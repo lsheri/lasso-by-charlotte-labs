@@ -17,7 +17,7 @@ export const getMcpToken = createServerFn({ method: "GET" })
     const { supabase, userId } = context;
     const profile = await resolveProfile(supabase, userId, data.profile_id);
     if (!profile) return null;
-    const { data } = await supabase
+    const { data: token } = await supabase
       .from("mcp_tokens")
       .select("id, created_at, last_used_at")
       .eq("profile_id", profile.id)
@@ -25,7 +25,7 @@ export const getMcpToken = createServerFn({ method: "GET" })
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
-    return data ?? null;
+    return token ?? null;
   });
 
 export const createMcpToken = createServerFn({ method: "POST" })
