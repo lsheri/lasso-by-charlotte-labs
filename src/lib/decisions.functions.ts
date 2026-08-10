@@ -119,22 +119,13 @@ export const draftDecisions = createServerFn({ method: "POST" })
       if (insertError) throw new Error(insertError.message);
     }
 
-    try {
-      const encoded = new TextEncoder().encode(profile.org_id);
-      const digest = await crypto.subtle.digest("SHA-256", encoded);
-      const tenant_hash = Array.from(new Uint8Array(digest))
-        .map((b) => b.toString(16).padStart(2, "0"))
-        .join("");
-      await supabase.from("events").insert({
-        event_type: "decision.drafted",
-        schema_version: "v1",
-        tenant_hash,
-        dims: { count: rows.length },
-        payload: {},
-      });
-    } catch {
-      /* telemetry never blocks */
-    }
+    const { recordEvent } = await import("./telemetry.server");
+    await recordEvent(supabase, {
+      eventType: "decision.drafted",
+      orgId: profile.org_id,
+      userId: context.userId,
+      dims: { count: rows.length },
+    });
 
     return { drafted: rows.length };
   });
