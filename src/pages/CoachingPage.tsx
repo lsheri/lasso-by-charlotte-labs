@@ -4,10 +4,11 @@ import { useCoachSubjects } from "@/hooks/use-coaching";
 import { useProfile } from "@/hooks/use-profile";
 
 function sinceLabel(iso: string | null): string {
-  if (!iso) return "no notes yet";
-  return `since your note on ${new Date(iso).toLocaleDateString(undefined, {
+  if (!iso) return "No notes yet";
+  return `Last note ${new Date(iso).toLocaleDateString(undefined, {
     month: "short",
     day: "numeric",
+    year: "numeric",
   })}`;
 }
 
@@ -20,7 +21,7 @@ export function CoachingPage() {
       <header className="mb-8">
         <h1 className="page-title">People you coach</h1>
         <p className="mt-1.5 text-sm text-muted-foreground">
-          The work each colleague has chosen to share with you, newest first.
+          The work each colleague has mapped and shared with you, most new material first.
         </p>
       </header>
 
@@ -54,8 +55,7 @@ export function CoachingPage() {
 
         {subjects && subjects.length === 0 && !isLoading ? (
           <p className="text-sm text-muted-foreground">
-            No one has shared work with you yet. Once you&apos;re added to an engagement, it appears
-            here.
+            You&apos;ll see the people you coach here once an engagement owner adds you.
           </p>
         ) : null}
       </div>

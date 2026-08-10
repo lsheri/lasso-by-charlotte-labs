@@ -97,7 +97,26 @@ function JoinPage() {
 
     await queryClient.invalidateQueries();
     setPending(false);
+    if (eng && memberRole === "coach") {
+      const { data: subjects } = await supabase
+        .from("engagement_members")
+        .select("profile_id")
+        .eq("engagement_id", eng)
+        .eq("member_role", "em");
+      const only = (subjects ?? []).length === 1 ? (subjects ?? [])[0]?.profile_id : undefined;
+      if (only) {
+        navigate({
+          to: "/coaching/$engagementId/$subjectId",
+          params: { engagementId: eng, subjectId: only },
+          replace: true,
+        });
+      } else {
+        navigate({ to: "/coaching", replace: true });
+      }
+      return;
+    }
     if (eng) navigate({ to: "/engagements/$id", params: { id: eng }, replace: true });
+    else if (memberRole === "coach") navigate({ to: "/coaching", replace: true });
     else navigate({ to: "/work", replace: true });
   }
 

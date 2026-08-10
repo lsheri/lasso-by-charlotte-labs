@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import { useState, type ReactNode } from "react";
 import { toast } from "sonner";
 
@@ -23,6 +24,53 @@ const ROLE_OPTIONS: { value: InviteRole; label: string; hint: string }[] = [
   { value: "lead", label: "Lead", hint: "Can invite others and see engagements across the team." },
   { value: "admin", label: "Admin", hint: "Full workspace settings." },
 ];
+
+function IssuedInvites({ orgId, refreshKey }: { orgId: string; refreshKey: string }) {
+  const { data } = useQuery({
+    queryKey: ["invites", orgId, refreshKey],
+    queryFn: async () => {
+      const { data: rows, error } = await supabase
+        .from("invites")
+        .select("code, invited_role, email, used_at, expires_at")
+        .eq("org_id", orgId)
+        .order("expires_at", { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      return rows ?? [];
+    },
+  });
+
+  if (!data || data.length === 0) return null;
+
+  return (
+    <div className="border-t border-border pt-4">
+      <p className="micro-label">Invites you&apos;ve issued</p>
+      <ul className="mt-2 space-y-1.5">
+        {data.map((invite) => (
+          <li
+            key={invite.code}
+            className="flex flex-wrap items-center justify-between gap-2 rounded-[var(--radius)] border border-border bg-card px-3 py-2"
+          >
+            <span className="font-mono text-xs text-foreground">{invite.code}</span>
+            <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+              {invite.invited_role}
+              {invite.email ? ` · ${invite.email}` : " · open link"}
+            </span>
+            <span
+              className={
+                invite.used_at
+                  ? "rounded-full bg-accent-soft px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-accent-deep"
+                  : "rounded-full bg-muted px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground"
+              }
+            >
+              {invite.used_at ? "Accepted" : "Unused"}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
 
 export function InviteDialog({
   trigger,
@@ -112,7 +160,7 @@ export function InviteDialog({
 
           <div className="space-y-1.5">
             <Label htmlFor="invite-email" className="micro-label">
-              Restrict to one email (optional)
+              Lock this invite to their email — recommended
             </Label>
             <Input
               id="invite-email"
@@ -123,11 +171,11 @@ export function InviteDialog({
             />
           </div>
 
-          {engagementId ? (
-            <p className="text-xs text-muted-foreground">
-              They&apos;ll land straight in this engagement when they accept.
-            </p>
-          ) : null}
+          <p className="rounded-[var(--radius)] border border-border bg-secondary px-4 py-3 text-xs text-muted-foreground">
+            Coaches see only the work you&apos;ve mapped to this engagement. Private and unmapped
+            work is never visible.
+            {engagementId ? " They'll land straight in this engagement when they accept." : ""}
+          </p>
 
           <Button type="submit" disabled={pending}>
             {pending ? "Creating…" : "Create invite link"}
@@ -153,6 +201,8 @@ export function InviteDialog({
         ) : null}
 
         {error ? <p className="text-sm text-destructive">{error}</p> : null}
+
+        <IssuedInvites orgId={profile.org_id} refreshKey={link ?? ""} />
       </DialogContent>
     </Dialog>
   );

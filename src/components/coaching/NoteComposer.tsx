@@ -79,7 +79,7 @@ export function NoteComposer({
       return;
     }
 
-    logEvent("note.created", profile.org_id, { citations: cited.length });
+    logEvent("note.created", profile.org_id, { cites_count: cited.length });
     await queryClient.invalidateQueries({ queryKey: ["packet", engagementId, subjectId] });
     await queryClient.invalidateQueries({ queryKey: ["coach-subjects"] });
     setDidWell("");

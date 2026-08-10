@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { supabase } from "@/integrations/supabase/client";
+import type { WorkItemRow } from "@/lib/work-types";
 
 export type CoachSubject = {
   engagement_id: string;
@@ -116,17 +117,8 @@ export function useCoachSubjects(coachProfileId: string | undefined) {
 export type PacketElement = {
   step_no: number | null;
   step_confirmed: boolean;
-  work_items: {
-    id: string;
-    title: string;
-    type: string;
-    source: string;
-    content_fidelity: string | null;
-    source_vendor: string | null;
-    work_date: string | null;
-    created_at_source: string | null;
-    captured_at: string;
-  } | null;
+  mapped_at: string;
+  work_items: (WorkItemRow & { owner_id?: string | null }) | null;
 };
 
 export type PacketTask = {
@@ -184,7 +176,7 @@ export async function fetchPacket(engagementId: string, subjectId: string): Prom
     supabase
       .from("tasks")
       .select(
-        "id, name, goal, when_label, position, work_item_tasks(step_no, step_confirmed, work_items(id, title, type, source, content_fidelity, source_vendor, work_date, created_at_source, captured_at))",
+        "id, name, goal, when_label, position, work_item_tasks(step_no, step_confirmed, mapped_at, work_items(id, owner_id, title, type, source, visibility, content_ref, content_fidelity, source_vendor, work_date, created_at_source, captured_at, meta))",
       )
       .eq("engagement_id", engagementId)
       .eq("owner_id", subjectId)
