@@ -1,6 +1,7 @@
 /** Canonical event registry. Every name here is mirrored to PostHog. */
 export type TelemetryEvent =
   | "org.created"
+  | "landing.viewed"
   | "workitem.captured"
   | "workitem.mapped"
   | "workitem.marked_private"
