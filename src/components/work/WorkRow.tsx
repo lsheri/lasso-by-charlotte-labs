@@ -8,7 +8,7 @@ import {
   Table2,
 } from "lucide-react";
 
-import { formatDate, type WorkItemRow, type WorkType } from "@/lib/work-types";
+import { formatDate, sourceLabel, type WorkItemRow, type WorkType } from "@/lib/work-types";
 
 const ICONS: Record<WorkType, typeof FileText> = {
   ai_thread: MessagesSquare,
@@ -31,6 +31,8 @@ export function WorkRow({
 }) {
   const Icon = ICONS[item.type];
   const mapping = item.work_item_tasks[0]?.tasks ?? null;
+  const link = item.meta?.web_view_link ?? null;
+  const dateIso = item.created_at_source ?? item.captured_at;
 
   return (
     <div className="flex items-center gap-4 rounded-[var(--radius)] border border-border bg-card px-4 py-3 shadow-card">
@@ -48,7 +50,20 @@ export function WorkRow({
           <p className="truncate text-sm font-medium text-foreground">{item.title}</p>
         )}
         <p className="mt-0.5 truncate font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
-          {item.type.replace("_", " ")} · {item.source} · {formatDate(item.captured_at)}
+          {item.type.replace("_", " ")} · {sourceLabel(item.source)} · {formatDate(dateIso)}
+          {link ? (
+            <>
+              {" · "}
+              <a
+                href={link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-accent-deep hover:opacity-70"
+              >
+                open ↗
+              </a>
+            </>
+          ) : null}
         </p>
       </div>
 

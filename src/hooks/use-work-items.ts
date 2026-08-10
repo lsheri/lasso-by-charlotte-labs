@@ -8,11 +8,15 @@ export type WorkItemsResult = { items: WorkItemRow[]; mappingError: string | nul
 export async function fetchWorkItems(): Promise<WorkItemsResult> {
   const { data, error } = await supabase
     .from("work_items")
-    .select("id, title, type, source, visibility, captured_at, content_ref")
+    .select("id, title, type, source, visibility, captured_at, content_ref, created_at_source, meta")
     .order("captured_at", { ascending: false });
   if (error) throw error;
 
-  const items: WorkItemRow[] = (data ?? []).map((row) => ({ ...row, work_item_tasks: [] }));
+  const items: WorkItemRow[] = (data ?? []).map((row) => ({
+    ...row,
+    meta: (row.meta ?? null) as WorkItemRow["meta"],
+    work_item_tasks: [],
+  }));
   if (items.length === 0) return { items, mappingError: null };
 
   // Mapping labels live behind engagement policies; if those reads fail we still
