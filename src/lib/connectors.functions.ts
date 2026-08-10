@@ -181,14 +181,21 @@ export const syncDrive = createServerFn({ method: "POST" })
       imported += 1;
     }
 
-    const tenantHash = await sha256Hex(profile.org_id);
-    await supabase.from("events").insert({
-      event_type: "connector.synced",
-      schema_version: "v1",
-      tenant_hash: tenantHash,
+    const { recordEvent } = await import("./telemetry.server");
+    await recordEvent(supabase, {
+      eventType: "connector.synced",
+      orgId: profile.org_id,
+      userId,
       dims: { toolkit: "googledrive", imported },
-      payload: {},
     });
+    if (imported > 0) {
+      await recordEvent(supabase, {
+        eventType: "workitem.captured",
+        orgId: profile.org_id,
+        userId,
+        dims: { channel: "connector", source: "googledrive", count: imported },
+      });
+    }
 
     return { imported, skipped };
   });
