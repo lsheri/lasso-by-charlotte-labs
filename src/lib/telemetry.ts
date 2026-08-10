@@ -8,7 +8,8 @@ export type TelemetryEvent =
   | "decision.drafted"
   | "decision.resolved"
   | "connector.enabled"
-  | "connector.synced";
+  | "connector.synced"
+  | "import.completed";
 
 /** Fire-and-forget. Never blocks the UI, never carries content or names. */
 export function logEvent(

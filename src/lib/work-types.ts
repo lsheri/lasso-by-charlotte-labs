@@ -23,7 +23,13 @@ export type WorkItemRow = {
   content_ref: string | null;
   created_at_source?: string | null | undefined;
   meta?:
-    | { drive_file_id?: string; mime_type?: string | null; web_view_link?: string | null }
+    | {
+        drive_file_id?: string;
+        mime_type?: string | null;
+        web_view_link?: string | null;
+        orig_id?: string;
+        imported?: boolean;
+      }
     | null
     | undefined;
   work_item_tasks: MappedTask[];
@@ -63,5 +69,6 @@ export function sourceLabel(source: string): string {
     const toolkit = source.slice("connector:".length);
     return toolkit === "googledrive" ? "google drive" : toolkit;
   }
+  if (source.startsWith("import:")) return `${source.slice("import:".length)} import`;
   return source;
 }
