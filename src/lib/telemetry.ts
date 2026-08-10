@@ -4,13 +4,15 @@ import { sha256 } from "@/lib/parse-thread";
 export type TelemetryEvent =
   | "workitem.captured"
   | "workitem.mapped"
-  | "workitem.marked_private";
+  | "workitem.marked_private"
+  | "decision.drafted"
+  | "decision.resolved";
 
 /** Fire-and-forget. Never blocks the UI, never carries content or names. */
 export function logEvent(
   eventType: TelemetryEvent,
   orgId: string,
-  dims: { type: string; source: string },
+  dims: Record<string, string | number | boolean>,
 ): void {
   void (async () => {
     try {
