@@ -40,6 +40,12 @@ async function applyOrgType(profileId: string, type: OrgType): Promise<string | 
 
 export const Route = createFileRoute("/onboarding")({
   ssr: false,
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { intent?: "company" | "personal" | "invite" | undefined } => {
+    const intent = search["intent"];
+    return intent === "company" || intent === "personal" || intent === "invite" ? { intent } : {};
+  },
   beforeLoad: async () => {
     const { data, error } = await supabase.auth.getUser();
     if (error || !data.user) throw redirect({ to: "/auth" });
@@ -112,8 +118,10 @@ function McpOnboardingSection({ onSetup }: { onSetup: () => void }) {
 function OnboardingInner() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { intent } = Route.useSearch();
   const [stage, setStage] = useState<"choose" | "setup" | "why" | "capture">("choose");
-  const [orgType, setOrgType] = useState<OrgType>("company");
+  const [orgType, setOrgType] = useState<OrgType>(intent === "personal" ? "personal" : "company");
+  const [selected, setSelected] = useState<"company" | "personal" | "invite" | null>(intent ?? null);
   const [mode, setMode] = useState<"create" | "join">("create");
   const [displayName, setDisplayName] = useState("");
   const [orgName, setOrgName] = useState("");
@@ -329,7 +337,11 @@ function OnboardingInner() {
             ).map(([value, title, body]) => (
               <div
                 key={value}
-                className="flex flex-col rounded-[var(--radius)] border border-border bg-card p-5 shadow-card"
+                className={
+                  selected === value
+                    ? "flex flex-col rounded-[var(--radius)] border border-accent bg-card p-5 shadow-card ring-1 ring-accent"
+                    : "flex flex-col rounded-[var(--radius)] border border-border bg-card p-5 shadow-card"
+                }
               >
                 <p className="text-sm font-medium text-foreground">{title}</p>
                 <p className="mt-2 flex-1 text-sm text-muted-foreground">{body}</p>
@@ -337,6 +349,7 @@ function OnboardingInner() {
                   type="button"
                   className="mt-4"
                   onClick={() => {
+                    setSelected(value);
                     setOrgType(value);
                     setStage("setup");
                   }}
@@ -352,7 +365,13 @@ function OnboardingInner() {
               </div>
             ))}
 
-            <div className="flex flex-col rounded-[var(--radius)] border border-border bg-card p-5 shadow-card">
+            <div
+              className={
+                selected === "invite"
+                  ? "flex flex-col rounded-[var(--radius)] border border-accent bg-card p-5 shadow-card ring-1 ring-accent"
+                  : "flex flex-col rounded-[var(--radius)] border border-border bg-card p-5 shadow-card"
+              }
+            >
               <p className="text-sm font-medium text-foreground">I have an invite</p>
               <p className="mt-2 flex-1 text-sm text-muted-foreground">
                 Someone already set up a workspace for you. Paste the code or link they sent.
