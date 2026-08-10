@@ -21,8 +21,11 @@ export type WorkItemRow = {
   visibility: WorkVisibility;
   captured_at: string;
   content_ref: string | null;
-  created_at_source?: string | null;
-  meta?: { drive_file_id?: string; mime_type?: string | null; web_view_link?: string | null } | null;
+  created_at_source?: string | null | undefined;
+  meta?:
+    | { drive_file_id?: string; mime_type?: string | null; web_view_link?: string | null }
+    | null
+    | undefined;
   work_item_tasks: MappedTask[];
 };
 
