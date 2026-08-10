@@ -22,6 +22,8 @@ export type WorkItemRow = {
   captured_at: string;
   content_ref: string | null;
   created_at_source?: string | null | undefined;
+  content_fidelity?: string | null | undefined;
+  source_vendor?: string | null | undefined;
   meta?:
     | {
         drive_file_id?: string;
@@ -29,6 +31,8 @@ export type WorkItemRow = {
         web_view_link?: string | null;
         orig_id?: string;
         imported?: boolean;
+        warnings?: string[];
+        models?: string[];
       }
     | null
     | undefined;

@@ -39,6 +39,13 @@ export function ThreadViewer({
 
         {error ? <p className="text-sm text-destructive">{(error as Error).message}</p> : null}
 
+        {item?.content_fidelity === "summary" ? (
+          <p className="rounded-[var(--radius)] border border-border bg-secondary/60 px-4 py-3 text-sm text-foreground">
+            Copilot exports contain summaries, not full replies. For work that matters, paste the
+            conversation for full fidelity.
+          </p>
+        ) : null}
+
         <div className="space-y-5">
           {(turns ?? []).map((turn) =>
             turn.role === "user" ? (
