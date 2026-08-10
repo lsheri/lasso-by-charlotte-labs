@@ -65,6 +65,78 @@ function OnboardingPage() {
 
 function McpOnboardingSection({ onSetup }: { onSetup: () => void }) {
   const [showWhat, setShowWhat] = useState(false);
+  if (stage === "choose") {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-background px-4 py-16">
+        <div className="w-full max-w-3xl">
+          <Wordmark size="lg" />
+          <p className="micro-label mt-6">Welcome</p>
+          <h1 className="page-title mt-2">Who is this for?</h1>
+          <p className="mt-1.5 text-sm text-muted-foreground">
+            You can change this later. It only decides who owns the workspace.
+          </p>
+
+          <div className="mt-6 grid gap-3 md:grid-cols-3">
+            {(
+              [
+                [
+                  "company",
+                  "For my company",
+                  "Your organization owns the tenancy. Each person's work stays private to them.",
+                ],
+                [
+                  "personal",
+                  "Just for me",
+                  "Your work, your record. You own everything here. Invite a coach whenever you're ready.",
+                ],
+              ] as const
+            ).map(([value, title, body]) => (
+              <div
+                key={value}
+                className="flex flex-col rounded-[var(--radius)] border border-border bg-card p-5 shadow-card"
+              >
+                <p className="text-sm font-medium text-foreground">{title}</p>
+                <p className="mt-2 flex-1 text-sm text-muted-foreground">{body}</p>
+                <Button
+                  type="button"
+                  className="mt-4"
+                  onClick={() => {
+                    setOrgType(value);
+                    setStage("setup");
+                  }}
+                >
+                  Continue
+                </Button>
+                <Link
+                  to="/trust"
+                  className="mt-3 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  How your data works →
+                </Link>
+              </div>
+            ))}
+
+            <div className="flex flex-col rounded-[var(--radius)] border border-border bg-card p-5 shadow-card">
+              <p className="text-sm font-medium text-foreground">I have an invite</p>
+              <p className="mt-2 flex-1 text-sm text-muted-foreground">
+                Someone already set up a workspace for you. Paste the code or link they sent.
+              </p>
+              <div className="mt-4">
+                <EnterInviteCode label="Invite code or link" />
+              </div>
+              <Link
+                to="/trust"
+                className="mt-3 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+              >
+                How your data works →
+              </Link>
+            </div>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <section className="mt-6 rounded-[var(--radius)] border border-accent bg-accent-soft px-5 py-5">
       <h2 className="micro-label text-accent-deep">Connect your AI — where Lasso began</h2>
@@ -298,10 +370,14 @@ function OnboardingInner() {
         <Wordmark size="lg" />
 
         <div className="mt-6 rounded-[var(--radius)] border border-border bg-card p-6 shadow-card">
-          <p className="micro-label">Welcome</p>
+          <p className="micro-label">
+            {orgType === "personal" ? "Just for me" : "For my company"}
+          </p>
           <h1 className="page-title mt-2">Set up your workspace</h1>
           <p className="mt-1.5 text-sm text-muted-foreground">
-            Two details and you're in. You can change them later.
+            {orgType === "personal"
+              ? "One detail and you're in. You can change it later."
+              : "Two details and you're in. You can change them later."}
           </p>
 
           <form onSubmit={handleSubmit} className="mt-6 space-y-5">
@@ -318,32 +394,7 @@ function OnboardingInner() {
               />
             </div>
 
-            <div className="flex gap-1 rounded-[var(--radius)] bg-secondary p-1">
-              {(
-                [
-                  ["create", "Create a workspace"],
-                  ["join", "Join with an invite"],
-                ] as const
-              ).map(([value, label]) => (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => {
-                    setMode(value);
-                    setError(null);
-                  }}
-                  className={
-                    mode === value
-                      ? "flex-1 rounded-[calc(var(--radius)-4px)] bg-card px-3 py-2 text-sm font-medium text-foreground shadow-card"
-                      : "flex-1 rounded-[calc(var(--radius)-4px)] px-3 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
-                  }
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-
-            {mode === "create" ? (
+            {orgType === "company" ? (
               <div className="space-y-1.5">
                 <Label htmlFor="org-name" className="micro-label">
                   Workspace name
@@ -356,27 +407,20 @@ function OnboardingInner() {
                   placeholder="Charlotte Labs"
                 />
               </div>
-            ) : (
-              <div className="space-y-1.5">
-                <Label htmlFor="invite-code" className="micro-label">
-                  Invite code
-                </Label>
-                <Input
-                  id="invite-code"
-                  required
-                  value={code}
-                  onChange={(e) => setCode(e.target.value)}
-                  placeholder="a1b2c3d4e5f6"
-                  className="font-mono"
-                />
-              </div>
-            )}
+            ) : null}
 
             {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
             <Button type="submit" className="w-full" disabled={pending}>
-              {pending ? "Setting up…" : mode === "create" ? "Create workspace" : "Join workspace"}
+              {pending ? "Setting up…" : "Create workspace"}
             </Button>
+            <button
+              type="button"
+              onClick={() => setStage("choose")}
+              className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+            >
+              ← Back
+            </button>
           </form>
         </div>
       </div>
