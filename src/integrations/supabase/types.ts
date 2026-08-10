@@ -105,6 +105,44 @@ export type Database = {
           },
         ]
       }
+      connector_accounts: {
+        Row: {
+          composio_account_id: string | null
+          connected_at: string | null
+          created_at: string
+          id: string
+          profile_id: string
+          status: string
+          toolkit: string
+        }
+        Insert: {
+          composio_account_id?: string | null
+          connected_at?: string | null
+          created_at?: string
+          id?: string
+          profile_id: string
+          status?: string
+          toolkit: string
+        }
+        Update: {
+          composio_account_id?: string | null
+          connected_at?: string | null
+          created_at?: string
+          id?: string
+          profile_id?: string
+          status?: string
+          toolkit?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "connector_accounts_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       decisions: {
         Row: {
           author: Database["public"]["Enums"]["authored_by"]
