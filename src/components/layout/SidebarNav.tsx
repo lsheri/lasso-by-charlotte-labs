@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router";
 
 import { navGroups } from "./nav-config";
 
-export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
+export function SidebarNav({ onNavigate }: { onNavigate?: (() => void) | undefined }) {
   return (
     <nav className="flex flex-col gap-7">
       {navGroups.map((group) => (

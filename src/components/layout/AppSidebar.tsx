@@ -9,7 +9,7 @@ export function AppSidebar({
 }: {
   userName: string;
   onSignOut: () => void;
-  onNavigate?: () => void;
+  onNavigate?: (() => void) | undefined;
 }) {
   return (
     <div className="flex h-full w-full flex-col gap-8 bg-sidebar px-4 py-5">
