@@ -43,7 +43,13 @@ function monthLabel(iso: string | null | undefined): string {
   return new Date(iso).toLocaleDateString(undefined, { month: "short", year: "numeric" });
 }
 
-export function ImportFlowDialog({ trigger }: { trigger: React.ReactNode }) {
+export function ImportFlowDialog({
+  trigger,
+  initialVendor,
+}: {
+  trigger: React.ReactNode;
+  initialVendor?: ImportVendor;
+}) {
   const { data: profile } = useProfile();
   const queryClient = useQueryClient();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -74,6 +80,7 @@ export function ImportFlowDialog({ trigger }: { trigger: React.ReactNode }) {
     }
     setOpen(next);
     if (!next) reset();
+    if (next && initialVendor) chooseVendor(initialVendor);
   }
 
   function chooseVendor(next: ImportVendor) {
