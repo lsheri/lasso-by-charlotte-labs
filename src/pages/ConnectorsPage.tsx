@@ -5,6 +5,7 @@ import { useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { NamingConventionsCard } from "@/components/settings/NamingConventionsCard";
 import {
   statusLabel,
   useConnectorAccounts,
@@ -205,6 +206,8 @@ export function ConnectorsPage() {
             Go to Work →
           </Link>
         </div>
+
+        <NamingConventionsCard />
       </div>
     </div>
   );

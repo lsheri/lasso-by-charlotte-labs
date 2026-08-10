@@ -69,5 +69,6 @@ export function sourceLabel(source: string): string {
     const toolkit = source.slice("connector:".length);
     return toolkit === "googledrive" ? "google drive" : toolkit;
   }
+  if (source.startsWith("import:")) return `${source.slice("import:".length)} import`;
   return source;
 }
