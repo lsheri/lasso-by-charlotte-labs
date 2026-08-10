@@ -5,6 +5,7 @@ import { useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { ConnectYourAiCard } from "@/components/connectors/ConnectYourAiCard";
 import { NamingConventionsCard } from "@/components/settings/NamingConventionsCard";
 import {
   statusLabel,
@@ -169,6 +170,8 @@ export function ConnectorsPage() {
       {error ? <p className="mb-6 text-sm text-destructive">{(error as Error).message}</p> : null}
 
       <div className="space-y-10">
+        <ConnectYourAiCard />
+
         <section>
           <h2 className="micro-label">Documents &amp; email</h2>
           <div className="mt-3 space-y-2">
