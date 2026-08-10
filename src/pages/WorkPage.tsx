@@ -2,6 +2,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
 import { MapDialog } from "@/components/work/MapDialog";
+import { DraftDecisionsButton } from "@/components/decisions/DraftDecisionsButton";
 import { PasteThreadDialog } from "@/components/work/PasteThreadDialog";
 import { ThreadViewer } from "@/components/work/ThreadViewer";
 import { UploadFilesButton } from "@/components/work/UploadFilesButton";
@@ -105,6 +106,9 @@ export function WorkPage() {
                 onOpen={openItem(item)}
                 actions={
                   <>
+                    {item.type === "ai_thread" ? (
+                      <DraftDecisionsButton workItemId={item.id} />
+                    ) : null}
                     <RowAction onClick={() => setMapItem(item)}>Remap</RowAction>
                     <RowAction onClick={() => void makePrivate(item)}>Make private</RowAction>
                   </>
@@ -121,6 +125,9 @@ export function WorkPage() {
                 onOpen={openItem(item)}
                 actions={
                   <>
+                    {item.type === "ai_thread" ? (
+                      <DraftDecisionsButton workItemId={item.id} />
+                    ) : null}
                     <RowAction primary onClick={() => setMapItem(item)}>
                       Map to a task
                     </RowAction>
