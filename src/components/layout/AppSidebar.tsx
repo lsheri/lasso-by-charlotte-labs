@@ -1,19 +1,20 @@
 import { SidebarNav } from "./SidebarNav";
 import { UserCard } from "./UserCard";
-import { Wordmark } from "./Wordmark";
 
 export function AppSidebar({
   userName,
+  userRole,
   onSignOut,
   onNavigate,
 }: {
   userName: string;
+  userRole: string | undefined;
   onSignOut: () => void;
   onNavigate?: (() => void) | undefined;
 }) {
   return (
     <div className="flex h-full w-full flex-col gap-8 bg-sidebar px-4 py-5">
-      <UserCard name={userName} onSignOut={onSignOut} />
+      <UserCard name={userName} role={userRole} onSignOut={onSignOut} />
       <div className="flex-1 overflow-y-auto">
         <SidebarNav onNavigate={onNavigate} />
       </div>
