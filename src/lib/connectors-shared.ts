@@ -1,6 +1,6 @@
 import { isConnectorToolkit, type ConnectorToolkit } from "@/lib/connector-toolkits";
 
-export function validateToolkit(input: { toolkit: string; profile_id?: string }): {
+export function validateToolkit(input: { toolkit: string; profile_id?: string | undefined }): {
   toolkit: ConnectorToolkit;
   profile_id: string | null;
 } {
@@ -9,7 +9,7 @@ export function validateToolkit(input: { toolkit: string; profile_id?: string })
 }
 
 /** Server functions receive the caller's active profile id (multi-org users). */
-export function validateProfileId(input: { profile_id?: string } | undefined): {
+export function validateProfileId(input: { profile_id?: string | undefined } | undefined): {
   profile_id: string | null;
 } {
   return { profile_id: input?.profile_id ?? null };

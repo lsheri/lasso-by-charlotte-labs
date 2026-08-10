@@ -6,7 +6,7 @@ import { DRAFT_SYSTEM_PROMPT, DRAFT_TOOL, dateLabel, type DraftedDecision } from
 
 export const draftDecisions = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { work_item_id: string; profile_id?: string }) => {
+  .inputValidator((input: { work_item_id: string; profile_id?: string | undefined }) => {
     if (!input || typeof input.work_item_id !== "string" || !input.work_item_id) {
       throw new Error("work_item_id is required");
     }
