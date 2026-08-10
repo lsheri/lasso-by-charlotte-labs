@@ -35,6 +35,49 @@ export const Route = createFileRoute("/onboarding")({
 });
 
 function OnboardingPage() {
+  return <OnboardingInner />;
+}
+
+function McpOnboardingSection({ onSetup }: { onSetup: () => void }) {
+  const [showWhat, setShowWhat] = useState(false);
+  return (
+    <section className="mt-6 rounded-[var(--radius)] border border-accent bg-accent-soft px-5 py-5">
+      <h2 className="micro-label text-accent-deep">Connect your AI — where Lasso began</h2>
+      <div className="mt-3 space-y-2 text-sm text-foreground">
+        <p>Lasso started with one idea: the work you do with AI should belong to you.</p>
+        <p>
+          MCP is a simple standard that lets your AI talk to Lasso directly — you add Lasso as a
+          connector in Claude or ChatGPT once, then just tell your AI “push this to Lasso” at the end
+          of any working session.
+        </p>
+        <p>
+          Everything it pushes lands private and unmapped, only you can see it, and you can revoke
+          the connection anytime.
+        </p>
+      </div>
+      <div className="mt-4 flex items-center gap-6">
+        <Button type="button" onClick={onSetup}>
+          Set it up
+        </Button>
+        <button
+          type="button"
+          onClick={() => setShowWhat((v) => !v)}
+          className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+        >
+          What&apos;s MCP?
+        </button>
+      </div>
+      {showWhat ? (
+        <p className="mt-3 text-sm text-muted-foreground">
+          Model Context Protocol — an open standard (like USB for AI tools) that lets AI assistants
+          use other apps on your behalf, with your permission.
+        </p>
+      ) : null}
+    </section>
+  );
+}
+
+function OnboardingInner() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [stage, setStage] = useState<"setup" | "why" | "capture">("setup");
