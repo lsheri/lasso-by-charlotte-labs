@@ -9,9 +9,14 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
-  beforeLoad: async () => {
+  validateSearch: (search: Record<string, unknown>): { next?: string } => {
+    const next = search["next"];
+    return typeof next === "string" && next.startsWith("/") ? { next } : {};
+  },
+  beforeLoadDeps: ({ search }: { search: { next?: string } }) => ({ next: search.next }),
+  beforeLoad: async ({ deps }) => {
     const { data } = await supabase.auth.getUser();
-    if (data.user) throw redirect({ to: "/overview" });
+    if (data.user) throw redirect(deps.next ? { href: deps.next } : { to: "/overview" });
   },
   head: () => ({
     meta: [
