@@ -1,7 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { isConnectorToolkit, type ConnectorToolkit } from "@/lib/connector-toolkits";
 import { sha256Hex, validateToolkit } from "@/lib/connectors-shared";
 
 export const initiateConnection = createServerFn({ method: "POST" })
