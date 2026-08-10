@@ -105,7 +105,8 @@ function McpOnboardingSection({ onSetup }: { onSetup: () => void }) {
 function OnboardingInner() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [stage, setStage] = useState<"setup" | "why" | "capture">("setup");
+  const [stage, setStage] = useState<"choose" | "setup" | "why" | "capture">("choose");
+  const [orgType, setOrgType] = useState<OrgType>("company");
   const [mode, setMode] = useState<"create" | "join">("create");
   const [displayName, setDisplayName] = useState("");
   const [orgName, setOrgName] = useState("");
@@ -122,7 +123,10 @@ function OnboardingInner() {
       mode === "create"
         ? await supabase.rpc("create_org_with_profile", {
             p_display_name: displayName.trim(),
-            p_org_name: orgName.trim(),
+            p_org_name:
+              orgType === "personal"
+                ? orgName.trim() || `${displayName.trim()}'s workspace`
+                : orgName.trim(),
           })
         : await supabase.rpc("join_org_with_invite", {
             p_display_name: displayName.trim(),
@@ -135,9 +139,17 @@ function OnboardingInner() {
       return;
     }
 
+    if (mode === "create") {
+      const profile = await fetchProfile();
+      if (profile) {
+        const orgId = await applyOrgType(profile.id, orgType);
+        if (orgId) logEvent("org.created", orgId, { org_type: orgType });
+      }
+    }
+
     await queryClient.invalidateQueries();
     setPending(false);
-    setStage("why");
+    setStage(orgType === "personal" && mode === "create" ? "capture" : "why");
   }
 
   function finish() {
