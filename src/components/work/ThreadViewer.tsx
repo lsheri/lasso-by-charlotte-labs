@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DraftDecisionsButton } from "@/components/decisions/DraftDecisionsButton";
 import { supabase } from "@/integrations/supabase/client";
 import type { WorkItemRow } from "@/lib/work-types";
 
@@ -64,6 +65,12 @@ export function ThreadViewer({
             <p className="text-sm text-muted-foreground">No turns stored for this item.</p>
           ) : null}
         </div>
+
+        {item && item.type === "ai_thread" ? (
+          <div className="mt-6 flex justify-end border-t border-border pt-4">
+            <DraftDecisionsButton workItemId={item.id} />
+          </div>
+        ) : null}
       </DialogContent>
     </Dialog>
   );
