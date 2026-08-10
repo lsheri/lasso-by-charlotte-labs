@@ -62,16 +62,19 @@ async function resolveOwner(token: string): Promise<Owner | null> {
 }
 
 async function logPush(owner: Owner, dims: Record<string, string>): Promise<void> {
-  try {
-    await supabaseAdmin.from("events").insert({
-      event_type: "mcp.push",
-      schema_version: "v1",
-      tenant_hash: await sha256Hex(owner.orgId),
-      dims,
-      payload: {},
+  await recordEvent(supabaseAdmin, {
+    eventType: "mcp.push",
+    orgId: owner.orgId,
+    userId: owner.userId,
+    dims,
+  });
+  if (dims["tool"] === "push_thread" || dims["tool"] === "push_document") {
+    await recordEvent(supabaseAdmin, {
+      eventType: "workitem.captured",
+      orgId: owner.orgId,
+      userId: owner.userId,
+      dims: { channel: "mcp", source: dims["source_ai"] ?? "mcp" },
     });
-  } catch {
-    /* telemetry must never break a push */
   }
 }
 
