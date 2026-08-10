@@ -15,13 +15,14 @@ import type { WorkItemRow } from "@/lib/work-types";
 
 export function WorkPage() {
   const { data: profile } = useProfile();
-  const { data: items, isLoading, error } = useWorkItems();
+  const { data, isLoading, error } = useWorkItems();
   const queryClient = useQueryClient();
   const [mapItem, setMapItem] = useState<WorkItemRow | null>(null);
   const [threadItem, setThreadItem] = useState<WorkItemRow | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
-  const all = items ?? [];
+  const all = data?.items ?? [];
+  const mappingError = data?.mappingError ?? null;
   const mapped = all.filter((i) => i.visibility === "mapped");
   const unmapped = all.filter((i) => i.visibility === "unmapped");
   const priv = all.filter((i) => i.visibility === "private");
@@ -75,6 +76,11 @@ export function WorkPage() {
         <p className="mb-6 text-sm text-destructive">{(error as Error).message}</p>
       ) : null}
       {actionError ? <p className="mb-6 text-sm text-destructive">{actionError}</p> : null}
+      {mappingError ? (
+        <p className="mb-6 text-sm text-destructive">
+          Mapping details couldn't load: {mappingError}
+        </p>
+      ) : null}
 
       {isLoading ? (
         <p className="text-sm text-muted-foreground">Loading your work…</p>
