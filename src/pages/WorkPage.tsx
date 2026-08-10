@@ -10,6 +10,7 @@ import { PasteThreadDialog } from "@/components/work/PasteThreadDialog";
 import { SuggestionChip } from "@/components/work/SuggestionChip";
 import { ThreadViewer } from "@/components/work/ThreadViewer";
 import { UploadFilesButton } from "@/components/work/UploadFilesButton";
+import { WorkDateDialog } from "@/components/work/WorkDateDialog";
 import { RowAction, WorkRow } from "@/components/work/WorkRow";
 import { Button } from "@/components/ui/button";
 import { useProfile } from "@/hooks/use-profile";
@@ -27,6 +28,7 @@ export function WorkPage() {
   const runSuggest = useServerFn(suggestMappings);
   const [mapItem, setMapItem] = useState<WorkItemRow | null>(null);
   const [threadItem, setThreadItem] = useState<WorkItemRow | null>(null);
+  const [dateItem, setDateItem] = useState<WorkItemRow | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<MappingSuggestion[] | null>(null);
   const [dismissed, setDismissed] = useState<string[]>([]);
@@ -242,6 +244,7 @@ export function WorkPage() {
                       <DraftDecisionsButton workItemId={item.id} />
                     ) : null}
                     <RowAction onClick={() => setMapItem(item)}>Remap</RowAction>
+                    <RowAction onClick={() => setDateItem(item)}>Work date</RowAction>
                     <RowAction onClick={() => void makePrivate(item)}>Make private</RowAction>
                   </>
                 }
@@ -302,6 +305,7 @@ export function WorkPage() {
                           <RowAction primary onClick={() => setMapItem(item)}>
                             Map to a task
                           </RowAction>
+                          <RowAction onClick={() => setDateItem(item)}>Work date</RowAction>
                           <RowAction onClick={() => void makePrivate(item)}>
                             Make private
                           </RowAction>
@@ -321,7 +325,12 @@ export function WorkPage() {
                 key={item.id}
                 item={item}
                 onOpen={openItem(item)}
-                actions={<RowAction onClick={() => void unmark(item)}>Unmark</RowAction>}
+                actions={
+                  <>
+                    <RowAction onClick={() => setDateItem(item)}>Work date</RowAction>
+                    <RowAction onClick={() => void unmark(item)}>Unmark</RowAction>
+                  </>
+                }
               />
             )}
           </Section>
@@ -340,6 +349,13 @@ export function WorkPage() {
         open={threadItem !== null}
         onOpenChange={(next) => {
           if (!next) setThreadItem(null);
+        }}
+      />
+      <WorkDateDialog
+        item={dateItem}
+        open={dateItem !== null}
+        onOpenChange={(next) => {
+          if (!next) setDateItem(null);
         }}
       />
     </div>
