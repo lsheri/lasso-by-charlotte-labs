@@ -9,7 +9,7 @@ import { useProfile } from "@/hooks/use-profile";
 import { AppSidebar } from "./AppSidebar";
 
 export function AppShell() {
-  const { data: profile } = useProfile();
+  const { data: profile, profiles } = useProfile();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
   const userName = profile?.display_name ?? "Signed in";
@@ -23,7 +23,13 @@ export function AppShell() {
     <div className="flex min-h-screen w-full bg-background">
       <aside className="hidden w-[264px] shrink-0 border-r border-border md:block">
         <div className="sticky top-0 h-screen">
-          <AppSidebar userName={userName} userRole={profile?.role} onSignOut={handleSignOut} />
+          <AppSidebar
+            userName={userName}
+            userRole={profile?.role}
+            profiles={profiles}
+            activeProfile={profile}
+            onSignOut={handleSignOut}
+          />
         </div>
       </aside>
 
@@ -41,6 +47,8 @@ export function AppShell() {
               <AppSidebar
                 userName={userName}
                 userRole={profile?.role}
+                profiles={profiles}
+                activeProfile={profile}
                 onSignOut={handleSignOut}
                 onNavigate={() => setMobileOpen(false)}
               />
