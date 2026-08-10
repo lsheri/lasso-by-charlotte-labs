@@ -4,15 +4,15 @@ import { useState } from "react";
 
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { supabase } from "@/integrations/supabase/client";
-import { useSession } from "@/hooks/use-session";
+import { useProfile } from "@/hooks/use-profile";
 
 import { AppSidebar } from "./AppSidebar";
 
 export function AppShell() {
-  const { session } = useSession();
+  const { data: profile } = useProfile();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const userName = session?.user.email ?? "Signed in";
+  const userName = profile?.display_name ?? "Signed in";
 
   async function handleSignOut() {
     await supabase.auth.signOut();
@@ -23,7 +23,7 @@ export function AppShell() {
     <div className="flex min-h-screen w-full bg-background">
       <aside className="hidden w-[264px] shrink-0 border-r border-border md:block">
         <div className="sticky top-0 h-screen">
-          <AppSidebar userName={userName} onSignOut={handleSignOut} />
+          <AppSidebar userName={userName} userRole={profile?.role} onSignOut={handleSignOut} />
         </div>
       </aside>
 
@@ -40,6 +40,7 @@ export function AppShell() {
               <SheetTitle className="sr-only">Navigation</SheetTitle>
               <AppSidebar
                 userName={userName}
+                userRole={profile?.role}
                 onSignOut={handleSignOut}
                 onNavigate={() => setMobileOpen(false)}
               />

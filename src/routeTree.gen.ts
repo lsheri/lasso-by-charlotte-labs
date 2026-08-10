@@ -12,11 +12,13 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as AuthenticatedConnectorsRouteImport } from './routes/_authenticated/connectors'
 import { Route as AuthenticatedDecisionsRouteImport } from './routes/_authenticated/decisions'
 import { Route as AuthenticatedOneOnOneRouteImport } from './routes/_authenticated/one-on-one'
 import { Route as AuthenticatedOverviewRouteImport } from './routes/_authenticated/overview'
 import { Route as AuthenticatedWorkRouteImport } from './routes/_authenticated/work'
+import { Route as AuthenticatedEngagementsIdRouteImport } from './routes/_authenticated/engagements.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -30,6 +32,11 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OnboardingRoute = OnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedConnectorsRoute = AuthenticatedConnectorsRouteImport.update({
@@ -57,71 +64,90 @@ const AuthenticatedWorkRoute = AuthenticatedWorkRouteImport.update({
   path: '/work',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedEngagementsIdRoute =
+  AuthenticatedEngagementsIdRouteImport.update({
+    id: '/engagements/$id',
+    path: '/engagements/$id',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/onboarding': typeof OnboardingRoute
   '/connectors': typeof AuthenticatedConnectorsRoute
   '/decisions': typeof AuthenticatedDecisionsRoute
   '/one-on-one': typeof AuthenticatedOneOnOneRoute
   '/overview': typeof AuthenticatedOverviewRoute
   '/work': typeof AuthenticatedWorkRoute
+  '/engagements/$id': typeof AuthenticatedEngagementsIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/onboarding': typeof OnboardingRoute
   '/connectors': typeof AuthenticatedConnectorsRoute
   '/decisions': typeof AuthenticatedDecisionsRoute
   '/one-on-one': typeof AuthenticatedOneOnOneRoute
   '/overview': typeof AuthenticatedOverviewRoute
   '/work': typeof AuthenticatedWorkRoute
+  '/engagements/$id': typeof AuthenticatedEngagementsIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/onboarding': typeof OnboardingRoute
   '/_authenticated/connectors': typeof AuthenticatedConnectorsRoute
   '/_authenticated/decisions': typeof AuthenticatedDecisionsRoute
   '/_authenticated/one-on-one': typeof AuthenticatedOneOnOneRoute
   '/_authenticated/overview': typeof AuthenticatedOverviewRoute
   '/_authenticated/work': typeof AuthenticatedWorkRoute
+  '/_authenticated/engagements/$id': typeof AuthenticatedEngagementsIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/auth'
+    | '/onboarding'
     | '/connectors'
     | '/decisions'
     | '/one-on-one'
     | '/overview'
     | '/work'
+    | '/engagements/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
+    | '/onboarding'
     | '/connectors'
     | '/decisions'
     | '/one-on-one'
     | '/overview'
     | '/work'
+    | '/engagements/$id'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/onboarding'
     | '/_authenticated/connectors'
     | '/_authenticated/decisions'
     | '/_authenticated/one-on-one'
     | '/_authenticated/overview'
     | '/_authenticated/work'
+    | '/_authenticated/engagements/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  OnboardingRoute: typeof OnboardingRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -145,6 +171,13 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/onboarding': {
+      id: '/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof OnboardingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/connectors': {
@@ -182,6 +215,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedWorkRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/engagements/$id': {
+      id: '/_authenticated/engagements/$id'
+      path: '/engagements/$id'
+      fullPath: '/engagements/$id'
+      preLoaderRoute: typeof AuthenticatedEngagementsIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -191,6 +231,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedOneOnOneRoute: typeof AuthenticatedOneOnOneRoute
   AuthenticatedOverviewRoute: typeof AuthenticatedOverviewRoute
   AuthenticatedWorkRoute: typeof AuthenticatedWorkRoute
+  AuthenticatedEngagementsIdRoute: typeof AuthenticatedEngagementsIdRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -199,6 +240,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedOneOnOneRoute: AuthenticatedOneOnOneRoute,
   AuthenticatedOverviewRoute: AuthenticatedOverviewRoute,
   AuthenticatedWorkRoute: AuthenticatedWorkRoute,
+  AuthenticatedEngagementsIdRoute: AuthenticatedEngagementsIdRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
@@ -208,6 +250,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  OnboardingRoute: OnboardingRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
