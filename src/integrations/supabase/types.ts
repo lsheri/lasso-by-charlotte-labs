@@ -473,6 +473,7 @@ export type Database = {
         Row: {
           code: string
           created_by: string | null
+          email: string | null
           expires_at: string
           invited_role: Database["public"]["Enums"]["app_role"]
           org_id: string
@@ -482,6 +483,7 @@ export type Database = {
         Insert: {
           code: string
           created_by?: string | null
+          email?: string | null
           expires_at?: string
           invited_role?: Database["public"]["Enums"]["app_role"]
           org_id: string
@@ -491,6 +493,7 @@ export type Database = {
         Update: {
           code?: string
           created_by?: string | null
+          email?: string | null
           expires_at?: string
           invited_role?: Database["public"]["Enums"]["app_role"]
           org_id?: string
@@ -951,17 +954,31 @@ export type Database = {
         Args: { p_display_name: string; p_org_name: string }
         Returns: string
       }
+      has_org_role: {
+        Args: {
+          p_org: string
+          p_roles: Database["public"]["Enums"]["app_role"][]
+        }
+        Returns: boolean
+      }
       is_engagement_member: { Args: { eng: string }; Returns: boolean }
+      is_member_of: { Args: { p_org: string }; Returns: boolean }
+      is_my_profile: { Args: { p: string }; Returns: boolean }
       join_org_with_invite: {
         Args: { p_code: string; p_display_name: string }
         Returns: string
       }
       make_invite: {
-        Args: { p_role?: Database["public"]["Enums"]["app_role"] }
+        Args: {
+          p_email?: string
+          p_org_id?: string
+          p_role?: Database["public"]["Enums"]["app_role"]
+        }
         Returns: string
       }
       my_org_id: { Args: never; Returns: string }
       my_profile_id: { Args: never; Returns: string }
+      my_profile_ids: { Args: never; Returns: string[] }
       my_role: { Args: never; Returns: Database["public"]["Enums"]["app_role"] }
     }
     Enums: {
