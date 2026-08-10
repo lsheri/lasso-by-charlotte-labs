@@ -56,7 +56,11 @@ export function UploadFilesButton({
         continue;
       }
 
-      logEvent("workitem.captured", profile.org_id, { type, source: "upload" });
+      logEvent("workitem.captured", profile.org_id, {
+        channel: "upload",
+        type,
+        source: "upload",
+      });
     }
 
     await queryClient.invalidateQueries({ queryKey: ["work-items"] });
