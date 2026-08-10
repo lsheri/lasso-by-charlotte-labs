@@ -34,7 +34,10 @@ export function DecisionsPage() {
       .update(patch)
       .eq("id", decision.id);
     if (updateError) return setActionError(updateError.message);
-    if (profile) logEvent("decision.resolved", profile.org_id, { status, edited });
+    if (profile) {
+      logEvent("decision.resolved", profile.org_id, { status, edited });
+      if (status === "confirmed") logEvent("decision.confirmed", profile.org_id, { edited });
+    }
     await queryClient.invalidateQueries({ queryKey: ["decisions"] });
   }
 
