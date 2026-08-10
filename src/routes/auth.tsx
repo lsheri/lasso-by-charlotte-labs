@@ -148,6 +148,15 @@ function AuthPage() {
             {mode === "signin" ? "Need an account? Sign up" : "Already have an account? Sign in"}
           </button>
         </div>
+
+        <div className="mt-6 text-center">
+          <Link
+            to="/trust"
+            className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+          >
+            Trust &amp; data
+          </Link>
+        </div>
       </div>
     </main>
   );
