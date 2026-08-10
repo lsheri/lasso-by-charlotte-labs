@@ -1,6 +1,11 @@
 @import "tailwindcss" source(none);
 @source "../src";
 @import "tw-animate-css";
+@import "@fontsource/dm-sans/400.css";
+@import "@fontsource/dm-sans/500.css";
+@import "@fontsource/dm-sans/600.css";
+@import "@fontsource/jetbrains-mono/400.css";
+@import "@fontsource/jetbrains-mono/500.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -19,6 +24,17 @@
  */
 
 @theme inline {
+  --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-deep: var(--accent-deep);
+  --color-navy: var(--navy);
+  --color-mint: var(--mint);
+  --color-cream: var(--cream);
+  --color-pattern-bg: var(--pattern-bg);
+  --color-pattern-border: var(--pattern-border);
+  --color-pattern-fg: var(--pattern-fg);
+  --shadow-card: 0 1px 2px rgba(42, 40, 32, 0.04), 0 4px 16px rgba(42, 40, 32, 0.05);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -62,39 +78,47 @@
 }
 
 :root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.129 0.042 264.695);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.129 0.042 264.695);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.129 0.042 264.695);
-  --primary: oklch(0.208 0.042 265.755);
-  --primary-foreground: oklch(0.984 0.003 247.858);
-  --secondary: oklch(0.968 0.007 247.896);
-  --secondary-foreground: oklch(0.208 0.042 265.755);
-  --muted: oklch(0.968 0.007 247.896);
-  --muted-foreground: oklch(0.554 0.046 257.417);
-  --accent: oklch(0.968 0.007 247.896);
-  --accent-foreground: oklch(0.208 0.042 265.755);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.984 0.003 247.858);
-  --border: oklch(0.929 0.013 255.508);
-  --input: oklch(0.929 0.013 255.508);
-  --ring: oklch(0.704 0.04 256.788);
+  --radius: 12px;
+  --background: #f7f5f2;
+  --foreground: #2a2820;
+  --card: #ffffff;
+  --card-foreground: #2a2820;
+  --popover: #ffffff;
+  --popover-foreground: #2a2820;
+  --primary: #3a3830;
+  --primary-foreground: #d8d0b8;
+  --secondary: #eeeae4;
+  --secondary-foreground: #2a2820;
+  --muted: #ddd8d0;
+  --muted-foreground: #908870;
+  --accent: #607060;
+  --accent-foreground: #ffffff;
+  --accent-soft: #e7ece7;
+  --accent-deep: #3c4a3c;
+  --navy: #0b2a4a;
+  --mint: #6ffac6;
+  --cream: #efece4;
+  --pattern-bg: #fffbeb;
+  --pattern-border: #fbbf24;
+  --pattern-fg: #78350f;
+  --destructive: #9c3418;
+  --destructive-foreground: #ffffff;
+  --border: #ddd8d0;
+  --input: #ddd8d0;
+  --ring: #607060;
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.984 0.003 247.858);
-  --sidebar-foreground: oklch(0.129 0.042 264.695);
-  --sidebar-primary: oklch(0.208 0.042 265.755);
-  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.968 0.007 247.896);
-  --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
-  --sidebar-border: oklch(0.929 0.013 255.508);
-  --sidebar-ring: oklch(0.704 0.04 256.788);
+  --sidebar: #eeeae4;
+  --sidebar-foreground: #2a2820;
+  --sidebar-primary: #3a3830;
+  --sidebar-primary-foreground: #d8d0b8;
+  --sidebar-accent: #e7ece7;
+  --sidebar-accent-foreground: #3c4a3c;
+  --sidebar-border: #ddd8d0;
+  --sidebar-ring: #607060;
 }
 
 .dark {
@@ -140,5 +164,24 @@
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
   }
+}
+
+@utility micro-label {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+@utility page-title {
+  font-family: var(--font-sans);
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--foreground);
 }
