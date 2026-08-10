@@ -6,7 +6,9 @@ export type TelemetryEvent =
   | "workitem.mapped"
   | "workitem.marked_private"
   | "decision.drafted"
-  | "decision.resolved";
+  | "decision.resolved"
+  | "connector.enabled"
+  | "connector.synced";
 
 /** Fire-and-forget. Never blocks the UI, never carries content or names. */
 export function logEvent(
