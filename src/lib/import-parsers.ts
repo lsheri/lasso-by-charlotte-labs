@@ -109,6 +109,15 @@ type ChatGptNode = {
 };
 
 function parseChatGpt(records: unknown[]): ParseResult {
+  const findLeafNode = (mapping: Record<string, ChatGptNode>): string | undefined => {
+    const parents = new Set(
+      Object.values(mapping)
+        .map((n) => n.parent)
+        .filter((p): p is string => Boolean(p)),
+    );
+    const ids = Object.keys(mapping);
+    return ids.reverse().find((id) => !parents.has(id));
+  };
   const conversations: ParsedConversation[] = [];
   const failures: ParseFailure[] = [];
 
@@ -135,9 +144,10 @@ function parseChatGpt(records: unknown[]): ParseResult {
         const message = node.message;
         const role = message?.author?.role;
         if (role !== "user" && role !== "assistant") continue;
-        const contentType = message?.content?.content_type;
+        if (!message) continue;
+        const contentType = message.content?.content_type;
         if (contentType && contentType !== "text") continue;
-        const content = (message.content.parts ?? [])
+        const content = (message.content?.parts ?? [])
           .filter((p): p is string => typeof p === "string")
           .join("\n")
           .trim();
