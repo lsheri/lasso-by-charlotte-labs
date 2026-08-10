@@ -21,6 +21,8 @@ export type WorkItemRow = {
   visibility: WorkVisibility;
   captured_at: string;
   content_ref: string | null;
+  created_at_source?: string | null;
+  meta?: { drive_file_id?: string; mime_type?: string | null; web_view_link?: string | null } | null;
   work_item_tasks: MappedTask[];
 };
 
@@ -50,4 +52,13 @@ export function formatDate(iso: string): string {
     month: "short",
     day: "numeric",
   });
+}
+
+/** "google drive", "upload", "chatgpt" — a calm human label for a work source. */
+export function sourceLabel(source: string): string {
+  if (source.startsWith("connector:")) {
+    const toolkit = source.slice("connector:".length);
+    return toolkit === "googledrive" ? "google drive" : toolkit;
+  }
+  return source;
 }
