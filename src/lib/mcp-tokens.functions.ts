@@ -1,7 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { sha256Hex } from "@/lib/connectors-shared";
+import { sha256Hex, validateProfileId } from "@/lib/connectors-shared";
+import { resolveProfile } from "@/lib/profile-resolve";
 
 export type McpTokenInfo = {
   id: string;
@@ -11,13 +12,10 @@ export type McpTokenInfo = {
 
 export const getMcpToken = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<McpTokenInfo> => {
+  .inputValidator(validateProfileId)
+  .handler(async ({ data, context }): Promise<McpTokenInfo> => {
     const { supabase, userId } = context;
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("id")
-      .eq("user_id", userId)
-      .maybeSingle();
+    const profile = await resolveProfile(supabase, userId, data.profile_id);
     if (!profile) return null;
     const { data } = await supabase
       .from("mcp_tokens")
@@ -32,13 +30,10 @@ export const getMcpToken = createServerFn({ method: "GET" })
 
 export const createMcpToken = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .inputValidator(validateProfileId)
+  .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("id")
-      .eq("user_id", userId)
-      .maybeSingle();
+    const profile = await resolveProfile(supabase, userId, data.profile_id);
     if (!profile) throw new Response("Forbidden", { status: 403 });
 
     await supabase
@@ -63,13 +58,10 @@ export const createMcpToken = createServerFn({ method: "POST" })
 
 export const revokeMcpToken = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .inputValidator(validateProfileId)
+  .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("id")
-      .eq("user_id", userId)
-      .maybeSingle();
+    const profile = await resolveProfile(supabase, userId, data.profile_id);
     if (!profile) throw new Response("Forbidden", { status: 403 });
     const { error } = await supabase
       .from("mcp_tokens")
