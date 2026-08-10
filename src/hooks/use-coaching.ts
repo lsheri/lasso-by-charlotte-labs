@@ -113,26 +113,28 @@ export function useCoachSubjects(coachProfileId: string | undefined) {
   });
 }
 
+export type PacketElement = {
+  step_no: number | null;
+  step_confirmed: boolean;
+  work_items: {
+    id: string;
+    title: string;
+    type: string;
+    source: string;
+    content_fidelity: string | null;
+    source_vendor: string | null;
+    work_date: string | null;
+    created_at_source: string | null;
+    captured_at: string;
+  } | null;
+};
+
 export type PacketTask = {
   id: string;
   name: string;
   goal: string | null;
   when_label: string | null;
-  elements: {
-    step_no: number | null;
-    step_confirmed: boolean;
-    work_items: {
-      id: string;
-      title: string;
-      type: string;
-      source: string;
-      content_fidelity: string | null;
-      source_vendor: string | null;
-      work_date: string | null;
-      created_at_source: string | null;
-      captured_at: string;
-    } | null;
-  }[];
+  work_item_tasks: PacketElement[];
 };
 
 export type PacketNote = {
@@ -205,10 +207,7 @@ export async function fetchPacket(engagementId: string, subjectId: string): Prom
   if (engagementRes.error) throw engagementRes.error;
   if (tasksRes.error) throw tasksRes.error;
 
-  const tasks = ((tasksRes.data ?? []) as unknown as PacketTask[]).map((task) => ({
-    ...task,
-    elements: [...(task.elements ?? (task as unknown as { work_item_tasks: PacketTask["elements"] }).work_item_tasks ?? [])],
-  }));
+  const tasks = (tasksRes.data ?? []) as unknown as PacketTask[];
 
   return {
     engagement: engagementRes.data,
