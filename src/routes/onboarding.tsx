@@ -1,8 +1,9 @@
-import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
 import { Wordmark } from "@/components/layout/Wordmark";
+import { EnterInviteCode } from "@/components/invites/EnterInviteCode";
 import { PasteThreadDialog } from "@/components/work/PasteThreadDialog";
 import { UploadFilesButton } from "@/components/work/UploadFilesButton";
 import { ImportFlowDialog } from "@/components/work/import/ImportFlowDialog";
@@ -12,6 +13,30 @@ import { Label } from "@/components/ui/label";
 import { VENDORS, VENDOR_ORDER } from "@/lib/import-vendors";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchProfile } from "@/hooks/use-profile";
+import { logEvent } from "@/lib/telemetry";
+
+type OrgType = "company" | "personal";
+
+/** The RPC creates the org; the type is workspace settings we write after. */
+async function applyOrgType(profileId: string, type: OrgType): Promise<string | null> {
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("org_id")
+    .eq("id", profileId)
+    .maybeSingle();
+  if (!profile?.org_id) return null;
+  const { data: org } = await supabase
+    .from("orgs")
+    .select("settings")
+    .eq("id", profile.org_id)
+    .maybeSingle();
+  const settings = (org?.settings ?? {}) as Record<string, unknown>;
+  await supabase
+    .from("orgs")
+    .update({ settings: { ...settings, type } })
+    .eq("id", profile.org_id);
+  return profile.org_id;
+}
 
 export const Route = createFileRoute("/onboarding")({
   ssr: false,
