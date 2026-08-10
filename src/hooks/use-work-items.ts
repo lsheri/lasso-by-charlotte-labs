@@ -9,7 +9,7 @@ export async function fetchWorkItems(): Promise<WorkItemsResult> {
   const { data, error } = await supabase
     .from("work_items")
     .select(
-      "id, title, type, source, visibility, captured_at, content_ref, created_at_source, content_fidelity, source_vendor, meta",
+      "id, title, type, source, visibility, captured_at, content_ref, created_at_source, work_date, content_fidelity, source_vendor, meta",
     )
     .order("captured_at", { ascending: false });
   if (error) throw error;

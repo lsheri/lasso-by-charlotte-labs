@@ -22,6 +22,7 @@ export type WorkItemRow = {
   captured_at: string;
   content_ref: string | null;
   created_at_source?: string | null | undefined;
+  work_date?: string | null | undefined;
   content_fidelity?: string | null | undefined;
   source_vendor?: string | null | undefined;
   meta?:
@@ -65,6 +66,15 @@ export function formatDate(iso: string): string {
     month: "short",
     day: "numeric",
   });
+}
+
+/** The date a work element happened: work_date, else source date, else capture date. */
+export function effectiveWorkDate(item: {
+  work_date?: string | null | undefined;
+  created_at_source?: string | null | undefined;
+  captured_at: string;
+}): string {
+  return item.work_date ?? item.created_at_source ?? item.captured_at;
 }
 
 /** "google drive", "upload", "chatgpt" — a calm human label for a work source. */
