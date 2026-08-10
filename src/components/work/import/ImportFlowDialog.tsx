@@ -140,6 +140,15 @@ export function ImportFlowDialog({
         ts_precision_mix: outcome.ts_precision_mix,
         duplicate_count_bucket: bucket(outcome.duplicates),
       });
+      logEvent("workitem.captured", profile.org_id, {
+        channel: "import",
+        source: vendor,
+        count_bucket: bucket(outcome.imported),
+      });
+      logEvent("import.completed", profile.org_id, {
+        vendor,
+        imported_bucket: bucket(outcome.imported),
+      });
       await queryClient.invalidateQueries({ queryKey: ["work-items"] });
       setResult({ imported: outcome.imported, duplicates: outcome.duplicates });
       setScreen("done");
