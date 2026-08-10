@@ -6,6 +6,7 @@ import { DecisionCard } from "@/components/decisions/DecisionCard";
 import { Button } from "@/components/ui/button";
 import { ThreadViewerById } from "@/components/work/ThreadViewerById";
 import { useDecisions, type DecisionRow } from "@/hooks/use-decisions";
+import type { Database } from "@/integrations/supabase/types";
 import { useProfile } from "@/hooks/use-profile";
 import { supabase } from "@/integrations/supabase/client";
 import { logEvent } from "@/lib/telemetry";
@@ -23,7 +24,7 @@ export function DecisionsPage() {
 
   async function update(
     decision: DecisionRow,
-    patch: Record<string, unknown>,
+    patch: Database["public"]["Tables"]["decisions"]["Update"],
     status: string,
     edited: boolean,
   ) {
