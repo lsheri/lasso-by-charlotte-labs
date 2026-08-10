@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 
 import { NewEngagementDialog } from "@/components/engagements/NewEngagementDialog";
+import { useDecisions } from "@/hooks/use-decisions";
 import { useEngagements } from "@/hooks/use-engagements";
 import { useProfile } from "@/hooks/use-profile";
 
@@ -12,6 +13,8 @@ const linkClass =
 export function SidebarNav({ onNavigate }: { onNavigate?: (() => void) | undefined }) {
   const { data: profile } = useProfile();
   const { data: engagements } = useEngagements(profile?.id);
+  const { data: decisions } = useDecisions();
+  const decisionCount = (decisions ?? []).length;
 
   return (
     <nav className="flex flex-col gap-7">
@@ -27,7 +30,14 @@ export function SidebarNav({ onNavigate }: { onNavigate?: (() => void) | undefin
                 className={linkClass}
                 activeProps={{ className: "bg-accent-soft text-accent-deep font-medium" }}
               >
-                {item.label}
+                <span className="flex items-center justify-between gap-2">
+                  <span>{item.label}</span>
+                  {item.to === "/decisions" && decisionCount > 0 ? (
+                    <span className="rounded-full bg-muted px-2 py-0.5 font-mono text-[10px] text-muted-foreground">
+                      {decisionCount}
+                    </span>
+                  ) : null}
+                </span>
               </Link>
             ))}
 

@@ -784,6 +784,7 @@ export type Database = {
         Args: { p_display_name: string; p_org_name: string }
         Returns: string
       }
+      is_engagement_member: { Args: { eng: string }; Returns: boolean }
       join_org_with_invite: {
         Args: { p_code: string; p_display_name: string }
         Returns: string
