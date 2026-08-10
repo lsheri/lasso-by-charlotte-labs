@@ -187,6 +187,8 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
         </div>
       </section>
+
+      <SubjectCoachingSection profileId={profile?.id} engagementId={engagementId} />
     </div>
   );
 }
