@@ -19,6 +19,7 @@ import { Route as AuthenticatedOneOnOneRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedOverviewRouteImport } from './routes/_authenticated/overview'
 import { Route as AuthenticatedWorkRouteImport } from './routes/_authenticated/work'
 import { Route as AuthenticatedEngagementsIdRouteImport } from './routes/_authenticated/engagements.$id'
+import { Route as ApiMcpTokenRouteImport } from './routes/api/mcp.$token'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -70,6 +71,11 @@ const AuthenticatedEngagementsIdRoute =
     path: '/engagements/$id',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const ApiMcpTokenRoute = ApiMcpTokenRouteImport.update({
+  id: '/api/mcp/$token',
+  path: '/api/mcp/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -81,6 +87,7 @@ export interface FileRoutesByFullPath {
   '/overview': typeof AuthenticatedOverviewRoute
   '/work': typeof AuthenticatedWorkRoute
   '/engagements/$id': typeof AuthenticatedEngagementsIdRoute
+  '/api/mcp/$token': typeof ApiMcpTokenRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -92,6 +99,7 @@ export interface FileRoutesByTo {
   '/overview': typeof AuthenticatedOverviewRoute
   '/work': typeof AuthenticatedWorkRoute
   '/engagements/$id': typeof AuthenticatedEngagementsIdRoute
+  '/api/mcp/$token': typeof ApiMcpTokenRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -105,6 +113,7 @@ export interface FileRoutesById {
   '/_authenticated/overview': typeof AuthenticatedOverviewRoute
   '/_authenticated/work': typeof AuthenticatedWorkRoute
   '/_authenticated/engagements/$id': typeof AuthenticatedEngagementsIdRoute
+  '/api/mcp/$token': typeof ApiMcpTokenRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -118,6 +127,7 @@ export interface FileRouteTypes {
     | '/overview'
     | '/work'
     | '/engagements/$id'
+    | '/api/mcp/$token'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -129,6 +139,7 @@ export interface FileRouteTypes {
     | '/overview'
     | '/work'
     | '/engagements/$id'
+    | '/api/mcp/$token'
   id:
     | '__root__'
     | '/'
@@ -141,6 +152,7 @@ export interface FileRouteTypes {
     | '/_authenticated/overview'
     | '/_authenticated/work'
     | '/_authenticated/engagements/$id'
+    | '/api/mcp/$token'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -148,6 +160,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   OnboardingRoute: typeof OnboardingRoute
+  ApiMcpTokenRoute: typeof ApiMcpTokenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -222,6 +235,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEngagementsIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/mcp/$token': {
+      id: '/api/mcp/$token'
+      path: '/api/mcp/$token'
+      fullPath: '/api/mcp/$token'
+      preLoaderRoute: typeof ApiMcpTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -251,17 +271,8 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   OnboardingRoute: OnboardingRoute,
+  ApiMcpTokenRoute: ApiMcpTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

@@ -61,7 +61,7 @@ async function resolveOwner(token: string): Promise<Owner | null> {
   };
 }
 
-async function logPush(owner: Owner, dims: Obj): Promise<void> {
+async function logPush(owner: Owner, dims: Record<string, string>): Promise<void> {
   try {
     await supabaseAdmin.from("events").insert({
       event_type: "mcp.push",
