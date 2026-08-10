@@ -1,20 +1,28 @@
+import type { Profile } from "@/hooks/use-profile";
+
+import { OrgSwitcher } from "./OrgSwitcher";
 import { SidebarNav } from "./SidebarNav";
 import { UserCard } from "./UserCard";
 
 export function AppSidebar({
   userName,
   userRole,
+  profiles,
+  activeProfile,
   onSignOut,
   onNavigate,
 }: {
   userName: string;
   userRole: string | undefined;
+  profiles: Profile[];
+  activeProfile: Profile | null;
   onSignOut: () => void;
   onNavigate?: (() => void) | undefined;
 }) {
   return (
     <div className="flex h-full w-full flex-col gap-8 bg-sidebar px-4 py-5">
       <UserCard name={userName} role={userRole} onSignOut={onSignOut} />
+      <OrgSwitcher profiles={profiles} active={activeProfile} />
       <div className="flex-1 overflow-y-auto">
         <SidebarNav onNavigate={onNavigate} />
       </div>
