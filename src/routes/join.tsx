@@ -10,7 +10,7 @@ import { setActiveProfileId } from "@/hooks/use-profile";
 import { supabase } from "@/integrations/supabase/client";
 import { logEvent } from "@/lib/telemetry";
 
-type JoinSearch = { code?: string; eng?: string };
+type JoinSearch = { code?: string | undefined; eng?: string | undefined };
 
 export const Route = createFileRoute("/join")({
   ssr: false,
@@ -18,13 +18,12 @@ export const Route = createFileRoute("/join")({
     code: typeof search["code"] === "string" ? search["code"] : undefined,
     eng: typeof search["eng"] === "string" ? search["eng"] : undefined,
   }),
-  beforeLoadDeps: ({ search }) => ({ code: search.code, eng: search.eng }),
-  beforeLoad: async ({ deps }) => {
+  beforeLoad: async ({ search }) => {
     const { data } = await supabase.auth.getUser();
     if (!data.user) {
       const params = new URLSearchParams();
-      if (deps.code) params.set("code", deps.code);
-      if (deps.eng) params.set("eng", deps.eng);
+      if (search.code) params.set("code", search.code);
+      if (search.eng) params.set("eng", search.eng);
       throw redirect({ to: "/auth", search: { next: `/join?${params.toString()}` } });
     }
   },

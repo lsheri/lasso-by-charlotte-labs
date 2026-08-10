@@ -51,11 +51,12 @@ export function InviteDialog({
     setError(null);
     setLink(null);
 
-    const { data, error: rpcError } = await supabase.rpc("make_invite", {
+    const args: { p_role: InviteRole; p_org_id: string; p_email?: string } = {
       p_role: role,
-      p_email: email.trim() ? email.trim() : undefined,
       p_org_id: profile.org_id,
-    });
+    };
+    if (email.trim()) args.p_email = email.trim();
+    const { data, error: rpcError } = await supabase.rpc("make_invite", args);
 
     setPending(false);
     if (rpcError) {

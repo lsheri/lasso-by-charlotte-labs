@@ -9,14 +9,16 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
-  validateSearch: (search: Record<string, unknown>): { next?: string } => {
+  validateSearch: (search: Record<string, unknown>): { next?: string | undefined } => {
     const next = search["next"];
     return typeof next === "string" && next.startsWith("/") ? { next } : {};
   },
-  beforeLoadDeps: ({ search }: { search: { next?: string } }) => ({ next: search.next }),
-  beforeLoad: async ({ deps }) => {
+  beforeLoad: async ({ search }) => {
     const { data } = await supabase.auth.getUser();
-    if (data.user) throw redirect(deps.next ? { href: deps.next } : { to: "/overview" });
+    if (!data.user) return;
+    const target = joinTarget(search.next);
+    if (target) throw redirect({ to: "/join", search: target, replace: true });
+    throw redirect({ to: "/overview" });
   },
   head: () => ({
     meta: [
@@ -29,8 +31,28 @@ export const Route = createFileRoute("/auth")({
   component: AuthPage,
 });
 
+/** The only deep link we preserve through sign-in is an invite. */
+function joinTarget(next: string | undefined) {
+  if (!next || !next.startsWith("/join")) return null;
+  const query = new URLSearchParams(next.split("?")[1] ?? "");
+  const code = query.get("code");
+  const eng = query.get("eng");
+  return {
+    code: code ?? undefined,
+    eng: eng ?? undefined,
+  } as { code?: string | undefined; eng?: string | undefined };
+}
+
 function AuthPage() {
   const navigate = useNavigate();
+  const { next } = Route.useSearch();
+
+  function goOn() {
+    const target = joinTarget(next);
+    if (target) navigate({ to: "/join", search: target, replace: true });
+    else navigate({ to: "/overview", replace: true });
+  }
+
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -47,7 +69,7 @@ function AuthPage() {
     if (mode === "signin") {
       const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
       if (signInError) setError(signInError.message);
-      else navigate({ to: "/overview", replace: true });
+      else goOn();
     } else {
       const { data, error: signUpError } = await supabase.auth.signUp({
         email,
@@ -55,7 +77,7 @@ function AuthPage() {
         options: { emailRedirectTo: window.location.origin },
       });
       if (signUpError) setError(signUpError.message);
-      else if (data.session) navigate({ to: "/overview", replace: true });
+      else if (data.session) goOn();
       else setMessage("Check your email to confirm your account.");
     }
 
