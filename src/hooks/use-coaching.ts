@@ -119,6 +119,38 @@ export function useCoachSubjects(coachProfileId: string | undefined) {
   });
 }
 
+export type CoachSubjectAcrossOrgs = CoachSubject & {
+  coach_profile_id: string;
+  org_name: string;
+};
+
+/** A coach may hold profiles in several orgs; the queue spans all of them. */
+export function useAllCoachSubjects(profiles: Profile[]) {
+  const coachProfiles = profiles.filter((p) => p.role === "coach");
+  const results = useQueries({
+    queries: coachProfiles.map((profile) => ({
+      queryKey: ["coach-subjects", profile.id],
+      queryFn: () => fetchCoachSubjects(profile.id),
+    })),
+  });
+
+  const data: CoachSubjectAcrossOrgs[] = results.flatMap((result, index) => {
+    const profile = coachProfiles[index];
+    if (!profile || !result.data) return [];
+    return result.data.map((subject) => ({
+      ...subject,
+      coach_profile_id: profile.id,
+      org_name: profile.org_name,
+    }));
+  });
+
+  return {
+    data: data.sort((a, b) => (b.last_activity ?? "").localeCompare(a.last_activity ?? "")),
+    isLoading: results.some((r) => r.isLoading),
+    error: (results.find((r) => r.error)?.error ?? null) as Error | null,
+  };
+}
+
 export type PacketElement = {
   step_no: number | null;
   step_confirmed: boolean;
