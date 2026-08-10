@@ -74,8 +74,8 @@ function TrustPage() {
         <p className="micro-label mt-8">Trust &amp; data</p>
         <h1 className="page-title mt-2">How Lasso handles your work</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Lasso exists so the work you do belongs to you. This page states plainly who can see
-          what, and what we will never build.
+          Lasso exists so the work you do belongs to you. This page states plainly who can see what,
+          and what we will never build.
         </p>
 
         <div className="mt-12 space-y-10">

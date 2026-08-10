@@ -51,9 +51,7 @@ export function DecisionsPage() {
           </p>
         </div>
         <div className="text-right">
-          <AddDecisionDialog
-            trigger={<Button type="button">＋ Add a decision yourself</Button>}
-          />
+          <AddDecisionDialog trigger={<Button type="button">＋ Add a decision yourself</Button>} />
           <p className="mt-2 max-w-xs text-xs text-muted-foreground">
             The calls you made off-platform are often the ones that matter most.
           </p>

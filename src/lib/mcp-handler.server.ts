@@ -13,7 +13,8 @@ const MAX_DOC_BYTES = 5 * 1024 * 1024;
 export const CORS_HEADERS: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "content-type, authorization, mcp-protocol-version, mcp-session-id",
+  "Access-Control-Allow-Headers":
+    "content-type, authorization, mcp-protocol-version, mcp-session-id",
   "Access-Control-Max-Age": "86400",
 };
 
@@ -130,7 +131,8 @@ const TOOLS = [
 ];
 
 export async function handleMcpRequest(request: Request, token: string): Promise<Response> {
-  if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS_HEADERS });
+  if (request.method === "OPTIONS")
+    return new Response(null, { status: 204, headers: CORS_HEADERS });
   if (request.method !== "POST") {
     return json({ error: "Method not allowed" }, 405);
   }
@@ -232,7 +234,8 @@ async function pushThread(owner: Owner, args: Obj, id: unknown): Promise<Respons
     })
     .select("id")
     .single();
-  if (error || !item) return rpcError(id, -32603, error?.message ?? "Could not save the conversation");
+  if (error || !item)
+    return rpcError(id, -32603, error?.message ?? "Could not save the conversation");
 
   const rows = await Promise.all(
     turns.map(async (t, i) => ({
@@ -288,7 +291,9 @@ async function pushDocument(owner: Owner, args: Obj, id: unknown): Promise<Respo
     content_fidelity: "verbatim",
     ts_precision: "capture",
     content_hash: await sha256Hex(content),
-    meta: hint ? { assistant_transcribed: true, engagement_hint: hint } : { assistant_transcribed: true },
+    meta: hint
+      ? { assistant_transcribed: true, engagement_hint: hint }
+      : { assistant_transcribed: true },
   });
   if (error) return rpcError(id, -32603, error.message);
 

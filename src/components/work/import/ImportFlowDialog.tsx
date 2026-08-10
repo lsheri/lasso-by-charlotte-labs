@@ -240,7 +240,10 @@ export function ImportFlowDialog({
               </p>
               <PasteThreadDialog
                 trigger={
-                  <button type="button" className="text-xs font-medium text-accent-deep hover:opacity-70">
+                  <button
+                    type="button"
+                    className="text-xs font-medium text-accent-deep hover:opacity-70"
+                  >
                     Export not working? Paste a conversation instead
                   </button>
                 }
@@ -308,9 +311,7 @@ export function ImportFlowDialog({
             <p className="text-sm text-foreground">
               {result.imported} conversation{result.imported === 1 ? "" : "s"} added. They are
               private until you map them.
-              {result.duplicates > 0
-                ? ` ${result.duplicates} already in Lasso, skipped.`
-                : ""}
+              {result.duplicates > 0 ? ` ${result.duplicates} already in Lasso, skipped.` : ""}
             </p>
             <div className="flex flex-wrap gap-2">
               <Button type="button" onClick={() => setScreen("organize")}>

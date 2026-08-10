@@ -2,7 +2,12 @@ import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveProfile } from "@/lib/profile-resolve";
-import { DRAFT_SYSTEM_PROMPT, DRAFT_TOOL, dateLabel, type DraftedDecision } from "@/lib/decisions-shared";
+import {
+  DRAFT_SYSTEM_PROMPT,
+  DRAFT_TOOL,
+  dateLabel,
+  type DraftedDecision,
+} from "@/lib/decisions-shared";
 
 export const draftDecisions = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

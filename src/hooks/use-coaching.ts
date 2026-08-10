@@ -27,10 +27,12 @@ export async function fetchCoachSubjects(coachProfileId: string): Promise<CoachS
     .eq("member_role", "coach");
   if (coachedError) throw coachedError;
 
-  const engagements = ((coached ?? []) as unknown as {
-    engagement_id: string;
-    engagements: { id: string; code: string; title: string } | null;
-  }[]).filter((row) => row.engagements !== null);
+  const engagements = (
+    (coached ?? []) as unknown as {
+      engagement_id: string;
+      engagements: { id: string; code: string; title: string } | null;
+    }[]
+  ).filter((row) => row.engagements !== null);
   if (engagements.length === 0) return [];
 
   const engagementIds = engagements.map((row) => row.engagement_id);
@@ -70,11 +72,13 @@ export async function fetchCoachSubjects(coachProfileId: string): Promise<CoachS
     tasks: { engagement_id: string; owner_id: string } | null;
   }[];
 
-  const rows: CoachSubject[] = ((subjects ?? []) as unknown as {
-    engagement_id: string;
-    profile_id: string;
-    profiles: { id: string; display_name: string } | null;
-  }[])
+  const rows: CoachSubject[] = (
+    (subjects ?? []) as unknown as {
+      engagement_id: string;
+      profile_id: string;
+      profiles: { id: string; display_name: string } | null;
+    }[]
+  )
     .filter((row) => row.profiles !== null && row.profile_id !== coachProfileId)
     .map((row) => {
       const engagement = engagements.find((e) => e.engagement_id === row.engagement_id);

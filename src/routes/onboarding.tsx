@@ -49,9 +49,15 @@ export const Route = createFileRoute("/onboarding")({
   head: () => ({
     meta: [
       { title: "Set up your workspace — Lasso" },
-      { name: "description", content: "Create a Lasso workspace or join your team with an invite code." },
+      {
+        name: "description",
+        content: "Create a Lasso workspace or join your team with an invite code.",
+      },
       { property: "og:title", content: "Set up your workspace — Lasso" },
-      { property: "og:description", content: "Create a Lasso workspace or join your team with an invite code." },
+      {
+        property: "og:description",
+        content: "Create a Lasso workspace or join your team with an invite code.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -73,8 +79,8 @@ function McpOnboardingSection({ onSetup }: { onSetup: () => void }) {
         <p>Lasso started with one idea: the work you do with AI should belong to you.</p>
         <p>
           MCP is a simple standard that lets your AI talk to Lasso directly — you add Lasso as a
-          connector in Claude or ChatGPT once, then just tell your AI “push this to Lasso” at the end
-          of any working session.
+          connector in Claude or ChatGPT once, then just tell your AI “push this to Lasso” at the
+          end of any working session.
         </p>
         <p>
           Everything it pushes lands private and unmapped, only you can see it, and you can revoke
@@ -216,7 +222,9 @@ function OnboardingInner() {
             Start with one source. You can add the rest any time.
           </p>
 
-          <McpOnboardingSection onSetup={() => navigate({ to: "/connectors", hash: "connect-your-ai" })} />
+          <McpOnboardingSection
+            onSetup={() => navigate({ to: "/connectors", hash: "connect-your-ai" })}
+          />
 
           <div className="mt-6 grid gap-3 sm:grid-cols-2">
             <button
@@ -371,9 +379,7 @@ function OnboardingInner() {
         <Wordmark size="lg" />
 
         <div className="mt-6 rounded-[var(--radius)] border border-border bg-card p-6 shadow-card">
-          <p className="micro-label">
-            {orgType === "personal" ? "Just for me" : "For my company"}
-          </p>
+          <p className="micro-label">{orgType === "personal" ? "Just for me" : "For my company"}</p>
           <h1 className="page-title mt-2">Set up your workspace</h1>
           <p className="mt-1.5 text-sm text-muted-foreground">
             {orgType === "personal"

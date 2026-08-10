@@ -49,7 +49,11 @@ function InviteContext({ code, eng }: { code: string | undefined; eng: string | 
     queryFn: async () => {
       const [inviteRes, engRes] = await Promise.all([
         code
-          ? supabase.from("invites").select("invited_role, orgs(name)").eq("code", code).maybeSingle()
+          ? supabase
+              .from("invites")
+              .select("invited_role, orgs(name)")
+              .eq("code", code)
+              .maybeSingle()
           : Promise.resolve({ data: null }),
         eng
           ? supabase.from("engagements").select("title").eq("id", eng).maybeSingle()
