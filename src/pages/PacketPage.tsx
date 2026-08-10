@@ -1,25 +1,38 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 
 import { CoachChat } from "@/components/coaching/CoachChat";
 import { NoteComposer, type CitationOption } from "@/components/coaching/NoteComposer";
+import { TaskWorkflow, type WorkflowElement } from "@/components/work/TaskWorkflow";
 import { usePacket, type PacketElement } from "@/hooks/use-coaching";
 import { useProfile } from "@/hooks/use-profile";
 import { logEvent } from "@/lib/telemetry";
-import { formatDate, sourceLabel } from "@/lib/work-types";
 
-function elementDate(element: PacketElement): string {
-  const item = element.work_items;
-  if (!item) return "";
-  return item.work_date ?? item.created_at_source ?? item.captured_at;
+const SEEN_PREFIX = "lasso.packet_seen.";
+
+function readSeen(key: string): string | null {
+  try {
+    return window.localStorage.getItem(SEEN_PREFIX + key);
+  } catch {
+    return null;
+  }
 }
 
-function orderElements(elements: PacketElement[]): PacketElement[] {
-  const withItems = elements.filter((element) => element.work_items !== null);
-  const confirmed = withItems.filter((e) => e.step_confirmed && e.step_no !== null);
-  const rest = withItems
-    .filter((e) => !(e.step_confirmed && e.step_no !== null))
-    .sort((a, b) => new Date(elementDate(a)).getTime() - new Date(elementDate(b)).getTime());
-  return [...confirmed.sort((a, b) => (a.step_no ?? 0) - (b.step_no ?? 0)), ...rest];
+function writeSeen(key: string, iso: string): void {
+  try {
+    window.localStorage.setItem(SEEN_PREFIX + key, iso);
+  } catch {
+    /* remembering the last visit is a nicety, not a requirement */
+  }
+}
+
+function toWorkflowElements(elements: PacketElement[]): WorkflowElement[] {
+  return elements
+    .filter((element) => element.work_items !== null)
+    .map((element) => ({
+      step_no: element.step_no,
+      step_confirmed: element.step_confirmed,
+      work_items: { ...element.work_items!, work_item_tasks: [] },
+    }));
 }
 
 export function PacketPage({
@@ -32,9 +45,30 @@ export function PacketPage({
   const { data: profile } = useProfile();
   const { data, isLoading, error } = usePacket(engagementId, subjectId);
 
+  const seenKey = `${engagementId}.${subjectId}`;
+
+  const newest = useMemo(() => {
+    if (!data) return null;
+    const stamps = [
+      ...data.decisions.map((decision) => decision.created_at),
+      ...data.tasks.flatMap((task) =>
+        (task.work_item_tasks ?? []).map((element) => element.mapped_at),
+      ),
+    ].sort();
+    return stamps.length > 0 ? (stamps[stamps.length - 1] as string) : null;
+  }, [data]);
+
+  const lastSeen = useMemo(
+    () => (typeof window === "undefined" ? null : readSeen(seenKey)),
+    [seenKey],
+  );
+  const hasNewer = Boolean(newest && lastSeen && newest > lastSeen);
+
   useEffect(() => {
-    if (profile?.org_id && data?.engagement) logEvent("packet.viewed", profile.org_id, {});
-  }, [profile?.org_id, data?.engagement]);
+    if (!data?.engagement) return;
+    if (profile?.org_id) logEvent("packet.viewed", profile.org_id, {});
+    writeSeen(seenKey, new Date().toISOString());
+  }, [profile?.org_id, data?.engagement, seenKey]);
 
   if (isLoading) return <p className="text-sm text-muted-foreground">Loading…</p>;
   if (error) return <p className="text-sm text-destructive">{(error as Error).message}</p>;
@@ -56,6 +90,11 @@ export function PacketPage({
     <div className="space-y-10">
       <header>
         <p className="micro-label">Coaching packet</p>
+        {hasNewer ? (
+          <p className="mt-2 inline-block rounded-full bg-accent-soft px-3 py-1 font-mono text-[11px] tracking-[0.06em] text-accent-deep">
+            Newer material since your last visit
+          </p>
+        ) : null}
         <h1 className="page-title mt-1.5">{subjectName}</h1>
         <p className="mt-1.5 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
           {data.engagement.code} · {data.engagement.title}
@@ -74,50 +113,26 @@ export function PacketPage({
       <section>
         <h2 className="micro-label">How the work ran</h2>
         <div className="mt-3 space-y-2">
-          {data.tasks.map((task) => {
-            const elements = orderElements(task.work_item_tasks ?? []);
-            return (
-              <div
-                key={task.id}
-                className="rounded-[var(--radius)] border border-border bg-card px-4 py-3 shadow-card"
-              >
-                <p className="text-sm font-medium text-foreground">{task.name}</p>
-                {task.goal ? (
-                  <p className="mt-0.5 text-sm text-muted-foreground">{task.goal}</p>
-                ) : null}
-                <ul className="mt-2 space-y-1">
-                  {elements.map((element, index) => {
-                    const item = element.work_items;
-                    if (!item) return null;
-                    return (
-                      <li
-                        key={item.id}
-                        className="flex items-center gap-3 rounded-[var(--radius)] border border-border bg-background px-3 py-2"
-                      >
-                        {element.step_confirmed && element.step_no !== null ? (
-                          <span className="shrink-0 rounded-full bg-accent-soft px-2 py-0.5 font-mono text-[10px] text-accent-deep">
-                            {index + 1}
-                          </span>
-                        ) : null}
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm text-foreground">{item.title}</p>
-                          <p className="truncate font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
-                            {item.type.replace("_", " ")} · {sourceLabel(item.source)} ·{" "}
-                            {formatDate(elementDate(element))}
-                          </p>
-                        </div>
-                        {item.content_fidelity === "summary" ? (
-                          <span className="shrink-0 rounded-full border border-border bg-secondary px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
-                            Summary
-                          </span>
-                        ) : null}
-                      </li>
-                    );
-                  })}
-                </ul>
+          {data.tasks.map((task) => (
+            <div
+              key={task.id}
+              className="rounded-[var(--radius)] border border-border bg-card px-4 py-3 shadow-card"
+            >
+              <p className="text-sm font-medium text-foreground">{task.name}</p>
+              {task.goal ? (
+                <p className="mt-0.5 text-sm text-muted-foreground">{task.goal}</p>
+              ) : null}
+              <div className="mt-2">
+                <TaskWorkflow
+                  taskId={task.id}
+                  elements={toWorkflowElements(task.work_item_tasks ?? [])}
+                  canEdit={false}
+                  orgId={profile?.org_id}
+                  onChanged={() => undefined}
+                />
               </div>
-            );
-          })}
+            </div>
+          ))}
           {data.tasks.length === 0 ? (
             <p className="text-sm text-muted-foreground">Nothing shared here yet.</p>
           ) : null}
