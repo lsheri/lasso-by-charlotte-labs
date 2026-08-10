@@ -22,10 +22,10 @@ export function AppSidebar({
   return (
     <div className="flex h-full w-full flex-col gap-8 bg-sidebar px-4 py-5">
       <UserCard name={userName} role={userRole} onSignOut={onSignOut} />
-      <OrgSwitcher profiles={profiles} active={activeProfile} />
       <div className="flex-1 overflow-y-auto">
         <SidebarNav onNavigate={onNavigate} />
       </div>
+      <OrgSwitcher profiles={profiles} active={activeProfile} />
       <div className="rounded-[var(--radius)] bg-navy p-4 shadow-card">
         <div className="font-mono text-lg tracking-[0.28em] text-mint">LASSO</div>
         <div className="mt-1 text-xs text-cream/80">by Charlotte Labs</div>
