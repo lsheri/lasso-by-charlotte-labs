@@ -12,7 +12,6 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
-import { Route as ImportTestRouteImport } from './routes/import-test'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as AuthenticatedConnectorsRouteImport } from './routes/_authenticated/connectors'
 import { Route as AuthenticatedDecisionsRouteImport } from './routes/_authenticated/decisions'
@@ -33,11 +32,6 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ImportTestRoute = ImportTestRouteImport.update({
-  id: '/import-test',
-  path: '/import-test',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OnboardingRoute = OnboardingRouteImport.update({
@@ -80,7 +74,6 @@ const AuthenticatedEngagementsIdRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/import-test': typeof ImportTestRoute
   '/onboarding': typeof OnboardingRoute
   '/connectors': typeof AuthenticatedConnectorsRoute
   '/decisions': typeof AuthenticatedDecisionsRoute
@@ -92,7 +85,6 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/import-test': typeof ImportTestRoute
   '/onboarding': typeof OnboardingRoute
   '/connectors': typeof AuthenticatedConnectorsRoute
   '/decisions': typeof AuthenticatedDecisionsRoute
@@ -106,7 +98,6 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
-  '/import-test': typeof ImportTestRoute
   '/onboarding': typeof OnboardingRoute
   '/_authenticated/connectors': typeof AuthenticatedConnectorsRoute
   '/_authenticated/decisions': typeof AuthenticatedDecisionsRoute
@@ -120,7 +111,6 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
-    | '/import-test'
     | '/onboarding'
     | '/connectors'
     | '/decisions'
@@ -132,7 +122,6 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
-    | '/import-test'
     | '/onboarding'
     | '/connectors'
     | '/decisions'
@@ -145,7 +134,6 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/auth'
-    | '/import-test'
     | '/onboarding'
     | '/_authenticated/connectors'
     | '/_authenticated/decisions'
@@ -159,7 +147,6 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
-  ImportTestRoute: typeof ImportTestRoute
   OnboardingRoute: typeof OnboardingRoute
 }
 
@@ -184,13 +171,6 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/import-test': {
-      id: '/import-test'
-      path: '/import-test'
-      fullPath: '/import-test'
-      preLoaderRoute: typeof ImportTestRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/onboarding': {
@@ -270,9 +250,18 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
-  ImportTestRoute: ImportTestRoute,
   OnboardingRoute: OnboardingRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
