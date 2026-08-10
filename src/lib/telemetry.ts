@@ -17,7 +17,7 @@ export type TelemetryEvent =
   | "workflow.reordered"
   | "workflow.reset"
   | "workitem.dated"
-  | "coach.invited"
+  | "coach.invite_created"
   | "coach.joined"
   | "packet.viewed"
   | "note.created"

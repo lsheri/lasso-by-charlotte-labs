@@ -10,6 +10,8 @@ export type CoachSubject = {
   subject_id: string;
   subject_name: string;
   last_note_at: string | null;
+  total_decisions: number;
+  total_elements: number;
   new_decisions: number;
   new_elements: number;
   last_activity: string | null;
@@ -97,6 +99,8 @@ export async function fetchCoachSubjects(coachProfileId: string): Promise<CoachS
         subject_id: row.profile_id,
         subject_name: row.profiles?.display_name ?? "Colleague",
         last_note_at: since,
+        total_decisions: subjectDecisions.length,
+        total_elements: subjectElements.length,
         new_decisions: subjectDecisions.filter((d) => after(d.created_at)).length,
         new_elements: subjectElements.filter((m) => after(m.mapped_at)).length,
         last_activity: stamps.length > 0 ? (stamps[stamps.length - 1] as string) : null,

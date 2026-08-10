@@ -110,6 +110,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
         >
           About this engagement {aboutOpen ? "−" : "+"}
         </button>
+        {profile?.role === "admin" || profile?.role === "lead" ? (
         <InviteDialog
           engagementId={engagementId}
           trigger={
@@ -121,6 +122,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
             </button>
           }
         />
+        ) : null}
         </div>
 
         {aboutOpen ? (

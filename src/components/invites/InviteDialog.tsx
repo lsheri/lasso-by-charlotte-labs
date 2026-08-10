@@ -11,7 +11,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { useProfile } from "@/hooks/use-profile";
 import { supabase } from "@/integrations/supabase/client";
 import { logEvent } from "@/lib/telemetry";
@@ -85,6 +84,7 @@ export function InviteDialog({
   const [open, setOpen] = useState(false);
   const [role, setRole] = useState<InviteRole>(defaultRole);
   const [email, setEmail] = useState("");
+  const [lockEmail, setLockEmail] = useState(true);
   const [link, setLink] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -115,7 +115,7 @@ export function InviteDialog({
     const params = new URLSearchParams({ code: String(data) });
     if (engagementId) params.set("eng", engagementId);
     setLink(`${window.location.origin}/join?${params.toString()}`);
-    logEvent("coach.invited", profile.org_id, { role });
+    logEvent("coach.invite_created", profile.org_id, { role });
   }
 
   return (
@@ -159,16 +159,28 @@ export function InviteDialog({
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="invite-email" className="micro-label">
-              Lock this invite to their email — recommended
-            </Label>
-            <Input
-              id="invite-email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="them@firm.com"
-            />
+            <label className="flex items-center gap-2 text-sm text-foreground">
+              <input
+                type="checkbox"
+                checked={lockEmail}
+                onChange={(e) => {
+                  setLockEmail(e.target.checked);
+                  if (!e.target.checked) setEmail("");
+                }}
+                className="h-4 w-4 accent-[var(--accent-deep)]"
+              />
+              Lock this invite to their email
+              <span className="text-muted-foreground">(recommended)</span>
+            </label>
+            {lockEmail ? (
+              <Input
+                id="invite-email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="them@firm.com"
+              />
+            ) : null}
           </div>
 
           <p className="rounded-[var(--radius)] border border-border bg-secondary px-4 py-3 text-xs text-muted-foreground">
@@ -185,6 +197,9 @@ export function InviteDialog({
         {link ? (
           <div className="space-y-2 rounded-[var(--radius)] border border-border bg-secondary px-4 py-3">
             <p className="micro-label">Share this link</p>
+            <p className="text-xs text-muted-foreground">
+              Send this to your coach. It expires; it can only be used once.
+            </p>
             <p className="break-all font-mono text-xs text-foreground">{link}</p>
             <Button
               type="button"

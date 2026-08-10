@@ -21,7 +21,7 @@ export function CoachingPage() {
       <header className="mb-8">
         <h1 className="page-title">People you coach</h1>
         <p className="mt-1.5 text-sm text-muted-foreground">
-          The work each colleague has mapped and shared with you, most new material first.
+          The work each colleague has chosen to share with you.
         </p>
       </header>
 
@@ -43,32 +43,33 @@ export function CoachingPage() {
               </span>
             </div>
             <p className="mt-0.5 text-sm text-muted-foreground">{subject.engagement_title}</p>
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              <Count n={subject.new_decisions} noun="confirmed decision" />
-              <Count n={subject.new_elements} noun="mapped work element" />
+            <div className="mt-3 flex flex-wrap items-center gap-3">
+              <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+                {subject.total_decisions} confirmed decision{subject.total_decisions === 1 ? "" : "s"}
+              </span>
+              <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+                {subject.total_elements} mapped work element{subject.total_elements === 1 ? "" : "s"}
+              </span>
               <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
                 {sinceLabel(subject.last_note_at)}
               </span>
             </div>
+            {subject.last_note_at && (subject.new_decisions > 0 || subject.new_elements > 0) ? (
+              <p className="mt-2 inline-block rounded-full bg-accent-soft px-3 py-1 font-mono text-[11px] tracking-[0.06em] text-accent-deep">
+                New since your last note: {subject.new_decisions} decision
+                {subject.new_decisions === 1 ? "" : "s"}, {subject.new_elements} work element
+                {subject.new_elements === 1 ? "" : "s"}
+              </p>
+            ) : null}
           </Link>
         ))}
 
         {subjects && subjects.length === 0 && !isLoading ? (
           <p className="text-sm text-muted-foreground">
-            You&apos;ll see the people you coach here once an engagement owner adds you.
+            When someone invites you to coach their work, it appears here.
           </p>
         ) : null}
       </div>
     </div>
-  );
-}
-
-function Count({ n, noun }: { n: number; noun: string }) {
-  if (n === 0) return null;
-  return (
-    <span className="rounded-full bg-accent-soft px-3 py-1 font-mono text-[11px] tracking-[0.06em] text-accent-deep">
-      {n} new {noun}
-      {n === 1 ? "" : "s"}
-    </span>
   );
 }
