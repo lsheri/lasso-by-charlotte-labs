@@ -23,7 +23,7 @@ const AUTH_CONFIG_NAMES: Record<ConnectorToolkit, string> = {
 /** Finds (or creates) the Composio-managed auth config for a toolkit. */
 export async function resolveAuthConfigId(toolkit: ConnectorToolkit): Promise<string> {
   const c = composio();
-  const existing = await c.authConfigs.list({ toolkitSlug: toolkit });
+  const existing = await c.authConfigs.list({ toolkit });
   const match = existing.items?.[0];
   if (match?.id) return match.id;
   const created = await c.authConfigs.create(toolkit, {
