@@ -27,7 +27,7 @@ export function SubjectCoachingSection({
     <div className="mt-10 space-y-8">
       {hasNotes ? (
         <section>
-          <h2 className="micro-label">Coaching</h2>
+          <h2 className="micro-label">Notes from your coach</h2>
           <div className="mt-3 space-y-2">
             {(notes ?? []).map((note) => (
               <CoachingNoteCard

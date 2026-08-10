@@ -89,7 +89,7 @@ export function PacketPage({
   return (
     <div className="space-y-10">
       <header>
-        <p className="micro-label">Coaching packet</p>
+        <p className="micro-label">What {subjectName} has chosen to share</p>
         {hasNewer ? (
           <p className="mt-2 inline-block rounded-full bg-accent-soft px-3 py-1 font-mono text-[11px] tracking-[0.06em] text-accent-deep">
             Newer material since your last visit

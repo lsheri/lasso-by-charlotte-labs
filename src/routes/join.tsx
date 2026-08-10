@@ -1,4 +1,4 @@
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 
@@ -42,6 +42,42 @@ export const Route = createFileRoute("/join")({
   }),
   component: JoinPage,
 });
+
+function InviteContext({ code, eng }: { code: string | undefined; eng: string | undefined }) {
+  const { data } = useQuery({
+    queryKey: ["invite-context", code, eng],
+    queryFn: async () => {
+      const [inviteRes, engRes] = await Promise.all([
+        code
+          ? supabase.from("invites").select("invited_role, orgs(name)").eq("code", code).maybeSingle()
+          : Promise.resolve({ data: null }),
+        eng
+          ? supabase.from("engagements").select("title").eq("id", eng).maybeSingle()
+          : Promise.resolve({ data: null }),
+      ]);
+      return {
+        org: (inviteRes.data as { orgs?: { name: string } | null } | null)?.orgs?.name ?? null,
+        role: (inviteRes.data as { invited_role?: string } | null)?.invited_role ?? null,
+        engagement: (engRes.data as { title: string } | null)?.title ?? null,
+      };
+    },
+    enabled: Boolean(code),
+  });
+
+  if (!data || (!data.org && !data.engagement)) return null;
+
+  return (
+    <div className="mb-4 rounded-[var(--radius)] border border-border bg-secondary px-4 py-3">
+      {data.org ? <p className="micro-label">{data.org}</p> : null}
+      {data.engagement ? (
+        <p className="mt-1 text-sm text-foreground">
+          You&apos;ve been invited to {data.role === "coach" ? "coach on" : "join"}{" "}
+          {data.engagement}
+        </p>
+      ) : null}
+    </div>
+  );
+}
 
 function JoinPage() {
   const { code, eng } = Route.useSearch();
@@ -125,6 +161,7 @@ function JoinPage() {
       <div className="w-full max-w-md">
         <Wordmark size="lg" />
         <div className="mt-8 rounded-[var(--radius)] border border-border bg-card px-6 py-6 shadow-card">
+          <InviteContext code={code} eng={eng} />
           <h1 className="page-title">Accept your invite</h1>
           <p className="mt-1.5 text-sm text-muted-foreground">
             {eng
