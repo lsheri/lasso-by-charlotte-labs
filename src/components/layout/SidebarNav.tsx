@@ -18,6 +18,21 @@ export function SidebarNav({ onNavigate }: { onNavigate?: (() => void) | undefin
 
   return (
     <nav className="flex flex-col gap-7">
+      {profile?.role === "coach" ? (
+        <div>
+          <div className="micro-label px-3">Coaching</div>
+          <div className="mt-2 flex flex-col gap-0.5">
+            <Link
+              to="/coaching"
+              onClick={onNavigate}
+              className={linkClass}
+              activeProps={{ className: "bg-accent-soft text-accent-deep font-medium" }}
+            >
+              People you coach
+            </Link>
+          </div>
+        </div>
+      ) : null}
       {navGroups.map((group) => (
         <div key={group.label}>
           <div className="micro-label px-3">{group.label}</div>
