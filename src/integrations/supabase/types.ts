@@ -14,16 +14,803 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      chain_links: {
+        Row: {
+          from_turn: string
+          id: string
+          method: string
+          to_turn: string
+        }
+        Insert: {
+          from_turn: string
+          id?: string
+          method?: string
+          to_turn: string
+        }
+        Update: {
+          from_turn?: string
+          id?: string
+          method?: string
+          to_turn?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chain_links_from_turn_fkey"
+            columns: ["from_turn"]
+            isOneToOne: false
+            referencedRelation: "turns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chain_links_to_turn_fkey"
+            columns: ["to_turn"]
+            isOneToOne: false
+            referencedRelation: "turns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coaching_notes: {
+        Row: {
+          author_id: string
+          created_at: string
+          did_well: string
+          engagement_id: string | null
+          id: string
+          subject_id: string
+          watch_next: string
+          would_try: string
+        }
+        Insert: {
+          author_id: string
+          created_at?: string
+          did_well: string
+          engagement_id?: string | null
+          id?: string
+          subject_id: string
+          watch_next: string
+          would_try: string
+        }
+        Update: {
+          author_id?: string
+          created_at?: string
+          did_well?: string
+          engagement_id?: string | null
+          id?: string
+          subject_id?: string
+          watch_next?: string
+          would_try?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coaching_notes_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coaching_notes_engagement_id_fkey"
+            columns: ["engagement_id"]
+            isOneToOne: false
+            referencedRelation: "engagements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coaching_notes_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      decisions: {
+        Row: {
+          author: Database["public"]["Enums"]["authored_by"]
+          call_text: string
+          created_at: string
+          date_label: string | null
+          engagement_id: string | null
+          id: string
+          owner_id: string
+          pattern_tags: string[]
+          resolved_at: string | null
+          situation: string
+          srcs: Json
+          status: Database["public"]["Enums"]["decision_status"]
+          why: string
+        }
+        Insert: {
+          author?: Database["public"]["Enums"]["authored_by"]
+          call_text: string
+          created_at?: string
+          date_label?: string | null
+          engagement_id?: string | null
+          id?: string
+          owner_id: string
+          pattern_tags?: string[]
+          resolved_at?: string | null
+          situation: string
+          srcs?: Json
+          status?: Database["public"]["Enums"]["decision_status"]
+          why: string
+        }
+        Update: {
+          author?: Database["public"]["Enums"]["authored_by"]
+          call_text?: string
+          created_at?: string
+          date_label?: string | null
+          engagement_id?: string | null
+          id?: string
+          owner_id?: string
+          pattern_tags?: string[]
+          resolved_at?: string | null
+          situation?: string
+          srcs?: Json
+          status?: Database["public"]["Enums"]["decision_status"]
+          why?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "decisions_engagement_id_fkey"
+            columns: ["engagement_id"]
+            isOneToOne: false
+            referencedRelation: "engagements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "decisions_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      document_versions: {
+        Row: {
+          content_hash: string
+          content_ref: string
+          created_at: string
+          id: string
+          parent_version_id: string | null
+          slide_map: Json | null
+          source_event: string
+          version_no: number
+          work_item_id: string
+        }
+        Insert: {
+          content_hash: string
+          content_ref: string
+          created_at?: string
+          id?: string
+          parent_version_id?: string | null
+          slide_map?: Json | null
+          source_event?: string
+          version_no: number
+          work_item_id: string
+        }
+        Update: {
+          content_hash?: string
+          content_ref?: string
+          created_at?: string
+          id?: string
+          parent_version_id?: string | null
+          slide_map?: Json | null
+          source_event?: string
+          version_no?: number
+          work_item_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_versions_parent_version_id_fkey"
+            columns: ["parent_version_id"]
+            isOneToOne: false
+            referencedRelation: "document_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_versions_work_item_id_fkey"
+            columns: ["work_item_id"]
+            isOneToOne: false
+            referencedRelation: "work_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      engagement_members: {
+        Row: {
+          engagement_id: string
+          member_role: Database["public"]["Enums"]["app_role"]
+          profile_id: string
+        }
+        Insert: {
+          engagement_id: string
+          member_role: Database["public"]["Enums"]["app_role"]
+          profile_id: string
+        }
+        Update: {
+          engagement_id?: string
+          member_role?: Database["public"]["Enums"]["app_role"]
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "engagement_members_engagement_id_fkey"
+            columns: ["engagement_id"]
+            isOneToOne: false
+            referencedRelation: "engagements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "engagement_members_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      engagements: {
+        Row: {
+          brief: string | null
+          brief_by: string | null
+          client_label: string | null
+          code: string
+          created_at: string
+          id: string
+          org_id: string
+          outcome: string | null
+          term_label: string | null
+          title: string
+        }
+        Insert: {
+          brief?: string | null
+          brief_by?: string | null
+          client_label?: string | null
+          code: string
+          created_at?: string
+          id?: string
+          org_id: string
+          outcome?: string | null
+          term_label?: string | null
+          title: string
+        }
+        Update: {
+          brief?: string | null
+          brief_by?: string | null
+          client_label?: string | null
+          code?: string
+          created_at?: string
+          id?: string
+          org_id?: string
+          outcome?: string | null
+          term_label?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "engagements_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      events: {
+        Row: {
+          dims: Json
+          event_type: string
+          id: number
+          payload: Json
+          schema_version: string
+          tenant_hash: string
+          ts: string
+        }
+        Insert: {
+          dims?: Json
+          event_type: string
+          id?: never
+          payload?: Json
+          schema_version?: string
+          tenant_hash: string
+          ts?: string
+        }
+        Update: {
+          dims?: Json
+          event_type?: string
+          id?: never
+          payload?: Json
+          schema_version?: string
+          tenant_hash?: string
+          ts?: string
+        }
+        Relationships: []
+      }
+      feedback_links: {
+        Row: {
+          created_at: string
+          id: string
+          note_id: string
+          owner_confirmed: boolean
+          target_work_item_id: string
+          uptake: Json | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          note_id: string
+          owner_confirmed?: boolean
+          target_work_item_id: string
+          uptake?: Json | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          note_id?: string
+          owner_confirmed?: boolean
+          target_work_item_id?: string
+          uptake?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feedback_links_note_id_fkey"
+            columns: ["note_id"]
+            isOneToOne: false
+            referencedRelation: "coaching_notes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "feedback_links_target_work_item_id_fkey"
+            columns: ["target_work_item_id"]
+            isOneToOne: false
+            referencedRelation: "work_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invites: {
+        Row: {
+          code: string
+          created_by: string | null
+          expires_at: string
+          invited_role: Database["public"]["Enums"]["app_role"]
+          org_id: string
+          used_at: string | null
+          used_by: string | null
+        }
+        Insert: {
+          code: string
+          created_by?: string | null
+          expires_at?: string
+          invited_role?: Database["public"]["Enums"]["app_role"]
+          org_id: string
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Update: {
+          code?: string
+          created_by?: string | null
+          expires_at?: string
+          invited_role?: Database["public"]["Enums"]["app_role"]
+          org_id?: string
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invites_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invites_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invites_used_by_fkey"
+            columns: ["used_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      note_cites: {
+        Row: {
+          decision_id: string | null
+          note_id: string
+          task_id: string | null
+        }
+        Insert: {
+          decision_id?: string | null
+          note_id: string
+          task_id?: string | null
+        }
+        Update: {
+          decision_id?: string | null
+          note_id?: string
+          task_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "note_cites_decision_id_fkey"
+            columns: ["decision_id"]
+            isOneToOne: false
+            referencedRelation: "decisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "note_cites_note_id_fkey"
+            columns: ["note_id"]
+            isOneToOne: false
+            referencedRelation: "coaching_notes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "note_cites_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orgs: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          display_name: string
+          id: string
+          org_id: string
+          role: Database["public"]["Enums"]["app_role"]
+          style_label: string | null
+          title_band: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          display_name: string
+          id?: string
+          org_id: string
+          role?: Database["public"]["Enums"]["app_role"]
+          style_label?: string | null
+          title_band?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          display_name?: string
+          id?: string
+          org_id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          style_label?: string | null
+          title_band?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      query_log: {
+        Row: {
+          answer_ref: string | null
+          asker_id: string
+          created_at: string
+          id: string
+          question: string
+          scope: string
+          subject_id: string
+        }
+        Insert: {
+          answer_ref?: string | null
+          asker_id: string
+          created_at?: string
+          id?: string
+          question: string
+          scope: string
+          subject_id: string
+        }
+        Update: {
+          answer_ref?: string | null
+          asker_id?: string
+          created_at?: string
+          id?: string
+          question?: string
+          scope?: string
+          subject_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "query_log_asker_id_fkey"
+            columns: ["asker_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "query_log_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tasks: {
+        Row: {
+          created_at: string
+          detail: string | null
+          engagement_id: string
+          goal: string | null
+          id: string
+          lane_ai: string | null
+          lane_edited_by_human: boolean
+          lane_you: string | null
+          name: string
+          owner_id: string
+          position: number
+          status: string
+          when_label: string | null
+        }
+        Insert: {
+          created_at?: string
+          detail?: string | null
+          engagement_id: string
+          goal?: string | null
+          id?: string
+          lane_ai?: string | null
+          lane_edited_by_human?: boolean
+          lane_you?: string | null
+          name: string
+          owner_id: string
+          position?: number
+          status?: string
+          when_label?: string | null
+        }
+        Update: {
+          created_at?: string
+          detail?: string | null
+          engagement_id?: string
+          goal?: string | null
+          id?: string
+          lane_ai?: string | null
+          lane_edited_by_human?: boolean
+          lane_you?: string | null
+          name?: string
+          owner_id?: string
+          position?: number
+          status?: string
+          when_label?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tasks_engagement_id_fkey"
+            columns: ["engagement_id"]
+            isOneToOne: false
+            referencedRelation: "engagements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      turns: {
+        Row: {
+          content: string
+          content_hash: string
+          id: string
+          meta: Json
+          model: string | null
+          role: Database["public"]["Enums"]["turn_role"]
+          ts: string | null
+          ts_precision: Database["public"]["Enums"]["ts_precision"]
+          turn_no: number
+          work_item_id: string
+        }
+        Insert: {
+          content: string
+          content_hash: string
+          id?: string
+          meta?: Json
+          model?: string | null
+          role: Database["public"]["Enums"]["turn_role"]
+          ts?: string | null
+          ts_precision?: Database["public"]["Enums"]["ts_precision"]
+          turn_no: number
+          work_item_id: string
+        }
+        Update: {
+          content?: string
+          content_hash?: string
+          id?: string
+          meta?: Json
+          model?: string | null
+          role?: Database["public"]["Enums"]["turn_role"]
+          ts?: string | null
+          ts_precision?: Database["public"]["Enums"]["ts_precision"]
+          turn_no?: number
+          work_item_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "turns_work_item_id_fkey"
+            columns: ["work_item_id"]
+            isOneToOne: false
+            referencedRelation: "work_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      work_item_tasks: {
+        Row: {
+          mapped_at: string
+          task_id: string
+          work_item_id: string
+        }
+        Insert: {
+          mapped_at?: string
+          task_id: string
+          work_item_id: string
+        }
+        Update: {
+          mapped_at?: string
+          task_id?: string
+          work_item_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_item_tasks_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_item_tasks_work_item_id_fkey"
+            columns: ["work_item_id"]
+            isOneToOne: false
+            referencedRelation: "work_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      work_items: {
+        Row: {
+          captured_at: string
+          content_hash: string | null
+          content_ref: string | null
+          created_at_source: string | null
+          id: string
+          meta: Json
+          org_id: string
+          owner_id: string
+          source: string
+          title: string
+          ts_precision: Database["public"]["Enums"]["ts_precision"]
+          type: Database["public"]["Enums"]["work_type"]
+          visibility: Database["public"]["Enums"]["work_visibility"]
+        }
+        Insert: {
+          captured_at?: string
+          content_hash?: string | null
+          content_ref?: string | null
+          created_at_source?: string | null
+          id?: string
+          meta?: Json
+          org_id: string
+          owner_id: string
+          source?: string
+          title: string
+          ts_precision?: Database["public"]["Enums"]["ts_precision"]
+          type: Database["public"]["Enums"]["work_type"]
+          visibility?: Database["public"]["Enums"]["work_visibility"]
+        }
+        Update: {
+          captured_at?: string
+          content_hash?: string | null
+          content_ref?: string | null
+          created_at_source?: string | null
+          id?: string
+          meta?: Json
+          org_id?: string
+          owner_id?: string
+          source?: string
+          title?: string
+          ts_precision?: Database["public"]["Enums"]["ts_precision"]
+          type?: Database["public"]["Enums"]["work_type"]
+          visibility?: Database["public"]["Enums"]["work_visibility"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_items_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_items_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      coach_can_see_item: { Args: { item: string }; Returns: boolean }
+      coaches_subject: { Args: { subject: string }; Returns: boolean }
+      create_org_with_profile: {
+        Args: { p_display_name: string; p_org_name: string }
+        Returns: string
+      }
+      join_org_with_invite: {
+        Args: { p_code: string; p_display_name: string }
+        Returns: string
+      }
+      make_invite: {
+        Args: { p_role?: Database["public"]["Enums"]["app_role"] }
+        Returns: string
+      }
+      my_org_id: { Args: never; Returns: string }
+      my_profile_id: { Args: never; Returns: string }
+      my_role: { Args: never; Returns: Database["public"]["Enums"]["app_role"] }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "em" | "coach" | "lead" | "admin"
+      authored_by: "ai_draft" | "human"
+      decision_status: "draft" | "confirmed" | "discarded"
+      ts_precision: "source" | "capture"
+      turn_role: "user" | "assistant" | "tool"
+      work_type:
+        | "ai_thread"
+        | "document"
+        | "deck"
+        | "sheet"
+        | "call"
+        | "email"
+        | "message"
+      work_visibility: "unmapped" | "mapped" | "private"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +937,22 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["em", "coach", "lead", "admin"],
+      authored_by: ["ai_draft", "human"],
+      decision_status: ["draft", "confirmed", "discarded"],
+      ts_precision: ["source", "capture"],
+      turn_role: ["user", "assistant", "tool"],
+      work_type: [
+        "ai_thread",
+        "document",
+        "deck",
+        "sheet",
+        "call",
+        "email",
+        "message",
+      ],
+      work_visibility: ["unmapped", "mapped", "private"],
+    },
   },
 } as const
