@@ -521,6 +521,44 @@ export type Database = {
           },
         ]
       }
+      mcp_tokens: {
+        Row: {
+          created_at: string
+          id: string
+          label: string
+          last_used_at: string | null
+          profile_id: string
+          revoked_at: string | null
+          token_hash: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          label?: string
+          last_used_at?: string | null
+          profile_id: string
+          revoked_at?: string | null
+          token_hash: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          label?: string
+          last_used_at?: string | null
+          profile_id?: string
+          revoked_at?: string | null
+          token_hash?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mcp_tokens_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       note_cites: {
         Row: {
           decision_id: string | null
