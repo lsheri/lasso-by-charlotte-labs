@@ -20,8 +20,10 @@ import { Route as AuthenticatedOneOnOneRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedOverviewRouteImport } from './routes/_authenticated/overview'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedWorkRouteImport } from './routes/_authenticated/work'
+import { Route as AuthenticatedCoachingIndexRouteImport } from './routes/_authenticated/coaching.index'
 import { Route as AuthenticatedEngagementsIdRouteImport } from './routes/_authenticated/engagements.$id'
 import { Route as ApiMcpTokenRouteImport } from './routes/api/mcp.$token'
+import { Route as AuthenticatedCoachingEngagementIdSubjectIdRouteImport } from './routes/_authenticated/coaching.$engagementId.$subjectId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -77,6 +79,12 @@ const AuthenticatedWorkRoute = AuthenticatedWorkRouteImport.update({
   path: '/work',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedCoachingIndexRoute =
+  AuthenticatedCoachingIndexRouteImport.update({
+    id: '/coaching/',
+    path: '/coaching/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedEngagementsIdRoute =
   AuthenticatedEngagementsIdRouteImport.update({
     id: '/engagements/$id',
@@ -88,6 +96,12 @@ const ApiMcpTokenRoute = ApiMcpTokenRouteImport.update({
   path: '/api/mcp/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedCoachingEngagementIdSubjectIdRoute =
+  AuthenticatedCoachingEngagementIdSubjectIdRouteImport.update({
+    id: '/coaching/$engagementId/$subjectId',
+    path: '/coaching/$engagementId/$subjectId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -102,6 +116,8 @@ export interface FileRoutesByFullPath {
   '/work': typeof AuthenticatedWorkRoute
   '/engagements/$id': typeof AuthenticatedEngagementsIdRoute
   '/api/mcp/$token': typeof ApiMcpTokenRoute
+  '/coaching/': typeof AuthenticatedCoachingIndexRoute
+  '/coaching/$engagementId/$subjectId': typeof AuthenticatedCoachingEngagementIdSubjectIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -116,6 +132,8 @@ export interface FileRoutesByTo {
   '/work': typeof AuthenticatedWorkRoute
   '/engagements/$id': typeof AuthenticatedEngagementsIdRoute
   '/api/mcp/$token': typeof ApiMcpTokenRoute
+  '/coaching': typeof AuthenticatedCoachingIndexRoute
+  '/coaching/$engagementId/$subjectId': typeof AuthenticatedCoachingEngagementIdSubjectIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -132,6 +150,8 @@ export interface FileRoutesById {
   '/_authenticated/work': typeof AuthenticatedWorkRoute
   '/_authenticated/engagements/$id': typeof AuthenticatedEngagementsIdRoute
   '/api/mcp/$token': typeof ApiMcpTokenRoute
+  '/_authenticated/coaching/': typeof AuthenticatedCoachingIndexRoute
+  '/_authenticated/coaching/$engagementId/$subjectId': typeof AuthenticatedCoachingEngagementIdSubjectIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -148,6 +168,8 @@ export interface FileRouteTypes {
     | '/work'
     | '/engagements/$id'
     | '/api/mcp/$token'
+    | '/coaching/'
+    | '/coaching/$engagementId/$subjectId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -162,6 +184,8 @@ export interface FileRouteTypes {
     | '/work'
     | '/engagements/$id'
     | '/api/mcp/$token'
+    | '/coaching'
+    | '/coaching/$engagementId/$subjectId'
   id:
     | '__root__'
     | '/'
@@ -177,6 +201,8 @@ export interface FileRouteTypes {
     | '/_authenticated/work'
     | '/_authenticated/engagements/$id'
     | '/api/mcp/$token'
+    | '/_authenticated/coaching/'
+    | '/_authenticated/coaching/$engagementId/$subjectId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -267,6 +293,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedWorkRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/coaching/': {
+      id: '/_authenticated/coaching/'
+      path: '/coaching'
+      fullPath: '/coaching/'
+      preLoaderRoute: typeof AuthenticatedCoachingIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/engagements/$id': {
       id: '/_authenticated/engagements/$id'
       path: '/engagements/$id'
@@ -281,6 +314,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiMcpTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/coaching/$engagementId/$subjectId': {
+      id: '/_authenticated/coaching/$engagementId/$subjectId'
+      path: '/coaching/$engagementId/$subjectId'
+      fullPath: '/coaching/$engagementId/$subjectId'
+      preLoaderRoute: typeof AuthenticatedCoachingEngagementIdSubjectIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -292,6 +332,8 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedWorkRoute: typeof AuthenticatedWorkRoute
   AuthenticatedEngagementsIdRoute: typeof AuthenticatedEngagementsIdRoute
+  AuthenticatedCoachingIndexRoute: typeof AuthenticatedCoachingIndexRoute
+  AuthenticatedCoachingEngagementIdSubjectIdRoute: typeof AuthenticatedCoachingEngagementIdSubjectIdRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -302,6 +344,9 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedWorkRoute: AuthenticatedWorkRoute,
   AuthenticatedEngagementsIdRoute: AuthenticatedEngagementsIdRoute,
+  AuthenticatedCoachingIndexRoute: AuthenticatedCoachingIndexRoute,
+  AuthenticatedCoachingEngagementIdSubjectIdRoute:
+    AuthenticatedCoachingEngagementIdSubjectIdRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
