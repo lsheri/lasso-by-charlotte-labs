@@ -84,6 +84,7 @@ export function PasteThreadDialog({ trigger }: { trigger: React.ReactNode }) {
     }
 
     logEvent("workitem.captured", profile.org_id, {
+      channel: "paste",
       type: "ai_thread",
       source: source === "other" ? "paste" : source,
     });

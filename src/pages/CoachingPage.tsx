@@ -1,7 +1,9 @@
-import { Link } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
 
-import { useCoachSubjects } from "@/hooks/use-coaching";
-import { useProfile } from "@/hooks/use-profile";
+import { EnterInviteCode } from "@/components/invites/EnterInviteCode";
+import { useAllCoachSubjects } from "@/hooks/use-coaching";
+import { setActiveProfileId, useProfile } from "@/hooks/use-profile";
 
 function sinceLabel(iso: string | null): string {
   if (!iso) return "No notes yet";
@@ -13,8 +15,20 @@ function sinceLabel(iso: string | null): string {
 }
 
 export function CoachingPage() {
-  const { data: profile } = useProfile();
-  const { data: subjects, isLoading, error } = useCoachSubjects(profile?.id);
+  const { profiles } = useProfile();
+  const { data: subjects, isLoading, error } = useAllCoachSubjects(profiles);
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const multiOrg = new Set(subjects.map((s) => s.coach_profile_id)).size > 1;
+
+  function openPacket(coachProfileId: string, engagementId: string, subjectId: string) {
+    setActiveProfileId(coachProfileId);
+    void queryClient.invalidateQueries();
+    navigate({
+      to: "/coaching/$engagementId/$subjectId",
+      params: { engagementId, subjectId },
+    });
+  }
 
   return (
     <div>
@@ -26,15 +40,17 @@ export function CoachingPage() {
       </header>
 
       {isLoading ? <p className="text-sm text-muted-foreground">Loading…</p> : null}
-      {error ? <p className="text-sm text-destructive">{(error as Error).message}</p> : null}
+      {error ? <p className="text-sm text-destructive">{error.message}</p> : null}
 
       <div className="space-y-2">
-        {(subjects ?? []).map((subject) => (
-          <Link
-            key={`${subject.engagement_id}:${subject.subject_id}`}
-            to="/coaching/$engagementId/$subjectId"
-            params={{ engagementId: subject.engagement_id, subjectId: subject.subject_id }}
-            className="block rounded-[var(--radius)] border border-border bg-card px-5 py-4 shadow-card transition-colors hover:bg-accent-soft"
+        {subjects.map((subject) => (
+          <button
+            key={`${subject.coach_profile_id}:${subject.engagement_id}:${subject.subject_id}`}
+            type="button"
+            onClick={() =>
+              openPacket(subject.coach_profile_id, subject.engagement_id, subject.subject_id)
+            }
+            className="block w-full rounded-[var(--radius)] border border-border bg-card px-5 py-4 text-left shadow-card transition-colors hover:bg-accent-soft"
           >
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <p className="text-sm font-medium text-foreground">{subject.subject_name}</p>
@@ -43,12 +59,19 @@ export function CoachingPage() {
               </span>
             </div>
             <p className="mt-0.5 text-sm text-muted-foreground">{subject.engagement_title}</p>
+            {multiOrg ? (
+              <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+                {subject.org_name}
+              </p>
+            ) : null}
             <div className="mt-3 flex flex-wrap items-center gap-3">
               <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
-                {subject.total_decisions} confirmed decision{subject.total_decisions === 1 ? "" : "s"}
+                {subject.total_decisions} confirmed decision
+                {subject.total_decisions === 1 ? "" : "s"}
               </span>
               <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
-                {subject.total_elements} mapped work element{subject.total_elements === 1 ? "" : "s"}
+                {subject.total_elements} mapped work element
+                {subject.total_elements === 1 ? "" : "s"}
               </span>
               <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
                 {sinceLabel(subject.last_note_at)}
@@ -61,13 +84,18 @@ export function CoachingPage() {
                 {subject.new_elements === 1 ? "" : "s"}
               </p>
             ) : null}
-          </Link>
+          </button>
         ))}
 
-        {subjects && subjects.length === 0 && !isLoading ? (
-          <p className="text-sm text-muted-foreground">
-            When someone invites you to coach their work, it appears here.
-          </p>
+        {subjects.length === 0 && !isLoading ? (
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              When someone invites you to coach their work, it appears here.
+            </p>
+            <div className="max-w-lg">
+              <EnterInviteCode label="Have an invite?" />
+            </div>
+          </div>
         ) : null}
       </div>
     </div>

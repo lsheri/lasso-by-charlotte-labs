@@ -339,6 +339,7 @@ export type Database = {
       }
       events: {
         Row: {
+          actor_hash: string | null
           dims: Json
           event_type: string
           id: number
@@ -348,6 +349,7 @@ export type Database = {
           ts: string
         }
         Insert: {
+          actor_hash?: string | null
           dims?: Json
           event_type: string
           id?: never
@@ -357,6 +359,7 @@ export type Database = {
           ts?: string
         }
         Update: {
+          actor_hash?: string | null
           dims?: Json
           event_type?: string
           id?: never

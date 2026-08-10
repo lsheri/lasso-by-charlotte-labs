@@ -2,6 +2,7 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { sha256Hex } from "@/lib/connectors-shared";
 import { workTypeForFile } from "@/lib/work-types";
+import { recordEvent } from "@/lib/telemetry.server";
 
 const PROTOCOL_VERSION = "2025-06-18";
 const ACCEPTED_PROTOCOLS = new Set([PROTOCOL_VERSION, "2025-03-26", "2024-11-05"]);
@@ -12,7 +13,8 @@ const MAX_DOC_BYTES = 5 * 1024 * 1024;
 export const CORS_HEADERS: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "content-type, authorization, mcp-protocol-version, mcp-session-id",
+  "Access-Control-Allow-Headers":
+    "content-type, authorization, mcp-protocol-version, mcp-session-id",
   "Access-Control-Max-Age": "86400",
 };
 
@@ -62,16 +64,19 @@ async function resolveOwner(token: string): Promise<Owner | null> {
 }
 
 async function logPush(owner: Owner, dims: Record<string, string>): Promise<void> {
-  try {
-    await supabaseAdmin.from("events").insert({
-      event_type: "mcp.push",
-      schema_version: "v1",
-      tenant_hash: await sha256Hex(owner.orgId),
-      dims,
-      payload: {},
+  await recordEvent(supabaseAdmin, {
+    eventType: "mcp.push",
+    orgId: owner.orgId,
+    userId: owner.userId,
+    dims,
+  });
+  if (dims["tool"] === "push_thread" || dims["tool"] === "push_document") {
+    await recordEvent(supabaseAdmin, {
+      eventType: "workitem.captured",
+      orgId: owner.orgId,
+      userId: owner.userId,
+      dims: { channel: "mcp", source: dims["source_ai"] ?? "mcp" },
     });
-  } catch {
-    /* telemetry must never break a push */
   }
 }
 
@@ -126,7 +131,8 @@ const TOOLS = [
 ];
 
 export async function handleMcpRequest(request: Request, token: string): Promise<Response> {
-  if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS_HEADERS });
+  if (request.method === "OPTIONS")
+    return new Response(null, { status: 204, headers: CORS_HEADERS });
   if (request.method !== "POST") {
     return json({ error: "Method not allowed" }, 405);
   }
@@ -228,7 +234,8 @@ async function pushThread(owner: Owner, args: Obj, id: unknown): Promise<Respons
     })
     .select("id")
     .single();
-  if (error || !item) return rpcError(id, -32603, error?.message ?? "Could not save the conversation");
+  if (error || !item)
+    return rpcError(id, -32603, error?.message ?? "Could not save the conversation");
 
   const rows = await Promise.all(
     turns.map(async (t, i) => ({
@@ -284,7 +291,9 @@ async function pushDocument(owner: Owner, args: Obj, id: unknown): Promise<Respo
     content_fidelity: "verbatim",
     ts_precision: "capture",
     content_hash: await sha256Hex(content),
-    meta: hint ? { assistant_transcribed: true, engagement_hint: hint } : { assistant_transcribed: true },
+    meta: hint
+      ? { assistant_transcribed: true, engagement_hint: hint }
+      : { assistant_transcribed: true },
   });
   if (error) return rpcError(id, -32603, error.message);
 

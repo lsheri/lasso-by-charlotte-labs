@@ -1,3 +1,5 @@
+import { Link } from "@tanstack/react-router";
+
 import type { Profile } from "@/hooks/use-profile";
 
 import { OrgSwitcher } from "./OrgSwitcher";
@@ -26,6 +28,13 @@ export function AppSidebar({
         <SidebarNav onNavigate={onNavigate} />
       </div>
       <OrgSwitcher profiles={profiles} active={activeProfile} />
+      <Link
+        to="/trust"
+        onClick={onNavigate}
+        className="px-1 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+      >
+        Trust &amp; data
+      </Link>
       <div className="rounded-[var(--radius)] bg-navy p-4 shadow-card">
         <div className="font-mono text-lg tracking-[0.28em] text-mint">LASSO</div>
         <div className="mt-1 text-xs text-cream/80">by Charlotte Labs</div>

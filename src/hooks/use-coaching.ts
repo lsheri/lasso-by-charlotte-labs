@@ -1,6 +1,7 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQueries, useQuery } from "@tanstack/react-query";
 
 import { supabase } from "@/integrations/supabase/client";
+import type { Profile } from "@/hooks/use-profile";
 import type { WorkItemRow } from "@/lib/work-types";
 
 export type CoachSubject = {
@@ -26,10 +27,12 @@ export async function fetchCoachSubjects(coachProfileId: string): Promise<CoachS
     .eq("member_role", "coach");
   if (coachedError) throw coachedError;
 
-  const engagements = ((coached ?? []) as unknown as {
-    engagement_id: string;
-    engagements: { id: string; code: string; title: string } | null;
-  }[]).filter((row) => row.engagements !== null);
+  const engagements = (
+    (coached ?? []) as unknown as {
+      engagement_id: string;
+      engagements: { id: string; code: string; title: string } | null;
+    }[]
+  ).filter((row) => row.engagements !== null);
   if (engagements.length === 0) return [];
 
   const engagementIds = engagements.map((row) => row.engagement_id);
@@ -69,11 +72,13 @@ export async function fetchCoachSubjects(coachProfileId: string): Promise<CoachS
     tasks: { engagement_id: string; owner_id: string } | null;
   }[];
 
-  const rows: CoachSubject[] = ((subjects ?? []) as unknown as {
-    engagement_id: string;
-    profile_id: string;
-    profiles: { id: string; display_name: string } | null;
-  }[])
+  const rows: CoachSubject[] = (
+    (subjects ?? []) as unknown as {
+      engagement_id: string;
+      profile_id: string;
+      profiles: { id: string; display_name: string } | null;
+    }[]
+  )
     .filter((row) => row.profiles !== null && row.profile_id !== coachProfileId)
     .map((row) => {
       const engagement = engagements.find((e) => e.engagement_id === row.engagement_id);
@@ -116,6 +121,38 @@ export function useCoachSubjects(coachProfileId: string | undefined) {
     queryFn: () => fetchCoachSubjects(coachProfileId as string),
     enabled: Boolean(coachProfileId),
   });
+}
+
+export type CoachSubjectAcrossOrgs = CoachSubject & {
+  coach_profile_id: string;
+  org_name: string;
+};
+
+/** A coach may hold profiles in several orgs; the queue spans all of them. */
+export function useAllCoachSubjects(profiles: Profile[]) {
+  const coachProfiles = profiles.filter((p) => p.role === "coach");
+  const results = useQueries({
+    queries: coachProfiles.map((profile) => ({
+      queryKey: ["coach-subjects", profile.id],
+      queryFn: () => fetchCoachSubjects(profile.id),
+    })),
+  });
+
+  const data: CoachSubjectAcrossOrgs[] = results.flatMap((result, index) => {
+    const profile = coachProfiles[index];
+    if (!profile || !result.data) return [];
+    return result.data.map((subject) => ({
+      ...subject,
+      coach_profile_id: profile.id,
+      org_name: profile.org_name,
+    }));
+  });
+
+  return {
+    data: data.sort((a, b) => (b.last_activity ?? "").localeCompare(a.last_activity ?? "")),
+    isLoading: results.some((r) => r.isLoading),
+    error: (results.find((r) => r.error)?.error ?? null) as Error | null,
+  };
 }
 
 export type PacketElement = {

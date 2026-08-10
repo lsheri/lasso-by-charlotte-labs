@@ -1,5 +1,6 @@
 import { NamingConventionsCard } from "@/components/settings/NamingConventionsCard";
 import { InviteDialog } from "@/components/invites/InviteDialog";
+import { EnterInviteCode } from "@/components/invites/EnterInviteCode";
 import { Button } from "@/components/ui/button";
 
 export function SettingsPage() {
@@ -14,6 +15,9 @@ export function SettingsPage() {
       <div className="max-w-2xl">
         <div className="mb-4">
           <InviteDialog trigger={<Button type="button">Invite someone</Button>} />
+        </div>
+        <div className="mb-6">
+          <EnterInviteCode label="Joining another workspace?" />
         </div>
         <NamingConventionsCard />
       </div>

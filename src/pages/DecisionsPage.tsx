@@ -34,7 +34,10 @@ export function DecisionsPage() {
       .update(patch)
       .eq("id", decision.id);
     if (updateError) return setActionError(updateError.message);
-    if (profile) logEvent("decision.resolved", profile.org_id, { status, edited });
+    if (profile) {
+      logEvent("decision.resolved", profile.org_id, { status, edited });
+      if (status === "confirmed") logEvent("decision.confirmed", profile.org_id, { edited });
+    }
     await queryClient.invalidateQueries({ queryKey: ["decisions"] });
   }
 
@@ -48,9 +51,7 @@ export function DecisionsPage() {
           </p>
         </div>
         <div className="text-right">
-          <AddDecisionDialog
-            trigger={<Button type="button">＋ Add a decision yourself</Button>}
-          />
+          <AddDecisionDialog trigger={<Button type="button">＋ Add a decision yourself</Button>} />
           <p className="mt-2 max-w-xs text-xs text-muted-foreground">
             The calls you made off-platform are often the ones that matter most.
           </p>

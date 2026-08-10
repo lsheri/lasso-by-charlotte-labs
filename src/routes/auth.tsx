@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Wordmark } from "@/components/layout/Wordmark";
+import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/auth")({
@@ -23,9 +24,15 @@ export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
       { title: "Sign in — Lasso by Charlotte Labs" },
-      { name: "description", content: "Sign in to Lasso, the coaching platform for consultancies." },
+      {
+        name: "description",
+        content: "Sign in to Lasso, the coaching platform for consultancies.",
+      },
       { property: "og:title", content: "Sign in — Lasso" },
-      { property: "og:description", content: "Sign in to Lasso, the coaching platform for consultancies." },
+      {
+        property: "og:description",
+        content: "Sign in to Lasso, the coaching platform for consultancies.",
+      },
     ],
   }),
   component: AuthPage,
@@ -91,9 +98,7 @@ function AuthPage() {
 
         <div className="mt-6 rounded-[var(--radius)] border border-border bg-card p-6 shadow-card">
           <p className="micro-label">{mode === "signin" ? "Sign in" : "Create account"}</p>
-          <h1 className="mt-2 page-title">
-            {mode === "signin" ? "Welcome back" : "Get started"}
-          </h1>
+          <h1 className="mt-2 page-title">{mode === "signin" ? "Welcome back" : "Get started"}</h1>
           <p className="mt-1.5 text-sm text-muted-foreground">
             Coaching context for engagement managers.
           </p>
@@ -146,6 +151,15 @@ function AuthPage() {
           >
             {mode === "signin" ? "Need an account? Sign up" : "Already have an account? Sign in"}
           </button>
+        </div>
+
+        <div className="mt-6 text-center">
+          <Link
+            to="/trust"
+            className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+          >
+            Trust &amp; data
+          </Link>
         </div>
       </div>
     </main>

@@ -1,8 +1,9 @@
-import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
 import { Wordmark } from "@/components/layout/Wordmark";
+import { EnterInviteCode } from "@/components/invites/EnterInviteCode";
 import { PasteThreadDialog } from "@/components/work/PasteThreadDialog";
 import { UploadFilesButton } from "@/components/work/UploadFilesButton";
 import { ImportFlowDialog } from "@/components/work/import/ImportFlowDialog";
@@ -12,6 +13,30 @@ import { Label } from "@/components/ui/label";
 import { VENDORS, VENDOR_ORDER } from "@/lib/import-vendors";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchProfile } from "@/hooks/use-profile";
+import { logEvent } from "@/lib/telemetry";
+
+type OrgType = "company" | "personal";
+
+/** The RPC creates the org; the type is workspace settings we write after. */
+async function applyOrgType(profileId: string, type: OrgType): Promise<string | null> {
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("org_id")
+    .eq("id", profileId)
+    .maybeSingle();
+  if (!profile?.org_id) return null;
+  const { data: org } = await supabase
+    .from("orgs")
+    .select("settings")
+    .eq("id", profile.org_id)
+    .maybeSingle();
+  const settings = (org?.settings ?? {}) as Record<string, unknown>;
+  await supabase
+    .from("orgs")
+    .update({ settings: { ...settings, type } })
+    .eq("id", profile.org_id);
+  return profile.org_id;
+}
 
 export const Route = createFileRoute("/onboarding")({
   ssr: false,
@@ -24,9 +49,15 @@ export const Route = createFileRoute("/onboarding")({
   head: () => ({
     meta: [
       { title: "Set up your workspace — Lasso" },
-      { name: "description", content: "Create a Lasso workspace or join your team with an invite code." },
+      {
+        name: "description",
+        content: "Create a Lasso workspace or join your team with an invite code.",
+      },
       { property: "og:title", content: "Set up your workspace — Lasso" },
-      { property: "og:description", content: "Create a Lasso workspace or join your team with an invite code." },
+      {
+        property: "og:description",
+        content: "Create a Lasso workspace or join your team with an invite code.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -40,6 +71,7 @@ function OnboardingPage() {
 
 function McpOnboardingSection({ onSetup }: { onSetup: () => void }) {
   const [showWhat, setShowWhat] = useState(false);
+
   return (
     <section className="mt-6 rounded-[var(--radius)] border border-accent bg-accent-soft px-5 py-5">
       <h2 className="micro-label text-accent-deep">Connect your AI — where Lasso began</h2>
@@ -47,8 +79,8 @@ function McpOnboardingSection({ onSetup }: { onSetup: () => void }) {
         <p>Lasso started with one idea: the work you do with AI should belong to you.</p>
         <p>
           MCP is a simple standard that lets your AI talk to Lasso directly — you add Lasso as a
-          connector in Claude or ChatGPT once, then just tell your AI “push this to Lasso” at the end
-          of any working session.
+          connector in Claude or ChatGPT once, then just tell your AI “push this to Lasso” at the
+          end of any working session.
         </p>
         <p>
           Everything it pushes lands private and unmapped, only you can see it, and you can revoke
@@ -80,7 +112,8 @@ function McpOnboardingSection({ onSetup }: { onSetup: () => void }) {
 function OnboardingInner() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [stage, setStage] = useState<"setup" | "why" | "capture">("setup");
+  const [stage, setStage] = useState<"choose" | "setup" | "why" | "capture">("choose");
+  const [orgType, setOrgType] = useState<OrgType>("company");
   const [mode, setMode] = useState<"create" | "join">("create");
   const [displayName, setDisplayName] = useState("");
   const [orgName, setOrgName] = useState("");
@@ -97,7 +130,10 @@ function OnboardingInner() {
       mode === "create"
         ? await supabase.rpc("create_org_with_profile", {
             p_display_name: displayName.trim(),
-            p_org_name: orgName.trim(),
+            p_org_name:
+              orgType === "personal"
+                ? orgName.trim() || `${displayName.trim()}'s workspace`
+                : orgName.trim(),
           })
         : await supabase.rpc("join_org_with_invite", {
             p_display_name: displayName.trim(),
@@ -110,9 +146,17 @@ function OnboardingInner() {
       return;
     }
 
+    if (mode === "create") {
+      const profile = await fetchProfile();
+      if (profile) {
+        const orgId = await applyOrgType(profile.id, orgType);
+        if (orgId) logEvent("org.created", orgId, { org_type: orgType });
+      }
+    }
+
     await queryClient.invalidateQueries();
     setPending(false);
-    setStage("why");
+    setStage(orgType === "personal" && mode === "create" ? "capture" : "why");
   }
 
   function finish() {
@@ -178,7 +222,9 @@ function OnboardingInner() {
             Start with one source. You can add the rest any time.
           </p>
 
-          <McpOnboardingSection onSetup={() => navigate({ to: "/connectors", hash: "connect-your-ai" })} />
+          <McpOnboardingSection
+            onSetup={() => navigate({ to: "/connectors", hash: "connect-your-ai" })}
+          />
 
           <div className="mt-6 grid gap-3 sm:grid-cols-2">
             <button
@@ -255,16 +301,90 @@ function OnboardingInner() {
     );
   }
 
+  if (stage === "choose") {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-background px-4 py-16">
+        <div className="w-full max-w-3xl">
+          <Wordmark size="lg" />
+          <p className="micro-label mt-6">Welcome</p>
+          <h1 className="page-title mt-2">Who is this for?</h1>
+          <p className="mt-1.5 text-sm text-muted-foreground">
+            You can change this later. It only decides who owns the workspace.
+          </p>
+
+          <div className="mt-6 grid gap-3 md:grid-cols-3">
+            {(
+              [
+                [
+                  "company",
+                  "For my company",
+                  "Your organization owns the tenancy. Each person's work stays private to them.",
+                ],
+                [
+                  "personal",
+                  "Just for me",
+                  "Your work, your record. You own everything here. Invite a coach whenever you're ready.",
+                ],
+              ] as const
+            ).map(([value, title, body]) => (
+              <div
+                key={value}
+                className="flex flex-col rounded-[var(--radius)] border border-border bg-card p-5 shadow-card"
+              >
+                <p className="text-sm font-medium text-foreground">{title}</p>
+                <p className="mt-2 flex-1 text-sm text-muted-foreground">{body}</p>
+                <Button
+                  type="button"
+                  className="mt-4"
+                  onClick={() => {
+                    setOrgType(value);
+                    setStage("setup");
+                  }}
+                >
+                  Continue
+                </Button>
+                <Link
+                  to="/trust"
+                  className="mt-3 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  How your data works →
+                </Link>
+              </div>
+            ))}
+
+            <div className="flex flex-col rounded-[var(--radius)] border border-border bg-card p-5 shadow-card">
+              <p className="text-sm font-medium text-foreground">I have an invite</p>
+              <p className="mt-2 flex-1 text-sm text-muted-foreground">
+                Someone already set up a workspace for you. Paste the code or link they sent.
+              </p>
+              <div className="mt-4">
+                <EnterInviteCode label="Invite code or link" />
+              </div>
+              <Link
+                to="/trust"
+                className="mt-3 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+              >
+                How your data works →
+              </Link>
+            </div>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="flex min-h-screen items-center justify-center bg-background px-4 py-16">
       <div className="w-full max-w-md">
         <Wordmark size="lg" />
 
         <div className="mt-6 rounded-[var(--radius)] border border-border bg-card p-6 shadow-card">
-          <p className="micro-label">Welcome</p>
+          <p className="micro-label">{orgType === "personal" ? "Just for me" : "For my company"}</p>
           <h1 className="page-title mt-2">Set up your workspace</h1>
           <p className="mt-1.5 text-sm text-muted-foreground">
-            Two details and you're in. You can change them later.
+            {orgType === "personal"
+              ? "One detail and you're in. You can change it later."
+              : "Two details and you're in. You can change them later."}
           </p>
 
           <form onSubmit={handleSubmit} className="mt-6 space-y-5">
@@ -281,32 +401,7 @@ function OnboardingInner() {
               />
             </div>
 
-            <div className="flex gap-1 rounded-[var(--radius)] bg-secondary p-1">
-              {(
-                [
-                  ["create", "Create a workspace"],
-                  ["join", "Join with an invite"],
-                ] as const
-              ).map(([value, label]) => (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => {
-                    setMode(value);
-                    setError(null);
-                  }}
-                  className={
-                    mode === value
-                      ? "flex-1 rounded-[calc(var(--radius)-4px)] bg-card px-3 py-2 text-sm font-medium text-foreground shadow-card"
-                      : "flex-1 rounded-[calc(var(--radius)-4px)] px-3 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
-                  }
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-
-            {mode === "create" ? (
+            {orgType === "company" ? (
               <div className="space-y-1.5">
                 <Label htmlFor="org-name" className="micro-label">
                   Workspace name
@@ -319,27 +414,20 @@ function OnboardingInner() {
                   placeholder="Charlotte Labs"
                 />
               </div>
-            ) : (
-              <div className="space-y-1.5">
-                <Label htmlFor="invite-code" className="micro-label">
-                  Invite code
-                </Label>
-                <Input
-                  id="invite-code"
-                  required
-                  value={code}
-                  onChange={(e) => setCode(e.target.value)}
-                  placeholder="a1b2c3d4e5f6"
-                  className="font-mono"
-                />
-              </div>
-            )}
+            ) : null}
 
             {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
             <Button type="submit" className="w-full" disabled={pending}>
-              {pending ? "Setting up…" : mode === "create" ? "Create workspace" : "Join workspace"}
+              {pending ? "Setting up…" : "Create workspace"}
             </Button>
+            <button
+              type="button"
+              onClick={() => setStage("choose")}
+              className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+            >
+              ← Back
+            </button>
           </form>
         </div>
       </div>

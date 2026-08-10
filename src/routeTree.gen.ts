@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as JoinRouteImport } from './routes/join'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
+import { Route as TrustRouteImport } from './routes/trust'
 import { Route as AuthenticatedConnectorsRouteImport } from './routes/_authenticated/connectors'
 import { Route as AuthenticatedDecisionsRouteImport } from './routes/_authenticated/decisions'
 import { Route as AuthenticatedOneOnOneRouteImport } from './routes/_authenticated/one-on-one'
@@ -47,6 +48,11 @@ const JoinRoute = JoinRouteImport.update({
 const OnboardingRoute = OnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TrustRoute = TrustRouteImport.update({
+  id: '/trust',
+  path: '/trust',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedConnectorsRoute = AuthenticatedConnectorsRouteImport.update({
@@ -108,6 +114,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/join': typeof JoinRoute
   '/onboarding': typeof OnboardingRoute
+  '/trust': typeof TrustRoute
   '/connectors': typeof AuthenticatedConnectorsRoute
   '/decisions': typeof AuthenticatedDecisionsRoute
   '/one-on-one': typeof AuthenticatedOneOnOneRoute
@@ -124,6 +131,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/join': typeof JoinRoute
   '/onboarding': typeof OnboardingRoute
+  '/trust': typeof TrustRoute
   '/connectors': typeof AuthenticatedConnectorsRoute
   '/decisions': typeof AuthenticatedDecisionsRoute
   '/one-on-one': typeof AuthenticatedOneOnOneRoute
@@ -142,6 +150,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/join': typeof JoinRoute
   '/onboarding': typeof OnboardingRoute
+  '/trust': typeof TrustRoute
   '/_authenticated/connectors': typeof AuthenticatedConnectorsRoute
   '/_authenticated/decisions': typeof AuthenticatedDecisionsRoute
   '/_authenticated/one-on-one': typeof AuthenticatedOneOnOneRoute
@@ -160,6 +169,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/join'
     | '/onboarding'
+    | '/trust'
     | '/connectors'
     | '/decisions'
     | '/one-on-one'
@@ -176,6 +186,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/join'
     | '/onboarding'
+    | '/trust'
     | '/connectors'
     | '/decisions'
     | '/one-on-one'
@@ -193,6 +204,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/join'
     | '/onboarding'
+    | '/trust'
     | '/_authenticated/connectors'
     | '/_authenticated/decisions'
     | '/_authenticated/one-on-one'
@@ -211,6 +223,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   JoinRoute: typeof JoinRoute
   OnboardingRoute: typeof OnboardingRoute
+  TrustRoute: typeof TrustRoute
   ApiMcpTokenRoute: typeof ApiMcpTokenRoute
 }
 
@@ -249,6 +262,13 @@ declare module '@tanstack/react-router' {
       path: '/onboarding'
       fullPath: '/onboarding'
       preLoaderRoute: typeof OnboardingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/trust': {
+      id: '/trust'
+      path: '/trust'
+      fullPath: '/trust'
+      preLoaderRoute: typeof TrustRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/connectors': {
@@ -358,18 +378,9 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   JoinRoute: JoinRoute,
   OnboardingRoute: OnboardingRoute,
+  TrustRoute: TrustRoute,
   ApiMcpTokenRoute: ApiMcpTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

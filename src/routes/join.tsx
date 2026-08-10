@@ -1,12 +1,12 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Wordmark } from "@/components/layout/Wordmark";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { setActiveProfileId } from "@/hooks/use-profile";
+import { setActiveProfileId, useProfiles } from "@/hooks/use-profile";
 import { supabase } from "@/integrations/supabase/client";
 import { logEvent } from "@/lib/telemetry";
 
@@ -49,7 +49,11 @@ function InviteContext({ code, eng }: { code: string | undefined; eng: string | 
     queryFn: async () => {
       const [inviteRes, engRes] = await Promise.all([
         code
-          ? supabase.from("invites").select("invited_role, orgs(name)").eq("code", code).maybeSingle()
+          ? supabase
+              .from("invites")
+              .select("invited_role, orgs(name)")
+              .eq("code", code)
+              .maybeSingle()
           : Promise.resolve({ data: null }),
         eng
           ? supabase.from("engagements").select("title").eq("id", eng).maybeSingle()
@@ -84,6 +88,14 @@ function JoinPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [displayName, setDisplayName] = useState("");
+  const { data: existingProfiles } = useProfiles();
+
+  // Someone who already has a profile shouldn't retype their name.
+  useEffect(() => {
+    const recent = existingProfiles?.[existingProfiles.length - 1];
+    if (recent?.display_name) setDisplayName((current) => current || recent.display_name);
+  }, [existingProfiles]);
+
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

@@ -7,11 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { logEvent } from "@/lib/telemetry";
 import { workTypeForFile } from "@/lib/work-types";
 
-export function UploadFilesButton({
-  variant = "outline",
-}: {
-  variant?: "default" | "outline";
-}) {
+export function UploadFilesButton({ variant = "outline" }: { variant?: "default" | "outline" }) {
   const { data: profile } = useProfile();
   const queryClient = useQueryClient();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -33,9 +29,7 @@ export function UploadFilesButton({
 
     for (const file of Array.from(files)) {
       const path = `${userId}/${crypto.randomUUID()}-${file.name}`;
-      const { error: uploadError } = await supabase.storage
-        .from("work-files")
-        .upload(path, file);
+      const { error: uploadError } = await supabase.storage.from("work-files").upload(path, file);
       if (uploadError) {
         setError(uploadError.message);
         continue;
@@ -56,7 +50,11 @@ export function UploadFilesButton({
         continue;
       }
 
-      logEvent("workitem.captured", profile.org_id, { type, source: "upload" });
+      logEvent("workitem.captured", profile.org_id, {
+        channel: "upload",
+        type,
+        source: "upload",
+      });
     }
 
     await queryClient.invalidateQueries({ queryKey: ["work-items"] });

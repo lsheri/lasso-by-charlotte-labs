@@ -132,22 +132,13 @@ export const askCoachChat = createServerFn({ method: "POST" })
       question: data.question,
     });
 
-    try {
-      const encoded = new TextEncoder().encode(profile.org_id);
-      const digest = await crypto.subtle.digest("SHA-256", encoded);
-      const tenant_hash = Array.from(new Uint8Array(digest))
-        .map((b) => b.toString(16).padStart(2, "0"))
-        .join("");
-      await supabase.from("events").insert({
-        event_type: "coachchat.asked",
-        schema_version: "v1",
-        tenant_hash,
-        dims: { role: profile.role },
-        payload: {},
-      });
-    } catch {
-      /* telemetry never blocks */
-    }
+    const { recordEvent } = await import("./telemetry.server");
+    await recordEvent(supabase, {
+      eventType: "coachchat.asked",
+      orgId: profile.org_id,
+      userId,
+      dims: { role: profile.role },
+    });
 
     return { answer };
   });
