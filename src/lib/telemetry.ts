@@ -16,7 +16,12 @@ export type TelemetryEvent =
   | "import.abandoned"
   | "workflow.reordered"
   | "workflow.reset"
-  | "workitem.dated";
+  | "workitem.dated"
+  | "coach.invited"
+  | "coach.joined"
+  | "packet.viewed"
+  | "note.created"
+  | "coachchat.asked";
 
 /** 0 · 1-10 · 11-50 · 51-200 · 200+ — counts never leave as exact values. */
 export function bucket(n: number): string {
