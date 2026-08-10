@@ -2,6 +2,7 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { sha256Hex } from "@/lib/connectors-shared";
 import { workTypeForFile } from "@/lib/work-types";
+import { recordEvent } from "@/lib/telemetry.server";
 
 const PROTOCOL_VERSION = "2025-06-18";
 const ACCEPTED_PROTOCOLS = new Set([PROTOCOL_VERSION, "2025-03-26", "2024-11-05"]);
