@@ -9,7 +9,13 @@ import {
   Table2,
 } from "lucide-react";
 
-import { formatDate, sourceLabel, type WorkItemRow, type WorkType } from "@/lib/work-types";
+import {
+  effectiveWorkDate,
+  formatDate,
+  sourceLabel,
+  type WorkItemRow,
+  type WorkType,
+} from "@/lib/work-types";
 
 const ICONS: Record<WorkType, typeof FileText> = {
   ai_thread: MessagesSquare,
@@ -34,7 +40,7 @@ export function WorkRow({
   const Icon = ICONS[item.type];
   const mapping = item.work_item_tasks[0]?.tasks ?? null;
   const link = item.meta?.web_view_link ?? null;
-  const dateIso = item.created_at_source ?? item.captured_at;
+  const dateIso = effectiveWorkDate(item);
 
   return (
     <div className="flex items-center gap-4 rounded-[var(--radius)] border border-border bg-card px-4 py-3 shadow-card">

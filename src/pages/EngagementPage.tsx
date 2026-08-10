@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
 import { Input } from "@/components/ui/input";
+import { TaskWorkflow, type WorkflowElement } from "@/components/work/TaskWorkflow";
 import { useProfile } from "@/hooks/use-profile";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -18,7 +19,12 @@ type Engagement = {
 type TaskWithWork = {
   id: string;
   name: string;
-  work_item_tasks: { work_items: { id: string; title: string } | null }[];
+  owner_id: string;
+  work_item_tasks: {
+    step_no: number | null;
+    step_confirmed: boolean;
+    work_items: WorkflowElement["work_items"] | null;
+  }[];
 };
 
 export function EngagementPage({ engagementId }: { engagementId: string }) {
@@ -46,7 +52,9 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
     queryFn: async (): Promise<TaskWithWork[]> => {
       const { data, error: e } = await supabase
         .from("tasks")
-        .select("id, name, work_item_tasks(work_items(id, title))")
+        .select(
+          "id, name, owner_id, work_item_tasks(step_no, step_confirmed, work_items(id, owner_id, title, type, source, visibility, captured_at, content_ref, created_at_source, work_date, content_fidelity, meta))",
+        )
         .eq("engagement_id", engagementId)
         .order("position", { ascending: true });
       if (e) throw e;
@@ -119,30 +127,40 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
       <section>
         <h2 className="micro-label">Tasks</h2>
         <div className="mt-3 space-y-2">
-          {(tasksQuery.data ?? []).map((task) => (
+          {(tasksQuery.data ?? []).map((task) => {
+            const elements: WorkflowElement[] = task.work_item_tasks
+              .filter((link) => link.work_items !== null)
+              .map((link) => ({
+                step_no: link.step_no,
+                step_confirmed: link.step_confirmed,
+                work_items: { ...link.work_items!, work_item_tasks: [] },
+              }));
+            const canEdit =
+              !!profile &&
+              profile.role !== "coach" &&
+              elements.every((e) => e.work_items.owner_id === profile.id);
+            return (
             <div
               key={task.id}
               className="rounded-[var(--radius)] border border-border bg-card px-4 py-3 shadow-card"
             >
               <p className="text-sm font-medium text-foreground">{task.name}</p>
-              <div className="mt-2 flex flex-wrap gap-1.5">
-                {task.work_item_tasks.length === 0 ? (
-                  <span className="text-xs text-muted-foreground">No work mapped yet</span>
-                ) : (
-                  task.work_item_tasks.map((link) =>
-                    link.work_items ? (
-                      <span
-                        key={link.work_items.id}
-                        className="max-w-[240px] truncate rounded-full bg-accent-soft px-3 py-1 font-mono text-[11px] tracking-[0.06em] text-accent-deep"
-                      >
-                        {link.work_items.title}
-                      </span>
-                    ) : null,
-                  )
-                )}
+              <div className="mt-2">
+                <TaskWorkflow
+                  taskId={task.id}
+                  elements={elements}
+                  canEdit={canEdit}
+                  orgId={profile?.org_id}
+                  onChanged={async () => {
+                    await queryClient.invalidateQueries({
+                      queryKey: ["engagement-tasks", engagementId],
+                    });
+                  }}
+                />
               </div>
             </div>
-          ))}
+            );
+          })}
 
           <form onSubmit={addTask} className="pt-2">
             <Input
