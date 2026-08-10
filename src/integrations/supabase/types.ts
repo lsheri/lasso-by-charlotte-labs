@@ -819,16 +819,22 @@ export type Database = {
       work_item_tasks: {
         Row: {
           mapped_at: string
+          step_confirmed: boolean
+          step_no: number | null
           task_id: string
           work_item_id: string
         }
         Insert: {
           mapped_at?: string
+          step_confirmed?: boolean
+          step_no?: number | null
           task_id: string
           work_item_id: string
         }
         Update: {
           mapped_at?: string
+          step_confirmed?: boolean
+          step_no?: number | null
           task_id?: string
           work_item_id?: string
         }
@@ -868,6 +874,7 @@ export type Database = {
           ts_precision: Database["public"]["Enums"]["ts_precision"]
           type: Database["public"]["Enums"]["work_type"]
           visibility: Database["public"]["Enums"]["work_visibility"]
+          work_date: string | null
         }
         Insert: {
           captured_at?: string
@@ -887,6 +894,7 @@ export type Database = {
           ts_precision?: Database["public"]["Enums"]["ts_precision"]
           type: Database["public"]["Enums"]["work_type"]
           visibility?: Database["public"]["Enums"]["work_visibility"]
+          work_date?: string | null
         }
         Update: {
           captured_at?: string
@@ -906,6 +914,7 @@ export type Database = {
           ts_precision?: Database["public"]["Enums"]["ts_precision"]
           type?: Database["public"]["Enums"]["work_type"]
           visibility?: Database["public"]["Enums"]["work_visibility"]
+          work_date?: string | null
         }
         Relationships: [
           {

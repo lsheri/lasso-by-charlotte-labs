@@ -6,7 +6,6 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { ConnectYourAiCard } from "@/components/connectors/ConnectYourAiCard";
-import { NamingConventionsCard } from "@/components/settings/NamingConventionsCard";
 import {
   statusLabel,
   useConnectorAccounts,
@@ -209,8 +208,6 @@ export function ConnectorsPage() {
             Go to Work →
           </Link>
         </div>
-
-        <NamingConventionsCard />
       </div>
     </div>
   );

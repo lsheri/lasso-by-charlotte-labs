@@ -251,6 +251,19 @@ export function WorkPage() {
 
           <section className={suggesting ? "animate-pulse" : undefined}>
             <h2 className="micro-label">Unmapped · Private by default until you map it</h2>
+            {unmapped.length > 0 && active.length === 0 ? (
+              <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius)] border border-dashed border-border bg-accent-soft/50 px-4 py-3">
+                <p className="text-sm text-accent-deep">✨ Let Lasso suggest where these go</p>
+                <button
+                  type="button"
+                  disabled={suggesting}
+                  onClick={() => void handleSuggest()}
+                  className="text-xs font-medium text-accent-deep transition-opacity hover:opacity-70 disabled:opacity-50"
+                >
+                  {suggesting ? "Thinking…" : "Suggest mapping"}
+                </button>
+              </div>
+            ) : null}
             {active.length > 0 ? (
               <p className="mt-1 text-sm text-muted-foreground">
                 Suggestions are drafts — nothing is shared until you accept.

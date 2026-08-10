@@ -109,6 +109,15 @@ type ChatGptNode = {
 };
 
 function parseChatGpt(records: unknown[]): ParseResult {
+  const findLeafNode = (mapping: Record<string, ChatGptNode>): string | undefined => {
+    const parents = new Set(
+      Object.values(mapping)
+        .map((n) => n.parent)
+        .filter((p): p is string => Boolean(p)),
+    );
+    const ids = Object.keys(mapping);
+    return ids.reverse().find((id) => !parents.has(id));
+  };
   const conversations: ParsedConversation[] = [];
   const failures: ParseFailure[] = [];
 
@@ -119,7 +128,7 @@ function parseChatGpt(records: unknown[]): ParseResult {
       const mapping = (conv["mapping"] ?? {}) as Record<string, ChatGptNode>;
       if (!conv["mapping"]) throw new Error("No message mapping in this record.");
       const chain: ChatGptNode[] = [];
-      let cursor = conv["current_node"] as string | undefined;
+      let cursor = (conv["current_node"] as string | undefined) ?? findLeafNode(mapping);
       const seen = new Set<string>();
       while (cursor && mapping[cursor] && !seen.has(cursor)) {
         seen.add(cursor);
@@ -135,8 +144,10 @@ function parseChatGpt(records: unknown[]): ParseResult {
         const message = node.message;
         const role = message?.author?.role;
         if (role !== "user" && role !== "assistant") continue;
-        if (message?.content?.content_type !== "text") continue;
-        const content = (message.content.parts ?? [])
+        if (!message) continue;
+        const contentType = message.content?.content_type;
+        if (contentType && contentType !== "text") continue;
+        const content = (message.content?.parts ?? [])
           .filter((p): p is string => typeof p === "string")
           .join("\n")
           .trim();
