@@ -16,9 +16,9 @@ export const CORS_HEADERS: Record<string, string> = {
   "Access-Control-Max-Age": "86400",
 };
 
-type Json = Record<string, unknown>;
+type Obj = Record<string, unknown>;
 
-function rpcResult(id: unknown, result: Json): Response {
+function rpcResult(id: unknown, result: Obj): Response {
   return json({ jsonrpc: "2.0", id: id ?? null, result });
 }
 
@@ -61,7 +61,7 @@ async function resolveOwner(token: string): Promise<Owner | null> {
   };
 }
 
-async function logPush(owner: Owner, dims: Json): Promise<void> {
+async function logPush(owner: Owner, dims: Obj): Promise<void> {
   try {
     await supabaseAdmin.from("events").insert({
       event_type: "mcp.push",
@@ -134,16 +134,16 @@ export async function handleMcpRequest(request: Request, token: string): Promise
   const owner = await resolveOwner(token);
   if (!owner) return json({ error: "Unauthorized" }, 401);
 
-  let body: Json;
+  let body: Obj;
   try {
-    body = (await request.json()) as Json;
+    body = (await request.json()) as Obj;
   } catch {
     return rpcError(null, -32700, "Parse error");
   }
 
   const id = body["id"];
   const method = String(body["method"] ?? "");
-  const params = (body["params"] ?? {}) as Json;
+  const params = (body["params"] ?? {}) as Obj;
 
   if (method === "initialize") {
     const asked = String((params["protocolVersion"] as string) ?? PROTOCOL_VERSION);
@@ -164,7 +164,7 @@ export async function handleMcpRequest(request: Request, token: string): Promise
 
   if (method === "tools/call") {
     const name = String(params["name"] ?? "");
-    const args = (params["arguments"] ?? {}) as Json;
+    const args = (params["arguments"] ?? {}) as Obj;
     try {
       if (name === "push_thread") return await pushThread(owner, args, id);
       if (name === "push_document") return await pushDocument(owner, args, id);
@@ -180,7 +180,7 @@ export async function handleMcpRequest(request: Request, token: string): Promise
 
 type IncomingTurn = { role: string; content: string; ts?: string };
 
-async function pushThread(owner: Owner, args: Json, id: unknown): Promise<Response> {
+async function pushThread(owner: Owner, args: Obj, id: unknown): Promise<Response> {
   const raw = args["turns"];
   if (!Array.isArray(raw) || raw.length === 0) {
     return rpcError(id, -32602, "turns must be a non-empty array");
@@ -252,7 +252,7 @@ async function pushThread(owner: Owner, args: Json, id: unknown): Promise<Respon
   );
 }
 
-async function pushDocument(owner: Owner, args: Json, id: unknown): Promise<Response> {
+async function pushDocument(owner: Owner, args: Obj, id: unknown): Promise<Response> {
   const filename = typeof args["filename"] === "string" ? args["filename"] : "";
   const content = typeof args["content"] === "string" ? args["content"] : "";
   if (!filename || !content) return rpcError(id, -32602, "filename and content are required");
