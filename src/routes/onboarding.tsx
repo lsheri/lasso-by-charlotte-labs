@@ -135,6 +135,8 @@ function OnboardingPage() {
             Start with one source. You can add the rest any time.
           </p>
 
+          <McpOnboardingSection onSetup={() => navigate({ to: "/connectors", hash: "connect-your-ai" })} />
+
           <div className="mt-6 grid gap-3 sm:grid-cols-2">
             <button
               type="button"
