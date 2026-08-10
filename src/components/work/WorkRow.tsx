@@ -1,5 +1,6 @@
 import {
   FileText,
+  ImageIcon,
   Mail,
   MessageSquare,
   MessagesSquare,
@@ -18,6 +19,7 @@ const ICONS: Record<WorkType, typeof FileText> = {
   call: Phone,
   email: Mail,
   message: MessageSquare,
+  image: ImageIcon,
 };
 
 export function WorkRow({
@@ -49,6 +51,11 @@ export function WorkRow({
         ) : (
           <p className="truncate text-sm font-medium text-foreground">{item.title}</p>
         )}
+        {item.content_fidelity === "summary" ? (
+          <span className="mt-1 inline-block rounded-full border border-border bg-secondary px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+            Summary
+          </span>
+        ) : null}
         <p className="mt-0.5 truncate font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
           {item.type.replace("_", " ")} · {sourceLabel(item.source)} · {formatDate(dateIso)}
           {link ? (

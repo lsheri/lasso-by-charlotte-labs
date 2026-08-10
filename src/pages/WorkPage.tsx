@@ -5,7 +5,7 @@ import { toast } from "sonner";
 
 import { MapDialog } from "@/components/work/MapDialog";
 import { DraftDecisionsButton } from "@/components/decisions/DraftDecisionsButton";
-import { ImportHistoryDialog } from "@/components/work/ImportHistoryDialog";
+import { ImportFlowDialog } from "@/components/work/import/ImportFlowDialog";
 import { PasteThreadDialog } from "@/components/work/PasteThreadDialog";
 import { SuggestionChip } from "@/components/work/SuggestionChip";
 import { ThreadViewer } from "@/components/work/ThreadViewer";
@@ -188,7 +188,7 @@ export function WorkPage() {
           ) : null}
           <PasteThreadDialog trigger={<Button type="button">Paste a thread</Button>} />
           <UploadFilesButton />
-          <ImportHistoryDialog
+          <ImportFlowDialog
             trigger={
               <Button type="button" variant="outline">
                 Import AI history
@@ -219,7 +219,7 @@ export function WorkPage() {
           <div className="mt-6 flex flex-wrap justify-center gap-2">
             <PasteThreadDialog trigger={<Button type="button">Paste a thread</Button>} />
             <UploadFilesButton />
-            <ImportHistoryDialog
+            <ImportFlowDialog
               trigger={
                 <Button type="button" variant="outline">
                   Import AI history

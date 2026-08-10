@@ -409,6 +409,66 @@ export type Database = {
           },
         ]
       }
+      import_sessions: {
+        Row: {
+          created_at: string
+          duplicate_count: number
+          id: string
+          org_id: string
+          owner_id: string
+          range_end: string | null
+          range_start: string | null
+          selected_count: number
+          source_export_dated: string | null
+          ts_precision_mix: Json
+          vendor: string
+          vendor_tier: number
+        }
+        Insert: {
+          created_at?: string
+          duplicate_count?: number
+          id?: string
+          org_id: string
+          owner_id: string
+          range_end?: string | null
+          range_start?: string | null
+          selected_count?: number
+          source_export_dated?: string | null
+          ts_precision_mix?: Json
+          vendor: string
+          vendor_tier: number
+        }
+        Update: {
+          created_at?: string
+          duplicate_count?: number
+          id?: string
+          org_id?: string
+          owner_id?: string
+          range_end?: string | null
+          range_start?: string | null
+          selected_count?: number
+          source_export_dated?: string | null
+          ts_precision_mix?: Json
+          vendor?: string
+          vendor_tier?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "import_sessions_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "import_sessions_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invites: {
         Row: {
           code: string
@@ -754,14 +814,18 @@ export type Database = {
       work_items: {
         Row: {
           captured_at: string
+          content_fidelity: string
           content_hash: string | null
           content_ref: string | null
           created_at_source: string | null
           id: string
+          import_session_id: string | null
           meta: Json
           org_id: string
+          orig_conversation_id: string | null
           owner_id: string
           source: string
+          source_vendor: string | null
           title: string
           ts_precision: Database["public"]["Enums"]["ts_precision"]
           type: Database["public"]["Enums"]["work_type"]
@@ -769,14 +833,18 @@ export type Database = {
         }
         Insert: {
           captured_at?: string
+          content_fidelity?: string
           content_hash?: string | null
           content_ref?: string | null
           created_at_source?: string | null
           id?: string
+          import_session_id?: string | null
           meta?: Json
           org_id: string
+          orig_conversation_id?: string | null
           owner_id: string
           source?: string
+          source_vendor?: string | null
           title: string
           ts_precision?: Database["public"]["Enums"]["ts_precision"]
           type: Database["public"]["Enums"]["work_type"]
@@ -784,20 +852,31 @@ export type Database = {
         }
         Update: {
           captured_at?: string
+          content_fidelity?: string
           content_hash?: string | null
           content_ref?: string | null
           created_at_source?: string | null
           id?: string
+          import_session_id?: string | null
           meta?: Json
           org_id?: string
+          orig_conversation_id?: string | null
           owner_id?: string
           source?: string
+          source_vendor?: string | null
           title?: string
           ts_precision?: Database["public"]["Enums"]["ts_precision"]
           type?: Database["public"]["Enums"]["work_type"]
           visibility?: Database["public"]["Enums"]["work_visibility"]
         }
         Relationships: [
+          {
+            foreignKeyName: "work_items_import_session_id_fkey"
+            columns: ["import_session_id"]
+            isOneToOne: false
+            referencedRelation: "import_sessions"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "work_items_org_id_fkey"
             columns: ["org_id"]
@@ -852,6 +931,7 @@ export type Database = {
         | "call"
         | "email"
         | "message"
+        | "image"
       work_visibility: "unmapped" | "mapped" | "private"
     }
     CompositeTypes: {
@@ -993,6 +1073,7 @@ export const Constants = {
         "call",
         "email",
         "message",
+        "image",
       ],
       work_visibility: ["unmapped", "mapped", "private"],
     },
