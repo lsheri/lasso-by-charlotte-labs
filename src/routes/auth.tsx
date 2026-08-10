@@ -10,9 +10,15 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
-  validateSearch: (search: Record<string, unknown>): { next?: string | undefined } => {
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { next?: string | undefined; intent?: "company" | "personal" | "invite" | undefined } => {
     const next = search["next"];
-    return typeof next === "string" && next.startsWith("/") ? { next } : {};
+    const intent = search["intent"];
+    return {
+      ...(typeof next === "string" && next.startsWith("/") ? { next } : {}),
+      ...(intent === "company" || intent === "personal" || intent === "invite" ? { intent } : {}),
+    };
   },
   beforeLoad: async ({ search }) => {
     const { data } = await supabase.auth.getUser();
@@ -52,11 +58,12 @@ function joinTarget(next: string | undefined) {
 
 function AuthPage() {
   const navigate = useNavigate();
-  const { next } = Route.useSearch();
+  const { next, intent } = Route.useSearch();
 
   function goOn() {
     const target = joinTarget(next);
     if (target) navigate({ to: "/join", search: target, replace: true });
+    else if (intent) navigate({ to: "/onboarding", search: { intent }, replace: true });
     else navigate({ to: "/overview", replace: true });
   }
 
