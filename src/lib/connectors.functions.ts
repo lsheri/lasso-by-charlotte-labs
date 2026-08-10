@@ -2,11 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { isConnectorToolkit, type ConnectorToolkit } from "@/lib/connector-toolkits";
-
-function validateToolkit(input: { toolkit: string }): { toolkit: ConnectorToolkit } {
-  if (!input || !isConnectorToolkit(input.toolkit)) throw new Error("Unsupported connector");
-  return { toolkit: input.toolkit };
-}
+import { sha256Hex, validateToolkit } from "@/lib/connectors-shared";
 
 export const initiateConnection = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -208,10 +204,3 @@ export const syncDrive = createServerFn({ method: "POST" })
 
     return { imported, skipped };
   });
-
-async function sha256Hex(value: string): Promise<string> {
-  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
-  return Array.from(new Uint8Array(digest))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
-}
