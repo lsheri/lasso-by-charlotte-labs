@@ -1,0 +1,26 @@
+export const COACH_CHAT_SYSTEM_PROMPT =
+  "You help a coach understand a colleague's working record so they can have a better development conversation. You are given ONLY the record below: confirmed decisions (situation, call, why, sources), the task structure of an engagement, and the titles and metadata of the work elements mapped to those tasks. Answer the coach's question using only that record. Always name which decisions or tasks your answer draws on. If the record does not contain the answer, say plainly that the record doesn't show it — never guess, never invent detail, never infer motives. Use coaching and development language. Never score, rate, rank, or evaluate the person, and never use monitoring or surveillance framing. Keep answers short and concrete.";
+
+export type CoachChatInput = {
+  profile_id?: string | undefined;
+  subject_id: string;
+  engagement_id: string;
+  question: string;
+};
+
+export function validateCoachChat(input: CoachChatInput): CoachChatInput {
+  if (!input || typeof input.subject_id !== "string" || !input.subject_id) {
+    throw new Error("subject_id is required");
+  }
+  if (typeof input.engagement_id !== "string" || !input.engagement_id) {
+    throw new Error("engagement_id is required");
+  }
+  const question = String(input.question ?? "").trim();
+  if (!question) throw new Error("Ask a question first");
+  return {
+    profile_id: typeof input.profile_id === "string" ? input.profile_id : undefined,
+    subject_id: input.subject_id,
+    engagement_id: input.engagement_id,
+    question: question.slice(0, 1000),
+  };
+}

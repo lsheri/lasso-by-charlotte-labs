@@ -100,7 +100,7 @@ export function WorkPage() {
     setSuggesting(true);
     setActionError(null);
     try {
-      const result = await runSuggest({});
+      const result = await runSuggest({ data: { profile_id: profile?.id } });
       setSuggestions(result.suggestions);
       setDismissed([]);
       toast.success(

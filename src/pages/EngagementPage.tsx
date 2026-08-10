@@ -2,6 +2,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
 import { Input } from "@/components/ui/input";
+import { InviteDialog } from "@/components/invites/InviteDialog";
+import { SubjectCoachingSection } from "@/components/coaching/SubjectCoachingSection";
 import { TaskWorkflow, type WorkflowElement } from "@/components/work/TaskWorkflow";
 import { useProfile } from "@/hooks/use-profile";
 import { supabase } from "@/integrations/supabase/client";
@@ -100,13 +102,26 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
           {engagement.term_label ? ` · ${engagement.term_label}` : ""}
         </p>
 
+        <div className="mt-4 flex flex-wrap items-center gap-2">
         <button
           type="button"
           onClick={() => setAboutOpen((v) => !v)}
-          className="mt-4 rounded-full border border-border bg-card px-3 py-1 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+          className="rounded-full border border-border bg-card px-3 py-1 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
         >
           About this engagement {aboutOpen ? "−" : "+"}
         </button>
+        <InviteDialog
+          engagementId={engagementId}
+          trigger={
+            <button
+              type="button"
+              className="rounded-full border border-border bg-card px-3 py-1 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Invite a coach
+            </button>
+          }
+        />
+        </div>
 
         {aboutOpen ? (
           <div className="mt-3 space-y-3 rounded-[var(--radius)] border border-border bg-card px-5 py-4 shadow-card">
@@ -172,6 +187,8 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
         </div>
       </section>
+
+      <SubjectCoachingSection profileId={profile?.id} engagementId={engagementId} />
     </div>
   );
 }

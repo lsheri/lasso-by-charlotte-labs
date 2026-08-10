@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { useProfile } from "@/hooks/use-profile";
 import { draftDecisions } from "@/lib/decisions.functions";
 
 export function DraftDecisionsButton({
@@ -13,13 +14,14 @@ export function DraftDecisionsButton({
   className?: string;
 }) {
   const run = useServerFn(draftDecisions);
+  const { data: profile } = useProfile();
   const queryClient = useQueryClient();
   const [busy, setBusy] = useState(false);
 
   async function onClick() {
     setBusy(true);
     try {
-      const result = await run({ data: { work_item_id: workItemId } });
+      const result = await run({ data: { work_item_id: workItemId, profile_id: profile?.id } });
       await queryClient.invalidateQueries({ queryKey: ["decisions"] });
       toast(
         result.drafted > 0

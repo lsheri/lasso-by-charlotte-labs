@@ -6,18 +6,16 @@ import {
   SUGGEST_TOOL,
   type MappingSuggestion,
 } from "@/lib/mapping-shared";
+import { validateProfileId } from "@/lib/connectors-shared";
+import { resolveProfile } from "@/lib/profile-resolve";
 
 export const suggestMappings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<{ suggestions: MappingSuggestion[] }> => {
+  .inputValidator(validateProfileId)
+  .handler(async ({ data, context }): Promise<{ suggestions: MappingSuggestion[] }> => {
     const { supabase, userId } = context;
 
-    const { data: profile, error: profileError } = await supabase
-      .from("profiles")
-      .select("id, org_id")
-      .eq("user_id", userId)
-      .maybeSingle();
-    if (profileError) throw new Error(profileError.message);
+    const profile = await resolveProfile(supabase, userId, data.profile_id);
     if (!profile) throw new Response("Forbidden", { status: 403 });
 
     const { data: items, error: itemsError } = await supabase

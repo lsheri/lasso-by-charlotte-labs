@@ -53,7 +53,7 @@ export function ConnectorsPage() {
 
   async function importDrive(auto: boolean) {
     try {
-      const result = await runSync({});
+      const result = await runSync({ data: { profile_id: profile?.id } });
       toast.success(
         result.imported > 0
           ? `${result.imported} file${result.imported === 1 ? "" : "s"} imported into Work`
@@ -69,7 +69,7 @@ export function ConnectorsPage() {
     setBusy(toolkit);
     stopPolling();
     try {
-      const { redirect_url } = await initiate({ data: { toolkit } });
+      const { redirect_url } = await initiate({ data: { toolkit, profile_id: profile?.id } });
       await refresh();
       if (redirect_url) window.open(redirect_url, "_blank", "noopener");
 
@@ -106,7 +106,7 @@ export function ConnectorsPage() {
   async function handleDisconnect(toolkit: ConnectorToolkit) {
     setBusy(toolkit);
     try {
-      await disconnect({ data: { toolkit } });
+      await disconnect({ data: { toolkit, profile_id: profile?.id } });
       await refresh();
       toast.success(`${TOOLKIT_LABELS[toolkit]} disconnected`);
     } catch (e) {

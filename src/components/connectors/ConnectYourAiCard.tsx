@@ -4,6 +4,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { useProfile } from "@/hooks/use-profile";
 import { createMcpToken, getMcpToken, revokeMcpToken } from "@/lib/mcp-tokens.functions";
 
 const SETUP_INSTRUCTIONS = `In Claude: Settings → Connectors → Add custom connector → paste your Lasso URL.
@@ -21,10 +22,11 @@ function formatDate(iso: string | null): string {
 
 export function ConnectYourAiCard() {
   const queryClient = useQueryClient();
+  const { data: profile } = useProfile();
   const fetchToken = useServerFn(getMcpToken);
   const create = useServerFn(createMcpToken);
   const revoke = useServerFn(revokeMcpToken);
-  const { data: token } = useQuery({ queryKey: ["mcp-token"], queryFn: () => fetchToken({}) });
+  const { data: token } = useQuery({ queryKey: ["mcp-token"], queryFn: () => fetchToken({ data: { profile_id: profile?.id } }) });
   const [freshUrl, setFreshUrl] = useState<string | null>(null);
   const [showSetup, setShowSetup] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -37,7 +39,7 @@ export function ConnectYourAiCard() {
   async function handleGenerate() {
     setBusy(true);
     try {
-      const { token: raw } = await create({});
+      const { token: raw } = await create({ data: { profile_id: profile?.id } });
       setFreshUrl(`${window.location.origin}/api/mcp/${raw}`);
       await queryClient.invalidateQueries({ queryKey: ["mcp-token"] });
       setShowSetup(true);
@@ -51,7 +53,7 @@ export function ConnectYourAiCard() {
   async function handleRevoke() {
     setBusy(true);
     try {
-      await revoke({});
+      await revoke({ data: { profile_id: profile?.id } });
       setFreshUrl(null);
       await queryClient.invalidateQueries({ queryKey: ["mcp-token"] });
       toast.success("Connector revoked");

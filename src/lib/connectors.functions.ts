@@ -1,7 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { sha256Hex, validateToolkit } from "@/lib/connectors-shared";
+import { sha256Hex, validateProfileId, validateToolkit } from "@/lib/connectors-shared";
+import { resolveProfile } from "@/lib/profile-resolve";
 
 export const initiateConnection = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -10,12 +11,7 @@ export const initiateConnection = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const { resolveAuthConfigId, composio } = await import("@/lib/composio.server");
 
-    const { data: profile, error } = await supabase
-      .from("profiles")
-      .select("id")
-      .eq("user_id", userId)
-      .maybeSingle();
-    if (error) throw new Error(error.message);
+    const profile = await resolveProfile(supabase, userId, data.profile_id);
     if (!profile) throw new Response("Forbidden", { status: 403 });
 
     const authConfigId = await resolveAuthConfigId(data.toolkit);
@@ -50,11 +46,7 @@ export const getConnectionStatus = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const { composio } = await import("@/lib/composio.server");
 
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("id")
-      .eq("user_id", userId)
-      .maybeSingle();
+    const profile = await resolveProfile(supabase, userId, data.profile_id);
     if (!profile) throw new Response("Forbidden", { status: 403 });
 
     const { data: row } = await supabase
@@ -99,11 +91,7 @@ export const disconnectConnector = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const { composio } = await import("@/lib/composio.server");
 
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("id")
-      .eq("user_id", userId)
-      .maybeSingle();
+    const profile = await resolveProfile(supabase, userId, data.profile_id);
     if (!profile) throw new Response("Forbidden", { status: 403 });
 
     const { data: row } = await supabase
@@ -132,7 +120,8 @@ export const disconnectConnector = createServerFn({ method: "POST" })
 
 export const syncDrive = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .inputValidator(validateProfileId)
+  .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const { listDriveFiles } = await import("@/lib/composio.server");
     const { driveWorkType } = await import("@/lib/connector-toolkits");

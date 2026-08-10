@@ -1,25 +1,21 @@
 import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { resolveProfile } from "@/lib/profile-resolve";
 import { DRAFT_SYSTEM_PROMPT, DRAFT_TOOL, dateLabel, type DraftedDecision } from "@/lib/decisions-shared";
 
 export const draftDecisions = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { work_item_id: string }) => {
+  .inputValidator((input: { work_item_id: string; profile_id?: string | undefined }) => {
     if (!input || typeof input.work_item_id !== "string" || !input.work_item_id) {
       throw new Error("work_item_id is required");
     }
-    return { work_item_id: input.work_item_id };
+    return { work_item_id: input.work_item_id, profile_id: input.profile_id ?? null };
   })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
 
-    const { data: profile, error: profileError } = await supabase
-      .from("profiles")
-      .select("id, org_id")
-      .eq("user_id", userId)
-      .maybeSingle();
-    if (profileError) throw new Error(profileError.message);
+    const profile = await resolveProfile(supabase, userId, data.profile_id);
     if (!profile) throw new Response("Forbidden", { status: 403 });
 
     const { data: item, error: itemError } = await supabase
