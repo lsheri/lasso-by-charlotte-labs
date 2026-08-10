@@ -293,6 +293,78 @@ function OnboardingInner() {
     );
   }
 
+  if (stage === "choose") {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-background px-4 py-16">
+        <div className="w-full max-w-3xl">
+          <Wordmark size="lg" />
+          <p className="micro-label mt-6">Welcome</p>
+          <h1 className="page-title mt-2">Who is this for?</h1>
+          <p className="mt-1.5 text-sm text-muted-foreground">
+            You can change this later. It only decides who owns the workspace.
+          </p>
+
+          <div className="mt-6 grid gap-3 md:grid-cols-3">
+            {(
+              [
+                [
+                  "company",
+                  "For my company",
+                  "Your organization owns the tenancy. Each person's work stays private to them.",
+                ],
+                [
+                  "personal",
+                  "Just for me",
+                  "Your work, your record. You own everything here. Invite a coach whenever you're ready.",
+                ],
+              ] as const
+            ).map(([value, title, body]) => (
+              <div
+                key={value}
+                className="flex flex-col rounded-[var(--radius)] border border-border bg-card p-5 shadow-card"
+              >
+                <p className="text-sm font-medium text-foreground">{title}</p>
+                <p className="mt-2 flex-1 text-sm text-muted-foreground">{body}</p>
+                <Button
+                  type="button"
+                  className="mt-4"
+                  onClick={() => {
+                    setOrgType(value);
+                    setStage("setup");
+                  }}
+                >
+                  Continue
+                </Button>
+                <Link
+                  to="/trust"
+                  className="mt-3 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  How your data works →
+                </Link>
+              </div>
+            ))}
+
+            <div className="flex flex-col rounded-[var(--radius)] border border-border bg-card p-5 shadow-card">
+              <p className="text-sm font-medium text-foreground">I have an invite</p>
+              <p className="mt-2 flex-1 text-sm text-muted-foreground">
+                Someone already set up a workspace for you. Paste the code or link they sent.
+              </p>
+              <div className="mt-4">
+                <EnterInviteCode label="Invite code or link" />
+              </div>
+              <Link
+                to="/trust"
+                className="mt-3 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+              >
+                How your data works →
+              </Link>
+            </div>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="flex min-h-screen items-center justify-center bg-background px-4 py-16">
       <div className="w-full max-w-md">
