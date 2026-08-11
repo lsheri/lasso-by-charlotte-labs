@@ -35,6 +35,7 @@ import type { MappingSuggestion } from "@/lib/mapping-shared";
 import { suggestMappings } from "@/lib/mapping.functions";
 import { removeWorkItems } from "@/lib/work-bulk.functions";
 import { logEvent } from "@/lib/telemetry";
+import { vendorLabel } from "@/lib/conversation-shared";
 import { engagementHue } from "@/lib/work-identity";
 import {
   groupConversations,
