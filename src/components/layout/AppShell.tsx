@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useProfile } from "@/hooks/use-profile";
 
 import { AppSidebar } from "./AppSidebar";
+import { FeedbackWidget } from "@/components/feedback/FeedbackWidget";
 
 export function AppShell() {
   const { data: profile, profiles } = useProfile();
@@ -63,6 +64,7 @@ export function AppShell() {
           </div>
         </main>
       </div>
+      <FeedbackWidget />
     </div>
   );
 }
