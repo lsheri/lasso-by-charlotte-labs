@@ -1,6 +1,10 @@
+import { LassoLogo } from "./LassoLogo";
+
 export function Wordmark({ size = "sm" }: { size?: "sm" | "lg" }) {
   return (
-    <div className="rounded-[var(--radius)] bg-navy px-4 py-4">
+    <div className="flex items-center gap-3 rounded-[var(--radius)] bg-navy px-4 py-4">
+      <LassoLogo size={size === "lg" ? "lg" : "md"} />
+      <div>
       <div
         className={
           size === "lg"
@@ -11,6 +15,7 @@ export function Wordmark({ size = "sm" }: { size?: "sm" | "lg" }) {
         LASSO
       </div>
       <div className="mt-1 text-xs text-cream/80">by Charlotte Labs</div>
+      </div>
     </div>
   );
 }
