@@ -1,16 +1,27 @@
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, type LucideIcon } from "lucide-react";
 import { useState } from "react";
 
 /**
  * A sticky-headed section of the work page. Needs-mapping opens by default;
  * settled work (mapped, private) stays folded away until asked for.
  */
+export type SectionTone = "amber" | "teal" | "indigo" | "neutral";
+
+const TONE: Record<SectionTone, { color: string; band: string }> = {
+  amber: { color: "var(--state-amber)", band: "var(--state-amber-band)" },
+  teal: { color: "var(--state-teal)", band: "var(--state-teal-band)" },
+  indigo: { color: "var(--state-indigo)", band: "var(--state-indigo-band)" },
+  neutral: { color: "var(--muted-foreground)", band: "var(--secondary)" },
+};
+
 export function WorkSection({
   label,
   hint,
   count,
   defaultOpen = false,
   accessory,
+  tone = "neutral",
+  icon: Icon,
   children,
 }: {
   label: string;
@@ -18,8 +29,11 @@ export function WorkSection({
   count: number;
   defaultOpen?: boolean;
   accessory?: React.ReactNode;
+  tone?: SectionTone;
+  icon?: LucideIcon;
   children: React.ReactNode;
 }) {
+  const { color, band } = TONE[tone];
   const [open, setOpen] = useState(defaultOpen);
   return (
     <section>
@@ -28,16 +42,22 @@ export function WorkSection({
           type="button"
           onClick={() => setOpen((v) => !v)}
           aria-expanded={open}
-          className="flex min-w-0 items-center gap-2 text-left"
+          className="state-band min-w-0 text-left"
+          style={{ backgroundColor: band }}
         >
           <ChevronRight
-            className={`h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform ${
-              open ? "rotate-90" : ""
-            }`}
+            className={`h-3.5 w-3.5 shrink-0 transition-transform ${open ? "rotate-90" : ""}`}
+            style={{ color }}
             aria-hidden
           />
-          <span className="micro-label truncate">{label}</span>
-          <span className="shrink-0 rounded-full bg-secondary px-2 py-0.5 font-mono text-[10px] text-muted-foreground">
+          {Icon ? <Icon className="h-3.5 w-3.5 shrink-0" style={{ color }} aria-hidden /> : null}
+          <span
+            className="truncate font-mono text-[11px] font-semibold uppercase tracking-[0.14em]"
+            style={{ color }}
+          >
+            {label}
+          </span>
+          <span className="count-pill shrink-0" style={{ backgroundColor: color }}>
             {count}
           </span>
         </button>
