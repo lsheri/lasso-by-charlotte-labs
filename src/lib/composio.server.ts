@@ -77,6 +77,17 @@ export type DriveFile = {
 
 export const DRIVE_FOLDER_MIME = "application/vnd.google-apps.folder";
 
+/** Which Google account is actually linked — verified against Drive itself. */
+export async function driveAccountIdentity(entityId: string): Promise<string | null> {
+  try {
+    const data = await run("GOOGLEDRIVE_GET_ABOUT", entityId, { fields: "user" });
+    const user = data["user"] as { emailAddress?: string; displayName?: string } | undefined;
+    return user?.emailAddress ?? user?.displayName ?? null;
+  } catch {
+    return null;
+  }
+}
+
 /** One page of a folder's contents, or of a name search across the Drive. */
 export async function browseDrive(
   entityId: string,
