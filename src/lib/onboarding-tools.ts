@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
+import { fetchProfile } from "@/hooks/use-profile";
 
 /**
  * The tools people actually work with AI in. What they check here decides
@@ -113,7 +114,10 @@ export function toolCountBucket(n: number): string {
 }
 
 /** Persist the selection into the existing orgs.settings jsonb. */
-export async function saveToolsUsed(orgId: string, tools: ToolId[]): Promise<void> {
+export async function saveToolsUsed(tools: ToolId[]): Promise<string | null> {
+  const profile = await fetchProfile();
+  if (!profile) return null;
+  const orgId = profile.org_id;
   const { data: org } = await supabase
     .from("orgs")
     .select("settings")
@@ -124,9 +128,13 @@ export async function saveToolsUsed(orgId: string, tools: ToolId[]): Promise<voi
     .from("orgs")
     .update({ settings: { ...settings, tools_used: tools } })
     .eq("id", orgId);
+  return orgId;
 }
 
-export async function loadToolsUsed(orgId: string): Promise<ToolId[]> {
+export async function loadToolsUsed(): Promise<ToolId[]> {
+  const profile = await fetchProfile();
+  if (!profile) return [];
+  const orgId = profile.org_id;
   const { data: org } = await supabase
     .from("orgs")
     .select("settings")
