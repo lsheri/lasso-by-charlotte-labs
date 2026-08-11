@@ -314,7 +314,9 @@ export function ConnectorPicker({
           <div className="space-y-4">
             {isFolderBrowser && folders.length > 0 ? (
               <div>
-                <p className="micro-label">{kind === "sharepoint" ? "Sites & folders" : "Folders"}</p>
+                <p className="micro-label">
+                  {kind === "sharepoint" ? "Sites & folders" : "Folders"}
+                </p>
                 <ul className="mt-2 divide-y divide-border rounded-[var(--radius)] border border-border bg-card">
                   {folders.map((item) => (
                     <li key={item.id}>

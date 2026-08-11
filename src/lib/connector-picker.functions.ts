@@ -135,9 +135,8 @@ export const importGranolaMeetings = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<{ imported: number; skipped: number }> => {
     const { supabase, userId } = context;
     const { resolveProfile } = await import("@/lib/profile-resolve");
-    const { requireConnected, importedGranolaIds, storeFile, captureEvents } = await import(
-      "@/lib/connector-import.server"
-    );
+    const { requireConnected, importedGranolaIds, storeFile, captureEvents } =
+      await import("@/lib/connector-import.server");
     const { listGranolaMeetings, fetchGranolaTranscript } = await import("@/lib/composio.server");
 
     const profile = await resolveProfile(supabase, userId, data.profile_id);

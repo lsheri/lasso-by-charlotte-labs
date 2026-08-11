@@ -90,9 +90,8 @@ export async function importConnectorFiles(
     ids: string[];
   },
 ): Promise<{ imported: number; skipped: number }> {
-  const { importedToolkitIds, storeFile, captureEvents } = await import(
-    "@/lib/connector-import.server"
-  );
+  const { importedToolkitIds, storeFile, captureEvents } =
+    await import("@/lib/connector-import.server");
   const seen = await importedToolkitIds(supabase, args.profileId, args.toolkit);
   const idKey = TOOLKIT_ID_KEY[args.toolkit];
   let imported = 0;

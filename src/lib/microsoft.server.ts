@@ -140,9 +140,7 @@ export async function browseMicrosoft(
 ): Promise<MsItem[]> {
   const args = { folderId: opts.folderId ?? null, search: opts.search ?? null };
   const items =
-    toolkit === "one_drive"
-      ? await browseOneDrive(auth, args)
-      : await browseSharePoint(auth, args);
+    toolkit === "one_drive" ? await browseOneDrive(auth, args) : await browseSharePoint(auth, args);
   return items
     .filter((item) => item.id)
     .sort((a, b) => Number(b.isFolder) - Number(a.isFolder) || a.name.localeCompare(b.name));
@@ -171,9 +169,15 @@ export async function fetchMicrosoftFileBytes(
   entityId: string,
   id: string,
   fallbackName: string,
-): Promise<{ bytes: Uint8Array; mimeType: string; name: string; webViewLink: string | null } | null> {
+): Promise<{
+  bytes: Uint8Array;
+  mimeType: string;
+  name: string;
+  webViewLink: string | null;
+} | null> {
   const decoded = decodeDriveItem(id);
-  const slug = toolkit === "one_drive" ? "ONE_DRIVE_DOWNLOAD_FILE" : "SHAREPOINT_GRAPH_DOWNLOAD_DRIVE_ITEM";
+  const slug =
+    toolkit === "one_drive" ? "ONE_DRIVE_DOWNLOAD_FILE" : "SHAREPOINT_GRAPH_DOWNLOAD_DRIVE_ITEM";
   const args: Record<string, unknown> =
     toolkit === "one_drive"
       ? { item_id: id, file_name: fallbackName }
