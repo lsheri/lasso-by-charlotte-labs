@@ -1,7 +1,12 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/integrations/supabase/types";
-import type { ConnectorToolkit } from "@/lib/connector-toolkits";
+import {
+  TOOLKIT_ID_KEY,
+  TOOLKIT_SOURCE,
+  type BrowsableToolkit,
+  type ConnectorToolkit,
+} from "@/lib/connector-toolkits";
 
 type Client = SupabaseClient<Database>;
 
@@ -26,7 +31,7 @@ async function importedIds(
   supabase: Client,
   profileId: string,
   source: string,
-  key: "drive_file_id" | "granola_id",
+  key: string,
 ): Promise<Set<string>> {
   const { data, error } = await supabase
     .from("work_items")
@@ -42,8 +47,13 @@ async function importedIds(
   return seen;
 }
 
-export function importedDriveIds(supabase: Client, profileId: string): Promise<Set<string>> {
-  return importedIds(supabase, profileId, "connector:googledrive", "drive_file_id");
+/** Provider file ids already in this profile's Work, for the "In Lasso" badge. */
+export function importedToolkitIds(
+  supabase: Client,
+  profileId: string,
+  toolkit: BrowsableToolkit,
+): Promise<Set<string>> {
+  return importedIds(supabase, profileId, TOOLKIT_SOURCE[toolkit], TOOLKIT_ID_KEY[toolkit]);
 }
 
 export function importedGranolaIds(supabase: Client, profileId: string): Promise<Set<string>> {
