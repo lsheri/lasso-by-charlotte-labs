@@ -185,3 +185,140 @@
   letter-spacing: -0.02em;
   color: var(--foreground);
 }
+
+/* Peek panel: Notion-like reading typography for rendered markdown/HTML. */
+.peek-prose {
+  color: var(--foreground);
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  max-width: 68ch;
+}
+.peek-prose > * + * {
+  margin-top: 0.9em;
+}
+.peek-prose h1,
+.peek-prose h2,
+.peek-prose h3,
+.peek-prose h4 {
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  line-height: 1.3;
+  margin-top: 1.6em;
+}
+.peek-prose h1 {
+  font-size: 1.5rem;
+}
+.peek-prose h2 {
+  font-size: 1.25rem;
+}
+.peek-prose h3 {
+  font-size: 1.0625rem;
+}
+.peek-prose h4 {
+  font-size: 0.9375rem;
+}
+.peek-prose a {
+  color: var(--accent-deep);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.peek-prose ul,
+.peek-prose ol {
+  padding-left: 1.25rem;
+}
+.peek-prose ul {
+  list-style: disc;
+}
+.peek-prose ol {
+  list-style: decimal;
+}
+.peek-prose li + li {
+  margin-top: 0.3em;
+}
+.peek-prose blockquote {
+  border-left: 2px solid var(--accent);
+  padding-left: 1rem;
+  color: var(--muted-foreground);
+}
+.peek-prose hr {
+  border-color: var(--border);
+}
+.peek-prose code {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  background: var(--secondary);
+  border-radius: 4px;
+  padding: 0.1em 0.35em;
+}
+.peek-prose pre {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  background: var(--secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.9rem 1rem;
+  overflow-x: auto;
+}
+.peek-prose pre code {
+  background: transparent;
+  padding: 0;
+}
+.peek-prose img {
+  max-width: 100%;
+  border-radius: var(--radius);
+}
+.peek-prose table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+.peek-prose th,
+.peek-prose td {
+  border: 1px solid var(--border);
+  padding: 0.4rem 0.6rem;
+  text-align: left;
+}
+
+/* Restrained syntax colouring that sits inside Bone + Slate. */
+.hljs-comment,
+.hljs-quote {
+  color: var(--muted-foreground);
+  font-style: italic;
+}
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-literal,
+.hljs-doctag {
+  color: #7a4a8c;
+}
+.hljs-string,
+.hljs-regexp,
+.hljs-addition {
+  color: #3c6a4a;
+}
+.hljs-number,
+.hljs-built_in,
+.hljs-attr,
+.hljs-variable,
+.hljs-template-variable {
+  color: #8a5a20;
+}
+.hljs-title,
+.hljs-section,
+.hljs-name,
+.hljs-type {
+  color: #2a4a7c;
+}
+.hljs-meta,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-deletion {
+  color: #9a4a3a;
+}
+.hljs-emphasis {
+  font-style: italic;
+}
+.hljs-strong {
+  font-weight: 600;
+}
