@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { ConnectorCaptureCard } from "@/components/connectors/ConnectorCaptureCard";
 import { Wordmark } from "@/components/layout/Wordmark";
+import { SessionHeader } from "@/components/layout/SessionHeader";
 import { EnterInviteCode } from "@/components/invites/EnterInviteCode";
 import { PasteThreadDialog } from "@/components/work/PasteThreadDialog";
 import { UploadFilesButton } from "@/components/work/UploadFilesButton";
@@ -174,7 +175,9 @@ function OnboardingInner() {
 
   if (stage === "why") {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-background px-4 py-16">
+      <>
+      <SessionHeader />
+      <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-background px-4 py-16">
         <div className="w-full max-w-3xl">
           <Wordmark size="lg" />
           <p className="micro-label mt-6">Why Lasso</p>
@@ -217,12 +220,15 @@ function OnboardingInner() {
           </div>
         </div>
       </main>
+    </>
     );
   }
 
   if (stage === "capture") {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-background px-4 py-16">
+      <>
+      <SessionHeader />
+      <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-background px-4 py-16">
         <div className="w-full max-w-3xl">
           <Wordmark size="lg" />
           <p className="micro-label mt-6">Step two</p>
@@ -298,12 +304,15 @@ function OnboardingInner() {
           </div>
         </div>
       </main>
+    </>
     );
   }
 
   if (stage === "choose") {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-background px-4 py-16">
+      <>
+      <SessionHeader />
+      <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-background px-4 py-16">
         <div className="w-full max-w-3xl">
           <Wordmark size="lg" />
           <p className="micro-label mt-6">Welcome</p>
@@ -381,11 +390,14 @@ function OnboardingInner() {
           </div>
         </div>
       </main>
+    </>
     );
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-background px-4 py-16">
+    <>
+      <SessionHeader />
+      <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-background px-4 py-16">
       <div className="w-full max-w-md">
         <Wordmark size="lg" />
 
@@ -443,5 +455,6 @@ function OnboardingInner() {
         </div>
       </div>
     </main>
+    </>
   );
 }

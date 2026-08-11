@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 
+import { PublicHeader } from "@/components/layout/PublicHeader";
 import { Wordmark } from "@/components/layout/Wordmark";
 
 export const Route = createFileRoute("/trust")({
@@ -69,7 +70,9 @@ function Section({
 
 function TrustPage() {
   return (
-    <main className="min-h-screen bg-background px-6 py-16 md:px-12">
+    <>
+      <PublicHeader current="/trust" />
+      <main className="min-h-screen bg-background px-6 py-16 md:px-12">
       <div className="mx-auto max-w-2xl">
         <Wordmark size="lg" />
         <p className="micro-label mt-8">Trust &amp; data</p>
@@ -187,5 +190,6 @@ function TrustPage() {
         </div>
       </div>
     </main>
+    </>
   );
 }

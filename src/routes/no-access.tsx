@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 
+import { SessionHeader } from "@/components/layout/SessionHeader";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -24,7 +25,9 @@ export const Route = createFileRoute("/no-access")({
 function NoAccessPage() {
   const navigate = useNavigate();
   return (
-    <main className="flex min-h-screen items-center justify-center bg-background px-6">
+    <>
+      <SessionHeader />
+      <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-background px-6">
       <div className="max-w-md text-center">
         <div className="font-mono text-sm tracking-[0.24em] text-muted-foreground">LASSO</div>
         <h1 className="page-title mt-6">You don&apos;t have access to a workspace right now.</h1>
@@ -44,5 +47,6 @@ function NoAccessPage() {
         </Button>
       </div>
     </main>
+    </>
   );
 }

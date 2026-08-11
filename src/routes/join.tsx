@@ -3,6 +3,7 @@ import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
 import { Wordmark } from "@/components/layout/Wordmark";
+import { SessionHeader } from "@/components/layout/SessionHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -169,7 +170,9 @@ function JoinPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-background px-4 py-16">
+    <>
+      <SessionHeader />
+      <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-background px-4 py-16">
       <div className="w-full max-w-md">
         <Wordmark size="lg" />
         <div className="mt-8 rounded-[var(--radius)] border border-border bg-card px-6 py-6 shadow-card">
@@ -207,5 +210,6 @@ function JoinPage() {
         </div>
       </div>
     </main>
+    </>
   );
 }
