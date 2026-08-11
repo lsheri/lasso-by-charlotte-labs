@@ -17,6 +17,7 @@ export function SidebarNav({ onNavigate }: { onNavigate?: (() => void) | undefin
   const decisionCount = (decisions ?? []).length;
   // Reflect is the owner's private space — it never appears for a coach profile.
   const isCoach = profile?.role === "coach";
+  const canManageMembers = profile?.role === "admin" || profile?.role === "lead";
 
   return (
     <nav className="flex flex-col gap-7">
@@ -41,6 +42,7 @@ export function SidebarNav({ onNavigate }: { onNavigate?: (() => void) | undefin
           <div className="mt-2 flex flex-col gap-0.5">
             {group.items
               .filter((item) => !(isCoach && item.to === "/reflect"))
+              .filter((item) => !(item.to === "/members" && !canManageMembers))
               .map((item) => (
               <Link
                 key={item.to}

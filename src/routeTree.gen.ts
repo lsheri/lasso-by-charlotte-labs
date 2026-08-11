@@ -18,6 +18,7 @@ import { Route as TrustRouteImport } from './routes/trust'
 import { Route as WhyRouteImport } from './routes/why'
 import { Route as AuthenticatedConnectorsRouteImport } from './routes/_authenticated/connectors'
 import { Route as AuthenticatedDecisionsRouteImport } from './routes/_authenticated/decisions'
+import { Route as AuthenticatedMembersRouteImport } from './routes/_authenticated/members'
 import { Route as AuthenticatedOneOnOneRouteImport } from './routes/_authenticated/one-on-one'
 import { Route as AuthenticatedOverviewRouteImport } from './routes/_authenticated/overview'
 import { Route as AuthenticatedReflectRouteImport } from './routes/_authenticated/reflect'
@@ -70,6 +71,11 @@ const AuthenticatedConnectorsRoute = AuthenticatedConnectorsRouteImport.update({
 const AuthenticatedDecisionsRoute = AuthenticatedDecisionsRouteImport.update({
   id: '/decisions',
   path: '/decisions',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedMembersRoute = AuthenticatedMembersRouteImport.update({
+  id: '/members',
+  path: '/members',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedOneOnOneRoute = AuthenticatedOneOnOneRouteImport.update({
@@ -130,6 +136,7 @@ export interface FileRoutesByFullPath {
   '/why': typeof WhyRoute
   '/connectors': typeof AuthenticatedConnectorsRoute
   '/decisions': typeof AuthenticatedDecisionsRoute
+  '/members': typeof AuthenticatedMembersRoute
   '/one-on-one': typeof AuthenticatedOneOnOneRoute
   '/overview': typeof AuthenticatedOverviewRoute
   '/reflect': typeof AuthenticatedReflectRoute
@@ -149,6 +156,7 @@ export interface FileRoutesByTo {
   '/why': typeof WhyRoute
   '/connectors': typeof AuthenticatedConnectorsRoute
   '/decisions': typeof AuthenticatedDecisionsRoute
+  '/members': typeof AuthenticatedMembersRoute
   '/one-on-one': typeof AuthenticatedOneOnOneRoute
   '/overview': typeof AuthenticatedOverviewRoute
   '/reflect': typeof AuthenticatedReflectRoute
@@ -170,6 +178,7 @@ export interface FileRoutesById {
   '/why': typeof WhyRoute
   '/_authenticated/connectors': typeof AuthenticatedConnectorsRoute
   '/_authenticated/decisions': typeof AuthenticatedDecisionsRoute
+  '/_authenticated/members': typeof AuthenticatedMembersRoute
   '/_authenticated/one-on-one': typeof AuthenticatedOneOnOneRoute
   '/_authenticated/overview': typeof AuthenticatedOverviewRoute
   '/_authenticated/reflect': typeof AuthenticatedReflectRoute
@@ -191,6 +200,7 @@ export interface FileRouteTypes {
     | '/why'
     | '/connectors'
     | '/decisions'
+    | '/members'
     | '/one-on-one'
     | '/overview'
     | '/reflect'
@@ -210,6 +220,7 @@ export interface FileRouteTypes {
     | '/why'
     | '/connectors'
     | '/decisions'
+    | '/members'
     | '/one-on-one'
     | '/overview'
     | '/reflect'
@@ -230,6 +241,7 @@ export interface FileRouteTypes {
     | '/why'
     | '/_authenticated/connectors'
     | '/_authenticated/decisions'
+    | '/_authenticated/members'
     | '/_authenticated/one-on-one'
     | '/_authenticated/overview'
     | '/_authenticated/reflect'
@@ -317,6 +329,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDecisionsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/members': {
+      id: '/_authenticated/members'
+      path: '/members'
+      fullPath: '/members'
+      preLoaderRoute: typeof AuthenticatedMembersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/one-on-one': {
       id: '/_authenticated/one-on-one'
       path: '/one-on-one'
@@ -386,6 +405,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedConnectorsRoute: typeof AuthenticatedConnectorsRoute
   AuthenticatedDecisionsRoute: typeof AuthenticatedDecisionsRoute
+  AuthenticatedMembersRoute: typeof AuthenticatedMembersRoute
   AuthenticatedOneOnOneRoute: typeof AuthenticatedOneOnOneRoute
   AuthenticatedOverviewRoute: typeof AuthenticatedOverviewRoute
   AuthenticatedReflectRoute: typeof AuthenticatedReflectRoute
@@ -399,6 +419,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedConnectorsRoute: AuthenticatedConnectorsRoute,
   AuthenticatedDecisionsRoute: AuthenticatedDecisionsRoute,
+  AuthenticatedMembersRoute: AuthenticatedMembersRoute,
   AuthenticatedOneOnOneRoute: AuthenticatedOneOnOneRoute,
   AuthenticatedOverviewRoute: AuthenticatedOverviewRoute,
   AuthenticatedReflectRoute: AuthenticatedReflectRoute,
@@ -426,13 +447,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
