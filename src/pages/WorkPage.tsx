@@ -14,6 +14,7 @@ import { PeekPanel, type PeekEntry } from "@/components/peek/PeekPanel";
 import { UploadFilesButton } from "@/components/work/UploadFilesButton";
 import { WorkDateDialog } from "@/components/work/WorkDateDialog";
 import { RowAction, WorkRow } from "@/components/work/WorkRow";
+import { EngagementFold, WorkSection } from "@/components/work/WorkSection";
 import { ConversationChips } from "@/components/work/ConversationChips";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -34,6 +35,7 @@ import type { MappingSuggestion } from "@/lib/mapping-shared";
 import { suggestMappings } from "@/lib/mapping.functions";
 import { removeWorkItems } from "@/lib/work-bulk.functions";
 import { logEvent } from "@/lib/telemetry";
+import { engagementHue } from "@/lib/work-identity";
 import {
   groupConversations,
   isConversationGroup,
