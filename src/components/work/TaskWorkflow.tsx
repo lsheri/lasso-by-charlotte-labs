@@ -1,5 +1,7 @@
 import { useState } from "react";
 
+import { TypeIcon } from "@/components/work/TypeIcon";
+import { workIdentityLabel } from "@/lib/work-identity";
 import { WorkDateDialog } from "@/components/work/WorkDateDialog";
 import { OpenFileAction } from "@/components/work/OpenFileAction";
 import { supabase } from "@/integrations/supabase/client";
