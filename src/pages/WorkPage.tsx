@@ -10,7 +10,7 @@ import { PasteThreadDialog } from "@/components/work/PasteThreadDialog";
 import { OpenFileAction } from "@/components/work/OpenFileAction";
 import { ConnectorBrowseActions } from "@/components/connectors/ConnectorBrowseActions";
 import { SuggestionChip } from "@/components/work/SuggestionChip";
-import { ThreadViewer } from "@/components/work/ThreadViewer";
+import { PeekPanel, type PeekEntry } from "@/components/peek/PeekPanel";
 import { UploadFilesButton } from "@/components/work/UploadFilesButton";
 import { WorkDateDialog } from "@/components/work/WorkDateDialog";
 import { RowAction, WorkRow } from "@/components/work/WorkRow";
@@ -49,7 +49,7 @@ export function WorkPage() {
   const runRemove = useServerFn(removeWorkItems);
   const [mapItem, setMapItem] = useState<WorkItemRow | null>(null);
   const [mapGroup, setMapGroup] = useState<WorkItemRow[] | null>(null);
-  const [threadItem, setThreadItem] = useState<WorkItemRow | null>(null);
+  const [peek, setPeek] = useState<{ entry: PeekEntry; focusId: string } | null>(null);
   const [dateItem, setDateItem] = useState<WorkItemRow | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<MappingSuggestion[] | null>(null);
@@ -124,8 +124,8 @@ export function WorkPage() {
     await queryClient.invalidateQueries({ queryKey: ["work-items"] });
   }
 
-  function openItem(item: WorkItemRow): (() => void) | undefined {
-    return item.type === "ai_thread" ? () => setThreadItem(item) : undefined;
+  function openItem(item: WorkItemRow, entry?: PeekEntry): () => void {
+    return () => setPeek({ entry: entry ?? item, focusId: item.id });
   }
 
   function openMap(item: WorkItemRow, group?: WorkItemRow[]) {
@@ -144,7 +144,7 @@ export function WorkPage() {
       >
         <WorkRow
           item={head}
-          onOpen={openItem(head)}
+          onOpen={openItem(head, group)}
           chips={<ConversationChips item={head} />}
           actions={rowActions(head, variant, group.items)}
         />
@@ -155,7 +155,7 @@ export function WorkPage() {
                 key={child.id}
                 nested
                 item={child}
-                onOpen={openItem(child)}
+                onOpen={openItem(child, group)}
                 chips={<ConversationChips item={child} />}
                 actions={rowActions(child, variant)}
               />
@@ -536,11 +536,25 @@ export function WorkPage() {
           }
         }}
       />
-      <ThreadViewer
-        item={threadItem}
-        open={threadItem !== null}
+      <PeekPanel
+        entry={peek?.entry ?? null}
+        focusId={peek?.focusId}
+        open={peek !== null}
+        canEdit={!isCoach}
+        onMap={(item, group) => {
+          setPeek(null);
+          openMap(item, group);
+        }}
+        onWorkDate={(item) => {
+          setPeek(null);
+          setDateItem(item);
+        }}
+        onMakePrivate={(item) => {
+          setPeek(null);
+          void makePrivate(item);
+        }}
         onOpenChange={(next) => {
-          if (!next) setThreadItem(null);
+          if (!next) setPeek(null);
         }}
       />
       <AlertDialog open={confirmRemove} onOpenChange={setConfirmRemove}>

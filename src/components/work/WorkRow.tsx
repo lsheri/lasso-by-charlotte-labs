@@ -50,26 +50,33 @@ export function WorkRow({
 
   return (
     <div
+      {...(onOpen
+        ? {
+            role: "button" as const,
+            tabIndex: 0,
+            onClick: onOpen,
+            onKeyDown: (event: React.KeyboardEvent) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                onOpen();
+              }
+            },
+          }
+        : {})}
       className={
         nested
-          ? "flex items-center gap-4 rounded-[var(--radius)] border border-border/70 bg-card px-4 py-2.5"
-          : "flex items-center gap-4 rounded-[var(--radius)] border border-border bg-card px-4 py-3 shadow-card"
+          ? `flex items-center gap-4 rounded-[var(--radius)] border border-border/70 bg-card px-4 py-2.5 ${onOpen ? "cursor-pointer transition-colors hover:border-accent/40 hover:bg-secondary/40" : ""}`
+          : `flex items-center gap-4 rounded-[var(--radius)] border border-border bg-card px-4 py-3 shadow-card ${onOpen ? "cursor-pointer transition-colors hover:border-accent/40 hover:bg-secondary/30" : ""}`
       }
     >
-      {lead ? <div className="shrink-0">{lead}</div> : null}
+      {lead ? (
+        <div className="shrink-0" onClick={(event) => event.stopPropagation()}>
+          {lead}
+        </div>
+      ) : null}
       <Icon className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
       <div className="min-w-0 flex-1">
-        {onOpen ? (
-          <button
-            type="button"
-            onClick={onOpen}
-            className="block max-w-full truncate text-left text-sm font-medium text-foreground hover:text-accent-deep"
-          >
-            {item.title}
-          </button>
-        ) : (
-          <p className="truncate text-sm font-medium text-foreground">{item.title}</p>
-        )}
+        <p className="truncate text-sm font-medium text-foreground">{item.title}</p>
         <div className="flex flex-wrap items-center gap-1.5">
           {item.content_fidelity === "summary" ? (
             <span className="mt-1 inline-block rounded-full border border-border bg-secondary px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
@@ -87,6 +94,7 @@ export function WorkRow({
                 href={link}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={(event) => event.stopPropagation()}
                 className="text-accent-deep hover:opacity-70"
               >
                 open ↗
@@ -102,7 +110,9 @@ export function WorkRow({
         </span>
       ) : null}
 
-      <div className="flex shrink-0 items-center gap-3">{actions}</div>
+      <div className="flex shrink-0 items-center gap-3" onClick={(event) => event.stopPropagation()}>
+        {actions}
+      </div>
     </div>
   );
 }
