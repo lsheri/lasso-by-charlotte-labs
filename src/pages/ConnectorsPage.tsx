@@ -138,7 +138,12 @@ export function ConnectorsPage() {
               </button>
             </div>
           ) : (
-            <Button type="button" size="sm" disabled={busy === toolkit} onClick={() => void handleConnect(toolkit)}>
+            <Button
+              type="button"
+              size="sm"
+              disabled={busy === toolkit}
+              onClick={() => void handleConnect(toolkit)}
+            >
               {busy === toolkit ? "Waiting…" : "Connect"}
             </Button>
           )
@@ -200,7 +205,10 @@ export function ConnectorsPage() {
 
         <div className="rounded-[var(--radius)] border border-border bg-card px-4 py-4 shadow-card">
           <p className="text-sm text-foreground">No connector? Paste or upload always works.</p>
-          <Link to="/work" className="mt-1 inline-block text-xs font-medium text-accent-deep hover:opacity-70">
+          <Link
+            to="/work"
+            className="mt-1 inline-block text-xs font-medium text-accent-deep hover:opacity-70"
+          >
             Go to Work →
           </Link>
         </div>

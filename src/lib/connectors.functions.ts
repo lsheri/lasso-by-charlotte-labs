@@ -128,9 +128,8 @@ export const getConnectorDetails = createServerFn({ method: "POST" })
   .inputValidator(validateToolkit)
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const { composio, connectedAccountIdentity, driveAccountIdentity, granolaTools } = await import(
-      "@/lib/composio.server"
-    );
+    const { composio, connectedAccountIdentity, driveAccountIdentity, granolaTools } =
+      await import("@/lib/composio.server");
 
     const profile = await resolveProfile(supabase, userId, data.profile_id);
     if (!profile) throw new Response("Forbidden", { status: 403 });
@@ -160,6 +159,7 @@ export const getConnectorDetails = createServerFn({ method: "POST" })
       }
     }
 
-    const tools = data.toolkit === "granola_mcp" ? await granolaTools(profile.id).catch(() => []) : [];
+    const tools =
+      data.toolkit === "granola_mcp" ? await granolaTools(profile.id).catch(() => []) : [];
     return { identity, tools };
   });

@@ -155,7 +155,12 @@ export function connectedAccountIdentity(account: Record<string, unknown>): stri
 export async function fetchDriveFileBytes(
   entityId: string,
   fileId: string,
-): Promise<{ bytes: Uint8Array; mimeType: string; name: string; webViewLink: string | null } | null> {
+): Promise<{
+  bytes: Uint8Array;
+  mimeType: string;
+  name: string;
+  webViewLink: string | null;
+} | null> {
   const data = await run("GOOGLEDRIVE_PARSE_FILE", entityId, { file_id: fileId });
   const file = data["file"] as { s3url?: string; mimetype?: string; name?: string } | undefined;
   if (!file?.s3url) return null;

@@ -72,7 +72,13 @@ export function WorkPage() {
   );
 
   const { data: taskLabels } = useQuery({
-    queryKey: ["suggestion-task-labels", active.map((s) => s.task_id).sort().join(",")],
+    queryKey: [
+      "suggestion-task-labels",
+      active
+        .map((s) => s.task_id)
+        .sort()
+        .join(","),
+    ],
     enabled: active.length > 0,
     queryFn: async (): Promise<Record<string, string>> => {
       const ids = Array.from(new Set(active.map((s) => s.task_id)));
@@ -222,10 +228,7 @@ export function WorkPage() {
     setAcceptPending(true);
     setActionError(null);
     try {
-      const cleanup = await supabase
-        .from("work_item_tasks")
-        .delete()
-        .eq("work_item_id", item.id);
+      const cleanup = await supabase.from("work_item_tasks").delete().eq("work_item_id", item.id);
       if (cleanup.error) throw new Error(cleanup.error.message);
       const link = await supabase
         .from("work_item_tasks")
@@ -314,8 +317,8 @@ export function WorkPage() {
         <div>
           <h1 className="page-title">Work</h1>
           <p className="mt-1.5 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
-            {all.length} items · {mapped.length} mapped · {unmapped.length} unmapped ·{" "}
-            {priv.length} private
+            {all.length} items · {mapped.length} mapped · {unmapped.length} unmapped · {priv.length}{" "}
+            private
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -342,9 +345,7 @@ export function WorkPage() {
         </div>
       </header>
 
-      {error ? (
-        <p className="mb-6 text-sm text-destructive">{(error as Error).message}</p>
-      ) : null}
+      {error ? <p className="mb-6 text-sm text-destructive">{(error as Error).message}</p> : null}
       {actionError ? <p className="mb-6 text-sm text-destructive">{actionError}</p> : null}
       {mappingError ? (
         <p className="mb-6 text-sm text-destructive">
@@ -362,7 +363,7 @@ export function WorkPage() {
           </p>
           <div className="mt-6 flex flex-wrap justify-center gap-2">
             <ConnectorBrowseActions />
-          <PasteThreadDialog trigger={<Button type="button">Paste a thread</Button>} />
+            <PasteThreadDialog trigger={<Button type="button">Paste a thread</Button>} />
             <UploadFilesButton />
             <ImportFlowDialog
               trigger={

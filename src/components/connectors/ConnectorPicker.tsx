@@ -289,7 +289,9 @@ export function ConnectorPicker({ kind, trigger }: { kind: PickerKind; trigger: 
             disabled={selected.size === 0 || importing}
             onClick={() => void handleImport()}
           >
-            {importing ? "Bringing in…" : `${copy.action}${selected.size ? ` (${selected.size})` : ""}`}
+            {importing
+              ? "Bringing in…"
+              : `${copy.action}${selected.size ? ` (${selected.size})` : ""}`}
           </Button>
         </div>
       </DialogContent>
