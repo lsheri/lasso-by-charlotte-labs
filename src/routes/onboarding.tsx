@@ -235,16 +235,7 @@ function OnboardingInner() {
           />
 
           <div className="mt-6 grid gap-3 sm:grid-cols-2">
-            <button
-              type="button"
-              onClick={() => navigate({ to: "/connectors" })}
-              className="rounded-[var(--radius)] border border-border bg-card p-4 text-left shadow-card transition-colors hover:border-accent"
-            >
-              <p className="text-sm font-medium text-foreground">Connect Google Drive</p>
-              <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
-                Live connector
-              </p>
-            </button>
+            <ConnectorCaptureCard onConnect={() => navigate({ to: "/connectors" })} />
 
             {VENDOR_ORDER.map((id) => (
               <ImportFlowDialog

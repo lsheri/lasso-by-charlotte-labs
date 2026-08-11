@@ -43,4 +43,5 @@ export const TOOLKIT_LABELS: Record<ConnectorToolkit, string> = {
   gmail: "Gmail",
   slack: "Slack",
   notion: "Notion",
+  granola_mcp: "Granola",
 };

@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { ConnectYourAiCard } from "@/components/connectors/ConnectYourAiCard";
+import { ConnectorPicker } from "@/components/connectors/ConnectorPicker";
 import {
   statusLabel,
   useConnectorAccounts,
@@ -27,9 +28,10 @@ const DESCRIPTIONS: Record<ConnectorToolkit, string> = {
   gmail: "Client threads and the decisions buried in them.",
   notion: "Working pages and notes from your workspace.",
   slack: "Channel conversations where the work gets negotiated.",
+  granola_mcp: "Meeting notes and transcripts from your calls.",
 };
 
-const COMING_SOON = ["Zoom", "Teams", "Granola", "ChatGPT Enterprise"];
+const COMING_SOON = ["Zoom", "Teams", "ChatGPT Enterprise"];
 
 export function ConnectorsPage() {
   const { data: profile } = useProfile();
@@ -129,6 +131,19 @@ export function ConnectorsPage() {
         actions={
           connected ? (
             <div className="flex items-center gap-4">
+              {toolkit === "googledrive" || toolkit === "granola_mcp" ? (
+                <ConnectorPicker
+                  kind={toolkit === "googledrive" ? "googledrive" : "granola"}
+                  trigger={
+                    <button
+                      type="button"
+                      className="text-xs font-medium text-accent-deep transition-opacity hover:opacity-70"
+                    >
+                      {toolkit === "googledrive" ? "Browse files" : "Browse meetings"}
+                    </button>
+                  }
+                />
+              ) : null}
               {toolkit === "googledrive" ? (
                 <button
                   type="button"
@@ -183,6 +198,11 @@ export function ConnectorsPage() {
         <section>
           <h2 className="micro-label">Messages</h2>
           <div className="mt-3 space-y-2">{card("slack")}</div>
+        </section>
+
+        <section>
+          <h2 className="micro-label">Meetings</h2>
+          <div className="mt-3 space-y-2">{card("granola_mcp")}</div>
         </section>
 
         <section>
