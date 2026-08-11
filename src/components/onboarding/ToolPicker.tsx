@@ -1,0 +1,51 @@
+import { Check } from "lucide-react";
+
+import { TOOLS, TOOL_ORDER, type ToolId } from "@/lib/onboarding-tools";
+import { ToolBadge } from "./ToolBadge";
+
+export function ToolPicker({
+  selected,
+  onToggle,
+}: {
+  selected: Set<ToolId>;
+  onToggle: (tool: ToolId) => void;
+}) {
+  return (
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      {TOOL_ORDER.map((id) => {
+        const meta = TOOLS[id];
+        const checked = selected.has(id);
+        return (
+          <button
+            key={id}
+            type="button"
+            role="checkbox"
+            aria-checked={checked}
+            onClick={() => onToggle(id)}
+            className={
+              checked
+                ? "flex items-start gap-3 rounded-[var(--radius)] border border-accent bg-card p-4 text-left shadow-card ring-1 ring-accent transition-colors"
+                : "flex items-start gap-3 rounded-[var(--radius)] border border-border bg-card p-4 text-left shadow-card transition-colors hover:border-accent"
+            }
+          >
+            <ToolBadge tool={id} />
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-medium text-foreground">{meta.label}</span>
+              <span className="mt-1 block text-sm text-muted-foreground">{meta.blurb}</span>
+            </span>
+            <span
+              aria-hidden
+              className={
+                checked
+                  ? "flex h-5 w-5 shrink-0 items-center justify-center rounded-[4px] border border-accent bg-accent-soft text-accent-deep"
+                  : "h-5 w-5 shrink-0 rounded-[4px] border border-border"
+              }
+            >
+              {checked ? <Check size={12} /> : null}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}

@@ -154,12 +154,21 @@ export function ConnectorsPage() {
 
   return (
     <div>
-      <header className="mb-8">
-        <h1 className="page-title">Where work lives</h1>
-        <p className="mt-1.5 max-w-xl text-sm text-muted-foreground">
-          Where the record comes from. Connect a tool once — new work lands in Work, unmapped and
-          private by default.
-        </p>
+      <header className="mb-8 flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="page-title">Where work lives</h1>
+          <p className="mt-1.5 max-w-xl text-sm text-muted-foreground">
+            Where the record comes from. Connect a tool once — new work lands in Work, unmapped and
+            private by default.
+          </p>
+        </div>
+        <Link
+          to="/onboarding"
+          search={{ setup: true }}
+          className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+        >
+          Set up more tools
+        </Link>
       </header>
 
       {error ? <p className="mb-6 text-sm text-destructive">{(error as Error).message}</p> : null}

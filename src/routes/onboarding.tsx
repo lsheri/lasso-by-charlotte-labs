@@ -1,21 +1,25 @@
 import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-import { ConnectorCaptureCard } from "@/components/connectors/ConnectorCaptureCard";
+import { ProgressDots } from "@/components/onboarding/ProgressDots";
+import { SetupTools } from "@/components/onboarding/SetupTools";
+import { ToolPicker } from "@/components/onboarding/ToolPicker";
 import { Wordmark } from "@/components/layout/Wordmark";
 import { SessionHeader } from "@/components/layout/SessionHeader";
 import { EnterInviteCode } from "@/components/invites/EnterInviteCode";
-import { PasteThreadDialog } from "@/components/work/PasteThreadDialog";
-import { UploadFilesButton } from "@/components/work/UploadFilesButton";
-import { ImportFlowDialog } from "@/components/work/import/ImportFlowDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { VENDORS, VENDOR_ORDER } from "@/lib/import-vendors";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchProfile } from "@/hooks/use-profile";
 import { logEvent } from "@/lib/telemetry";
+import {
+  loadToolsUsed,
+  saveToolsUsed,
+  toolCountBucket,
+  type ToolId,
+} from "@/lib/onboarding-tools";
 
 type OrgType = "company" | "personal";
 
@@ -44,15 +48,23 @@ export const Route = createFileRoute("/onboarding")({
   ssr: false,
   validateSearch: (
     search: Record<string, unknown>,
-  ): { intent?: "company" | "personal" | "invite" | undefined } => {
+  ): {
+    intent?: "company" | "personal" | "invite" | undefined;
+    setup?: boolean | undefined;
+  } => {
     const intent = search["intent"];
-    return intent === "company" || intent === "personal" || intent === "invite" ? { intent } : {};
+    const setup = search["setup"] === true || search["setup"] === "1" ? { setup: true } : {};
+    return {
+      ...(intent === "company" || intent === "personal" || intent === "invite" ? { intent } : {}),
+      ...setup,
+    };
   },
-  beforeLoad: async () => {
+  beforeLoad: async ({ search }) => {
     const { data, error } = await supabase.auth.getUser();
     if (error || !data.user) throw redirect({ to: "/auth" });
     const profile = await fetchProfile();
-    if (profile) throw redirect({ to: "/work" });
+    // `?setup=1` is how an existing member reopens the tool setup from Connectors.
+    if (profile && !search.setup) throw redirect({ to: "/work" });
   },
   head: () => ({
     meta: [
@@ -77,51 +89,15 @@ function OnboardingPage() {
   return <OnboardingInner />;
 }
 
-function McpOnboardingSection({ onSetup }: { onSetup: () => void }) {
-  const [showWhat, setShowWhat] = useState(false);
-
-  return (
-    <section className="mt-6 rounded-[var(--radius)] border border-accent bg-accent-soft px-5 py-5">
-      <h2 className="micro-label text-accent-deep">Connect your AI — where Lasso began</h2>
-      <div className="mt-3 space-y-2 text-sm text-foreground">
-        <p>Lasso started with one idea: the work you do with AI should belong to you.</p>
-        <p>
-          MCP is a simple standard that lets your AI talk to Lasso directly — you add Lasso as a
-          connector in Claude or ChatGPT once, then just tell your AI “push this to Lasso” at the
-          end of any working session.
-        </p>
-        <p>
-          Everything it pushes lands private and unmapped, only you can see it, and you can revoke
-          the connection anytime.
-        </p>
-      </div>
-      <div className="mt-4 flex items-center gap-6">
-        <Button type="button" onClick={onSetup}>
-          Set it up
-        </Button>
-        <button
-          type="button"
-          onClick={() => setShowWhat((v) => !v)}
-          className="text-xs text-muted-foreground transition-colors hover:text-foreground"
-        >
-          What&apos;s MCP?
-        </button>
-      </div>
-      {showWhat ? (
-        <p className="mt-3 text-sm text-muted-foreground">
-          Model Context Protocol — an open standard (like USB for AI tools) that lets AI assistants
-          use other apps on your behalf, with your permission.
-        </p>
-      ) : null}
-    </section>
-  );
-}
 
 function OnboardingInner() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { intent } = Route.useSearch();
-  const [stage, setStage] = useState<"choose" | "setup" | "why" | "capture">("choose");
+  const { intent, setup } = Route.useSearch();
+  const [stage, setStage] = useState<"choose" | "setup" | "why" | "tools" | "capture">(
+    setup ? "tools" : "choose",
+  );
+  const [tools, setTools] = useState<Set<ToolId>>(new Set());
   const [orgType, setOrgType] = useState<OrgType>(intent === "personal" ? "personal" : "company");
   const [selected, setSelected] = useState<"company" | "personal" | "invite" | null>(
     intent ?? null,
@@ -132,6 +108,30 @@ function OnboardingInner() {
   const [code, setCode] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Returning members reopening setup from Connectors see their earlier picks.
+  useEffect(() => {
+    if (!setup) return;
+    void loadToolsUsed().then((saved) => setTools(new Set(saved)));
+  }, [setup]);
+
+  function toggleTool(id: ToolId) {
+    setTools((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  async function continueFromTools() {
+    const picked = [...tools];
+    const orgId = await saveToolsUsed(picked);
+    if (orgId) {
+      logEvent("onboarding.tools_selected", orgId, { count: toolCountBucket(picked.length) });
+    }
+    setStage("capture");
+  }
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -168,7 +168,7 @@ function OnboardingInner() {
 
     await queryClient.invalidateQueries();
     setPending(false);
-    setStage(orgType === "personal" && mode === "create" ? "capture" : "why");
+    setStage(orgType === "personal" && mode === "create" ? "tools" : "why");
   }
 
   function finish() {
@@ -209,7 +209,7 @@ function OnboardingInner() {
               ))}
             </div>
             <div className="mt-8 flex items-center gap-6">
-              <Button type="button" onClick={() => setStage("capture")}>
+              <Button type="button" onClick={() => setStage("tools")}>
                 Continue
               </Button>
               <button
@@ -226,73 +226,62 @@ function OnboardingInner() {
     );
   }
 
-  if (stage === "capture") {
+
+  if (stage === "tools") {
     return (
       <>
         <SessionHeader />
         <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-background px-4 py-16">
           <div className="w-full max-w-3xl">
             <Wordmark size="lg" />
+            <p className="micro-label mt-6">Step one</p>
+            <h1 className="page-title mt-2">Where do you work with AI?</h1>
+            <p className="mt-1.5 text-sm text-muted-foreground">
+              Pick everything you use. We'll only set up what you choose — and nothing comes in
+              until you say so.
+            </p>
+
+            <div className="mt-6">
+              <ToolPicker selected={tools} onToggle={toggleTool} />
+            </div>
+
+            <div className="mt-8 flex items-center gap-6">
+              <Button type="button" onClick={() => void continueFromTools()}>
+                Continue
+              </Button>
+              <button
+                type="button"
+                onClick={finish}
+                className="text-xs text-muted-foreground hover:text-foreground"
+              >
+                I'll do this later
+              </button>
+            </div>
+            <ProgressDots total={2} current={0} />
+          </div>
+        </main>
+      </>
+    );
+  }
+
+  if (stage === "capture") {
+    return (
+      <>
+        <SessionHeader />
+        <main className="flex min-h-[calc(100vh-4rem)] justify-center bg-background px-4 py-16">
+          <div className="w-full max-w-3xl">
+            <Wordmark size="lg" />
             <p className="micro-label mt-6">Step two</p>
-            <h1 className="page-title mt-2">Bring in your work</h1>
+            <h1 className="page-title mt-2">Set up your first work</h1>
             <p className="mt-1.5 text-sm text-muted-foreground">
               Start with one source. You can add the rest any time.
             </p>
 
-            <McpOnboardingSection
-              onSetup={() => navigate({ to: "/connectors", hash: "connect-your-ai" })}
-            />
-
-            <div className="mt-6 grid gap-3 sm:grid-cols-2">
-              <ConnectorCaptureCard onConnect={() => navigate({ to: "/connectors" })} />
-
-              {VENDOR_ORDER.map((id) => (
-                <ImportFlowDialog
-                  key={id}
-                  initialVendor={id}
-                  trigger={
-                    <button
-                      type="button"
-                      className="rounded-[var(--radius)] border border-border bg-card p-4 text-left shadow-card transition-colors hover:border-accent"
-                    >
-                      <p className="text-sm font-medium text-foreground">
-                        Import {VENDORS[id].label} history
-                      </p>
-                      <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
-                        {VENDORS[id].tierHint}
-                      </p>
-                    </button>
-                  }
-                />
-              ))}
-
-              <PasteThreadDialog
-                trigger={
-                  <button
-                    type="button"
-                    className="rounded-[var(--radius)] border border-border bg-card p-4 text-left shadow-card transition-colors hover:border-accent"
-                  >
-                    <p className="text-sm font-medium text-foreground">Paste a conversation</p>
-                    <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
-                      Full fidelity
-                    </p>
-                  </button>
-                }
-              />
-
-              <div className="rounded-[var(--radius)] border border-border bg-card p-4 shadow-card">
-                <p className="text-sm font-medium text-foreground">Upload files</p>
-                <div className="mt-2">
-                  <UploadFilesButton />
-                </div>
-              </div>
+            <div className="mt-6">
+              <SetupTools tools={[...tools]} />
             </div>
 
-            <p className="mt-6 text-sm text-muted-foreground">
-              Everything lands private. Nothing is visible to anyone until you map it.
-            </p>
-
-            <div className="mt-6 flex items-center gap-6">
+            <div className="mt-8 flex items-center gap-6">
               <Button type="button" onClick={finish}>
                 Go to my work
               </Button>
@@ -304,11 +293,13 @@ function OnboardingInner() {
                 I'll do this later
               </button>
             </div>
+            <ProgressDots total={2} current={1} />
           </div>
         </main>
       </>
     );
   }
+
 
   if (stage === "choose") {
     return (
