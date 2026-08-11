@@ -7,6 +7,7 @@ import { MapDialog } from "@/components/work/MapDialog";
 import { DraftDecisionsButton } from "@/components/decisions/DraftDecisionsButton";
 import { ImportFlowDialog } from "@/components/work/import/ImportFlowDialog";
 import { PasteThreadDialog } from "@/components/work/PasteThreadDialog";
+import { OpenFileAction } from "@/components/work/OpenFileAction";
 import { SuggestionChip } from "@/components/work/SuggestionChip";
 import { ThreadViewer } from "@/components/work/ThreadViewer";
 import { UploadFilesButton } from "@/components/work/UploadFilesButton";
@@ -243,6 +244,7 @@ export function WorkPage() {
                     {item.type === "ai_thread" ? (
                       <DraftDecisionsButton workItemId={item.id} />
                     ) : null}
+                    {item.content_ref ? <OpenFileAction workItemId={item.id} /> : null}
                     <RowAction onClick={() => setMapItem(item)}>Remap</RowAction>
                     <RowAction onClick={() => setDateItem(item)}>Work date</RowAction>
                     <RowAction onClick={() => void makePrivate(item)}>Make private</RowAction>
@@ -302,6 +304,7 @@ export function WorkPage() {
                           {item.type === "ai_thread" ? (
                             <DraftDecisionsButton workItemId={item.id} />
                           ) : null}
+                          {item.content_ref ? <OpenFileAction workItemId={item.id} /> : null}
                           <RowAction primary onClick={() => setMapItem(item)}>
                             Map to a task
                           </RowAction>
@@ -327,6 +330,7 @@ export function WorkPage() {
                 onOpen={openItem(item)}
                 actions={
                   <>
+                    {item.content_ref ? <OpenFileAction workItemId={item.id} /> : null}
                     <RowAction onClick={() => setDateItem(item)}>Work date</RowAction>
                     <RowAction onClick={() => void unmark(item)}>Unmark</RowAction>
                   </>
