@@ -6,7 +6,7 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { ConnectYourAiCard } from "@/components/connectors/ConnectYourAiCard";
-import { ConnectorPicker } from "@/components/connectors/ConnectorPicker";
+import { ConnectorPicker, type PickerKind } from "@/components/connectors/ConnectorPicker";
 import {
   statusLabel,
   useConnectorAccounts,
@@ -25,10 +25,20 @@ import { logEvent } from "@/lib/telemetry";
 
 const DESCRIPTIONS: Record<ConnectorToolkit, string> = {
   googledrive: "Docs, decks and sheets you've touched recently.",
+  one_drive: "Your Microsoft files, browsed folder by folder.",
+  sharepoint_graph: "Team sites and document libraries you can reach.",
   gmail: "Client threads and the decisions buried in them.",
   notion: "Working pages and notes from your workspace.",
   slack: "Channel conversations where the work gets negotiated.",
   granola_mcp: "Meeting notes and transcripts from your calls.",
+};
+
+/** Which connectors open a picker, and which picker. */
+const PICKER_KIND: Partial<Record<ConnectorToolkit, PickerKind>> = {
+  googledrive: "googledrive",
+  one_drive: "onedrive",
+  sharepoint_graph: "sharepoint",
+  granola_mcp: "granola",
 };
 
 const COMING_SOON = ["Zoom", "Teams", "ChatGPT Enterprise"];
@@ -116,15 +126,15 @@ export function ConnectorsPage() {
         actions={
           connected ? (
             <div className="flex items-center gap-4">
-              {toolkit === "googledrive" || toolkit === "granola_mcp" ? (
+              {PICKER_KIND[toolkit] ? (
                 <ConnectorPicker
-                  kind={toolkit === "googledrive" ? "googledrive" : "granola"}
+                  kind={PICKER_KIND[toolkit]!}
                   trigger={
                     <button
                       type="button"
                       className="text-xs font-medium text-accent-deep transition-opacity hover:opacity-70"
                     >
-                      {toolkit === "googledrive" ? "Browse files" : "Browse meetings"}
+                      {toolkit === "granola_mcp" ? "Browse meetings" : "Browse files"}
                     </button>
                   }
                 />
@@ -180,6 +190,8 @@ export function ConnectorsPage() {
           <h2 className="micro-label">Documents &amp; email</h2>
           <div className="mt-3 space-y-2">
             {card("googledrive")}
+            {card("one_drive")}
+            {card("sharepoint_graph")}
             {card("gmail")}
             {card("notion")}
           </div>
