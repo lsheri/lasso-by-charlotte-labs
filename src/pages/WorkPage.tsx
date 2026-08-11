@@ -139,11 +139,16 @@ export function WorkPage() {
   function renderGroup(group: ConversationGroup, variant: "mapped" | "unmapped" | "private") {
     const head = group.transcript ?? group.items[0]!;
     const rest = group.transcript ? group.attachments : group.items.slice(1);
+    const vendor = head.source_vendor ?? head.source_meta?.vendor ?? null;
     return (
       <div
         key={group.key}
         className="rounded-[var(--radius)] border border-border bg-secondary/40 p-2"
       >
+        <p className="px-1 pb-1.5 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+          Conversation · {rest.length} file{rest.length === 1 ? "" : "s"}
+          {vendor ? ` · ${vendorLabel(vendor)}` : ""}
+        </p>
         <WorkRow
           item={head}
           onOpen={openItem(head, group)}
@@ -151,7 +156,11 @@ export function WorkPage() {
           actions={rowActions(head, variant, group.items)}
         />
         {rest.length > 0 ? (
-          <div className="mt-2 space-y-2 border-l border-border pl-3">
+          <div className="relative mt-2 space-y-2 pl-4 sm:pl-6">
+            <span
+              className="absolute bottom-3 left-2 top-0 w-px bg-border sm:left-3"
+              aria-hidden
+            />
             {rest.map((child) => (
               <WorkRow
                 key={child.id}
