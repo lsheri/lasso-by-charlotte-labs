@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
@@ -18,7 +18,7 @@ import {
   disconnectConnector,
   getConnectionStatus,
   initiateConnection,
-  syncDrive,
+  getConnectorDetails,
 } from "@/lib/connectors.functions";
 import type { ConnectorToolkit } from "@/lib/connector-toolkits";
 import { logEvent } from "@/lib/telemetry";
@@ -40,7 +40,6 @@ export function ConnectorsPage() {
   const initiate = useServerFn(initiateConnection);
   const checkStatus = useServerFn(getConnectionStatus);
   const disconnect = useServerFn(disconnectConnector);
-  const runSync = useServerFn(syncDrive);
   const [busy, setBusy] = useState<string | null>(null);
   const pollTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -51,20 +50,6 @@ export function ConnectorsPage() {
 
   async function refresh() {
     await queryClient.invalidateQueries({ queryKey: ["connector-accounts"] });
-  }
-
-  async function importDrive(auto: boolean) {
-    try {
-      const result = await runSync({ data: { profile_id: profile?.id } });
-      toast.success(
-        result.imported > 0
-          ? `${result.imported} file${result.imported === 1 ? "" : "s"} imported into Work`
-          : "Nothing new to import",
-      );
-      await queryClient.invalidateQueries({ queryKey: ["work-items"] });
-    } catch (e) {
-      if (!auto) toast.error((e as Error).message);
-    }
   }
 
   async function handleConnect(toolkit: ConnectorToolkit) {
@@ -95,7 +80,6 @@ export function ConnectorsPage() {
                 auth_mode: "worker_oauth",
               });
             }
-            if (toolkit === "googledrive") await importDrive(true);
           }
         })();
       }, 3000);
@@ -128,6 +112,7 @@ export function ConnectorsPage() {
         description={DESCRIPTIONS[toolkit]}
         account={account}
         busy={busy === toolkit}
+        identity={connected ? <ConnectorIdentity toolkit={toolkit} /> : null}
         actions={
           connected ? (
             <div className="flex items-center gap-4">
@@ -144,15 +129,6 @@ export function ConnectorsPage() {
                   }
                 />
               ) : null}
-              {toolkit === "googledrive" ? (
-                <button
-                  type="button"
-                  onClick={() => void importDrive(false)}
-                  className="text-xs font-medium text-accent-deep transition-opacity hover:opacity-70"
-                >
-                  Sync now
-                </button>
-              ) : null}
               <button
                 type="button"
                 onClick={() => void handleDisconnect(toolkit)}
@@ -162,7 +138,12 @@ export function ConnectorsPage() {
               </button>
             </div>
           ) : (
-            <Button type="button" size="sm" disabled={busy === toolkit} onClick={() => void handleConnect(toolkit)}>
+            <Button
+              type="button"
+              size="sm"
+              disabled={busy === toolkit}
+              onClick={() => void handleConnect(toolkit)}
+            >
               {busy === toolkit ? "Waiting…" : "Connect"}
             </Button>
           )
@@ -224,7 +205,10 @@ export function ConnectorsPage() {
 
         <div className="rounded-[var(--radius)] border border-border bg-card px-4 py-4 shadow-card">
           <p className="text-sm text-foreground">No connector? Paste or upload always works.</p>
-          <Link to="/work" className="mt-1 inline-block text-xs font-medium text-accent-deep hover:opacity-70">
+          <Link
+            to="/work"
+            className="mt-1 inline-block text-xs font-medium text-accent-deep hover:opacity-70"
+          >
             Go to Work →
           </Link>
         </div>
@@ -239,23 +223,47 @@ function ConnectorCard({
   account,
   actions,
   busy,
+  identity,
 }: {
   name: string;
   description: string;
   account: ConnectorAccount | undefined;
   actions: React.ReactNode;
   busy: boolean;
+  identity?: React.ReactNode;
 }) {
   return (
     <div className="flex flex-wrap items-center gap-4 rounded-[var(--radius)] border border-border bg-card px-4 py-3 shadow-card">
       <div className="min-w-0 flex-1">
         <p className="text-sm font-medium text-foreground">{name}</p>
         <p className="mt-0.5 text-sm text-muted-foreground">{description}</p>
+        {identity}
       </div>
       <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
         {busy ? "Pending" : statusLabel(account)}
       </span>
       {actions}
     </div>
+  );
+}
+
+/**
+ * Which account is actually linked. Composio exposes identity for some
+ * toolkits only; when it doesn't, the card falls back to the connection date
+ * already shown in the status column.
+ */
+function ConnectorIdentity({ toolkit }: { toolkit: ConnectorToolkit }) {
+  const { data: profile } = useProfile();
+  const details = useServerFn(getConnectorDetails);
+  const { data } = useQuery({
+    queryKey: ["connector-details", toolkit, profile?.id],
+    queryFn: () => details({ data: { toolkit, profile_id: profile?.id } }),
+    staleTime: 60_000,
+  });
+  if (!data?.identity) return null;
+  return (
+    <p className="mt-0.5 truncate font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+      Connected as {data.identity}
+    </p>
   );
 }

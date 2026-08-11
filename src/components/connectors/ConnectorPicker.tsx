@@ -143,6 +143,9 @@ export function ConnectorPicker({ kind, trigger }: { kind: PickerKind; trigger: 
 
   const copy = COPY[kind];
   const items = page?.items ?? [];
+  // Folder-first: navigate into folders, then pick files inside them.
+  const folders = items.filter((i) => i.isFolder);
+  const files = items.filter((i) => !i.isFolder);
 
   return (
     <Dialog
@@ -184,7 +187,7 @@ export function ConnectorPicker({ kind, trigger }: { kind: PickerKind; trigger: 
           </Button>
         </form>
 
-        {kind === "googledrive" && !term ? (
+        {kind === "googledrive" ? (
           <div className="flex flex-wrap items-center gap-1 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
             {crumbs.map((crumb, i) => (
               <span key={`${crumb.id ?? "root"}-${i}`} className="flex items-center gap-1">
@@ -192,7 +195,11 @@ export function ConnectorPicker({ kind, trigger }: { kind: PickerKind; trigger: 
                 <button
                   type="button"
                   className="hover:text-foreground"
-                  onClick={() => setCrumbs((prev) => prev.slice(0, i + 1))}
+                  onClick={() => {
+                    setTerm("");
+                    setSearch("");
+                    setCrumbs((prev) => prev.slice(0, i + 1));
+                  }}
                 >
                   {crumb.name}
                 </button>
@@ -211,43 +218,69 @@ export function ConnectorPicker({ kind, trigger }: { kind: PickerKind; trigger: 
         ) : items.length === 0 && !page?.unsupported ? (
           <p className="text-sm text-muted-foreground">{copy.empty}</p>
         ) : (
-          <ul className="divide-y divide-border rounded-[var(--radius)] border border-border bg-card">
-            {items.map((item) => (
-              <li key={item.id} className="flex items-center gap-3 px-4 py-2.5">
-                {item.isFolder ? (
-                  <span className="w-4 text-center text-muted-foreground">▸</span>
-                ) : (
-                  <Checkbox
-                    checked={selected.has(item.id)}
-                    disabled={item.alreadyInLasso}
-                    onCheckedChange={() => toggle(item.id)}
-                    aria-label={`Select ${item.title}`}
-                  />
-                )}
-                <div className="min-w-0 flex-1">
-                  {item.isFolder ? (
-                    <button
-                      type="button"
-                      onClick={() => openFolder(item)}
-                      className="truncate text-sm font-medium text-foreground hover:text-accent-deep"
-                    >
-                      {item.title}
-                    </button>
-                  ) : (
-                    <p className="truncate text-sm text-foreground">{item.title}</p>
-                  )}
-                  {item.subtitle ? (
-                    <p className="truncate font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
-                      {item.subtitle}
-                    </p>
-                  ) : null}
-                </div>
-                <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
-                  {item.alreadyInLasso ? "In Lasso" : dateLabel(item.date)}
-                </span>
-              </li>
-            ))}
-          </ul>
+          <div className="space-y-4">
+            {kind === "googledrive" && folders.length > 0 ? (
+              <div>
+                <p className="micro-label">Folders</p>
+                <ul className="mt-2 divide-y divide-border rounded-[var(--radius)] border border-border bg-card">
+                  {folders.map((item) => (
+                    <li key={item.id}>
+                      <button
+                        type="button"
+                        onClick={() => openFolder(item)}
+                        className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-secondary/50"
+                      >
+                        <span aria-hidden className="text-base leading-none">
+                          📁
+                        </span>
+                        <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
+                          {item.title}
+                        </span>
+                        <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+                          Open
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+
+            <div>
+              {kind === "googledrive" ? <p className="micro-label">Files</p> : null}
+              {files.length === 0 ? (
+                <p className="mt-2 text-sm text-muted-foreground">
+                  {kind === "googledrive"
+                    ? "No files here — open a folder to keep browsing."
+                    : copy.empty}
+                </p>
+              ) : (
+                <ul className="mt-2 divide-y divide-border rounded-[var(--radius)] border border-border bg-card">
+                  {files.map((item) => (
+                    <li key={item.id} className="flex items-center gap-3 px-4 py-2.5">
+                      <Checkbox
+                        checked={selected.has(item.id)}
+                        disabled={item.alreadyInLasso}
+                        onCheckedChange={() => toggle(item.id)}
+                        aria-label={`Select ${item.title}`}
+                      />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm text-foreground">{item.title}</p>
+                        {item.subtitle ? (
+                          <p className="truncate font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+                            {item.subtitle}
+                          </p>
+                        ) : null}
+                      </div>
+                      <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+                        {item.alreadyInLasso ? "In Lasso" : dateLabel(item.date)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
         )}
 
         <div className="flex justify-end">
@@ -256,7 +289,9 @@ export function ConnectorPicker({ kind, trigger }: { kind: PickerKind; trigger: 
             disabled={selected.size === 0 || importing}
             onClick={() => void handleImport()}
           >
-            {importing ? "Bringing in…" : `${copy.action}${selected.size ? ` (${selected.size})` : ""}`}
+            {importing
+              ? "Bringing in…"
+              : `${copy.action}${selected.size ? ` (${selected.size})` : ""}`}
           </Button>
         </div>
       </DialogContent>

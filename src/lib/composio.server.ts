@@ -77,6 +77,17 @@ export type DriveFile = {
 
 export const DRIVE_FOLDER_MIME = "application/vnd.google-apps.folder";
 
+/** Which Google account is actually linked — verified against Drive itself. */
+export async function driveAccountIdentity(entityId: string): Promise<string | null> {
+  try {
+    const data = await run("GOOGLEDRIVE_GET_ABOUT", entityId, { fields: "user" });
+    const user = data["user"] as { emailAddress?: string; displayName?: string } | undefined;
+    return user?.emailAddress ?? user?.displayName ?? null;
+  } catch {
+    return null;
+  }
+}
+
 /** One page of a folder's contents, or of a name search across the Drive. */
 export async function browseDrive(
   entityId: string,
@@ -101,16 +112,42 @@ export async function browseDrive(
   };
 }
 
-/** Backwards-compatible flat listing used by the older "Sync now" action. */
-export async function listDriveFiles(entityId: string, limit = 20): Promise<DriveFile[]> {
-  const data = await run("GOOGLEDRIVE_LIST_FILES", entityId, {
-    q: "trashed = false",
-    fields: "files(id,name,mimeType,modifiedTime,webViewLink)",
-    orderBy: "modifiedTime desc",
-    pageSize: limit,
-  });
-  const files = (data["files"] as DriveFile[] | undefined) ?? [];
-  return Array.isArray(files) ? files.slice(0, limit) : [];
+/**
+ * Best-effort human identity for a connected account, so users can verify they
+ * linked the right one. Composio exposes this inconsistently across toolkits,
+ * so we look through the usual places and return null rather than guess.
+ */
+export function connectedAccountIdentity(account: Record<string, unknown>): string | null {
+  const pools: unknown[] = [
+    account,
+    account["data"],
+    account["params"],
+    account["metadata"],
+    (account["state"] as Record<string, unknown> | undefined)?.["val"],
+    account["state"],
+  ];
+  const keys = [
+    "email",
+    "user_email",
+    "account_email",
+    "email_address",
+    "login",
+    "username",
+    "user_name",
+    "workspace_name",
+    "team_name",
+    "account_name",
+    "name",
+  ];
+  for (const pool of pools) {
+    if (!pool || typeof pool !== "object") continue;
+    const record = pool as Record<string, unknown>;
+    for (const key of keys) {
+      const value = record[key];
+      if (typeof value === "string" && value.trim()) return value.trim();
+    }
+  }
+  return null;
 }
 
 /** Bytes as Drive serves them. Google-native docs (which have no binary form)
@@ -118,7 +155,12 @@ export async function listDriveFiles(entityId: string, limit = 20): Promise<Driv
 export async function fetchDriveFileBytes(
   entityId: string,
   fileId: string,
-): Promise<{ bytes: Uint8Array; mimeType: string; name: string; webViewLink: string | null } | null> {
+): Promise<{
+  bytes: Uint8Array;
+  mimeType: string;
+  name: string;
+  webViewLink: string | null;
+} | null> {
   const data = await run("GOOGLEDRIVE_PARSE_FILE", entityId, { file_id: fileId });
   const file = data["file"] as { s3url?: string; mimetype?: string; name?: string } | undefined;
   if (!file?.s3url) return null;

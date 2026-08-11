@@ -34,12 +34,14 @@ export function WorkRow({
   onOpen,
   chips,
   nested = false,
+  lead,
 }: {
   item: WorkItemRow;
   actions: React.ReactNode;
   onOpen?: (() => void) | undefined;
   chips?: React.ReactNode;
   nested?: boolean;
+  lead?: React.ReactNode;
 }) {
   const Icon = ICONS[item.type];
   const mapping = item.work_item_tasks[0]?.tasks ?? null;
@@ -54,6 +56,7 @@ export function WorkRow({
           : "flex items-center gap-4 rounded-[var(--radius)] border border-border bg-card px-4 py-3 shadow-card"
       }
     >
+      {lead ? <div className="shrink-0">{lead}</div> : null}
       <Icon className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
       <div className="min-w-0 flex-1">
         {onOpen ? (
