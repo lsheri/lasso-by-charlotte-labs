@@ -448,153 +448,138 @@ export function WorkPage() {
           </div>
         </div>
       ) : (
-        <div className="space-y-10">
-          <Section
-            label="Mapped · Visible to your coach through tasks"
-            entries={groupConversations(mapped)}
+        <div className="space-y-8">
+          <WorkSection
+            label="Needs mapping"
+            hint="Private by default until you map it — nothing is shared with your coach yet."
+            count={unmappedEntries.length}
+            defaultOpen
           >
-            {(entry) =>
-              isConversationGroup(entry) ? (
-                renderGroup(entry, "mapped")
-              ) : (
-                <WorkRow
-                  key={entry.id}
-                  item={entry}
-                  onOpen={openItem(entry)}
-                  chips={<ConversationChips item={entry} />}
-                  actions={rowActions(entry, "mapped")}
-                />
-              )
-            }
-          </Section>
-
-          <section className={suggesting ? "animate-pulse" : undefined}>
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <h2 className="micro-label">Unmapped · Private by default until you map it</h2>
-              {!isCoach && unmapped.length > 0 ? (
-                selectMode ? (
-                  <div className="flex items-center gap-3">
-                    <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
-                      <Checkbox
-                        checked={allChosen}
-                        onCheckedChange={() =>
-                          setChosen(allChosen ? new Set() : new Set(selectable))
-                        }
-                        aria-label="Select all visible unmapped items"
-                      />
-                      Select all visible
-                    </label>
+            {unmapped.length === 0 ? (
+              <p className="rounded-[var(--radius)] border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
+                Nothing waiting. Every piece of work here has a home.
+              </p>
+            ) : (
+              <div className={suggesting ? "animate-pulse space-y-2" : "space-y-2"}>
+                {active.length === 0 ? (
+                  <div className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius)] border border-dashed border-border bg-accent-soft/50 px-4 py-3">
+                    <p className="text-sm text-accent-deep">Let Lasso suggest where these go</p>
                     <button
                       type="button"
-                      disabled={chosen.size === 0}
-                      onClick={() => setConfirmRemove(true)}
-                      className="text-xs font-medium text-destructive transition-opacity hover:opacity-70 disabled:opacity-40"
+                      disabled={suggesting}
+                      onClick={() => void handleSuggest()}
+                      className="text-xs font-medium text-accent-deep transition-opacity hover:opacity-70 disabled:opacity-50"
                     >
-                      Remove from Lasso{chosen.size ? ` (${chosen.size})` : ""}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={leaveSelectMode}
-                      className="text-xs text-muted-foreground transition-colors hover:text-foreground"
-                    >
-                      Cancel
+                      {suggesting ? "Thinking…" : "Suggest mapping"}
                     </button>
                   </div>
                 ) : (
-                  <button
-                    type="button"
-                    onClick={() => setSelectMode(true)}
-                    className="text-xs text-muted-foreground transition-colors hover:text-foreground"
-                  >
-                    Select
-                  </button>
-                )
-              ) : null}
-            </div>
-            {unmapped.length > 0 && active.length === 0 ? (
-              <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius)] border border-dashed border-border bg-accent-soft/50 px-4 py-3">
-                <p className="text-sm text-accent-deep">✨ Let Lasso suggest where these go</p>
-                <button
-                  type="button"
-                  disabled={suggesting}
-                  onClick={() => void handleSuggest()}
-                  className="text-xs font-medium text-accent-deep transition-opacity hover:opacity-70 disabled:opacity-50"
-                >
-                  {suggesting ? "Thinking…" : "Suggest mapping"}
-                </button>
-              </div>
-            ) : null}
-            {active.length > 0 ? (
-              <p className="mt-1 text-sm text-muted-foreground">
-                Suggestions are drafts — nothing is shared until you accept.
-              </p>
-            ) : null}
-            {highConfidence.length >= 3 ? (
-              <button
-                type="button"
-                disabled={acceptPending}
-                onClick={() => {
-                  void (async () => {
-                    for (const suggestion of highConfidence) {
-                      await acceptSuggestion(suggestion);
-                    }
-                  })();
-                }}
-                className="mt-2 text-xs font-medium text-accent-deep transition-opacity hover:opacity-70 disabled:opacity-50"
-              >
-                Accept all high-confidence ({highConfidence.length})
-              </button>
-            ) : null}
-            <div className="mt-3 space-y-2">
-              {unmapped.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Nothing here yet.</p>
-              ) : (
-                groupConversations(unmapped).map((entry) =>
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <p className="text-xs text-muted-foreground">
+                      Suggestions are drafts — nothing is shared until you accept.
+                    </p>
+                    {highConfidence.length >= 3 ? (
+                      <button
+                        type="button"
+                        disabled={acceptPending}
+                        onClick={() => {
+                          void (async () => {
+                            for (const suggestion of highConfidence) {
+                              await acceptSuggestion(suggestion);
+                            }
+                          })();
+                        }}
+                        className="text-xs font-medium text-accent-deep transition-opacity hover:opacity-70 disabled:opacity-50"
+                      >
+                        Accept all high-confidence ({highConfidence.length})
+                      </button>
+                    ) : null}
+                  </div>
+                )}
+
+                {unmappedEntries.map((entry) =>
                   isConversationGroup(entry) ? (
                     renderGroup(entry, "unmapped")
                   ) : (
-                    <div key={entry.id}>
+                    <WorkRow
+                      key={entry.id}
+                      item={entry}
+                      lead={
+                        selectMode && !isCoach ? (
+                          <Checkbox
+                            checked={chosen.has(entry.id)}
+                            onCheckedChange={() => toggleChosen(entry.id)}
+                            aria-label={`Select ${entry.title}`}
+                          />
+                        ) : undefined
+                      }
+                      onOpen={openItem(entry)}
+                      chips={<ConversationChips item={entry} />}
+                      actions={rowActions(entry, "unmapped")}
+                      footer={suggestionFor(entry)}
+                    />
+                  ),
+                )}
+              </div>
+            )}
+          </WorkSection>
+
+          <WorkSection
+            label="Mapped"
+            hint="Visible to your coach through the tasks you mapped it to."
+            count={mapped.length}
+          >
+            {mapped.length === 0 ? (
+              <p className="rounded-[var(--radius)] border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
+                Nothing mapped yet. Map a piece of work to a task and it shows up here.
+              </p>
+            ) : (
+              mappedByEngagement.map((bucket) => (
+                <EngagementFold
+                  key={bucket.id ?? "unfiled"}
+                  label={bucket.label}
+                  hue={engagementHue(bucket.id)}
+                  count={bucket.items.length}
+                >
+                  {groupConversations(bucket.items).map((entry) =>
+                    isConversationGroup(entry) ? (
+                      renderGroup(entry, "mapped")
+                    ) : (
                       <WorkRow
+                        key={entry.id}
                         item={entry}
-                        lead={
-                          selectMode && !isCoach ? (
-                            <Checkbox
-                              checked={chosen.has(entry.id)}
-                              onCheckedChange={() => toggleChosen(entry.id)}
-                              aria-label={`Select ${entry.title}`}
-                            />
-                          ) : undefined
-                        }
                         onOpen={openItem(entry)}
                         chips={<ConversationChips item={entry} />}
-                        actions={rowActions(entry, "unmapped")}
+                        actions={rowActions(entry, "mapped")}
                       />
-                      {suggestionFor(entry)}
-                    </div>
-                  ),
-                )
-              )}
-            </div>
-          </section>
+                    ),
+                  )}
+                </EngagementFold>
+              ))
+            )}
+          </WorkSection>
 
-          <Section
-            label="Marked private · Never visible to anyone"
-            entries={groupConversations(priv)}
-          >
-            {(entry) =>
-              isConversationGroup(entry) ? (
-                renderGroup(entry, "private")
-              ) : (
-                <WorkRow
-                  key={entry.id}
-                  item={entry}
-                  onOpen={openItem(entry)}
-                  chips={<ConversationChips item={entry} />}
-                  actions={rowActions(entry, "private")}
-                />
+          <WorkSection label="Private" hint="Never visible to anyone but you." count={priv.length}>
+            {priv.length === 0 ? (
+              <p className="rounded-[var(--radius)] border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
+                Nothing marked private. Anything you set aside stays here, for your eyes only.
+              </p>
+            ) : (
+              groupConversations(priv).map((entry) =>
+                isConversationGroup(entry) ? (
+                  renderGroup(entry, "private")
+                ) : (
+                  <WorkRow
+                    key={entry.id}
+                    item={entry}
+                    onOpen={openItem(entry)}
+                    chips={<ConversationChips item={entry} />}
+                    actions={rowActions(entry, "private")}
+                  />
+                ),
               )
-            }
-          </Section>
+            )}
+          </WorkSection>
         </div>
       )}
 
@@ -663,30 +648,5 @@ export function WorkPage() {
         }}
       />
     </div>
-  );
-}
-
-function Section({
-  label,
-  entries,
-  children,
-}: {
-  label: string;
-  entries: (WorkItemRow | ConversationGroup)[];
-  children: (entry: WorkItemRow | ConversationGroup) => React.ReactNode;
-}) {
-  return (
-    <section>
-      <h2 className="micro-label">{label}</h2>
-      <div className="mt-3 space-y-2">
-        {entries.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Nothing here yet.</p>
-        ) : (
-          entries.map((entry) => (
-            <div key={isConversationGroup(entry) ? entry.key : entry.id}>{children(entry)}</div>
-          ))
-        )}
-      </div>
-    </section>
   );
 }
