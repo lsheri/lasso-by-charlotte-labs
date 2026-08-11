@@ -1,0 +1,323 @@
+import { useState } from "react";
+import { toast } from "sonner";
+import { MoreHorizontal } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { InviteDialog } from "@/components/invites/InviteDialog";
+import { useMemberAction, useMembers } from "@/hooks/use-members";
+import { ROLE_LABELS, useProfile } from "@/hooks/use-profile";
+import { maskCode, type InviteRow, type MemberRow } from "@/lib/members-shared";
+
+function dateLabel(iso: string | null): string {
+  if (!iso) return "—";
+  return new Date(iso).toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+function Badge({ children, tone = "muted" }: { children: React.ReactNode; tone?: "muted" | "accent" }) {
+  return (
+    <span
+      className={
+        tone === "accent"
+          ? "rounded-full bg-accent-soft px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-accent-deep"
+          : "rounded-full bg-muted px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground"
+      }
+    >
+      {children}
+    </span>
+  );
+}
+
+export function MembersPage() {
+  const { data: profile } = useProfile();
+  const { data, isLoading, error } = useMembers(profile?.id);
+  const action = useMemberAction(profile?.id);
+  const [confirm, setConfirm] = useState<MemberRow | null>(null);
+  const [roleTarget, setRoleTarget] = useState<MemberRow | null>(null);
+  const [nextRole, setNextRole] = useState<"em" | "lead">("em");
+  const [showHistory, setShowHistory] = useState(false);
+
+  const isAdmin = data?.viewer_role === "admin";
+
+  function run(input: Parameters<typeof action.mutate>[0], success: string) {
+    action.mutate(input, {
+      onSuccess: () => toast.success(success),
+      onError: (e) => toast.error((e as Error).message),
+    });
+  }
+
+  const invites = data?.invites ?? [];
+  const pending = invites.filter(
+    (i) => !i.used_at && !i.revoked_at && new Date(i.expires_at) > new Date(),
+  );
+  const history = invites.filter((i) => !pending.includes(i));
+
+  return (
+    <div>
+      <header className="mb-8">
+        <h1 className="page-title">Members</h1>
+        <p className="mt-1.5 text-sm text-muted-foreground">
+          Who belongs to this workspace, and the invites still outstanding.
+        </p>
+      </header>
+
+      {isLoading ? <p className="text-sm text-muted-foreground">Loading…</p> : null}
+      {error ? (
+        <p className="text-sm text-muted-foreground">
+          You don&apos;t have access to the member console.
+        </p>
+      ) : null}
+
+      {data ? (
+        <div className="space-y-10">
+          <section>
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="micro-label">People</h2>
+              {isAdmin ? (
+                <InviteDialog
+                  trigger={
+                    <Button type="button" size="sm" variant="outline">
+                      Invite someone
+                    </Button>
+                  }
+                />
+              ) : null}
+            </div>
+            <ul className="mt-3 space-y-1.5">
+              {data.members.map((member) => (
+                <li
+                  key={member.id}
+                  className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-[var(--radius)] border border-border bg-card px-4 py-3 shadow-card"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-foreground">
+                      {member.display_name}
+                    </p>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {member.email ?? "No login email"} · joined {dateLabel(member.created_at)}
+                    </p>
+                  </div>
+                  <Badge>{ROLE_LABELS[member.role] ?? member.role}</Badge>
+                  {member.deactivated_at ? (
+                    <Badge>Deactivated {dateLabel(member.deactivated_at)}</Badge>
+                  ) : (
+                    <Badge tone="accent">Active</Badge>
+                  )}
+                  {isAdmin ? (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger
+                        aria-label={`Actions for ${member.display_name}`}
+                        className="rounded-md p-1.5 text-foreground/60 transition-colors hover:bg-secondary"
+                      >
+                        <MoreHorizontal className="h-4 w-4" />
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        {member.deactivated_at ? (
+                          <DropdownMenuItem
+                            onSelect={() =>
+                              run(
+                                { kind: "reactivate", member_id: member.id },
+                                `${member.display_name} can access this workspace again`,
+                              )
+                            }
+                          >
+                            Reactivate
+                          </DropdownMenuItem>
+                        ) : (
+                          <DropdownMenuItem onSelect={() => setConfirm(member)}>
+                            Deactivate
+                          </DropdownMenuItem>
+                        )}
+                        <DropdownMenuItem
+                          onSelect={() => {
+                            setRoleTarget(member);
+                            setNextRole(member.role === "lead" ? "lead" : "em");
+                          }}
+                        >
+                          Change role
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+            {!isAdmin ? (
+              <p className="mt-2 text-xs text-muted-foreground">
+                Leads can see the list. Only an admin can change it.
+              </p>
+            ) : null}
+          </section>
+
+          <section>
+            <h2 className="micro-label">Pending invites</h2>
+            {pending.length === 0 ? (
+              <p className="mt-2 text-sm text-muted-foreground">Nothing outstanding.</p>
+            ) : (
+              <ul className="mt-3 space-y-1.5">
+                {pending.map((invite) => (
+                  <InviteLine
+                    key={invite.code}
+                    invite={invite}
+                    {...(isAdmin
+                      ? {
+                          onRevoke: () =>
+                            run({ kind: "revoke", code: invite.code }, "Invite revoked"),
+                        }
+                      : {})}
+                  />
+                ))}
+              </ul>
+            )}
+          </section>
+
+          {history.length > 0 ? (
+            <section>
+              <button
+                type="button"
+                onClick={() => setShowHistory((v) => !v)}
+                className="micro-label transition-colors hover:text-foreground"
+              >
+                {showHistory ? "Hide" : "Show"} invite history ({history.length})
+              </button>
+              {showHistory ? (
+                <ul className="mt-3 space-y-1.5 opacity-55">
+                  {history.map((invite) => (
+                    <InviteLine key={invite.code} invite={invite} />
+                  ))}
+                </ul>
+              ) : null}
+            </section>
+          ) : null}
+        </div>
+      ) : null}
+
+      <AlertDialog open={Boolean(confirm)} onOpenChange={(open) => !open && setConfirm(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Deactivate {confirm?.display_name}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              They will no longer be able to access this workspace. Nothing is deleted, and this
+              can be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (confirm) run({ kind: "deactivate", member_id: confirm.id }, "Member deactivated");
+                setConfirm(null);
+              }}
+            >
+              Deactivate
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <Dialog open={Boolean(roleTarget)} onOpenChange={(open) => !open && setRoleTarget(null)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="page-title">Change role</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            {roleTarget?.display_name} can be a member or a lead. Admin and coach roles are set
+            through an invite.
+          </p>
+          <RadioGroup
+            value={nextRole}
+            onValueChange={(value) => setNextRole(value as "em" | "lead")}
+            className="gap-2"
+          >
+            <label className="flex items-center gap-2 text-sm text-foreground">
+              <RadioGroupItem value="em" /> Engagement manager
+            </label>
+            <label className="flex items-center gap-2 text-sm text-foreground">
+              <RadioGroupItem value="lead" /> Lead
+            </label>
+          </RadioGroup>
+          <Button
+            type="button"
+            onClick={() => {
+              if (roleTarget)
+                run({ kind: "role", member_id: roleTarget.id, role: nextRole }, "Role updated");
+              setRoleTarget(null);
+            }}
+          >
+            Save role
+          </Button>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+function InviteLine({ invite, onRevoke }: { invite: InviteRow; onRevoke?: () => void }) {
+  const expired = new Date(invite.expires_at) < new Date();
+  const status = invite.revoked_at
+    ? "Revoked"
+    : invite.used_at
+      ? "Accepted"
+      : expired
+        ? "Expired"
+        : `Expires ${dateLabel(invite.expires_at)}`;
+
+  return (
+    <li className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-[var(--radius)] border border-border bg-card px-4 py-2.5">
+      <span className="font-mono text-xs text-foreground">{maskCode(invite.code)}</span>
+      <Badge>{ROLE_LABELS[invite.invited_role] ?? invite.invited_role}</Badge>
+      <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
+        {invite.email ?? "Open link"} · {status}
+      </span>
+      {onRevoke ? (
+        <>
+          <button
+            type="button"
+            onClick={() => {
+              void navigator.clipboard.writeText(
+                `${window.location.origin}/join?code=${invite.code}`,
+              );
+              toast.success("Invite link copied");
+            }}
+            className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+          >
+            Copy link
+          </button>
+          <button
+            type="button"
+            onClick={onRevoke}
+            className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+          >
+            Revoke
+          </button>
+        </>
+      ) : null}
+    </li>
+  );
+}
