@@ -18,7 +18,7 @@ import {
   disconnectConnector,
   getConnectionStatus,
   initiateConnection,
-  syncDrive,
+  getConnectorDetails,
 } from "@/lib/connectors.functions";
 import type { ConnectorToolkit } from "@/lib/connector-toolkits";
 import { logEvent } from "@/lib/telemetry";
@@ -40,7 +40,6 @@ export function ConnectorsPage() {
   const initiate = useServerFn(initiateConnection);
   const checkStatus = useServerFn(getConnectionStatus);
   const disconnect = useServerFn(disconnectConnector);
-  const runSync = useServerFn(syncDrive);
   const [busy, setBusy] = useState<string | null>(null);
   const pollTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -51,20 +50,6 @@ export function ConnectorsPage() {
 
   async function refresh() {
     await queryClient.invalidateQueries({ queryKey: ["connector-accounts"] });
-  }
-
-  async function importDrive(auto: boolean) {
-    try {
-      const result = await runSync({ data: { profile_id: profile?.id } });
-      toast.success(
-        result.imported > 0
-          ? `${result.imported} file${result.imported === 1 ? "" : "s"} imported into Work`
-          : "Nothing new to import",
-      );
-      await queryClient.invalidateQueries({ queryKey: ["work-items"] });
-    } catch (e) {
-      if (!auto) toast.error((e as Error).message);
-    }
   }
 
   async function handleConnect(toolkit: ConnectorToolkit) {
@@ -95,7 +80,6 @@ export function ConnectorsPage() {
                 auth_mode: "worker_oauth",
               });
             }
-            if (toolkit === "googledrive") await importDrive(true);
           }
         })();
       }, 3000);
@@ -143,15 +127,6 @@ export function ConnectorsPage() {
                     </button>
                   }
                 />
-              ) : null}
-              {toolkit === "googledrive" ? (
-                <button
-                  type="button"
-                  onClick={() => void importDrive(false)}
-                  className="text-xs font-medium text-accent-deep transition-opacity hover:opacity-70"
-                >
-                  Sync now
-                </button>
               ) : null}
               <button
                 type="button"
