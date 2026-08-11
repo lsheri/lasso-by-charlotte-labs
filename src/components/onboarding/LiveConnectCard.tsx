@@ -1,0 +1,110 @@
+import { useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
+
+import { ConnectorPicker } from "@/components/connectors/ConnectorPicker";
+import { Button } from "@/components/ui/button";
+import { useConnectorAccounts, TOOLKIT_LABELS } from "@/hooks/use-connector-accounts";
+import { useProfile } from "@/hooks/use-profile";
+import { getConnectionStatus, initiateConnection } from "@/lib/connectors.functions";
+import { logEvent } from "@/lib/telemetry";
+import { TOOLS, type ToolId } from "@/lib/onboarding-tools";
+import { ToolBadge } from "./ToolBadge";
+
+/**
+ * Real OAuth in the first session. On success the folder-first picker opens
+ * inline — the user picks files themselves. Nothing arrives unselected.
+ */
+export function LiveConnectCard({ tool }: { tool: Extract<ToolId, "googledrive" | "granola"> }) {
+  const toolkit = tool === "googledrive" ? "googledrive" : "granola_mcp";
+  const meta = TOOLS[tool];
+  const { data: profile } = useProfile();
+  const { data: accounts } = useConnectorAccounts();
+  const queryClient = useQueryClient();
+  const initiate = useServerFn(initiateConnection);
+  const checkStatus = useServerFn(getConnectionStatus);
+  const [busy, setBusy] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const timer = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const connected = accounts?.[toolkit]?.status === "connected";
+
+  useEffect(
+    () => () => {
+      if (timer.current) clearInterval(timer.current);
+    },
+    [],
+  );
+
+  async function connect() {
+    setBusy(true);
+    try {
+      const { redirect_url } = await initiate({ data: { toolkit, profile_id: profile?.id } });
+      if (redirect_url) window.open(redirect_url, "_blank", "noopener");
+      const started = Date.now();
+      timer.current = setInterval(() => {
+        void (async () => {
+          if (Date.now() - started > 120_000) {
+            if (timer.current) clearInterval(timer.current);
+            setBusy(false);
+            return;
+          }
+          const result = await checkStatus({ data: { toolkit } }).catch(() => null);
+          if (result?.status === "connected") {
+            if (timer.current) clearInterval(timer.current);
+            setBusy(false);
+            await queryClient.invalidateQueries({ queryKey: ["connector-accounts"] });
+            toast.success(`${TOOLKIT_LABELS[toolkit]} connected`);
+            if (profile) {
+              logEvent("connector.enabled", profile.org_id, { toolkit, auth_mode: "worker_oauth" });
+            }
+            if (tool === "googledrive") setPickerOpen(true);
+          }
+        })();
+      }, 3000);
+    } catch (e) {
+      setBusy(false);
+      toast.error((e as Error).message);
+    }
+  }
+
+  return (
+    <div className="rounded-[var(--radius)] border border-border bg-card px-5 py-5 shadow-card">
+      <div className="flex items-start gap-3">
+        <ToolBadge tool={tool} />
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-medium text-foreground">{meta.label}</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {tool === "googledrive"
+              ? "Connect once, then browse your folders and tick only the files you want."
+              : "Connect your Granola account so your meeting notes can come across."}
+          </p>
+        </div>
+      </div>
+
+      {!connected ? (
+        <div className="mt-4">
+          <Button type="button" disabled={busy} onClick={() => void connect()}>
+            {busy ? "Waiting for you to approve…" : `Connect ${meta.label}`}
+          </Button>
+        </div>
+      ) : tool === "googledrive" ? (
+        <div className="mt-4">
+          <ConnectorPicker
+            kind="googledrive"
+            open={pickerOpen}
+            onOpenChange={setPickerOpen}
+            trigger={<Button type="button">Pick files to bring in</Button>}
+          />
+        </div>
+      ) : (
+        <p className="mt-4 rounded-[var(--radius)] border border-border bg-secondary/60 px-4 py-3 text-sm text-muted-foreground">
+          Connected — meeting browsing is coming soon. Granola doesn&apos;t expose a list of your
+          meetings to us yet, so there&apos;s nothing to pick from in here today. We&apos;ll turn it
+          on the moment it does.
+        </p>
+      )}
+    </div>
+  );
+}
