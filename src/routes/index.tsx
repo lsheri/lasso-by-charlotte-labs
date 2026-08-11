@@ -1,7 +1,7 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useEffect } from "react";
 
-import { Wordmark } from "@/components/layout/Wordmark";
+import { PublicHeader } from "@/components/layout/PublicHeader";
 import { Button } from "@/components/ui/button";
 import { fetchProfile } from "@/hooks/use-profile";
 import { supabase } from "@/integrations/supabase/client";
@@ -98,32 +98,10 @@ function LandingPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-4 px-6 py-6 md:px-10">
-        <Wordmark />
-        <nav className="flex items-center gap-5">
-          <Link
-            to="/why"
-            className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
-          >
-            Why Lasso
-          </Link>
-          <Link
-            to="/trust"
-            className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
-          >
-            Trust &amp; data
-          </Link>
-          <Link
-            to="/auth"
-            className="font-mono text-[10px] uppercase tracking-[0.08em] text-foreground transition-colors hover:text-accent-deep"
-          >
-            Sign in
-          </Link>
-        </nav>
-      </header>
+      <PublicHeader current="/" />
 
       <main className="mx-auto max-w-5xl px-6 pb-20 md:px-10">
-        <section className="border-t border-border pt-14 md:pt-20">
+        <section className="pt-14 md:pt-20">
           <p className="micro-label">Lasso by Charlotte Labs</p>
           <h1 className="mt-4 max-w-3xl text-3xl font-semibold tracking-tight text-foreground md:text-5xl">
             Your AI work, on the record.
