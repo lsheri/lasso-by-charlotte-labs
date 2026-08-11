@@ -101,6 +101,12 @@ function AuthPage() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-background px-4 py-16">
       <div className="w-full max-w-sm">
+        <Link
+          to="/"
+          className="mb-4 inline-block font-mono text-[11px] tracking-[0.24em] text-muted-foreground transition-colors hover:text-foreground"
+        >
+          LASSO
+        </Link>
         <Wordmark size="lg" />
 
         <div className="mt-6 rounded-[var(--radius)] border border-border bg-card p-6 shadow-card">

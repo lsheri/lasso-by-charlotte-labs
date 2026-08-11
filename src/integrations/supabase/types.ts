@@ -1100,7 +1100,6 @@ export type Database = {
       my_profile_ids: { Args: never; Returns: string[] }
       my_role: { Args: never; Returns: Database["public"]["Enums"]["app_role"] }
       reactivate_member: { Args: { p_profile: string }; Returns: undefined }
-      revoke_invite: { Args: { p_invite: string }; Returns: undefined }
       set_member_role: {
         Args: {
           p_profile: string

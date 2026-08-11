@@ -3,6 +3,7 @@ import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
 import { Wordmark } from "@/components/layout/Wordmark";
+import { SessionHeader } from "@/components/layout/SessionHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -169,43 +170,46 @@ function JoinPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-background px-4 py-16">
-      <div className="w-full max-w-md">
-        <Wordmark size="lg" />
-        <div className="mt-8 rounded-[var(--radius)] border border-border bg-card px-6 py-6 shadow-card">
-          <InviteContext code={code} eng={eng} />
-          <h1 className="page-title">Accept your invite</h1>
-          <p className="mt-1.5 text-sm text-muted-foreground">
-            {eng
-              ? "You'll land straight in the engagement you were invited to."
-              : "Tell us how your name should appear to your team."}
-          </p>
-
-          <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="join-name" className="micro-label">
-                Your name
-              </Label>
-              <Input
-                id="join-name"
-                required
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                placeholder="Alex Rivera"
-              />
-            </div>
-            <Button type="submit" disabled={pending || !displayName.trim()}>
-              {pending ? "Joining…" : "Join"}
-            </Button>
-          </form>
-
-          {error ? (
-            <p className="mt-4 rounded-[var(--radius)] border border-border bg-secondary px-4 py-3 text-sm text-foreground">
-              {error}
+    <>
+      <SessionHeader />
+      <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-background px-4 py-16">
+        <div className="w-full max-w-md">
+          <Wordmark size="lg" />
+          <div className="mt-8 rounded-[var(--radius)] border border-border bg-card px-6 py-6 shadow-card">
+            <InviteContext code={code} eng={eng} />
+            <h1 className="page-title">Accept your invite</h1>
+            <p className="mt-1.5 text-sm text-muted-foreground">
+              {eng
+                ? "You'll land straight in the engagement you were invited to."
+                : "Tell us how your name should appear to your team."}
             </p>
-          ) : null}
+
+            <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="join-name" className="micro-label">
+                  Your name
+                </Label>
+                <Input
+                  id="join-name"
+                  required
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  placeholder="Alex Rivera"
+                />
+              </div>
+              <Button type="submit" disabled={pending || !displayName.trim()}>
+                {pending ? "Joining…" : "Join"}
+              </Button>
+            </form>
+
+            {error ? (
+              <p className="mt-4 rounded-[var(--radius)] border border-border bg-secondary px-4 py-3 text-sm text-foreground">
+                {error}
+              </p>
+            ) : null}
+          </div>
         </div>
-      </div>
-    </main>
+      </main>
+    </>
   );
 }

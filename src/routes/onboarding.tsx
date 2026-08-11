@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { ConnectorCaptureCard } from "@/components/connectors/ConnectorCaptureCard";
 import { Wordmark } from "@/components/layout/Wordmark";
+import { SessionHeader } from "@/components/layout/SessionHeader";
 import { EnterInviteCode } from "@/components/invites/EnterInviteCode";
 import { PasteThreadDialog } from "@/components/work/PasteThreadDialog";
 import { UploadFilesButton } from "@/components/work/UploadFilesButton";
@@ -122,7 +123,9 @@ function OnboardingInner() {
   const { intent } = Route.useSearch();
   const [stage, setStage] = useState<"choose" | "setup" | "why" | "capture">("choose");
   const [orgType, setOrgType] = useState<OrgType>(intent === "personal" ? "personal" : "company");
-  const [selected, setSelected] = useState<"company" | "personal" | "invite" | null>(intent ?? null);
+  const [selected, setSelected] = useState<"company" | "personal" | "invite" | null>(
+    intent ?? null,
+  );
   const [mode, setMode] = useState<"create" | "join">("create");
   const [displayName, setDisplayName] = useState("");
   const [orgName, setOrgName] = useState("");
@@ -174,180 +177,211 @@ function OnboardingInner() {
 
   if (stage === "why") {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-background px-4 py-16">
-        <div className="w-full max-w-3xl">
-          <Wordmark size="lg" />
-          <p className="micro-label mt-6">Why Lasso</p>
-          <h1 className="page-title mt-2">The point of all this</h1>
-          <div className="mt-6 grid gap-4 md:grid-cols-3">
-            {[
-              [
-                "See your own thinking",
-                "your decisions, drafted from your real work, confirmed by you.",
-              ],
-              [
-                "Grow on purpose",
-                "coaching that finally has the full picture, without anyone reading your raw files.",
-              ],
-              [
-                "Own your record",
-                "private by default. You choose what's shared, piece by piece. It stays yours.",
-              ],
-            ].map(([title, body]) => (
-              <div
-                key={title}
-                className="rounded-[var(--radius)] border border-border bg-card p-5 shadow-card"
+      <>
+        <SessionHeader />
+        <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-background px-4 py-16">
+          <div className="w-full max-w-3xl">
+            <Wordmark size="lg" />
+            <p className="micro-label mt-6">Why Lasso</p>
+            <h1 className="page-title mt-2">The point of all this</h1>
+            <div className="mt-6 grid gap-4 md:grid-cols-3">
+              {[
+                [
+                  "See your own thinking",
+                  "your decisions, drafted from your real work, confirmed by you.",
+                ],
+                [
+                  "Grow on purpose",
+                  "coaching that finally has the full picture, without anyone reading your raw files.",
+                ],
+                [
+                  "Own your record",
+                  "private by default. You choose what's shared, piece by piece. It stays yours.",
+                ],
+              ].map(([title, body]) => (
+                <div
+                  key={title}
+                  className="rounded-[var(--radius)] border border-border bg-card p-5 shadow-card"
+                >
+                  <p className="text-sm font-medium text-foreground">{title}</p>
+                  <p className="mt-2 text-sm text-muted-foreground">{body}</p>
+                </div>
+              ))}
+            </div>
+            <div className="mt-8 flex items-center gap-6">
+              <Button type="button" onClick={() => setStage("capture")}>
+                Continue
+              </Button>
+              <button
+                type="button"
+                onClick={finish}
+                className="text-xs text-muted-foreground hover:text-foreground"
               >
-                <p className="text-sm font-medium text-foreground">{title}</p>
-                <p className="mt-2 text-sm text-muted-foreground">{body}</p>
-              </div>
-            ))}
+                I'll do this later
+              </button>
+            </div>
           </div>
-          <div className="mt-8 flex items-center gap-6">
-            <Button type="button" onClick={() => setStage("capture")}>
-              Continue
-            </Button>
-            <button
-              type="button"
-              onClick={finish}
-              className="text-xs text-muted-foreground hover:text-foreground"
-            >
-              I'll do this later
-            </button>
-          </div>
-        </div>
-      </main>
+        </main>
+      </>
     );
   }
 
   if (stage === "capture") {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-background px-4 py-16">
-        <div className="w-full max-w-3xl">
-          <Wordmark size="lg" />
-          <p className="micro-label mt-6">Step two</p>
-          <h1 className="page-title mt-2">Bring in your work</h1>
-          <p className="mt-1.5 text-sm text-muted-foreground">
-            Start with one source. You can add the rest any time.
-          </p>
+      <>
+        <SessionHeader />
+        <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-background px-4 py-16">
+          <div className="w-full max-w-3xl">
+            <Wordmark size="lg" />
+            <p className="micro-label mt-6">Step two</p>
+            <h1 className="page-title mt-2">Bring in your work</h1>
+            <p className="mt-1.5 text-sm text-muted-foreground">
+              Start with one source. You can add the rest any time.
+            </p>
 
-          <McpOnboardingSection
-            onSetup={() => navigate({ to: "/connectors", hash: "connect-your-ai" })}
-          />
+            <McpOnboardingSection
+              onSetup={() => navigate({ to: "/connectors", hash: "connect-your-ai" })}
+            />
 
-          <div className="mt-6 grid gap-3 sm:grid-cols-2">
-            <ConnectorCaptureCard onConnect={() => navigate({ to: "/connectors" })} />
+            <div className="mt-6 grid gap-3 sm:grid-cols-2">
+              <ConnectorCaptureCard onConnect={() => navigate({ to: "/connectors" })} />
 
-            {VENDOR_ORDER.map((id) => (
-              <ImportFlowDialog
-                key={id}
-                initialVendor={id}
+              {VENDOR_ORDER.map((id) => (
+                <ImportFlowDialog
+                  key={id}
+                  initialVendor={id}
+                  trigger={
+                    <button
+                      type="button"
+                      className="rounded-[var(--radius)] border border-border bg-card p-4 text-left shadow-card transition-colors hover:border-accent"
+                    >
+                      <p className="text-sm font-medium text-foreground">
+                        Import {VENDORS[id].label} history
+                      </p>
+                      <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+                        {VENDORS[id].tierHint}
+                      </p>
+                    </button>
+                  }
+                />
+              ))}
+
+              <PasteThreadDialog
                 trigger={
                   <button
                     type="button"
                     className="rounded-[var(--radius)] border border-border bg-card p-4 text-left shadow-card transition-colors hover:border-accent"
                   >
-                    <p className="text-sm font-medium text-foreground">
-                      Import {VENDORS[id].label} history
-                    </p>
+                    <p className="text-sm font-medium text-foreground">Paste a conversation</p>
                     <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
-                      {VENDORS[id].tierHint}
+                      Full fidelity
                     </p>
                   </button>
                 }
               />
-            ))}
 
-            <PasteThreadDialog
-              trigger={
-                <button
-                  type="button"
-                  className="rounded-[var(--radius)] border border-border bg-card p-4 text-left shadow-card transition-colors hover:border-accent"
-                >
-                  <p className="text-sm font-medium text-foreground">Paste a conversation</p>
-                  <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
-                    Full fidelity
-                  </p>
-                </button>
-              }
-            />
-
-            <div className="rounded-[var(--radius)] border border-border bg-card p-4 shadow-card">
-              <p className="text-sm font-medium text-foreground">Upload files</p>
-              <div className="mt-2">
-                <UploadFilesButton />
+              <div className="rounded-[var(--radius)] border border-border bg-card p-4 shadow-card">
+                <p className="text-sm font-medium text-foreground">Upload files</p>
+                <div className="mt-2">
+                  <UploadFilesButton />
+                </div>
               </div>
             </div>
-          </div>
 
-          <p className="mt-6 text-sm text-muted-foreground">
-            Everything lands private. Nothing is visible to anyone until you map it.
-          </p>
+            <p className="mt-6 text-sm text-muted-foreground">
+              Everything lands private. Nothing is visible to anyone until you map it.
+            </p>
 
-          <div className="mt-6 flex items-center gap-6">
-            <Button type="button" onClick={finish}>
-              Go to my work
-            </Button>
-            <button
-              type="button"
-              onClick={finish}
-              className="text-xs text-muted-foreground hover:text-foreground"
-            >
-              I'll do this later
-            </button>
+            <div className="mt-6 flex items-center gap-6">
+              <Button type="button" onClick={finish}>
+                Go to my work
+              </Button>
+              <button
+                type="button"
+                onClick={finish}
+                className="text-xs text-muted-foreground hover:text-foreground"
+              >
+                I'll do this later
+              </button>
+            </div>
           </div>
-        </div>
-      </main>
+        </main>
+      </>
     );
   }
 
   if (stage === "choose") {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-background px-4 py-16">
-        <div className="w-full max-w-3xl">
-          <Wordmark size="lg" />
-          <p className="micro-label mt-6">Welcome</p>
-          <h1 className="page-title mt-2">Who is this for?</h1>
-          <p className="mt-1.5 text-sm text-muted-foreground">
-            You can change this later. It only decides who owns the workspace.
-          </p>
+      <>
+        <SessionHeader />
+        <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-background px-4 py-16">
+          <div className="w-full max-w-3xl">
+            <Wordmark size="lg" />
+            <p className="micro-label mt-6">Welcome</p>
+            <h1 className="page-title mt-2">Who is this for?</h1>
+            <p className="mt-1.5 text-sm text-muted-foreground">
+              You can change this later. It only decides who owns the workspace.
+            </p>
 
-          <div className="mt-6 grid gap-3 md:grid-cols-3">
-            {(
-              [
+            <div className="mt-6 grid gap-3 md:grid-cols-3">
+              {(
                 [
-                  "company",
-                  "For my company",
-                  "Your organization owns the tenancy. Each person's work stays private to them.",
-                ],
-                [
-                  "personal",
-                  "Just for me",
-                  "Your work, your record. You own everything here. Invite a coach whenever you're ready.",
-                ],
-              ] as const
-            ).map(([value, title, body]) => (
+                  [
+                    "company",
+                    "For my company",
+                    "Your organization owns the tenancy. Each person's work stays private to them.",
+                  ],
+                  [
+                    "personal",
+                    "Just for me",
+                    "Your work, your record. You own everything here. Invite a coach whenever you're ready.",
+                  ],
+                ] as const
+              ).map(([value, title, body]) => (
+                <div
+                  key={value}
+                  className={
+                    selected === value
+                      ? "flex flex-col rounded-[var(--radius)] border border-accent bg-card p-5 shadow-card ring-1 ring-accent"
+                      : "flex flex-col rounded-[var(--radius)] border border-border bg-card p-5 shadow-card"
+                  }
+                >
+                  <p className="text-sm font-medium text-foreground">{title}</p>
+                  <p className="mt-2 flex-1 text-sm text-muted-foreground">{body}</p>
+                  <Button
+                    type="button"
+                    className="mt-4"
+                    onClick={() => {
+                      setSelected(value);
+                      setOrgType(value);
+                      setStage("setup");
+                    }}
+                  >
+                    Continue
+                  </Button>
+                  <Link
+                    to="/trust"
+                    className="mt-3 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+                  >
+                    How your data works →
+                  </Link>
+                </div>
+              ))}
+
               <div
-                key={value}
                 className={
-                  selected === value
+                  selected === "invite"
                     ? "flex flex-col rounded-[var(--radius)] border border-accent bg-card p-5 shadow-card ring-1 ring-accent"
                     : "flex flex-col rounded-[var(--radius)] border border-border bg-card p-5 shadow-card"
                 }
               >
-                <p className="text-sm font-medium text-foreground">{title}</p>
-                <p className="mt-2 flex-1 text-sm text-muted-foreground">{body}</p>
-                <Button
-                  type="button"
-                  className="mt-4"
-                  onClick={() => {
-                    setSelected(value);
-                    setOrgType(value);
-                    setStage("setup");
-                  }}
-                >
-                  Continue
-                </Button>
+                <p className="text-sm font-medium text-foreground">I have an invite</p>
+                <p className="mt-2 flex-1 text-sm text-muted-foreground">
+                  Someone already set up a workspace for you. Paste the code or link they sent.
+                </p>
+                <div className="mt-4">
+                  <EnterInviteCode label="Invite code or link" />
+                </div>
                 <Link
                   to="/trust"
                   className="mt-3 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
@@ -355,93 +389,76 @@ function OnboardingInner() {
                   How your data works →
                 </Link>
               </div>
-            ))}
-
-            <div
-              className={
-                selected === "invite"
-                  ? "flex flex-col rounded-[var(--radius)] border border-accent bg-card p-5 shadow-card ring-1 ring-accent"
-                  : "flex flex-col rounded-[var(--radius)] border border-border bg-card p-5 shadow-card"
-              }
-            >
-              <p className="text-sm font-medium text-foreground">I have an invite</p>
-              <p className="mt-2 flex-1 text-sm text-muted-foreground">
-                Someone already set up a workspace for you. Paste the code or link they sent.
-              </p>
-              <div className="mt-4">
-                <EnterInviteCode label="Invite code or link" />
-              </div>
-              <Link
-                to="/trust"
-                className="mt-3 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
-              >
-                How your data works →
-              </Link>
             </div>
           </div>
-        </div>
-      </main>
+        </main>
+      </>
     );
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-background px-4 py-16">
-      <div className="w-full max-w-md">
-        <Wordmark size="lg" />
+    <>
+      <SessionHeader />
+      <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-background px-4 py-16">
+        <div className="w-full max-w-md">
+          <Wordmark size="lg" />
 
-        <div className="mt-6 rounded-[var(--radius)] border border-border bg-card p-6 shadow-card">
-          <p className="micro-label">{orgType === "personal" ? "Just for me" : "For my company"}</p>
-          <h1 className="page-title mt-2">Set up your workspace</h1>
-          <p className="mt-1.5 text-sm text-muted-foreground">
-            {orgType === "personal"
-              ? "One detail and you're in. You can change it later."
-              : "Two details and you're in. You can change them later."}
-          </p>
+          <div className="mt-6 rounded-[var(--radius)] border border-border bg-card p-6 shadow-card">
+            <p className="micro-label">
+              {orgType === "personal" ? "Just for me" : "For my company"}
+            </p>
+            <h1 className="page-title mt-2">Set up your workspace</h1>
+            <p className="mt-1.5 text-sm text-muted-foreground">
+              {orgType === "personal"
+                ? "One detail and you're in. You can change it later."
+                : "Two details and you're in. You can change them later."}
+            </p>
 
-          <form onSubmit={handleSubmit} className="mt-6 space-y-5">
-            <div className="space-y-1.5">
-              <Label htmlFor="display-name" className="micro-label">
-                Display name
-              </Label>
-              <Input
-                id="display-name"
-                required
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                placeholder="Jordan Reyes"
-              />
-            </div>
-
-            {orgType === "company" ? (
+            <form onSubmit={handleSubmit} className="mt-6 space-y-5">
               <div className="space-y-1.5">
-                <Label htmlFor="org-name" className="micro-label">
-                  Workspace name
+                <Label htmlFor="display-name" className="micro-label">
+                  Display name
                 </Label>
                 <Input
-                  id="org-name"
+                  id="display-name"
                   required
-                  value={orgName}
-                  onChange={(e) => setOrgName(e.target.value)}
-                  placeholder="Charlotte Labs"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  placeholder="Jordan Reyes"
                 />
               </div>
-            ) : null}
 
-            {error ? <p className="text-sm text-destructive">{error}</p> : null}
+              {orgType === "company" ? (
+                <div className="space-y-1.5">
+                  <Label htmlFor="org-name" className="micro-label">
+                    Workspace name
+                  </Label>
+                  <Input
+                    id="org-name"
+                    required
+                    value={orgName}
+                    onChange={(e) => setOrgName(e.target.value)}
+                    placeholder="Charlotte Labs"
+                  />
+                </div>
+              ) : null}
 
-            <Button type="submit" className="w-full" disabled={pending}>
-              {pending ? "Setting up…" : "Create workspace"}
-            </Button>
-            <button
-              type="button"
-              onClick={() => setStage("choose")}
-              className="text-xs text-muted-foreground transition-colors hover:text-foreground"
-            >
-              ← Back
-            </button>
-          </form>
+              {error ? <p className="text-sm text-destructive">{error}</p> : null}
+
+              <Button type="submit" className="w-full" disabled={pending}>
+                {pending ? "Setting up…" : "Create workspace"}
+              </Button>
+              <button
+                type="button"
+                onClick={() => setStage("choose")}
+                className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+              >
+                ← Back
+              </button>
+            </form>
+          </div>
         </div>
-      </div>
-    </main>
+      </main>
+    </>
   );
 }
