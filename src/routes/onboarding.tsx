@@ -2,20 +2,24 @@ import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-ro
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
-import { ConnectorCaptureCard } from "@/components/connectors/ConnectorCaptureCard";
+import { ProgressDots } from "@/components/onboarding/ProgressDots";
+import { SetupTools } from "@/components/onboarding/SetupTools";
+import { ToolPicker } from "@/components/onboarding/ToolPicker";
 import { Wordmark } from "@/components/layout/Wordmark";
 import { SessionHeader } from "@/components/layout/SessionHeader";
 import { EnterInviteCode } from "@/components/invites/EnterInviteCode";
-import { PasteThreadDialog } from "@/components/work/PasteThreadDialog";
-import { UploadFilesButton } from "@/components/work/UploadFilesButton";
-import { ImportFlowDialog } from "@/components/work/import/ImportFlowDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { VENDORS, VENDOR_ORDER } from "@/lib/import-vendors";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchProfile } from "@/hooks/use-profile";
 import { logEvent } from "@/lib/telemetry";
+import {
+  loadToolsUsed,
+  saveToolsUsed,
+  toolCountBucket,
+  type ToolId,
+} from "@/lib/onboarding-tools";
 
 type OrgType = "company" | "personal";
 
@@ -44,15 +48,23 @@ export const Route = createFileRoute("/onboarding")({
   ssr: false,
   validateSearch: (
     search: Record<string, unknown>,
-  ): { intent?: "company" | "personal" | "invite" | undefined } => {
+  ): {
+    intent?: "company" | "personal" | "invite" | undefined;
+    setup?: boolean | undefined;
+  } => {
     const intent = search["intent"];
-    return intent === "company" || intent === "personal" || intent === "invite" ? { intent } : {};
+    const setup = search["setup"] === true || search["setup"] === "1" ? { setup: true } : {};
+    return {
+      ...(intent === "company" || intent === "personal" || intent === "invite" ? { intent } : {}),
+      ...setup,
+    };
   },
-  beforeLoad: async () => {
+  beforeLoad: async ({ search }) => {
     const { data, error } = await supabase.auth.getUser();
     if (error || !data.user) throw redirect({ to: "/auth" });
     const profile = await fetchProfile();
-    if (profile) throw redirect({ to: "/work" });
+    // `?setup=1` is how an existing member reopens the tool setup from Connectors.
+    if (profile && !search.setup) throw redirect({ to: "/work" });
   },
   head: () => ({
     meta: [
