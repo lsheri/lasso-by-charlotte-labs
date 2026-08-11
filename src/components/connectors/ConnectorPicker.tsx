@@ -53,13 +53,29 @@ function dateLabel(iso: string | null): string {
   });
 }
 
-export function ConnectorPicker({ kind, trigger }: { kind: PickerKind; trigger: React.ReactNode }) {
+export function ConnectorPicker({
+  kind,
+  trigger,
+  open: openProp,
+  onOpenChange,
+}: {
+  kind: PickerKind;
+  trigger?: React.ReactNode;
+  /** Controlled mode: onboarding opens the picker itself right after connect. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+}) {
   const { data: profile } = useProfile();
   const queryClient = useQueryClient();
   const browse = useServerFn(kind === "googledrive" ? browseDriveFiles : browseGranolaMeetings);
   const bring = useServerFn(kind === "googledrive" ? importDriveFiles : importGranolaMeetings);
 
-  const [open, setOpen] = useState(false);
+  const [openState, setOpenState] = useState(false);
+  const open = openProp ?? openState;
+  const setOpen = (next: boolean) => {
+    setOpenState(next);
+    onOpenChange?.(next);
+  };
   const [page, setPage] = useState<PickerPage | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
