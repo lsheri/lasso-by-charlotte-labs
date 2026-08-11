@@ -16,11 +16,23 @@ import { WorkDateDialog } from "@/components/work/WorkDateDialog";
 import { RowAction, WorkRow } from "@/components/work/WorkRow";
 import { ConversationChips } from "@/components/work/ConversationChips";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useProfile } from "@/hooks/use-profile";
 import { useWorkItems } from "@/hooks/use-work-items";
 import { supabase } from "@/integrations/supabase/client";
 import type { MappingSuggestion } from "@/lib/mapping-shared";
 import { suggestMappings } from "@/lib/mapping.functions";
+import { removeWorkItems } from "@/lib/work-bulk.functions";
 import { logEvent } from "@/lib/telemetry";
 import {
   groupConversations,
@@ -34,6 +46,7 @@ export function WorkPage() {
   const { data, isLoading, error } = useWorkItems();
   const queryClient = useQueryClient();
   const runSuggest = useServerFn(suggestMappings);
+  const runRemove = useServerFn(removeWorkItems);
   const [mapItem, setMapItem] = useState<WorkItemRow | null>(null);
   const [mapGroup, setMapGroup] = useState<WorkItemRow[] | null>(null);
   const [threadItem, setThreadItem] = useState<WorkItemRow | null>(null);
@@ -43,6 +56,10 @@ export function WorkPage() {
   const [dismissed, setDismissed] = useState<string[]>([]);
   const [suggesting, setSuggesting] = useState(false);
   const [acceptPending, setAcceptPending] = useState(false);
+  const [selectMode, setSelectMode] = useState(false);
+  const [chosen, setChosen] = useState<Set<string>>(new Set());
+  const [confirmRemove, setConfirmRemove] = useState(false);
+  const [removing, setRemoving] = useState(false);
 
   const all = data?.items ?? [];
   const mappingError = data?.mappingError ?? null;
@@ -251,6 +268,46 @@ export function WorkPage() {
     );
   }
 
+  const isCoach = profile?.role === "coach";
+  const selectable = unmapped.map((i) => i.id);
+  const allChosen = selectable.length > 0 && selectable.every((id) => chosen.has(id));
+
+  function toggleChosen(id: string) {
+    setChosen((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function leaveSelectMode() {
+    setSelectMode(false);
+    setChosen(new Set());
+  }
+
+  async function handleRemove() {
+    setRemoving(true);
+    setActionError(null);
+    try {
+      const result = await runRemove({
+        data: { profile_id: profile?.id, ids: Array.from(chosen) },
+      });
+      toast.success(
+        result.removed > 0
+          ? `${result.removed} item${result.removed === 1 ? "" : "s"} removed from Lasso`
+          : "Nothing was removed",
+      );
+      setConfirmRemove(false);
+      leaveSelectMode();
+      await queryClient.invalidateQueries({ queryKey: ["work-items"] });
+    } catch (e) {
+      setActionError((e as Error).message);
+    } finally {
+      setRemoving(false);
+    }
+  }
+
   return (
     <div>
       <header className="mb-8 flex flex-wrap items-start justify-between gap-4">
@@ -338,7 +395,48 @@ export function WorkPage() {
           </Section>
 
           <section className={suggesting ? "animate-pulse" : undefined}>
-            <h2 className="micro-label">Unmapped · Private by default until you map it</h2>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h2 className="micro-label">Unmapped · Private by default until you map it</h2>
+              {!isCoach && unmapped.length > 0 ? (
+                selectMode ? (
+                  <div className="flex items-center gap-3">
+                    <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
+                      <Checkbox
+                        checked={allChosen}
+                        onCheckedChange={() =>
+                          setChosen(allChosen ? new Set() : new Set(selectable))
+                        }
+                        aria-label="Select all visible unmapped items"
+                      />
+                      Select all visible
+                    </label>
+                    <button
+                      type="button"
+                      disabled={chosen.size === 0}
+                      onClick={() => setConfirmRemove(true)}
+                      className="text-xs font-medium text-destructive transition-opacity hover:opacity-70 disabled:opacity-40"
+                    >
+                      Remove from Lasso{chosen.size ? ` (${chosen.size})` : ""}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={leaveSelectMode}
+                      className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setSelectMode(true)}
+                    className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+                  >
+                    Select
+                  </button>
+                )
+              ) : null}
+            </div>
             {unmapped.length > 0 && active.length === 0 ? (
               <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius)] border border-dashed border-border bg-accent-soft/50 px-4 py-3">
                 <p className="text-sm text-accent-deep">✨ Let Lasso suggest where these go</p>
@@ -384,6 +482,15 @@ export function WorkPage() {
                     <div key={entry.id}>
                       <WorkRow
                         item={entry}
+                        lead={
+                          selectMode && !isCoach ? (
+                            <Checkbox
+                              checked={chosen.has(entry.id)}
+                              onCheckedChange={() => toggleChosen(entry.id)}
+                              aria-label={`Select ${entry.title}`}
+                            />
+                          ) : undefined
+                        }
                         onOpen={openItem(entry)}
                         chips={<ConversationChips item={entry} />}
                         actions={rowActions(entry, "unmapped")}
@@ -435,6 +542,31 @@ export function WorkPage() {
           if (!next) setThreadItem(null);
         }}
       />
+      <AlertDialog open={confirmRemove} onOpenChange={setConfirmRemove}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Remove {chosen.size} item{chosen.size === 1 ? "" : "s"}?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This deletes them from Lasso only — the originals in Drive/your AI apps are untouched.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={removing}>Keep them</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={removing}
+              onClick={(e) => {
+                e.preventDefault();
+                void handleRemove();
+              }}
+            >
+              {removing ? "Removing…" : "Remove from Lasso"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <WorkDateDialog
         item={dateItem}
         open={dateItem !== null}
