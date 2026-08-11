@@ -1,6 +1,6 @@
 import { CircleDashed, Lock } from "lucide-react";
 
-import { EngagementChip, TypeIcon } from "@/components/work/TypeIcon";
+import { EngagementChip, TypeIcon, VendorChip } from "@/components/work/TypeIcon";
 import { engagementHue, workIdentityLabel } from "@/lib/work-identity";
 import { effectiveWorkDate, formatDate, sourceLabel, type WorkItemRow } from "@/lib/work-types";
 
@@ -107,8 +107,15 @@ export function WorkRow({
             ) : null}
             {chips}
           </div>
-          <p className="mt-0.5 truncate font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
-            {workIdentityLabel(item)} · {sourceLabel(item.source)} · {formatDate(dateIso)}
+          <p className="mt-0.5 flex flex-wrap items-center gap-x-1.5 truncate font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+            <span>{workIdentityLabel(item)}</span>
+            <span aria-hidden>·</span>
+            <VendorChip
+              vendor={item.source_vendor ?? sourceLabel(item.source)}
+              label={sourceLabel(item.source)}
+            />
+            <span aria-hidden>·</span>
+            <span>{formatDate(dateIso)}</span>
             {link ? (
               <>
                 {" · "}
