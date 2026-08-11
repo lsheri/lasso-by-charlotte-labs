@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { PickerPage } from "@/lib/connector-picker-shared";
+import { isBrowsableToolkit, type BrowsableToolkit } from "@/lib/connector-toolkits";
 
 type BrowseInput = {
   profile_id?: string | undefined;
@@ -15,6 +16,9 @@ type ImportInput = {
   ids: string[];
 };
 
+type ToolkitBrowseInput = BrowseInput & { toolkit: BrowsableToolkit };
+type ToolkitImportInput = ImportInput & { toolkit: BrowsableToolkit };
+
 function validateBrowse(input: BrowseInput | undefined): BrowseInput {
   return input ?? {};
 }
@@ -26,103 +30,62 @@ function validateImport(input: ImportInput): ImportInput {
   return { profile_id: input.profile_id, ids: input.ids.slice(0, 100) };
 }
 
-export const browseDriveFiles = createServerFn({ method: "POST" })
+function validateToolkitBrowse(input: ToolkitBrowseInput | undefined): ToolkitBrowseInput {
+  if (!input || !isBrowsableToolkit(input.toolkit)) throw new Error("Unsupported connector");
+  return { ...validateBrowse(input), toolkit: input.toolkit };
+}
+
+function validateToolkitImport(input: ToolkitImportInput): ToolkitImportInput {
+  if (!input || !isBrowsableToolkit(input.toolkit)) throw new Error("Unsupported connector");
+  return { ...validateImport(input), toolkit: input.toolkit };
+}
+
+/** Folder-first listing for every browsable file connector. */
+export const browseConnectorItems = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(validateBrowse)
+  .inputValidator(validateToolkitBrowse)
   .handler(async ({ data, context }): Promise<PickerPage> => {
     const { supabase, userId } = context;
     const { resolveProfile } = await import("@/lib/profile-resolve");
-    const { requireConnected, importedDriveIds } = await import("@/lib/connector-import.server");
-    const { browseDrive, DRIVE_FOLDER_MIME } = await import("@/lib/composio.server");
+    const { requireConnected, importedToolkitIds } = await import("@/lib/connector-import.server");
+    const { browseConnector } = await import("@/lib/connector-browse.server");
 
     const profile = await resolveProfile(supabase, userId, data.profile_id);
     if (!profile) throw new Response("Forbidden", { status: 403 });
-    await requireConnected(supabase, profile.id, "googledrive");
+    await requireConnected(supabase, profile.id, data.toolkit);
 
-    const page = await browseDrive(profile.id, {
+    const seen = await importedToolkitIds(supabase, profile.id, data.toolkit);
+    return browseConnector(supabase, {
+      toolkit: data.toolkit,
+      profileId: profile.id,
       folderId: data.folder_id ?? null,
       search: data.search ?? null,
       pageToken: data.page_token ?? null,
+      seen,
     });
-    const seen = await importedDriveIds(supabase, profile.id);
-
-    return {
-      items: page.files.map((file) => ({
-        id: file.id ?? "",
-        title: file.name ?? "Untitled",
-        subtitle: file.mimeType ?? null,
-        date: file.modifiedTime ?? null,
-        isFolder: file.mimeType === DRIVE_FOLDER_MIME,
-        alreadyInLasso: Boolean(file.id && seen.has(file.id)),
-      })),
-      nextPageToken: page.nextPageToken,
-      unsupported: null,
-    };
   });
 
-export const importDriveFiles = createServerFn({ method: "POST" })
+/** Import exactly what the user ticked — never anything else. */
+export const importConnectorItems = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(validateImport)
+  .inputValidator(validateToolkitImport)
   .handler(async ({ data, context }): Promise<{ imported: number; skipped: number }> => {
     const { supabase, userId } = context;
     const { resolveProfile } = await import("@/lib/profile-resolve");
-    const { requireConnected, importedDriveIds, storeFile, captureEvents } = await import(
-      "@/lib/connector-import.server"
-    );
-    const { fetchDriveFileBytes } = await import("@/lib/composio.server");
-    const { driveWorkType } = await import("@/lib/connector-toolkits");
+    const { requireConnected } = await import("@/lib/connector-import.server");
+    const { importConnectorFiles } = await import("@/lib/connector-browse.server");
 
     const profile = await resolveProfile(supabase, userId, data.profile_id);
     if (!profile) throw new Response("Forbidden", { status: 403 });
-    await requireConnected(supabase, profile.id, "googledrive");
+    await requireConnected(supabase, profile.id, data.toolkit);
 
-    const seen = await importedDriveIds(supabase, profile.id);
-    let imported = 0;
-    let skipped = 0;
-
-    for (const fileId of data.ids) {
-      if (seen.has(fileId)) {
-        skipped += 1;
-        continue;
-      }
-      const file = await fetchDriveFileBytes(profile.id, fileId);
-      if (!file) {
-        skipped += 1;
-        continue;
-      }
-      const name = file.name;
-      const path = await storeFile(userId, name, file.bytes, file.mimeType);
-      const insert = await supabase.from("work_items").insert({
-        owner_id: profile.id,
-        org_id: profile.org_id,
-        type: driveWorkType(file.mimeType),
-        source: "connector:googledrive",
-        source_vendor: "gdrive",
-        title: name,
-        visibility: "unmapped",
-        content_ref: path,
-        content_fidelity: "verbatim",
-        ts_precision: "capture",
-        source_meta: { filename: name, mime_type: file.mimeType },
-        meta: {
-          drive_file_id: fileId,
-          mime_type: file.mimeType,
-          web_view_link: file.webViewLink,
-        },
-      });
-      if (insert.error) throw new Error(insert.error.message);
-      seen.add(fileId);
-      imported += 1;
-    }
-
-    await captureEvents(supabase, {
+    return importConnectorFiles(supabase, {
+      toolkit: data.toolkit,
+      profileId: profile.id,
       orgId: profile.org_id,
       userId,
-      toolkit: "googledrive",
-      source: "gdrive",
-      imported,
+      ids: data.ids,
     });
-    return { imported, skipped };
   });
 
 export const browseGranolaMeetings = createServerFn({ method: "POST" })
