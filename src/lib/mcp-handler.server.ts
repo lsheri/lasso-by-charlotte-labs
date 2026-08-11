@@ -89,9 +89,80 @@ async function logPush(owner: Owner, dims: Record<string, string>): Promise<void
 
 const TOOLS = [
   {
+    name: "push_conversation",
+    description:
+      "When the user says 'Push to Lasso', 'send to Lasso', or similar: call push_conversation EXACTLY ONCE with the ENTIRE conversation — every message, verbatim, unabridged — plus EVERY artifact, canvas, file, or report created during the conversation as attachments. Never summarize the transcript. Never split one conversation across multiple calls or use push_document for conversation artifacts.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        title: {
+          type: "string",
+          description:
+            "The conversation title EXACTLY as shown in the source app, verbatim. Never invent or rephrase.",
+        },
+        vendor: {
+          type: "string",
+          enum: [...CONVERSATION_VENDORS],
+          description: "The app this conversation happened in.",
+        },
+        model: {
+          type: "string",
+          description:
+            "The model used, as named in the source app (e.g. 'Claude Opus 4.5', 'GPT-5').",
+        },
+        orig_conversation_id: {
+          type: "string",
+          description:
+            "Stable ID for the source thread; all pushes for the same conversation MUST reuse it.",
+        },
+        messages: {
+          type: "array",
+          maxItems: MAX_TURNS,
+          description:
+            "Every message in order, complete and verbatim. Include timestamps ONLY if actually known from the source; NEVER invent timestamps.",
+          items: {
+            type: "object",
+            properties: {
+              role: { type: "string", enum: ["user", "assistant", "tool"] },
+              content: { type: "string", description: "VERBATIM, unabridged message content." },
+              timestamp: { type: "string", description: "ISO 8601, only if actually known." },
+            },
+            required: ["role", "content"],
+          },
+        },
+        attachments: {
+          type: "array",
+          maxItems: MAX_ATTACHMENTS,
+          description:
+            "Every artifact, canvas, file, page, or report created during the conversation.",
+          items: {
+            type: "object",
+            properties: {
+              kind: { type: "string", enum: [...ATTACHMENT_KINDS] },
+              title: { type: "string", description: "Title verbatim as shown in the source app." },
+              content: { type: "string", description: "Verbatim source or text." },
+              language: { type: "string" },
+            },
+            required: ["kind", "title", "content"],
+          },
+        },
+        meta: {
+          type: "object",
+          properties: {
+            skills_used: { type: "array", items: { type: "string" } },
+            thinking_level: { type: "string", enum: ["none", "medium", "high", "extended"] },
+            research_mode: { type: "string", enum: ["none", "web_search", "deep_research"] },
+            notes: { type: "string" },
+          },
+        },
+      },
+      required: ["title", "vendor", "orig_conversation_id", "messages"],
+    },
+  },
+  {
     name: "push_thread",
     description:
-      "Save an AI conversation to the user's Lasso workspace. It lands private and unmapped; the user organizes it later. Pass the conversation turns VERBATIM — do not summarize, do not omit turns.",
+      "Prefer push_conversation for anything conversation-shaped; use this only for a standalone transcript with no artifacts and no source conversation to group it with.",
     inputSchema: {
       type: "object",
       properties: {
@@ -121,7 +192,7 @@ const TOOLS = [
   {
     name: "push_document",
     description:
-      "Save a document or artifact produced in this session to the user's Lasso workspace (private, unmapped). Pass full exact content.",
+      "Prefer push_conversation for anything conversation-shaped; use this only for a standalone document with no source conversation.",
     inputSchema: {
       type: "object",
       properties: {
