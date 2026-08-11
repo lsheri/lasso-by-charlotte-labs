@@ -195,7 +195,11 @@ export function ConnectorPicker({ kind, trigger }: { kind: PickerKind; trigger: 
                 <button
                   type="button"
                   className="hover:text-foreground"
-                  onClick={() => setCrumbs((prev) => prev.slice(0, i + 1))}
+                  onClick={() => {
+                    setTerm("");
+                    setSearch("");
+                    setCrumbs((prev) => prev.slice(0, i + 1));
+                  }}
                 >
                   {crumb.name}
                 </button>

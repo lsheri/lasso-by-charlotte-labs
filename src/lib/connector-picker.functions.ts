@@ -139,12 +139,12 @@ export const browseGranolaMeetings = createServerFn({ method: "POST" })
     await requireConnected(supabase, profile.id, "granola_mcp");
 
     const { meetings, tool } = await listGranolaMeetings(profile.id);
-    if (!tool) {
+    if (!tool || meetings.length === 0) {
       return {
         items: [],
         nextPageToken: null,
         unsupported:
-          "Granola is connected, but it isn't publishing a meeting list yet. Paste or upload still works.",
+          "Granola is connected but meeting browsing isn't available yet — this connection doesn't return a meeting list. Paste or upload still works.",
       };
     }
     const seen = await importedGranolaIds(supabase, profile.id);
