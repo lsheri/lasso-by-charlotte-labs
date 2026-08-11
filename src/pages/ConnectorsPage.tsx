@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ConnectYourAiCard } from "@/components/connectors/ConnectYourAiCard";
 import { ConnectorPicker, type PickerKind } from "@/components/connectors/ConnectorPicker";
+import { GranolaKeyCard } from "@/components/connectors/GranolaKeyCard";
 import {
   statusLabel,
   useConnectorAccounts,
@@ -204,7 +205,9 @@ export function ConnectorsPage() {
 
         <section>
           <h2 className="micro-label">Meetings</h2>
-          <div className="mt-3 space-y-2">{card("granola_mcp")}</div>
+          <div className="mt-3 space-y-2">
+            <GranolaKeyCard />
+          </div>
         </section>
 
         <section>
