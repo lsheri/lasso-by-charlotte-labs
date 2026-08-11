@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 
 import { Button } from "@/components/ui/button";
+import { PublicHeader } from "@/components/layout/PublicHeader";
 import { Wordmark } from "@/components/layout/Wordmark";
 
 export const Route = createFileRoute("/why")({
@@ -52,27 +53,7 @@ const SECTIONS: { heading: string; body: string[] }[] = [
 function WhyPage() {
   return (
     <div className="min-h-screen bg-background">
-      <nav className="border-b border-border">
-        <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-6 py-5 md:px-10">
-          <Link to="/" className="font-mono text-sm tracking-[0.24em] text-foreground">
-            LASSO
-          </Link>
-          <div className="flex items-center gap-5">
-            <Link
-              to="/trust"
-              className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
-            >
-              Trust &amp; data
-            </Link>
-            <Link
-              to="/auth"
-              className="font-mono text-[11px] uppercase tracking-[0.08em] text-accent-deep transition-colors hover:text-foreground"
-            >
-              Sign in
-            </Link>
-          </div>
-        </div>
-      </nav>
+      <PublicHeader current="/why" />
 
       <main className="mx-auto max-w-3xl px-6 py-16 md:px-10 md:py-24">
         <div className="max-w-xs">
