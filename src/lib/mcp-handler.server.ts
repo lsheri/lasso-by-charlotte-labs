@@ -3,12 +3,19 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { sha256Hex } from "@/lib/connectors-shared";
 import { workTypeForFile } from "@/lib/work-types";
 import { recordEvent } from "@/lib/telemetry.server";
+import {
+  ATTACHMENT_KINDS,
+  CONVERSATION_VENDORS,
+  attachmentBucket,
+  type SourceMeta,
+} from "@/lib/conversation-shared";
 
 const PROTOCOL_VERSION = "2025-06-18";
 const ACCEPTED_PROTOCOLS = new Set([PROTOCOL_VERSION, "2025-03-26", "2024-11-05"]);
 const MAX_TURNS = 500;
 const MAX_THREAD_BYTES = 2 * 1024 * 1024;
 const MAX_DOC_BYTES = 5 * 1024 * 1024;
+const MAX_ATTACHMENTS = 40;
 
 export const CORS_HEADERS: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
