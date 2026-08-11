@@ -128,7 +128,7 @@ export const getConnectorDetails = createServerFn({ method: "POST" })
   .inputValidator(validateToolkit)
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const { composio, connectedAccountIdentity, granolaTools } = await import(
+    const { composio, connectedAccountIdentity, driveAccountIdentity, granolaTools } = await import(
       "@/lib/composio.server"
     );
 
@@ -147,11 +147,17 @@ export const getConnectorDetails = createServerFn({ method: "POST" })
     }
 
     let identity: string | null = null;
-    try {
-      const account = await composio().connectedAccounts.get(row.composio_account_id);
-      identity = connectedAccountIdentity(account as unknown as Record<string, unknown>);
-    } catch {
-      identity = null;
+    if (data.toolkit === "googledrive") {
+      // Drive publishes the signed-in user directly; that beats OAuth metadata.
+      identity = await driveAccountIdentity(profile.id);
+    }
+    if (!identity) {
+      try {
+        const account = await composio().connectedAccounts.get(row.composio_account_id);
+        identity = connectedAccountIdentity(account as unknown as Record<string, unknown>);
+      } catch {
+        identity = null;
+      }
     }
 
     const tools = data.toolkit === "granola_mcp" ? await granolaTools(profile.id).catch(() => []) : [];
