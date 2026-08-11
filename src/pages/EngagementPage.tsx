@@ -1,11 +1,13 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { Sparkle } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
 import { EditEngagementDialog } from "@/components/engagements/EditEngagementDialog";
 import { EditTaskDialog } from "@/components/engagements/EditTaskDialog";
 import { InviteDialog } from "@/components/invites/InviteDialog";
 import { SubjectCoachingSection } from "@/components/coaching/SubjectCoachingSection";
+import { ReflectDock } from "@/components/reflect/ReflectDock";
 import { TaskWorkflow, type WorkflowElement } from "@/components/work/TaskWorkflow";
 import { useProfile } from "@/hooks/use-profile";
 import { supabase } from "@/integrations/supabase/client";
@@ -36,6 +38,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
   const { data: profile } = useProfile();
   const queryClient = useQueryClient();
   const [aboutOpen, setAboutOpen] = useState(false);
+  const [askOpen, setAskOpen] = useState(false);
   const [taskName, setTaskName] = useState("");
   const [error, setError] = useState<string | null>(null);
 
@@ -99,11 +102,24 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
   return (
     <div>
       <header className="mb-8">
-        <h1 className="page-title">{engagement.title}</h1>
-        <p className="mt-1.5 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
-          {engagement.code}
-          {engagement.term_label ? ` · ${engagement.term_label}` : ""}
-        </p>
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4">
+          <div className="min-w-0">
+            <h1 className="page-title">{engagement.title}</h1>
+            <p className="mt-1.5 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+              {engagement.code}
+              {engagement.term_label ? ` · ${engagement.term_label}` : ""}
+            </p>
+          </div>
+          {profile && profile.role !== "coach" ? (
+            <button
+              type="button"
+              onClick={() => setAskOpen(true)}
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+            >
+              <Sparkle className="h-3.5 w-3.5" aria-hidden /> Ask Lasso
+            </button>
+          ) : null}
+        </div>
 
         <div className="mt-4 flex flex-wrap items-center gap-2">
         {profile?.role !== "coach" ? <EditEngagementDialog engagement={engagement} /> : null}
@@ -207,6 +223,17 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
       </section>
 
       <SubjectCoachingSection profileId={profile?.id} engagementId={engagementId} />
+
+      {profile && profile.role !== "coach" ? (
+        <ReflectDock
+          open={askOpen}
+          onOpenChange={setAskOpen}
+          engagementId={engagementId}
+          engagementTitle={engagement.title}
+          profileId={profile.id}
+          orgId={profile.org_id}
+        />
+      ) : null}
     </div>
   );
 }
