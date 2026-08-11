@@ -118,84 +118,42 @@ export const disconnectConnector = createServerFn({ method: "POST" })
     return { status: "disconnected" as const };
   });
 
-export const syncDrive = createServerFn({ method: "POST" })
+/**
+ * Connector metadata for the cards: which account is actually linked, and (for
+ * MCP-backed toolkits) which actions that connection publishes. Import is never
+ * triggered here — explicit selection in the picker is the only import path.
+ */
+export const getConnectorDetails = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(validateProfileId)
+  .inputValidator(validateToolkit)
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const { listDriveFiles } = await import("@/lib/composio.server");
-    const { driveWorkType } = await import("@/lib/connector-toolkits");
-
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("id, org_id")
-      .eq("user_id", userId)
-      .maybeSingle();
-    if (!profile) throw new Response("Forbidden", { status: 403 });
-
-    const { data: account } = await supabase
-      .from("connector_accounts")
-      .select("status")
-      .eq("profile_id", profile.id)
-      .eq("toolkit", "googledrive")
-      .maybeSingle();
-    if (account?.status !== "connected") throw new Error("Connect Google Drive first");
-
-    const files = await listDriveFiles(profile.id, 20);
-
-    const { data: existing } = await supabase
-      .from("work_items")
-      .select("meta")
-      .eq("owner_id", profile.id)
-      .eq("source", "connector:googledrive");
-    const seen = new Set(
-      (existing ?? [])
-        .map((row) => (row.meta as { drive_file_id?: string } | null)?.drive_file_id)
-        .filter((id): id is string => Boolean(id)),
+    const { composio, connectedAccountIdentity, granolaTools } = await import(
+      "@/lib/composio.server"
     );
 
-    let imported = 0;
-    let skipped = 0;
-    for (const file of files) {
-      if (!file.id || seen.has(file.id)) {
-        skipped += 1;
-        continue;
-      }
-      const insert = await supabase.from("work_items").insert({
-        owner_id: profile.id,
-        org_id: profile.org_id,
-        type: driveWorkType(file.mimeType),
-        source: "connector:googledrive",
-        title: file.name ?? "Untitled file",
-        visibility: "unmapped",
-        ts_precision: "source",
-        created_at_source: file.modifiedTime ?? null,
-        meta: {
-          drive_file_id: file.id,
-          mime_type: file.mimeType ?? null,
-          web_view_link: file.webViewLink ?? null,
-        },
-      });
-      if (insert.error) throw new Error(insert.error.message);
-      seen.add(file.id);
-      imported += 1;
+    const profile = await resolveProfile(supabase, userId, data.profile_id);
+    if (!profile) throw new Response("Forbidden", { status: 403 });
+
+    const { data: row } = await supabase
+      .from("connector_accounts")
+      .select("status, composio_account_id, connected_at")
+      .eq("profile_id", profile.id)
+      .eq("toolkit", data.toolkit)
+      .maybeSingle();
+
+    if (row?.status !== "connected" || !row.composio_account_id) {
+      return { identity: null as string | null, tools: [] as string[] };
     }
 
-    const { recordEvent } = await import("./telemetry.server");
-    await recordEvent(supabase, {
-      eventType: "connector.synced",
-      orgId: profile.org_id,
-      userId,
-      dims: { toolkit: "googledrive", imported },
-    });
-    if (imported > 0) {
-      await recordEvent(supabase, {
-        eventType: "workitem.captured",
-        orgId: profile.org_id,
-        userId,
-        dims: { channel: "connector", source: "googledrive", count: imported },
-      });
+    let identity: string | null = null;
+    try {
+      const account = await composio().connectedAccounts.get(row.composio_account_id);
+      identity = connectedAccountIdentity(account as unknown as Record<string, unknown>);
+    } catch {
+      identity = null;
     }
 
-    return { imported, skipped };
+    const tools = data.toolkit === "granola_mcp" ? await granolaTools(profile.id).catch(() => []) : [];
+    return { identity, tools };
   });
