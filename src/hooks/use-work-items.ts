@@ -9,7 +9,7 @@ export async function fetchWorkItems(): Promise<WorkItemsResult> {
   const { data, error } = await supabase
     .from("work_items")
     .select(
-      "id, title, type, source, visibility, captured_at, content_ref, created_at_source, work_date, content_fidelity, source_vendor, meta",
+      "id, title, type, source, visibility, captured_at, content_ref, created_at_source, work_date, content_fidelity, source_vendor, orig_conversation_id, source_meta, meta",
     )
     .order("captured_at", { ascending: false });
   if (error) throw error;
@@ -17,6 +17,7 @@ export async function fetchWorkItems(): Promise<WorkItemsResult> {
   const items: WorkItemRow[] = (data ?? []).map((row) => ({
     ...row,
     meta: (row.meta ?? null) as WorkItemRow["meta"],
+    source_meta: (row.source_meta ?? null) as WorkItemRow["source_meta"],
     work_item_tasks: [],
   }));
   if (items.length === 0) return { items, mappingError: null };

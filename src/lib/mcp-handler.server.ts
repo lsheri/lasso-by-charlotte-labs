@@ -1,14 +1,22 @@
 // Server-only MCP endpoint logic. Token in URL path, service-role scoped writes.
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import type { Json } from "@/integrations/supabase/types";
 import { sha256Hex } from "@/lib/connectors-shared";
 import { workTypeForFile } from "@/lib/work-types";
 import { recordEvent } from "@/lib/telemetry.server";
+import {
+  ATTACHMENT_KINDS,
+  CONVERSATION_VENDORS,
+  attachmentBucket,
+  type SourceMeta,
+} from "@/lib/conversation-shared";
 
 const PROTOCOL_VERSION = "2025-06-18";
 const ACCEPTED_PROTOCOLS = new Set([PROTOCOL_VERSION, "2025-03-26", "2024-11-05"]);
 const MAX_TURNS = 500;
 const MAX_THREAD_BYTES = 2 * 1024 * 1024;
 const MAX_DOC_BYTES = 5 * 1024 * 1024;
+const MAX_ATTACHMENTS = 40;
 
 export const CORS_HEADERS: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
@@ -82,9 +90,80 @@ async function logPush(owner: Owner, dims: Record<string, string>): Promise<void
 
 const TOOLS = [
   {
+    name: "push_conversation",
+    description:
+      "When the user says 'Push to Lasso', 'send to Lasso', or similar: call push_conversation EXACTLY ONCE with the ENTIRE conversation — every message, verbatim, unabridged — plus EVERY artifact, canvas, file, or report created during the conversation as attachments. Never summarize the transcript. Never split one conversation across multiple calls or use push_document for conversation artifacts.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        title: {
+          type: "string",
+          description:
+            "The conversation title EXACTLY as shown in the source app, verbatim. Never invent or rephrase.",
+        },
+        vendor: {
+          type: "string",
+          enum: [...CONVERSATION_VENDORS],
+          description: "The app this conversation happened in.",
+        },
+        model: {
+          type: "string",
+          description:
+            "The model used, as named in the source app (e.g. 'Claude Opus 4.5', 'GPT-5').",
+        },
+        orig_conversation_id: {
+          type: "string",
+          description:
+            "Stable ID for the source thread; all pushes for the same conversation MUST reuse it.",
+        },
+        messages: {
+          type: "array",
+          maxItems: MAX_TURNS,
+          description:
+            "Every message in order, complete and verbatim. Include timestamps ONLY if actually known from the source; NEVER invent timestamps.",
+          items: {
+            type: "object",
+            properties: {
+              role: { type: "string", enum: ["user", "assistant", "tool"] },
+              content: { type: "string", description: "VERBATIM, unabridged message content." },
+              timestamp: { type: "string", description: "ISO 8601, only if actually known." },
+            },
+            required: ["role", "content"],
+          },
+        },
+        attachments: {
+          type: "array",
+          maxItems: MAX_ATTACHMENTS,
+          description:
+            "Every artifact, canvas, file, page, or report created during the conversation.",
+          items: {
+            type: "object",
+            properties: {
+              kind: { type: "string", enum: [...ATTACHMENT_KINDS] },
+              title: { type: "string", description: "Title verbatim as shown in the source app." },
+              content: { type: "string", description: "Verbatim source or text." },
+              language: { type: "string" },
+            },
+            required: ["kind", "title", "content"],
+          },
+        },
+        meta: {
+          type: "object",
+          properties: {
+            skills_used: { type: "array", items: { type: "string" } },
+            thinking_level: { type: "string", enum: ["none", "medium", "high", "extended"] },
+            research_mode: { type: "string", enum: ["none", "web_search", "deep_research"] },
+            notes: { type: "string" },
+          },
+        },
+      },
+      required: ["title", "vendor", "orig_conversation_id", "messages"],
+    },
+  },
+  {
     name: "push_thread",
     description:
-      "Save an AI conversation to the user's Lasso workspace. It lands private and unmapped; the user organizes it later. Pass the conversation turns VERBATIM — do not summarize, do not omit turns.",
+      "Prefer push_conversation for anything conversation-shaped; use this only for a standalone transcript with no artifacts and no source conversation to group it with.",
     inputSchema: {
       type: "object",
       properties: {
@@ -114,7 +193,7 @@ const TOOLS = [
   {
     name: "push_document",
     description:
-      "Save a document or artifact produced in this session to the user's Lasso workspace (private, unmapped). Pass full exact content.",
+      "Prefer push_conversation for anything conversation-shaped; use this only for a standalone document with no source conversation.",
     inputSchema: {
       type: "object",
       properties: {
@@ -181,6 +260,7 @@ export async function handleMcpRequest(request: Request, token: string): Promise
     const name = String(params["name"] ?? "");
     const args = (params["arguments"] ?? {}) as Obj;
     try {
+      if (name === "push_conversation") return await pushConversation(owner, args, id);
       if (name === "push_thread") return await pushThread(owner, args, id);
       if (name === "push_document") return await pushDocument(owner, args, id);
       if (name === "list_engagements") return await listEngagements(owner, id);
@@ -335,4 +415,247 @@ async function listEngagements(owner: Owner, id: unknown): Promise<Response> {
   });
   await logPush(owner, { tool: "list_engagements" });
   return textResult(id, lines.join("\n\n"));
+}
+
+type IncomingMessage = { role: string; content: string; timestamp?: string };
+type IncomingAttachment = { kind: string; title: string; content: string; language?: string };
+
+const ATTACHMENT_TYPES: Record<string, "document" | "image" | "deck" | "sheet"> = {
+  artifact_svg: "image",
+  image_description: "image",
+};
+
+function slugify(value: string): string {
+  return (
+    value
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "")
+      .slice(0, 60) || "attachment"
+  );
+}
+
+/**
+ * The canonical push. One call = one conversation: a transcript work item plus
+ * one work item per attachment, all sharing orig_conversation_id so the app can
+ * render them as a single group. Re-pushing the same conversation updates in
+ * place rather than duplicating.
+ */
+async function pushConversation(owner: Owner, args: Obj, id: unknown): Promise<Response> {
+  const title = typeof args["title"] === "string" ? args["title"].trim() : "";
+  if (!title) return rpcError(id, -32602, "title is required, verbatim from the source app");
+
+  const vendor = CONVERSATION_VENDORS.includes(String(args["vendor"]) as never)
+    ? String(args["vendor"])
+    : "other";
+
+  const origId =
+    typeof args["orig_conversation_id"] === "string" ? args["orig_conversation_id"].trim() : "";
+  if (!origId) return rpcError(id, -32602, "orig_conversation_id is required");
+
+  const rawMessages = args["messages"];
+  if (!Array.isArray(rawMessages) || rawMessages.length === 0) {
+    return rpcError(id, -32602, "messages must be a non-empty array");
+  }
+  if (rawMessages.length > MAX_TURNS) {
+    return rpcError(id, -32602, `Too many messages (${rawMessages.length}). Max is ${MAX_TURNS}.`);
+  }
+
+  const messages: IncomingMessage[] = [];
+  for (const m of rawMessages as IncomingMessage[]) {
+    const role =
+      m?.role === "assistant" || m?.role === "tool" || m?.role === "user" ? m.role : null;
+    if (!role || typeof m.content !== "string") {
+      return rpcError(id, -32602, "Each message needs role (user|assistant|tool) and content");
+    }
+    messages.push({
+      role,
+      content: m.content,
+      ...(typeof m.timestamp === "string" && m.timestamp ? { timestamp: m.timestamp } : {}),
+    });
+  }
+
+  const serialized = JSON.stringify(messages.map((m) => ({ role: m.role, content: m.content })));
+  if (new TextEncoder().encode(serialized).byteLength > MAX_THREAD_BYTES) {
+    return rpcError(id, -32602, "Conversation is larger than the 2MB limit. Push it in parts.");
+  }
+
+  const rawAttachments = Array.isArray(args["attachments"])
+    ? (args["attachments"] as IncomingAttachment[])
+    : [];
+  if (rawAttachments.length > MAX_ATTACHMENTS) {
+    return rpcError(id, -32602, `Too many attachments. Max is ${MAX_ATTACHMENTS}.`);
+  }
+  const attachments: IncomingAttachment[] = [];
+  for (const a of rawAttachments) {
+    if (!a || typeof a.title !== "string" || typeof a.content !== "string" || !a.title.trim()) {
+      return rpcError(id, -32602, "Each attachment needs kind, verbatim title, and content");
+    }
+    attachments.push({
+      kind: ATTACHMENT_KINDS.includes(String(a.kind) as never) ? String(a.kind) : "other",
+      title: a.title.trim(),
+      content: a.content,
+      ...(typeof a.language === "string" ? { language: a.language } : {}),
+    });
+  }
+
+  const model = typeof args["model"] === "string" && args["model"].trim() ? args["model"].trim() : null;
+  const metaIn = (args["meta"] ?? {}) as {
+    skills_used?: unknown;
+    thinking_level?: unknown;
+    research_mode?: unknown;
+    notes?: unknown;
+  };
+  const sharedMeta: SourceMeta = {
+    vendor,
+    model,
+    ...(Array.isArray(metaIn.skills_used)
+      ? { skills_used: metaIn.skills_used.filter((s): s is string => typeof s === "string") }
+      : {}),
+    ...(typeof metaIn.thinking_level === "string"
+      ? { thinking_level: metaIn.thinking_level }
+      : {}),
+    ...(typeof metaIn.research_mode === "string" ? { research_mode: metaIn.research_mode } : {}),
+    ...(typeof metaIn.notes === "string" ? { notes: metaIn.notes } : {}),
+  };
+
+  // ---- transcript work item (insert or update in place) --------------------
+  const { data: existingThread } = await supabaseAdmin
+    .from("work_items")
+    .select("id")
+    .eq("owner_id", owner.profileId)
+    .eq("orig_conversation_id", origId)
+    .eq("type", "ai_thread")
+    .maybeSingle();
+
+  const threadFields = {
+    owner_id: owner.profileId,
+    org_id: owner.orgId,
+    type: "ai_thread" as const,
+    source: `mcp:${vendor}`,
+    source_vendor: vendor,
+    orig_conversation_id: origId,
+    title,
+    content_fidelity: "transcribed",
+    ts_precision: "capture" as const,
+    content_hash: await sha256Hex(serialized),
+    source_meta: { ...sharedMeta, role: "transcript" } as unknown as Json,
+    meta: { assistant_transcribed: true },
+  };
+
+  let threadId: string;
+  if (existingThread) {
+    threadId = existingThread.id;
+    const { error } = await supabaseAdmin
+      .from("work_items")
+      .update(threadFields)
+      .eq("id", threadId);
+    if (error) return rpcError(id, -32603, error.message);
+    const del = await supabaseAdmin.from("turns").delete().eq("work_item_id", threadId);
+    if (del.error) return rpcError(id, -32603, del.error.message);
+  } else {
+    const { data, error } = await supabaseAdmin
+      .from("work_items")
+      .insert({ ...threadFields, visibility: "unmapped" })
+      .select("id")
+      .single();
+    if (error || !data) return rpcError(id, -32603, error?.message ?? "Could not save it");
+    threadId = data.id;
+  }
+
+  const turnRows = await Promise.all(
+    messages.map(async (m, i) => ({
+      work_item_id: threadId,
+      turn_no: i + 1,
+      role: m.role as "user" | "assistant" | "tool",
+      content: m.content,
+      content_hash: await sha256Hex(m.content),
+      ts: m.timestamp ?? null,
+      ts_precision: (m.timestamp ? "source" : "capture") as "source" | "capture",
+      ...(model ? { model } : {}),
+      meta: {},
+    })),
+  );
+  const { error: turnsError } = await supabaseAdmin.from("turns").insert(turnRows);
+  if (turnsError) return rpcError(id, -32603, turnsError.message);
+
+  // ---- attachments (upsert by orig_conversation_id + title) ----------------
+  let saved = 0;
+  const problems: string[] = [];
+  if (attachments.length > 0 && !owner.userId) {
+    problems.push("attachments need a signed-in workspace account");
+  } else {
+    const { data: existingAttachments } = await supabaseAdmin
+      .from("work_items")
+      .select("id, title")
+      .eq("owner_id", owner.profileId)
+      .eq("orig_conversation_id", origId)
+      .neq("type", "ai_thread");
+
+    for (const attachment of attachments) {
+      const encoded = new TextEncoder().encode(attachment.content);
+      if (encoded.byteLength > MAX_DOC_BYTES) {
+        problems.push(`'${attachment.title}' is over the 5MB limit`);
+        continue;
+      }
+      const path = `${owner.userId}/conv-${slugify(origId)}-${slugify(attachment.title)}`;
+      const upload = await supabaseAdmin.storage
+        .from("work-files")
+        .upload(path, encoded, { contentType: "text/plain; charset=utf-8", upsert: true });
+      if (upload.error) {
+        problems.push(`'${attachment.title}': ${upload.error.message}`);
+        continue;
+      }
+
+      const fields = {
+        owner_id: owner.profileId,
+        org_id: owner.orgId,
+        type: ATTACHMENT_TYPES[attachment.kind] ?? workTypeForFile(attachment.title),
+        source: `mcp:${vendor}`,
+        source_vendor: vendor,
+        orig_conversation_id: origId,
+        title: attachment.title,
+        content_ref: path,
+        content_fidelity: "verbatim",
+        ts_precision: "capture" as const,
+        content_hash: await sha256Hex(attachment.content),
+        source_meta: {
+          ...sharedMeta,
+          role: "attachment",
+          kind: attachment.kind,
+          language: attachment.language ?? null,
+          filename: attachment.title,
+        } as unknown as Json,
+        meta: { assistant_transcribed: true },
+      };
+
+      const match = (existingAttachments ?? []).find((row) => row.title === attachment.title);
+      const result = match
+        ? await supabaseAdmin.from("work_items").update(fields).eq("id", match.id)
+        : await supabaseAdmin.from("work_items").insert({ ...fields, visibility: "unmapped" });
+      if (result.error) problems.push(`'${attachment.title}': ${result.error.message}`);
+      else saved += 1;
+    }
+  }
+
+  await recordEvent(supabaseAdmin, {
+    eventType: "mcp.push",
+    orgId: owner.orgId,
+    userId: owner.userId,
+    dims: { vendor, attachment_count: attachmentBucket(attachments.length) },
+  });
+  await recordEvent(supabaseAdmin, {
+    eventType: "workitem.captured",
+    orgId: owner.orgId,
+    userId: owner.userId,
+    dims: { channel: "mcp", source: vendor },
+  });
+
+  const verb = existingThread ? "Updated" : "Saved";
+  const tail = saved > 0 ? ` with ${saved} attachment${saved === 1 ? "" : "s"}` : "";
+  const warn = problems.length > 0 ? ` Some attachments didn't save: ${problems.join("; ")}.` : "";
+  return textResult(
+    id,
+    `${verb} '${title}' in Lasso (${messages.length} messages${tail}). It stays private until the user maps it.${warn}`,
+  );
 }
