@@ -368,6 +368,43 @@ export function WorkPage() {
               {suggesting ? "Thinking…" : "✨ Suggest mapping"}
             </button>
           ) : null}
+          {!isCoach && selectable.length > 0 ? (
+            selectMode ? (
+              <div className="flex flex-wrap items-center gap-3">
+                <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
+                  <Checkbox
+                    checked={allChosen}
+                    onCheckedChange={() => setChosen(allChosen ? new Set() : new Set(selectable))}
+                    aria-label="Select all visible unmapped items"
+                  />
+                  Select all
+                </label>
+                <button
+                  type="button"
+                  disabled={chosen.size === 0}
+                  onClick={() => setConfirmRemove(true)}
+                  className="text-xs font-medium text-destructive transition-opacity hover:opacity-70 disabled:opacity-40"
+                >
+                  Remove{chosen.size ? ` (${chosen.size})` : ""}
+                </button>
+                <button
+                  type="button"
+                  onClick={leaveSelectMode}
+                  className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  Done
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setSelectMode(true)}
+                className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+              >
+                Select
+              </button>
+            )
+          ) : null}
           <ConnectorBrowseActions />
           <PasteThreadDialog trigger={<Button type="button">Paste a thread</Button>} />
           <UploadFilesButton />
