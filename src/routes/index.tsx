@@ -210,12 +210,26 @@ function LandingPage() {
           <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
             Lasso by Charlotte Labs
           </p>
-          <Link
-            to="/trust"
-            className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
-          >
-            Trust &amp; data
-          </Link>
+          <div className="flex flex-wrap items-center gap-5">
+            <Link
+              to="/why"
+              className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Why Lasso
+            </Link>
+            <Link
+              to="/trust"
+              className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Trust &amp; data
+            </Link>
+            <Link
+              to="/auth"
+              className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Feedback
+            </Link>
+          </div>
         </div>
       </footer>
     </div>
