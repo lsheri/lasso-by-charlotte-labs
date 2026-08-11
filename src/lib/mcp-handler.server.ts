@@ -259,6 +259,7 @@ export async function handleMcpRequest(request: Request, token: string): Promise
     const name = String(params["name"] ?? "");
     const args = (params["arguments"] ?? {}) as Obj;
     try {
+      if (name === "push_conversation") return await pushConversation(owner, args, id);
       if (name === "push_thread") return await pushThread(owner, args, id);
       if (name === "push_document") return await pushDocument(owner, args, id);
       if (name === "list_engagements") return await listEngagements(owner, id);
