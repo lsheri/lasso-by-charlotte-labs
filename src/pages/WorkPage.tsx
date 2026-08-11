@@ -8,6 +8,7 @@ import { DraftDecisionsButton } from "@/components/decisions/DraftDecisionsButto
 import { ImportFlowDialog } from "@/components/work/import/ImportFlowDialog";
 import { PasteThreadDialog } from "@/components/work/PasteThreadDialog";
 import { OpenFileAction } from "@/components/work/OpenFileAction";
+import { ConnectorBrowseActions } from "@/components/connectors/ConnectorBrowseActions";
 import { SuggestionChip } from "@/components/work/SuggestionChip";
 import { ThreadViewer } from "@/components/work/ThreadViewer";
 import { UploadFilesButton } from "@/components/work/UploadFilesButton";
@@ -271,6 +272,7 @@ export function WorkPage() {
               {suggesting ? "Thinking…" : "✨ Suggest mapping"}
             </button>
           ) : null}
+          <ConnectorBrowseActions />
           <PasteThreadDialog trigger={<Button type="button">Paste a thread</Button>} />
           <UploadFilesButton />
           <ImportFlowDialog
@@ -302,7 +304,8 @@ export function WorkPage() {
             ready.
           </p>
           <div className="mt-6 flex flex-wrap justify-center gap-2">
-            <PasteThreadDialog trigger={<Button type="button">Paste a thread</Button>} />
+            <ConnectorBrowseActions />
+          <PasteThreadDialog trigger={<Button type="button">Paste a thread</Button>} />
             <UploadFilesButton />
             <ImportFlowDialog
               trigger={
