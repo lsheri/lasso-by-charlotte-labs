@@ -125,12 +125,15 @@ export function MapDialog({
         </DialogHeader>
 
         {item ? (
-          <p className="-mt-2 truncate text-sm text-muted-foreground">
-            {item.title}
-            {groupItems && groupItems.length > 1
-              ? ` · whole conversation (${groupItems.length} items)`
-              : ""}
-          </p>
+          <div className="-mt-2 flex min-w-0 items-center gap-2">
+            <TypeIcon item={item} size="sm" />
+            <p className="min-w-0 truncate text-sm text-muted-foreground">
+              {item.title}
+              {groupItems && groupItems.length > 1
+                ? ` · whole conversation (${groupItems.length} items)`
+                : ""}
+            </p>
+          </div>
         ) : null}
 
         {!engagementId ? (
@@ -141,10 +144,15 @@ export function MapDialog({
                 key={engagement.id}
                 type="button"
                 onClick={() => setEngagementId(engagement.id)}
-                className="w-full rounded-[var(--radius)] border border-border bg-card px-4 py-3 text-left transition-colors hover:bg-accent-soft"
+                className="flex w-full items-center gap-2 rounded-[var(--radius)] border border-border bg-card px-4 py-3 text-left transition-colors hover:bg-accent-soft"
               >
+                <span
+                  className="h-2.5 w-2.5 shrink-0 rounded-full"
+                  style={{ backgroundColor: `var(${engagementHue(engagement.id)})` }}
+                  aria-hidden
+                />
                 <span className="font-mono text-xs text-muted-foreground">{engagement.code}</span>
-                <span className="ml-2 text-sm text-foreground">{engagement.title}</span>
+                <span className="text-sm text-foreground">{engagement.title}</span>
               </button>
             ))}
             {engagements && engagements.length === 0 ? (
