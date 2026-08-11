@@ -1,5 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -44,6 +45,7 @@ function relative(iso: string): string {
 
 export function ReflectPage() {
   const { data: profile } = useProfile();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const send = useServerFn(sendReflectMessage);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -53,6 +55,13 @@ export function ReflectPage() {
   const [truncated, setTruncated] = useState(false);
   const [scopeOpen, setScopeOpen] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  // Reflect is private to the person doing the work; coach profiles never see it,
+  // including by typing the URL directly.
+  const isCoach = profile?.role === "coach";
+  useEffect(() => {
+    if (isCoach) navigate({ to: "/coaching", replace: true });
+  }, [isCoach, navigate]);
 
   const { data: sessions } = useQuery({
     queryKey: ["reflect-sessions", profile?.id],
