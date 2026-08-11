@@ -14,10 +14,12 @@ type TaskRow = { id: string; name: string };
 
 export function MapDialog({
   item,
+  groupItems,
   open,
   onOpenChange,
 }: {
   item: WorkItemRow | null;
+  groupItems?: WorkItemRow[] | undefined;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
@@ -54,7 +56,11 @@ export function MapDialog({
     setPending(true);
     setError(null);
 
-    const cleanup = await supabase.from("work_item_tasks").delete().eq("work_item_id", item.id);
+    // A conversation maps as a unit: transcript and every attachment together.
+    const targets = groupItems && groupItems.length > 0 ? groupItems : [item];
+    const ids = targets.map((t) => t.id);
+
+    const cleanup = await supabase.from("work_item_tasks").delete().in("work_item_id", ids);
     if (cleanup.error) {
       setError(cleanup.error.message);
       setPending(false);
@@ -63,24 +69,23 @@ export function MapDialog({
 
     const link = await supabase
       .from("work_item_tasks")
-      .insert({ work_item_id: item.id, task_id: taskId });
+      .insert(ids.map((workItemId) => ({ work_item_id: workItemId, task_id: taskId })));
     if (link.error) {
       setError(link.error.message);
       setPending(false);
       return;
     }
 
-    const update = await supabase
-      .from("work_items")
-      .update({ visibility: "mapped" })
-      .eq("id", item.id);
+    const update = await supabase.from("work_items").update({ visibility: "mapped" }).in("id", ids);
     if (update.error) {
       setError(update.error.message);
       setPending(false);
       return;
     }
 
-    logEvent("workitem.mapped", profile.org_id, { type: item.type, source: item.source });
+    for (const target of targets) {
+      logEvent("workitem.mapped", profile.org_id, { type: target.type, source: target.source });
+    }
     await queryClient.invalidateQueries({ queryKey: ["work-items"] });
     await queryClient.invalidateQueries({ queryKey: ["engagement"] });
     setPending(false);
@@ -119,7 +124,14 @@ export function MapDialog({
           <DialogTitle className="page-title">Map to a task</DialogTitle>
         </DialogHeader>
 
-        {item ? <p className="-mt-2 truncate text-sm text-muted-foreground">{item.title}</p> : null}
+        {item ? (
+          <p className="-mt-2 truncate text-sm text-muted-foreground">
+            {item.title}
+            {groupItems && groupItems.length > 1
+              ? ` · whole conversation (${groupItems.length} items)`
+              : ""}
+          </p>
+        ) : null}
 
         {!engagementId ? (
           <div className="space-y-2">
