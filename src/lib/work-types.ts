@@ -1,3 +1,5 @@
+import type { SourceMeta } from "./conversation-shared";
+
 import type { Database } from "@/integrations/supabase/types";
 
 export type WorkType = Database["public"]["Enums"]["work_type"];
@@ -25,6 +27,8 @@ export type WorkItemRow = {
   work_date?: string | null | undefined;
   content_fidelity?: string | null | undefined;
   source_vendor?: string | null | undefined;
+  orig_conversation_id?: string | null | undefined;
+  source_meta?: SourceMeta | null | undefined;
   meta?:
     | {
         drive_file_id?: string;
@@ -39,6 +43,50 @@ export type WorkItemRow = {
     | undefined;
   work_item_tasks: MappedTask[];
 };
+
+/** A transcript plus every artifact pushed with it, from one MCP conversation. */
+export type ConversationGroup = {
+  key: string;
+  transcript: WorkItemRow | null;
+  attachments: WorkItemRow[];
+  items: WorkItemRow[];
+};
+
+/**
+ * Items pushed together share orig_conversation_id. Anything else — and any
+ * lone item that happens to carry one — stays an ordinary row.
+ */
+export function groupConversations(items: WorkItemRow[]): (WorkItemRow | ConversationGroup)[] {
+  const counts = new Map<string, WorkItemRow[]>();
+  for (const item of items) {
+    const key = item.orig_conversation_id;
+    if (!key) continue;
+    counts.set(key, [...(counts.get(key) ?? []), item]);
+  }
+
+  const out: (WorkItemRow | ConversationGroup)[] = [];
+  const done = new Set<string>();
+  for (const item of items) {
+    const key = item.orig_conversation_id;
+    const siblings = key ? (counts.get(key) ?? []) : [];
+    if (!key || siblings.length < 2) {
+      out.push(item);
+      continue;
+    }
+    if (done.has(key)) continue;
+    done.add(key);
+    const transcript = siblings.find((s) => s.type === "ai_thread") ?? null;
+    const attachments = siblings.filter((s) => s !== transcript);
+    out.push({ key, transcript, attachments, items: siblings });
+  }
+  return out;
+}
+
+export function isConversationGroup(
+  value: WorkItemRow | ConversationGroup,
+): value is ConversationGroup {
+  return "items" in value;
+}
 
 const EXT_MAP: Record<string, WorkType> = {
   pdf: "document",
