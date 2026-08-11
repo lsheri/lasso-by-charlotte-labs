@@ -7,7 +7,8 @@ import { RenderedContent } from "@/components/peek/RenderedContent";
 import { SlideOver } from "@/components/peek/SlideOver";
 import { ThreadBody } from "@/components/peek/ThreadBody";
 import { DraftDecisionsButton } from "@/components/decisions/DraftDecisionsButton";
-import { attachmentKindLabel, vendorLabel } from "@/lib/conversation-shared";
+import { TypeChip, TypeIcon } from "@/components/work/TypeIcon";
+import { vendorLabel } from "@/lib/conversation-shared";
 import { peekFormat } from "@/lib/peek-format";
 import { getWorkFileUrl } from "@/lib/work-files.functions";
 import {
@@ -27,7 +28,13 @@ function entryItems(entry: PeekEntry): WorkItemRow[] {
   return [head, ...entry.items.filter((i) => i !== head)];
 }
 
-function Chip({ children, tone = "quiet" }: { children: React.ReactNode; tone?: "quiet" | "accent" }) {
+function Chip({
+  children,
+  tone = "quiet",
+}: {
+  children: React.ReactNode;
+  tone?: "quiet" | "accent";
+}) {
   return (
     <span
       className={
@@ -107,12 +114,15 @@ export function PeekPanel({
   }
 
   if (!active) {
-    return <SlideOver open={open} onOpenChange={onOpenChange} title="Preview">{null}</SlideOver>;
+    return (
+      <SlideOver open={open} onOpenChange={onOpenChange} title="Preview">
+        {null}
+      </SlideOver>
+    );
   }
 
   const format = peekFormat(active);
   const vendor = active.source_vendor ?? active.source_meta?.vendor ?? null;
-  const kind = active.source_meta?.kind ?? null;
   const link = active.meta?.web_view_link ?? null;
 
   return (
@@ -124,12 +134,16 @@ export function PeekPanel({
     >
       <header className="shrink-0 border-b border-border px-6 pb-4 pt-6">
         <div className="flex flex-wrap items-center gap-1.5 pr-8">
-          <Chip>{active.type.replace("_", " ")}</Chip>
-          {kind ? <Chip>{attachmentKindLabel(kind)}</Chip> : null}
+          <TypeChip item={active} />
           {vendor ? <Chip tone="accent">{vendorLabel(vendor)}</Chip> : null}
           {active.content_fidelity === "summary" ? <Chip>Summary</Chip> : null}
         </div>
-        <h2 className="page-title mt-2 break-words text-[19px] leading-snug">{active.title}</h2>
+        <div className="mt-2 flex items-start gap-2.5">
+          <TypeIcon item={active} />
+          <h2 className="page-title min-w-0 break-words text-[19px] leading-snug">
+            {active.title}
+          </h2>
+        </div>
         <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
           {sourceLabel(active.source)} · {formatDate(effectiveWorkDate(active))}
         </p>
@@ -143,11 +157,14 @@ export function PeekPanel({
                 onClick={() => setTab(index)}
                 className={
                   index === tab
-                    ? "max-w-[180px] shrink-0 truncate border-b-2 border-accent-deep px-2 pb-2 text-xs font-medium text-foreground"
-                    : "max-w-[180px] shrink-0 truncate border-b-2 border-transparent px-2 pb-2 text-xs text-muted-foreground transition-colors hover:text-foreground"
+                    ? "flex max-w-[180px] shrink-0 items-center gap-1.5 border-b-2 border-accent-deep px-2 pb-2 text-xs font-medium text-foreground"
+                    : "flex max-w-[180px] shrink-0 items-center gap-1.5 border-b-2 border-transparent px-2 pb-2 text-xs text-muted-foreground transition-colors hover:text-foreground"
                 }
               >
-                {item.type === "ai_thread" ? "Transcript" : item.title}
+                <TypeIcon item={item} size="sm" />
+                <span className="truncate">
+                  {item.type === "ai_thread" ? "Transcript" : item.title}
+                </span>
               </button>
             ))}
           </div>

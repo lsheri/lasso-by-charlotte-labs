@@ -1,5 +1,7 @@
 import { useState } from "react";
 
+import { TypeIcon } from "@/components/work/TypeIcon";
+import { workIdentityLabel } from "@/lib/work-identity";
 import { WorkDateDialog } from "@/components/work/WorkDateDialog";
 import { OpenFileAction } from "@/components/work/OpenFileAction";
 import { supabase } from "@/integrations/supabase/client";
@@ -160,10 +162,11 @@ export function TaskWorkflow({
                     {index + 1}
                   </span>
                 ) : null}
+                <TypeIcon item={item} size="sm" />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm text-foreground">{item.title}</p>
                   <p className="truncate font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
-                    {item.type.replace("_", " ")} · {sourceLabel(item.source)} ·{" "}
+                    {workIdentityLabel(item)} · {sourceLabel(item.source)} ·{" "}
                     {formatDate(effectiveWorkDate(item))}
                   </p>
                 </div>
