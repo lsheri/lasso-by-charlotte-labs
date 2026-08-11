@@ -9,6 +9,7 @@ export const navGroups: NavGroup[] = [
     label: "Your work",
     items: [
       { label: "Overview", to: "/overview" },
+      { label: "Reflect", to: "/reflect" },
       { label: "1:1 prep", to: "/one-on-one" },
       { label: "Decision log", to: "/decisions" },
       { label: "Settings", to: "/settings" },

@@ -40,7 +40,7 @@ export const submitFeedback = createServerFn({ method: "POST" })
     const { error } = await supabaseAdmin.from("feedback").insert({
       org_id: profile.org_id,
       profile_id: profile.id,
-      category,
+      category: category.toLowerCase(),
       url_path: path,
       expected: data.expected?.trim() || null,
       actual,
@@ -53,7 +53,7 @@ export const submitFeedback = createServerFn({ method: "POST" })
       eventType: "feedback.submitted",
       orgId: profile.org_id,
       userId: context.userId,
-      dims: { category, path },
+      dims: { category: category.toLowerCase(), path },
     });
     return { ok: true };
   });

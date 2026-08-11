@@ -45,6 +45,7 @@ const SUBPROCESSORS: [string, string][] = [
   ["Supabase", "Database and authentication. SOC 2 Type II."],
   ["Lovable", "Application hosting."],
   ["Composio", "Connector OAuth for the sources you choose to link."],
+  ["Lovable AI (Google)", "AI responses only — Reflect and drafting features."],
   ["PostHog", "Usage analytics, US cloud, content-free events only."],
 ];
 
@@ -144,7 +145,19 @@ function TrustPage() {
             </p>
           </Section>
 
-          <Section label="06" title="Infrastructure">
+          <Section label="06" title="AI features">
+            <p>
+              Reflect conversations are processed by an AI model through Lovable AI (Google Gemini)
+              to generate responses. They are private to the account owner — never visible to
+              coaches or admins, never surfaced in a packet or any coach-facing view.
+            </p>
+            <p>
+              They are never used to train models, and you can delete any session, along with every
+              message in it, at any time.
+            </p>
+          </Section>
+
+          <Section label="07" title="Infrastructure">
             <div className="space-y-2">
               {SUBPROCESSORS.map(([name, role]) => (
                 <div key={name} className="flex flex-wrap gap-x-3 gap-y-1">

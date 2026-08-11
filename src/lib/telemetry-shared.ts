@@ -26,7 +26,9 @@ export type TelemetryEvent =
   | "coachchat.asked"
   | "engagement.updated"
   | "task.updated"
-  | "feedback.submitted";
+  | "feedback.submitted"
+  | "reflect.session_created"
+  | "reflect.message_sent";
 
 export type TelemetryDims = Record<
   string,
