@@ -23,30 +23,42 @@ export async function computeActorHash(userId: string | null | undefined): Promi
   return sha256Hex(salt + userId);
 }
 
-/** Fire-and-forget mirror. Content-free: hashes and dimensions only. */
-function mirrorToPostHog(
+/** Content-free mirror: hashes and dimensions only. Awaited so the edge runtime
+ * does not cancel the request when the handler returns. Never throws. */
+async function mirrorToPostHog(
   eventType: TelemetryEvent,
   actorHash: string | null,
   tenantHash: string,
   dims: TelemetryDims,
-): void {
-  if (!actorHash) return;
-  void fetch(`${POSTHOG_HOST}/i/v0/e/`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      api_key: POSTHOG_KEY,
-      event: eventType,
-      distinct_id: actorHash,
-      properties: {
-        ...dims,
-        $process_person_profile: false,
-        $groups: { org: tenantHash },
-      },
-    }),
-  }).catch(() => {
-    /* analytics must never surface to the user */
-  });
+): Promise<void> {
+  if (!actorHash) {
+    console.warn(`[telemetry] mirror skipped for ${eventType}: no actor hash (TELEMETRY_SALT?)`);
+    return;
+  }
+  try {
+    const response = await fetch(`${POSTHOG_HOST}/i/v0/e/`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        api_key: POSTHOG_KEY,
+        event: eventType,
+        distinct_id: actorHash,
+        properties: {
+          ...dims,
+          $process_person_profile: false,
+          $groups: { org: tenantHash },
+        },
+      }),
+    });
+    if (!response.ok) {
+      console.error(
+        `[telemetry] mirror failed for ${eventType}: ${response.status} ${await response.text()}`,
+      );
+    }
+  } catch (e) {
+    // Analytics must never surface to the user — but it must never be silent either.
+    console.error(`[telemetry] mirror threw for ${eventType}:`, (e as Error).message);
+  }
 }
 
 /**
@@ -66,7 +78,7 @@ export async function recordEvent(
     const dims = input.dims ?? {};
     const tenantHash = await sha256Hex(input.orgId);
     const actorHash = await computeActorHash(input.userId);
-    await supabase.from("events").insert({
+    const { error } = await supabase.from("events").insert({
       event_type: input.eventType,
       schema_version: "v1",
       tenant_hash: tenantHash,
@@ -74,8 +86,9 @@ export async function recordEvent(
       dims,
       payload: {},
     });
-    mirrorToPostHog(input.eventType, actorHash, tenantHash, dims);
-  } catch {
-    /* telemetry must never block or surface to the user */
+    if (error) console.error(`[telemetry] canonical insert failed for ${input.eventType}:`, error.message);
+    await mirrorToPostHog(input.eventType, actorHash, tenantHash, dims);
+  } catch (e) {
+    console.error("[telemetry] recordEvent failed:", (e as Error).message);
   }
 }
