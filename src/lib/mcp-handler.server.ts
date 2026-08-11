@@ -88,7 +88,11 @@ const TOOLS = [
     inputSchema: {
       type: "object",
       properties: {
-        title: { type: "string", description: "Short title for the conversation." },
+        title: {
+          type: "string",
+          description:
+            "The conversation/document title EXACTLY as it appears in the source app, verbatim.",
+        },
         source_ai: { type: "string", enum: ["claude", "chatgpt", "gemini", "other"] },
         turns: {
           type: "array",
@@ -104,7 +108,7 @@ const TOOLS = [
           },
         },
       },
-      required: ["source_ai", "turns"],
+      required: ["title", "source_ai", "turns"],
     },
   },
   {
@@ -114,12 +118,17 @@ const TOOLS = [
     inputSchema: {
       type: "object",
       properties: {
+        title: {
+          type: "string",
+          description:
+            "The conversation/document title EXACTLY as it appears in the source app, verbatim.",
+        },
         filename: { type: "string" },
         content: { type: "string" },
         mime_type: { type: "string" },
         engagement_hint: { type: "string" },
       },
-      required: ["filename", "content"],
+      required: ["title", "filename", "content"],
     },
   },
   {
