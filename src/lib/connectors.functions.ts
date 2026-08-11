@@ -150,6 +150,13 @@ export const getConnectorDetails = createServerFn({ method: "POST" })
       // Drive publishes the signed-in user directly; that beats OAuth metadata.
       identity = await driveAccountIdentity(profile.id);
     }
+    if (data.toolkit === "one_drive" || data.toolkit === "sharepoint_graph") {
+      const { microsoftIdentity } = await import("@/lib/microsoft.server");
+      identity = await microsoftIdentity({
+        entityId: profile.id,
+        accountId: row.composio_account_id,
+      });
+    }
     if (!identity) {
       try {
         const account = await composio().connectedAccounts.get(row.composio_account_id);
