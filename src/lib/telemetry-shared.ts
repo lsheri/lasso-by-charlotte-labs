@@ -28,7 +28,11 @@ export type TelemetryEvent =
   | "task.updated"
   | "feedback.submitted"
   | "reflect.session_created"
-  | "reflect.message_sent";
+  | "reflect.message_sent"
+  | "member.deactivated"
+  | "member.reactivated"
+  | "member.role_changed"
+  | "invite.revoked";
 
 export type TelemetryDims = Record<
   string,

@@ -1,4 +1,5 @@
 import { NamingConventionsCard } from "@/components/settings/NamingConventionsCard";
+import { AccountEmailCard } from "@/components/settings/AccountEmailCard";
 import { InviteDialog } from "@/components/invites/InviteDialog";
 import { EnterInviteCode } from "@/components/invites/EnterInviteCode";
 import { Button } from "@/components/ui/button";
@@ -19,7 +20,10 @@ export function SettingsPage() {
         <div className="mb-6">
           <EnterInviteCode label="Joining another workspace?" />
         </div>
-        <NamingConventionsCard />
+        <div className="space-y-8">
+          <AccountEmailCard />
+          <NamingConventionsCard />
+        </div>
       </div>
     </div>
   );

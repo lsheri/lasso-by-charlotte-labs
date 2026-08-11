@@ -13,6 +13,9 @@ export type Profile = {
   org_name: string;
 };
 
+/** Active profiles, plus whether the user holds only deactivated ones. */
+export type ProfileState = { profiles: Profile[]; hasDeactivated: boolean };
+
 const STORAGE_KEY = "lasso.active_profile_id";
 const listeners = new Set<() => void>();
 
@@ -49,19 +52,32 @@ export function useActiveProfileId(): string | null {
 
 /** Every profile this user holds — one per org. */
 export async function fetchProfiles(): Promise<Profile[]> {
+  return (await fetchProfileState()).profiles;
+}
+
+export async function fetchProfileState(): Promise<ProfileState> {
   const { data: userData } = await supabase.auth.getUser();
   const user = userData.user;
-  if (!user) return [];
+  if (!user) return { profiles: [], hasDeactivated: false };
   const { data, error } = await supabase
     .from("profiles")
-    .select("id, user_id, org_id, role, display_name, title_band, orgs(name)")
+    .select("id, user_id, org_id, role, display_name, title_band, deactivated_at, orgs(name)")
     .eq("user_id", user.id)
     .order("created_at", { ascending: true });
   if (error) throw error;
   const rows = (data ?? []) as unknown as (Omit<Profile, "org_name"> & {
+    deactivated_at: string | null;
     orgs: { name: string } | null;
   })[];
-  return rows.map(({ orgs, ...rest }) => ({ ...rest, org_name: orgs?.name ?? "Workspace" }));
+  // A deactivated profile is simply omitted — the switcher and every query
+  // behave as if that workspace isn't there.
+  const profiles = rows
+    .filter((row) => !row.deactivated_at)
+    .map(({ orgs, deactivated_at: _deactivated, ...rest }) => ({
+      ...rest,
+      org_name: orgs?.name ?? "Workspace",
+    }));
+  return { profiles, hasDeactivated: rows.some((row) => row.deactivated_at) };
 }
 
 function pickActive(profiles: Profile[], activeId: string | null): Profile | null {

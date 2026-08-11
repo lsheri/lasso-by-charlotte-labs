@@ -586,6 +586,7 @@ export type Database = {
           expires_at: string
           invited_role: Database["public"]["Enums"]["app_role"]
           org_id: string
+          revoked_at: string | null
           used_at: string | null
           used_by: string | null
         }
@@ -596,6 +597,7 @@ export type Database = {
           expires_at?: string
           invited_role?: Database["public"]["Enums"]["app_role"]
           org_id: string
+          revoked_at?: string | null
           used_at?: string | null
           used_by?: string | null
         }
@@ -606,6 +608,7 @@ export type Database = {
           expires_at?: string
           invited_role?: Database["public"]["Enums"]["app_role"]
           org_id?: string
+          revoked_at?: string | null
           used_at?: string | null
           used_by?: string | null
         }
@@ -735,6 +738,7 @@ export type Database = {
       profiles: {
         Row: {
           created_at: string
+          deactivated_at: string | null
           display_name: string
           id: string
           org_id: string
@@ -745,6 +749,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          deactivated_at?: string | null
           display_name: string
           id?: string
           org_id: string
@@ -755,6 +760,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          deactivated_at?: string | null
           display_name?: string
           id?: string
           org_id?: string
@@ -1066,6 +1072,7 @@ export type Database = {
         Args: { p_display_name: string; p_org_name: string }
         Returns: string
       }
+      deactivate_member: { Args: { p_profile: string }; Returns: undefined }
       has_org_role: {
         Args: {
           p_org: string
@@ -1092,6 +1099,15 @@ export type Database = {
       my_profile_id: { Args: never; Returns: string }
       my_profile_ids: { Args: never; Returns: string[] }
       my_role: { Args: never; Returns: Database["public"]["Enums"]["app_role"] }
+      reactivate_member: { Args: { p_profile: string }; Returns: undefined }
+      revoke_invite: { Args: { p_invite: string }; Returns: undefined }
+      set_member_role: {
+        Args: {
+          p_profile: string
+          p_role: Database["public"]["Enums"]["app_role"]
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "em" | "coach" | "lead" | "admin"
