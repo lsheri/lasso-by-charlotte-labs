@@ -2,6 +2,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
 import { Input } from "@/components/ui/input";
+import { EditEngagementDialog } from "@/components/engagements/EditEngagementDialog";
+import { EditTaskDialog } from "@/components/engagements/EditTaskDialog";
 import { InviteDialog } from "@/components/invites/InviteDialog";
 import { SubjectCoachingSection } from "@/components/coaching/SubjectCoachingSection";
 import { TaskWorkflow, type WorkflowElement } from "@/components/work/TaskWorkflow";
@@ -22,6 +24,7 @@ type TaskWithWork = {
   id: string;
   name: string;
   owner_id: string;
+  detail: string | null;
   work_item_tasks: {
     step_no: number | null;
     step_confirmed: boolean;
@@ -55,7 +58,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
       const { data, error: e } = await supabase
         .from("tasks")
         .select(
-          "id, name, owner_id, work_item_tasks(step_no, step_confirmed, work_items(id, owner_id, title, type, source, visibility, captured_at, content_ref, created_at_source, work_date, content_fidelity, meta))",
+          "id, name, owner_id, detail, work_item_tasks(step_no, step_confirmed, work_items(id, owner_id, title, type, source, visibility, captured_at, content_ref, created_at_source, work_date, content_fidelity, meta))",
         )
         .eq("engagement_id", engagementId)
         .order("position", { ascending: true });
@@ -103,6 +106,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
         </p>
 
         <div className="mt-4 flex flex-wrap items-center gap-2">
+        {profile?.role !== "coach" ? <EditEngagementDialog engagement={engagement} /> : null}
         <button
           type="button"
           onClick={() => setAboutOpen((v) => !v)}
@@ -161,7 +165,19 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
               key={task.id}
               className="rounded-[var(--radius)] border border-border bg-card px-4 py-3 shadow-card"
             >
-              <p className="text-sm font-medium text-foreground">{task.name}</p>
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-foreground">{task.name}</p>
+                  {task.detail ? (
+                    <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">
+                      {task.detail}
+                    </p>
+                  ) : null}
+                </div>
+                {profile && profile.role !== "coach" && task.owner_id === profile.id ? (
+                  <EditTaskDialog task={task} engagementId={engagementId} />
+                ) : null}
+              </div>
               <div className="mt-2">
                 <TaskWorkflow
                   taskId={task.id}

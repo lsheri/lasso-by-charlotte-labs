@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 import { WorkDateDialog } from "@/components/work/WorkDateDialog";
+import { OpenFileAction } from "@/components/work/OpenFileAction";
 import { supabase } from "@/integrations/supabase/client";
 import { logEvent } from "@/lib/telemetry";
 import { effectiveWorkDate, formatDate, sourceLabel, type WorkItemRow } from "@/lib/work-types";
@@ -168,6 +169,7 @@ export function TaskWorkflow({
                 </div>
                 {canEdit ? (
                   <div className="flex shrink-0 items-center gap-2">
+                    {item.content_ref ? <OpenFileAction workItemId={item.id} /> : null}
                     <button
                       type="button"
                       aria-label="Move up"

@@ -370,6 +370,42 @@ export type Database = {
         }
         Relationships: []
       }
+      feedback: {
+        Row: {
+          actual: string
+          category: string
+          created_at: string
+          expected: string | null
+          id: number
+          org_id: string | null
+          profile_id: string | null
+          status: string
+          url_path: string
+        }
+        Insert: {
+          actual: string
+          category: string
+          created_at?: string
+          expected?: string | null
+          id?: never
+          org_id?: string | null
+          profile_id?: string | null
+          status?: string
+          url_path: string
+        }
+        Update: {
+          actual?: string
+          category?: string
+          created_at?: string
+          expected?: string | null
+          id?: never
+          org_id?: string | null
+          profile_id?: string | null
+          status?: string
+          url_path?: string
+        }
+        Relationships: []
+      }
       feedback_links: {
         Row: {
           created_at: string
@@ -875,6 +911,7 @@ export type Database = {
           orig_conversation_id: string | null
           owner_id: string
           source: string
+          source_meta: Json | null
           source_vendor: string | null
           title: string
           ts_precision: Database["public"]["Enums"]["ts_precision"]
@@ -895,6 +932,7 @@ export type Database = {
           orig_conversation_id?: string | null
           owner_id: string
           source?: string
+          source_meta?: Json | null
           source_vendor?: string | null
           title: string
           ts_precision?: Database["public"]["Enums"]["ts_precision"]
@@ -915,6 +953,7 @@ export type Database = {
           orig_conversation_id?: string | null
           owner_id?: string
           source?: string
+          source_meta?: Json | null
           source_vendor?: string | null
           title?: string
           ts_precision?: Database["public"]["Enums"]["ts_precision"]

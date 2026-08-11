@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 
 import type { Profile } from "@/hooks/use-profile";
+import { FeedbackDialog } from "@/components/feedback/FeedbackWidget";
 
 import { OrgSwitcher } from "./OrgSwitcher";
 import { SidebarNav } from "./SidebarNav";
@@ -28,22 +29,42 @@ export function AppSidebar({
         <SidebarNav onNavigate={onNavigate} />
       </div>
       <OrgSwitcher profiles={profiles} active={activeProfile} />
-      <Link
-        to="/trust"
-        onClick={onNavigate}
-        className="px-1 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
-      >
-        Trust &amp; data
-      </Link>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-1">
+        <Link
+          to="/trust"
+          onClick={onNavigate}
+          className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+        >
+          Trust &amp; data
+        </Link>
+        <Link
+          to="/why"
+          onClick={onNavigate}
+          className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+        >
+          Why Lasso
+        </Link>
+        <FeedbackDialog
+          trigger={
+            <button
+              type="button"
+              className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Feedback
+            </button>
+          }
+        />
+      </div>
       <div className="rounded-[var(--radius)] bg-navy p-4 shadow-card">
         <div className="font-mono text-lg tracking-[0.28em] text-mint">LASSO</div>
         <div className="mt-1 text-xs text-cream/80">by Charlotte Labs</div>
-        <button
-          type="button"
+        <Link
+          to="/why"
+          onClick={onNavigate}
           className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-mint px-3 py-1 font-mono text-[11px] tracking-[0.1em] text-navy transition-opacity hover:opacity-90"
         >
           <span aria-hidden>◆</span> Why Lasso
-        </button>
+        </Link>
       </div>
     </div>
   );
