@@ -1,5 +1,7 @@
 import { Link } from "@tanstack/react-router";
 
+import { LassoLogo } from "./LassoLogo";
+
 const LINKS = [
   { to: "/why" as const, label: "Why Lasso" },
   { to: "/trust" as const, label: "Trust & data" },
@@ -12,10 +14,11 @@ export function PublicHeader({ current }: { current?: "/" | "/why" | "/trust" })
       <div className="mx-auto grid max-w-5xl grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-4 sm:px-6 md:px-10">
         <Link
           to="/"
-          className="min-w-0 truncate font-mono text-sm tracking-[0.24em] text-foreground"
+          className="flex min-w-0 items-center gap-2 font-mono text-sm tracking-[0.24em] text-foreground"
           aria-current={current === "/" ? "page" : undefined}
         >
-          LASSO
+          <LassoLogo size="sm" />
+          <span className="truncate">LASSO</span>
         </Link>
         <nav className="flex shrink-0 items-center gap-3 sm:gap-5">
           {LINKS.filter((link) => link.to !== current).map((link) => (

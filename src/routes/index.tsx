@@ -2,6 +2,7 @@ import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useEffect } from "react";
 
 import { PublicHeader } from "@/components/layout/PublicHeader";
+import { LassoLogo } from "@/components/layout/LassoLogo";
 import { Button } from "@/components/ui/button";
 import { fetchProfile } from "@/hooks/use-profile";
 import { supabase } from "@/integrations/supabase/client";
@@ -95,7 +96,8 @@ function LandingPage() {
       <PublicHeader current="/" />
 
       <main className="mx-auto max-w-5xl px-6 pb-20 md:px-10">
-        <section className="pt-14 md:pt-20">
+        <section className="grid items-center gap-8 pt-14 md:grid-cols-[minmax(0,1fr)_auto] md:pt-20">
+          <div>
           <p className="micro-label">Lasso by Charlotte Labs</p>
           <h1 className="mt-4 max-w-3xl text-3xl font-semibold tracking-tight text-foreground md:text-5xl">
             Your AI work, on the record.
@@ -114,6 +116,8 @@ function LandingPage() {
               <a href="#who-its-for">For companies</a>
             </Button>
           </div>
+          </div>
+          <LassoLogo size="xl" className="justify-self-center" />
         </section>
 
         <section className="mt-20 border-t border-border pt-10">

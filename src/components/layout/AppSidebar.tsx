@@ -4,6 +4,7 @@ import type { Profile } from "@/hooks/use-profile";
 import { FeedbackDialog } from "@/components/feedback/FeedbackWidget";
 
 import { OrgSwitcher } from "./OrgSwitcher";
+import { LassoLogo } from "./LassoLogo";
 import { SidebarNav } from "./SidebarNav";
 import { UserCard } from "./UserCard";
 
@@ -56,8 +57,13 @@ export function AppSidebar({
         />
       </div>
       <div className="rounded-[var(--radius)] bg-navy p-4 shadow-card">
-        <div className="font-mono text-lg tracking-[0.28em] text-mint">LASSO</div>
-        <div className="mt-1 text-xs text-cream/80">by Charlotte Labs</div>
+        <div className="flex items-center gap-3">
+          <LassoLogo size="md" />
+          <div>
+            <div className="font-mono text-lg tracking-[0.28em] text-mint">LASSO</div>
+            <div className="mt-1 text-xs text-cream/80">by Charlotte Labs</div>
+          </div>
+        </div>
         <Link
           to="/why"
           onClick={onNavigate}
