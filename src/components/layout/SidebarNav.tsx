@@ -15,6 +15,8 @@ export function SidebarNav({ onNavigate }: { onNavigate?: (() => void) | undefin
   const { data: engagements } = useEngagements(profile?.id);
   const { data: decisions } = useDecisions();
   const decisionCount = (decisions ?? []).length;
+  // Reflect is the owner's private space — it never appears for a coach profile.
+  const isCoach = profile?.role === "coach";
 
   return (
     <nav className="flex flex-col gap-7">
@@ -37,7 +39,9 @@ export function SidebarNav({ onNavigate }: { onNavigate?: (() => void) | undefin
         <div key={group.label}>
           <div className="micro-label px-3">{group.label}</div>
           <div className="mt-2 flex flex-col gap-0.5">
-            {group.items.map((item) => (
+            {group.items
+              .filter((item) => !(isCoach && item.to === "/reflect"))
+              .map((item) => (
               <Link
                 key={item.to}
                 to={item.to}
