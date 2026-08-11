@@ -1,6 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useState } from "react";
+import { ChevronLeft, Folder } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -15,30 +16,53 @@ import {
 import { Input } from "@/components/ui/input";
 import { useProfile } from "@/hooks/use-profile";
 import type { PickerItem, PickerPage } from "@/lib/connector-picker-shared";
+import type { BrowsableToolkit } from "@/lib/connector-toolkits";
 import {
-  browseDriveFiles,
+  browseConnectorItems,
   browseGranolaMeetings,
-  importDriveFiles,
+  importConnectorItems,
   importGranolaMeetings,
 } from "@/lib/connector-picker.functions";
 
 type Crumb = { id: string | null; name: string };
 
-export type PickerKind = "googledrive" | "granola";
+export type PickerKind = "googledrive" | "onedrive" | "sharepoint" | "granola";
+
+const TOOLKIT: Record<Exclude<PickerKind, "granola">, BrowsableToolkit> = {
+  googledrive: "googledrive",
+  onedrive: "one_drive",
+  sharepoint: "sharepoint_graph",
+};
 
 const COPY: Record<
   PickerKind,
-  { title: string; searchLabel: string; empty: string; action: string }
+  { title: string; searchLabel: string; root: string; empty: string; action: string }
 > = {
   googledrive: {
     title: "Browse Google Drive",
     searchLabel: "Search your Drive",
+    root: "My Drive",
+    empty: "Nothing here yet.",
+    action: "Bring into Lasso",
+  },
+  onedrive: {
+    title: "Browse OneDrive",
+    searchLabel: "Search your OneDrive",
+    root: "My files",
+    empty: "Nothing here yet.",
+    action: "Bring into Lasso",
+  },
+  sharepoint: {
+    title: "Browse SharePoint",
+    searchLabel: "Search sites",
+    root: "Sites",
     empty: "Nothing here yet.",
     action: "Bring into Lasso",
   },
   granola: {
     title: "Browse Granola meetings",
     searchLabel: "Search meetings",
+    root: "Meetings",
     empty: "Nothing here yet.",
     action: "Bring into Lasso",
   },
@@ -65,10 +89,14 @@ export function ConnectorPicker({
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
 }) {
+  const isFolderBrowser = kind !== "granola";
+  const copy = COPY[kind];
   const { data: profile } = useProfile();
   const queryClient = useQueryClient();
-  const browse = useServerFn(kind === "googledrive" ? browseDriveFiles : browseGranolaMeetings);
-  const bring = useServerFn(kind === "googledrive" ? importDriveFiles : importGranolaMeetings);
+  const browseFiles = useServerFn(browseConnectorItems);
+  const browseMeetings = useServerFn(browseGranolaMeetings);
+  const importFiles = useServerFn(importConnectorItems);
+  const importMeetings = useServerFn(importGranolaMeetings);
 
   const [openState, setOpenState] = useState(false);
   const open = openProp ?? openState;
@@ -81,24 +109,30 @@ export function ConnectorPicker({
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [term, setTerm] = useState("");
-  const [crumbs, setCrumbs] = useState<Crumb[]>([{ id: null, name: "My Drive" }]);
+  const [crumbs, setCrumbs] = useState<Crumb[]>([{ id: null, name: copy.root }]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [importing, setImporting] = useState(false);
 
   const folderId = crumbs[crumbs.length - 1]?.id ?? null;
+  const canGoBack = crumbs.length > 1;
+
+  const load = useCallback((): Promise<PickerPage> => {
+    const data = {
+      profile_id: profile?.id,
+      ...(folderId ? { folder_id: folderId } : {}),
+      ...(term ? { search: term } : {}),
+    };
+    return isFolderBrowser
+      ? browseFiles({ data: { ...data, toolkit: TOOLKIT[kind as Exclude<PickerKind, "granola">] } })
+      : browseMeetings({ data });
+  }, [browseFiles, browseMeetings, folderId, isFolderBrowser, kind, profile?.id, term]);
 
   useEffect(() => {
     if (!open) return;
     let cancelled = false;
     setLoading(true);
     setError(null);
-    void browse({
-      data: {
-        profile_id: profile?.id,
-        ...(folderId ? { folder_id: folderId } : {}),
-        ...(term ? { search: term } : {}),
-      },
-    })
+    void load()
       .then((result) => {
         if (!cancelled) setPage(result);
       })
@@ -111,7 +145,7 @@ export function ConnectorPicker({
     return () => {
       cancelled = true;
     };
-  }, [open, folderId, term, profile?.id, browse]);
+  }, [open, load]);
 
   function toggle(id: string) {
     setSelected((prev) => {
@@ -120,6 +154,17 @@ export function ConnectorPicker({
       else next.add(id);
       return next;
     });
+  }
+
+  /** Every navigation clears the search box, so the trail always matches the list. */
+  function goTo(depth: number) {
+    setTerm("");
+    setSearch("");
+    setCrumbs((prev) => (depth < prev.length ? prev.slice(0, depth + 1) : prev));
+  }
+
+  function goBack() {
+    if (canGoBack) goTo(crumbs.length - 2);
   }
 
   function openFolder(item: PickerItem) {
@@ -133,7 +178,16 @@ export function ConnectorPicker({
     setImporting(true);
     setError(null);
     try {
-      const result = await bring({ data: { profile_id: profile?.id, ids: Array.from(selected) } });
+      const ids = Array.from(selected);
+      const result = isFolderBrowser
+        ? await importFiles({
+            data: {
+              profile_id: profile?.id,
+              ids,
+              toolkit: TOOLKIT[kind as Exclude<PickerKind, "granola">],
+            },
+          })
+        : await importMeetings({ data: { profile_id: profile?.id, ids } });
       toast.success(
         result.imported > 0
           ? `${result.imported} item${result.imported === 1 ? "" : "s"} brought into Work`
@@ -141,15 +195,7 @@ export function ConnectorPicker({
       );
       setSelected(new Set());
       await queryClient.invalidateQueries({ queryKey: ["work-items"] });
-      setTerm((t) => t);
-      const refreshed = await browse({
-        data: {
-          profile_id: profile?.id,
-          ...(folderId ? { folder_id: folderId } : {}),
-          ...(term ? { search: term } : {}),
-        },
-      });
-      setPage(refreshed);
+      setPage(await load());
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -157,7 +203,6 @@ export function ConnectorPicker({
     }
   }
 
-  const copy = COPY[kind];
   const items = page?.items ?? [];
   // Folder-first: navigate into folders, then pick files inside them.
   const folders = items.filter((i) => i.isFolder);
@@ -171,14 +216,26 @@ export function ConnectorPicker({
         if (!next) {
           setSelected(new Set());
           setPage(null);
-          setCrumbs([{ id: null, name: "My Drive" }]);
+          setCrumbs([{ id: null, name: copy.root }]);
           setSearch("");
           setTerm("");
         }
       }}
     >
       {trigger ? <DialogTrigger asChild>{trigger}</DialogTrigger> : null}
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
+      <DialogContent
+        className="max-h-[90vh] overflow-y-auto sm:max-w-3xl"
+        onKeyDown={(e) => {
+          // Alt+Left / Backspace step up a level, as in a file manager.
+          const typing = (e.target as HTMLElement).tagName === "INPUT";
+          if ((e.key === "ArrowLeft" && e.altKey) || (e.key === "Backspace" && !typing)) {
+            if (canGoBack) {
+              e.preventDefault();
+              goBack();
+            }
+          }
+        }}
+      >
         <DialogHeader>
           <DialogTitle className="page-title">{copy.title}</DialogTitle>
         </DialogHeader>
@@ -203,24 +260,44 @@ export function ConnectorPicker({
           </Button>
         </form>
 
-        {kind === "googledrive" ? (
-          <div className="flex flex-wrap items-center gap-1 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
-            {crumbs.map((crumb, i) => (
-              <span key={`${crumb.id ?? "root"}-${i}`} className="flex items-center gap-1">
-                {i > 0 ? <span>/</span> : null}
-                <button
-                  type="button"
-                  className="hover:text-foreground"
-                  onClick={() => {
-                    setTerm("");
-                    setSearch("");
-                    setCrumbs((prev) => prev.slice(0, i + 1));
-                  }}
-                >
-                  {crumb.name}
-                </button>
-              </span>
-            ))}
+        {isFolderBrowser ? (
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={!canGoBack}
+              onClick={goBack}
+              aria-label="Back to the previous folder"
+            >
+              <ChevronLeft aria-hidden className="size-3.5" />
+              Back
+            </Button>
+            <nav
+              aria-label="Folder trail"
+              className="flex min-w-0 flex-wrap items-center gap-1 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground"
+            >
+              {crumbs.map((crumb, i) => {
+                const isLast = i === crumbs.length - 1;
+                return (
+                  <span key={`${crumb.id ?? "root"}-${i}`} className="flex items-center gap-1">
+                    {i > 0 ? <span aria-hidden>/</span> : null}
+                    <button
+                      type="button"
+                      onClick={() => goTo(i)}
+                      aria-current={isLast ? "page" : undefined}
+                      className={
+                        isLast
+                          ? "max-w-[16rem] truncate text-foreground"
+                          : "max-w-[10rem] truncate rounded-sm underline-offset-2 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      }
+                    >
+                      {crumb.name}
+                    </button>
+                  </span>
+                );
+              })}
+            </nav>
           </div>
         ) : null}
 
@@ -235,9 +312,11 @@ export function ConnectorPicker({
           <p className="text-sm text-muted-foreground">{copy.empty}</p>
         ) : (
           <div className="space-y-4">
-            {kind === "googledrive" && folders.length > 0 ? (
+            {isFolderBrowser && folders.length > 0 ? (
               <div>
-                <p className="micro-label">Folders</p>
+                <p className="micro-label">
+                  {kind === "sharepoint" ? "Sites & folders" : "Folders"}
+                </p>
                 <ul className="mt-2 divide-y divide-border rounded-[var(--radius)] border border-border bg-card">
                   {folders.map((item) => (
                     <li key={item.id}>
@@ -246,9 +325,7 @@ export function ConnectorPicker({
                         onClick={() => openFolder(item)}
                         className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-secondary/50"
                       >
-                        <span aria-hidden className="text-base leading-none">
-                          📁
-                        </span>
+                        <Folder aria-hidden className="size-4 text-muted-foreground" />
                         <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
                           {item.title}
                         </span>
@@ -263,12 +340,10 @@ export function ConnectorPicker({
             ) : null}
 
             <div>
-              {kind === "googledrive" ? <p className="micro-label">Files</p> : null}
+              {isFolderBrowser ? <p className="micro-label">Files</p> : null}
               {files.length === 0 ? (
                 <p className="mt-2 text-sm text-muted-foreground">
-                  {kind === "googledrive"
-                    ? "No files here — open a folder to keep browsing."
-                    : copy.empty}
+                  {isFolderBrowser ? "No files here — open a folder to keep browsing." : copy.empty}
                 </p>
               ) : (
                 <ul className="mt-2 divide-y divide-border rounded-[var(--radius)] border border-border bg-card">

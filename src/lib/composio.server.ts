@@ -15,6 +15,8 @@ export function composio(): Composio {
 
 const AUTH_CONFIG_NAMES: Record<ConnectorToolkit, string> = {
   googledrive: "Google Drive Auth Config",
+  one_drive: "OneDrive Auth Config",
+  sharepoint_graph: "SharePoint Auth Config",
   gmail: "Gmail Auth Config",
   slack: "Slack Auth Config",
   notion: "Notion Auth Config",

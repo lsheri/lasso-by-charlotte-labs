@@ -40,6 +40,8 @@ export function statusLabel(account: ConnectorAccount | undefined): string {
 
 export const TOOLKIT_LABELS: Record<ConnectorToolkit, string> = {
   googledrive: "Google Drive",
+  one_drive: "OneDrive",
+  sharepoint_graph: "SharePoint",
   gmail: "Gmail",
   slack: "Slack",
   notion: "Notion",
