@@ -1,4 +1,3 @@
-<<<<<<<<
 import { Check } from "lucide-react";
 
 import { TOOLS, TOOL_ORDER, type ToolId } from "@/lib/onboarding-tools";
