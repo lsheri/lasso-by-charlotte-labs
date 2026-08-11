@@ -158,10 +158,7 @@ export function WorkPage() {
         />
         {rest.length > 0 ? (
           <div className="relative mt-2 space-y-2 pl-4 sm:pl-6">
-            <span
-              className="absolute bottom-3 left-2 top-0 w-px bg-border sm:left-3"
-              aria-hidden
-            />
+            <span className="absolute bottom-3 left-2 top-0 w-px bg-border sm:left-3" aria-hidden />
             {rest.map((child) => (
               <WorkRow
                 key={child.id}
@@ -293,10 +290,7 @@ export function WorkPage() {
 
   /** Mapped work, folded one engagement at a time. */
   const mappedByEngagement = (() => {
-    const buckets = new Map<
-      string,
-      { id: string | null; label: string; items: WorkItemRow[] }
-    >();
+    const buckets = new Map<string, { id: string | null; label: string; items: WorkItemRow[] }>();
     for (const item of mapped) {
       const engagement = item.work_item_tasks[0]?.tasks?.engagements ?? null;
       const key = engagement?.id ?? "unfiled";

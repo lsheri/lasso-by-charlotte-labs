@@ -67,9 +67,11 @@ export function workIdentity(
 }
 
 /** The human name for a row: the attachment kind if there is one, else the type. */
-export function workIdentityLabel(item: Pick<WorkItemRow, "type"> & {
-  source_meta?: WorkItemRow["source_meta"];
-}): string {
+export function workIdentityLabel(
+  item: Pick<WorkItemRow, "type"> & {
+    source_meta?: WorkItemRow["source_meta"];
+  },
+): string {
   const kind = item.source_meta?.kind;
   if (kind) return attachmentKindLabel(kind);
   return workIdentity(item).label;

@@ -109,7 +109,12 @@ export function SelectionTable({
         <div className="flex items-center gap-3">
           <button
             type="button"
-            onClick={() => setAll(visible.map((c) => c.orig_id), true)}
+            onClick={() =>
+              setAll(
+                visible.map((c) => c.orig_id),
+                true,
+              )
+            }
             className="text-xs font-medium text-accent-deep hover:opacity-70"
           >
             Select all

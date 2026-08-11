@@ -28,7 +28,13 @@ function entryItems(entry: PeekEntry): WorkItemRow[] {
   return [head, ...entry.items.filter((i) => i !== head)];
 }
 
-function Chip({ children, tone = "quiet" }: { children: React.ReactNode; tone?: "quiet" | "accent" }) {
+function Chip({
+  children,
+  tone = "quiet",
+}: {
+  children: React.ReactNode;
+  tone?: "quiet" | "accent";
+}) {
   return (
     <span
       className={
@@ -108,7 +114,11 @@ export function PeekPanel({
   }
 
   if (!active) {
-    return <SlideOver open={open} onOpenChange={onOpenChange} title="Preview">{null}</SlideOver>;
+    return (
+      <SlideOver open={open} onOpenChange={onOpenChange} title="Preview">
+        {null}
+      </SlideOver>
+    );
   }
 
   const format = peekFormat(active);

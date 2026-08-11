@@ -117,7 +117,10 @@ export function RenderedContent({
         const html =
           shape.kind === "code"
             ? await highlight(raw, shape.language)
-            : await toSafeHtml(raw, shape.kind === "markdown" ? "markdown" : shape.kind === "svg" ? "svg" : "html");
+            : await toSafeHtml(
+                raw,
+                shape.kind === "markdown" ? "markdown" : shape.kind === "svg" ? "svg" : "html",
+              );
         if (!cancelled) setRendered(html);
       } catch (e) {
         if (!cancelled) setFailed((e as Error).message);
@@ -129,7 +132,9 @@ export function RenderedContent({
   }, [url, wantsText, shape.kind, shape.kind === "code" ? shape.language : null]);
 
   if (shape.kind === "none") {
-    return <Notice>Nothing is stored for this item — it&apos;s a record of work, not a file.</Notice>;
+    return (
+      <Notice>Nothing is stored for this item — it&apos;s a record of work, not a file.</Notice>
+    );
   }
   if (shape.kind === "unsupported") {
     return <FallbackCard item={item} label={shape.label} onDownload={onDownload} />;
