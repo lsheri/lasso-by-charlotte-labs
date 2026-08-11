@@ -213,6 +213,32 @@ export type Database = {
           },
         ]
       }
+      connector_secrets: {
+        Row: {
+          account_id: string
+          api_key: string
+          created_at: string
+        }
+        Insert: {
+          account_id: string
+          api_key: string
+          created_at?: string
+        }
+        Update: {
+          account_id?: string
+          api_key?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "connector_secrets_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: true
+            referencedRelation: "connector_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       decisions: {
         Row: {
           author: Database["public"]["Enums"]["authored_by"]
