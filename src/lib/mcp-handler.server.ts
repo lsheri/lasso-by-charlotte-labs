@@ -222,10 +222,9 @@ async function pushThread(owner: Owner, args: Obj, id: unknown): Promise<Respons
     ? String(args["source_ai"])
     : "other";
   const firstUser = turns.find((t) => t.role === "user")?.content ?? turns[0]?.content ?? "";
-  const title =
-    (typeof args["title"] === "string" && args["title"].trim()) ||
-    firstUser.trim().slice(0, 60) ||
-    "Untitled conversation";
+  // Verbatim: a supplied title is stored exactly as given, never renamed or synthesized.
+  const supplied = typeof args["title"] === "string" ? args["title"] : "";
+  const title = supplied.length > 0 ? supplied : firstUser.trim().slice(0, 60) || "Untitled conversation";
 
   const { data: item, error } = await supabaseAdmin
     .from("work_items")
@@ -272,6 +271,8 @@ async function pushDocument(owner: Owner, args: Obj, id: unknown): Promise<Respo
   const filename = typeof args["filename"] === "string" ? args["filename"] : "";
   const content = typeof args["content"] === "string" ? args["content"] : "";
   if (!filename || !content) return rpcError(id, -32602, "filename and content are required");
+  const suppliedTitle = typeof args["title"] === "string" ? args["title"] : "";
+  const title = suppliedTitle.length > 0 ? suppliedTitle : filename;
 
   const encoded = new TextEncoder().encode(content);
   if (encoded.byteLength > MAX_DOC_BYTES) {
@@ -294,9 +295,10 @@ async function pushDocument(owner: Owner, args: Obj, id: unknown): Promise<Respo
     org_id: owner.orgId,
     type: workTypeForFile(safe),
     source: "mcp:push",
-    title: filename,
+    title,
     visibility: "unmapped",
     content_ref: path,
+    source_meta: { filename, mime_type: mime },
     content_fidelity: "verbatim",
     ts_precision: "capture",
     content_hash: await sha256Hex(content),
@@ -307,7 +309,7 @@ async function pushDocument(owner: Owner, args: Obj, id: unknown): Promise<Respo
   if (error) return rpcError(id, -32603, error.message);
 
   await logPush(owner, { tool: "push_document" });
-  return textResult(id, `Saved '${filename}' to Lasso (private, unmapped).`);
+  return textResult(id, `Saved '${title}' to Lasso (private, unmapped).`);
 }
 
 async function listEngagements(owner: Owner, id: unknown): Promise<Response> {
