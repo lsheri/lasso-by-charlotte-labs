@@ -1,5 +1,6 @@
 // Server-only MCP endpoint logic. Token in URL path, service-role scoped writes.
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import type { Json } from "@/integrations/supabase/types";
 import { sha256Hex } from "@/lib/connectors-shared";
 import { workTypeForFile } from "@/lib/work-types";
 import { recordEvent } from "@/lib/telemetry.server";
@@ -538,7 +539,7 @@ async function pushConversation(owner: Owner, args: Obj, id: unknown): Promise<R
     content_fidelity: "transcribed",
     ts_precision: "capture" as const,
     content_hash: await sha256Hex(serialized),
-    source_meta: { ...sharedMeta, role: "transcript" } as unknown as Obj,
+    source_meta: { ...sharedMeta, role: "transcript" } as unknown as Json,
     meta: { assistant_transcribed: true },
   };
 
@@ -624,7 +625,7 @@ async function pushConversation(owner: Owner, args: Obj, id: unknown): Promise<R
           kind: attachment.kind,
           language: attachment.language ?? null,
           filename: attachment.title,
-        } as unknown as Obj,
+        } as unknown as Json,
         meta: { assistant_transcribed: true },
       };
 
