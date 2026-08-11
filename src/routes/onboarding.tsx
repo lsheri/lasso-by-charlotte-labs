@@ -1,6 +1,6 @@
 import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { ProgressDots } from "@/components/onboarding/ProgressDots";
 import { SetupTools } from "@/components/onboarding/SetupTools";
@@ -93,8 +93,11 @@ function OnboardingPage() {
 function OnboardingInner() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { intent } = Route.useSearch();
-  const [stage, setStage] = useState<"choose" | "setup" | "why" | "capture">("choose");
+  const { intent, setup } = Route.useSearch();
+  const [stage, setStage] = useState<"choose" | "setup" | "why" | "tools" | "capture">(
+    setup ? "tools" : "choose",
+  );
+  const [tools, setTools] = useState<Set<ToolId>>(new Set());
   const [orgType, setOrgType] = useState<OrgType>(intent === "personal" ? "personal" : "company");
   const [selected, setSelected] = useState<"company" | "personal" | "invite" | null>(
     intent ?? null,
@@ -105,6 +108,30 @@ function OnboardingInner() {
   const [code, setCode] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Returning members reopening setup from Connectors see their earlier picks.
+  useEffect(() => {
+    if (!setup) return;
+    void loadToolsUsed().then((saved) => setTools(new Set(saved)));
+  }, [setup]);
+
+  function toggleTool(id: ToolId) {
+    setTools((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  async function continueFromTools() {
+    const picked = [...tools];
+    const orgId = await saveToolsUsed(picked);
+    if (orgId) {
+      logEvent("onboarding.tools_selected", orgId, { count: toolCountBucket(picked.length) });
+    }
+    setStage("capture");
+  }
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -141,7 +168,7 @@ function OnboardingInner() {
 
     await queryClient.invalidateQueries();
     setPending(false);
-    setStage(orgType === "personal" && mode === "create" ? "capture" : "why");
+    setStage(orgType === "personal" && mode === "create" ? "tools" : "why");
   }
 
   function finish() {
@@ -182,7 +209,7 @@ function OnboardingInner() {
               ))}
             </div>
             <div className="mt-8 flex items-center gap-6">
-              <Button type="button" onClick={() => setStage("capture")}>
+              <Button type="button" onClick={() => setStage("tools")}>
                 Continue
               </Button>
               <button
