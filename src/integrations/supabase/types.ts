@@ -50,6 +50,76 @@ export type Database = {
           },
         ]
       }
+      chat_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: number
+          role: string
+          session_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: never
+          role: string
+          session_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: never
+          role?: string
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "chat_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_sessions: {
+        Row: {
+          context_scope: Json
+          created_at: string
+          id: string
+          org_id: string
+          profile_id: string
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          context_scope?: Json
+          created_at?: string
+          id?: string
+          org_id: string
+          profile_id: string
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          context_scope?: Json
+          created_at?: string
+          id?: string
+          org_id?: string
+          profile_id?: string
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_sessions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       coaching_notes: {
         Row: {
           author_id: string
