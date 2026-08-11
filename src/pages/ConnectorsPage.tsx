@@ -215,23 +215,47 @@ function ConnectorCard({
   account,
   actions,
   busy,
+  identity,
 }: {
   name: string;
   description: string;
   account: ConnectorAccount | undefined;
   actions: React.ReactNode;
   busy: boolean;
+  identity?: React.ReactNode;
 }) {
   return (
     <div className="flex flex-wrap items-center gap-4 rounded-[var(--radius)] border border-border bg-card px-4 py-3 shadow-card">
       <div className="min-w-0 flex-1">
         <p className="text-sm font-medium text-foreground">{name}</p>
         <p className="mt-0.5 text-sm text-muted-foreground">{description}</p>
+        {identity}
       </div>
       <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
         {busy ? "Pending" : statusLabel(account)}
       </span>
       {actions}
     </div>
+  );
+}
+
+/**
+ * Which account is actually linked. Composio exposes identity for some
+ * toolkits only; when it doesn't, the card falls back to the connection date
+ * already shown in the status column.
+ */
+function ConnectorIdentity({ toolkit }: { toolkit: ConnectorToolkit }) {
+  const { data: profile } = useProfile();
+  const details = useServerFn(getConnectorDetails);
+  const { data } = useQuery({
+    queryKey: ["connector-details", toolkit, profile?.id],
+    queryFn: () => details({ data: { toolkit, profile_id: profile?.id } }),
+    staleTime: 60_000,
+  });
+  if (!data?.identity) return null;
+  return (
+    <p className="mt-0.5 truncate font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+      Connected as {data.identity}
+    </p>
   );
 }
