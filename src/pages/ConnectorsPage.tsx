@@ -112,6 +112,7 @@ export function ConnectorsPage() {
         description={DESCRIPTIONS[toolkit]}
         account={account}
         busy={busy === toolkit}
+        identity={connected ? <ConnectorIdentity toolkit={toolkit} /> : null}
         actions={
           connected ? (
             <div className="flex items-center gap-4">
