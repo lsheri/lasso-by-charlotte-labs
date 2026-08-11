@@ -45,14 +45,11 @@ export function decodeDriveItem(id: string): { driveId: string; itemId: string }
   return driveId && itemId ? { driveId, itemId } : null;
 }
 
-async function graph(
-  toolkit: MsToolkit,
-  entityId: string,
-  endpoint: string,
-): Promise<Record<string, unknown>> {
+export type MsAuth = { entityId: string; accountId: string };
+
+async function graph(auth: MsAuth, endpoint: string): Promise<Record<string, unknown>> {
   const response = await composio().tools.proxyExecute({
-    toolkitSlug: toolkit,
-    userId: entityId,
+    connectedAccountId: auth.accountId,
     endpoint,
     method: "GET",
   });
@@ -83,7 +80,7 @@ function escapeQuery(term: string): string {
 }
 
 async function browseOneDrive(
-  entityId: string,
+  auth: MsAuth,
   opts: { folderId: string | null; search: string | null },
 ): Promise<MsItem[]> {
   const term = opts.search?.trim();
@@ -92,23 +89,19 @@ async function browseOneDrive(
     : opts.folderId
       ? `/me/drive/items/${encodeURIComponent(opts.folderId)}/children?$top=50`
       : `/me/drive/root/children?$top=50`;
-  const body = await graph("one_drive", entityId, endpoint);
+  const body = await graph(auth, endpoint);
   return values(body).map((raw) => toItem(raw, raw.id ?? ""));
 }
 
 async function browseSharePoint(
-  entityId: string,
+  auth: MsAuth,
   opts: { folderId: string | null; search: string | null },
 ): Promise<MsItem[]> {
   const term = opts.search?.trim();
 
   // Top level is the list of sites the user can reach.
   if (!opts.folderId) {
-    const body = await graph(
-      "sharepoint_graph",
-      entityId,
-      `/sites?search=${term ? escapeQuery(term) : "*"}`,
-    );
+    const body = await graph(auth, `/sites?search=${term ? escapeQuery(term) : "*"}`);
     return values(body).map((raw) => ({
       id: `${SITE}${raw.id ?? ""}`,
       name: raw.displayName ?? raw.name ?? "Site",
@@ -122,28 +115,19 @@ async function browseSharePoint(
   // Entering a site drops into its default document library.
   if (opts.folderId.startsWith(SITE)) {
     const siteId = opts.folderId.slice(SITE.length);
-    const drive = await graph(
-      "sharepoint_graph",
-      entityId,
-      `/sites/${encodeURIComponent(siteId)}/drive`,
-    );
+    const drive = await graph(auth, `/sites/${encodeURIComponent(siteId)}/drive`);
     const driveId = String(
       drive["id"] ?? (drive["data"] as Record<string, unknown> | undefined)?.["id"] ?? "",
     );
     if (!driveId) return [];
-    const body = await graph(
-      "sharepoint_graph",
-      entityId,
-      `/drives/${encodeURIComponent(driveId)}/root/children?$top=50`,
-    );
+    const body = await graph(auth, `/drives/${encodeURIComponent(driveId)}/root/children?$top=50`);
     return values(body).map((raw) => toItem(raw, encodeDriveItem(driveId, raw.id ?? "")));
   }
 
   const decoded = decodeDriveItem(opts.folderId);
   if (!decoded) return [];
   const body = await graph(
-    "sharepoint_graph",
-    entityId,
+    auth,
     `/drives/${encodeURIComponent(decoded.driveId)}/items/${encodeURIComponent(decoded.itemId)}/children?$top=50`,
   );
   return values(body).map((raw) => toItem(raw, encodeDriveItem(decoded.driveId, raw.id ?? "")));
@@ -151,26 +135,23 @@ async function browseSharePoint(
 
 export async function browseMicrosoft(
   toolkit: MsToolkit,
-  entityId: string,
+  auth: MsAuth,
   opts: { folderId?: string | null; search?: string | null },
 ): Promise<MsItem[]> {
   const args = { folderId: opts.folderId ?? null, search: opts.search ?? null };
   const items =
     toolkit === "one_drive"
-      ? await browseOneDrive(entityId, args)
-      : await browseSharePoint(entityId, args);
+      ? await browseOneDrive(auth, args)
+      : await browseSharePoint(auth, args);
   return items
     .filter((item) => item.id)
     .sort((a, b) => Number(b.isFolder) - Number(a.isFolder) || a.name.localeCompare(b.name));
 }
 
 /** Who is actually linked, so users can confirm the right Microsoft account. */
-export async function microsoftIdentity(
-  toolkit: MsToolkit,
-  entityId: string,
-): Promise<string | null> {
+export async function microsoftIdentity(auth: MsAuth): Promise<string | null> {
   try {
-    const body = await graph(toolkit, entityId, "/me?$select=userPrincipalName,displayName,mail");
+    const body = await graph(auth, "/me?$select=userPrincipalName,displayName,mail");
     const pool = ((body["data"] as Record<string, unknown> | undefined) ?? body) as Record<
       string,
       unknown
