@@ -94,38 +94,36 @@ export const browseGranolaMeetings = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<PickerPage> => {
     const { supabase, userId } = context;
     const { resolveProfile } = await import("@/lib/profile-resolve");
-    const { requireConnected, importedGranolaIds } = await import("@/lib/connector-import.server");
-    const { listGranolaMeetings } = await import("@/lib/composio.server");
+    const { importedGranolaIds } = await import("@/lib/connector-import.server");
+    const { requireGranolaKey, listGranolaNotes } = await import("@/lib/granola.server");
 
     const profile = await resolveProfile(supabase, userId, data.profile_id);
     if (!profile) throw new Response("Forbidden", { status: 403 });
-    await requireConnected(supabase, profile.id, "granola_mcp");
 
-    const { meetings, tool } = await listGranolaMeetings(profile.id);
-    if (!tool || meetings.length === 0) {
-      return {
-        items: [],
-        nextPageToken: null,
-        unsupported:
-          "Granola is connected but meeting browsing isn't available yet — this connection doesn't return a meeting list. Paste or upload still works.",
-      };
-    }
+    const key = await requireGranolaKey(profile.id);
+    const { notes, cursor } = await listGranolaNotes(key, {
+      limit: 30,
+      cursor: data.page_token ?? null,
+    });
     const seen = await importedGranolaIds(supabase, profile.id);
     const term = data.search?.trim().toLowerCase();
 
     return {
-      items: meetings
-        .filter((m) => !term || m.title.toLowerCase().includes(term))
-        .map((m) => ({
-          id: m.id,
-          title: m.title,
+      items: notes
+        .filter((note) => !term || note.title.toLowerCase().includes(term))
+        .map((note) => ({
+          id: note.id,
+          title: note.title,
           subtitle: null,
-          date: m.date,
+          date: note.date,
           isFolder: false,
-          alreadyInLasso: seen.has(m.id),
+          alreadyInLasso: seen.has(note.id),
         })),
-      nextPageToken: null,
-      unsupported: null,
+      nextPageToken: cursor,
+      unsupported:
+        notes.length === 0 && !data.page_token
+          ? "No meeting notes came back yet. Granola only returns notes that already have an AI summary."
+          : null,
     };
   });
 
@@ -135,46 +133,51 @@ export const importGranolaMeetings = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<{ imported: number; skipped: number }> => {
     const { supabase, userId } = context;
     const { resolveProfile } = await import("@/lib/profile-resolve");
-    const { requireConnected, importedGranolaIds, storeFile, captureEvents } =
-      await import("@/lib/connector-import.server");
-    const { listGranolaMeetings, fetchGranolaTranscript } = await import("@/lib/composio.server");
+    const { importedGranolaIds, storeFile, captureEvents } = await import(
+      "@/lib/connector-import.server"
+    );
+    const { requireGranolaKey, fetchGranolaNote } = await import("@/lib/granola.server");
 
     const profile = await resolveProfile(supabase, userId, data.profile_id);
     if (!profile) throw new Response("Forbidden", { status: 403 });
-    await requireConnected(supabase, profile.id, "granola_mcp");
 
-    const { meetings } = await listGranolaMeetings(profile.id);
+    const key = await requireGranolaKey(profile.id);
     const seen = await importedGranolaIds(supabase, profile.id);
     let imported = 0;
     let skipped = 0;
 
-    for (const id of data.ids) {
+    for (const [index, id] of data.ids.entries()) {
       if (seen.has(id)) {
         skipped += 1;
         continue;
       }
-      const meeting = meetings.find((m) => m.id === id);
-      const transcript = await fetchGranolaTranscript(profile.id, id);
-      if (!transcript) {
+      // One note at a time, with a breath between calls: Granola rate-limits.
+      if (index > 0) await new Promise((r) => setTimeout(r, 250));
+      const note = await fetchGranolaNote(key, id);
+      if (!note) {
         skipped += 1;
         continue;
       }
-      const title = meeting?.title ?? "Untitled meeting";
-      const bytes = new TextEncoder().encode(transcript);
-      const path = await storeFile(userId, `${title}.md`, bytes, "text/markdown; charset=utf-8");
+      const bytes = new TextEncoder().encode(note.markdown);
+      const path = await storeFile(
+        userId,
+        `${note.title}.md`,
+        bytes,
+        "text/markdown; charset=utf-8",
+      );
       const insert = await supabase.from("work_items").insert({
         owner_id: profile.id,
         org_id: profile.org_id,
         type: "call",
         source: "connector:granola",
         source_vendor: "granola",
-        title,
+        title: note.title,
         visibility: "unmapped",
         content_ref: path,
         content_fidelity: "transcribed",
-        ts_precision: meeting?.date ? "source" : "capture",
-        created_at_source: meeting?.date ?? null,
-        source_meta: { filename: `${title}.md`, mime_type: "text/markdown" },
+        ts_precision: note.date ? "source" : "capture",
+        created_at_source: note.date,
+        source_meta: { filename: `${note.title}.md`, mime_type: "text/markdown" },
         meta: { granola_id: id },
       });
       if (insert.error) throw new Error(insert.error.message);
