@@ -284,8 +284,32 @@ export function WorkPage() {
   }
 
   const isCoach = profile?.role === "coach";
-  const selectable = unmapped.map((i) => i.id);
+  const unmappedEntries = groupConversations(unmapped);
+  // Only standalone items are bulk-selectable; a conversation stays whole.
+  const selectable = unmappedEntries
+    .filter((entry): entry is WorkItemRow => !isConversationGroup(entry))
+    .map((i) => i.id);
   const allChosen = selectable.length > 0 && selectable.every((id) => chosen.has(id));
+
+  /** Mapped work, folded one engagement at a time. */
+  const mappedByEngagement = (() => {
+    const buckets = new Map<
+      string,
+      { id: string | null; label: string; items: WorkItemRow[] }
+    >();
+    for (const item of mapped) {
+      const engagement = item.work_item_tasks[0]?.tasks?.engagements ?? null;
+      const key = engagement?.id ?? "unfiled";
+      const bucket = buckets.get(key) ?? {
+        id: engagement?.id ?? null,
+        label: engagement ? `${engagement.code} · ${engagement.title}` : "Mapped elsewhere",
+        items: [],
+      };
+      bucket.items.push(item);
+      buckets.set(key, bucket);
+    }
+    return Array.from(buckets.values()).sort((a, b) => a.label.localeCompare(b.label));
+  })();
 
   function toggleChosen(id: string) {
     setChosen((prev) => {
