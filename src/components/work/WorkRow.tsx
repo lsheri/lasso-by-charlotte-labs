@@ -1,6 +1,6 @@
-import { Lock } from "lucide-react";
+import { CircleDashed, Lock } from "lucide-react";
 
-import { EngagementChip, TypeIcon } from "@/components/work/TypeIcon";
+import { EngagementChip, TypeIcon, VendorChip } from "@/components/work/TypeIcon";
 import { engagementHue, workIdentityLabel } from "@/lib/work-identity";
 import { effectiveWorkDate, formatDate, sourceLabel, type WorkItemRow } from "@/lib/work-types";
 
@@ -32,8 +32,19 @@ export function WorkRow({
     state === "mapped"
       ? "border-border bg-card shadow-card"
       : state === "private"
-        ? "border-border/70 bg-secondary/50"
-        : "border-dashed border-muted-foreground/35 bg-card/60";
+        ? "border-border/70"
+        : "border-dashed";
+
+  // Amber wash + dashed border for waiting work, indigo recess for private.
+  const wash =
+    state === "unmapped"
+      ? {
+          backgroundColor: "var(--state-amber-wash)",
+          borderColor: "color-mix(in oklab, var(--state-amber) 45%, transparent)",
+        }
+      : state === "private"
+        ? { backgroundColor: "var(--state-indigo-wash)" }
+        : {};
 
   const spine =
     state === "mapped"
@@ -49,7 +60,7 @@ export function WorkRow({
       className={`rounded-[var(--radius)] border ${shell} ${
         onOpen ? "transition-colors hover:border-accent/40" : ""
       }`}
-      style={spine}
+      style={{ ...wash, ...spine }}
     >
       <div
         {...(onOpen
@@ -80,7 +91,11 @@ export function WorkRow({
         <div className="min-w-0 flex-1">
           <div className="flex min-w-0 items-center gap-1.5">
             {state === "private" ? (
-              <Lock className="h-3 w-3 shrink-0 text-muted-foreground" aria-label="Private" />
+              <Lock
+                className="h-3 w-3 shrink-0"
+                style={{ color: "var(--state-indigo)" }}
+                aria-label="Private"
+              />
             ) : null}
             <p className="truncate text-sm font-medium text-foreground">{item.title}</p>
           </div>
@@ -92,8 +107,15 @@ export function WorkRow({
             ) : null}
             {chips}
           </div>
-          <p className="mt-0.5 truncate font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
-            {workIdentityLabel(item)} · {sourceLabel(item.source)} · {formatDate(dateIso)}
+          <p className="mt-0.5 flex flex-wrap items-center gap-x-1.5 truncate font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+            <span>{workIdentityLabel(item)}</span>
+            <span aria-hidden>·</span>
+            <VendorChip
+              vendor={item.source_vendor ?? sourceLabel(item.source)}
+              label={sourceLabel(item.source)}
+            />
+            <span aria-hidden>·</span>
+            <span>{formatDate(dateIso)}</span>
             {link ? (
               <>
                 {" · "}
@@ -120,7 +142,14 @@ export function WorkRow({
             />
           </span>
         ) : state === "unmapped" ? (
-          <span className="hidden shrink-0 rounded-full border border-dashed border-muted-foreground/40 px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground sm:inline">
+          <span
+            className="hidden shrink-0 items-center gap-1 rounded-full border border-dashed px-2 py-0.5 font-mono text-[10px] font-medium uppercase tracking-[0.08em] sm:inline-flex"
+            style={{
+              color: "var(--state-amber)",
+              borderColor: "color-mix(in oklab, var(--state-amber) 50%, transparent)",
+            }}
+          >
+            <CircleDashed className="h-3 w-3" aria-hidden />
             Needs mapping
           </span>
         ) : null}

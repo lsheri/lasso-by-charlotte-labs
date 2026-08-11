@@ -97,3 +97,29 @@ export function engagementHue(engagementId: string | null | undefined): string {
   }
   return `--engagement-${(hash % ENGAGEMENT_HUES) + 1}`;
 }
+
+/**
+ * Vendor tones: each source gets a brand-adjacent colour at chip scale, so a
+ * Claude thread and a Drive deck are told apart before the label is read.
+ */
+const VENDOR_HUES: Record<string, string> = {
+  claude: "--vendor-claude",
+  chatgpt: "--vendor-chatgpt",
+  openai: "--vendor-chatgpt",
+  gemini: "--vendor-gemini",
+  copilot: "--vendor-copilot",
+  gdrive: "--vendor-gdrive",
+  googledrive: "--vendor-gdrive",
+  "google drive": "--vendor-gdrive",
+  granola: "--vendor-granola",
+  notion: "--vendor-notion",
+  slack: "--vendor-slack",
+  onedrive: "--vendor-microsoft",
+  sharepoint: "--vendor-microsoft",
+  gmail: "--vendor-claude",
+};
+
+export function vendorHue(vendor: string | null | undefined): string | null {
+  if (!vendor) return null;
+  return VENDOR_HUES[vendor.trim().toLowerCase()] ?? null;
+}

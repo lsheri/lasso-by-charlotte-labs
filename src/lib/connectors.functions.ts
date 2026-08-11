@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { validateToolkit } from "@/lib/connectors-shared";
+import { validateProfileId, validateToolkit } from "@/lib/connectors-shared";
 import { resolveProfile } from "@/lib/profile-resolve";
 
 export const initiateConnection = createServerFn({ method: "POST" })
@@ -110,6 +110,10 @@ export const disconnectConnector = createServerFn({ method: "POST" })
       }
     }
 
+    // API-key connectors keep their secret in connector_secrets; drop it too.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await supabaseAdmin.from("connector_secrets").delete().eq("account_id", row.id);
+
     const upd = await supabase
       .from("connector_accounts")
       .update({ status: "disconnected", composio_account_id: null, connected_at: null })
@@ -128,8 +132,9 @@ export const getConnectorDetails = createServerFn({ method: "POST" })
   .inputValidator(validateToolkit)
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const { composio, connectedAccountIdentity, driveAccountIdentity, granolaTools } =
-      await import("@/lib/composio.server");
+    const { composio, connectedAccountIdentity, driveAccountIdentity } = await import(
+      "@/lib/composio.server"
+    );
 
     const profile = await resolveProfile(supabase, userId, data.profile_id);
     if (!profile) throw new Response("Forbidden", { status: 403 });
@@ -166,7 +171,87 @@ export const getConnectorDetails = createServerFn({ method: "POST" })
       }
     }
 
-    const tools =
-      data.toolkit === "granola_mcp" ? await granolaTools(profile.id).catch(() => []) : [];
-    return { identity, tools };
+    return { identity, tools: [] as string[] };
+  });
+
+function validateGranolaSave(input: { profile_id?: string | undefined; api_key: string }): {
+  profile_id: string | null;
+  api_key: string;
+} {
+  const key = (input?.api_key ?? "").trim();
+  if (!key) throw new Error("Paste your Granola API key first.");
+  if (key.length > 400) throw new Error("That doesn't look like a Granola API key.");
+  return { profile_id: input.profile_id ?? null, api_key: key };
+}
+
+/**
+ * Granola authenticates with a personal API key rather than OAuth. The key is
+ * validated against Granola before it is stored, written with the service role
+ * into connector_secrets, and never sent back to the browser.
+ */
+export const saveGranolaKey = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(validateGranolaSave)
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { validateGranolaKey, maskKey } = await import("@/lib/granola.server");
+
+    const profile = await resolveProfile(supabase, userId, data.profile_id);
+    if (!profile) throw new Response("Forbidden", { status: 403 });
+
+    await validateGranolaKey(data.api_key);
+
+    const { data: existing } = await supabase
+      .from("connector_accounts")
+      .select("id")
+      .eq("profile_id", profile.id)
+      .eq("toolkit", "granola_mcp")
+      .maybeSingle();
+
+    const connectedAt = new Date().toISOString();
+    const row = {
+      profile_id: profile.id,
+      toolkit: "granola_mcp",
+      composio_account_id: null,
+      status: "connected",
+      connected_at: connectedAt,
+    };
+    const write = existing
+      ? await supabase
+          .from("connector_accounts")
+          .update(row)
+          .eq("id", existing.id)
+          .select("id")
+          .single()
+      : await supabase.from("connector_accounts").insert(row).select("id").single();
+    if (write.error) throw new Error(write.error.message);
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const secret = await supabaseAdmin
+      .from("connector_secrets")
+      .upsert({ account_id: write.data.id, api_key: data.api_key }, { onConflict: "account_id" });
+    if (secret.error) throw new Error(secret.error.message);
+
+    const { recordEvent } = await import("@/lib/telemetry.server");
+    await recordEvent(supabase, {
+      eventType: "connector.enabled",
+      orgId: profile.org_id,
+      userId,
+      dims: { toolkit: "granola_mcp", auth_mode: "api_key" },
+    });
+
+    return { status: "connected" as const, masked: maskKey(data.api_key) };
+  });
+
+/** Masked key for the card — the plaintext never leaves the server. */
+export const getGranolaKeyMask = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(validateProfileId)
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const profile = await resolveProfile(supabase, userId, data.profile_id);
+    if (!profile) throw new Response("Forbidden", { status: 403 });
+    const { granolaKeyForProfile, maskKey } = await import("@/lib/granola.server");
+    const found = await granolaKeyForProfile(profile.id);
+    return { masked: found ? maskKey(found.key) : null };
   });

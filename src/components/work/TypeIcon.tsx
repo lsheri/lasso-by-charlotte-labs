@@ -1,4 +1,12 @@
-import { engagementHue, hueStyles, workIdentity, workIdentityLabel } from "@/lib/work-identity";
+import { CheckCircle2 } from "lucide-react";
+
+import {
+  engagementHue,
+  hueStyles,
+  vendorHue,
+  workIdentity,
+  workIdentityLabel,
+} from "@/lib/work-identity";
 import type { WorkItemRow } from "@/lib/work-types";
 
 type IdentityItem = Pick<WorkItemRow, "type"> & { source_meta?: WorkItemRow["source_meta"] };
@@ -54,8 +62,30 @@ export function EngagementChip({
       className="inline-flex max-w-[220px] items-center gap-1 truncate rounded-full px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em]"
       style={{ backgroundColor: styles.background, color: styles.color }}
     >
+      <CheckCircle2 className="h-3 w-3 shrink-0" aria-hidden />
       {code ?? "—"}
       {taskName ? ` · ${taskName}` : ""}
+    </span>
+  );
+}
+
+/** The source a piece of work came from, in that vendor's own tone. */
+export function VendorChip({ vendor, label }: { vendor: string | null | undefined; label: string }) {
+  const hue = vendorHue(vendor);
+  if (!hue) {
+    return (
+      <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+        {label}
+      </span>
+    );
+  }
+  const styles = hueStyles(hue);
+  return (
+    <span
+      className="inline-flex items-center rounded-full px-1.5 py-0.5 font-mono text-[10px] font-medium uppercase tracking-[0.08em]"
+      style={{ backgroundColor: styles.background, color: styles.color }}
+    >
+      {label}
     </span>
   );
 }
