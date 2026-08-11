@@ -102,6 +102,12 @@ function LandingPage() {
         <Wordmark />
         <nav className="flex items-center gap-5">
           <Link
+            to="/why"
+            className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+          >
+            Why Lasso
+          </Link>
+          <Link
             to="/trust"
             className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
           >
