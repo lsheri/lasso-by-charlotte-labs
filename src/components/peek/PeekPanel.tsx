@@ -67,6 +67,7 @@ function FooterAction({
 
 export function PeekPanel({
   entry,
+  focusId,
   open,
   onOpenChange,
   canEdit,
@@ -75,6 +76,7 @@ export function PeekPanel({
   onMakePrivate,
 }: {
   entry: PeekEntry | null;
+  focusId?: string | undefined;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   canEdit: boolean;
@@ -87,8 +89,10 @@ export function PeekPanel({
   const [tab, setTab] = useState(0);
 
   useEffect(() => {
-    setTab(0);
-  }, [entry]);
+    if (!entry) return;
+    const index = focusId ? entryItems(entry).findIndex((i) => i.id === focusId) : 0;
+    setTab(index < 0 ? 0 : index);
+  }, [entry, focusId]);
 
   const active = items[Math.min(tab, Math.max(items.length - 1, 0))] ?? null;
   const group = entry && isConversationGroup(entry) ? entry.items : undefined;
