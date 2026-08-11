@@ -1,4 +1,4 @@
-export const CONNECTOR_TOOLKITS = ["googledrive", "gmail", "slack", "notion"] as const;
+export const CONNECTOR_TOOLKITS = ["googledrive", "gmail", "slack", "notion", "granola_mcp"] as const;
 export type ConnectorToolkit = (typeof CONNECTOR_TOOLKITS)[number];
 
 export type ConnectorStatus = "not_connected" | "pending" | "connected" | "disconnected";

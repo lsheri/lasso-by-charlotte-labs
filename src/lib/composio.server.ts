@@ -118,15 +118,17 @@ export async function listDriveFiles(entityId: string, limit = 20): Promise<Driv
 export async function fetchDriveFileBytes(
   entityId: string,
   fileId: string,
-): Promise<{ bytes: Uint8Array; mimeType: string } | null> {
+): Promise<{ bytes: Uint8Array; mimeType: string; name: string; webViewLink: string | null } | null> {
   const data = await run("GOOGLEDRIVE_PARSE_FILE", entityId, { file_id: fileId });
-  const file = data["file"] as { s3url?: string; mimetype?: string } | undefined;
+  const file = data["file"] as { s3url?: string; mimetype?: string; name?: string } | undefined;
   if (!file?.s3url) return null;
   const response = await fetch(file.s3url);
   if (!response.ok) return null;
   return {
     bytes: new Uint8Array(await response.arrayBuffer()),
     mimeType: file.mimetype ?? "application/octet-stream",
+    name: file.name ?? "Untitled file",
+    webViewLink: (data["display_url"] as string | undefined) ?? null,
   };
 }
 

@@ -90,14 +90,7 @@ export const importDriveFiles = createServerFn({ method: "POST" })
         skipped += 1;
         continue;
       }
-      const meta = await supabase
-        .from("work_items")
-        .select("id")
-        .eq("owner_id", profile.id)
-        .limit(0);
-      if (meta.error) throw new Error(meta.error.message);
-
-      const name = file.name ?? "Untitled file";
+      const name = file.name;
       const path = await storeFile(userId, name, file.bytes, file.mimeType);
       const insert = await supabase.from("work_items").insert({
         owner_id: profile.id,
@@ -109,13 +102,12 @@ export const importDriveFiles = createServerFn({ method: "POST" })
         visibility: "unmapped",
         content_ref: path,
         content_fidelity: "verbatim",
-        ts_precision: "source",
-        created_at_source: file.modifiedTime ?? null,
+        ts_precision: "capture",
         source_meta: { filename: name, mime_type: file.mimeType },
         meta: {
           drive_file_id: fileId,
           mime_type: file.mimeType,
-          web_view_link: file.webViewLink ?? null,
+          web_view_link: file.webViewLink,
         },
       });
       if (insert.error) throw new Error(insert.error.message);
