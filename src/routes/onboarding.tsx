@@ -2,6 +2,7 @@ import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-ro
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
+import { ConnectorCaptureCard } from "@/components/connectors/ConnectorCaptureCard";
 import { Wordmark } from "@/components/layout/Wordmark";
 import { EnterInviteCode } from "@/components/invites/EnterInviteCode";
 import { PasteThreadDialog } from "@/components/work/PasteThreadDialog";
