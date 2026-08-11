@@ -26,6 +26,13 @@
 @theme inline {
   --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --color-ember: var(--ember);
+  --color-ember-deep: var(--ember-deep);
+  --color-ember-foreground: var(--ember-foreground);
+  --color-ember-wash: var(--ember-wash);
+  --color-state-amber: var(--state-amber);
+  --color-state-teal: var(--state-teal);
+  --color-state-indigo: var(--state-indigo);
   --color-accent-soft: var(--accent-soft);
   --color-accent-deep: var(--accent-deep);
   --color-navy: var(--navy);
@@ -105,7 +112,7 @@
   --destructive-foreground: #ffffff;
   --border: #ddd8d0;
   --input: #ddd8d0;
-  --ring: #607060;
+  --ring: #c05621;
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
@@ -122,28 +129,82 @@
 }
 
 /*
+ * Accent system. Ember is THE action colour — one ember-filled primary button
+ * per screen. The state triad is separated by LUMINANCE as well as hue, so it
+ * survives deuteranopia/protanopia, and colour is never the only signal: every
+ * state also carries an icon, a label and a border treatment.
+ */
+:root {
+  --ember: #c05621; /* white text: 4.57:1 */
+  --ember-deep: #9c4221; /* ember text on bone: 6.0:1 */
+  --ember-foreground: #ffffff;
+  --ember-wash: color-mix(in oklab, var(--ember) 10%, transparent);
+
+  --state-amber: #b45309; /* needs mapping — 4.61:1 on bone */
+  --state-amber-wash: color-mix(in oklab, var(--state-amber) 8%, transparent);
+  --state-amber-band: color-mix(in oklab, var(--state-amber) 10%, transparent);
+
+  --state-teal: #0f766e; /* mapped — 5.03:1 on bone */
+  --state-teal-wash: color-mix(in oklab, var(--state-teal) 8%, transparent);
+  --state-teal-band: color-mix(in oklab, var(--state-teal) 10%, transparent);
+
+  --state-indigo: #4c51bf; /* private — 5.96:1 on bone */
+  --state-indigo-wash: color-mix(in oklab, var(--state-indigo) 8%, transparent);
+  --state-indigo-band: color-mix(in oklab, var(--state-indigo) 10%, transparent);
+
+  /* Vendor tones, brand-adjacent but pulled into the bone palette. */
+  --vendor-claude: #a8452a;
+  --vendor-chatgpt: #0f6b5c;
+  --vendor-gemini: #2d5bb9;
+  --vendor-copilot: #0b6a86;
+  --vendor-gdrive: #4d7a1f;
+  --vendor-granola: #b1601c;
+  --vendor-notion: #45403a;
+  --vendor-slack: #6b3f7a;
+  --vendor-microsoft: #1f5fa8;
+}
+
+.dark {
+  --ember: #e2793f;
+  --ember-deep: #f0a476;
+  --ember-foreground: #221a12;
+  --state-amber: #e0a862;
+  --state-teal: #5cc3b4;
+  --state-indigo: #a3a3e0;
+  --vendor-claude: #e39c84;
+  --vendor-chatgpt: #6fc4b2;
+  --vendor-gemini: #8fb1ea;
+  --vendor-copilot: #74c0d6;
+  --vendor-gdrive: #a8cf75;
+  --vendor-granola: #e5aa72;
+  --vendor-notion: #c9c3ba;
+  --vendor-slack: #c39ad0;
+  --vendor-microsoft: #8ab6e8;
+}
+
+/*
  * Type identity hues. Muted saturation so they sit inside Bone + Slate: used
  * as a full-strength icon colour on a ~12% tint of themselves.
  */
 :root {
-  --hue-slate-blue: #4a5f7a;
-  --hue-sand: #8a7248;
-  --hue-moss: #4f6b45;
-  --hue-clay: #9a5a41;
-  --hue-sage: #5c7566;
-  --hue-plum: #6f4a6b;
-  --hue-amber: #96702a;
-  --hue-indigo: #4f4f86;
-  --hue-neutral: #7a7566;
+  --hue-slate-blue: #3d5f88;
+  --hue-sand: #8a6a2a;
+  --hue-moss: #3f7030;
+  --hue-clay: #a5502c;
+  --hue-sage: #437a5c;
+  --hue-plum: #7a3f74;
+  --hue-amber: #9c6c10;
+  --hue-indigo: #4a4a99;
+  --hue-neutral: #736d59;
   /* Stable per-engagement accents, chosen by hashing the engagement id. */
-  --engagement-1: #4a5f7a;
-  --engagement-2: #4f6b45;
-  --engagement-3: #9a5a41;
-  --engagement-4: #6f4a6b;
-  --engagement-5: #8a7248;
-  --engagement-6: #4f4f86;
-  --engagement-7: #5c7566;
-  --engagement-8: #7a5a5a;
+  --engagement-1: #3d5f88;
+  --engagement-2: #3f7030;
+  --engagement-3: #a5502c;
+  --engagement-4: #7a3f74;
+  --engagement-5: #8a6a2a;
+  --engagement-6: #4a4a99;
+  --engagement-7: #437a5c;
+  --engagement-8: #8a4c4c;
 }
 
 .dark {
@@ -366,4 +427,33 @@
 }
 .hljs-strong {
   font-weight: 600;
+}
+
+/* Interactive affordances: visible weight, never grey-on-grey. */
+@layer base {
+  :focus-visible {
+    outline: 2px solid var(--ember);
+    outline-offset: 2px;
+  }
+}
+
+@utility state-band {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: var(--radius);
+  padding: 0.375rem 0.625rem;
+}
+
+@utility count-pill {
+  display: inline-flex;
+  min-width: 1.25rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  padding: 0.0625rem 0.4rem;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  color: #ffffff;
 }
