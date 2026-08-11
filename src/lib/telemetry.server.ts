@@ -39,6 +39,8 @@ async function mirrorToPostHog(
     const response = await fetch(`${POSTHOG_HOST}/i/v0/e/`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      // A hanging analytics host must never stall a user action.
+      signal: AbortSignal.timeout(3000),
       body: JSON.stringify({
         api_key: POSTHOG_KEY,
         event: eventType,
