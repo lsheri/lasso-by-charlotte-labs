@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { ConnectorPicker } from "@/components/connectors/ConnectorPicker";
+import { GranolaKeyCard } from "@/components/connectors/GranolaKeyCard";
 import { Button } from "@/components/ui/button";
 import { useConnectorAccounts, TOOLKIT_LABELS } from "@/hooks/use-connector-accounts";
 import { useProfile } from "@/hooks/use-profile";
@@ -17,6 +18,12 @@ import { ToolBadge } from "./ToolBadge";
  * inline — the user picks files themselves. Nothing arrives unselected.
  */
 export function LiveConnectCard({ tool }: { tool: Extract<ToolId, "googledrive" | "granola"> }) {
+  // Granola authenticates with a pasted API key, so it gets its own card.
+  if (tool === "granola") return <GranolaKeyCard />;
+  return <OAuthConnectCard tool={tool} />;
+}
+
+function OAuthConnectCard({ tool }: { tool: Extract<ToolId, "googledrive" | "granola"> }) {
   const toolkit = tool === "googledrive" ? "googledrive" : "granola_mcp";
   const meta = TOOLS[tool];
   const { data: profile } = useProfile();
@@ -89,7 +96,7 @@ export function LiveConnectCard({ tool }: { tool: Extract<ToolId, "googledrive" 
             {busy ? "Waiting for you to approve…" : `Connect ${meta.label}`}
           </Button>
         </div>
-      ) : tool === "googledrive" ? (
+      ) : (
         <div className="mt-4">
           <ConnectorPicker
             kind="googledrive"
@@ -98,12 +105,6 @@ export function LiveConnectCard({ tool }: { tool: Extract<ToolId, "googledrive" 
             trigger={<Button type="button">Pick files to bring in</Button>}
           />
         </div>
-      ) : (
-        <p className="mt-4 rounded-[var(--radius)] border border-border bg-secondary/60 px-4 py-3 text-sm text-muted-foreground">
-          Connected — meeting browsing is coming soon. Granola doesn&apos;t expose a list of your
-          meetings to us yet, so there&apos;s nothing to pick from in here today. We&apos;ll turn it
-          on the moment it does.
-        </p>
       )}
     </div>
   );
