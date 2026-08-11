@@ -10,7 +10,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
  */
 export const getWorkFileUrl = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { work_item_id: string }) => input)
+  .inputValidator((input: { work_item_id: string; inline?: boolean }) => input)
   .handler(async ({ data, context }): Promise<{ url: string }> => {
     const { data: item, error } = await context.supabase
       .from("work_items")
@@ -24,9 +24,11 @@ export const getWorkFileUrl = createServerFn({ method: "POST" })
     const filename = meta.filename ?? item.title;
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    // Inline previews must not carry a download disposition, or the browser
+    // saves the file instead of rendering it in the peek panel.
     const signed = await supabaseAdmin.storage
       .from("work-files")
-      .createSignedUrl(item.content_ref, 300, { download: filename });
+      .createSignedUrl(item.content_ref, 300, data.inline ? {} : { download: filename });
     if (signed.error || !signed.data) {
       throw new Error(signed.error?.message ?? "Could not open this file.");
     }
