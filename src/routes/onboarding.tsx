@@ -89,45 +89,6 @@ function OnboardingPage() {
   return <OnboardingInner />;
 }
 
-function McpOnboardingSection({ onSetup }: { onSetup: () => void }) {
-  const [showWhat, setShowWhat] = useState(false);
-
-  return (
-    <section className="mt-6 rounded-[var(--radius)] border border-accent bg-accent-soft px-5 py-5">
-      <h2 className="micro-label text-accent-deep">Connect your AI — where Lasso began</h2>
-      <div className="mt-3 space-y-2 text-sm text-foreground">
-        <p>Lasso started with one idea: the work you do with AI should belong to you.</p>
-        <p>
-          MCP is a simple standard that lets your AI talk to Lasso directly — you add Lasso as a
-          connector in Claude or ChatGPT once, then just tell your AI “push this to Lasso” at the
-          end of any working session.
-        </p>
-        <p>
-          Everything it pushes lands private and unmapped, only you can see it, and you can revoke
-          the connection anytime.
-        </p>
-      </div>
-      <div className="mt-4 flex items-center gap-6">
-        <Button type="button" onClick={onSetup}>
-          Set it up
-        </Button>
-        <button
-          type="button"
-          onClick={() => setShowWhat((v) => !v)}
-          className="text-xs text-muted-foreground transition-colors hover:text-foreground"
-        >
-          What&apos;s MCP?
-        </button>
-      </div>
-      {showWhat ? (
-        <p className="mt-3 text-sm text-muted-foreground">
-          Model Context Protocol — an open standard (like USB for AI tools) that lets AI assistants
-          use other apps on your behalf, with your permission.
-        </p>
-      ) : null}
-    </section>
-  );
-}
 
 function OnboardingInner() {
   const navigate = useNavigate();
@@ -238,73 +199,62 @@ function OnboardingInner() {
     );
   }
 
-  if (stage === "capture") {
+
+  if (stage === "tools") {
     return (
       <>
         <SessionHeader />
         <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-background px-4 py-16">
           <div className="w-full max-w-3xl">
             <Wordmark size="lg" />
+            <p className="micro-label mt-6">Step one</p>
+            <h1 className="page-title mt-2">Where do you work with AI?</h1>
+            <p className="mt-1.5 text-sm text-muted-foreground">
+              Pick everything you use. We'll only set up what you choose — and nothing comes in
+              until you say so.
+            </p>
+
+            <div className="mt-6">
+              <ToolPicker selected={tools} onToggle={toggleTool} />
+            </div>
+
+            <div className="mt-8 flex items-center gap-6">
+              <Button type="button" onClick={() => void continueFromTools()}>
+                Continue
+              </Button>
+              <button
+                type="button"
+                onClick={finish}
+                className="text-xs text-muted-foreground hover:text-foreground"
+              >
+                I'll do this later
+              </button>
+            </div>
+            <ProgressDots total={2} current={0} />
+          </div>
+        </main>
+      </>
+    );
+  }
+
+  if (stage === "capture") {
+    return (
+      <>
+        <SessionHeader />
+        <main className="flex min-h-[calc(100vh-4rem)] justify-center bg-background px-4 py-16">
+          <div className="w-full max-w-3xl">
+            <Wordmark size="lg" />
             <p className="micro-label mt-6">Step two</p>
-            <h1 className="page-title mt-2">Bring in your work</h1>
+            <h1 className="page-title mt-2">Set up your first work</h1>
             <p className="mt-1.5 text-sm text-muted-foreground">
               Start with one source. You can add the rest any time.
             </p>
 
-            <McpOnboardingSection
-              onSetup={() => navigate({ to: "/connectors", hash: "connect-your-ai" })}
-            />
-
-            <div className="mt-6 grid gap-3 sm:grid-cols-2">
-              <ConnectorCaptureCard onConnect={() => navigate({ to: "/connectors" })} />
-
-              {VENDOR_ORDER.map((id) => (
-                <ImportFlowDialog
-                  key={id}
-                  initialVendor={id}
-                  trigger={
-                    <button
-                      type="button"
-                      className="rounded-[var(--radius)] border border-border bg-card p-4 text-left shadow-card transition-colors hover:border-accent"
-                    >
-                      <p className="text-sm font-medium text-foreground">
-                        Import {VENDORS[id].label} history
-                      </p>
-                      <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
-                        {VENDORS[id].tierHint}
-                      </p>
-                    </button>
-                  }
-                />
-              ))}
-
-              <PasteThreadDialog
-                trigger={
-                  <button
-                    type="button"
-                    className="rounded-[var(--radius)] border border-border bg-card p-4 text-left shadow-card transition-colors hover:border-accent"
-                  >
-                    <p className="text-sm font-medium text-foreground">Paste a conversation</p>
-                    <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
-                      Full fidelity
-                    </p>
-                  </button>
-                }
-              />
-
-              <div className="rounded-[var(--radius)] border border-border bg-card p-4 shadow-card">
-                <p className="text-sm font-medium text-foreground">Upload files</p>
-                <div className="mt-2">
-                  <UploadFilesButton />
-                </div>
-              </div>
+            <div className="mt-6">
+              <SetupTools tools={[...tools]} />
             </div>
 
-            <p className="mt-6 text-sm text-muted-foreground">
-              Everything lands private. Nothing is visible to anyone until you map it.
-            </p>
-
-            <div className="mt-6 flex items-center gap-6">
+            <div className="mt-8 flex items-center gap-6">
               <Button type="button" onClick={finish}>
                 Go to my work
               </Button>
@@ -316,11 +266,13 @@ function OnboardingInner() {
                 I'll do this later
               </button>
             </div>
+            <ProgressDots total={2} current={1} />
           </div>
         </main>
       </>
     );
   }
+
 
   if (stage === "choose") {
     return (
