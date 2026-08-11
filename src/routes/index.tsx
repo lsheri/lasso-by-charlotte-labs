@@ -39,14 +39,8 @@ const STEPS: [string, string][] = [
     "Capture",
     "Bring in your AI threads and files — paste, export, or connect. Nothing is imported unless you select it.",
   ],
-  [
-    "Organize",
-    "Map work to real engagements. Confirm the sequence it actually happened in.",
-  ],
-  [
-    "Share on your terms",
-    "Invite a coach into exactly what you choose. Private stays private.",
-  ],
+  ["Organize", "Map work to real engagements. Confirm the sequence it actually happened in."],
+  ["Share on your terms", "Invite a coach into exactly what you choose. Private stays private."],
 ];
 
 const AUDIENCES: {

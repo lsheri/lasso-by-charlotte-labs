@@ -26,7 +26,10 @@ export function SessionHeader() {
   return (
     <header className="border-b border-border">
       <div className="mx-auto grid max-w-5xl grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-4 sm:px-6 md:px-10">
-        <Link to="/" className="min-w-0 truncate font-mono text-sm tracking-[0.24em] text-foreground">
+        <Link
+          to="/"
+          className="min-w-0 truncate font-mono text-sm tracking-[0.24em] text-foreground"
+        >
           LASSO
         </Link>
         <div className="flex shrink-0 items-center gap-3">
