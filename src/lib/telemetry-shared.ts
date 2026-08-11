@@ -23,7 +23,10 @@ export type TelemetryEvent =
   | "coach.joined"
   | "packet.viewed"
   | "note.created"
-  | "coachchat.asked";
+  | "coachchat.asked"
+  | "engagement.updated"
+  | "task.updated"
+  | "feedback.submitted";
 
 export type TelemetryDims = Record<
   string,
