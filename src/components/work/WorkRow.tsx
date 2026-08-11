@@ -1,15 +1,8 @@
 import { Lock } from "lucide-react";
 
-import { TypeIcon } from "@/components/work/TypeIcon";
-import { EngagementChip } from "@/components/work/TypeIcon";
-import { engagementHue } from "@/lib/work-identity";
-import {
-  effectiveWorkDate,
-  formatDate,
-  sourceLabel,
-  workIdentityRowLabel,
-  type WorkItemRow,
-} from "@/lib/work-types";
+import { EngagementChip, TypeIcon } from "@/components/work/TypeIcon";
+import { engagementHue, workIdentityLabel } from "@/lib/work-identity";
+import { effectiveWorkDate, formatDate, sourceLabel, type WorkItemRow } from "@/lib/work-types";
 
 export function WorkRow({
   item,
@@ -100,7 +93,7 @@ export function WorkRow({
             {chips}
           </div>
           <p className="mt-0.5 truncate font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
-            {workIdentityRowLabel(item)} · {sourceLabel(item.source)} · {formatDate(dateIso)}
+            {workIdentityLabel(item)} · {sourceLabel(item.source)} · {formatDate(dateIso)}
             {link ? (
               <>
                 {" · "}
@@ -133,7 +126,7 @@ export function WorkRow({
         ) : null}
 
         <div
-          className="flex shrink-0 items-center gap-3"
+          className="flex max-w-[50%] shrink-0 flex-wrap items-center justify-end gap-x-3 gap-y-1"
           onClick={(event) => event.stopPropagation()}
         >
           {actions}
