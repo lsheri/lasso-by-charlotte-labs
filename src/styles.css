@@ -121,6 +121,51 @@
   --sidebar-ring: #607060;
 }
 
+/*
+ * Type identity hues. Muted saturation so they sit inside Bone + Slate: used
+ * as a full-strength icon colour on a ~12% tint of themselves.
+ */
+:root {
+  --hue-slate-blue: #4a5f7a;
+  --hue-sand: #8a7248;
+  --hue-moss: #4f6b45;
+  --hue-clay: #9a5a41;
+  --hue-sage: #5c7566;
+  --hue-plum: #6f4a6b;
+  --hue-amber: #96702a;
+  --hue-indigo: #4f4f86;
+  --hue-neutral: #7a7566;
+  /* Stable per-engagement accents, chosen by hashing the engagement id. */
+  --engagement-1: #4a5f7a;
+  --engagement-2: #4f6b45;
+  --engagement-3: #9a5a41;
+  --engagement-4: #6f4a6b;
+  --engagement-5: #8a7248;
+  --engagement-6: #4f4f86;
+  --engagement-7: #5c7566;
+  --engagement-8: #7a5a5a;
+}
+
+.dark {
+  --hue-slate-blue: #93b0d4;
+  --hue-sand: #d6bd8a;
+  --hue-moss: #9cc48f;
+  --hue-clay: #e0a086;
+  --hue-sage: #a5c4b1;
+  --hue-plum: #c architecture;
+  --hue-amber: #e0be76;
+  --hue-indigo: #a3a3e0;
+  --hue-neutral: #bdb8a8;
+  --engagement-1: #93b0d4;
+  --engagement-2: #9cc48f;
+  --engagement-3: #e0a086;
+  --engagement-4: #c69ac1;
+  --engagement-5: #d6bd8a;
+  --engagement-6: #a3a3e0;
+  --engagement-7: #a5c4b1;
+  --engagement-8: #d0a8a8;
+}
+
 .dark {
   --background: oklch(0.129 0.042 264.695);
   --foreground: oklch(0.984 0.003 247.858);
