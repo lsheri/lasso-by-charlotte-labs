@@ -536,11 +536,25 @@ export function WorkPage() {
           }
         }}
       />
-      <ThreadViewer
-        item={threadItem}
-        open={threadItem !== null}
+      <PeekPanel
+        entry={peek?.entry ?? null}
+        focusId={peek?.focusId}
+        open={peek !== null}
+        canEdit={!isCoach}
+        onMap={(item, group) => {
+          setPeek(null);
+          openMap(item, group);
+        }}
+        onWorkDate={(item) => {
+          setPeek(null);
+          setDateItem(item);
+        }}
+        onMakePrivate={(item) => {
+          setPeek(null);
+          void makePrivate(item);
+        }}
         onOpenChange={(next) => {
-          if (!next) setThreadItem(null);
+          if (!next) setPeek(null);
         }}
       />
       <AlertDialog open={confirmRemove} onOpenChange={setConfirmRemove}>
