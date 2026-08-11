@@ -447,6 +447,8 @@ export function WorkPage() {
             label="Needs mapping"
             hint="Private by default until you map it — nothing is shared with your coach yet."
             count={unmappedEntries.length}
+            tone="amber"
+            icon={CircleDashed}
             defaultOpen
           >
             {unmapped.length === 0 ? (
@@ -522,6 +524,8 @@ export function WorkPage() {
             label="Mapped"
             hint="Visible to your coach through the tasks you mapped it to."
             count={mapped.length}
+            tone="teal"
+            icon={CheckCircle2}
           >
             {mapped.length === 0 ? (
               <p className="rounded-[var(--radius)] border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
@@ -553,7 +557,13 @@ export function WorkPage() {
             )}
           </WorkSection>
 
-          <WorkSection label="Private" hint="Never visible to anyone but you." count={priv.length}>
+          <WorkSection
+            label="Private"
+            hint="Never visible to anyone but you."
+            count={priv.length}
+            tone="indigo"
+            icon={Lock}
+          >
             {priv.length === 0 ? (
               <p className="rounded-[var(--radius)] border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
                 Nothing marked private. Anything you set aside stays here, for your eyes only.
