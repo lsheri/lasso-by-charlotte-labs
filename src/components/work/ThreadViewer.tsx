@@ -1,5 +1,6 @@
 import { DraftDecisionsButton } from "@/components/decisions/DraftDecisionsButton";
 import { ThreadBody } from "@/components/peek/ThreadBody";
+import { TypeChip } from "@/components/work/TypeIcon";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { WorkItemRow } from "@/lib/work-types";
 
@@ -17,6 +18,11 @@ export function ThreadViewer({
       <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle className="page-title">{item?.title ?? "Thread"}</DialogTitle>
+          {item ? (
+            <div className="flex flex-wrap items-center gap-1.5 pt-1">
+              <TypeChip item={item} />
+            </div>
+          ) : null}
         </DialogHeader>
 
         {item ? <ThreadBody item={item} enabled={open} /> : null}
