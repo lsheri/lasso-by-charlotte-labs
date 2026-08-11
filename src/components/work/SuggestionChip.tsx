@@ -15,9 +15,9 @@ export function SuggestionChip({
   pending: boolean;
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-[var(--radius-md)] bg-accent-soft px-3 py-2">
-      <Sparkle className="h-3.5 w-3.5 shrink-0 text-accent-deep" aria-hidden />
-      <p className="min-w-0 flex-1 text-xs text-accent-deep">
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-[var(--radius-md)] bg-ember-wash px-3 py-2">
+      <Sparkle className="h-3.5 w-3.5 shrink-0 text-ember-deep" aria-hidden />
+      <p className="min-w-0 flex-1 text-xs text-ember-deep">
         <span className="font-medium">{label}</span>
         {reason ? <span className="text-muted-foreground"> — {reason}</span> : null}
       </p>
@@ -26,7 +26,7 @@ export function SuggestionChip({
           type="button"
           disabled={pending}
           onClick={onAccept}
-          className="rounded-full bg-accent-deep px-3 py-1 text-xs font-medium text-accent-foreground transition-opacity hover:opacity-85 disabled:opacity-50"
+          className="rounded-full bg-ember px-3 py-1 text-xs font-medium text-ember-foreground transition-opacity hover:opacity-85 disabled:opacity-50"
         >
           Accept
         </button>
