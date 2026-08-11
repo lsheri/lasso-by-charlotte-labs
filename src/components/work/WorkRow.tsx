@@ -32,10 +32,14 @@ export function WorkRow({
   item,
   actions,
   onOpen,
+  chips,
+  nested = false,
 }: {
   item: WorkItemRow;
   actions: React.ReactNode;
   onOpen?: (() => void) | undefined;
+  chips?: React.ReactNode;
+  nested?: boolean;
 }) {
   const Icon = ICONS[item.type];
   const mapping = item.work_item_tasks[0]?.tasks ?? null;
@@ -43,7 +47,13 @@ export function WorkRow({
   const dateIso = effectiveWorkDate(item);
 
   return (
-    <div className="flex items-center gap-4 rounded-[var(--radius)] border border-border bg-card px-4 py-3 shadow-card">
+    <div
+      className={
+        nested
+          ? "flex items-center gap-4 rounded-[var(--radius)] border border-border/70 bg-card px-4 py-2.5"
+          : "flex items-center gap-4 rounded-[var(--radius)] border border-border bg-card px-4 py-3 shadow-card"
+      }
+    >
       <Icon className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
       <div className="min-w-0 flex-1">
         {onOpen ? (
@@ -57,11 +67,14 @@ export function WorkRow({
         ) : (
           <p className="truncate text-sm font-medium text-foreground">{item.title}</p>
         )}
-        {item.content_fidelity === "summary" ? (
-          <span className="mt-1 inline-block rounded-full border border-border bg-secondary px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
-            Summary
-          </span>
-        ) : null}
+        <div className="flex flex-wrap items-center gap-1.5">
+          {item.content_fidelity === "summary" ? (
+            <span className="mt-1 inline-block rounded-full border border-border bg-secondary px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+              Summary
+            </span>
+          ) : null}
+          {chips}
+        </div>
         <p className="mt-0.5 truncate font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
           {item.type.replace("_", " ")} · {sourceLabel(item.source)} · {formatDate(dateIso)}
           {link ? (
