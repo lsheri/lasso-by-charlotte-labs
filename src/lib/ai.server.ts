@@ -40,10 +40,22 @@ export const MODELS: Record<ModelTier, string> = {
   smart: "gpt-5",
 };
 
+/**
+ * If a tier's model id is unavailable to this account (OpenAI answers 404 with
+ * code `model_not_found`), the same request is retried once against this model.
+ * One unavailable model must never take every surface down. The person is not
+ * told; this is plumbing, and the health log carries the anomaly.
+ */
+export const MODEL_FALLBACK: Partial<Record<ModelTier, string>> = {
+  smart: "gpt-4.1",
+};
+
 /** USD per 1M tokens. One table, one edit when prices move. */
 export const MODEL_PRICES: Record<string, { input: number; cachedInput: number; output: number }> =
   {
     "gpt-4.1-mini": { input: 0.4, cachedInput: 0.1, output: 1.6 },
+    // OpenAI published API pricing for gpt-4.1: 2.00 in / 0.50 cached in / 8.00 out.
+    "gpt-4.1": { input: 2, cachedInput: 0.5, output: 8 },
     "gpt-5": { input: 1.25, cachedInput: 0.125, output: 10 },
   };
 
@@ -133,6 +145,16 @@ function providerMessage(body: string, status: number): string {
   return `${status}`;
 }
 
+/** The provider's machine readable error code, when it gave one. */
+function providerCode(body: string): string | null {
+  try {
+    const parsed = JSON.parse(body) as { error?: { code?: string | null } };
+    return parsed.error?.code ?? null;
+  } catch {
+    return null;
+  }
+}
+
 function friendly(errorClass: AiErrorClass): string {
   switch (errorClass) {
     case "rate_limit":
@@ -178,10 +200,37 @@ function buildBody(
   return body;
 }
 
-function apiKey(): string {
-  const key = process.env["OPENAI_API_KEY"];
-  if (!key) throw new AiError("The AI account is not configured yet.", "bad_request");
+/**
+ * A pasted key often carries a trailing newline, which turns into a confusing
+ * 401 that reads like a bad key. Trim at read time. A missing key is logged
+ * before throwing, because otherwise it is invisible to the owner.
+ */
+async function apiKey(surface: string, orgId: string | null | undefined): Promise<string> {
+  const key = process.env["OPENAI_API_KEY"]?.trim();
+  if (!key) {
+    await safeLogHealth({
+      kind: "error",
+      surface: "config",
+      orgId,
+      detail: "openai_api_key_missing",
+      meta: { error_class: "bad_request", origin_surface: surface },
+    });
+    throw new AiError("The AI account is not configured yet.", "bad_request");
+  }
   return key;
+}
+
+/**
+ * An awaited health write for error paths. The person is already receiving a
+ * failure, so the milliseconds are free, and a logging failure must never
+ * replace the real error with a worse one.
+ */
+async function safeLogHealth(input: Parameters<typeof logHealth>[0]): Promise<void> {
+  try {
+    await logHealth(input);
+  } catch {
+    // Never let the health channel mask what actually went wrong.
+  }
 }
 
 function afterCall(result: ChatResult, meta: AiMeta | undefined): void {
@@ -222,7 +271,7 @@ async function failed(
   note?: string,
   status?: number,
 ): Promise<never> {
-  void logHealth({
+  await safeLogHealth({
     kind: errorClass === "rate_limit" ? "rate_limit" : "error",
     surface: meta?.surface ?? "unknown",
     orgId: meta?.orgId,
@@ -232,6 +281,72 @@ async function failed(
     meta: { error_class: errorClass, ...(status != null ? { http_status: status } : {}) },
   });
   throw new AiError(friendly(errorClass), errorClass);
+}
+
+type Attempt =
+  | { ok: true; response: Response }
+  | { ok: false; kind: "fetch"; name: string }
+  | { ok: false; kind: "http"; status: number; body: string };
+
+async function sendRequest(
+  model: string,
+  messages: ChatMessage[],
+  options: ChatOptions,
+  stream: boolean,
+): Promise<Attempt> {
+  let response: Response;
+  try {
+    response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      signal: AbortSignal.timeout(options.timeoutMs ?? DEFAULT_TIMEOUT_MS),
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${await apiKey(options.meta?.surface ?? "unknown", options.meta?.orgId)}`,
+      },
+      body: JSON.stringify(buildBody(messages, model, options, stream)),
+    });
+  } catch (e) {
+    return { ok: false, kind: "fetch", name: (e as Error).name };
+  }
+  if (!response.ok || (stream && !response.body)) {
+    const body = response.body ? await response.text() : "";
+    return { ok: false, kind: "http", status: response.status, body };
+  }
+  return { ok: true, response };
+}
+
+/**
+ * The one hop. Only `model_not_found` on the tier's model, never a malformed
+ * body, a 401 or a 403, and never twice.
+ */
+async function fallbackModelFor(
+  attempt: Attempt,
+  model: string,
+  options: ChatOptions,
+): Promise<string | null> {
+  if (attempt.ok || attempt.kind !== "http") return null;
+  if (classify(attempt.status, attempt.body) !== "bad_request") return null;
+  if (providerCode(attempt.body) !== "model_not_found") return null;
+  const tier = options.tier ?? "smart";
+  if (model !== MODELS[tier]) return null;
+  const fallback = MODEL_FALLBACK[tier];
+  if (!fallback || fallback === model) return null;
+  await safeLogHealth({
+    kind: "anomaly",
+    surface: "model_fallback",
+    orgId: options.meta?.orgId,
+    model: fallback,
+    detail: "smart_model_unavailable_used_fallback",
+    meta: {
+      requested_model: model,
+      actual_model: fallback,
+      tier,
+      http_status: attempt.status,
+      provider_code: "model_not_found",
+      origin_surface: options.meta?.surface ?? "unknown",
+    },
+  });
+  return fallback;
 }
 
 function normaliseFinish(raw: string | undefined): ChatResult["finishReason"] {
@@ -246,41 +361,36 @@ export async function chatComplete(
   messages: ChatMessage[],
   options: ChatOptions = {},
 ): Promise<ChatResult> {
-  const model = options.model ?? MODELS[options.tier ?? "smart"];
+  let model = options.model ?? MODELS[options.tier ?? "smart"];
   const startedAt = Date.now();
 
-  let response: Response;
-  try {
-    response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      signal: AbortSignal.timeout(options.timeoutMs ?? DEFAULT_TIMEOUT_MS),
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey()}`,
-      },
-      body: JSON.stringify(buildBody(messages, model, options, false)),
-    });
-  } catch (e) {
-    const name = (e as Error).name;
+  let attempt = await sendRequest(model, messages, options, false);
+  const fallback = await fallbackModelFor(attempt, model, options);
+  if (fallback) {
+    model = fallback;
+    attempt = await sendRequest(model, messages, options, false);
+  }
+
+  if (!attempt.ok && attempt.kind === "fetch") {
+    const name = attempt.name;
     if (name === "TimeoutError" || name === "AbortError") {
       return await failed("timeout", model, startedAt, options.meta);
     }
     return await failed("model_error", model, startedAt, options.meta, name);
   }
-
-  if (!response.ok) {
-    const body = await response.text();
+  if (!attempt.ok) {
     return await failed(
-      classify(response.status, body),
+      classify(attempt.status, attempt.body),
       model,
       startedAt,
       options.meta,
-      providerMessage(body, response.status),
-      response.status,
+      providerMessage(attempt.body, attempt.status),
+      attempt.status,
     );
   }
+  const response = attempt.response;
 
-  const payload = (await response.json()) as {
+  type Payload = {
     choices?: {
       message?: {
         content?: string;
@@ -294,6 +404,20 @@ export async function chatComplete(
       prompt_tokens_details?: { cached_tokens?: number };
     };
   };
+  let payload: Payload;
+  try {
+    payload = (await response.json()) as Payload;
+  } catch {
+    // A 200 with a body we cannot parse is still a model request failure.
+    return await failed(
+      "model_error",
+      model,
+      startedAt,
+      options.meta,
+      "response_body_unparseable",
+      response.status,
+    );
+  }
   const choice = payload.choices?.[0];
   const tokensIn = payload.usage?.prompt_tokens ?? 0;
   const tokensOut = payload.usage?.completion_tokens ?? 0;
@@ -328,38 +452,36 @@ export async function streamChat(
   onDelta: (delta: string) => void | Promise<void>,
   options: ChatOptions = {},
 ): Promise<ChatResult & { interrupted: boolean }> {
-  const model = options.model ?? MODELS[options.tier ?? "smart"];
+  let model = options.model ?? MODELS[options.tier ?? "smart"];
   const startedAt = Date.now();
 
-  let response: Response;
-  try {
-    response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      signal: AbortSignal.timeout(options.timeoutMs ?? DEFAULT_TIMEOUT_MS),
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey()}`,
-      },
-      body: JSON.stringify(buildBody(messages, model, options, true)),
-    });
-  } catch (e) {
-    const name = (e as Error).name;
+  let attempt = await sendRequest(model, messages, options, true);
+  const fallback = await fallbackModelFor(attempt, model, options);
+  if (fallback) {
+    model = fallback;
+    attempt = await sendRequest(model, messages, options, true);
+  }
+
+  if (!attempt.ok && attempt.kind === "fetch") {
+    const name = attempt.name;
     if (name === "TimeoutError" || name === "AbortError") {
       return await failed("timeout", model, startedAt, options.meta);
     }
     return await failed("model_error", model, startedAt, options.meta, name);
   }
-
-  if (!response.ok || !response.body) {
-    const body = response.body ? await response.text() : "";
+  if (!attempt.ok) {
     return await failed(
-      classify(response.status, body),
+      classify(attempt.status, attempt.body),
       model,
       startedAt,
       options.meta,
-      providerMessage(body, response.status),
-      response.status,
+      providerMessage(attempt.body, attempt.status),
+      attempt.status,
     );
+  }
+  const response = attempt.response;
+  if (!response.body) {
+    return await failed("model_error", model, startedAt, options.meta, "missing_response_body");
   }
 
   const reader = response.body.getReader();

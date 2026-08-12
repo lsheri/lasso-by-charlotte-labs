@@ -142,7 +142,21 @@ export async function runCatalogueAnswer(
       })),
     });
     for (const call of planning.toolCalls) {
-      const output = await runRecordTool(state, call.name, call.arguments);
+      let output: string;
+      try {
+        output = await runRecordTool(state, call.name, call.arguments);
+      } catch (e) {
+        // A failing fetch loses one tool result, not the whole question.
+        const { logHealth } = await import("./health.server");
+        await logHealth({
+          kind: "error",
+          surface: "record_tools",
+          orgId: input.meta?.orgId,
+          detail: "record_tool_failed",
+          meta: { tool: call.name, error_name: (e as Error).name },
+        }).catch(() => undefined);
+        output = "That fetch failed. Continue with what you already have.";
+      }
       conversation.push({ role: "tool", content: output, tool_call_id: call.id });
     }
     if (lastRound || Date.now() > state.deadline) {
