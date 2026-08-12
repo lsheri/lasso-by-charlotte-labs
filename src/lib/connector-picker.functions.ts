@@ -103,7 +103,7 @@ export const browseTranscriptCandidates = createServerFn({ method: "POST" })
 export const importConnectorItems = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(validateToolkitImport)
-  .handler(async ({ data, context }): Promise<{ imported: number; skipped: number }> => {
+  .handler(async ({ data, context }): Promise<ImportResult> => {
     const { supabase, userId } = context;
     const { resolveProfile } = await import("@/lib/profile-resolve");
     const { requireConnected } = await import("@/lib/connector-import.server");
@@ -166,7 +166,7 @@ export const browseGranolaMeetings = createServerFn({ method: "POST" })
 export const importGranolaMeetings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(validateImport)
-  .handler(async ({ data, context }): Promise<{ imported: number; skipped: number }> => {
+  .handler(async ({ data, context }): Promise<ImportResult> => {
     const { supabase, userId } = context;
     const { resolveProfile } = await import("@/lib/profile-resolve");
     const { importedGranolaIds, storeFile, captureEvents } =
@@ -234,7 +234,7 @@ export const importGranolaMeetings = createServerFn({ method: "POST" })
       source: "granola",
       imported,
     });
-    return { imported, skipped };
+    return { imported, skipped, updated: 0, unchanged: 0 };
   });
 
 /** Gmail: label chips stand in for folders, plus Gmail query syntax passthrough. */
@@ -283,7 +283,7 @@ export const browseGmailThreads = createServerFn({ method: "POST" })
 export const importGmailThreads = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(validateImport)
-  .handler(async ({ data, context }): Promise<{ imported: number; skipped: number }> => {
+  .handler(async ({ data, context }): Promise<ImportResult> => {
     const { supabase, userId } = context;
     const { resolveProfile } = await import("@/lib/profile-resolve");
     const { requireConnected, importedGmailThreadIds, storeFile, captureEvents } =
@@ -350,5 +350,5 @@ export const importGmailThreads = createServerFn({ method: "POST" })
       source: "gmail",
       imported,
     });
-    return { imported, skipped };
+    return { imported, skipped, updated: 0, unchanged: 0 };
   });
