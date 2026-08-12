@@ -34,7 +34,7 @@ const BY_TYPE: Record<WorkType, WorkIdentity> = {
   deck: { icon: Presentation, hue: "--hue-clay", label: "Deck" },
   sheet: { icon: Table2, hue: "--hue-sage", label: "Sheet" },
   call: { icon: Phone, hue: "--hue-plum", label: "Call" },
-  email: { icon: Mail, hue: "--hue-neutral", label: "Email" },
+  email: { icon: Mail, hue: "--hue-cyan", label: "Email" },
   message: { icon: MessageSquare, hue: "--hue-slate-blue", label: "Message" },
   image: { icon: ImageIcon, hue: "--hue-amber", label: "Image" },
 };
@@ -116,7 +116,7 @@ const VENDOR_HUES: Record<string, string> = {
   slack: "--vendor-slack",
   onedrive: "--vendor-microsoft",
   sharepoint: "--vendor-microsoft",
-  gmail: "--vendor-claude",
+  gmail: "--vendor-gmail",
 };
 
 export function vendorHue(vendor: string | null | undefined): string | null {
