@@ -452,38 +452,36 @@ export async function streamChat(
   onDelta: (delta: string) => void | Promise<void>,
   options: ChatOptions = {},
 ): Promise<ChatResult & { interrupted: boolean }> {
-  const model = options.model ?? MODELS[options.tier ?? "smart"];
+  let model = options.model ?? MODELS[options.tier ?? "smart"];
   const startedAt = Date.now();
 
-  let response: Response;
-  try {
-    response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      signal: AbortSignal.timeout(options.timeoutMs ?? DEFAULT_TIMEOUT_MS),
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey()}`,
-      },
-      body: JSON.stringify(buildBody(messages, model, options, true)),
-    });
-  } catch (e) {
-    const name = (e as Error).name;
+  let attempt = await sendRequest(model, messages, options, true);
+  const fallback = await fallbackModelFor(attempt, model, options);
+  if (fallback) {
+    model = fallback;
+    attempt = await sendRequest(model, messages, options, true);
+  }
+
+  if (!attempt.ok && attempt.kind === "fetch") {
+    const name = attempt.name;
     if (name === "TimeoutError" || name === "AbortError") {
       return await failed("timeout", model, startedAt, options.meta);
     }
     return await failed("model_error", model, startedAt, options.meta, name);
   }
-
-  if (!response.ok || !response.body) {
-    const body = response.body ? await response.text() : "";
+  if (!attempt.ok) {
     return await failed(
-      classify(response.status, body),
+      classify(attempt.status, attempt.body),
       model,
       startedAt,
       options.meta,
-      providerMessage(body, response.status),
-      response.status,
+      providerMessage(attempt.body, attempt.status),
+      attempt.status,
     );
+  }
+  const response = attempt.response;
+  if (!response.body) {
+    return await failed("model_error", model, startedAt, options.meta, "missing_response_body");
   }
 
   const reader = response.body.getReader();
