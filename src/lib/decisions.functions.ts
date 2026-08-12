@@ -104,9 +104,24 @@ export const draftDecisions = createServerFn({ method: "POST" })
     const byTurnNo = new Map(turns.map((turn) => [turn.turn_no, turn.id]));
     const label = dateLabel(new Date());
 
+    // Verbatim rule: a decision that quotes something we cannot find in the
+    // source does not render at all.
+    const { unmatchedQuotes } = await import("./quote-check");
+    let suppressed = 0;
     const rows = drafts
       .filter((d) => d && d.situation && d.call && d.why)
-      .map((d) => ({
+      .filter((d) => {
+        const text = `${d.situation}\n${d.call}\n${d.why}`;
+        if (unmatchedQuotes(text, transcript).length === 0) return true;
+        suppressed += 1;
+        return false;
+      })
+      .map((d) => {
+        const turnSrcs = (Array.isArray(d.source_turn_nos) ? d.source_turn_nos : [])
+          .map((no) => byTurnNo.get(Number(no)))
+          .filter((turnId): turnId is string => Boolean(turnId))
+          .map((turnId) => ({ work_item_id: item.id, turn_id: turnId }));
+        return {
         owner_id: profile.id,
         engagement_id: engagementId,
         situation: String(d.situation).trim(),
@@ -115,11 +130,10 @@ export const draftDecisions = createServerFn({ method: "POST" })
         status: "draft" as const,
         author: "ai_draft" as const,
         date_label: label,
-        srcs: (Array.isArray(d.source_turn_nos) ? d.source_turn_nos : [])
-          .map((no) => byTurnNo.get(Number(no)))
-          .filter((turnId): turnId is string => Boolean(turnId))
-          .map((turnId) => ({ work_item_id: item.id, turn_id: turnId })),
-      }));
+        srcs:
+          turnSrcs.length > 0 ? turnSrcs : [{ work_item_id: item.id, turn_id: null as string | null }],
+        };
+      });
 
     if (rows.length > 0) {
       const { error: insertError } = await supabase.from("decisions").insert(rows);
@@ -132,10 +146,10 @@ export const draftDecisions = createServerFn({ method: "POST" })
       eventType: "decision.drafted",
       orgId: profile.org_id,
       userId: context.userId,
-      dims: { count: rows.length, ...usageDims(completion) },
+      dims: { count: rows.length, suppressed, type: item.type, ...usageDims(completion) },
     });
 
-    return { drafted: rows.length };
+    return { drafted: rows.length, suppressed };
   });
 
 /**
