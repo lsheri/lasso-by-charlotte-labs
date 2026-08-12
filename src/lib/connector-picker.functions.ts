@@ -7,6 +7,7 @@ import { isBrowsableToolkit, type BrowsableToolkit } from "@/lib/connector-toolk
 type BrowseInput = {
   profile_id?: string | undefined;
   folder_id?: string | undefined;
+  folder_name?: string | undefined;
   search?: string | undefined;
   page_token?: string | undefined;
 };
@@ -14,6 +15,7 @@ type BrowseInput = {
 type ImportInput = {
   profile_id?: string | undefined;
   ids: string[];
+  folder_name?: string | undefined;
 };
 
 type ToolkitBrowseInput = BrowseInput & { toolkit: BrowsableToolkit };
@@ -27,7 +29,11 @@ function validateImport(input: ImportInput): ImportInput {
   if (!input || !Array.isArray(input.ids) || input.ids.length === 0) {
     throw new Error("Select at least one item first.");
   }
-  return { profile_id: input.profile_id, ids: input.ids.slice(0, 100) };
+  return {
+    profile_id: input.profile_id,
+    ids: input.ids.slice(0, 100),
+    folder_name: input.folder_name,
+  };
 }
 
 function validateToolkitBrowse(input: ToolkitBrowseInput | undefined): ToolkitBrowseInput {
@@ -55,13 +61,17 @@ export const browseConnectorItems = createServerFn({ method: "POST" })
     await requireConnected(supabase, profile.id, data.toolkit);
 
     const seen = await importedToolkitIds(supabase, profile.id, data.toolkit);
+    const { watchedFolderIds } = await import("@/lib/connector-watch.server");
+    const watched = await watchedFolderIds(supabase, profile.id, data.toolkit);
     return browseConnector(supabase, {
       toolkit: data.toolkit,
       profileId: profile.id,
       folderId: data.folder_id ?? null,
+      folderName: data.folder_name ?? null,
       search: data.search ?? null,
       pageToken: data.page_token ?? null,
       seen,
+      watched,
     });
   });
 
@@ -85,6 +95,7 @@ export const importConnectorItems = createServerFn({ method: "POST" })
       orgId: profile.org_id,
       userId,
       ids: data.ids,
+      folderName: data.folder_name ?? null,
     });
   });
 
@@ -133,9 +144,8 @@ export const importGranolaMeetings = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<{ imported: number; skipped: number }> => {
     const { supabase, userId } = context;
     const { resolveProfile } = await import("@/lib/profile-resolve");
-    const { importedGranolaIds, storeFile, captureEvents } = await import(
-      "@/lib/connector-import.server"
-    );
+    const { importedGranolaIds, storeFile, captureEvents } =
+      await import("@/lib/connector-import.server");
     const { requireGranolaKey, fetchGranolaNote } = await import("@/lib/granola.server");
 
     const profile = await resolveProfile(supabase, userId, data.profile_id);
@@ -190,6 +200,115 @@ export const importGranolaMeetings = createServerFn({ method: "POST" })
       userId,
       toolkit: "granola_mcp",
       source: "granola",
+      imported,
+    });
+    return { imported, skipped };
+  });
+
+/** Gmail: label chips stand in for folders, plus Gmail query syntax passthrough. */
+export const browseGmailThreads = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(validateBrowse)
+  .handler(async ({ data, context }): Promise<PickerPage> => {
+    const { supabase, userId } = context;
+    const { resolveProfile } = await import("@/lib/profile-resolve");
+    const { requireConnected, importedGmailThreadIds } =
+      await import("@/lib/connector-import.server");
+    const { listGmailLabels, listGmailThreads } = await import("@/lib/gmail.server");
+
+    const profile = await resolveProfile(supabase, userId, data.profile_id);
+    if (!profile) throw new Response("Forbidden", { status: 403 });
+    await requireConnected(supabase, profile.id, "gmail");
+
+    const labels = await listGmailLabels(profile.id);
+    const scope = data.folder_id ?? "in:inbox";
+    const term = data.search?.trim();
+    const query = [scope, term].filter(Boolean).join(" ");
+
+    const { threads, nextPageToken } = await listGmailThreads(profile.id, {
+      query,
+      pageToken: data.page_token ?? null,
+    });
+    const seen = await importedGmailThreadIds(supabase, profile.id);
+
+    return {
+      items: threads.map((thread) => ({
+        id: thread.id,
+        title: thread.subject,
+        subtitle: [thread.participants, thread.snippet].filter(Boolean).join(" — ") || null,
+        date: thread.date,
+        isFolder: false,
+        alreadyInLasso: seen.has(thread.id),
+        hint: null,
+      })),
+      nextPageToken,
+      unsupported:
+        threads.length === 0 && !data.page_token ? "No threads matched that view." : null,
+      labels,
+    };
+  });
+
+export const importGmailThreads = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(validateImport)
+  .handler(async ({ data, context }): Promise<{ imported: number; skipped: number }> => {
+    const { supabase, userId } = context;
+    const { resolveProfile } = await import("@/lib/profile-resolve");
+    const { requireConnected, importedGmailThreadIds, storeFile, captureEvents } =
+      await import("@/lib/connector-import.server");
+    const { fetchGmailThread } = await import("@/lib/gmail.server");
+
+    const profile = await resolveProfile(supabase, userId, data.profile_id);
+    if (!profile) throw new Response("Forbidden", { status: 403 });
+    await requireConnected(supabase, profile.id, "gmail");
+
+    const seen = await importedGmailThreadIds(supabase, profile.id);
+    let imported = 0;
+    let skipped = 0;
+
+    for (const [index, id] of data.ids.entries()) {
+      if (seen.has(id)) {
+        skipped += 1;
+        continue;
+      }
+      if (index > 0) await new Promise((r) => setTimeout(r, 200));
+      const thread = await fetchGmailThread(profile.id, id);
+      if (!thread) {
+        skipped += 1;
+        continue;
+      }
+      const bytes = new TextEncoder().encode(thread.markdown);
+      const path = await storeFile(
+        userId,
+        `${thread.subject}.md`,
+        bytes,
+        "text/markdown; charset=utf-8",
+      );
+      const insert = await supabase.from("work_items").insert({
+        owner_id: profile.id,
+        org_id: profile.org_id,
+        type: "email",
+        source: "connector:gmail",
+        source_vendor: "gmail",
+        title: thread.subject,
+        visibility: "unmapped",
+        content_ref: path,
+        content_fidelity: "verbatim",
+        ts_precision: thread.date ? "source" : "capture",
+        created_at_source: thread.date,
+        source_meta: { filename: `${thread.subject}.md`, mime_type: "text/markdown" },
+        meta: { gmail_thread_id: id },
+      });
+      if (insert.error) throw new Error(insert.error.message);
+      seen.add(id);
+      imported += 1;
+    }
+
+    await captureEvents(supabase, {
+      orgId: profile.org_id,
+      userId,
+      toolkit: "gmail",
+      source: "gmail",
       imported,
     });
     return { imported, skipped };

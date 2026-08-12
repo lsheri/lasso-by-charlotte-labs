@@ -132,9 +132,8 @@ export const getConnectorDetails = createServerFn({ method: "POST" })
   .inputValidator(validateToolkit)
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const { composio, connectedAccountIdentity, driveAccountIdentity } = await import(
-      "@/lib/composio.server"
-    );
+    const { composio, connectedAccountIdentity, driveAccountIdentity } =
+      await import("@/lib/composio.server");
 
     const profile = await resolveProfile(supabase, userId, data.profile_id);
     if (!profile) throw new Response("Forbidden", { status: 403 });

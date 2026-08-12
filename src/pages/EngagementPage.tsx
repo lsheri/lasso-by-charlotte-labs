@@ -122,27 +122,27 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
         </div>
 
         <div className="mt-4 flex flex-wrap items-center gap-2">
-        {profile?.role !== "coach" ? <EditEngagementDialog engagement={engagement} /> : null}
-        <button
-          type="button"
-          onClick={() => setAboutOpen((v) => !v)}
-          className="rounded-full border border-border bg-card px-3 py-1 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
-        >
-          About this engagement {aboutOpen ? "−" : "+"}
-        </button>
-        {profile?.role === "admin" || profile?.role === "lead" ? (
-        <InviteDialog
-          engagementId={engagementId}
-          trigger={
-            <button
-              type="button"
-              className="rounded-full border border-border bg-card px-3 py-1 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
-            >
-              Invite a coach
-            </button>
-          }
-        />
-        ) : null}
+          {profile?.role !== "coach" ? <EditEngagementDialog engagement={engagement} /> : null}
+          <button
+            type="button"
+            onClick={() => setAboutOpen((v) => !v)}
+            className="rounded-full border border-border bg-card px-3 py-1 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+          >
+            About this engagement {aboutOpen ? "−" : "+"}
+          </button>
+          {profile?.role === "admin" || profile?.role === "lead" ? (
+            <InviteDialog
+              engagementId={engagementId}
+              trigger={
+                <button
+                  type="button"
+                  className="rounded-full border border-border bg-card px-3 py-1 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  Invite a coach
+                </button>
+              }
+            />
+          ) : null}
         </div>
 
         {aboutOpen ? (
@@ -177,37 +177,37 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
               profile.role !== "coach" &&
               elements.every((e) => e.work_items.owner_id === profile.id);
             return (
-            <div
-              key={task.id}
-              className="rounded-[var(--radius)] border border-border bg-card px-4 py-3 shadow-card"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-foreground">{task.name}</p>
-                  {task.detail ? (
-                    <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">
-                      {task.detail}
-                    </p>
+              <div
+                key={task.id}
+                className="rounded-[var(--radius)] border border-border bg-card px-4 py-3 shadow-card"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-foreground">{task.name}</p>
+                    {task.detail ? (
+                      <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">
+                        {task.detail}
+                      </p>
+                    ) : null}
+                  </div>
+                  {profile && profile.role !== "coach" && task.owner_id === profile.id ? (
+                    <EditTaskDialog task={task} engagementId={engagementId} />
                   ) : null}
                 </div>
-                {profile && profile.role !== "coach" && task.owner_id === profile.id ? (
-                  <EditTaskDialog task={task} engagementId={engagementId} />
-                ) : null}
+                <div className="mt-2">
+                  <TaskWorkflow
+                    taskId={task.id}
+                    elements={elements}
+                    canEdit={canEdit}
+                    orgId={profile?.org_id}
+                    onChanged={async () => {
+                      await queryClient.invalidateQueries({
+                        queryKey: ["engagement-tasks", engagementId],
+                      });
+                    }}
+                  />
+                </div>
               </div>
-              <div className="mt-2">
-                <TaskWorkflow
-                  taskId={task.id}
-                  elements={elements}
-                  canEdit={canEdit}
-                  orgId={profile?.org_id}
-                  onChanged={async () => {
-                    await queryClient.invalidateQueries({
-                      queryKey: ["engagement-tasks", engagementId],
-                    });
-                  }}
-                />
-              </div>
-            </div>
             );
           })}
 

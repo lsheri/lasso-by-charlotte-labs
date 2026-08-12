@@ -1,6 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ChevronLeft, Folder } from "lucide-react";
+import { Bell, ChevronLeft, Eye, Folder, Phone } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -19,16 +19,21 @@ import type { PickerItem, PickerPage } from "@/lib/connector-picker-shared";
 import type { BrowsableToolkit } from "@/lib/connector-toolkits";
 import {
   browseConnectorItems,
+  browseGmailThreads,
   browseGranolaMeetings,
   importConnectorItems,
+  importGmailThreads,
   importGranolaMeetings,
 } from "@/lib/connector-picker.functions";
+import { setFolderWatch } from "@/lib/connector-watch.functions";
 
 type Crumb = { id: string | null; name: string };
 
-export type PickerKind = "googledrive" | "onedrive" | "sharepoint" | "granola";
+export type PickerKind = "googledrive" | "onedrive" | "sharepoint" | "granola" | "gmail";
 
-const TOOLKIT: Record<Exclude<PickerKind, "granola">, BrowsableToolkit> = {
+type FileKind = "googledrive" | "onedrive" | "sharepoint";
+
+const TOOLKIT: Record<FileKind, BrowsableToolkit> = {
   googledrive: "googledrive",
   onedrive: "one_drive",
   sharepoint: "sharepoint_graph",
@@ -66,6 +71,13 @@ const COPY: Record<
     empty: "Nothing here yet.",
     action: "Bring into Lasso",
   },
+  gmail: {
+    title: "Browse Gmail threads",
+    searchLabel: "Gmail search (e.g. from:client@acme.com has:attachment)",
+    root: "Inbox",
+    empty: "No threads here.",
+    action: "Bring into Lasso",
+  },
 };
 
 function dateLabel(iso: string | null): string {
@@ -82,21 +94,32 @@ export function ConnectorPicker({
   trigger,
   open: openProp,
   onOpenChange,
+  initialFolder,
+  highlightIds,
 }: {
   kind: PickerKind;
   trigger?: React.ReactNode;
   /** Controlled mode: onboarding opens the picker itself right after connect. */
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  /** Watch suggestions open the picker straight into the folder that changed. */
+  initialFolder?: { id: string; name: string } | null;
+  /** Provider ids to call out as new — still default-unchecked. */
+  highlightIds?: string[];
 }) {
-  const isFolderBrowser = kind !== "granola";
+  const isFolderBrowser = kind !== "granola" && kind !== "gmail";
+  const isGmail = kind === "gmail";
   const copy = COPY[kind];
   const { data: profile } = useProfile();
   const queryClient = useQueryClient();
   const browseFiles = useServerFn(browseConnectorItems);
   const browseMeetings = useServerFn(browseGranolaMeetings);
+  const browseThreads = useServerFn(browseGmailThreads);
   const importFiles = useServerFn(importConnectorItems);
   const importMeetings = useServerFn(importGranolaMeetings);
+  const importThreads = useServerFn(importGmailThreads);
+  const toggleWatch = useServerFn(setFolderWatch);
+  const highlight = new Set(highlightIds ?? []);
 
   const [openState, setOpenState] = useState(false);
   const open = openProp ?? openState;
@@ -109,23 +132,47 @@ export function ConnectorPicker({
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [term, setTerm] = useState("");
-  const [crumbs, setCrumbs] = useState<Crumb[]>([{ id: null, name: copy.root }]);
+  const [crumbs, setCrumbs] = useState<Crumb[]>(
+    initialFolder
+      ? [
+          { id: null, name: copy.root },
+          { id: initialFolder.id, name: initialFolder.name },
+        ]
+      : [{ id: null, name: copy.root }],
+  );
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [importing, setImporting] = useState(false);
+  const [watchBusy, setWatchBusy] = useState<string | null>(null);
+  /** Gmail label chips act as this picker's "folders". */
+  const [labelQuery, setLabelQuery] = useState<string>("in:inbox");
 
-  const folderId = crumbs[crumbs.length - 1]?.id ?? null;
+  const crumbFolder = crumbs[crumbs.length - 1] ?? { id: null, name: copy.root };
+  const folderId = isGmail ? labelQuery : (crumbFolder.id ?? null);
   const canGoBack = crumbs.length > 1;
 
   const load = useCallback((): Promise<PickerPage> => {
     const data = {
       profile_id: profile?.id,
       ...(folderId ? { folder_id: folderId } : {}),
+      ...(crumbFolder.name ? { folder_name: crumbFolder.name } : {}),
       ...(term ? { search: term } : {}),
     };
-    return isFolderBrowser
-      ? browseFiles({ data: { ...data, toolkit: TOOLKIT[kind as Exclude<PickerKind, "granola">] } })
-      : browseMeetings({ data });
-  }, [browseFiles, browseMeetings, folderId, isFolderBrowser, kind, profile?.id, term]);
+    if (isFolderBrowser) {
+      return browseFiles({ data: { ...data, toolkit: TOOLKIT[kind as FileKind] } });
+    }
+    return isGmail ? browseThreads({ data }) : browseMeetings({ data });
+  }, [
+    browseFiles,
+    browseMeetings,
+    browseThreads,
+    crumbFolder.name,
+    folderId,
+    isFolderBrowser,
+    isGmail,
+    kind,
+    profile?.id,
+    term,
+  ]);
 
   useEffect(() => {
     if (!open) return;
@@ -173,6 +220,33 @@ export function ConnectorPicker({
     setCrumbs((prev) => [...prev, { id: item.id, name: item.title }]);
   }
 
+  /** Watching only ever produces suggestions — it never imports anything. */
+  async function handleWatch(item: PickerItem) {
+    if (!isFolderBrowser) return;
+    setWatchBusy(item.id);
+    try {
+      const result = await toggleWatch({
+        data: {
+          profile_id: profile?.id,
+          toolkit: TOOLKIT[kind as FileKind],
+          folder_id: item.id,
+          folder_name: item.title,
+          watch: !item.isWatched,
+        },
+      });
+      toast.success(
+        result.watched
+          ? `Watching “${item.title}” — Lasso will suggest new files, never import them.`
+          : `Stopped watching “${item.title}”`,
+      );
+      setPage(await load());
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setWatchBusy(null);
+    }
+  }
+
   async function handleImport() {
     if (selected.size === 0) return;
     setImporting(true);
@@ -184,10 +258,13 @@ export function ConnectorPicker({
             data: {
               profile_id: profile?.id,
               ids,
-              toolkit: TOOLKIT[kind as Exclude<PickerKind, "granola">],
+              folder_name: crumbFolder.name,
+              toolkit: TOOLKIT[kind as FileKind],
             },
           })
-        : await importMeetings({ data: { profile_id: profile?.id, ids } });
+        : isGmail
+          ? await importThreads({ data: { profile_id: profile?.id, ids } })
+          : await importMeetings({ data: { profile_id: profile?.id, ids } });
       toast.success(
         result.imported > 0
           ? `${result.imported} item${result.imported === 1 ? "" : "s"} brought into Work`
@@ -216,7 +293,14 @@ export function ConnectorPicker({
         if (!next) {
           setSelected(new Set());
           setPage(null);
-          setCrumbs([{ id: null, name: copy.root }]);
+          setCrumbs(
+            initialFolder
+              ? [
+                  { id: null, name: copy.root },
+                  { id: initialFolder.id, name: initialFolder.name },
+                ]
+              : [{ id: null, name: copy.root }],
+          );
           setSearch("");
           setTerm("");
         }
@@ -241,6 +325,32 @@ export function ConnectorPicker({
         </DialogHeader>
 
         <p className="text-sm text-muted-foreground">Nothing is imported unless you select it.</p>
+
+        {isGmail && page?.labels?.length ? (
+          <nav aria-label="Gmail labels" className="flex flex-wrap gap-1.5">
+            {page.labels.map((label) => {
+              const active = labelQuery === label.query;
+              return (
+                <button
+                  key={label.id}
+                  type="button"
+                  aria-pressed={active}
+                  onClick={() => {
+                    setLabelQuery(label.query);
+                    setSelected(new Set());
+                  }}
+                  className={
+                    active
+                      ? "rounded-full border border-accent bg-accent-soft px-3 py-1 text-xs font-medium text-accent-deep"
+                      : "rounded-full border border-border px-3 py-1 text-xs text-muted-foreground transition-colors hover:border-accent hover:text-foreground"
+                  }
+                >
+                  {label.name}
+                </button>
+              );
+            })}
+          </nav>
+        ) : null}
 
         <form
           className="flex gap-2"
@@ -320,19 +430,47 @@ export function ConnectorPicker({
                 <ul className="mt-2 divide-y divide-border rounded-[var(--radius)] border border-border bg-card">
                   {folders.map((item) => (
                     <li key={item.id}>
-                      <button
-                        type="button"
-                        onClick={() => openFolder(item)}
-                        className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-secondary/50"
-                      >
-                        <Folder aria-hidden className="size-4 text-muted-foreground" />
-                        <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
-                          {item.title}
-                        </span>
-                        <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
-                          Open
-                        </span>
-                      </button>
+                      <div className="flex items-center gap-1 pr-2">
+                        <button
+                          type="button"
+                          onClick={() => openFolder(item)}
+                          className="flex min-w-0 flex-1 items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-secondary/50"
+                        >
+                          <Folder aria-hidden className="size-4 text-muted-foreground" />
+                          <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
+                            {item.title}
+                          </span>
+                          <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+                            Open
+                          </span>
+                        </button>
+                        <button
+                          type="button"
+                          disabled={watchBusy === item.id}
+                          onClick={() => void handleWatch(item)}
+                          aria-pressed={Boolean(item.isWatched)}
+                          title={
+                            item.isWatched
+                              ? "Watching — Lasso suggests new files, never imports them"
+                              : "Watch this folder for new work"
+                          }
+                          aria-label={
+                            item.isWatched ? `Stop watching ${item.title}` : `Watch ${item.title}`
+                          }
+                          className={
+                            item.isWatched
+                              ? "flex items-center gap-1 rounded-full border border-accent bg-accent-soft px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.08em] text-accent-deep transition-opacity hover:opacity-70 disabled:opacity-50"
+                              : "flex items-center gap-1 rounded-full border border-border px-2.5 py-1 text-[10px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:border-accent hover:text-foreground disabled:opacity-50"
+                          }
+                        >
+                          {item.isWatched ? (
+                            <Bell aria-hidden className="size-3" />
+                          ) : (
+                            <Eye aria-hidden className="size-3" />
+                          )}
+                          {item.isWatched ? "Watching" : "Watch"}
+                        </button>
+                      </div>
                     </li>
                   ))}
                 </ul>
@@ -348,7 +486,14 @@ export function ConnectorPicker({
               ) : (
                 <ul className="mt-2 divide-y divide-border rounded-[var(--radius)] border border-border bg-card">
                   {files.map((item) => (
-                    <li key={item.id} className="flex items-center gap-3 px-4 py-2.5">
+                    <li
+                      key={item.id}
+                      className={
+                        highlight.has(item.id)
+                          ? "flex items-center gap-3 border-l-2 border-l-accent bg-accent-soft/40 px-4 py-2.5"
+                          : "flex items-center gap-3 px-4 py-2.5"
+                      }
+                    >
                       <Checkbox
                         checked={selected.has(item.id)}
                         disabled={item.alreadyInLasso}
@@ -356,7 +501,20 @@ export function ConnectorPicker({
                         aria-label={`Select ${item.title}`}
                       />
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm text-foreground">{item.title}</p>
+                        <p className="flex min-w-0 items-center gap-2 text-sm text-foreground">
+                          <span className="truncate">{item.title}</span>
+                          {highlight.has(item.id) ? (
+                            <span className="shrink-0 rounded-full bg-accent-soft px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.08em] text-accent-deep">
+                              New
+                            </span>
+                          ) : null}
+                          {item.hint ? (
+                            <span className="flex shrink-0 items-center gap-1 rounded-full border border-border px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
+                              <Phone aria-hidden className="size-2.5" />
+                              {item.hint}
+                            </span>
+                          ) : null}
+                        </p>
                         {item.subtitle ? (
                           <p className="truncate font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
                             {item.subtitle}

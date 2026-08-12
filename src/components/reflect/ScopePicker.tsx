@@ -44,7 +44,11 @@ export function ScopePicker({
         .eq("owner_id", profile?.id as string)
         .order("position", { ascending: true });
       if (error) throw error;
-      return (data ?? []) as unknown as { id: string; name: string; engagements: { code: string } | null }[];
+      return (data ?? []) as unknown as {
+        id: string;
+        name: string;
+        engagements: { code: string } | null;
+      }[];
     },
   });
 

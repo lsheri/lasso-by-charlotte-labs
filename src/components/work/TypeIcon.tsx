@@ -70,7 +70,13 @@ export function EngagementChip({
 }
 
 /** The source a piece of work came from, in that vendor's own tone. */
-export function VendorChip({ vendor, label }: { vendor: string | null | undefined; label: string }) {
+export function VendorChip({
+  vendor,
+  label,
+}: {
+  vendor: string | null | undefined;
+  label: string;
+}) {
   const hue = vendorHue(vendor);
   if (!hue) {
     return (

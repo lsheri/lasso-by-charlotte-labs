@@ -26,11 +26,7 @@ export function maskKey(key: string): string {
   return `${key.slice(0, 4)}••••${key.slice(-4)}`;
 }
 
-async function call(
-  key: string,
-  path: string,
-  attempt = 0,
-): Promise<Record<string, unknown>> {
+async function call(key: string, path: string, attempt = 0): Promise<Record<string, unknown>> {
   const response = await fetch(`${BASE}${path}`, {
     headers: { Authorization: `Bearer ${key}`, Accept: "application/json" },
   });
@@ -38,7 +34,9 @@ async function call(
   // Be gentle: Granola rate-limits per key, so back off once rather than hammer.
   if (response.status === 429 && attempt < 2) {
     const retryAfter = Number(response.headers.get("retry-after") ?? "2");
-    await new Promise((r) => setTimeout(r, Math.min(Number.isFinite(retryAfter) ? retryAfter : 2, 10) * 1000));
+    await new Promise((r) =>
+      setTimeout(r, Math.min(Number.isFinite(retryAfter) ? retryAfter : 2, 10) * 1000),
+    );
     return call(key, path, attempt + 1);
   }
 
@@ -105,7 +103,7 @@ export async function fetchGranolaNote(
   id: string,
 ): Promise<{ title: string; date: string | null; markdown: string } | null> {
   const body = await call(key, `/notes/${encodeURIComponent(id)}?include=transcript`);
-  const note = ((body["note"] ?? body["data"] ?? body) ?? {}) as Record<string, unknown>;
+  const note = (body["note"] ?? body["data"] ?? body ?? {}) as Record<string, unknown>;
   const title = pickString(note, ["title", "name"]) ?? "Untitled meeting";
   const date = pickString(note, ["created_at", "createdAt", "date", "started_at"]);
 

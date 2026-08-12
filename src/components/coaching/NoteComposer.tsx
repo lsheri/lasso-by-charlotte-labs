@@ -111,9 +111,7 @@ export function NoteComposer({
         <div>
           <p className="micro-label mb-2">Point to the work (at least one)</p>
           {citations.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              Nothing to cite yet in this engagement.
-            </p>
+            <p className="text-sm text-muted-foreground">Nothing to cite yet in this engagement.</p>
           ) : (
             <div className="flex flex-wrap gap-2">
               {citations.map((citation) => (

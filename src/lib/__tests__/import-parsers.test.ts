@@ -57,7 +57,7 @@ describe("import parsers", () => {
   });
 
   it("never throws on malformed records", () => {
-    const out = parseImport("chatgpt", [{ name: "conversations.json", text: "[{\"nope\":1}]" }]);
+    const out = parseImport("chatgpt", [{ name: "conversations.json", text: '[{"nope":1}]' }]);
     expect(out.conversations).toHaveLength(0);
   });
 });

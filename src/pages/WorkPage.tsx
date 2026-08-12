@@ -10,6 +10,7 @@ import { ImportFlowDialog } from "@/components/work/import/ImportFlowDialog";
 import { PasteThreadDialog } from "@/components/work/PasteThreadDialog";
 import { OpenFileAction } from "@/components/work/OpenFileAction";
 import { ConnectorBrowseActions } from "@/components/connectors/ConnectorBrowseActions";
+import { WatchSuggestionBanner } from "@/components/connectors/WatchSuggestionBanner";
 import { SuggestionChip } from "@/components/work/SuggestionChip";
 import { PeekPanel, type PeekEntry } from "@/components/peek/PeekPanel";
 import { UploadFilesButton } from "@/components/work/UploadFilesButton";
@@ -444,6 +445,7 @@ export function WorkPage() {
         </div>
       ) : (
         <div className="space-y-8">
+          <WatchSuggestionBanner />
           <WorkSection
             label="Needs mapping"
             hint="Private by default until you map it — nothing is shared with your coach yet."

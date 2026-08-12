@@ -60,6 +60,10 @@ export function importedGranolaIds(supabase: Client, profileId: string): Promise
   return importedIds(supabase, profileId, "connector:granola", "granola_id");
 }
 
+export function importedGmailThreadIds(supabase: Client, profileId: string): Promise<Set<string>> {
+  return importedIds(supabase, profileId, "connector:gmail", "gmail_thread_id");
+}
+
 /** Connector bytes are written with the service role, so signed URLs are minted
  * server-side by getWorkFileUrl exactly as they are for MCP pushes. */
 export async function storeFile(

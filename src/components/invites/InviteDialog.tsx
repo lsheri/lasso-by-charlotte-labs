@@ -18,7 +18,11 @@ import { logEvent } from "@/lib/telemetry";
 type InviteRole = "coach" | "em" | "lead" | "admin";
 
 const ROLE_OPTIONS: { value: InviteRole; label: string; hint: string }[] = [
-  { value: "coach", label: "Coach", hint: "Reviews the work someone shares, writes coaching notes." },
+  {
+    value: "coach",
+    label: "Coach",
+    hint: "Reviews the work someone shares, writes coaching notes.",
+  },
   { value: "em", label: "Engagement manager", hint: "Brings their own work into Lasso." },
   { value: "lead", label: "Lead", hint: "Can invite others and see engagements across the team." },
   { value: "admin", label: "Admin", hint: "Full workspace settings." },

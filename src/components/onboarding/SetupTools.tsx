@@ -52,7 +52,9 @@ export function SetupTools({ tools }: { tools: ToolId[] }) {
       ) : null}
 
       <section className="space-y-3">
-        <h2 className="micro-label">{nothingPicked ? "Start anywhere" : "Or just bring one thing"}</h2>
+        <h2 className="micro-label">
+          {nothingPicked ? "Start anywhere" : "Or just bring one thing"}
+        </h2>
         <div className="grid gap-3 sm:grid-cols-2">
           <PasteThreadDialog
             trigger={

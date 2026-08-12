@@ -184,6 +184,7 @@ export type Database = {
           profile_id: string
           status: string
           toolkit: string
+          watch_config: Json
         }
         Insert: {
           composio_account_id?: string | null
@@ -193,6 +194,7 @@ export type Database = {
           profile_id: string
           status?: string
           toolkit: string
+          watch_config?: Json
         }
         Update: {
           composio_account_id?: string | null
@@ -202,6 +204,7 @@ export type Database = {
           profile_id?: string
           status?: string
           toolkit?: string
+          watch_config?: Json
         }
         Relationships: [
           {

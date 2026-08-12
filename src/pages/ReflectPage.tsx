@@ -267,9 +267,7 @@ export function ReflectPage() {
                 <div ref={bottomRef} />
               </div>
 
-              {error ? (
-                <p className="px-5 pb-2 text-sm text-destructive">{error}</p>
-              ) : null}
+              {error ? <p className="px-5 pb-2 text-sm text-destructive">{error}</p> : null}
 
               <div className="flex items-end gap-2 border-t border-border px-5 py-4">
                 <Textarea

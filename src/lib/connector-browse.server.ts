@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/integrations/supabase/types";
 import type { PickerPage } from "@/lib/connector-picker-shared";
+import { looksLikeTranscript, transcriptHint } from "@/lib/transcript-detect";
 import {
   driveWorkType,
   TOOLKIT_ID_KEY,
@@ -33,9 +34,11 @@ export async function browseConnector(
     toolkit: BrowsableToolkit;
     profileId: string;
     folderId: string | null;
+    folderName: string | null;
     search: string | null;
     pageToken: string | null;
     seen: Set<string>;
+    watched: Set<string>;
   },
 ): Promise<PickerPage> {
   if (args.toolkit === "googledrive") {
@@ -46,14 +49,19 @@ export async function browseConnector(
       pageToken: args.pageToken,
     });
     return {
-      items: page.files.map((file) => ({
-        id: file.id ?? "",
-        title: file.name ?? "Untitled",
-        subtitle: file.mimeType ?? null,
-        date: file.modifiedTime ?? null,
-        isFolder: file.mimeType === DRIVE_FOLDER_MIME,
-        alreadyInLasso: Boolean(file.id && args.seen.has(file.id)),
-      })),
+      items: page.files.map((file) => {
+        const isFolder = file.mimeType === DRIVE_FOLDER_MIME;
+        return {
+          id: file.id ?? "",
+          title: file.name ?? "Untitled",
+          subtitle: file.mimeType ?? null,
+          date: file.modifiedTime ?? null,
+          isFolder,
+          alreadyInLasso: Boolean(file.id && args.seen.has(file.id)),
+          hint: isFolder ? null : transcriptHint(file.name, args.folderName),
+          isWatched: isFolder ? args.watched.has(file.id ?? "") : false,
+        };
+      }),
       nextPageToken: page.nextPageToken,
       unsupported: null,
     };
@@ -73,6 +81,8 @@ export async function browseConnector(
       date: item.modified,
       isFolder: item.isFolder,
       alreadyInLasso: args.seen.has(item.id),
+      hint: item.isFolder ? null : transcriptHint(item.name, args.folderName),
+      isWatched: item.isFolder ? args.watched.has(item.id) : false,
     })),
     nextPageToken: null,
     unsupported: null,
@@ -88,6 +98,7 @@ export async function importConnectorFiles(
     orgId: string;
     userId: string;
     ids: string[];
+    folderName: string | null;
   },
 ): Promise<{ imported: number; skipped: number }> {
   const { importedToolkitIds, storeFile, captureEvents } =
@@ -127,22 +138,25 @@ export async function importConnectorFiles(
     }
 
     const path = await storeFile(args.userId, file.name, file.bytes, file.mimeType);
+    // A labelled guess: transcripts land as calls, and stay editable.
+    const isTranscript = looksLikeTranscript(file.name, args.folderName);
     const insert = await supabase.from("work_items").insert({
       owner_id: args.profileId,
       org_id: args.orgId,
-      type: driveWorkType(file.mimeType),
+      type: isTranscript ? "call" : driveWorkType(file.mimeType),
       source: TOOLKIT_SOURCE[args.toolkit],
       source_vendor: TOOLKIT_VENDOR[args.toolkit],
       title: file.name,
       visibility: "unmapped",
       content_ref: path,
-      content_fidelity: "verbatim",
+      content_fidelity: isTranscript ? "transcribed" : "verbatim",
       ts_precision: "capture",
       source_meta: { filename: file.name, mime_type: file.mimeType },
       meta: {
         [idKey]: id,
         mime_type: file.mimeType,
         web_view_link: file.webViewLink,
+        ...(isTranscript ? { transcript_guess: true } : {}),
       },
     });
     if (insert.error) throw new Error(insert.error.message);

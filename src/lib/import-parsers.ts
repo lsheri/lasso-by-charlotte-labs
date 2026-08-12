@@ -160,7 +160,7 @@ function parseChatGpt(records: unknown[]): ParseResult {
       const title = String(conv["title"] ?? "").trim();
       conversations.push(
         finalize({
-        orig_id: String(conv["conversation_id"] ?? conv["id"] ?? (title || `cg-${index}`)),
+          orig_id: String(conv["conversation_id"] ?? conv["id"] ?? (title || `cg-${index}`)),
           title: title || (turns[0] as ParsedTurnRecord).content.slice(0, 60),
           created_at: toIso(conv["create_time"]),
           models: Array.from(models),
@@ -235,7 +235,12 @@ const THIRTY_MIN = 30 * 60 * 1000;
 
 function parseGemini(records: unknown[]): ParseResult {
   const failures: ParseFailure[] = [];
-  type Item = { ts: string | null; chatId: string | null; role: "user" | "assistant"; content: string };
+  type Item = {
+    ts: string | null;
+    chatId: string | null;
+    role: "user" | "assistant";
+    content: string;
+  };
   const items: Item[] = [];
 
   records.forEach((entry, index) => {
@@ -371,14 +376,14 @@ function parseCopilot(parts: LoadedPart[]): ParseResult {
 
     const groups = new Map<string, { ts: string | null; turns: ParsedTurnRecord[] }>();
     rows.forEach((row, index) => {
-      const prompt = (iPrompt >= 0 ? row[iPrompt] ?? "" : "").trim();
-      const reply = (iReply >= 0 ? row[iReply] ?? "" : "").trim();
+      const prompt = (iPrompt >= 0 ? (row[iPrompt] ?? "") : "").trim();
+      const reply = (iReply >= 0 ? (row[iReply] ?? "") : "").trim();
       if (!prompt && !reply) {
         failures.push({ record: `${part.name} row ${index + 2}`, reason: "Row has no text." });
         return;
       }
       const ts = iTime >= 0 ? toIso(row[iTime]) : null;
-      const key = (iConv >= 0 ? row[iConv] ?? "" : "").trim() || `${part.name}-row-${index}`;
+      const key = (iConv >= 0 ? (row[iConv] ?? "") : "").trim() || `${part.name}-row-${index}`;
       const group = groups.get(key) ?? { ts, turns: [] };
       if (prompt) {
         group.turns.push({ turn_no: group.turns.length + 1, role: "user", content: prompt, ts });

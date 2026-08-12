@@ -3,6 +3,7 @@ import {
   CircleDashed,
   FileText,
   HardDrive,
+  Mail,
   MessageSquare,
   Mic,
   Sparkles,
@@ -18,13 +19,7 @@ import { fetchProfile } from "@/hooks/use-profile";
  * travel in telemetry.
  */
 export type ToolId =
-  | "claude"
-  | "chatgpt"
-  | "gemini"
-  | "copilot"
-  | "googledrive"
-  | "granola"
-  | "other";
+  "claude" | "chatgpt" | "gemini" | "copilot" | "googledrive" | "gmail" | "granola" | "other";
 
 export type ToolMeta = {
   id: ToolId;
@@ -86,6 +81,14 @@ export const TOOLS: Record<ToolId, ToolMeta> = {
     hue: "--hue-plum",
     path: "connector",
   },
+  gmail: {
+    id: "gmail",
+    label: "Gmail",
+    blurb: "Connect, then pick the threads you want.",
+    icon: Mail,
+    hue: "--hue-cyan",
+    path: "connector",
+  },
   other: {
     id: "other",
     label: "Something else / skip",
@@ -102,8 +105,22 @@ export const TOOL_ORDER: ToolId[] = [
   "gemini",
   "copilot",
   "googledrive",
+  "gmail",
   "granola",
   "other",
+];
+
+/** The same four categories the Connectors page uses, so the two screens rhyme. */
+export const TOOL_CATEGORIES: { title: string; hue: string; tools: ToolId[] }[] = [
+  {
+    title: "Connect your AI · MCP",
+    hue: "--hue-slate-blue",
+    tools: ["claude", "chatgpt", "gemini", "copilot"],
+  },
+  { title: "Documents & files", hue: "--hue-sand", tools: ["googledrive"] },
+  { title: "Email", hue: "--hue-cyan", tools: ["gmail"] },
+  { title: "Meetings", hue: "--hue-clay", tools: ["granola"] },
+  { title: "Anything else", hue: "--hue-neutral", tools: ["other"] },
 ];
 
 /** 0 · 1-2 · 3+ — the only shape of this that ever leaves the browser. */

@@ -80,7 +80,9 @@ export function FeedbackDialog({ trigger }: { trigger: ReactNode }) {
 
         {done ? (
           <div className="space-y-4">
-            <p className="text-sm text-foreground">Got it — thank you. This goes straight to the founder.</p>
+            <p className="text-sm text-foreground">
+              Got it — thank you. This goes straight to the founder.
+            </p>
             <Button className="w-full" onClick={() => setOpen(false)}>
               Close
             </Button>
