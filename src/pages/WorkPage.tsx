@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { MapDialog } from "@/components/work/MapDialog";
 import { RowMenu } from "@/components/work/RowMenu";
 import { AnalysisLens } from "@/components/reflect/AnalysisLens";
+import { isDeliverableType } from "@/lib/lineage-shared";
 import { ImportFlowDialog } from "@/components/work/import/ImportFlowDialog";
 import { PasteThreadDialog } from "@/components/work/PasteThreadDialog";
 import { OpenFileAction } from "@/components/work/OpenFileAction";
@@ -719,8 +720,12 @@ export function WorkPage() {
           onOpenChange={(next) => {
             if (!next) setLensItem(null);
           }}
-          workItemId={lensItem.id}
-          workItemTitle={lensItem.title}
+          target={{
+            kind: "item",
+            id: lensItem.id,
+            title: lensItem.title,
+            scope: isDeliverableType(lensItem.type) ? "deliverable" : "thread",
+          }}
           profileId={profile.id}
           orgId={profile.org_id}
         />
