@@ -33,7 +33,7 @@ type CoachTask = {
  */
 function briefRecord(
   tasks: CoachTask[],
-  extractFor: Map<string, { summary: string; decisions: string | null }>,
+  extractOf: (id: string) => { summary: string | null; decisions: string | null } | null,
 ): { what_they_were_asked_to_do: unknown } {
   const items = tasks
     .flatMap((task) => task.work_item_tasks ?? [])
@@ -48,8 +48,8 @@ function briefRecord(
   return {
     what_they_were_asked_to_do: items.map((item) => ({
       title: item["title"],
-      summary: extractFor.get(String(item["id"]))?.summary ?? null,
-      decided: extractFor.get(String(item["id"]))?.decisions ?? null,
+      summary: extractOf(String(item["id"]))?.summary ?? null,
+      decided: extractOf(String(item["id"]))?.decisions ?? null,
     })),
   };
 }
@@ -130,7 +130,10 @@ export async function runCoachChat(
 
   const record = {
     colleague: subjectRes.data?.display_name ?? "your colleague",
-    ...briefRecord(tasks, extractFor),
+    ...briefRecord(tasks, (id) => {
+      const row = extractFor.get(id);
+      return row ? { summary: row.summary, decisions: row.decisions } : null;
+    }),
     tasks: tasks.map((task) => ({
       task_id: task.id,
       name: task.name,
