@@ -302,11 +302,19 @@ export function ConnectorPicker({
           : isGmail
           ? await importThreads({ data: { profile_id: profile?.id, ids } })
           : await importMeetings({ data: { profile_id: profile?.id, ids } });
-      toast.success(
-        result.imported > 0
-          ? `${result.imported} item${result.imported === 1 ? "" : "s"} brought into Work`
-          : "Nothing new to bring in",
-      );
+      const parts: string[] = [];
+      if (result.imported > 0) {
+        parts.push(`${result.imported} item${result.imported === 1 ? "" : "s"} brought into Work`);
+      }
+      if (result.updated > 0) {
+        parts.push(
+          `${result.updated} updated to a new version`,
+        );
+      }
+      if (result.unchanged > 0) {
+        parts.push(`${result.unchanged} already captured and unchanged`);
+      }
+      toast.success(parts.length > 0 ? parts.join(", ") : "Nothing new to bring in");
       setSelected(new Set());
       await queryClient.invalidateQueries({ queryKey: ["work-items"] });
       setPage(await load());
