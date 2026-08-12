@@ -40,3 +40,24 @@ export function useEngagementDecisions(engagementId: string | undefined) {
 export function srcsOf(row: DecisionRow): DecisionSrc[] {
   return Array.isArray(row.srcs) ? (row.srcs as unknown as DecisionSrc[]) : [];
 }
+
+export type SourceItemInfo = { id: string; title: string; type: string };
+
+/** Titles and types for the items a decision cites, so the card can say where it landed. */
+export function useDecisionSourceItems(ids: string[]) {
+  const key = [...ids].sort().join(",");
+  return useQuery({
+    queryKey: ["decision-source-items", key],
+    enabled: ids.length > 0,
+    queryFn: async (): Promise<Record<string, SourceItemInfo>> => {
+      const { data, error } = await supabase
+        .from("work_items")
+        .select("id, title, type")
+        .in("id", ids);
+      if (error) throw error;
+      const out: Record<string, SourceItemInfo> = {};
+      for (const row of data ?? []) out[row.id] = row as SourceItemInfo;
+      return out;
+    },
+  });
+}

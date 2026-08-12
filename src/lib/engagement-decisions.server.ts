@@ -10,6 +10,10 @@ type Db = SupabaseClient<Database>;
 /** Raw text is the expensive part, so the map is extracts and the text is bounded. */
 const RAW_BUDGET = 80_000;
 const PER_ITEM = 20_000;
+/** Deliverables get read in full first: that is where a decision landed. */
+const DELIVERABLE_BUDGET = 120_000;
+const DELIVERABLE_PER_ITEM = 40_000;
+const DELIVERABLE_TYPES = new Set(["document", "deck", "sheet"]);
 const MAX_BACKFILL = 8;
 
 export type EngagementSource = { no: number; id: string; title: string };
@@ -106,6 +110,28 @@ export async function buildEngagementCorpus(
   }
   const extractFor = new Map(extracts.map((e) => [e.work_item_id, e]));
 
+  // A confirmed link marks its target as a deliverable that other work fed
+  // into, so those get read first and most generously.
+  const { data: deliverableLinks } = items.length
+    ? await supabase
+        .from("work_item_links")
+        .select("to_item_id, status")
+        .eq("status", "confirmed")
+        .in(
+          "to_item_id",
+          items.map((i) => i.id),
+        )
+    : { data: [] };
+  const linkedTargets = new Set(
+    ((deliverableLinks ?? []) as unknown as { to_item_id: string }[]).map((r) => r.to_item_id),
+  );
+  const isDeliverable = (item: Row) => DELIVERABLE_TYPES.has(item.type as string);
+  const readOrder = [...items].sort((a, b) => {
+    const rank = (item: Row) =>
+      linkedTargets.has(item.id) && isDeliverable(item) ? 0 : isDeliverable(item) ? 1 : 2;
+    return rank(a) - rank(b);
+  });
+
   const taskFor = new Map<string, string>();
   for (const link of linkRows) {
     const task = taskRows.find((t) => t.id === link.task_id);
@@ -129,34 +155,49 @@ export async function buildEngagementCorpus(
     .join("\n");
 
   const sources: EngagementSource[] = [];
-  const blocks: string[] = [];
+  const blockFor = new Map<string, string>();
+  const numberFor = new Map<string, number>();
   let used = 0;
+  let deliverableUsed = 0;
   let no = 0;
 
+  // Numbering follows the timeline the reader sees; reading order follows
+  // priority, so the budget lands on deliverables first.
   for (const item of items) {
     no += 1;
+    numberFor.set(item.id, no);
     sources.push({ no, id: item.id, title: item.title });
+  }
+
+  for (const item of readOrder) {
+    const itemNo = numberFor.get(item.id)!;
     const extract = extractFor.get(item.id);
+    const deliverable = isDeliverable(item);
     const lines = [
-      `ITEM ${no}: ${item.title}`,
-      `  Type: ${item.type} · Task: ${taskFor.get(item.id) ?? "unmapped"}${item.visibility === "private" ? " · MARKED PRIVATE" : ""}`,
+      `ITEM ${itemNo}: ${item.title}`,
+      `  Type: ${item.type}${deliverable ? " · DELIVERABLE" : ""}${linkedTargets.has(item.id) ? " · other work fed into this" : ""} · Task: ${taskFor.get(item.id) ?? "unmapped"}${item.visibility === "private" ? " · MARKED PRIVATE" : ""}`,
     ];
     if (extract) {
       lines.push(`  Summary: ${extract.summary}`);
       if (extract.decisions) lines.push(`  Decided: ${extract.decisions}`);
     }
-    if (used < RAW_BUDGET) {
+    const budget = deliverable ? DELIVERABLE_BUDGET : RAW_BUDGET;
+    const spent = deliverable ? deliverableUsed : used;
+    if (spent < budget) {
       const text = (await pullItemText(supabase, item)).trim();
       if (text) {
-        const room = Math.min(PER_ITEM, RAW_BUDGET - used);
+        const room = Math.min(deliverable ? DELIVERABLE_PER_ITEM : PER_ITEM, budget - spent);
         const clipped =
           text.length > room ? `${text.slice(0, room)}\n[... rest omitted ...]` : text;
-        used += clipped.length;
+        if (deliverable) deliverableUsed += clipped.length;
+        else used += clipped.length;
         lines.push(`  Text:\n${clipped}`);
       }
     }
-    blocks.push(lines.join("\n"));
+    blockFor.set(item.id, lines.join("\n"));
   }
+
+  const blocks = items.map((item) => blockFor.get(item.id)!).filter(Boolean);
 
   return {
     prompt: [header, ...blocks].join("\n\n---\n\n"),

@@ -204,7 +204,7 @@ export function PeekPanel({
         {canEdit && onMakePrivate && active.visibility !== "private" ? (
           <FooterAction onClick={() => onMakePrivate(active)}>Make private</FooterAction>
         ) : null}
-        {canEdit && active.type === "ai_thread" ? (
+        {canEdit && ["ai_thread", "document", "deck", "sheet"].includes(active.type) ? (
           <DraftDecisionsButton workItemId={active.id} />
         ) : null}
         {canEdit && active.type === "ai_thread" && onFluency ? (

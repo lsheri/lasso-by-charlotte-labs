@@ -73,4 +73,6 @@ export type SourceMeta = {
   research_mode?: string;
   notes?: string;
   filename?: string;
+  /** Set when the pushed attachment was substantially already in the transcript. */
+  duplicate_of_transcript?: boolean;
 };

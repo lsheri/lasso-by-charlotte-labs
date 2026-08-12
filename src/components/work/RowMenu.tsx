@@ -22,7 +22,8 @@ export function RowMenu({
 }) {
   const { busy, draft } = useDraftDecisions(item.id);
   const isThread = item.type === "ai_thread";
-  if (!isThread) return null;
+  const readable = isThread || ["document", "deck", "sheet"].includes(item.type);
+  if (!readable) return null;
 
   return (
     <DropdownMenu>
@@ -34,9 +35,15 @@ export function RowMenu({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-64">
         <DropdownMenuItem disabled={busy} onSelect={() => draft()}>
-          {busy ? "Reading this conversation…" : "Find decisions in this conversation"}
+          {busy
+            ? isThread
+              ? "Reading this conversation…"
+              : "Reading this document…"
+            : isThread
+              ? "Find decisions in this conversation"
+              : "Find decisions in this document"}
         </DropdownMenuItem>
-        {onFluency ? (
+        {onFluency && isThread ? (
           <DropdownMenuItem onSelect={() => onFluency(item)}>
             Analyse this conversation
           </DropdownMenuItem>

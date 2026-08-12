@@ -28,19 +28,34 @@ export const draftDecisions = createServerFn({ method: "POST" })
 
     const { data: item, error: itemError } = await supabase
       .from("work_items")
-      .select("id, owner_id, type, source")
+      .select("id, owner_id, type, source, title, content_ref, content_hash, source_meta, meta")
       .eq("id", data.work_item_id)
       .maybeSingle();
     if (itemError) throw new Error(itemError.message);
     if (!item || item.owner_id !== profile.id) throw new Response("Forbidden", { status: 403 });
 
-    const { data: turns, error: turnsError } = await supabase
-      .from("turns")
-      .select("id, turn_no, role, content")
-      .eq("work_item_id", item.id)
-      .order("turn_no", { ascending: true });
-    if (turnsError) throw new Error(turnsError.message);
-    if (!turns || turns.length === 0) return { drafted: 0 };
+    // A thread is read as turns. A document, deck or sheet is read as its
+    // extracted text, so the drafter works on the deliverable too.
+    let turns: { id: string; turn_no: number; role: string; content: string }[] = [];
+    let transcript = "";
+    if (item.type === "ai_thread") {
+      const { data: turnRows, error: turnsError } = await supabase
+        .from("turns")
+        .select("id, turn_no, role, content")
+        .eq("work_item_id", item.id)
+        .order("turn_no", { ascending: true });
+      if (turnsError) throw new Error(turnsError.message);
+      turns = turnRows ?? [];
+      transcript = turns
+        .map((turn) => `TURN ${turn.turn_no} · ${turn.role.toUpperCase()}\n${turn.content}`)
+        .join("\n\n");
+    } else {
+      const { getItemText } = await import("./item-text.server");
+      const result = await getItemText(supabase, item as never);
+      const text = (result.text ?? "").slice(0, 60_000).trim();
+      if (text) transcript = `${item.type.toUpperCase()}: ${item.title}\n\n${text}`;
+    }
+    if (!transcript) return { drafted: 0 };
 
     const { data: mapped } = await supabase
       .from("work_item_tasks")
@@ -54,10 +69,6 @@ export const draftDecisions = createServerFn({ method: "POST" })
       ),
     );
     const engagementId = engagementIds.length === 1 ? (engagementIds[0] as string) : null;
-
-    const transcript = turns
-      .map((turn) => `TURN ${turn.turn_no} · ${turn.role.toUpperCase()}\n${turn.content}`)
-      .join("\n\n");
 
     const { chatComplete, resolveAiMeta } = await import("./ai.server");
     const meta = await resolveAiMeta(supabase, {
@@ -93,9 +104,24 @@ export const draftDecisions = createServerFn({ method: "POST" })
     const byTurnNo = new Map(turns.map((turn) => [turn.turn_no, turn.id]));
     const label = dateLabel(new Date());
 
+    // Verbatim rule: a decision that quotes something we cannot find in the
+    // source does not render at all.
+    const { unmatchedQuotes } = await import("./quote-check");
+    let suppressed = 0;
     const rows = drafts
       .filter((d) => d && d.situation && d.call && d.why)
-      .map((d) => ({
+      .filter((d) => {
+        const text = `${d.situation}\n${d.call}\n${d.why}`;
+        if (unmatchedQuotes(text, transcript).length === 0) return true;
+        suppressed += 1;
+        return false;
+      })
+      .map((d) => {
+        const turnSrcs = (Array.isArray(d.source_turn_nos) ? d.source_turn_nos : [])
+          .map((no) => byTurnNo.get(Number(no)))
+          .filter((turnId): turnId is string => Boolean(turnId))
+          .map((turnId) => ({ work_item_id: item.id, turn_id: turnId }));
+        return {
         owner_id: profile.id,
         engagement_id: engagementId,
         situation: String(d.situation).trim(),
@@ -104,11 +130,10 @@ export const draftDecisions = createServerFn({ method: "POST" })
         status: "draft" as const,
         author: "ai_draft" as const,
         date_label: label,
-        srcs: (Array.isArray(d.source_turn_nos) ? d.source_turn_nos : [])
-          .map((no) => byTurnNo.get(Number(no)))
-          .filter((turnId): turnId is string => Boolean(turnId))
-          .map((turnId) => ({ work_item_id: item.id, turn_id: turnId })),
-      }));
+        srcs:
+          turnSrcs.length > 0 ? turnSrcs : [{ work_item_id: item.id, turn_id: null as string | null }],
+        };
+      });
 
     if (rows.length > 0) {
       const { error: insertError } = await supabase.from("decisions").insert(rows);
@@ -121,10 +146,10 @@ export const draftDecisions = createServerFn({ method: "POST" })
       eventType: "decision.drafted",
       orgId: profile.org_id,
       userId: context.userId,
-      dims: { count: rows.length, ...usageDims(completion) },
+      dims: { count: rows.length, suppressed, type: item.type, ...usageDims(completion) },
     });
 
-    return { drafted: rows.length };
+    return { drafted: rows.length, suppressed };
   });
 
 /**
@@ -140,7 +165,8 @@ export const draftEngagementDecisions = createServerFn({ method: "POST" })
     }
     return { engagement_id: input.engagement_id, profile_id: input.profile_id ?? null };
   })
-  .handler(async ({ data, context }): Promise<{ drafted: number; scanned: number }> => {
+  .handler(
+    async ({ data, context }): Promise<{ drafted: number; scanned: number; suppressed: number }> => {
     const { supabase, userId } = context;
 
     const profile = await resolveProfile(supabase, userId, data.profile_id);
@@ -148,7 +174,7 @@ export const draftEngagementDecisions = createServerFn({ method: "POST" })
 
     const { buildEngagementCorpus } = await import("./engagement-decisions.server");
     const corpus = await buildEngagementCorpus(supabase, data.engagement_id, profile.id);
-    if (corpus.sources.length === 0) return { drafted: 0, scanned: 0 };
+    if (corpus.sources.length === 0) return { drafted: 0, scanned: 0, suppressed: 0 };
 
     const { chatComplete, resolveAiMeta } = await import("./ai.server");
     const meta = await resolveAiMeta(supabase, {
@@ -183,8 +209,16 @@ export const draftEngagementDecisions = createServerFn({ method: "POST" })
 
     const idFor = new Map(corpus.sources.map((s) => [s.no, s.id]));
     const label = dateLabel(new Date());
+    const { unmatchedQuotes } = await import("./quote-check");
+    let suppressed = 0;
     const rows = drafts
       .filter((d) => d && d.situation && d.call && d.why)
+      .filter((d) => {
+        const text = `${d.situation}\n${d.call}\n${d.why}`;
+        if (unmatchedQuotes(text, corpus.prompt).length === 0) return true;
+        suppressed += 1;
+        return false;
+      })
       .map((d) => ({
         owner_id: profile.id,
         engagement_id: data.engagement_id,
@@ -214,8 +248,9 @@ export const draftEngagementDecisions = createServerFn({ method: "POST" })
       eventType: "decision.drafted",
       orgId: profile.org_id,
       userId,
-      dims: { count: rows.length, scope: "engagement", ...usageDims(completion) },
+      dims: { count: rows.length, scope: "engagement", suppressed, ...usageDims(completion) },
     });
 
-    return { drafted: rows.length, scanned: corpus.sources.length };
-  });
+    return { drafted: rows.length, scanned: corpus.sources.length, suppressed };
+    },
+  );

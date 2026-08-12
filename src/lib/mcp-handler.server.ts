@@ -2,6 +2,7 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import type { Json } from "@/integrations/supabase/types";
 import { sha256Hex } from "@/lib/connectors-shared";
+import { flaggedBucket, looksLikeRestatement } from "@/lib/attachment-guard";
 import { workTypeForFile } from "@/lib/work-types";
 import { recordEvent } from "@/lib/telemetry.server";
 import {
@@ -92,7 +93,7 @@ const TOOLS = [
   {
     name: "push_conversation",
     description:
-      "When the user says 'Push to Lasso', 'send to Lasso', or similar: call push_conversation EXACTLY ONCE with the ENTIRE conversation, every message, verbatim, unabridged, plus EVERY artifact, canvas, file, or report created during the conversation as attachments. Never summarize the transcript. Never split one conversation across multiple calls or use push_document for conversation artifacts.",
+      "When the user says 'Push to Lasso', 'send to Lasso', or similar: call push_conversation EXACTLY ONCE with the ENTIRE conversation, every message, verbatim, unabridged, plus any artifact, canvas or file that already existed as its own object in this app, as attachments. Never summarize the transcript. Never compose new summaries, recaps or section write-ups and send them as attachments. Never split one conversation across multiple calls or use push_document for conversation artifacts.",
     inputSchema: {
       type: "object",
       properties: {
@@ -140,12 +141,16 @@ const TOOLS = [
           type: "array",
           maxItems: MAX_ATTACHMENTS,
           description:
-            "Every artifact, canvas, file, page, or report created during the conversation.",
+            "ONLY objects that already existed as a separate, addressable thing in the source app before this push was requested: a Claude artifact, a ChatGPT canvas, a generated or downloadable file, a produced document. If the user could open, rename, or download it on its own in the app, it belongs here. NOT an attachment: a section or heading taken from a message; a summary, recap, list, or set of key points you are composing now; an explanation of what happened in the conversation; anything you would have to write in order to send it. If you are generating the content at push time, it is not an artifact and must not be sent. The transcript already carries it. When in doubt, send nothing and let the messages speak.",
           items: {
             type: "object",
             properties: {
               kind: { type: "string", enum: [...ATTACHMENT_KINDS] },
-              title: { type: "string", description: "Title verbatim as shown in the source app." },
+              title: {
+                type: "string",
+                description:
+                  "The artifact's own title exactly as it appeared in the source app, verbatim. Never a description you invent for it, and never a heading you compose to label it.",
+              },
               content: { type: "string", description: "Verbatim source or text." },
               language: { type: "string" },
             },
@@ -700,6 +705,8 @@ async function pushConversation(owner: Owner, args: Obj, id: unknown): Promise<R
   let saved = 0;
   const capturedIds: string[] = [threadId];
   const problems: string[] = [];
+  let flaggedCount = 0;
+  const transcriptText = messages.map((m) => m.content).join("\n\n");
   if (attachments.length > 0 && !owner.userId) {
     problems.push("attachments need a signed-in workspace account");
   } else {
@@ -717,6 +724,10 @@ async function pushConversation(owner: Owner, args: Obj, id: unknown): Promise<R
         continue;
       }
       const match = (existingAttachments ?? []).find((row) => row.title === attachment.title);
+      // A restatement of the conversation is not a separate artifact. We never
+      // drop it: we flag it, and the owner decides.
+      const restated = looksLikeRestatement(attachment.content, transcriptText);
+      if (restated) flaggedCount += 1;
       // Reuse the stored path for a known attachment; give new ones a collision-proof suffix.
       const suffix = (await sha256Hex(attachment.title)).slice(0, 8);
       const path =
@@ -748,6 +759,7 @@ async function pushConversation(owner: Owner, args: Obj, id: unknown): Promise<R
           kind: attachment.kind,
           language: attachment.language ?? null,
           filename: attachment.title,
+          duplicate_of_transcript: restated,
         } as unknown as Json,
         meta: { assistant_transcribed: true },
       };
@@ -786,7 +798,12 @@ async function pushConversation(owner: Owner, args: Obj, id: unknown): Promise<R
     eventType: "mcp.push",
     orgId: owner.orgId,
     userId: owner.userId,
-    dims: { vendor, attachment_count: attachmentBucket(attachments.length), mode: pushMode },
+    dims: {
+      vendor,
+      attachment_count: attachmentBucket(attachments.length),
+      flagged_attachments: flaggedBucket(flaggedCount),
+      mode: pushMode,
+    },
   });
   await recordEvent(supabaseAdmin, {
     eventType: "workitem.captured",
@@ -798,6 +815,10 @@ async function pushConversation(owner: Owner, args: Obj, id: unknown): Promise<R
   const verb = existingThread ? "Updated" : "Saved";
   const tail = saved > 0 ? ` with ${saved} attachment${saved === 1 ? "" : "s"}` : "";
   const warn = problems.length > 0 ? ` Some attachments didn't save: ${problems.join("; ")}.` : "";
+  const flaggedNote =
+    flaggedCount > 0
+      ? ` ${flaggedCount} attachment${flaggedCount === 1 ? "" : "s"} looked like restatement${flaggedCount === 1 ? "" : "s"} of the conversation rather than separate artifacts and ${flaggedCount === 1 ? "was" : "were"} flagged. Only send artifacts that existed in the app before the push.`
+      : "";
   const counts = existingThread
     ? ` ${unchangedCount} message${unchangedCount === 1 ? "" : "s"} already captured, ${newRows.length} new, ${changedCount} changed since last push.`
     : ` ${messages.length} message${messages.length === 1 ? "" : "s"} captured.`;
@@ -810,6 +831,6 @@ async function pushConversation(owner: Owner, args: Obj, id: unknown): Promise<R
     : "";
   return textResult(
     id,
-    `${verb} '${title}' in Lasso${tail}.${counts}${shortNote} It stays private until the user maps it.${warn}${continuation}`,
+    `${verb} '${title}' in Lasso${tail}.${counts}${shortNote} It stays private until the user maps it.${flaggedNote}${warn}${continuation}`,
   );
 }

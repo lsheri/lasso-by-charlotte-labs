@@ -20,6 +20,7 @@ import { WorkDateDialog } from "@/components/work/WorkDateDialog";
 import { RowAction, WorkRow } from "@/components/work/WorkRow";
 import { EngagementFold, WorkSection } from "@/components/work/WorkSection";
 import { ConversationChips } from "@/components/work/ConversationChips";
+import { FlaggedMarker, isFlaggedRestatement } from "@/components/work/FlaggedMarker";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -68,12 +69,34 @@ export function WorkPage() {
   const [chosen, setChosen] = useState<Set<string>>(new Set());
   const [confirmRemove, setConfirmRemove] = useState(false);
   const [removing, setRemoving] = useState(false);
+  const [removingFlagged, setRemovingFlagged] = useState(false);
 
   const all = data?.items ?? [];
   const mappingError = data?.mappingError ?? null;
   const mapped = all.filter((i) => i.visibility === "mapped");
   const unmapped = all.filter((i) => i.visibility === "unmapped");
   const priv = all.filter((i) => i.visibility === "private");
+  const flagged = all.filter((i) => i.visibility === "unmapped" && isFlaggedRestatement(i));
+
+  async function removeAllFlagged() {
+    setRemovingFlagged(true);
+    setActionError(null);
+    try {
+      const result = await runRemove({
+        data: { profile_id: profile?.id, ids: flagged.map((i) => i.id) },
+      });
+      toast.success(
+        result.removed > 0
+          ? `${result.removed} item${result.removed === 1 ? "" : "s"} removed from Lasso`
+          : "Nothing was removed",
+      );
+      await queryClient.invalidateQueries({ queryKey: ["work-items"] });
+    } catch (e) {
+      setActionError((e as Error).message);
+    } finally {
+      setRemovingFlagged(false);
+    }
+  }
 
   const active = (suggestions ?? []).filter(
     (s) => !dismissed.includes(s.work_item_id) && unmapped.some((i) => i.id === s.work_item_id),
@@ -172,6 +195,7 @@ export function WorkPage() {
                 onOpen={openItem(child, group)}
                 chips={<ConversationChips item={child} />}
                 actions={rowActions(child, variant)}
+                footer={isFlaggedRestatement(child) ? <FlaggedMarker item={child} /> : undefined}
               />
             ))}
           </div>
@@ -274,15 +298,19 @@ export function WorkPage() {
 
   function suggestionFor(item: WorkItemRow) {
     const suggestion = active.find((s) => s.work_item_id === item.id);
-    if (!suggestion) return null;
+    const flag = isFlaggedRestatement(item) ? <FlaggedMarker item={item} /> : null;
+    if (!suggestion) return flag;
     return (
-      <SuggestionChip
-        label={taskLabels?.[suggestion.task_id] ?? "task"}
-        reason={suggestion.reason}
-        pending={acceptPending}
-        onAccept={() => void acceptSuggestion(suggestion)}
-        onDismiss={() => setDismissed((prev) => [...prev, suggestion.work_item_id])}
-      />
+      <div className="space-y-2">
+        <SuggestionChip
+          label={taskLabels?.[suggestion.task_id] ?? "task"}
+          reason={suggestion.reason}
+          pending={acceptPending}
+          onAccept={() => void acceptSuggestion(suggestion)}
+          onDismiss={() => setDismissed((prev) => [...prev, suggestion.work_item_id])}
+        />
+        {flag}
+      </div>
     );
   }
 
@@ -450,6 +478,22 @@ export function WorkPage() {
       ) : (
         <div className="space-y-8">
           <WatchSuggestionBanner />
+          {!isCoach && flagged.length > 0 ? (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius)] border border-dashed border-border bg-secondary/50 px-4 py-3">
+              <p className="min-w-0 text-sm text-foreground">
+                {flagged.length} item{flagged.length === 1 ? "" : "s"} look like part of a
+                conversation rather than separate artifacts. You decide whether they stay.
+              </p>
+              <button
+                type="button"
+                disabled={removingFlagged}
+                onClick={() => void removeAllFlagged()}
+                className="text-xs font-medium text-destructive transition-opacity hover:opacity-70 disabled:opacity-40"
+              >
+                {removingFlagged ? "Removing…" : `Remove all ${flagged.length}`}
+              </button>
+            </div>
+          ) : null}
           <WorkSection
             label="Needs mapping"
             hint="Private by default until you map it, nothing is shared with your coach yet."
