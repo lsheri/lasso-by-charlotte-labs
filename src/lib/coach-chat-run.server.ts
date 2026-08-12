@@ -30,7 +30,7 @@ export async function runCoachChat(
     supabase
       .from("tasks")
       .select(
-        "id, name, goal, when_label, work_item_tasks(step_no, step_confirmed, work_items(id, title, type, source, source_vendor, content_fidelity, work_date, created_at_source, captured_at))",
+        "id, name, goal, when_label, work_item_tasks(step_no, step_confirmed, work_items(id, title, type, source, source_vendor, content_fidelity, work_date, created_at_source, captured_at, meta))",
       )
       .eq("engagement_id", data.engagement_id)
       .eq("owner_id", data.subject_id)
@@ -100,6 +100,7 @@ export async function runCoachChat(
 
   const record = {
     colleague: subjectRes.data?.display_name ?? "your colleague",
+    ...briefRecord(tasks, extractFor),
     tasks: tasks.map((task) => ({
       task_id: task.id,
       name: task.name,
