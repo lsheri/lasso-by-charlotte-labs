@@ -4,6 +4,14 @@ import { BRIEF_PROMPT_RULES } from "@/lib/brief-shared";
 /**
  * The analysis preset registry. Every analysis in the product is an entry here,
  * not a build: id, prompt, info panel, attribution, and who may run it.
+ *
+ * THE NAMING RULE.
+ * A name is legitimate when a partner could say it out loud in a review without it
+ * sounding like software. Person-shaped analyses use second person and stay owner-only.
+ * Artifact-shaped analyses make the WORK the subject of the sentence, and those are the
+ * only ones a coach or practitioner may run. Never "score", "level", "assessment",
+ * "audit", "rating", or "efficiency" in a label: efficiency reads as a productivity
+ * measure of a person even when the content is pure craft.
  */
 
 export const ANALYSIS_SOURCES = [
@@ -66,8 +74,11 @@ export type AnalysisPreset = {
 
 export const ANALYSIS_PRESET_IDS = [
   "ai_fluency_4d",
-  "working_efficiently",
+  "working_the_model",
   "assumptions",
+  "decision_origin",
+  "what_fed_this",
+  "what_recurs",
 ] as const;
 export type AnalysisPresetId = (typeof ANALYSIS_PRESET_IDS)[number];
 
@@ -87,7 +98,7 @@ ABSOLUTE RULES:
 - If the thread gives no evidence for a D, say plainly that it does not show, and still offer one thing to try.
 - Use markdown with a heading per D. Never use an em dash.`;
 
-const EFFICIENCY_PROMPT = `You are running "Working efficiently with AI" over ONE of this person's own AI conversations. The transcript is supplied with each turn numbered as "TURN n ROLE:".
+const WORKING_THE_MODEL_PROMPT = `You are running "Working efficiently with AI" over ONE of this person's own AI conversations. The transcript is supplied with each turn numbered as "TURN n ROLE:".
 
 Your job is to MATCH, not to lecture. Read the actual transcript, find which of the patterns below genuinely occurred in it, and report only those.
 
@@ -128,6 +139,62 @@ ABSOLUTE RULES:
 - No score, no judgement of the person, no advice about their competence.
 - Use markdown. One assumption per block. Never use an em dash.`;
 
+const DECISION_ORIGIN_PROMPT = `You are establishing, for ONE finished piece of work, where each significant call came from. You are given the deliverable, the conversations that fed it, and the brief when one exists. Turns are numbered as "TURN n ROLE:".
+
+A significant call is a choice that shaped the deliverable and could have gone another way: a scope boundary, a method, a number or assumption that drives an output, a recommendation, a framing, an exclusion.
+
+For each significant call, give:
+- THE CALL, in one plain sentence.
+- ORIGIN, exactly one of: REQUIRED BY THE BRIEF, MADE BY YOU, PROPOSED BY THE MODEL AND ACCEPTED BY YOU, PROPOSED BY THE MODEL AND CHANGED BY YOU, or CARRIED IN FROM A SOURCE.
+- THE EVIDENCE: the exact quoted span the origin rests on, copied character for character, with its turn number or the deliverable location.
+- WHAT IT DECIDED: the part of the deliverable that follows from it.
+
+PROVENANCE, NEVER PROPORTION. This is the hard constraint on this analysis and it is not negotiable. Never state or imply how much of the work was AI and how much was human. No percentages, no counts of calls by origin, no summary sentence characterising the balance, no "mostly", "largely" or "heavily". A reader who wants the balance can read the list. The moment this produces a ratio it becomes a measurement of a person and it is the model that failed.
+
+ORDER: PROPOSED BY THE MODEL AND ACCEPTED BY YOU first, because an accepted proposal that nobody examined is the one worth seeing. Then MADE BY YOU, then the rest.
+
+ABSOLUTE RULES:
+- Verbatim or it does not render. If you cannot copy the exact span, do not write the call at all.
+- If a call cannot be traced to any evidence, say so plainly as its own entry with origin UNTRACEABLE and no quote. Do not infer an origin.
+- No judgement of the person, no advice about their competence, no number attached to them.
+- Never use an em dash.`;
+
+const WHAT_FED_THIS_PROMPT = `You are reconstructing what went into ONE finished piece of work. You are given the deliverable and the candidate items from this person's record: conversations, documents, transcripts, earlier versions.
+
+For each item that genuinely fed the deliverable, give:
+- THE ITEM, by its title.
+- RELATION, exactly one of: PRODUCED (this item is where the deliverable was drafted), INFORMED (material or reasoning from it reached the deliverable), REVISED (it changed an existing version), CITED (the deliverable quotes or references it).
+- THE EVIDENCE: the specific overlap, quoted verbatim from both sides where possible, or the concrete reason with its location.
+
+WHAT NOT TO LINK. Shared vocabulary is not a link. Same client, same week, or same engagement is not a link. If the only thing connecting an item to the deliverable is topic, do not link it. An over-linked record is worse than a sparse one, because a link the person cannot recognise teaches them the whole feature is guesswork.
+
+If nothing fed it that you can evidence, say exactly that. An empty result is a true result.
+
+ABSOLUTE RULES:
+- Every link carries evidence. No evidence, no link.
+- Draft only. Say plainly at the end that these are proposed links for the person to confirm or discard, and that nothing is recorded until they do.
+- No count of how many items fed the work, no completeness claim, no number about the person.
+- Never use an em dash.`;
+
+const WHAT_RECURS_PROMPT = `You are looking across SEVERAL pieces of this person's own work in one engagement, to find what happened more than once. You are given the items and their conversations, oldest first, with dates.
+
+Report only patterns that appear in AT LEAST TWO separate pieces of work, each with its own citation. A pattern in one piece of work is an observation about that piece, not a recurrence, and it does not belong here.
+
+For each recurrence:
+- NAME THE PATTERN in plain language, as a thing that happened, not as a trait of the person. Write "the brief's constraint was restated before drafting" rather than "you are disciplined about constraints".
+- WHERE: each occurrence, by item title and date, with the exact quoted span.
+- WHAT CHANGED BETWEEN THEM, if anything. Say plainly when nothing changed. Change is not improvement and must never be written as improvement.
+
+VOCABULARY, NOT MEASUREMENT. This is the hard constraint on this analysis. You are naming things that happened repeatedly. You are not measuring a person over time, not describing a trajectory, not saying anything is developing, growing, improving, declining, strengthening or weakening. No trend language of any kind. No first-versus-latest comparison framed as progress. If you find yourself about to write that something got better, write instead what specifically differed and let the reader decide.
+
+ABSOLUTE RULES:
+- At most five recurrences, ordered by how many pieces of work they appear in.
+- Verbatim or it does not render, on every citation.
+- Never a number about the person: no counts of behaviours, no frequencies, no proportions, no "X of your Y conversations". Dates and item titles are the only identifiers permitted.
+- Never rank the person, never use a ranking adjective, never call anything a strength or a weakness.
+- If fewer than three pieces of work are in scope, produce nothing and say plainly that there is not enough work in this engagement yet.
+- Never use an em dash.`;
+
 export const ANALYSIS_PRESETS: AnalysisPreset[] = [
   {
     id: "ai_fluency_4d",
@@ -153,12 +220,12 @@ export const ANALYSIS_PRESETS: AnalysisPreset[] = [
     coachMayRun: false,
   },
   {
-    id: "working_efficiently",
-    dbPreset: "trace",
-    label: "Working efficiently with AI",
-    description: "Techniques that would have made this conversation shorter and sharper.",
+    id: "working_the_model",
+    dbPreset: "working_the_model",
+    label: "How you worked the model",
+    description: "The techniques that would have made this conversation shorter and sharper.",
     scope: "thread",
-    systemPrompt: EFFICIENCY_PROMPT,
+    systemPrompt: WORKING_THE_MODEL_PROMPT,
     openingMessage:
       "Look at how I worked with the AI in this conversation and tell me which techniques would have made it tighter.",
     infoPanel: {
@@ -173,7 +240,7 @@ export const ANALYSIS_PRESETS: AnalysisPreset[] = [
   {
     id: "assumptions",
     dbPreset: "assumptions",
-    label: "Assumptions in this work",
+    label: "What this work assumes",
     description: "What was assumed, where it came from, and whether it was ever checked.",
     scope: "thread",
     systemPrompt: ASSUMPTIONS_PROMPT,
@@ -193,9 +260,81 @@ export const ANALYSIS_PRESETS: AnalysisPreset[] = [
       sources: ANALYSIS_SOURCES,
     },
     attribution: null,
+    coachMayRun: true,
+  },
+  {
+    id: "decision_origin",
+    dbPreset: "decision_origin",
+    label: "Who decided what",
+    description: "Every significant call in this work, and where it came from.",
+    scope: "deliverable",
+    systemPrompt: DECISION_ORIGIN_PROMPT,
+    openingMessage:
+      "For this piece of work, set out every significant call and where each one came from.",
+    infoPanel: {
+      reads: (detail) => detail,
+      looksFor: [
+        "Calls the brief required",
+        "Calls you made yourself",
+        "Calls the model proposed and you accepted",
+        "Calls the model proposed and you changed",
+        "Calls carried in from a source",
+      ],
+      never: `${NEVER_LINE} No ratio of human to AI is produced anywhere, by design.`,
+      sources: ANALYSIS_SOURCES,
+    },
+    attribution: null,
+    coachMayRun: true,
+  },
+  {
+    id: "what_fed_this",
+    dbPreset: "what_fed_this",
+    label: "What fed this",
+    description: "The conversations and documents that went into this piece of work.",
+    scope: "deliverable",
+    systemPrompt: WHAT_FED_THIS_PROMPT,
+    openingMessage: "Reconstruct what fed this piece of work, with the evidence for each link.",
+    infoPanel: {
+      reads: (detail) => detail,
+      looksFor: [
+        "The conversation this was drafted in",
+        "Material or reasoning that reached the work",
+        "Items that revised an earlier version",
+        "Items the work quotes or references",
+      ],
+      never: `${NEVER_LINE} Every proposal is a draft you confirm or discard, and nothing is recorded until you do.`,
+      sources: ANALYSIS_SOURCES,
+    },
+    attribution: null,
+    coachMayRun: true,
+  },
+  {
+    id: "what_recurs",
+    dbPreset: "what_recurs",
+    label: "What recurs",
+    description: "Patterns that appear in more than one piece of work in this engagement.",
+    scope: "engagement",
+    systemPrompt: WHAT_RECURS_PROMPT,
+    openingMessage:
+      "Across this engagement, name what happened in more than one piece of work, with citations.",
+    infoPanel: {
+      reads: (detail) => detail,
+      looksFor: [
+        "Things that happened in at least two separate pieces of work",
+        "Where each occurrence is, by item and date",
+        "What differed between the occurrences",
+      ],
+      never: `${NEVER_LINE} No trend, no trajectory, no count and no chart is produced, by design.`,
+      sources: ANALYSIS_SOURCES,
+    },
+    attribution: null,
     coachMayRun: false,
   },
 ];
+
+/** Below this, "What recurs" has nothing to compare and must not run. */
+export const MIN_ITEMS_FOR_RECURRENCE = 3;
+export const NOT_ENOUGH_WORK_LINE = "There is not enough work in this engagement yet.";
 
 export function analysisPreset(id: string): AnalysisPreset | null {
   return ANALYSIS_PRESETS.find((p) => p.id === id) ?? null;

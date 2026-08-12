@@ -11,6 +11,7 @@ import { EditTaskDialog } from "@/components/engagements/EditTaskDialog";
 import { EngagementBriefSection } from "@/components/engagements/EngagementBriefSection";
 import { InviteDialog } from "@/components/invites/InviteDialog";
 import { SubjectCoachingSection } from "@/components/coaching/SubjectCoachingSection";
+import { AnalysisLens } from "@/components/reflect/AnalysisLens";
 import { ReflectDock } from "@/components/reflect/ReflectDock";
 import { TaskWorkflow, type WorkflowElement } from "@/components/work/TaskWorkflow";
 import { useProfile } from "@/hooks/use-profile";
@@ -43,6 +44,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
   const queryClient = useQueryClient();
   const [aboutOpen, setAboutOpen] = useState(false);
   const [askOpen, setAskOpen] = useState(false);
+  const [analyseOpen, setAnalyseOpen] = useState(false);
   const [prepOpen, setPrepOpen] = useState(false);
   const [taskName, setTaskName] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -92,6 +94,16 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
 
   const engagement = engagementQuery.data;
 
+  // Mapped items in this engagement, the only input to whether "What recurs"
+  // has enough work to run. No count is ever shown to the person.
+  const mappedItemCount = new Set(
+    (tasksQuery.data ?? []).flatMap((task) =>
+      (task.work_item_tasks ?? [])
+        .map((link) => link.work_items?.id)
+        .filter((id): id is string => Boolean(id)),
+    ),
+  ).size;
+
   if (engagementQuery.isLoading) {
     return <p className="text-sm text-muted-foreground">Loading…</p>;
   }
@@ -122,6 +134,15 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
               className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
             >
               <Sparkle className="h-3.5 w-3.5" aria-hidden /> Ask Lasso
+            </button>
+          ) : null}
+          {profile && profile.role !== "coach" ? (
+            <button
+              type="button"
+              onClick={() => setAnalyseOpen(true)}
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Analyse this engagement
             </button>
           ) : null}
         </div>
@@ -269,6 +290,21 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
           profileId={profile.id}
           engagementId={engagementId}
           scopeLabel={engagement.title}
+        />
+      ) : null}
+
+      {profile && profile.role !== "coach" ? (
+        <AnalysisLens
+          open={analyseOpen}
+          onOpenChange={setAnalyseOpen}
+          target={{
+            kind: "engagement",
+            id: engagementId,
+            title: engagement.title,
+            itemCount: mappedItemCount,
+          }}
+          profileId={profile.id}
+          orgId={profile.org_id}
         />
       ) : null}
 
