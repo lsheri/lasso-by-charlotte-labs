@@ -5,6 +5,7 @@ import { NoteComposer, type CitationOption } from "@/components/coaching/NoteCom
 import { TaskWorkflow, type WorkflowElement } from "@/components/work/TaskWorkflow";
 import { usePacket, type PacketElement } from "@/hooks/use-coaching";
 import { useProfile } from "@/hooks/use-profile";
+import { isBriefItem } from "@/lib/brief-shared";
 import { logEvent } from "@/lib/telemetry";
 
 const SEEN_PREFIX = "lasso.packet_seen.";
@@ -77,6 +78,10 @@ export function PacketPage({
   }
 
   const subjectName = data.subject.display_name;
+  const sharedBriefs = data.tasks
+    .flatMap((task) => task.work_item_tasks ?? [])
+    .map((element) => element.work_items)
+    .filter((item): item is NonNullable<typeof item> => item !== null && isBriefItem(item));
   const citations: CitationOption[] = [
     ...data.decisions.map((decision) => ({
       id: decision.id,
@@ -100,6 +105,19 @@ export function PacketPage({
           {data.engagement.code} · {data.engagement.title}
           {data.engagement.term_label ? ` · ${data.engagement.term_label}` : ""}
         </p>
+        {sharedBriefs.length > 0 ? (
+          <div className="mt-4 rounded-[var(--radius)] border border-accent bg-card px-5 py-4 shadow-card">
+            <p className="micro-label">What {subjectName} was asked to do</p>
+            {sharedBriefs.map((item) => (
+              <p key={item.id} className="mt-1.5 text-sm font-medium text-foreground">
+                {item.title}
+              </p>
+            ))}
+            <p className="mt-1 text-sm text-muted-foreground">
+              Shared with you as the brief for this work.
+            </p>
+          </div>
+        ) : null}
         {data.engagement.brief ? (
           <div className="mt-4 rounded-[var(--radius)] border border-border bg-card px-5 py-4 shadow-card">
             <p className="micro-label">Brief</p>
