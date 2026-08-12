@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/integrations/supabase/types";
+import { isBriefItem } from "@/lib/brief-shared";
 import { COACH_CHAT_SYSTEM_PROMPT, type CoachChatInput } from "@/lib/coach-chat-shared";
 import { resolveProfile } from "@/lib/profile-resolve";
 import type { ContextSource } from "@/lib/reflect-shared";
@@ -13,6 +14,45 @@ export type CoachChatResult = {
   sources: ContextSource[];
   cutOff: boolean;
 };
+
+type CoachTask = {
+  id: string;
+  name: string;
+  goal: string | null;
+  when_label: string | null;
+  work_item_tasks: {
+    step_no: number | null;
+    step_confirmed: boolean;
+    work_items: Record<string, unknown> | null;
+  }[];
+};
+
+/**
+ * A brief reaches a coach only if the person mapped it, exactly like any other
+ * item. Nothing here widens visibility; it only labels what is already shared.
+ */
+function briefRecord(
+  tasks: CoachTask[],
+  extractFor: Map<string, { summary: string; decisions: string | null }>,
+): { what_they_were_asked_to_do: unknown } {
+  const items = tasks
+    .flatMap((task) => task.work_item_tasks ?? [])
+    .map((link) => link.work_items)
+    .filter((item): item is Record<string, unknown> => item !== null && isBriefItem(item));
+  if (items.length === 0) {
+    return {
+      what_they_were_asked_to_do:
+        "No brief has been shared with you. Do not infer what this person was asked to do.",
+    };
+  }
+  return {
+    what_they_were_asked_to_do: items.map((item) => ({
+      title: item["title"],
+      summary: extractFor.get(String(item["id"]))?.summary ?? null,
+      decided: extractFor.get(String(item["id"]))?.decisions ?? null,
+    })),
+  };
+}
 
 /** One coach question. Streams when a delta sink is given. */
 export async function runCoachChat(
@@ -47,17 +87,7 @@ export async function runCoachChat(
   if (tasksRes.error) throw new Error(tasksRes.error.message);
   if (decisionsRes.error) throw new Error(decisionsRes.error.message);
 
-  const tasks = (tasksRes.data ?? []) as unknown as {
-    id: string;
-    name: string;
-    goal: string | null;
-    when_label: string | null;
-    work_item_tasks: {
-      step_no: number | null;
-      step_confirmed: boolean;
-      work_items: Record<string, unknown> | null;
-    }[];
-  }[];
+  const tasks = (tasksRes.data ?? []) as unknown as CoachTask[];
 
   if (tasks.length === 0 && (decisionsRes.data ?? []).length === 0) {
     return {
