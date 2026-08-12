@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { ANALYSIS_PRESET_IDS, type AnalysisPresetId } from "@/lib/analysis-presets";
+import { tokensBucket } from "@/lib/ai-usage";
 
 type StartInput = {
   preset_id: AnalysisPresetId;
@@ -65,6 +66,16 @@ export const startAnalysis = createServerFn({ method: "POST" })
     if (!item) throw new Error("That item is gone.");
     const isOwner = item.owner_id === profile.id;
     if (!isOwner && !preset.coachMayRun) throw new Response("Forbidden", { status: 403 });
+
+    const { assertUnderDailyCap } = await import("./analysis-cap.server");
+    await assertUnderDailyCap(supabase, profile.id);
+
+    const { resolveAiMeta } = await import("./ai.server");
+    const aiMeta = await resolveAiMeta(supabase, {
+      surface: `analysis:${preset.id}`,
+      orgId: profile.org_id,
+      userId,
+    });
 
     const idempotencyKey = `${preset.id}:thread:${item.id}:${profile.id}`;
 
@@ -164,8 +175,12 @@ export const startAnalysis = createServerFn({ method: "POST" })
         { role: "user" as const, content: preset.openingMessage },
       ];
 
-      const { chatComplete, estimateCostUsd } = await import("./ai-gateway.server");
-      const completion = await chatComplete(conversation, { timeoutMs: 180_000 });
+      const { chatComplete } = await import("./ai.server");
+      const completion = await chatComplete(conversation, {
+        tier: "smart",
+        maxTokens: 8000,
+        meta: aiMeta,
+      });
       const cutOff = completion.finishReason === "length";
       const { CUT_OFF_NOTE } = await import("./quote-check");
       const { guardQuotes } = await import("./quote-guard.server");
@@ -174,6 +189,7 @@ export const startAnalysis = createServerFn({ method: "POST" })
         assembled.context,
         cutOff,
         conversation,
+        aiMeta,
       );
       const answer = cutOff ? `${guarded.answer}\n\n${CUT_OFF_NOTE}` : guarded.answer;
 
@@ -196,7 +212,7 @@ export const startAnalysis = createServerFn({ method: "POST" })
 
       const tokensIn = completion.tokensIn + guarded.tokensIn;
       const tokensOut = completion.tokensOut + guarded.tokensOut;
-      const costUsd = estimateCostUsd(tokensIn, tokensOut);
+      const costUsd = Number((completion.costUsd + guarded.costUsd).toFixed(6));
       const itemsRead = assembled.sources.length;
 
       await supabase
@@ -222,6 +238,7 @@ export const startAnalysis = createServerFn({ method: "POST" })
           items_read_bucket: smallBucket(itemsRead),
           suppressed_bucket: smallBucket(guarded.suppressed),
           cost_bucket: costBucket(costUsd),
+          tokens_in_bucket: tokensBucket(tokensIn),
         },
       });
 

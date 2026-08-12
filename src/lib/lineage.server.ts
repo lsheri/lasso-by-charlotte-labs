@@ -72,6 +72,7 @@ export type LineageRunResult = {
   drafted: number;
   considered: number;
   skippedExisting: number;
+  usage?: { tokensIn: number; costUsd: number };
 };
 
 /**
@@ -202,39 +203,26 @@ export async function draftLineageFor(
     ...blocks,
   ].join("\n\n---\n\n");
 
-  const apiKey = process.env["LOVABLE_API_KEY"];
-  if (!apiKey) throw new Error("Missing LOVABLE_API_KEY");
-
-  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Lovable-API-Key": apiKey,
-      "X-Lovable-AIG-SDK": "fetch",
-    },
-    body: JSON.stringify({
-      model: "google/gemini-3.6-flash",
-      max_tokens: 2000,
-      messages: [
-        { role: "system", content: LINEAGE_SYSTEM_PROMPT },
-        { role: "user", content: prompt },
-      ],
+  const { chatComplete, orgNameFor } = await import("./ai.server");
+  const completion = await chatComplete(
+    [
+      { role: "system", content: LINEAGE_SYSTEM_PROMPT },
+      { role: "user", content: prompt },
+    ],
+    {
+      tier: "fast",
+      maxTokens: 3000,
       tools: [LINEAGE_TOOL],
-      tool_choice: { type: "function", function: { name: "record_links" } },
-    }),
-  });
+      toolChoice: { type: "function", function: { name: "record_links" } },
+      meta: {
+        surface: "lineage_draft",
+        orgId: args.orgId,
+        orgName: await orgNameFor(supabase, args.orgId),
+      },
+    },
+  );
 
-  if (!response.ok) {
-    const body = await response.text();
-    if (response.status === 429) throw new Error("Rate limited. Try again in a moment.");
-    if (response.status === 402) throw new Error("AI credits exhausted for this workspace.");
-    throw new Error(`AI request failed (${response.status}): ${body.slice(0, 300)}`);
-  }
-
-  const payload = (await response.json()) as {
-    choices?: { message?: { tool_calls?: { function?: { arguments?: string } }[] } }[];
-  };
-  const rawArgs = payload.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
+  const rawArgs = completion.toolArgs;
   let drafts: DraftedLink[] = [];
   if (rawArgs) {
     try {
@@ -269,8 +257,10 @@ export async function draftLineageFor(
     })
     .filter((row): row is NonNullable<typeof row> => row !== null);
 
+  const usage = { tokensIn: completion.tokensIn, costUsd: completion.costUsd };
+
   if (rows.length === 0) {
-    return { drafted: 0, considered: candidates.length, skippedExisting };
+    return { drafted: 0, considered: candidates.length, skippedExisting, usage };
   }
 
   // ignoreDuplicates: a second concurrent run silently no-ops instead of
@@ -285,5 +275,6 @@ export async function draftLineageFor(
     drafted: (inserted ?? []).length,
     considered: candidates.length,
     skippedExisting,
+    usage,
   };
 }

@@ -1,5 +1,4 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
 import { Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 
@@ -12,7 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useAnswerSources } from "@/hooks/use-answer-sources";
 import { supabase } from "@/integrations/supabase/client";
-import { sendReflectMessage } from "@/lib/reflect.functions";
+import { streamChatRequest } from "@/lib/stream-client";
+import type { ReflectResult } from "@/lib/reflect-run.server";
 import { logEvent } from "@/lib/telemetry";
 import type { ContextScope } from "@/lib/reflect-shared";
 
@@ -40,10 +40,10 @@ export function ReflectDock({
   orgId: string;
 }) {
   const queryClient = useQueryClient();
-  const send = useServerFn(sendReflectMessage);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
   const [pending, setPending] = useState(false);
+  const [streamed, setStreamed] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [coverage, setCoverage] = useState<{
     truncated: boolean;
@@ -105,10 +105,13 @@ export function ReflectDock({
     try {
       const id = await ensureSession();
       if (!id) return;
-      const result = await send({
-        data: { session_id: id, message, profile_id: profileId, surface: "ask_lasso" },
-      });
+      setStreamed("");
       setDraft("");
+      const result = await streamChatRequest<ReflectResult>(
+        "/api/reflect/stream",
+        { session_id: id, message, profile_id: profileId, surface: "ask_lasso" },
+        (delta) => setStreamed((prev) => prev + delta),
+      );
       setCoverage({
         truncated: result.truncated,
         fullCount: result.fullCount,
@@ -120,6 +123,7 @@ export function ReflectDock({
       setError((e as Error).message);
     } finally {
       setPending(false);
+      setStreamed("");
     }
   }
 
@@ -163,7 +167,13 @@ export function ReflectDock({
             )}
           </div>
         ))}
-        {pending ? <ThinkingIndicator /> : null}
+        {pending && streamed ? (
+          <div>
+            <p className="micro-label">Reflect</p>
+            <MarkdownMessage content={streamed} />
+          </div>
+        ) : null}
+        {pending && !streamed ? <ThinkingIndicator /> : null}
         {coverage?.truncated ? <CoverageNote {...coverage} /> : null}
         <div ref={bottomRef} />
       </div>

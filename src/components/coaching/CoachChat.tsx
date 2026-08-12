@@ -1,4 +1,3 @@
-import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -8,7 +7,8 @@ import { AnswerSources } from "@/components/reflect/AnswerSources";
 import { CoverageNote } from "@/components/reflect/CoverageNote";
 import { Input } from "@/components/ui/input";
 import { useProfile } from "@/hooks/use-profile";
-import { askCoachChat } from "@/lib/coach-chat.functions";
+import { streamChatRequest } from "@/lib/stream-client";
+import type { CoachChatResult } from "@/lib/coach-chat-run.server";
 import type { ContextSource } from "@/lib/reflect-shared";
 
 type Exchange = {
@@ -30,10 +30,10 @@ export function CoachChat({
   subjectName: string;
 }) {
   const { data: profile } = useProfile();
-  const ask = useServerFn(askCoachChat);
   const [question, setQuestion] = useState("");
   const [exchanges, setExchanges] = useState<Exchange[]>([]);
   const [pending, setPending] = useState(false);
+  const [streamed, setStreamed] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   async function submit(event: React.FormEvent) {
@@ -43,14 +43,17 @@ export function CoachChat({
     setPending(true);
     setError(null);
     try {
-      const result = await ask({
-        data: {
+      setStreamed("");
+      const result = await streamChatRequest<CoachChatResult>(
+        "/api/coach-chat/stream",
+        {
           profile_id: profile.id,
           subject_id: subjectId,
           engagement_id: engagementId,
           question: trimmed,
         },
-      });
+        (delta) => setStreamed((prev) => prev + delta),
+      );
       setExchanges((prev) => [
         ...prev,
         {
@@ -67,6 +70,7 @@ export function CoachChat({
       setError((e as Error).message);
     } finally {
       setPending(false);
+      setStreamed("");
     }
   }
 
@@ -91,7 +95,11 @@ export function CoachChat({
         ))}
       </div>
 
-      {pending ? (
+      {pending && streamed ? (
+        <MarkdownMessage content={streamed} className="mt-4 border-l-2 border-accent pl-4" />
+      ) : null}
+
+      {pending && !streamed ? (
         <ThinkingIndicator
           className="mt-4"
           stages={["Gathering this record…", "Reading what was shared…", "Thinking it through…"]}

@@ -75,39 +75,27 @@ export const suggestMappings = createServerFn({ method: "POST" })
       })),
     };
 
-    const apiKey = process.env["LOVABLE_API_KEY"];
-    if (!apiKey) throw new Error("Missing LOVABLE_API_KEY");
-
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Lovable-API-Key": apiKey,
-        "X-Lovable-AIG-SDK": "fetch",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-3.6-flash",
-        max_tokens: 3000,
-        messages: [
-          { role: "system", content: SUGGEST_SYSTEM_PROMPT },
-          { role: "user", content: JSON.stringify(payload) },
-        ],
-        tools: [SUGGEST_TOOL],
-        tool_choice: { type: "function", function: { name: "record_suggestions" } },
-      }),
+    const { chatComplete, resolveAiMeta } = await import("./ai.server");
+    const meta = await resolveAiMeta(supabase, {
+      surface: "mapping_suggest",
+      orgId: profile.org_id,
+      userId,
     });
+    const completion = await chatComplete(
+      [
+        { role: "system", content: SUGGEST_SYSTEM_PROMPT },
+        { role: "user", content: JSON.stringify(payload) },
+      ],
+      {
+        tier: "fast",
+        maxTokens: 3000,
+        tools: [SUGGEST_TOOL],
+        toolChoice: { type: "function", function: { name: "record_suggestions" } },
+        meta,
+      },
+    );
 
-    if (!response.ok) {
-      const body = await response.text();
-      if (response.status === 429) throw new Error("Rate limited, try again in a moment.");
-      if (response.status === 402) throw new Error("AI credits exhausted for this workspace.");
-      throw new Error(`AI request failed (${response.status}): ${body.slice(0, 300)}`);
-    }
-
-    const result = (await response.json()) as {
-      choices?: { message?: { tool_calls?: { function?: { arguments?: string } }[] } }[];
-    };
-    const args = result.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
+    const args = completion.toolArgs;
     if (!args) return { suggestions: [] };
 
     let raw: MappingSuggestion[] = [];

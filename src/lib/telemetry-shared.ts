@@ -46,7 +46,8 @@ export type TelemetryEvent =
   | "link.drafted"
   | "link.reviewed"
   | "evidence.opened"
-  | "version.recorded";
+  | "version.recorded"
+  | "extract.generated";
 
 export type TelemetryDims = Record<
   string,

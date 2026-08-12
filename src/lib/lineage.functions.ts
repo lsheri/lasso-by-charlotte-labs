@@ -206,6 +206,7 @@ export const draftLineage = createServerFn({ method: "POST" })
         orgId: profile.org_id,
       });
 
+      const { usageDims } = await import("./ai-usage");
       const { recordEvent } = await import("./telemetry.server");
       await recordEvent(supabase, {
         eventType: "link.drafted",
@@ -215,6 +216,7 @@ export const draftLineage = createServerFn({ method: "POST" })
           count: linkBucket(result.drafted),
           considered: linkBucket(result.considered),
           scope: "item",
+          ...usageDims(result.usage ?? { tokensIn: 0, costUsd: 0 }),
         },
       });
       return result;
@@ -263,6 +265,8 @@ export const draftEngagementLineage = createServerFn({ method: "POST" })
       const { draftLineageFor } = await import("./lineage.server");
       let drafted = 0;
       let considered = 0;
+      let tokensIn = 0;
+      let costUsd = 0;
       // Batched deliberately: one deliverable at a time, so a long engagement
       // never sends one enormous request.
       for (const deliverable of deliverables) {
@@ -273,8 +277,11 @@ export const draftEngagementLineage = createServerFn({ method: "POST" })
         });
         drafted += result.drafted;
         considered = Math.max(considered, result.considered);
+        tokensIn += result.usage?.tokensIn ?? 0;
+        costUsd += result.usage?.costUsd ?? 0;
       }
 
+      const { usageDims } = await import("./ai-usage");
       const { recordEvent } = await import("./telemetry.server");
       await recordEvent(supabase, {
         eventType: "link.drafted",
@@ -284,6 +291,7 @@ export const draftEngagementLineage = createServerFn({ method: "POST" })
           count: linkBucket(drafted),
           considered: linkBucket(considered),
           scope: "engagement",
+          ...usageDims({ tokensIn, costUsd }),
         },
       });
       return { drafted, deliverables: deliverables.length, considered };
