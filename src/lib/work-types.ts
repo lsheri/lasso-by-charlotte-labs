@@ -1,4 +1,5 @@
 import type { SourceMeta } from "./conversation-shared";
+import type { BriefScope } from "./brief-shared";
 
 import type { Database } from "@/integrations/supabase/types";
 
@@ -38,6 +39,8 @@ export type WorkItemRow = {
         imported?: boolean;
         warnings?: string[];
         models?: string[];
+        role?: string | null;
+        brief_scope?: BriefScope | null;
       }
     | null
     | undefined;
