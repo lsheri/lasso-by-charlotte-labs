@@ -180,7 +180,7 @@ export const startAnalysis = createServerFn({ method: "POST" })
         kind: "error",
         surface: "analysis",
         orgId: profile!.org_id,
-        ownerId: item!.owner_id,
+        ownerId: target.ownerId,
         detail: reason,
         meta: { preset: preset!.id },
       });
@@ -192,12 +192,87 @@ export const startAnalysis = createServerFn({ method: "POST" })
     }
 
     try {
+      // "What fed this" writes through the lineage drafter rather than a second
+      // model pass: draft links only, upserted, nothing recorded until the
+      // person confirms them in the What fed this section.
+      if (preset.id === "what_fed_this") {
+        const { draftLineageFor } = await import("./lineage.server");
+        const drafted = await draftLineageFor(supabase, {
+          deliverableId: target.scopeId,
+          ownerId: target.ownerId,
+          orgId: profile.org_id,
+        });
+        const { renderDraftedLineage } = await import("./analysis-scope.server");
+        const rendered = await renderDraftedLineage(supabase, target.scopeId, target.title);
+
+        const { data: lineageWritten } = await supabase
+          .from("chat_messages")
+          .insert([
+            { session_id: session.id, role: "user", content: preset.openingMessage },
+            { session_id: session.id, role: "assistant", content: rendered.text },
+          ])
+          .select("id, role");
+        const lineageAnswerId =
+          (lineageWritten ?? []).find((row) => row.role === "assistant")?.id ?? null;
+
+        const { recordAiReads } = await import("./ai-reads.server");
+        await recordAiReads([{ workItemId: target.scopeId, ownerId: target.ownerId, depth: "full" }], {
+          surface: "ask_lasso",
+          readerRole: isOwner ? "owner" : "coach",
+          readerProfileId: profile.id,
+          messageId: lineageAnswerId,
+        });
+
+        const lineageCost = Number((drafted.usage?.costUsd ?? 0).toFixed(6));
+        const lineageItems = drafted.considered + 1;
+        costSoFar = lineageCost;
+        itemsReadSoFar = lineageItems;
+        claimsSoFar = rendered.considered;
+
+        await supabase
+          .from("analysis_runs")
+          .update({
+            items_read: lineageItems,
+            tokens_in: drafted.usage?.tokensIn ?? 0,
+            tokens_out: 0,
+            cost_usd: lineageCost,
+            claims_rendered: rendered.considered,
+            suppressed_claims: 0,
+            status: "completed",
+            completed_at: new Date().toISOString(),
+          })
+          .eq("id", runId);
+
+        await recordEvent(supabase, {
+          eventType: "analysis.run",
+          orgId: profile.org_id,
+          userId,
+          dims: analysisRunDims({
+            preset: preset.id,
+            scopeType,
+            status: "completed",
+            itemsRead: lineageItems,
+            costUsd: lineageCost,
+            claims: rendered.considered,
+            suppressed: 0,
+          }),
+        });
+
+        return {
+          run_id: runId,
+          session_id: session.id,
+          reused: false,
+          items_read: lineageItems,
+          suppressed: 0,
+        };
+      }
+
       const { assembleReflectContext } = await import("./reflect-context.server");
       const assembled = await assembleReflectContext(
         supabase,
         profile.id,
-        { mode: "items", ids: [item.id] },
-        { ownerProfileId: item.owner_id, readerRole: isOwner ? "owner" : "coach" },
+        target.scope,
+        { ownerProfileId: target.ownerId, readerRole: isOwner ? "owner" : "coach" },
       );
 
       const { REFLECT_SYSTEM_PROMPT } = await import("./reflect-shared");
@@ -206,7 +281,9 @@ export const startAnalysis = createServerFn({ method: "POST" })
         { role: "system" as const, content: preset.systemPrompt },
         {
           role: "system" as const,
-          content: `THE CONVERSATION UNDER ANALYSIS:\n\n${assembled.context}`,
+          content: `${
+            preset.scope === "thread" ? "THE CONVERSATION UNDER ANALYSIS" : "THE WORK UNDER ANALYSIS"
+          }:\n\n${assembled.context}`,
         },
         { role: "user" as const, content: preset.openingMessage },
       ];
