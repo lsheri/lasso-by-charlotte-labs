@@ -162,6 +162,7 @@
   --vendor-notion: #45403a;
   --vendor-slack: #6b3f7a;
   --vendor-microsoft: #1f5fa8;
+  --vendor-gmail: #b03a2e;
 }
 
 .dark {
@@ -180,6 +181,7 @@
   --vendor-notion: #c9c3ba;
   --vendor-slack: #c39ad0;
   --vendor-microsoft: #8ab6e8;
+  --vendor-gmail: #e79184;
 }
 
 /*
