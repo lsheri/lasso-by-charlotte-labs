@@ -31,6 +31,9 @@ export const sendReflectMessage = createServerFn({ method: "POST" })
       title: string | null;
       fullCount: number;
       summaryCount: number;
+      messageId: number | null;
+      sources: import("./reflect-context.server").ContextSource[];
+      unmatchedQuotes: number;
     }> => {
       const { supabase, userId } = context;
       const message = data.message.trim();
@@ -66,12 +69,6 @@ export const sendReflectMessage = createServerFn({ method: "POST" })
       const assembled = await assembleReflectContext(supabase, profile.id, scope);
 
       const surface = data.surface === "ask_lasso" ? "ask_lasso" : "reflect";
-      const { recordAiReads } = await import("./ai-reads.server");
-      await recordAiReads(assembled.reads, {
-        surface,
-        readerRole: "owner",
-        readerProfileId: profile.id,
-      });
 
       const apiKey = process.env["LOVABLE_API_KEY"];
       if (!apiKey) throw new Error("Missing LOVABLE_API_KEY");
@@ -128,6 +125,18 @@ export const sendReflectMessage = createServerFn({ method: "POST" })
       // and which answer it produced. Tenant content, never telemetry.
       const answerId =
         (written ?? []).find((row) => row.role === "assistant")?.id ?? null;
+
+      // The audit trail is attached to the exact answer it belongs to.
+      const { recordAiReads } = await import("./ai-reads.server");
+      await recordAiReads(assembled.reads, {
+        surface,
+        readerRole: "owner",
+        readerProfileId: profile.id,
+        messageId: answerId,
+      });
+
+      const { unmatchedQuotes, quoteBucket } = await import("./quote-check");
+      const unmatched = unmatchedQuotes(answer, assembled.context);
       const scopeLabelForLog =
         scope.mode === "whole"
           ? "whole record"
@@ -161,6 +170,7 @@ export const sendReflectMessage = createServerFn({ method: "POST" })
           scope: scope.mode,
           truncated: assembled.truncated,
           tier2_items: tierBucket(assembled.tier2Count),
+          unmatched_quotes: quoteBucket(unmatched.length),
           ...(preset ? { preset } : {}),
         },
       });
@@ -170,7 +180,13 @@ export const sendReflectMessage = createServerFn({ method: "POST" })
         truncated: assembled.truncated,
         title,
         fullCount: assembled.tier2Count,
-        summaryCount: Math.max(assembled.tier1Count - assembled.tier2Count, 0),
+        summaryCount: Math.max(
+          assembled.tier1Count - assembled.tier2Count - assembled.unreadableCount,
+          0,
+        ),
+        messageId: answerId,
+        sources: assembled.sources,
+        unmatchedQuotes: unmatched.length,
       };
     },
   );
