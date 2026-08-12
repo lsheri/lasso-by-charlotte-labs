@@ -3,10 +3,12 @@ import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { MarkdownMessage } from "@/components/markdown/MarkdownMessage";
+import { AnswerSources } from "@/components/reflect/AnswerSources";
 import { CoverageNote } from "@/components/reflect/CoverageNote";
 import { Input } from "@/components/ui/input";
 import { useProfile } from "@/hooks/use-profile";
 import { askCoachChat } from "@/lib/coach-chat.functions";
+import type { ContextSource } from "@/lib/reflect-shared";
 
 type Exchange = {
   question: string;
@@ -14,6 +16,7 @@ type Exchange = {
   truncated: boolean;
   fullCount: number;
   summaryCount: number;
+  sources: ContextSource[];
 };
 
 export function CoachChat({
@@ -55,6 +58,7 @@ export function CoachChat({
           truncated: result.truncated,
           fullCount: result.fullCount,
           summaryCount: result.summaryCount,
+          sources: result.sources,
         },
       ]);
       setQuestion("");
@@ -81,6 +85,7 @@ export function CoachChat({
               content={exchange.answer}
               className="border-l-2 border-accent pl-4"
             />
+            <AnswerSources sources={exchange.sources} />
             {exchange.truncated ? (
               <CoverageNote
                 fullCount={exchange.fullCount}
