@@ -112,7 +112,7 @@ export async function buildEngagementCorpus(
 
   // A confirmed link marks its target as a deliverable that other work fed
   // into, so those get read first and most generously.
-  const { data: linkRows } = items.length
+  const { data: deliverableLinks } = items.length
     ? await supabase
         .from("work_item_links")
         .select("to_item_id, status")
@@ -123,7 +123,7 @@ export async function buildEngagementCorpus(
         )
     : { data: [] };
   const linkedTargets = new Set(
-    ((linkRows ?? []) as { to_item_id: string }[]).map((r) => r.to_item_id),
+    ((deliverableLinks ?? []) as unknown as { to_item_id: string }[]).map((r) => r.to_item_id),
   );
   const isDeliverable = (item: Row) => DELIVERABLE_TYPES.has(item.type as string);
   const readOrder = [...items].sort((a, b) => {
