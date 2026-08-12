@@ -19,6 +19,7 @@ export type Database = {
           created_at: string
           depth: string
           id: string
+          message_id: number | null
           owner_id: string
           reader_profile_id: string | null
           reader_role: string
@@ -29,6 +30,7 @@ export type Database = {
           created_at?: string
           depth: string
           id?: string
+          message_id?: number | null
           owner_id: string
           reader_profile_id?: string | null
           reader_role: string
@@ -39,6 +41,7 @@ export type Database = {
           created_at?: string
           depth?: string
           id?: string
+          message_id?: number | null
           owner_id?: string
           reader_profile_id?: string | null
           reader_role?: string
@@ -46,6 +49,13 @@ export type Database = {
           work_item_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "ai_reads_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "chat_messages"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "ai_reads_owner_id_fkey"
             columns: ["owner_id"]

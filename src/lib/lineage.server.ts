@@ -131,7 +131,10 @@ export async function draftLineageFor(
   const { data: extractData } = await supabase
     .from("work_item_extracts")
     .select("work_item_id, summary, decisions, entities, handoff")
-    .in("work_item_id", candidates.map((c) => c.id));
+    .in(
+      "work_item_id",
+      candidates.map((c) => c.id),
+    );
   let extracts = (extractData ?? []) as {
     work_item_id: string;
     summary: string;
@@ -181,7 +184,8 @@ export async function draftLineageFor(
       const text = (await pullItemText(supabase, candidate)).trim();
       if (text) {
         const room = Math.min(PER_CANDIDATE_TEXT, CANDIDATE_TEXT_BUDGET - used);
-        const clipped = text.length > room ? `${text.slice(0, room)}\n[... rest omitted ...]` : text;
+        const clipped =
+          text.length > room ? `${text.slice(0, room)}\n[... rest omitted ...]` : text;
         used += clipped.length;
         lines.push(`  Text:\n${clipped}`);
       }

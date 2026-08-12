@@ -28,7 +28,10 @@ export function PdfView({ url, title }: { url: string; title: string }) {
         for (let n = 1; n <= Math.min(doc.numPages, MAX_PAGES); n += 1) {
           const page = await doc.getPage(n);
           if (cancelled) return;
-          const scale = Math.min(2, (host.clientWidth || 720) / page.getViewport({ scale: 1 }).width);
+          const scale = Math.min(
+            2,
+            (host.clientWidth || 720) / page.getViewport({ scale: 1 }).width,
+          );
           const viewport = page.getViewport({ scale });
           const canvas = document.createElement("canvas");
           canvas.width = Math.floor(viewport.width);
@@ -49,7 +52,8 @@ export function PdfView({ url, title }: { url: string; title: string }) {
     };
   }, [url]);
 
-  if (error) return <p className="text-sm text-muted-foreground">Couldn&apos;t render this PDF: {error}</p>;
+  if (error)
+    return <p className="text-sm text-muted-foreground">Couldn&apos;t render this PDF: {error}</p>;
 
   return (
     <div aria-label={title}>

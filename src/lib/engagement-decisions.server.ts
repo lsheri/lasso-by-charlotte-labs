@@ -55,7 +55,11 @@ export async function buildEngagementCorpus(
         )
     : { data: [] };
 
-  const linkRows = (links ?? []) as { work_item_id: string; task_id: string; step_no: number | null }[];
+  const linkRows = (links ?? []) as {
+    work_item_id: string;
+    task_id: string;
+    step_no: number | null;
+  }[];
   const itemIds = Array.from(new Set(linkRows.map((l) => l.work_item_id)));
 
   const { data: itemData } = itemIds.length
@@ -81,9 +85,14 @@ export async function buildEngagementCorpus(
           items.map((i) => i.id),
         )
     : { data: [] };
-  let extracts = (extractData ?? []) as { work_item_id: string; summary: string; decisions: string | null }[];
+  let extracts = (extractData ?? []) as {
+    work_item_id: string;
+    summary: string;
+    decisions: string | null;
+  }[];
   const have = new Set(extracts.map((e) => e.work_item_id));
-  for (const item of items) if (!have.has(item.id) && missing.length < MAX_BACKFILL) missing.push(item.id);
+  for (const item of items)
+    if (!have.has(item.id) && missing.length < MAX_BACKFILL) missing.push(item.id);
   if (missing.length > 0) {
     const made: string[] = [];
     for (const id of missing) if (await ensureExtract(id)) made.push(id);
@@ -140,7 +149,8 @@ export async function buildEngagementCorpus(
       const text = (await pullItemText(supabase, item)).trim();
       if (text) {
         const room = Math.min(PER_ITEM, RAW_BUDGET - used);
-        const clipped = text.length > room ? `${text.slice(0, room)}\n[... rest omitted ...]` : text;
+        const clipped =
+          text.length > room ? `${text.slice(0, room)}\n[... rest omitted ...]` : text;
         used += clipped.length;
         lines.push(`  Text:\n${clipped}`);
       }

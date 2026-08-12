@@ -17,7 +17,7 @@ import type { WorkItemRow, WorkType } from "./work-types";
 
 /**
  * One source of truth for what a piece of work LOOKS like. Every surface that
- * shows a work item, rows, peek panel, map dialog, task workflow, packets , 
+ * shows a work item, rows, peek panel, map dialog, task workflow, packets ,
  * reads its icon, hue and label from here, so a deck is the same clay-coloured
  * thing everywhere it appears.
  */

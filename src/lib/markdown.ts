@@ -3,10 +3,7 @@
  * through here is untrusted (AI output, uploaded artifacts), so it always goes
  * through DOMPurify before it touches the DOM.
  */
-export async function toSafeHtml(
-  raw: string,
-  mode: "markdown" | "html" | "svg",
-): Promise<string> {
+export async function toSafeHtml(raw: string, mode: "markdown" | "html" | "svg"): Promise<string> {
   const [{ marked }, { default: DOMPurify }] = await Promise.all([
     import("marked"),
     import("dompurify"),

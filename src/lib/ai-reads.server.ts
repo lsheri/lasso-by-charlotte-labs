@@ -1,7 +1,7 @@
 import type { Database } from "@/integrations/supabase/types";
 
 export type AiReadSurface = Database["public"]["Tables"]["ai_reads"]["Row"]["surface"];
-export type AiReadDepth = "extract" | "full";
+export type AiReadDepth = "extract" | "full" | "unreadable";
 export type AiReadRole = "owner" | "coach";
 
 export type AiReadInput = {
@@ -16,7 +16,12 @@ export type AiReadInput = {
  */
 export async function recordAiReads(
   reads: AiReadInput[],
-  ctx: { surface: string; readerRole: AiReadRole; readerProfileId: string | null },
+  ctx: {
+    surface: string;
+    readerRole: AiReadRole;
+    readerProfileId: string | null;
+    messageId?: number | null;
+  },
 ): Promise<void> {
   if (reads.length === 0) return;
   try {
@@ -29,6 +34,7 @@ export async function recordAiReads(
         reader_role: ctx.readerRole,
         surface: ctx.surface,
         depth: read.depth,
+        message_id: ctx.messageId ?? null,
       })),
     );
     if (error) console.error("[ai_reads] insert failed:", error.message);

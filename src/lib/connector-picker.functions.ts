@@ -201,21 +201,23 @@ export const importGranolaMeetings = createServerFn({ method: "POST" })
         bytes,
         "text/markdown; charset=utf-8",
       );
-      const insert = await supabase.from("work_items").insert({
-        owner_id: profile.id,
-        org_id: profile.org_id,
-        type: "call",
-        source: "connector:granola",
-        source_vendor: "granola",
-        title: note.title,
-        visibility: "unmapped",
-        content_ref: path,
-        content_fidelity: "transcribed",
-        ts_precision: note.date ? "source" : "capture",
-        created_at_source: note.date,
-        source_meta: { filename: `${note.title}.md`, mime_type: "text/markdown" },
-        meta: { granola_id: id },
-      })
+      const insert = await supabase
+        .from("work_items")
+        .insert({
+          owner_id: profile.id,
+          org_id: profile.org_id,
+          type: "call",
+          source: "connector:granola",
+          source_vendor: "granola",
+          title: note.title,
+          visibility: "unmapped",
+          content_ref: path,
+          content_fidelity: "transcribed",
+          ts_precision: note.date ? "source" : "capture",
+          created_at_source: note.date,
+          source_meta: { filename: `${note.title}.md`, mime_type: "text/markdown" },
+          meta: { granola_id: id },
+        })
         .select("id")
         .maybeSingle();
       if (insert.error) throw new Error(insert.error.message);
@@ -317,21 +319,23 @@ export const importGmailThreads = createServerFn({ method: "POST" })
         bytes,
         "text/markdown; charset=utf-8",
       );
-      const insert = await supabase.from("work_items").insert({
-        owner_id: profile.id,
-        org_id: profile.org_id,
-        type: "email",
-        source: "connector:gmail",
-        source_vendor: "gmail",
-        title: thread.subject,
-        visibility: "unmapped",
-        content_ref: path,
-        content_fidelity: "verbatim",
-        ts_precision: thread.date ? "source" : "capture",
-        created_at_source: thread.date,
-        source_meta: { filename: `${thread.subject}.md`, mime_type: "text/markdown" },
-        meta: { gmail_thread_id: id },
-      })
+      const insert = await supabase
+        .from("work_items")
+        .insert({
+          owner_id: profile.id,
+          org_id: profile.org_id,
+          type: "email",
+          source: "connector:gmail",
+          source_vendor: "gmail",
+          title: thread.subject,
+          visibility: "unmapped",
+          content_ref: path,
+          content_fidelity: "verbatim",
+          ts_precision: thread.date ? "source" : "capture",
+          created_at_source: thread.date,
+          source_meta: { filename: `${thread.subject}.md`, mime_type: "text/markdown" },
+          meta: { gmail_thread_id: id },
+        })
         .select("id")
         .maybeSingle();
       if (insert.error) throw new Error(insert.error.message);

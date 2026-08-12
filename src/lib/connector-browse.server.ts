@@ -97,9 +97,11 @@ const TRANSCRIPT_TERMS = ["Meet Recordings", "Transcript", "Recording", "Notes b
  * Recordings" folder first, then the existing title heuristics across the
  * Drive. Still picker-only, nothing is imported here.
  */
-export async function browseDriveTranscripts(
-  args: { profileId: string; search: string | null; seen: Set<string> },
-): Promise<PickerPage> {
+export async function browseDriveTranscripts(args: {
+  profileId: string;
+  search: string | null;
+  seen: Set<string>;
+}): Promise<PickerPage> {
   const { browseDrive, DRIVE_FOLDER_MIME } = await import("@/lib/composio.server");
 
   type Raw = { id?: string; name?: string; mimeType?: string; modifiedTime?: string };
@@ -108,7 +110,8 @@ export async function browseDriveTranscripts(
   if (args.search?.trim()) {
     const page = await browseDrive(args.profileId, { search: args.search });
     for (const file of page.files as Raw[]) {
-      if (file.id && file.mimeType !== DRIVE_FOLDER_MIME) found.set(file.id, { raw: file, folder: null });
+      if (file.id && file.mimeType !== DRIVE_FOLDER_MIME)
+        found.set(file.id, { raw: file, folder: null });
     }
   } else {
     // 1. The Meet Recordings folder, if the user has one.
@@ -169,13 +172,8 @@ export async function importConnectorFiles(
     folderName: string | null;
   },
 ): Promise<{ imported: number; skipped: number; updated: number; unchanged: number }> {
-  const {
-    storeFile,
-    captureEvents,
-    existingByProviderId,
-    sha256Bytes,
-    recordNewVersion,
-  } = await import("@/lib/connector-import.server");
+  const { storeFile, captureEvents, existingByProviderId, sha256Bytes, recordNewVersion } =
+    await import("@/lib/connector-import.server");
   const idKey = TOOLKIT_ID_KEY[args.toolkit];
   const existing = await existingByProviderId(
     supabase,
@@ -245,26 +243,28 @@ export async function importConnectorFiles(
     const path = await storeFile(args.userId, file.name, file.bytes, file.mimeType);
     // A labelled guess: transcripts land as calls, and stay editable.
     const isTranscript = looksLikeTranscript(file.name, args.folderName);
-    const insert = await supabase.from("work_items").insert({
-      owner_id: args.profileId,
-      org_id: args.orgId,
-      type: isTranscript ? "call" : driveWorkType(file.mimeType),
-      source: TOOLKIT_SOURCE[args.toolkit],
-      source_vendor: TOOLKIT_VENDOR[args.toolkit],
-      title: file.name,
-      visibility: "unmapped",
-      content_ref: path,
-      content_hash: hash,
-      content_fidelity: isTranscript ? "transcribed" : "verbatim",
-      ts_precision: "capture",
-      source_meta: { filename: file.name, mime_type: file.mimeType },
-      meta: {
-        [idKey]: id,
-        mime_type: file.mimeType,
-        web_view_link: file.webViewLink,
-        ...(isTranscript ? { transcript_guess: true } : {}),
-      },
-    })
+    const insert = await supabase
+      .from("work_items")
+      .insert({
+        owner_id: args.profileId,
+        org_id: args.orgId,
+        type: isTranscript ? "call" : driveWorkType(file.mimeType),
+        source: TOOLKIT_SOURCE[args.toolkit],
+        source_vendor: TOOLKIT_VENDOR[args.toolkit],
+        title: file.name,
+        visibility: "unmapped",
+        content_ref: path,
+        content_hash: hash,
+        content_fidelity: isTranscript ? "transcribed" : "verbatim",
+        ts_precision: "capture",
+        source_meta: { filename: file.name, mime_type: file.mimeType },
+        meta: {
+          [idKey]: id,
+          mime_type: file.mimeType,
+          web_view_link: file.webViewLink,
+          ...(isTranscript ? { transcript_guess: true } : {}),
+        },
+      })
       .select("id")
       .maybeSingle();
     if (insert.error) throw new Error(insert.error.message);

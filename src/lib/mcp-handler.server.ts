@@ -379,22 +379,24 @@ async function pushDocument(owner: Owner, args: Obj, id: unknown): Promise<Respo
   if (uploadError) return rpcError(id, -32603, uploadError.message);
 
   const hint = typeof args["engagement_hint"] === "string" ? args["engagement_hint"] : null;
-  const { data: doc, error } = await supabaseAdmin.from("work_items").insert({
-    owner_id: owner.profileId,
-    org_id: owner.orgId,
-    type: workTypeForFile(safe),
-    source: "mcp:push",
-    title,
-    visibility: "unmapped",
-    content_ref: path,
-    source_meta: { filename, mime_type: mime },
-    content_fidelity: "verbatim",
-    ts_precision: "capture",
-    content_hash: await sha256Hex(content),
-    meta: hint
-      ? { assistant_transcribed: true, engagement_hint: hint }
-      : { assistant_transcribed: true },
-  })
+  const { data: doc, error } = await supabaseAdmin
+    .from("work_items")
+    .insert({
+      owner_id: owner.profileId,
+      org_id: owner.orgId,
+      type: workTypeForFile(safe),
+      source: "mcp:push",
+      title,
+      visibility: "unmapped",
+      content_ref: path,
+      source_meta: { filename, mime_type: mime },
+      content_fidelity: "verbatim",
+      ts_precision: "capture",
+      content_hash: await sha256Hex(content),
+      meta: hint
+        ? { assistant_transcribed: true, engagement_hint: hint }
+        : { assistant_transcribed: true },
+    })
     .select("id")
     .maybeSingle();
   if (error) return rpcError(id, -32603, error.message);

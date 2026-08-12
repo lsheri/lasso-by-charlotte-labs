@@ -70,9 +70,14 @@ export async function buildOneOnOneCorpus(
         )
     : { data: [] };
   const extractFor = new Map(
-    ((extractData ?? []) as { work_item_id: string; summary: string; decisions: string | null; handoff: string | null }[]).map(
-      (e) => [e.work_item_id, e],
-    ),
+    (
+      (extractData ?? []) as {
+        work_item_id: string;
+        summary: string;
+        decisions: string | null;
+        handoff: string | null;
+      }[]
+    ).map((e) => [e.work_item_id, e]),
   );
 
   let decisionQuery = supabase
@@ -123,12 +128,12 @@ export async function buildOneOnOneCorpus(
     "CONFIRMED DECISIONS IN THE WINDOW:",
     ...(confirmed.length === 0
       ? ["  (none)"]
-      : confirmed.map((d) => `  - Call: ${d.call_text}\n    Situation: ${d.situation}\n    Why: ${d.why}`)),
+      : confirmed.map(
+          (d) => `  - Call: ${d.call_text}\n    Situation: ${d.situation}\n    Why: ${d.why}`,
+        )),
     "",
     "STILL UNRESOLVED (drafted, not yet confirmed):",
-    ...(open.length === 0
-      ? ["  (none)"]
-      : open.map((d) => `  - ${d.call_text} (${d.situation})`)),
+    ...(open.length === 0 ? ["  (none)"] : open.map((d) => `  - ${d.call_text} (${d.situation})`)),
   ].join("\n");
 
   return { prompt, itemCount: items.length };

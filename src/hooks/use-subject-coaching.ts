@@ -17,7 +17,9 @@ export async function fetchNotesAboutMe(
 ): Promise<SubjectNote[]> {
   const { data, error } = await supabase
     .from("coaching_notes")
-    .select("id, created_at, did_well, would_try, watch_next, profiles!coaching_notes_author_id_fkey(display_name)")
+    .select(
+      "id, created_at, did_well, would_try, watch_next, profiles!coaching_notes_author_id_fkey(display_name)",
+    )
     .eq("subject_id", subjectId)
     .eq("engagement_id", engagementId)
     .order("created_at", { ascending: false });

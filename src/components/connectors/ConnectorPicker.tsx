@@ -31,12 +31,7 @@ import { setFolderWatch } from "@/lib/connector-watch.functions";
 type Crumb = { id: string | null; name: string };
 
 export type PickerKind =
-  | "googledrive"
-  | "onedrive"
-  | "sharepoint"
-  | "granola"
-  | "gmail"
-  | "transcripts";
+  "googledrive" | "onedrive" | "sharepoint" | "granola" | "gmail" | "transcripts";
 
 type FileKind = "googledrive" | "onedrive" | "sharepoint";
 
@@ -176,7 +171,10 @@ export function ConnectorPicker({
     if (isFolderBrowser) {
       return browseFiles({ data: { ...data, toolkit: TOOLKIT[kind as FileKind] } });
     }
-    if (isTranscripts) return browseTranscripts({ data: { profile_id: profile?.id, ...(term ? { search: term } : {}) } });
+    if (isTranscripts)
+      return browseTranscripts({
+        data: { profile_id: profile?.id, ...(term ? { search: term } : {}) },
+      });
     return isGmail ? browseThreads({ data }) : browseMeetings({ data });
   }, [
     browseFiles,
@@ -300,16 +298,14 @@ export function ConnectorPicker({
               },
             })
           : isGmail
-          ? await importThreads({ data: { profile_id: profile?.id, ids } })
-          : await importMeetings({ data: { profile_id: profile?.id, ids } });
+            ? await importThreads({ data: { profile_id: profile?.id, ids } })
+            : await importMeetings({ data: { profile_id: profile?.id, ids } });
       const parts: string[] = [];
       if (result.imported > 0) {
         parts.push(`${result.imported} item${result.imported === 1 ? "" : "s"} brought into Work`);
       }
       if (result.updated > 0) {
-        parts.push(
-          `${result.updated} updated to a new version`,
-        );
+        parts.push(`${result.updated} updated to a new version`);
       }
       if (result.unchanged > 0) {
         parts.push(`${result.unchanged} already captured and unchanged`);

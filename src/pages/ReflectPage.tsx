@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { PageHeader } from "@/components/layout/PageHeader";
 import { MarkdownMessage } from "@/components/markdown/MarkdownMessage";
+import { AnswerSources } from "@/components/reflect/AnswerSources";
 import { CoverageNote } from "@/components/reflect/CoverageNote";
 import { ScopePicker } from "@/components/reflect/ScopePicker";
 import {
@@ -21,6 +22,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useProfile } from "@/hooks/use-profile";
+import { useAnswerSources } from "@/hooks/use-answer-sources";
 import { supabase } from "@/integrations/supabase/client";
 import { sendReflectMessage } from "@/lib/reflect.functions";
 import { DEFAULT_SCOPE, parseScope, scopeLabel, type ContextScope } from "@/lib/reflect-shared";
@@ -86,6 +88,7 @@ export function ReflectPage() {
   const active = (sessions ?? []).find((s) => s.id === activeId) ?? null;
   const scope: ContextScope = active ? parseScope(active.context_scope) : DEFAULT_SCOPE;
 
+  const [unmatched, setUnmatched] = useState<Record<number, number>>({});
   const { data: messages } = useQuery({
     queryKey: ["reflect-messages", activeId],
     enabled: Boolean(activeId),
@@ -99,6 +102,10 @@ export function ReflectPage() {
       return (data ?? []) as MessageRow[];
     },
   });
+
+  const { data: sourcesByMessage } = useAnswerSources(
+    (messages ?? []).filter((m) => m.role === "assistant").map((m) => Number(m.id)),
+  );
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -152,6 +159,10 @@ export function ReflectPage() {
         fullCount: result.fullCount,
         summaryCount: result.summaryCount,
       });
+      if (result.messageId !== null) {
+        const id = Number(result.messageId);
+        setUnmatched((prev) => ({ ...prev, [id]: result.unmatchedQuotes }));
+      }
       await queryClient.invalidateQueries({ queryKey: ["reflect-messages", activeId] });
       await queryClient.invalidateQueries({ queryKey: ["reflect-sessions"] });
     } catch (e) {
@@ -268,7 +279,13 @@ export function ReflectPage() {
                         {message.content}
                       </p>
                     ) : (
-                      <MarkdownMessage content={message.content} />
+                      <>
+                        <MarkdownMessage content={message.content} />
+                        <AnswerSources
+                          sources={sourcesByMessage?.[Number(message.id)] ?? []}
+                          unmatchedQuotes={unmatched[Number(message.id)] ?? 0}
+                        />
+                      </>
                     )}
                   </div>
                 ))}

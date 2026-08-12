@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/integrations/supabase/types";
+import { getItemText, ITEM_TEXT_COLUMNS, type TextItem } from "@/lib/item-text.server";
 import { needsTextFetch, peekFormat } from "@/lib/peek-format";
 import type { WorkItemRow } from "@/lib/work-types";
 
@@ -12,46 +13,22 @@ export const EXTRACT_SCHEMA_VERSION = 1;
 const MAX_SOURCE_CHARS = 60_000;
 
 /** The subset of a work item the classifier and the text puller need. */
-export type ClassifiableItem = Pick<
-  WorkItemRow,
-  "id" | "title" | "type" | "content_ref" | "source_meta" | "meta"
->;
+export type ClassifiableItem = TextItem;
 
-export const ITEM_TEXT_COLUMNS = "id, title, type, content_ref, source_meta, meta";
+export { ITEM_TEXT_COLUMNS };
 
 /** True when this item's stored bytes are readable as text by the context layer. */
 export function isReadableAsText(item: ClassifiableItem): boolean {
   return needsTextFetch(peekFormat(item as WorkItemRow));
 }
 
-async function downloadText(contentRef: string): Promise<string | null> {
-  try {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data, error } = await supabaseAdmin.storage.from("work-files").download(contentRef);
-    if (error || !data) return null;
-    return await data.text();
-  } catch {
-    return null;
-  }
-}
-
 /**
- * The single way text is pulled out of a work item. Threads come from `turns`;
- * everything else is classified by the shared peek-format classifier and, when
- * that says it is text-shaped, downloaded from storage. No filename guessing.
+ * The single way text is pulled out of a work item: it delegates to the one
+ * extraction layer, so the sidecar and the context assembler can never drift.
  */
 export async function pullItemText(supabase: Db, item: ClassifiableItem): Promise<string> {
-  const format = peekFormat(item as WorkItemRow);
-  if (format.kind === "thread") {
-    const { data } = await supabase
-      .from("turns")
-      .select("role, content")
-      .eq("work_item_id", item.id)
-      .order("turn_no", { ascending: true });
-    return (data ?? []).map((t) => `${t.role.toUpperCase()}: ${t.content}`).join("\n\n");
-  }
-  if (!item.content_ref || !needsTextFetch(format)) return "";
-  return (await downloadText(item.content_ref)) ?? "";
+  const result = await getItemText(supabase, item);
+  return result.text ?? "";
 }
 
 async function sha256Hex(value: string): Promise<string> {

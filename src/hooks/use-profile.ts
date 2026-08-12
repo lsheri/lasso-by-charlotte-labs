@@ -43,11 +43,7 @@ function subscribe(listener: () => void): () => void {
 }
 
 export function useActiveProfileId(): string | null {
-  return useSyncExternalStore(
-    subscribe,
-    readStored,
-    () => null,
-  );
+  return useSyncExternalStore(subscribe, readStored, () => null);
 }
 
 /** Every profile this user holds, one per org. */

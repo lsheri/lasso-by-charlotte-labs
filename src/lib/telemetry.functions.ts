@@ -25,7 +25,9 @@ export const recordEventFn = createServerFn({ method: "POST" })
  * no auth middleware. It accepts only content-free dims and a random view id.
  */
 export const recordAnonymousEventFn = createServerFn({ method: "POST" })
-  .inputValidator((input: { event_type: TelemetryEvent; view_id: string; dims?: TelemetryDims }) => input)
+  .inputValidator(
+    (input: { event_type: TelemetryEvent; view_id: string; dims?: TelemetryDims }) => input,
+  )
   .handler(async ({ data }) => {
     const { recordAnonymousEvent } = await import("./telemetry.server");
     await recordAnonymousEvent(data.event_type, String(data.view_id).slice(0, 64), data.dims ?? {});
