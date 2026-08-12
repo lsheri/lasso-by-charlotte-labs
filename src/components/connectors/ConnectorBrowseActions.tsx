@@ -6,8 +6,9 @@ import { useConnectorAccounts } from "@/hooks/use-connector-accounts";
 export function ConnectorBrowseActions() {
   const { data: accounts } = useConnectorAccounts();
   const drive = accounts?.["googledrive"]?.status === "connected";
+  const gmail = accounts?.["gmail"]?.status === "connected";
   const granola = accounts?.["granola_mcp"]?.status === "connected";
-  if (!drive && !granola) return null;
+  if (!drive && !gmail && !granola) return null;
   return (
     <>
       {drive ? (
@@ -16,6 +17,16 @@ export function ConnectorBrowseActions() {
           trigger={
             <Button type="button" variant="outline">
               Browse Drive files
+            </Button>
+          }
+        />
+      ) : null}
+      {gmail ? (
+        <ConnectorPicker
+          kind="gmail"
+          trigger={
+            <Button type="button" variant="outline">
+              Browse Gmail
             </Button>
           }
         />
