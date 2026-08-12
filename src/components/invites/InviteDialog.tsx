@@ -1,3 +1,4 @@
+import { WorkingLabel } from "@/components/common/Working";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState, type ReactNode } from "react";
@@ -221,7 +222,7 @@ export function InviteDialog({
           </p>
 
           <Button type="submit" disabled={pending}>
-            {pending ? "Creating…" : "Create invite link"}
+            {pending ? <WorkingLabel>Creating</WorkingLabel> : "Create invite link"}
           </Button>
         </form>
 

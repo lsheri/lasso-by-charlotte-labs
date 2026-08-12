@@ -4,7 +4,7 @@ import { useState } from "react";
 import { ThreadViewerById } from "@/components/work/ThreadViewerById";
 import { vendorLabel } from "@/lib/conversation-shared";
 import { SOURCE_GROUPS, type ContextSource } from "@/lib/reflect-shared";
-import { UNMATCHED_QUOTE_NOTE } from "@/lib/quote-check";
+import { unmatchedQuoteNote } from "@/lib/quote-check";
 import { hueStyles, vendorHue, workIdentity } from "@/lib/work-identity";
 import type { WorkType } from "@/lib/work-types";
 
@@ -86,7 +86,7 @@ export function AnswerSources({
       {open ? <SourceList sources={sources} /> : null}
 
       {unmatchedQuotes > 0 ? (
-        <p className="mt-2 text-xs text-muted-foreground">{UNMATCHED_QUOTE_NOTE}</p>
+        <p className="mt-2 text-xs text-muted-foreground">{unmatchedQuoteNote(unmatchedQuotes)}</p>
       ) : null}
     </div>
   );

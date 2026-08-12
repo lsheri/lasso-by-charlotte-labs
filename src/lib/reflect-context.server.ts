@@ -13,8 +13,14 @@ const PER_ITEM_CHARS = 40_000;
 const HEAD_CHARS = 8_000;
 const TAIL_CHARS = 32_000;
 const OMITTED_MARKER = "[... middle of this item omitted ...]";
-/** Backfilling is a side effect of asking a question; keep it small. */
-const MAX_BACKFILL_PER_REQUEST = 8;
+/**
+ * Backfilling is a side effect of asking a question, so almost none of it
+ * happens on the critical path. Two are made to wait; the rest are started
+ * and left to finish, and are simply there for the next question.
+ */
+const MAX_BACKFILL_INLINE = 2;
+/** Pulling raw text is I/O plus parsing. Stop spending on it after this. */
+const TEXT_BUDGET_MS = 25_000;
 
 type Db = SupabaseClient<Database>;
 
@@ -182,13 +188,26 @@ export async function assembleReflectContext(
   const allIds = items.map((i) => i.id);
   let extractRows = await readExtracts(allIds);
   const have = new Set(extractRows.map((row) => row.work_item_id));
-  const missing = allIds.filter((id) => !have.has(id)).slice(0, MAX_BACKFILL_PER_REQUEST);
+  const missing = allIds.filter((id) => !have.has(id));
   if (missing.length > 0) {
+    const inline = missing.slice(0, MAX_BACKFILL_INLINE);
+    const deferred = missing.slice(MAX_BACKFILL_INLINE);
+    const started = Date.now();
     const made: string[] = [];
-    for (const id of missing) {
+    for (const id of inline) {
       if (await ensureExtract(id)) made.push(id);
     }
+    console.log(
+      `[reflect-context] inline backfill ${made.length}/${inline.length} in ${Date.now() - started}ms, ${deferred.length} deferred`,
+    );
     if (made.length > 0) extractRows = [...extractRows, ...(await readExtracts(made))];
+    // Deliberately not awaited: the person's question must not wait on work
+    // that only makes the NEXT answer better.
+    for (const id of deferred) {
+      void ensureExtract(id).catch(() => {
+        /* a missing extract is never fatal */
+      });
+    }
   }
   const extractFor = new Map(extractRows.map((row) => [row.work_item_id, row]));
 
@@ -246,7 +265,11 @@ export async function assembleReflectContext(
   const unreadable = new Map<string, { status: ItemTextStatus; note: string | null }>();
   let rawUsed = 0;
   let anyCut = false;
+  const textStarted = Date.now();
   for (const item of priority) {
+    // Once the budget or the clock is gone, stop opening files entirely: the
+    // remaining items still appear, as their extract.
+    if (rawUsed >= RAW_BUDGET || Date.now() - textStarted > TEXT_BUDGET_MS) break;
     const result = await getItemText(supabase, item);
     if (result.status === "unsupported" || result.status === "failed") {
       unreadable.set(item.id, { status: result.status, note: result.note ?? null });
@@ -256,7 +279,6 @@ export async function assembleReflectContext(
       unreadable.set(item.id, { status: "empty", note: result.note ?? null });
       continue;
     }
-    if (rawUsed >= RAW_BUDGET) continue;
     const text = (result.text ?? "").trim();
     if (!text) continue;
     const clipped = headAndTail(text);
@@ -272,6 +294,9 @@ export async function assembleReflectContext(
     fullText.set(item.id, clipped.text);
     rawUsed += clipped.text.length;
   }
+  console.log(
+    `[reflect-context] text pass: ${fullText.size} full, ${unreadable.size} unreadable, ${Date.now() - textStarted}ms`,
+  );
 
   // 7. Serialize oldest to newest so the record reads as a story.
   const oldestFirst = [...items].sort(

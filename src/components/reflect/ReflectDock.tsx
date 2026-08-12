@@ -4,6 +4,7 @@ import { Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 
 import { SlideOver } from "@/components/peek/SlideOver";
+import { ThinkingIndicator, WorkingLabel } from "@/components/common/Working";
 import { AnswerSources } from "@/components/reflect/AnswerSources";
 import { CoverageNote } from "@/components/reflect/CoverageNote";
 import { MarkdownMessage } from "@/components/markdown/MarkdownMessage";
@@ -168,7 +169,7 @@ export function ReflectDock({
             )}
           </div>
         ))}
-        {pending ? <p className="text-sm text-muted-foreground">Thinking…</p> : null}
+        {pending ? <ThinkingIndicator /> : null}
         {coverage?.truncated ? <CoverageNote {...coverage} /> : null}
         <div ref={bottomRef} />
       </div>
@@ -185,7 +186,7 @@ export function ReflectDock({
             className="resize-none"
           />
           <Button onClick={() => void submit()} disabled={pending || !draft.trim()}>
-            Send
+            {pending ? <WorkingLabel>Sending</WorkingLabel> : "Send"}
           </Button>
         </div>
         <Link

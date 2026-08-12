@@ -1,3 +1,4 @@
+import { ThinkingIndicator } from "@/components/common/Working";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useNavigate } from "@tanstack/react-router";
@@ -289,7 +290,7 @@ export function ReflectPage() {
                     )}
                   </div>
                 ))}
-                {pending ? <p className="text-sm text-muted-foreground">Thinking…</p> : null}
+                {pending ? <ThinkingIndicator /> : null}
                 {coverage?.truncated ? <CoverageNote {...coverage} /> : null}
                 <div ref={bottomRef} />
               </div>

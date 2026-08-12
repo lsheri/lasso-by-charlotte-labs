@@ -4,6 +4,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { useProfile } from "@/hooks/use-profile";
+import { Spinner } from "@/components/common/Working";
 import { draftDecisions } from "@/lib/decisions.functions";
 
 /** Drafting one item's decisions, shared by the peek panel and the row menu. */
@@ -54,7 +55,14 @@ export function DraftDecisionsButton({
         "text-xs font-medium text-accent-deep transition-opacity hover:opacity-70 disabled:opacity-60"
       }
     >
-      {busy ? "Reading this conversation…" : label}
+      {busy ? (
+        <span className="inline-flex items-center gap-1.5">
+          <Spinner className="size-3" />
+          Reading this conversation…
+        </span>
+      ) : (
+        label
+      )}
     </button>
   );
 }

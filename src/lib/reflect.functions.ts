@@ -19,6 +19,9 @@ function tierBucket(n: number): string {
   return "20+";
 }
 
+/** Long enough that a real answer is never cut off, short enough to fail loudly. */
+const ANSWER_TIMEOUT_MS = 180_000;
+
 export const sendReflectMessage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: SendInput) => input)
@@ -35,6 +38,7 @@ export const sendReflectMessage = createServerFn({ method: "POST" })
       messageId: number | null;
       sources: ContextSource[];
       unmatchedQuotes: number;
+      cutOff: boolean;
     }> => {
       const { supabase, userId } = context;
       const message = data.message.trim();
@@ -75,8 +79,11 @@ export const sendReflectMessage = createServerFn({ method: "POST" })
       if (!apiKey) throw new Error("Missing LOVABLE_API_KEY");
 
       // gemini-2.5-pro is deliberate: the whole record can be very large.
-      const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      let response: Response;
+      try {
+        response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
+        signal: AbortSignal.timeout(ANSWER_TIMEOUT_MS),
         headers: {
           "Content-Type": "application/json",
           "Lovable-API-Key": apiKey,
@@ -84,7 +91,7 @@ export const sendReflectMessage = createServerFn({ method: "POST" })
         },
         body: JSON.stringify({
           model: "google/gemini-2.5-pro",
-          max_tokens: 2000,
+          max_tokens: 8000,
           messages: [
             { role: "system", content: REFLECT_SYSTEM_PROMPT },
             ...(preset ? [{ role: "system", content: FLUENCY_SYSTEM_PROMPT }] : []),
@@ -99,7 +106,13 @@ export const sendReflectMessage = createServerFn({ method: "POST" })
             { role: "user", content: message },
           ],
         }),
-      });
+        });
+      } catch (e) {
+        if ((e as Error).name === "TimeoutError" || (e as Error).name === "AbortError") {
+          throw new Error("That took too long to answer. Try a narrower scope.");
+        }
+        throw e;
+      }
 
       if (!response.ok) {
         const body = await response.text();
@@ -108,10 +121,18 @@ export const sendReflectMessage = createServerFn({ method: "POST" })
         throw new Error(`AI request failed (${response.status}): ${body.slice(0, 300)}`);
       }
 
-      const payload = (await response.json()) as { choices?: { message?: { content?: string } }[] };
-      const answer =
+      const payload = (await response.json()) as {
+        choices?: { message?: { content?: string }; finish_reason?: string }[];
+      };
+      const rawFinish = payload.choices?.[0]?.finish_reason ?? "stop";
+      const finishReason = rawFinish === "stop" ? "stop" : rawFinish === "length" ? "length" : "other";
+      const cutOff = finishReason === "length";
+      const { CUT_OFF_NOTE } = await import("./quote-check");
+      const base =
         payload.choices?.[0]?.message?.content?.trim() ??
         "I couldn't draw an answer out of that. Try asking a different way.";
+      // Never present a cut-off answer as if it were complete, and never discard it.
+      const answer = cutOff ? `${base}\n\n${CUT_OFF_NOTE}` : base;
 
       const { data: written, error: insertError } = await supabase
         .from("chat_messages")
@@ -136,7 +157,7 @@ export const sendReflectMessage = createServerFn({ method: "POST" })
       });
 
       const { unmatchedQuotes, quoteBucket } = await import("./quote-check");
-      const unmatched = unmatchedQuotes(answer, assembled.context);
+      const unmatched = unmatchedQuotes(base, assembled.context, cutOff);
       const scopeLabelForLog =
         scope.mode === "whole"
           ? "whole record"
@@ -171,6 +192,7 @@ export const sendReflectMessage = createServerFn({ method: "POST" })
           truncated: assembled.truncated,
           tier2_items: tierBucket(assembled.tier2Count),
           unmatched_quotes: quoteBucket(unmatched.length),
+          finish_reason: finishReason,
           ...(preset ? { preset } : {}),
         },
       });
@@ -187,6 +209,7 @@ export const sendReflectMessage = createServerFn({ method: "POST" })
         messageId: answerId,
         sources: assembled.sources,
         unmatchedQuotes: unmatched.length,
+        cutOff,
       };
     },
   );

@@ -1,3 +1,4 @@
+import { ThinkingIndicator, WorkingLabel } from "@/components/common/Working";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Link } from "@tanstack/react-router";
@@ -157,7 +158,13 @@ export function FluencyLens({
           ),
         )}
         {pending ? (
-          <p className="text-sm text-muted-foreground">Reading the conversation…</p>
+          <ThinkingIndicator
+            stages={[
+              "Reading the conversation…",
+              "Looking at how you worked with the AI…",
+              "Writing it up…",
+            ]}
+          />
         ) : null}
         {(messages ?? []).some((m) => m.role === "assistant") ? (
           <p className="border-t border-border pt-4 text-xs text-muted-foreground">
@@ -179,7 +186,7 @@ export function FluencyLens({
             className="resize-none"
           />
           <Button onClick={() => void submit()} disabled={pending || !draft.trim()}>
-            Send
+            {pending ? <WorkingLabel>Sending</WorkingLabel> : "Send"}
           </Button>
         </div>
         <Link

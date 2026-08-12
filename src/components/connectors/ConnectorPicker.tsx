@@ -1,3 +1,4 @@
+import { WorkingLabel } from "@/components/common/Working";
 import { useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Bell, ChevronLeft, Eye, Folder, Phone } from "lucide-react";
@@ -582,7 +583,7 @@ export function ConnectorPicker({
             onClick={() => void handleImport()}
           >
             {importing
-              ? "Bringing in…"
+              ? <WorkingLabel>{`Bringing in ${selected.size} item${selected.size === 1 ? "" : "s"}`}</WorkingLabel>
               : `${copy.action}${selected.size ? ` (${selected.size})` : ""}`}
           </Button>
         </div>

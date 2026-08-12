@@ -1,3 +1,4 @@
+import { WorkingLabel } from "@/components/common/Working";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Sparkle } from "lucide-react";
@@ -173,7 +174,7 @@ export function WhatFedThis({ workItemId, canEdit }: { workItemId: string; canEd
   const findButton = canEdit ? (
     <Button type="button" disabled={busy} onClick={() => void find()}>
       <Sparkle className="mr-2 h-4 w-4" aria-hidden />
-      {busy ? "Reading this engagement…" : "Find what fed this"}
+      {busy ? <WorkingLabel>Reading this engagement</WorkingLabel> : "Find what fed this"}
     </Button>
   ) : null;
 
