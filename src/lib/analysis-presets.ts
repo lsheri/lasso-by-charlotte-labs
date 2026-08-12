@@ -4,6 +4,14 @@ import { BRIEF_PROMPT_RULES } from "@/lib/brief-shared";
 /**
  * The analysis preset registry. Every analysis in the product is an entry here,
  * not a build: id, prompt, info panel, attribution, and who may run it.
+ *
+ * THE NAMING RULE.
+ * A name is legitimate when a partner could say it out loud in a review without it
+ * sounding like software. Person-shaped analyses use second person and stay owner-only.
+ * Artifact-shaped analyses make the WORK the subject of the sentence, and those are the
+ * only ones a coach or practitioner may run. Never "score", "level", "assessment",
+ * "audit", "rating", or "efficiency" in a label: efficiency reads as a productivity
+ * measure of a person even when the content is pure craft.
  */
 
 export const ANALYSIS_SOURCES = [
@@ -66,8 +74,11 @@ export type AnalysisPreset = {
 
 export const ANALYSIS_PRESET_IDS = [
   "ai_fluency_4d",
-  "working_efficiently",
+  "working_the_model",
   "assumptions",
+  "decision_origin",
+  "what_fed_this",
+  "what_recurs",
 ] as const;
 export type AnalysisPresetId = (typeof ANALYSIS_PRESET_IDS)[number];
 
@@ -87,7 +98,7 @@ ABSOLUTE RULES:
 - If the thread gives no evidence for a D, say plainly that it does not show, and still offer one thing to try.
 - Use markdown with a heading per D. Never use an em dash.`;
 
-const EFFICIENCY_PROMPT = `You are running "Working efficiently with AI" over ONE of this person's own AI conversations. The transcript is supplied with each turn numbered as "TURN n ROLE:".
+const WORKING_THE_MODEL_PROMPT = `You are running "Working efficiently with AI" over ONE of this person's own AI conversations. The transcript is supplied with each turn numbered as "TURN n ROLE:".
 
 Your job is to MATCH, not to lecture. Read the actual transcript, find which of the patterns below genuinely occurred in it, and report only those.
 
