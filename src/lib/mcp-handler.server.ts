@@ -798,7 +798,12 @@ async function pushConversation(owner: Owner, args: Obj, id: unknown): Promise<R
     eventType: "mcp.push",
     orgId: owner.orgId,
     userId: owner.userId,
-    dims: { vendor, attachment_count: attachmentBucket(attachments.length), mode: pushMode },
+    dims: {
+      vendor,
+      attachment_count: attachmentBucket(attachments.length),
+      flagged_attachments: flaggedBucket(flaggedCount),
+      mode: pushMode,
+    },
   });
   await recordEvent(supabaseAdmin, {
     eventType: "workitem.captured",
@@ -810,6 +815,10 @@ async function pushConversation(owner: Owner, args: Obj, id: unknown): Promise<R
   const verb = existingThread ? "Updated" : "Saved";
   const tail = saved > 0 ? ` with ${saved} attachment${saved === 1 ? "" : "s"}` : "";
   const warn = problems.length > 0 ? ` Some attachments didn't save: ${problems.join("; ")}.` : "";
+  const flaggedNote =
+    flaggedCount > 0
+      ? ` ${flaggedCount} attachment${flaggedCount === 1 ? "" : "s"} looked like restatement${flaggedCount === 1 ? "" : "s"} of the conversation rather than separate artifacts and ${flaggedCount === 1 ? "was" : "were"} flagged. Only send artifacts that existed in the app before the push.`
+      : "";
   const counts = existingThread
     ? ` ${unchangedCount} message${unchangedCount === 1 ? "" : "s"} already captured, ${newRows.length} new, ${changedCount} changed since last push.`
     : ` ${messages.length} message${messages.length === 1 ? "" : "s"} captured.`;
@@ -822,6 +831,6 @@ async function pushConversation(owner: Owner, args: Obj, id: unknown): Promise<R
     : "";
   return textResult(
     id,
-    `${verb} '${title}' in Lasso${tail}.${counts}${shortNote} It stays private until the user maps it.${warn}${continuation}`,
+    `${verb} '${title}' in Lasso${tail}.${counts}${shortNote} It stays private until the user maps it.${flaggedNote}${warn}${continuation}`,
   );
 }
