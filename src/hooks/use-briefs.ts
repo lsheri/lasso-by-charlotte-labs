@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 import { briefScopeOf, type BriefScope } from "@/lib/brief-shared";
 import type { WorkItemRow } from "@/lib/work-types";
 
@@ -51,7 +52,10 @@ export async function setBriefRole(workItemId: string, scope: BriefScope | null)
     delete meta["brief_scope"];
   }
 
-  const { error } = await supabase.from("work_items").update({ meta }).eq("id", workItemId);
+  const { error } = await supabase
+    .from("work_items")
+    .update({ meta: meta as Json })
+    .eq("id", workItemId);
   if (error) throw error;
 }
 
