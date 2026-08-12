@@ -35,6 +35,7 @@ export type TelemetryEvent =
   | "reflect.session_created"
   | "reflect.message_sent"
   | "analysis.started"
+  | "analysis.run"
   | "analysis.completed"
   | "analysis.failed"
   | "member.deactivated"

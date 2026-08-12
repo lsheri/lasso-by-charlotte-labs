@@ -77,10 +77,36 @@ export function catalogueLine(entry: CatalogueEntry): string {
     entry.code,
     entry.date.slice(0, 10),
     entry.type,
+    ...(entry.vendor ? [entry.vendor] : []),
     entry.mapped ?? "unmapped",
     entry.title,
     entry.entities ? entry.entities.slice(0, 160) : "",
   ].join(" | ");
+}
+
+/**
+ * Codes are derived from the item's uuid, not its position. A sparse space
+ * means an invented code misses loudly instead of resolving to a real item
+ * the model never saw.
+ */
+export function assignCatalogueCodes(ids: string[]): Map<string, string> {
+  const hex = new Map(ids.map((id) => [id, id.replace(/-/g, "").toLowerCase()]));
+  const lengths = new Map(ids.map((id) => [id, 4]));
+  for (const width of [4, 6]) {
+    const seen = new Map<string, string[]>();
+    for (const id of ids) {
+      if (lengths.get(id) !== width) continue;
+      const key = hex.get(id)!.slice(0, width);
+      const list = seen.get(key) ?? [];
+      list.push(id);
+      seen.set(key, list);
+    }
+    for (const [, group] of seen) {
+      if (group.length < 2) continue;
+      for (const id of group) lengths.set(id, width + 2);
+    }
+  }
+  return new Map(ids.map((id) => [id, `[${hex.get(id)!.slice(0, lengths.get(id)!)}]`]));
 }
 
 async function readExtracts(supabase: Db, ids: string[]): Promise<ExtractRow[]> {
@@ -133,8 +159,10 @@ export async function buildCatalogue(
   );
   const extractFor = new Map(extractRows.map((row) => [row.work_item_id, row]));
 
-  const entries: CatalogueEntry[] = oldestFirst.map((item, index) => ({
-    code: `i${index + 1}`,
+  const codes = assignCatalogueCodes(oldestFirst.map((item) => item.id));
+
+  const entries: CatalogueEntry[] = oldestFirst.map((item) => ({
+    code: codes.get(item.id) ?? `[${item.id.slice(0, 4)}]`,
     id: item.id,
     title: item.title,
     type: item.type,

@@ -64,7 +64,7 @@ export const RECORD_TOOLS = [
           item_ids: {
             type: "array",
             items: { type: "string" },
-            description: "Catalogue codes, for example i4, or item ids.",
+            description: "Catalogue codes exactly as written in the catalogue, for example [a3f9].",
           },
         },
         required: ["item_ids"],
@@ -84,7 +84,7 @@ export const RECORD_TOOLS = [
           item_ids: {
             type: "array",
             items: { type: "string" },
-            description: "Catalogue codes, for example i4, or item ids.",
+            description: "Catalogue codes exactly as written in the catalogue, for example [a3f9].",
           },
         },
         required: ["item_ids"],
@@ -101,7 +101,10 @@ export const RECORD_TOOLS = [
       parameters: {
         type: "object",
         properties: {
-          item_id: { type: "string", description: "Catalogue code or item id." },
+          item_id: {
+            type: "string",
+            description: "One catalogue code exactly as written, for example [a3f9].",
+          },
           from_turn: { type: "number", description: "First turn number. Defaults to 1." },
           to_turn: { type: "number", description: "Last turn number." },
         },
@@ -116,9 +119,30 @@ function resolve(state: ToolState, raw: string): { id: string; code: string } | 
   const key = raw.trim();
   const byCode = state.catalogue.byCode.get(key);
   if (byCode) return { id: byCode.id, code: byCode.code };
+  const bracketed = state.catalogue.byCode.get(`[${key.replace(/^\[|\]$/g, "")}]`);
+  if (bracketed) return { id: bracketed.id, code: bracketed.code };
   const byId = state.catalogue.byId.get(key);
   if (byId) return { id: byId.id, code: byId.code };
   return null;
+}
+
+/** Codes are sparse on purpose: a miss is reported, never guessed around. */
+function partition(
+  state: ToolState,
+  raws: string[],
+): { found: { id: string; code: string }[]; missing: string[] } {
+  const found: { id: string; code: string }[] = [];
+  const missing: string[] = [];
+  for (const raw of raws) {
+    const hit = resolve(state, raw);
+    if (hit) found.push(hit);
+    else missing.push(raw.trim());
+  }
+  return { found, missing };
+}
+
+function missingLine(missing: string[]): string {
+  return `No item with ${missing.length === 1 ? "that code" : "those codes"} is in your catalogue: ${missing.join(", ")}. Do not guess a code. Use search_record, or a code copied exactly from the catalogue.`;
 }
 
 async function extractsFor(state: ToolState, ids: string[]): Promise<Map<string, ExtractRow>> {
@@ -174,16 +198,14 @@ async function searchRecord(state: ToolState, query: string): Promise<string> {
 }
 
 async function openItems(state: ToolState, ids: string[]): Promise<string> {
-  const resolved = ids
-    .slice(0, MAX_OPEN)
-    .map((raw) => resolve(state, raw))
-    .filter((value): value is { id: string; code: string } => value !== null);
-  if (resolved.length === 0) return "None of those ids are in the catalogue for this scope.";
+  const { found: resolved, missing } = partition(state, ids.slice(0, MAX_OPEN));
+  if (resolved.length === 0) return missingLine(missing.length > 0 ? missing : ids);
   const extracts = await extractsFor(
     state,
     resolved.map((r) => r.id),
   );
   const blocks: string[] = [];
+  if (missing.length > 0) blocks.push(missingLine(missing));
   for (const { id } of resolved) {
     const item = state.catalogue.items.get(id);
     const entry = state.catalogue.byId.get(id);
@@ -195,12 +217,10 @@ async function openItems(state: ToolState, ids: string[]): Promise<string> {
 }
 
 async function readItems(state: ToolState, ids: string[]): Promise<string> {
-  const resolved = ids
-    .slice(0, MAX_READ)
-    .map((raw) => resolve(state, raw))
-    .filter((value): value is { id: string; code: string } => value !== null);
-  if (resolved.length === 0) return "None of those ids are in the catalogue for this scope.";
+  const { found: resolved, missing } = partition(state, ids.slice(0, MAX_READ));
+  if (resolved.length === 0) return missingLine(missing.length > 0 ? missing : ids);
   const blocks: string[] = [];
+  if (missing.length > 0) blocks.push(missingLine(missing));
   for (const { id, code } of resolved) {
     const item = state.catalogue.items.get(id);
     if (!item) continue;
@@ -246,7 +266,7 @@ async function readTurns(
   toTurn: number | undefined,
 ): Promise<string> {
   const target = resolve(state, itemId);
-  if (!target) return "That id is not in the catalogue for this scope.";
+  if (!target) return missingLine([itemId.trim()]);
   const from = Math.max(1, Math.floor(fromTurn ?? 1));
   const to = Math.max(from, Math.floor(toTurn ?? from + MAX_TURNS - 1));
   const { data, error } = await state.supabase

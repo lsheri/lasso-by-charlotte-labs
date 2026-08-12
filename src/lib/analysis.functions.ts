@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { analysisRunDims } from "@/lib/analysis-dims";
 import { ANALYSIS_PRESET_IDS, type AnalysisPresetId } from "@/lib/analysis-presets";
 import { tokensBucket } from "@/lib/ai-usage";
 
@@ -136,12 +137,32 @@ export const startAnalysis = createServerFn({ method: "POST" })
       .single();
     if (runError || !run) throw new Error(runError?.message ?? "Could not start the analysis.");
     const runId = run.id;
+    const scopeType = preset.scope === "thread" ? "item" : preset.scope;
+    let costSoFar = 0;
+    let itemsReadSoFar = 0;
+    let claimsSoFar = 0;
+    let suppressedSoFar = 0;
 
     async function fail(reason: string): Promise<never> {
       await supabase
         .from("analysis_runs")
         .update({ status: "failed", error_class: reason, completed_at: new Date().toISOString() })
         .eq("id", runId);
+      await recordEvent(supabase, {
+        eventType: "analysis.run",
+        orgId: profile!.org_id,
+        userId,
+        dims: analysisRunDims({
+          preset: preset!.id,
+          scopeType,
+          status: "failed",
+          errorClass: reason,
+          itemsRead: itemsReadSoFar,
+          costUsd: costSoFar,
+          claims: claimsSoFar,
+          suppressed: suppressedSoFar,
+        }),
+      });
       await recordEvent(supabase, {
         eventType: "analysis.failed",
         orgId: profile!.org_id,
@@ -223,6 +244,10 @@ export const startAnalysis = createServerFn({ method: "POST" })
       const tokensOut = completion.tokensOut + guarded.tokensOut;
       const costUsd = Number((completion.costUsd + guarded.costUsd).toFixed(6));
       const itemsRead = assembled.sources.length;
+      costSoFar = costUsd;
+      itemsReadSoFar = itemsRead;
+      claimsSoFar = guarded.claims;
+      suppressedSoFar = guarded.suppressed;
 
       await supabase
         .from("analysis_runs")
@@ -237,6 +262,21 @@ export const startAnalysis = createServerFn({ method: "POST" })
           completed_at: new Date().toISOString(),
         })
         .eq("id", runId);
+
+      await recordEvent(supabase, {
+        eventType: "analysis.run",
+        orgId: profile.org_id,
+        userId,
+        dims: analysisRunDims({
+          preset: preset.id,
+          scopeType,
+          status: "completed",
+          itemsRead,
+          costUsd,
+          claims: guarded.claims,
+          suppressed: guarded.suppressed,
+        }),
+      });
 
       await recordEvent(supabase, {
         eventType: "analysis.completed",

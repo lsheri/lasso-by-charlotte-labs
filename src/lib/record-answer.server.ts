@@ -53,7 +53,7 @@ export function catalogueContext(catalogue: Catalogue): string {
   parts.push(
     [
       `CATALOGUE: ${catalogue.entries.length} piece${catalogue.entries.length === 1 ? "" : "s"} of recorded work in scope.`,
-      "Format: code | date | type | mapping | title | topics",
+      "Format: code | date | type | vendor when known | mapping | title | topics",
       ...catalogue.entries.map(catalogueLine),
     ].join("\n"),
   );
