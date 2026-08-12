@@ -182,6 +182,7 @@ export const ANALYSIS_PRESETS: AnalysisPreset[] = [
     infoPanel: {
       reads: (detail) => detail,
       looksFor: [
+        "Assumptions that contradict the brief, when a brief was provided",
         "Assumptions stated by the client or the source material",
         "Assumptions you stated yourself",
         "Assumptions the model introduced",
