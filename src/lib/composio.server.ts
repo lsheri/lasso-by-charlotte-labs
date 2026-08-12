@@ -79,7 +79,27 @@ export type DriveFile = {
 
 export const DRIVE_FOLDER_MIME = "application/vnd.google-apps.folder";
 
-/** Which Google account is actually linked — verified against Drive itself. */
+/** Writes a markdown brief into the person's own Drive as a Google Doc. */
+export async function createDriveDoc(
+  entityId: string,
+  fileName: string,
+  text: string,
+): Promise<{ link: string | null }> {
+  const data = await run("GOOGLEDRIVE_CREATE_FILE_FROM_TEXT", entityId, {
+    file_name: fileName,
+    text_content: text,
+    mime_type: "text/markdown",
+  });
+  const nested = (data["file"] ?? data["response_data"] ?? data) as Record<string, unknown>;
+  const link =
+    (nested["webViewLink"] as string | undefined) ??
+    (typeof nested["id"] === "string"
+      ? `https://drive.google.com/file/d/${nested["id"] as string}/view`
+      : null);
+  return { link: link ?? null };
+}
+
+/** Which Google account is actually linked, verified against Drive itself. */
 export async function driveAccountIdentity(entityId: string): Promise<string | null> {
   try {
     const data = await run("GOOGLEDRIVE_GET_ABOUT", entityId, { fields: "user" });

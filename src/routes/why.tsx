@@ -7,17 +7,17 @@ import { Wordmark } from "@/components/layout/Wordmark";
 export const Route = createFileRoute("/why")({
   head: () => ({
     meta: [
-      { title: "Why Lasso — the coach in your corner" },
+      { title: "Why Lasso, the coach in your corner" },
       {
         name: "description",
         content:
-          "The real work you do with AI is invisible. Lasso makes it yours — a record you own, and a coach you invite into exactly what you choose.",
+          "The real work you do with AI is invisible. Lasso makes it yours, a record you own, and a coach you invite into exactly what you choose.",
       },
-      { property: "og:title", content: "Why Lasso — the coach in your corner" },
+      { property: "og:title", content: "Why Lasso, the coach in your corner" },
       {
         property: "og:description",
         content:
-          "The real work you do with AI is invisible. Lasso makes it yours — a record you own, and a coach you invite into exactly what you choose.",
+          "The real work you do with AI is invisible. Lasso makes it yours, a record you own, and a coach you invite into exactly what you choose.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -30,14 +30,14 @@ const SECTIONS: { heading: string; body: string[] }[] = [
   {
     heading: "Your work deserves a record",
     body: [
-      "Most of the thinking you do with AI disappears the moment the tab closes. The drafts, the dead ends, the call you finally got right — none of it lands anywhere you can point to later.",
-      "Lasso keeps that work. You bring in the threads and files you choose, map them to the engagements they belong to, and end up with a record of how the work actually happened — in your own words, in your own order.",
+      "Most of the thinking you do with AI disappears the moment the tab closes. The drafts, the dead ends, the call you finally got right, none of it lands anywhere you can point to later.",
+      "Lasso keeps that work. You bring in the threads and files you choose, map them to the engagements they belong to, and end up with a record of how the work actually happened, in your own words, in your own order.",
     ],
   },
   {
     heading: "A coach in your corner",
     body: [
-      "Growing fast is easier with someone who has seen the road. Lasso lets you invite someone you trust into exactly the work you choose — a coach, a lead, a mentor.",
+      "Growing fast is easier with someone who has seen the road. Lasso lets you invite someone you trust into exactly the work you choose, a coach, a lead, a mentor.",
       "They see what you share, never more. No dashboards over your shoulder, no ratings, no verdicts on you as a person. Just a colleague who can read the real context and tell you something useful.",
     ],
   },
@@ -45,7 +45,7 @@ const SECTIONS: { heading: string; body: string[] }[] = [
     heading: "Yours, always",
     body: [
       "You own the record. Private stays private, drafts stay drafts, and nothing is shared until you say so. Change your mind and you can unshare or delete it.",
-      "Your organization's admins handle settings and invitations — never anyone's content.",
+      "Your organization's admins handle settings and invitations, never anyone's content.",
     ],
   },
 ];
@@ -63,7 +63,7 @@ function WhyPage() {
           The best coach you didn't know you needed.
         </h1>
         <p className="mt-5 max-w-2xl text-base leading-relaxed text-muted-foreground">
-          Lasso turns the work you already do with AI into a record you own — and makes it easy to
+          Lasso turns the work you already do with AI into a record you own, and makes it easy to
           put that record in front of someone who can help you get better at it.
         </p>
 

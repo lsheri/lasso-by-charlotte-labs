@@ -23,7 +23,7 @@ export type MembersPayload = {
   invites: InviteRow[];
 };
 
-/** "a1b2c3d4e5f6" → "a1b2…e5f6" — enough to recognise, not enough to reuse. */
+/** "a1b2c3d4e5f6" → "a1b2…e5f6", enough to recognise, not enough to reuse. */
 export function maskCode(code: string): string {
   if (code.length <= 8) return code;
   return `${code.slice(0, 4)}…${code.slice(-4)}`;

@@ -68,12 +68,12 @@ export const Route = createFileRoute("/onboarding")({
   },
   head: () => ({
     meta: [
-      { title: "Set up your workspace — Lasso" },
+      { title: "Set up your workspace | Lasso" },
       {
         name: "description",
         content: "Create a Lasso workspace or join your team with an invite code.",
       },
-      { property: "og:title", content: "Set up your workspace — Lasso" },
+      { property: "og:title", content: "Set up your workspace | Lasso" },
       {
         property: "og:description",
         content: "Create a Lasso workspace or join your team with an invite code.",
@@ -237,7 +237,7 @@ function OnboardingInner() {
             <p className="micro-label mt-6">Step one</p>
             <h1 className="page-title mt-2">Where do you work with AI?</h1>
             <p className="mt-1.5 text-sm text-muted-foreground">
-              Pick everything you use. We'll only set up what you choose — and nothing comes in
+              Pick everything you use. We'll only set up what you choose, and nothing comes in
               until you say so.
             </p>
 

@@ -187,10 +187,10 @@ export async function fetchGmailThread(
   const blocks = ordered.map((message, index) => {
     const header = [
       `### Message ${index + 1}`,
-      `**From:** ${message.from || "—"}`,
-      `**To:** ${message.to || "—"}`,
+      `**From:** ${message.from || "Not set"}`,
+      `**To:** ${message.to || "Not set"}`,
       ...(message.cc ? [`**Cc:** ${message.cc}`] : []),
-      `**Date:** ${message.date ?? "—"}`,
+      `**Date:** ${message.date ?? "Not set"}`,
       ...(message.subject && message.subject !== subject
         ? [`**Subject:** ${message.subject}`]
         : []),

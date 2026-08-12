@@ -2,7 +2,7 @@ import logoAsset from "@/assets/lasso-mascots.png.asset.json";
 
 const SIZES = { sm: "h-6", md: "h-9", lg: "h-14", xl: "h-40 md:h-56" } as const;
 
-/** The Charlotte Labs mascots — shared logo mark for Lasso. */
+/** The Charlotte Labs mascots, shared logo mark for Lasso. */
 export function LassoLogo({
   size = "sm",
   className = "",

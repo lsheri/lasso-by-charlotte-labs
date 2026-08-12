@@ -99,7 +99,7 @@ export async function fetchCoachSubjects(coachProfileId: string): Promise<CoachS
 
       return {
         engagement_id: row.engagement_id,
-        engagement_code: engagement?.engagements?.code ?? "—",
+        engagement_code: engagement?.engagements?.code ?? "Not set",
         engagement_title: engagement?.engagements?.title ?? "Engagement",
         subject_id: row.profile_id,
         subject_name: row.profiles?.display_name ?? "Colleague",

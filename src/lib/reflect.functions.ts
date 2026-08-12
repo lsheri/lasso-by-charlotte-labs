@@ -7,6 +7,7 @@ type SendInput = {
   message: string;
   profile_id?: string | undefined;
   surface?: "reflect" | "ask_lasso" | undefined;
+  preset?: "ai_fluency_4d" | undefined;
 };
 
 /** Bucketed so an exact count never leaves as a dimension. */
@@ -49,9 +50,10 @@ export const sendReflectMessage = createServerFn({ method: "POST" })
         throw new Response("Forbidden", { status: 403 });
       }
 
-      const { parseScope, titleFromMessage, REFLECT_SYSTEM_PROMPT } =
+      const { parseScope, titleFromMessage, REFLECT_SYSTEM_PROMPT, FLUENCY_SYSTEM_PROMPT } =
         await import("./reflect-shared");
       const scope = parseScope(session.context_scope);
+      const preset = data.preset === "ai_fluency_4d" ? "ai_fluency_4d" : null;
 
       const { data: history } = await supabase
         .from("chat_messages")
@@ -87,6 +89,7 @@ export const sendReflectMessage = createServerFn({ method: "POST" })
           max_tokens: 2000,
           messages: [
             { role: "system", content: REFLECT_SYSTEM_PROMPT },
+            ...(preset ? [{ role: "system", content: FLUENCY_SYSTEM_PROMPT }] : []),
             {
               role: "system",
               content: `THE PERSON'S RECORDED WORK (scope: ${scope.mode}):\n\n${assembled.context}`,
@@ -102,7 +105,7 @@ export const sendReflectMessage = createServerFn({ method: "POST" })
 
       if (!response.ok) {
         const body = await response.text();
-        if (response.status === 429) throw new Error("Rate limited — try again in a moment.");
+        if (response.status === 429) throw new Error("Rate limited. Try again in a moment.");
         if (response.status === 402) throw new Error("AI credits exhausted for this workspace.");
         throw new Error(`AI request failed (${response.status}): ${body.slice(0, 300)}`);
       }
@@ -110,7 +113,7 @@ export const sendReflectMessage = createServerFn({ method: "POST" })
       const payload = (await response.json()) as { choices?: { message?: { content?: string } }[] };
       const answer =
         payload.choices?.[0]?.message?.content?.trim() ??
-        "I couldn't draw an answer out of that — try asking a different way.";
+        "I couldn't draw an answer out of that. Try asking a different way.";
 
       const { error: insertError } = await supabase.from("chat_messages").insert([
         { session_id: session.id, role: "user", content: message },
@@ -134,6 +137,7 @@ export const sendReflectMessage = createServerFn({ method: "POST" })
           scope: scope.mode,
           truncated: assembled.truncated,
           tier2_items: tierBucket(assembled.tier2Count),
+          ...(preset ? { preset } : {}),
         },
       });
 

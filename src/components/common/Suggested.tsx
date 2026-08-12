@@ -1,7 +1,7 @@
 /**
  * The suggestion treatment: "Lasso suggested this, a person decides."
  *
- * Surface only — a neon left edge, a wash, and a dot before the label. The
+ * Surface only, a neon left edge, a wash, and a dot before the label. The
  * neon is never used as text colour (it lands near 1.3:1 on bone), so every
  * word inside stays foreground or ember-deep and passes AA.
  */

@@ -63,7 +63,7 @@ export function EngagementChip({
       style={{ backgroundColor: styles.background, color: styles.color }}
     >
       <CheckCircle2 className="h-3 w-3 shrink-0" aria-hidden />
-      {code ?? "—"}
+      {code ?? "Not set"}
       {taskName ? ` · ${taskName}` : ""}
     </span>
   );

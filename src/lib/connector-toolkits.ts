@@ -17,7 +17,7 @@ export function isBrowsableToolkit(value: unknown): value is BrowsableToolkit {
   return typeof value === "string" && (BROWSABLE_TOOLKITS as readonly string[]).includes(value);
 }
 
-/** work_items.source per browsable toolkit — also the dedupe partition. */
+/** work_items.source per browsable toolkit, also the dedupe partition. */
 export const TOOLKIT_SOURCE: Record<BrowsableToolkit, string> = {
   googledrive: "connector:googledrive",
   one_drive: "connector:onedrive",

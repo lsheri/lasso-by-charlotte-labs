@@ -19,7 +19,7 @@ export function SuggestionChip({
       <SuggestDot />
       <p className="min-w-0 flex-1 break-words text-xs text-ember-deep">
         <span className="font-medium">{label}</span>
-        {reason ? <span className="text-muted-foreground"> — {reason}</span> : null}
+        {reason ? <span className="text-muted-foreground">, {reason}</span> : null}
       </p>
       <div className="flex shrink-0 items-center gap-2">
         <button

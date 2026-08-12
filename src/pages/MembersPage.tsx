@@ -27,7 +27,7 @@ import { ROLE_LABELS, useProfile } from "@/hooks/use-profile";
 import { maskCode, type InviteRow, type MemberRow } from "@/lib/members-shared";
 
 function dateLabel(iso: string | null): string {
-  if (!iso) return "—";
+  if (!iso) return "Not set";
   return new Date(iso).toLocaleDateString(undefined, {
     month: "short",
     day: "numeric",

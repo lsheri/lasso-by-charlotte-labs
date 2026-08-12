@@ -30,9 +30,9 @@ export const Route = createFileRoute("/join")({
   },
   head: () => ({
     meta: [
-      { title: "Accept your invite — Lasso" },
+      { title: "Accept your invite | Lasso" },
       { name: "description", content: "Join your team's Lasso workspace with an invite link." },
-      { property: "og:title", content: "Accept your invite — Lasso" },
+      { property: "og:title", content: "Accept your invite | Lasso" },
       {
         property: "og:description",
         content: "Join your team's Lasso workspace with an invite link.",

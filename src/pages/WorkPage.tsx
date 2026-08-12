@@ -5,7 +5,8 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { MapDialog } from "@/components/work/MapDialog";
-import { DraftDecisionsButton } from "@/components/decisions/DraftDecisionsButton";
+import { RowMenu } from "@/components/work/RowMenu";
+import { FluencyLens } from "@/components/reflect/FluencyLens";
 import { ImportFlowDialog } from "@/components/work/import/ImportFlowDialog";
 import { PasteThreadDialog } from "@/components/work/PasteThreadDialog";
 import { OpenFileAction } from "@/components/work/OpenFileAction";
@@ -57,6 +58,7 @@ export function WorkPage() {
   const [mapGroup, setMapGroup] = useState<WorkItemRow[] | null>(null);
   const [peek, setPeek] = useState<{ entry: PeekEntry; focusId: string } | null>(null);
   const [dateItem, setDateItem] = useState<WorkItemRow | null>(null);
+  const [lensItem, setLensItem] = useState<WorkItemRow | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<MappingSuggestion[] | null>(null);
   const [dismissed, setDismissed] = useState<string[]>([]);
@@ -99,7 +101,7 @@ export function WorkPage() {
         name: string;
         engagements: { code: string } | null;
       }[]) {
-        out[row.id] = `${row.engagements?.code ?? "—"} · ${row.name}`;
+        out[row.id] = `${row.engagements?.code ?? "Not set"} · ${row.name}`;
       }
       return out;
     },
@@ -189,13 +191,13 @@ export function WorkPage() {
           {item.content_ref ? <OpenFileAction workItemId={item.id} /> : null}
           <RowAction onClick={() => setDateItem(item)}>Work date</RowAction>
           <RowAction onClick={() => void unmark(item)}>Unmark</RowAction>
+          <RowMenu item={item} onFluency={setLensItem} />
         </>
       );
     }
     const groupLabel = group && group.length > 1;
     return (
       <>
-        {item.type === "ai_thread" ? <DraftDecisionsButton workItemId={item.id} /> : null}
         {item.content_ref ? <OpenFileAction workItemId={item.id} /> : null}
         <RowAction primary={variant === "unmapped"} onClick={() => openMap(item, group)}>
           {variant === "mapped"
@@ -211,6 +213,7 @@ export function WorkPage() {
         ) : null}
         <RowAction onClick={() => setDateItem(item)}>Work date</RowAction>
         <RowAction onClick={() => void makePrivate(item)}>Make private</RowAction>
+        <RowMenu item={item} onFluency={setLensItem} />
       </>
     );
   }
@@ -428,7 +431,7 @@ export function WorkPage() {
       ) : all.length === 0 ? (
         <div className="mx-auto max-w-lg rounded-[var(--radius)] border border-border bg-card px-8 py-12 text-center shadow-card">
           <p className="text-sm text-foreground">
-            Your work lands here. Paste an AI thread or drop a file — organize it whenever you're
+            Your work lands here. Paste an AI thread or drop a file, organize it whenever you're
             ready.
           </p>
           <div className="mt-6 flex flex-wrap justify-center gap-2">
@@ -449,7 +452,7 @@ export function WorkPage() {
           <WatchSuggestionBanner />
           <WorkSection
             label="Needs mapping"
-            hint="Private by default until you map it — nothing is shared with your coach yet."
+            hint="Private by default until you map it, nothing is shared with your coach yet."
             count={unmappedEntries.length}
             tone="amber"
             icon={CircleDashed}
@@ -620,6 +623,10 @@ export function WorkPage() {
           setPeek(null);
           void makePrivate(item);
         }}
+        onFluency={(item) => {
+          setPeek(null);
+          setLensItem(item);
+        }}
         onOpenChange={(next) => {
           if (!next) setPeek(null);
         }}
@@ -631,7 +638,8 @@ export function WorkPage() {
               Remove {chosen.size} item{chosen.size === 1 ? "" : "s"}?
             </AlertDialogTitle>
             <AlertDialogDescription>
-              This deletes them from Lasso only — the originals in Drive/your AI apps are untouched.
+              This deletes them from Lasso only. The originals in Drive and your AI apps are
+              untouched.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -656,6 +664,20 @@ export function WorkPage() {
           if (!next) setDateItem(null);
         }}
       />
+
+      {profile && lensItem ? (
+        <FluencyLens
+          key={lensItem.id}
+          open
+          onOpenChange={(next) => {
+            if (!next) setLensItem(null);
+          }}
+          workItemId={lensItem.id}
+          workItemTitle={lensItem.title}
+          profileId={profile.id}
+          orgId={profile.org_id}
+        />
+      ) : null}
     </div>
   );
 }

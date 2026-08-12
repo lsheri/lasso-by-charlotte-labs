@@ -47,7 +47,7 @@ export function AccountEmailCard() {
         </p>
         {pendingEmail ? (
           <p className="rounded-[var(--radius)] border border-border bg-secondary px-3 py-2 text-xs text-muted-foreground">
-            Pending change to <span className="font-mono">{pendingEmail}</span> — confirm it from
+            Pending change to <span className="font-mono">{pendingEmail}</span>, confirm it from
             the link we sent to that address.
           </p>
         ) : null}

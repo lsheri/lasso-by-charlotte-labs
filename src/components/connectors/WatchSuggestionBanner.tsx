@@ -17,7 +17,7 @@ const PICKER_FOR: Record<BrowsableToolkit, PickerKind> = {
 
 /**
  * Watched folders only ever suggest. This banner is the whole surface: it
- * tells you what changed and opens the picker — still default-unchecked.
+ * tells you what changed and opens the picker, still default-unchecked.
  */
 export function WatchSuggestionBanner() {
   const { data: profile } = useProfile();

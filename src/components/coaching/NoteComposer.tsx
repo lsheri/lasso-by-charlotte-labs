@@ -35,7 +35,7 @@ export function NoteComposer({
   async function save() {
     if (!profile) return;
     if (!didWell.trim() || !wouldTry.trim() || !watchNext.trim()) {
-      setError("All three fields help the conversation land — please fill each one.");
+      setError("All three fields help the conversation land, please fill each one.");
       return;
     }
     if (cited.length === 0) {

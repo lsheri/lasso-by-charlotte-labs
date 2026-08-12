@@ -14,7 +14,7 @@ export function OrganizeStep({ onDone }: { onDone: () => void }) {
   return (
     <div className="space-y-4">
       <p className="text-sm text-foreground">
-        Optional: let Lasso suggest where this work belongs. Suggestions are drafts — nothing is
+        Optional: let Lasso suggest where this work belongs. Suggestions are drafts, nothing is
         shared until you accept.
       </p>
 

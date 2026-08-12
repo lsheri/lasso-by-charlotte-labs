@@ -1,7 +1,7 @@
 /**
  * Granola direct API (https://public-api.granola.ai/v1).
  *
- * The key lives in public.connector_secrets — RLS on, zero policies — so it is
+ * The key lives in public.connector_secrets, RLS on, zero policies, so it is
  * readable only by the service role inside these server-only helpers. It is
  * never returned to the client; the UI only ever sees a mask.
  */
@@ -45,7 +45,7 @@ async function call(key: string, path: string, attempt = 0): Promise<Record<stri
     throw new GranolaError(
       response.status,
       response.status === 401 || response.status === 403
-        ? "That key didn't work — check it in Granola → Settings → Connectors → API keys"
+        ? "That key didn't work, check it in Granola → Settings → Connectors → API keys"
         : response.status === 429
           ? "Granola is rate-limiting this key. Wait a moment and try again."
           : `Granola returned ${response.status}${body ? `: ${body.slice(0, 200)}` : ""}`,
@@ -86,7 +86,7 @@ export async function listGranolaNotes(
       if (!id) return null;
       return {
         id,
-        // Titles are shown and stored verbatim — never re-worded.
+        // Titles are shown and stored verbatim, never re-worded.
         title: pickString(row, ["title", "name"]) ?? "Untitled meeting",
         date: pickString(row, ["created_at", "createdAt", "date", "started_at"]),
       };

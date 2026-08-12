@@ -20,7 +20,7 @@ function usePrefersReducedMotion(): boolean {
 }
 
 /**
- * A ~20 second, plays-once look at the loop. No data, no screenshots — four
+ * A ~20 second, plays-once look at the loop. No data, no screenshots, four
  * abstract beats. Reduced motion gets the same four beats, all at once.
  */
 export function FlowPreview({ onSkip }: { onSkip?: () => void }) {
@@ -102,7 +102,7 @@ export function FlowPreview({ onSkip }: { onSkip?: () => void }) {
           <ul className="space-y-1">
             {STAGES.map((item) => (
               <li key={item.label} className="text-sm text-muted-foreground">
-                <span className="text-foreground">{item.label}</span> — {item.body}
+                <span className="text-foreground">{item.label}</span>, {item.body}
               </li>
             ))}
           </ul>

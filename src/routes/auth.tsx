@@ -29,12 +29,12 @@ export const Route = createFileRoute("/auth")({
   },
   head: () => ({
     meta: [
-      { title: "Sign in — Lasso by Charlotte Labs" },
+      { title: "Sign in | Lasso by Charlotte Labs" },
       {
         name: "description",
         content: "Sign in to Lasso, the coaching platform for consultancies.",
       },
-      { property: "og:title", content: "Sign in — Lasso" },
+      { property: "og:title", content: "Sign in | Lasso" },
       {
         property: "og:description",
         content: "Sign in to Lasso, the coaching platform for consultancies.",

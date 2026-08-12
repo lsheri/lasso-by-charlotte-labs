@@ -8,9 +8,9 @@ export const Route = createFileRoute("/no-access")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "No workspace access — Lasso" },
+      { title: "No workspace access | Lasso" },
       { name: "description", content: "Your Lasso workspace access has been turned off." },
-      { property: "og:title", content: "No workspace access — Lasso" },
+      { property: "og:title", content: "No workspace access | Lasso" },
       {
         property: "og:description",
         content: "Your Lasso workspace access has been turned off.",

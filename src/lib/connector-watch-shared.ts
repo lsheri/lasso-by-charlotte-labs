@@ -1,6 +1,6 @@
 import type { BrowsableToolkit } from "@/lib/connector-toolkits";
 
-/** connector_accounts.watch_config — a consent-safe list of watched folders. */
+/** connector_accounts.watch_config, a consent-safe list of watched folders. */
 export type WatchFolder = {
   id: string;
   name: string;
@@ -24,7 +24,7 @@ export type WatchSuggestion = {
   new_ids: string[];
 };
 
-/** 1-2 · 3-9 · 10+ — the only shape of a count that leaves the browser. */
+/** 1-2 · 3-9 · 10+, the only shape of a count that leaves the browser. */
 export function suggestionBucket(n: number): string {
   if (n <= 2) return "1-2";
   if (n <= 9) return "3-9";

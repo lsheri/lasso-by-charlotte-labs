@@ -43,7 +43,7 @@ export function useMappingSuggestions() {
         name: string;
         engagements: { code: string } | null;
       }[]) {
-        out[row.id] = `${row.engagements?.code ?? "—"} · ${row.name}`;
+        out[row.id] = `${row.engagements?.code ?? "Not set"} · ${row.name}`;
       }
       return out;
     },

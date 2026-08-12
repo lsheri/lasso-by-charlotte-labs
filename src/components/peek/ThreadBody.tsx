@@ -19,7 +19,7 @@ function turnTime(ts: string | null): string | null {
   return Number.isNaN(date.getTime()) ? null : date.toLocaleString();
 }
 
-/** The conversation itself — shared by the peek panel and the standalone viewer. */
+/** The conversation itself, shared by the peek panel and the standalone viewer. */
 export function ThreadBody({ item, enabled = true }: { item: WorkItemRow; enabled?: boolean }) {
   const { data: turns, error } = useQuery({
     queryKey: ["turns", item.id],

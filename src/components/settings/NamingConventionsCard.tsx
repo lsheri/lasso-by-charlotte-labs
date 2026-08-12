@@ -55,7 +55,7 @@ export function NamingConventionsCard() {
       <h2 className="micro-label">Naming conventions</h2>
       <div className="mt-3 space-y-3 rounded-[var(--radius)] border border-border bg-card px-4 py-4 shadow-card">
         <p className="text-sm text-muted-foreground">
-          Teach Lasso your team&apos;s labels — engagement codes, client shorthand, folder patterns.
+          Teach Lasso your team&apos;s labels, engagement codes, client shorthand, folder patterns.
           Suggestions get sharper. e.g. &quot;EMP-COAL = Employer Coalition engagement. Client
           folders look like /Clients/&lt;code&gt;/…&quot;
         </p>
