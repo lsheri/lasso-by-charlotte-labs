@@ -152,7 +152,11 @@ export async function browseDriveTranscripts(
   return { items, nextPageToken: null, unsupported: null };
 }
 
-/** Imports only the ids the user ticked; already-imported ids are skipped. */
+/**
+ * Imports only the ids the user ticked. A file that is already in Work keeps
+ * its work item: unchanged content is left alone, changed content is recorded
+ * as a new version so links pointing at the item survive the re-import.
+ */
 export async function importConnectorFiles(
   supabase: Client,
   args: {
@@ -164,24 +168,32 @@ export async function importConnectorFiles(
     mimes?: Record<string, string> | null;
     folderName: string | null;
   },
-): Promise<{ imported: number; skipped: number }> {
-  const { importedToolkitIds, storeFile, captureEvents } =
-    await import("@/lib/connector-import.server");
-  const seen = await importedToolkitIds(supabase, args.profileId, args.toolkit);
+): Promise<{ imported: number; skipped: number; updated: number; unchanged: number }> {
+  const {
+    storeFile,
+    captureEvents,
+    existingByProviderId,
+    sha256Bytes,
+    recordNewVersion,
+  } = await import("@/lib/connector-import.server");
   const idKey = TOOLKIT_ID_KEY[args.toolkit];
+  const existing = await existingByProviderId(
+    supabase,
+    args.profileId,
+    TOOLKIT_SOURCE[args.toolkit],
+    idKey,
+  );
   const newIds: string[] = [];
+  const touchedIds: string[] = [];
   let imported = 0;
   let skipped = 0;
+  let updated = 0;
+  let unchanged = 0;
 
   const msAuth =
     args.toolkit === "googledrive" ? null : await auth(supabase, args.profileId, args.toolkit);
 
   for (const id of args.ids) {
-    if (seen.has(id)) {
-      skipped += 1;
-      continue;
-    }
-
     let file: {
       bytes: Uint8Array;
       mimeType: string;
@@ -202,6 +214,34 @@ export async function importConnectorFiles(
       continue;
     }
 
+    const hash = await sha256Bytes(file.bytes);
+    const prior = existing.get(id);
+
+    if (prior) {
+      if (prior.content_hash === hash) {
+        unchanged += 1;
+        continue;
+      }
+      const path = await storeFile(args.userId, file.name, file.bytes, file.mimeType);
+      await recordNewVersion(supabase, {
+        workItemId: prior.id,
+        previousRef: prior.content_ref,
+        previousHash: prior.content_hash,
+        previousAt: prior.captured_at,
+        newRef: path,
+        newHash: hash,
+        sourceEvent: "connector_reimport",
+      });
+      const update = await supabase
+        .from("work_items")
+        .update({ content_ref: path, content_hash: hash })
+        .eq("id", prior.id);
+      if (update.error) throw new Error(update.error.message);
+      touchedIds.push(prior.id);
+      updated += 1;
+      continue;
+    }
+
     const path = await storeFile(args.userId, file.name, file.bytes, file.mimeType);
     // A labelled guess: transcripts land as calls, and stay editable.
     const isTranscript = looksLikeTranscript(file.name, args.folderName);
@@ -214,6 +254,7 @@ export async function importConnectorFiles(
       title: file.name,
       visibility: "unmapped",
       content_ref: path,
+      content_hash: hash,
       content_fidelity: isTranscript ? "transcribed" : "verbatim",
       ts_precision: "capture",
       source_meta: { filename: file.name, mime_type: file.mimeType },
@@ -228,12 +269,19 @@ export async function importConnectorFiles(
       .maybeSingle();
     if (insert.error) throw new Error(insert.error.message);
     if (insert.data?.id) newIds.push(insert.data.id);
-    seen.add(id);
+    if (insert.data?.id) {
+      existing.set(id, {
+        id: insert.data.id,
+        content_ref: path,
+        content_hash: hash,
+        captured_at: new Date().toISOString(),
+      });
+    }
     imported += 1;
   }
 
   const { ensureExtracts } = await import("@/lib/extract.server");
-  await ensureExtracts(newIds);
+  await ensureExtracts([...newIds, ...touchedIds]);
 
   await captureEvents(supabase, {
     orgId: args.orgId,
@@ -242,5 +290,5 @@ export async function importConnectorFiles(
     source: TOOLKIT_VENDOR[args.toolkit],
     imported,
   });
-  return { imported, skipped };
+  return { imported, skipped, updated, unchanged };
 }
