@@ -3,6 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { COACH_CHAT_SYSTEM_PROMPT, validateCoachChat } from "@/lib/coach-chat-shared";
 import { resolveProfile } from "@/lib/profile-resolve";
+import type { ContextSource } from "@/lib/reflect-shared";
 
 export const askCoachChat = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -16,6 +17,7 @@ export const askCoachChat = createServerFn({ method: "POST" })
       truncated: boolean;
       fullCount: number;
       summaryCount: number;
+      sources: ContextSource[];
     }> => {
     const { supabase, userId } = context;
 
@@ -28,7 +30,7 @@ export const askCoachChat = createServerFn({ method: "POST" })
       supabase
         .from("tasks")
         .select(
-          "id, name, goal, when_label, work_item_tasks(step_no, step_confirmed, work_items(id, title, type, source, content_fidelity, work_date, created_at_source, captured_at))",
+          "id, name, goal, when_label, work_item_tasks(step_no, step_confirmed, work_items(id, title, type, source, source_vendor, content_fidelity, work_date, created_at_source, captured_at))",
         )
         .eq("engagement_id", data.engagement_id)
         .eq("owner_id", data.subject_id)
@@ -64,6 +66,7 @@ export const askCoachChat = createServerFn({ method: "POST" })
         truncated: false,
         fullCount: 0,
         summaryCount: 0,
+        sources: [],
       };
     }
 
@@ -83,6 +86,18 @@ export const askCoachChat = createServerFn({ method: "POST" })
     const extractFor = new Map(
       (extractRows ?? []).map((row) => [row.work_item_id as string, row]),
     );
+
+    // The coach's view of a vendor chip obeys the org setting, exactly as the
+    // deliverable view does. The owner is never affected by it.
+    const { data: subjectOrg } = await supabase
+      .from("profiles")
+      .select("org_id, orgs(vendor_display)")
+      .eq("id", data.subject_id)
+      .maybeSingle();
+    const vendorVisible =
+      profile.id === data.subject_id ||
+      (subjectOrg as unknown as { orgs?: { vendor_display?: string } } | null)?.orgs
+        ?.vendor_display !== "vendor_neutral";
 
     const record = {
       colleague: subjectRes.data?.display_name ?? "your colleague",
@@ -178,10 +193,31 @@ export const askCoachChat = createServerFn({ method: "POST" })
       dims: { role: profile.role },
     });
 
+    const seen = new Set<string>();
+    const sources: ContextSource[] = [];
+    for (const task of tasks) {
+      for (const link of task.work_item_tasks ?? []) {
+        const item = link.work_items;
+        const id = typeof item?.["id"] === "string" ? (item["id"] as string) : null;
+        if (!id || seen.has(id)) continue;
+        seen.add(id);
+        sources.push({
+          id,
+          title: String(item?.["title"] ?? "Untitled"),
+          type: String(item?.["type"] ?? "document"),
+          source_vendor: vendorVisible
+            ? ((item?.["source_vendor"] as string | null) ?? null)
+            : null,
+          depth: "extract",
+        });
+      }
+    }
+
     return {
       answer,
       truncated: itemIds.length > 0,
       fullCount: 0,
       summaryCount: itemIds.length,
+      sources,
     };
   });
