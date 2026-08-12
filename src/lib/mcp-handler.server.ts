@@ -116,6 +116,11 @@ const TOOLS = [
           description:
             "Stable ID for the source thread; all pushes for the same conversation MUST reuse it.",
         },
+        source_url: {
+          type: "string",
+          description:
+            "The conversation's URL in the source app, if you can see it. This is the most stable way to recognise the same conversation later.",
+        },
         messages: {
           type: "array",
           maxItems: MAX_TURNS,
