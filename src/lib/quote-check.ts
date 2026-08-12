@@ -2,6 +2,12 @@
 
 const MIN_QUOTE_CHARS = 40;
 
+/**
+ * Prevention, said the same way in every prompt that can quote. A quotation is
+ * a promise of exact wording; anything restated is written as plain prose.
+ */
+export const QUOTE_RULE = `ABSOLUTE RULE ON QUOTATION: quotation marks are used ONLY around text copied character for character from the work supplied to you. Anything you restate, condense, summarise or characterise is written as plain prose with NO quotation marks of any kind. Every quotation must name the item it came from. If you are not certain of the exact wording, do not use quotation marks.`;
+
 function normalise(value: string): string {
   return value
     .replace(/[\u2018\u2019\u201B\u2032]/g, "'")
@@ -45,13 +51,6 @@ export function quoteBucket(count: number): "0" | "1" | "2+" {
   if (count <= 0) return "0";
   if (count === 1) return "1";
   return "2+";
-}
-
-/** Names what was not found, rather than warning in general. */
-export function unmatchedQuoteNote(count: number): string {
-  const subject = count === 1 ? "One quote" : `${count} quotes`;
-  const verb = count === 1 ? "could not be found" : "could not be found";
-  return `${subject} in this answer ${verb} in your stored work. Open What I read for this answer to check.`;
 }
 
 export const CUT_OFF_NOTE =

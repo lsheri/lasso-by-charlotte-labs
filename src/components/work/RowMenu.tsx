@@ -38,7 +38,7 @@ export function RowMenu({
         </DropdownMenuItem>
         {onFluency ? (
           <DropdownMenuItem onSelect={() => onFluency(item)}>
-            Review this with the AI Fluency lens
+            Analyse this conversation
           </DropdownMenuItem>
         ) : null}
       </DropdownMenuContent>

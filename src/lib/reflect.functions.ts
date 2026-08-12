@@ -2,13 +2,14 @@ import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { ContextSource } from "@/lib/reflect-shared";
+import type { AnalysisPresetId } from "@/lib/analysis-presets";
 
 type SendInput = {
   session_id: string;
   message: string;
   profile_id?: string | undefined;
   surface?: "reflect" | "ask_lasso" | undefined;
-  preset?: "ai_fluency_4d" | undefined;
+  preset?: AnalysisPresetId | undefined;
 };
 
 /** Bucketed so an exact count never leaves as a dimension. */
@@ -37,7 +38,6 @@ export const sendReflectMessage = createServerFn({ method: "POST" })
       summaryCount: number;
       messageId: number | null;
       sources: ContextSource[];
-      unmatchedQuotes: number;
       cutOff: boolean;
     }> => {
       const { supabase, userId } = context;
@@ -58,10 +58,12 @@ export const sendReflectMessage = createServerFn({ method: "POST" })
         throw new Response("Forbidden", { status: 403 });
       }
 
-      const { parseScope, titleFromMessage, REFLECT_SYSTEM_PROMPT, FLUENCY_SYSTEM_PROMPT } =
-        await import("./reflect-shared");
+      const { parseScope, titleFromMessage, REFLECT_SYSTEM_PROMPT } = await import(
+        "./reflect-shared"
+      );
+      const { analysisPreset } = await import("./analysis-presets");
       const scope = parseScope(session.context_scope);
-      const preset = data.preset === "ai_fluency_4d" ? "ai_fluency_4d" : null;
+      const preset = data.preset ? analysisPreset(data.preset) : null;
 
       const { data: history } = await supabase
         .from("chat_messages")
@@ -75,64 +77,32 @@ export const sendReflectMessage = createServerFn({ method: "POST" })
 
       const surface = data.surface === "ask_lasso" ? "ask_lasso" : "reflect";
 
-      const apiKey = process.env["LOVABLE_API_KEY"];
-      if (!apiKey) throw new Error("Missing LOVABLE_API_KEY");
-
+      const { chatComplete } = await import("./ai-gateway.server");
       // gemini-2.5-pro is deliberate: the whole record can be very large.
-      let response: Response;
-      try {
-        response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        signal: AbortSignal.timeout(ANSWER_TIMEOUT_MS),
-        headers: {
-          "Content-Type": "application/json",
-          "Lovable-API-Key": apiKey,
-          "X-Lovable-AIG-SDK": "fetch",
+      const conversation = [
+        { role: "system" as const, content: REFLECT_SYSTEM_PROMPT },
+        ...(preset ? [{ role: "system" as const, content: preset.systemPrompt }] : []),
+        {
+          role: "system" as const,
+          content: `THE PERSON'S RECORDED WORK (scope: ${scope.mode}):\n\n${assembled.context}`,
         },
-        body: JSON.stringify({
-          model: "google/gemini-2.5-pro",
-          max_tokens: 8000,
-          messages: [
-            { role: "system", content: REFLECT_SYSTEM_PROMPT },
-            ...(preset ? [{ role: "system", content: FLUENCY_SYSTEM_PROMPT }] : []),
-            {
-              role: "system",
-              content: `THE PERSON'S RECORDED WORK (scope: ${scope.mode}):\n\n${assembled.context}`,
-            },
-            ...((history ?? []) as { role: string; content: string }[]).map((m) => ({
-              role: m.role === "assistant" ? "assistant" : "user",
-              content: m.content,
-            })),
-            { role: "user", content: message },
-          ],
-        }),
-        });
-      } catch (e) {
-        if ((e as Error).name === "TimeoutError" || (e as Error).name === "AbortError") {
-          throw new Error("That took too long to answer. Try a narrower scope.");
-        }
-        throw e;
-      }
-
-      if (!response.ok) {
-        const body = await response.text();
-        if (response.status === 429) throw new Error("Rate limited. Try again in a moment.");
-        if (response.status === 402) throw new Error("AI credits exhausted for this workspace.");
-        throw new Error(`AI request failed (${response.status}): ${body.slice(0, 300)}`);
-      }
-
-      const payload = (await response.json()) as {
-        choices?: { message?: { content?: string }; finish_reason?: string }[];
-      };
-      const rawFinish = payload.choices?.[0]?.finish_reason ?? "stop";
-      const finishReason = rawFinish === "stop" ? "stop" : rawFinish === "length" ? "length" : "other";
-      const cutOff = finishReason === "length";
+        ...((history ?? []) as { role: string; content: string }[]).map((m) => ({
+          role: (m.role === "assistant" ? "assistant" : "user") as "assistant" | "user",
+          content: m.content,
+        })),
+        { role: "user" as const, content: message },
+      ];
+      const completion = await chatComplete(conversation, { timeoutMs: ANSWER_TIMEOUT_MS });
+      const cutOff = completion.finishReason === "length";
       const { CUT_OFF_NOTE } = await import("./quote-check");
-      const base =
-        payload.choices?.[0]?.message?.content?.trim() ??
-        "I couldn't draw an answer out of that. Try asking a different way.";
+      const raw =
+        completion.text || "I couldn't draw an answer out of that. Try asking a different way.";
+
+      // Prevent, verify, repair, then refuse. The reader never sees a warning.
+      const { guardQuotes } = await import("./quote-guard.server");
+      const guarded = await guardQuotes(raw, assembled.context, cutOff, conversation);
       // Never present a cut-off answer as if it were complete, and never discard it.
-      const answer = cutOff ? `${base}\n\n${CUT_OFF_NOTE}` : base;
+      const answer = cutOff ? `${guarded.answer}\n\n${CUT_OFF_NOTE}` : guarded.answer;
 
       const { data: written, error: insertError } = await supabase
         .from("chat_messages")
@@ -156,8 +126,7 @@ export const sendReflectMessage = createServerFn({ method: "POST" })
         messageId: answerId,
       });
 
-      const { unmatchedQuotes, quoteBucket } = await import("./quote-check");
-      const unmatched = unmatchedQuotes(base, assembled.context, cutOff);
+      const { quoteBucket } = await import("./quote-check");
       const scopeLabelForLog =
         scope.mode === "whole"
           ? "whole record"
@@ -191,9 +160,11 @@ export const sendReflectMessage = createServerFn({ method: "POST" })
           scope: scope.mode,
           truncated: assembled.truncated,
           tier2_items: tierBucket(assembled.tier2Count),
-          unmatched_quotes: quoteBucket(unmatched.length),
-          finish_reason: finishReason,
-          ...(preset ? { preset } : {}),
+          unmatched_quotes: quoteBucket(guarded.unmatchedBefore),
+          quote_repairs: quoteBucket(guarded.repairs),
+          suppressed_quotes: quoteBucket(guarded.suppressed),
+          finish_reason: completion.finishReason,
+          ...(preset ? { preset: preset.id } : {}),
         },
       });
 
@@ -208,7 +179,6 @@ export const sendReflectMessage = createServerFn({ method: "POST" })
         ),
         messageId: answerId,
         sources: assembled.sources,
-        unmatchedQuotes: unmatched.length,
         cutOff,
       };
     },

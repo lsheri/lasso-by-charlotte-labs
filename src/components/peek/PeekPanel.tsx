@@ -208,7 +208,7 @@ export function PeekPanel({
           <DraftDecisionsButton workItemId={active.id} />
         ) : null}
         {canEdit && active.type === "ai_thread" && onFluency ? (
-          <FooterAction onClick={() => onFluency(active)}>AI Fluency lens</FooterAction>
+          <FooterAction onClick={() => onFluency(active)}>Analyse this conversation</FooterAction>
         ) : null}
         <div className="ml-auto">
           {link ? (

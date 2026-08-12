@@ -1,0 +1,264 @@
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { useEffect, useRef, useState } from "react";
+
+import { ThinkingIndicator, WorkingLabel } from "@/components/common/Working";
+import { Suggested, SuggestDot } from "@/components/common/Suggested";
+import { MarkdownMessage } from "@/components/markdown/MarkdownMessage";
+import { SlideOver } from "@/components/peek/SlideOver";
+import { AnalysisInfoPanel } from "@/components/reflect/AnalysisInfoPanel";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { supabase } from "@/integrations/supabase/client";
+import { presetsForScope, type AnalysisPreset, type AnalysisPresetId } from "@/lib/analysis-presets";
+import { startAnalysis } from "@/lib/analysis.functions";
+import { sendReflectMessage } from "@/lib/reflect.functions";
+import { logEvent } from "@/lib/telemetry";
+
+type MessageRow = { id: number; role: string; content: string };
+
+/**
+ * Analyses over one conversation. The buttons are the product: each one opens
+ * a new scoped Ask Lasso session and runs its preset. Owner only, never scored.
+ */
+export function AnalysisLens({
+  open,
+  onOpenChange,
+  workItemId,
+  workItemTitle,
+  profileId,
+  orgId,
+  initialPreset,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  workItemId: string;
+  workItemTitle: string;
+  profileId: string;
+  orgId: string;
+  initialPreset?: AnalysisPresetId;
+}) {
+  const queryClient = useQueryClient();
+  const run = useServerFn(startAnalysis);
+  const send = useServerFn(sendReflectMessage);
+  const presets = presetsForScope("thread", false);
+  const [active, setActive] = useState<AnalysisPreset | null>(
+    presets.find((p) => p.id === initialPreset) ?? null,
+  );
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [suppressed, setSuppressed] = useState(0);
+  const [draft, setDraft] = useState("");
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const started = useRef<string | null>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  const { data: turnCount } = useQuery({
+    queryKey: ["thread-turn-count", workItemId],
+    queryFn: async (): Promise<number> => {
+      const { count } = await supabase
+        .from("turns")
+        .select("id", { count: "exact", head: true })
+        .eq("work_item_id", workItemId);
+      return count ?? 0;
+    },
+  });
+
+  const { data: messages } = useQuery({
+    queryKey: ["reflect-messages", sessionId],
+    enabled: Boolean(sessionId),
+    queryFn: async (): Promise<MessageRow[]> => {
+      const { data, error: e } = await supabase
+        .from("chat_messages")
+        .select("id, role, content")
+        .eq("session_id", sessionId as string)
+        .order("created_at", { ascending: true });
+      if (e) throw e;
+      return (data ?? []) as MessageRow[];
+    },
+  });
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages?.length, pending]);
+
+  async function runPreset(preset: AnalysisPreset) {
+    if (pending) return;
+    started.current = preset.id;
+    setActive(preset);
+    setSessionId(null);
+    setSuppressed(0);
+    setPending(true);
+    setError(null);
+    try {
+      const result = await run({
+        data: { preset_id: preset.id, work_item_id: workItemId, profile_id: profileId },
+      });
+      setSessionId(result.session_id);
+      setSuppressed(result.suppressed);
+      logEvent("reflect.session_created", orgId, { preset: preset.id });
+      await queryClient.invalidateQueries({ queryKey: ["reflect-sessions"] });
+      await queryClient.invalidateQueries({ queryKey: ["reflect-messages", result.session_id] });
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setPending(false);
+    }
+  }
+
+  // One run per opening when a preset was chosen from the row it opened from.
+  useEffect(() => {
+    if (!open || started.current || !initialPreset) return;
+    const preset = presets.find((p) => p.id === initialPreset);
+    if (preset) void runPreset(preset);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
+  async function submit() {
+    const message = draft.trim();
+    if (!message || !sessionId || pending) return;
+    setDraft("");
+    setPending(true);
+    setError(null);
+    try {
+      await send({
+        data: {
+          session_id: sessionId,
+          message,
+          profile_id: profileId,
+          surface: "ask_lasso",
+          ...(active ? { preset: active.id } : {}),
+        },
+      });
+      await queryClient.invalidateQueries({ queryKey: ["reflect-messages", sessionId] });
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setPending(false);
+    }
+  }
+
+  const readsDetail = `this conversation only, ${turnCount ?? 0} message${
+    turnCount === 1 ? "" : "s"
+  }, read in full`;
+
+  return (
+    <SlideOver
+      open={open}
+      onOpenChange={onOpenChange}
+      title={active ? active.label : "Analyse this conversation"}
+      description="Observations over one of your own conversations"
+    >
+      <header className="shrink-0 border-b border-border px-6 pb-4 pt-6">
+        <p className="micro-label">{active ? active.label : "Analyse this conversation"}</p>
+        <h2 className="page-title mt-1 break-words text-[19px] leading-snug">{workItemTitle}</h2>
+        <p className="mt-2 text-xs text-muted-foreground">
+          Private to you. Observations only, never a score.
+        </p>
+      </header>
+
+      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-6 py-5">
+        {active ? <p className="text-sm text-muted-foreground">{active.description}</p> : null}
+        {!active && !pending ? (
+          <p className="text-sm text-muted-foreground">
+            Pick an analysis below. Each one opens its own session over this conversation.
+          </p>
+        ) : null}
+
+        {(messages ?? []).map((message, index) =>
+          message.role === "user" && index === 0 ? null : (
+            <div key={message.id}>
+              <p className="micro-label">{message.role === "user" ? "You" : "Lasso"}</p>
+              {message.role === "user" ? (
+                <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-foreground">
+                  {message.content}
+                </p>
+              ) : (
+                <MarkdownMessage content={message.content} />
+              )}
+            </div>
+          ),
+        )}
+
+        {pending ? (
+          <ThinkingIndicator
+            stages={[
+              "Reading the conversation…",
+              "Matching it against what we look for…",
+              "Checking every quote against your work…",
+            ]}
+          />
+        ) : null}
+
+        {suppressed > 0 ? (
+          <p className="text-xs text-muted-foreground">
+            {suppressed === 1
+              ? "One finding was left out because its exact wording could not be confirmed."
+              : `${suppressed} findings were left out because their exact wording could not be confirmed.`}
+          </p>
+        ) : null}
+
+        {active && (messages ?? []).some((m) => m.role === "assistant") ? (
+          <div className="border-t border-border pt-4">
+            <AnalysisInfoPanel preset={active} readsDetail={readsDetail} />
+            {active.attribution ? (
+              <p className="mt-3 text-xs text-muted-foreground">{active.attribution}</p>
+            ) : null}
+          </div>
+        ) : null}
+        <div ref={bottomRef} />
+      </div>
+
+      {error ? <p className="px-6 pb-2 text-sm text-destructive">{error}</p> : null}
+
+      <footer className="shrink-0 border-t border-border bg-card px-6 py-4">
+        <Suggested className="mb-3">
+          <div className="flex items-center gap-2">
+            <SuggestDot />
+            <p className="text-xs text-ember-deep">Analyses Lasso can run on this conversation</p>
+          </div>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {presets.map((preset) => (
+              <div key={preset.id} className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  disabled={pending}
+                  onClick={() => void runPreset(preset)}
+                  className={`rounded-full px-3 py-1 text-xs font-medium transition-opacity hover:opacity-85 disabled:opacity-50 ${
+                    active?.id === preset.id
+                      ? "bg-ember text-ember-foreground"
+                      : "border border-border bg-card text-foreground"
+                  }`}
+                >
+                  {preset.label}
+                </button>
+                <AnalysisInfoPanel preset={preset} readsDetail={readsDetail} />
+              </div>
+            ))}
+          </div>
+        </Suggested>
+
+        <div className="flex items-end gap-2">
+          <Textarea
+            value={draft}
+            onChange={(event) => setDraft(event.target.value)}
+            placeholder="Ask a follow up about this conversation"
+            rows={2}
+            className="resize-none"
+            disabled={!sessionId}
+          />
+          <Button onClick={() => void submit()} disabled={pending || !draft.trim() || !sessionId}>
+            {pending ? <WorkingLabel>Working</WorkingLabel> : "Send"}
+          </Button>
+        </div>
+        <Link
+          to="/reflect"
+          className="mt-3 inline-block text-xs font-medium text-accent-deep transition-opacity hover:opacity-70"
+        >
+          Open in Reflect →
+        </Link>
+      </footer>
+    </SlideOver>
+  );
+}

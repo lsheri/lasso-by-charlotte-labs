@@ -255,10 +255,12 @@ export async function getItemText(supabase: Db, item: TextItem): Promise<ItemTex
   if (format.kind === "thread") {
     const { data } = await supabase
       .from("turns")
-      .select("role, content")
+      .select("turn_no, role, content")
       .eq("work_item_id", item.id)
       .order("turn_no", { ascending: true });
-    const text = (data ?? []).map((t) => `${t.role.toUpperCase()}: ${t.content}`).join("\n\n");
+    const text = (data ?? [])
+      .map((t) => `TURN ${t.turn_no} ${t.role.toUpperCase()}: ${t.content}`)
+      .join("\n\n");
     return text.trim() ? { text, status: "ok" } : { text: null, status: "empty" };
   }
 

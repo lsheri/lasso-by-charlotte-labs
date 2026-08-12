@@ -52,7 +52,6 @@ export function ReflectDock({
   } | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  const [unmatched, setUnmatched] = useState<Record<number, number>>({});
   const { data: messages } = useQuery({
     queryKey: ["reflect-messages", sessionId],
     enabled: Boolean(sessionId),
@@ -115,10 +114,6 @@ export function ReflectDock({
         fullCount: result.fullCount,
         summaryCount: result.summaryCount,
       });
-      if (result.messageId !== null) {
-        const id = Number(result.messageId);
-        setUnmatched((prev) => ({ ...prev, [id]: result.unmatchedQuotes }));
-      }
       await queryClient.invalidateQueries({ queryKey: ["reflect-messages", id] });
       await queryClient.invalidateQueries({ queryKey: ["reflect-sessions"] });
     } catch (e) {
@@ -163,7 +158,6 @@ export function ReflectDock({
                 <MarkdownMessage content={message.content} />
                 <AnswerSources
                   sources={sourcesByMessage?.[Number(message.id)] ?? []}
-                  unmatchedQuotes={unmatched[Number(message.id)] ?? 0}
                 />
               </>
             )}

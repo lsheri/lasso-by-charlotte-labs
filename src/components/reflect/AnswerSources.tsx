@@ -4,7 +4,6 @@ import { useState } from "react";
 import { ThreadViewerById } from "@/components/work/ThreadViewerById";
 import { vendorLabel } from "@/lib/conversation-shared";
 import { SOURCE_GROUPS, type ContextSource } from "@/lib/reflect-shared";
-import { unmatchedQuoteNote } from "@/lib/quote-check";
 import { hueStyles, vendorHue, workIdentity } from "@/lib/work-identity";
 import type { WorkType } from "@/lib/work-types";
 
@@ -57,13 +56,7 @@ function SourceRow({ source, onOpen }: { source: ContextSource; onOpen: () => vo
  * an answer was built from, and how deeply each one was read. Collapsed by
  * default, and absent entirely when nothing was recorded.
  */
-export function AnswerSources({
-  sources,
-  unmatchedQuotes = 0,
-}: {
-  sources: ContextSource[];
-  unmatchedQuotes?: number;
-}) {
+export function AnswerSources({ sources }: { sources: ContextSource[] }) {
   const [open, setOpen] = useState(false);
   if (!sources || sources.length === 0) return null;
 
@@ -84,10 +77,6 @@ export function AnswerSources({
       </button>
 
       {open ? <SourceList sources={sources} /> : null}
-
-      {unmatchedQuotes > 0 ? (
-        <p className="mt-2 text-xs text-muted-foreground">{unmatchedQuoteNote(unmatchedQuotes)}</p>
-      ) : null}
     </div>
   );
 }
