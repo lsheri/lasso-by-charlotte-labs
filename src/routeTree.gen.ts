@@ -29,7 +29,6 @@ import { Route as AuthenticatedCoachingIndexRouteImport } from './routes/_authen
 import { Route as AuthenticatedEngagementsIdRouteImport } from './routes/_authenticated/engagements.$id'
 import { Route as ApiCoachChatStreamRouteImport } from './routes/api/coach-chat.stream'
 import { Route as ApiMcpTokenRouteImport } from './routes/api/mcp.$token'
-import { Route as ApiPublicExtractBatchRouteImport } from './routes/api/public/extract-batch'
 import { Route as ApiReflectStreamRouteImport } from './routes/api/reflect.stream'
 import { Route as AuthenticatedCoachingEngagementIdSubjectIdRouteImport } from './routes/_authenticated/coaching.$engagementId.$subjectId'
 
@@ -134,11 +133,6 @@ const ApiMcpTokenRoute = ApiMcpTokenRouteImport.update({
   path: '/api/mcp/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicExtractBatchRoute = ApiPublicExtractBatchRouteImport.update({
-  id: '/api/public/extract-batch',
-  path: '/api/public/extract-batch',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ApiReflectStreamRoute = ApiReflectStreamRouteImport.update({
   id: '/api/reflect/stream',
   path: '/api/reflect/stream',
@@ -170,7 +164,6 @@ export interface FileRoutesByFullPath {
   '/engagements/$id': typeof AuthenticatedEngagementsIdRoute
   '/api/coach-chat/stream': typeof ApiCoachChatStreamRoute
   '/api/mcp/$token': typeof ApiMcpTokenRoute
-  '/api/public/extract-batch': typeof ApiPublicExtractBatchRoute
   '/api/reflect/stream': typeof ApiReflectStreamRoute
   '/coaching/': typeof AuthenticatedCoachingIndexRoute
   '/coaching/$engagementId/$subjectId': typeof AuthenticatedCoachingEngagementIdSubjectIdRoute
@@ -194,7 +187,6 @@ export interface FileRoutesByTo {
   '/engagements/$id': typeof AuthenticatedEngagementsIdRoute
   '/api/coach-chat/stream': typeof ApiCoachChatStreamRoute
   '/api/mcp/$token': typeof ApiMcpTokenRoute
-  '/api/public/extract-batch': typeof ApiPublicExtractBatchRoute
   '/api/reflect/stream': typeof ApiReflectStreamRoute
   '/coaching': typeof AuthenticatedCoachingIndexRoute
   '/coaching/$engagementId/$subjectId': typeof AuthenticatedCoachingEngagementIdSubjectIdRoute
@@ -220,7 +212,6 @@ export interface FileRoutesById {
   '/_authenticated/engagements/$id': typeof AuthenticatedEngagementsIdRoute
   '/api/coach-chat/stream': typeof ApiCoachChatStreamRoute
   '/api/mcp/$token': typeof ApiMcpTokenRoute
-  '/api/public/extract-batch': typeof ApiPublicExtractBatchRoute
   '/api/reflect/stream': typeof ApiReflectStreamRoute
   '/_authenticated/coaching/': typeof AuthenticatedCoachingIndexRoute
   '/_authenticated/coaching/$engagementId/$subjectId': typeof AuthenticatedCoachingEngagementIdSubjectIdRoute
@@ -246,7 +237,6 @@ export interface FileRouteTypes {
     | '/engagements/$id'
     | '/api/coach-chat/stream'
     | '/api/mcp/$token'
-    | '/api/public/extract-batch'
     | '/api/reflect/stream'
     | '/coaching/'
     | '/coaching/$engagementId/$subjectId'
@@ -270,7 +260,6 @@ export interface FileRouteTypes {
     | '/engagements/$id'
     | '/api/coach-chat/stream'
     | '/api/mcp/$token'
-    | '/api/public/extract-batch'
     | '/api/reflect/stream'
     | '/coaching'
     | '/coaching/$engagementId/$subjectId'
@@ -295,7 +284,6 @@ export interface FileRouteTypes {
     | '/_authenticated/engagements/$id'
     | '/api/coach-chat/stream'
     | '/api/mcp/$token'
-    | '/api/public/extract-batch'
     | '/api/reflect/stream'
     | '/_authenticated/coaching/'
     | '/_authenticated/coaching/$engagementId/$subjectId'
@@ -312,7 +300,6 @@ export interface RootRouteChildren {
   WhyRoute: typeof WhyRoute
   ApiCoachChatStreamRoute: typeof ApiCoachChatStreamRoute
   ApiMcpTokenRoute: typeof ApiMcpTokenRoute
-  ApiPublicExtractBatchRoute: typeof ApiPublicExtractBatchRoute
   ApiReflectStreamRoute: typeof ApiReflectStreamRoute
 }
 
@@ -458,13 +445,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiMcpTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/extract-batch': {
-      id: '/api/public/extract-batch'
-      path: '/api/public/extract-batch'
-      fullPath: '/api/public/extract-batch'
-      preLoaderRoute: typeof ApiPublicExtractBatchRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/reflect/stream': {
       id: '/api/reflect/stream'
       path: '/api/reflect/stream'
@@ -525,7 +505,6 @@ const rootRouteChildren: RootRouteChildren = {
   WhyRoute: WhyRoute,
   ApiCoachChatStreamRoute: ApiCoachChatStreamRoute,
   ApiMcpTokenRoute: ApiMcpTokenRoute,
-  ApiPublicExtractBatchRoute: ApiPublicExtractBatchRoute,
   ApiReflectStreamRoute: ApiReflectStreamRoute,
 }
 export const routeTree = rootRouteImport

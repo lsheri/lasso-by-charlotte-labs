@@ -2,7 +2,16 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/integrations/supabase/types";
 
-import { reportAiHealth, type AiErrorClass } from "./ai-health.server";
+import { logHealth } from "./health.server";
+
+export type AiErrorClass =
+  | "rate_limit"
+  | "timeout"
+  | "server_error"
+  | "context_length"
+  | "refusal"
+  | "bad_request"
+  | "model_error";
 
 /**
  * The single place any model is called. Every surface goes through here so
@@ -84,7 +93,7 @@ export type ChatOptions = {
   meta?: AiMeta;
 };
 
-const SLOW_CALL_MS = 30_000;
+const SLOW_CALL_MS = 20_000;
 const DEFAULT_TIMEOUT_MS = 180_000;
 
 export class AiError extends Error {
@@ -154,36 +163,32 @@ function apiKey(): string {
   return key;
 }
 
-async function afterCall(result: ChatResult, meta: AiMeta | undefined): Promise<void> {
+function afterCall(result: ChatResult, meta: AiMeta | undefined): void {
   const surface = meta?.surface ?? "unknown";
   if (result.durationMs > SLOW_CALL_MS) {
-    await reportAiHealth({
-      errorClass: "slow_call",
+    void logHealth({
+      kind: "slow",
       surface,
       orgId: meta?.orgId,
-      orgName: meta?.orgName,
-      actorHash: meta?.actorHash,
       model: result.model,
-      durationMs: result.durationMs,
+      latencyMs: result.durationMs,
       tokensIn: result.tokensIn,
       tokensOut: result.tokensOut,
-      cachedIn: result.cachedIn,
-      costUsd: result.costUsd,
+      detail: "wall clock over slow threshold",
+      meta: { slow_threshold_ms: SLOW_CALL_MS, cached_in: result.cachedIn },
     });
   }
   if (result.finishReason === "length") {
-    await reportAiHealth({
-      errorClass: "finish_length",
+    void logHealth({
+      kind: "truncated",
       surface,
       orgId: meta?.orgId,
-      orgName: meta?.orgName,
-      actorHash: meta?.actorHash,
       model: result.model,
-      durationMs: result.durationMs,
+      latencyMs: result.durationMs,
       tokensIn: result.tokensIn,
       tokensOut: result.tokensOut,
-      cachedIn: result.cachedIn,
-      costUsd: result.costUsd,
+      detail: "finish_reason: length",
+      meta: { finish_reason: "length" },
     });
   }
 }
@@ -194,16 +199,16 @@ async function failed(
   startedAt: number,
   meta: AiMeta | undefined,
   note?: string,
+  status?: number,
 ): Promise<never> {
-  await reportAiHealth({
-    errorClass,
+  void logHealth({
+    kind: errorClass === "rate_limit" ? "rate_limit" : "error",
     surface: meta?.surface ?? "unknown",
     orgId: meta?.orgId,
-    orgName: meta?.orgName,
-    actorHash: meta?.actorHash,
     model,
-    durationMs: Date.now() - startedAt,
-    note: note ?? null,
+    latencyMs: Date.now() - startedAt,
+    detail: note ?? errorClass,
+    meta: { error_class: errorClass, ...(status != null ? { http_status: status } : {}) },
   });
   throw new AiError(friendly(errorClass), errorClass);
 }
