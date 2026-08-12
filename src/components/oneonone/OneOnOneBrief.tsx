@@ -127,7 +127,13 @@ export function OneOnOneBrief({
 
       <footer className="flex shrink-0 flex-wrap items-center gap-3 border-t border-border bg-card px-6 py-4">
         <Button type="button" disabled={busy} onClick={() => void generate()}>
-          {busy ? "Writing your brief…" : markdown ? "Regenerate" : "Generate brief"}
+          {busy ? (
+            <WorkingLabel>Writing your brief</WorkingLabel>
+          ) : markdown ? (
+            "Regenerate"
+          ) : (
+            "Generate brief"
+          )}
         </Button>
         {markdown ? (
           <>

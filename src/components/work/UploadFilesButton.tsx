@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { WorkingLabel } from "@/components/common/Working";
 import { useProfile } from "@/hooks/use-profile";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureExtractsFn } from "@/lib/extract.functions";
@@ -15,12 +16,14 @@ export function UploadFilesButton({ variant = "outline" }: { variant?: "default"
   const queryClient = useQueryClient();
   const inputRef = useRef<HTMLInputElement>(null);
   const [pending, setPending] = useState(false);
+  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   async function handleFiles(files: FileList | null) {
     if (!files || files.length === 0 || !profile) return;
     setPending(true);
     setError(null);
+    setProgress({ done: 0, total: files.length });
 
     const { data: userData } = await supabase.auth.getUser();
     const userId = userData.user?.id;
@@ -31,7 +34,9 @@ export function UploadFilesButton({ variant = "outline" }: { variant?: "default"
     }
 
     const capturedIds: string[] = [];
-    for (const file of Array.from(files)) {
+    const all = Array.from(files);
+    for (const [index, file] of all.entries()) {
+      setProgress({ done: index, total: all.length });
       const path = `${userId}/${crypto.randomUUID()}-${file.name}`;
       const { error: uploadError } = await supabase.storage.from("work-files").upload(path, file);
       if (uploadError) {
@@ -73,6 +78,7 @@ export function UploadFilesButton({ variant = "outline" }: { variant?: "default"
 
     await queryClient.invalidateQueries({ queryKey: ["work-items"] });
     setPending(false);
+    setProgress(null);
     if (inputRef.current) inputRef.current.value = "";
   }
 
@@ -91,7 +97,15 @@ export function UploadFilesButton({ variant = "outline" }: { variant?: "default"
         disabled={pending}
         onClick={() => inputRef.current?.click()}
       >
-        {pending ? "Uploading…" : "Upload files"}
+        {pending ? (
+          <WorkingLabel>
+            {progress && progress.total > 1
+              ? `Uploading ${progress.done + 1} of ${progress.total}`
+              : "Uploading"}
+          </WorkingLabel>
+        ) : (
+          "Upload files"
+        )}
       </Button>
       {error ? <p className="text-xs text-destructive">{error}</p> : null}
     </div>

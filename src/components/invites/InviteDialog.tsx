@@ -221,7 +221,7 @@ export function InviteDialog({
           </p>
 
           <Button type="submit" disabled={pending}>
-            {pending ? "Creating…" : "Create invite link"}
+            {pending ? <WorkingLabel>Creating</WorkingLabel> : "Create invite link"}
           </Button>
         </form>
 
