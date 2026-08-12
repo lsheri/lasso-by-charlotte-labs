@@ -79,6 +79,27 @@ export const browseConnectorItems = createServerFn({ method: "POST" })
   });
 
 /** Import exactly what the user ticked — never anything else. */
+export const browseTranscriptCandidates = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(validateBrowse)
+  .handler(async ({ data, context }): Promise<PickerPage> => {
+    const { supabase, userId } = context;
+    const { resolveProfile } = await import("@/lib/profile-resolve");
+    const { requireConnected, importedToolkitIds } = await import("@/lib/connector-import.server");
+    const { browseDriveTranscripts } = await import("@/lib/connector-browse.server");
+
+    const profile = await resolveProfile(supabase, userId, data.profile_id);
+    if (!profile) throw new Response("Forbidden", { status: 403 });
+    await requireConnected(supabase, profile.id, "googledrive");
+
+    const seen = await importedToolkitIds(supabase, profile.id, "googledrive");
+    return browseDriveTranscripts({
+      profileId: profile.id,
+      search: data.search ?? null,
+      seen,
+    });
+  });
+
 export const importConnectorItems = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(validateToolkitImport)

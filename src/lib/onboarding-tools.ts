@@ -19,7 +19,15 @@ import { fetchProfile } from "@/hooks/use-profile";
  * travel in telemetry.
  */
 export type ToolId =
-  "claude" | "chatgpt" | "gemini" | "copilot" | "googledrive" | "gmail" | "granola" | "other";
+  | "claude"
+  | "chatgpt"
+  | "gemini"
+  | "copilot"
+  | "googledrive"
+  | "gmail"
+  | "granola"
+  | "transcripts"
+  | "other";
 
 export type ToolMeta = {
   id: ToolId;
@@ -89,6 +97,14 @@ export const TOOLS: Record<ToolId, ToolMeta> = {
     hue: "--hue-cyan",
     path: "connector",
   },
+  transcripts: {
+    id: "transcripts",
+    label: "Call transcripts (Google Drive)",
+    blurb: "Your recordings and transcripts, already in Drive.",
+    icon: Mic,
+    hue: "--hue-clay",
+    path: "connector",
+  },
   other: {
     id: "other",
     label: "Something else / skip",
@@ -107,6 +123,7 @@ export const TOOL_ORDER: ToolId[] = [
   "googledrive",
   "gmail",
   "granola",
+  "transcripts",
   "other",
 ];
 
@@ -119,7 +136,7 @@ export const TOOL_CATEGORIES: { title: string; hue: string; tools: ToolId[] }[] 
   },
   { title: "Documents & files", hue: "--hue-sand", tools: ["googledrive"] },
   { title: "Email", hue: "--hue-cyan", tools: ["gmail"] },
-  { title: "Meetings", hue: "--hue-clay", tools: ["granola"] },
+  { title: "Meetings", hue: "--hue-clay", tools: ["granola", "transcripts"] },
   { title: "Anything else", hue: "--hue-neutral", tools: ["other"] },
 ];
 

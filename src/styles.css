@@ -37,6 +37,7 @@
   --color-accent-deep: var(--accent-deep);
   --color-navy: var(--navy);
   --color-mint: var(--mint);
+  --color-suggest: var(--suggest);
   --color-cream: var(--cream);
   --color-pattern-bg: var(--pattern-bg);
   --color-pattern-border: var(--pattern-border);
@@ -104,6 +105,10 @@
   --accent-deep: #9c4221; /* link/action text — 6.0:1 on bone */
   --navy: #0b2a4a;
   --mint: #6ffac6;
+  /* Lasso suggested it, a person decides. Surface treatment only, never text. */
+  --suggest: #6ffac6;
+  --suggest-wash: color-mix(in oklab, var(--suggest) 16%, transparent);
+  --suggest-edge: color-mix(in oklab, var(--suggest) 70%, #0f766e 30%);
   --cream: #efece4;
   --pattern-bg: #fffbeb;
   --pattern-border: #fbbf24;

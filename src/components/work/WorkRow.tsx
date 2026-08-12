@@ -97,7 +97,12 @@ export function WorkRow({
                 aria-label="Private"
               />
             ) : null}
-            <p className="truncate text-sm font-medium text-foreground">{item.title}</p>
+            <p
+              title={item.title}
+              className="line-clamp-2 min-w-0 break-words text-sm font-medium text-foreground"
+            >
+              {item.title}
+            </p>
           </div>
           <div className="flex flex-wrap items-center gap-1.5">
             {item.content_fidelity === "summary" ? (
@@ -107,7 +112,7 @@ export function WorkRow({
             ) : null}
             {chips}
           </div>
-          <p className="mt-0.5 flex flex-wrap items-center gap-x-1.5 truncate font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+          <p className="mt-0.5 flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5 break-words font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
             <span>{workIdentityLabel(item)}</span>
             <span aria-hidden>·</span>
             <VendorChip

@@ -89,6 +89,69 @@ export async function browseConnector(
   };
 }
 
+/** The Drive names that usually hold call recordings and their transcripts. */
+const TRANSCRIPT_TERMS = ["Meet Recordings", "Transcript", "Recording", "Notes by Gemini"];
+
+/**
+ * A Google Drive listing scoped to likely call transcripts: the "Meet
+ * Recordings" folder first, then the existing title heuristics across the
+ * Drive. Still picker-only — nothing is imported here.
+ */
+export async function browseDriveTranscripts(
+  args: { profileId: string; search: string | null; seen: Set<string> },
+): Promise<PickerPage> {
+  const { browseDrive, DRIVE_FOLDER_MIME } = await import("@/lib/composio.server");
+
+  type Raw = { id?: string; name?: string; mimeType?: string; modifiedTime?: string };
+  const found = new Map<string, { raw: Raw; folder: string | null }>();
+
+  if (args.search?.trim()) {
+    const page = await browseDrive(args.profileId, { search: args.search });
+    for (const file of page.files as Raw[]) {
+      if (file.id && file.mimeType !== DRIVE_FOLDER_MIME) found.set(file.id, { raw: file, folder: null });
+    }
+  } else {
+    // 1. The Meet Recordings folder, if the user has one.
+    const folderHit = await browseDrive(args.profileId, { search: "Meet Recordings" });
+    const folders = (folderHit.files as Raw[]).filter((f) => f.mimeType === DRIVE_FOLDER_MIME);
+    for (const folder of folders.slice(0, 3)) {
+      if (!folder.id) continue;
+      const inside = await browseDrive(args.profileId, { folderId: folder.id });
+      for (const file of inside.files as Raw[]) {
+        if (file.id && file.mimeType !== DRIVE_FOLDER_MIME) {
+          found.set(file.id, { raw: file, folder: folder.name ?? "Meet Recordings" });
+        }
+      }
+    }
+    // 2. Title heuristics across the rest of the Drive.
+    for (const term of TRANSCRIPT_TERMS) {
+      const page = await browseDrive(args.profileId, { search: term });
+      for (const file of page.files as Raw[]) {
+        if (!file.id || file.mimeType === DRIVE_FOLDER_MIME) continue;
+        if (found.has(file.id)) continue;
+        if (!looksLikeTranscript(file.name, null)) continue;
+        found.set(file.id, { raw: file, folder: null });
+      }
+    }
+  }
+
+  const items = Array.from(found.values())
+    .filter(({ raw, folder }) => looksLikeTranscript(raw.name, folder))
+    .map(({ raw, folder }) => ({
+      id: raw.id ?? "",
+      title: raw.name ?? "Untitled",
+      subtitle: raw.mimeType ?? null,
+      date: raw.modifiedTime ?? null,
+      isFolder: false,
+      alreadyInLasso: Boolean(raw.id && args.seen.has(raw.id)),
+      hint: transcriptHint(raw.name, folder) ?? "Call transcript",
+      isWatched: false,
+    }))
+    .sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""));
+
+  return { items, nextPageToken: null, unsupported: null };
+}
+
 /** Imports only the ids the user ticked; already-imported ids are skipped. */
 export async function importConnectorFiles(
   supabase: Client,

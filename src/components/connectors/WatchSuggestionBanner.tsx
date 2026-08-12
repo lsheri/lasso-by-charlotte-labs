@@ -1,8 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Bell } from "lucide-react";
 import { useState } from "react";
 
+import { Suggested, SuggestDot } from "@/components/common/Suggested";
 import { ConnectorPicker, type PickerKind } from "@/components/connectors/ConnectorPicker";
 import { useProfile } from "@/hooks/use-profile";
 import type { WatchSuggestion } from "@/lib/connector-watch-shared";
@@ -53,12 +53,12 @@ export function WatchSuggestionBanner() {
   return (
     <div className="space-y-2">
       {suggestions.map((suggestion) => (
-        <div
+        <Suggested
           key={`${suggestion.source}:${suggestion.folder_id}`}
-          className="flex flex-wrap items-center gap-3 rounded-[var(--radius)] border border-accent/40 bg-accent-soft px-4 py-3"
+          className="flex flex-wrap items-center gap-3"
         >
-          <Bell aria-hidden className="size-4 text-accent-deep" />
-          <p className="min-w-0 flex-1 text-sm text-accent-deep">
+          <SuggestDot />
+          <p className="min-w-0 flex-1 break-words text-sm text-foreground">
             {suggestion.new_count} new {suggestion.new_count === 1 ? "file" : "files"} in “
             {suggestion.folder_name}” since you last looked. Nothing was imported.
           </p>
@@ -79,7 +79,7 @@ export function WatchSuggestionBanner() {
           >
             Dismiss
           </button>
-        </div>
+        </Suggested>
       ))}
 
       {open ? (

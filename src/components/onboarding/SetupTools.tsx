@@ -13,7 +13,7 @@ import { McpSetupCard } from "./McpSetupCard";
 export function SetupTools({ tools }: { tools: ToolId[] }) {
   const has = (id: ToolId) => tools.includes(id);
   const mcp = (["claude", "chatgpt"] as const).filter(has);
-  const connectors = (["googledrive", "granola"] as const).filter(has);
+  const connectors = (["googledrive", "granola", "transcripts"] as const).filter(has);
   const guides = (["gemini", "copilot"] as const).filter(has);
   const nothingPicked = mcp.length + connectors.length + guides.length === 0;
 

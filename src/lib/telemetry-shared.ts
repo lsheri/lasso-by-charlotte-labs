@@ -36,7 +36,8 @@ export type TelemetryEvent =
   | "member.deactivated"
   | "member.reactivated"
   | "member.role_changed"
-  | "invite.revoked";
+  | "invite.revoked"
+  | "invite.email_sent";
 
 export type TelemetryDims = Record<
   string,

@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { SuggestDot } from "@/components/common/Suggested";
 import { Textarea } from "@/components/ui/textarea";
 import { srcsOf, type DecisionRow } from "@/hooks/use-decisions";
 
@@ -30,12 +31,22 @@ export function DecisionCard({
     <article
       className={
         isDraft
-          ? "rounded-[var(--radius)] border border-dashed border-muted-foreground/50 bg-card px-6 py-5"
+          ? "rounded-[var(--radius)] border border-dashed border-muted-foreground/50 border-l-[3px] px-6 py-5"
           : "rounded-[var(--radius)] border border-border bg-card px-6 py-5 shadow-card"
+      }
+      style={
+        isDraft
+          ? {
+              background: "var(--suggest-wash)",
+              borderLeftStyle: "solid",
+              borderLeftColor: "var(--suggest-edge)",
+            }
+          : {}
       }
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <span className="micro-label">
+        <span className="micro-label flex items-center gap-2">
+          {isDraft ? <SuggestDot /> : null}
           {isDraft ? "Drafted by Lasso · Awaiting your review" : "Confirmed"}
         </span>
         {decision.date_label ? (
