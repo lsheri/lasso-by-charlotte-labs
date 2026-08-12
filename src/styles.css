@@ -196,6 +196,7 @@
   --hue-amber: #9c6c10;
   --hue-indigo: #4a4a99;
   --hue-neutral: #736d59;
+  --hue-cyan: #1f6a86;
   /* Stable per-engagement accents, chosen by hashing the engagement id. */
   --engagement-1: #3d5f88;
   --engagement-2: #3f7030;
@@ -217,6 +218,7 @@
   --hue-amber: #e0be76;
   --hue-indigo: #a3a3e0;
   --hue-neutral: #bdb8a8;
+  --hue-cyan: #84c2d8;
   --engagement-1: #93b0d4;
   --engagement-2: #9cc48f;
   --engagement-3: #e0a086;
