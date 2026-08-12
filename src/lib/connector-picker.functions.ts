@@ -7,6 +7,7 @@ import { isBrowsableToolkit, type BrowsableToolkit } from "@/lib/connector-toolk
 type BrowseInput = {
   profile_id?: string | undefined;
   folder_id?: string | undefined;
+  folder_name?: string | undefined;
   search?: string | undefined;
   page_token?: string | undefined;
 };
@@ -14,6 +15,7 @@ type BrowseInput = {
 type ImportInput = {
   profile_id?: string | undefined;
   ids: string[];
+  folder_name?: string | undefined;
 };
 
 type ToolkitBrowseInput = BrowseInput & { toolkit: BrowsableToolkit };
@@ -27,7 +29,11 @@ function validateImport(input: ImportInput): ImportInput {
   if (!input || !Array.isArray(input.ids) || input.ids.length === 0) {
     throw new Error("Select at least one item first.");
   }
-  return { profile_id: input.profile_id, ids: input.ids.slice(0, 100) };
+  return {
+    profile_id: input.profile_id,
+    ids: input.ids.slice(0, 100),
+    folder_name: input.folder_name,
+  };
 }
 
 function validateToolkitBrowse(input: ToolkitBrowseInput | undefined): ToolkitBrowseInput {
@@ -55,13 +61,17 @@ export const browseConnectorItems = createServerFn({ method: "POST" })
     await requireConnected(supabase, profile.id, data.toolkit);
 
     const seen = await importedToolkitIds(supabase, profile.id, data.toolkit);
+    const { watchedFolderIds } = await import("@/lib/connector-watch.server");
+    const watched = await watchedFolderIds(supabase, profile.id, data.toolkit);
     return browseConnector(supabase, {
       toolkit: data.toolkit,
       profileId: profile.id,
       folderId: data.folder_id ?? null,
+      folderName: data.folder_name ?? null,
       search: data.search ?? null,
       pageToken: data.page_token ?? null,
       seen,
+      watched,
     });
   });
 
@@ -85,6 +95,7 @@ export const importConnectorItems = createServerFn({ method: "POST" })
       orgId: profile.org_id,
       userId,
       ids: data.ids,
+      folderName: data.folder_name ?? null,
     });
   });
 
