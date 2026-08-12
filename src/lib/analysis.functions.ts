@@ -7,7 +7,8 @@ import { tokensBucket } from "@/lib/ai-usage";
 
 type StartInput = {
   preset_id: AnalysisPresetId;
-  work_item_id: string;
+  work_item_id?: string | undefined;
+  engagement_id?: string | undefined;
   profile_id?: string | undefined;
 };
 
@@ -44,7 +45,7 @@ export const startAnalysis = createServerFn({ method: "POST" })
     if (!(ANALYSIS_PRESET_IDS as readonly string[]).includes(input.preset_id)) {
       throw new Error("Unknown analysis.");
     }
-    if (!input.work_item_id) throw new Error("Nothing to analyse.");
+    if (!input.work_item_id && !input.engagement_id) throw new Error("Nothing to analyse.");
     return input;
   })
   .handler(async ({ data, context }): Promise<AnalysisRunResult> => {
@@ -54,19 +55,24 @@ export const startAnalysis = createServerFn({ method: "POST" })
     const profile = await resolveProfile(supabase, userId, data.profile_id);
     if (!profile) throw new Response("Forbidden", { status: 403 });
 
-    const { analysisPreset } = await import("./analysis-presets");
+    const { analysisPreset, MIN_ITEMS_FOR_RECURRENCE, NOT_ENOUGH_WORK_LINE } = await import(
+      "./analysis-presets"
+    );
     const preset = analysisPreset(data.preset_id);
     if (!preset) throw new Error("Unknown analysis.");
 
-    const { data: item, error: itemError } = await supabase
-      .from("work_items")
-      .select("id, title, owner_id")
-      .eq("id", data.work_item_id)
-      .maybeSingle();
-    if (itemError) throw new Error(itemError.message);
-    if (!item) throw new Error("That item is gone.");
-    const isOwner = item.owner_id === profile.id;
+    const { resolveAnalysisTarget } = await import("./analysis-scope.server");
+    const target = await resolveAnalysisTarget(supabase, {
+      scope: preset.scope,
+      profileId: profile.id,
+      workItemId: data.work_item_id ?? null,
+      engagementId: data.engagement_id ?? null,
+    });
+    const isOwner = target.ownerId === profile.id;
     if (!isOwner && !preset.coachMayRun) throw new Response("Forbidden", { status: 403 });
+    if (preset.id === "what_recurs" && target.itemsInScope < MIN_ITEMS_FOR_RECURRENCE) {
+      throw new Error(NOT_ENOUGH_WORK_LINE);
+    }
 
     const { assertUnderDailyCap } = await import("./analysis-cap.server");
     await assertUnderDailyCap(supabase, profile.id);
@@ -78,7 +84,7 @@ export const startAnalysis = createServerFn({ method: "POST" })
       userId,
     });
 
-    const idempotencyKey = `${preset.id}:thread:${item.id}:${profile.id}`;
+    const idempotencyKey = `${preset.id}:${target.scopeType}:${target.scopeId}:${profile.id}`;
 
     // A second run while one is in flight returns the run already going.
     const { data: inFlight } = await supabase
@@ -112,8 +118,8 @@ export const startAnalysis = createServerFn({ method: "POST" })
       .insert({
         profile_id: profile.id,
         org_id: profile.org_id,
-        context_scope: { mode: "items", ids: [item.id] },
-        title: `${preset.label}: ${item.title}`.slice(0, 120),
+        context_scope: target.scope,
+        title: `${preset.label}: ${target.title}`.slice(0, 120),
       })
       .select("id")
       .single();
@@ -124,11 +130,11 @@ export const startAnalysis = createServerFn({ method: "POST" })
       .insert({
         preset: preset.dbPreset,
         // analysis_runs.scope_type allows item | deliverable | engagement.
-        scope_type: preset.scope === "thread" ? "item" : preset.scope,
-        scope_id: item.id,
+        scope_type: target.scopeType,
+        scope_id: target.scopeId,
         idempotency_key: idempotencyKey,
         org_id: profile.org_id,
-        owner_id: item.owner_id,
+        owner_id: target.ownerId,
         run_by_profile_id: profile.id,
         session_id: session.id,
         status: "running",
@@ -137,7 +143,7 @@ export const startAnalysis = createServerFn({ method: "POST" })
       .single();
     if (runError || !run) throw new Error(runError?.message ?? "Could not start the analysis.");
     const runId = run.id;
-    const scopeType = preset.scope === "thread" ? "item" : preset.scope;
+    const scopeType = target.scopeType;
     let costSoFar = 0;
     let itemsReadSoFar = 0;
     let claimsSoFar = 0;
