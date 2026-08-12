@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { SuggestDot } from "@/components/common/Suggested";
 import { Textarea } from "@/components/ui/textarea";
-import { srcsOf, type DecisionRow } from "@/hooks/use-decisions";
+import { srcsOf, useDecisionSourceItems, type DecisionRow } from "@/hooks/use-decisions";
 
 export function DecisionCard({
   decision,
@@ -26,6 +26,16 @@ export function DecisionCard({
 
   const srcs = srcsOf(decision);
   const sourceItems = Array.from(new Set(srcs.map((s) => s.work_item_id)));
+  const { data: itemInfo } = useDecisionSourceItems(sourceItems);
+
+  function sourceLabelFor(id: string): string {
+    const info = itemInfo?.[id];
+    const hasTurn = srcs.some((s) => s.work_item_id === id && s.turn_id);
+    if (hasTurn) return info ? `In the conversation · ${info.title}` : "Moment in the conversation";
+    if (!info) return "Source";
+    if (info.type === "ai_thread") return `Conversation · ${info.title}`;
+    return `Where it landed · ${info.title}`;
+  }
 
   return (
     <article
@@ -87,9 +97,9 @@ export function DecisionCard({
               key={id}
               type="button"
               onClick={() => onOpenSource(id)}
-              className="rounded-full bg-accent-soft px-3 py-1 font-mono text-[11px] tracking-[0.06em] text-accent-deep transition-opacity hover:opacity-80"
+              className="max-w-full truncate rounded-full bg-accent-soft px-3 py-1 font-mono text-[11px] tracking-[0.06em] text-accent-deep transition-opacity hover:opacity-80"
             >
-              Source thread
+              {sourceLabelFor(id)}
             </button>
           ))}
         </div>
