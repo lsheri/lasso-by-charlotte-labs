@@ -25,7 +25,7 @@ const TEXT_BUDGET_MS = 25_000;
 
 type Db = SupabaseClient<Database>;
 
-type ItemRow = ClassifiableItem & {
+export type ItemRow = ClassifiableItem & {
   title: string;
   source: string;
   visibility: string;
@@ -35,6 +35,43 @@ type ItemRow = ClassifiableItem & {
   content_fidelity: string | null;
   source_vendor: string | null;
 };
+
+export type TaskRow = {
+  id: string;
+  name: string;
+  goal: string | null;
+  detail: string | null;
+  when_label: string | null;
+  status: string;
+  position: number;
+  engagement_id: string;
+  engagements: {
+    id: string;
+    code: string;
+    title: string;
+    client_label: string | null;
+    brief: string | null;
+    term_label: string | null;
+    outcome: string | null;
+  } | null;
+};
+
+export type LinkRow = {
+  work_item_id: string;
+  task_id: string;
+  step_no: number | null;
+  step_confirmed: boolean;
+};
+
+export type ExtractRow = {
+  work_item_id: string;
+  summary: string;
+  decisions: string | null;
+  entities: string | null;
+  handoff: string | null;
+};
+
+export const EXTRACT_COLUMNS = "work_item_id, summary, decisions, entities, handoff";
 
 export type { ContextSource };
 
@@ -53,11 +90,11 @@ export type AssembledContext = {
  * The honesty guard. An item we could not open still appears in the context,
  * marked so plainly that the model cannot mistake it for something it read.
  */
-function unreadableLine(type: string, note: string | null): string {
+export function unreadableLine(type: string, note: string | null): string {
   return `  CONTENT COULD NOT BE READ (${note ?? "scanned or unsupported format"}). You have NOT seen this ${type === "sheet" ? "spreadsheet" : "file"}. Do not describe, summarise or quote it.`;
 }
 
-function effectiveDate(item: ItemRow): string {
+export function effectiveDate(item: ItemRow): string {
   return item.work_date ?? item.created_at_source ?? item.captured_at;
 }
 
@@ -68,6 +105,136 @@ export function headAndTail(text: string, cap = PER_ITEM_CHARS): { text: string;
     text: `${text.slice(0, HEAD_CHARS)}\n\n${OMITTED_MARKER}\n\n${text.slice(-TAIL_CHARS)}`,
     cut: true,
   };
+}
+
+export { RAW_BUDGET };
+
+/**
+ * Steps 1 to 3 of assembly: which tasks, which mapping links, which items.
+ * Shared with the catalogue so both paths see exactly the same scope.
+ */
+export async function loadScopeData(
+  supabase: Db,
+  ownerId: string,
+  scope: ContextScope,
+): Promise<{ tasks: TaskRow[]; linkRows: LinkRow[]; items: ItemRow[] }> {
+  let taskQuery = supabase
+    .from("tasks")
+    .select(
+      "id, name, goal, detail, when_label, status, position, engagement_id, engagements(id, code, title, client_label, brief, term_label, outcome)",
+    )
+    .eq("owner_id", ownerId);
+  if (scope.mode === "engagements" && scope.ids.length > 0) {
+    taskQuery = taskQuery.in("engagement_id", scope.ids);
+  } else if (scope.mode === "tasks" && scope.ids.length > 0) {
+    taskQuery = taskQuery.in("id", scope.ids);
+  }
+  const tasksRes = scope.mode === "items" ? { data: [], error: null } : await taskQuery;
+  if (tasksRes.error) throw new Error(tasksRes.error.message);
+  const tasks = (tasksRes.data ?? []) as unknown as TaskRow[];
+
+  const links = tasks.length
+    ? await supabase
+        .from("work_item_tasks")
+        .select("work_item_id, task_id, step_no, step_confirmed")
+        .in(
+          "task_id",
+          tasks.map((t) => t.id),
+        )
+    : { data: [], error: null };
+  if (links.error) throw new Error(links.error.message);
+  const linkRows = (links.data ?? []) as LinkRow[];
+
+  let itemQuery = supabase
+    .from("work_items")
+    .select(
+      `${ITEM_TEXT_COLUMNS}, source, visibility, captured_at, work_date, created_at_source, content_fidelity, source_vendor`,
+    )
+    .eq("owner_id", ownerId)
+    .order("captured_at", { ascending: false })
+    .limit(300);
+  if (scope.mode === "items" && scope.ids.length > 0) {
+    itemQuery = itemQuery.in("id", scope.ids);
+  } else if (scope.mode !== "whole") {
+    const ids = linkRows.map((l) => l.work_item_id);
+    if (ids.length === 0) itemQuery = itemQuery.in("id", ["00000000-0000-0000-0000-000000000000"]);
+    else itemQuery = itemQuery.in("id", ids);
+  }
+  const itemsRes = await itemQuery;
+  if (itemsRes.error) throw new Error(itemsRes.error.message);
+  return { tasks, linkRows, items: (itemsRes.data ?? []) as unknown as ItemRow[] };
+}
+
+/** "ENG-1 · Discovery" for a mapped item, undefined when unmapped. */
+export function taskLabels(tasks: TaskRow[], linkRows: LinkRow[]): Map<string, string> {
+  const taskNameFor = new Map<string, string>();
+  for (const link of linkRows) {
+    const task = tasks.find((t) => t.id === link.task_id);
+    const engagement = task?.engagements;
+    if (task) {
+      taskNameFor.set(
+        link.work_item_id,
+        engagement ? `${engagement.code} · ${task.name}` : task.name,
+      );
+    }
+  }
+  return taskNameFor;
+}
+
+/** The engagement and task structure block, identical in both paths. */
+export function buildEngagementBlocks(
+  tasks: TaskRow[],
+  linkRows: LinkRow[],
+  items: { id: string; title: string }[],
+): string[] {
+  const engagementBlocks = new Map<string, string>();
+  for (const task of tasks) {
+    const engagement = task.engagements;
+    if (!engagement || engagementBlocks.has(engagement.id)) continue;
+    const own = tasks
+      .filter((t) => t.engagement_id === engagement.id)
+      .sort((a, b) => a.position - b.position);
+    const taskLines = own.map((t) => {
+      const steps = linkRows
+        .filter((l) => l.task_id === t.id)
+        .sort((a, b) => (a.step_no ?? 999) - (b.step_no ?? 999))
+        .map((l, index) => {
+          const item = items.find((i) => i.id === l.work_item_id);
+          return `      ${l.step_no ?? index + 1}. ${item?.title ?? "(item)"}${l.step_confirmed ? " [confirmed sequence]" : ""}`;
+        });
+      return [
+        `    TASK: ${t.name}${t.when_label ? ` (${t.when_label})` : ""}, status ${t.status}`,
+        t.goal ? `      Goal: ${t.goal}` : null,
+        t.detail ? `      Detail: ${t.detail}` : null,
+        ...steps,
+      ]
+        .filter(Boolean)
+        .join("\n");
+    });
+    engagementBlocks.set(
+      engagement.id,
+      [
+        `ENGAGEMENT ${engagement.code}: ${engagement.title}`,
+        engagement.client_label ? `  Client/context: ${engagement.client_label}` : null,
+        engagement.term_label ? `  Term: ${engagement.term_label}` : null,
+        engagement.brief ? `  Brief: ${engagement.brief}` : null,
+        engagement.outcome ? `  Outcome: ${engagement.outcome}` : null,
+        ...taskLines,
+      ]
+        .filter(Boolean)
+        .join("\n"),
+    );
+  }
+  return [...engagementBlocks.values()];
+}
+
+/** The four extract fields, formatted the one way every surface shows them. */
+export function extractLines(extract: ExtractRow): string[] {
+  const lines = [`  Summary: ${extract.summary}`];
+  if (extract.decisions) lines.push(`  Decided: ${extract.decisions}`);
+  if (extract.entities) lines.push(`  Key names and topics: ${extract.entities}`);
+  if (extract.handoff) lines.push(`  Led to: ${extract.handoff}`);
+  return lines;
 }
 
 /**
