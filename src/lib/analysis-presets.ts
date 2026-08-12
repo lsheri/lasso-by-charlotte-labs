@@ -164,12 +164,12 @@ export const ANALYSIS_PRESETS: AnalysisPreset[] = [
     coachMayRun: false,
   },
   {
-    id: "working_efficiently",
-    dbPreset: "trace",
-    label: "Working efficiently with AI",
-    description: "Techniques that would have made this conversation shorter and sharper.",
+    id: "working_the_model",
+    dbPreset: "working_the_model",
+    label: "How you worked the model",
+    description: "The techniques that would have made this conversation shorter and sharper.",
     scope: "thread",
-    systemPrompt: EFFICIENCY_PROMPT,
+    systemPrompt: WORKING_THE_MODEL_PROMPT,
     openingMessage:
       "Look at how I worked with the AI in this conversation and tell me which techniques would have made it tighter.",
     infoPanel: {
@@ -184,7 +184,7 @@ export const ANALYSIS_PRESETS: AnalysisPreset[] = [
   {
     id: "assumptions",
     dbPreset: "assumptions",
-    label: "Assumptions in this work",
+    label: "What this work assumes",
     description: "What was assumed, where it came from, and whether it was ever checked.",
     scope: "thread",
     systemPrompt: ASSUMPTIONS_PROMPT,
@@ -204,7 +204,7 @@ export const ANALYSIS_PRESETS: AnalysisPreset[] = [
       sources: ANALYSIS_SOURCES,
     },
     attribution: null,
-    coachMayRun: false,
+    coachMayRun: true,
   },
 ];
 
