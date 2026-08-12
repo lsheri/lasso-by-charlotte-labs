@@ -3,12 +3,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 
 import type { AiReadInput, AiReadRole } from "./ai-reads.server";
-import {
-  ITEM_TEXT_COLUMNS,
-  ensureExtract,
-  pullItemText,
-  type ClassifiableItem,
-} from "./extract.server";
+import { ensureExtract, type ClassifiableItem } from "./extract.server";
+import { ITEM_TEXT_COLUMNS, getItemText, type ItemTextStatus } from "./item-text.server";
 import type { ContextScope } from "./reflect-shared";
 
 /** Tier 2 is the expensive tier: raw text, bounded hard. */
@@ -39,8 +35,27 @@ export type AssembledContext = {
   itemCount: number;
   tier1Count: number;
   tier2Count: number;
+  unreadableCount: number;
   reads: AiReadInput[];
+  sources: ContextSource[];
 };
+
+/** What actually went into one answer, for the in-chat audit strip. */
+export type ContextSource = {
+  id: string;
+  title: string;
+  type: string;
+  source_vendor: string | null;
+  depth: "full" | "extract" | "unreadable";
+};
+
+/**
+ * The honesty guard. An item we could not open still appears in the context,
+ * marked so plainly that the model cannot mistake it for something it read.
+ */
+function unreadableLine(type: string, note: string | null): string {
+  return `  CONTENT COULD NOT BE READ (${note ?? "scanned or unsupported format"}). You have NOT seen this ${type === "sheet" ? "spreadsheet" : "file"}. Do not describe, summarise or quote it.`;
+}
 
 function effectiveDate(item: ItemRow): string {
   return item.work_date ?? item.created_at_source ?? item.captured_at;
@@ -235,11 +250,21 @@ export async function assembleReflectContext(
   ];
 
   const fullText = new Map<string, string>();
+  const unreadable = new Map<string, { status: ItemTextStatus; note: string | null }>();
   let rawUsed = 0;
   let anyCut = false;
   for (const item of priority) {
-    if (rawUsed >= RAW_BUDGET) break;
-    const text = (await pullItemText(supabase, item)).trim();
+    const result = await getItemText(supabase, item);
+    if (result.status === "unsupported" || result.status === "failed") {
+      unreadable.set(item.id, { status: result.status, note: result.note ?? null });
+      continue;
+    }
+    if (result.status === "empty" && item.content_ref) {
+      unreadable.set(item.id, { status: "empty", note: result.note ?? null });
+      continue;
+    }
+    if (rawUsed >= RAW_BUDGET) continue;
+    const text = (result.text ?? "").trim();
     if (!text) continue;
     const clipped = headAndTail(text);
     if (clipped.cut) anyCut = true;
@@ -262,7 +287,9 @@ export async function assembleReflectContext(
 
   const parts: string[] = [...engagementBlocks.values()];
   const reads: AiReadInput[] = [];
+  const sources: ContextSource[] = [];
   let tier2 = 0;
+  let unreadableCount = 0;
 
   for (const item of oldestFirst) {
     const extract = extractFor.get(item.id);
@@ -279,15 +306,41 @@ export async function assembleReflectContext(
       if (extract.entities) lines.push(`  Key names and topics: ${extract.entities}`);
       if (extract.handoff) lines.push(`  Led to: ${extract.handoff}`);
     }
+    const blocked = unreadable.get(item.id);
     if (raw) {
       lines.push(`  Full text:\n${raw}`);
       tier2 += 1;
       reads.push({ workItemId: item.id, ownerId, depth: "full" });
+      sources.push({
+        id: item.id,
+        title: item.title,
+        type: item.type,
+        source_vendor: item.source_vendor,
+        depth: "full",
+      });
+    } else if (blocked) {
+      lines.push(unreadableLine(item.type, blocked.note));
+      unreadableCount += 1;
+      reads.push({ workItemId: item.id, ownerId, depth: "unreadable" });
+      sources.push({
+        id: item.id,
+        title: item.title,
+        type: item.type,
+        source_vendor: item.source_vendor,
+        depth: "unreadable",
+      });
     } else {
       lines.push(
         extract ? "  Full text: summary only in this answer." : "  Content: not stored as text.",
       );
       reads.push({ workItemId: item.id, ownerId, depth: "extract" });
+      sources.push({
+        id: item.id,
+        title: item.title,
+        type: item.type,
+        source_vendor: item.source_vendor,
+        depth: "extract",
+      });
     }
     parts.push(lines.join("\n"));
   }
@@ -301,6 +354,8 @@ export async function assembleReflectContext(
     itemCount: tier1,
     tier1Count: tier1,
     tier2Count: tier2,
+    unreadableCount,
     reads,
+    sources,
   };
 }
