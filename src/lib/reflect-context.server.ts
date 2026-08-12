@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 
 import type { AiReadInput, AiReadRole } from "./ai-reads.server";
+import { loadBriefContext } from "./brief.server";
 import { ensureExtract, type ClassifiableItem } from "./extract.server";
 import { ITEM_TEXT_COLUMNS, getItemText, type ItemTextStatus } from "./item-text.server";
 import type { ContextScope, ContextSource } from "./reflect-shared";
@@ -153,7 +154,15 @@ export async function assembleReflectContext(
   }
   const itemsRes = await itemQuery;
   if (itemsRes.error) throw new Error(itemsRes.error.message);
-  const items = (itemsRes.data ?? []) as unknown as ItemRow[];
+  const allItems = (itemsRes.data ?? []) as unknown as ItemRow[];
+
+  // Tier 0. The brief is loaded first, is never budgeted away, and is removed
+  // from the ordinary item list so it cannot also appear as an extract.
+  const brief = await loadBriefContext(supabase, ownerId, scope);
+  const briefIds = new Set(brief.itemIds);
+  const items = allItems.filter((item) => !briefIds.has(item.id));
+  // Brief characters come out of the tier 2 budget, so total context does not grow.
+  const rawBudget = Math.max(0, RAW_BUDGET - brief.chars);
 
   const taskNameFor = new Map<string, string>();
   for (const link of linkRows) {
@@ -269,7 +278,7 @@ export async function assembleReflectContext(
   for (const item of priority) {
     // Once the budget or the clock is gone, stop opening files entirely: the
     // remaining items still appear, as their extract.
-    if (rawUsed >= RAW_BUDGET || Date.now() - textStarted > TEXT_BUDGET_MS) break;
+    if (rawUsed >= rawBudget || Date.now() - textStarted > TEXT_BUDGET_MS) break;
     const result = await getItemText(supabase, item);
     if (result.status === "unsupported" || result.status === "failed") {
       unreadable.set(item.id, { status: result.status, note: result.note ?? null });
@@ -283,12 +292,12 @@ export async function assembleReflectContext(
     if (!text) continue;
     const clipped = headAndTail(text);
     if (clipped.cut) anyCut = true;
-    const remaining = RAW_BUDGET - rawUsed;
+    const remaining = rawBudget - rawUsed;
     if (clipped.text.length > remaining) {
       anyCut = true;
       const room = headAndTail(clipped.text, remaining);
       fullText.set(item.id, room.text);
-      rawUsed = RAW_BUDGET;
+      rawUsed = rawBudget;
       break;
     }
     fullText.set(item.id, clipped.text);
@@ -303,10 +312,12 @@ export async function assembleReflectContext(
     (a, b) => new Date(effectiveDate(a)).getTime() - new Date(effectiveDate(b)).getTime(),
   );
 
-  const parts: string[] = [...engagementBlocks.values()];
-  const reads: AiReadInput[] = [];
-  const sources: ContextSource[] = [];
-  let tier2 = 0;
+  // The brief sits above the engagement structure and above every item: long
+  // framing material belongs at the top, and a stable prefix caches well.
+  const parts: string[] = [brief.block, ...engagementBlocks.values()];
+  const reads: AiReadInput[] = [...brief.reads];
+  const sources: ContextSource[] = [...brief.sources];
+  let tier2 = brief.itemIds.length;
   let unreadableCount = 0;
 
   for (const item of oldestFirst) {
@@ -363,7 +374,7 @@ export async function assembleReflectContext(
     parts.push(lines.join("\n"));
   }
 
-  const tier1 = items.length;
+  const tier1 = items.length + brief.itemIds.length;
   const extractOnly = tier1 - tier2;
 
   return {
