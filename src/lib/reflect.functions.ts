@@ -115,11 +115,35 @@ export const sendReflectMessage = createServerFn({ method: "POST" })
         payload.choices?.[0]?.message?.content?.trim() ??
         "I couldn't draw an answer out of that. Try asking a different way.";
 
-      const { error: insertError } = await supabase.from("chat_messages").insert([
-        { session_id: session.id, role: "user", content: message },
-        { session_id: session.id, role: "assistant", content: answer },
-      ]);
+      const { data: written, error: insertError } = await supabase
+        .from("chat_messages")
+        .insert([
+          { session_id: session.id, role: "user", content: message },
+          { session_id: session.id, role: "assistant", content: answer },
+        ])
+        .select("id, role");
       if (insertError) throw new Error(insertError.message);
+
+      // The content companion to ai_reads: what was asked, about whose work,
+      // and which answer it produced. Tenant content, never telemetry.
+      const answerId =
+        (written ?? []).find((row) => row.role === "assistant")?.id ?? null;
+      const scopeLabelForLog =
+        scope.mode === "whole"
+          ? "whole record"
+          : scope.mode === "engagements"
+            ? "engagement"
+            : scope.mode === "tasks"
+              ? "task"
+              : "item";
+      const { error: logError } = await supabase.from("query_log").insert({
+        asker_id: profile.id,
+        subject_id: profile.id,
+        scope: scopeLabelForLog,
+        question: message,
+        answer_ref: answerId === null ? null : String(answerId),
+      });
+      if (logError) console.error("[query_log] insert failed:", logError.message);
 
       const title = session.title ?? titleFromMessage(message);
       await supabase

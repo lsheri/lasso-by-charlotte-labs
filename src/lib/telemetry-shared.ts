@@ -39,7 +39,11 @@ export type TelemetryEvent =
   | "invite.revoked"
   | "invite.email_sent"
   | "oneonone.prepared"
-  | "oneonone.saved_to_drive";
+  | "oneonone.saved_to_drive"
+  | "link.drafted"
+  | "link.reviewed"
+  | "evidence.opened"
+  | "version.recorded";
 
 export type TelemetryDims = Record<
   string,

@@ -69,6 +69,94 @@ export type Database = {
           },
         ]
       }
+      analysis_runs: {
+        Row: {
+          claims_rendered: number | null
+          completed_at: string | null
+          cost_usd: number | null
+          created_at: string
+          error_class: string | null
+          id: string
+          idempotency_key: string | null
+          items_read: number | null
+          org_id: string
+          owner_id: string
+          preset: string
+          run_by_profile_id: string | null
+          scope_id: string | null
+          scope_type: string
+          session_id: string | null
+          status: string
+          suppressed_claims: number | null
+          tokens_in: number | null
+          tokens_out: number | null
+        }
+        Insert: {
+          claims_rendered?: number | null
+          completed_at?: string | null
+          cost_usd?: number | null
+          created_at?: string
+          error_class?: string | null
+          id?: string
+          idempotency_key?: string | null
+          items_read?: number | null
+          org_id: string
+          owner_id: string
+          preset: string
+          run_by_profile_id?: string | null
+          scope_id?: string | null
+          scope_type: string
+          session_id?: string | null
+          status?: string
+          suppressed_claims?: number | null
+          tokens_in?: number | null
+          tokens_out?: number | null
+        }
+        Update: {
+          claims_rendered?: number | null
+          completed_at?: string | null
+          cost_usd?: number | null
+          created_at?: string
+          error_class?: string | null
+          id?: string
+          idempotency_key?: string | null
+          items_read?: number | null
+          org_id?: string
+          owner_id?: string
+          preset?: string
+          run_by_profile_id?: string | null
+          scope_id?: string | null
+          scope_type?: string
+          session_id?: string | null
+          status?: string
+          suppressed_claims?: number | null
+          tokens_in?: number | null
+          tokens_out?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "analysis_runs_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "analysis_runs_run_by_profile_id_fkey"
+            columns: ["run_by_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "analysis_runs_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "chat_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chain_links: {
         Row: {
           from_turn: string
@@ -804,20 +892,79 @@ export type Database = {
           id: string
           name: string
           settings: Json
+          vendor_display: string
         }
         Insert: {
           created_at?: string
           id?: string
           name: string
           settings?: Json
+          vendor_display?: string
         }
         Update: {
           created_at?: string
           id?: string
           name?: string
           settings?: Json
+          vendor_display?: string
         }
         Relationships: []
+      }
+      practice_signatures: {
+        Row: {
+          carry_through: number
+          challenge: number
+          computed_at: string
+          direction: number
+          exploration: number
+          framing: number
+          id: string
+          org_id: string
+          owner_id: string
+          scope_id: string | null
+          scope_type: string
+          thread_count: number
+          verification: number
+        }
+        Insert: {
+          carry_through: number
+          challenge: number
+          computed_at?: string
+          direction: number
+          exploration: number
+          framing: number
+          id?: string
+          org_id: string
+          owner_id: string
+          scope_id?: string | null
+          scope_type: string
+          thread_count: number
+          verification: number
+        }
+        Update: {
+          carry_through?: number
+          challenge?: number
+          computed_at?: string
+          direction?: number
+          exploration?: number
+          framing?: number
+          id?: string
+          org_id?: string
+          owner_id?: string
+          scope_id?: string | null
+          scope_type?: string
+          thread_count?: number
+          verification?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "practice_signatures_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -1078,6 +1225,67 @@ export type Database = {
           {
             foreignKeyName: "work_item_extracts_work_item_id_fkey"
             columns: ["work_item_id"]
+            isOneToOne: false
+            referencedRelation: "work_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      work_item_links: {
+        Row: {
+          confirmed_at: string | null
+          created_at: string
+          from_item_id: string
+          id: string
+          org_id: string
+          owner_id: string
+          rationale: string | null
+          relation: string
+          status: string
+          to_item_id: string
+        }
+        Insert: {
+          confirmed_at?: string | null
+          created_at?: string
+          from_item_id: string
+          id?: string
+          org_id: string
+          owner_id: string
+          rationale?: string | null
+          relation: string
+          status?: string
+          to_item_id: string
+        }
+        Update: {
+          confirmed_at?: string | null
+          created_at?: string
+          from_item_id?: string
+          id?: string
+          org_id?: string
+          owner_id?: string
+          rationale?: string | null
+          relation?: string
+          status?: string
+          to_item_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_item_links_from_item_id_fkey"
+            columns: ["from_item_id"]
+            isOneToOne: false
+            referencedRelation: "work_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_item_links_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_item_links_to_item_id_fkey"
+            columns: ["to_item_id"]
             isOneToOne: false
             referencedRelation: "work_items"
             referencedColumns: ["id"]

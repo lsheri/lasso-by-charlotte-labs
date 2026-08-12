@@ -12,6 +12,14 @@ export type PickerItem = {
   isWatched?: boolean;
 };
 
+/** Every picker import reports the same four outcomes. */
+export type ImportResult = {
+  imported: number;
+  skipped: number;
+  updated: number;
+  unchanged: number;
+};
+
 export type PickerPage = {
   items: PickerItem[];
   nextPageToken: string | null;

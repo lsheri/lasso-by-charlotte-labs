@@ -4,6 +4,7 @@ import { Sparkle } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
 import { EngagementDecisions } from "@/components/decisions/EngagementDecisions";
+import { EngagementLineage } from "@/components/peek/EngagementLineage";
 import { OneOnOneBrief } from "@/components/oneonone/OneOnOneBrief";
 import { EditEngagementDialog } from "@/components/engagements/EditEngagementDialog";
 import { EditTaskDialog } from "@/components/engagements/EditTaskDialog";
@@ -242,6 +243,10 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
           profileId={profile.id}
           canEdit={profile.role !== "coach"}
         />
+      ) : null}
+
+      {profile && profile.role !== "coach" ? (
+        <EngagementLineage engagementId={engagementId} profileId={profile.id} />
       ) : null}
 
       {profile && profile.role !== "coach" ? (

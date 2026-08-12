@@ -34,3 +34,32 @@ export const getWorkFileUrl = createServerFn({ method: "POST" })
     }
     return { url: signed.data.signedUrl };
   });
+
+/**
+ * Signed URL for one earlier version of a work item. Access is decided by the
+ * caller's read of the parent work item through RLS, exactly as above.
+ */
+export const getVersionFileUrl = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { version_id: string }) => {
+    if (!input?.version_id) throw new Error("version_id is required");
+    return { version_id: input.version_id };
+  })
+  .handler(async ({ data, context }): Promise<{ url: string }> => {
+    const { data: version, error } = await context.supabase
+      .from("document_versions")
+      .select("id, content_ref, work_item_id")
+      .eq("id", data.version_id)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!version?.content_ref) throw new Error("That version has no stored file.");
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const signed = await supabaseAdmin.storage
+      .from("work-files")
+      .createSignedUrl(version.content_ref, 300, {});
+    if (signed.error || !signed.data) {
+      throw new Error(signed.error?.message ?? "Could not open that version.");
+    }
+    return { url: signed.data.signedUrl };
+  });
