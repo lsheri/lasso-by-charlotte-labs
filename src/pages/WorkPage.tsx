@@ -6,7 +6,7 @@ import { toast } from "sonner";
 
 import { MapDialog } from "@/components/work/MapDialog";
 import { RowMenu } from "@/components/work/RowMenu";
-import { FluencyLens } from "@/components/reflect/FluencyLens";
+import { AnalysisLens } from "@/components/reflect/AnalysisLens";
 import { ImportFlowDialog } from "@/components/work/import/ImportFlowDialog";
 import { PasteThreadDialog } from "@/components/work/PasteThreadDialog";
 import { OpenFileAction } from "@/components/work/OpenFileAction";
@@ -666,7 +666,7 @@ export function WorkPage() {
       />
 
       {profile && lensItem ? (
-        <FluencyLens
+        <AnalysisLens
           key={lensItem.id}
           open
           onOpenChange={(next) => {

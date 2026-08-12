@@ -89,7 +89,6 @@ export function ReflectPage() {
   const active = (sessions ?? []).find((s) => s.id === activeId) ?? null;
   const scope: ContextScope = active ? parseScope(active.context_scope) : DEFAULT_SCOPE;
 
-  const [unmatched, setUnmatched] = useState<Record<number, number>>({});
   const { data: messages } = useQuery({
     queryKey: ["reflect-messages", activeId],
     enabled: Boolean(activeId),
@@ -160,10 +159,6 @@ export function ReflectPage() {
         fullCount: result.fullCount,
         summaryCount: result.summaryCount,
       });
-      if (result.messageId !== null) {
-        const id = Number(result.messageId);
-        setUnmatched((prev) => ({ ...prev, [id]: result.unmatchedQuotes }));
-      }
       await queryClient.invalidateQueries({ queryKey: ["reflect-messages", activeId] });
       await queryClient.invalidateQueries({ queryKey: ["reflect-sessions"] });
     } catch (e) {
@@ -284,7 +279,6 @@ export function ReflectPage() {
                         <MarkdownMessage content={message.content} />
                         <AnswerSources
                           sources={sourcesByMessage?.[Number(message.id)] ?? []}
-                          unmatchedQuotes={unmatched[Number(message.id)] ?? 0}
                         />
                       </>
                     )}
