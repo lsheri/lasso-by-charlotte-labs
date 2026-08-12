@@ -220,8 +220,10 @@ export function PeekPanel({
         {canEdit && ["ai_thread", "document", "deck", "sheet"].includes(active.type) ? (
           <DraftDecisionsButton workItemId={active.id} />
         ) : null}
-        {canEdit && active.type === "ai_thread" && onFluency ? (
-          <FooterAction onClick={() => onFluency(active)}>Analyse this conversation</FooterAction>
+        {canEdit && ["ai_thread", "document", "deck", "sheet"].includes(active.type) && onFluency ? (
+          <FooterAction onClick={() => onFluency(active)}>
+            {active.type === "ai_thread" ? "Analyse this conversation" : "Analyse this work"}
+          </FooterAction>
         ) : null}
         <div className="ml-auto">
           {link ? (
