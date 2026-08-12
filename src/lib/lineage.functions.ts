@@ -16,7 +16,8 @@ export type EvidenceLink = {
     visibility: string;
     date: string;
     source_vendor: string | null;
-    source_meta: Record<string, unknown> | null;
+    /** Attachment kind only: enough for type identity, nothing else. */
+    kind: string | null;
   };
 };
 
@@ -116,8 +117,8 @@ export const getDeliverableEvidence = createServerFn({ method: "POST" })
             visibility: item.visibility as string,
             date: item.work_date ?? item.created_at_source ?? item.captured_at,
             source_vendor: vendorVisible ? item.source_vendor : null,
-            source_meta: vendorVisible
-              ? (item.source_meta as Record<string, unknown> | null)
+            kind: vendorVisible
+              ? (((item.source_meta as { kind?: string } | null)?.kind ?? null) as string | null)
               : null,
           },
         };
