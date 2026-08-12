@@ -36,9 +36,7 @@ export async function streamChatRequest<T>(
     for (const line of lines) {
       if (!line.trim()) continue;
       const frame = JSON.parse(line) as
-        | { t: "delta"; v: string }
-        | { t: "done"; payload: T }
-        | { t: "error"; message: string };
+        { t: "delta"; v: string } | { t: "done"; payload: T } | { t: "error"; message: string };
       if (frame.t === "delta") onDelta(frame.v);
       else if (frame.t === "error") throw new Error(frame.message);
       else result = frame.payload;

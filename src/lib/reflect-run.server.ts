@@ -62,9 +62,7 @@ export async function runReflectTurn(
     throw new Response("Forbidden", { status: 403 });
   }
 
-  const { parseScope, titleFromMessage, REFLECT_SYSTEM_PROMPT } = await import(
-    "./reflect-shared"
-  );
+  const { parseScope, titleFromMessage, REFLECT_SYSTEM_PROMPT } = await import("./reflect-shared");
   const { analysisPreset } = await import("./analysis-presets");
   const scope = parseScope(session.context_scope);
   const preset = data.preset ? analysisPreset(data.preset) : null;

@@ -160,9 +160,7 @@ export function ReflectDock({
             ) : (
               <>
                 <MarkdownMessage content={message.content} />
-                <AnswerSources
-                  sources={sourcesByMessage?.[Number(message.id)] ?? []}
-                />
+                <AnswerSources sources={sourcesByMessage?.[Number(message.id)] ?? []} />
               </>
             )}
           </div>

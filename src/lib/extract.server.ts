@@ -224,11 +224,7 @@ export async function ensureExtract(workItemId: string): Promise<boolean> {
       orgId: prepared.item.org_id,
       orgName: await orgNameFor(supabaseAdmin as unknown as Db, prepared.item.org_id),
     };
-    const { fields, tokensIn, costUsd } = await generate(
-      prepared.item.title,
-      prepared.text,
-      meta,
-    );
+    const { fields, tokensIn, costUsd } = await generate(prepared.item.title, prepared.text, meta);
     if (!fields) return false;
 
     const { usageDims } = await import("./ai-usage");

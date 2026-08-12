@@ -28,7 +28,11 @@ type PendingBatch = { id: string; submitted_at: string; count: number };
 
 async function readPending(orgId: string): Promise<PendingBatch[]> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data } = await supabaseAdmin.from("orgs").select("settings").eq("id", orgId).maybeSingle();
+  const { data } = await supabaseAdmin
+    .from("orgs")
+    .select("settings")
+    .eq("id", orgId)
+    .maybeSingle();
   const settings = (data?.settings ?? {}) as Record<string, unknown>;
   const list = settings["extract_batches"];
   return Array.isArray(list) ? (list as PendingBatch[]) : [];
@@ -36,7 +40,11 @@ async function readPending(orgId: string): Promise<PendingBatch[]> {
 
 async function writePending(orgId: string, batches: PendingBatch[]): Promise<void> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data } = await supabaseAdmin.from("orgs").select("settings").eq("id", orgId).maybeSingle();
+  const { data } = await supabaseAdmin
+    .from("orgs")
+    .select("settings")
+    .eq("id", orgId)
+    .maybeSingle();
   const settings = { ...((data?.settings ?? {}) as Record<string, unknown>) };
   if (batches.length === 0) delete settings["extract_batches"];
   else settings["extract_batches"] = batches;
@@ -147,7 +155,11 @@ export async function drainExtractBatches(): Promise<{ written: number; pending:
           status: string;
           output_file_id?: string | null;
         };
-        if (batch.status === "in_progress" || batch.status === "validating" || batch.status === "finalizing") {
+        if (
+          batch.status === "in_progress" ||
+          batch.status === "validating" ||
+          batch.status === "finalizing"
+        ) {
           keep.push(entry);
           stillPending += 1;
           continue;

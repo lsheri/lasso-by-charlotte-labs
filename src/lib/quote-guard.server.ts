@@ -70,15 +70,15 @@ export async function guardQuotes(
   try {
     repaired = await chatComplete(
       [
-      ...conversation,
-      { role: "assistant", content: answer },
-      {
-        role: "user",
-        content: `${QUOTE_RULE}\n\nThe following quoted spans in your last answer do not appear character for character in the work supplied:\n\n${failed
-          .map((span, i) => `${i + 1}. "${span}"`)
-          .join(
-            "\n",
-          )}\n\nRewrite the whole answer. For each span, either restore the exact wording from the source, or remove the quotation marks and restate it as your own prose. Change nothing else. Return only the corrected answer.`,
+        ...conversation,
+        { role: "assistant", content: answer },
+        {
+          role: "user",
+          content: `${QUOTE_RULE}\n\nThe following quoted spans in your last answer do not appear character for character in the work supplied:\n\n${failed
+            .map((span, i) => `${i + 1}. "${span}"`)
+            .join(
+              "\n",
+            )}\n\nRewrite the whole answer. For each span, either restore the exact wording from the source, or remove the quotation marks and restate it as your own prose. Change nothing else. Return only the corrected answer.`,
         },
       ],
       { tier: "smart", meta: meta ?? { surface: "quote_repair" } },

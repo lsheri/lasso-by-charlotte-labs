@@ -84,9 +84,7 @@ export async function runCoachChat(
         .select("work_item_id, summary, decisions, entities, handoff")
         .in("work_item_id", itemIds)
     : { data: [] };
-  const extractFor = new Map(
-    (extractRows ?? []).map((row) => [row.work_item_id as string, row]),
-  );
+  const extractFor = new Map((extractRows ?? []).map((row) => [row.work_item_id as string, row]));
 
   // The coach's view of a vendor chip obeys the org setting, exactly as the
   // deliverable view does. The owner is never affected by it.
@@ -216,9 +214,7 @@ export async function runCoachChat(
         id,
         title: String(item?.["title"] ?? "Untitled"),
         type: String(item?.["type"] ?? "document"),
-        source_vendor: vendorVisible
-          ? ((item?.["source_vendor"] as string | null) ?? null)
-          : null,
+        source_vendor: vendorVisible ? ((item?.["source_vendor"] as string | null) ?? null) : null,
         depth: "extract",
       });
     }

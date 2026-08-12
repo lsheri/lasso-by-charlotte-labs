@@ -282,9 +282,7 @@ export function ReflectPage() {
                     ) : (
                       <>
                         <MarkdownMessage content={message.content} />
-                        <AnswerSources
-                          sources={sourcesByMessage?.[Number(message.id)] ?? []}
-                        />
+                        <AnswerSources sources={sourcesByMessage?.[Number(message.id)] ?? []} />
                       </>
                     )}
                   </div>
