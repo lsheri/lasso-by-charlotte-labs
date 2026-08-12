@@ -92,7 +92,7 @@ const TOOLS = [
   {
     name: "push_conversation",
     description:
-      "When the user says 'Push to Lasso', 'send to Lasso', or similar: call push_conversation EXACTLY ONCE with the ENTIRE conversation, every message, verbatim, unabridged, plus EVERY artifact, canvas, file, or report created during the conversation as attachments. Never summarize the transcript. Never split one conversation across multiple calls or use push_document for conversation artifacts.",
+      "When the user says 'Push to Lasso', 'send to Lasso', or similar: call push_conversation EXACTLY ONCE with the ENTIRE conversation, every message, verbatim, unabridged, plus any artifact, canvas or file that already existed as its own object in this app, as attachments. Never summarize the transcript. Never compose new summaries, recaps or section write-ups and send them as attachments. Never split one conversation across multiple calls or use push_document for conversation artifacts.",
     inputSchema: {
       type: "object",
       properties: {
