@@ -28,19 +28,34 @@ export const draftDecisions = createServerFn({ method: "POST" })
 
     const { data: item, error: itemError } = await supabase
       .from("work_items")
-      .select("id, owner_id, type, source")
+      .select("id, owner_id, type, source, title, content_ref, content_hash, source_meta, meta")
       .eq("id", data.work_item_id)
       .maybeSingle();
     if (itemError) throw new Error(itemError.message);
     if (!item || item.owner_id !== profile.id) throw new Response("Forbidden", { status: 403 });
 
-    const { data: turns, error: turnsError } = await supabase
-      .from("turns")
-      .select("id, turn_no, role, content")
-      .eq("work_item_id", item.id)
-      .order("turn_no", { ascending: true });
-    if (turnsError) throw new Error(turnsError.message);
-    if (!turns || turns.length === 0) return { drafted: 0 };
+    // A thread is read as turns. A document, deck or sheet is read as its
+    // extracted text, so the drafter works on the deliverable too.
+    let turns: { id: string; turn_no: number; role: string; content: string }[] = [];
+    let transcript = "";
+    if (item.type === "ai_thread") {
+      const { data: turnRows, error: turnsError } = await supabase
+        .from("turns")
+        .select("id, turn_no, role, content")
+        .eq("work_item_id", item.id)
+        .order("turn_no", { ascending: true });
+      if (turnsError) throw new Error(turnsError.message);
+      turns = turnRows ?? [];
+      transcript = turns
+        .map((turn) => `TURN ${turn.turn_no} · ${turn.role.toUpperCase()}\n${turn.content}`)
+        .join("\n\n");
+    } else {
+      const { getItemText } = await import("./item-text.server");
+      const result = await getItemText(supabase, item as never);
+      const text = (result.text ?? "").slice(0, 60_000).trim();
+      if (text) transcript = `${item.type.toUpperCase()}: ${item.title}\n\n${text}`;
+    }
+    if (!transcript) return { drafted: 0 };
 
     const { data: mapped } = await supabase
       .from("work_item_tasks")
@@ -54,10 +69,6 @@ export const draftDecisions = createServerFn({ method: "POST" })
       ),
     );
     const engagementId = engagementIds.length === 1 ? (engagementIds[0] as string) : null;
-
-    const transcript = turns
-      .map((turn) => `TURN ${turn.turn_no} · ${turn.role.toUpperCase()}\n${turn.content}`)
-      .join("\n\n");
 
     const { chatComplete, resolveAiMeta } = await import("./ai.server");
     const meta = await resolveAiMeta(supabase, {
