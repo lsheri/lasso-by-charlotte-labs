@@ -6,7 +6,8 @@ export type DraftedDecision = {
 };
 
 export const DRAFT_SYSTEM_PROMPT =
-  "You extract CONSEQUENTIAL DECISIONS from a professional's AI conversation. A consequential decision is a moment the human chose a direction, rejected an option, corrected the AI, or set a constraint that shaped the outcome. Extract at most 3, only if genuinely consequential, zero is a valid answer. For each: situation (1 sentence, the context they faced), call (1 sentence, what they decided, active voice), why (1-2 sentences, the reasoning as evidenced or clearly implied, never invent motives), source_turn_nos (the turn numbers that evidence it). Write in second person plain language ('you decided...' style is NOT wanted, write neutrally: 'Rebuilt the flag on public filings...'). No praise, no scores, no advice.";
+  "You extract CONSEQUENTIAL DECISIONS from one piece of a professional's work. It may be an AI conversation transcript, or a document, deck or sheet they produced. A consequential decision is a moment the human chose a direction, rejected an option, corrected the AI, or set a constraint that shaped the outcome. In a deliverable, a decision shows up as a commitment, a term, a scope line, a number that was settled. Extract at most 3, only if genuinely consequential, zero is a valid answer. For each: situation (1 sentence, the context they faced), call (1 sentence, what they decided, active voice, neutral), why (1-2 sentences, the reasoning as evidenced or clearly implied, never invent motives). When the source is a transcript, set source_turn_nos to the turn numbers that evidence it. When the source is a document, deck or sheet there are no turns, so return an empty array. When a decision appears with no visible deliberation behind it, say so plainly rather than inventing a rationale. No praise, no scores, no advice. Never use an em dash in your output. " +
+  QUOTE_RULE;
 
 export const DRAFT_TOOL = {
   type: "function",
