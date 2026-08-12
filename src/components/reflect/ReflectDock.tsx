@@ -4,10 +4,12 @@ import { Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 
 import { SlideOver } from "@/components/peek/SlideOver";
+import { AnswerSources } from "@/components/reflect/AnswerSources";
 import { CoverageNote } from "@/components/reflect/CoverageNote";
 import { MarkdownMessage } from "@/components/markdown/MarkdownMessage";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { useAnswerSources } from "@/hooks/use-answer-sources";
 import { supabase } from "@/integrations/supabase/client";
 import { sendReflectMessage } from "@/lib/reflect.functions";
 import { logEvent } from "@/lib/telemetry";
@@ -50,6 +52,7 @@ export function ReflectDock({
   } | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
+  const [unmatched, setUnmatched] = useState<Record<number, number>>({});
   const { data: messages } = useQuery({
     queryKey: ["reflect-messages", sessionId],
     enabled: Boolean(sessionId),
@@ -63,6 +66,10 @@ export function ReflectDock({
       return (data ?? []) as MessageRow[];
     },
   });
+
+  const { data: sourcesByMessage } = useAnswerSources(
+    (messages ?? []).filter((m) => m.role === "assistant").map((m) => Number(m.id)),
+  );
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -148,7 +155,13 @@ export function ReflectDock({
                 {message.content}
               </p>
             ) : (
-              <MarkdownMessage content={message.content} />
+              <>
+                <MarkdownMessage content={message.content} />
+                <AnswerSources
+                  sources={sourcesByMessage?.[Number(message.id)] ?? []}
+                  unmatchedQuotes={unmatched[Number(message.id)] ?? 0}
+                />
+              </>
             )}
           </div>
         ))}
