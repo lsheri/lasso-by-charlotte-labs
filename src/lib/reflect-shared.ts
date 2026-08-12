@@ -57,3 +57,19 @@ export function titleFromMessage(message: string): string {
   if (clean.length <= 60) return clean || "New session";
   return `${clean.slice(0, 57).trimEnd()}…`;
 }
+
+
+/** One work item that went into one answer, for the in-chat audit strip. */
+export type ContextSource = {
+  id: string;
+  title: string;
+  type: string;
+  source_vendor: string | null;
+  depth: "full" | "extract" | "unreadable";
+};
+
+export const SOURCE_GROUPS: { depth: ContextSource["depth"]; label: string }[] = [
+  { depth: "full", label: "Read in full" },
+  { depth: "extract", label: "Read as a summary only" },
+  { depth: "unreadable", label: "Could not be read" },
+];

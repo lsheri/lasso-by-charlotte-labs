@@ -5,7 +5,7 @@ import type { Database } from "@/integrations/supabase/types";
 import type { AiReadInput, AiReadRole } from "./ai-reads.server";
 import { ensureExtract, type ClassifiableItem } from "./extract.server";
 import { ITEM_TEXT_COLUMNS, getItemText, type ItemTextStatus } from "./item-text.server";
-import type { ContextScope } from "./reflect-shared";
+import type { ContextScope, ContextSource } from "./reflect-shared";
 
 /** Tier 2 is the expensive tier: raw text, bounded hard. */
 const RAW_BUDGET = 120_000;
@@ -29,6 +29,8 @@ type ItemRow = ClassifiableItem & {
   source_vendor: string | null;
 };
 
+export type { ContextSource };
+
 export type AssembledContext = {
   context: string;
   truncated: boolean;
@@ -40,14 +42,6 @@ export type AssembledContext = {
   sources: ContextSource[];
 };
 
-/** What actually went into one answer, for the in-chat audit strip. */
-export type ContextSource = {
-  id: string;
-  title: string;
-  type: string;
-  source_vendor: string | null;
-  depth: "full" | "extract" | "unreadable";
-};
 
 /**
  * The honesty guard. An item we could not open still appears in the context,

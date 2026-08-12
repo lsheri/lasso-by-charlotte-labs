@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { ContextSource } from "@/lib/reflect-shared";
 
 type SendInput = {
   session_id: string;
@@ -32,7 +33,7 @@ export const sendReflectMessage = createServerFn({ method: "POST" })
       fullCount: number;
       summaryCount: number;
       messageId: number | null;
-      sources: import("./reflect-context.server").ContextSource[];
+      sources: ContextSource[];
       unmatchedQuotes: number;
     }> => {
       const { supabase, userId } = context;
