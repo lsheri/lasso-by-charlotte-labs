@@ -1,8 +1,9 @@
 import { CircleDashed, Lock } from "lucide-react";
 
-import { EngagementChip, TypeIcon, VendorChip } from "@/components/work/TypeIcon";
+import { EngagementChip, TypeIcon } from "@/components/work/TypeIcon";
+import { VendorMark } from "@/components/work/VendorMark";
 import { engagementHue, workIdentityLabel } from "@/lib/work-identity";
-import { effectiveWorkDate, formatDate, sourceLabel, type WorkItemRow } from "@/lib/work-types";
+import { effectiveWorkDate, formatDate, type WorkItemRow } from "@/lib/work-types";
 
 export function WorkRow({
   item,
@@ -115,10 +116,7 @@ export function WorkRow({
           <p className="mt-0.5 flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5 break-words font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
             <span>{workIdentityLabel(item)}</span>
             <span aria-hidden>·</span>
-            <VendorChip
-              vendor={item.source_vendor ?? sourceLabel(item.source)}
-              label={sourceLabel(item.source)}
-            />
+            <VendorMark item={item} />
             <span aria-hidden>·</span>
             <span>{formatDate(dateIso)}</span>
             {link ? (

@@ -16,6 +16,7 @@ import { SuggestDot, SuggestLegend, Suggested } from "@/components/common/Sugges
 import { SuggestionChip } from "@/components/work/SuggestionChip";
 import { PeekPanel, type PeekEntry } from "@/components/peek/PeekPanel";
 import { UploadFilesButton } from "@/components/work/UploadFilesButton";
+import { TranscriptsAction } from "@/components/work/TranscriptsAction";
 import { WorkDateDialog } from "@/components/work/WorkDateDialog";
 import { RowAction, WorkRow } from "@/components/work/WorkRow";
 import { EngagementFold, WorkSection } from "@/components/work/WorkSection";
@@ -436,6 +437,7 @@ export function WorkPage() {
           <ConnectorBrowseActions />
           <PasteThreadDialog trigger={<Button type="button">Paste a thread</Button>} />
           <UploadFilesButton />
+          <TranscriptsAction />
           <ImportFlowDialog
             trigger={
               <Button type="button" variant="outline">
@@ -466,6 +468,7 @@ export function WorkPage() {
             <ConnectorBrowseActions />
             <PasteThreadDialog trigger={<Button type="button">Paste a thread</Button>} />
             <UploadFilesButton />
+            <TranscriptsAction />
             <ImportFlowDialog
               trigger={
                 <Button type="button" variant="outline">

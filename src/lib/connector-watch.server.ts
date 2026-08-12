@@ -155,7 +155,9 @@ export async function checkWatches(
       let ids: string[] = [];
       try {
         ids = await folderFileIds(supabase, profileId, account.toolkit, folder.id);
-      } catch {
+      } catch (error) {
+        const { reportConnectorError } = await import("@/lib/connector-error.server");
+        await reportConnectorError(supabase, { provider: account.toolkit, error });
         next.push(folder);
         continue;
       }

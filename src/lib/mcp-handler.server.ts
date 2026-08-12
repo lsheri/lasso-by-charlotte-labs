@@ -2,7 +2,12 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import type { Json } from "@/integrations/supabase/types";
 import { sha256Hex } from "@/lib/connectors-shared";
-import { flaggedBucket, looksLikeRestatement } from "@/lib/attachment-guard";
+import {
+  attachmentRejection,
+  flaggedBucket,
+  REJECTION_WORDS,
+  type RejectionReason,
+} from "@/lib/attachment-guard";
 import { workTypeForFile } from "@/lib/work-types";
 import { recordEvent } from "@/lib/telemetry.server";
 import {
@@ -12,12 +17,23 @@ import {
   type SourceMeta,
 } from "@/lib/conversation-shared";
 
-const PROTOCOL_VERSION = "2025-06-18";
-const ACCEPTED_PROTOCOLS = new Set([PROTOCOL_VERSION, "2025-03-26", "2024-11-05"]);
+const PROTOCOL_VERSION = "2025-11-25";
+const ACCEPTED_PROTOCOLS = new Set([
+  PROTOCOL_VERSION,
+  "2025-06-18",
+  "2025-03-26",
+  "2024-11-05",
+]);
 const MAX_TURNS = 500;
 const MAX_THREAD_BYTES = 2 * 1024 * 1024;
 const MAX_DOC_BYTES = 5 * 1024 * 1024;
-const MAX_ATTACHMENTS = 40;
+const MAX_ATTACHMENTS = 12;
+
+const SITE_URL = "https://pilot-platform.charlotte-labs.dev";
+const ICONS = [
+  { src: `${SITE_URL}/mcp-icon-256.png`, mimeType: "image/png", sizes: ["256x256"] },
+  { src: `${SITE_URL}/mcp-icon-48.png`, mimeType: "image/png", sizes: ["48x48"] },
+];
 
 export const CORS_HEADERS: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
@@ -92,6 +108,8 @@ async function logPush(owner: Owner, dims: Record<string, string>): Promise<void
 const TOOLS = [
   {
     name: "push_conversation",
+    title: "Push a conversation",
+    icons: ICONS,
     description:
       "When the user says 'Push to Lasso', 'send to Lasso', or similar: call push_conversation EXACTLY ONCE with the ENTIRE conversation, every message, verbatim, unabridged, plus any artifact, canvas or file that already existed as its own object in this app, as attachments. Never summarize the transcript. Never compose new summaries, recaps or section write-ups and send them as attachments. Never split one conversation across multiple calls or use push_document for conversation artifacts.",
     inputSchema: {
@@ -141,7 +159,7 @@ const TOOLS = [
           type: "array",
           maxItems: MAX_ATTACHMENTS,
           description:
-            "ONLY objects that already existed as a separate, addressable thing in the source app before this push was requested: a Claude artifact, a ChatGPT canvas, a generated or downloadable file, a produced document. If the user could open, rename, or download it on its own in the app, it belongs here. NOT an attachment: a section or heading taken from a message; a summary, recap, list, or set of key points you are composing now; an explanation of what happened in the conversation; anything you would have to write in order to send it. If you are generating the content at push time, it is not an artifact and must not be sent. The transcript already carries it. When in doubt, send nothing and let the messages speak.",
+            "ONLY objects that already existed as a separate, addressable thing in the source app before this push: a Claude artifact, a ChatGPT canvas, a generated or downloadable file. Each one must carry its own source_artifact_id from that app. The server rejects attachments that duplicate message content. Rejected content is still captured in the transcript.",
           items: {
             type: "object",
             properties: {
@@ -151,10 +169,15 @@ const TOOLS = [
                 description:
                   "The artifact's own title exactly as it appeared in the source app, verbatim. Never a description you invent for it, and never a heading you compose to label it.",
               },
+              source_artifact_id: {
+                type: "string",
+                description:
+                  "The artifact's own identifier in the source app, exactly as the app knows it. In Claude this is the artifact's identifier. In ChatGPT it is the canvas or textdoc id. For a generated file it is the filename the app gave it. This is not a description and not a slug you invent. If the object does not have an identifier of its own in the app, it is not an artifact and must not be sent as an attachment.",
+              },
               content: { type: "string", description: "Verbatim source or text." },
               language: { type: "string" },
             },
-            required: ["kind", "title", "content"],
+            required: ["kind", "title", "content", "source_artifact_id"],
           },
         },
         meta: {
@@ -172,6 +195,8 @@ const TOOLS = [
   },
   {
     name: "push_thread",
+    title: "Push a transcript",
+    icons: ICONS,
     description:
       "Prefer push_conversation for anything conversation-shaped; use this only for a standalone transcript with no artifacts and no source conversation to group it with.",
     inputSchema: {
@@ -202,6 +227,8 @@ const TOOLS = [
   },
   {
     name: "push_document",
+    title: "Push a document",
+    icons: ICONS,
     description:
       "Prefer push_conversation for anything conversation-shaped; use this only for a standalone document with no source conversation.",
     inputSchema: {
@@ -222,6 +249,8 @@ const TOOLS = [
   },
   {
     name: "list_engagements",
+    title: "List engagements",
+    icons: ICONS,
     description:
       "List the user's engagements and tasks so a pushed item can mention where it might belong. Read-only.",
     inputSchema: { type: "object", properties: {} },
@@ -254,7 +283,13 @@ export async function handleMcpRequest(request: Request, token: string): Promise
     return rpcResult(id, {
       protocolVersion: ACCEPTED_PROTOCOLS.has(asked) ? asked : PROTOCOL_VERSION,
       capabilities: { tools: {} },
-      serverInfo: { name: "lasso", version: "1.0.0" },
+      serverInfo: {
+        name: "lasso",
+        title: "Lasso by Charlotte Labs",
+        version: "1.1.0",
+        websiteUrl: SITE_URL,
+        icons: ICONS,
+      },
     });
   }
 
@@ -439,7 +474,21 @@ async function listEngagements(owner: Owner, id: unknown): Promise<Response> {
 }
 
 type IncomingMessage = { role: string; content: string; timestamp?: string };
-type IncomingAttachment = { kind: string; title: string; content: string; language?: string };
+type IncomingAttachment = {
+  kind: string;
+  title: string;
+  content: string;
+  sourceArtifactId: string;
+  language?: string;
+};
+
+type RejectedAttachment = {
+  title: string;
+  kind: string;
+  reason: RejectionReason;
+  chars: number;
+  source_artifact_id: string;
+};
 
 const ATTACHMENT_TYPES: Record<string, "document" | "image" | "deck" | "sheet"> = {
   artifact_svg: "image",
@@ -507,10 +556,14 @@ async function pushConversation(owner: Owner, args: Obj, id: unknown): Promise<R
   }
 
   const rawAttachments = Array.isArray(args["attachments"])
-    ? (args["attachments"] as IncomingAttachment[])
+    ? (args["attachments"] as (Partial<IncomingAttachment> & { source_artifact_id?: unknown })[])
     : [];
   if (rawAttachments.length > MAX_ATTACHMENTS) {
-    return rpcError(id, -32602, `Too many attachments. Max is ${MAX_ATTACHMENTS}.`);
+    return rpcError(
+      id,
+      -32602,
+      `Too many attachments (${rawAttachments.length}). Maximum is ${MAX_ATTACHMENTS}. Send only objects that already existed in the app as their own artifact, canvas or file.`,
+    );
   }
   const attachments: IncomingAttachment[] = [];
   for (const a of rawAttachments) {
@@ -521,6 +574,8 @@ async function pushConversation(owner: Owner, args: Obj, id: unknown): Promise<R
       kind: ATTACHMENT_KINDS.includes(String(a.kind) as never) ? String(a.kind) : "other",
       title: a.title.trim(),
       content: a.content,
+      sourceArtifactId:
+        typeof a.source_artifact_id === "string" ? a.source_artifact_id.trim() : "",
       ...(typeof a.language === "string" ? { language: a.language } : {}),
     });
   }
@@ -701,35 +756,53 @@ async function pushConversation(owner: Owner, args: Obj, id: unknown): Promise<R
   const storedCount = storedTurns?.length ?? 0;
   const extraStored = Math.max(0, storedCount - messages.length);
 
-  // ---- attachments (upsert by orig_conversation_id + title) ----------------
+  // ---- attachments (match by source_artifact_id, then title) ---------------
   let saved = 0;
   const capturedIds: string[] = [threadId];
   const problems: string[] = [];
-  let flaggedCount = 0;
+  const rejected: RejectedAttachment[] = [];
   const transcriptText = messages.map((m) => m.content).join("\n\n");
+  const messageTexts = messages.map((m) => m.content);
   if (attachments.length > 0 && !owner.userId) {
     problems.push("attachments need a signed-in workspace account");
   } else {
     const { data: existingAttachments } = await supabaseAdmin
       .from("work_items")
-      .select("id, title, content_ref")
+      .select("id, title, content_ref, source_meta")
       .eq("owner_id", owner.profileId)
       .eq("orig_conversation_id", origId)
       .neq("type", "ai_thread");
 
     for (const attachment of attachments) {
+      // The server decides what an artifact is. Every rejected attachment's
+      // content is already stored verbatim in the transcript, so rejecting it
+      // removes a duplicate row, not information.
+      const reason = attachmentRejection(attachment, messageTexts, transcriptText);
+      if (reason) {
+        rejected.push({
+          title: attachment.title,
+          kind: attachment.kind,
+          reason,
+          chars: attachment.content.length,
+          source_artifact_id: attachment.sourceArtifactId,
+        });
+        continue;
+      }
       const encoded = new TextEncoder().encode(attachment.content);
       if (encoded.byteLength > MAX_DOC_BYTES) {
         problems.push(`'${attachment.title}' is over the 5MB limit`);
         continue;
       }
-      const match = (existingAttachments ?? []).find((row) => row.title === attachment.title);
-      // A restatement of the conversation is not a separate artifact. We never
-      // drop it: we flag it, and the owner decides.
-      const restated = looksLikeRestatement(attachment.content, transcriptText);
-      if (restated) flaggedCount += 1;
+      // Match on the artifact's own id first, so a rename in the source app
+      // follows through instead of creating a second row.
+      const match =
+        (existingAttachments ?? []).find(
+          (row) =>
+            ((row.source_meta as { source_artifact_id?: string } | null)?.source_artifact_id ??
+              "") === attachment.sourceArtifactId,
+        ) ?? (existingAttachments ?? []).find((row) => row.title === attachment.title);
       // Reuse the stored path for a known attachment; give new ones a collision-proof suffix.
-      const suffix = (await sha256Hex(attachment.title)).slice(0, 8);
+      const suffix = (await sha256Hex(attachment.sourceArtifactId)).slice(0, 8);
       const path =
         match?.content_ref ??
         `${owner.userId}/conv-${slugify(origId)}-${slugify(attachment.title)}-${suffix}`;
@@ -759,7 +832,8 @@ async function pushConversation(owner: Owner, args: Obj, id: unknown): Promise<R
           kind: attachment.kind,
           language: attachment.language ?? null,
           filename: attachment.title,
-          duplicate_of_transcript: restated,
+          source_artifact_id: attachment.sourceArtifactId,
+          duplicate_of_transcript: false,
         } as unknown as Json,
         meta: { assistant_transcribed: true },
       };
@@ -788,6 +862,18 @@ async function pushConversation(owner: Owner, args: Obj, id: unknown): Promise<R
   const { ensureExtracts } = await import("./extract.server");
   await ensureExtracts(capturedIds);
 
+  // The transcript carries the record of what was refused, replaced each push.
+  await supabaseAdmin
+    .from("work_items")
+    .update({
+      source_meta: {
+        ...sharedMeta,
+        role: "transcript",
+        rejected_attachments: rejected,
+      } as unknown as Json,
+    })
+    .eq("id", threadId);
+
   const pushMode = !existingThread
     ? "created"
     : newRows.length > 0 || changedCount > 0
@@ -801,7 +887,7 @@ async function pushConversation(owner: Owner, args: Obj, id: unknown): Promise<R
     dims: {
       vendor,
       attachment_count: attachmentBucket(attachments.length),
-      flagged_attachments: flaggedBucket(flaggedCount),
+      rejected_attachments: flaggedBucket(rejected.length),
       mode: pushMode,
     },
   });
@@ -815,9 +901,13 @@ async function pushConversation(owner: Owner, args: Obj, id: unknown): Promise<R
   const verb = existingThread ? "Updated" : "Saved";
   const tail = saved > 0 ? ` with ${saved} attachment${saved === 1 ? "" : "s"}` : "";
   const warn = problems.length > 0 ? ` Some attachments didn't save: ${problems.join("; ")}.` : "";
-  const flaggedNote =
-    flaggedCount > 0
-      ? ` ${flaggedCount} attachment${flaggedCount === 1 ? "" : "s"} looked like restatement${flaggedCount === 1 ? "" : "s"} of the conversation rather than separate artifacts and ${flaggedCount === 1 ? "was" : "were"} flagged. Only send artifacts that existed in the app before the push.`
+  const rejectedNote =
+    rejected.length > 0
+      ? ` Did not create ${rejected.length} separate item${rejected.length === 1 ? "" : "s"}: ${rejected
+          .map((r) => `'${r.title}' ${REJECTION_WORDS[r.reason]}`)
+          .join(
+            "; ",
+          )}. All of it is already stored word for word in the transcript, so nothing was lost. Only send objects that existed in the app before the push, with their own identifier.`
       : "";
   const counts = existingThread
     ? ` ${unchangedCount} message${unchangedCount === 1 ? "" : "s"} already captured, ${newRows.length} new, ${changedCount} changed since last push.`
@@ -831,6 +921,6 @@ async function pushConversation(owner: Owner, args: Obj, id: unknown): Promise<R
     : "";
   return textResult(
     id,
-    `${verb} '${title}' in Lasso${tail}.${counts}${shortNote} It stays private until the user maps it.${flaggedNote}${warn}${continuation}`,
+    `${verb} '${title}' in Lasso${tail}.${counts}${shortNote} It stays private until the user maps it.${rejectedNote}${warn}${continuation}`,
   );
 }

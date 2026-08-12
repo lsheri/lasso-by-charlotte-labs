@@ -58,24 +58,30 @@ export const browseConnectorItems = createServerFn({ method: "POST" })
     const { resolveProfile } = await import("@/lib/profile-resolve");
     const { requireConnected, importedToolkitIds } = await import("@/lib/connector-import.server");
     const { browseConnector } = await import("@/lib/connector-browse.server");
+    const { guardConnector } = await import("@/lib/connector-error.server");
 
     const profile = await resolveProfile(supabase, userId, data.profile_id);
     if (!profile) throw new Response("Forbidden", { status: 403 });
-    await requireConnected(supabase, profile.id, data.toolkit);
-
-    const seen = await importedToolkitIds(supabase, profile.id, data.toolkit);
-    const { watchedFolderIds } = await import("@/lib/connector-watch.server");
-    const watched = await watchedFolderIds(supabase, profile.id, data.toolkit);
-    return browseConnector(supabase, {
-      toolkit: data.toolkit,
-      profileId: profile.id,
-      folderId: data.folder_id ?? null,
-      folderName: data.folder_name ?? null,
-      search: data.search ?? null,
-      pageToken: data.page_token ?? null,
-      seen,
-      watched,
-    });
+    return guardConnector(
+      supabase,
+      { provider: data.toolkit, orgId: profile.org_id, userId },
+      async () => {
+        await requireConnected(supabase, profile.id, data.toolkit);
+        const seen = await importedToolkitIds(supabase, profile.id, data.toolkit);
+        const { watchedFolderIds } = await import("@/lib/connector-watch.server");
+        const watched = await watchedFolderIds(supabase, profile.id, data.toolkit);
+        return browseConnector(supabase, {
+          toolkit: data.toolkit,
+          profileId: profile.id,
+          folderId: data.folder_id ?? null,
+          folderName: data.folder_name ?? null,
+          search: data.search ?? null,
+          pageToken: data.page_token ?? null,
+          seen,
+          watched,
+        });
+      },
+    );
   });
 
 /** Import exactly what the user ticked, never anything else. */
@@ -87,17 +93,23 @@ export const browseTranscriptCandidates = createServerFn({ method: "POST" })
     const { resolveProfile } = await import("@/lib/profile-resolve");
     const { requireConnected, importedToolkitIds } = await import("@/lib/connector-import.server");
     const { browseDriveTranscripts } = await import("@/lib/connector-browse.server");
+    const { guardConnector } = await import("@/lib/connector-error.server");
 
     const profile = await resolveProfile(supabase, userId, data.profile_id);
     if (!profile) throw new Response("Forbidden", { status: 403 });
-    await requireConnected(supabase, profile.id, "googledrive");
-
-    const seen = await importedToolkitIds(supabase, profile.id, "googledrive");
-    return browseDriveTranscripts({
-      profileId: profile.id,
-      search: data.search ?? null,
-      seen,
-    });
+    return guardConnector(
+      supabase,
+      { provider: "googledrive", orgId: profile.org_id, userId },
+      async () => {
+        await requireConnected(supabase, profile.id, "googledrive");
+        const seen = await importedToolkitIds(supabase, profile.id, "googledrive");
+        return browseDriveTranscripts({
+          profileId: profile.id,
+          search: data.search ?? null,
+          seen,
+        });
+      },
+    );
   });
 
 export const importConnectorItems = createServerFn({ method: "POST" })
@@ -108,20 +120,26 @@ export const importConnectorItems = createServerFn({ method: "POST" })
     const { resolveProfile } = await import("@/lib/profile-resolve");
     const { requireConnected } = await import("@/lib/connector-import.server");
     const { importConnectorFiles } = await import("@/lib/connector-browse.server");
+    const { guardConnector } = await import("@/lib/connector-error.server");
 
     const profile = await resolveProfile(supabase, userId, data.profile_id);
     if (!profile) throw new Response("Forbidden", { status: 403 });
-    await requireConnected(supabase, profile.id, data.toolkit);
-
-    return importConnectorFiles(supabase, {
-      toolkit: data.toolkit,
-      profileId: profile.id,
-      orgId: profile.org_id,
-      userId,
-      ids: data.ids,
-      mimes: data.mimes ?? null,
-      folderName: data.folder_name ?? null,
-    });
+    return guardConnector(
+      supabase,
+      { provider: data.toolkit, orgId: profile.org_id, userId },
+      async () => {
+        await requireConnected(supabase, profile.id, data.toolkit);
+        return importConnectorFiles(supabase, {
+          toolkit: data.toolkit,
+          profileId: profile.id,
+          orgId: profile.org_id,
+          userId,
+          ids: data.ids,
+          mimes: data.mimes ?? null,
+          folderName: data.folder_name ?? null,
+        });
+      },
+    );
   });
 
 export const browseGranolaMeetings = createServerFn({ method: "POST" })
@@ -132,35 +150,42 @@ export const browseGranolaMeetings = createServerFn({ method: "POST" })
     const { resolveProfile } = await import("@/lib/profile-resolve");
     const { importedGranolaIds } = await import("@/lib/connector-import.server");
     const { requireGranolaKey, listGranolaNotes } = await import("@/lib/granola.server");
+    const { guardConnector } = await import("@/lib/connector-error.server");
 
     const profile = await resolveProfile(supabase, userId, data.profile_id);
     if (!profile) throw new Response("Forbidden", { status: 403 });
 
-    const key = await requireGranolaKey(profile.id);
-    const { notes, cursor } = await listGranolaNotes(key, {
-      limit: 30,
-      cursor: data.page_token ?? null,
-    });
-    const seen = await importedGranolaIds(supabase, profile.id);
-    const term = data.search?.trim().toLowerCase();
+    return guardConnector(
+      supabase,
+      { provider: "granola", orgId: profile.org_id, userId },
+      async () => {
+        const key = await requireGranolaKey(profile.id);
+        const { notes, cursor } = await listGranolaNotes(key, {
+          limit: 30,
+          cursor: data.page_token ?? null,
+        });
+        const seen = await importedGranolaIds(supabase, profile.id);
+        const term = data.search?.trim().toLowerCase();
 
-    return {
-      items: notes
-        .filter((note) => !term || note.title.toLowerCase().includes(term))
-        .map((note) => ({
-          id: note.id,
-          title: note.title,
-          subtitle: null,
-          date: note.date,
-          isFolder: false,
-          alreadyInLasso: seen.has(note.id),
-        })),
-      nextPageToken: cursor,
-      unsupported:
-        notes.length === 0 && !data.page_token
-          ? "No meeting notes came back yet. Granola only returns notes that already have an AI summary."
-          : null,
-    };
+        return {
+          items: notes
+            .filter((note) => !term || note.title.toLowerCase().includes(term))
+            .map((note) => ({
+              id: note.id,
+              title: note.title,
+              subtitle: null,
+              date: note.date,
+              isFolder: false,
+              alreadyInLasso: seen.has(note.id),
+            })),
+          nextPageToken: cursor,
+          unsupported:
+            notes.length === 0 && !data.page_token
+              ? "No meeting notes came back yet. Granola only returns notes that already have an AI summary."
+              : null,
+        };
+      },
+    );
   });
 
 export const importGranolaMeetings = createServerFn({ method: "POST" })
@@ -172,11 +197,13 @@ export const importGranolaMeetings = createServerFn({ method: "POST" })
     const { importedGranolaIds, storeFile, captureEvents } =
       await import("@/lib/connector-import.server");
     const { requireGranolaKey, fetchGranolaNote } = await import("@/lib/granola.server");
+    const { guardConnector } = await import("@/lib/connector-error.server");
 
     const profile = await resolveProfile(supabase, userId, data.profile_id);
     if (!profile) throw new Response("Forbidden", { status: 403 });
 
-    const key = await requireGranolaKey(profile.id);
+    const guard = { provider: "granola", orgId: profile.org_id, userId };
+    const key = await guardConnector(supabase, guard, () => requireGranolaKey(profile.id));
     const seen = await importedGranolaIds(supabase, profile.id);
     const newIds: string[] = [];
     let imported = 0;
@@ -189,7 +216,7 @@ export const importGranolaMeetings = createServerFn({ method: "POST" })
       }
       // One note at a time, with a breath between calls: Granola rate-limits.
       if (index > 0) await new Promise((r) => setTimeout(r, 250));
-      const note = await fetchGranolaNote(key, id);
+      const note = await guardConnector(supabase, guard, () => fetchGranolaNote(key, id));
       if (!note) {
         skipped += 1;
         continue;
@@ -249,20 +276,21 @@ export const browseGmailThreads = createServerFn({ method: "POST" })
     const { requireConnected, importedGmailThreadIds } =
       await import("@/lib/connector-import.server");
     const { listGmailLabels, listGmailThreads } = await import("@/lib/gmail.server");
+    const { guardConnector } = await import("@/lib/connector-error.server");
 
     const profile = await resolveProfile(supabase, userId, data.profile_id);
     if (!profile) throw new Response("Forbidden", { status: 403 });
     await requireConnected(supabase, profile.id, "gmail");
 
-    const labels = await listGmailLabels(profile.id);
+    const guard = { provider: "gmail", orgId: profile.org_id, userId };
+    const labels = await guardConnector(supabase, guard, () => listGmailLabels(profile.id));
     const scope = data.folder_id ?? "in:inbox";
     const term = data.search?.trim();
     const query = [scope, term].filter(Boolean).join(" ");
 
-    const { threads, nextPageToken } = await listGmailThreads(profile.id, {
-      query,
-      pageToken: data.page_token ?? null,
-    });
+    const { threads, nextPageToken } = await guardConnector(supabase, guard, () =>
+      listGmailThreads(profile.id, { query, pageToken: data.page_token ?? null }),
+    );
     const seen = await importedGmailThreadIds(supabase, profile.id);
 
     return {
@@ -291,11 +319,13 @@ export const importGmailThreads = createServerFn({ method: "POST" })
     const { requireConnected, importedGmailThreadIds, storeFile, captureEvents } =
       await import("@/lib/connector-import.server");
     const { fetchGmailThread } = await import("@/lib/gmail.server");
+    const { guardConnector } = await import("@/lib/connector-error.server");
 
     const profile = await resolveProfile(supabase, userId, data.profile_id);
     if (!profile) throw new Response("Forbidden", { status: 403 });
     await requireConnected(supabase, profile.id, "gmail");
 
+    const guard = { provider: "gmail", orgId: profile.org_id, userId };
     const seen = await importedGmailThreadIds(supabase, profile.id);
     const newIds: string[] = [];
     let imported = 0;
@@ -307,7 +337,9 @@ export const importGmailThreads = createServerFn({ method: "POST" })
         continue;
       }
       if (index > 0) await new Promise((r) => setTimeout(r, 200));
-      const thread = await fetchGmailThread(profile.id, id);
+      const thread = await guardConnector(supabase, guard, () =>
+        fetchGmailThread(profile.id, id),
+      );
       if (!thread) {
         skipped += 1;
         continue;
