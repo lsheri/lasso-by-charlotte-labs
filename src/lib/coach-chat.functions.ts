@@ -18,6 +18,7 @@ export const askCoachChat = createServerFn({ method: "POST" })
       fullCount: number;
       summaryCount: number;
       sources: ContextSource[];
+      cutOff: boolean;
     }> => {
       const { supabase, userId } = context;
 
@@ -67,6 +68,7 @@ export const askCoachChat = createServerFn({ method: "POST" })
           fullCount: 0,
           summaryCount: 0,
           sources: [],
+          cutOff: false,
         };
       }
 
@@ -138,8 +140,11 @@ export const askCoachChat = createServerFn({ method: "POST" })
       const apiKey = process.env["LOVABLE_API_KEY"];
       if (!apiKey) throw new Error("Missing LOVABLE_API_KEY");
 
-      const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      let response: Response;
+      try {
+        response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
+        signal: AbortSignal.timeout(180_000),
         headers: {
           "Content-Type": "application/json",
           "Lovable-API-Key": apiKey,
@@ -147,7 +152,7 @@ export const askCoachChat = createServerFn({ method: "POST" })
         },
         body: JSON.stringify({
           model: "google/gemini-3.6-flash",
-          max_tokens: 1200,
+          max_tokens: 8000,
           messages: [
             { role: "system", content: COACH_CHAT_SYSTEM_PROMPT },
             {
@@ -156,7 +161,13 @@ export const askCoachChat = createServerFn({ method: "POST" })
             },
           ],
         }),
-      });
+        });
+      } catch (e) {
+        if ((e as Error).name === "TimeoutError" || (e as Error).name === "AbortError") {
+          throw new Error("That took too long to answer. Try a narrower question.");
+        }
+        throw e;
+      }
 
       if (!response.ok) {
         const body = await response.text();
@@ -166,11 +177,14 @@ export const askCoachChat = createServerFn({ method: "POST" })
       }
 
       const payload = (await response.json()) as {
-        choices?: { message?: { content?: string } }[];
+        choices?: { message?: { content?: string }; finish_reason?: string }[];
       };
-      const answer =
+      const cutOff = payload.choices?.[0]?.finish_reason === "length";
+      const { CUT_OFF_NOTE } = await import("./quote-check");
+      const base =
         payload.choices?.[0]?.message?.content?.trim() ??
         "The record doesn't give me enough to answer that.";
+      const answer = cutOff ? `${base}\n\n${CUT_OFF_NOTE}` : base;
 
       const { recordAiReads } = await import("./ai-reads.server");
       await recordAiReads(
@@ -223,6 +237,7 @@ export const askCoachChat = createServerFn({ method: "POST" })
         fullCount: 0,
         summaryCount: itemIds.length,
         sources,
+        cutOff,
       };
     },
   );
