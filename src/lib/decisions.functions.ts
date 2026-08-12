@@ -165,7 +165,8 @@ export const draftEngagementDecisions = createServerFn({ method: "POST" })
     }
     return { engagement_id: input.engagement_id, profile_id: input.profile_id ?? null };
   })
-  .handler(async ({ data, context }): Promise<{ drafted: number; scanned: number }> => {
+  .handler(
+    async ({ data, context }): Promise<{ drafted: number; scanned: number; suppressed: number }> => {
     const { supabase, userId } = context;
 
     const profile = await resolveProfile(supabase, userId, data.profile_id);
@@ -173,7 +174,7 @@ export const draftEngagementDecisions = createServerFn({ method: "POST" })
 
     const { buildEngagementCorpus } = await import("./engagement-decisions.server");
     const corpus = await buildEngagementCorpus(supabase, data.engagement_id, profile.id);
-    if (corpus.sources.length === 0) return { drafted: 0, scanned: 0 };
+    if (corpus.sources.length === 0) return { drafted: 0, scanned: 0, suppressed: 0 };
 
     const { chatComplete, resolveAiMeta } = await import("./ai.server");
     const meta = await resolveAiMeta(supabase, {
@@ -208,8 +209,16 @@ export const draftEngagementDecisions = createServerFn({ method: "POST" })
 
     const idFor = new Map(corpus.sources.map((s) => [s.no, s.id]));
     const label = dateLabel(new Date());
+    const { unmatchedQuotes } = await import("./quote-check");
+    let suppressed = 0;
     const rows = drafts
       .filter((d) => d && d.situation && d.call && d.why)
+      .filter((d) => {
+        const text = `${d.situation}\n${d.call}\n${d.why}`;
+        if (unmatchedQuotes(text, corpus.prompt).length === 0) return true;
+        suppressed += 1;
+        return false;
+      })
       .map((d) => ({
         owner_id: profile.id,
         engagement_id: data.engagement_id,
@@ -239,8 +248,9 @@ export const draftEngagementDecisions = createServerFn({ method: "POST" })
       eventType: "decision.drafted",
       orgId: profile.org_id,
       userId,
-      dims: { count: rows.length, scope: "engagement", ...usageDims(completion) },
+      dims: { count: rows.length, scope: "engagement", suppressed, ...usageDims(completion) },
     });
 
-    return { drafted: rows.length, scanned: corpus.sources.length };
-  });
+    return { drafted: rows.length, scanned: corpus.sources.length, suppressed };
+    },
+  );
