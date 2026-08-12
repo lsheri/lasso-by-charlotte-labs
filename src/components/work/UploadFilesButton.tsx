@@ -10,7 +10,15 @@ import { ensureExtractsFn } from "@/lib/extract.functions";
 import { logEvent } from "@/lib/telemetry";
 import { workTypeForFile } from "@/lib/work-types";
 
-export function UploadFilesButton({ variant = "outline" }: { variant?: "default" | "outline" }) {
+export function UploadFilesButton({
+  variant = "outline",
+  label = "Upload files",
+  onCaptured,
+}: {
+  variant?: "default" | "outline";
+  label?: string;
+  onCaptured?: ((workItemIds: string[]) => void | Promise<void>) | undefined;
+}) {
   const ensureExtracts = useServerFn(ensureExtractsFn);
   const { data: profile } = useProfile();
   const queryClient = useQueryClient();
@@ -77,6 +85,7 @@ export function UploadFilesButton({ variant = "outline" }: { variant?: "default"
     }
 
     await queryClient.invalidateQueries({ queryKey: ["work-items"] });
+    if (capturedIds.length > 0 && onCaptured) await onCaptured(capturedIds);
     setPending(false);
     setProgress(null);
     if (inputRef.current) inputRef.current.value = "";
@@ -104,7 +113,7 @@ export function UploadFilesButton({ variant = "outline" }: { variant?: "default"
               : "Uploading"}
           </WorkingLabel>
         ) : (
-          "Upload files"
+          label
         )}
       </Button>
       {error ? <p className="text-xs text-destructive">{error}</p> : null}
