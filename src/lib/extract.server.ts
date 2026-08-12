@@ -250,9 +250,5 @@ export async function ensureExtract(workItemId: string): Promise<boolean> {
  * the morning is readable the same morning.
  */
 export async function ensureExtracts(ids: string[]): Promise<void> {
-  if (ids.length <= 1) {
-    for (const id of ids) await ensureExtract(id);
-    return;
-  }
   for (const id of ids) await ensureExtract(id);
 }
