@@ -4,6 +4,7 @@ import { Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 
 import { SlideOver } from "@/components/peek/SlideOver";
+import { MarkdownMessage } from "@/components/markdown/MarkdownMessage";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
@@ -135,9 +136,13 @@ export function ReflectDock({
         {(messages ?? []).map((message) => (
           <div key={message.id}>
             <p className="micro-label">{message.role === "user" ? "You" : "Reflect"}</p>
-            <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-foreground">
-              {message.content}
-            </p>
+            {message.role === "user" ? (
+              <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-foreground">
+                {message.content}
+              </p>
+            ) : (
+              <MarkdownMessage content={message.content} />
+            )}
           </div>
         ))}
         {pending ? <p className="text-sm text-muted-foreground">Thinking…</p> : null}

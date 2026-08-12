@@ -461,3 +461,35 @@
   font-weight: 500;
   color: #ffffff;
 }
+
+/* Compact variant of the prose styles for AI chat bubbles. */
+.chat-prose {
+  font-size: 0.875rem;
+  line-height: 1.65;
+  max-width: none;
+}
+.chat-prose > * + * {
+  margin-top: 0.6em;
+}
+.chat-prose h1,
+.chat-prose h2,
+.chat-prose h3,
+.chat-prose h4 {
+  margin-top: 1.1em;
+}
+.chat-prose h1 {
+  font-size: 1.125rem;
+}
+.chat-prose h2 {
+  font-size: 1.0625rem;
+}
+.chat-prose h3,
+.chat-prose h4 {
+  font-size: 0.9375rem;
+}
+.chat-prose li + li {
+  margin-top: 0.2em;
+}
+.chat-prose pre {
+  padding: 0.7rem 0.85rem;
+}

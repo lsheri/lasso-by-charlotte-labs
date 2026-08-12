@@ -2,6 +2,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { MarkdownMessage } from "@/components/markdown/MarkdownMessage";
 import { Input } from "@/components/ui/input";
 import { useProfile } from "@/hooks/use-profile";
 import { askCoachChat } from "@/lib/coach-chat.functions";
@@ -60,9 +61,10 @@ export function CoachChat({
         {exchanges.map((exchange, index) => (
           <div key={index} className="space-y-1.5">
             <p className="text-sm font-medium text-foreground">{exchange.question}</p>
-            <p className="whitespace-pre-wrap border-l-2 border-accent pl-4 text-sm text-foreground">
-              {exchange.answer}
-            </p>
+            <MarkdownMessage
+              content={exchange.answer}
+              className="border-l-2 border-accent pl-4"
+            />
           </div>
         ))}
       </div>
