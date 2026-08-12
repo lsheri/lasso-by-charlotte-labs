@@ -116,6 +116,11 @@ const TOOLS = [
           description:
             "Stable ID for the source thread; all pushes for the same conversation MUST reuse it.",
         },
+        source_url: {
+          type: "string",
+          description:
+            "The conversation's URL in the source app, if you can see it. This is the most stable way to recognise the same conversation later.",
+        },
         messages: {
           type: "array",
           maxItems: MAX_TURNS,
@@ -462,6 +467,11 @@ async function pushConversation(owner: Owner, args: Obj, id: unknown): Promise<R
     typeof args["orig_conversation_id"] === "string" ? args["orig_conversation_id"].trim() : "";
   if (!origId) return rpcError(id, -32602, "orig_conversation_id is required");
 
+  const sourceUrl =
+    typeof args["source_url"] === "string" && args["source_url"].trim()
+      ? args["source_url"].trim()
+      : null;
+
   const rawMessages = args["messages"];
   if (!Array.isArray(rawMessages) || rawMessages.length === 0) {
     return rpcError(id, -32602, "messages must be a non-empty array");
@@ -527,14 +537,55 @@ async function pushConversation(owner: Owner, args: Obj, id: unknown): Promise<R
     ...(typeof metaIn.notes === "string" ? { notes: metaIn.notes } : {}),
   };
 
-  // ---- transcript work item (insert or update in place) --------------------
-  const { data: existingThread } = await supabaseAdmin
-    .from("work_items")
-    .select("id")
-    .eq("owner_id", owner.profileId)
-    .eq("orig_conversation_id", origId)
-    .eq("type", "ai_thread")
-    .maybeSingle();
+  // ---- locate the existing thread: source_url, then orig id, then continuation
+  let existingThread: { id: string } | null = null;
+  if (sourceUrl) {
+    const { data } = await supabaseAdmin
+      .from("work_items")
+      .select("id")
+      .eq("owner_id", owner.profileId)
+      .eq("type", "ai_thread")
+      .eq("meta->>source_url", sourceUrl)
+      .maybeSingle();
+    existingThread = data ?? null;
+  }
+  if (!existingThread) {
+    const { data } = await supabaseAdmin
+      .from("work_items")
+      .select("id")
+      .eq("owner_id", owner.profileId)
+      .eq("orig_conversation_id", origId)
+      .eq("type", "ai_thread")
+      .maybeSingle();
+    existingThread = data ?? null;
+  }
+
+  // Continuation hint only. We never merge threads, we just teach the caller the stable key.
+  let continuationOrigId: string | null = null;
+  if (!existingThread) {
+    const firstUser = messages.find((m) => m.role === "user");
+    if (firstUser) {
+      const firstHash = await sha256Hex(firstUser.content);
+      const { data: matchTurns } = await supabaseAdmin
+        .from("turns")
+        .select("work_item_id")
+        .eq("role", "user")
+        .eq("content_hash", firstHash)
+        .limit(25);
+      const ids = (matchTurns ?? []).map((t) => t.work_item_id).filter(Boolean);
+      if (ids.length > 0) {
+        const { data: candidates } = await supabaseAdmin
+          .from("work_items")
+          .select("orig_conversation_id")
+          .in("id", ids)
+          .eq("owner_id", owner.profileId)
+          .eq("type", "ai_thread")
+          .eq("source_vendor", vendor)
+          .limit(1);
+        continuationOrigId = candidates?.[0]?.orig_conversation_id ?? null;
+      }
+    }
+  }
 
   const threadFields = {
     owner_id: owner.profileId,
@@ -548,7 +599,7 @@ async function pushConversation(owner: Owner, args: Obj, id: unknown): Promise<R
     ts_precision: "capture" as const,
     content_hash: await sha256Hex(serialized),
     source_meta: { ...sharedMeta, role: "transcript" } as unknown as Json,
-    meta: { assistant_transcribed: true },
+    meta: { assistant_transcribed: true, ...(sourceUrl ? { source_url: sourceUrl } : {}) },
   };
 
   let threadId: string;
@@ -559,8 +610,6 @@ async function pushConversation(owner: Owner, args: Obj, id: unknown): Promise<R
       .update(threadFields)
       .eq("id", threadId);
     if (error) return rpcError(id, -32603, error.message);
-    const del = await supabaseAdmin.from("turns").delete().eq("work_item_id", threadId);
-    if (del.error) return rpcError(id, -32603, del.error.message);
   } else {
     const { data, error } = await supabaseAdmin
       .from("work_items")
@@ -571,21 +620,79 @@ async function pushConversation(owner: Owner, args: Obj, id: unknown): Promise<R
     threadId = data.id;
   }
 
-  const turnRows = await Promise.all(
-    messages.map(async (m, i) => ({
-      work_item_id: threadId,
-      turn_no: i + 1,
-      role: m.role as "user" | "assistant" | "tool",
-      content: m.content,
-      content_hash: await sha256Hex(m.content),
-      ts: m.timestamp ?? null,
-      ts_precision: (m.timestamp ? "source" : "capture") as "source" | "capture",
-      ...(model ? { model } : {}),
-      meta: {},
-    })),
+  // ---- reconcile turns: append-only, never delete -------------------------
+  const { data: storedTurns, error: storedError } = await supabaseAdmin
+    .from("turns")
+    .select("id, turn_no, content_hash, meta")
+    .eq("work_item_id", threadId)
+    .order("turn_no", { ascending: true });
+  if (storedError) return rpcError(id, -32603, storedError.message);
+  const stored = new Map(
+    (storedTurns ?? []).map((t) => [
+      t.turn_no,
+      { id: t.id, content_hash: t.content_hash, meta: t.meta },
+    ]),
   );
-  const { error: turnsError } = await supabaseAdmin.from("turns").insert(turnRows);
-  if (turnsError) return rpcError(id, -32603, turnsError.message);
+
+  let unchangedCount = 0;
+  let changedCount = 0;
+  const newRows: Record<string, unknown>[] = [];
+
+  for (let i = 0; i < messages.length; i += 1) {
+    const m = messages[i]!;
+    const turnNo = i + 1;
+    const hash = await sha256Hex(m.content);
+    const prior = stored.get(turnNo);
+    if (!prior) {
+      newRows.push({
+        work_item_id: threadId,
+        turn_no: turnNo,
+        role: m.role as "user" | "assistant" | "tool",
+        content: m.content,
+        content_hash: hash,
+        ts: m.timestamp ?? null,
+        ts_precision: (m.timestamp ? "source" : "capture") as "source" | "capture",
+        ...(model ? { model } : {}),
+        meta: {},
+      });
+      continue;
+    }
+    if (prior.content_hash === hash) {
+      unchangedCount += 1;
+      continue;
+    }
+    // Edited or branched upstream: update in place so the turn id survives.
+    const priorMeta =
+      prior.meta && typeof prior.meta === "object" && !Array.isArray(prior.meta)
+        ? (prior.meta as Record<string, unknown>)
+        : {};
+    const { error: updError } = await supabaseAdmin
+      .from("turns")
+      .update({
+        role: m.role as "user" | "assistant" | "tool",
+        content: m.content,
+        content_hash: hash,
+        ts: m.timestamp ?? null,
+        ts_precision: (m.timestamp ? "source" : "capture") as "source" | "capture",
+        ...(model ? { model } : {}),
+        meta: {
+          ...priorMeta,
+          revised_at: new Date().toISOString(),
+          previous_content_hash: prior.content_hash,
+        } as unknown as Json,
+      })
+      .eq("id", prior.id);
+    if (updError) return rpcError(id, -32603, updError.message);
+    changedCount += 1;
+  }
+
+  if (newRows.length > 0) {
+    const { error: turnsError } = await supabaseAdmin.from("turns").insert(newRows as never);
+    if (turnsError) return rpcError(id, -32603, turnsError.message);
+  }
+
+  const storedCount = storedTurns?.length ?? 0;
+  const extraStored = Math.max(0, storedCount - messages.length);
 
   // ---- attachments (upsert by orig_conversation_id + title) ----------------
   let saved = 0;
@@ -596,7 +703,7 @@ async function pushConversation(owner: Owner, args: Obj, id: unknown): Promise<R
   } else {
     const { data: existingAttachments } = await supabaseAdmin
       .from("work_items")
-      .select("id, title")
+      .select("id, title, content_ref")
       .eq("owner_id", owner.profileId)
       .eq("orig_conversation_id", origId)
       .neq("type", "ai_thread");
@@ -607,7 +714,12 @@ async function pushConversation(owner: Owner, args: Obj, id: unknown): Promise<R
         problems.push(`'${attachment.title}' is over the 5MB limit`);
         continue;
       }
-      const path = `${owner.userId}/conv-${slugify(origId)}-${slugify(attachment.title)}`;
+      const match = (existingAttachments ?? []).find((row) => row.title === attachment.title);
+      // Reuse the stored path for a known attachment; give new ones a collision-proof suffix.
+      const suffix = (await sha256Hex(attachment.title)).slice(0, 8);
+      const path =
+        match?.content_ref ??
+        `${owner.userId}/conv-${slugify(origId)}-${slugify(attachment.title)}-${suffix}`;
       const upload = await supabaseAdmin.storage
         .from("work-files")
         .upload(path, encoded, { contentType: "text/plain; charset=utf-8", upsert: true });
@@ -638,7 +750,6 @@ async function pushConversation(owner: Owner, args: Obj, id: unknown): Promise<R
         meta: { assistant_transcribed: true },
       };
 
-      const match = (existingAttachments ?? []).find((row) => row.title === attachment.title);
       const result = match
         ? await supabaseAdmin
             .from("work_items")
@@ -663,11 +774,17 @@ async function pushConversation(owner: Owner, args: Obj, id: unknown): Promise<R
   const { ensureExtracts } = await import("./extract.server");
   await ensureExtracts(capturedIds);
 
+  const pushMode = !existingThread
+    ? "created"
+    : newRows.length > 0 || changedCount > 0
+      ? "appended"
+      : "unchanged";
+
   await recordEvent(supabaseAdmin, {
     eventType: "mcp.push",
     orgId: owner.orgId,
     userId: owner.userId,
-    dims: { vendor, attachment_count: attachmentBucket(attachments.length) },
+    dims: { vendor, attachment_count: attachmentBucket(attachments.length), mode: pushMode },
   });
   await recordEvent(supabaseAdmin, {
     eventType: "workitem.captured",
@@ -679,8 +796,18 @@ async function pushConversation(owner: Owner, args: Obj, id: unknown): Promise<R
   const verb = existingThread ? "Updated" : "Saved";
   const tail = saved > 0 ? ` with ${saved} attachment${saved === 1 ? "" : "s"}` : "";
   const warn = problems.length > 0 ? ` Some attachments didn't save: ${problems.join("; ")}.` : "";
+  const counts = existingThread
+    ? ` ${unchangedCount} message${unchangedCount === 1 ? "" : "s"} already captured, ${newRows.length} new, ${changedCount} changed since last push.`
+    : ` ${messages.length} message${messages.length === 1 ? "" : "s"} captured.`;
+  const shortNote =
+    extraStored > 0
+      ? " This push had fewer messages than what is already stored. Nothing was removed."
+      : "";
+  const continuation = continuationOrigId
+    ? ` This looks like a continuation of an existing conversation in Lasso. To keep them together next time, reuse orig_conversation_id '${continuationOrigId}'.`
+    : "";
   return textResult(
     id,
-    `${verb} '${title}' in Lasso (${messages.length} messages${tail}). It stays private until the user maps it.${warn}`,
+    `${verb} '${title}' in Lasso${tail}.${counts}${shortNote} It stays private until the user maps it.${warn}${continuation}`,
   );
 }
