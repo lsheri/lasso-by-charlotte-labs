@@ -79,6 +79,25 @@ export async function runReflectTurn(
 
   const surface = data.surface === "ask_lasso" ? "ask_lasso" : "reflect";
 
+  // The defect class that cost trust before: items were in scope and none of
+  // them could be read. Structural counts only, no content.
+  if (assembled.itemCount > 0 && assembled.itemCount === assembled.unreadableCount) {
+    const { logHealth } = await import("./health.server");
+    void logHealth({
+      kind: "empty_context",
+      surface,
+      orgId: profile.org_id,
+      ownerId: profile.id,
+      detail: "assembler produced zero readable items while items were in scope",
+      meta: {
+        items_in_scope: assembled.itemCount,
+        unreadable: assembled.unreadableCount,
+        tier2: assembled.tier2Count,
+        scope_mode: scope.mode,
+      },
+    });
+  }
+
   const { chatComplete, streamChat, resolveAiMeta } = await import("./ai.server");
   const conversation = [
     { role: "system" as const, content: REFLECT_SYSTEM_PROMPT },
@@ -168,26 +187,6 @@ export async function runReflectTurn(
     .from("chat_sessions")
     .update({ title, updated_at: new Date().toISOString() })
     .eq("id", session.id);
-
-  // Content-free by construction: the scope mode is the only dimension.
-  const { reportAiAudit } = await import("./ai-health.server");
-  await reportAiAudit({
-    orgId: profile.org_id,
-    orgName: aiMeta.orgName,
-    surface,
-    model: completion.model,
-    question: message,
-    answer,
-    itemsRead: assembled.sources.map((source) => ({ title: source.title, depth: source.depth })),
-    quoteRepairs: guarded.repairs,
-    quoteFailures: guarded.failedSpans,
-    truncated: assembled.truncated,
-    tokensIn: completion.tokensIn + guarded.tokensIn,
-    tokensOut: completion.tokensOut + guarded.tokensOut,
-    cachedIn: completion.cachedIn,
-    costUsd: completion.costUsd + guarded.costUsd,
-    durationMs: completion.durationMs,
-  });
 
   const { usageDims } = await import("./ai-usage");
   const { recordEvent } = await import("./telemetry.server");

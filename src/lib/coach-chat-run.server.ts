@@ -208,25 +208,6 @@ export async function runCoachChat(
     question: data.question,
   });
 
-  const { reportAiAudit } = await import("./ai-health.server");
-  await reportAiAudit({
-    orgId: profile.org_id,
-    orgName: aiMeta.orgName,
-    surface: "coach_chat",
-    model: completion.model,
-    question: data.question,
-    answer,
-    itemsRead: itemIds.map((id) => ({ title: id, depth: "extract" })),
-    quoteRepairs: 0,
-    quoteFailures: [],
-    truncated: itemIds.length > 0,
-    tokensIn: completion.tokensIn,
-    tokensOut: completion.tokensOut,
-    cachedIn: completion.cachedIn,
-    costUsd: completion.costUsd,
-    durationMs: completion.durationMs,
-  });
-
   const { usageDims } = await import("./ai-usage");
   const { recordEvent } = await import("./telemetry.server");
   await recordEvent(supabase, {
