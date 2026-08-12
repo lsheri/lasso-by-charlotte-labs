@@ -1,7 +1,9 @@
 import { useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 
 import { supabase } from "@/integrations/supabase/client";
+import { removeWorkItems } from "@/lib/work-bulk.functions";
 import type { WorkItemRow } from "@/lib/work-types";
 
 export function isFlaggedRestatement(item: WorkItemRow): boolean {
@@ -14,6 +16,7 @@ export function isFlaggedRestatement(item: WorkItemRow): boolean {
  */
 export function FlaggedMarker({ item }: { item: WorkItemRow }) {
   const queryClient = useQueryClient();
+  const runRemove = useServerFn(removeWorkItems);
   const [busy, setBusy] = useState(false);
 
   async function keep() {
@@ -26,8 +29,7 @@ export function FlaggedMarker({ item }: { item: WorkItemRow }) {
 
   async function remove() {
     setBusy(true);
-    const { removeWorkItems } = await import("@/lib/work-bulk.functions");
-    await removeWorkItems({ data: { ids: [item.id] } });
+    await runRemove({ data: { ids: [item.id] } });
     await queryClient.invalidateQueries({ queryKey: ["work-items"] });
     setBusy(false);
   }
