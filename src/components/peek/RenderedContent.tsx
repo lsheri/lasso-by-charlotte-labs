@@ -3,38 +3,10 @@ import { useQuery } from "@tanstack/react-query";
 import { Download, ExternalLink } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import { highlight, toSafeHtml } from "@/lib/markdown";
 import { getWorkFileUrl } from "@/lib/work-files.functions";
 import { fileNameFor, needsTextFetch, peekFormat, type PeekFormat } from "@/lib/peek-format";
 import type { WorkItemRow } from "@/lib/work-types";
-
-/**
- * Everything rendered here is untrusted: markdown, HTML artifacts and SVG all
- * go through DOMPurify before they ever touch the DOM, so no script, event
- * handler or foreign object can execute inside the panel.
- */
-async function toSafeHtml(raw: string, mode: "markdown" | "html" | "svg"): Promise<string> {
-  const [{ marked }, { default: DOMPurify }] = await Promise.all([
-    import("marked"),
-    import("dompurify"),
-  ]);
-  const source =
-    mode === "markdown" ? await marked.parse(raw, { async: true, gfm: true, breaks: true }) : raw;
-  return DOMPurify.sanitize(source, {
-    USE_PROFILES: { html: true, svg: true, svgFilters: true },
-    FORBID_TAGS: ["script", "style", "iframe", "object", "embed", "form"],
-    FORBID_ATTR: ["style", "srcdoc", "formaction"],
-  });
-}
-
-async function highlight(code: string, language: string | null): Promise<string> {
-  const { default: hljs } = await import("highlight.js/lib/common");
-  const { default: DOMPurify } = await import("dompurify");
-  const result =
-    language && hljs.getLanguage(language)
-      ? hljs.highlight(code, { language })
-      : hljs.highlightAuto(code);
-  return DOMPurify.sanitize(result.value);
-}
 
 function useFileUrl(item: WorkItemRow, enabled: boolean) {
   const fetchUrl = useServerFn(getWorkFileUrl);
