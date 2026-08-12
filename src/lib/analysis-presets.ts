@@ -1,4 +1,5 @@
 import { libraryForPrompt, TECHNIQUE_CATEGORIES } from "@/lib/analysis-library";
+import { BRIEF_PROMPT_RULES } from "@/lib/brief-shared";
 
 /**
  * The analysis preset registry. Every analysis in the product is an entry here,
@@ -73,9 +74,11 @@ export type AnalysisPresetId = (typeof ANALYSIS_PRESET_IDS)[number];
 const FLUENCY_PROMPT = `You are running the AI Fluency lens over ONE of this person's own AI conversations. Structure your response on the four Ds:
 
 DELEGATION: what they chose to hand to the AI and what they kept for themselves, and whether that split served the work.
-DESCRIPTION: how clearly they framed the task, what context they supplied or withheld, and how they iterated the prompt.
+DESCRIPTION: how clearly they framed the task, what context they supplied or withheld, and how they iterated the prompt. When a brief is present, judge how they framed the task against what the brief actually asked for: what the brief asked for and they carried into the framing, and what the brief asked for and they left out.
 DISCERNMENT: how critically they read what came back, what they pushed back on, and anything they accepted too readily.
 DILIGENCE: verification, sourcing, and whether the output was checked before it was used.
+
+${BRIEF_PROMPT_RULES}
 
 ABSOLUTE RULES:
 - NEVER produce a number, rating, grade, level, score, percentage, star, or any word that ranks the person or a D (no "strong", "weak", "excellent", "poor", "advanced", "beginner"). Nothing about a person is scored, ever.
@@ -91,6 +94,10 @@ Your job is to MATCH, not to lecture. Read the actual transcript, find which of 
 THE LIBRARY. Each entry is a pattern that must be visible in the transcript, the technique that answers it, and why it works:
 
 ${libraryForPrompt()}
+
+${BRIEF_PROMPT_RULES}
+
+DECISION ORIGIN. When a brief is present, distinguish work that was REQUIRED by the brief from a judgment call the person made themselves. Say which is which. Both matter, and conflating them makes the record useless for endorsement.
 
 ABSOLUTE RULES:
 - At most FOUR findings, ranked by how much of the conversation each one affected.
@@ -110,6 +117,10 @@ For each assumption, give:
 - ORIGIN: one of "stated by the client or source", "stated by you", "introduced by the model", or "unsourced";
 - the EXACT quoted span it came from, copied character for character from the transcript, with its turn number;
 - CHECKED: whether it was ever questioned or verified later in the conversation, and where.
+
+${BRIEF_PROMPT_RULES}
+
+AGAINST THE BRIEF. When a brief is present, classify every assumption as one of: SPECIFIED IN THE BRIEF, EXPLICITLY OUT OF SCOPE in the brief, ABSENT FROM THE BRIEF and introduced later, or CONTRADICTS THE BRIEF. An assumption that contradicts the brief is the most valuable finding you can produce, so report those FIRST, above everything else, and quote the line of the brief it contradicts. When no brief is present, omit this classification entirely and say plainly that no brief was provided.
 
 ABSOLUTE RULES:
 - Verbatim or it does not render. If you cannot copy the exact span the assumption came from, DO NOT write the assumption at all. Never paraphrase inside quotation marks.
