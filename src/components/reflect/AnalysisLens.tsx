@@ -11,12 +11,26 @@ import { AnalysisInfoPanel } from "@/components/reflect/AnalysisInfoPanel";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
-import { presetsForScope, type AnalysisPreset, type AnalysisPresetId } from "@/lib/analysis-presets";
+import {
+  MIN_ITEMS_FOR_RECURRENCE,
+  NOT_ENOUGH_WORK_LINE,
+  presetsForScope,
+  type AnalysisPreset,
+  type AnalysisPresetId,
+} from "@/lib/analysis-presets";
 import { startAnalysis } from "@/lib/analysis.functions";
 import { sendReflectMessage } from "@/lib/reflect.functions";
 import { logEvent } from "@/lib/telemetry";
 
 type MessageRow = { id: number; role: string; content: string };
+
+/**
+ * What an analysis is pointed at. A thread and a deliverable are both work
+ * items; an engagement is the longitudinal scope and names no single item.
+ */
+export type AnalysisTargetProp =
+  | { kind: "item"; id: string; title: string; scope: "thread" | "deliverable" }
+  | { kind: "engagement"; id: string; title: string; itemCount: number };
 
 /**
  * Analyses over one conversation. The buttons are the product: each one opens
@@ -25,16 +39,14 @@ type MessageRow = { id: number; role: string; content: string };
 export function AnalysisLens({
   open,
   onOpenChange,
-  workItemId,
-  workItemTitle,
+  target,
   profileId,
   orgId,
   initialPreset,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  workItemId: string;
-  workItemTitle: string;
+  target: AnalysisTargetProp;
   profileId: string;
   orgId: string;
   initialPreset?: AnalysisPresetId;
@@ -42,7 +54,8 @@ export function AnalysisLens({
   const queryClient = useQueryClient();
   const run = useServerFn(startAnalysis);
   const send = useServerFn(sendReflectMessage);
-  const presets = presetsForScope("thread", false);
+  const scope = target.kind === "engagement" ? "engagement" : target.scope;
+  const presets = presetsForScope(scope, false);
   const [active, setActive] = useState<AnalysisPreset | null>(
     presets.find((p) => p.id === initialPreset) ?? null,
   );
@@ -55,12 +68,13 @@ export function AnalysisLens({
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const { data: turnCount } = useQuery({
-    queryKey: ["thread-turn-count", workItemId],
+    queryKey: ["thread-turn-count", target.id],
+    enabled: target.kind === "item",
     queryFn: async (): Promise<number> => {
       const { count } = await supabase
         .from("turns")
         .select("id", { count: "exact", head: true })
-        .eq("work_item_id", workItemId);
+        .eq("work_item_id", target.id);
       return count ?? 0;
     },
   });
@@ -93,7 +107,13 @@ export function AnalysisLens({
     setError(null);
     try {
       const result = await run({
-        data: { preset_id: preset.id, work_item_id: workItemId, profile_id: profileId },
+        data: {
+          preset_id: preset.id,
+          ...(target.kind === "engagement"
+            ? { engagement_id: target.id }
+            : { work_item_id: target.id }),
+          profile_id: profileId,
+        },
       });
       setSessionId(result.session_id);
       setSuppressed(result.suppressed);
@@ -139,20 +159,28 @@ export function AnalysisLens({
     }
   }
 
-  const readsDetail = `this conversation only, ${turnCount ?? 0} message${
-    turnCount === 1 ? "" : "s"
-  }, read in full`;
+  const notEnoughWork =
+    target.kind === "engagement" && target.itemCount < MIN_ITEMS_FOR_RECURRENCE;
+
+  const readsDetail =
+    target.kind === "engagement"
+      ? "every piece of work mapped into this engagement, oldest first"
+      : target.scope === "deliverable"
+        ? "this piece of work, the conversations linked to it, and the brief when there is one"
+        : `this conversation only, ${turnCount ?? 0} message${
+            turnCount === 1 ? "" : "s"
+          }, read in full`;
 
   return (
     <SlideOver
       open={open}
       onOpenChange={onOpenChange}
-      title={active ? active.label : "Analyse this conversation"}
-      description="Observations over one of your own conversations"
+      title={active ? active.label : "Analyse this work"}
+      description="Observations over your own work"
     >
       <header className="shrink-0 border-b border-border px-6 pb-4 pt-6">
-        <p className="micro-label">{active ? active.label : "Analyse this conversation"}</p>
-        <h2 className="page-title mt-1 break-words text-[19px] leading-snug">{workItemTitle}</h2>
+        <p className="micro-label">{active ? active.label : "Analyse this work"}</p>
+        <h2 className="page-title mt-1 break-words text-[19px] leading-snug">{target.title}</h2>
         <p className="mt-2 text-xs text-muted-foreground">
           Private to you. Observations only, never a score.
         </p>
@@ -162,7 +190,7 @@ export function AnalysisLens({
         {active ? <p className="text-sm text-muted-foreground">{active.description}</p> : null}
         {!active && !pending ? (
           <p className="text-sm text-muted-foreground">
-            Pick an analysis below. Each one opens its own session over this conversation.
+            Pick an analysis below. Each one opens its own session over this work.
           </p>
         ) : null}
 
@@ -216,14 +244,17 @@ export function AnalysisLens({
         <Suggested className="mb-3">
           <div className="flex items-center gap-2">
             <SuggestDot />
-            <p className="text-xs text-ember-deep">Analyses Lasso can run on this conversation</p>
+            <p className="text-xs text-ember-deep">Analyses Lasso can run on this work</p>
           </div>
           <div className="mt-2 flex flex-wrap gap-2">
-            {presets.map((preset) => (
+            {presets.map((preset) => {
+              const blocked = preset.id === "what_recurs" && notEnoughWork;
+              return (
               <div key={preset.id} className="flex items-center gap-1.5">
                 <button
                   type="button"
-                  disabled={pending}
+                  disabled={pending || blocked}
+                  title={blocked ? NOT_ENOUGH_WORK_LINE : undefined}
                   onClick={() => void runPreset(preset)}
                   className={`rounded-full px-3 py-1 text-xs font-medium transition-opacity hover:opacity-85 disabled:opacity-50 ${
                     active?.id === preset.id
@@ -235,15 +266,19 @@ export function AnalysisLens({
                 </button>
                 <AnalysisInfoPanel preset={preset} readsDetail={readsDetail} />
               </div>
-            ))}
+              );
+            })}
           </div>
+          {notEnoughWork ? (
+            <p className="mt-2 text-xs text-muted-foreground">{NOT_ENOUGH_WORK_LINE}</p>
+          ) : null}
         </Suggested>
 
         <div className="flex items-end gap-2">
           <Textarea
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
-            placeholder="Ask a follow up about this conversation"
+            placeholder="Ask a follow up about this work"
             rows={2}
             className="resize-none"
             disabled={!sessionId}
