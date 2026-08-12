@@ -140,12 +140,16 @@ const TOOLS = [
           type: "array",
           maxItems: MAX_ATTACHMENTS,
           description:
-            "Every artifact, canvas, file, page, or report created during the conversation.",
+            "ONLY objects that already existed as a separate, addressable thing in the source app before this push was requested: a Claude artifact, a ChatGPT canvas, a generated or downloadable file, a produced document. If the user could open, rename, or download it on its own in the app, it belongs here. NOT an attachment: a section or heading taken from a message; a summary, recap, list, or set of key points you are composing now; an explanation of what happened in the conversation; anything you would have to write in order to send it. If you are generating the content at push time, it is not an artifact and must not be sent. The transcript already carries it. When in doubt, send nothing and let the messages speak.",
           items: {
             type: "object",
             properties: {
               kind: { type: "string", enum: [...ATTACHMENT_KINDS] },
-              title: { type: "string", description: "Title verbatim as shown in the source app." },
+              title: {
+                type: "string",
+                description:
+                  "The artifact's own title exactly as it appeared in the source app, verbatim. Never a description you invent for it, and never a heading you compose to label it.",
+              },
               content: { type: "string", description: "Verbatim source or text." },
               language: { type: "string" },
             },
