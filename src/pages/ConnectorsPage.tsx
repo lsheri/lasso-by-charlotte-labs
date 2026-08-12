@@ -40,6 +40,7 @@ const PICKER_KIND: Partial<Record<ConnectorToolkit, PickerKind>> = {
   one_drive: "onedrive",
   sharepoint_graph: "sharepoint",
   granola_mcp: "granola",
+  gmail: "gmail",
 };
 
 const COMING_SOON = ["Zoom", "Teams", "ChatGPT Enterprise"];
@@ -135,7 +136,11 @@ export function ConnectorsPage() {
                       type="button"
                       className="text-xs font-medium text-accent-deep transition-opacity hover:opacity-70"
                     >
-                      {toolkit === "granola_mcp" ? "Browse meetings" : "Browse files"}
+                      {toolkit === "granola_mcp"
+                        ? "Browse meetings"
+                        : toolkit === "gmail"
+                          ? "Browse threads"
+                          : "Browse files"}
                     </button>
                   }
                 />
@@ -185,34 +190,31 @@ export function ConnectorsPage() {
       {error ? <p className="mb-6 text-sm text-destructive">{(error as Error).message}</p> : null}
 
       <div className="space-y-10">
-        <ConnectYourAiCard />
+        <Category title="Connect your AI · MCP" hue="--hue-slate-blue">
+          <ConnectYourAiCard />
+        </Category>
 
-        <section>
-          <h2 className="micro-label">Documents &amp; email</h2>
-          <div className="mt-3 space-y-2">
-            {card("googledrive")}
-            {card("one_drive")}
-            {card("sharepoint_graph")}
-            {card("gmail")}
-            {card("notion")}
-          </div>
-        </section>
+        <Category title="Documents &amp; files" hue="--hue-sand">
+          {card("googledrive")}
+          {card("one_drive")}
+          {card("sharepoint_graph")}
+          {card("notion")}
+        </Category>
 
-        <section>
-          <h2 className="micro-label">Messages</h2>
-          <div className="mt-3 space-y-2">{card("slack")}</div>
-        </section>
+        <Category title="Email" hue="--hue-cyan">
+          {card("gmail")}
+        </Category>
 
-        <section>
-          <h2 className="micro-label">Meetings</h2>
-          <div className="mt-3 space-y-2">
-            <GranolaKeyCard />
-          </div>
-        </section>
+        <Category title="Messages" hue="--hue-plum">
+          {card("slack")}
+        </Category>
 
-        <section>
-          <h2 className="micro-label">Coming soon</h2>
-          <div className="mt-3 space-y-2">
+        <Category title="Meetings" hue="--hue-clay">
+          <GranolaKeyCard />
+        </Category>
+
+        <Category title="Coming soon" hue="--hue-neutral">
+          <div className="space-y-2">
             {COMING_SOON.map((name) => (
               <div
                 key={name}
@@ -225,7 +227,7 @@ export function ConnectorsPage() {
               </div>
             ))}
           </div>
-        </section>
+        </Category>
 
         <div className="rounded-[var(--radius)] border border-border bg-card px-4 py-4 shadow-card">
           <p className="text-sm text-foreground">No connector? Paste or upload always works.</p>
@@ -238,6 +240,31 @@ export function ConnectorsPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+/** Tinted band header, so a category is found before it is read. */
+function Category({
+  title,
+  hue,
+  children,
+}: {
+  title: string;
+  hue: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section>
+      <h2
+        className="rounded-[var(--radius)] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.08em]"
+        style={{
+          color: `var(${hue})`,
+          background: `color-mix(in oklab, var(${hue}) 10%, transparent)`,
+        }}
+        dangerouslySetInnerHTML={{ __html: title }}
+      />
+      <div className="mt-3 space-y-2">{children}</div>
+    </section>
   );
 }
 
