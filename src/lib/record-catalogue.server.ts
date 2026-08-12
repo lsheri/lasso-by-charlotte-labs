@@ -27,6 +27,24 @@ export const CATALOGUE_THRESHOLD = 25;
 /** Extracts prefetched before the first model call, so easy questions need no tools. */
 const PREFETCH_RECENT = 5;
 
+/** How many items are in scope, without loading any content. */
+export async function scopeItemCount(
+  supabase: Db,
+  ownerId: string,
+  scope: ContextScope,
+): Promise<number> {
+  if (scope.mode === "items") return scope.ids.length;
+  if (scope.mode === "whole") {
+    const { count } = await supabase
+      .from("work_items")
+      .select("id", { count: "exact", head: true })
+      .eq("owner_id", ownerId);
+    return count ?? 0;
+  }
+  const { items } = await loadScopeData(supabase, ownerId, scope);
+  return items.length;
+}
+
 export type CatalogueEntry = {
   code: string;
   id: string;
