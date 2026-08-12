@@ -11,6 +11,7 @@ export type TelemetryEvent =
   | "decision.confirmed"
   | "decision.resolved"
   | "connector.enabled"
+  | "connector.error"
   | "connector.synced"
   | "connector.watch_enabled"
   | "connector.suggestion_shown"

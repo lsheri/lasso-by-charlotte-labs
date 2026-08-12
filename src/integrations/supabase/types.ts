@@ -1240,6 +1240,7 @@ export type Database = {
           org_id: string
           owner_id: string
           schema_version: number
+          search_tsv: unknown
           source_chars: number | null
           summary: string
           updated_at: string
@@ -1256,6 +1257,7 @@ export type Database = {
           org_id: string
           owner_id: string
           schema_version?: number
+          search_tsv?: unknown
           source_chars?: number | null
           summary: string
           updated_at?: string
@@ -1272,6 +1274,7 @@ export type Database = {
           org_id?: string
           owner_id?: string
           schema_version?: number
+          search_tsv?: unknown
           source_chars?: number | null
           summary?: string
           updated_at?: string
@@ -1528,6 +1531,8 @@ export type Database = {
         }
         Returns: undefined
       }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
     }
     Enums: {
       app_role: "em" | "coach" | "lead" | "admin"
