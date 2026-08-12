@@ -20,6 +20,7 @@ import { WorkDateDialog } from "@/components/work/WorkDateDialog";
 import { RowAction, WorkRow } from "@/components/work/WorkRow";
 import { EngagementFold, WorkSection } from "@/components/work/WorkSection";
 import { ConversationChips } from "@/components/work/ConversationChips";
+import { FlaggedMarker, isFlaggedRestatement } from "@/components/work/FlaggedMarker";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -68,12 +69,34 @@ export function WorkPage() {
   const [chosen, setChosen] = useState<Set<string>>(new Set());
   const [confirmRemove, setConfirmRemove] = useState(false);
   const [removing, setRemoving] = useState(false);
+  const [removingFlagged, setRemovingFlagged] = useState(false);
 
   const all = data?.items ?? [];
   const mappingError = data?.mappingError ?? null;
   const mapped = all.filter((i) => i.visibility === "mapped");
   const unmapped = all.filter((i) => i.visibility === "unmapped");
   const priv = all.filter((i) => i.visibility === "private");
+  const flagged = all.filter((i) => i.visibility === "unmapped" && isFlaggedRestatement(i));
+
+  async function removeAllFlagged() {
+    setRemovingFlagged(true);
+    setActionError(null);
+    try {
+      const result = await runRemove({
+        data: { profile_id: profile?.id, ids: flagged.map((i) => i.id) },
+      });
+      toast.success(
+        result.removed > 0
+          ? `${result.removed} item${result.removed === 1 ? "" : "s"} removed from Lasso`
+          : "Nothing was removed",
+      );
+      await queryClient.invalidateQueries({ queryKey: ["work-items"] });
+    } catch (e) {
+      setActionError((e as Error).message);
+    } finally {
+      setRemovingFlagged(false);
+    }
+  }
 
   const active = (suggestions ?? []).filter(
     (s) => !dismissed.includes(s.work_item_id) && unmapped.some((i) => i.id === s.work_item_id),
@@ -172,6 +195,7 @@ export function WorkPage() {
                 onOpen={openItem(child, group)}
                 chips={<ConversationChips item={child} />}
                 actions={rowActions(child, variant)}
+                footer={isFlaggedRestatement(child) ? <FlaggedMarker item={child} /> : undefined}
               />
             ))}
           </div>
