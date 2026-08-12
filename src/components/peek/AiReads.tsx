@@ -23,7 +23,9 @@ function QuestionsAsked({ profileId }: { profileId: string }) {
     queryFn: async () => {
       const { data: rows, error } = await supabase
         .from("query_log")
-        .select("id, question, scope, created_at, asker_id, profiles!query_log_asker_id_fkey(display_name)")
+        .select(
+          "id, question, scope, created_at, asker_id, profiles!query_log_asker_id_fkey(display_name)",
+        )
         .eq("subject_id", profileId)
         .neq("asker_id", profileId)
         .order("created_at", { ascending: false })

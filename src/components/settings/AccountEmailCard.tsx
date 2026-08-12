@@ -47,8 +47,8 @@ export function AccountEmailCard() {
         </p>
         {pendingEmail ? (
           <p className="rounded-[var(--radius)] border border-border bg-secondary px-3 py-2 text-xs text-muted-foreground">
-            Pending change to <span className="font-mono">{pendingEmail}</span>, confirm it from
-            the link we sent to that address.
+            Pending change to <span className="font-mono">{pendingEmail}</span>, confirm it from the
+            link we sent to that address.
           </p>
         ) : null}
         <form onSubmit={changeEmail} className="flex flex-wrap items-center gap-2">

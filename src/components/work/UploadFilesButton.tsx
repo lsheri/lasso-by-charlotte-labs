@@ -40,15 +40,17 @@ export function UploadFilesButton({ variant = "outline" }: { variant?: "default"
       }
 
       const type = workTypeForFile(file.name);
-      const { data: created, error: insertError } = await supabase.from("work_items").insert({
-        owner_id: profile.id,
-        org_id: profile.org_id,
-        type,
-        source: "upload",
-        title: file.name,
-        content_ref: path,
-        ts_precision: "capture",
-      })
+      const { data: created, error: insertError } = await supabase
+        .from("work_items")
+        .insert({
+          owner_id: profile.id,
+          org_id: profile.org_id,
+          type,
+          source: "upload",
+          title: file.name,
+          content_ref: path,
+          ts_precision: "capture",
+        })
         .select("id")
         .maybeSingle();
       if (insertError) {

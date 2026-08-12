@@ -84,7 +84,8 @@ export async function recordAnonymousEvent(
       dims,
       payload: {},
     });
-    if (error) console.error(`[telemetry] anonymous insert failed for ${eventType}:`, error.message);
+    if (error)
+      console.error(`[telemetry] anonymous insert failed for ${eventType}:`, error.message);
     await mirrorToPostHog(eventType, actorHash, tenantHash, dims);
   } catch (e) {
     console.error("[telemetry] recordAnonymousEvent failed:", (e as Error).message);

@@ -48,8 +48,7 @@ export function VersionHistory({ workItemId }: { workItemId: string }) {
     <section className="mt-8 border-t border-border pt-4">
       <h3 className="micro-label">Versions</h3>
       <p className="mt-2 text-sm text-foreground">
-        Version {latest.version_no} of {latest.version_no}, updated{" "}
-        {formatDate(latest.created_at)}.
+        Version {latest.version_no} of {latest.version_no}, updated {formatDate(latest.created_at)}.
       </p>
       <button
         type="button"

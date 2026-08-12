@@ -44,8 +44,8 @@ export function EngagementLineage({
     <section className="rounded-[var(--radius)] border border-border bg-card px-5 py-5 shadow-card">
       <h2 className="micro-label">Lineage</h2>
       <p className="mt-1.5 text-sm text-muted-foreground">
-        Lasso can look across this engagement and propose what fed each document, deck and
-        sheet. Every proposal is a draft you confirm or discard.
+        Lasso can look across this engagement and propose what fed each document, deck and sheet.
+        Every proposal is a draft you confirm or discard.
       </p>
       <Button className="mt-4" onClick={() => void start()} disabled={pending}>
         {pending ? "Looking…" : "Find what fed these deliverables"}

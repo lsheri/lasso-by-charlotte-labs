@@ -42,7 +42,6 @@ export type AssembledContext = {
   sources: ContextSource[];
 };
 
-
 /**
  * The honesty guard. An item we could not open still appears in the context,
  * marked so plainly that the model cannot mistake it for something it read.

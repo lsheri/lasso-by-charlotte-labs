@@ -12,9 +12,7 @@ export const prepareOneOnOne = createServerFn({ method: "POST" })
       engagement_id?: string | null | undefined;
       profile_id?: string | undefined;
     }) => {
-      const days = [7, 14, 30].includes(Number(input?.window_days))
-        ? Number(input.window_days)
-        : 7;
+      const days = [7, 14, 30].includes(Number(input?.window_days)) ? Number(input.window_days) : 7;
       return {
         window_days: days,
         engagement_id: input?.engagement_id ?? null,

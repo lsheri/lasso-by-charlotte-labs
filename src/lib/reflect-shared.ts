@@ -58,7 +58,6 @@ export function titleFromMessage(message: string): string {
   return `${clean.slice(0, 57).trimEnd()}…`;
 }
 
-
 /** One work item that went into one answer, for the in-chat audit strip. */
 export type ContextSource = {
   id: string;

@@ -75,7 +75,9 @@ export function AnswerSources({
         className="inline-flex items-center gap-1 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
       >
         <ChevronRight
-          className={open ? "h-3 w-3 rotate-90 transition-transform" : "h-3 w-3 transition-transform"}
+          className={
+            open ? "h-3 w-3 rotate-90 transition-transform" : "h-3 w-3 transition-transform"
+          }
           aria-hidden
         />
         What I read for this answer

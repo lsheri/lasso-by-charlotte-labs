@@ -81,16 +81,10 @@ export function CoachChat({
         {exchanges.map((exchange, index) => (
           <div key={index} className="space-y-1.5">
             <p className="text-sm font-medium text-foreground">{exchange.question}</p>
-            <MarkdownMessage
-              content={exchange.answer}
-              className="border-l-2 border-accent pl-4"
-            />
+            <MarkdownMessage content={exchange.answer} className="border-l-2 border-accent pl-4" />
             <AnswerSources sources={exchange.sources} />
             {exchange.truncated ? (
-              <CoverageNote
-                fullCount={exchange.fullCount}
-                summaryCount={exchange.summaryCount}
-              />
+              <CoverageNote fullCount={exchange.fullCount} summaryCount={exchange.summaryCount} />
             ) : null}
           </div>
         ))}

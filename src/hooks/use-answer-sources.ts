@@ -38,7 +38,8 @@ export function useAnswerSources(messageIds: number[]) {
           title: row.work_items?.title ?? "Untitled",
           type: row.work_items?.type ?? "document",
           source_vendor: row.work_items?.source_vendor ?? null,
-          depth: row.depth === "full" ? "full" : row.depth === "unreadable" ? "unreadable" : "extract",
+          depth:
+            row.depth === "full" ? "full" : row.depth === "unreadable" ? "unreadable" : "extract",
         });
       }
       return grouped;

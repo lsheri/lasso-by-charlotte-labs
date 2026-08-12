@@ -99,11 +99,7 @@ function derivedPath(item: TextItem, hash: string): string {
   return `${dir}/derived/${item.id}-${hash.slice(0, 8)}.txt`;
 }
 
-async function writeCache(
-  item: TextItem,
-  hash: string,
-  result: ItemTextResult,
-): Promise<void> {
+async function writeCache(item: TextItem, hash: string, result: ItemTextResult): Promise<void> {
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const patch: TextMeta = {
@@ -123,7 +119,10 @@ async function writeCache(
         });
       if (!upload.error) patch.text_ref = path;
     }
-    const next = { ...metaOf(item), ...patch } as unknown as Database["public"]["Tables"]["work_items"]["Row"]["meta"];
+    const next = {
+      ...metaOf(item),
+      ...patch,
+    } as unknown as Database["public"]["Tables"]["work_items"]["Row"]["meta"];
     await supabaseAdmin.from("work_items").update({ meta: next }).eq("id", item.id);
   } catch (e) {
     console.error("[item-text] cache write failed:", (e as Error).message);
@@ -233,7 +232,10 @@ async function extractPptx(bytes: Uint8Array): Promise<ItemTextResult> {
   };
 }
 
-async function decode(shape: Exclude<BinaryShape, null>, bytes: Uint8Array): Promise<ItemTextResult> {
+async function decode(
+  shape: Exclude<BinaryShape, null>,
+  bytes: Uint8Array,
+): Promise<ItemTextResult> {
   if (shape === "docx") return extractDocx(bytes);
   if (shape === "xlsx") return extractXlsx(bytes);
   if (shape === "pdf") return extractPdf(bytes);
@@ -266,7 +268,8 @@ export async function getItemText(supabase: Db, item: TextItem): Promise<ItemTex
 
   if (needsTextFetch(format)) {
     const raw = await downloadText(item.content_ref);
-    if (raw === null) return { text: null, status: "failed", note: "the stored file could not be opened" };
+    if (raw === null)
+      return { text: null, status: "failed", note: "the stored file could not be opened" };
     return raw.trim() ? { text: raw, status: "ok" } : { text: null, status: "empty" };
   }
 

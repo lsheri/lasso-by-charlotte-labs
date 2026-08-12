@@ -17,7 +17,6 @@ import type { ContextScope } from "@/lib/reflect-shared";
 
 type MessageRow = { id: number; role: string; content: string };
 
-
 /**
  * Reflect, docked beside an engagement. Same machinery as /reflect, the only
  * difference is the context scope, preset to this engagement. Chat content

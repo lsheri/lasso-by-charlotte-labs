@@ -124,8 +124,7 @@ export const sendReflectMessage = createServerFn({ method: "POST" })
 
       // The content companion to ai_reads: what was asked, about whose work,
       // and which answer it produced. Tenant content, never telemetry.
-      const answerId =
-        (written ?? []).find((row) => row.role === "assistant")?.id ?? null;
+      const answerId = (written ?? []).find((row) => row.role === "assistant")?.id ?? null;
 
       // The audit trail is attached to the exact answer it belongs to.
       const { recordAiReads } = await import("./ai-reads.server");
