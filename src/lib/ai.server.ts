@@ -40,10 +40,22 @@ export const MODELS: Record<ModelTier, string> = {
   smart: "gpt-5",
 };
 
+/**
+ * If a tier's model id is unavailable to this account (OpenAI answers 404 with
+ * code `model_not_found`), the same request is retried once against this model.
+ * One unavailable model must never take every surface down. The person is not
+ * told; this is plumbing, and the health log carries the anomaly.
+ */
+export const MODEL_FALLBACK: Partial<Record<ModelTier, string>> = {
+  smart: "gpt-4.1",
+};
+
 /** USD per 1M tokens. One table, one edit when prices move. */
 export const MODEL_PRICES: Record<string, { input: number; cachedInput: number; output: number }> =
   {
     "gpt-4.1-mini": { input: 0.4, cachedInput: 0.1, output: 1.6 },
+    // OpenAI published API pricing for gpt-4.1: 2.00 in / 0.50 cached in / 8.00 out.
+    "gpt-4.1": { input: 2, cachedInput: 0.5, output: 8 },
     "gpt-5": { input: 1.25, cachedInput: 0.125, output: 10 },
   };
 
