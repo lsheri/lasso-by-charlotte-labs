@@ -123,7 +123,7 @@ async function writeCache(
         });
       if (!upload.error) patch.text_ref = path;
     }
-    const next = { ...metaOf(item), ...patch } as unknown as Database["public"]["Tables"]["work_items"]["Update"]["meta"];
+    const next = { ...metaOf(item), ...patch } as unknown as Database["public"]["Tables"]["work_items"]["Row"]["meta"];
     await supabaseAdmin.from("work_items").update({ meta: next }).eq("id", item.id);
   } catch (e) {
     console.error("[item-text] cache write failed:", (e as Error).message);
