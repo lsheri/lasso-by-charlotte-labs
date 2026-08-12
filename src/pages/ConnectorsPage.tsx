@@ -194,7 +194,7 @@ export function ConnectorsPage() {
           <ConnectYourAiCard />
         </Category>
 
-        <Category title="Documents &amp; files" hue="--hue-sand">
+        <Category title="Documents & files" hue="--hue-sand">
           {card("googledrive")}
           {card("one_drive")}
           {card("sharepoint_graph")}
@@ -261,8 +261,9 @@ function Category({
           color: `var(${hue})`,
           background: `color-mix(in oklab, var(${hue}) 10%, transparent)`,
         }}
-        dangerouslySetInnerHTML={{ __html: title }}
-      />
+      >
+        {title}
+      </h2>
       <div className="mt-3 space-y-2">{children}</div>
     </section>
   );
