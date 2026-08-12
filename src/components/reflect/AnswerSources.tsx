@@ -12,7 +12,8 @@ function SourceRow({ source, onOpen }: { source: ContextSource; onOpen: () => vo
   const identity = workIdentity({ type: source.type as WorkType, source_meta: null });
   const Icon = identity.icon;
   const styles = hueStyles(identity.hue);
-  const hue = vendorHue(source.source_vendor);
+  const vHue = vendorHue(source.source_vendor);
+  const vendorStyles = vHue ? hueStyles(vHue) : null;
   return (
     <li className="flex items-center gap-2">
       <span
@@ -34,7 +35,15 @@ function SourceRow({ source, onOpen }: { source: ContextSource; onOpen: () => vo
       {source.source_vendor ? (
         <span
           className="shrink-0 rounded-full border px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em]"
-          style={hue ? { color: hue.color, background: hue.background, borderColor: hue.border } : undefined}
+          style={
+            vendorStyles
+              ? {
+                  color: vendorStyles.color,
+                  background: vendorStyles.background,
+                  borderColor: vendorStyles.border,
+                }
+              : undefined
+          }
         >
           {vendorLabel(source.source_vendor)}
         </span>
