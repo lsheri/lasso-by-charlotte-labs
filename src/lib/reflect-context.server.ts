@@ -77,6 +77,8 @@ export type { ContextSource };
 
 export type AssembledContext = {
   context: string;
+  /** Only text the model actually saw verbatim: the brief and full raw text. */
+  quotable: string;
   truncated: boolean;
   itemCount: number;
   tier1Count: number;
@@ -251,77 +253,8 @@ export async function assembleReflectContext(
 ): Promise<AssembledContext> {
   const ownerId = options?.ownerProfileId ?? profileId;
 
-  // 1. Which tasks are in scope (and, through them, which engagements).
-  let taskQuery = supabase
-    .from("tasks")
-    .select(
-      "id, name, goal, detail, when_label, status, position, engagement_id, engagements(id, code, title, client_label, brief, term_label, outcome)",
-    )
-    .eq("owner_id", ownerId);
-  if (scope.mode === "engagements" && scope.ids.length > 0) {
-    taskQuery = taskQuery.in("engagement_id", scope.ids);
-  } else if (scope.mode === "tasks" && scope.ids.length > 0) {
-    taskQuery = taskQuery.in("id", scope.ids);
-  }
-  const tasksRes = scope.mode === "items" ? { data: [], error: null } : await taskQuery;
-  if (tasksRes.error) throw new Error(tasksRes.error.message);
-  const tasks = (tasksRes.data ?? []) as unknown as {
-    id: string;
-    name: string;
-    goal: string | null;
-    detail: string | null;
-    when_label: string | null;
-    status: string;
-    position: number;
-    engagement_id: string;
-    engagements: {
-      id: string;
-      code: string;
-      title: string;
-      client_label: string | null;
-      brief: string | null;
-      term_label: string | null;
-      outcome: string | null;
-    } | null;
-  }[];
-
-  // 2. Mapping links, in confirmed step order.
-  const links = tasks.length
-    ? await supabase
-        .from("work_item_tasks")
-        .select("work_item_id, task_id, step_no, step_confirmed")
-        .in(
-          "task_id",
-          tasks.map((t) => t.id),
-        )
-    : { data: [], error: null };
-  if (links.error) throw new Error(links.error.message);
-  const linkRows = (links.data ?? []) as {
-    work_item_id: string;
-    task_id: string;
-    step_no: number | null;
-    step_confirmed: boolean;
-  }[];
-
-  // 3. The work items themselves.
-  let itemQuery = supabase
-    .from("work_items")
-    .select(
-      `${ITEM_TEXT_COLUMNS}, source, visibility, captured_at, work_date, created_at_source, content_fidelity, source_vendor`,
-    )
-    .eq("owner_id", ownerId)
-    .order("captured_at", { ascending: false })
-    .limit(300);
-  if (scope.mode === "items" && scope.ids.length > 0) {
-    itemQuery = itemQuery.in("id", scope.ids);
-  } else if (scope.mode !== "whole") {
-    const ids = linkRows.map((l) => l.work_item_id);
-    if (ids.length === 0) itemQuery = itemQuery.in("id", ["00000000-0000-0000-0000-000000000000"]);
-    else itemQuery = itemQuery.in("id", ids);
-  }
-  const itemsRes = await itemQuery;
-  if (itemsRes.error) throw new Error(itemsRes.error.message);
-  const allItems = (itemsRes.data ?? []) as unknown as ItemRow[];
+  // 1 to 3. Tasks, mapping links, and the work items themselves.
+  const { tasks, linkRows, items: allItems } = await loadScopeData(supabase, ownerId, scope);
 
   // Tier 0. The brief is loaded first, is never budgeted away, and is removed
   // from the ordinary item list so it cannot also appear as an extract.
@@ -331,32 +264,14 @@ export async function assembleReflectContext(
   // Brief characters come out of the tier 2 budget, so total context does not grow.
   const rawBudget = Math.max(0, RAW_BUDGET - brief.chars);
 
-  const taskNameFor = new Map<string, string>();
-  for (const link of linkRows) {
-    const task = tasks.find((t) => t.id === link.task_id);
-    const engagement = task?.engagements;
-    if (task) {
-      taskNameFor.set(
-        link.work_item_id,
-        engagement ? `${engagement.code} · ${task.name}` : task.name,
-      );
-    }
-  }
+  const taskNameFor = taskLabels(tasks, linkRows);
 
   // 4. Extracts for every in-scope item, backfilling a few that are missing.
-  type ExtractRow = {
-    work_item_id: string;
-    summary: string;
-    decisions: string | null;
-    entities: string | null;
-    handoff: string | null;
-  };
-  const extractColumns = "work_item_id, summary, decisions, entities, handoff";
   async function readExtracts(ids: string[]): Promise<ExtractRow[]> {
     if (ids.length === 0) return [];
     const { data } = await supabase
       .from("work_item_extracts")
-      .select(extractColumns)
+      .select(EXTRACT_COLUMNS)
       .in("work_item_id", ids);
     return (data ?? []) as ExtractRow[];
   }
@@ -388,44 +303,7 @@ export async function assembleReflectContext(
   const extractFor = new Map(extractRows.map((row) => [row.work_item_id, row]));
 
   // 5. Structure block, unchanged in shape.
-  const engagementBlocks = new Map<string, string>();
-  for (const task of tasks) {
-    const engagement = task.engagements;
-    if (!engagement || engagementBlocks.has(engagement.id)) continue;
-    const own = tasks
-      .filter((t) => t.engagement_id === engagement.id)
-      .sort((a, b) => a.position - b.position);
-    const taskLines = own.map((t) => {
-      const steps = linkRows
-        .filter((l) => l.task_id === t.id)
-        .sort((a, b) => (a.step_no ?? 999) - (b.step_no ?? 999))
-        .map((l, index) => {
-          const item = items.find((i) => i.id === l.work_item_id);
-          return `      ${l.step_no ?? index + 1}. ${item?.title ?? "(item)"}${l.step_confirmed ? " [confirmed sequence]" : ""}`;
-        });
-      return [
-        `    TASK: ${t.name}${t.when_label ? ` (${t.when_label})` : ""}, status ${t.status}`,
-        t.goal ? `      Goal: ${t.goal}` : null,
-        t.detail ? `      Detail: ${t.detail}` : null,
-        ...steps,
-      ]
-        .filter(Boolean)
-        .join("\n");
-    });
-    engagementBlocks.set(
-      engagement.id,
-      [
-        `ENGAGEMENT ${engagement.code}: ${engagement.title}`,
-        engagement.client_label ? `  Client/context: ${engagement.client_label}` : null,
-        engagement.term_label ? `  Term: ${engagement.term_label}` : null,
-        engagement.brief ? `  Brief: ${engagement.brief}` : null,
-        engagement.outcome ? `  Outcome: ${engagement.outcome}` : null,
-        ...taskLines,
-      ]
-        .filter(Boolean)
-        .join("\n"),
-    );
-  }
+  const engagementBlocks = buildEngagementBlocks(tasks, linkRows, items);
 
   // 6. Tier 2 priority: explicitly named items first, then most recent.
   const byNewest = [...items].sort(
@@ -481,11 +359,13 @@ export async function assembleReflectContext(
 
   // The brief sits above the engagement structure and above every item: long
   // framing material belongs at the top, and a stable prefix caches well.
-  const parts: string[] = [brief.block, ...engagementBlocks.values()];
+  const parts: string[] = [brief.block, ...engagementBlocks];
   const reads: AiReadInput[] = [...brief.reads];
   const sources: ContextSource[] = [...brief.sources];
   let tier2 = brief.itemIds.length;
   let unreadableCount = 0;
+  // Quotation is a promise of exact wording, so only verbatim text counts.
+  const quotableParts: string[] = [brief.block];
 
   for (const item of oldestFirst) {
     const extract = extractFor.get(item.id);
@@ -497,14 +377,12 @@ export async function assembleReflectContext(
       `  Date: ${effectiveDate(item).slice(0, 10)} · ${mapped ? `Mapped to ${mapped}` : "Unmapped"}${item.visibility === "private" ? " · MARKED PRIVATE" : ""}`,
     ];
     if (extract) {
-      lines.push(`  Summary: ${extract.summary}`);
-      if (extract.decisions) lines.push(`  Decided: ${extract.decisions}`);
-      if (extract.entities) lines.push(`  Key names and topics: ${extract.entities}`);
-      if (extract.handoff) lines.push(`  Led to: ${extract.handoff}`);
+      lines.push(...extractLines(extract));
     }
     const blocked = unreadable.get(item.id);
     if (raw) {
       lines.push(`  Full text:\n${raw}`);
+      quotableParts.push(raw);
       tier2 += 1;
       reads.push({ workItemId: item.id, ownerId, depth: "full" });
       sources.push({
@@ -546,6 +424,7 @@ export async function assembleReflectContext(
 
   return {
     context: parts.join("\n\n---\n\n") || "(No recorded work in this scope yet.)",
+    quotable: quotableParts.join("\n\n"),
     truncated: anyCut || extractOnly > 0,
     itemCount: tier1,
     tier1Count: tier1,
