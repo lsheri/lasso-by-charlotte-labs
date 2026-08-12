@@ -7,9 +7,12 @@ import { AiReads } from "@/components/peek/AiReads";
 import { RenderedContent } from "@/components/peek/RenderedContent";
 import { SlideOver } from "@/components/peek/SlideOver";
 import { ThreadBody } from "@/components/peek/ThreadBody";
+import { VersionHistory } from "@/components/peek/VersionHistory";
+import { WhatFedThis } from "@/components/peek/WhatFedThis";
 import { DraftDecisionsButton } from "@/components/decisions/DraftDecisionsButton";
 import { TypeChip, TypeIcon } from "@/components/work/TypeIcon";
 import { vendorLabel } from "@/lib/conversation-shared";
+import { isDeliverableType } from "@/lib/lineage-shared";
 import { peekFormat } from "@/lib/peek-format";
 import { getWorkFileUrl } from "@/lib/work-files.functions";
 import {
@@ -181,6 +184,12 @@ export function PeekPanel({
           <RenderedContent item={active} format={format} onDownload={() => void download(active)} />
         )}
         {canEdit ? <AiReads workItemId={active.id} /> : null}
+        {isDeliverableType(active.type) ? (
+          <>
+            <VersionHistory workItemId={active.id} />
+            <WhatFedThis workItemId={active.id} canEdit={canEdit} />
+          </>
+        ) : null}
       </div>
 
       <footer className="flex shrink-0 flex-wrap items-center gap-4 border-t border-border bg-card px-6 py-4">
