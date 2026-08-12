@@ -262,7 +262,79 @@ export const ANALYSIS_PRESETS: AnalysisPreset[] = [
     attribution: null,
     coachMayRun: true,
   },
+  {
+    id: "decision_origin",
+    dbPreset: "decision_origin",
+    label: "Who decided what",
+    description: "Every significant call in this work, and where it came from.",
+    scope: "deliverable",
+    systemPrompt: DECISION_ORIGIN_PROMPT,
+    openingMessage:
+      "For this piece of work, set out every significant call and where each one came from.",
+    infoPanel: {
+      reads: (detail) => detail,
+      looksFor: [
+        "Calls the brief required",
+        "Calls you made yourself",
+        "Calls the model proposed and you accepted",
+        "Calls the model proposed and you changed",
+        "Calls carried in from a source",
+      ],
+      never: `${NEVER_LINE} No ratio of human to AI is produced anywhere, by design.`,
+      sources: ANALYSIS_SOURCES,
+    },
+    attribution: null,
+    coachMayRun: true,
+  },
+  {
+    id: "what_fed_this",
+    dbPreset: "what_fed_this",
+    label: "What fed this",
+    description: "The conversations and documents that went into this piece of work.",
+    scope: "deliverable",
+    systemPrompt: WHAT_FED_THIS_PROMPT,
+    openingMessage: "Reconstruct what fed this piece of work, with the evidence for each link.",
+    infoPanel: {
+      reads: (detail) => detail,
+      looksFor: [
+        "The conversation this was drafted in",
+        "Material or reasoning that reached the work",
+        "Items that revised an earlier version",
+        "Items the work quotes or references",
+      ],
+      never: `${NEVER_LINE} Every proposal is a draft you confirm or discard, and nothing is recorded until you do.`,
+      sources: ANALYSIS_SOURCES,
+    },
+    attribution: null,
+    coachMayRun: true,
+  },
+  {
+    id: "what_recurs",
+    dbPreset: "what_recurs",
+    label: "What recurs",
+    description: "Patterns that appear in more than one piece of work in this engagement.",
+    scope: "engagement",
+    systemPrompt: WHAT_RECURS_PROMPT,
+    openingMessage:
+      "Across this engagement, name what happened in more than one piece of work, with citations.",
+    infoPanel: {
+      reads: (detail) => detail,
+      looksFor: [
+        "Things that happened in at least two separate pieces of work",
+        "Where each occurrence is, by item and date",
+        "What differed between the occurrences",
+      ],
+      never: `${NEVER_LINE} No trend, no trajectory, no count and no chart is produced, by design.`,
+      sources: ANALYSIS_SOURCES,
+    },
+    attribution: null,
+    coachMayRun: false,
+  },
 ];
+
+/** Below this, "What recurs" has nothing to compare and must not run. */
+export const MIN_ITEMS_FOR_RECURRENCE = 3;
+export const NOT_ENOUGH_WORK_LINE = "There is not enough work in this engagement yet.";
 
 export function analysisPreset(id: string): AnalysisPreset | null {
   return ANALYSIS_PRESETS.find((p) => p.id === id) ?? null;
