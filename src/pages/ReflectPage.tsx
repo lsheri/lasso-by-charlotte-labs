@@ -4,6 +4,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 
 import { PageHeader } from "@/components/layout/PageHeader";
+import { MarkdownMessage } from "@/components/markdown/MarkdownMessage";
 import { ScopePicker } from "@/components/reflect/ScopePicker";
 import {
   AlertDialog,
@@ -258,9 +259,13 @@ export function ReflectPage() {
                 {(messages ?? []).map((message) => (
                   <div key={message.id}>
                     <p className="micro-label">{message.role === "user" ? "You" : "Reflect"}</p>
-                    <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-foreground">
-                      {message.content}
-                    </p>
+                    {message.role === "user" ? (
+                      <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-foreground">
+                        {message.content}
+                      </p>
+                    ) : (
+                      <MarkdownMessage content={message.content} />
+                    )}
                   </div>
                 ))}
                 {pending ? <p className="text-sm text-muted-foreground">Thinking…</p> : null}
