@@ -293,7 +293,14 @@ export function ConnectorPicker({
         if (!next) {
           setSelected(new Set());
           setPage(null);
-          setCrumbs([{ id: null, name: copy.root }]);
+          setCrumbs(
+            initialFolder
+              ? [
+                  { id: null, name: copy.root },
+                  { id: initialFolder.id, name: initialFolder.name },
+                ]
+              : [{ id: null, name: copy.root }],
+          );
           setSearch("");
           setTerm("");
         }
@@ -318,6 +325,32 @@ export function ConnectorPicker({
         </DialogHeader>
 
         <p className="text-sm text-muted-foreground">Nothing is imported unless you select it.</p>
+
+        {isGmail && page?.labels?.length ? (
+          <nav aria-label="Gmail labels" className="flex flex-wrap gap-1.5">
+            {page.labels.map((label) => {
+              const active = labelQuery === label.query;
+              return (
+                <button
+                  key={label.id}
+                  type="button"
+                  aria-pressed={active}
+                  onClick={() => {
+                    setLabelQuery(label.query);
+                    setSelected(new Set());
+                  }}
+                  className={
+                    active
+                      ? "rounded-full border border-accent bg-accent-soft px-3 py-1 text-xs font-medium text-accent-deep"
+                      : "rounded-full border border-border px-3 py-1 text-xs text-muted-foreground transition-colors hover:border-accent hover:text-foreground"
+                  }
+                >
+                  {label.name}
+                </button>
+              );
+            })}
+          </nav>
+        ) : null}
 
         <form
           className="flex gap-2"
@@ -397,19 +430,47 @@ export function ConnectorPicker({
                 <ul className="mt-2 divide-y divide-border rounded-[var(--radius)] border border-border bg-card">
                   {folders.map((item) => (
                     <li key={item.id}>
-                      <button
-                        type="button"
-                        onClick={() => openFolder(item)}
-                        className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-secondary/50"
-                      >
-                        <Folder aria-hidden className="size-4 text-muted-foreground" />
-                        <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
-                          {item.title}
-                        </span>
-                        <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
-                          Open
-                        </span>
-                      </button>
+                      <div className="flex items-center gap-1 pr-2">
+                        <button
+                          type="button"
+                          onClick={() => openFolder(item)}
+                          className="flex min-w-0 flex-1 items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-secondary/50"
+                        >
+                          <Folder aria-hidden className="size-4 text-muted-foreground" />
+                          <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
+                            {item.title}
+                          </span>
+                          <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+                            Open
+                          </span>
+                        </button>
+                        <button
+                          type="button"
+                          disabled={watchBusy === item.id}
+                          onClick={() => void handleWatch(item)}
+                          aria-pressed={Boolean(item.isWatched)}
+                          title={
+                            item.isWatched
+                              ? "Watching — Lasso suggests new files, never imports them"
+                              : "Watch this folder for new work"
+                          }
+                          aria-label={
+                            item.isWatched ? `Stop watching ${item.title}` : `Watch ${item.title}`
+                          }
+                          className={
+                            item.isWatched
+                              ? "flex items-center gap-1 rounded-full border border-accent bg-accent-soft px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.08em] text-accent-deep transition-opacity hover:opacity-70 disabled:opacity-50"
+                              : "flex items-center gap-1 rounded-full border border-border px-2.5 py-1 text-[10px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:border-accent hover:text-foreground disabled:opacity-50"
+                          }
+                        >
+                          {item.isWatched ? (
+                            <Bell aria-hidden className="size-3" />
+                          ) : (
+                            <Eye aria-hidden className="size-3" />
+                          )}
+                          {item.isWatched ? "Watching" : "Watch"}
+                        </button>
+                      </div>
                     </li>
                   ))}
                 </ul>
@@ -425,7 +486,14 @@ export function ConnectorPicker({
               ) : (
                 <ul className="mt-2 divide-y divide-border rounded-[var(--radius)] border border-border bg-card">
                   {files.map((item) => (
-                    <li key={item.id} className="flex items-center gap-3 px-4 py-2.5">
+                    <li
+                      key={item.id}
+                      className={
+                        highlight.has(item.id)
+                          ? "flex items-center gap-3 border-l-2 border-l-accent bg-accent-soft/40 px-4 py-2.5"
+                          : "flex items-center gap-3 px-4 py-2.5"
+                      }
+                    >
                       <Checkbox
                         checked={selected.has(item.id)}
                         disabled={item.alreadyInLasso}
@@ -433,7 +501,20 @@ export function ConnectorPicker({
                         aria-label={`Select ${item.title}`}
                       />
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm text-foreground">{item.title}</p>
+                        <p className="flex min-w-0 items-center gap-2 text-sm text-foreground">
+                          <span className="truncate">{item.title}</span>
+                          {highlight.has(item.id) ? (
+                            <span className="shrink-0 rounded-full bg-accent-soft px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.08em] text-accent-deep">
+                              New
+                            </span>
+                          ) : null}
+                          {item.hint ? (
+                            <span className="flex shrink-0 items-center gap-1 rounded-full border border-border px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
+                              <Phone aria-hidden className="size-2.5" />
+                              {item.hint}
+                            </span>
+                          ) : null}
+                        </p>
                         {item.subtitle ? (
                           <p className="truncate font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
                             {item.subtitle}
