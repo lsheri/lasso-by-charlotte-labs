@@ -774,11 +774,17 @@ async function pushConversation(owner: Owner, args: Obj, id: unknown): Promise<R
   const { ensureExtracts } = await import("./extract.server");
   await ensureExtracts(capturedIds);
 
+  const pushMode = !existingThread
+    ? "created"
+    : newRows.length > 0 || changedCount > 0
+      ? "appended"
+      : "unchanged";
+
   await recordEvent(supabaseAdmin, {
     eventType: "mcp.push",
     orgId: owner.orgId,
     userId: owner.userId,
-    dims: { vendor, attachment_count: attachmentBucket(attachments.length) },
+    dims: { vendor, attachment_count: attachmentBucket(attachments.length), mode: pushMode },
   });
   await recordEvent(supabaseAdmin, {
     eventType: "workitem.captured",
