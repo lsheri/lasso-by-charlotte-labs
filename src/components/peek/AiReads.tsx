@@ -76,26 +76,25 @@ export function AiReads({ workItemId }: { workItemId: string }) {
   });
 
   const hasReads = Boolean(data && data.length > 0);
-  if (!hasReads && !profile) return null;
 
   return (
-    <section className="mt-8 border-t border-border pt-4">
+    <>
       {hasReads ? (
-        <>
+        <section className="mt-8 border-t border-border pt-4">
           <h3 className="micro-label">AI reads</h3>
           <ul className="mt-2 space-y-1">
             {(data ?? []).map((read) => (
-          <li key={read.id} className="text-xs text-muted-foreground">
-            {read.reader_role === "owner"
-              ? `You read the ${read.depth === "full" ? "full text" : "summary"}`
-              : `${SURFACE_LABEL[read.surface] ?? "An assistant"} read the ${read.depth === "full" ? "full text" : "summary"}`}
-            , {formatDate(read.created_at)}
-          </li>
+              <li key={read.id} className="text-xs text-muted-foreground">
+                {read.reader_role === "owner"
+                  ? `You read the ${read.depth === "full" ? "full text" : "summary"}`
+                  : `${SURFACE_LABEL[read.surface] ?? "An assistant"} read the ${read.depth === "full" ? "full text" : "summary"}`}
+                , {formatDate(read.created_at)}
+              </li>
             ))}
           </ul>
-        </>
+        </section>
       ) : null}
       {profile ? <QuestionsAsked profileId={profile.id} /> : null}
-    </section>
+    </>
   );
 }
