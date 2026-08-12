@@ -159,7 +159,9 @@ export async function buildCatalogue(
   );
   const extractFor = new Map(extractRows.map((row) => [row.work_item_id, row]));
 
-  const entries: CatalogueEntry[] = oldestFirst.map((item, index) => ({
+  const codes = assignCatalogueCodes(oldestFirst.map((item) => item.id));
+
+  const entries: CatalogueEntry[] = oldestFirst.map((item) => ({
     code: codes.get(item.id) ?? `[${item.id.slice(0, 4)}]`,
     id: item.id,
     title: item.title,
