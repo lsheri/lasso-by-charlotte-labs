@@ -1,3 +1,5 @@
+import { QUOTE_RULE } from "./quote-check";
+
 export type DraftedDecision = {
   situation: string;
   call: string;
