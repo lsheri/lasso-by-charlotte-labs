@@ -112,6 +112,18 @@ function classify(status: number, body: string): AiErrorClass {
   return "bad_request";
 }
 
+/** The provider's own error string, never our request body. */
+function providerMessage(body: string, status: number): string {
+  try {
+    const parsed = JSON.parse(body) as { error?: { message?: string; code?: string } };
+    const message = parsed.error?.message;
+    if (message) return `${status}: ${message}`.slice(0, 2000);
+  } catch {
+    // not JSON
+  }
+  return `${status}`;
+}
+
 function friendly(errorClass: AiErrorClass): string {
   switch (errorClass) {
     case "rate_limit":
@@ -254,7 +266,8 @@ export async function chatComplete(
       model,
       startedAt,
       options.meta,
-      String(response.status),
+      providerMessage(body, response.status),
+      response.status,
     );
   }
 
@@ -284,7 +297,7 @@ export async function chatComplete(
     costUsd: computeCostUsd(model, tokensIn, cachedIn, tokensOut),
     durationMs: Date.now() - startedAt,
   };
-  await afterCall(result, options.meta);
+  afterCall(result, options.meta);
   return result;
 }
 
@@ -327,7 +340,8 @@ export async function streamChat(
       model,
       startedAt,
       options.meta,
-      String(response.status),
+      providerMessage(body, response.status),
+      response.status,
     );
   }
 
@@ -382,15 +396,14 @@ export async function streamChat(
   } catch (e) {
     interrupted = true;
     console.error("[ai] stream broke:", (e as Error).message);
-    await reportAiHealth({
-      errorClass: "model_error",
+    void logHealth({
+      kind: "error",
       surface: options.meta?.surface ?? "unknown",
       orgId: options.meta?.orgId,
-      orgName: options.meta?.orgName,
-      actorHash: options.meta?.actorHash,
       model,
-      durationMs: Date.now() - startedAt,
-      note: "stream interrupted",
+      latencyMs: Date.now() - startedAt,
+      detail: "stream interrupted",
+      meta: { error_class: "model_error" },
     });
   }
 
@@ -405,7 +418,7 @@ export async function streamChat(
     costUsd: computeCostUsd(model, tokensIn, cachedIn, tokensOut),
     durationMs: Date.now() - startedAt,
   };
-  await afterCall(result, options.meta);
+  afterCall(result, options.meta);
   return { ...result, interrupted };
 }
 
