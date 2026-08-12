@@ -44,11 +44,12 @@ export type ContextSource = {
   title: string;
   type: string;
   source_vendor: string | null;
-  depth: "full" | "extract" | "unreadable";
+  depth: "full" | "extract" | "catalogue" | "unreadable";
 };
 
 export const SOURCE_GROUPS: { depth: ContextSource["depth"]; label: string }[] = [
   { depth: "full", label: "Read in full" },
   { depth: "extract", label: "Read as a summary only" },
+  { depth: "catalogue", label: "Listed, not opened" },
   { depth: "unreadable", label: "Could not be read" },
 ];
