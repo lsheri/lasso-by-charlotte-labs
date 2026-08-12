@@ -1,4 +1,4 @@
-import { Sparkle } from "lucide-react";
+import { Suggested, SuggestDot } from "@/components/common/Suggested";
 
 /** A draft mapping, sitting inside the item's own card. Accept is a real button. */
 export function SuggestionChip({
@@ -15,9 +15,9 @@ export function SuggestionChip({
   pending: boolean;
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-[var(--radius-md)] bg-ember-wash px-3 py-2">
-      <Sparkle className="h-3.5 w-3.5 shrink-0 text-ember-deep" aria-hidden />
-      <p className="min-w-0 flex-1 text-xs text-ember-deep">
+    <Suggested className="flex flex-wrap items-center gap-x-3 gap-y-2">
+      <SuggestDot />
+      <p className="min-w-0 flex-1 break-words text-xs text-ember-deep">
         <span className="font-medium">{label}</span>
         {reason ? <span className="text-muted-foreground"> — {reason}</span> : null}
       </p>
@@ -38,6 +38,6 @@ export function SuggestionChip({
           Dismiss
         </button>
       </div>
-    </div>
+    </Suggested>
   );
 }

@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { MessageSquare } from "lucide-react";
 import { useState, type ReactNode } from "react";
 
+import { SuggestDot } from "@/components/common/Suggested";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -160,8 +161,14 @@ export function FeedbackWidget() {
         trigger={
           <button
             type="button"
-            className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground shadow-card transition-colors hover:text-foreground"
+            style={{
+              background: "var(--suggest-wash)",
+              borderLeftWidth: "3px",
+              borderLeftColor: "var(--suggest-edge)",
+            }}
+            className="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 font-mono text-[11px] uppercase tracking-[0.08em] text-foreground shadow-card transition-colors hover:text-foreground"
           >
+            <SuggestDot />
             <MessageSquare className="h-3.5 w-3.5" aria-hidden /> Feedback
           </button>
         }

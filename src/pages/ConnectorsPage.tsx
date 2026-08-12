@@ -211,6 +211,11 @@ export function ConnectorsPage() {
 
         <Category title="Meetings" hue="--hue-clay">
           <GranolaKeyCard />
+          <TranscriptsCard
+            connected={accounts?.["googledrive"]?.status === "connected"}
+            busy={busy === "googledrive"}
+            onConnect={() => void handleConnect("googledrive")}
+          />
         </Category>
 
         <Category title="Coming soon" hue="--hue-neutral">
@@ -244,6 +249,49 @@ export function ConnectorsPage() {
 }
 
 /** Tinted band header, so a category is found before it is read. */
+/**
+ * Call transcripts are not a second connection — they are the same Google
+ * Drive connection, opened straight into a picker scoped to where recordings
+ * usually live. Still picker-only, nothing auto-imports.
+ */
+function TranscriptsCard({
+  connected,
+  busy,
+  onConnect,
+}: {
+  connected: boolean;
+  busy: boolean;
+  onConnect: () => void;
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-4 rounded-[var(--radius)] border border-border bg-card px-4 py-3 shadow-card">
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-medium text-foreground">Call transcripts (Google Drive)</p>
+        <p className="mt-0.5 text-sm text-muted-foreground">
+          Recordings and transcripts already in your Drive. Uses the same connection.
+        </p>
+      </div>
+      <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+        {busy ? "Pending" : connected ? "Ready" : "Needs Google Drive"}
+      </span>
+      {connected ? (
+        <ConnectorPicker
+          kind="transcripts"
+          trigger={
+            <Button type="button" size="sm" variant="outline">
+              Find transcripts
+            </Button>
+          }
+        />
+      ) : (
+        <Button type="button" size="sm" disabled={busy} onClick={onConnect}>
+          {busy ? "Waiting…" : "Connect Google Drive"}
+        </Button>
+      )}
+    </div>
+  );
+}
+
 function Category({
   title,
   hue,

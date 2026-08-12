@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { useState, type ReactNode } from "react";
 import { toast } from "sonner";
 
@@ -13,19 +14,22 @@ import {
 import { Input } from "@/components/ui/input";
 import { useProfile } from "@/hooks/use-profile";
 import { supabase } from "@/integrations/supabase/client";
+import { sendInviteEmail } from "@/lib/invites.functions";
 import { logEvent } from "@/lib/telemetry";
 
-type InviteRole = "coach" | "em" | "lead" | "admin";
+type InviteRole = "coach" | "em";
 
 const ROLE_OPTIONS: { value: InviteRole; label: string; hint: string }[] = [
   {
     value: "coach",
-    label: "Coach",
-    hint: "Reviews the work someone shares, writes coaching notes.",
+    label: "Coach or manager",
+    hint: "Reviews the work you choose to share with them. Cannot see anything you have not shared.",
   },
-  { value: "em", label: "Engagement manager", hint: "Brings their own work into Lasso." },
-  { value: "lead", label: "Lead", hint: "Can invite others and see engagements across the team." },
-  { value: "admin", label: "Admin", hint: "Full workspace settings." },
+  {
+    value: "em",
+    label: "Teammate",
+    hint: "Builds their own record in this workspace. Sees only their own work.",
+  },
 ];
 
 function IssuedInvites({ orgId, refreshKey }: { orgId: string; refreshKey: string }) {
@@ -85,11 +89,13 @@ export function InviteDialog({
   defaultRole?: InviteRole;
 }) {
   const { data: profile } = useProfile();
+  const emailInvite = useServerFn(sendInviteEmail);
   const [open, setOpen] = useState(false);
   const [role, setRole] = useState<InviteRole>(defaultRole);
   const [email, setEmail] = useState("");
   const [lockEmail, setLockEmail] = useState(true);
   const [link, setLink] = useState<string | null>(null);
+  const [emailState, setEmailState] = useState<"sent" | "not_configured" | "failed" | null>(null);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -102,6 +108,7 @@ export function InviteDialog({
     setPending(true);
     setError(null);
     setLink(null);
+    setEmailState(null);
 
     const args: { p_role: InviteRole; p_org_id: string; p_email?: string } = {
       p_role: role,
@@ -118,8 +125,27 @@ export function InviteDialog({
 
     const params = new URLSearchParams({ code: String(data) });
     if (engagementId) params.set("eng", engagementId);
-    setLink(`${window.location.origin}/join?${params.toString()}`);
+    const url = `${window.location.origin}/join?${params.toString()}`;
+    setLink(url);
     logEvent("coach.invite_created", profile.org_id, { role });
+
+    const recipient = email.trim();
+    if (recipient) {
+      try {
+        const result = await emailInvite({
+          data: {
+            profile_id: profile.id,
+            code: String(data),
+            email: recipient,
+            accept_url: url,
+          },
+        });
+        setEmailState(result.reason);
+        if (result.sent) toast.success("Invitation emailed");
+      } catch {
+        setEmailState("failed");
+      }
+    }
   }
 
   return (
@@ -131,6 +157,7 @@ export function InviteDialog({
           setLink(null);
           setError(null);
           setEmail("");
+          setEmailState(null);
         }
       }}
     >
@@ -200,10 +227,22 @@ export function InviteDialog({
 
         {link ? (
           <div className="space-y-2 rounded-[var(--radius)] border border-border bg-secondary px-4 py-3">
-            <p className="micro-label">Share this link</p>
-            <p className="text-xs text-muted-foreground">
-              Send this to your coach. It expires; it can only be used once.
+            <p className="micro-label">
+              {emailState === "sent" ? "Invitation sent" : "Share this link"}
             </p>
+            {emailState === "sent" ? (
+              <p className="text-xs text-muted-foreground">
+                We emailed the invitation. You can also share the link below.
+              </p>
+            ) : emailState === "not_configured" || emailState === "failed" ? (
+              <p className="text-xs text-muted-foreground">
+                Email sending is not configured yet, so copy this link and send it yourself.
+              </p>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                Send this to them. It expires; it can only be used once.
+              </p>
+            )}
             <p className="break-all font-mono text-xs text-foreground">{link}</p>
             <Button
               type="button"

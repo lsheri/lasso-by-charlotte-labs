@@ -11,6 +11,7 @@ import { PasteThreadDialog } from "@/components/work/PasteThreadDialog";
 import { OpenFileAction } from "@/components/work/OpenFileAction";
 import { ConnectorBrowseActions } from "@/components/connectors/ConnectorBrowseActions";
 import { WatchSuggestionBanner } from "@/components/connectors/WatchSuggestionBanner";
+import { SuggestDot, SuggestLegend, Suggested } from "@/components/common/Suggested";
 import { SuggestionChip } from "@/components/work/SuggestionChip";
 import { PeekPanel, type PeekEntry } from "@/components/peek/PeekPanel";
 import { UploadFilesButton } from "@/components/work/UploadFilesButton";
@@ -461,8 +462,11 @@ export function WorkPage() {
             ) : (
               <div className={suggesting ? "animate-pulse space-y-2" : "space-y-2"}>
                 {active.length === 0 ? (
-                  <div className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius)] border border-dashed border-border bg-accent-soft/50 px-4 py-3">
-                    <p className="text-sm text-accent-deep">Let Lasso suggest where these go</p>
+                  <Suggested className="flex flex-wrap items-center justify-between gap-3">
+                    <p className="flex min-w-0 items-center gap-2 text-sm text-foreground">
+                      <SuggestDot />
+                      Let Lasso suggest where these go
+                    </p>
                     <button
                       type="button"
                       disabled={suggesting}
@@ -471,12 +475,10 @@ export function WorkPage() {
                     >
                       {suggesting ? "Thinking…" : "Suggest mapping"}
                     </button>
-                  </div>
+                  </Suggested>
                 ) : (
                   <div className="flex flex-wrap items-center justify-between gap-3">
-                    <p className="text-xs text-muted-foreground">
-                      Suggestions are drafts — nothing is shared until you accept.
-                    </p>
+                    <SuggestLegend />
                     {highConfidence.length >= 3 ? (
                       <button
                         type="button"

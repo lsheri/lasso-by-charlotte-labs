@@ -17,14 +17,18 @@ import { ToolBadge } from "./ToolBadge";
  * Real OAuth in the first session. On success the folder-first picker opens
  * inline — the user picks files themselves. Nothing arrives unselected.
  */
-export function LiveConnectCard({ tool }: { tool: Extract<ToolId, "googledrive" | "granola"> }) {
+type ConnectTool = Extract<ToolId, "googledrive" | "granola" | "transcripts">;
+
+export function LiveConnectCard({ tool }: { tool: ConnectTool }) {
   // Granola authenticates with a pasted API key, so it gets its own card.
   if (tool === "granola") return <GranolaKeyCard />;
   return <OAuthConnectCard tool={tool} />;
 }
 
-function OAuthConnectCard({ tool }: { tool: Extract<ToolId, "googledrive" | "granola"> }) {
-  const toolkit = tool === "googledrive" ? "googledrive" : "granola_mcp";
+function OAuthConnectCard({ tool }: { tool: ConnectTool }) {
+  // Call transcripts reuse the same Google Drive connection — no second OAuth.
+  const toolkit = tool === "granola" ? "granola_mcp" : "googledrive";
+  const pickerKind = tool === "transcripts" ? "transcripts" : "googledrive";
   const meta = TOOLS[tool];
   const { data: profile } = useProfile();
   const { data: accounts } = useConnectorAccounts();
@@ -66,7 +70,7 @@ function OAuthConnectCard({ tool }: { tool: Extract<ToolId, "googledrive" | "gra
             if (profile) {
               logEvent("connector.enabled", profile.org_id, { toolkit, auth_mode: "worker_oauth" });
             }
-            if (tool === "googledrive") setPickerOpen(true);
+            setPickerOpen(true);
           }
         })();
       }, 3000);
@@ -83,9 +87,9 @@ function OAuthConnectCard({ tool }: { tool: Extract<ToolId, "googledrive" | "gra
         <div className="min-w-0 flex-1">
           <p className="text-sm font-medium text-foreground">{meta.label}</p>
           <p className="mt-1 text-sm text-muted-foreground">
-            {tool === "googledrive"
-              ? "Connect once, then browse your folders and tick only the files you want."
-              : "Connect your Granola account so your meeting notes can come across."}
+            {tool === "transcripts"
+              ? "Uses your Google Drive connection. Lasso looks where recordings usually live, then you tick the ones you want."
+              : "Connect once, then browse your folders and tick only the files you want."}
           </p>
         </div>
       </div>
@@ -93,16 +97,24 @@ function OAuthConnectCard({ tool }: { tool: Extract<ToolId, "googledrive" | "gra
       {!connected ? (
         <div className="mt-4">
           <Button type="button" disabled={busy} onClick={() => void connect()}>
-            {busy ? "Waiting for you to approve…" : `Connect ${meta.label}`}
+            {busy
+              ? "Waiting for you to approve…"
+              : tool === "transcripts"
+                ? "Connect Google Drive"
+                : `Connect ${meta.label}`}
           </Button>
         </div>
       ) : (
         <div className="mt-4">
           <ConnectorPicker
-            kind="googledrive"
+            kind={pickerKind}
             open={pickerOpen}
             onOpenChange={setPickerOpen}
-            trigger={<Button type="button">Pick files to bring in</Button>}
+            trigger={
+              <Button type="button">
+                {tool === "transcripts" ? "Find call transcripts" : "Pick files to bring in"}
+              </Button>
+            }
           />
         </div>
       )}

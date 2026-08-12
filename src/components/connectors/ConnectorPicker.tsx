@@ -21,6 +21,7 @@ import {
   browseConnectorItems,
   browseGmailThreads,
   browseGranolaMeetings,
+  browseTranscriptCandidates,
   importConnectorItems,
   importGmailThreads,
   importGranolaMeetings,
@@ -29,7 +30,13 @@ import { setFolderWatch } from "@/lib/connector-watch.functions";
 
 type Crumb = { id: string | null; name: string };
 
-export type PickerKind = "googledrive" | "onedrive" | "sharepoint" | "granola" | "gmail";
+export type PickerKind =
+  | "googledrive"
+  | "onedrive"
+  | "sharepoint"
+  | "granola"
+  | "gmail"
+  | "transcripts";
 
 type FileKind = "googledrive" | "onedrive" | "sharepoint";
 
@@ -78,6 +85,13 @@ const COPY: Record<
     empty: "No threads here.",
     action: "Bring into Lasso",
   },
+  transcripts: {
+    title: "Call transcripts in Google Drive",
+    searchLabel: "Search your Drive for a transcript",
+    root: "Meet Recordings",
+    empty: "No call transcripts found yet. Try a search, or browse Drive instead.",
+    action: "Bring into Lasso",
+  },
 };
 
 function dateLabel(iso: string | null): string {
@@ -107,7 +121,8 @@ export function ConnectorPicker({
   /** Provider ids to call out as new — still default-unchecked. */
   highlightIds?: string[];
 }) {
-  const isFolderBrowser = kind !== "granola" && kind !== "gmail";
+  const isTranscripts = kind === "transcripts";
+  const isFolderBrowser = kind !== "granola" && kind !== "gmail" && !isTranscripts;
   const isGmail = kind === "gmail";
   const copy = COPY[kind];
   const { data: profile } = useProfile();
@@ -115,6 +130,7 @@ export function ConnectorPicker({
   const browseFiles = useServerFn(browseConnectorItems);
   const browseMeetings = useServerFn(browseGranolaMeetings);
   const browseThreads = useServerFn(browseGmailThreads);
+  const browseTranscripts = useServerFn(browseTranscriptCandidates);
   const importFiles = useServerFn(importConnectorItems);
   const importMeetings = useServerFn(importGranolaMeetings);
   const importThreads = useServerFn(importGmailThreads);
@@ -160,15 +176,18 @@ export function ConnectorPicker({
     if (isFolderBrowser) {
       return browseFiles({ data: { ...data, toolkit: TOOLKIT[kind as FileKind] } });
     }
+    if (isTranscripts) return browseTranscripts({ data: { profile_id: profile?.id, ...(term ? { search: term } : {}) } });
     return isGmail ? browseThreads({ data }) : browseMeetings({ data });
   }, [
     browseFiles,
     browseMeetings,
     browseThreads,
+    browseTranscripts,
     crumbFolder.name,
     folderId,
     isFolderBrowser,
     isGmail,
+    isTranscripts,
     kind,
     profile?.id,
     term,
@@ -269,7 +288,18 @@ export function ConnectorPicker({
               toolkit: TOOLKIT[kind as FileKind],
             },
           })
-        : isGmail
+        : isTranscripts
+          ? await importFiles({
+              data: {
+                profile_id: profile?.id,
+                ids,
+                mimes,
+                // Forces the transcript path: these land as calls.
+                folder_name: "Meet Recordings",
+                toolkit: "googledrive",
+              },
+            })
+          : isGmail
           ? await importThreads({ data: { profile_id: profile?.id, ids } })
           : await importMeetings({ data: { profile_id: profile?.id, ids } });
       toast.success(
@@ -497,8 +527,8 @@ export function ConnectorPicker({
                       key={item.id}
                       className={
                         highlight.has(item.id)
-                          ? "flex items-center gap-3 border-l-2 border-l-accent bg-accent-soft/40 px-4 py-2.5"
-                          : "flex items-center gap-3 px-4 py-2.5"
+                          ? "flex min-w-0 items-start gap-3 border-l-2 border-l-accent bg-accent-soft/40 px-4 py-2.5"
+                          : "flex min-w-0 items-start gap-3 px-4 py-2.5"
                       }
                     >
                       <Checkbox
@@ -508,8 +538,10 @@ export function ConnectorPicker({
                         aria-label={`Select ${item.title}`}
                       />
                       <div className="min-w-0 flex-1">
-                        <p className="flex min-w-0 items-center gap-2 text-sm text-foreground">
-                          <span className="truncate">{item.title}</span>
+                        <p className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-sm text-foreground">
+                          <span title={item.title} className="line-clamp-2 min-w-0 break-words">
+                            {item.title}
+                          </span>
                           {highlight.has(item.id) ? (
                             <span className="shrink-0 rounded-full bg-accent-soft px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.08em] text-accent-deep">
                               New
@@ -523,12 +555,12 @@ export function ConnectorPicker({
                           ) : null}
                         </p>
                         {item.subtitle ? (
-                          <p className="truncate font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+                          <p className="break-words font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
                             {item.subtitle}
                           </p>
                         ) : null}
                       </div>
-                      <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+                      <span className="shrink-0 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
                         {item.alreadyInLasso ? "In Lasso" : dateLabel(item.date)}
                       </span>
                     </li>
