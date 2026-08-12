@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import type { PickerPage } from "@/lib/connector-picker-shared";
+import type { ImportResult, PickerPage } from "@/lib/connector-picker-shared";
 import { isBrowsableToolkit, type BrowsableToolkit } from "@/lib/connector-toolkits";
 
 type BrowseInput = {
