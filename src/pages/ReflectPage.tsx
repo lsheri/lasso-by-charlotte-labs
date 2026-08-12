@@ -289,7 +289,7 @@ export function ReflectPage() {
                     )}
                   </div>
                 ))}
-                {pending ? <p className="text-sm text-muted-foreground">Thinking…</p> : null}
+                {pending ? <ThinkingIndicator /> : null}
                 {coverage?.truncated ? <CoverageNote {...coverage} /> : null}
                 <div ref={bottomRef} />
               </div>

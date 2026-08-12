@@ -2,6 +2,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { ThinkingIndicator, WorkingLabel } from "@/components/common/Working";
 import { MarkdownMessage } from "@/components/markdown/MarkdownMessage";
 import { AnswerSources } from "@/components/reflect/AnswerSources";
 import { CoverageNote } from "@/components/reflect/CoverageNote";
@@ -90,6 +91,13 @@ export function CoachChat({
         ))}
       </div>
 
+      {pending ? (
+        <ThinkingIndicator
+          className="mt-4"
+          stages={["Gathering this record…", "Reading what was shared…", "Thinking it through…"]}
+        />
+      ) : null}
+
       <form onSubmit={submit} className="mt-4 flex gap-2">
         <Input
           value={question}
@@ -97,7 +105,7 @@ export function CoachChat({
           placeholder="How did they approach the pricing question?"
         />
         <Button type="submit" disabled={pending || !question.trim()}>
-          {pending ? "Asking…" : "Ask"}
+          {pending ? <WorkingLabel>Asking</WorkingLabel> : "Ask"}
         </Button>
       </form>
 
