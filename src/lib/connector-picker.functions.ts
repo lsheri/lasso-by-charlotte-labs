@@ -276,20 +276,21 @@ export const browseGmailThreads = createServerFn({ method: "POST" })
     const { requireConnected, importedGmailThreadIds } =
       await import("@/lib/connector-import.server");
     const { listGmailLabels, listGmailThreads } = await import("@/lib/gmail.server");
+    const { guardConnector } = await import("@/lib/connector-error.server");
 
     const profile = await resolveProfile(supabase, userId, data.profile_id);
     if (!profile) throw new Response("Forbidden", { status: 403 });
     await requireConnected(supabase, profile.id, "gmail");
 
-    const labels = await listGmailLabels(profile.id);
+    const guard = { provider: "gmail", orgId: profile.org_id, userId };
+    const labels = await guardConnector(supabase, guard, () => listGmailLabels(profile.id));
     const scope = data.folder_id ?? "in:inbox";
     const term = data.search?.trim();
     const query = [scope, term].filter(Boolean).join(" ");
 
-    const { threads, nextPageToken } = await listGmailThreads(profile.id, {
-      query,
-      pageToken: data.page_token ?? null,
-    });
+    const { threads, nextPageToken } = await guardConnector(supabase, guard, () =>
+      listGmailThreads(profile.id, { query, pageToken: data.page_token ?? null }),
+    );
     const seen = await importedGmailThreadIds(supabase, profile.id);
 
     return {
@@ -318,11 +319,13 @@ export const importGmailThreads = createServerFn({ method: "POST" })
     const { requireConnected, importedGmailThreadIds, storeFile, captureEvents } =
       await import("@/lib/connector-import.server");
     const { fetchGmailThread } = await import("@/lib/gmail.server");
+    const { guardConnector } = await import("@/lib/connector-error.server");
 
     const profile = await resolveProfile(supabase, userId, data.profile_id);
     if (!profile) throw new Response("Forbidden", { status: 403 });
     await requireConnected(supabase, profile.id, "gmail");
 
+    const guard = { provider: "gmail", orgId: profile.org_id, userId };
     const seen = await importedGmailThreadIds(supabase, profile.id);
     const newIds: string[] = [];
     let imported = 0;
@@ -334,7 +337,9 @@ export const importGmailThreads = createServerFn({ method: "POST" })
         continue;
       }
       if (index > 0) await new Promise((r) => setTimeout(r, 200));
-      const thread = await fetchGmailThread(profile.id, id);
+      const thread = await guardConnector(supabase, guard, () =>
+        fetchGmailThread(profile.id, id),
+      );
       if (!thread) {
         skipped += 1;
         continue;
