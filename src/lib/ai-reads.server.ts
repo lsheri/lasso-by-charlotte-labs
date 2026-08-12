@@ -1,7 +1,7 @@
 import type { Database } from "@/integrations/supabase/types";
 
 export type AiReadSurface = Database["public"]["Tables"]["ai_reads"]["Row"]["surface"];
-export type AiReadDepth = "extract" | "full" | "unreadable";
+export type AiReadDepth = "extract" | "full" | "catalogue" | "unreadable";
 export type AiReadRole = "owner" | "coach";
 
 export type AiReadInput = {
