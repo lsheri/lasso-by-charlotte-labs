@@ -704,6 +704,8 @@ async function pushConversation(owner: Owner, args: Obj, id: unknown): Promise<R
   let saved = 0;
   const capturedIds: string[] = [threadId];
   const problems: string[] = [];
+  let flaggedCount = 0;
+  const transcriptText = messages.map((m) => m.content).join("\n\n");
   if (attachments.length > 0 && !owner.userId) {
     problems.push("attachments need a signed-in workspace account");
   } else {
@@ -721,6 +723,10 @@ async function pushConversation(owner: Owner, args: Obj, id: unknown): Promise<R
         continue;
       }
       const match = (existingAttachments ?? []).find((row) => row.title === attachment.title);
+      // A restatement of the conversation is not a separate artifact. We never
+      // drop it: we flag it, and the owner decides.
+      const restated = looksLikeRestatement(attachment.content, transcriptText);
+      if (restated) flaggedCount += 1;
       // Reuse the stored path for a known attachment; give new ones a collision-proof suffix.
       const suffix = (await sha256Hex(attachment.title)).slice(0, 8);
       const path =
@@ -752,6 +758,7 @@ async function pushConversation(owner: Owner, args: Obj, id: unknown): Promise<R
           kind: attachment.kind,
           language: attachment.language ?? null,
           filename: attachment.title,
+          duplicate_of_transcript: restated,
         } as unknown as Json,
         meta: { assistant_transcribed: true },
       };
