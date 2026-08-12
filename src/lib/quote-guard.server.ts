@@ -1,4 +1,5 @@
-import { chatComplete, type ChatMessage, type ChatResult } from "@/lib/ai-gateway.server";
+import { chatComplete, type AiMeta, type ChatMessage, type ChatResult } from "@/lib/ai.server";
+import { reportAiHealth } from "@/lib/ai-health.server";
 import { longQuotes, unmatchedQuotes } from "@/lib/quote-check";
 
 /**
@@ -17,8 +18,12 @@ export type QuoteGuardResult = {
   repairs: number;
   /** Spans still unverifiable after repair, stripped rather than rendered. */
   suppressed: number;
+  /** The spans that could not be verified even after the repair turn. */
+  failedSpans: string[];
   tokensIn: number;
   tokensOut: number;
+  cachedIn: number;
+  costUsd: number;
   claims: number;
 };
 
@@ -42,6 +47,7 @@ export async function guardQuotes(
   context: string,
   cutOff: boolean,
   conversation: ChatMessage[],
+  meta?: AiMeta,
 ): Promise<QuoteGuardResult> {
   const failed = unmatchedQuotes(answer, context, cutOff);
   if (failed.length === 0) {
@@ -50,8 +56,11 @@ export async function guardQuotes(
       unmatchedBefore: 0,
       repairs: 0,
       suppressed: 0,
+      failedSpans: [],
       tokensIn: 0,
       tokensOut: 0,
+      cachedIn: 0,
+      costUsd: 0,
       claims: longQuotes(answer).length,
     };
   }
@@ -59,18 +68,21 @@ export async function guardQuotes(
   // Repair: one automatic corrective turn, invisible to the reader.
   let repaired: ChatResult | null = null;
   try {
-    repaired = await chatComplete([
-      ...conversation,
-      { role: "assistant", content: answer },
-      {
-        role: "user",
-        content: `${QUOTE_RULE}\n\nThe following quoted spans in your last answer do not appear character for character in the work supplied:\n\n${failed
-          .map((span, i) => `${i + 1}. "${span}"`)
-          .join(
-            "\n",
-          )}\n\nRewrite the whole answer. For each span, either restore the exact wording from the source, or remove the quotation marks and restate it as your own prose. Change nothing else. Return only the corrected answer.`,
-      },
-    ]);
+    repaired = await chatComplete(
+      [
+        ...conversation,
+        { role: "assistant", content: answer },
+        {
+          role: "user",
+          content: `${QUOTE_RULE}\n\nThe following quoted spans in your last answer do not appear character for character in the work supplied:\n\n${failed
+            .map((span, i) => `${i + 1}. "${span}"`)
+            .join(
+              "\n",
+            )}\n\nRewrite the whole answer. For each span, either restore the exact wording from the source, or remove the quotation marks and restate it as your own prose. Change nothing else. Return only the corrected answer.`,
+        },
+      ],
+      { tier: "smart", meta: meta ?? { surface: "quote_repair" } },
+    );
   } catch (e) {
     console.error("[quote-guard] repair turn failed:", (e as Error).message);
   }
@@ -88,7 +100,15 @@ export async function guardQuotes(
   if (stillFailing.length > 0) {
     console.error("[quote-guard] suppressed unverifiable quotes", {
       count: stillFailing.length,
-      spans: stillFailing,
+    });
+    await reportAiHealth({
+      errorClass: "quote_unverified",
+      surface: meta?.surface ?? "quote_repair",
+      orgId: meta?.orgId,
+      orgName: meta?.orgName,
+      actorHash: meta?.actorHash,
+      model: repaired?.model ?? null,
+      note: `${stillFailing.length} span(s) unverifiable after repair`,
     });
   }
 
@@ -97,8 +117,11 @@ export async function guardQuotes(
     unmatchedBefore: failed.length,
     repairs,
     suppressed: stillFailing.length,
+    failedSpans: stillFailing,
     tokensIn: repaired?.tokensIn ?? 0,
     tokensOut: repaired?.tokensOut ?? 0,
+    cachedIn: repaired?.cachedIn ?? 0,
+    costUsd: repaired?.costUsd ?? 0,
     claims: longQuotes(finalAnswer).length,
   };
 }

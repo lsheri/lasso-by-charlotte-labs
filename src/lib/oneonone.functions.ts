@@ -40,39 +40,23 @@ export const prepareOneOnOne = createServerFn({ method: "POST" })
       };
     }
 
-    const apiKey = process.env["LOVABLE_API_KEY"];
-    if (!apiKey) throw new Error("Missing LOVABLE_API_KEY");
-
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Lovable-API-Key": apiKey,
-        "X-Lovable-AIG-SDK": "fetch",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-3.6-flash",
-        max_tokens: 1800,
-        messages: [
-          { role: "system", content: ONEONONE_SYSTEM_PROMPT },
-          { role: "user", content: corpus.prompt },
-        ],
-      }),
+    const { chatComplete, resolveAiMeta } = await import("./ai.server");
+    const meta = await resolveAiMeta(supabase, {
+      surface: "oneonone",
+      orgId: profile.org_id,
+      userId,
     });
-
-    if (!response.ok) {
-      const body = await response.text();
-      if (response.status === 429) throw new Error("Rate limited. Try again in a moment.");
-      if (response.status === 402) throw new Error("AI credits exhausted for this workspace.");
-      throw new Error(`AI request failed (${response.status}): ${body.slice(0, 300)}`);
-    }
-
-    const payload = (await response.json()) as {
-      choices?: { message?: { content?: string } }[];
-    };
-    const markdown = payload.choices?.[0]?.message?.content?.trim();
+    const completion = await chatComplete(
+      [
+        { role: "system", content: ONEONONE_SYSTEM_PROMPT },
+        { role: "user", content: corpus.prompt },
+      ],
+      { tier: "smart", maxTokens: 4000, meta },
+    );
+    const markdown = completion.text;
     if (!markdown) throw new Error("The brief came back empty. Try again.");
 
+    const { usageDims } = await import("./ai-usage");
     const { recordEvent } = await import("./telemetry.server");
     await recordEvent(supabase, {
       eventType: "oneonone.prepared",
@@ -81,6 +65,7 @@ export const prepareOneOnOne = createServerFn({ method: "POST" })
       dims: {
         window: windowDim(data.window_days),
         scope: data.engagement_id ? "engagement" : "overview",
+        ...usageDims(completion),
       },
     });
 

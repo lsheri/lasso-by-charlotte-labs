@@ -25,7 +25,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useProfile } from "@/hooks/use-profile";
 import { useAnswerSources } from "@/hooks/use-answer-sources";
 import { supabase } from "@/integrations/supabase/client";
-import { sendReflectMessage } from "@/lib/reflect.functions";
+import { streamChatRequest } from "@/lib/stream-client";
+import type { ReflectResult } from "@/lib/reflect-run.server";
 import { DEFAULT_SCOPE, parseScope, scopeLabel, type ContextScope } from "@/lib/reflect-shared";
 import { logEvent } from "@/lib/telemetry";
 
@@ -52,10 +53,10 @@ export function ReflectPage() {
   const { data: profile } = useProfile();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const send = useServerFn(sendReflectMessage);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
   const [pending, setPending] = useState(false);
+  const [streamed, setStreamed] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [coverage, setCoverage] = useState<{
     truncated: boolean;
@@ -150,10 +151,13 @@ export function ReflectPage() {
     setPending(true);
     setError(null);
     try {
-      const result = await send({
-        data: { session_id: activeId, message, profile_id: profile.id, surface: "reflect" },
-      });
+      setStreamed("");
       setDraft("");
+      const result = await streamChatRequest<ReflectResult>(
+        "/api/reflect/stream",
+        { session_id: activeId, message, profile_id: profile.id, surface: "reflect" },
+        (delta) => setStreamed((prev) => prev + delta),
+      );
       setCoverage({
         truncated: result.truncated,
         fullCount: result.fullCount,
@@ -165,6 +169,7 @@ export function ReflectPage() {
       setError((e as Error).message);
     } finally {
       setPending(false);
+      setStreamed("");
     }
   }
 
@@ -277,14 +282,18 @@ export function ReflectPage() {
                     ) : (
                       <>
                         <MarkdownMessage content={message.content} />
-                        <AnswerSources
-                          sources={sourcesByMessage?.[Number(message.id)] ?? []}
-                        />
+                        <AnswerSources sources={sourcesByMessage?.[Number(message.id)] ?? []} />
                       </>
                     )}
                   </div>
                 ))}
-                {pending ? <ThinkingIndicator /> : null}
+                {pending && streamed ? (
+                  <div>
+                    <p className="micro-label">Reflect</p>
+                    <MarkdownMessage content={streamed} />
+                  </div>
+                ) : null}
+                {pending && !streamed ? <ThinkingIndicator /> : null}
                 {coverage?.truncated ? <CoverageNote {...coverage} /> : null}
                 <div ref={bottomRef} />
               </div>

@@ -59,39 +59,27 @@ export const draftDecisions = createServerFn({ method: "POST" })
       .map((turn) => `TURN ${turn.turn_no} · ${turn.role.toUpperCase()}\n${turn.content}`)
       .join("\n\n");
 
-    const apiKey = process.env["LOVABLE_API_KEY"];
-    if (!apiKey) throw new Error("Missing LOVABLE_API_KEY");
-
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Lovable-API-Key": apiKey,
-        "X-Lovable-AIG-SDK": "fetch",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-3.6-flash",
-        max_tokens: 1500,
-        messages: [
-          { role: "system", content: DRAFT_SYSTEM_PROMPT },
-          { role: "user", content: transcript },
-        ],
-        tools: [DRAFT_TOOL],
-        tool_choice: { type: "function", function: { name: "record_decisions" } },
-      }),
+    const { chatComplete, resolveAiMeta } = await import("./ai.server");
+    const meta = await resolveAiMeta(supabase, {
+      surface: "decision_draft_item",
+      orgId: profile.org_id,
+      userId: context.userId,
     });
+    const completion = await chatComplete(
+      [
+        { role: "system", content: DRAFT_SYSTEM_PROMPT },
+        { role: "user", content: transcript },
+      ],
+      {
+        tier: "smart",
+        maxTokens: 4000,
+        tools: [DRAFT_TOOL],
+        toolChoice: { type: "function", function: { name: "record_decisions" } },
+        meta,
+      },
+    );
 
-    if (!response.ok) {
-      const body = await response.text();
-      if (response.status === 429) throw new Error("Rate limited. Try again in a moment.");
-      if (response.status === 402) throw new Error("AI credits exhausted for this workspace.");
-      throw new Error(`AI request failed (${response.status}): ${body.slice(0, 300)}`);
-    }
-
-    const payload = (await response.json()) as {
-      choices?: { message?: { tool_calls?: { function?: { arguments?: string } }[] } }[];
-    };
-    const args = payload.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
+    const args = completion.toolArgs;
     let drafts: DraftedDecision[] = [];
     if (args) {
       try {
@@ -127,12 +115,13 @@ export const draftDecisions = createServerFn({ method: "POST" })
       if (insertError) throw new Error(insertError.message);
     }
 
+    const { usageDims } = await import("./ai-usage");
     const { recordEvent } = await import("./telemetry.server");
     await recordEvent(supabase, {
       eventType: "decision.drafted",
       orgId: profile.org_id,
       userId: context.userId,
-      dims: { count: rows.length },
+      dims: { count: rows.length, ...usageDims(completion) },
     });
 
     return { drafted: rows.length };
@@ -161,39 +150,27 @@ export const draftEngagementDecisions = createServerFn({ method: "POST" })
     const corpus = await buildEngagementCorpus(supabase, data.engagement_id, profile.id);
     if (corpus.sources.length === 0) return { drafted: 0, scanned: 0 };
 
-    const apiKey = process.env["LOVABLE_API_KEY"];
-    if (!apiKey) throw new Error("Missing LOVABLE_API_KEY");
-
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Lovable-API-Key": apiKey,
-        "X-Lovable-AIG-SDK": "fetch",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-3.6-flash",
-        max_tokens: 2500,
-        messages: [
-          { role: "system", content: ENGAGEMENT_DRAFT_SYSTEM_PROMPT },
-          { role: "user", content: corpus.prompt },
-        ],
-        tools: [ENGAGEMENT_DRAFT_TOOL],
-        tool_choice: { type: "function", function: { name: "record_engagement_decisions" } },
-      }),
+    const { chatComplete, resolveAiMeta } = await import("./ai.server");
+    const meta = await resolveAiMeta(supabase, {
+      surface: "decision_draft_engagement",
+      orgId: profile.org_id,
+      userId,
     });
+    const completion = await chatComplete(
+      [
+        { role: "system", content: ENGAGEMENT_DRAFT_SYSTEM_PROMPT },
+        { role: "user", content: corpus.prompt },
+      ],
+      {
+        tier: "smart",
+        maxTokens: 6000,
+        tools: [ENGAGEMENT_DRAFT_TOOL],
+        toolChoice: { type: "function", function: { name: "record_engagement_decisions" } },
+        meta,
+      },
+    );
 
-    if (!response.ok) {
-      const body = await response.text();
-      if (response.status === 429) throw new Error("Rate limited. Try again in a moment.");
-      if (response.status === 402) throw new Error("AI credits exhausted for this workspace.");
-      throw new Error(`AI request failed (${response.status}): ${body.slice(0, 300)}`);
-    }
-
-    const payload = (await response.json()) as {
-      choices?: { message?: { tool_calls?: { function?: { arguments?: string } }[] } }[];
-    };
-    const args = payload.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
+    const args = completion.toolArgs;
     let drafts: DraftedEngagementDecision[] = [];
     if (args) {
       try {
@@ -231,12 +208,13 @@ export const draftEngagementDecisions = createServerFn({ method: "POST" })
       if (insertError) throw new Error(insertError.message);
     }
 
+    const { usageDims } = await import("./ai-usage");
     const { recordEvent } = await import("./telemetry.server");
     await recordEvent(supabase, {
       eventType: "decision.drafted",
       orgId: profile.org_id,
       userId,
-      dims: { count: rows.length, scope: "engagement" },
+      dims: { count: rows.length, scope: "engagement", ...usageDims(completion) },
     });
 
     return { drafted: rows.length, scanned: corpus.sources.length };
