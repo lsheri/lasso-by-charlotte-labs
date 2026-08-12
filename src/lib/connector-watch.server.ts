@@ -164,6 +164,7 @@ export async function checkWatches(
           folder_name: folder.name,
           source: account.toolkit,
           new_count: fresh.length,
+          new_ids: fresh.slice(0, WATCH_SEEN_CAP),
         });
       }
       // last_checked moves; last_seen only moves on dismiss or import.
