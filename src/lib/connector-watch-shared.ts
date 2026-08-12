@@ -20,6 +20,8 @@ export type WatchSuggestion = {
   folder_name: string;
   source: BrowsableToolkit;
   new_count: number;
+  /** Provider ids of the new files, so the picker can highlight them. */
+  new_ids: string[];
 };
 
 /** 1-2 · 3-9 · 10+ — the only shape of a count that leaves the browser. */
