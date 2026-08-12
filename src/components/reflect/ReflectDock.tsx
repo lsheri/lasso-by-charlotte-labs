@@ -115,6 +115,10 @@ export function ReflectDock({
         fullCount: result.fullCount,
         summaryCount: result.summaryCount,
       });
+      if (result.messageId !== null) {
+        const id = Number(result.messageId);
+        setUnmatched((prev) => ({ ...prev, [id]: result.unmatchedQuotes }));
+      }
       await queryClient.invalidateQueries({ queryKey: ["reflect-messages", id] });
       await queryClient.invalidateQueries({ queryKey: ["reflect-sessions"] });
     } catch (e) {
