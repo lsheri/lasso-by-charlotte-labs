@@ -15,7 +15,6 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as JoinRouteImport } from './routes/join'
 import { Route as NoAccessRouteImport } from './routes/no-access'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
-import { Route as QaLayoutRouteImport } from './routes/qa-layout'
 import { Route as TrustRouteImport } from './routes/trust'
 import { Route as WhyRouteImport } from './routes/why'
 import { Route as AuthenticatedConnectorsRouteImport } from './routes/_authenticated/connectors'
@@ -58,11 +57,6 @@ const NoAccessRoute = NoAccessRouteImport.update({
 const OnboardingRoute = OnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const QaLayoutRoute = QaLayoutRouteImport.update({
-  id: '/qa-layout',
-  path: '/qa-layout',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TrustRoute = TrustRouteImport.update({
@@ -145,7 +139,6 @@ export interface FileRoutesByFullPath {
   '/join': typeof JoinRoute
   '/no-access': typeof NoAccessRoute
   '/onboarding': typeof OnboardingRoute
-  '/qa-layout': typeof QaLayoutRoute
   '/trust': typeof TrustRoute
   '/why': typeof WhyRoute
   '/connectors': typeof AuthenticatedConnectorsRoute
@@ -167,7 +160,6 @@ export interface FileRoutesByTo {
   '/join': typeof JoinRoute
   '/no-access': typeof NoAccessRoute
   '/onboarding': typeof OnboardingRoute
-  '/qa-layout': typeof QaLayoutRoute
   '/trust': typeof TrustRoute
   '/why': typeof WhyRoute
   '/connectors': typeof AuthenticatedConnectorsRoute
@@ -191,7 +183,6 @@ export interface FileRoutesById {
   '/join': typeof JoinRoute
   '/no-access': typeof NoAccessRoute
   '/onboarding': typeof OnboardingRoute
-  '/qa-layout': typeof QaLayoutRoute
   '/trust': typeof TrustRoute
   '/why': typeof WhyRoute
   '/_authenticated/connectors': typeof AuthenticatedConnectorsRoute
@@ -215,7 +206,6 @@ export interface FileRouteTypes {
     | '/join'
     | '/no-access'
     | '/onboarding'
-    | '/qa-layout'
     | '/trust'
     | '/why'
     | '/connectors'
@@ -237,7 +227,6 @@ export interface FileRouteTypes {
     | '/join'
     | '/no-access'
     | '/onboarding'
-    | '/qa-layout'
     | '/trust'
     | '/why'
     | '/connectors'
@@ -260,7 +249,6 @@ export interface FileRouteTypes {
     | '/join'
     | '/no-access'
     | '/onboarding'
-    | '/qa-layout'
     | '/trust'
     | '/why'
     | '/_authenticated/connectors'
@@ -284,7 +272,6 @@ export interface RootRouteChildren {
   JoinRoute: typeof JoinRoute
   NoAccessRoute: typeof NoAccessRoute
   OnboardingRoute: typeof OnboardingRoute
-  QaLayoutRoute: typeof QaLayoutRoute
   TrustRoute: typeof TrustRoute
   WhyRoute: typeof WhyRoute
   ApiMcpTokenRoute: typeof ApiMcpTokenRoute
@@ -332,13 +319,6 @@ declare module '@tanstack/react-router' {
       path: '/onboarding'
       fullPath: '/onboarding'
       preLoaderRoute: typeof OnboardingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/qa-layout': {
-      id: '/qa-layout'
-      path: '/qa-layout'
-      fullPath: '/qa-layout'
-      preLoaderRoute: typeof QaLayoutRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/trust': {
@@ -481,7 +461,6 @@ const rootRouteChildren: RootRouteChildren = {
   JoinRoute: JoinRoute,
   NoAccessRoute: NoAccessRoute,
   OnboardingRoute: OnboardingRoute,
-  QaLayoutRoute: QaLayoutRoute,
   TrustRoute: TrustRoute,
   WhyRoute: WhyRoute,
   ApiMcpTokenRoute: ApiMcpTokenRoute,
@@ -489,3 +468,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
