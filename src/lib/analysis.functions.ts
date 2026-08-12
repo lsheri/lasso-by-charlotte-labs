@@ -195,7 +195,7 @@ export const startAnalysis = createServerFn({ method: "POST" })
       const { guardQuotes } = await import("./quote-guard.server");
       const guarded = await guardQuotes(
         completion.text || "Nothing came back for that. Try again.",
-        assembled.context,
+        assembled.quotable,
         cutOff,
         conversation,
         aiMeta,

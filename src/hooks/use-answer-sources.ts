@@ -39,7 +39,13 @@ export function useAnswerSources(messageIds: number[]) {
           type: row.work_items?.type ?? "document",
           source_vendor: row.work_items?.source_vendor ?? null,
           depth:
-            row.depth === "full" ? "full" : row.depth === "unreadable" ? "unreadable" : "extract",
+            row.depth === "full"
+              ? "full"
+              : row.depth === "unreadable"
+                ? "unreadable"
+                : row.depth === "catalogue"
+                  ? "catalogue"
+                  : "extract",
         });
       }
       return grouped;

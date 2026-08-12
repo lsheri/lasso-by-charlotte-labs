@@ -25,7 +25,7 @@ const TEXT_BUDGET_MS = 25_000;
 
 type Db = SupabaseClient<Database>;
 
-type ItemRow = ClassifiableItem & {
+export type ItemRow = ClassifiableItem & {
   title: string;
   source: string;
   visibility: string;
@@ -36,10 +36,49 @@ type ItemRow = ClassifiableItem & {
   source_vendor: string | null;
 };
 
+export type TaskRow = {
+  id: string;
+  name: string;
+  goal: string | null;
+  detail: string | null;
+  when_label: string | null;
+  status: string;
+  position: number;
+  engagement_id: string;
+  engagements: {
+    id: string;
+    code: string;
+    title: string;
+    client_label: string | null;
+    brief: string | null;
+    term_label: string | null;
+    outcome: string | null;
+  } | null;
+};
+
+export type LinkRow = {
+  work_item_id: string;
+  task_id: string;
+  step_no: number | null;
+  step_confirmed: boolean;
+};
+
+export type ExtractRow = {
+  work_item_id: string;
+  summary: string;
+  decisions: string | null;
+  entities: string | null;
+  handoff: string | null;
+};
+
+export const EXTRACT_COLUMNS = "work_item_id, summary, decisions, entities, handoff";
+
 export type { ContextSource };
 
 export type AssembledContext = {
   context: string;
+  /** Only text the model actually saw verbatim: the brief and full raw text. */
+  quotable: string;
   truncated: boolean;
   itemCount: number;
   tier1Count: number;
@@ -53,11 +92,11 @@ export type AssembledContext = {
  * The honesty guard. An item we could not open still appears in the context,
  * marked so plainly that the model cannot mistake it for something it read.
  */
-function unreadableLine(type: string, note: string | null): string {
+export function unreadableLine(type: string, note: string | null): string {
   return `  CONTENT COULD NOT BE READ (${note ?? "scanned or unsupported format"}). You have NOT seen this ${type === "sheet" ? "spreadsheet" : "file"}. Do not describe, summarise or quote it.`;
 }
 
-function effectiveDate(item: ItemRow): string {
+export function effectiveDate(item: ItemRow): string {
   return item.work_date ?? item.created_at_source ?? item.captured_at;
 }
 
@@ -70,21 +109,17 @@ export function headAndTail(text: string, cap = PER_ITEM_CHARS): { text: string;
   };
 }
 
-/**
- * Two tiers. Tier 1 is the structure plus a compact extract for every in-scope
- * item, so nothing is invisible. Tier 2 is full raw text for a prioritised,
- * budgeted subset. Everything is read as the caller, so row-level policies
- * decide what can be assembled at all.
- */
-export async function assembleReflectContext(
-  supabase: Db,
-  profileId: string,
-  scope: ContextScope,
-  options?: { ownerProfileId?: string; readerRole?: AiReadRole },
-): Promise<AssembledContext> {
-  const ownerId = options?.ownerProfileId ?? profileId;
+export { RAW_BUDGET };
 
-  // 1. Which tasks are in scope (and, through them, which engagements).
+/**
+ * Steps 1 to 3 of assembly: which tasks, which mapping links, which items.
+ * Shared with the catalogue so both paths see exactly the same scope.
+ */
+export async function loadScopeData(
+  supabase: Db,
+  ownerId: string,
+  scope: ContextScope,
+): Promise<{ tasks: TaskRow[]; linkRows: LinkRow[]; items: ItemRow[] }> {
   let taskQuery = supabase
     .from("tasks")
     .select(
@@ -98,27 +133,8 @@ export async function assembleReflectContext(
   }
   const tasksRes = scope.mode === "items" ? { data: [], error: null } : await taskQuery;
   if (tasksRes.error) throw new Error(tasksRes.error.message);
-  const tasks = (tasksRes.data ?? []) as unknown as {
-    id: string;
-    name: string;
-    goal: string | null;
-    detail: string | null;
-    when_label: string | null;
-    status: string;
-    position: number;
-    engagement_id: string;
-    engagements: {
-      id: string;
-      code: string;
-      title: string;
-      client_label: string | null;
-      brief: string | null;
-      term_label: string | null;
-      outcome: string | null;
-    } | null;
-  }[];
+  const tasks = (tasksRes.data ?? []) as unknown as TaskRow[];
 
-  // 2. Mapping links, in confirmed step order.
   const links = tasks.length
     ? await supabase
         .from("work_item_tasks")
@@ -129,14 +145,8 @@ export async function assembleReflectContext(
         )
     : { data: [], error: null };
   if (links.error) throw new Error(links.error.message);
-  const linkRows = (links.data ?? []) as {
-    work_item_id: string;
-    task_id: string;
-    step_no: number | null;
-    step_confirmed: boolean;
-  }[];
+  const linkRows = (links.data ?? []) as LinkRow[];
 
-  // 3. The work items themselves.
   let itemQuery = supabase
     .from("work_items")
     .select(
@@ -154,16 +164,11 @@ export async function assembleReflectContext(
   }
   const itemsRes = await itemQuery;
   if (itemsRes.error) throw new Error(itemsRes.error.message);
-  const allItems = (itemsRes.data ?? []) as unknown as ItemRow[];
+  return { tasks, linkRows, items: (itemsRes.data ?? []) as unknown as ItemRow[] };
+}
 
-  // Tier 0. The brief is loaded first, is never budgeted away, and is removed
-  // from the ordinary item list so it cannot also appear as an extract.
-  const brief = await loadBriefContext(supabase, ownerId, scope);
-  const briefIds = new Set(brief.itemIds);
-  const items = allItems.filter((item) => !briefIds.has(item.id));
-  // Brief characters come out of the tier 2 budget, so total context does not grow.
-  const rawBudget = Math.max(0, RAW_BUDGET - brief.chars);
-
+/** "ENG-1 · Discovery" for a mapped item, undefined when unmapped. */
+export function taskLabels(tasks: TaskRow[], linkRows: LinkRow[]): Map<string, string> {
   const taskNameFor = new Map<string, string>();
   for (const link of linkRows) {
     const task = tasks.find((t) => t.id === link.task_id);
@@ -175,52 +180,15 @@ export async function assembleReflectContext(
       );
     }
   }
+  return taskNameFor;
+}
 
-  // 4. Extracts for every in-scope item, backfilling a few that are missing.
-  type ExtractRow = {
-    work_item_id: string;
-    summary: string;
-    decisions: string | null;
-    entities: string | null;
-    handoff: string | null;
-  };
-  const extractColumns = "work_item_id, summary, decisions, entities, handoff";
-  async function readExtracts(ids: string[]): Promise<ExtractRow[]> {
-    if (ids.length === 0) return [];
-    const { data } = await supabase
-      .from("work_item_extracts")
-      .select(extractColumns)
-      .in("work_item_id", ids);
-    return (data ?? []) as ExtractRow[];
-  }
-
-  const allIds = items.map((i) => i.id);
-  let extractRows = await readExtracts(allIds);
-  const have = new Set(extractRows.map((row) => row.work_item_id));
-  const missing = allIds.filter((id) => !have.has(id));
-  if (missing.length > 0) {
-    const inline = missing.slice(0, MAX_BACKFILL_INLINE);
-    const deferred = missing.slice(MAX_BACKFILL_INLINE);
-    const started = Date.now();
-    const made: string[] = [];
-    for (const id of inline) {
-      if (await ensureExtract(id)) made.push(id);
-    }
-    console.log(
-      `[reflect-context] inline backfill ${made.length}/${inline.length} in ${Date.now() - started}ms, ${deferred.length} deferred`,
-    );
-    if (made.length > 0) extractRows = [...extractRows, ...(await readExtracts(made))];
-    // Deliberately not awaited: the person's question must not wait on work
-    // that only makes the NEXT answer better.
-    for (const id of deferred) {
-      void ensureExtract(id).catch(() => {
-        /* a missing extract is never fatal */
-      });
-    }
-  }
-  const extractFor = new Map(extractRows.map((row) => [row.work_item_id, row]));
-
-  // 5. Structure block, unchanged in shape.
+/** The engagement and task structure block, identical in both paths. */
+export function buildEngagementBlocks(
+  tasks: TaskRow[],
+  linkRows: LinkRow[],
+  items: { id: string; title: string }[],
+): string[] {
   const engagementBlocks = new Map<string, string>();
   for (const task of tasks) {
     const engagement = task.engagements;
@@ -259,6 +227,83 @@ export async function assembleReflectContext(
         .join("\n"),
     );
   }
+  return [...engagementBlocks.values()];
+}
+
+/** The four extract fields, formatted the one way every surface shows them. */
+export function extractLines(extract: ExtractRow): string[] {
+  const lines = [`  Summary: ${extract.summary}`];
+  if (extract.decisions) lines.push(`  Decided: ${extract.decisions}`);
+  if (extract.entities) lines.push(`  Key names and topics: ${extract.entities}`);
+  if (extract.handoff) lines.push(`  Led to: ${extract.handoff}`);
+  return lines;
+}
+
+/**
+ * Two tiers. Tier 1 is the structure plus a compact extract for every in-scope
+ * item, so nothing is invisible. Tier 2 is full raw text for a prioritised,
+ * budgeted subset. Everything is read as the caller, so row-level policies
+ * decide what can be assembled at all.
+ */
+export async function assembleReflectContext(
+  supabase: Db,
+  profileId: string,
+  scope: ContextScope,
+  options?: { ownerProfileId?: string; readerRole?: AiReadRole },
+): Promise<AssembledContext> {
+  const ownerId = options?.ownerProfileId ?? profileId;
+
+  // 1 to 3. Tasks, mapping links, and the work items themselves.
+  const { tasks, linkRows, items: allItems } = await loadScopeData(supabase, ownerId, scope);
+
+  // Tier 0. The brief is loaded first, is never budgeted away, and is removed
+  // from the ordinary item list so it cannot also appear as an extract.
+  const brief = await loadBriefContext(supabase, ownerId, scope);
+  const briefIds = new Set(brief.itemIds);
+  const items = allItems.filter((item) => !briefIds.has(item.id));
+  // Brief characters come out of the tier 2 budget, so total context does not grow.
+  const rawBudget = Math.max(0, RAW_BUDGET - brief.chars);
+
+  const taskNameFor = taskLabels(tasks, linkRows);
+
+  // 4. Extracts for every in-scope item, backfilling a few that are missing.
+  async function readExtracts(ids: string[]): Promise<ExtractRow[]> {
+    if (ids.length === 0) return [];
+    const { data } = await supabase
+      .from("work_item_extracts")
+      .select(EXTRACT_COLUMNS)
+      .in("work_item_id", ids);
+    return (data ?? []) as ExtractRow[];
+  }
+
+  const allIds = items.map((i) => i.id);
+  let extractRows = await readExtracts(allIds);
+  const have = new Set(extractRows.map((row) => row.work_item_id));
+  const missing = allIds.filter((id) => !have.has(id));
+  if (missing.length > 0) {
+    const inline = missing.slice(0, MAX_BACKFILL_INLINE);
+    const deferred = missing.slice(MAX_BACKFILL_INLINE);
+    const started = Date.now();
+    const made: string[] = [];
+    for (const id of inline) {
+      if (await ensureExtract(id)) made.push(id);
+    }
+    console.log(
+      `[reflect-context] inline backfill ${made.length}/${inline.length} in ${Date.now() - started}ms, ${deferred.length} deferred`,
+    );
+    if (made.length > 0) extractRows = [...extractRows, ...(await readExtracts(made))];
+    // Deliberately not awaited: the person's question must not wait on work
+    // that only makes the NEXT answer better.
+    for (const id of deferred) {
+      void ensureExtract(id).catch(() => {
+        /* a missing extract is never fatal */
+      });
+    }
+  }
+  const extractFor = new Map(extractRows.map((row) => [row.work_item_id, row]));
+
+  // 5. Structure block, unchanged in shape.
+  const engagementBlocks = buildEngagementBlocks(tasks, linkRows, items);
 
   // 6. Tier 2 priority: explicitly named items first, then most recent.
   const byNewest = [...items].sort(
@@ -314,11 +359,13 @@ export async function assembleReflectContext(
 
   // The brief sits above the engagement structure and above every item: long
   // framing material belongs at the top, and a stable prefix caches well.
-  const parts: string[] = [brief.block, ...engagementBlocks.values()];
+  const parts: string[] = [brief.block, ...engagementBlocks];
   const reads: AiReadInput[] = [...brief.reads];
   const sources: ContextSource[] = [...brief.sources];
   let tier2 = brief.itemIds.length;
   let unreadableCount = 0;
+  // Quotation is a promise of exact wording, so only verbatim text counts.
+  const quotableParts: string[] = [brief.block];
 
   for (const item of oldestFirst) {
     const extract = extractFor.get(item.id);
@@ -330,14 +377,12 @@ export async function assembleReflectContext(
       `  Date: ${effectiveDate(item).slice(0, 10)} · ${mapped ? `Mapped to ${mapped}` : "Unmapped"}${item.visibility === "private" ? " · MARKED PRIVATE" : ""}`,
     ];
     if (extract) {
-      lines.push(`  Summary: ${extract.summary}`);
-      if (extract.decisions) lines.push(`  Decided: ${extract.decisions}`);
-      if (extract.entities) lines.push(`  Key names and topics: ${extract.entities}`);
-      if (extract.handoff) lines.push(`  Led to: ${extract.handoff}`);
+      lines.push(...extractLines(extract));
     }
     const blocked = unreadable.get(item.id);
     if (raw) {
       lines.push(`  Full text:\n${raw}`);
+      quotableParts.push(raw);
       tier2 += 1;
       reads.push({ workItemId: item.id, ownerId, depth: "full" });
       sources.push({
@@ -379,6 +424,7 @@ export async function assembleReflectContext(
 
   return {
     context: parts.join("\n\n---\n\n") || "(No recorded work in this scope yet.)",
+    quotable: quotableParts.join("\n\n"),
     truncated: anyCut || extractOnly > 0,
     itemCount: tier1,
     tier1Count: tier1,

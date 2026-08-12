@@ -21,6 +21,8 @@ export type ReflectResult = {
   messageId: number | null;
   sources: ContextSource[];
   cutOff: boolean;
+  /** "inline" pours the scope in; "catalogue" indexes it and fetches. */
+  contextMode: "inline" | "catalogue";
 };
 
 /** Bucketed so an exact count never leaves as a dimension. */
@@ -33,6 +35,21 @@ function tierBucket(n: number): string {
 
 /** Long enough that a real answer is never cut off, short enough to fail loudly. */
 const ANSWER_TIMEOUT_MS = 180_000;
+
+/** Content-free bucket for round and fetch counts. */
+function smallBucket(n: number): string {
+  if (n <= 0) return "0";
+  if (n <= 2) return "1-2";
+  if (n <= 5) return "3-5";
+  return "6+";
+}
+
+function sizeBucket(n: number): string {
+  if (n <= 25) return "0-25";
+  if (n <= 100) return "26-100";
+  if (n <= 300) return "101-300";
+  return "300+";
+}
 
 /**
  * One Reflect turn. Streams when a delta sink is given, and in both cases the
@@ -74,10 +91,130 @@ export async function runReflectTurn(
     .order("created_at", { ascending: true })
     .limit(40);
 
+  const surface = data.surface === "ask_lasso" ? "ask_lasso" : "reflect";
+  const historyMessages = ((history ?? []) as { role: string; content: string }[]).map((m) => ({
+    role: (m.role === "assistant" ? "assistant" : "user") as "assistant" | "user",
+    content: m.content,
+  }));
+  const prompts = [
+    { role: "system" as const, content: REFLECT_SYSTEM_PROMPT },
+    ...(preset ? [{ role: "system" as const, content: preset.systemPrompt }] : []),
+  ];
+
+  const { chatComplete, streamChat, resolveAiMeta } = await import("./ai.server");
+  const aiMeta = await resolveAiMeta(supabase, {
+    surface,
+    orgId: profile.org_id,
+    userId,
+  });
+
+  // Above the threshold, the record is too large to pour into one prompt, so
+  // the model gets an index of all of it and fetches what the question needs.
+  const { scopeItemCount, CATALOGUE_THRESHOLD } = await import("./record-catalogue.server");
+  const inScopeCount = await scopeItemCount(supabase, profile.id, scope);
+  const contextMode: "inline" | "catalogue" =
+    inScopeCount > CATALOGUE_THRESHOLD ? "catalogue" : "inline";
+
+  if (contextMode === "catalogue") {
+    const { runCatalogueAnswer } = await import("./record-answer.server");
+    const run = await runCatalogueAnswer(
+      supabase,
+      {
+        ownerId: profile.id,
+        scope,
+        prompts,
+        history: historyMessages,
+        question: message,
+        meta: aiMeta,
+        tier: "smart",
+        timeoutMs: ANSWER_TIMEOUT_MS,
+      },
+      onDelta,
+    );
+    const cutOffCat = run.finishReason === "length";
+    const { CUT_OFF_NOTE: CUT_OFF } = await import("./quote-check");
+    const { guardQuotes: guard } = await import("./quote-guard.server");
+    const guardedCat = await guard(
+      run.answer || "I couldn't draw an answer out of that. Try asking a different way.",
+      run.quotable,
+      cutOffCat,
+      [...prompts, { role: "user" as const, content: message }],
+      aiMeta,
+    );
+    const answerCat = cutOffCat ? `${guardedCat.answer}\n\n${CUT_OFF}` : guardedCat.answer;
+
+    if (run.catalogue.entries.length > 0 && run.itemsFetched === 0) {
+      const { logHealth } = await import("./health.server");
+      void logHealth({
+        kind: "empty_context",
+        surface,
+        orgId: profile.org_id,
+        ownerId: profile.id,
+        detail: "catalogue answer fetched no item text",
+        meta: {
+          catalogue_size: run.catalogue.entries.length,
+          rounds: run.rounds,
+          tool_calls: run.toolCalls,
+          scope_mode: scope.mode,
+        },
+      });
+    }
+
+    const written = await persistTurn(supabase, {
+      sessionId: session.id,
+      question: message,
+      answer: answerCat,
+      profileId: profile.id,
+      scopeMode: scope.mode,
+      title: session.title,
+    });
+
+    const { recordAiReads } = await import("./ai-reads.server");
+    await recordAiReads(run.reads, {
+      surface,
+      readerRole: "owner",
+      readerProfileId: profile.id,
+      messageId: written.messageId,
+    });
+
+    const { quoteBucket: qb } = await import("./quote-check");
+    const { recordEvent: record } = await import("./telemetry.server");
+    await record(supabase, {
+      eventType: "reflect.message_sent",
+      orgId: profile.org_id,
+      userId,
+      dims: {
+        scope: scope.mode,
+        context_mode: "catalogue",
+        catalogue_size: sizeBucket(run.catalogue.entries.length),
+        rounds: smallBucket(run.rounds),
+        tool_calls: smallBucket(run.toolCalls),
+        searches: smallBucket(run.searches),
+        items_fetched: smallBucket(run.itemsFetched),
+        truncated: false,
+        unmatched_quotes: qb(guardedCat.unmatchedBefore),
+        quote_repairs: qb(guardedCat.repairs),
+        suppressed_quotes: qb(guardedCat.suppressed),
+        finish_reason: run.finishReason,
+        ...(preset ? { preset: preset.id } : {}),
+      },
+    });
+
+    return {
+      answer: answerCat,
+      truncated: false,
+      title: written.title,
+      fullCount: run.itemsFetched,
+      summaryCount: run.sources.filter((s) => s.depth === "extract").length,
+      messageId: written.messageId,
+      sources: run.sources,
+      cutOff: cutOffCat,
+      contextMode,
+    };
+  }
+
   const { assembleReflectContext } = await import("./reflect-context.server");
   const assembled = await assembleReflectContext(supabase, profile.id, scope);
-
-  const surface = data.surface === "ask_lasso" ? "ask_lasso" : "reflect";
 
   // The defect class that cost trust before: items were in scope and none of
   // them could be read. Structural counts only, no content.
@@ -98,25 +235,15 @@ export async function runReflectTurn(
     });
   }
 
-  const { chatComplete, streamChat, resolveAiMeta } = await import("./ai.server");
   const conversation = [
-    { role: "system" as const, content: REFLECT_SYSTEM_PROMPT },
-    ...(preset ? [{ role: "system" as const, content: preset.systemPrompt }] : []),
+    ...prompts,
     {
       role: "system" as const,
       content: `THE PERSON'S RECORDED WORK (scope: ${scope.mode}):\n\n${assembled.context}`,
     },
-    ...((history ?? []) as { role: string; content: string }[]).map((m) => ({
-      role: (m.role === "assistant" ? "assistant" : "user") as "assistant" | "user",
-      content: m.content,
-    })),
+    ...historyMessages,
     { role: "user" as const, content: message },
   ];
-  const aiMeta = await resolveAiMeta(supabase, {
-    surface,
-    orgId: profile.org_id,
-    userId,
-  });
   const completion = onDelta
     ? await streamChat(conversation, onDelta, {
         tier: "smart",
@@ -138,7 +265,8 @@ export async function runReflectTurn(
 
   // Prevent, verify, repair, then refuse. The reader never sees a warning.
   const { guardQuotes } = await import("./quote-guard.server");
-  const guarded = await guardQuotes(raw, assembled.context, cutOff, conversation, aiMeta);
+  // Verified against verbatim text only: an extract is not a quotable source.
+  const guarded = await guardQuotes(raw, assembled.quotable, cutOff, conversation, aiMeta);
   // Never present a cut-off answer as if it were complete, and never discard it.
   const answer = cutOff ? `${guarded.answer}\n\n${CUT_OFF_NOTE}` : guarded.answer;
 
@@ -165,28 +293,14 @@ export async function runReflectTurn(
   });
 
   const { quoteBucket } = await import("./quote-check");
-  const scopeLabelForLog =
-    scope.mode === "whole"
-      ? "whole record"
-      : scope.mode === "engagements"
-        ? "engagement"
-        : scope.mode === "tasks"
-          ? "task"
-          : "item";
-  const { error: logError } = await supabase.from("query_log").insert({
-    asker_id: profile.id,
-    subject_id: profile.id,
-    scope: scopeLabelForLog,
+  const title = await finishTurn(supabase, {
+    sessionId: session.id,
     question: message,
-    answer_ref: answerId === null ? null : String(answerId),
+    profileId: profile.id,
+    scopeMode: scope.mode,
+    title: session.title,
+    messageId: answerId,
   });
-  if (logError) console.error("[query_log] insert failed:", logError.message);
-
-  const title = session.title ?? titleFromMessage(message);
-  await supabase
-    .from("chat_sessions")
-    .update({ title, updated_at: new Date().toISOString() })
-    .eq("id", session.id);
 
   const { usageDims } = await import("./ai-usage");
   const { recordEvent } = await import("./telemetry.server");
@@ -196,6 +310,7 @@ export async function runReflectTurn(
     userId,
     dims: {
       scope: scope.mode,
+      context_mode: "inline",
       truncated: assembled.truncated,
       tier2_items: tierBucket(assembled.tier2Count),
       unmatched_quotes: quoteBucket(guarded.unmatchedBefore),
@@ -218,5 +333,69 @@ export async function runReflectTurn(
     messageId: answerId,
     sources: assembled.sources,
     cutOff,
+    contextMode,
   };
+}
+
+/** The question log, and the session title. Identical in both context modes. */
+async function finishTurn(
+  supabase: SupabaseClient<Database>,
+  input: {
+    sessionId: string;
+    question: string;
+    profileId: string;
+    scopeMode: string;
+    title: string | null;
+    messageId: number | null;
+  },
+): Promise<string> {
+  const { titleFromMessage } = await import("./reflect-shared");
+  const scopeLabelForLog =
+    input.scopeMode === "whole"
+      ? "whole record"
+      : input.scopeMode === "engagements"
+        ? "engagement"
+        : input.scopeMode === "tasks"
+          ? "task"
+          : "item";
+  const { error: logError } = await supabase.from("query_log").insert({
+    asker_id: input.profileId,
+    subject_id: input.profileId,
+    scope: scopeLabelForLog,
+    question: input.question,
+    answer_ref: input.messageId === null ? null : String(input.messageId),
+  });
+  if (logError) console.error("[query_log] insert failed:", logError.message);
+
+  const title = input.title ?? titleFromMessage(input.question);
+  await supabase
+    .from("chat_sessions")
+    .update({ title, updated_at: new Date().toISOString() })
+    .eq("id", input.sessionId);
+  return title;
+}
+
+/** Writes the pair of messages, then the log and title. */
+async function persistTurn(
+  supabase: SupabaseClient<Database>,
+  input: {
+    sessionId: string;
+    question: string;
+    answer: string;
+    profileId: string;
+    scopeMode: string;
+    title: string | null;
+  },
+): Promise<{ messageId: number | null; title: string }> {
+  const { data: written, error: insertError } = await supabase
+    .from("chat_messages")
+    .insert([
+      { session_id: input.sessionId, role: "user", content: input.question },
+      { session_id: input.sessionId, role: "assistant", content: input.answer },
+    ])
+    .select("id, role");
+  if (insertError) throw new Error(insertError.message);
+  const messageId = (written ?? []).find((row) => row.role === "assistant")?.id ?? null;
+  const title = await finishTurn(supabase, { ...input, messageId });
+  return { messageId, title };
 }
