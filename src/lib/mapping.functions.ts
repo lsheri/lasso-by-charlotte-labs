@@ -1,11 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import {
-  SUGGEST_SYSTEM_PROMPT,
-  SUGGEST_TOOL,
-  type MappingSuggestion,
-} from "@/lib/mapping-shared";
+import { SUGGEST_SYSTEM_PROMPT, SUGGEST_TOOL, type MappingSuggestion } from "@/lib/mapping-shared";
 import { validateProfileId } from "@/lib/connectors-shared";
 import { resolveProfile } from "@/lib/profile-resolve";
 
@@ -34,9 +30,16 @@ export const suggestMappings = createServerFn({ method: "POST" })
       .eq("profile_id", profile.id);
     if (memberError) throw new Error(memberError.message);
 
-    const engagements = ((memberships ?? []) as unknown as {
-      engagements: { id: string; code: string; title: string; client_label: string | null } | null;
-    }[])
+    const engagements = (
+      (memberships ?? []) as unknown as {
+        engagements: {
+          id: string;
+          code: string;
+          title: string;
+          client_label: string | null;
+        } | null;
+      }[]
+    )
       .map((row) => row.engagements)
       .filter((e): e is NonNullable<typeof e> => e !== null);
     if (engagements.length === 0) return { suggestions: [] };

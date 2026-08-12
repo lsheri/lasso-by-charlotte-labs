@@ -2,7 +2,10 @@ export type ParsedTurn = { turn_no: number; role: "user" | "assistant"; content:
 
 const MARKERS: { re: RegExp; role: "user" | "assistant" }[] = [
   { re: /^(you said:|user:|human:|me:|prompt:)\s*(.*)$/i, role: "user" },
-  { re: /^(chatgpt said:|assistant:|claude said:|claude:|gemini said:|gemini:|ai:|gpt:|response:)\s*(.*)$/i, role: "assistant" },
+  {
+    re: /^(chatgpt said:|assistant:|claude said:|claude:|gemini said:|gemini:|ai:|gpt:|response:)\s*(.*)$/i,
+    role: "assistant",
+  },
 ];
 
 export function parseThread(raw: string): { turns: ParsedTurn[]; resolved: boolean } {
@@ -23,7 +26,10 @@ export function parseThread(raw: string): { turns: ParsedTurn[]; resolved: boole
     let hit: { role: "user" | "assistant"; rest: string } | null = null;
     for (const mk of MARKERS) {
       const m = line.trim().match(mk.re);
-      if (m) { hit = { role: mk.role, rest: m[2] ?? "" }; break; }
+      if (m) {
+        hit = { role: mk.role, rest: m[2] ?? "" };
+        break;
+      }
     }
     if (hit) {
       matched++;
@@ -43,5 +49,7 @@ export function parseThread(raw: string): { turns: ParsedTurn[]; resolved: boole
 
 export async function sha256(s: string): Promise<string> {
   const d = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
-  return Array.from(new Uint8Array(d)).map((b) => b.toString(16).padStart(2, "0")).join("");
+  return Array.from(new Uint8Array(d))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
 }

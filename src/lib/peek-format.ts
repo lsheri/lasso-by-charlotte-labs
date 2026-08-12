@@ -100,7 +100,8 @@ export function peekFormat(item: WorkItemRow): PeekFormat {
 
   const mime = item.meta?.mime_type ?? null;
   if (mime) {
-    if (mime.startsWith("image/")) return mime === "image/svg+xml" ? { kind: "svg" } : { kind: "image" };
+    if (mime.startsWith("image/"))
+      return mime === "image/svg+xml" ? { kind: "svg" } : { kind: "image" };
     if (mime === "application/pdf") return { kind: "pdf" };
     if (mime === "text/markdown") return { kind: "markdown" };
     if (mime === "text/html") return { kind: "html" };
@@ -119,7 +120,10 @@ export function peekFormat(item: WorkItemRow): PeekFormat {
   if (CODE_EXT[ext]) return { kind: "code", language: CODE_EXT[ext] ?? null };
   if (TEXT_EXT.has(ext)) return { kind: "text" };
 
-  return { kind: "unsupported", label: FORMAT_LABELS[ext] ?? (ext ? `.${ext} file` : "this format") };
+  return {
+    kind: "unsupported",
+    label: FORMAT_LABELS[ext] ?? (ext ? `.${ext} file` : "this format"),
+  };
 }
 
 /** True when the panel needs to download the bytes to render them. */

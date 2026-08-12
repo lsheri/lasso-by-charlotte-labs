@@ -57,8 +57,7 @@ function str(value: unknown): string {
 function headerMap(raw: Record<string, unknown>): Record<string, string> {
   const payload = raw["payload"] as Record<string, unknown> | undefined;
   const headers = (payload?.["headers"] ?? raw["headers"]) as
-    | { name?: string; value?: string }[]
-    | undefined;
+    { name?: string; value?: string }[] | undefined;
   const map: Record<string, string> = {};
   if (Array.isArray(headers)) {
     for (const h of headers) {
@@ -75,7 +74,8 @@ function normalizeMessage(raw: Record<string, unknown>): GmailMessage {
     const stamp = pick(raw, ["messageTimestamp", "message_timestamp", "internalDate"]);
     if (typeof stamp === "string" && stamp) {
       const asNumber = Number(stamp);
-      const date = Number.isFinite(asNumber) && stamp.length >= 12 ? new Date(asNumber) : new Date(stamp);
+      const date =
+        Number.isFinite(asNumber) && stamp.length >= 12 ? new Date(asNumber) : new Date(stamp);
       if (!Number.isNaN(date.getTime())) return date.toISOString();
     }
     if (headers["date"]) {
@@ -111,9 +111,9 @@ export async function listGmailLabels(entityId: string): Promise<GmailLabel[]> {
   const out = [...SYSTEM_LABELS];
   try {
     const data = await run("GMAIL_LIST_LABELS", entityId, { user_id: "me" });
-    const labels = (data["labels"] ?? (data["response_data"] as Record<string, unknown>)?.["labels"]) as
-      | { id?: string; name?: string; type?: string }[]
-      | undefined;
+    const labels = (data["labels"] ??
+      (data["response_data"] as Record<string, unknown>)?.["labels"]) as
+      { id?: string; name?: string; type?: string }[] | undefined;
     for (const label of labels ?? []) {
       if (!label?.id || !label.name) continue;
       if (label.type !== "user") continue;
@@ -146,7 +146,12 @@ export async function listGmailThreads(
     const first = messages[0];
     const last = messages[messages.length - 1] ?? first;
     const people = Array.from(
-      new Set(messages.map((m) => m.from).filter(Boolean).map((m) => m.replace(/<.*>/, "").trim() || m)),
+      new Set(
+        messages
+          .map((m) => m.from)
+          .filter(Boolean)
+          .map((m) => m.replace(/<.*>/, "").trim() || m),
+      ),
     ).slice(0, 3);
     threads.push({
       id,
@@ -186,7 +191,9 @@ export async function fetchGmailThread(
       `**To:** ${message.to || "—"}`,
       ...(message.cc ? [`**Cc:** ${message.cc}`] : []),
       `**Date:** ${message.date ?? "—"}`,
-      ...(message.subject && message.subject !== subject ? [`**Subject:** ${message.subject}`] : []),
+      ...(message.subject && message.subject !== subject
+        ? [`**Subject:** ${message.subject}`]
+        : []),
     ].join("\n");
     return `${header}\n\n${message.body.trim()}`;
   });

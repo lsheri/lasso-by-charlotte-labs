@@ -59,9 +59,8 @@ export function WatchSuggestionBanner() {
         >
           <Bell aria-hidden className="size-4 text-accent-deep" />
           <p className="min-w-0 flex-1 text-sm text-accent-deep">
-            {suggestion.new_count} new{" "}
-            {suggestion.new_count === 1 ? "file" : "files"} in “{suggestion.folder_name}” since you
-            last looked. Nothing was imported.
+            {suggestion.new_count} new {suggestion.new_count === 1 ? "file" : "files"} in “
+            {suggestion.folder_name}” since you last looked. Nothing was imported.
           </p>
           <button
             type="button"

@@ -13,12 +13,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -40,7 +35,13 @@ function dateLabel(iso: string | null): string {
   });
 }
 
-function Badge({ children, tone = "muted" }: { children: React.ReactNode; tone?: "muted" | "accent" }) {
+function Badge({
+  children,
+  tone = "muted",
+}: {
+  children: React.ReactNode;
+  tone?: "muted" | "accent";
+}) {
   return (
     <span
       className={
@@ -223,15 +224,16 @@ export function MembersPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Deactivate {confirm?.display_name}?</AlertDialogTitle>
             <AlertDialogDescription>
-              They will no longer be able to access this workspace. Nothing is deleted, and this
-              can be undone.
+              They will no longer be able to access this workspace. Nothing is deleted, and this can
+              be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
-                if (confirm) run({ kind: "deactivate", member_id: confirm.id }, "Member deactivated");
+                if (confirm)
+                  run({ kind: "deactivate", member_id: confirm.id }, "Member deactivated");
                 setConfirm(null);
               }}
             >

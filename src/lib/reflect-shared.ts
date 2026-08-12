@@ -12,7 +12,9 @@ export function parseScope(value: unknown): ContextScope {
   const mode = (SCOPE_MODES as readonly string[]).includes(String(raw.mode))
     ? (raw.mode as ScopeMode)
     : "whole";
-  const ids = Array.isArray(raw.ids) ? raw.ids.filter((id): id is string => typeof id === "string") : [];
+  const ids = Array.isArray(raw.ids)
+    ? raw.ids.filter((id): id is string => typeof id === "string")
+    : [];
   return mode === "whole" ? DEFAULT_SCOPE : { mode, ids };
 }
 

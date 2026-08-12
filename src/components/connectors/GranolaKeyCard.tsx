@@ -119,7 +119,12 @@ export function GranolaKeyCard() {
               className="h-8 max-w-xs text-sm"
               autoComplete="off"
             />
-            <Button type="button" size="sm" disabled={busy || !key.trim()} onClick={() => void handleSave()}>
+            <Button
+              type="button"
+              size="sm"
+              disabled={busy || !key.trim()}
+              onClick={() => void handleSave()}
+            >
               {busy ? "Checking…" : "Save key"}
             </Button>
           </div>

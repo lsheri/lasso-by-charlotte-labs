@@ -37,7 +37,10 @@ async function watchedAccounts(supabase: Client, profileId: string): Promise<Acc
 async function writeConfig(supabase: Client, accountId: string, config: WatchConfig) {
   const { error } = await supabase
     .from("connector_accounts")
-    .update({ watch_config: config as unknown as Database["public"]["Tables"]["connector_accounts"]["Row"]["watch_config"] })
+    .update({
+      watch_config:
+        config as unknown as Database["public"]["Tables"]["connector_accounts"]["Row"]["watch_config"],
+    })
     .eq("id", accountId);
   if (error) throw new Error(error.message);
 }
@@ -198,9 +201,10 @@ export async function dismissWatch(
       ? {
           ...folder,
           last_checked_iso: new Date().toISOString(),
-          last_seen_file_ids: Array.from(
-            new Set([...ids, ...folder.last_seen_file_ids]),
-          ).slice(0, WATCH_SEEN_CAP),
+          last_seen_file_ids: Array.from(new Set([...ids, ...folder.last_seen_file_ids])).slice(
+            0,
+            WATCH_SEEN_CAP,
+          ),
         }
       : folder,
   );

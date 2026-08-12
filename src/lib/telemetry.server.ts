@@ -88,7 +88,8 @@ export async function recordEvent(
       dims,
       payload: {},
     });
-    if (error) console.error(`[telemetry] canonical insert failed for ${input.eventType}:`, error.message);
+    if (error)
+      console.error(`[telemetry] canonical insert failed for ${input.eventType}:`, error.message);
     await mirrorToPostHog(input.eventType, actorHash, tenantHash, dims);
   } catch (e) {
     console.error("[telemetry] recordEvent failed:", (e as Error).message);

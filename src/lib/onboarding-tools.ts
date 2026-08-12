@@ -19,14 +19,7 @@ import { fetchProfile } from "@/hooks/use-profile";
  * travel in telemetry.
  */
 export type ToolId =
-  | "claude"
-  | "chatgpt"
-  | "gemini"
-  | "copilot"
-  | "googledrive"
-  | "gmail"
-  | "granola"
-  | "other";
+  "claude" | "chatgpt" | "gemini" | "copilot" | "googledrive" | "gmail" | "granola" | "other";
 
 export type ToolMeta = {
   id: ToolId;

@@ -44,23 +44,23 @@ export function SidebarNav({ onNavigate }: { onNavigate?: (() => void) | undefin
               .filter((item) => !(isCoach && item.to === "/reflect"))
               .filter((item) => !(item.to === "/members" && !canManageMembers))
               .map((item) => (
-              <Link
-                key={item.to}
-                to={item.to}
-                onClick={onNavigate}
-                className={linkClass}
-                activeProps={{ className: "bg-accent-soft text-accent-deep font-medium" }}
-              >
-                <span className="flex items-center justify-between gap-2">
-                  <span>{item.label}</span>
-                  {item.to === "/decisions" && decisionCount > 0 ? (
-                    <span className="rounded-full bg-muted px-2 py-0.5 font-mono text-[10px] text-muted-foreground">
-                      {decisionCount}
-                    </span>
-                  ) : null}
-                </span>
-              </Link>
-            ))}
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  onClick={onNavigate}
+                  className={linkClass}
+                  activeProps={{ className: "bg-accent-soft text-accent-deep font-medium" }}
+                >
+                  <span className="flex items-center justify-between gap-2">
+                    <span>{item.label}</span>
+                    {item.to === "/decisions" && decisionCount > 0 ? (
+                      <span className="rounded-full bg-muted px-2 py-0.5 font-mono text-[10px] text-muted-foreground">
+                        {decisionCount}
+                      </span>
+                    ) : null}
+                  </span>
+                </Link>
+              ))}
 
             {group.label === "Engagements" ? (
               <>

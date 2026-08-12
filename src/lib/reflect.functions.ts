@@ -30,9 +30,8 @@ export const sendReflectMessage = createServerFn({ method: "POST" })
         throw new Response("Forbidden", { status: 403 });
       }
 
-      const { parseScope, titleFromMessage, REFLECT_SYSTEM_PROMPT } = await import(
-        "./reflect-shared"
-      );
+      const { parseScope, titleFromMessage, REFLECT_SYSTEM_PROMPT } =
+        await import("./reflect-shared");
       const scope = parseScope(session.context_scope);
 
       const { data: history } = await supabase

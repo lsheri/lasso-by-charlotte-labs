@@ -304,7 +304,8 @@ async function pushThread(owner: Owner, args: Obj, id: unknown): Promise<Respons
   const firstUser = turns.find((t) => t.role === "user")?.content ?? turns[0]?.content ?? "";
   // Verbatim: a supplied title is stored exactly as given, never renamed or synthesized.
   const supplied = typeof args["title"] === "string" ? args["title"] : "";
-  const title = supplied.length > 0 ? supplied : firstUser.trim().slice(0, 60) || "Untitled conversation";
+  const title =
+    supplied.length > 0 ? supplied : firstUser.trim().slice(0, 60) || "Untitled conversation";
 
   const { data: item, error } = await supabaseAdmin
     .from("work_items")
@@ -499,7 +500,8 @@ async function pushConversation(owner: Owner, args: Obj, id: unknown): Promise<R
     });
   }
 
-  const model = typeof args["model"] === "string" && args["model"].trim() ? args["model"].trim() : null;
+  const model =
+    typeof args["model"] === "string" && args["model"].trim() ? args["model"].trim() : null;
   const metaIn = (args["meta"] ?? {}) as {
     skills_used?: unknown;
     thinking_level?: unknown;
@@ -512,9 +514,7 @@ async function pushConversation(owner: Owner, args: Obj, id: unknown): Promise<R
     ...(Array.isArray(metaIn.skills_used)
       ? { skills_used: metaIn.skills_used.filter((s): s is string => typeof s === "string") }
       : {}),
-    ...(typeof metaIn.thinking_level === "string"
-      ? { thinking_level: metaIn.thinking_level }
-      : {}),
+    ...(typeof metaIn.thinking_level === "string" ? { thinking_level: metaIn.thinking_level } : {}),
     ...(typeof metaIn.research_mode === "string" ? { research_mode: metaIn.research_mode } : {}),
     ...(typeof metaIn.notes === "string" ? { notes: metaIn.notes } : {}),
   };

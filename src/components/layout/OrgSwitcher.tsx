@@ -2,13 +2,7 @@ import { useQueryClient } from "@tanstack/react-query";
 
 import { ROLE_LABELS, setActiveProfileId, type Profile } from "@/hooks/use-profile";
 
-export function OrgSwitcher({
-  profiles,
-  active,
-}: {
-  profiles: Profile[];
-  active: Profile | null;
-}) {
+export function OrgSwitcher({ profiles, active }: { profiles: Profile[]; active: Profile | null }) {
   const queryClient = useQueryClient();
   if (profiles.length < 2) return null;
 

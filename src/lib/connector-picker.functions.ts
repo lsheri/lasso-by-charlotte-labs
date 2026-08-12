@@ -144,9 +144,8 @@ export const importGranolaMeetings = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<{ imported: number; skipped: number }> => {
     const { supabase, userId } = context;
     const { resolveProfile } = await import("@/lib/profile-resolve");
-    const { importedGranolaIds, storeFile, captureEvents } = await import(
-      "@/lib/connector-import.server"
-    );
+    const { importedGranolaIds, storeFile, captureEvents } =
+      await import("@/lib/connector-import.server");
     const { requireGranolaKey, fetchGranolaNote } = await import("@/lib/granola.server");
 
     const profile = await resolveProfile(supabase, userId, data.profile_id);
@@ -213,9 +212,8 @@ export const browseGmailThreads = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<PickerPage> => {
     const { supabase, userId } = context;
     const { resolveProfile } = await import("@/lib/profile-resolve");
-    const { requireConnected, importedGmailThreadIds } = await import(
-      "@/lib/connector-import.server"
-    );
+    const { requireConnected, importedGmailThreadIds } =
+      await import("@/lib/connector-import.server");
     const { listGmailLabels, listGmailThreads } = await import("@/lib/gmail.server");
 
     const profile = await resolveProfile(supabase, userId, data.profile_id);
@@ -256,9 +254,8 @@ export const importGmailThreads = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<{ imported: number; skipped: number }> => {
     const { supabase, userId } = context;
     const { resolveProfile } = await import("@/lib/profile-resolve");
-    const { requireConnected, importedGmailThreadIds, storeFile, captureEvents } = await import(
-      "@/lib/connector-import.server"
-    );
+    const { requireConnected, importedGmailThreadIds, storeFile, captureEvents } =
+      await import("@/lib/connector-import.server");
     const { fetchGmailThread } = await import("@/lib/gmail.server");
 
     const profile = await resolveProfile(supabase, userId, data.profile_id);

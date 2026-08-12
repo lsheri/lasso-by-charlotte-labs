@@ -26,7 +26,10 @@ export function ConnectYourAiCard() {
   const fetchToken = useServerFn(getMcpToken);
   const create = useServerFn(createMcpToken);
   const revoke = useServerFn(revokeMcpToken);
-  const { data: token } = useQuery({ queryKey: ["mcp-token"], queryFn: () => fetchToken({ data: { profile_id: profile?.id } }) });
+  const { data: token } = useQuery({
+    queryKey: ["mcp-token"],
+    queryFn: () => fetchToken({ data: { profile_id: profile?.id } }),
+  });
   const [freshUrl, setFreshUrl] = useState<string | null>(null);
   const [showSetup, setShowSetup] = useState(false);
   const [busy, setBusy] = useState(false);
