@@ -14,6 +14,59 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_health_events: {
+        Row: {
+          created_at: string
+          detail: string | null
+          id: string
+          kind: string
+          latency_ms: number | null
+          meta: Json
+          model: string | null
+          org_id: string | null
+          owner_id: string | null
+          surface: string | null
+          tokens_in: number | null
+          tokens_out: number | null
+        }
+        Insert: {
+          created_at?: string
+          detail?: string | null
+          id?: string
+          kind: string
+          latency_ms?: number | null
+          meta?: Json
+          model?: string | null
+          org_id?: string | null
+          owner_id?: string | null
+          surface?: string | null
+          tokens_in?: number | null
+          tokens_out?: number | null
+        }
+        Update: {
+          created_at?: string
+          detail?: string | null
+          id?: string
+          kind?: string
+          latency_ms?: number | null
+          meta?: Json
+          model?: string | null
+          org_id?: string | null
+          owner_id?: string | null
+          surface?: string | null
+          tokens_in?: number | null
+          tokens_out?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_health_events_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ai_reads: {
         Row: {
           created_at: string

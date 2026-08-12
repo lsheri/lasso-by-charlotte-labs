@@ -148,6 +148,15 @@ export const startAnalysis = createServerFn({ method: "POST" })
         userId,
         dims: { preset: preset!.id, reason_class: reason },
       });
+      const { logHealth } = await import("./health.server");
+      void logHealth({
+        kind: "error",
+        surface: "analysis",
+        orgId: profile!.org_id,
+        ownerId: item!.owner_id,
+        detail: reason,
+        meta: { preset: preset!.id },
+      });
       throw new Error(
         reason === "timeout"
           ? "That took too long to finish. Try again."

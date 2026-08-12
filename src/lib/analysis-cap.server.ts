@@ -21,11 +21,13 @@ export async function assertUnderDailyCap(
     .gte("created_at", since);
   if (error) return;
   if ((count ?? 0) >= DAILY_ANALYSIS_CAP) {
-    const { reportAiHealth } = await import("./ai-health.server");
-    await reportAiHealth({
-      errorClass: "daily_cap",
+    const { logHealth } = await import("./health.server");
+    void logHealth({
+      kind: "anomaly",
       surface: "analysis",
-      note: `daily analysis cap of ${DAILY_ANALYSIS_CAP} reached`,
+      ownerId: profileId,
+      detail: "daily_analysis_cap_reached",
+      meta: { cap: DAILY_ANALYSIS_CAP },
     });
     throw new Error(
       `You have run ${DAILY_ANALYSIS_CAP} analyses today, which is the daily limit. It resets in a few hours.`,
