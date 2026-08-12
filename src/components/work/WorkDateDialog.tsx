@@ -71,7 +71,7 @@ export function WorkDateDialog({
         <DialogHeader>
           <DialogTitle>Work date</DialogTitle>
           <DialogDescription>
-            When this work actually happened. Change it anytime — the date it was added never
+            When this work actually happened. Change it anytime, the date it was added never
             changes.
           </DialogDescription>
         </DialogHeader>

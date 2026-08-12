@@ -122,7 +122,7 @@ export function PasteThreadDialog({ trigger }: { trigger: React.ReactNode }) {
             {parsed
               ? parsed.resolved
                 ? `${parsed.turns.length} turns detected`
-                : "Couldn't split turns — will save as one block"
+                : "Couldn't split turns, will save as one block"
               : "Nothing pasted yet"}
           </p>
 

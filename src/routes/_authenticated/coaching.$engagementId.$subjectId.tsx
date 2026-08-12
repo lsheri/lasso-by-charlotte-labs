@@ -5,12 +5,12 @@ import { PacketPage } from "@/pages/PacketPage";
 export const Route = createFileRoute("/_authenticated/coaching/$engagementId/$subjectId")({
   head: () => ({
     meta: [
-      { title: "Coaching packet — Lasso" },
+      { title: "Coaching packet | Lasso" },
       {
         name: "description",
         content: "The shared record behind a coaching conversation: work, decisions, notes.",
       },
-      { property: "og:title", content: "Coaching packet — Lasso" },
+      { property: "og:title", content: "Coaching packet | Lasso" },
       {
         property: "og:description",
         content: "The shared record behind a coaching conversation: work, decisions, notes.",

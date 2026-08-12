@@ -95,7 +95,7 @@ const COPY: Record<
 };
 
 function dateLabel(iso: string | null): string {
-  if (!iso) return "—";
+  if (!iso) return "Not set";
   return new Date(iso).toLocaleDateString(undefined, {
     month: "short",
     day: "numeric",
@@ -118,7 +118,7 @@ export function ConnectorPicker({
   onOpenChange?: (open: boolean) => void;
   /** Watch suggestions open the picker straight into the folder that changed. */
   initialFolder?: { id: string; name: string } | null;
-  /** Provider ids to call out as new — still default-unchecked. */
+  /** Provider ids to call out as new, still default-unchecked. */
   highlightIds?: string[];
 }) {
   const isTranscripts = kind === "transcripts";
@@ -239,7 +239,7 @@ export function ConnectorPicker({
     setCrumbs((prev) => [...prev, { id: item.id, name: item.title }]);
   }
 
-  /** Watching only ever produces suggestions — it never imports anything. */
+  /** Watching only ever produces suggestions, it never imports anything. */
   async function handleWatch(item: PickerItem) {
     if (!isFolderBrowser) return;
     setWatchBusy(item.id);
@@ -255,7 +255,7 @@ export function ConnectorPicker({
       });
       toast.success(
         result.watched
-          ? `Watching “${item.title}” — Lasso will suggest new files, never import them.`
+          ? `Watching “${item.title}” | Lasso will suggest new files, never import them.`
           : `Stopped watching “${item.title}”`,
       );
       setPage(await load());
@@ -488,7 +488,7 @@ export function ConnectorPicker({
                           aria-pressed={Boolean(item.isWatched)}
                           title={
                             item.isWatched
-                              ? "Watching — Lasso suggests new files, never imports them"
+                              ? "Watching | Lasso suggests new files, never imports them"
                               : "Watch this folder for new work"
                           }
                           aria-label={
@@ -518,7 +518,7 @@ export function ConnectorPicker({
               {isFolderBrowser ? <p className="micro-label">Files</p> : null}
               {files.length === 0 ? (
                 <p className="mt-2 text-sm text-muted-foreground">
-                  {isFolderBrowser ? "No files here — open a folder to keep browsing." : copy.empty}
+                  {isFolderBrowser ? "No files here, open a folder to keep browsing." : copy.empty}
                 </p>
               ) : (
                 <ul className="mt-2 divide-y divide-border rounded-[var(--radius)] border border-border bg-card">

@@ -5,7 +5,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 /**
  * Signed URL for a stored work file. MCP-pushed files are written with the
  * service role, so they carry no storage `owner` and the browser client cannot
- * read them directly — the signature is minted server-side after the caller's
+ * read them directly, the signature is minted server-side after the caller's
  * access to the work item is confirmed through RLS.
  */
 export const getWorkFileUrl = createServerFn({ method: "POST" })

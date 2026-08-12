@@ -60,7 +60,7 @@ export const askCoachChat = createServerFn({ method: "POST" })
     if (tasks.length === 0 && (decisionsRes.data ?? []).length === 0) {
       return {
         answer:
-          "There's nothing in this record yet — no confirmed decisions and no mapped work for this engagement.",
+          "There's nothing in this record yet, no confirmed decisions and no mapped work for this engagement.",
         truncated: false,
         fullCount: 0,
         summaryCount: 0,
@@ -145,7 +145,7 @@ export const askCoachChat = createServerFn({ method: "POST" })
 
     if (!response.ok) {
       const body = await response.text();
-      if (response.status === 429) throw new Error("Rate limited — try again in a moment.");
+      if (response.status === 429) throw new Error("Rate limited, try again in a moment.");
       if (response.status === 402) throw new Error("AI credits exhausted for this workspace.");
       throw new Error(`AI request failed (${response.status}): ${body.slice(0, 300)}`);
     }

@@ -104,7 +104,7 @@ export function McpSetupCard({ vendor }: { vendor: McpVendor }) {
           <p className="text-sm font-medium text-foreground">Connect {meta.label} to Lasso</p>
           <p className="mt-1 text-sm text-muted-foreground">
             One connector, set up once. Then you just say “push this to Lasso” at the end of a
-            session — and only that lands here.
+            session, and only that lands here.
           </p>
         </div>
       </div>
@@ -116,14 +116,14 @@ export function McpSetupCard({ vendor }: { vendor: McpVendor }) {
           </Button>
           {token ? (
             <span className="text-xs text-muted-foreground">
-              You already have one — generating replaces it.
+              You already have one, generating replaces it.
             </span>
           ) : null}
         </div>
       ) : (
         <div className="mt-4 space-y-4">
           <div className="rounded-[var(--radius)] border border-accent bg-accent-soft px-4 py-3">
-            <p className="micro-label text-accent-deep">Your connector URL — shown once</p>
+            <p className="micro-label text-accent-deep">Your connector URL, shown once</p>
             <div className="mt-2 flex flex-wrap items-center gap-3">
               <code className="min-w-0 flex-1 break-all font-mono text-xs text-foreground">
                 {url}

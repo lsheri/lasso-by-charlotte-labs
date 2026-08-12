@@ -124,7 +124,7 @@ export async function watchedFolderIds(
 /**
  * Diff every watched folder that hasn't been looked at for 30 minutes.
  * Sources are walked one at a time, never in parallel, and NOTHING is
- * imported — the result is a list of suggestions the owner can act on.
+ * imported, the result is a list of suggestions the owner can act on.
  */
 export async function checkWatches(
   supabase: Client,
@@ -180,7 +180,7 @@ export async function checkWatches(
   return { suggestions };
 }
 
-/** Dismiss = "I've seen these" — the ids are remembered, nothing is imported. */
+/** Dismiss = "I've seen these", the ids are remembered, nothing is imported. */
 export async function dismissWatch(
   supabase: Client,
   args: { profileId: string; toolkit: BrowsableToolkit; folderId: string },

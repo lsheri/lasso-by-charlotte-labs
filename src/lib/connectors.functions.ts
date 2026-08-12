@@ -125,7 +125,7 @@ export const disconnectConnector = createServerFn({ method: "POST" })
 /**
  * Connector metadata for the cards: which account is actually linked, and (for
  * MCP-backed toolkits) which actions that connection publishes. Import is never
- * triggered here — explicit selection in the picker is the only import path.
+ * triggered here, explicit selection in the picker is the only import path.
  */
 export const getConnectorDetails = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -242,7 +242,7 @@ export const saveGranolaKey = createServerFn({ method: "POST" })
     return { status: "connected" as const, masked: maskKey(data.api_key) };
   });
 
-/** Masked key for the card — the plaintext never leaves the server. */
+/** Masked key for the card, the plaintext never leaves the server. */
 export const getGranolaKeyMask = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(validateProfileId)

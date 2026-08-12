@@ -5,9 +5,9 @@ import { MembersPage } from "@/pages/MembersPage";
 export const Route = createFileRoute("/_authenticated/members")({
   head: () => ({
     meta: [
-      { title: "Members — Lasso" },
+      { title: "Members | Lasso" },
       { name: "description", content: "Manage who belongs to your Lasso workspace and the invites still outstanding." },
-      { property: "og:title", content: "Members — Lasso" },
+      { property: "og:title", content: "Members | Lasso" },
       {
         property: "og:description",
         content: "Manage who belongs to your Lasso workspace and the invites still outstanding.",

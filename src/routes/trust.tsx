@@ -6,13 +6,13 @@ import { Wordmark } from "@/components/layout/Wordmark";
 export const Route = createFileRoute("/trust")({
   head: () => ({
     meta: [
-      { title: "Trust & data — Lasso by Charlotte Labs" },
+      { title: "Trust & data | Lasso by Charlotte Labs" },
       {
         name: "description",
         content:
           "Who sees what in Lasso, how work gets in, what we never do, and how telemetry and deletion work.",
       },
-      { property: "og:title", content: "Trust & data — Lasso" },
+      { property: "og:title", content: "Trust & data | Lasso" },
       {
         property: "og:description",
         content:
@@ -29,10 +29,10 @@ const MATRIX: [string, string][] = [
   ["You", "Everything you capture. Only you can delete it."],
   [
     "Your coach",
-    "Only what you've mapped and chosen to share — never private items, never drafts.",
+    "Only what you've mapped and chosen to share, never private items, never drafts.",
   ],
   ["Your organization's admin", "Settings and invites. Never anyone's content, ever."],
-  ["Charlotte Labs", "Content-free usage events only — no text, no titles, no names."],
+  ["Charlotte Labs", "Content-free usage events only, no text, no titles, no names."],
 ];
 
 const NEVER: string[] = [
@@ -46,7 +46,7 @@ const SUBPROCESSORS: [string, string][] = [
   ["Supabase", "Database and authentication. SOC 2 Type II."],
   ["Lovable", "Application hosting."],
   ["Composio", "Connector OAuth for the sources you choose to link."],
-  ["Lovable AI (Google)", "AI responses only — Reflect and drafting features."],
+  ["Lovable AI (Google)", "AI responses only, Reflect and drafting features."],
   ["PostHog", "Usage analytics, US cloud, content-free events only."],
 ];
 
@@ -105,7 +105,7 @@ function TrustPage() {
 
             <Section label="02" title="How your work gets in">
               <p>
-                Capture is consent-first. Nothing is imported without you selecting it — when you
+                Capture is consent-first. Nothing is imported without you selecting it, when you
                 import a history file, the conversations you leave unchecked are never transmitted;
                 parsing happens in your browser.
               </p>
@@ -130,7 +130,7 @@ function TrustPage() {
 
             <Section label="04" title="Telemetry, plainly">
               <p>
-                We record that an event happened — for example, “a work item was captured” — never
+                We record that an event happened, for example, “a work item was captured”, never
                 what it contained. No text, no titles, no file names, no email addresses.
               </p>
               <p>
@@ -152,7 +152,7 @@ function TrustPage() {
             <Section label="06" title="AI features">
               <p>
                 Reflect conversations are processed by an AI model through Lovable AI (Google
-                Gemini) to generate responses. They are private to the account owner — never visible
+                Gemini) to generate responses. They are private to the account owner, never visible
                 to coaches or admins, never surfaced in a packet or any coach-facing view.
               </p>
               <p>

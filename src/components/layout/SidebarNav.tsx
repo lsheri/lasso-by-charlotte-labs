@@ -15,7 +15,7 @@ export function SidebarNav({ onNavigate }: { onNavigate?: (() => void) | undefin
   const { data: engagements } = useEngagements(profile?.id);
   const { data: decisions } = useDecisions();
   const decisionCount = (decisions ?? []).length;
-  // Reflect is the owner's private space — it never appears for a coach profile.
+  // Reflect is the owner's private space, it never appears for a coach profile.
   const isCoach = profile?.role === "coach";
   const canManageMembers = profile?.role === "admin" || profile?.role === "lead";
 

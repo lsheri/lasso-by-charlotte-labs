@@ -201,7 +201,7 @@ export async function assembleReflectContext(
           return `      ${l.step_no ?? index + 1}. ${item?.title ?? "(item)"}${l.step_confirmed ? " [confirmed sequence]" : ""}`;
         });
       return [
-        `    TASK: ${t.name}${t.when_label ? ` (${t.when_label})` : ""} — status ${t.status}`,
+        `    TASK: ${t.name}${t.when_label ? ` (${t.when_label})` : ""}, status ${t.status}`,
         t.goal ? `      Goal: ${t.goal}` : null,
         t.detail ? `      Detail: ${t.detail}` : null,
         ...steps,

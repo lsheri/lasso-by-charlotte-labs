@@ -78,7 +78,7 @@ export const browseConnectorItems = createServerFn({ method: "POST" })
     });
   });
 
-/** Import exactly what the user ticked — never anything else. */
+/** Import exactly what the user ticked, never anything else. */
 export const browseTranscriptCandidates = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(validateBrowse)
@@ -267,7 +267,7 @@ export const browseGmailThreads = createServerFn({ method: "POST" })
       items: threads.map((thread) => ({
         id: thread.id,
         title: thread.subject,
-        subtitle: [thread.participants, thread.snippet].filter(Boolean).join(" — ") || null,
+        subtitle: [thread.participants, thread.snippet].filter(Boolean).join(", ") || null,
         date: thread.date,
         isFolder: false,
         alreadyInLasso: seen.has(thread.id),

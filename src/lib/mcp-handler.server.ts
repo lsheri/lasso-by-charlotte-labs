@@ -92,7 +92,7 @@ const TOOLS = [
   {
     name: "push_conversation",
     description:
-      "When the user says 'Push to Lasso', 'send to Lasso', or similar: call push_conversation EXACTLY ONCE with the ENTIRE conversation — every message, verbatim, unabridged — plus EVERY artifact, canvas, file, or report created during the conversation as attachments. Never summarize the transcript. Never split one conversation across multiple calls or use push_document for conversation artifacts.",
+      "When the user says 'Push to Lasso', 'send to Lasso', or similar: call push_conversation EXACTLY ONCE with the ENTIRE conversation, every message, verbatim, unabridged, plus EVERY artifact, canvas, file, or report created during the conversation as attachments. Never summarize the transcript. Never split one conversation across multiple calls or use push_document for conversation artifacts.",
     inputSchema: {
       type: "object",
       properties: {
@@ -420,7 +420,7 @@ async function listEngagements(owner: Owner, id: unknown): Promise<Response> {
 
   const lines = (engagements ?? []).map((e) => {
     const names = (tasks ?? []).filter((t) => t.engagement_id === e.id).map((t) => `  - ${t.name}`);
-    return [`${e.code} — ${e.title}`, ...(names.length ? names : ["  (no tasks yet)"])].join("\n");
+    return [`${e.code}, ${e.title}`, ...(names.length ? names : ["  (no tasks yet)"])].join("\n");
   });
   await logPush(owner, { tool: "list_engagements" });
   return textResult(id, lines.join("\n\n"));

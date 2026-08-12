@@ -82,6 +82,7 @@ export function PeekPanel({
   onMap,
   onWorkDate,
   onMakePrivate,
+  onFluency,
 }: {
   entry: PeekEntry | null;
   focusId?: string | undefined;
@@ -91,6 +92,7 @@ export function PeekPanel({
   onMap?: ((item: WorkItemRow, group?: WorkItemRow[]) => void) | undefined;
   onWorkDate?: ((item: WorkItemRow) => void) | undefined;
   onMakePrivate?: ((item: WorkItemRow) => void) | undefined;
+  onFluency?: ((item: WorkItemRow) => void) | undefined;
 }) {
   const fetchUrl = useServerFn(getWorkFileUrl);
   const items = entry ? entryItems(entry) : [];
@@ -195,6 +197,9 @@ export function PeekPanel({
         ) : null}
         {canEdit && active.type === "ai_thread" ? (
           <DraftDecisionsButton workItemId={active.id} />
+        ) : null}
+        {canEdit && active.type === "ai_thread" && onFluency ? (
+          <FooterAction onClick={() => onFluency(active)}>AI Fluency lens</FooterAction>
         ) : null}
         <div className="ml-auto">
           {link ? (

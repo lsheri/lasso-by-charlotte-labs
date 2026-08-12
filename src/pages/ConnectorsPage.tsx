@@ -174,7 +174,7 @@ export function ConnectorsPage() {
         <div>
           <h1 className="page-title">Where work lives</h1>
           <p className="mt-1.5 max-w-xl text-sm text-muted-foreground">
-            Where the record comes from. Connect a tool once — new work lands in Work, unmapped and
+            Where the record comes from. Connect a tool once, new work lands in Work, unmapped and
             private by default.
           </p>
         </div>
@@ -250,7 +250,7 @@ export function ConnectorsPage() {
 
 /** Tinted band header, so a category is found before it is read. */
 /**
- * Call transcripts are not a second connection — they are the same Google
+ * Call transcripts are not a second connection, they are the same Google
  * Drive connection, opened straight into a picker scoped to where recordings
  * usually live. Still picker-only, nothing auto-imports.
  */

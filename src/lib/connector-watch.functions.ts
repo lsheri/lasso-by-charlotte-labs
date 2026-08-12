@@ -83,7 +83,7 @@ export const checkWatchedFolders = createServerFn({ method: "POST" })
     return result;
   });
 
-/** Dismiss remembers the ids so they never resurface — still no import. */
+/** Dismiss remembers the ids so they never resurface, still no import. */
 export const reviewWatchSuggestion = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: WatchInput & { action: "opened" | "dismissed" }) => {

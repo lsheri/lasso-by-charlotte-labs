@@ -276,7 +276,7 @@ export function ImportFlowDialog({
                 <ul className="mt-2 space-y-1">
                   {failures.map((failure, i) => (
                     <li key={`${failure.record}-${i}`} className="text-xs text-muted-foreground">
-                      {failure.record} — {failure.reason}
+                      {failure.record}, {failure.reason}
                     </li>
                   ))}
                 </ul>

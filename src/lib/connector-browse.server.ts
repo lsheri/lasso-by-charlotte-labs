@@ -95,7 +95,7 @@ const TRANSCRIPT_TERMS = ["Meet Recordings", "Transcript", "Recording", "Notes b
 /**
  * A Google Drive listing scoped to likely call transcripts: the "Meet
  * Recordings" folder first, then the existing title heuristics across the
- * Drive. Still picker-only — nothing is imported here.
+ * Drive. Still picker-only, nothing is imported here.
  */
 export async function browseDriveTranscripts(
   args: { profileId: string; search: string | null; seen: Set<string> },

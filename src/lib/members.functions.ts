@@ -37,7 +37,7 @@ export const listMembers = createServerFn({ method: "POST" })
       const { data: users } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 });
       for (const user of users?.users ?? []) if (user.email) emails.set(user.id, user.email);
     } catch {
-      /* emails are a convenience — the console still works without them */
+      /* emails are a convenience, the console still works without them */
     }
 
     return {

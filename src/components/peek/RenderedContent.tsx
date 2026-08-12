@@ -106,7 +106,7 @@ export function RenderedContent({
 
   if (shape.kind === "none") {
     return (
-      <Notice>Nothing is stored for this item — it&apos;s a record of work, not a file.</Notice>
+      <Notice>Nothing is stored for this item, it&apos;s a record of work, not a file.</Notice>
     );
   }
   if (shape.kind === "unsupported") {

@@ -184,7 +184,7 @@ export function SelectionTable({
                   {conv.turns.length}
                 </td>
                 <td className="px-3 py-2 font-mono text-[11px] text-muted-foreground">
-                  {conv.models.join(", ") || "—"}
+                  {conv.models.join(", ") || "Not set"}
                 </td>
               </tr>
             ))}

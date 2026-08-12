@@ -50,7 +50,7 @@ export function useActiveProfileId(): string | null {
   );
 }
 
-/** Every profile this user holds — one per org. */
+/** Every profile this user holds, one per org. */
 export async function fetchProfiles(): Promise<Profile[]> {
   return (await fetchProfileState()).profiles;
 }
@@ -69,7 +69,7 @@ export async function fetchProfileState(): Promise<ProfileState> {
     deactivated_at: string | null;
     orgs: { name: string } | null;
   })[];
-  // A deactivated profile is simply omitted — the switcher and every query
+  // A deactivated profile is simply omitted, the switcher and every query
   // behave as if that workspace isn't there.
   const profiles = rows
     .filter((row) => !row.deactivated_at)
@@ -86,7 +86,7 @@ function pickActive(profiles: Profile[], activeId: string | null): Profile | nul
   return match ?? (profiles[0] as Profile);
 }
 
-/** Existence check used by route gates — true when the user has any profile. */
+/** Existence check used by route gates, true when the user has any profile. */
 export async function fetchProfile(): Promise<Profile | null> {
   const profiles = await fetchProfiles();
   return pickActive(profiles, readStored());
@@ -96,7 +96,7 @@ export function useProfiles() {
   return useQuery({ queryKey: ["profiles"], queryFn: fetchProfiles, staleTime: 60_000 });
 }
 
-/** The active profile — the only one, or the most recently used. */
+/** The active profile, the only one, or the most recently used. */
 export function useProfile() {
   const query = useProfiles();
   const activeId = useActiveProfileId();

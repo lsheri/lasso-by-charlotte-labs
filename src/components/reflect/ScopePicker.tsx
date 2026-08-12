@@ -112,7 +112,7 @@ export function ScopePicker({
           </div>
         ) : (
           <p className="text-sm text-muted-foreground">
-            Everything you have recorded — engagements, tasks, and every work item you own.
+            Everything you have recorded, engagements, tasks, and every work item you own.
           </p>
         )}
 

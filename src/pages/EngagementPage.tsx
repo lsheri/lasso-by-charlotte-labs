@@ -3,6 +3,8 @@ import { useState } from "react";
 import { Sparkle } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
+import { EngagementDecisions } from "@/components/decisions/EngagementDecisions";
+import { OneOnOneBrief } from "@/components/oneonone/OneOnOneBrief";
 import { EditEngagementDialog } from "@/components/engagements/EditEngagementDialog";
 import { EditTaskDialog } from "@/components/engagements/EditTaskDialog";
 import { InviteDialog } from "@/components/invites/InviteDialog";
@@ -39,6 +41,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
   const queryClient = useQueryClient();
   const [aboutOpen, setAboutOpen] = useState(false);
   const [askOpen, setAskOpen] = useState(false);
+  const [prepOpen, setPrepOpen] = useState(false);
   const [taskName, setTaskName] = useState("");
   const [error, setError] = useState<string | null>(null);
 
@@ -143,18 +146,27 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
               }
             />
           ) : null}
+          {profile && profile.role !== "coach" ? (
+            <button
+              type="button"
+              onClick={() => setPrepOpen(true)}
+              className="rounded-full border border-border bg-card px-3 py-1 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Prepare a 1:1
+            </button>
+          ) : null}
         </div>
 
         {aboutOpen ? (
           <div className="mt-3 space-y-3 rounded-[var(--radius)] border border-border bg-card px-5 py-4 shadow-card">
             <div>
               <p className="micro-label">Client</p>
-              <p className="mt-1 text-sm text-foreground">{engagement.client_label ?? "—"}</p>
+              <p className="mt-1 text-sm text-foreground">{engagement.client_label ?? "Not set"}</p>
             </div>
             <div>
               <p className="micro-label">Brief</p>
               <p className="mt-1 whitespace-pre-wrap text-sm text-foreground">
-                {engagement.brief ?? "—"}
+                {engagement.brief ?? "Not set"}
               </p>
             </div>
           </div>
@@ -223,6 +235,24 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
       </section>
 
       <SubjectCoachingSection profileId={profile?.id} engagementId={engagementId} />
+
+      {profile && profile.role !== "coach" ? (
+        <EngagementDecisions
+          engagementId={engagementId}
+          profileId={profile.id}
+          canEdit={profile.role !== "coach"}
+        />
+      ) : null}
+
+      {profile && profile.role !== "coach" ? (
+        <OneOnOneBrief
+          open={prepOpen}
+          onOpenChange={setPrepOpen}
+          profileId={profile.id}
+          engagementId={engagementId}
+          scopeLabel={engagement.title}
+        />
+      ) : null}
 
       {profile && profile.role !== "coach" ? (
         <ReflectDock

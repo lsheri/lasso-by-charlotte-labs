@@ -17,7 +17,7 @@ import type { WorkItemRow, WorkType } from "./work-types";
 
 /**
  * One source of truth for what a piece of work LOOKS like. Every surface that
- * shows a work item — rows, peek panel, map dialog, task workflow, packets —
+ * shows a work item, rows, peek panel, map dialog, task workflow, packets , 
  * reads its icon, hue and label from here, so a deck is the same clay-coloured
  * thing everywhere it appears.
  */
@@ -88,7 +88,7 @@ export function hueStyles(hue: string): { color: string; background: string; bor
 
 const ENGAGEMENT_HUES = 8;
 
-/** A stable colour per engagement, derived from its id — no schema needed. */
+/** A stable colour per engagement, derived from its id, no schema needed. */
 export function engagementHue(engagementId: string | null | undefined): string {
   if (!engagementId) return "--hue-neutral";
   let hash = 0;

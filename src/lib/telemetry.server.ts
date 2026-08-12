@@ -4,7 +4,7 @@ import type { Database } from "@/integrations/supabase/types";
 
 import type { TelemetryDims, TelemetryEvent } from "./telemetry-shared";
 
-/** Publishable project key — safe in source, write-only ingest. */
+/** Publishable project key, safe in source, write-only ingest. */
 const POSTHOG_KEY = "phc_mb9PLASteZ87YA6P34n4Mb9Hp9rW3oXXRQvq6qXiy6mw";
 const POSTHOG_HOST = "https://us.i.posthog.com";
 
@@ -58,7 +58,7 @@ async function mirrorToPostHog(
       );
     }
   } catch (e) {
-    // Analytics must never surface to the user — but it must never be silent either.
+    // Analytics must never surface to the user, but it must never be silent either.
     console.error(`[telemetry] mirror threw for ${eventType}:`, (e as Error).message);
   }
 }

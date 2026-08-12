@@ -7,7 +7,7 @@ export type FeedbackCategory = (typeof FEEDBACK_CATEGORIES)[number];
 
 const UUID = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi;
 
-/** "/engagements/9f2…" → "/engagements/:id" — a route pattern, never a raw URL. */
+/** "/engagements/9f2…" → "/engagements/:id", a route pattern, never a raw URL. */
 export function routePattern(path: string): string {
   return path.split("?")[0]!.replace(UUID, ":id");
 }

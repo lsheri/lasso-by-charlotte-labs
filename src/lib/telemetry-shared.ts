@@ -37,7 +37,9 @@ export type TelemetryEvent =
   | "member.reactivated"
   | "member.role_changed"
   | "invite.revoked"
-  | "invite.email_sent";
+  | "invite.email_sent"
+  | "oneonone.prepared"
+  | "oneonone.saved_to_drive";
 
 export type TelemetryDims = Record<
   string,
@@ -47,7 +49,7 @@ export type TelemetryDims = Record<
 /** How a work item entered Lasso. Content never travels; the channel does. */
 export type CaptureChannel = "paste" | "upload" | "import" | "mcp" | "connector";
 
-/** 0 · 1-10 · 11-50 · 51-200 · 200+ — counts never leave as exact values. */
+/** 0 · 1-10 · 11-50 · 51-200 · 200+, counts never leave as exact values. */
 export function bucket(n: number): string {
   if (n <= 0) return "0";
   if (n <= 10) return "1-10";

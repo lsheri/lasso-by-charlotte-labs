@@ -53,8 +53,8 @@ export type ConversationGroup = {
 };
 
 /**
- * Items pushed together share orig_conversation_id. Anything else — and any
- * lone item that happens to carry one — stays an ordinary row.
+ * Items pushed together share orig_conversation_id. Anything else, and any
+ * lone item that happens to carry one, stays an ordinary row.
  */
 export function groupConversations(items: WorkItemRow[]): (WorkItemRow | ConversationGroup)[] {
   const counts = new Map<string, WorkItemRow[]>();
@@ -125,7 +125,7 @@ export function effectiveWorkDate(item: {
   return item.work_date ?? item.created_at_source ?? item.captured_at;
 }
 
-/** "google drive", "upload", "chatgpt" — a calm human label for a work source. */
+/** "google drive", "upload", "chatgpt", a calm human label for a work source. */
 export function sourceLabel(source: string): string {
   if (source.startsWith("connector:")) {
     const toolkit = source.slice("connector:".length);

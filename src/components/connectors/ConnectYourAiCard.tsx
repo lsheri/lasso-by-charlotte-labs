@@ -78,7 +78,7 @@ export function ConnectYourAiCard() {
         </p>
         <p className="mt-1.5 max-w-2xl text-sm text-muted-foreground">
           Add Lasso as a custom connector in your AI once. Then, at the end of any working session,
-          just say “push this conversation to Lasso.” Everything lands private and unmapped — only
+          just say “push this conversation to Lasso.” Everything lands private and unmapped, only
           you can see it.
         </p>
 
@@ -92,7 +92,7 @@ export function ConnectYourAiCard() {
           <div className="mt-5 space-y-4">
             {freshUrl ? (
               <div className="rounded-[var(--radius)] border border-accent bg-accent-soft px-4 py-3">
-                <p className="micro-label text-accent-deep">Your connector URL — shown once</p>
+                <p className="micro-label text-accent-deep">Your connector URL, shown once</p>
                 <div className="mt-2 flex flex-wrap items-center gap-3">
                   <code className="min-w-0 flex-1 break-all font-mono text-xs text-foreground">
                     {freshUrl}

@@ -15,7 +15,7 @@ import { fetchProfile } from "@/hooks/use-profile";
 
 /**
  * The tools people actually work with AI in. What they check here decides
- * which setup cards they see next — and nothing else. No tool names ever
+ * which setup cards they see next, and nothing else. No tool names ever
  * travel in telemetry.
  */
 export type ToolId =
@@ -140,7 +140,7 @@ export const TOOL_CATEGORIES: { title: string; hue: string; tools: ToolId[] }[] 
   { title: "Anything else", hue: "--hue-neutral", tools: ["other"] },
 ];
 
-/** 0 · 1-2 · 3+ — the only shape of this that ever leaves the browser. */
+/** 0 · 1-2 · 3+, the only shape of this that ever leaves the browser. */
 export function toolCountBucket(n: number): string {
   if (n <= 0) return "0";
   if (n <= 2) return "1-2";

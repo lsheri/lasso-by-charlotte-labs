@@ -110,7 +110,7 @@ export function TaskWorkflow({
         <p className="text-xs text-muted-foreground">
           {confirmed
             ? "Ordered by your sequence."
-            : "Ordered by work date — drag to set the real sequence."}
+            : "Ordered by work date, drag to set the real sequence."}
         </p>
         <div className="flex items-center gap-3">
           {confirmed ? (
@@ -139,7 +139,7 @@ export function TaskWorkflow({
             <li key={item.id}>
               {isNew && index === placed.length ? (
                 <p className="mb-1 mt-3 border-t border-dashed border-border pt-2 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
-                  New — not yet placed
+                  New, not yet placed
                 </p>
               ) : null}
               <div
