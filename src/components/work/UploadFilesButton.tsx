@@ -1,13 +1,16 @@
 import { useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { useProfile } from "@/hooks/use-profile";
 import { supabase } from "@/integrations/supabase/client";
+import { ensureExtractsFn } from "@/lib/extract.functions";
 import { logEvent } from "@/lib/telemetry";
 import { workTypeForFile } from "@/lib/work-types";
 
 export function UploadFilesButton({ variant = "outline" }: { variant?: "default" | "outline" }) {
+  const ensureExtracts = useServerFn(ensureExtractsFn);
   const { data: profile } = useProfile();
   const queryClient = useQueryClient();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -27,6 +30,7 @@ export function UploadFilesButton({ variant = "outline" }: { variant?: "default"
       return;
     }
 
+    const capturedIds: string[] = [];
     for (const file of Array.from(files)) {
       const path = `${userId}/${crypto.randomUUID()}-${file.name}`;
       const { error: uploadError } = await supabase.storage.from("work-files").upload(path, file);
@@ -36,7 +40,7 @@ export function UploadFilesButton({ variant = "outline" }: { variant?: "default"
       }
 
       const type = workTypeForFile(file.name);
-      const { error: insertError } = await supabase.from("work_items").insert({
+      const { data: created, error: insertError } = await supabase.from("work_items").insert({
         owner_id: profile.id,
         org_id: profile.org_id,
         type,
@@ -44,17 +48,25 @@ export function UploadFilesButton({ variant = "outline" }: { variant?: "default"
         title: file.name,
         content_ref: path,
         ts_precision: "capture",
-      });
+      })
+        .select("id")
+        .maybeSingle();
       if (insertError) {
         setError(insertError.message);
         continue;
       }
+
+      if (created?.id) capturedIds.push(created.id);
 
       logEvent("workitem.captured", profile.org_id, {
         channel: "upload",
         type,
         source: "upload",
       });
+    }
+
+    if (capturedIds.length > 0) {
+      void ensureExtracts({ data: { work_item_ids: capturedIds } }).catch(() => {});
     }
 
     await queryClient.invalidateQueries({ queryKey: ["work-items"] });

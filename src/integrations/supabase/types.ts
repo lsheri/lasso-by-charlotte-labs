@@ -14,6 +14,61 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_reads: {
+        Row: {
+          created_at: string
+          depth: string
+          id: string
+          owner_id: string
+          reader_profile_id: string | null
+          reader_role: string
+          surface: string
+          work_item_id: string
+        }
+        Insert: {
+          created_at?: string
+          depth: string
+          id?: string
+          owner_id: string
+          reader_profile_id?: string | null
+          reader_role: string
+          surface: string
+          work_item_id: string
+        }
+        Update: {
+          created_at?: string
+          depth?: string
+          id?: string
+          owner_id?: string
+          reader_profile_id?: string | null
+          reader_role?: string
+          surface?: string
+          work_item_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_reads_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_reads_reader_profile_id_fkey"
+            columns: ["reader_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_reads_work_item_id_fkey"
+            columns: ["work_item_id"]
+            isOneToOne: false
+            referencedRelation: "work_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chain_links: {
         Row: {
           from_turn: string
@@ -956,6 +1011,72 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "turns_work_item_id_fkey"
+            columns: ["work_item_id"]
+            isOneToOne: false
+            referencedRelation: "work_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      work_item_extracts: {
+        Row: {
+          content_hash: string | null
+          created_at: string
+          decisions: string | null
+          entities: string | null
+          handoff: string | null
+          id: string
+          model: string | null
+          org_id: string
+          owner_id: string
+          schema_version: number
+          source_chars: number | null
+          summary: string
+          updated_at: string
+          work_item_id: string
+        }
+        Insert: {
+          content_hash?: string | null
+          created_at?: string
+          decisions?: string | null
+          entities?: string | null
+          handoff?: string | null
+          id?: string
+          model?: string | null
+          org_id: string
+          owner_id: string
+          schema_version?: number
+          source_chars?: number | null
+          summary: string
+          updated_at?: string
+          work_item_id: string
+        }
+        Update: {
+          content_hash?: string | null
+          created_at?: string
+          decisions?: string | null
+          entities?: string | null
+          handoff?: string | null
+          id?: string
+          model?: string | null
+          org_id?: string
+          owner_id?: string
+          schema_version?: number
+          source_chars?: number | null
+          summary?: string
+          updated_at?: string
+          work_item_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_item_extracts_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_item_extracts_work_item_id_fkey"
             columns: ["work_item_id"]
             isOneToOne: false
             referencedRelation: "work_items"

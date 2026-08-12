@@ -73,6 +73,7 @@ export async function commitImport(opts: {
   }
   const sessionId = session.data.id;
   const fidelity = vendor === "copilot" ? "summary" : "verbatim";
+  const capturedIds: string[] = [];
   let imported = 0;
 
   for (let i = 0; i < fresh.length; i += BATCH) {
@@ -107,6 +108,8 @@ export async function commitImport(opts: {
       .select("id, orig_conversation_id");
     if (inserted.error) throw new Error(inserted.error.message);
 
+    capturedIds.push(...(inserted.data ?? []).map((row) => row.id));
+
     const byOrigId = new Map(
       (inserted.data ?? []).map((row) => [row.orig_conversation_id ?? "", row.id]),
     );
@@ -138,6 +141,11 @@ export async function commitImport(opts: {
 
     imported += batch.length;
     onProgress?.(Math.round((Math.min(i + BATCH, fresh.length) / Math.max(fresh.length, 1)) * 100));
+  }
+
+  if (capturedIds.length > 0) {
+    const { ensureExtractsFn } = await import("./extract.functions");
+    void ensureExtractsFn({ data: { work_item_ids: capturedIds } }).catch(() => {});
   }
 
   return { session_id: sessionId, imported, duplicates, ts_precision_mix: mix };

@@ -2,7 +2,20 @@ import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-type SendInput = { session_id: string; message: string; profile_id?: string | undefined };
+type SendInput = {
+  session_id: string;
+  message: string;
+  profile_id?: string | undefined;
+  surface?: "reflect" | "ask_lasso" | undefined;
+};
+
+/** Bucketed so an exact count never leaves as a dimension. */
+function tierBucket(n: number): string {
+  if (n <= 0) return "0";
+  if (n <= 5) return "1-5";
+  if (n <= 20) return "6-20";
+  return "20+";
+}
 
 export const sendReflectMessage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -11,7 +24,13 @@ export const sendReflectMessage = createServerFn({ method: "POST" })
     async ({
       data,
       context,
-    }): Promise<{ answer: string; truncated: boolean; title: string | null }> => {
+    }): Promise<{
+      answer: string;
+      truncated: boolean;
+      title: string | null;
+      fullCount: number;
+      summaryCount: number;
+    }> => {
       const { supabase, userId } = context;
       const message = data.message.trim();
       if (!message) throw new Error("Write something first.");
@@ -43,6 +62,14 @@ export const sendReflectMessage = createServerFn({ method: "POST" })
 
       const { assembleReflectContext } = await import("./reflect-context.server");
       const assembled = await assembleReflectContext(supabase, profile.id, scope);
+
+      const surface = data.surface === "ask_lasso" ? "ask_lasso" : "reflect";
+      const { recordAiReads } = await import("./ai-reads.server");
+      await recordAiReads(assembled.reads, {
+        surface,
+        readerRole: "owner",
+        readerProfileId: profile.id,
+      });
 
       const apiKey = process.env["LOVABLE_API_KEY"];
       if (!apiKey) throw new Error("Missing LOVABLE_API_KEY");
@@ -103,9 +130,19 @@ export const sendReflectMessage = createServerFn({ method: "POST" })
         eventType: "reflect.message_sent",
         orgId: profile.org_id,
         userId,
-        dims: { scope: scope.mode },
+        dims: {
+          scope: scope.mode,
+          truncated: assembled.truncated,
+          tier2_items: tierBucket(assembled.tier2Count),
+        },
       });
 
-      return { answer, truncated: assembled.truncated, title };
+      return {
+        answer,
+        truncated: assembled.truncated,
+        title,
+        fullCount: assembled.tier2Count,
+        summaryCount: Math.max(assembled.tier1Count - assembled.tier2Count, 0),
+      };
     },
   );

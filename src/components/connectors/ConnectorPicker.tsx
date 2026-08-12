@@ -253,11 +253,18 @@ export function ConnectorPicker({
     setError(null);
     try {
       const ids = Array.from(selected);
+      // Google-native files must be exported as text, which needs their real mime.
+      const mimes = Object.fromEntries(
+        (page?.items ?? [])
+          .filter((i) => ids.includes(i.id) && i.subtitle)
+          .map((i) => [i.id, i.subtitle as string]),
+      );
       const result = isFolderBrowser
         ? await importFiles({
             data: {
               profile_id: profile?.id,
               ids,
+              mimes,
               folder_name: crumbFolder.name,
               toolkit: TOOLKIT[kind as FileKind],
             },

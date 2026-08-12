@@ -7,7 +7,16 @@ import { resolveProfile } from "@/lib/profile-resolve";
 export const askCoachChat = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(validateCoachChat)
-  .handler(async ({ data, context }): Promise<{ answer: string }> => {
+  .handler(
+    async ({
+      data,
+      context,
+    }): Promise<{
+      answer: string;
+      truncated: boolean;
+      fullCount: number;
+      summaryCount: number;
+    }> => {
     const { supabase, userId } = context;
 
     const profile = await resolveProfile(supabase, userId, data.profile_id);
@@ -52,8 +61,28 @@ export const askCoachChat = createServerFn({ method: "POST" })
       return {
         answer:
           "There's nothing in this record yet — no confirmed decisions and no mapped work for this engagement.",
+        truncated: false,
+        fullCount: 0,
+        summaryCount: 0,
       };
     }
+
+    // Coaches never see raw content. They do see the compact extract, which is
+    // itself readable to them through the same row-level policy as the item.
+    const itemIds = tasks.flatMap((task) =>
+      (task.work_item_tasks ?? [])
+        .map((link) => link.work_items?.["id"])
+        .filter((id): id is string => typeof id === "string"),
+    );
+    const { data: extractRows } = itemIds.length
+      ? await supabase
+          .from("work_item_extracts")
+          .select("work_item_id, summary, decisions, entities, handoff")
+          .in("work_item_id", itemIds)
+      : { data: [] };
+    const extractFor = new Map(
+      (extractRows ?? []).map((row) => [row.work_item_id as string, row]),
+    );
 
     const record = {
       colleague: subjectRes.data?.display_name ?? "your colleague",
@@ -69,6 +98,9 @@ export const askCoachChat = createServerFn({ method: "POST" })
             step_no: link.step_no,
             sequence_confirmed: link.step_confirmed,
             title: link.work_items?.["title"],
+            summary: extractFor.get(String(link.work_items?.["id"]))?.summary ?? null,
+            decided: extractFor.get(String(link.work_items?.["id"]))?.decisions ?? null,
+            led_to: extractFor.get(String(link.work_items?.["id"]))?.handoff ?? null,
             type: link.work_items?.["type"],
             source: link.work_items?.["source"],
             fidelity: link.work_items?.["content_fidelity"],
@@ -125,6 +157,12 @@ export const askCoachChat = createServerFn({ method: "POST" })
       payload.choices?.[0]?.message?.content?.trim() ??
       "The record doesn't give me enough to answer that.";
 
+    const { recordAiReads } = await import("./ai-reads.server");
+    await recordAiReads(
+      itemIds.map((id) => ({ workItemId: id, ownerId: data.subject_id, depth: "extract" as const })),
+      { surface: "coach_chat", readerRole: "coach", readerProfileId: profile.id },
+    );
+
     await supabase.from("query_log").insert({
       asker_id: profile.id,
       subject_id: data.subject_id,
@@ -140,5 +178,10 @@ export const askCoachChat = createServerFn({ method: "POST" })
       dims: { role: profile.role },
     });
 
-    return { answer };
+    return {
+      answer,
+      truncated: itemIds.length > 0,
+      fullCount: 0,
+      summaryCount: itemIds.length,
+    };
   });

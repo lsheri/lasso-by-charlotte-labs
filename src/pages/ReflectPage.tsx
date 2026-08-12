@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { PageHeader } from "@/components/layout/PageHeader";
 import { MarkdownMessage } from "@/components/markdown/MarkdownMessage";
+import { CoverageNote } from "@/components/reflect/CoverageNote";
 import { ScopePicker } from "@/components/reflect/ScopePicker";
 import {
   AlertDialog,
@@ -53,7 +54,11 @@ export function ReflectPage() {
   const [draft, setDraft] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [truncated, setTruncated] = useState(false);
+  const [coverage, setCoverage] = useState<{
+    truncated: boolean;
+    fullCount: number;
+    summaryCount: number;
+  } | null>(null);
   const [scopeOpen, setScopeOpen] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -111,7 +116,7 @@ export function ReflectPage() {
     logEvent("reflect.session_created", profile.org_id, {});
     await queryClient.invalidateQueries({ queryKey: ["reflect-sessions"] });
     setActiveId(data.id);
-    setTruncated(false);
+    setCoverage(null);
   }
 
   async function deleteSession(id: string) {
@@ -139,10 +144,14 @@ export function ReflectPage() {
     setError(null);
     try {
       const result = await send({
-        data: { session_id: activeId, message, profile_id: profile.id },
+        data: { session_id: activeId, message, profile_id: profile.id, surface: "reflect" },
       });
       setDraft("");
-      setTruncated(result.truncated);
+      setCoverage({
+        truncated: result.truncated,
+        fullCount: result.fullCount,
+        summaryCount: result.summaryCount,
+      });
       await queryClient.invalidateQueries({ queryKey: ["reflect-messages", activeId] });
       await queryClient.invalidateQueries({ queryKey: ["reflect-sessions"] });
     } catch (e) {
@@ -178,7 +187,7 @@ export function ReflectPage() {
                   type="button"
                   onClick={() => {
                     setActiveId(session.id);
-                    setTruncated(false);
+                    setCoverage(null);
                   }}
                   className="min-w-0 flex-1 text-left"
                 >
@@ -243,11 +252,6 @@ export function ReflectPage() {
                 >
                   {scopeLabel(scope)} · change
                 </button>
-                {truncated ? (
-                  <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
-                    Context truncated to fit
-                  </span>
-                ) : null}
               </div>
 
               <div className="flex-1 space-y-4 overflow-y-auto px-5 py-5">
@@ -269,6 +273,7 @@ export function ReflectPage() {
                   </div>
                 ))}
                 {pending ? <p className="text-sm text-muted-foreground">Thinking…</p> : null}
+                {coverage?.truncated ? <CoverageNote {...coverage} /> : null}
                 <div ref={bottomRef} />
               </div>
 
