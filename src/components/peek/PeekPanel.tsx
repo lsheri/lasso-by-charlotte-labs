@@ -10,7 +10,9 @@ import { ThreadBody } from "@/components/peek/ThreadBody";
 import { VersionHistory } from "@/components/peek/VersionHistory";
 import { WhatFedThis } from "@/components/peek/WhatFedThis";
 import { DraftDecisionsButton } from "@/components/decisions/DraftDecisionsButton";
+import { MarkBriefDialog } from "@/components/work/MarkBriefDialog";
 import { TypeChip, TypeIcon } from "@/components/work/TypeIcon";
+import { isBriefItem } from "@/lib/brief-shared";
 import { vendorLabel } from "@/lib/conversation-shared";
 import { isDeliverableType } from "@/lib/lineage-shared";
 import { peekFormat } from "@/lib/peek-format";
@@ -100,6 +102,7 @@ export function PeekPanel({
   const fetchUrl = useServerFn(getWorkFileUrl);
   const items = entry ? entryItems(entry) : [];
   const [tab, setTab] = useState(0);
+  const [briefOpen, setBriefOpen] = useState(false);
 
   useEffect(() => {
     if (!entry) return;
@@ -150,6 +153,11 @@ export function PeekPanel({
             {active.title}
           </h2>
         </div>
+        {isBriefItem(active) ? (
+          <p className="mt-2">
+            <Chip tone="accent">The brief</Chip>
+          </p>
+        ) : null}
         <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
           {sourceLabel(active.source)} · {formatDate(effectiveWorkDate(active))}
         </p>
@@ -204,6 +212,11 @@ export function PeekPanel({
         {canEdit && onMakePrivate && active.visibility !== "private" ? (
           <FooterAction onClick={() => onMakePrivate(active)}>Make private</FooterAction>
         ) : null}
+        {canEdit ? (
+          <FooterAction onClick={() => setBriefOpen(true)}>
+            {isBriefItem(active) ? "Change what this briefs" : "Mark as the brief"}
+          </FooterAction>
+        ) : null}
         {canEdit && ["ai_thread", "document", "deck", "sheet"].includes(active.type) ? (
           <DraftDecisionsButton workItemId={active.id} />
         ) : null}
@@ -227,6 +240,7 @@ export function PeekPanel({
           ) : null}
         </div>
       </footer>
+      <MarkBriefDialog item={active} open={briefOpen} onOpenChange={setBriefOpen} />
     </SlideOver>
   );
 }

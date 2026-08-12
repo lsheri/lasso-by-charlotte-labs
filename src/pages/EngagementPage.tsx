@@ -8,6 +8,7 @@ import { EngagementLineage } from "@/components/peek/EngagementLineage";
 import { OneOnOneBrief } from "@/components/oneonone/OneOnOneBrief";
 import { EditEngagementDialog } from "@/components/engagements/EditEngagementDialog";
 import { EditTaskDialog } from "@/components/engagements/EditTaskDialog";
+import { EngagementBriefSection } from "@/components/engagements/EngagementBriefSection";
 import { InviteDialog } from "@/components/invites/InviteDialog";
 import { SubjectCoachingSection } from "@/components/coaching/SubjectCoachingSection";
 import { ReflectDock } from "@/components/reflect/ReflectDock";
@@ -173,6 +174,18 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
           </div>
         ) : null}
       </header>
+
+      {profile && profile.role !== "coach" ? (
+        <EngagementBriefSection
+          engagementId={engagementId}
+          profileId={profile.id}
+          orgId={profile.org_id}
+          taskIds={(tasksQuery.data ?? []).map((task) => task.id)}
+          hasMappedWork={(tasksQuery.data ?? []).some(
+            (task) => (task.work_item_tasks ?? []).length > 0,
+          )}
+        />
+      ) : null}
 
       <section>
         <h2 className="micro-label">Tasks</h2>

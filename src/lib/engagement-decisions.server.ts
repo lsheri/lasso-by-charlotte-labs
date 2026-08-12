@@ -4,6 +4,7 @@ import type { Database } from "@/integrations/supabase/types";
 
 import { ITEM_TEXT_COLUMNS, ensureExtract, pullItemText } from "./extract.server";
 import type { ClassifiableItem } from "./extract.server";
+import { loadBriefContext } from "./brief.server";
 
 type Db = SupabaseClient<Database>;
 
@@ -40,6 +41,12 @@ export async function buildEngagementCorpus(
     .select("code, title, client_label, brief, term_label, outcome")
     .eq("id", engagementId)
     .maybeSingle();
+
+  // Tier 0: the marked brief, in full, above everything else.
+  const briefContext = await loadBriefContext(supabase, ownerId, {
+    mode: "engagements",
+    ids: [engagementId],
+  });
 
   const { data: tasks } = await supabase
     .from("tasks")
@@ -200,7 +207,7 @@ export async function buildEngagementCorpus(
   const blocks = items.map((item) => blockFor.get(item.id)!).filter(Boolean);
 
   return {
-    prompt: [header, ...blocks].join("\n\n---\n\n"),
+    prompt: [briefContext.block, header, ...blocks].join("\n\n---\n\n"),
     sources,
   };
 }

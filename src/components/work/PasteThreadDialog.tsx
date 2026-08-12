@@ -22,7 +22,13 @@ import { logEvent } from "@/lib/telemetry";
 const SOURCES = ["chatgpt", "claude", "gemini", "other"] as const;
 type Source = (typeof SOURCES)[number];
 
-export function PasteThreadDialog({ trigger }: { trigger: React.ReactNode }) {
+export function PasteThreadDialog({
+  trigger,
+  onCaptured,
+}: {
+  trigger: React.ReactNode;
+  onCaptured?: ((workItemIds: string[]) => void | Promise<void>) | undefined;
+}) {
   const ensureExtracts = useServerFn(ensureExtractsFn);
   const { data: profile } = useProfile();
   const queryClient = useQueryClient();
@@ -95,6 +101,7 @@ export function PasteThreadDialog({ trigger }: { trigger: React.ReactNode }) {
     });
 
     await queryClient.invalidateQueries({ queryKey: ["work-items"] });
+    if (onCaptured) await onCaptured([item.id]);
     setPending(false);
     setOpen(false);
     setRaw("");
