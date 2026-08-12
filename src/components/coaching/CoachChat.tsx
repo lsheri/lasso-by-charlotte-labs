@@ -3,11 +3,18 @@ import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { MarkdownMessage } from "@/components/markdown/MarkdownMessage";
+import { CoverageNote } from "@/components/reflect/CoverageNote";
 import { Input } from "@/components/ui/input";
 import { useProfile } from "@/hooks/use-profile";
 import { askCoachChat } from "@/lib/coach-chat.functions";
 
-type Exchange = { question: string; answer: string };
+type Exchange = {
+  question: string;
+  answer: string;
+  truncated: boolean;
+  fullCount: number;
+  summaryCount: number;
+};
 
 export function CoachChat({
   subjectId,
@@ -40,7 +47,16 @@ export function CoachChat({
           question: trimmed,
         },
       });
-      setExchanges((prev) => [...prev, { question: trimmed, answer: result.answer }]);
+      setExchanges((prev) => [
+        ...prev,
+        {
+          question: trimmed,
+          answer: result.answer,
+          truncated: result.truncated,
+          fullCount: result.fullCount,
+          summaryCount: result.summaryCount,
+        },
+      ]);
       setQuestion("");
     } catch (e) {
       setError((e as Error).message);
@@ -65,6 +81,12 @@ export function CoachChat({
               content={exchange.answer}
               className="border-l-2 border-accent pl-4"
             />
+            {exchange.truncated ? (
+              <CoverageNote
+                fullCount={exchange.fullCount}
+                summaryCount={exchange.summaryCount}
+              />
+            ) : null}
           </div>
         ))}
       </div>

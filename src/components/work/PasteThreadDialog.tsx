@@ -1,4 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -15,12 +16,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { useProfile } from "@/hooks/use-profile";
 import { supabase } from "@/integrations/supabase/client";
 import { parseThread, sha256 } from "@/lib/parse-thread";
+import { ensureExtractsFn } from "@/lib/extract.functions";
 import { logEvent } from "@/lib/telemetry";
 
 const SOURCES = ["chatgpt", "claude", "gemini", "other"] as const;
 type Source = (typeof SOURCES)[number];
 
 export function PasteThreadDialog({ trigger }: { trigger: React.ReactNode }) {
+  const ensureExtracts = useServerFn(ensureExtractsFn);
   const { data: profile } = useProfile();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
@@ -82,6 +85,8 @@ export function PasteThreadDialog({ trigger }: { trigger: React.ReactNode }) {
       setPending(false);
       return;
     }
+
+    void ensureExtracts({ data: { work_item_ids: [item.id] } }).catch(() => {});
 
     logEvent("workitem.captured", profile.org_id, {
       channel: "paste",

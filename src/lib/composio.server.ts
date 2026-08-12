@@ -152,11 +152,60 @@ export function connectedAccountIdentity(account: Record<string, unknown>): stri
   return null;
 }
 
-/** Bytes as Drive serves them. Google-native docs (which have no binary form)
- * come back as an exported PDF; everything else is byte-true. */
+/**
+ * Google-native docs have no binary form, so they must be exported. We export
+ * them as text shapes the context layer and the peek panel can both read; PDF
+ * is a last resort for slides only. Non-Google binaries are byte-true.
+ */
+const GOOGLE_EXPORTS: Record<string, { mime: string; ext: string }[]> = {
+  "application/vnd.google-apps.document": [
+    { mime: "text/markdown", ext: "md" },
+    { mime: "text/plain", ext: "txt" },
+  ],
+  "application/vnd.google-apps.spreadsheet": [{ mime: "text/csv", ext: "csv" }],
+  "application/vnd.google-apps.presentation": [
+    { mime: "text/plain", ext: "txt" },
+    { mime: "application/pdf", ext: "pdf" },
+  ],
+};
+
+function withExtension(name: string, ext: string): string {
+  const base = name.replace(/\.[a-z0-9]{1,6}$/i, "");
+  return `${base}.${ext}`;
+}
+
+async function exportGoogleDoc(
+  entityId: string,
+  fileId: string,
+  sourceMime: string,
+  name: string,
+): Promise<{ bytes: Uint8Array; mimeType: string; name: string } | null> {
+  for (const target of GOOGLE_EXPORTS[sourceMime] ?? []) {
+    try {
+      const data = await run("GOOGLEDRIVE_DOWNLOAD_FILE", entityId, {
+        file_id: fileId,
+        mime_type: target.mime,
+      });
+      const file = data["file"] as { s3url?: string; name?: string } | undefined;
+      if (!file?.s3url) continue;
+      const response = await fetch(file.s3url);
+      if (!response.ok) continue;
+      return {
+        bytes: new Uint8Array(await response.arrayBuffer()),
+        mimeType: target.mime,
+        name: withExtension(file.name ?? name, target.ext),
+      };
+    } catch {
+      // Try the next export shape rather than failing the import.
+    }
+  }
+  return null;
+}
+
 export async function fetchDriveFileBytes(
   entityId: string,
   fileId: string,
+  sourceMime?: string | null,
 ): Promise<{
   bytes: Uint8Array;
   mimeType: string;
@@ -166,13 +215,22 @@ export async function fetchDriveFileBytes(
   const data = await run("GOOGLEDRIVE_PARSE_FILE", entityId, { file_id: fileId });
   const file = data["file"] as { s3url?: string; mimetype?: string; name?: string } | undefined;
   if (!file?.s3url) return null;
+  const webViewLink = (data["display_url"] as string | undefined) ?? null;
+  const name = file.name ?? "Untitled file";
+
+  const native = sourceMime ?? null;
+  if (native && GOOGLE_EXPORTS[native]) {
+    const exported = await exportGoogleDoc(entityId, fileId, native, name);
+    if (exported) return { ...exported, webViewLink };
+  }
+
   const response = await fetch(file.s3url);
   if (!response.ok) return null;
   return {
     bytes: new Uint8Array(await response.arrayBuffer()),
     mimeType: file.mimetype ?? "application/octet-stream",
-    name: file.name ?? "Untitled file",
-    webViewLink: (data["display_url"] as string | undefined) ?? null,
+    name,
+    webViewLink,
   };
 }
 

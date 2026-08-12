@@ -127,11 +127,13 @@ export function RenderedContent({
   }
 
   if (shape.kind === "pdf") {
+    // An empty sandbox blocks Chromium's built-in PDF viewer entirely. The
+    // signed URL is cross-origin, so scripts inside the frame cannot reach us.
     return (
       <iframe
         src={url}
         title={item.title}
-        sandbox=""
+        sandbox="allow-scripts"
         className="h-[70vh] w-full rounded-[var(--radius)] border border-border bg-card"
       />
     );

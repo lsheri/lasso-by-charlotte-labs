@@ -4,6 +4,7 @@ import { Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 
 import { SlideOver } from "@/components/peek/SlideOver";
+import { CoverageNote } from "@/components/reflect/CoverageNote";
 import { MarkdownMessage } from "@/components/markdown/MarkdownMessage";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,6 +14,7 @@ import { logEvent } from "@/lib/telemetry";
 import type { ContextScope } from "@/lib/reflect-shared";
 
 type MessageRow = { id: number; role: string; content: string };
+
 
 /**
  * Reflect, docked beside an engagement. Same machinery as /reflect — the only
@@ -41,7 +43,11 @@ export function ReflectDock({
   const [draft, setDraft] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [truncated, setTruncated] = useState(false);
+  const [coverage, setCoverage] = useState<{
+    truncated: boolean;
+    fullCount: number;
+    summaryCount: number;
+  } | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const { data: messages } = useQuery({
@@ -93,9 +99,15 @@ export function ReflectDock({
     try {
       const id = await ensureSession();
       if (!id) return;
-      const result = await send({ data: { session_id: id, message, profile_id: profileId } });
+      const result = await send({
+        data: { session_id: id, message, profile_id: profileId, surface: "ask_lasso" },
+      });
       setDraft("");
-      setTruncated(result.truncated);
+      setCoverage({
+        truncated: result.truncated,
+        fullCount: result.fullCount,
+        summaryCount: result.summaryCount,
+      });
       await queryClient.invalidateQueries({ queryKey: ["reflect-messages", id] });
       await queryClient.invalidateQueries({ queryKey: ["reflect-sessions"] });
     } catch (e) {
@@ -119,11 +131,6 @@ export function ReflectDock({
           <span className="rounded-full bg-accent-soft px-3 py-1 font-mono text-[11px] uppercase tracking-[0.08em] text-accent-deep">
             This engagement
           </span>
-          {truncated ? (
-            <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
-              Context truncated to fit
-            </span>
-          ) : null}
         </div>
       </header>
 
@@ -146,6 +153,7 @@ export function ReflectDock({
           </div>
         ))}
         {pending ? <p className="text-sm text-muted-foreground">Thinking…</p> : null}
+        {coverage?.truncated ? <CoverageNote {...coverage} /> : null}
         <div ref={bottomRef} />
       </div>
 

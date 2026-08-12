@@ -64,6 +64,34 @@ async function mirrorToPostHog(
 }
 
 /**
+ * Anonymous marketing views have no org and no user, so they get a constant
+ * tenant bucket and a salted per-view actor hash. Still content-free.
+ */
+export async function recordAnonymousEvent(
+  eventType: TelemetryEvent,
+  viewId: string,
+  dims: TelemetryDims = {},
+): Promise<void> {
+  try {
+    const tenantHash = await sha256Hex("anonymous");
+    const actorHash = await computeActorHash(`anon:${viewId}`);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.from("events").insert({
+      event_type: eventType,
+      schema_version: "v1",
+      tenant_hash: tenantHash,
+      actor_hash: actorHash,
+      dims,
+      payload: {},
+    });
+    if (error) console.error(`[telemetry] anonymous insert failed for ${eventType}:`, error.message);
+    await mirrorToPostHog(eventType, actorHash, tenantHash, dims);
+  } catch (e) {
+    console.error("[telemetry] recordAnonymousEvent failed:", (e as Error).message);
+  }
+}
+
+/**
  * The single write path for telemetry: the canonical events row plus the
  * content-free PostHog mirror. Never throws.
  */

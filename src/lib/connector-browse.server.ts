@@ -98,6 +98,7 @@ export async function importConnectorFiles(
     orgId: string;
     userId: string;
     ids: string[];
+    mimes?: Record<string, string> | null;
     folderName: string | null;
   },
 ): Promise<{ imported: number; skipped: number }> {
@@ -105,6 +106,7 @@ export async function importConnectorFiles(
     await import("@/lib/connector-import.server");
   const seen = await importedToolkitIds(supabase, args.profileId, args.toolkit);
   const idKey = TOOLKIT_ID_KEY[args.toolkit];
+  const newIds: string[] = [];
   let imported = 0;
   let skipped = 0;
 
@@ -126,7 +128,7 @@ export async function importConnectorFiles(
 
     if (args.toolkit === "googledrive") {
       const { fetchDriveFileBytes } = await import("@/lib/composio.server");
-      file = await fetchDriveFileBytes(args.profileId, id);
+      file = await fetchDriveFileBytes(args.profileId, id, args.mimes?.[id] ?? null);
     } else if (msAuth) {
       const { fetchMicrosoftFileBytes } = await import("@/lib/microsoft.server");
       file = await fetchMicrosoftFileBytes(args.toolkit, msAuth.entityId, id, "file");
@@ -158,11 +160,17 @@ export async function importConnectorFiles(
         web_view_link: file.webViewLink,
         ...(isTranscript ? { transcript_guess: true } : {}),
       },
-    });
+    })
+      .select("id")
+      .maybeSingle();
     if (insert.error) throw new Error(insert.error.message);
+    if (insert.data?.id) newIds.push(insert.data.id);
     seen.add(id);
     imported += 1;
   }
+
+  const { ensureExtracts } = await import("@/lib/extract.server");
+  await ensureExtracts(newIds);
 
   await captureEvents(supabase, {
     orgId: args.orgId,

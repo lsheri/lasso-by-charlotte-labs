@@ -341,6 +341,9 @@ async function pushThread(owner: Owner, args: Obj, id: unknown): Promise<Respons
   const { error: turnsError } = await supabaseAdmin.from("turns").insert(rows);
   if (turnsError) return rpcError(id, -32603, turnsError.message);
 
+  const { ensureExtracts } = await import("./extract.server");
+  await ensureExtracts([item.id]);
+
   await logPush(owner, { tool: "push_thread", source_ai: sourceAi });
   return textResult(
     id,
@@ -371,7 +374,7 @@ async function pushDocument(owner: Owner, args: Obj, id: unknown): Promise<Respo
   if (uploadError) return rpcError(id, -32603, uploadError.message);
 
   const hint = typeof args["engagement_hint"] === "string" ? args["engagement_hint"] : null;
-  const { error } = await supabaseAdmin.from("work_items").insert({
+  const { data: doc, error } = await supabaseAdmin.from("work_items").insert({
     owner_id: owner.profileId,
     org_id: owner.orgId,
     type: workTypeForFile(safe),
@@ -386,8 +389,13 @@ async function pushDocument(owner: Owner, args: Obj, id: unknown): Promise<Respo
     meta: hint
       ? { assistant_transcribed: true, engagement_hint: hint }
       : { assistant_transcribed: true },
-  });
+  })
+    .select("id")
+    .maybeSingle();
   if (error) return rpcError(id, -32603, error.message);
+
+  const { ensureExtracts } = await import("./extract.server");
+  if (doc?.id) await ensureExtracts([doc.id]);
 
   await logPush(owner, { tool: "push_document" });
   return textResult(id, `Saved '${title}' to Lasso (private, unmapped).`);
@@ -581,6 +589,7 @@ async function pushConversation(owner: Owner, args: Obj, id: unknown): Promise<R
 
   // ---- attachments (upsert by orig_conversation_id + title) ----------------
   let saved = 0;
+  const capturedIds: string[] = [threadId];
   const problems: string[] = [];
   if (attachments.length > 0 && !owner.userId) {
     problems.push("attachments need a signed-in workspace account");
@@ -631,12 +640,28 @@ async function pushConversation(owner: Owner, args: Obj, id: unknown): Promise<R
 
       const match = (existingAttachments ?? []).find((row) => row.title === attachment.title);
       const result = match
-        ? await supabaseAdmin.from("work_items").update(fields).eq("id", match.id)
-        : await supabaseAdmin.from("work_items").insert({ ...fields, visibility: "unmapped" });
+        ? await supabaseAdmin
+            .from("work_items")
+            .update(fields)
+            .eq("id", match.id)
+            .select("id")
+            .maybeSingle()
+        : await supabaseAdmin
+            .from("work_items")
+            .insert({ ...fields, visibility: "unmapped" })
+            .select("id")
+            .maybeSingle();
       if (result.error) problems.push(`'${attachment.title}': ${result.error.message}`);
-      else saved += 1;
+      else {
+        saved += 1;
+        if (match?.id) capturedIds.push(match.id);
+        else if (result.data?.id) capturedIds.push(result.data.id);
+      }
     }
   }
+
+  const { ensureExtracts } = await import("./extract.server");
+  await ensureExtracts(capturedIds);
 
   await recordEvent(supabaseAdmin, {
     eventType: "mcp.push",

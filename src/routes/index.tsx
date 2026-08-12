@@ -5,9 +5,8 @@ import { PublicHeader } from "@/components/layout/PublicHeader";
 import { LassoLogo } from "@/components/layout/LassoLogo";
 import { PrivacyToggleDemo } from "@/components/marketing/PrivacyToggleDemo";
 import { Button } from "@/components/ui/button";
-import { fetchProfile } from "@/hooks/use-profile";
 import { supabase } from "@/integrations/supabase/client";
-import { logEvent } from "@/lib/telemetry";
+import { recordAnonymousEventFn } from "@/lib/telemetry.functions";
 
 export const Route = createFileRoute("/")({
   ssr: false,
@@ -50,18 +49,14 @@ const TRUST_ITEMS: string[] = [
 ];
 
 function LandingPage() {
+  // Every real marketing visitor is anonymous, so this fires once per page
+  // view with no session and no org. Content-free, as always.
   useEffect(() => {
-    let cancelled = false;
-    void (async () => {
-      const { data } = await supabase.auth.getSession();
-      if (!data.session || cancelled) return;
-      const profile = await fetchProfile().catch(() => null);
-      if (!profile || cancelled) return;
-      logEvent("landing.viewed", profile.org_id, {});
-    })();
-    return () => {
-      cancelled = true;
-    };
+    void recordAnonymousEventFn({
+      data: { event_type: "landing.viewed", view_id: crypto.randomUUID(), dims: {} },
+    }).catch(() => {
+      /* telemetry must never surface to the user */
+    });
   }, []);
 
   return (

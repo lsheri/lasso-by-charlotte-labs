@@ -15,6 +15,8 @@ type BrowseInput = {
 type ImportInput = {
   profile_id?: string | undefined;
   ids: string[];
+  /** Source mime per id, so Google-native docs can be exported as text. */
+  mimes?: Record<string, string> | undefined;
   folder_name?: string | undefined;
 };
 
@@ -32,6 +34,7 @@ function validateImport(input: ImportInput): ImportInput {
   return {
     profile_id: input.profile_id,
     ids: input.ids.slice(0, 100),
+    mimes: input.mimes,
     folder_name: input.folder_name,
   };
 }
@@ -95,6 +98,7 @@ export const importConnectorItems = createServerFn({ method: "POST" })
       orgId: profile.org_id,
       userId,
       ids: data.ids,
+      mimes: data.mimes ?? null,
       folderName: data.folder_name ?? null,
     });
   });
@@ -153,6 +157,7 @@ export const importGranolaMeetings = createServerFn({ method: "POST" })
 
     const key = await requireGranolaKey(profile.id);
     const seen = await importedGranolaIds(supabase, profile.id);
+    const newIds: string[] = [];
     let imported = 0;
     let skipped = 0;
 
@@ -189,11 +194,17 @@ export const importGranolaMeetings = createServerFn({ method: "POST" })
         created_at_source: note.date,
         source_meta: { filename: `${note.title}.md`, mime_type: "text/markdown" },
         meta: { granola_id: id },
-      });
+      })
+        .select("id")
+        .maybeSingle();
       if (insert.error) throw new Error(insert.error.message);
+      if (insert.data?.id) newIds.push(insert.data.id);
       seen.add(id);
       imported += 1;
     }
+
+    const { ensureExtracts } = await import("@/lib/extract.server");
+    await ensureExtracts(newIds);
 
     await captureEvents(supabase, {
       orgId: profile.org_id,
@@ -263,6 +274,7 @@ export const importGmailThreads = createServerFn({ method: "POST" })
     await requireConnected(supabase, profile.id, "gmail");
 
     const seen = await importedGmailThreadIds(supabase, profile.id);
+    const newIds: string[] = [];
     let imported = 0;
     let skipped = 0;
 
@@ -298,11 +310,17 @@ export const importGmailThreads = createServerFn({ method: "POST" })
         created_at_source: thread.date,
         source_meta: { filename: `${thread.subject}.md`, mime_type: "text/markdown" },
         meta: { gmail_thread_id: id },
-      });
+      })
+        .select("id")
+        .maybeSingle();
       if (insert.error) throw new Error(insert.error.message);
+      if (insert.data?.id) newIds.push(insert.data.id);
       seen.add(id);
       imported += 1;
     }
+
+    const { ensureExtracts } = await import("@/lib/extract.server");
+    await ensureExtracts(newIds);
 
     await captureEvents(supabase, {
       orgId: profile.org_id,
