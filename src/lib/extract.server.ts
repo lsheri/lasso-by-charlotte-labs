@@ -2,7 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/integrations/supabase/types";
 import { MODELS, chatComplete, orgNameFor, type AiMeta } from "@/lib/ai.server";
-import { reportAiHealth } from "@/lib/ai-health.server";
+import { logHealth } from "@/lib/health.server";
 import { getItemText, ITEM_TEXT_COLUMNS, type TextItem } from "@/lib/item-text.server";
 import { needsTextFetch, peekFormat } from "@/lib/peek-format";
 import type { WorkItemRow } from "@/lib/work-types";
@@ -112,13 +112,13 @@ async function generate(
       costUsd: completion.costUsd,
     };
   } catch (e) {
-    await reportAiHealth({
-      errorClass: "extract_failed",
+    void logHealth({
+      kind: "error",
       surface: "extract",
       orgId: meta.orgId,
-      orgName: meta.orgName,
       model: EXTRACT_MODEL,
-      note: (e as Error).message.slice(0, 120),
+      detail: (e as Error).message,
+      meta: { reason: "extract_failed" },
     });
     return { fields: null, tokensIn: 0, tokensOut: 0, costUsd: 0 };
   }
@@ -148,12 +148,13 @@ export async function prepareExtract(workItemId: string): Promise<PreparedExtrac
     .trim()
     .slice(0, MAX_SOURCE_CHARS);
   if (!text) {
-    await reportAiHealth({
-      errorClass: "extract_empty",
+    void logHealth({
+      kind: "empty_context",
       surface: "extract",
       orgId: item.org_id,
-      orgName: await orgNameFor(supabaseAdmin as unknown as Db, item.org_id),
-      note: "no readable text",
+      ownerId: item.owner_id,
+      detail: "no_readable_text",
+      meta: { source_chars: 0 },
     });
     return null;
   }
@@ -245,21 +246,13 @@ export async function ensureExtract(workItemId: string): Promise<boolean> {
 
 /**
  * Fire-and-forget from capture paths: awaited, but never allowed to fail them.
- * A single item is done inline so the person sees it straight away. A bulk
- * capture goes through the Batch API at half price, and anything the batch
- * refuses falls back to the inline path.
+ * Every extract runs through the normal synchronous API, so work captured in
+ * the morning is readable the same morning.
  */
 export async function ensureExtracts(ids: string[]): Promise<void> {
   if (ids.length <= 1) {
     for (const id of ids) await ensureExtract(id);
     return;
   }
-  try {
-    const { submitExtractBatch } = await import("./extract-batch.server");
-    const leftovers = await submitExtractBatch(ids);
-    for (const id of leftovers) await ensureExtract(id);
-  } catch (e) {
-    console.error("[extract] batch submit failed, running inline:", (e as Error).message);
-    for (const id of ids) await ensureExtract(id);
-  }
+  for (const id of ids) await ensureExtract(id);
 }

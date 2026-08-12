@@ -1,5 +1,5 @@
 import { chatComplete, type AiMeta, type ChatMessage, type ChatResult } from "@/lib/ai.server";
-import { reportAiHealth } from "@/lib/ai-health.server";
+import { logHealth } from "@/lib/health.server";
 import { longQuotes, unmatchedQuotes } from "@/lib/quote-check";
 
 /**
@@ -92,6 +92,14 @@ export async function guardQuotes(
   if (repaired && repaired.text) {
     repairs = 1;
     finalAnswer = repaired.finishReason === "length" ? answer : repaired.text;
+    void logHealth({
+      kind: "quote_repair",
+      surface: meta?.surface ?? "quote_repair",
+      orgId: meta?.orgId,
+      model: repaired.model,
+      detail: "quote_failed_verification_repaired",
+      meta: { spans_failed: failed.length },
+    });
   }
 
   // Refuse: whatever still cannot be verified is not rendered as a quote.
@@ -101,14 +109,13 @@ export async function guardQuotes(
     console.error("[quote-guard] suppressed unverifiable quotes", {
       count: stillFailing.length,
     });
-    await reportAiHealth({
-      errorClass: "quote_unverified",
+    void logHealth({
+      kind: "quote_refusal",
       surface: meta?.surface ?? "quote_repair",
       orgId: meta?.orgId,
-      orgName: meta?.orgName,
-      actorHash: meta?.actorHash,
       model: repaired?.model ?? null,
-      note: `${stillFailing.length} span(s) unverifiable after repair`,
+      detail: "quote_unverifiable_after_repair_withheld",
+      meta: { spans_withheld: stillFailing.length },
     });
   }
 
