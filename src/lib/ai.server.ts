@@ -361,41 +361,36 @@ export async function chatComplete(
   messages: ChatMessage[],
   options: ChatOptions = {},
 ): Promise<ChatResult> {
-  const model = options.model ?? MODELS[options.tier ?? "smart"];
+  let model = options.model ?? MODELS[options.tier ?? "smart"];
   const startedAt = Date.now();
 
-  let response: Response;
-  try {
-    response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      signal: AbortSignal.timeout(options.timeoutMs ?? DEFAULT_TIMEOUT_MS),
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey()}`,
-      },
-      body: JSON.stringify(buildBody(messages, model, options, false)),
-    });
-  } catch (e) {
-    const name = (e as Error).name;
+  let attempt = await sendRequest(model, messages, options, false);
+  const fallback = await fallbackModelFor(attempt, model, options);
+  if (fallback) {
+    model = fallback;
+    attempt = await sendRequest(model, messages, options, false);
+  }
+
+  if (!attempt.ok && attempt.kind === "fetch") {
+    const name = attempt.name;
     if (name === "TimeoutError" || name === "AbortError") {
       return await failed("timeout", model, startedAt, options.meta);
     }
     return await failed("model_error", model, startedAt, options.meta, name);
   }
-
-  if (!response.ok) {
-    const body = await response.text();
+  if (!attempt.ok) {
     return await failed(
-      classify(response.status, body),
+      classify(attempt.status, attempt.body),
       model,
       startedAt,
       options.meta,
-      providerMessage(body, response.status),
-      response.status,
+      providerMessage(attempt.body, attempt.status),
+      attempt.status,
     );
   }
+  const response = attempt.response;
 
-  const payload = (await response.json()) as {
+  type Payload = {
     choices?: {
       message?: {
         content?: string;
@@ -409,6 +404,20 @@ export async function chatComplete(
       prompt_tokens_details?: { cached_tokens?: number };
     };
   };
+  let payload: Payload;
+  try {
+    payload = (await response.json()) as Payload;
+  } catch {
+    // A 200 with a body we cannot parse is still a model request failure.
+    return await failed(
+      "model_error",
+      model,
+      startedAt,
+      options.meta,
+      "response_body_unparseable",
+      response.status,
+    );
+  }
   const choice = payload.choices?.[0];
   const tokensIn = payload.usage?.prompt_tokens ?? 0;
   const tokensOut = payload.usage?.completion_tokens ?? 0;
