@@ -205,3 +205,114 @@ export const importGranolaMeetings = createServerFn({ method: "POST" })
     });
     return { imported, skipped };
   });
+
+/** Gmail: label chips stand in for folders, plus Gmail query syntax passthrough. */
+export const browseGmailThreads = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(validateBrowse)
+  .handler(async ({ data, context }): Promise<PickerPage> => {
+    const { supabase, userId } = context;
+    const { resolveProfile } = await import("@/lib/profile-resolve");
+    const { requireConnected, importedGmailThreadIds } = await import(
+      "@/lib/connector-import.server"
+    );
+    const { listGmailLabels, listGmailThreads } = await import("@/lib/gmail.server");
+
+    const profile = await resolveProfile(supabase, userId, data.profile_id);
+    if (!profile) throw new Response("Forbidden", { status: 403 });
+    await requireConnected(supabase, profile.id, "gmail");
+
+    const labels = await listGmailLabels(profile.id);
+    const scope = data.folder_id ?? "in:inbox";
+    const term = data.search?.trim();
+    const query = [scope, term].filter(Boolean).join(" ");
+
+    const { threads, nextPageToken } = await listGmailThreads(profile.id, {
+      query,
+      pageToken: data.page_token ?? null,
+    });
+    const seen = await importedGmailThreadIds(supabase, profile.id);
+
+    return {
+      items: threads.map((thread) => ({
+        id: thread.id,
+        title: thread.subject,
+        subtitle: [thread.participants, thread.snippet].filter(Boolean).join(" — ") || null,
+        date: thread.date,
+        isFolder: false,
+        alreadyInLasso: seen.has(thread.id),
+        hint: null,
+      })),
+      nextPageToken,
+      unsupported:
+        threads.length === 0 && !data.page_token ? "No threads matched that view." : null,
+      labels,
+    };
+  });
+
+export const importGmailThreads = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(validateImport)
+  .handler(async ({ data, context }): Promise<{ imported: number; skipped: number }> => {
+    const { supabase, userId } = context;
+    const { resolveProfile } = await import("@/lib/profile-resolve");
+    const { requireConnected, importedGmailThreadIds, storeFile, captureEvents } = await import(
+      "@/lib/connector-import.server"
+    );
+    const { fetchGmailThread } = await import("@/lib/gmail.server");
+
+    const profile = await resolveProfile(supabase, userId, data.profile_id);
+    if (!profile) throw new Response("Forbidden", { status: 403 });
+    await requireConnected(supabase, profile.id, "gmail");
+
+    const seen = await importedGmailThreadIds(supabase, profile.id);
+    let imported = 0;
+    let skipped = 0;
+
+    for (const [index, id] of data.ids.entries()) {
+      if (seen.has(id)) {
+        skipped += 1;
+        continue;
+      }
+      if (index > 0) await new Promise((r) => setTimeout(r, 200));
+      const thread = await fetchGmailThread(profile.id, id);
+      if (!thread) {
+        skipped += 1;
+        continue;
+      }
+      const bytes = new TextEncoder().encode(thread.markdown);
+      const path = await storeFile(
+        userId,
+        `${thread.subject}.md`,
+        bytes,
+        "text/markdown; charset=utf-8",
+      );
+      const insert = await supabase.from("work_items").insert({
+        owner_id: profile.id,
+        org_id: profile.org_id,
+        type: "email",
+        source: "connector:gmail",
+        source_vendor: "gmail",
+        title: thread.subject,
+        visibility: "unmapped",
+        content_ref: path,
+        content_fidelity: "verbatim",
+        ts_precision: thread.date ? "source" : "capture",
+        created_at_source: thread.date,
+        source_meta: { filename: `${thread.subject}.md`, mime_type: "text/markdown" },
+        meta: { gmail_thread_id: id },
+      });
+      if (insert.error) throw new Error(insert.error.message);
+      seen.add(id);
+      imported += 1;
+    }
+
+    await captureEvents(supabase, {
+      orgId: profile.org_id,
+      userId,
+      toolkit: "gmail",
+      source: "gmail",
+      imported,
+    });
+    return { imported, skipped };
+  });
