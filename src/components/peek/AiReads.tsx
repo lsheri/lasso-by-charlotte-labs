@@ -40,9 +40,8 @@ function QuestionsAsked({ profileId }: { profileId: string }) {
   });
 
   if (!data || data.length === 0) return null;
-
   return (
-    <div className="mt-4">
+    <div className="mt-8 border-t border-border pt-4">
       <h3 className="micro-label">Questions asked about your work</h3>
       <ul className="mt-2 space-y-1.5">
         {data.map((row) => (
