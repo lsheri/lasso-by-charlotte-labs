@@ -7,15 +7,20 @@ function normalise(value: string): string {
     .replace(/[\u2018\u2019\u201B\u2032]/g, "'")
     .replace(/[\u201C\u201D\u201F\u2033]/g, '"')
     .replace(/[\u2013\u2014]/g, "-")
+    .replace(/[*_`~]/g, "")
     .replace(/\s+/g, " ")
     .trim()
     .toLowerCase();
 }
 
-/** Every quoted span longer than the floor, straight or curly, single or double. */
+/**
+ * Every COMPLETE quoted span longer than the floor. A dangling opening quote
+ * with no partner, which is what a cut-off answer leaves behind, is ignored:
+ * the verifier must never fire on our own truncation.
+ */
 export function longQuotes(answer: string): string[] {
   const found: string[] = [];
-  const patterns = [/"([^"]{40,})"/g, /\u201C([^\u201D]{40,})\u201D/g];
+  const patterns = [/"([^"\n]*)"/g, /\u201C([^\u201D]*)\u201D/g];
   for (const pattern of patterns) {
     for (const match of answer.matchAll(pattern)) {
       const span = (match[1] ?? "").trim();
@@ -25,8 +30,12 @@ export function longQuotes(answer: string): string[] {
   return found;
 }
 
-/** Quoted spans that do not appear in the context that was supplied. */
-export function unmatchedQuotes(answer: string, context: string): string[] {
+/**
+ * Quoted spans that do not appear in the context that was supplied. When the
+ * answer itself was cut short, no check on it is meaningful, so none is made.
+ */
+export function unmatchedQuotes(answer: string, context: string, cutOff = false): string[] {
+  if (cutOff) return [];
   const haystack = normalise(context);
   return longQuotes(answer).filter((quote) => !haystack.includes(normalise(quote)));
 }
@@ -38,5 +47,12 @@ export function quoteBucket(count: number): "0" | "1" | "2+" {
   return "2+";
 }
 
-export const UNMATCHED_QUOTE_NOTE =
-  "One or more quotes in this answer could not be matched to your stored work. Open the sources above to check.";
+/** Names what was not found, rather than warning in general. */
+export function unmatchedQuoteNote(count: number): string {
+  const subject = count === 1 ? "One quote" : `${count} quotes`;
+  const verb = count === 1 ? "could not be found" : "could not be found";
+  return `${subject} in this answer ${verb} in your stored work. Open What I read for this answer to check.`;
+}
+
+export const CUT_OFF_NOTE =
+  "This answer was cut off before it finished. Ask a narrower question, or ask me to continue.";
