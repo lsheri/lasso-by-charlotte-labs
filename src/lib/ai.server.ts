@@ -19,7 +19,14 @@ export type AiErrorClass =
  * between them. All calls are OpenAI, server side, with the owner's key.
  */
 
-export type ChatMessage = { role: "system" | "user" | "assistant"; content: string };
+export type ToolCall = { id: string; name: string; arguments: string };
+
+export type ChatMessage = {
+  role: "system" | "user" | "assistant" | "tool";
+  content: string;
+  tool_calls?: { id: string; type: "function"; function: { name: string; arguments: string } }[];
+  tool_call_id?: string;
+};
 
 /**
  * Two tiers, named here so the vendor or the model can change in one edit.
@@ -72,6 +79,8 @@ export type AiMeta = {
 export type ChatResult = {
   text: string;
   toolArgs: string | null;
+  /** Every tool call the model asked for, in order. */
+  toolCalls: ToolCall[];
   finishReason: "stop" | "length" | "tool_calls" | "other";
   model: string;
   tokensIn: number;
@@ -273,7 +282,10 @@ export async function chatComplete(
 
   const payload = (await response.json()) as {
     choices?: {
-      message?: { content?: string; tool_calls?: { function?: { arguments?: string } }[] };
+      message?: {
+        content?: string;
+        tool_calls?: { id?: string; function?: { name?: string; arguments?: string } }[];
+      };
       finish_reason?: string;
     }[];
     usage?: {
@@ -289,6 +301,11 @@ export async function chatComplete(
   const result: ChatResult = {
     text: stripEmDashes(choice?.message?.content?.trim() ?? ""),
     toolArgs: choice?.message?.tool_calls?.[0]?.function?.arguments ?? null,
+    toolCalls: (choice?.message?.tool_calls ?? []).map((call, index) => ({
+      id: call.id ?? `call_${index}`,
+      name: call.function?.name ?? "",
+      arguments: call.function?.arguments ?? "{}",
+    })),
     finishReason: normaliseFinish(choice?.finish_reason),
     model,
     tokensIn,
@@ -354,6 +371,8 @@ export async function streamChat(
   let tokensOut = 0;
   let cachedIn = 0;
   let interrupted = false;
+  // Tool calls arrive in fragments, keyed by index, and are reassembled here.
+  const toolParts = new Map<number, { id: string; name: string; arguments: string }>();
 
   try {
     for (;;) {
@@ -368,7 +387,17 @@ export async function streamChat(
         const data = line.slice(5).trim();
         if (!data || data === "[DONE]") continue;
         let event: {
-          choices?: { delta?: { content?: string }; finish_reason?: string }[];
+          choices?: {
+            delta?: {
+              content?: string;
+              tool_calls?: {
+                index?: number;
+                id?: string;
+                function?: { name?: string; arguments?: string };
+              }[];
+            };
+            finish_reason?: string;
+          }[];
           usage?: {
             prompt_tokens?: number;
             completion_tokens?: number;
@@ -384,6 +413,15 @@ export async function streamChat(
         if (delta) {
           text += delta;
           await onDelta(delta);
+        }
+        for (const part of event.choices?.[0]?.delta?.tool_calls ?? []) {
+          const index = part.index ?? 0;
+          const existing = toolParts.get(index) ?? { id: "", name: "", arguments: "" };
+          toolParts.set(index, {
+            id: part.id ?? existing.id,
+            name: part.function?.name ?? existing.name,
+            arguments: existing.arguments + (part.function?.arguments ?? ""),
+          });
         }
         if (event.choices?.[0]?.finish_reason) finish = event.choices[0].finish_reason;
         if (event.usage) {
@@ -409,7 +447,14 @@ export async function streamChat(
 
   const result: ChatResult = {
     text: stripEmDashes(text.trim()),
-    toolArgs: null,
+    toolArgs: [...toolParts.values()][0]?.arguments ?? null,
+    toolCalls: [...toolParts.entries()]
+      .sort((a, b) => a[0] - b[0])
+      .map(([index, call]) => ({
+        id: call.id || `call_${index}`,
+        name: call.name,
+        arguments: call.arguments || "{}",
+      })),
     finishReason: normaliseFinish(finish),
     model,
     tokensIn,
