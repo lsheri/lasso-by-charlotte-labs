@@ -150,6 +150,13 @@ export function ReflectPage() {
     title: e.title,
   }));
 
+  const readsDetail =
+    shape.kind === "engagement"
+      ? `the ${shape.itemCount} ${shape.itemCount === 1 ? "piece" : "pieces"} of work mapped into this engagement, oldest first`
+      : shape.kind === "item" && shape.scope === "deliverable"
+        ? "this piece of work, the conversations linked to it, and the brief when there is one"
+        : "this conversation only, read in full";
+
   /** The chips row, identical before and during a session. */
   const chipsRow = (
     <AnalysisChips
@@ -186,13 +193,6 @@ export function ReflectPage() {
       ) : null}
     </div>
   );
-
-  const readsDetail =
-    shape.kind === "engagement"
-      ? `the ${shape.itemCount} ${shape.itemCount === 1 ? "piece" : "pieces"} of work mapped into this engagement, oldest first`
-      : shape.kind === "item" && shape.scope === "deliverable"
-        ? "this piece of work, the conversations linked to it, and the brief when there is one"
-        : "this conversation only, read in full";
 
   async function newSession(withScope: ContextScope = DEFAULT_SCOPE) {
     if (!profile) return;
