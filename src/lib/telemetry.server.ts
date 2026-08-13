@@ -25,7 +25,7 @@ export async function computeActorHash(userId: string | null | undefined): Promi
 
 /** Content-free mirror: hashes and dimensions only. Awaited so the edge runtime
  * does not cancel the request when the handler returns. Never throws. */
-async function mirrorToPostHog(
+export async function mirrorToPostHog(
   eventType: TelemetryEvent,
   actorHash: string | null,
   tenantHash: string,
