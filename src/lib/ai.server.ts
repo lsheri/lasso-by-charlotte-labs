@@ -83,6 +83,9 @@ export function stripEmDashes(text: string): string {
 
 export type AiMeta = {
   surface: string;
+  /** Present only where the caller has an authenticated identity to attribute. */
+  userId?: string | null | undefined;
+  profileId?: string | null | undefined;
   orgId?: string | null | undefined;
   orgName?: string | null | undefined;
   actorHash?: string | null | undefined;
@@ -346,6 +349,20 @@ async function fallbackModelFor(
       origin_surface: options.meta?.surface ?? "unknown",
     },
   });
+  // The canonical record of a substitution, when the caller carries identity.
+  if (options.meta?.userId) {
+    try {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { recordEventV2 } = await import("./telemetry-v2.server");
+      await recordEventV2(supabaseAdmin, options.meta.userId, {
+        eventName: "model.substituted",
+        props: { requested_tier: tier, served_model: fallback },
+        profileId: options.meta.profileId ?? null,
+      });
+    } catch {
+      // Plumbing. A substitution is never worth an error in front of someone.
+    }
+  }
   return fallback;
 }
 
@@ -612,7 +629,12 @@ export async function orgNameFor(
 /** Org name and hashed actor for reporting. Never a raw user id, never a name. */
 export async function resolveAiMeta(
   supabase: SupabaseClient<Database>,
-  input: { surface: string; orgId: string; userId?: string | null | undefined },
+  input: {
+    surface: string;
+    orgId: string;
+    userId?: string | null | undefined;
+    profileId?: string | null | undefined;
+  },
 ): Promise<AiMeta> {
   const orgName = await orgNameFor(supabase, input.orgId);
   const { computeActorHash } = await import("./telemetry.server");
@@ -620,6 +642,8 @@ export async function resolveAiMeta(
     surface: input.surface,
     orgId: input.orgId,
     orgName,
+    userId: input.userId ?? null,
+    profileId: input.profileId ?? null,
     actorHash: await computeActorHash(input.userId),
   };
 }

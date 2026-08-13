@@ -178,6 +178,12 @@ export async function runReflectTurn(
     });
 
     const { quoteBucket: qb } = await import("./quote-check");
+    const { recordEventV2: recV2 } = await import("./telemetry-v2.server");
+    await recV2(supabase, userId, {
+      eventName: "reflection.completed",
+      props: { surface, message_count: run.rounds },
+      profileId: profile.id,
+    });
     const { recordEvent: record } = await import("./telemetry.server");
     await record(supabase, {
       eventType: "reflect.message_sent",

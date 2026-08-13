@@ -74,6 +74,28 @@ export async function classifyQuestionIntent(
       workItemId: input.workItemId ?? null,
       email: input.email ?? null,
     });
+
+    // The same classification, kept as a fact row so questions can be studied
+    // as practice over time. Enums and a length only: never the question text.
+    const { data: profileRow } = await supabase
+      .from("profiles")
+      .select("org_id")
+      .eq("id", input.profileId)
+      .maybeSingle();
+    if (profileRow?.org_id) {
+      const { writeQuestionFact } = await import("./facts.server");
+      await writeQuestionFact(
+        { supabase, orgId: profileRow.org_id, profileId: input.profileId },
+        {
+          surface: input.scopeMode === "engagements" ? "reflect_engagement" : "reflect",
+          intentClass: intent,
+          target,
+          stage,
+          qChars: input.question.length,
+          questionText: input.question,
+        },
+      );
+    }
   } catch {
     // Enrichment only. No health row, no user-visible effect.
   }

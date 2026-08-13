@@ -15,6 +15,7 @@ import { useProfile } from "@/hooks/use-profile";
 import { supabase } from "@/integrations/supabase/client";
 import { briefScopeOf, type BriefScope } from "@/lib/brief-shared";
 import { logEvent } from "@/lib/telemetry";
+import { logV2 } from "@/lib/telemetry-v2";
 import type { WorkItemRow } from "@/lib/work-types";
 
 type TaskRow = { id: string; name: string; engagement_id: string };
@@ -72,6 +73,9 @@ export function MarkBriefDialog({
       logEvent(scope ? "brief.marked" : "brief.cleared", profile.org_id, {
         scope_type: scope?.type ?? current?.type ?? "none",
       });
+      if (scope) {
+        logV2("brief.linked", { scope: scope.type }, { profileId: profile.id, workItemId: item.id });
+      }
       await invalidate();
       toast.success(scope ? "Marked as the brief." : "Brief marking removed.");
       onOpenChange(false);

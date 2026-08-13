@@ -8,6 +8,7 @@ import { useProfile } from "@/hooks/use-profile";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureExtractsFn } from "@/lib/extract.functions";
 import { logEvent } from "@/lib/telemetry";
+import { logV2 } from "@/lib/telemetry-v2";
 import { workTypeForFile } from "@/lib/work-types";
 
 export function UploadFilesButton({
@@ -78,6 +79,18 @@ export function UploadFilesButton({
         type,
         source: "upload",
       });
+      logV2(
+        "work_item.captured",
+        { item_type: type, channel: "upload", item_count: 1 },
+        { profileId: profile.id, workItemId: created?.id },
+      );
+      if (type === "document" || type === "deck" || type === "sheet") {
+        logV2(
+          "artifact.captured",
+          { artifact_type: type, channel: "upload" },
+          { profileId: profile.id, workItemId: created?.id },
+        );
+      }
     }
 
     if (capturedIds.length > 0) {

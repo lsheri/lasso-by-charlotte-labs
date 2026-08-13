@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Sparkle } from "lucide-react";
 import { useState } from "react";
+import { logV2 } from "@/lib/telemetry-v2";
 import { toast } from "sonner";
 
 import { SuggestDot } from "@/components/common/Suggested";
@@ -108,7 +109,15 @@ function ContributorRow({
  * prompts behind it, verbatim. Drafts wear the suggestion treatment, because
  * Lasso proposed them and a person decides.
  */
-export function WhatFedThis({ workItemId, canEdit }: { workItemId: string; canEdit: boolean }) {
+export function WhatFedThis({
+  workItemId,
+  itemType,
+  canEdit,
+}: {
+  workItemId: string;
+  itemType: WorkType;
+  canEdit: boolean;
+}) {
   const { data: profile } = useProfile();
   const load = useServerFn(getDeliverableEvidence);
   const run = useServerFn(draftLineage);
@@ -160,6 +169,11 @@ export function WhatFedThis({ workItemId, canEdit }: { workItemId: string; canEd
 
   function evidenceOpened(surface: string) {
     if (!profile) return;
+    logV2(
+      "evidence.opened",
+      { surface, item_type: itemType },
+      { profileId: profile.id, workItemId },
+    );
     void track({
       data: { event_type: "evidence.opened", org_id: profile.org_id, dims: { surface } },
     }).catch(() => {});

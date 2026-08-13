@@ -12,6 +12,7 @@ import { useProfile } from "@/hooks/use-profile";
 import { supabase } from "@/integrations/supabase/client";
 import { detachEpisodeItems, syncEpisodeForMapping } from "@/lib/episodes.functions";
 import { logEvent } from "@/lib/telemetry";
+import { captureChannelOf, logV2 } from "@/lib/telemetry-v2";
 import type { WorkItemRow } from "@/lib/work-types";
 
 type TaskRow = { id: string; name: string };
@@ -96,6 +97,15 @@ export function MapDialog({
 
     for (const target of targets) {
       logEvent("workitem.mapped", profile.org_id, { type: target.type, source: target.source });
+      logV2(
+        "work_item.mapped",
+        {
+          item_type: target.type,
+          channel: captureChannelOf(target.source),
+          bulk: targets.length,
+        },
+        { profileId: profile.id, workItemId: target.id },
+      );
     }
     await queryClient.invalidateQueries({ queryKey: ["work-items"] });
     await queryClient.invalidateQueries({ queryKey: ["engagement"] });

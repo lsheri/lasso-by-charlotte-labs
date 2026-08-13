@@ -181,12 +181,26 @@ export const startAnalysis = createServerFn({ method: "POST" })
             suppressed: 0,
           }),
         });
+        const { recordEventV2 } = await import("./telemetry-v2.server");
+        await recordEventV2(supabase, userId, {
+          eventName: "analysis.failed",
+          props: { preset: presetId, scope: scopeType, reason_class: errorClass },
+          profileId: profile?.id ?? null,
+        });
       } catch {
         // Telemetry failure must not expose an internal error to the person.
       }
       throw new Error("That analysis could not start. Try again.");
     }
     const runId = run.id;
+    {
+      const { recordEventV2 } = await import("./telemetry-v2.server");
+      await recordEventV2(supabase, userId, {
+        eventName: "analysis.started",
+        props: { preset: presetId, scope: scopeType },
+        profileId: profile.id,
+      });
+    }
     let costSoFar = 0;
     let itemsReadSoFar = 0;
     let claimsSoFar = 0;
@@ -220,6 +234,12 @@ export const startAnalysis = createServerFn({ method: "POST" })
           orgId: profileOrgId,
           userId,
           dims: { preset: presetId, reason_class: reason },
+        });
+        const { recordEventV2 } = await import("./telemetry-v2.server");
+        await recordEventV2(supabase, userId, {
+          eventName: "analysis.failed",
+          props: { preset: presetId, scope: scopeType, reason_class: reason.slice(0, 48) },
+          profileId: profile?.id ?? null,
         });
       } catch {
         // Telemetry failure must not replace the analysis error.
@@ -308,6 +328,30 @@ export const startAnalysis = createServerFn({ method: "POST" })
             suppressed: 0,
           }),
         });
+
+        const { recordEventV2 } = await import("./telemetry-v2.server");
+        await recordEventV2(supabase, userId, {
+          eventName: "analysis.completed",
+          props: {
+            preset: preset.id,
+            scope: scopeType,
+            items_read: lineageItems,
+            claims_rendered: rendered.considered,
+            suppressed: 0,
+          },
+          profileId: profile.id,
+        });
+        const { writeAnalysisFinding } = await import("./facts.server");
+        await writeAnalysisFinding(
+          { supabase, orgId: profile.org_id, profileId: profile.id },
+          {
+            analysisRunId: runId,
+            presetId: preset.id,
+            presetVersion: "v1",
+            scope: scopeType,
+            evidenceCount: lineageItems,
+          },
+        );
 
         return {
           run_id: runId,
@@ -421,6 +465,31 @@ export const startAnalysis = createServerFn({ method: "POST" })
           tokens_in_bucket: tokensBucket(tokensIn),
         },
       });
+
+      const { recordEventV2 } = await import("./telemetry-v2.server");
+      await recordEventV2(supabase, userId, {
+        eventName: "analysis.completed",
+        props: {
+          preset: preset.id,
+          scope: scopeType,
+          items_read: itemsRead,
+          claims_rendered: guarded.claims,
+          suppressed: guarded.suppressed,
+        },
+        profileId: profile.id,
+      });
+      const { writeAnalysisFinding } = await import("./facts.server");
+      await writeAnalysisFinding(
+        { supabase, orgId: profile.org_id, profileId: profile.id },
+        {
+          analysisRunId: runId,
+          presetId: preset.id,
+          presetVersion: "v1",
+          scope: scopeType,
+          evidenceCount: itemsRead,
+          model: completion.model ?? null,
+        },
+      );
 
       return {
         run_id: runId,

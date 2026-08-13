@@ -11,10 +11,12 @@ export function FindingLabel({
   preset,
   claims,
   profileId,
+  runId,
 }: {
   preset: string;
   claims: number;
   profileId?: string | undefined;
+  runId?: string | undefined;
 }) {
   const send = useServerFn(labelFinding);
   const [done, setDone] = useState(false);
@@ -24,7 +26,7 @@ export function FindingLabel({
   function tap(label: "confirmed" | "rejected") {
     setDone(true);
     void send({
-      data: { preset, label, claims_rendered: claims, profile_id: profileId },
+      data: { preset, label, claims_rendered: claims, profile_id: profileId, run_id: runId },
     }).catch(() => {
       /* a label is never worth an error in front of someone */
     });

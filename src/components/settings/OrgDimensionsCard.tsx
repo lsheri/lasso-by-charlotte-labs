@@ -1,5 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
+import { logV2 } from "@/lib/telemetry-v2";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -14,7 +15,7 @@ import {
 import { useProfile } from "@/hooks/use-profile";
 import { supabase } from "@/integrations/supabase/client";
 
-const ORG_MODES = ["consultancy", "in_house", "agency", "education", "other"];
+const ORG_MODES = ["corporate", "education"];
 const INDUSTRIES = [
   "Professional services",
   "Technology",
@@ -98,6 +99,11 @@ export function OrgDimensionsCard() {
     setPending(false);
     if (error) return void toast.error(error.message);
     await queryClient.invalidateQueries({ queryKey: ["org-dimensions", profile.org_id] });
+    logV2("organization.segment_updated", {
+      fields_set: [form.org_mode, form.industry, form.size_band, form.country, form.ai_maturity].filter(
+        (v) => Boolean(v),
+      ).length,
+    }, { profileId: profile.id });
     toast.success("Workspace details saved");
   }
 

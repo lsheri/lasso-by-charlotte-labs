@@ -1,3 +1,4 @@
+import { DataUseCard } from "@/components/settings/DataUseCard";
 import { NamingConventionsCard } from "@/components/settings/NamingConventionsCard";
 import { OrgDimensionsCard } from "@/components/settings/OrgDimensionsCard";
 import { YourWorkCard } from "@/components/settings/YourWorkCard";
@@ -27,6 +28,7 @@ export function SettingsPage() {
           <YourWorkCard />
           <OrgDimensionsCard />
           <NamingConventionsCard />
+          <DataUseCard />
         </div>
       </div>
     </div>

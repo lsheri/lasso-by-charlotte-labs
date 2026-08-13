@@ -10,6 +10,7 @@ import type { Database } from "@/integrations/supabase/types";
 import { useProfile } from "@/hooks/use-profile";
 import { supabase } from "@/integrations/supabase/client";
 import { logEvent } from "@/lib/telemetry";
+import { logV2 } from "@/lib/telemetry-v2";
 
 export function DecisionsPage() {
   const { data: profile } = useProfile();
@@ -37,6 +38,10 @@ export function DecisionsPage() {
     if (profile) {
       logEvent("decision.resolved", profile.org_id, { status, edited });
       if (status === "confirmed") logEvent("decision.confirmed", profile.org_id, { edited });
+      logV2("decision.resolved", { status: status as never, edited }, { profileId: profile.id });
+      if (status === "confirmed")
+        logV2("decision.confirmed", { edited, evidence_count: 0 }, { profileId: profile.id });
+      if (status === "discarded") logV2("decision.discarded", { edited }, { profileId: profile.id });
     }
     await queryClient.invalidateQueries({ queryKey: ["decisions"] });
   }

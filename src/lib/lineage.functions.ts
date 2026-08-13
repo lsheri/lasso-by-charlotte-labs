@@ -221,6 +221,13 @@ export const draftLineage = createServerFn({ method: "POST" })
           ...usageDims(result.usage ?? { tokensIn: 0, costUsd: 0 }),
         },
       });
+      const { recordEventV2 } = await import("./telemetry-v2.server");
+      await recordEventV2(supabase, userId, {
+        eventName: "lineage.drafted",
+        props: { candidate_count: result.considered, scope: "item" },
+        profileId: profile.id,
+        workItemId: item.id,
+      });
       return result;
     },
   );
@@ -323,6 +330,14 @@ export const reviewLink = createServerFn({ method: "POST" })
     const profile = await resolveProfile(supabase, userId, data.profile_id);
     if (!profile) throw new Response("Forbidden", { status: 403 });
 
+    // Read the pair before the update so the tools on both ends are known.
+    const { data: link } = await supabase
+      .from("work_item_links")
+      .select("id, relation, from_item_id, to_item_id")
+      .eq("id", data.link_id)
+      .eq("owner_id", profile.id)
+      .maybeSingle();
+
     const { error } = await supabase
       .from("work_item_links")
       .update({
@@ -340,5 +355,44 @@ export const reviewLink = createServerFn({ method: "POST" })
       userId,
       dims: { action: data.action },
     });
+
+    const { recordEventV2 } = await import("./telemetry-v2.server");
+    const relation = link?.relation ?? "informed";
+    await recordEventV2(supabase, userId, {
+      eventName: data.action === "confirmed" ? "lineage.confirmed" : "lineage.rejected",
+      props: { relation },
+      profileId: profile.id,
+      workItemId: link?.to_item_id ?? null,
+    });
+
+    // A confirmed link between two different tools is a handoff, which is the
+    // only cross tool evidence in the product that a human has vouched for.
+    if (link) {
+      const { data: pair } = await supabase
+        .from("work_items")
+        .select("id, source_vendor, source")
+        .in("id", [link.from_item_id, link.to_item_id]);
+      const toolOf = (id: string) => {
+        const row = (pair ?? []).find((r) => r.id === id);
+        return (row?.source_vendor ?? row?.source ?? "unknown").slice(0, 48);
+      };
+      const fromTool = toolOf(link.from_item_id);
+      const toTool = toolOf(link.to_item_id);
+      if (fromTool !== toTool) {
+        await recordEventV2(supabase, userId, {
+          eventName:
+            data.action === "confirmed" ? "tool_handoff.confirmed" : "tool_handoff.rejected",
+          props: { from_tool: fromTool, to_tool: toTool },
+          profileId: profile.id,
+        });
+        if (data.action === "confirmed") {
+          const { writeHandoffFact } = await import("./facts.server");
+          await writeHandoffFact(
+            { supabase, orgId: profile.org_id, profileId: profile.id },
+            { fromTool, toTool, method: relation, confirmed: true },
+          );
+        }
+      }
+    }
     return { ok: true };
   });

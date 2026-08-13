@@ -898,6 +898,42 @@ async function pushConversation(owner: Owner, args: Obj, id: unknown): Promise<R
     dims: { channel: "mcp", source: vendor },
   });
 
+  if (owner.userId) {
+    // The canonical record of the push. Exact counts, no content.
+    const { recordEventV2 } = await import("./telemetry-v2.server");
+    if (pushMode === "created") {
+      await recordEventV2(supabaseAdmin, owner.userId, {
+        eventName: "conversation.pushed",
+        props: { tool: vendor, turn_count: messages.length, attachment_count: attachments.length },
+        profileId: owner.profileId,
+        workItemId: threadId,
+      });
+    } else if (pushMode === "appended") {
+      if (newRows.length > 0) {
+        await recordEventV2(supabaseAdmin, owner.userId, {
+          eventName: "conversation.appended",
+          props: { tool: vendor, turn_count: newRows.length },
+          profileId: owner.profileId,
+          workItemId: threadId,
+        });
+      }
+      if (changedCount > 0) {
+        await recordEventV2(supabaseAdmin, owner.userId, {
+          eventName: "conversation.turn_revised",
+          props: { tool: vendor, turn_count: changedCount },
+          profileId: owner.profileId,
+          workItemId: threadId,
+        });
+      }
+    }
+    await recordEventV2(supabaseAdmin, owner.userId, {
+      eventName: "work_item.captured",
+      props: { item_type: "ai_thread", channel: "mcp", item_count: 1 + saved },
+      profileId: owner.profileId,
+      workItemId: threadId,
+    });
+  }
+
   const verb = existingThread ? "Updated" : "Saved";
   const tail = saved > 0 ? ` with ${saved} attachment${saved === 1 ? "" : "s"}` : "";
   const warn = problems.length > 0 ? ` Some attachments didn't save: ${problems.join("; ")}.` : "";

@@ -145,7 +145,7 @@ export function ReflectPage() {
 
   const readsDetail =
     shape.kind === "engagement"
-      ? "every piece of work mapped into this engagement, oldest first"
+      ? `the ${shape.itemCount} ${shape.itemCount === 1 ? "piece" : "pieces"} of work mapped into this engagement, oldest first`
       : shape.kind === "item" && shape.scope === "deliverable"
         ? "this piece of work, the conversations linked to it, and the brief when there is one"
         : "this conversation only, read in full";

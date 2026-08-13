@@ -195,7 +195,7 @@ export function PeekPanel({
         {isDeliverableType(active.type) ? (
           <>
             <VersionHistory workItemId={active.id} />
-            <WhatFedThis workItemId={active.id} canEdit={canEdit} />
+            <WhatFedThis workItemId={active.id} itemType={active.type} canEdit={canEdit} />
           </>
         ) : null}
       </div>

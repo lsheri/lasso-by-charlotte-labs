@@ -223,5 +223,16 @@ export const closeEpisode = createServerFn({ method: "POST" })
       email,
     });
 
+    // The fact tables carry the same close, keyed pseudonymously, so outcomes
+    // can be studied without reading anyone's work.
+    const { writeOutcomeFact, writeEpisodeFact } = await import("./facts.server");
+    const factCtx = { supabase, orgId: profile.org_id, profileId: episode.owner_id };
+    await writeOutcomeFact(factCtx, {
+      episodeId: episode.id,
+      kind: outcomeKind,
+      outcomeSource,
+    });
+    await writeEpisodeFact(factCtx, episode.id);
+
     return { ok: true };
   });
