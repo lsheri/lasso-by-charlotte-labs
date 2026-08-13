@@ -41,6 +41,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { MappingSuggestion } from "@/lib/mapping-shared";
 import { suggestMappings } from "@/lib/mapping.functions";
 import { removeWorkItems } from "@/lib/work-bulk.functions";
+import { detachEpisodeItems, syncEpisodeForMapping } from "@/lib/episodes.functions";
 import { logEvent } from "@/lib/telemetry";
 import { vendorLabel } from "@/lib/conversation-shared";
 import { engagementHue } from "@/lib/work-identity";
@@ -136,6 +137,7 @@ export function WorkPage() {
     setActionError(null);
     const del = await supabase.from("work_item_tasks").delete().eq("work_item_id", item.id);
     if (del.error) return setActionError(del.error.message);
+    await detachEpisode({ data: { work_item_ids: [item.id] } });
     const upd = await supabase
       .from("work_items")
       .update({ visibility: "private" })
@@ -280,6 +282,15 @@ export function WorkPage() {
         .update({ visibility: "mapped" })
         .eq("id", item.id);
       if (upd.error) throw new Error(upd.error.message);
+
+      await detachEpisode({ data: { work_item_ids: [item.id] } });
+      await syncEpisode({
+        data: {
+          task_id: suggestion.task_id,
+          work_item_ids: [item.id],
+          profile_id: profile.id,
+        },
+      });
 
       logEvent("workitem.mapped", profile.org_id, {
         type: item.type,

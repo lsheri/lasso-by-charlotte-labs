@@ -7,6 +7,7 @@ import { EngagementDecisions } from "@/components/decisions/EngagementDecisions"
 import { EngagementLineage } from "@/components/peek/EngagementLineage";
 import { OneOnOneBrief } from "@/components/oneonone/OneOnOneBrief";
 import { EditEngagementDialog } from "@/components/engagements/EditEngagementDialog";
+import { EpisodePanel } from "@/components/episodes/EpisodePanel";
 import { EditTaskDialog } from "@/components/engagements/EditTaskDialog";
 import { EngagementBriefSection } from "@/components/engagements/EngagementBriefSection";
 import { InviteDialog } from "@/components/invites/InviteDialog";
@@ -241,6 +242,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
                     <EditTaskDialog task={task} engagementId={engagementId} />
                   ) : null}
                 </div>
+                <EpisodePanel taskId={task.id} profileId={profile?.id} />
                 <div className="mt-2">
                   <TaskWorkflow
                     taskId={task.id}
