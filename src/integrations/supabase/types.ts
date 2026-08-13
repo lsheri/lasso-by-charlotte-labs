@@ -448,6 +448,51 @@ export type Database = {
           },
         ]
       }
+      consent_ledger: {
+        Row: {
+          created_at: string
+          granted: boolean
+          id: string
+          org_id: string
+          policy_version: string
+          profile_id: string | null
+          purpose: string
+        }
+        Insert: {
+          created_at?: string
+          granted: boolean
+          id?: string
+          org_id: string
+          policy_version?: string
+          profile_id?: string | null
+          purpose: string
+        }
+        Update: {
+          created_at?: string
+          granted?: boolean
+          id?: string
+          org_id?: string
+          policy_version?: string
+          profile_id?: string | null
+          purpose?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consent_ledger_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consent_ledger_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       decisions: {
         Row: {
           author: Database["public"]["Enums"]["authored_by"]
@@ -642,6 +687,77 @@ export type Database = {
           },
         ]
       }
+      episode_items: {
+        Row: {
+          added_at: string
+          episode_id: string
+          item_role: string
+          work_item_id: string
+        }
+        Insert: {
+          added_at?: string
+          episode_id: string
+          item_role?: string
+          work_item_id: string
+        }
+        Update: {
+          added_at?: string
+          episode_id?: string
+          item_role?: string
+          work_item_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "episode_items_episode_id_fkey"
+            columns: ["episode_id"]
+            isOneToOne: false
+            referencedRelation: "work_episodes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "episode_items_work_item_id_fkey"
+            columns: ["work_item_id"]
+            isOneToOne: false
+            referencedRelation: "work_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      episode_outcomes: {
+        Row: {
+          detail: string | null
+          episode_id: string
+          id: string
+          kind: string
+          observed_at: string
+          outcome_source: string
+        }
+        Insert: {
+          detail?: string | null
+          episode_id: string
+          id?: string
+          kind: string
+          observed_at?: string
+          outcome_source: string
+        }
+        Update: {
+          detail?: string | null
+          episode_id?: string
+          id?: string
+          kind?: string
+          observed_at?: string
+          outcome_source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "episode_outcomes_episode_id_fkey"
+            columns: ["episode_id"]
+            isOneToOne: false
+            referencedRelation: "work_episodes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       events: {
         Row: {
           actor_hash: string | null
@@ -672,6 +788,66 @@ export type Database = {
           schema_version?: string
           tenant_hash?: string
           ts?: string
+        }
+        Relationships: []
+      }
+      events_v2: {
+        Row: {
+          actor_pseudo: string | null
+          actor_type: string
+          consent_snapshot: string | null
+          engagement_id: string | null
+          environment: string
+          episode_id: string | null
+          event_name: string
+          id: string
+          occurred_at: string
+          props: Json
+          received_at: string
+          schema_version: string
+          source: string
+          subject_pseudo: string | null
+          taxonomy_version: string | null
+          tenant_pseudo: string
+          work_item_id: string | null
+        }
+        Insert: {
+          actor_pseudo?: string | null
+          actor_type?: string
+          consent_snapshot?: string | null
+          engagement_id?: string | null
+          environment?: string
+          episode_id?: string | null
+          event_name: string
+          id?: string
+          occurred_at?: string
+          props?: Json
+          received_at?: string
+          schema_version?: string
+          source?: string
+          subject_pseudo?: string | null
+          taxonomy_version?: string | null
+          tenant_pseudo: string
+          work_item_id?: string | null
+        }
+        Update: {
+          actor_pseudo?: string | null
+          actor_type?: string
+          consent_snapshot?: string | null
+          engagement_id?: string | null
+          environment?: string
+          episode_id?: string | null
+          event_name?: string
+          id?: string
+          occurred_at?: string
+          props?: Json
+          received_at?: string
+          schema_version?: string
+          source?: string
+          subject_pseudo?: string | null
+          taxonomy_version?: string | null
+          tenant_pseudo?: string
+          work_item_id?: string | null
         }
         Relationships: []
       }
@@ -951,24 +1127,42 @@ export type Database = {
       }
       orgs: {
         Row: {
+          ai_maturity: string | null
+          country: string | null
           created_at: string
+          data_use_tier: string | null
           id: string
+          industry: string | null
           name: string
+          org_mode: string | null
           settings: Json
+          size_band: string | null
           vendor_display: string
         }
         Insert: {
+          ai_maturity?: string | null
+          country?: string | null
           created_at?: string
+          data_use_tier?: string | null
           id?: string
+          industry?: string | null
           name: string
+          org_mode?: string | null
           settings?: Json
+          size_band?: string | null
           vendor_display?: string
         }
         Update: {
+          ai_maturity?: string | null
+          country?: string | null
           created_at?: string
+          data_use_tier?: string | null
           id?: string
+          industry?: string | null
           name?: string
+          org_mode?: string | null
           settings?: Json
+          size_band?: string | null
           vendor_display?: string
         }
         Relationships: []
@@ -1034,9 +1228,14 @@ export type Database = {
           created_at: string
           deactivated_at: string | null
           display_name: string
+          experience_band: string | null
+          function_area: string | null
           id: string
           org_id: string
+          primary_work_types: string[] | null
           role: Database["public"]["Enums"]["app_role"]
+          role_family: string | null
+          seniority_band: string | null
           style_label: string | null
           title_band: string | null
           user_id: string | null
@@ -1045,9 +1244,14 @@ export type Database = {
           created_at?: string
           deactivated_at?: string | null
           display_name: string
+          experience_band?: string | null
+          function_area?: string | null
           id?: string
           org_id: string
+          primary_work_types?: string[] | null
           role?: Database["public"]["Enums"]["app_role"]
+          role_family?: string | null
+          seniority_band?: string | null
           style_label?: string | null
           title_band?: string | null
           user_id?: string | null
@@ -1056,9 +1260,14 @@ export type Database = {
           created_at?: string
           deactivated_at?: string | null
           display_name?: string
+          experience_band?: string | null
+          function_area?: string | null
           id?: string
           org_id?: string
+          primary_work_types?: string[] | null
           role?: Database["public"]["Enums"]["app_role"]
+          role_family?: string | null
+          seniority_band?: string | null
           style_label?: string | null
           title_band?: string | null
           user_id?: string | null
@@ -1224,6 +1433,67 @@ export type Database = {
             columns: ["work_item_id"]
             isOneToOne: false
             referencedRelation: "work_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      work_episodes: {
+        Row: {
+          closed_at: string | null
+          id: string
+          meta: Json
+          objective: string | null
+          opened_at: string
+          org_id: string
+          owner_id: string
+          status: string
+          task_id: string | null
+          title: string
+        }
+        Insert: {
+          closed_at?: string | null
+          id?: string
+          meta?: Json
+          objective?: string | null
+          opened_at?: string
+          org_id: string
+          owner_id: string
+          status?: string
+          task_id?: string | null
+          title: string
+        }
+        Update: {
+          closed_at?: string | null
+          id?: string
+          meta?: Json
+          objective?: string | null
+          opened_at?: string
+          org_id?: string
+          owner_id?: string
+          status?: string
+          task_id?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_episodes_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_episodes_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_episodes_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
             referencedColumns: ["id"]
           },
         ]
