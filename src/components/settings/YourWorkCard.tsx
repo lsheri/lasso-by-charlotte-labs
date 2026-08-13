@@ -1,5 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
+import { logV2 } from "@/lib/telemetry-v2";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -112,6 +113,15 @@ export function YourWorkCard() {
     setPending(false);
     if (error) return void toast.error(error.message);
     await queryClient.invalidateQueries({ queryKey: ["profile-dimensions", profile.id] });
+    logV2("actor.segment_updated", {
+      fields_set: [
+        form.role_family,
+        form.seniority_band,
+        form.experience_band,
+        form.function_area,
+        (form.primary_work_types ?? []).length ? "set" : "",
+      ].filter((v) => Boolean(v)).length,
+    }, { profileId: profile.id });
     toast.success("Saved");
   }
 
