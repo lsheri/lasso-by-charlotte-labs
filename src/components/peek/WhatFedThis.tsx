@@ -109,7 +109,15 @@ function ContributorRow({
  * prompts behind it, verbatim. Drafts wear the suggestion treatment, because
  * Lasso proposed them and a person decides.
  */
-export function WhatFedThis({ workItemId, canEdit }: { workItemId: string; canEdit: boolean }) {
+export function WhatFedThis({
+  workItemId,
+  itemType,
+  canEdit,
+}: {
+  workItemId: string;
+  itemType: WorkType;
+  canEdit: boolean;
+}) {
   const { data: profile } = useProfile();
   const load = useServerFn(getDeliverableEvidence);
   const run = useServerFn(draftLineage);
@@ -164,7 +172,7 @@ export function WhatFedThis({ workItemId, canEdit }: { workItemId: string; canEd
     logV2(
       "evidence.opened",
       { surface, item_type: itemType },
-      { profileId: profile.id, workItemId: itemId },
+      { profileId: profile.id, workItemId },
     );
     void track({
       data: { event_type: "evidence.opened", org_id: profile.org_id, dims: { surface } },
