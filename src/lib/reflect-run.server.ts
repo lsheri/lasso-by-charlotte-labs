@@ -200,6 +200,14 @@ export async function runReflectTurn(
       },
     });
 
+    const { classifyQuestionIntent } = await import("./question-intent.server");
+    await classifyQuestionIntent(supabase, {
+      userId,
+      profileId: profile.id,
+      question: message,
+      scopeMode: scope.mode,
+    });
+
     return {
       answer: answerCat,
       truncated: false,
@@ -319,6 +327,14 @@ export async function runReflectTurn(
       finish_reason: completion.finishReason,
       ...(preset ? { preset: preset.id } : {}),
     },
+  });
+
+  const { classifyQuestionIntent } = await import("./question-intent.server");
+  await classifyQuestionIntent(supabase, {
+    userId,
+    profileId: profile.id,
+    question: message,
+    scopeMode: scope.mode,
   });
 
   return {

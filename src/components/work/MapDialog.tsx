@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 
 import { TypeIcon } from "@/components/work/TypeIcon";
@@ -9,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { useEngagements } from "@/hooks/use-engagements";
 import { useProfile } from "@/hooks/use-profile";
 import { supabase } from "@/integrations/supabase/client";
+import { detachEpisodeItems, syncEpisodeForMapping } from "@/lib/episodes.functions";
 import { logEvent } from "@/lib/telemetry";
 import type { WorkItemRow } from "@/lib/work-types";
 
@@ -28,6 +30,8 @@ export function MapDialog({
   const { data: profile } = useProfile();
   const { data: engagements } = useEngagements(profile?.id);
   const queryClient = useQueryClient();
+  const syncEpisode = useServerFn(syncEpisodeForMapping);
+  const detachEpisode = useServerFn(detachEpisodeItems);
   const [engagementId, setEngagementId] = useState<string | null>(null);
   const [newTask, setNewTask] = useState("");
   const [pending, setPending] = useState(false);
@@ -84,6 +88,11 @@ export function MapDialog({
       setPending(false);
       return;
     }
+
+    // Mapping is the product action that assembles the piece of work.
+    await detachEpisode({ data: { work_item_ids: ids } });
+    await syncEpisode({ data: { task_id: taskId, work_item_ids: ids, profile_id: profile.id } });
+    await queryClient.invalidateQueries({ queryKey: ["episode", taskId] });
 
     for (const target of targets) {
       logEvent("workitem.mapped", profile.org_id, { type: target.type, source: target.source });

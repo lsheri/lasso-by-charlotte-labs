@@ -18,6 +18,8 @@ export type AnalysisRunResult = {
   reused: boolean;
   items_read: number;
   suppressed: number;
+  /** Exact count, used for the human label on the finding. */
+  claims: number;
 };
 
 function costBucket(usd: number): string {
@@ -97,7 +99,7 @@ export const startAnalysis = createServerFn({ method: "POST" })
       // the authenticated person may reuse.
       const { data: inFlight } = await supabase
         .from("analysis_runs")
-        .select("id, session_id, items_read, suppressed_claims")
+        .select("id, session_id, items_read, suppressed_claims, claims_rendered")
         .eq("idempotency_key", idempotencyKey)
         .eq("status", "running")
         .order("created_at", { ascending: false })
@@ -110,6 +112,7 @@ export const startAnalysis = createServerFn({ method: "POST" })
           reused: true,
           items_read: inFlight.items_read ?? 1,
           suppressed: inFlight.suppressed_claims ?? 0,
+          claims: inFlight.claims_rendered ?? 0,
         };
       }
 
@@ -312,6 +315,7 @@ export const startAnalysis = createServerFn({ method: "POST" })
           reused: false,
           items_read: lineageItems,
           suppressed: 0,
+          claims: rendered.considered,
         };
       }
 
@@ -424,6 +428,7 @@ export const startAnalysis = createServerFn({ method: "POST" })
         reused: false,
         items_read: itemsRead,
         suppressed: guarded.suppressed,
+        claims: guarded.claims,
       };
     } catch (e) {
       const message = (e as Error).message ?? "";

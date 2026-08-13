@@ -234,7 +234,7 @@ export function AiRecordPage() {
                     {analyses.error ? (
                       <p className="text-sm text-destructive">{analyses.error}</p>
                     ) : null}
-                    <InlineAnalysisBlocks results={analyses.results} />
+                    <InlineAnalysisBlocks results={analyses.results} profileId={profile?.id} />
                   </div>
                 ) : null}
 
