@@ -10,6 +10,7 @@ export const navGroups: NavGroup[] = [
     items: [
       { label: "Overview", to: "/overview" },
       { label: "Reflect", to: "/reflect" },
+      { label: "AI record", to: "/ai-record" },
       { label: "1:1 prep", to: "/one-on-one" },
       { label: "Decision log", to: "/decisions" },
       { label: "Members", to: "/members" },

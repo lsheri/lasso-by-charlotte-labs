@@ -17,6 +17,7 @@ import { Route as NoAccessRouteImport } from './routes/no-access'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as TrustRouteImport } from './routes/trust'
 import { Route as WhyRouteImport } from './routes/why'
+import { Route as AuthenticatedAiRecordRouteImport } from './routes/_authenticated/ai-record'
 import { Route as AuthenticatedConnectorsRouteImport } from './routes/_authenticated/connectors'
 import { Route as AuthenticatedDecisionsRouteImport } from './routes/_authenticated/decisions'
 import { Route as AuthenticatedMembersRouteImport } from './routes/_authenticated/members'
@@ -70,6 +71,11 @@ const WhyRoute = WhyRouteImport.update({
   id: '/why',
   path: '/why',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedAiRecordRoute = AuthenticatedAiRecordRouteImport.update({
+  id: '/ai-record',
+  path: '/ai-record',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedConnectorsRoute = AuthenticatedConnectorsRouteImport.update({
   id: '/connectors',
@@ -153,6 +159,7 @@ export interface FileRoutesByFullPath {
   '/onboarding': typeof OnboardingRoute
   '/trust': typeof TrustRoute
   '/why': typeof WhyRoute
+  '/ai-record': typeof AuthenticatedAiRecordRoute
   '/connectors': typeof AuthenticatedConnectorsRoute
   '/decisions': typeof AuthenticatedDecisionsRoute
   '/members': typeof AuthenticatedMembersRoute
@@ -176,6 +183,7 @@ export interface FileRoutesByTo {
   '/onboarding': typeof OnboardingRoute
   '/trust': typeof TrustRoute
   '/why': typeof WhyRoute
+  '/ai-record': typeof AuthenticatedAiRecordRoute
   '/connectors': typeof AuthenticatedConnectorsRoute
   '/decisions': typeof AuthenticatedDecisionsRoute
   '/members': typeof AuthenticatedMembersRoute
@@ -201,6 +209,7 @@ export interface FileRoutesById {
   '/onboarding': typeof OnboardingRoute
   '/trust': typeof TrustRoute
   '/why': typeof WhyRoute
+  '/_authenticated/ai-record': typeof AuthenticatedAiRecordRoute
   '/_authenticated/connectors': typeof AuthenticatedConnectorsRoute
   '/_authenticated/decisions': typeof AuthenticatedDecisionsRoute
   '/_authenticated/members': typeof AuthenticatedMembersRoute
@@ -226,6 +235,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/trust'
     | '/why'
+    | '/ai-record'
     | '/connectors'
     | '/decisions'
     | '/members'
@@ -249,6 +259,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/trust'
     | '/why'
+    | '/ai-record'
     | '/connectors'
     | '/decisions'
     | '/members'
@@ -273,6 +284,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/trust'
     | '/why'
+    | '/_authenticated/ai-record'
     | '/_authenticated/connectors'
     | '/_authenticated/decisions'
     | '/_authenticated/members'
@@ -360,6 +372,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/why'
       preLoaderRoute: typeof WhyRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/ai-record': {
+      id: '/_authenticated/ai-record'
+      path: '/ai-record'
+      fullPath: '/ai-record'
+      preLoaderRoute: typeof AuthenticatedAiRecordRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/connectors': {
       id: '/_authenticated/connectors'
@@ -463,6 +482,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAiRecordRoute: typeof AuthenticatedAiRecordRoute
   AuthenticatedConnectorsRoute: typeof AuthenticatedConnectorsRoute
   AuthenticatedDecisionsRoute: typeof AuthenticatedDecisionsRoute
   AuthenticatedMembersRoute: typeof AuthenticatedMembersRoute
@@ -477,6 +497,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAiRecordRoute: AuthenticatedAiRecordRoute,
   AuthenticatedConnectorsRoute: AuthenticatedConnectorsRoute,
   AuthenticatedDecisionsRoute: AuthenticatedDecisionsRoute,
   AuthenticatedMembersRoute: AuthenticatedMembersRoute,
