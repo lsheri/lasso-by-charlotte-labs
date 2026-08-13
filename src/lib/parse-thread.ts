@@ -1,12 +1,13 @@
 export type ParsedTurn = { turn_no: number; role: "user" | "assistant"; content: string };
 
 const MARKERS: { re: RegExp; role: "user" | "assistant" }[] = [
-  { re: /^(you said:|user:|human:|me:|prompt:)\s*(.*)$/i, role: "user" },
+  { re: /^(you said:|you:|user:|human:|me:|prompt:)\s*(.*)$/i, role: "user" },
   {
-    re: /^(chatgpt said:|assistant:|claude said:|claude:|gemini said:|gemini:|ai:|gpt:|response:)\s*(.*)$/i,
+    re: /^(chatgpt said:|chatgpt:|assistant:|claude said:|claude:|gemini said:|gemini:|ai:|gpt:|response:)\s*(.*)$/i,
     role: "assistant",
   },
 ];
+
 
 export function parseThread(raw: string): { turns: ParsedTurn[]; resolved: boolean } {
   const text = raw.replace(/\r\n/g, "\n").trim();
