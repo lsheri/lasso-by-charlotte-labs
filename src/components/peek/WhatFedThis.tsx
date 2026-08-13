@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Sparkle } from "lucide-react";
 import { useState } from "react";
+import { logV2 } from "@/lib/telemetry-v2";
 import { toast } from "sonner";
 
 import { SuggestDot } from "@/components/common/Suggested";
@@ -160,6 +161,11 @@ export function WhatFedThis({ workItemId, canEdit }: { workItemId: string; canEd
 
   function evidenceOpened(surface: string) {
     if (!profile) return;
+    logV2(
+      "evidence.opened",
+      { surface, item_type: itemType },
+      { profileId: profile.id, workItemId: itemId },
+    );
     void track({
       data: { event_type: "evidence.opened", org_id: profile.org_id, dims: { surface } },
     }).catch(() => {});
