@@ -13,7 +13,8 @@ export function OpenFileAction({ workItemId }: { workItemId: string }) {
     <button
       type="button"
       disabled={pending}
-      onClick={() => {
+      onClick={(event) => {
+        event.stopPropagation();
         void (async () => {
           setPending(true);
           try {

@@ -182,7 +182,10 @@ export function RowAction({
   return (
     <button
       type="button"
-      onClick={onClick}
+      onClick={(event) => {
+        event.stopPropagation();
+        onClick();
+      }}
       className={
         primary
           ? "text-xs font-medium text-accent-deep transition-opacity hover:opacity-70"
