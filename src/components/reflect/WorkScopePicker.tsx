@@ -74,10 +74,11 @@ export function WorkScopePicker({
 }) {
   const shape = chipShape(scope, all);
   const initialEngagement =
-    (shape.kind === "engagement" ? shape.engagementId : null) ??
-    (shape.kind === "item" ? (shape.item.work_item_tasks[0]?.tasks?.engagement_id ?? null) : null) ??
-    engagements[0]?.id ??
-    null;
+    shape.kind === "engagement"
+      ? shape.engagementId
+      : shape.kind === "item"
+        ? (shape.item.work_item_tasks[0]?.tasks?.engagement_id ?? engagements[0]?.id ?? null)
+        : (engagements[0]?.id ?? null);
 
   const [engagementId, setEngagementId] = useState<string | null>(initialEngagement);
   const [checked, setChecked] = useState<Set<string>>(new Set());
