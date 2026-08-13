@@ -1,4 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 
@@ -20,7 +21,12 @@ import { logEvent } from "@/lib/telemetry";
 export type ChipTarget =
   | { kind: "item"; id: string; title: string; scope: "thread" | "deliverable" }
   | { kind: "engagement"; id: string; title: string; itemCount: number }
-  | { kind: "none" };
+  | { kind: "none"; reason: "multiple" | "empty" };
+
+/** The engagements a person can narrow to, in the order the record holds them. */
+export type ChipEngagement = { id: string; code: string; title: string };
+
+const MAX_ENGAGEMENT_CHIPS = 5;
 
 export type InlineAnalysis = {
   key: string;
@@ -131,6 +137,12 @@ export function InlineAnalysisBlocks({
   );
 }
 
+/**
+ * INVARIANT: no scope state may render nothing. An empty return teaches the
+ * user the feature does not exist. Every branch here renders the same
+ * Suggested container with the same label, and either the analyses that can
+ * run or the one action that makes them runnable.
+ */
 export function AnalysisChips({
   target,
   readsDetail,
@@ -138,6 +150,9 @@ export function AnalysisChips({
   onRun,
   isCoach = false,
   className = "",
+  engagementOptions = [],
+  onPickEngagement,
+  onOpenPicker,
 }: {
   target: ChipTarget;
   readsDetail: string;
@@ -145,8 +160,58 @@ export function AnalysisChips({
   onRun: (preset: AnalysisPreset) => void;
   isCoach?: boolean;
   className?: string;
+  engagementOptions?: ChipEngagement[];
+  onPickEngagement?: (engagementId: string) => void;
+  onOpenPicker?: () => void;
 }) {
-  if (target.kind === "none") return null;
+  if (target.kind === "none") {
+    return (
+      <Suggested className={className}>
+        <div className="flex items-center gap-2">
+          <SuggestDot />
+          <p className="text-xs text-ember-deep">Analyses Lasso can run on this work</p>
+        </div>
+        {target.reason === "empty" || engagementOptions.length === 0 ? (
+          <p className="mt-2 text-xs text-muted-foreground">
+            Map work to an engagement and analyses will appear here.{" "}
+            <Link to="/work" className="text-accent-deep underline underline-offset-2">
+              Go to Work
+            </Link>
+          </p>
+        ) : (
+          <>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Pick one engagement or one piece of work to run an analysis.
+            </p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {engagementOptions.slice(0, MAX_ENGAGEMENT_CHIPS).map((engagement) => (
+                <button
+                  key={engagement.id}
+                  type="button"
+                  onClick={() => onPickEngagement?.(engagement.id)}
+                  className="rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-foreground transition-opacity hover:opacity-85"
+                >
+                  <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+                    {engagement.code}
+                  </span>{" "}
+                  {engagement.title}
+                </button>
+              ))}
+              {engagementOptions.length > MAX_ENGAGEMENT_CHIPS || onOpenPicker ? (
+                <button
+                  type="button"
+                  onClick={() => onOpenPicker?.()}
+                  className="rounded-full border border-border px-3 py-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  More…
+                </button>
+              ) : null}
+            </div>
+          </>
+        )}
+      </Suggested>
+    );
+  }
   const scope = target.kind === "engagement" ? "engagement" : target.scope;
   const presets = presetsForScope(scope, isCoach);
   if (presets.length === 0) return null;
