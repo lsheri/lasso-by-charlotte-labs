@@ -362,35 +362,21 @@ export function ReflectPage() {
 
         <section className="flex min-h-[60vh] flex-col rounded-[var(--radius)] border border-border bg-card shadow-card">
           {!active ? (
-            <div className="flex flex-1 flex-col items-center justify-center gap-2 p-10 text-center">
-              <p className="text-sm text-foreground">
-                Start a session to think out loud about your own work.
-              </p>
-              <p className="text-sm text-muted-foreground">
-                Private to you. Your coach never sees this.
-              </p>
-            </div>
+            <>
+              {scopeBar}
+              <div className="flex flex-1 flex-col items-center justify-center gap-2 p-10 text-center">
+                <p className="text-sm text-foreground">
+                  Start a session to think out loud about your own work.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Private to you. Your coach never sees this.
+                </p>
+              </div>
+              <div className="space-y-3 border-t border-border px-5 py-4">{chipsRow}</div>
+            </>
           ) : (
             <>
-              <div className="flex flex-wrap items-center gap-2 border-b border-border px-5 py-3">
-                <span className="micro-label">Looking at</span>
-                <button
-                  type="button"
-                  onClick={() => setScopeOpen(true)}
-                  className="rounded-full bg-accent-soft px-3 py-1 text-xs text-accent-deep"
-                >
-                  {scopeSentence(scope, all, engagements ?? [])} · change
-                </button>
-                {scope.mode !== "whole" ? (
-                  <button
-                    type="button"
-                    onClick={() => applyScope(DEFAULT_SCOPE)}
-                    className="text-xs text-muted-foreground transition-colors hover:text-foreground"
-                  >
-                    Use all of your work
-                  </button>
-                ) : null}
-              </div>
+              {scopeBar}
 
               <div className="flex-1 space-y-4 overflow-y-auto px-5 py-5">
                 {(messages ?? []).length === 0 && analyses.results.length === 0 ? (
