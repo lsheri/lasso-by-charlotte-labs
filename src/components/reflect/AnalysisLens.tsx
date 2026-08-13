@@ -63,6 +63,7 @@ export function AnalysisLens({
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [suppressed, setSuppressed] = useState(0);
   const [claims, setClaims] = useState(0);
+  const [runId, setRunId] = useState<string | undefined>(undefined);
   const [draft, setDraft] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -106,6 +107,7 @@ export function AnalysisLens({
     setSessionId(null);
     setSuppressed(0);
     setClaims(0);
+    setRunId(undefined);
     setPending(true);
     setError(null);
     try {
@@ -121,6 +123,7 @@ export function AnalysisLens({
       setSessionId(result.session_id);
       setSuppressed(result.suppressed);
       setClaims(result.claims);
+      setRunId(result.run_id);
       logEvent("reflect.session_created", orgId, { preset: preset.id });
       await queryClient.invalidateQueries({ queryKey: ["reflect-sessions"] });
       await queryClient.invalidateQueries({ queryKey: ["reflect-messages", result.session_id] });
@@ -168,7 +171,7 @@ export function AnalysisLens({
 
   const readsDetail =
     target.kind === "engagement"
-      ? "every piece of work mapped into this engagement, oldest first"
+      ? `the ${target.itemCount} ${target.itemCount === 1 ? "piece" : "pieces"} of work mapped into this engagement, oldest first`
       : target.scope === "deliverable"
         ? "this piece of work, the conversations linked to it, and the brief when there is one"
         : `this conversation only, ${turnCount ?? 0} message${
@@ -237,7 +240,7 @@ export function AnalysisLens({
             {active.attribution ? (
               <p className="mt-3 text-xs text-muted-foreground">{active.attribution}</p>
             ) : null}
-            <FindingLabel preset={active.id} claims={claims} profileId={profileId} />
+            <FindingLabel preset={active.id} claims={claims} profileId={profileId} runId={runId} />
           </div>
         ) : null}
         <div ref={bottomRef} />

@@ -148,6 +148,18 @@ export const draftDecisions = createServerFn({ method: "POST" })
       userId: context.userId,
       dims: { count: rows.length, suppressed, type: item.type, ...usageDims(completion) },
     });
+    const { recordEventV2 } = await import("./telemetry-v2.server");
+    await recordEventV2(supabase, context.userId, {
+      eventName: "decision.drafted",
+      props: { draft_count: rows.length, scope: "item" },
+      profileId: profile.id,
+      workItemId: item.id,
+    });
+    const { writeDecisionFact } = await import("./facts.server");
+    await writeDecisionFact(
+      { supabase, orgId: profile.org_id, profileId: profile.id },
+      { status: "draft", origin: "ai_draft", evidenceCount: 1 },
+    );
 
     return { drafted: rows.length, suppressed };
   });
@@ -250,6 +262,17 @@ export const draftEngagementDecisions = createServerFn({ method: "POST" })
       userId,
       dims: { count: rows.length, scope: "engagement", suppressed, ...usageDims(completion) },
     });
+    const { recordEventV2 } = await import("./telemetry-v2.server");
+    await recordEventV2(supabase, userId, {
+      eventName: "decision.drafted",
+      props: { draft_count: rows.length, scope: "engagement" },
+      profileId: profile.id,
+    });
+    const { writeDecisionFact } = await import("./facts.server");
+    await writeDecisionFact(
+      { supabase, orgId: profile.org_id, profileId: profile.id },
+      { status: "draft", origin: "ai_draft", evidenceCount: corpus.sources.length },
+    );
 
     return { drafted: rows.length, scanned: corpus.sources.length, suppressed };
     },

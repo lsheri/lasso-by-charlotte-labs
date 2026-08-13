@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { ONEONONE_WINDOWS, type OneOnOneWindow } from "@/lib/oneonone-shared";
 import { prepareOneOnOne, saveBriefToDrive } from "@/lib/oneonone.functions";
+import { logV2 } from "@/lib/telemetry-v2";
 
 /** A brief the person owns: their work, their decisions, their questions. */
 export function OneOnOneBrief({
@@ -49,6 +50,10 @@ export function OneOnOneBrief({
   const title = `1:1 brief, ${scopeLabel}, last ${days} days`;
 
   async function generate() {
+    logV2("one_on_one.opened", { surface: engagementId ? "engagement" : "overview" }, {
+      profileId,
+      engagementId,
+    });
     setBusy(true);
     try {
       const result = await prepare({
@@ -63,6 +68,7 @@ export function OneOnOneBrief({
   }
 
   function download() {
+    logV2("one_on_one.used", { surface: "download" }, { profileId });
     const blob = new Blob([markdown ?? ""], { type: "text/markdown" });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");

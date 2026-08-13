@@ -43,6 +43,7 @@ import { suggestMappings } from "@/lib/mapping.functions";
 import { removeWorkItems } from "@/lib/work-bulk.functions";
 import { detachEpisodeItems, syncEpisodeForMapping } from "@/lib/episodes.functions";
 import { logEvent } from "@/lib/telemetry";
+import { captureChannelOf, logV2 } from "@/lib/telemetry-v2";
 import { vendorLabel } from "@/lib/conversation-shared";
 import { engagementHue } from "@/lib/work-identity";
 import {
@@ -147,6 +148,10 @@ export function WorkPage() {
     if (upd.error) return setActionError(upd.error.message);
     if (profile) {
       logEvent("workitem.marked_private", profile.org_id, { type: item.type, source: item.source });
+      logV2("work_item.marked_private", { item_type: item.type }, {
+        profileId: profile.id,
+        workItemId: item.id,
+      });
     }
     await queryClient.invalidateQueries({ queryKey: ["work-items"] });
   }
@@ -158,6 +163,12 @@ export function WorkPage() {
       .update({ visibility: "unmapped" })
       .eq("id", item.id);
     if (upd.error) return setActionError(upd.error.message);
+    if (profile) {
+      logV2("work_item.unmapped", { item_type: item.type }, {
+        profileId: profile.id,
+        workItemId: item.id,
+      });
+    }
     await queryClient.invalidateQueries({ queryKey: ["work-items"] });
   }
 
@@ -299,6 +310,11 @@ export function WorkPage() {
         source: item.source,
         suggested: true,
       });
+      logV2(
+        "work_item.mapped",
+        { item_type: item.type, channel: captureChannelOf(item.source), bulk: 1 },
+        { profileId: profile.id, workItemId: item.id },
+      );
       setDismissed((prev) => [...prev, item.id]);
       await queryClient.invalidateQueries({ queryKey: ["work-items"] });
       await queryClient.invalidateQueries({ queryKey: ["engagement"] });

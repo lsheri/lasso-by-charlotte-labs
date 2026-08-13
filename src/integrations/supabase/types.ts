@@ -851,6 +851,312 @@ export type Database = {
         }
         Relationships: []
       }
+      events_v2_2026h2: {
+        Row: {
+          actor_pseudo: string | null
+          actor_type: string
+          consent_snapshot: string | null
+          engagement_id: string | null
+          environment: string
+          episode_id: string | null
+          event_name: string
+          id: string
+          occurred_at: string
+          props: Json
+          received_at: string
+          schema_version: string
+          source: string
+          subject_pseudo: string | null
+          taxonomy_version: string | null
+          tenant_pseudo: string
+          work_item_id: string | null
+        }
+        Insert: {
+          actor_pseudo?: string | null
+          actor_type?: string
+          consent_snapshot?: string | null
+          engagement_id?: string | null
+          environment?: string
+          episode_id?: string | null
+          event_name: string
+          id?: string
+          occurred_at?: string
+          props?: Json
+          received_at?: string
+          schema_version?: string
+          source?: string
+          subject_pseudo?: string | null
+          taxonomy_version?: string | null
+          tenant_pseudo: string
+          work_item_id?: string | null
+        }
+        Update: {
+          actor_pseudo?: string | null
+          actor_type?: string
+          consent_snapshot?: string | null
+          engagement_id?: string | null
+          environment?: string
+          episode_id?: string | null
+          event_name?: string
+          id?: string
+          occurred_at?: string
+          props?: Json
+          received_at?: string
+          schema_version?: string
+          source?: string
+          subject_pseudo?: string | null
+          taxonomy_version?: string | null
+          tenant_pseudo?: string
+          work_item_id?: string | null
+        }
+        Relationships: []
+      }
+      events_v2_2027h1: {
+        Row: {
+          actor_pseudo: string | null
+          actor_type: string
+          consent_snapshot: string | null
+          engagement_id: string | null
+          environment: string
+          episode_id: string | null
+          event_name: string
+          id: string
+          occurred_at: string
+          props: Json
+          received_at: string
+          schema_version: string
+          source: string
+          subject_pseudo: string | null
+          taxonomy_version: string | null
+          tenant_pseudo: string
+          work_item_id: string | null
+        }
+        Insert: {
+          actor_pseudo?: string | null
+          actor_type?: string
+          consent_snapshot?: string | null
+          engagement_id?: string | null
+          environment?: string
+          episode_id?: string | null
+          event_name: string
+          id?: string
+          occurred_at?: string
+          props?: Json
+          received_at?: string
+          schema_version?: string
+          source?: string
+          subject_pseudo?: string | null
+          taxonomy_version?: string | null
+          tenant_pseudo: string
+          work_item_id?: string | null
+        }
+        Update: {
+          actor_pseudo?: string | null
+          actor_type?: string
+          consent_snapshot?: string | null
+          engagement_id?: string | null
+          environment?: string
+          episode_id?: string | null
+          event_name?: string
+          id?: string
+          occurred_at?: string
+          props?: Json
+          received_at?: string
+          schema_version?: string
+          source?: string
+          subject_pseudo?: string | null
+          taxonomy_version?: string | null
+          tenant_pseudo?: string
+          work_item_id?: string | null
+        }
+        Relationships: []
+      }
+      events_v2_2027h2: {
+        Row: {
+          actor_pseudo: string | null
+          actor_type: string
+          consent_snapshot: string | null
+          engagement_id: string | null
+          environment: string
+          episode_id: string | null
+          event_name: string
+          id: string
+          occurred_at: string
+          props: Json
+          received_at: string
+          schema_version: string
+          source: string
+          subject_pseudo: string | null
+          taxonomy_version: string | null
+          tenant_pseudo: string
+          work_item_id: string | null
+        }
+        Insert: {
+          actor_pseudo?: string | null
+          actor_type?: string
+          consent_snapshot?: string | null
+          engagement_id?: string | null
+          environment?: string
+          episode_id?: string | null
+          event_name: string
+          id?: string
+          occurred_at?: string
+          props?: Json
+          received_at?: string
+          schema_version?: string
+          source?: string
+          subject_pseudo?: string | null
+          taxonomy_version?: string | null
+          tenant_pseudo: string
+          work_item_id?: string | null
+        }
+        Update: {
+          actor_pseudo?: string | null
+          actor_type?: string
+          consent_snapshot?: string | null
+          engagement_id?: string | null
+          environment?: string
+          episode_id?: string | null
+          event_name?: string
+          id?: string
+          occurred_at?: string
+          props?: Json
+          received_at?: string
+          schema_version?: string
+          source?: string
+          subject_pseudo?: string | null
+          taxonomy_version?: string | null
+          tenant_pseudo?: string
+          work_item_id?: string | null
+        }
+        Relationships: []
+      }
+      events_v2_default: {
+        Row: {
+          actor_pseudo: string | null
+          actor_type: string
+          consent_snapshot: string | null
+          engagement_id: string | null
+          environment: string
+          episode_id: string | null
+          event_name: string
+          id: string
+          occurred_at: string
+          props: Json
+          received_at: string
+          schema_version: string
+          source: string
+          subject_pseudo: string | null
+          taxonomy_version: string | null
+          tenant_pseudo: string
+          work_item_id: string | null
+        }
+        Insert: {
+          actor_pseudo?: string | null
+          actor_type?: string
+          consent_snapshot?: string | null
+          engagement_id?: string | null
+          environment?: string
+          episode_id?: string | null
+          event_name: string
+          id?: string
+          occurred_at?: string
+          props?: Json
+          received_at?: string
+          schema_version?: string
+          source?: string
+          subject_pseudo?: string | null
+          taxonomy_version?: string | null
+          tenant_pseudo: string
+          work_item_id?: string | null
+        }
+        Update: {
+          actor_pseudo?: string | null
+          actor_type?: string
+          consent_snapshot?: string | null
+          engagement_id?: string | null
+          environment?: string
+          episode_id?: string | null
+          event_name?: string
+          id?: string
+          occurred_at?: string
+          props?: Json
+          received_at?: string
+          schema_version?: string
+          source?: string
+          subject_pseudo?: string | null
+          taxonomy_version?: string | null
+          tenant_pseudo?: string
+          work_item_id?: string | null
+        }
+        Relationships: []
+      }
+      experiment_assignments: {
+        Row: {
+          assigned_at: string
+          eligibility: string | null
+          experiment_id: string
+          profile_id: string
+          variant: string
+        }
+        Insert: {
+          assigned_at?: string
+          eligibility?: string | null
+          experiment_id: string
+          profile_id: string
+          variant: string
+        }
+        Update: {
+          assigned_at?: string
+          eligibility?: string | null
+          experiment_id?: string
+          profile_id?: string
+          variant?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "experiment_assignments_experiment_id_fkey"
+            columns: ["experiment_id"]
+            isOneToOne: false
+            referencedRelation: "experiments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "experiment_assignments_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      experiments: {
+        Row: {
+          ended_at: string | null
+          hypothesis: string | null
+          id: string
+          name: string
+          started_at: string | null
+          variants: string[]
+        }
+        Insert: {
+          ended_at?: string | null
+          hypothesis?: string | null
+          id?: string
+          name: string
+          started_at?: string | null
+          variants?: string[]
+        }
+        Update: {
+          ended_at?: string | null
+          hypothesis?: string | null
+          id?: string
+          name?: string
+          started_at?: string | null
+          variants?: string[]
+        }
+        Relationships: []
+      }
       feedback: {
         Row: {
           actual: string
@@ -1322,6 +1628,38 @@ export type Database = {
             foreignKeyName: "query_log_subject_id_fkey"
             columns: ["subject_id"]
             isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      research_panel_ids: {
+        Row: {
+          consented_at: string
+          panel_id: string
+          policy_version: string
+          profile_id: string
+          withdrawn_at: string | null
+        }
+        Insert: {
+          consented_at?: string
+          panel_id?: string
+          policy_version: string
+          profile_id: string
+          withdrawn_at?: string | null
+        }
+        Update: {
+          consented_at?: string
+          panel_id?: string
+          policy_version?: string
+          profile_id?: string
+          withdrawn_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "research_panel_ids_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },

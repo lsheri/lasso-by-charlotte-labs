@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
+import { CaptureCoverage } from "@/components/common/CaptureCoverage";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { PeekPanel, type PeekEntry } from "@/components/peek/PeekPanel";
 import {
@@ -169,6 +170,13 @@ export function AiRecordPage() {
       <PageHeader
         title="AI record"
         subtitle="Every conversation you have captured, in the engagements you mapped them into."
+      />
+
+      <CaptureCoverage
+        profileId={profile?.id}
+        itemCount={threads.length}
+        scopeLabel="your record"
+        dates={threads.map((t) => effectiveWorkDate(t))}
       />
 
       {threads.length === 0 ? (

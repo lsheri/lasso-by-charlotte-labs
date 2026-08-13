@@ -5,6 +5,9 @@ import type { Database } from "@/integrations/supabase/types";
 
 import { bucket } from "./telemetry-shared";
 import {
+  CAPTURE_CHANNELS,
+  CONSENT_PURPOSES,
+  DECISION_STATUSES,
   EPISODE_ITEM_ROLES,
   EPISODE_STATUSES,
   OUTCOME_KINDS,
@@ -12,6 +15,7 @@ import {
   QUESTION_INTENT_CLASSES,
   QUESTION_STAGES,
   QUESTION_TARGETS,
+  WORK_ITEM_TYPES,
   type EventNameV2,
   type EventSourceV2,
 } from "./telemetry-v2-shared";
@@ -28,53 +32,153 @@ import {
  * arriving from a browser is never event truth.
  */
 
-const TAXONOMY_VERSION = "v2.0";
+export const TAXONOMY_VERSION = "v2.0";
 const KEY_VERSION = "v1";
 
-/** The registry. An event name that is not here cannot be recorded. */
+/**
+ * The registry. An event name that is not here cannot be recorded, and a prop
+ * that is not in its schema cannot travel. Enums and exact integers only.
+ */
+const count = z.number().int().nonnegative();
+/** Short controlled vocabulary: a tool name, a preset id, a class label. */
+const term = z.string().max(48);
+
 const SCHEMAS = {
-  "episode.created": z
-    .object({
-      has_task: z.boolean(),
-      item_count: z.number().int().nonnegative(),
-    })
+  // 15.1 identity and consent
+  "organization.profile_created": z.object({ org_mode: term, has_segments: z.boolean() }).strict(),
+  "organization.segment_updated": z.object({ fields_set: count }).strict(),
+  "actor.profile_created": z.object({ role_family: term }).strict(),
+  "actor.segment_updated": z.object({ fields_set: count }).strict(),
+  "cohort.created": z.object({ member_count: count }).strict(),
+  "cohort.member_joined": z.object({ member_count: count }).strict(),
+  "consent.presented": z.object({ purpose_count: count, policy_version: term }).strict(),
+  "consent.granted": z.object({ purpose: z.enum(CONSENT_PURPOSES), policy_version: term }).strict(),
+  "consent.declined": z.object({ purpose: z.enum(CONSENT_PURPOSES), policy_version: term }).strict(),
+  "consent.withdrawn": z
+    .object({ purpose: z.enum(CONSENT_PURPOSES), policy_version: term })
     .strict(),
-  "episode.item_linked": z
-    .object({
-      item_role: z.enum(EPISODE_ITEM_ROLES),
-      item_count: z.number().int().nonnegative(),
-    })
-    .strict(),
+  "consent.policy_changed": z.object({ policy_version: term, granted_count: count }).strict(),
+  "retention.policy_applied": z.object({ policy_version: term, item_count: count }).strict(),
+
+  // 15.2 capture and episode
+  "episode.created": z.object({ has_task: z.boolean(), item_count: count }).strict(),
+  "episode.objective_confirmed": z.object({ objective_chars: count }).strict(),
   "episode.closed": z
+    .object({ status: z.enum(EPISODE_STATUSES), item_count: count, days_open: count })
+    .strict(),
+  "work_item.captured": z
     .object({
-      status: z.enum(EPISODE_STATUSES),
-      item_count: z.number().int().nonnegative(),
-      days_open: z.number().int().nonnegative(),
+      item_type: z.enum(WORK_ITEM_TYPES),
+      channel: z.enum(CAPTURE_CHANNELS),
+      item_count: count,
     })
     .strict(),
-  "outcome.declared": z
-    .object({
-      kind: z.enum(OUTCOME_KINDS),
-      outcome_source: z.enum(OUTCOME_SOURCES),
-      item_count: z.number().int().nonnegative(),
-    })
+  "work_item.mapped": z
+    .object({ item_type: z.enum(WORK_ITEM_TYPES), channel: z.enum(CAPTURE_CHANNELS), bulk: count })
     .strict(),
+  "work_item.unmapped": z.object({ item_type: z.enum(WORK_ITEM_TYPES) }).strict(),
+  "work_item.marked_private": z.object({ item_type: z.enum(WORK_ITEM_TYPES) }).strict(),
+  "conversation.pushed": z
+    .object({ tool: term, turn_count: count, attachment_count: count })
+    .strict(),
+  "conversation.appended": z.object({ tool: term, turn_count: count }).strict(),
+  "conversation.turn_revised": z.object({ tool: term, turn_count: count }).strict(),
+  "artifact.captured": z
+    .object({ artifact_type: z.enum(WORK_ITEM_TYPES), channel: z.enum(CAPTURE_CHANNELS) })
+    .strict(),
+  "artifact.versioned": z.object({ version_no: count, source_event: term }).strict(),
+  "brief.linked": z.object({ scope: term }).strict(),
+  "rubric.linked": z.object({ scope: term }).strict(),
+  "source.linked": z.object({ relation: term }).strict(),
+
+  // 15.3 lineage and cross-tool
+  "episode.item_linked": z
+    .object({ item_role: z.enum(EPISODE_ITEM_ROLES), item_count: count })
+    .strict(),
+  "lineage.drafted": z.object({ candidate_count: count, scope: term }).strict(),
+  "lineage.confirmed": z.object({ relation: term }).strict(),
+  "lineage.rejected": z.object({ relation: term }).strict(),
+  "tool_handoff.inferred": z.object({ from_tool: term, to_tool: term }).strict(),
+  "tool_handoff.confirmed": z.object({ from_tool: term, to_tool: term }).strict(),
+  "tool_handoff.rejected": z.object({ from_tool: term, to_tool: term }).strict(),
+  "model.substituted": z.object({ requested_tier: term, served_model: term }).strict(),
+
+  // 15.4 decisions and verification
+  "decision.drafted": z.object({ draft_count: count, scope: term }).strict(),
+  "decision.confirmed": z.object({ edited: z.boolean(), evidence_count: count }).strict(),
+  "decision.edited": z.object({ edited: z.boolean() }).strict(),
+  "decision.discarded": z.object({ edited: z.boolean() }).strict(),
+  "decision.resolved": z.object({ status: z.enum(DECISION_STATUSES), edited: z.boolean() }).strict(),
+  "decision.applied": z.object({ evidence_count: count }).strict(),
+  "verification.detected": z.object({ kind: term }).strict(),
+  "verification.confirmed": z.object({ kind: term }).strict(),
+  "verification.failed": z.object({ kind: term }).strict(),
+  "evidence.opened": z.object({ surface: term, item_type: z.enum(WORK_ITEM_TYPES) }).strict(),
+
+  // 15.5 questions and analysis
   "question.asked": z
     .object({
       intent_class: z.enum(QUESTION_INTENT_CLASSES),
       target: z.enum(QUESTION_TARGETS),
       stage: z.enum(QUESTION_STAGES),
-      question_chars: z.number().int().nonnegative(),
+      question_chars: count,
     })
     .strict(),
+  "question.refined": z.object({ question_chars: count }).strict(),
+  "question.result_used": z.object({ surface: term }).strict(),
+  "analysis.started": z.object({ preset: term, scope: term }).strict(),
+  "analysis.completed": z
+    .object({ preset: term, items_read: count, claims_rendered: count, suppressed: count })
+    .strict(),
+  "analysis.failed": z.object({ preset: term, error_class: term }).strict(),
+  "finding.generated": z.object({ preset: term, claims_rendered: count }).strict(),
+  "finding.confirmed": z.object({ preset: term, claims_rendered: count }).strict(),
+  "finding.edited": z.object({ preset: term }).strict(),
+  "finding.rejected": z.object({ preset: term, claims_rendered: count }).strict(),
   "finding.labelled": z
+    .object({ preset: term, label: z.enum(["confirmed", "rejected"]), claims_rendered: count })
+    .strict(),
+  "reflection.started": z.object({ surface: term }).strict(),
+  "reflection.completed": z.object({ surface: term, message_count: count }).strict(),
+
+  // 15.6 coaching and the 1:1
+  "coaching.review_started": z.object({ surface: term }).strict(),
+  "coaching.question_asked": z.object({ scope: term }).strict(),
+  "coaching.note_created": z.object({ cites_count: count }).strict(),
+  "coaching.action_created": z.object({ action_class: term }).strict(),
+  "coaching.action_accepted": z.object({ action_class: term }).strict(),
+  "coaching.action_declined": z.object({ action_class: term }).strict(),
+  "coaching.followup_observed": z.object({ action_class: term, days_after: count }).strict(),
+  "one_on_one.prepared": z.object({ item_count: count }).strict(),
+  "one_on_one.opened": z.object({ surface: term }).strict(),
+  "one_on_one.used": z.object({ surface: term }).strict(),
+  "one_on_one.saved": z.object({ destination: term }).strict(),
+
+  // 15.7 outcomes
+  "outcome.declared": z
     .object({
-      preset: z.string().max(64),
-      label: z.enum(["confirmed", "rejected"]),
-      claims_rendered: z.number().int().nonnegative(),
+      kind: z.enum(OUTCOME_KINDS),
+      outcome_source: z.enum(OUTCOME_SOURCES),
+      item_count: count,
     })
     .strict(),
+  "outcome.observed": z.object({ kind: z.enum(OUTCOME_KINDS) }).strict(),
+  "outcome.validated": z
+    .object({ kind: z.enum(OUTCOME_KINDS), outcome_source: z.enum(OUTCOME_SOURCES) })
+    .strict(),
+  "artifact.delivered": z.object({ artifact_type: z.enum(WORK_ITEM_TYPES) }).strict(),
+  "artifact.accepted": z.object({ artifact_type: z.enum(WORK_ITEM_TYPES) }).strict(),
+  "rework.requested": z.object({ item_count: count }).strict(),
+  "episode.reopened": z.object({ item_count: count }).strict(),
+  "episode.abandoned": z.object({ item_count: count, days_open: count }).strict(),
 } satisfies Record<EventNameV2, z.ZodTypeAny>;
+
+export type { EventNameV2 };
+/** Runtime guard for the client bridge: is this a name we know? */
+export function isEventNameV2(name: string): name is EventNameV2 {
+  return Object.prototype.hasOwnProperty.call(SCHEMAS, name);
+}
+
 
 export type PropsV2 = Record<string, string | number | boolean>;
 
@@ -106,7 +210,7 @@ function guardProps(eventName: EventNameV2, props: PropsV2): boolean {
   return true;
 }
 
-async function hmacHex(key: string, message: string): Promise<string> {
+export async function hmacHex(key: string, message: string): Promise<string> {
   const cryptoKey = await crypto.subtle.importKey(
     "raw",
     new TextEncoder().encode(key),
@@ -125,7 +229,7 @@ async function hmacHex(key: string, message: string): Promise<string> {
  * unlinkable actor pseudonyms. Keyed HMAC, never a plain hash, and never the
  * v1 global actor hash.
  */
-async function pseudonyms(
+export async function pseudonyms(
   key: string,
   orgId: string,
   profileId: string | null,
@@ -169,6 +273,8 @@ export type RecordEventV2Input = {
   actorType?: "user" | "system" | undefined;
   /** From the verified JWT claims, used only to spot QA identities. */
   email?: string | null | undefined;
+  /** Experiment exposure, attached to the next relevant event. See experiments.server.ts. */
+  exposure?: { experiment: string; variant: string } | null | undefined;
 };
 
 /**
@@ -216,12 +322,20 @@ export async function recordEventV2(
 
     const { data: org } = await supabase
       .from("orgs")
-      .select("name")
+      .select("name, data_use_tier")
       .eq("id", profile.org_id)
       .maybeSingle();
     const environment = resolveEnvironment(input.email ?? null, org?.name ?? null);
 
-    const canonicalProps = { ...props, _key_version: KEY_VERSION };
+    const canonicalProps: Record<string, string | number | boolean> = {
+      ...props,
+      _key_version: KEY_VERSION,
+    };
+    // Exposure rides along as two flat props so a variant can be read off any event.
+    if (input.exposure) {
+      canonicalProps["experiment"] = input.exposure.experiment.slice(0, 48);
+      canonicalProps["variant"] = input.exposure.variant.slice(0, 48);
+    }
 
     // events_v2 has RLS on and zero policies, by design: service role only.
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -239,7 +353,7 @@ export async function recordEventV2(
       work_item_id: input.workItemId ?? null,
       engagement_id: input.engagementId ?? null,
       taxonomy_version: TAXONOMY_VERSION,
-      consent_snapshot: null,
+      consent_snapshot: org?.data_use_tier ?? "operate",
       props: canonicalProps as never,
     });
     if (error) console.error(`[telemetry-v2] insert failed for ${input.eventName}:`, error.message);

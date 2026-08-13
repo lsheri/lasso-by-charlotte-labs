@@ -69,6 +69,14 @@ export const prepareOneOnOne = createServerFn({ method: "POST" })
       },
     });
 
+    const { recordEventV2 } = await import("./telemetry-v2.server");
+    await recordEventV2(supabase, userId, {
+      eventName: "one_on_one.prepared",
+      props: { item_count: corpus.itemCount },
+      profileId: profile.id,
+      engagementId: data.engagement_id ?? null,
+    });
+
     return { markdown, itemCount: corpus.itemCount };
   });
 
@@ -107,6 +115,12 @@ export const saveBriefToDrive = createServerFn({ method: "POST" })
       orgId: profile.org_id,
       userId,
       dims: {},
+    });
+    const { recordEventV2 } = await import("./telemetry-v2.server");
+    await recordEventV2(supabase, userId, {
+      eventName: "one_on_one.saved",
+      props: { destination: "drive" },
+      profileId: profile.id,
     });
 
     return result;

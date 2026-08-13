@@ -29,6 +29,7 @@ export type InlineAnalysis = {
   suppressed: number;
   claims: number;
   readsDetail: string;
+  runId: string;
 };
 
 /**
@@ -72,6 +73,7 @@ export function useChatAnalyses(profileId: string | undefined, orgId: string | u
           suppressed: result.suppressed,
           claims: result.claims,
           readsDetail,
+          runId: result.run_id,
         },
       ]);
       if (orgId) logEvent("reflect.session_created", orgId, { preset: preset.id });
@@ -120,6 +122,7 @@ export function InlineAnalysisBlocks({
               preset={result.preset.id}
               claims={result.claims}
               profileId={profileId}
+              runId={result.runId}
             />
           </div>
         </div>

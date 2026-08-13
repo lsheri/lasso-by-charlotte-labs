@@ -14,7 +14,7 @@ import {
 import { useProfile } from "@/hooks/use-profile";
 import { supabase } from "@/integrations/supabase/client";
 
-const ORG_MODES = ["consultancy", "in_house", "agency", "education", "other"];
+const ORG_MODES = ["corporate", "education"];
 const INDUSTRIES = [
   "Professional services",
   "Technology",

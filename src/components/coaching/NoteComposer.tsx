@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useProfile } from "@/hooks/use-profile";
 import { supabase } from "@/integrations/supabase/client";
 import { logEvent } from "@/lib/telemetry";
+import { logV2 } from "@/lib/telemetry-v2";
 
 export type CitationOption = { id: string; kind: "decision" | "task"; label: string };
 
@@ -80,6 +81,7 @@ export function NoteComposer({
     }
 
     logEvent("note.created", profile.org_id, { cites_count: cited.length });
+    logV2("coaching.note_created", { cites_count: cited.length }, { profileId: profile.id });
     await queryClient.invalidateQueries({ queryKey: ["packet", engagementId, subjectId] });
     await queryClient.invalidateQueries({ queryKey: ["coach-subjects"] });
     setDidWell("");

@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { EngagementDecisions } from "@/components/decisions/EngagementDecisions";
 import { EngagementLineage } from "@/components/peek/EngagementLineage";
 import { OneOnOneBrief } from "@/components/oneonone/OneOnOneBrief";
+import { CaptureCoverage } from "@/components/common/CaptureCoverage";
 import { EditEngagementDialog } from "@/components/engagements/EditEngagementDialog";
 import { EpisodePanel } from "@/components/episodes/EpisodePanel";
 import { EditTaskDialog } from "@/components/engagements/EditTaskDialog";
@@ -147,6 +148,13 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
             </button>
           ) : null}
         </div>
+
+        <CaptureCoverage
+          profileId={profile?.id}
+          itemCount={mappedItemCount}
+          scopeLabel="this engagement"
+          isOwner={profile?.role !== "coach"}
+        />
 
         <div className="mt-4 flex flex-wrap items-center gap-2">
           {profile?.role !== "coach" ? <EditEngagementDialog engagement={engagement} /> : null}
