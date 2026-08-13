@@ -433,12 +433,7 @@ export function ReflectPage() {
               ) : null}
 
               <div className="space-y-3 border-t border-border px-5 py-4">
-                <AnalysisChips
-                  target={chipTarget}
-                  readsDetail={readsDetail}
-                  running={analyses.running}
-                  onRun={(preset) => void analyses.runPreset(preset, chipTarget, readsDetail)}
-                />
+                {chipsRow}
                 <div className="flex items-end gap-2">
                   <Textarea
                     value={draft}
