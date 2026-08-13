@@ -35,6 +35,7 @@ export function RowMenu({
         <DropdownMenuTrigger
           aria-label="More actions"
           className="rounded-full border border-border bg-card p-1.5 text-muted-foreground transition-colors hover:text-foreground"
+          onClick={(event) => event.stopPropagation()}
         >
           <MoreHorizontal className="h-4 w-4" aria-hidden />
         </DropdownMenuTrigger>
