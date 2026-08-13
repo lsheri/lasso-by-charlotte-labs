@@ -74,62 +74,68 @@ export const startAnalysis = createServerFn({ method: "POST" })
       throw new Error(NOT_ENOUGH_WORK_LINE);
     }
 
-    const { assertUnderDailyCap } = await import("./analysis-cap.server");
-    await assertUnderDailyCap(supabase, profile.id);
-
-    const { resolveAiMeta } = await import("./ai.server");
-    const aiMeta = await resolveAiMeta(supabase, {
-      surface: `analysis:${preset.id}`,
-      orgId: profile.org_id,
-      userId,
-    });
-
     const idempotencyKey = `${preset.id}:${target.scopeType}:${target.scopeId}:${profile.id}`;
-
-    // A second run while one is in flight returns the run already going.
-    const { data: inFlight } = await supabase
-      .from("analysis_runs")
-      .select("id, session_id, items_read, suppressed_claims")
-      .eq("idempotency_key", idempotencyKey)
-      .eq("status", "running")
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    if (inFlight?.session_id) {
-      return {
-        run_id: inFlight.id,
-        session_id: inFlight.session_id,
-        reused: true,
-        items_read: inFlight.items_read ?? 1,
-        suppressed: inFlight.suppressed_claims ?? 0,
-      };
-    }
-
     const { recordEvent } = await import("./telemetry.server");
-    await recordEvent(supabase, {
-      eventType: "analysis.started",
-      orgId: profile.org_id,
-      userId,
-      dims: { preset: preset.id, scope_type: preset.scope },
-    });
+    const scopeType = target.scopeType;
+    let aiMeta: Awaited<ReturnType<typeof import("./ai.server")["resolveAiMeta"]>>;
+    let session: { id: string };
+    let run: { id: string };
+    try {
+      const { assertUnderDailyCap } = await import("./analysis-cap.server");
+      await assertUnderDailyCap(supabase, profile.id);
 
-    const { data: session, error: sessionError } = await supabase
-      .from("chat_sessions")
-      .insert({
-        profile_id: profile.id,
-        org_id: profile.org_id,
-        context_scope: target.scope,
-        title: `${preset.label}: ${target.title}`.slice(0, 120),
-      })
-      .select("id")
-      .single();
-    if (sessionError) throw new Error(sessionError.message);
+      const { resolveAiMeta } = await import("./ai.server");
+      aiMeta = await resolveAiMeta(supabase, {
+        surface: `analysis:${preset.id}`,
+        orgId: profile.org_id,
+        userId,
+      });
 
-    const { data: run, error: runError } = await supabase
-      .from("analysis_runs")
-      .insert({
+      // This read intentionally uses the caller client. RLS decides which run
+      // the authenticated person may reuse.
+      const { data: inFlight } = await supabase
+        .from("analysis_runs")
+        .select("id, session_id, items_read, suppressed_claims")
+        .eq("idempotency_key", idempotencyKey)
+        .eq("status", "running")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (inFlight?.session_id) {
+        return {
+          run_id: inFlight.id,
+          session_id: inFlight.session_id,
+          reused: true,
+          items_read: inFlight.items_read ?? 1,
+          suppressed: inFlight.suppressed_claims ?? 0,
+        };
+      }
+
+      await recordEvent(supabase, {
+        eventType: "analysis.started",
+        orgId: profile.org_id,
+        userId,
+        dims: { preset: preset.id, scope_type: preset.scope },
+      });
+
+      const { data: createdSession, error: sessionError } = await supabase
+        .from("chat_sessions")
+        .insert({
+          profile_id: profile.id,
+          org_id: profile.org_id,
+          context_scope: target.scope,
+          title: `${preset.label}: ${target.title}`.slice(0, 120),
+        })
+        .select("id")
+        .single();
+      if (sessionError || !createdSession) {
+        throw new Error(sessionError?.message ?? "analysis_session_create_failed");
+      }
+      session = createdSession;
+
+      const { createRun } = await import("./analysis-runs.server");
+      run = await createRun({
         preset: preset.dbPreset,
-        // analysis_runs.scope_type allows item | deliverable | engagement.
         scope_type: target.scopeType,
         scope_id: target.scopeId,
         idempotency_key: idempotencyKey,
@@ -137,23 +143,49 @@ export const startAnalysis = createServerFn({ method: "POST" })
         owner_id: target.ownerId,
         run_by_profile_id: profile.id,
         session_id: session.id,
-        status: "running",
-      })
-      .select("id")
-      .single();
-    if (runError || !run) throw new Error(runError?.message ?? "Could not start the analysis.");
+      });
+    } catch (error) {
+      const rawReason = error instanceof Error ? error.message : "analysis_start_failed";
+      const errorClass = "start_error";
+      try {
+        const { logHealth } = await import("./health.server");
+        await logHealth({
+          kind: "error",
+          surface: "analysis",
+          orgId: profile.org_id,
+          ownerId: target.ownerId,
+          detail: rawReason,
+          meta: { preset: preset.id, error_class: errorClass },
+        });
+      } catch {
+        // Health reporting must never replace the human-facing start error.
+      }
+      await recordEvent(supabase, {
+        eventType: "analysis.run",
+        orgId: profile.org_id,
+        userId,
+        dims: analysisRunDims({
+          preset: preset.id,
+          scopeType,
+          status: "failed",
+          errorClass,
+          itemsRead: 0,
+          costUsd: 0,
+          claims: 0,
+          suppressed: 0,
+        }),
+      });
+      throw new Error("That analysis could not start. Try again.");
+    }
     const runId = run.id;
-    const scopeType = target.scopeType;
     let costSoFar = 0;
     let itemsReadSoFar = 0;
     let claimsSoFar = 0;
     let suppressedSoFar = 0;
 
     async function fail(reason: string): Promise<never> {
-      await supabase
-        .from("analysis_runs")
-        .update({ status: "failed", error_class: reason, completed_at: new Date().toISOString() })
-        .eq("id", runId);
+      const { failRun } = await import("./analysis-runs.server");
+      await failRun(runId, reason);
       await recordEvent(supabase, {
         eventType: "analysis.run",
         orgId: profile!.org_id,
@@ -175,15 +207,19 @@ export const startAnalysis = createServerFn({ method: "POST" })
         userId,
         dims: { preset: preset!.id, reason_class: reason },
       });
-      const { logHealth } = await import("./health.server");
-      void logHealth({
-        kind: "error",
-        surface: "analysis",
-        orgId: profile!.org_id,
-        ownerId: target.ownerId,
-        detail: reason,
-        meta: { preset: preset!.id },
-      });
+      try {
+        const { logHealth } = await import("./health.server");
+        await logHealth({
+          kind: "error",
+          surface: "analysis",
+          orgId: profile.org_id,
+          ownerId: target.ownerId,
+          detail: reason,
+          meta: { preset: preset.id },
+        });
+      } catch {
+        // The analysis failure remains the error returned to the person.
+      }
       throw new Error(
         reason === "timeout"
           ? "That took too long to finish. Try again."
@@ -201,6 +237,8 @@ export const startAnalysis = createServerFn({ method: "POST" })
           deliverableId: target.scopeId,
           ownerId: target.ownerId,
           orgId: profile.org_id,
+          runnerProfileId: profile.id,
+          coachMayRun: preset.coachMayRun,
         });
         const { renderDraftedLineage } = await import("./analysis-scope.server");
         const rendered = await renderDraftedLineage(supabase, target.scopeId, target.title);
@@ -229,19 +267,15 @@ export const startAnalysis = createServerFn({ method: "POST" })
         itemsReadSoFar = lineageItems;
         claimsSoFar = rendered.considered;
 
-        await supabase
-          .from("analysis_runs")
-          .update({
-            items_read: lineageItems,
-            tokens_in: drafted.usage?.tokensIn ?? 0,
-            tokens_out: 0,
-            cost_usd: lineageCost,
-            claims_rendered: rendered.considered,
-            suppressed_claims: 0,
-            status: "completed",
-            completed_at: new Date().toISOString(),
-          })
-          .eq("id", runId);
+        const { completeRun } = await import("./analysis-runs.server");
+        await completeRun(runId, {
+          items_read: lineageItems,
+          tokens_in: drafted.usage?.tokensIn ?? 0,
+          tokens_out: 0,
+          cost_usd: lineageCost,
+          claims_rendered: rendered.considered,
+          suppressed_claims: 0,
+        });
 
         await recordEvent(supabase, {
           eventType: "analysis.run",
@@ -332,19 +366,15 @@ export const startAnalysis = createServerFn({ method: "POST" })
       claimsSoFar = guarded.claims;
       suppressedSoFar = guarded.suppressed;
 
-      await supabase
-        .from("analysis_runs")
-        .update({
-          items_read: itemsRead,
-          tokens_in: tokensIn,
-          tokens_out: tokensOut,
-          cost_usd: costUsd,
-          claims_rendered: guarded.claims,
-          suppressed_claims: guarded.suppressed,
-          status: "completed",
-          completed_at: new Date().toISOString(),
-        })
-        .eq("id", runId);
+      const { completeRun } = await import("./analysis-runs.server");
+      await completeRun(runId, {
+        items_read: itemsRead,
+        tokens_in: tokensIn,
+        tokens_out: tokensOut,
+        cost_usd: costUsd,
+        claims_rendered: guarded.claims,
+        suppressed_claims: guarded.suppressed,
+      });
 
       await recordEvent(supabase, {
         eventType: "analysis.run",

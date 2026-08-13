@@ -82,7 +82,13 @@ export type LineageRunResult = {
  */
 export async function draftLineageFor(
   supabase: Db,
-  args: { deliverableId: string; ownerId: string; orgId: string },
+  args: {
+    deliverableId: string;
+    ownerId: string;
+    orgId: string;
+    runnerProfileId: string;
+    coachMayRun: boolean;
+  },
 ): Promise<LineageRunResult> {
   const { data: deliverableRow } = await supabase
     .from("work_items")
@@ -263,9 +269,23 @@ export async function draftLineageFor(
     return { drafted: 0, considered: candidates.length, skippedExisting, usage };
   }
 
+  const runnerIsOwner = args.runnerProfileId === args.ownerId;
+  let coachCanSeeDeliverable = false;
+  if (!runnerIsOwner && args.coachMayRun) {
+    const { data, error } = await supabase.rpc("coach_can_see_item", {
+      item: args.deliverableId,
+    });
+    if (error) throw new Error("lineage_authorization_failed");
+    coachCanSeeDeliverable = data === true;
+  }
+  if (!(runnerIsOwner || (args.coachMayRun && coachCanSeeDeliverable))) {
+    throw new Error("lineage_not_authorized");
+  }
+
   // ignoreDuplicates: a second concurrent run silently no-ops instead of
   // surfacing a unique violation to the person.
-  const { data: inserted, error } = await supabase
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data: inserted, error } = await supabaseAdmin
     .from("work_item_links")
     .upsert(rows, { onConflict: "from_item_id,to_item_id,relation", ignoreDuplicates: true })
     .select("id");
