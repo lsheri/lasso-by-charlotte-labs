@@ -5,6 +5,7 @@ import { useState } from "react";
 import { SuggestDot, Suggested } from "@/components/common/Suggested";
 import { MarkdownMessage } from "@/components/markdown/MarkdownMessage";
 import { AnalysisInfoPanel } from "@/components/reflect/AnalysisInfoPanel";
+import { FindingLabel } from "@/components/reflect/FindingLabel";
 import { supabase } from "@/integrations/supabase/client";
 import {
   MIN_ITEMS_FOR_RECURRENCE,
@@ -26,6 +27,7 @@ export type InlineAnalysis = {
   preset: AnalysisPreset;
   text: string;
   suppressed: number;
+  claims: number;
   readsDetail: string;
 };
 
@@ -68,6 +70,7 @@ export function useChatAnalyses(profileId: string | undefined, orgId: string | u
           preset,
           text: answer?.content ?? "Nothing came back for that. Try again.",
           suppressed: result.suppressed,
+          claims: result.claims,
           readsDetail,
         },
       ]);
@@ -88,7 +91,13 @@ export function useChatAnalyses(profileId: string | undefined, orgId: string | u
   return { results, running, error, runPreset, clear };
 }
 
-export function InlineAnalysisBlocks({ results }: { results: InlineAnalysis[] }) {
+export function InlineAnalysisBlocks({
+  results,
+  profileId,
+}: {
+  results: InlineAnalysis[];
+  profileId?: string | undefined;
+}) {
   return (
     <>
       {results.map((result) => (
@@ -107,6 +116,11 @@ export function InlineAnalysisBlocks({ results }: { results: InlineAnalysis[] })
             {result.preset.attribution ? (
               <p className="mt-2 text-xs text-muted-foreground">{result.preset.attribution}</p>
             ) : null}
+            <FindingLabel
+              preset={result.preset.id}
+              claims={result.claims}
+              profileId={profileId}
+            />
           </div>
         </div>
       ))}

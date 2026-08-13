@@ -8,6 +8,7 @@ import { Suggested, SuggestDot } from "@/components/common/Suggested";
 import { MarkdownMessage } from "@/components/markdown/MarkdownMessage";
 import { SlideOver } from "@/components/peek/SlideOver";
 import { AnalysisInfoPanel } from "@/components/reflect/AnalysisInfoPanel";
+import { FindingLabel } from "@/components/reflect/FindingLabel";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
@@ -61,6 +62,7 @@ export function AnalysisLens({
   );
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [suppressed, setSuppressed] = useState(0);
+  const [claims, setClaims] = useState(0);
   const [draft, setDraft] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -233,6 +235,7 @@ export function AnalysisLens({
             {active.attribution ? (
               <p className="mt-3 text-xs text-muted-foreground">{active.attribution}</p>
             ) : null}
+            <FindingLabel preset={active.id} claims={claims} profileId={profileId} />
           </div>
         ) : null}
         <div ref={bottomRef} />
