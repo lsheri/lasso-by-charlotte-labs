@@ -33,9 +33,7 @@ export function itemsInScope(scope: ContextScope, all: WorkItemRow[]): WorkItemR
 
 /** Everything mapped into one engagement. The selector's universe. */
 export function mappedItemsForEngagement(all: WorkItemRow[], engagementId: string): WorkItemRow[] {
-  return all.filter(
-    (i) => i.visibility === "mapped" && engagementIdsOf(i).includes(engagementId),
-  );
+  return all.filter((i) => i.visibility === "mapped" && engagementIdsOf(i).includes(engagementId));
 }
 
 export type ChipShape =
@@ -57,7 +55,11 @@ export function chipShape(scope: ContextScope, all: WorkItemRow[]): ChipShape {
   const engagements = new Set(resolved.flatMap(engagementIdsOf));
   if (scope.mode === "engagements" && scope.ids.length === 1) {
     const id = scope.ids[0]!;
-    return { kind: "engagement", engagementId: id, itemCount: mappedItemsForEngagement(all, id).length };
+    return {
+      kind: "engagement",
+      engagementId: id,
+      itemCount: mappedItemsForEngagement(all, id).length,
+    };
   }
   if (engagements.size === 1) {
     const id = Array.from(engagements)[0]!;

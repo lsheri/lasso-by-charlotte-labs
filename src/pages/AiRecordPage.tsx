@@ -78,10 +78,7 @@ function groupItems(items: WorkItemRow[]): Group[] {
         latest: 0,
       };
       if (!group.items.some((i) => i.id === item.id)) group.items.push(item);
-      group.latest = Math.max(
-        group.latest,
-        new Date(effectiveWorkDate(item)).getTime() || 0,
-      );
+      group.latest = Math.max(group.latest, new Date(effectiveWorkDate(item)).getTime() || 0);
       groups.set(engagement.id, group);
     }
   }
@@ -262,7 +259,7 @@ export function AiRecordPage() {
                       footer={
                         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
                           <span>
-                            {(turnCounts?.[item.id] ?? 0)} message
+                            {turnCounts?.[item.id] ?? 0} message
                             {(turnCounts?.[item.id] ?? 0) === 1 ? "" : "s"}
                           </span>
                           {(fed?.[item.id] ?? []).length > 0 ? (

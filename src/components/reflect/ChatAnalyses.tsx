@@ -133,8 +133,7 @@ export function AnalysisChips({
   const scope = target.kind === "engagement" ? "engagement" : target.scope;
   const presets = presetsForScope(scope, isCoach);
   if (presets.length === 0) return null;
-  const notEnoughWork =
-    target.kind === "engagement" && target.itemCount < MIN_ITEMS_FOR_RECURRENCE;
+  const notEnoughWork = target.kind === "engagement" && target.itemCount < MIN_ITEMS_FOR_RECURRENCE;
 
   return (
     <Suggested className={className}>

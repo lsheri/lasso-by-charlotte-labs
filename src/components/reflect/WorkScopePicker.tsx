@@ -5,11 +5,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { EngagementSummary } from "@/hooks/use-engagements";
 import type { ContextScope } from "@/lib/reflect-shared";
-import {
-  chipShape,
-  itemsInScope,
-  mappedItemsForEngagement,
-} from "@/lib/reflect-scope-shape";
+import { chipShape, itemsInScope, mappedItemsForEngagement } from "@/lib/reflect-scope-shape";
 import { effectiveWorkDate, formatDate, type WorkItemRow } from "@/lib/work-types";
 
 /** The scope as a plain sentence, never a count of tokens or a cost. */
@@ -137,7 +133,9 @@ export function WorkScopePicker({
                   type="button"
                   onClick={() => {
                     setEngagementId(engagement.id);
-                    setChecked(new Set(mappedItemsForEngagement(all, engagement.id).map((i) => i.id)));
+                    setChecked(
+                      new Set(mappedItemsForEngagement(all, engagement.id).map((i) => i.id)),
+                    );
                   }}
                   className={
                     engagement.id === engagementId
@@ -161,10 +159,7 @@ export function WorkScopePicker({
                     <p className="micro-label">{group.name}</p>
                     <div className="mt-1 space-y-1">
                       {group.items.map((item) => (
-                        <label
-                          key={item.id}
-                          className="flex items-start gap-3 px-1 py-1.5 text-sm"
-                        >
+                        <label key={item.id} className="flex items-start gap-3 px-1 py-1.5 text-sm">
                           <Checkbox
                             checked={checked.has(item.id)}
                             onCheckedChange={() => toggle(item.id)}
