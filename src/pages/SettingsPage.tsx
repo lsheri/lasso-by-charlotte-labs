@@ -1,4 +1,6 @@
 import { NamingConventionsCard } from "@/components/settings/NamingConventionsCard";
+import { OrgDimensionsCard } from "@/components/settings/OrgDimensionsCard";
+import { YourWorkCard } from "@/components/settings/YourWorkCard";
 import { AccountEmailCard } from "@/components/settings/AccountEmailCard";
 import { InviteDialog } from "@/components/invites/InviteDialog";
 import { EnterInviteCode } from "@/components/invites/EnterInviteCode";
@@ -22,6 +24,8 @@ export function SettingsPage() {
         </div>
         <div className="space-y-8">
           <AccountEmailCard />
+          <YourWorkCard />
+          <OrgDimensionsCard />
           <NamingConventionsCard />
         </div>
       </div>
