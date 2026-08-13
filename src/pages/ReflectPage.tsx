@@ -13,6 +13,7 @@ import {
   useChatAnalyses,
   type ChipTarget,
 } from "@/components/reflect/ChatAnalyses";
+import { AiRecordPointer } from "@/components/reflect/AiRecordPointer";
 import { WorkScopePicker, scopeSentence } from "@/components/reflect/WorkScopePicker";
 import {
   AlertDialog,
@@ -141,7 +142,13 @@ export function ReflectPage() {
               "this engagement",
             itemCount: shape.itemCount,
           }
-        : { kind: "none" };
+        : { kind: "none", reason: shape.reason };
+
+  const engagementOptions = (engagements ?? []).map((e) => ({
+    id: e.id,
+    code: e.code,
+    title: e.title,
+  }));
 
   const readsDetail =
     shape.kind === "engagement"
@@ -149,6 +156,43 @@ export function ReflectPage() {
       : shape.kind === "item" && shape.scope === "deliverable"
         ? "this piece of work, the conversations linked to it, and the brief when there is one"
         : "this conversation only, read in full";
+
+  /** The chips row, identical before and during a session. */
+  const chipsRow = (
+    <AnalysisChips
+      target={chipTarget}
+      readsDetail={readsDetail}
+      running={analyses.running}
+      onRun={(preset) => void analyses.runPreset(preset, chipTarget, readsDetail)}
+      engagementOptions={engagementOptions}
+      onPickEngagement={(id) => applyScope({ mode: "engagements", ids: [id] })}
+      onOpenPicker={() => setScopeOpen(true)}
+    />
+  );
+
+  /** The scope control, in the same position with or without a session. */
+  const scopeBar = (
+    <div className="flex flex-wrap items-center gap-2 border-b border-border px-5 py-3">
+      <span className="micro-label">Looking at</span>
+      <button
+        type="button"
+        onClick={() => setScopeOpen(true)}
+        aria-label="Change which work feeds this conversation"
+        className="rounded-full bg-accent-soft px-4 py-1.5 text-sm text-accent-deep transition-opacity hover:opacity-85"
+      >
+        {scopeSentence(scope, all, engagements ?? [])} · change
+      </button>
+      {scope.mode !== "whole" ? (
+        <button
+          type="button"
+          onClick={() => applyScope(DEFAULT_SCOPE)}
+          className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+        >
+          Use all of your work
+        </button>
+      ) : null}
+    </div>
+  );
 
   async function newSession(withScope: ContextScope = DEFAULT_SCOPE) {
     if (!profile) return;
@@ -191,11 +235,18 @@ export function ReflectPage() {
    * fresh chat rather than applied quietly.
    */
   function applyScope(next: ContextScope) {
+    // No session yet: the choice creates the session it belongs to.
+    if (!active) return void newSession(next);
     const before = new Set(itemsInScope(scope, all).map((i) => i.id));
     const after = new Set(itemsInScope(next, all).map((i) => i.id));
     const removed = Array.from(before).filter((id) => !after.has(id));
     const added = Array.from(after).filter((id) => !before.has(id));
-    if (removed.length > 0) return setNarrowing(next);
+    if (removed.length > 0) {
+      // Nothing has been read yet in an empty session, so narrowing there is
+      // silent. Only a conversation with history needs the fresh chat offer.
+      const untouched = (messages ?? []).length === 0 && analyses.results.length === 0;
+      if (!untouched) return setNarrowing(next);
+    }
     void writeScope(next);
     if (added.length > 0) {
       setScopeNotes((prev) => [
@@ -239,6 +290,10 @@ export function ReflectPage() {
         title="Reflect"
         subtitle="A private thinking space over your own recorded work."
       />
+
+      <div className="mb-4">
+        <AiRecordPointer />
+      </div>
 
       <div className="grid gap-6 lg:grid-cols-[240px_1fr]">
         <aside className="space-y-2">
@@ -307,35 +362,21 @@ export function ReflectPage() {
 
         <section className="flex min-h-[60vh] flex-col rounded-[var(--radius)] border border-border bg-card shadow-card">
           {!active ? (
-            <div className="flex flex-1 flex-col items-center justify-center gap-2 p-10 text-center">
-              <p className="text-sm text-foreground">
-                Start a session to think out loud about your own work.
-              </p>
-              <p className="text-sm text-muted-foreground">
-                Private to you. Your coach never sees this.
-              </p>
-            </div>
+            <>
+              {scopeBar}
+              <div className="flex flex-1 flex-col items-center justify-center gap-2 p-10 text-center">
+                <p className="text-sm text-foreground">
+                  Start a session to think out loud about your own work.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Private to you. Your coach never sees this.
+                </p>
+              </div>
+              <div className="space-y-3 border-t border-border px-5 py-4">{chipsRow}</div>
+            </>
           ) : (
             <>
-              <div className="flex flex-wrap items-center gap-2 border-b border-border px-5 py-3">
-                <span className="micro-label">Looking at</span>
-                <button
-                  type="button"
-                  onClick={() => setScopeOpen(true)}
-                  className="rounded-full bg-accent-soft px-3 py-1 text-xs text-accent-deep"
-                >
-                  {scopeSentence(scope, all, engagements ?? [])} · change
-                </button>
-                {scope.mode !== "whole" ? (
-                  <button
-                    type="button"
-                    onClick={() => applyScope(DEFAULT_SCOPE)}
-                    className="text-xs text-muted-foreground transition-colors hover:text-foreground"
-                  >
-                    Use all of your work
-                  </button>
-                ) : null}
-              </div>
+              {scopeBar}
 
               <div className="flex-1 space-y-4 overflow-y-auto px-5 py-5">
                 {(messages ?? []).length === 0 && analyses.results.length === 0 ? (
@@ -392,12 +433,7 @@ export function ReflectPage() {
               ) : null}
 
               <div className="space-y-3 border-t border-border px-5 py-4">
-                <AnalysisChips
-                  target={chipTarget}
-                  readsDetail={readsDetail}
-                  running={analyses.running}
-                  onRun={(preset) => void analyses.runPreset(preset, chipTarget, readsDetail)}
-                />
+                {chipsRow}
                 <div className="flex items-end gap-2">
                   <Textarea
                     value={draft}
