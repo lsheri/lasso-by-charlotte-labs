@@ -45,7 +45,9 @@ export async function failRun(runId: string, errorClass: string): Promise<void> 
       error_class: errorClass,
       completed_at: new Date().toISOString(),
     })
-    .eq("id", runId);
+    .eq("id", runId)
+    .select("id")
+    .single();
   if (error) throw new Error(error.message);
 }
 
@@ -54,6 +56,8 @@ export async function completeRun(runId: string, fields: CompleteRunFields): Pro
   const { error } = await supabaseAdmin
     .from("analysis_runs")
     .update({ ...fields, status: "completed", completed_at: new Date().toISOString() })
-    .eq("id", runId);
+    .eq("id", runId)
+    .select("id")
+    .single();
   if (error) throw new Error(error.message);
 }

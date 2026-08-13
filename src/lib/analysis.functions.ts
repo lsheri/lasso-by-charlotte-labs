@@ -73,6 +73,8 @@ export const startAnalysis = createServerFn({ method: "POST" })
     if (preset.id === "what_recurs" && target.itemsInScope < MIN_ITEMS_FOR_RECURRENCE) {
       throw new Error(NOT_ENOUGH_WORK_LINE);
     }
+    const profileOrgId = profile.org_id;
+    const presetId = preset.id;
 
     const idempotencyKey = `${preset.id}:${target.scopeType}:${target.scopeId}:${profile.id}`;
     const { recordEvent } = await import("./telemetry.server");
@@ -160,21 +162,25 @@ export const startAnalysis = createServerFn({ method: "POST" })
       } catch {
         // Health reporting must never replace the human-facing start error.
       }
-      await recordEvent(supabase, {
-        eventType: "analysis.run",
-        orgId: profile.org_id,
-        userId,
-        dims: analysisRunDims({
-          preset: preset.id,
-          scopeType,
-          status: "failed",
-          errorClass,
-          itemsRead: 0,
-          costUsd: 0,
-          claims: 0,
-          suppressed: 0,
-        }),
-      });
+      try {
+        await recordEvent(supabase, {
+          eventType: "analysis.run",
+          orgId: profileOrgId,
+          userId,
+          dims: analysisRunDims({
+            preset: presetId,
+            scopeType,
+            status: "failed",
+            errorClass,
+            itemsRead: 0,
+            costUsd: 0,
+            claims: 0,
+            suppressed: 0,
+          }),
+        });
+      } catch {
+        // Telemetry failure must not expose an internal error to the person.
+      }
       throw new Error("That analysis could not start. Try again.");
     }
     const runId = run.id;
@@ -184,38 +190,46 @@ export const startAnalysis = createServerFn({ method: "POST" })
     let suppressedSoFar = 0;
 
     async function fail(reason: string): Promise<never> {
-      const { failRun } = await import("./analysis-runs.server");
-      await failRun(runId, reason);
-      await recordEvent(supabase, {
-        eventType: "analysis.run",
-        orgId: profile!.org_id,
-        userId,
-        dims: analysisRunDims({
-          preset: preset!.id,
-          scopeType,
-          status: "failed",
-          errorClass: reason,
-          itemsRead: itemsReadSoFar,
-          costUsd: costSoFar,
-          claims: claimsSoFar,
-          suppressed: suppressedSoFar,
-        }),
-      });
-      await recordEvent(supabase, {
-        eventType: "analysis.failed",
-        orgId: profile!.org_id,
-        userId,
-        dims: { preset: preset!.id, reason_class: reason },
-      });
+      try {
+        const { failRun } = await import("./analysis-runs.server");
+        await failRun(runId, reason);
+      } catch {
+        // Continue through health reporting and the human-facing error.
+      }
+      try {
+        await recordEvent(supabase, {
+          eventType: "analysis.run",
+          orgId: profileOrgId,
+          userId,
+          dims: analysisRunDims({
+            preset: presetId,
+            scopeType,
+            status: "failed",
+            errorClass: reason,
+            itemsRead: itemsReadSoFar,
+            costUsd: costSoFar,
+            claims: claimsSoFar,
+            suppressed: suppressedSoFar,
+          }),
+        });
+        await recordEvent(supabase, {
+          eventType: "analysis.failed",
+          orgId: profileOrgId,
+          userId,
+          dims: { preset: presetId, reason_class: reason },
+        });
+      } catch {
+        // Telemetry failure must not replace the analysis error.
+      }
       try {
         const { logHealth } = await import("./health.server");
         await logHealth({
           kind: "error",
           surface: "analysis",
-          orgId: profile.org_id,
+          orgId: profileOrgId,
           ownerId: target.ownerId,
           detail: reason,
-          meta: { preset: preset.id },
+          meta: { preset: presetId },
         });
       } catch {
         // The analysis failure remains the error returned to the person.
