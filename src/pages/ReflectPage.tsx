@@ -291,6 +291,10 @@ export function ReflectPage() {
         subtitle="A private thinking space over your own recorded work."
       />
 
+      <div className="mb-4">
+        <AiRecordPointer />
+      </div>
+
       <div className="grid gap-6 lg:grid-cols-[240px_1fr]">
         <aside className="space-y-2">
           <Button className="w-full" onClick={() => void newSession()}>
