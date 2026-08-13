@@ -39,7 +39,7 @@ export function mappedItemsForEngagement(all: WorkItemRow[], engagementId: strin
 export type ChipShape =
   | { kind: "item"; item: WorkItemRow; scope: "thread" | "deliverable" }
   | { kind: "engagement"; engagementId: string; itemCount: number }
-  | { kind: "none" };
+  | { kind: "none"; reason: "multiple" | "empty" };
 
 /**
  * Which analyses belong on this chat. One conversation shows the thread
@@ -65,5 +65,8 @@ export function chipShape(scope: ContextScope, all: WorkItemRow[]): ChipShape {
     const id = Array.from(engagements)[0]!;
     return { kind: "engagement", engagementId: id, itemCount: resolved.length };
   }
-  return { kind: "none" };
+  // No single subject can be named. Tell the caller why, so the surface can
+  // offer a way forward instead of rendering nothing.
+  const anyMapped = all.some((i) => i.visibility === "mapped" && engagementIdsOf(i).length > 0);
+  return { kind: "none", reason: anyMapped ? "multiple" : "empty" };
 }
