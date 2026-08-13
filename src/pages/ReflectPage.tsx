@@ -1,6 +1,5 @@
 import { ThinkingIndicator } from "@/components/common/Working";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 
@@ -8,7 +7,13 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { MarkdownMessage } from "@/components/markdown/MarkdownMessage";
 import { AnswerSources } from "@/components/reflect/AnswerSources";
 import { CoverageNote } from "@/components/reflect/CoverageNote";
-import { ScopePicker } from "@/components/reflect/ScopePicker";
+import {
+  AnalysisChips,
+  InlineAnalysisBlocks,
+  useChatAnalyses,
+  type ChipTarget,
+} from "@/components/reflect/ChatAnalyses";
+import { WorkScopePicker, scopeSentence } from "@/components/reflect/WorkScopePicker";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,12 +27,15 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { useEngagements } from "@/hooks/use-engagements";
 import { useProfile } from "@/hooks/use-profile";
+import { useWorkItems } from "@/hooks/use-work-items";
 import { useAnswerSources } from "@/hooks/use-answer-sources";
 import { supabase } from "@/integrations/supabase/client";
 import { streamChatRequest } from "@/lib/stream-client";
 import type { ReflectResult } from "@/lib/reflect-run.server";
-import { DEFAULT_SCOPE, parseScope, scopeLabel, type ContextScope } from "@/lib/reflect-shared";
+import { chipShape, itemsInScope } from "@/lib/reflect-scope-shape";
+import { DEFAULT_SCOPE, parseScope, type ContextScope } from "@/lib/reflect-shared";
 import { logEvent } from "@/lib/telemetry";
 
 type SessionRow = {
@@ -64,7 +72,13 @@ export function ReflectPage() {
     summaryCount: number;
   } | null>(null);
   const [scopeOpen, setScopeOpen] = useState(false);
+  const [scopeNotes, setScopeNotes] = useState<string[]>([]);
+  const [narrowing, setNarrowing] = useState<ContextScope | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  const { data: work } = useWorkItems();
+  const { data: engagements } = useEngagements(profile?.id);
+  const all = work?.items ?? [];
 
   // Reflect is private to the person doing the work; coach profiles never see it,
   // including by typing the URL directly.
@@ -108,16 +122,40 @@ export function ReflectPage() {
     (messages ?? []).filter((m) => m.role === "assistant").map((m) => Number(m.id)),
   );
 
+  const analyses = useChatAnalyses(profile?.id, profile?.org_id);
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages?.length, pending]);
+  }, [messages?.length, pending, analyses.results.length, scopeNotes.length]);
 
-  async function newSession() {
+  const shape = chipShape(scope, all);
+  const chipTarget: ChipTarget =
+    shape.kind === "item"
+      ? { kind: "item", id: shape.item.id, title: shape.item.title, scope: shape.scope }
+      : shape.kind === "engagement"
+        ? {
+            kind: "engagement",
+            id: shape.engagementId,
+            title:
+              (engagements ?? []).find((e) => e.id === shape.engagementId)?.title ??
+              "this engagement",
+            itemCount: shape.itemCount,
+          }
+        : { kind: "none" };
+
+  const readsDetail =
+    shape.kind === "engagement"
+      ? "every piece of work mapped into this engagement, oldest first"
+      : shape.kind === "item" && shape.scope === "deliverable"
+        ? "this piece of work, the conversations linked to it, and the brief when there is one"
+        : "this conversation only, read in full";
+
+  async function newSession(withScope: ContextScope = DEFAULT_SCOPE) {
     if (!profile) return;
     setError(null);
     const { data, error: insertError } = await supabase
       .from("chat_sessions")
-      .insert({ profile_id: profile.id, org_id: profile.org_id, context_scope: DEFAULT_SCOPE })
+      .insert({ profile_id: profile.id, org_id: profile.org_id, context_scope: withScope })
       .select("id")
       .single();
     if (insertError) return setError(insertError.message);
@@ -125,6 +163,8 @@ export function ReflectPage() {
     await queryClient.invalidateQueries({ queryKey: ["reflect-sessions"] });
     setActiveId(data.id);
     setCoverage(null);
+    setScopeNotes([]);
+    analyses.clear();
   }
 
   async function deleteSession(id: string) {
@@ -135,7 +175,7 @@ export function ReflectPage() {
     await queryClient.invalidateQueries({ queryKey: ["reflect-sessions"] });
   }
 
-  async function saveScope(next: ContextScope) {
+  async function writeScope(next: ContextScope) {
     if (!activeId) return;
     const { error: scopeError } = await supabase
       .from("chat_sessions")
@@ -143,6 +183,26 @@ export function ReflectPage() {
       .eq("id", activeId);
     if (scopeError) return setError(scopeError.message);
     await queryClient.invalidateQueries({ queryKey: ["reflect-sessions"] });
+  }
+
+  /**
+   * Widening applies in place. Narrowing cannot be honoured inside a session
+   * the model has already read the removed work in, so it is offered as a
+   * fresh chat rather than applied quietly.
+   */
+  function applyScope(next: ContextScope) {
+    const before = new Set(itemsInScope(scope, all).map((i) => i.id));
+    const after = new Set(itemsInScope(next, all).map((i) => i.id));
+    const removed = Array.from(before).filter((id) => !after.has(id));
+    const added = Array.from(after).filter((id) => !before.has(id));
+    if (removed.length > 0) return setNarrowing(next);
+    void writeScope(next);
+    if (added.length > 0) {
+      setScopeNotes((prev) => [
+        ...prev,
+        `Added ${added.length} piece${added.length === 1 ? "" : "s"} of work to this conversation.`,
+      ]);
+    }
   }
 
   async function submit() {
@@ -182,7 +242,7 @@ export function ReflectPage() {
 
       <div className="grid gap-6 lg:grid-cols-[240px_1fr]">
         <aside className="space-y-2">
-          <Button className="w-full" onClick={newSession}>
+          <Button className="w-full" onClick={() => void newSession()}>
             New session
           </Button>
           <div className="space-y-1">
@@ -200,6 +260,8 @@ export function ReflectPage() {
                   onClick={() => {
                     setActiveId(session.id);
                     setCoverage(null);
+                    setScopeNotes([]);
+                    analyses.clear();
                   }}
                   className="min-w-0 flex-1 text-left"
                 >
@@ -260,14 +322,23 @@ export function ReflectPage() {
                 <button
                   type="button"
                   onClick={() => setScopeOpen(true)}
-                  className="rounded-full bg-accent-soft px-3 py-1 font-mono text-[11px] uppercase tracking-[0.08em] text-accent-deep"
+                  className="rounded-full bg-accent-soft px-3 py-1 text-xs text-accent-deep"
                 >
-                  {scopeLabel(scope)} · change
+                  {scopeSentence(scope, all, engagements ?? [])} · change
                 </button>
+                {scope.mode !== "whole" ? (
+                  <button
+                    type="button"
+                    onClick={() => applyScope(DEFAULT_SCOPE)}
+                    className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+                  >
+                    Use all of your work
+                  </button>
+                ) : null}
               </div>
 
               <div className="flex-1 space-y-4 overflow-y-auto px-5 py-5">
-                {(messages ?? []).length === 0 ? (
+                {(messages ?? []).length === 0 && analyses.results.length === 0 ? (
                   <p className="text-sm text-muted-foreground">
                     Private to you. Your coach never sees this.
                   </p>
@@ -287,6 +358,15 @@ export function ReflectPage() {
                     )}
                   </div>
                 ))}
+
+                <InlineAnalysisBlocks results={analyses.results} />
+
+                {scopeNotes.map((note, index) => (
+                  <p key={`${note}:${index}`} className="text-xs text-muted-foreground">
+                    {note}
+                  </p>
+                ))}
+
                 {pending && streamed ? (
                   <div>
                     <p className="micro-label">Reflect</p>
@@ -294,35 +374,86 @@ export function ReflectPage() {
                   </div>
                 ) : null}
                 {pending && !streamed ? <ThinkingIndicator /> : null}
+                {analyses.running ? (
+                  <ThinkingIndicator
+                    stages={[
+                      "Reading the work…",
+                      "Matching it against what we look for…",
+                      "Checking every quote against your work…",
+                    ]}
+                  />
+                ) : null}
                 {coverage?.truncated ? <CoverageNote {...coverage} /> : null}
                 <div ref={bottomRef} />
               </div>
 
-              {error ? <p className="px-5 pb-2 text-sm text-destructive">{error}</p> : null}
+              {error || analyses.error ? (
+                <p className="px-5 pb-2 text-sm text-destructive">{error ?? analyses.error}</p>
+              ) : null}
 
-              <div className="flex items-end gap-2 border-t border-border px-5 py-4">
-                <Textarea
-                  value={draft}
-                  onChange={(event) => setDraft(event.target.value)}
-                  placeholder="What do you want to think through?"
-                  rows={2}
-                  className="resize-none"
+              <div className="space-y-3 border-t border-border px-5 py-4">
+                <AnalysisChips
+                  target={chipTarget}
+                  readsDetail={readsDetail}
+                  running={analyses.running}
+                  onRun={(preset) => void analyses.runPreset(preset, chipTarget, readsDetail)}
                 />
-                <Button onClick={() => void submit()} disabled={pending || !draft.trim()}>
-                  Send
-                </Button>
+                <div className="flex items-end gap-2">
+                  <Textarea
+                    value={draft}
+                    onChange={(event) => setDraft(event.target.value)}
+                    placeholder="What do you want to think through?"
+                    rows={2}
+                    className="resize-none"
+                  />
+                  <Button onClick={() => void submit()} disabled={pending || !draft.trim()}>
+                    Send
+                  </Button>
+                </div>
               </div>
             </>
           )}
         </section>
       </div>
 
-      <ScopePicker
-        scope={scope}
+      <WorkScopePicker
         open={scopeOpen}
         onOpenChange={setScopeOpen}
-        onSave={(next) => void saveScope(next)}
+        scope={scope}
+        all={all}
+        engagements={engagements ?? []}
+        onApply={applyScope}
       />
+
+      <AlertDialog
+        open={narrowing !== null}
+        onOpenChange={(next) => {
+          if (!next) setNarrowing(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Start a fresh chat with just this selection?</AlertDialogTitle>
+            <AlertDialogDescription>
+              I have already read that work in this conversation, so I would still have it in front
+              of me.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setNarrowing(null)}>Keep this chat</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(event) => {
+                event.preventDefault();
+                const next = narrowing;
+                setNarrowing(null);
+                if (next) void newSession(next);
+              }}
+            >
+              Start fresh
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
