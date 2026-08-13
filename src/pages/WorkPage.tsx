@@ -58,6 +58,8 @@ export function WorkPage() {
   const queryClient = useQueryClient();
   const runSuggest = useServerFn(suggestMappings);
   const runRemove = useServerFn(removeWorkItems);
+  const syncEpisode = useServerFn(syncEpisodeForMapping);
+  const detachEpisode = useServerFn(detachEpisodeItems);
   const [mapItem, setMapItem] = useState<WorkItemRow | null>(null);
   const [mapGroup, setMapGroup] = useState<WorkItemRow[] | null>(null);
   const [peek, setPeek] = useState<{ entry: PeekEntry; focusId: string } | null>(null);
