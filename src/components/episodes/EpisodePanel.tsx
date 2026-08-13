@@ -31,7 +31,13 @@ const STATUS_LABELS: Record<string, string> = {
  * The quiet grouping. It is not a tracker and it holds no numbers about a
  * person: it is the piece of work, what went into it, and how it ended.
  */
-export function EpisodePanel({ taskId, profileId }: { taskId: string; profileId?: string }) {
+export function EpisodePanel({
+  taskId,
+  profileId,
+}: {
+  taskId: string;
+  profileId?: string | undefined;
+}) {
   const queryClient = useQueryClient();
   const load = useServerFn(episodeForTask);
   const saveObjective = useServerFn(setEpisodeObjective);
