@@ -105,6 +105,7 @@ export function AnalysisLens({
     setActive(preset);
     setSessionId(null);
     setSuppressed(0);
+    setClaims(0);
     setPending(true);
     setError(null);
     try {
@@ -119,6 +120,7 @@ export function AnalysisLens({
       });
       setSessionId(result.session_id);
       setSuppressed(result.suppressed);
+      setClaims(result.claims);
       logEvent("reflect.session_created", orgId, { preset: preset.id });
       await queryClient.invalidateQueries({ queryKey: ["reflect-sessions"] });
       await queryClient.invalidateQueries({ queryKey: ["reflect-messages", result.session_id] });

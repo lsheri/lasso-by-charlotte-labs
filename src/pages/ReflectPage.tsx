@@ -359,7 +359,7 @@ export function ReflectPage() {
                   </div>
                 ))}
 
-                <InlineAnalysisBlocks results={analyses.results} />
+                <InlineAnalysisBlocks results={analyses.results} profileId={profile?.id} />
 
                 {scopeNotes.map((note, index) => (
                   <p key={`${note}:${index}`} className="text-xs text-muted-foreground">
