@@ -204,6 +204,8 @@ export const draftLineage = createServerFn({ method: "POST" })
         deliverableId: item.id,
         ownerId: profile.id,
         orgId: profile.org_id,
+        runnerProfileId: profile.id,
+        coachMayRun: false,
       });
 
       const { usageDims } = await import("./ai-usage");
@@ -274,6 +276,8 @@ export const draftEngagementLineage = createServerFn({ method: "POST" })
           deliverableId: deliverable.id,
           ownerId: profile.id,
           orgId: profile.org_id,
+          runnerProfileId: profile.id,
+          coachMayRun: false,
         });
         drafted += result.drafted;
         considered = Math.max(considered, result.considered);
