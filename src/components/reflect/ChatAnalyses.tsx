@@ -40,6 +40,9 @@ export type InlineAnalysis = {
   claims: number;
   readsDetail: string;
   runId: string;
+  /** True when this is a prior run's result, shown again rather than rerun. */
+  reused: boolean;
+  sessionId: string;
 };
 
 /**
@@ -84,6 +87,8 @@ export function useChatAnalyses(profileId: string | undefined, orgId: string | u
           claims: result.claims,
           readsDetail,
           runId: result.run_id,
+          reused: result.reused,
+          sessionId: result.session_id,
         },
       ]);
       if (orgId) logEvent("reflect.session_created", orgId, { preset: preset.id });
