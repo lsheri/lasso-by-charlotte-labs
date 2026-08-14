@@ -12,6 +12,7 @@ import { isBriefItem } from "@/lib/brief-shared";
 import {
   MIN_ITEMS_FOR_RECURRENCE,
   NOT_ENOUGH_WORK_LINE,
+  NO_FIRM_CHECKS_LINE,
   ANALYSIS_PRESETS,
   presetsForScope,
   type AnalysisPreset,
@@ -302,6 +303,7 @@ export function selectionChips(
   engagement: { id: string; title: string },
   briefCandidates: WorkItemRow[] = [],
   engagementHasBrief = false,
+  firmCheckCount = 0,
 ): SelectionChip[] {
   const deliverables = selected.filter((i) => isDeliverableType(i.type));
   const conversations = selected.filter((i) => i.type === "ai_thread");
@@ -321,6 +323,9 @@ export function selectionChips(
       }
       if (preset.id === "still_on_brief" && !hasBrief) {
         return { preset, target: null, reason: "needs a brief linked to this engagement" };
+      }
+      if (preset.id === "firm_checks" && firmCheckCount === 0) {
+        return { preset, target: null, reason: NO_FIRM_CHECKS_LINE };
       }
       return {
         preset,
@@ -373,6 +378,7 @@ export function SelectionAnalysisChips({
   engagement,
   briefCandidates = [],
   engagementHasBrief = false,
+  firmCheckCount = 0,
   readsDetail,
   running,
   onRun,
@@ -382,12 +388,19 @@ export function SelectionAnalysisChips({
   engagement: { id: string; title: string };
   briefCandidates?: WorkItemRow[];
   engagementHasBrief?: boolean;
+  firmCheckCount?: number;
   readsDetail: string;
   running: AnalysisPreset | null;
   onRun: (preset: AnalysisPreset, target: ChipTarget) => void;
   className?: string;
 }) {
-  const chips = selectionChips(selected, engagement, briefCandidates, engagementHasBrief);
+  const chips = selectionChips(
+    selected,
+    engagement,
+    briefCandidates,
+    engagementHasBrief,
+    firmCheckCount,
+  );
   return (
     <Suggested className={className}>
       <div className="flex items-center gap-2">
