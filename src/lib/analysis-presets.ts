@@ -77,6 +77,7 @@ export const ANALYSIS_PRESET_IDS = [
   "working_the_model",
   "decision_origin",
   "verification",
+  "still_on_brief",
   "what_fed_this",
   "what_recurs",
 ] as const;
