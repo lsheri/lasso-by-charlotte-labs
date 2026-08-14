@@ -185,6 +185,7 @@ export function AnalysisChips({
   isCoach = false,
   className = "",
   engagementOptions = [],
+  firmCheckCount = 0,
   onPickEngagement,
   onOpenPicker,
 }: {
@@ -195,6 +196,7 @@ export function AnalysisChips({
   isCoach?: boolean;
   className?: string;
   engagementOptions?: ChipEngagement[];
+  firmCheckCount?: number;
   onPickEngagement?: (engagementId: string) => void;
   onOpenPicker?: () => void;
 }) {
@@ -259,13 +261,14 @@ export function AnalysisChips({
       </div>
       <div className="mt-2 flex flex-wrap gap-2">
         {presets.map((preset) => {
-          const blocked = preset.id === "what_recurs" && notEnoughWork;
+          const noChecks = preset.id === "firm_checks" && firmCheckCount === 0;
+          const blocked = (preset.id === "what_recurs" && notEnoughWork) || noChecks;
           return (
             <div key={preset.id} className="flex items-center gap-1.5">
               <button
                 type="button"
                 disabled={Boolean(running) || blocked}
-                title={blocked ? NOT_ENOUGH_WORK_LINE : undefined}
+                title={noChecks ? NO_FIRM_CHECKS_LINE : blocked ? NOT_ENOUGH_WORK_LINE : undefined}
                 onClick={() => onRun(preset)}
                 className={`rounded-full px-3 py-1 text-xs font-medium transition-opacity hover:opacity-85 disabled:opacity-50 ${
                   running?.id === preset.id
