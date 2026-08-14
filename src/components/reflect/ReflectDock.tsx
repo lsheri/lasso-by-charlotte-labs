@@ -253,6 +253,7 @@ export function ReflectDock({
           <SelectionAnalysisChips
             selected={selectedItems}
             engagement={{ id: engagementId, title: engagementTitle }}
+            briefCandidates={mapped}
             readsDetail={
               selectedItems.length === 1
                 ? "The piece of work you selected, and the brief when one exists."
