@@ -363,9 +363,9 @@ export function AnalysisChips({
   firmCheckCount?: number;
   onPickEngagement?: (engagementId: string) => void;
   onOpenPicker?: () => void;
-  orgName?: string;
-  canAuthorChecks?: boolean;
-  onAuthorCheck?: () => void;
+  orgName?: string | undefined;
+  canAuthorChecks?: boolean | undefined;
+  onAuthorCheck?: (() => void) | undefined;
 }) {
   if (target.kind === "none") {
     return (
@@ -572,9 +572,9 @@ export function SelectionAnalysisChips({
   running: AnalysisPreset | null;
   onRun: (preset: AnalysisPreset, target: ChipTarget) => void;
   className?: string;
-  orgName?: string;
-  canAuthorChecks?: boolean;
-  onAuthorCheck?: () => void;
+  orgName?: string | undefined;
+  canAuthorChecks?: boolean | undefined;
+  onAuthorCheck?: (() => void) | undefined;
 }) {
   const chips = selectionChips(
     selected,
