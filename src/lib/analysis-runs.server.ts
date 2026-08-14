@@ -74,21 +74,6 @@ export async function findRunByKey(key: string): Promise<{
   return data ?? null;
 }
 
-async function failRunLegacy(runId: string, errorClass: string): Promise<void> {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { error } = await supabaseAdmin
-    .from("analysis_runs")
-    .update({
-      status: "failed",
-      error_class: errorClass,
-      completed_at: new Date().toISOString(),
-    })
-    .eq("id", runId)
-    .select("id")
-    .single();
-  if (error) throw new Error(error.message);
-}
-
 export async function completeRun(runId: string, fields: CompleteRunFields): Promise<void> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { error } = await supabaseAdmin
