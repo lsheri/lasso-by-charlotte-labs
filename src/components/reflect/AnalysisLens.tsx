@@ -64,6 +64,7 @@ export function AnalysisLens({
   const [suppressed, setSuppressed] = useState(0);
   const [claims, setClaims] = useState(0);
   const [runId, setRunId] = useState<string | undefined>(undefined);
+  const [reused, setReused] = useState(false);
   const [draft, setDraft] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -108,6 +109,7 @@ export function AnalysisLens({
     setSuppressed(0);
     setClaims(0);
     setRunId(undefined);
+    setReused(false);
     setPending(true);
     setError(null);
     try {
@@ -124,6 +126,7 @@ export function AnalysisLens({
       setSuppressed(result.suppressed);
       setClaims(result.claims);
       setRunId(result.run_id);
+      setReused(result.reused);
       logEvent("reflect.session_created", orgId, { preset: preset.id });
       await queryClient.invalidateQueries({ queryKey: ["reflect-sessions"] });
       await queryClient.invalidateQueries({ queryKey: ["reflect-messages", result.session_id] });
@@ -195,6 +198,11 @@ export function AnalysisLens({
 
       <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-6 py-5">
         {active ? <p className="text-sm text-muted-foreground">{active.description}</p> : null}
+        {reused ? (
+          <p className="text-xs text-muted-foreground">
+            This analysis already ran on this exact work. Showing that result.
+          </p>
+        ) : null}
         {!active && !pending ? (
           <p className="text-sm text-muted-foreground">
             Pick an analysis below. Each one opens its own session over this work.
