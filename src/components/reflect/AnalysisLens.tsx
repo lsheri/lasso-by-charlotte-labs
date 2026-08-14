@@ -15,10 +15,12 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   MIN_ITEMS_FOR_RECURRENCE,
   NOT_ENOUGH_WORK_LINE,
+  NO_FIRM_CHECKS_LINE,
   presetsForScope,
   type AnalysisPreset,
   type AnalysisPresetId,
 } from "@/lib/analysis-presets";
+import { useFirmChecks } from "@/hooks/use-firm-checks";
 import { startAnalysis } from "@/lib/analysis.functions";
 import { sendReflectMessage } from "@/lib/reflect.functions";
 import { logEvent } from "@/lib/telemetry";
@@ -70,6 +72,10 @@ export function AnalysisLens({
   const [error, setError] = useState<string | null>(null);
   const started = useRef<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  // Firm checks apply org wide, per engagement, or per person. The server
+  // filters exactly; here we only decide whether the chip can be pressed.
+  const { data: firmChecks } = useFirmChecks({ orgId });
+  const firmCheckCount = (firmChecks ?? []).length;
 
   const { data: turnCount } = useQuery({
     queryKey: ["thread-turn-count", target.id],
@@ -264,13 +270,16 @@ export function AnalysisLens({
           </div>
           <div className="mt-2 flex flex-wrap gap-2">
             {presets.map((preset) => {
-              const blocked = preset.id === "what_recurs" && notEnoughWork;
+              const noChecks = preset.id === "firm_checks" && firmCheckCount === 0;
+              const blocked = (preset.id === "what_recurs" && notEnoughWork) || noChecks;
               return (
               <div key={preset.id} className="flex items-center gap-1.5">
                 <button
                   type="button"
                   disabled={pending || blocked}
-                  title={blocked ? NOT_ENOUGH_WORK_LINE : undefined}
+                  title={
+                    noChecks ? NO_FIRM_CHECKS_LINE : blocked ? NOT_ENOUGH_WORK_LINE : undefined
+                  }
                   onClick={() => void runPreset(preset)}
                   className={`rounded-full px-3 py-1 text-xs font-medium transition-opacity hover:opacity-85 disabled:opacity-50 ${
                     active?.id === preset.id
