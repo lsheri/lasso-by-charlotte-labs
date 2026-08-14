@@ -75,8 +75,8 @@ export type AnalysisPreset = {
 export const ANALYSIS_PRESET_IDS = [
   "ai_fluency_4d",
   "working_the_model",
-  "assumptions",
   "decision_origin",
+  "verification",
   "what_fed_this",
   "what_recurs",
 ] as const;
