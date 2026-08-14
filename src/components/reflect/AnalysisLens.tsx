@@ -289,7 +289,7 @@ export function AnalysisLens({
                 >
                   {preset.label}
                 </button>
-                <AnalysisInfoPanel preset={preset} readsDetail={readsDetail} />
+                <AnalysisInfoPanel preset={preset} readsDetail={readsDetail} iconOnly />
               </div>
               );
             })}

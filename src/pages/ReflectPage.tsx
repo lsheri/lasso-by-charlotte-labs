@@ -172,6 +172,7 @@ export function ReflectPage() {
       running={analyses.running}
       onRun={(preset) => void analyses.runPreset(preset, chipTarget, readsDetail)}
       firmCheckCount={(firmChecks ?? []).length}
+      orgName={profile?.org_name}
       engagementOptions={engagementOptions}
       onPickEngagement={(id) => applyScope({ mode: "engagements", ids: [id] })}
       onOpenPicker={() => setScopeOpen(true)}

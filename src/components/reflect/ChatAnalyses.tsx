@@ -33,6 +33,167 @@ export type ChipEngagement = { id: string; code: string; title: string };
 
 const MAX_ENGAGEMENT_CHIPS = 5;
 
+/**
+ * Reading order for the stock analyses: what the work claims first, how it
+ * came to be second, how the person worked last.
+ */
+const STOCK_ORDER: readonly string[] = [
+  "verification",
+  "still_on_brief",
+  "decision_origin",
+  "what_fed_this",
+  "what_recurs",
+  "ai_fluency_4d",
+  "working_the_model",
+];
+
+function byStockOrder(a: AnalysisPreset, b: AnalysisPreset): number {
+  const ai = STOCK_ORDER.indexOf(a.id);
+  const bi = STOCK_ORDER.indexOf(b.id);
+  return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
+}
+
+/** One stock analysis: a quiet pill and the icon that explains it. */
+function StockPill({
+  preset,
+  readsDetail,
+  running,
+  disabled,
+  reason,
+  onClick,
+}: {
+  preset: AnalysisPreset;
+  readsDetail: string;
+  running: AnalysisPreset | null;
+  disabled: boolean;
+  reason: string | null;
+  onClick: () => void;
+}) {
+  return (
+    <div className="flex items-center gap-1">
+      <button
+        type="button"
+        disabled={Boolean(running) || disabled}
+        title={reason ?? undefined}
+        onClick={onClick}
+        className={`rounded-full px-2.5 py-1 text-xs transition-opacity hover:opacity-85 disabled:opacity-50 ${
+          running?.id === preset.id
+            ? "bg-ember text-ember-foreground"
+            : "border border-border bg-card text-foreground"
+        }`}
+      >
+        {preset.label}
+      </button>
+      <AnalysisInfoPanel preset={preset} readsDetail={readsDetail} iconOnly />
+    </div>
+  );
+}
+
+/** The reasons a chip cannot run, one quiet line each, only when there are any. */
+function DisabledReasons({ rows }: { rows: { label: string; reason: string }[] }) {
+  if (rows.length === 0) return null;
+  return (
+    <div className="mt-2 space-y-0.5">
+      {rows.map((row) => (
+        <p key={row.label} className="text-[11px] text-muted-foreground">
+          {row.label}: {row.reason}
+        </p>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * The firm's own checks, given their own section above Lasso's analyses. This
+ * is the part a manager should read as "my knowledge, running on this work".
+ */
+function FirmSection({
+  orgName,
+  firmCheckCount,
+  canAuthorChecks = false,
+  onAuthorCheck,
+  preset,
+  readsDetail,
+  running,
+  disabled,
+  reason,
+  onRun,
+}: {
+  orgName?: string | undefined;
+  firmCheckCount: number;
+  canAuthorChecks?: boolean;
+  onAuthorCheck?: (() => void) | undefined;
+  preset: AnalysisPreset | null;
+  readsDetail: string;
+  running: AnalysisPreset | null;
+  disabled: boolean;
+  reason: string | null;
+  onRun: () => void;
+}) {
+  const label = `${orgName ? `${orgName} ` : ""}Firm checks`;
+  const hasChecks = firmCheckCount > 0;
+  return (
+    <div>
+      <p className="micro-label mb-2">{label}</p>
+      {hasChecks ? (
+        <>
+          {preset ? (
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                disabled={Boolean(running) || disabled}
+                title={reason ?? undefined}
+                onClick={onRun}
+                className={`rounded-full px-3 py-1 text-xs font-medium transition-opacity hover:opacity-85 disabled:opacity-50 ${
+                  running?.id === preset.id
+                    ? "bg-ember text-ember-foreground"
+                    : "bg-accent-soft text-accent-deep"
+                }`}
+              >
+                Run firm checks
+              </button>
+              <AnalysisInfoPanel preset={preset} readsDetail={readsDetail} iconOnly />
+            </div>
+          ) : null}
+          <p className="mt-1.5 text-[11px] text-muted-foreground">
+            {firmCheckCount === 1
+              ? "1 check applies to this work."
+              : `${firmCheckCount} checks apply to this work.`}
+            {canAuthorChecks && onAuthorCheck ? (
+              <>
+                {" "}
+                <button
+                  type="button"
+                  onClick={onAuthorCheck}
+                  className="text-accent-deep underline underline-offset-2"
+                >
+                  Add a check
+                </button>
+              </>
+            ) : null}
+          </p>
+        </>
+      ) : (
+        <p className="text-[11px] text-muted-foreground">
+          Checks your firm writes appear here and run against your work.
+          {canAuthorChecks && onAuthorCheck ? (
+            <>
+              {" "}
+              <button
+                type="button"
+                onClick={onAuthorCheck}
+                className="text-accent-deep underline underline-offset-2"
+              >
+                Write the first check
+              </button>
+            </>
+          ) : null}
+        </p>
+      )}
+    </div>
+  );
+}
+
 export type InlineAnalysis = {
   key: string;
   preset: AnalysisPreset;
@@ -188,6 +349,9 @@ export function AnalysisChips({
   firmCheckCount = 0,
   onPickEngagement,
   onOpenPicker,
+  orgName,
+  canAuthorChecks = false,
+  onAuthorCheck,
 }: {
   target: ChipTarget;
   readsDetail: string;
@@ -199,6 +363,9 @@ export function AnalysisChips({
   firmCheckCount?: number;
   onPickEngagement?: (engagementId: string) => void;
   onOpenPicker?: () => void;
+  orgName?: string | undefined;
+  canAuthorChecks?: boolean | undefined;
+  onAuthorCheck?: (() => void) | undefined;
 }) {
   if (target.kind === "none") {
     return (
@@ -252,40 +419,46 @@ export function AnalysisChips({
   const presets = presetsForScope(scope, isCoach);
   if (presets.length === 0) return null;
   const notEnoughWork = target.kind === "engagement" && target.itemCount < MIN_ITEMS_FOR_RECURRENCE;
+  const firmPreset = presets.find((p) => p.id === "firm_checks") ?? null;
+  const stock = presets.filter((p) => p.id !== "firm_checks").sort(byStockOrder);
+  const disabledRows = stock
+    .filter((p) => p.id === "what_recurs" && notEnoughWork)
+    .map((p) => ({ label: p.label, reason: NOT_ENOUGH_WORK_LINE }));
 
   return (
     <Suggested className={className}>
-      <div className="flex items-center gap-2">
-        <SuggestDot />
-        <p className="text-xs text-ember-deep">Analyses Lasso can run on this work</p>
-      </div>
-      <div className="mt-2 flex flex-wrap gap-2">
-        {presets.map((preset) => {
-          const noChecks = preset.id === "firm_checks" && firmCheckCount === 0;
-          const blocked = (preset.id === "what_recurs" && notEnoughWork) || noChecks;
-          return (
-            <div key={preset.id} className="flex items-center gap-1.5">
-              <button
-                type="button"
-                disabled={Boolean(running) || blocked}
-                title={noChecks ? NO_FIRM_CHECKS_LINE : blocked ? NOT_ENOUGH_WORK_LINE : undefined}
+      <FirmSection
+        orgName={orgName}
+        firmCheckCount={firmCheckCount}
+        canAuthorChecks={canAuthorChecks}
+        onAuthorCheck={onAuthorCheck}
+        preset={firmPreset}
+        readsDetail={readsDetail}
+        running={running}
+        disabled={firmCheckCount === 0}
+        reason={firmCheckCount === 0 ? NO_FIRM_CHECKS_LINE : null}
+        onRun={() => firmPreset && onRun(firmPreset)}
+      />
+      <div className="mt-4">
+        <p className="micro-label mb-2">Lasso analyses</p>
+        <div className="flex flex-wrap gap-2">
+          {stock.map((preset) => {
+            const blocked = preset.id === "what_recurs" && notEnoughWork;
+            return (
+              <StockPill
+                key={preset.id}
+                preset={preset}
+                readsDetail={readsDetail}
+                running={running}
+                disabled={blocked}
+                reason={blocked ? NOT_ENOUGH_WORK_LINE : null}
                 onClick={() => onRun(preset)}
-                className={`rounded-full px-3 py-1 text-xs font-medium transition-opacity hover:opacity-85 disabled:opacity-50 ${
-                  running?.id === preset.id
-                    ? "bg-ember text-ember-foreground"
-                    : "border border-border bg-card text-foreground"
-                }`}
-              >
-                {preset.label}
-              </button>
-              <AnalysisInfoPanel preset={preset} readsDetail={readsDetail} />
-            </div>
-          );
-        })}
+              />
+            );
+          })}
+        </div>
+        <DisabledReasons rows={disabledRows} />
       </div>
-      {notEnoughWork ? (
-        <p className="mt-2 text-xs text-muted-foreground">{NOT_ENOUGH_WORK_LINE}</p>
-      ) : null}
     </Suggested>
   );
 }
@@ -386,6 +559,9 @@ export function SelectionAnalysisChips({
   running,
   onRun,
   className = "",
+  orgName,
+  canAuthorChecks = false,
+  onAuthorCheck,
 }: {
   selected: WorkItemRow[];
   engagement: { id: string; title: string };
@@ -396,6 +572,9 @@ export function SelectionAnalysisChips({
   running: AnalysisPreset | null;
   onRun: (preset: AnalysisPreset, target: ChipTarget) => void;
   className?: string;
+  orgName?: string | undefined;
+  canAuthorChecks?: boolean | undefined;
+  onAuthorCheck?: (() => void) | undefined;
 }) {
   const chips = selectionChips(
     selected,
@@ -404,43 +583,46 @@ export function SelectionAnalysisChips({
     engagementHasBrief,
     firmCheckCount,
   );
+  const firmChip = chips.find((c) => c.preset.id === "firm_checks") ?? null;
+  const stock = chips
+    .filter((c) => c.preset.id !== "firm_checks")
+    .sort((a, b) => byStockOrder(a.preset, b.preset));
+  const disabledRows = stock
+    .filter((c) => c.reason)
+    .map((c) => ({ label: c.preset.label, reason: c.reason as string }));
   return (
     <Suggested className={className}>
-      <div className="flex items-center gap-2">
-        <SuggestDot />
-        <p className="text-xs text-ember-deep">Analyses Lasso can run on this work</p>
-      </div>
-      <div className="mt-2 flex flex-wrap gap-2">
-        {chips.map(({ preset, target, reason }) => (
-          <div key={preset.id} className="flex items-center gap-1.5">
-            <button
-              type="button"
-              disabled={Boolean(running) || target === null}
-              title={reason ?? undefined}
+      <FirmSection
+        orgName={orgName}
+        firmCheckCount={firmCheckCount}
+        canAuthorChecks={canAuthorChecks}
+        onAuthorCheck={onAuthorCheck}
+        preset={firmChip?.preset ?? null}
+        readsDetail={readsDetail}
+        running={running}
+        disabled={!firmChip?.target}
+        reason={firmChip?.reason ?? null}
+        onRun={() => {
+          if (firmChip?.target) onRun(firmChip.preset, firmChip.target);
+        }}
+      />
+      <div className="mt-4">
+        <p className="micro-label mb-2">Lasso analyses</p>
+        <div className="flex flex-wrap gap-2">
+          {stock.map(({ preset, target, reason }) => (
+            <StockPill
+              key={preset.id}
+              preset={preset}
+              readsDetail={readsDetail}
+              running={running}
+              disabled={target === null}
+              reason={reason}
               onClick={() => target && onRun(preset, target)}
-              className={`rounded-full px-3 py-1 text-xs font-medium transition-opacity hover:opacity-85 disabled:opacity-50 ${
-                running?.id === preset.id
-                  ? "bg-ember text-ember-foreground"
-                  : "border border-border bg-card text-foreground"
-              }`}
-            >
-              {preset.label}
-            </button>
-            <AnalysisInfoPanel preset={preset} readsDetail={readsDetail} />
-          </div>
-        ))}
+            />
+          ))}
+        </div>
+        <DisabledReasons rows={disabledRows} />
       </div>
-      {chips.some((c) => c.reason) ? (
-        <ul className="mt-2 space-y-0.5 text-xs text-muted-foreground">
-          {chips
-            .filter((c) => c.reason)
-            .map((c) => (
-              <li key={c.preset.id}>
-                {c.preset.label}: {c.reason}
-              </li>
-            ))}
-        </ul>
-      ) : null}
     </Suggested>
   );
 }

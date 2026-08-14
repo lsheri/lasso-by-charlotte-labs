@@ -14,9 +14,11 @@ import {
 export function AnalysisInfoPanel({
   preset,
   readsDetail,
+  iconOnly = false,
 }: {
   preset: AnalysisPreset;
   readsDetail: string;
+  iconOnly?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   return (
@@ -24,15 +26,18 @@ export function AnalysisInfoPanel({
       <button
         type="button"
         aria-expanded={open}
+        aria-label={iconOnly ? "How this works" : undefined}
+        title={iconOnly ? "How this works" : undefined}
         onClick={() => setOpen((prev) => !prev)}
         className="inline-flex items-center gap-1 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
       >
         <Info className="h-3 w-3" aria-hidden />
-        How this works
+        {iconOnly ? null : "How this works"}
       </button>
 
       {open ? (
         <div className="mt-2 space-y-3 rounded-[var(--radius-md)] border border-border bg-secondary/40 px-3 py-3 text-xs leading-relaxed text-muted-foreground">
+          {iconOnly ? <p className="micro-label">How this works</p> : null}
           <div>
             <p className="micro-label">What it reads</p>
             <p className="mt-1 text-foreground">{preset.infoPanel.reads(readsDetail)}</p>

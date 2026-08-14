@@ -19,6 +19,7 @@ import {
 } from "@/components/oneonone/SaveForOneOnOne";
 import { Button } from "@/components/ui/button";
 import { useFirmChecks } from "@/hooks/use-firm-checks";
+import { useProfile } from "@/hooks/use-profile";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { useAnswerSources } from "@/hooks/use-answer-sources";
@@ -87,6 +88,7 @@ export function ReflectDock({
   const composerRef = useRef<HTMLTextAreaElement>(null);
 
   const { data: work } = useWorkItems();
+  const { data: profile } = useProfile();
   const mapped: WorkItemRow[] = mappedItemsForEngagement(work?.items ?? [], engagementId);
   const analyses = useChatAnalyses(profileId, orgId);
   // The firm's checks that apply here: org wide, this engagement, or this person.
@@ -402,6 +404,9 @@ export function ReflectDock({
             briefCandidates={mapped}
             engagementHasBrief={engagementBrief ?? false}
             firmCheckCount={(firmChecks ?? []).length}
+            orgName={profile?.org_name}
+            canAuthorChecks={profile?.role === "coach" || profile?.role === "admin"}
+            onAuthorCheck={() => onOpenChange(false)}
             readsDetail={
               selectedItems.length === 1
                 ? "The piece of work you selected, and the brief when one exists."
