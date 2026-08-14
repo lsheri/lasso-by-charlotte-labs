@@ -2221,6 +2221,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      analytics_insert: {
+        Args: { p_row: Json; p_table: string }
+        Returns: undefined
+      }
+      analytics_label_finding: {
+        Args: { p_by_coach: boolean; p_response: string; p_run_id: string }
+        Returns: undefined
+      }
+      analytics_upsert_episode: { Args: { p_row: Json }; Returns: undefined }
+      analytics_upsert_feature: { Args: { p_row: Json }; Returns: undefined }
       coach_can_see_item: { Args: { item: string }; Returns: boolean }
       coaches_subject: { Args: { subject: string }; Returns: boolean }
       create_org_with_profile: {
