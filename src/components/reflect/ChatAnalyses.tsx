@@ -255,3 +255,131 @@ export function AnalysisChips({
     </Suggested>
   );
 }
+
+/**
+ * Which analyses the CURRENT selection can support, and why not when it cannot.
+ * An ineligible analysis stays visible with a plain reason, because a hidden
+ * chip teaches the person the analysis does not exist.
+ */
+export type SelectionChip = {
+  preset: AnalysisPreset;
+  target: ChipTarget | null;
+  reason: string | null;
+};
+
+export function selectionChips(
+  selected: WorkItemRow[],
+  engagement: { id: string; title: string },
+): SelectionChip[] {
+  const deliverables = selected.filter((i) => isDeliverableType(i.type));
+  const conversations = selected.filter((i) => i.type === "ai_thread");
+  const deliverable = deliverables[0] ?? null;
+  const conversation = conversations[0] ?? null;
+
+  return ANALYSIS_PRESETS.map((preset) => {
+    if (preset.scope === "deliverable") {
+      if (!deliverable) {
+        return { preset, target: null, reason: "needs a finished deliverable in the selection" };
+      }
+      return {
+        preset,
+        target: {
+          kind: "item",
+          id: deliverable.id,
+          title: deliverable.title,
+          scope: "deliverable",
+        } as ChipTarget,
+        reason: null,
+      };
+    }
+    if (preset.scope === "thread") {
+      if (conversations.length !== 1 || !conversation) {
+        return { preset, target: null, reason: "runs on one conversation, select just one" };
+      }
+      return {
+        preset,
+        target: {
+          kind: "item",
+          id: conversation.id,
+          title: conversation.title,
+          scope: "thread",
+        } as ChipTarget,
+        reason: null,
+      };
+    }
+    if (selected.length < MIN_ITEMS_FOR_RECURRENCE) {
+      return { preset, target: null, reason: "needs at least three pieces of work selected" };
+    }
+    return {
+      preset,
+      target: {
+        kind: "engagement",
+        id: engagement.id,
+        title: engagement.title,
+        itemCount: selected.length,
+      } as ChipTarget,
+      reason: null,
+    };
+  });
+}
+
+/**
+ * The chips row for a chat whose context is a hand picked selection. Same
+ * registry, same info panels, same server path as everywhere else.
+ */
+export function SelectionAnalysisChips({
+  selected,
+  engagement,
+  readsDetail,
+  running,
+  onRun,
+  className = "",
+}: {
+  selected: WorkItemRow[];
+  engagement: { id: string; title: string };
+  readsDetail: string;
+  running: AnalysisPreset | null;
+  onRun: (preset: AnalysisPreset, target: ChipTarget) => void;
+  className?: string;
+}) {
+  const chips = selectionChips(selected, engagement);
+  return (
+    <Suggested className={className}>
+      <div className="flex items-center gap-2">
+        <SuggestDot />
+        <p className="text-xs text-ember-deep">Analyses Lasso can run on this work</p>
+      </div>
+      <div className="mt-2 flex flex-wrap gap-2">
+        {chips.map(({ preset, target, reason }) => (
+          <div key={preset.id} className="flex items-center gap-1.5">
+            <button
+              type="button"
+              disabled={Boolean(running) || target === null}
+              title={reason ?? undefined}
+              onClick={() => target && onRun(preset, target)}
+              className={`rounded-full px-3 py-1 text-xs font-medium transition-opacity hover:opacity-85 disabled:opacity-50 ${
+                running?.id === preset.id
+                  ? "bg-ember text-ember-foreground"
+                  : "border border-border bg-card text-foreground"
+              }`}
+            >
+              {preset.label}
+            </button>
+            <AnalysisInfoPanel preset={preset} readsDetail={readsDetail} />
+          </div>
+        ))}
+      </div>
+      {chips.some((c) => c.reason) ? (
+        <ul className="mt-2 space-y-0.5 text-xs text-muted-foreground">
+          {chips
+            .filter((c) => c.reason)
+            .map((c) => (
+              <li key={c.preset.id}>
+                {c.preset.label}: {c.reason}
+              </li>
+            ))}
+        </ul>
+      ) : null}
+    </Suggested>
+  );
+}
