@@ -111,16 +111,40 @@ export function useChatAnalyses(profileId: string | undefined, orgId: string | u
 export function InlineAnalysisBlocks({
   results,
   profileId,
+  onSaveForOneOnOne,
 }: {
   results: InlineAnalysis[];
   profileId?: string | undefined;
+  onSaveForOneOnOne?:
+    | ((input: { text: string; kind: "analysis_finding"; sessionId: string }) => void)
+    | undefined;
 }) {
   return (
     <>
       {results.map((result) => (
         <div key={result.key}>
           <p className="micro-label">Lasso · {result.preset.label}</p>
+          {result.reused ? (
+            <p className="mt-1 text-xs text-muted-foreground">
+              This analysis already ran on this exact work. Showing that result.
+            </p>
+          ) : null}
           <MarkdownMessage content={result.text} />
+          {onSaveForOneOnOne ? (
+            <button
+              type="button"
+              onClick={() =>
+                onSaveForOneOnOne({
+                  text: result.text,
+                  kind: "analysis_finding",
+                  sessionId: result.sessionId,
+                })
+              }
+              className="mt-2 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Save for 1:1
+            </button>
+          ) : null}
           {result.suppressed > 0 ? (
             <p className="mt-2 text-xs text-muted-foreground">
               {result.suppressed === 1
@@ -277,13 +301,18 @@ export function selectionChips(
   selected: WorkItemRow[],
   engagement: { id: string; title: string },
   briefCandidates: WorkItemRow[] = [],
+  engagementHasBrief = false,
 ): SelectionChip[] {
   const deliverables = selected.filter((i) => isDeliverableType(i.type));
   const conversations = selected.filter((i) => i.type === "ai_thread");
   const deliverable = deliverables[0] ?? null;
   const conversation = conversations[0] ?? null;
+  // A brief is either a marked work item or the brief written on the
+  // engagement itself. Either one is enough for a drift analysis to run.
   const hasBrief =
-    selected.some((i) => isBriefItem(i)) || briefCandidates.some((i) => isBriefItem(i));
+    engagementHasBrief ||
+    selected.some((i) => isBriefItem(i)) ||
+    briefCandidates.some((i) => isBriefItem(i));
 
   return ANALYSIS_PRESETS.map((preset) => {
     if (preset.scope === "deliverable") {
@@ -343,6 +372,7 @@ export function SelectionAnalysisChips({
   selected,
   engagement,
   briefCandidates = [],
+  engagementHasBrief = false,
   readsDetail,
   running,
   onRun,
@@ -351,12 +381,13 @@ export function SelectionAnalysisChips({
   selected: WorkItemRow[];
   engagement: { id: string; title: string };
   briefCandidates?: WorkItemRow[];
+  engagementHasBrief?: boolean;
   readsDetail: string;
   running: AnalysisPreset | null;
   onRun: (preset: AnalysisPreset, target: ChipTarget) => void;
   className?: string;
 }) {
-  const chips = selectionChips(selected, engagement, briefCandidates);
+  const chips = selectionChips(selected, engagement, briefCandidates, engagementHasBrief);
   return (
     <Suggested className={className}>
       <div className="flex items-center gap-2">
