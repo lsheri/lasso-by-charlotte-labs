@@ -93,10 +93,9 @@ export async function loadBriefContext(
     .select(`${ITEM_TEXT_COLUMNS}, source_vendor`)
     .eq("owner_id", ownerId)
     .eq("meta->>role", "brief");
-  if (error || !data || data.length === 0) return empty;
 
   const covers = await scopeIds(supabase, ownerId, scope);
-  const briefs = (data as unknown as BriefRow[]).filter((row) => {
+  const briefs = ((error ? [] : ((data ?? []) as unknown as BriefRow[])) as BriefRow[]).filter((row) => {
     const briefScope = briefScopeOf(row.meta);
     if (!briefScope) return false;
     if (covers.whole) return true;
@@ -104,7 +103,12 @@ export async function loadBriefContext(
       ? covers.engagements.has(briefScope.id)
       : covers.tasks.has(briefScope.id);
   });
-  if (briefs.length === 0) return empty;
+  if (briefs.length === 0) {
+    // The brief is not always a document. An engagement can carry it as text
+    // on the engagement itself, and that is a brief in every sense that
+    // matters to an analysis, so it is read the same way.
+    return await engagementBriefContext(supabase, covers.engagements, empty);
+  }
 
   const blocks: string[] = [];
   const reads: AiReadInput[] = [];
@@ -150,5 +154,45 @@ export async function loadBriefContext(
     itemIds,
     reads,
     sources,
+  };
+}
+
+/** Tier 0 fallback: the brief written on the engagement row itself. */
+async function engagementBriefContext(
+  supabase: Db,
+  engagementIds: Set<string>,
+  empty: BriefContext,
+): Promise<BriefContext> {
+  if (engagementIds.size === 0) return empty;
+  const { data } = await supabase
+    .from("engagements")
+    .select("id, title, brief, brief_by")
+    .in("id", Array.from(engagementIds));
+  const written = (data ?? []).filter((row) => (row.brief ?? "").trim().length > 0);
+  if (written.length === 0) return empty;
+
+  const blocks: string[] = [];
+  let chars = 0;
+  for (const row of written) {
+    const clipped = clipBrief((row.brief ?? "").trim());
+    chars += clipped.text.length;
+    blocks.push(
+      [
+        `BRIEF FOR THE ENGAGEMENT: ${row.title}`,
+        row.brief_by ? `  Written by: ${row.brief_by}` : "",
+        clipped.text,
+      ]
+        .filter(Boolean)
+        .join("\n"),
+    );
+  }
+
+  return {
+    block: [BRIEF_HEADER, ...blocks].join("\n\n"),
+    chars,
+    present: true,
+    itemIds: [],
+    reads: [],
+    sources: [],
   };
 }

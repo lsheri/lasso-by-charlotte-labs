@@ -127,10 +127,20 @@ const SCHEMAS = {
   "question.refined": z.object({ question_chars: count }).strict(),
   "question.result_used": z.object({ surface: term }).strict(),
   "analysis.started": z.object({ preset: term, scope: term }).strict(),
+  // scope travels with the completion so a finding can be read by scope, and
+  // the failure carries the reason class the analysis path actually emits.
   "analysis.completed": z
-    .object({ preset: term, items_read: count, claims_rendered: count, suppressed: count })
+    .object({
+      preset: term,
+      scope: term.optional(),
+      items_read: count,
+      claims_rendered: count,
+      suppressed: count,
+    })
     .strict(),
-  "analysis.failed": z.object({ preset: term, error_class: term }).strict(),
+  "analysis.failed": z
+    .object({ preset: term, scope: term.optional(), reason_class: term })
+    .strict(),
   "finding.generated": z.object({ preset: term, claims_rendered: count }).strict(),
   "finding.confirmed": z.object({ preset: term, claims_rendered: count }).strict(),
   "finding.edited": z.object({ preset: term }).strict(),
