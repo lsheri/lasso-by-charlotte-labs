@@ -11,11 +11,14 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   MIN_ITEMS_FOR_RECURRENCE,
   NOT_ENOUGH_WORK_LINE,
+  ANALYSIS_PRESETS,
   presetsForScope,
   type AnalysisPreset,
 } from "@/lib/analysis-presets";
 import { startAnalysis } from "@/lib/analysis.functions";
 import { logEvent } from "@/lib/telemetry";
+import { isDeliverableType } from "@/lib/lineage-shared";
+import type { WorkItemRow } from "@/lib/work-types";
 
 /** What the chips point at, worked out from the chat's current scope. */
 export type ChipTarget =
