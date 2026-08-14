@@ -45,20 +45,30 @@ async function keysFor(ctx: FactContext): Promise<Keys | null> {
   return { ...ids, consent: org?.data_use_tier ?? "operate" };
 }
 
-/** analytics_core is never exposed to the Data API, so admin is the only door. */
-async function core() {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  return (supabaseAdmin as unknown as { schema: (s: string) => any }).schema("analytics_core");
+/**
+ * analytics_core is not exposed through the Data API and never will be, so
+ * every write goes through a SECURITY DEFINER function in public, executable
+ * by the service role only.
+ */
+async function rpc(fn: string, args: Record<string, unknown>): Promise<void> {
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await (supabaseAdmin as unknown as {
+      rpc: (name: string, params: Record<string, unknown>) => Promise<{ error: { message: string } | null }>;
+    }).rpc(fn, args);
+    if (error) console.error(`[facts] ${fn} failed:`, error.message);
+  } catch (e) {
+    console.error(`[facts] ${fn} threw:`, (e as Error).message);
+  }
+}
+
+/** Columns that are not set are omitted, so table defaults still apply. */
+function compact(row: Record<string, unknown>): Record<string, unknown> {
+  return Object.fromEntries(Object.entries(row).filter(([, v]) => v !== undefined));
 }
 
 async function insert(table: string, row: Record<string, unknown>): Promise<void> {
-  try {
-    const db = await core();
-    const { error } = await db.from(table).insert(row);
-    if (error) console.error(`[facts] ${table} insert failed:`, error.message);
-  } catch (e) {
-    console.error(`[facts] ${table} write threw:`, (e as Error).message);
-  }
+  await rpc("analytics_insert", { p_table: table, p_row: compact(row) });
 }
 
 /**
@@ -191,6 +201,9 @@ export async function writeAnalysisFinding(
 ): Promise<void> {
   const keys = await keysFor(ctx);
   if (!keys) return;
+  // The fact table's scope vocabulary has no "deliverable"; a deliverable is a
+  // single piece of work, so it lands as "item".
+  const scope = input.scope === "deliverable" ? "item" : (input.scope ?? null);
   await insert("fact_analysis_finding", {
     analysis_run_id: input.analysisRunId ?? null,
     preset_id: input.presetId.slice(0, 48),
@@ -198,7 +211,7 @@ export async function writeAnalysisFinding(
     tenant_pseudo: keys.tenant,
     actor_pseudo: keys.actor,
     episode_id: input.episodeId ?? null,
-    scope: input.scope ?? null,
+    scope,
     eligible_episodes: input.eligibleEpisodes ?? null,
     evidence_count: input.evidenceCount ?? null,
     model: input.model ?? null,
@@ -213,19 +226,11 @@ export async function labelAnalysisFinding(input: {
   response: "confirmed" | "rejected";
   byCoach?: boolean;
 }): Promise<void> {
-  try {
-    const db = await core();
-    const patch = input.byCoach
-      ? { coach_response: input.response }
-      : { user_response: input.response };
-    const { error } = await db
-      .from("fact_analysis_finding")
-      .update(patch)
-      .eq("analysis_run_id", input.analysisRunId);
-    if (error) console.error("[facts] finding label failed:", error.message);
-  } catch (e) {
-    console.error("[facts] finding label threw:", (e as Error).message);
-  }
+  await rpc("analytics_label_finding", {
+    p_run_id: input.analysisRunId,
+    p_response: input.response,
+    p_by_coach: input.byCoach ?? false,
+  });
 }
 
 export async function writeCoachingFact(
@@ -326,9 +331,8 @@ export async function writeEpisodeFact(ctx: FactContext, episodeId: string): Pro
       .eq("id", ctx.orgId)
       .maybeSingle();
 
-    const db = await core();
-    const { error } = await db.from("fact_work_episode").upsert(
-      {
+    await rpc("analytics_upsert_episode", {
+      p_row: compact({
         episode_id: episodeId,
         tenant_pseudo: keys.tenant,
         actor_pseudo: keys.actor,
@@ -344,10 +348,8 @@ export async function writeEpisodeFact(ctx: FactContext, episodeId: string): Pro
         outcome_labelled: (outcomes ?? []).length > 0,
         taxonomy_version: TAXONOMY,
         consent_snapshot: keys.consent,
-      },
-      { onConflict: "episode_id" },
-    );
-    if (error) console.error("[facts] episode upsert failed:", error.message);
+      }),
+    });
   } catch (e) {
     console.error("[facts] episode fact threw:", (e as Error).message);
   }
@@ -431,14 +433,10 @@ export const DERIVED_FEATURES: {
 /** Idempotent: the registry is a declaration, so it is upserted by name. */
 export async function seedFeatureRegistry(): Promise<{ ok: boolean }> {
   try {
-    const db = await core();
-    const { error } = await db.from("feature_registry").upsert(
-      DERIVED_FEATURES.map((f) => ({ ...f, extraction_version: TAXONOMY })),
-      { onConflict: "feature_name" },
-    );
-    if (error) {
-      console.error("[facts] feature registry seed failed:", error.message);
-      return { ok: false };
+    for (const feature of DERIVED_FEATURES) {
+      await rpc("analytics_upsert_feature", {
+        p_row: { ...feature, extraction_version: TAXONOMY },
+      });
     }
     return { ok: true };
   } catch (e) {

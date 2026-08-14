@@ -161,6 +161,7 @@ export function WorkScopePicker({
                       {group.items.map((item) => (
                         <label key={item.id} className="flex items-start gap-3 px-1 py-1.5 text-sm">
                           <Checkbox
+                            aria-label={item.title}
                             checked={checked.has(item.id)}
                             onCheckedChange={() => toggle(item.id)}
                           />

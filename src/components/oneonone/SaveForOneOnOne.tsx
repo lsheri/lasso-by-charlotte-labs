@@ -92,8 +92,12 @@ export function SaveForOneOnOneDialog({
         </DialogHeader>
         <div className="space-y-3">
           <div>
-            <p className="micro-label">The part that matters</p>
+            <label className="micro-label" htmlFor="one-on-one-excerpt">
+              The part that matters
+            </label>
             <Textarea
+              id="one-on-one-excerpt"
+              aria-label="The part that matters"
               value={content}
               onChange={(event) => setContent(event.target.value)}
               rows={7}
@@ -101,8 +105,12 @@ export function SaveForOneOnOneDialog({
             />
           </div>
           <div>
-            <p className="micro-label">What I want to say about this</p>
+            <label className="micro-label" htmlFor="one-on-one-talking-point">
+              What I want to say about this
+            </label>
             <Input
+              id="one-on-one-talking-point"
+              aria-label="What I want to say about this"
               value={talkingPoint}
               onChange={(event) => setTalkingPoint(event.target.value)}
               placeholder="Optional, one line"
