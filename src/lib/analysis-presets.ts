@@ -80,6 +80,7 @@ export const ANALYSIS_PRESET_IDS = [
   "still_on_brief",
   "what_fed_this",
   "what_recurs",
+  "firm_checks",
 ] as const;
 export type AnalysisPresetId = (typeof ANALYSIS_PRESET_IDS)[number];
 
