@@ -80,6 +80,7 @@ export const ANALYSIS_PRESET_IDS = [
   "still_on_brief",
   "what_fed_this",
   "what_recurs",
+  "firm_checks",
 ] as const;
 export type AnalysisPresetId = (typeof ANALYSIS_PRESET_IDS)[number];
 
@@ -231,6 +232,25 @@ ABSOLUTE RULES:
 - Never a number about the person: no counts of behaviours, no frequencies, no proportions, no "X of your Y conversations". Dates and item titles are the only identifiers permitted.
 - Never rank the person, never use a ranking adjective, never call anything a strength or a weakness.
 - If fewer than three pieces of work are in scope, produce nothing and say plainly that there is not enough work in this engagement yet.
+- Never use an em dash.`;
+
+const FIRM_CHECKS_PROMPT = `You are running a firm's own checks against ONE finished piece of work. You are given the deliverable, the conversations that fed it, the brief when one exists, and the CHECKS block below: the exact checks a coach or the firm wrote for this work. Turns are numbered as "TURN n ROLE:".
+
+For each check, in the order given:
+- THE CHECK, quoted exactly as the coach wrote it.
+- WHAT THE WORK SHOWS, exactly one of: ADDRESSED (the work satisfies the check; quote the span of the deliverable or conversation that shows it, verbatim), PARTLY (quote what is there, then name plainly what the check asks for that is not), or NOT VISIBLE IN THE CAPTURED RECORD (nothing in the record speaks to this check).
+- FOR PARTLY AND NOT VISIBLE, ONE NEXT STEP: the smallest concrete action that would satisfy the check for this specific piece of work.
+
+THE WORK IS THE SUBJECT. Never write that the person failed, passed, missed, or ignored a check. The work either shows the thing or the record does not contain it.
+
+BE HONEST LIKE A COACH. Do not soften. Do not pad with praise. An entirely NOT VISIBLE result is a true result and must be reported as one. Praise only with the verbatim quote that earns it.
+
+END WITH THE COVERAGE LINE: the captured record may not include everything the person did, so a check NOT VISIBLE here may have been handled somewhere Lasso cannot see.
+
+ABSOLUTE RULES:
+- Verbatim or it does not render, on every evidence quote.
+- Answer every check given, in order. Do not add checks of your own.
+- No count of checks addressed, no pass rate, no score, no judgement of the person.
 - Never use an em dash.`;
 
 export const ANALYSIS_PRESETS: AnalysisPreset[] = [
@@ -392,7 +412,31 @@ export const ANALYSIS_PRESETS: AnalysisPreset[] = [
     attribution: null,
     coachMayRun: false,
   },
+  {
+    id: "firm_checks",
+    dbPreset: "firm_checks",
+    label: "Firm checks",
+    description: "Your firm's checks, run against this work.",
+    scope: "deliverable",
+    systemPrompt: FIRM_CHECKS_PROMPT,
+    openingMessage: "Run my firm's checks against this piece of work.",
+    infoPanel: {
+      reads: (detail) =>
+        `${detail} It also reads the brief when one exists, and your firm's checks.`,
+      looksFor: [
+        "What the work shows against each check, with evidence",
+        "The smallest next step where a check is not yet visible",
+      ],
+      never: `${NEVER_LINE} Never a pass rate, never a score, never a judgment of you. A check not visible in the record may have been handled where Lasso cannot see.`,
+      sources: ANALYSIS_SOURCES,
+    },
+    attribution: null,
+    coachMayRun: true,
+  },
 ];
+
+/** Appended to the firm checks preset at run time; empty means the chip is disabled. */
+export const NO_FIRM_CHECKS_LINE = "no firm checks written yet";
 
 /** Below this, "What recurs" has nothing to compare and must not run. */
 export const MIN_ITEMS_FOR_RECURRENCE = 3;

@@ -30,6 +30,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useEngagements } from "@/hooks/use-engagements";
 import { useProfile } from "@/hooks/use-profile";
+import { useFirmChecks } from "@/hooks/use-firm-checks";
 import { useWorkItems } from "@/hooks/use-work-items";
 import { useAnswerSources } from "@/hooks/use-answer-sources";
 import { supabase } from "@/integrations/supabase/client";
@@ -60,6 +61,12 @@ function relative(iso: string): string {
 
 export function ReflectPage() {
   const { data: profile } = useProfile();
+  // Firm checks can be org wide, per engagement or per person. The server
+  // filters exactly at run time; this only decides whether the chip is live.
+  const { data: firmChecks } = useFirmChecks({
+    orgId: profile?.org_id,
+    subjectProfileId: profile?.id ?? null,
+  });
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -164,6 +171,7 @@ export function ReflectPage() {
       readsDetail={readsDetail}
       running={analyses.running}
       onRun={(preset) => void analyses.runPreset(preset, chipTarget, readsDetail)}
+      firmCheckCount={(firmChecks ?? []).length}
       engagementOptions={engagementOptions}
       onPickEngagement={(id) => applyScope({ mode: "engagements", ids: [id] })}
       onOpenPicker={() => setScopeOpen(true)}

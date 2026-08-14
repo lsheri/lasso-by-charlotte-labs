@@ -396,9 +396,27 @@ export const startAnalysis = createServerFn({ method: "POST" })
       );
 
       const { REFLECT_SYSTEM_PROMPT } = await import("./reflect-shared");
+      // The firm's own checks are part of the prompt for this preset, and the
+      // analysis cannot run without at least one of them.
+      let checksBlock: string | null = null;
+      if (preset.id === "firm_checks") {
+        const { applicableFirmChecks, renderChecksBlock } = await import("./firm-checks.server");
+        const checks = await applicableFirmChecks(supabase, {
+          orgId: profile.org_id,
+          ownerProfileId: target.ownerId,
+          workItemId: target.scopeId,
+        });
+        if (checks.length === 0) await fail("no_firm_checks");
+        checksBlock = renderChecksBlock(checks);
+      }
       const conversation = [
         { role: "system" as const, content: REFLECT_SYSTEM_PROMPT },
-        { role: "system" as const, content: preset.systemPrompt },
+        {
+          role: "system" as const,
+          content: checksBlock
+            ? `${preset.systemPrompt}\n\n${checksBlock}`
+            : preset.systemPrompt,
+        },
         {
           role: "system" as const,
           content: `${

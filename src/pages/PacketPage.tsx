@@ -5,6 +5,7 @@ import { NoteComposer, type CitationOption } from "@/components/coaching/NoteCom
 import { TaskWorkflow, type WorkflowElement } from "@/components/work/TaskWorkflow";
 import { usePacket, type PacketElement } from "@/hooks/use-coaching";
 import { useProfile } from "@/hooks/use-profile";
+import { FirmChecksCard } from "@/components/coaching/FirmChecksCard";
 import { isBriefItem } from "@/lib/brief-shared";
 import { logEvent } from "@/lib/telemetry";
 
@@ -156,6 +157,15 @@ export function PacketPage({
           ) : null}
         </div>
       </section>
+
+      <FirmChecksCard
+        orgId={profile?.org_id}
+        authorProfileId={profile?.id}
+        role={profile?.role}
+        engagementId={engagementId}
+        subjectProfileId={subjectId}
+        subjectName={subjectName}
+      />
 
       {data.decisions.length > 0 ? (
         <section>

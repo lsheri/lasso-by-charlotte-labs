@@ -11,6 +11,7 @@ import { EditEngagementDialog } from "@/components/engagements/EditEngagementDia
 import { EpisodePanel } from "@/components/episodes/EpisodePanel";
 import { EditTaskDialog } from "@/components/engagements/EditTaskDialog";
 import { EngagementBriefSection } from "@/components/engagements/EngagementBriefSection";
+import { FirmChecksCard } from "@/components/coaching/FirmChecksCard";
 import { InviteDialog } from "@/components/invites/InviteDialog";
 import { SubjectCoachingSection } from "@/components/coaching/SubjectCoachingSection";
 import { AnalysisLens } from "@/components/reflect/AnalysisLens";
@@ -280,6 +281,13 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
       </section>
 
       <SubjectCoachingSection profileId={profile?.id} engagementId={engagementId} />
+
+      <FirmChecksCard
+        orgId={profile?.org_id}
+        authorProfileId={profile?.id}
+        role={profile?.role}
+        engagementId={engagementId}
+      />
 
       {profile && profile.role !== "coach" ? (
         <EngagementDecisions
