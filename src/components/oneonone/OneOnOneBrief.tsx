@@ -5,6 +5,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { MarkdownMessage } from "@/components/markdown/MarkdownMessage";
+import { SavedForOneOnOne } from "@/components/oneonone/SaveForOneOnOne";
 import { SlideOver } from "@/components/peek/SlideOver";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -121,6 +122,7 @@ export function OneOnOneBrief({
       </header>
 
       <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+        <SavedForOneOnOne profileId={profileId} />
         {markdown ? (
           <MarkdownMessage content={markdown} />
         ) : (
