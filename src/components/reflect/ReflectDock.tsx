@@ -6,17 +6,39 @@ import { SlideOver } from "@/components/peek/SlideOver";
 import { ThinkingIndicator, WorkingLabel } from "@/components/common/Working";
 import { AnswerSources } from "@/components/reflect/AnswerSources";
 import { CoverageNote } from "@/components/reflect/CoverageNote";
+import {
+  InlineAnalysisBlocks,
+  SelectionAnalysisChips,
+  useChatAnalyses,
+  type ChipTarget,
+} from "@/components/reflect/ChatAnalyses";
 import { MarkdownMessage } from "@/components/markdown/MarkdownMessage";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { useAnswerSources } from "@/hooks/use-answer-sources";
+import { useWorkItems } from "@/hooks/use-work-items";
 import { supabase } from "@/integrations/supabase/client";
 import { streamChatRequest } from "@/lib/stream-client";
 import type { ReflectResult } from "@/lib/reflect-run.server";
+import { mappedItemsForEngagement } from "@/lib/reflect-scope-shape";
 import { logEvent } from "@/lib/telemetry";
 import type { ContextScope } from "@/lib/reflect-shared";
+import type { AnalysisPreset } from "@/lib/analysis-presets";
+import type { WorkItemRow } from "@/lib/work-types";
 
 type MessageRow = { id: number; role: string; content: string };
+
+/** Plain type words for the selector, never internal enum names. */
+const TYPE_WORD: Record<string, string> = {
+  ai_thread: "conversation",
+  document: "document",
+  deck: "deck",
+  sheet: "sheet",
+  email: "email",
+  note: "note",
+  transcript: "transcript",
+};
 
 /**
  * Reflect, docked beside an engagement. Same machinery as /reflect, the only
@@ -45,12 +67,46 @@ export function ReflectDock({
   const [pending, setPending] = useState(false);
   const [streamed, setStreamed] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Set<string> | null>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
   const [coverage, setCoverage] = useState<{
     truncated: boolean;
     fullCount: number;
     summaryCount: number;
   } | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  const { data: work } = useWorkItems();
+  const mapped: WorkItemRow[] = mappedItemsForEngagement(work?.items ?? [], engagementId);
+  const analyses = useChatAnalyses(profileId, orgId);
+
+  // Everything mapped into this engagement is selected when the chat opens.
+  // The person narrows from there; nothing is added behind their back.
+  useEffect(() => {
+    if (!open || selected !== null || mapped.length === 0) return;
+    setSelected(new Set(mapped.map((i) => i.id)));
+  }, [open, selected, mapped]);
+
+  const selectedItems = mapped.filter((i) => (selected ? selected.has(i.id) : true));
+
+  function scopeForSelection(): ContextScope {
+    if (!selected || selectedItems.length === 0 || selectedItems.length === mapped.length) {
+      return { mode: "engagements", ids: [engagementId] };
+    }
+    return { mode: "items", ids: selectedItems.map((i) => i.id) };
+  }
+  const scopeKey = scopeForSelection().ids.join(",") + selectedItems.length;
+
+  // A live session follows the selection, so what Lasso reads and what the
+  // audit strip records are always the current choice.
+  useEffect(() => {
+    if (!sessionId) return;
+    void supabase
+      .from("chat_sessions")
+      .update({ context_scope: scopeForSelection() })
+      .eq("id", sessionId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionId, scopeKey]);
 
   const { data: messages } = useQuery({
     queryKey: ["reflect-messages", sessionId],
@@ -76,7 +132,7 @@ export function ReflectDock({
 
   async function ensureSession(): Promise<string | null> {
     if (sessionId) return sessionId;
-    const scope: ContextScope = { mode: "engagements", ids: [engagementId] };
+    const scope: ContextScope = scopeForSelection();
     const { data, error: e } = await supabase
       .from("chat_sessions")
       .insert({
