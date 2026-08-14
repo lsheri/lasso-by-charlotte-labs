@@ -20,11 +20,14 @@ type TaskRow = { id: string; name: string };
 export function MapDialog({
   item,
   groupItems,
+  groupLabel,
   open,
   onOpenChange,
 }: {
   item: WorkItemRow | null;
   groupItems?: WorkItemRow[] | undefined;
+  /** How the extra items read to the person, when they are not a conversation. */
+  groupLabel?: string | undefined;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
@@ -151,7 +154,7 @@ export function MapDialog({
             <p className="min-w-0 truncate text-sm text-muted-foreground">
               {item.title}
               {groupItems && groupItems.length > 1
-                ? ` · whole conversation (${groupItems.length} items)`
+                ? ` · ${groupLabel ?? "whole conversation"} (${groupItems.length} items)`
                 : ""}
             </p>
           </div>
