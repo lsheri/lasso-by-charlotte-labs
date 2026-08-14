@@ -8,6 +8,7 @@ import { MarkdownMessage } from "@/components/markdown/MarkdownMessage";
 import { AnalysisInfoPanel } from "@/components/reflect/AnalysisInfoPanel";
 import { FindingLabel } from "@/components/reflect/FindingLabel";
 import { supabase } from "@/integrations/supabase/client";
+import { isBriefItem } from "@/lib/brief-shared";
 import {
   MIN_ITEMS_FOR_RECURRENCE,
   NOT_ENOUGH_WORK_LINE,
