@@ -88,6 +88,12 @@ export function ReflectDock({
   const { data: work } = useWorkItems();
   const mapped: WorkItemRow[] = mappedItemsForEngagement(work?.items ?? [], engagementId);
   const analyses = useChatAnalyses(profileId, orgId);
+  // The firm's checks that apply here: org wide, this engagement, or this person.
+  const { data: firmChecks } = useFirmChecks({
+    orgId,
+    engagementId,
+    subjectProfileId: profileId,
+  });
 
   // Everything mapped into this engagement is selected when the chat opens.
   // The person narrows from there; nothing is added behind their back.
@@ -394,6 +400,7 @@ export function ReflectDock({
             engagement={{ id: engagementId, title: engagementTitle }}
             briefCandidates={mapped}
             engagementHasBrief={engagementBrief ?? false}
+            firmCheckCount={(firmChecks ?? []).length}
             readsDetail={
               selectedItems.length === 1
                 ? "The piece of work you selected, and the brief when one exists."
