@@ -402,6 +402,9 @@ export function ReflectDock({
             briefCandidates={mapped}
             engagementHasBrief={engagementBrief ?? false}
             firmCheckCount={(firmChecks ?? []).length}
+            orgName={profile?.org_name}
+            canAuthorChecks={profile?.role === "coach" || profile?.role === "admin"}
+            onAuthorCheck={() => onOpenChange(false)}
             readsDetail={
               selectedItems.length === 1
                 ? "The piece of work you selected, and the brief when one exists."
