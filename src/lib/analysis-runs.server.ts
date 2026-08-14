@@ -51,6 +51,44 @@ export async function failRun(runId: string, errorClass: string): Promise<void> 
   if (error) throw new Error(error.message);
 }
 
+/**
+ * The run that already owns an idempotency key. Used to turn a duplicate key
+ * collision into the prior result rather than an error in front of someone.
+ */
+export async function findRunByKey(key: string): Promise<{
+  id: string;
+  session_id: string | null;
+  status: string;
+  items_read: number | null;
+  suppressed_claims: number | null;
+  claims_rendered: number | null;
+} | null> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data } = await supabaseAdmin
+    .from("analysis_runs")
+    .select("id, session_id, status, items_read, suppressed_claims, claims_rendered")
+    .eq("idempotency_key", key)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return data ?? null;
+}
+
+async function failRunLegacy(runId: string, errorClass: string): Promise<void> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { error } = await supabaseAdmin
+    .from("analysis_runs")
+    .update({
+      status: "failed",
+      error_class: errorClass,
+      completed_at: new Date().toISOString(),
+    })
+    .eq("id", runId)
+    .select("id")
+    .single();
+  if (error) throw new Error(error.message);
+}
+
 export async function completeRun(runId: string, fields: CompleteRunFields): Promise<void> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { error } = await supabaseAdmin
