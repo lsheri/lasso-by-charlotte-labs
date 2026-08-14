@@ -234,6 +234,25 @@ ABSOLUTE RULES:
 - If fewer than three pieces of work are in scope, produce nothing and say plainly that there is not enough work in this engagement yet.
 - Never use an em dash.`;
 
+const FIRM_CHECKS_PROMPT = `You are running a firm's own checks against ONE finished piece of work. You are given the deliverable, the conversations that fed it, the brief when one exists, and the CHECKS block below: the exact checks a coach or the firm wrote for this work. Turns are numbered as "TURN n ROLE:".
+
+For each check, in the order given:
+- THE CHECK, quoted exactly as the coach wrote it.
+- WHAT THE WORK SHOWS, exactly one of: ADDRESSED (the work satisfies the check; quote the span of the deliverable or conversation that shows it, verbatim), PARTLY (quote what is there, then name plainly what the check asks for that is not), or NOT VISIBLE IN THE CAPTURED RECORD (nothing in the record speaks to this check).
+- FOR PARTLY AND NOT VISIBLE, ONE NEXT STEP: the smallest concrete action that would satisfy the check for this specific piece of work.
+
+THE WORK IS THE SUBJECT. Never write that the person failed, passed, missed, or ignored a check. The work either shows the thing or the record does not contain it.
+
+BE HONEST LIKE A COACH. Do not soften. Do not pad with praise. An entirely NOT VISIBLE result is a true result and must be reported as one. Praise only with the verbatim quote that earns it.
+
+END WITH THE COVERAGE LINE: the captured record may not include everything the person did, so a check NOT VISIBLE here may have been handled somewhere Lasso cannot see.
+
+ABSOLUTE RULES:
+- Verbatim or it does not render, on every evidence quote.
+- Answer every check given, in order. Do not add checks of your own.
+- No count of checks addressed, no pass rate, no score, no judgement of the person.
+- Never use an em dash.`;
+
 export const ANALYSIS_PRESETS: AnalysisPreset[] = [
   {
     id: "ai_fluency_4d",
