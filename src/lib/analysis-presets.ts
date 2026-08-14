@@ -302,7 +302,7 @@ export const ANALYSIS_PRESETS: AnalysisPreset[] = [
   {
     id: "still_on_brief",
     dbPreset: "still_on_brief",
-    label: "Still on brief",
+    label: "Drift analysis",
     description:
       "Where this work departed from the brief, and whether the departure was acknowledged.",
     scope: "deliverable",
