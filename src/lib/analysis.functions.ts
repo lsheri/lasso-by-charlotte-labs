@@ -364,8 +364,9 @@ export const startAnalysis = createServerFn({ method: "POST" })
           },
           profileId: profile.id,
         });
+        // Fire and forget. A fact that cannot land never fails an analysis.
         const { writeAnalysisFinding } = await import("./facts.server");
-        await writeAnalysisFinding(
+        void writeAnalysisFinding(
           { supabase, orgId: profile.org_id, profileId: profile.id },
           {
             analysisRunId: runId,
@@ -374,7 +375,7 @@ export const startAnalysis = createServerFn({ method: "POST" })
             scope: scopeType,
             evidenceCount: lineageItems,
           },
-        );
+        ).catch(() => undefined);
 
         return {
           run_id: runId,
@@ -502,7 +503,7 @@ export const startAnalysis = createServerFn({ method: "POST" })
         profileId: profile.id,
       });
       const { writeAnalysisFinding } = await import("./facts.server");
-      await writeAnalysisFinding(
+      void writeAnalysisFinding(
         { supabase, orgId: profile.org_id, profileId: profile.id },
         {
           analysisRunId: runId,
@@ -512,17 +513,17 @@ export const startAnalysis = createServerFn({ method: "POST" })
           evidenceCount: itemsRead,
           model: completion.model ?? null,
         },
-      );
+      ).catch(() => undefined);
 
       if (preset.id === "verification") {
         const { recordVerificationSignal } = await import("./verification-signal.server");
-        await recordVerificationSignal(supabase, {
+        void recordVerificationSignal(supabase, {
           userId,
           orgId: profile.org_id,
           profileId: profile.id,
           workItemId: target.scopeId,
           outputText: answer,
-        });
+        }).catch(() => undefined);
       }
 
       return {
