@@ -77,6 +77,7 @@ export const ANALYSIS_PRESET_IDS = [
   "working_the_model",
   "decision_origin",
   "verification",
+  "still_on_brief",
   "what_fed_this",
   "what_recurs",
 ] as const;
@@ -171,6 +172,31 @@ ABSOLUTE RULES:
 - No judgement of the person, no advice about their competence, no number attached to them.
 - Never use an em dash.`;
 
+const STILL_ON_BRIEF_PROMPT = `You are comparing ONE finished piece of work against the brief it was commissioned under, to establish where the work departed from the brief and whether each departure was acknowledged anywhere in the captured record. You are given the deliverable, the conversations that fed it, and the brief. Turns are numbered as "TURN n ROLE:".
+
+A departure is a place where the work and the brief genuinely diverge. Style is not a departure. Depth is not a departure unless the brief specified depth. Report at most six departures, chosen by how much of the deliverable each one shaped.
+
+For each departure, give:
+- CLASS, exactly one of: ADDED (the work covers something the brief never asked for), DROPPED (the brief asked for something and the work does not contain it), CHANGED (the brief specified one thing and the work does another), REFRAMED (the deliverable answers a different question than the brief posed).
+- THE BRIEF SIDE: the exact span of the brief, quoted character for character.
+- THE WORK SIDE: the exact span of the deliverable that departs, quoted character for character. For DROPPED, name the section where the item would belong and state plainly that it is absent.
+- WHERE IT ENTERED: the turn where the work first moved, quoted, with its origin: proposed by the model, chosen in the conversation, or carried in from a source. If the departure cannot be traced to any turn, say so plainly.
+- THE VERDICT LINE, exactly one of: ACKNOWLEDGED IN THE RECORD (someone named the departure in the conversation or the deliverable; quote the acknowledgment), or NOT VISIBLE IN THE CAPTURED RECORD.
+
+DRIFT IS NOT ERROR. A departure can be good judgment. Never call a departure wrong, unauthorized, or a mistake. Never write "you drifted" or any sentence with the person as the subject of the departure. The work departed; the record either shows the departure being named or it does not. That is the entire claim.
+
+THE COVERAGE LINE IS MANDATORY. End with: scope changes are often agreed in conversations Lasso never saw, so a departure NOT VISIBLE in the captured record may have been agreed elsewhere. This line appears in every result, every time, without exception.
+
+REFRAMED FIRST. Order departures with NOT VISIBLE before ACKNOWLEDGED, and within NOT VISIBLE put REFRAMED first, because an inherited reframing decides everything downstream of it.
+
+WHEN THE BRIEF IS THIN OR STALE, SAY SO. If the brief is too short or too vague to support this comparison, report that as the finding: the work has moved past what the brief specifies, and the brief may need updating. That is a statement about the brief, not about the person.
+
+ABSOLUTE RULES:
+- Verbatim or it does not render, on both sides of every departure.
+- No count or proportion characterising the person, no drift score, no habit statements. This analysis reads one piece of work against one brief.
+- No judgement of the person, no advice about their competence.
+- Never use an em dash.`;
+
 const WHAT_FED_THIS_PROMPT = `You are reconstructing what went into ONE finished piece of work. You are given the deliverable and the candidate items from this person's record: conversations, documents, transcripts, earlier versions.
 
 For each item that genuinely fed the deliverable, give:
@@ -235,11 +261,11 @@ export const ANALYSIS_PRESETS: AnalysisPreset[] = [
     id: "working_the_model",
     dbPreset: "working_the_model",
     label: "How you worked the model",
-    description: "The techniques that would have made this conversation shorter and sharper.",
+    description: "The techniques that would have gotten this answer in fewer turns.",
     scope: "thread",
     systemPrompt: WORKING_THE_MODEL_PROMPT,
     openingMessage:
-      "Look at how I worked with the AI in this conversation and tell me which techniques would have made it tighter.",
+      "Look at how I worked with the AI in this conversation and tell me which techniques would have gotten the same result in fewer turns.",
     infoPanel: {
       reads: (detail) => detail,
       looksFor: TECHNIQUE_CATEGORIES.map((c) => `${c.label}: ${c.plain}`),
@@ -268,6 +294,31 @@ export const ANALYSIS_PRESETS: AnalysisPreset[] = [
       ],
       never:
         "Never a judgment of you, never a score, never a claim about what you did outside the captured record.",
+      sources: ANALYSIS_SOURCES,
+    },
+    attribution: null,
+    coachMayRun: true,
+  },
+  {
+    id: "still_on_brief",
+    dbPreset: "still_on_brief",
+    label: "Still on brief",
+    description:
+      "Where this work departed from the brief, and whether the departure was acknowledged.",
+    scope: "deliverable",
+    systemPrompt: STILL_ON_BRIEF_PROMPT,
+    openingMessage:
+      "Compare this piece of work against its brief and set out where the work departed, and whether the record shows the departure being named.",
+    infoPanel: {
+      reads: (detail) => detail,
+      looksFor: [
+        "Departures between what the brief asked for and what the work does",
+        "Which class each departure falls in: added, dropped, changed or reframed",
+        "The turn where the work first moved, and where that move came from",
+        "Whether the record shows the departure being acknowledged",
+      ],
+      never:
+        "Never a judgment of you, never a drift score, never a claim that a departure was wrong. A departure not visible in the record may have been agreed somewhere Lasso cannot see.",
       sources: ANALYSIS_SOURCES,
     },
     attribution: null,

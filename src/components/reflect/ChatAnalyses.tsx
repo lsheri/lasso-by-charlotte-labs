@@ -8,6 +8,7 @@ import { MarkdownMessage } from "@/components/markdown/MarkdownMessage";
 import { AnalysisInfoPanel } from "@/components/reflect/AnalysisInfoPanel";
 import { FindingLabel } from "@/components/reflect/FindingLabel";
 import { supabase } from "@/integrations/supabase/client";
+import { isBriefItem } from "@/lib/brief-shared";
 import {
   MIN_ITEMS_FOR_RECURRENCE,
   NOT_ENOUGH_WORK_LINE,
@@ -270,16 +271,22 @@ export type SelectionChip = {
 export function selectionChips(
   selected: WorkItemRow[],
   engagement: { id: string; title: string },
+  briefCandidates: WorkItemRow[] = [],
 ): SelectionChip[] {
   const deliverables = selected.filter((i) => isDeliverableType(i.type));
   const conversations = selected.filter((i) => i.type === "ai_thread");
   const deliverable = deliverables[0] ?? null;
   const conversation = conversations[0] ?? null;
+  const hasBrief =
+    selected.some((i) => isBriefItem(i)) || briefCandidates.some((i) => isBriefItem(i));
 
   return ANALYSIS_PRESETS.map((preset) => {
     if (preset.scope === "deliverable") {
       if (!deliverable) {
         return { preset, target: null, reason: "needs a finished deliverable in the selection" };
+      }
+      if (preset.id === "still_on_brief" && !hasBrief) {
+        return { preset, target: null, reason: "needs a brief linked to this engagement" };
       }
       return {
         preset,
@@ -330,6 +337,7 @@ export function selectionChips(
 export function SelectionAnalysisChips({
   selected,
   engagement,
+  briefCandidates = [],
   readsDetail,
   running,
   onRun,
@@ -337,12 +345,13 @@ export function SelectionAnalysisChips({
 }: {
   selected: WorkItemRow[];
   engagement: { id: string; title: string };
+  briefCandidates?: WorkItemRow[];
   readsDetail: string;
   running: AnalysisPreset | null;
   onRun: (preset: AnalysisPreset, target: ChipTarget) => void;
   className?: string;
 }) {
-  const chips = selectionChips(selected, engagement);
+  const chips = selectionChips(selected, engagement, briefCandidates);
   return (
     <Suggested className={className}>
       <div className="flex items-center gap-2">
