@@ -491,6 +491,17 @@ export const startAnalysis = createServerFn({ method: "POST" })
         },
       );
 
+      if (preset.id === "verification") {
+        const { recordVerificationSignal } = await import("./verification-signal.server");
+        await recordVerificationSignal(supabase, {
+          userId,
+          orgId: profile.org_id,
+          profileId: profile.id,
+          workItemId: target.scopeId,
+          outputText: answer,
+        });
+      }
+
       return {
         run_id: runId,
         session_id: session.id,
