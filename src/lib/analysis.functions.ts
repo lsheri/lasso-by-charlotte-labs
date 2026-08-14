@@ -78,7 +78,8 @@ export const startAnalysis = createServerFn({ method: "POST" })
     const profileOrgId = profile.org_id;
     const presetId = preset.id;
 
-    const idempotencyKey = `${preset.id}:${target.scopeType}:${target.scopeId}:${profile.id}`;
+    const baseIdempotencyKey = `${preset.id}:${target.scopeType}:${target.scopeId}:${profile.id}`;
+    let idempotencyKey = baseIdempotencyKey;
     const { recordEvent } = await import("./telemetry.server");
     const scopeType = target.scopeType;
     let aiMeta: Awaited<ReturnType<typeof import("./ai.server")["resolveAiMeta"]>>;
@@ -96,25 +97,29 @@ export const startAnalysis = createServerFn({ method: "POST" })
       });
 
       // This read intentionally uses the caller client. RLS decides which run
-      // the authenticated person may reuse.
-      const { data: inFlight } = await supabase
+      // the authenticated person may reuse. A run that already exists for this
+      // exact work is a result to show, never an error: the unique key is the
+      // feature, so running, completed and mid flight duplicates all reuse.
+      const { data: existing } = await supabase
         .from("analysis_runs")
-        .select("id, session_id, items_read, suppressed_claims, claims_rendered")
+        .select("id, session_id, status, items_read, suppressed_claims, claims_rendered")
         .eq("idempotency_key", idempotencyKey)
-        .eq("status", "running")
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
-      if (inFlight?.session_id) {
+      if (existing && existing.status !== "failed" && existing.session_id) {
         return {
-          run_id: inFlight.id,
-          session_id: inFlight.session_id,
+          run_id: existing.id,
+          session_id: existing.session_id,
           reused: true,
-          items_read: inFlight.items_read ?? 1,
-          suppressed: inFlight.suppressed_claims ?? 0,
-          claims: inFlight.claims_rendered ?? 0,
+          items_read: existing.items_read ?? 1,
+          suppressed: existing.suppressed_claims ?? 0,
+          claims: existing.claims_rendered ?? 0,
         };
       }
+      // A previous attempt that failed must be allowed to run again, so it
+      // gets its own key rather than colliding with the failed row.
+      if (existing) idempotencyKey = `${baseIdempotencyKey}:${Date.now()}`;
 
       await recordEvent(supabase, {
         eventType: "analysis.started",
@@ -139,16 +144,34 @@ export const startAnalysis = createServerFn({ method: "POST" })
       session = createdSession;
 
       const { createRun } = await import("./analysis-runs.server");
-      run = await createRun({
-        preset: preset.dbPreset,
-        scope_type: target.scopeType,
-        scope_id: target.scopeId,
-        idempotency_key: idempotencyKey,
-        org_id: profile.org_id,
-        owner_id: target.ownerId,
-        run_by_profile_id: profile.id,
-        session_id: session.id,
-      });
+      try {
+        run = await createRun({
+          preset: preset.dbPreset,
+          scope_type: target.scopeType,
+          scope_id: target.scopeId,
+          idempotency_key: idempotencyKey,
+          org_id: profile.org_id,
+          owner_id: target.ownerId,
+          run_by_profile_id: profile.id,
+          session_id: session.id,
+        });
+      } catch (collision) {
+        // Two clicks in the same second land here. The other click owns a run
+        // for this exact work, so show that one rather than an error.
+        const { findRunByKey } = await import("./analysis-runs.server");
+        const other = await findRunByKey(idempotencyKey);
+        if (other?.session_id) {
+          return {
+            run_id: other.id,
+            session_id: other.session_id,
+            reused: true,
+            items_read: other.items_read ?? 1,
+            suppressed: other.suppressed_claims ?? 0,
+            claims: other.claims_rendered ?? 0,
+          };
+        }
+        throw collision;
+      }
     } catch (error) {
       const rawReason = error instanceof Error ? error.message : "analysis_start_failed";
       const errorClass = "start_error";
