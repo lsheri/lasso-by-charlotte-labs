@@ -414,6 +414,9 @@ export const ANALYSIS_PRESETS: AnalysisPreset[] = [
   },
 ];
 
+/** Appended to the firm checks preset at run time; empty means the chip is disabled. */
+export const NO_FIRM_CHECKS_LINE = "no firm checks written yet";
+
 /** Below this, "What recurs" has nothing to compare and must not run. */
 export const MIN_ITEMS_FOR_RECURRENCE = 3;
 export const NOT_ENOUGH_WORK_LINE = "There is not enough work in this engagement yet.";
