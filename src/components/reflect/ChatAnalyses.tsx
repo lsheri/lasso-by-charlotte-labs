@@ -337,6 +337,7 @@ export function selectionChips(
 export function SelectionAnalysisChips({
   selected,
   engagement,
+  briefCandidates = [],
   readsDetail,
   running,
   onRun,
@@ -344,12 +345,13 @@ export function SelectionAnalysisChips({
 }: {
   selected: WorkItemRow[];
   engagement: { id: string; title: string };
+  briefCandidates?: WorkItemRow[];
   readsDetail: string;
   running: AnalysisPreset | null;
   onRun: (preset: AnalysisPreset, target: ChipTarget) => void;
   className?: string;
 }) {
-  const chips = selectionChips(selected, engagement);
+  const chips = selectionChips(selected, engagement, briefCandidates);
   return (
     <Suggested className={className}>
       <div className="flex items-center gap-2">
