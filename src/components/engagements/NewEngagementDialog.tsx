@@ -40,26 +40,28 @@ export function NewEngagementDialog({
     setPending(true);
     setError(null);
 
-    const { data, error: insertError } = await supabase
-      .from("engagements")
-      .insert({
-        org_id: profile.org_id,
-        code: code.trim(),
-        title: title.trim(),
-        client_label: clientLabel.trim() || null,
-        brief: brief.trim() || null,
-      })
-      .select("id")
-      .maybeSingle();
+    // The id is minted here on purpose. Reading the row back at insert time
+    // needs a membership row that does not exist yet, so asking for it would
+    // fail for anyone who is not a lead or an admin.
+    const engagementId = crypto.randomUUID();
 
-    if (insertError || !data) {
-      setError(insertError?.message ?? "Could not create the engagement.");
+    const { error: insertError } = await supabase.from("engagements").insert({
+      id: engagementId,
+      org_id: profile.org_id,
+      code: code.trim(),
+      title: title.trim(),
+      client_label: clientLabel.trim() || null,
+      brief: brief.trim() || null,
+    });
+
+    if (insertError) {
+      setError(insertError.message || "Could not create the engagement.");
       setPending(false);
       return;
     }
 
     const { error: memberError } = await supabase.from("engagement_members").insert({
-      engagement_id: data.id,
+      engagement_id: engagementId,
       profile_id: profile.id,
       member_role: "em",
     });
@@ -77,7 +79,7 @@ export function NewEngagementDialog({
     setClientLabel("");
     setBrief("");
     onDone?.();
-    navigate({ to: "/engagements/$id", params: { id: data.id } });
+    navigate({ to: "/engagements/$id", params: { id: engagementId } });
   }
 
   return (

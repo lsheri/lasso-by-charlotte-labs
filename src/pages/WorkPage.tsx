@@ -63,6 +63,7 @@ export function WorkPage() {
   const detachEpisode = useServerFn(detachEpisodeItems);
   const [mapItem, setMapItem] = useState<WorkItemRow | null>(null);
   const [mapGroup, setMapGroup] = useState<WorkItemRow[] | null>(null);
+  const [mapBulk, setMapBulk] = useState(false);
   const [peek, setPeek] = useState<{ entry: PeekEntry; focusId: string } | null>(null);
   const [dateItem, setDateItem] = useState<WorkItemRow | null>(null);
   const [lensItem, setLensItem] = useState<WorkItemRow | null>(null);
@@ -441,6 +442,21 @@ export function WorkPage() {
                 <button
                   type="button"
                   disabled={chosen.size === 0}
+                  onClick={() => {
+                    const picked = all.filter((i) => chosen.has(i.id));
+                    const head = picked[0];
+                    if (!head) return;
+                    setMapBulk(true);
+                    setMapGroup(picked);
+                    setMapItem(head);
+                  }}
+                  className="text-xs font-medium text-accent-deep transition-opacity hover:opacity-70 disabled:opacity-40"
+                >
+                  Map to a task{chosen.size ? ` (${chosen.size})` : ""}
+                </button>
+                <button
+                  type="button"
+                  disabled={chosen.size === 0}
                   onClick={() => setConfirmRemove(true)}
                   className="text-xs font-medium text-destructive transition-opacity hover:opacity-70 disabled:opacity-40"
                 >
@@ -675,11 +691,16 @@ export function WorkPage() {
       <MapDialog
         item={mapItem}
         groupItems={mapGroup ?? undefined}
+        groupLabel={mapBulk ? "selected work" : undefined}
         open={mapItem !== null}
         onOpenChange={(next) => {
           if (!next) {
             setMapItem(null);
             setMapGroup(null);
+            if (mapBulk) {
+              setMapBulk(false);
+              leaveSelectMode();
+            }
           }
         }}
       />

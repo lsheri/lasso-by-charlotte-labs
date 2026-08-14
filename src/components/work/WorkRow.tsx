@@ -68,6 +68,11 @@ export function WorkRow({
           ? {
               role: "button" as const,
               tabIndex: 0,
+              // Without an explicit name, the row's accessible name is built
+              // from everything inside it, including the action labels, so the
+              // row itself answers to "Map to a task". Naming it after the item
+              // keeps each action addressable as itself.
+              "aria-label": item.title,
               onClick: onOpen,
               onKeyDown: (event: React.KeyboardEvent) => {
                 if (event.key === "Enter" || event.key === " ") {
