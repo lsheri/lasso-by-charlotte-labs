@@ -300,9 +300,33 @@ export const ANALYSIS_PRESETS: AnalysisPreset[] = [
     coachMayRun: true,
   },
   {
+    id: "still_on_brief",
+    dbPreset: "still_on_brief",
+    label: "Still on brief",
+    description:
+      "Where this work departed from the brief, and whether the departure was acknowledged.",
+    scope: "deliverable",
+    systemPrompt: STILL_ON_BRIEF_PROMPT,
+    openingMessage:
+      "Compare this piece of work against its brief and set out where the work departed, and whether the record shows the departure being named.",
+    infoPanel: {
+      reads: (detail) => detail,
+      looksFor: [
+        "Departures between what the brief asked for and what the work does",
+        "Which class each departure falls in: added, dropped, changed or reframed",
+        "The turn where the work first moved, and where that move came from",
+        "Whether the record shows the departure being acknowledged",
+      ],
+      never:
+        "Never a judgment of you, never a drift score, never a claim that a departure was wrong. A departure not visible in the record may have been agreed somewhere Lasso cannot see.",
+      sources: ANALYSIS_SOURCES,
+    },
+    attribution: null,
+    coachMayRun: true,
+  },
+  {
     id: "decision_origin",
     dbPreset: "decision_origin",
-*** placeholder
     label: "Who decided what",
     description: "Every significant call in this work, and where it came from.",
     scope: "deliverable",
