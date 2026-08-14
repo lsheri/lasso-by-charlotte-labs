@@ -75,8 +75,8 @@ export type AnalysisPreset = {
 export const ANALYSIS_PRESET_IDS = [
   "ai_fluency_4d",
   "working_the_model",
-  "assumptions",
   "decision_origin",
+  "verification",
   "what_fed_this",
   "what_recurs",
 ] as const;
@@ -96,7 +96,14 @@ ABSOLUTE RULES:
 - Write to them in second person, about what actually happened in THIS thread. Name the specific moment and cite the turn number, written as (turn 4).
 - For each D: two to four sentences of observation, then a line starting "Try next:" with one concrete thing to do differently in their next conversation of this kind.
 - If the thread gives no evidence for a D, say plainly that it does not show, and still offer one thing to try.
-- Use markdown with a heading per D. Never use an em dash.`;
+- Use markdown with a heading per D. Never use an em dash.
+
+COACH STANCE:
+- Every observation of strength carries a verbatim quote showing it. No quote, no praise.
+- Name what is missing or weak as plainly as what is strong, citing the turn where it shows. If the same gap shows more than once in this thread, say so once, with each citation.
+- No generic encouragement, no summary that softens the findings, and no "overall, strong work" unless the evidence sections earned it.
+- If the thread is too thin to support an honest reading, say exactly that instead of inflating what is there.
+- End with WHAT TO TRY NEXT TIME: one or two concrete moves drawn from this thread's actual gaps, phrased as things to do, not traits to have.`;
 
 const WORKING_THE_MODEL_PROMPT = `You are running "Working efficiently with AI" over ONE of this person's own AI conversations. The transcript is supplied with each turn numbered as "TURN n ROLE:".
 
@@ -121,23 +128,28 @@ ABSOLUTE RULES:
 - Format each finding as a markdown heading naming the technique in plain language, then two to four sentences: what happened here with its turn citations, then what to do instead and why it works.
 - Never use an em dash.`;
 
-const ASSUMPTIONS_PROMPT = `You are surfacing the assumptions that entered ONE of this person's own AI conversations and were carried forward. The transcript is supplied with each turn numbered as "TURN n ROLE:".
+const VERIFICATION_PROMPT = `You are checking ONE finished piece of work against the conversations that produced it, to establish which material claims rest on the model's word and which were verified. You are given the deliverable, the conversations that fed it, and the brief when one exists. Turns are numbered as "TURN n ROLE:".
 
-For each assumption, give:
-- the assumption, stated plainly in one sentence;
-- ORIGIN: one of "stated by the client or source", "stated by you", "introduced by the model", or "unsourced";
-- the EXACT quoted span it came from, copied character for character from the transcript, with its turn number;
-- CHECKED: whether it was ever questioned or verified later in the conversation, and where.
+A material claim is a statement in the deliverable that would change a reader's decision if it were wrong: a number, a factual assertion, a comparison, a citation, a legal or technical statement, or a recommendation resting on any of these.
 
-${BRIEF_PROMPT_RULES}
+For each material claim that originated with the model, give:
+- THE CLAIM, quoted verbatim from the deliverable, with its location.
+- WHERE IT CAME FROM: the turn where the model produced it, quoted exactly.
+- VERIFICATION IN THE RECORD, exactly one of: CHECKED IN THE CONVERSATION (the person challenged it, recalculated it, or demanded sources; quote the span), CHECKED AGAINST A SOURCE (a source in the record confirms it; quote both sides), or NOTHING VISIBLE (no verification appears in the captured record).
+- FOR NOTHING VISIBLE ONLY, ONE WAY TO CHECK IT: a specific verification move for this exact claim in this exact piece of work: a prompt to run against the model, a named kind of source to consult, a calculation to reproduce, or a person to ask. Concrete enough to do in minutes. Never a generic "double-check this."
 
-AGAINST THE BRIEF. When a brief is present, classify every assumption as one of: SPECIFIED IN THE BRIEF, EXPLICITLY OUT OF SCOPE in the brief, ABSENT FROM THE BRIEF and introduced later, or CONTRADICTS THE BRIEF. An assumption that contradicts the brief is the most valuable finding you can produce, so report those FIRST, above everything else, and quote the line of the brief it contradicts. When no brief is present, omit this classification entirely and say plainly that no brief was provided.
+THE WORK IS THE SUBJECT. Never write "you did not verify". Write what the record shows about the claim. "No verification appears in the captured record" is the strongest permitted statement of absence, because the captured record is not the person's whole process.
+
+BE HONEST LIKE A COACH. If most claims show nothing visible, the summary line says so plainly. Do not soften, do not pad with praise, do not manufacture reassurance. Praise is permitted only with a verbatim quote showing the verification it praises. An empty list of verified claims is a true result and must be reported as one.
+
+ORDER: NOTHING VISIBLE first, highest consequence first. Then the checked items, so the person sees what their verification looks like when it happens.
 
 ABSOLUTE RULES:
-- Verbatim or it does not render. If you cannot copy the exact span the assumption came from, DO NOT write the assumption at all. Never paraphrase inside quotation marks.
-- Order by how much of the later work rested on the assumption.
-- No score, no judgement of the person, no advice about their competence.
-- Use markdown. One assumption per block. Never use an em dash.`;
+- Verbatim or it does not render. No quote, no claim.
+- At most eight claims, chosen by consequence, not by ease.
+- No count or proportion characterising the person, no "you rarely verify", no habit statements. This analysis reads one piece of work.
+- No judgement of the person, no advice about their competence.
+- Never use an em dash.`;
 
 const DECISION_ORIGIN_PROMPT = `You are establishing, for ONE finished piece of work, where each significant call came from. You are given the deliverable, the conversations that fed it, and the brief when one exists. Turns are numbered as "TURN n ROLE:".
 
@@ -199,7 +211,7 @@ export const ANALYSIS_PRESETS: AnalysisPreset[] = [
   {
     id: "ai_fluency_4d",
     dbPreset: "ai_fluency_4d",
-    label: "AI Fluency lens",
+    label: "How you direct AI",
     description: "How you delegated, described, discerned and verified in this conversation.",
     scope: "thread",
     systemPrompt: FLUENCY_PROMPT,
@@ -238,25 +250,24 @@ export const ANALYSIS_PRESETS: AnalysisPreset[] = [
     coachMayRun: false,
   },
   {
-    id: "assumptions",
-    dbPreset: "assumptions",
-    label: "What this work assumes",
-    description: "What was assumed, where it came from, and whether it was ever checked.",
-    scope: "thread",
-    systemPrompt: ASSUMPTIONS_PROMPT,
+    id: "verification",
+    dbPreset: "verification",
+    label: "What to verify",
+    description: "Which claims in this work rest on the model's word, and how to check them.",
+    scope: "deliverable",
+    systemPrompt: VERIFICATION_PROMPT,
     openingMessage:
-      "Surface the assumptions in this conversation, where each one came from, and whether it was checked.",
+      "For this piece of work, set out which material claims came from the model and whether verification appears in the record.",
     infoPanel: {
       reads: (detail) => detail,
       looksFor: [
-        "Assumptions that contradict the brief, when a brief was provided",
-        "Assumptions stated by the client or the source material",
-        "Assumptions you stated yourself",
-        "Assumptions the model introduced",
-        "Assumptions with no traceable source",
-        "Whether each one was ever checked",
+        "Material claims in the deliverable that came from the model",
+        "Where each claim was produced in the conversation",
+        "Whether the record shows it being challenged, recalculated or sourced",
+        "One concrete way to check each claim with nothing visible",
       ],
-      never: `${NEVER_LINE} An assumption without an exact quote is suppressed rather than shown.`,
+      never:
+        "Never a judgment of you, never a score, never a claim about what you did outside the captured record.",
       sources: ANALYSIS_SOURCES,
     },
     attribution: null,
