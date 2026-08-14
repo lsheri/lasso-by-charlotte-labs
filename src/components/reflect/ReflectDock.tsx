@@ -13,6 +13,10 @@ import {
   type ChipTarget,
 } from "@/components/reflect/ChatAnalyses";
 import { MarkdownMessage } from "@/components/markdown/MarkdownMessage";
+import {
+  SaveForOneOnOneDialog,
+  type SaveForOneOnOneTarget,
+} from "@/components/oneonone/SaveForOneOnOne";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
@@ -69,12 +73,17 @@ export function ReflectDock({
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string> | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [saveTarget, setSaveTarget] = useState<SaveForOneOnOneTarget | null>(null);
+  const [mention, setMention] = useState<{ query: string; start: number } | null>(null);
+  const [mentionIndex, setMentionIndex] = useState(0);
   const [coverage, setCoverage] = useState<{
     truncated: boolean;
     fullCount: number;
     summaryCount: number;
   } | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const composerRef = useRef<HTMLTextAreaElement>(null);
 
   const { data: work } = useWorkItems();
   const mapped: WorkItemRow[] = mappedItemsForEngagement(work?.items ?? [], engagementId);
@@ -88,6 +97,98 @@ export function ReflectDock({
   }, [open, selected, mapped]);
 
   const selectedItems = mapped.filter((i) => (selected ? selected.has(i.id) : true));
+
+  // The brief can live on the engagement itself rather than as a marked item,
+  // and that counts for the analyses that need one.
+  const { data: engagementBrief } = useQuery({
+    queryKey: ["engagement-brief-present", engagementId],
+    queryFn: async (): Promise<boolean> => {
+      const { data } = await supabase
+        .from("engagements")
+        .select("brief")
+        .eq("id", engagementId)
+        .maybeSingle();
+      return Boolean((data?.brief ?? "").trim());
+    },
+  });
+
+  const mappedIds = mapped.map((i) => i.id);
+  const { data: sessions } = useQuery({
+    queryKey: ["dock-sessions", engagementId, profileId, mappedIds.length],
+    enabled: open,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("chat_sessions")
+        .select("id, title, created_at, context_scope")
+        .eq("profile_id", profileId)
+        .order("created_at", { ascending: false })
+        .limit(50);
+      const ids = new Set(mappedIds);
+      return (data ?? []).filter((row) => {
+        const scope = row.context_scope as { mode?: string; ids?: string[] } | null;
+        if (!scope?.ids) return false;
+        if (scope.mode === "engagements") return scope.ids.includes(engagementId);
+        if (scope.mode === "items") return scope.ids.some((id) => ids.has(id));
+        return false;
+      });
+    },
+  });
+
+  /** A fresh chat: no session, no prior analyses, the whole engagement again. */
+  function newSession() {
+    setSessionId(null);
+    setSelected(new Set(mapped.map((i) => i.id)));
+    setCoverage(null);
+    setError(null);
+    setDraft("");
+    setHistoryOpen(false);
+    analyses.clear();
+  }
+
+  function openSession(id: string) {
+    setSessionId(id);
+    setHistoryOpen(false);
+    setCoverage(null);
+    analyses.clear();
+  }
+
+  // The @ menu reads the word being typed just before the caret.
+  function onDraftChange(value: string, caret: number) {
+    setDraft(value);
+    const upTo = value.slice(0, caret);
+    const at = upTo.lastIndexOf("@");
+    if (at === -1 || /\s/.test(upTo.slice(at + 1))) {
+      setMention(null);
+      return;
+    }
+    if (at > 0 && !/\s/.test(value[at - 1] ?? "")) {
+      setMention(null);
+      return;
+    }
+    setMention({ query: upTo.slice(at + 1), start: at });
+    setMentionIndex(0);
+  }
+
+  const mentionMatches = mention
+    ? mapped
+        .filter((item) => item.title.toLowerCase().includes(mention.query.toLowerCase()))
+        .slice(0, 6)
+    : [];
+
+  /** Insert the title as visible text, and make sure Lasso will read it. */
+  function chooseMention(item: WorkItemRow) {
+    if (!mention) return;
+    const caret = composerRef.current?.selectionStart ?? draft.length;
+    const next = `${draft.slice(0, mention.start)}@${item.title} ${draft.slice(caret)}`;
+    setDraft(next);
+    setMention(null);
+    setSelected((prev) => {
+      const base = new Set(prev ?? mapped.map((i) => i.id));
+      base.add(item.id);
+      return base;
+    });
+    composerRef.current?.focus();
+  }
 
   function scopeForSelection(): ContextScope {
     if (!selected || selectedItems.length === 0 || selectedItems.length === mapped.length) {
@@ -208,7 +309,45 @@ export function ReflectDock({
           >
             {pickerOpen ? "Hide what Lasso will read" : "Choose what Lasso will read"}
           </button>
+          <button
+            type="button"
+            onClick={newSession}
+            className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+          >
+            New session
+          </button>
+          <button
+            type="button"
+            onClick={() => setHistoryOpen((v) => !v)}
+            className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+          >
+            {historyOpen ? "Hide earlier sessions" : "Earlier sessions"}
+          </button>
         </div>
+
+        {historyOpen ? (
+          <div className="mt-3 max-h-48 space-y-1 overflow-y-auto rounded-[var(--radius-md)] border border-border bg-secondary/40 px-3 py-3">
+            {(sessions ?? []).length === 0 ? (
+              <p className="text-xs text-muted-foreground">No earlier sessions on this work yet.</p>
+            ) : (
+              (sessions ?? []).map((row) => (
+                <button
+                  key={row.id}
+                  type="button"
+                  onClick={() => openSession(row.id)}
+                  className={`block w-full truncate text-left text-sm transition-colors hover:text-foreground ${
+                    row.id === sessionId ? "text-foreground" : "text-muted-foreground"
+                  }`}
+                >
+                  {row.title ?? "Untitled"}{" "}
+                  <span className="font-mono text-[10px] uppercase tracking-[0.08em]">
+                    {new Date(row.created_at).toLocaleDateString()}
+                  </span>
+                </button>
+              ))
+            )}
+          </div>
+        ) : null}
 
         {pickerOpen ? (
           <div className="mt-3 max-h-56 space-y-1.5 overflow-y-auto rounded-[var(--radius-md)] border border-border bg-secondary/40 px-3 py-3">
@@ -254,6 +393,7 @@ export function ReflectDock({
             selected={selectedItems}
             engagement={{ id: engagementId, title: engagementTitle }}
             briefCandidates={mapped}
+            engagementHasBrief={engagementBrief ?? false}
             readsDetail={
               selectedItems.length === 1
                 ? "The piece of work you selected, and the brief when one exists."
@@ -272,7 +412,11 @@ export function ReflectDock({
           />
         ) : null}
         {analyses.error ? <p className="text-sm text-destructive">{analyses.error}</p> : null}
-        <InlineAnalysisBlocks results={analyses.results} profileId={profileId} />
+        <InlineAnalysisBlocks
+          results={analyses.results}
+          profileId={profileId}
+          onSaveForOneOnOne={(input) => setSaveTarget(input)}
+        />
         {(messages ?? []).map((message) => (
           <div key={message.id}>
             <p className="micro-label">{message.role === "user" ? "You" : "Reflect"}</p>
@@ -284,6 +428,19 @@ export function ReflectDock({
               <>
                 <MarkdownMessage content={message.content} />
                 <AnswerSources sources={sourcesByMessage?.[Number(message.id)] ?? []} />
+                <button
+                  type="button"
+                  onClick={() =>
+                    setSaveTarget({
+                      text: message.content,
+                      kind: "chat_excerpt",
+                      sessionId,
+                    })
+                  }
+                  className="mt-2 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  Save for 1:1
+                </button>
               </>
             )}
           </div>
@@ -302,11 +459,50 @@ export function ReflectDock({
       {error ? <p className="px-6 pb-2 text-sm text-destructive">{error}</p> : null}
 
       <footer className="shrink-0 border-t border-border bg-card px-6 py-4">
+        {mention && mentionMatches.length > 0 ? (
+          <div className="mb-2 max-h-44 overflow-y-auto rounded-[var(--radius-md)] border border-border bg-card shadow-card">
+            {mentionMatches.map((item, index) => (
+              <button
+                key={item.id}
+                type="button"
+                onMouseDown={(event) => {
+                  event.preventDefault();
+                  chooseMention(item);
+                }}
+                className={`block w-full px-3 py-1.5 text-left text-sm ${
+                  index === mentionIndex ? "bg-secondary text-foreground" : "text-muted-foreground"
+                }`}
+              >
+                <span className="break-words">{item.title}</span>{" "}
+                <span className="font-mono text-[10px] uppercase tracking-[0.08em]">
+                  {TYPE_WORD[item.type] ?? item.type}
+                </span>
+              </button>
+            ))}
+          </div>
+        ) : null}
         <div className="flex items-end gap-2">
           <Textarea
+            ref={composerRef}
             value={draft}
-            onChange={(event) => setDraft(event.target.value)}
-            placeholder="What do you want to think through?"
+            onChange={(event) => onDraftChange(event.target.value, event.target.selectionStart ?? 0)}
+            onKeyDown={(event) => {
+              if (!mention || mentionMatches.length === 0) return;
+              if (event.key === "ArrowDown") {
+                event.preventDefault();
+                setMentionIndex((i) => (i + 1) % mentionMatches.length);
+              } else if (event.key === "ArrowUp") {
+                event.preventDefault();
+                setMentionIndex((i) => (i - 1 + mentionMatches.length) % mentionMatches.length);
+              } else if (event.key === "Enter") {
+                event.preventDefault();
+                const pick = mentionMatches[mentionIndex];
+                if (pick) chooseMention(pick);
+              } else if (event.key === "Escape") {
+                setMention(null);
+              }
+            }}
+            placeholder="What do you want to think through? Type @ to point at a piece of work."
             rows={2}
             className="resize-none"
           />
@@ -321,6 +517,14 @@ export function ReflectDock({
           Open in Reflect →
         </Link>
       </footer>
+      <SaveForOneOnOneDialog
+        target={saveTarget}
+        onOpenChange={(next) => {
+          if (!next) setSaveTarget(null);
+        }}
+        profileId={profileId}
+        orgId={orgId}
+      />
     </SlideOver>
   );
 }
