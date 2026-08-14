@@ -559,6 +559,9 @@ export function SelectionAnalysisChips({
   running,
   onRun,
   className = "",
+  orgName,
+  canAuthorChecks = false,
+  onAuthorCheck,
 }: {
   selected: WorkItemRow[];
   engagement: { id: string; title: string };
@@ -569,6 +572,9 @@ export function SelectionAnalysisChips({
   running: AnalysisPreset | null;
   onRun: (preset: AnalysisPreset, target: ChipTarget) => void;
   className?: string;
+  orgName?: string;
+  canAuthorChecks?: boolean;
+  onAuthorCheck?: () => void;
 }) {
   const chips = selectionChips(
     selected,
@@ -577,43 +583,46 @@ export function SelectionAnalysisChips({
     engagementHasBrief,
     firmCheckCount,
   );
+  const firmChip = chips.find((c) => c.preset.id === "firm_checks") ?? null;
+  const stock = chips
+    .filter((c) => c.preset.id !== "firm_checks")
+    .sort((a, b) => byStockOrder(a.preset, b.preset));
+  const disabledRows = stock
+    .filter((c) => c.reason)
+    .map((c) => ({ label: c.preset.label, reason: c.reason as string }));
   return (
     <Suggested className={className}>
-      <div className="flex items-center gap-2">
-        <SuggestDot />
-        <p className="text-xs text-ember-deep">Analyses Lasso can run on this work</p>
-      </div>
-      <div className="mt-2 flex flex-wrap gap-2">
-        {chips.map(({ preset, target, reason }) => (
-          <div key={preset.id} className="flex items-center gap-1.5">
-            <button
-              type="button"
-              disabled={Boolean(running) || target === null}
-              title={reason ?? undefined}
+      <FirmSection
+        orgName={orgName}
+        firmCheckCount={firmCheckCount}
+        canAuthorChecks={canAuthorChecks}
+        onAuthorCheck={onAuthorCheck}
+        preset={firmChip?.preset ?? null}
+        readsDetail={readsDetail}
+        running={running}
+        disabled={!firmChip?.target}
+        reason={firmChip?.reason ?? null}
+        onRun={() => {
+          if (firmChip?.target) onRun(firmChip.preset, firmChip.target);
+        }}
+      />
+      <div className="mt-4">
+        <p className="micro-label mb-2">Lasso analyses</p>
+        <div className="flex flex-wrap gap-2">
+          {stock.map(({ preset, target, reason }) => (
+            <StockPill
+              key={preset.id}
+              preset={preset}
+              readsDetail={readsDetail}
+              running={running}
+              disabled={target === null}
+              reason={reason}
               onClick={() => target && onRun(preset, target)}
-              className={`rounded-full px-3 py-1 text-xs font-medium transition-opacity hover:opacity-85 disabled:opacity-50 ${
-                running?.id === preset.id
-                  ? "bg-ember text-ember-foreground"
-                  : "border border-border bg-card text-foreground"
-              }`}
-            >
-              {preset.label}
-            </button>
-            <AnalysisInfoPanel preset={preset} readsDetail={readsDetail} />
-          </div>
-        ))}
+            />
+          ))}
+        </div>
+        <DisabledReasons rows={disabledRows} />
       </div>
-      {chips.some((c) => c.reason) ? (
-        <ul className="mt-2 space-y-0.5 text-xs text-muted-foreground">
-          {chips
-            .filter((c) => c.reason)
-            .map((c) => (
-              <li key={c.preset.id}>
-                {c.preset.label}: {c.reason}
-              </li>
-            ))}
-        </ul>
-      ) : null}
     </Suggested>
   );
 }
