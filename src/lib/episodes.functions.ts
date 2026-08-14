@@ -66,6 +66,15 @@ export const syncEpisodeForMapping = createServerFn({ method: "POST" })
           email,
         });
       }
+      try {
+        const { writeEpisodeFact } = await import("./facts.server");
+        await writeEpisodeFact(
+          { supabase, orgId: profile.org_id, profileId: profile.id },
+          result.episode.id,
+        );
+      } catch (e) {
+        console.error("[episodes] episode fact failed:", (e as Error).message);
+      }
       return { ok: true as const, episode_id: result.episode.id };
     } catch (e) {
       console.error("[episodes] sync failed:", (e as Error).message);
