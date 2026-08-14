@@ -441,6 +441,20 @@ export function WorkPage() {
                 <button
                   type="button"
                   disabled={chosen.size === 0}
+                  onClick={() => {
+                    const picked = all.filter((i) => chosen.has(i.id));
+                    const head = picked[0];
+                    if (!head) return;
+                    setMapGroup(picked);
+                    setMapItem(head);
+                  }}
+                  className="text-xs font-medium text-accent-deep transition-opacity hover:opacity-70 disabled:opacity-40"
+                >
+                  Map to a task{chosen.size ? ` (${chosen.size})` : ""}
+                </button>
+                <button
+                  type="button"
+                  disabled={chosen.size === 0}
                   onClick={() => setConfirmRemove(true)}
                   className="text-xs font-medium text-destructive transition-opacity hover:opacity-70 disabled:opacity-40"
                 >
