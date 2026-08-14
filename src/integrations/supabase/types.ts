@@ -1235,6 +1235,71 @@ export type Database = {
           },
         ]
       }
+      firm_checks: {
+        Row: {
+          active: boolean
+          author_profile_id: string
+          body: string
+          created_at: string
+          engagement_id: string | null
+          id: string
+          org_id: string
+          subject_profile_id: string | null
+          title: string
+        }
+        Insert: {
+          active?: boolean
+          author_profile_id: string
+          body: string
+          created_at?: string
+          engagement_id?: string | null
+          id?: string
+          org_id: string
+          subject_profile_id?: string | null
+          title: string
+        }
+        Update: {
+          active?: boolean
+          author_profile_id?: string
+          body?: string
+          created_at?: string
+          engagement_id?: string | null
+          id?: string
+          org_id?: string
+          subject_profile_id?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "firm_checks_author_profile_id_fkey"
+            columns: ["author_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "firm_checks_engagement_id_fkey"
+            columns: ["engagement_id"]
+            isOneToOne: false
+            referencedRelation: "engagements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "firm_checks_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "firm_checks_subject_profile_id_fkey"
+            columns: ["subject_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       import_sessions: {
         Row: {
           created_at: string
@@ -1427,6 +1492,64 @@ export type Database = {
             columns: ["task_id"]
             isOneToOne: false
             referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      one_on_one_notes: {
+        Row: {
+          content: string
+          created_at: string
+          discussed: boolean
+          id: string
+          kind: string
+          org_id: string
+          owner_id: string
+          source_session_id: string | null
+          talking_point: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          discussed?: boolean
+          id?: string
+          kind?: string
+          org_id: string
+          owner_id: string
+          source_session_id?: string | null
+          talking_point?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          discussed?: boolean
+          id?: string
+          kind?: string
+          org_id?: string
+          owner_id?: string
+          source_session_id?: string | null
+          talking_point?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "one_on_one_notes_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "one_on_one_notes_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "one_on_one_notes_source_session_id_fkey"
+            columns: ["source_session_id"]
+            isOneToOne: false
+            referencedRelation: "chat_sessions"
             referencedColumns: ["id"]
           },
         ]
