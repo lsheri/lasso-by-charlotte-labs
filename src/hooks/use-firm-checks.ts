@@ -31,10 +31,11 @@ export function firmCheckAppliesTo(check: FirmCheck): string {
  */
 export function useFirmChecks(args: {
   orgId: string | undefined;
+  /** A string narrows to that engagement plus org wide; null is org wide only; undefined is any. */
   engagementId?: string | null;
   subjectProfileId?: string | null;
 }) {
-  const { orgId, engagementId = null, subjectProfileId = null } = args;
+  const { orgId, engagementId, subjectProfileId } = args;
   return useQuery({
     queryKey: ["firm-checks", orgId, engagementId, subjectProfileId],
     enabled: Boolean(orgId),
@@ -45,12 +46,16 @@ export function useFirmChecks(args: {
         .eq("org_id", orgId as string)
         .eq("active", true)
         .order("created_at", { ascending: false });
-      query = engagementId
-        ? query.or(`engagement_id.is.null,engagement_id.eq.${engagementId}`)
-        : query.is("engagement_id", null);
-      query = subjectProfileId
-        ? query.or(`subject_profile_id.is.null,subject_profile_id.eq.${subjectProfileId}`)
-        : query.is("subject_profile_id", null);
+      if (engagementId) {
+        query = query.or(`engagement_id.is.null,engagement_id.eq.${engagementId}`);
+      } else if (engagementId === null) {
+        query = query.is("engagement_id", null);
+      }
+      if (subjectProfileId) {
+        query = query.or(`subject_profile_id.is.null,subject_profile_id.eq.${subjectProfileId}`);
+      } else if (subjectProfileId === null) {
+        query = query.is("subject_profile_id", null);
+      }
       const { data, error } = await query;
       if (error) throw error;
       return (data ?? []) as FirmCheck[];

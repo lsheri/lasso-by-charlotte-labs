@@ -74,7 +74,7 @@ export function AnalysisLens({
   const bottomRef = useRef<HTMLDivElement>(null);
   // Firm checks apply org wide, per engagement, or per person. The server
   // filters exactly; here we only decide whether the chip can be pressed.
-  const { data: firmChecks } = useFirmChecks({ orgId });
+  const { data: firmChecks } = useFirmChecks({ orgId, subjectProfileId: profileId });
   const firmCheckCount = (firmChecks ?? []).length;
 
   const { data: turnCount } = useQuery({
