@@ -349,6 +349,9 @@ export function AnalysisChips({
   firmCheckCount = 0,
   onPickEngagement,
   onOpenPicker,
+  orgName,
+  canAuthorChecks = false,
+  onAuthorCheck,
 }: {
   target: ChipTarget;
   readsDetail: string;
@@ -360,6 +363,9 @@ export function AnalysisChips({
   firmCheckCount?: number;
   onPickEngagement?: (engagementId: string) => void;
   onOpenPicker?: () => void;
+  orgName?: string;
+  canAuthorChecks?: boolean;
+  onAuthorCheck?: () => void;
 }) {
   if (target.kind === "none") {
     return (
@@ -413,40 +419,46 @@ export function AnalysisChips({
   const presets = presetsForScope(scope, isCoach);
   if (presets.length === 0) return null;
   const notEnoughWork = target.kind === "engagement" && target.itemCount < MIN_ITEMS_FOR_RECURRENCE;
+  const firmPreset = presets.find((p) => p.id === "firm_checks") ?? null;
+  const stock = presets.filter((p) => p.id !== "firm_checks").sort(byStockOrder);
+  const disabledRows = stock
+    .filter((p) => p.id === "what_recurs" && notEnoughWork)
+    .map((p) => ({ label: p.label, reason: NOT_ENOUGH_WORK_LINE }));
 
   return (
     <Suggested className={className}>
-      <div className="flex items-center gap-2">
-        <SuggestDot />
-        <p className="text-xs text-ember-deep">Analyses Lasso can run on this work</p>
-      </div>
-      <div className="mt-2 flex flex-wrap gap-2">
-        {presets.map((preset) => {
-          const noChecks = preset.id === "firm_checks" && firmCheckCount === 0;
-          const blocked = (preset.id === "what_recurs" && notEnoughWork) || noChecks;
-          return (
-            <div key={preset.id} className="flex items-center gap-1.5">
-              <button
-                type="button"
-                disabled={Boolean(running) || blocked}
-                title={noChecks ? NO_FIRM_CHECKS_LINE : blocked ? NOT_ENOUGH_WORK_LINE : undefined}
+      <FirmSection
+        orgName={orgName}
+        firmCheckCount={firmCheckCount}
+        canAuthorChecks={canAuthorChecks}
+        onAuthorCheck={onAuthorCheck}
+        preset={firmPreset}
+        readsDetail={readsDetail}
+        running={running}
+        disabled={firmCheckCount === 0}
+        reason={firmCheckCount === 0 ? NO_FIRM_CHECKS_LINE : null}
+        onRun={() => firmPreset && onRun(firmPreset)}
+      />
+      <div className="mt-4">
+        <p className="micro-label mb-2">Lasso analyses</p>
+        <div className="flex flex-wrap gap-2">
+          {stock.map((preset) => {
+            const blocked = preset.id === "what_recurs" && notEnoughWork;
+            return (
+              <StockPill
+                key={preset.id}
+                preset={preset}
+                readsDetail={readsDetail}
+                running={running}
+                disabled={blocked}
+                reason={blocked ? NOT_ENOUGH_WORK_LINE : null}
                 onClick={() => onRun(preset)}
-                className={`rounded-full px-3 py-1 text-xs font-medium transition-opacity hover:opacity-85 disabled:opacity-50 ${
-                  running?.id === preset.id
-                    ? "bg-ember text-ember-foreground"
-                    : "border border-border bg-card text-foreground"
-                }`}
-              >
-                {preset.label}
-              </button>
-              <AnalysisInfoPanel preset={preset} readsDetail={readsDetail} />
-            </div>
-          );
-        })}
+              />
+            );
+          })}
+        </div>
+        <DisabledReasons rows={disabledRows} />
       </div>
-      {notEnoughWork ? (
-        <p className="mt-2 text-xs text-muted-foreground">{NOT_ENOUGH_WORK_LINE}</p>
-      ) : null}
     </Suggested>
   );
 }
