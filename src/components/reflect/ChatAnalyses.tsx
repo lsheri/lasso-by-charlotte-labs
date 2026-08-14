@@ -33,6 +33,167 @@ export type ChipEngagement = { id: string; code: string; title: string };
 
 const MAX_ENGAGEMENT_CHIPS = 5;
 
+/**
+ * Reading order for the stock analyses: what the work claims first, how it
+ * came to be second, how the person worked last.
+ */
+const STOCK_ORDER: readonly string[] = [
+  "verification",
+  "still_on_brief",
+  "decision_origin",
+  "what_fed_this",
+  "what_recurs",
+  "ai_fluency_4d",
+  "working_the_model",
+];
+
+function byStockOrder(a: AnalysisPreset, b: AnalysisPreset): number {
+  const ai = STOCK_ORDER.indexOf(a.id);
+  const bi = STOCK_ORDER.indexOf(b.id);
+  return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
+}
+
+/** One stock analysis: a quiet pill and the icon that explains it. */
+function StockPill({
+  preset,
+  readsDetail,
+  running,
+  disabled,
+  reason,
+  onClick,
+}: {
+  preset: AnalysisPreset;
+  readsDetail: string;
+  running: AnalysisPreset | null;
+  disabled: boolean;
+  reason: string | null;
+  onClick: () => void;
+}) {
+  return (
+    <div className="flex items-center gap-1">
+      <button
+        type="button"
+        disabled={Boolean(running) || disabled}
+        title={reason ?? undefined}
+        onClick={onClick}
+        className={`rounded-full px-2.5 py-1 text-xs transition-opacity hover:opacity-85 disabled:opacity-50 ${
+          running?.id === preset.id
+            ? "bg-ember text-ember-foreground"
+            : "border border-border bg-card text-foreground"
+        }`}
+      >
+        {preset.label}
+      </button>
+      <AnalysisInfoPanel preset={preset} readsDetail={readsDetail} iconOnly />
+    </div>
+  );
+}
+
+/** The reasons a chip cannot run, one quiet line each, only when there are any. */
+function DisabledReasons({ rows }: { rows: { label: string; reason: string }[] }) {
+  if (rows.length === 0) return null;
+  return (
+    <div className="mt-2 space-y-0.5">
+      {rows.map((row) => (
+        <p key={row.label} className="text-[11px] text-muted-foreground">
+          {row.label}: {row.reason}
+        </p>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * The firm's own checks, given their own section above Lasso's analyses. This
+ * is the part a manager should read as "my knowledge, running on this work".
+ */
+function FirmSection({
+  orgName,
+  firmCheckCount,
+  canAuthorChecks = false,
+  onAuthorCheck,
+  preset,
+  readsDetail,
+  running,
+  disabled,
+  reason,
+  onRun,
+}: {
+  orgName?: string | undefined;
+  firmCheckCount: number;
+  canAuthorChecks?: boolean;
+  onAuthorCheck?: (() => void) | undefined;
+  preset: AnalysisPreset | null;
+  readsDetail: string;
+  running: AnalysisPreset | null;
+  disabled: boolean;
+  reason: string | null;
+  onRun: () => void;
+}) {
+  const label = `${orgName ? `${orgName} ` : ""}Firm checks`;
+  const hasChecks = firmCheckCount > 0;
+  return (
+    <div>
+      <p className="micro-label mb-2">{label}</p>
+      {hasChecks ? (
+        <>
+          {preset ? (
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                disabled={Boolean(running) || disabled}
+                title={reason ?? undefined}
+                onClick={onRun}
+                className={`rounded-full px-3 py-1 text-xs font-medium transition-opacity hover:opacity-85 disabled:opacity-50 ${
+                  running?.id === preset.id
+                    ? "bg-ember text-ember-foreground"
+                    : "bg-accent-soft text-accent-deep"
+                }`}
+              >
+                Run firm checks
+              </button>
+              <AnalysisInfoPanel preset={preset} readsDetail={readsDetail} iconOnly />
+            </div>
+          ) : null}
+          <p className="mt-1.5 text-[11px] text-muted-foreground">
+            {firmCheckCount === 1
+              ? "1 check applies to this work."
+              : `${firmCheckCount} checks apply to this work.`}
+            {canAuthorChecks && onAuthorCheck ? (
+              <>
+                {" "}
+                <button
+                  type="button"
+                  onClick={onAuthorCheck}
+                  className="text-accent-deep underline underline-offset-2"
+                >
+                  Add a check
+                </button>
+              </>
+            ) : null}
+          </p>
+        </>
+      ) : (
+        <p className="text-[11px] text-muted-foreground">
+          Checks your firm writes appear here and run against your work.
+          {canAuthorChecks && onAuthorCheck ? (
+            <>
+              {" "}
+              <button
+                type="button"
+                onClick={onAuthorCheck}
+                className="text-accent-deep underline underline-offset-2"
+              >
+                Write the first check
+              </button>
+            </>
+          ) : null}
+        </p>
+      )}
+    </div>
+  );
+}
+
 export type InlineAnalysis = {
   key: string;
   preset: AnalysisPreset;
