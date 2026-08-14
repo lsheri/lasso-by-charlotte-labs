@@ -158,6 +158,15 @@ export function PacketPage({
         </div>
       </section>
 
+      <FirmChecksCard
+        orgId={profile?.org_id}
+        authorProfileId={profile?.id}
+        role={profile?.role}
+        engagementId={engagementId}
+        subjectProfileId={subjectId}
+        subjectName={subjectName}
+      />
+
       {data.decisions.length > 0 ? (
         <section>
           <h2 className="micro-label">Confirmed decisions</h2>
