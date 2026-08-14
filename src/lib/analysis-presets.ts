@@ -412,6 +412,27 @@ export const ANALYSIS_PRESETS: AnalysisPreset[] = [
     attribution: null,
     coachMayRun: false,
   },
+  {
+    id: "firm_checks",
+    dbPreset: "firm_checks",
+    label: "Firm checks",
+    description: "Your firm's checks, run against this work.",
+    scope: "deliverable",
+    systemPrompt: FIRM_CHECKS_PROMPT,
+    openingMessage: "Run my firm's checks against this piece of work.",
+    infoPanel: {
+      reads: (detail) =>
+        `${detail} It also reads the brief when one exists, and your firm's checks.`,
+      looksFor: [
+        "What the work shows against each check, with evidence",
+        "The smallest next step where a check is not yet visible",
+      ],
+      never: `${NEVER_LINE} Never a pass rate, never a score, never a judgment of you. A check not visible in the record may have been handled where Lasso cannot see.`,
+      sources: ANALYSIS_SOURCES,
+    },
+    attribution: null,
+    coachMayRun: true,
+  },
 ];
 
 /** Appended to the firm checks preset at run time; empty means the chip is disabled. */
