@@ -195,9 +195,52 @@ export function ReflectDock({
         <h2 className="page-title mt-1 break-words text-[19px] leading-snug">{engagementTitle}</h2>
         <div className="mt-2 flex flex-wrap items-center gap-2">
           <span className="rounded-full bg-accent-soft px-3 py-1 font-mono text-[11px] uppercase tracking-[0.08em] text-accent-deep">
-            This engagement
+            {selectedItems.length === mapped.length
+              ? "All work in this engagement"
+              : selectedItems.length === 1
+                ? "1 piece of work selected"
+                : `${selectedItems.length} pieces of work selected`}
           </span>
+          <button
+            type="button"
+            onClick={() => setPickerOpen((v) => !v)}
+            className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+          >
+            {pickerOpen ? "Hide what Lasso will read" : "Choose what Lasso will read"}
+          </button>
         </div>
+
+        {pickerOpen ? (
+          <div className="mt-3 max-h-56 space-y-1.5 overflow-y-auto rounded-[var(--radius-md)] border border-border bg-secondary/40 px-3 py-3">
+            {mapped.length === 0 ? (
+              <p className="text-xs text-muted-foreground">
+                No work is mapped into this engagement yet.
+              </p>
+            ) : (
+              mapped.map((item) => (
+                <label key={item.id} className="flex items-start gap-2 text-sm text-foreground">
+                  <Checkbox
+                    checked={selected ? selected.has(item.id) : true}
+                    onCheckedChange={(value) =>
+                      setSelected((prev) => {
+                        const next = new Set(prev ?? mapped.map((i) => i.id));
+                        if (value === true) next.add(item.id);
+                        else next.delete(item.id);
+                        return next;
+                      })
+                    }
+                  />
+                  <span className="min-w-0">
+                    <span className="break-words">{item.title}</span>{" "}
+                    <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+                      {TYPE_WORD[item.type] ?? item.type}
+                    </span>
+                  </span>
+                </label>
+              ))
+            )}
+          </div>
+        ) : null}
       </header>
 
       <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-6 py-5">
@@ -206,6 +249,29 @@ export function ReflectDock({
             Looking only at this engagement. Private to you, your coach never sees this.
           </p>
         ) : null}
+        {mapped.length > 0 ? (
+          <SelectionAnalysisChips
+            selected={selectedItems}
+            engagement={{ id: engagementId, title: engagementTitle }}
+            readsDetail={
+              selectedItems.length === 1
+                ? "The piece of work you selected, and the brief when one exists."
+                : "The pieces of work you selected, and the brief when one exists."
+            }
+            running={analyses.running}
+            onRun={(preset: AnalysisPreset, target: ChipTarget) =>
+              void analyses.runPreset(
+                preset,
+                target,
+                selectedItems.length === 1
+                  ? "The piece of work you selected, and the brief when one exists."
+                  : "The pieces of work you selected, and the brief when one exists.",
+              )
+            }
+          />
+        ) : null}
+        {analyses.error ? <p className="text-sm text-destructive">{analyses.error}</p> : null}
+        <InlineAnalysisBlocks results={analyses.results} profileId={profileId} />
         {(messages ?? []).map((message) => (
           <div key={message.id}>
             <p className="micro-label">{message.role === "user" ? "You" : "Reflect"}</p>
