@@ -303,7 +303,7 @@ export function ReflectDock({
       <header className="shrink-0 border-b border-border px-4 pb-4 pt-[calc(1.5rem+env(safe-area-inset-top))] sm:px-6">
         <p className="micro-label">Ask Lasso</p>
         <h2 className="page-title mt-1 break-words text-[19px] leading-snug">{engagementTitle}</h2>
-        <div className="mt-2 flex flex-wrap items-center gap-2">
+        <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2">
           <span className="rounded-full bg-accent-soft px-3 py-1 font-mono text-[11px] uppercase tracking-[0.08em] text-accent-deep">
             {selectedItems.length === mapped.length
               ? "All work in this engagement"
@@ -517,8 +517,8 @@ export function ReflectDock({
               }
             }}
             placeholder="What do you want to think through? Type @ to point at a piece of work."
-            rows={2}
-            className="resize-none"
+            rows={3}
+            className="min-h-[72px] resize-none"
           />
           <Button onClick={() => void submit()} disabled={pending || !draft.trim()}>
             {pending ? <WorkingLabel>Sending</WorkingLabel> : "Send"}
