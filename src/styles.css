@@ -498,3 +498,55 @@
 .chat-prose pre {
   padding: 0.7rem 0.85rem;
 }
+
+/*
+ * Mobile (below Tailwind's md, 768px). One breakpoint, no forked pages:
+ * everything here only relaxes the desktop layout for an iPhone-sized screen.
+ */
+@media (max-width: 767px) {
+  /* Headings step down one size on a 390px screen. */
+  .page-title {
+    font-size: 21px;
+  }
+
+  /* 16px in form fields stops iOS zooming the page on focus. */
+  input,
+  textarea,
+  select {
+    font-size: 16px;
+  }
+
+  /* Chips, pills and icon buttons keep a 44px tap area without growing
+     visually: the padding box stays, the hit box is padded out. */
+  button[class*="rounded-full"],
+  [role="menuitem"] {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  button,
+  [role="button"],
+  a {
+    touch-action: manipulation;
+  }
+
+  /* Nothing may push the page sideways on a phone. */
+  html,
+  body {
+    overflow-x: hidden;
+  }
+}
+
+/* Safe areas for anything that touches a screen edge on a notched phone. */
+@utility safe-top {
+  padding-top: env(safe-area-inset-top);
+}
+@utility safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+@utility safe-x {
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}

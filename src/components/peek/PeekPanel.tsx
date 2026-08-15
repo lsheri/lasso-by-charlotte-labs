@@ -141,7 +141,7 @@ export function PeekPanel({
       title={active.title}
       description="Work item preview"
     >
-      <header className="shrink-0 border-b border-border px-6 pb-4 pt-6">
+      <header className="shrink-0 border-b border-border px-4 pb-4 pt-[calc(1.5rem+env(safe-area-inset-top))] sm:px-6">
         <div className="flex flex-wrap items-center gap-1.5 pr-8">
           <TypeChip item={active} />
           {vendor ? <Chip tone="accent">{vendorLabel(vendor)}</Chip> : null}
@@ -185,7 +185,7 @@ export function PeekPanel({
         ) : null}
       </header>
 
-      <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+      <div className="min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6">
         {format.kind === "thread" ? (
           <ThreadBody item={active} enabled={open} />
         ) : (
@@ -200,7 +200,7 @@ export function PeekPanel({
         ) : null}
       </div>
 
-      <footer className="flex shrink-0 flex-wrap items-center gap-4 border-t border-border bg-card px-6 py-4">
+      <footer className="flex shrink-0 flex-wrap items-center gap-x-4 gap-y-1 border-t border-border bg-card px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 sm:px-6 sm:pt-4">
         {canEdit && onMap ? (
           <FooterAction primary onClick={() => onMap(active, group)}>
             {active.visibility === "mapped" ? "Remap" : "Map to a task"}
