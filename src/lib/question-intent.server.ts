@@ -23,6 +23,8 @@ export async function classifyQuestionIntent(
     email?: string | null | undefined;
     engagementId?: string | null | undefined;
     workItemId?: string | null | undefined;
+    /** The active episode, when the calling surface knows one. */
+    episodeId?: string | null | undefined;
   },
 ): Promise<void> {
   let intent: string | null = null;
@@ -113,7 +115,7 @@ export async function classifyQuestionIntent(
   } catch (e) {
     const { logHealth } = await import("./health.server");
     void logHealth({
-      kind: "fact_write_failed",
+      kind: "anomaly",
       surface: "ask_lasso",
       detail: `fact_question write threw: ${(e as Error).message}`,
     });
