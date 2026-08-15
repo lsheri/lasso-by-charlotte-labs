@@ -192,6 +192,43 @@ export function isEventNameV2(name: string): name is EventNameV2 {
 
 export type PropsV2 = Record<string, string | number | boolean>;
 
+/**
+ * Events that a v1 call site already mirrors to PostHog from the same server
+ * flow. The v2 row still lands in events_v2; only the outbound mirror is
+ * suppressed, so a single action is counted once in the panel. No name is
+ * renamed: the dashboards keep the v1 names they were built on.
+ *
+ *   v2 name                     v1 name (already mirrored)
+ *   work_item.captured          workitem.captured
+ *   analysis.started            analysis.started
+ *   analysis.completed          analysis.completed
+ *   analysis.failed             analysis.failed
+ *   decision.drafted            decision.drafted
+ *   lineage.drafted             link.drafted
+ *   lineage.confirmed           link.reviewed
+ *   lineage.rejected            link.reviewed
+ *   one_on_one.prepared         oneonone.prepared
+ *   one_on_one.saved            oneonone.saved_to_drive
+ *   conversation.pushed         mcp.push
+ *   conversation.appended       mcp.push
+ *   conversation.turn_revised   mcp.push
+ */
+const V1_MIRRORED = new Set<string>([
+  "work_item.captured",
+  "analysis.started",
+  "analysis.completed",
+  "analysis.failed",
+  "decision.drafted",
+  "lineage.drafted",
+  "lineage.confirmed",
+  "lineage.rejected",
+  "one_on_one.prepared",
+  "one_on_one.saved",
+  "conversation.pushed",
+  "conversation.appended",
+  "conversation.turn_revised",
+]);
+
 const EMAIL_LIKE = /[^\s@]+@[^\s@]+\.[^\s@]+/;
 const URL_LIKE = /(https?:\/\/|www\.|\/\/)/i;
 
@@ -368,8 +405,9 @@ export async function recordEventV2(
     });
     if (error) console.error(`[telemetry-v2] insert failed for ${input.eventName}:`, error.message);
 
-    // The mirror leaves bucketed. QA traffic is never mirrored.
-    if (environment === "production") {
+    // The mirror leaves bucketed. QA traffic is never mirrored, and neither is
+    // an event a v1 call site already captured: one action, one PostHog row.
+    if (environment === "production" && !V1_MIRRORED.has(input.eventName)) {
       const { mirrorToPostHog } = await import("./telemetry.server");
       await mirrorToPostHog(
         input.eventName as never,

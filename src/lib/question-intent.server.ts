@@ -23,8 +23,13 @@ export async function classifyQuestionIntent(
     email?: string | null | undefined;
     engagementId?: string | null | undefined;
     workItemId?: string | null | undefined;
+    /** The active episode, when the calling surface knows one. */
+    episodeId?: string | null | undefined;
   },
 ): Promise<void> {
+  let intent: string | null = null;
+  let target: string | null = null;
+  let stage: string | null = null;
   try {
     const { chatComplete } = await import("./ai.server");
     const completion = await chatComplete(
@@ -42,61 +47,77 @@ export async function classifyQuestionIntent(
       { tier: "fast", timeoutMs: 5000, meta: { surface: "question_intent" } },
     );
     const match = completion.text.match(/\{[\s\S]*\}/);
-    if (!match) return;
-    const parsed = JSON.parse(match[0]) as Record<string, string>;
-    const intent = (QUESTION_INTENT_CLASSES as readonly string[]).includes(
-      parsed["intent_class"] ?? "",
-    )
-      ? parsed["intent_class"]!
-      : "other";
-    const target = (QUESTION_TARGETS as readonly string[]).includes(parsed["target"] ?? "")
-      ? parsed["target"]!
-      : input.scopeMode === "engagements"
-        ? "engagement"
-        : input.scopeMode === "whole"
-          ? "own_work"
-          : "specific_item";
-    const stage = (QUESTION_STAGES as readonly string[]).includes(parsed["stage"] ?? "")
-      ? parsed["stage"]!
-      : "during";
+    if (match) {
+      const parsed = JSON.parse(match[0]) as Record<string, string>;
+      intent = (QUESTION_INTENT_CLASSES as readonly string[]).includes(parsed["intent_class"] ?? "")
+        ? parsed["intent_class"]!
+        : "other";
+      target = (QUESTION_TARGETS as readonly string[]).includes(parsed["target"] ?? "")
+        ? parsed["target"]!
+        : input.scopeMode === "engagements"
+          ? "engagement"
+          : input.scopeMode === "whole"
+            ? "own_work"
+            : "specific_item";
+      stage = (QUESTION_STAGES as readonly string[]).includes(parsed["stage"] ?? "")
+        ? parsed["stage"]!
+        : "during";
+    }
+  } catch {
+    // Enrichment only. No health row, no user-visible effect.
+  }
 
-    const { recordEventV2 } = await import("./telemetry-v2.server");
-    await recordEventV2(supabase, input.userId, {
-      eventName: "question.asked",
-      props: {
-        intent_class: intent,
-        target,
-        stage,
-        question_chars: input.question.length,
-      },
-      profileId: input.profileId,
-      engagementId: input.engagementId ?? null,
-      workItemId: input.workItemId ?? null,
-      email: input.email ?? null,
-    });
+  // The event only travels when the classification produced enums for it.
+  if (intent && target && stage) {
+    try {
+      const { recordEventV2 } = await import("./telemetry-v2.server");
+      await recordEventV2(supabase, input.userId, {
+        eventName: "question.asked",
+        props: {
+          intent_class: intent,
+          target,
+          stage,
+          question_chars: input.question.length,
+        },
+        profileId: input.profileId,
+        engagementId: input.engagementId ?? null,
+        workItemId: input.workItemId ?? null,
+        email: input.email ?? null,
+      });
+    } catch {
+      // Enrichment only.
+    }
+  }
 
-    // The same classification, kept as a fact row so questions can be studied
-    // as practice over time. Enums and a length only: never the question text.
+  // The fact row is written whether or not the classification landed: the
+  // question happened, and the counts are the point. Enums and a length only,
+  // never the question text. Failure here can never fail the person's question.
+  try {
     const { data: profileRow } = await supabase
       .from("profiles")
       .select("org_id")
       .eq("id", input.profileId)
       .maybeSingle();
-    if (profileRow?.org_id) {
-      const { writeQuestionFact } = await import("./facts.server");
-      await writeQuestionFact(
-        { supabase, orgId: profileRow.org_id, profileId: input.profileId },
-        {
-          surface: input.scopeMode === "engagements" ? "reflect_engagement" : "reflect",
-          intentClass: intent,
-          target,
-          stage,
-          qChars: input.question.length,
-          questionText: input.question,
-        },
-      );
-    }
-  } catch {
-    // Enrichment only. No health row, no user-visible effect.
+    if (!profileRow?.org_id) return;
+    const { writeQuestionFact } = await import("./facts.server");
+    await writeQuestionFact(
+      { supabase, orgId: profileRow.org_id, profileId: input.profileId },
+      {
+        surface: "ask_lasso",
+        intentClass: intent,
+        target,
+        stage,
+        episodeId: input.episodeId ?? null,
+        qChars: input.question.length,
+        questionText: input.question,
+      },
+    );
+  } catch (e) {
+    const { logHealth } = await import("./health.server");
+    void logHealth({
+      kind: "anomaly",
+      surface: "ask_lasso",
+      detail: `fact_question write threw: ${(e as Error).message}`,
+    });
   }
 }
