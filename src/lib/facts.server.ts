@@ -105,7 +105,7 @@ export async function writeQuestionFact(
     tenant_pseudo: keys.tenant,
     actor_pseudo: keys.actor,
     episode_id: input.episodeId ?? null,
-    surface: input.surface,
+    surface: questionSurface(input.surface),
     intent_class: input.intentClass ?? null,
     cognitive_operation: input.cognitiveOperation ?? null,
     target: input.target ?? null,
