@@ -300,7 +300,7 @@ export function ReflectDock({
       title="Ask Lasso"
       description="Reflect on this engagement"
     >
-      <header className="shrink-0 border-b border-border px-6 pb-4 pt-6">
+      <header className="shrink-0 border-b border-border px-4 pb-4 pt-[calc(1.5rem+env(safe-area-inset-top))] sm:px-6">
         <p className="micro-label">Ask Lasso</p>
         <h2 className="page-title mt-1 break-words text-[19px] leading-snug">{engagementTitle}</h2>
         <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -392,7 +392,7 @@ export function ReflectDock({
         ) : null}
       </header>
 
-      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-6 py-5">
+      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-5 sm:px-6">
         {(messages ?? []).length === 0 ? (
           <p className="text-sm text-muted-foreground">
             Looking only at this engagement. Private to you, your coach never sees this.
@@ -470,11 +470,11 @@ export function ReflectDock({
         <div ref={bottomRef} />
       </div>
 
-      {error ? <p className="px-6 pb-2 text-sm text-destructive">{error}</p> : null}
+      {error ? <p className="px-4 pb-2 text-sm text-destructive sm:px-6">{error}</p> : null}
 
-      <footer className="shrink-0 border-t border-border bg-card px-6 py-4">
+      <footer className="shrink-0 border-t border-border bg-card px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 sm:px-6 sm:pt-4">
         {mention && mentionMatches.length > 0 ? (
-          <div className="mb-2 max-h-44 overflow-y-auto rounded-[var(--radius-md)] border border-border bg-card shadow-card">
+          <div className="mb-2 max-h-52 w-full max-w-full overflow-y-auto overscroll-contain rounded-[var(--radius-md)] border border-border bg-card shadow-card">
             {mentionMatches.map((item, index) => (
               <button
                 key={item.id}
@@ -483,7 +483,7 @@ export function ReflectDock({
                   event.preventDefault();
                   chooseMention(item);
                 }}
-                className={`block w-full px-3 py-1.5 text-left text-sm ${
+                className={`block min-h-11 w-full px-3 py-2 text-left text-sm ${
                   index === mentionIndex ? "bg-secondary text-foreground" : "text-muted-foreground"
                 }`}
               >

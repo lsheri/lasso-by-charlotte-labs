@@ -82,7 +82,7 @@ export function WorkRow({
               },
             }
           : {})}
-        className={`flex items-center gap-3 px-3 sm:gap-4 sm:px-4 ${
+        className={`flex flex-wrap items-center gap-3 px-3 sm:gap-4 sm:px-4 ${
           nested ? "py-2.5" : "py-3"
         } ${onOpen ? "cursor-pointer" : ""}`}
       >
@@ -163,7 +163,7 @@ export function WorkRow({
         ) : null}
 
         <div
-          className="flex max-w-[50%] shrink-0 flex-wrap items-center justify-end gap-x-3 gap-y-1"
+          className="order-last flex w-full flex-wrap items-center justify-start gap-x-4 gap-y-0 border-t border-border/60 pt-1 md:order-none md:w-auto md:max-w-[50%] md:shrink-0 md:justify-end md:gap-x-3 md:gap-y-1 md:border-0 md:pt-0"
           onClick={(event) => event.stopPropagation()}
         >
           {actions}
@@ -193,8 +193,8 @@ export function RowAction({
       }}
       className={
         primary
-          ? "text-xs font-medium text-accent-deep transition-opacity hover:opacity-70"
-          : "text-xs text-muted-foreground transition-colors hover:text-foreground"
+          ? "inline-flex min-h-11 items-center text-xs font-medium text-accent-deep transition-opacity hover:opacity-70 md:min-h-0"
+          : "inline-flex min-h-11 items-center text-xs text-muted-foreground transition-colors hover:text-foreground md:min-h-0"
       }
     >
       {children}
