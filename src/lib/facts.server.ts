@@ -82,6 +82,20 @@ export async function tenantFingerprint(orgId: string, text: string): Promise<st
   return (await hmacHex(key, `${orgId}:q:${normalised}`)).slice(0, 32);
 }
 
+/**
+ * fact_question.surface is a closed vocabulary in the warehouse
+ * ('ai_interaction' | 'self_query' | 'coach_query'). Product surface names such
+ * as ask_lasso, reflect or reflect_engagement are mapped here rather than in
+ * the callers, so a new surface can never silently fail the check constraint.
+ */
+function questionSurface(surface: string): string {
+  if (surface === "ai_interaction" || surface === "self_query" || surface === "coach_query") {
+    return surface;
+  }
+  if (surface.startsWith("coach")) return "coach_query";
+  return "self_query";
+}
+
 export async function writeQuestionFact(
   ctx: FactContext,
   input: {
