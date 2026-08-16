@@ -868,6 +868,7 @@ async function pushConversation(owner: Owner, args: Obj, id: unknown): Promise<R
   const capturedIds: string[] = [threadId];
   const problems: string[] = [];
   const rejected: RejectedAttachment[] = [];
+  const degradedAttachments: { title: string; stored_chars: number; incoming_chars: number }[] = [];
   const transcriptText = messages.map((m) => m.content).join("\n\n");
   const messageTexts = messages.map((m) => m.content);
   if (attachments.length > 0 && !owner.userId) {
@@ -908,6 +909,19 @@ async function pushConversation(owner: Owner, args: Obj, id: unknown): Promise<R
             ((row.source_meta as { source_artifact_id?: string } | null)?.source_artifact_id ??
               "") === attachment.sourceArtifactId,
         ) ?? (existingAttachments ?? []).find((row) => row.title === attachment.title);
+      // Same guard as turns: a known artifact can grow or be edited, but a
+      // condensed replacement is a loss, so the stored version stays.
+      if (match) {
+        const storedChars = await storedAttachmentChars(match);
+        if (storedChars > 0 && looksCondensed(attachment.content.length, storedChars)) {
+          degradedAttachments.push({
+            title: attachment.title,
+            stored_chars: storedChars,
+            incoming_chars: attachment.content.length,
+          });
+          continue;
+        }
+      }
       // Reuse the stored path for a known attachment; give new ones a collision-proof suffix.
       const suffix = (await sha256Hex(attachment.sourceArtifactId)).slice(0, 8);
       const path =
@@ -940,6 +954,7 @@ async function pushConversation(owner: Owner, args: Obj, id: unknown): Promise<R
           language: attachment.language ?? null,
           filename: attachment.title,
           source_artifact_id: attachment.sourceArtifactId,
+          chars: attachment.content.length,
           duplicate_of_transcript: false,
         } as unknown as Json,
         meta: { assistant_transcribed: true },
