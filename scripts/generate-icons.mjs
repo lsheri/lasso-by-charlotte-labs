@@ -10,7 +10,8 @@ const PUBLIC_DIR = path.join(ROOT, "public");
 const CACHE = path.join(ROOT, "node_modules", ".cache", "coach-lasso-spider.png");
 const CDN_ORIGIN = "https://pilot-platform.charlotte-labs.dev";
 
-const BG = { r: 0x0b, g: 0x2a, b: 0x4a, alpha: 1 }; // #0B2A4A
+const BG = { r: 0xf7, g: 0xf5, b: 0xf2, alpha: 1 }; // #F7F5F2 bone/off-white
+const OG_BG = { r: 0x0b, g: 0x2a, b: 0x4a, alpha: 1 }; // #0B2A4A navy for OG card
 
 async function loadSource() {
   try {
@@ -80,12 +81,12 @@ async function ogImage(spider) {
   <text x="530" y="330" font-family="monospace" font-size="150" font-weight="bold" fill="#6FFAC6" letter-spacing="10">LASSO</text>
   <text x="536" y="400" font-family="monospace" font-size="42" fill="#C9D8E8" letter-spacing="6">BY CHARLOTTE LABS</text>
 </svg>`);
-  return sharp({ create: { width: 1200, height: 630, channels: 4, background: BG } })
+  return sharp({ create: { width: 1200, height: 630, channels: 4, background: OG_BG } })
     .composite([
       { input: art, left: 40, top: 80 },
       { input: svg, left: 0, top: 0 },
     ])
-    .flatten({ background: BG })
+    .flatten({ background: OG_BG })
     .png()
     .toBuffer();
 }

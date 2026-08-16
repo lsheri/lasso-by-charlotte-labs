@@ -95,7 +95,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:site", content: "@Lovable" },
-      { name: "theme-color", content: "#0B2A4A" },
+      { name: "theme-color", content: "#F7F5F2" },
       {
         property: "og:image",
         content: "https://pilot-platform.charlotte-labs.dev/og-image.png",
