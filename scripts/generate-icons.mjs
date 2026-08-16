@@ -81,12 +81,12 @@ async function ogImage(spider) {
   <text x="530" y="330" font-family="monospace" font-size="150" font-weight="bold" fill="#6FFAC6" letter-spacing="10">LASSO</text>
   <text x="536" y="400" font-family="monospace" font-size="42" fill="#C9D8E8" letter-spacing="6">BY CHARLOTTE LABS</text>
 </svg>`);
-  return sharp({ create: { width: 1200, height: 630, channels: 4, background: BG } })
+  return sharp({ create: { width: 1200, height: 630, channels: 4, background: OG_BG } })
     .composite([
       { input: art, left: 40, top: 80 },
       { input: svg, left: 0, top: 0 },
     ])
-    .flatten({ background: BG })
+    .flatten({ background: OG_BG })
     .png()
     .toBuffer();
 }
