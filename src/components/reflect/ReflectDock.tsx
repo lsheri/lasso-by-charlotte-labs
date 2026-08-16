@@ -28,7 +28,7 @@ import { useWorkItems } from "@/hooks/use-work-items";
 import { supabase } from "@/integrations/supabase/client";
 import { streamChatRequest } from "@/lib/stream-client";
 import type { ReflectResult } from "@/lib/reflect-run.server";
-import { mappedItemsForEngagement } from "@/lib/reflect-scope-shape";
+import { mappedItemsForEngagement, pointedAtIds } from "@/lib/reflect-scope-shape";
 import { logEvent } from "@/lib/telemetry";
 import { parseManifest, type ContextManifest } from "@/lib/context-manifest";
 import type { ContextScope } from "@/lib/reflect-shared";
@@ -81,6 +81,7 @@ export function ReflectDock({
   const [saveTarget, setSaveTarget] = useState<SaveForOneOnOneTarget | null>(null);
   const [mention, setMention] = useState<{ query: string; start: number } | null>(null);
   const [mentionIndex, setMentionIndex] = useState(0);
+  const [pointedNow, setPointedNow] = useState<WorkItemRow[]>([]);
   const [coverage, setCoverage] = useState<{
     truncated: boolean;
     fullCount: number;
@@ -187,18 +188,17 @@ export function ReflectDock({
         .slice(0, 6)
     : [];
 
-  /** Insert the title as visible text, and make sure Lasso will read it. */
+  /** What the draft currently points at, so the narrowing is visible before send. */
+  const pointedDraftIds = pointedAtIds(draft, mapped);
+  const draftPointed = mapped.filter((item) => pointedDraftIds.includes(item.id));
+
+  /** Insert the title as visible text. The tag itself narrows the read set. */
   function chooseMention(item: WorkItemRow) {
     if (!mention) return;
     const caret = composerRef.current?.selectionStart ?? draft.length;
     const next = `${draft.slice(0, mention.start)}@${item.title} ${draft.slice(caret)}`;
     setDraft(next);
     setMention(null);
-    setSelected((prev) => {
-      const base = new Set(prev ?? mapped.map((i) => i.id));
-      base.add(item.id);
-      return base;
-    });
     composerRef.current?.focus();
   }
 
@@ -269,6 +269,9 @@ export function ReflectDock({
   async function submit() {
     const message = draft.trim();
     if (!message || pending) return;
+    const ids = pointedAtIds(message, mapped);
+    const pointedItems = mapped.filter((item) => ids.includes(item.id));
+    setPointedNow(pointedItems);
     setPending(true);
     setError(null);
     setLiveManifest(null);
@@ -279,7 +282,13 @@ export function ReflectDock({
       setDraft("");
       const result = await streamChatRequest<ReflectResult>(
         "/api/reflect/stream",
-        { session_id: id, message, profile_id: profileId, surface: "ask_lasso" },
+        {
+          session_id: id,
+          message,
+          profile_id: profileId,
+          surface: "ask_lasso",
+          pointed_at: pointedItems.map((i) => i.id),
+        },
         (delta) => setStreamed((prev) => prev + delta),
       );
       setCoverage({
@@ -295,6 +304,7 @@ export function ReflectDock({
     } finally {
       setPending(false);
       setStreamed("");
+      setPointedNow([]);
     }
   }
 
@@ -310,12 +320,19 @@ export function ReflectDock({
         <h2 className="page-title mt-1 break-words text-[19px] leading-snug">{engagementTitle}</h2>
         <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2">
           <span className="rounded-full bg-accent-soft px-3 py-1 font-mono text-[11px] uppercase tracking-[0.08em] text-accent-deep">
-            {selectedItems.length === mapped.length
+            {draftPointed.length > 0
+              ? `Pointed at: ${draftPointed.length} ${draftPointed.length === 1 ? "item" : "items"}`
+              : selectedItems.length === mapped.length
               ? "All work in this engagement"
               : selectedItems.length === 1
                 ? "1 piece of work selected"
                 : `${selectedItems.length} pieces of work selected`}
           </span>
+          {draftPointed.length > 0 ? (
+            <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+              This message reads only what you pointed at
+            </span>
+          ) : null}
           <button
             type="button"
             onClick={() => setPickerOpen((v) => !v)}
@@ -473,9 +490,13 @@ export function ReflectDock({
         ) : null}
         {pending ? (
           <ThinkingTrail
-            items={selectedItems.map((item) => ({ id: item.id, title: item.title }))}
+            items={(pointedNow.length > 0 ? pointedNow : selectedItems).map((item) => ({
+              id: item.id,
+              title: item.title,
+            }))}
             finalPhase="Writing"
             manifest={liveManifest}
+            lead={pointedNow.length > 0 ? "Reading what you pointed at" : undefined}
           />
         ) : null}
         {analyses.running ? (

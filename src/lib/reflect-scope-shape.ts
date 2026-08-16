@@ -18,6 +18,23 @@ export function engagementIdsOf(item: WorkItemRow): string[] {
   );
 }
 
+/**
+ * The pieces of work a message points at with @ tags. A tag is the item title
+ * written verbatim after an @, which is exactly what the picker inserts.
+ */
+export function pointedAtIds(text: string, items: { id: string; title: string }[]): string[] {
+  if (!text.includes("@")) return [];
+  const haystack = text.toLowerCase();
+  const ids: string[] = [];
+  for (const item of items) {
+    const title = item.title.trim().toLowerCase();
+    if (title && haystack.includes(`@${title}`)) ids.push(item.id);
+  }
+  return Array.from(new Set(ids));
+}
+
+
+
 export function taskIdsOf(item: WorkItemRow): string[] {
   return item.work_item_tasks.map((m) => m.task_id);
 }
