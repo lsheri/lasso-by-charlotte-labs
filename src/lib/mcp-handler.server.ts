@@ -28,6 +28,13 @@ const MAX_TURNS = 500;
 const MAX_THREAD_BYTES = 2 * 1024 * 1024;
 const MAX_DOC_BYTES = 5 * 1024 * 1024;
 const MAX_ATTACHMENTS = 12;
+/** A re-push may improve the record; it may never shrink it silently. */
+const SHRINK_RATIO = 0.6;
+const SHRINK_FLOOR = 200;
+
+function looksCondensed(incomingChars: number, storedChars: number): boolean {
+  return storedChars > SHRINK_FLOOR && incomingChars < storedChars * SHRINK_RATIO;
+}
 
 const SITE_URL = "https://pilot-platform.charlotte-labs.dev";
 const ICONS = [
