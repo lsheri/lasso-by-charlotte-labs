@@ -44,9 +44,9 @@ function maskNeighbour(data, w, h) {
       const isLight = r > 225 && g > 225 && b > 225;
       const keep = y > 300 && (isGreen || isNavy || isLight);
       if (!keep) {
-        data[i] = 255;
-        data[i + 1] = 255;
-        data[i + 2] = 255;
+        data[i] = BG.r;
+        data[i + 1] = BG.g;
+        data[i + 2] = BG.b;
         data[i + 3] = 0;
       }
     }
@@ -74,9 +74,9 @@ function clearBackground(data, w, h) {
     seen[p] = 1;
     const i = p * 4;
     if (!isBg(i)) continue;
-    data[i] = 255;
-    data[i + 1] = 255;
-    data[i + 2] = 255;
+    data[i] = BG.r;
+    data[i + 1] = BG.g;
+    data[i + 2] = BG.b;
     data[i + 3] = 0;
     const x = p % w;
     const y = (p / w) | 0;
