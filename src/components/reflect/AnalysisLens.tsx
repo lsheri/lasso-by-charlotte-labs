@@ -3,11 +3,12 @@ import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
 
-import { ThinkingIndicator, WorkingLabel } from "@/components/common/Working";
+import { WorkingLabel } from "@/components/common/Working";
 import { Suggested, SuggestDot } from "@/components/common/Suggested";
 import { MarkdownMessage } from "@/components/markdown/MarkdownMessage";
 import { SlideOver } from "@/components/peek/SlideOver";
 import { AnalysisInfoPanel } from "@/components/reflect/AnalysisInfoPanel";
+import { ContextAudit, ThinkingTrail } from "@/components/reflect/ContextTrail";
 import { FindingLabel } from "@/components/reflect/FindingLabel";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -24,8 +25,9 @@ import { useFirmChecks } from "@/hooks/use-firm-checks";
 import { startAnalysis } from "@/lib/analysis.functions";
 import { sendReflectMessage } from "@/lib/reflect.functions";
 import { logEvent } from "@/lib/telemetry";
+import { parseManifest, type ContextManifest } from "@/lib/context-manifest";
 
-type MessageRow = { id: number; role: string; content: string };
+type MessageRow = { id: number; role: string; content: string; context_manifest: unknown };
 
 /**
  * What an analysis is pointed at. A thread and a deliverable are both work
@@ -67,6 +69,7 @@ export function AnalysisLens({
   const [claims, setClaims] = useState(0);
   const [runId, setRunId] = useState<string | undefined>(undefined);
   const [reused, setReused] = useState(false);
+  const [liveManifest, setLiveManifest] = useState<ContextManifest | null>(null);
   const [draft, setDraft] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -95,7 +98,7 @@ export function AnalysisLens({
     queryFn: async (): Promise<MessageRow[]> => {
       const { data, error: e } = await supabase
         .from("chat_messages")
-        .select("id, role, content")
+        .select("id, role, content, context_manifest")
         .eq("session_id", sessionId as string)
         .order("created_at", { ascending: true });
       if (e) throw e;
@@ -116,6 +119,7 @@ export function AnalysisLens({
     setClaims(0);
     setRunId(undefined);
     setReused(false);
+    setLiveManifest(null);
     setPending(true);
     setError(null);
     try {
@@ -133,6 +137,7 @@ export function AnalysisLens({
       setClaims(result.claims);
       setRunId(result.run_id);
       setReused(result.reused);
+      setLiveManifest(result.manifest ?? null);
       logEvent("reflect.session_created", orgId, { preset: preset.id });
       await queryClient.invalidateQueries({ queryKey: ["reflect-sessions"] });
       await queryClient.invalidateQueries({ queryKey: ["reflect-messages", result.session_id] });
@@ -175,8 +180,7 @@ export function AnalysisLens({
     }
   }
 
-  const notEnoughWork =
-    target.kind === "engagement" && target.itemCount < MIN_ITEMS_FOR_RECURRENCE;
+  const notEnoughWork = target.kind === "engagement" && target.itemCount < MIN_ITEMS_FOR_RECURRENCE;
 
   const readsDetail =
     target.kind === "engagement"
@@ -224,19 +228,20 @@ export function AnalysisLens({
                   {message.content}
                 </p>
               ) : (
-                <MarkdownMessage content={message.content} />
+                <>
+                  <MarkdownMessage content={message.content} />
+                  <ContextAudit manifest={parseManifest(message.context_manifest)} />
+                </>
               )}
             </div>
           ),
         )}
 
         {pending ? (
-          <ThinkingIndicator
-            stages={[
-              "Reading the conversation…",
-              "Matching it against what we look for…",
-              "Checking every quote against your work…",
-            ]}
+          <ThinkingTrail
+            items={target.kind === "item" ? [{ id: target.id, title: target.title }] : []}
+            finalPhase={active ? `Applying ${active.label}` : "Working"}
+            manifest={liveManifest}
           />
         ) : null}
 
@@ -273,24 +278,24 @@ export function AnalysisLens({
               const noChecks = preset.id === "firm_checks" && firmCheckCount === 0;
               const blocked = (preset.id === "what_recurs" && notEnoughWork) || noChecks;
               return (
-              <div key={preset.id} className="flex items-center gap-1.5">
-                <button
-                  type="button"
-                  disabled={pending || blocked}
-                  title={
-                    noChecks ? NO_FIRM_CHECKS_LINE : blocked ? NOT_ENOUGH_WORK_LINE : undefined
-                  }
-                  onClick={() => void runPreset(preset)}
-                  className={`rounded-full px-3 py-1 text-xs font-medium transition-opacity hover:opacity-85 disabled:opacity-50 ${
-                    active?.id === preset.id
-                      ? "bg-ember text-ember-foreground"
-                      : "border border-border bg-card text-foreground"
-                  }`}
-                >
-                  {preset.label}
-                </button>
-                <AnalysisInfoPanel preset={preset} readsDetail={readsDetail} iconOnly />
-              </div>
+                <div key={preset.id} className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    disabled={pending || blocked}
+                    title={
+                      noChecks ? NO_FIRM_CHECKS_LINE : blocked ? NOT_ENOUGH_WORK_LINE : undefined
+                    }
+                    onClick={() => void runPreset(preset)}
+                    className={`rounded-full px-3 py-1 text-xs font-medium transition-opacity hover:opacity-85 disabled:opacity-50 ${
+                      active?.id === preset.id
+                        ? "bg-ember text-ember-foreground"
+                        : "border border-border bg-card text-foreground"
+                    }`}
+                  >
+                    {preset.label}
+                  </button>
+                  <AnalysisInfoPanel preset={preset} readsDetail={readsDetail} iconOnly />
+                </div>
               );
             })}
           </div>

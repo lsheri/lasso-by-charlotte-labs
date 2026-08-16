@@ -1,4 +1,3 @@
-import { ThinkingIndicator } from "@/components/common/Working";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
@@ -6,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { MarkdownMessage } from "@/components/markdown/MarkdownMessage";
 import { AnswerSources } from "@/components/reflect/AnswerSources";
+import { ContextAudit, ThinkingTrail } from "@/components/reflect/ContextTrail";
 import { CoverageNote } from "@/components/reflect/CoverageNote";
 import {
   AnalysisChips,
@@ -39,6 +39,7 @@ import type { ReflectResult } from "@/lib/reflect-run.server";
 import { chipShape, itemsInScope } from "@/lib/reflect-scope-shape";
 import { DEFAULT_SCOPE, parseScope, type ContextScope } from "@/lib/reflect-shared";
 import { logEvent } from "@/lib/telemetry";
+import { parseManifest, type ContextManifest } from "@/lib/context-manifest";
 
 type SessionRow = {
   id: string;
@@ -47,7 +48,13 @@ type SessionRow = {
   updated_at: string;
 };
 
-type MessageRow = { id: number; role: string; content: string; created_at: string };
+type MessageRow = {
+  id: number;
+  role: string;
+  content: string;
+  created_at: string;
+  context_manifest: unknown;
+};
 
 function relative(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -80,6 +87,7 @@ export function ReflectPage() {
     summaryCount: number;
   } | null>(null);
   const [scopeOpen, setScopeOpen] = useState(false);
+  const [liveManifest, setLiveManifest] = useState<ContextManifest | null>(null);
   const [scopeNotes, setScopeNotes] = useState<string[]>([]);
   const [narrowing, setNarrowing] = useState<ContextScope | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -118,7 +126,7 @@ export function ReflectPage() {
     queryFn: async (): Promise<MessageRow[]> => {
       const { data, error: messageError } = await supabase
         .from("chat_messages")
-        .select("id, role, content, created_at")
+        .select("id, role, content, created_at, context_manifest")
         .eq("session_id", activeId as string)
         .order("created_at", { ascending: true });
       if (messageError) throw messageError;
@@ -273,6 +281,7 @@ export function ReflectPage() {
     try {
       setStreamed("");
       setDraft("");
+      setLiveManifest(null);
       const result = await streamChatRequest<ReflectResult>(
         "/api/reflect/stream",
         { session_id: activeId, message, profile_id: profile.id, surface: "reflect" },
@@ -283,6 +292,7 @@ export function ReflectPage() {
         fullCount: result.fullCount,
         summaryCount: result.summaryCount,
       });
+      setLiveManifest(result.manifest ?? null);
       await queryClient.invalidateQueries({ queryKey: ["reflect-messages", activeId] });
       await queryClient.invalidateQueries({ queryKey: ["reflect-sessions"] });
     } catch (e) {
@@ -403,6 +413,7 @@ export function ReflectPage() {
                     ) : (
                       <>
                         <MarkdownMessage content={message.content} />
+                        <ContextAudit manifest={parseManifest(message.context_manifest)} />
                         <AnswerSources sources={sourcesByMessage?.[Number(message.id)] ?? []} />
                       </>
                     )}
@@ -423,14 +434,23 @@ export function ReflectPage() {
                     <MarkdownMessage content={streamed} />
                   </div>
                 ) : null}
-                {pending && !streamed ? <ThinkingIndicator /> : null}
+                {pending ? (
+                  <ThinkingTrail
+                    items={itemsInScope(scope, all).map((item) => ({
+                      id: item.id,
+                      title: item.title,
+                    }))}
+                    finalPhase="Writing"
+                    manifest={liveManifest}
+                  />
+                ) : null}
                 {analyses.running ? (
-                  <ThinkingIndicator
-                    stages={[
-                      "Reading the work…",
-                      "Matching it against what we look for…",
-                      "Checking every quote against your work…",
-                    ]}
+                  <ThinkingTrail
+                    items={itemsInScope(scope, all).map((item) => ({
+                      id: item.id,
+                      title: item.title,
+                    }))}
+                    finalPhase={`Applying ${analyses.running.label}`}
                   />
                 ) : null}
                 {coverage?.truncated ? <CoverageNote {...coverage} /> : null}

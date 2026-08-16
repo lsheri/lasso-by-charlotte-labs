@@ -136,6 +136,7 @@ export type Database = {
         Row: {
           claims_rendered: number | null
           completed_at: string | null
+          context_manifest: Json | null
           cost_usd: number | null
           created_at: string
           error_class: string | null
@@ -157,6 +158,7 @@ export type Database = {
         Insert: {
           claims_rendered?: number | null
           completed_at?: string | null
+          context_manifest?: Json | null
           cost_usd?: number | null
           created_at?: string
           error_class?: string | null
@@ -178,6 +180,7 @@ export type Database = {
         Update: {
           claims_rendered?: number | null
           completed_at?: string | null
+          context_manifest?: Json | null
           cost_usd?: number | null
           created_at?: string
           error_class?: string | null
@@ -259,6 +262,7 @@ export type Database = {
       chat_messages: {
         Row: {
           content: string
+          context_manifest: Json | null
           created_at: string
           id: number
           role: string
@@ -266,6 +270,7 @@ export type Database = {
         }
         Insert: {
           content: string
+          context_manifest?: Json | null
           created_at?: string
           id?: never
           role: string
@@ -273,6 +278,7 @@ export type Database = {
         }
         Update: {
           content?: string
+          context_manifest?: Json | null
           created_at?: string
           id?: never
           role?: string

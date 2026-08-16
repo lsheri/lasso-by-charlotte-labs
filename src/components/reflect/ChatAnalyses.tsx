@@ -18,6 +18,8 @@ import {
   type AnalysisPreset,
 } from "@/lib/analysis-presets";
 import { startAnalysis } from "@/lib/analysis.functions";
+import { parseManifest, type ContextManifest } from "@/lib/context-manifest";
+import { ContextAudit } from "@/components/reflect/ContextTrail";
 import { logEvent } from "@/lib/telemetry";
 import { isDeliverableType } from "@/lib/lineage-shared";
 import type { WorkItemRow } from "@/lib/work-types";
@@ -205,6 +207,8 @@ export type InlineAnalysis = {
   /** True when this is a prior run's result, shown again rather than rerun. */
   reused: boolean;
   sessionId: string;
+  /** Exactly what the run read, from the server. Null when none was recorded. */
+  manifest: ContextManifest | null;
 };
 
 /**
@@ -235,7 +239,7 @@ export function useChatAnalyses(profileId: string | undefined, orgId: string | u
       });
       const { data } = await supabase
         .from("chat_messages")
-        .select("id, role, content")
+        .select("id, role, content, context_manifest")
         .eq("session_id", result.session_id)
         .order("created_at", { ascending: true });
       const answer = (data ?? []).filter((m) => m.role === "assistant").pop();
@@ -251,6 +255,7 @@ export function useChatAnalyses(profileId: string | undefined, orgId: string | u
           runId: result.run_id,
           reused: result.reused,
           sessionId: result.session_id,
+          manifest: result.manifest ?? parseManifest(answer?.context_manifest),
         },
       ]);
       if (orgId) logEvent("reflect.session_created", orgId, { preset: preset.id });
@@ -278,8 +283,7 @@ export function InlineAnalysisBlocks({
   results: InlineAnalysis[];
   profileId?: string | undefined;
   onSaveForOneOnOne?:
-    | ((input: { text: string; kind: "analysis_finding"; sessionId: string }) => void)
-    | undefined;
+    ((input: { text: string; kind: "analysis_finding"; sessionId: string }) => void) | undefined;
 }) {
   return (
     <>
@@ -292,6 +296,7 @@ export function InlineAnalysisBlocks({
             </p>
           ) : null}
           <MarkdownMessage content={result.text} />
+          <ContextAudit manifest={result.manifest} />
           {onSaveForOneOnOne ? (
             <button
               type="button"

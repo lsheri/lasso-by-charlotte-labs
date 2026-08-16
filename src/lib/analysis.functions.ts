@@ -4,6 +4,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { analysisRunDims } from "@/lib/analysis-dims";
 import { ANALYSIS_PRESET_IDS, type AnalysisPresetId } from "@/lib/analysis-presets";
 import { tokensBucket } from "@/lib/ai-usage";
+import type { ContextManifest } from "@/lib/context-manifest";
 
 type StartInput = {
   preset_id: AnalysisPresetId;
@@ -20,6 +21,8 @@ export type AnalysisRunResult = {
   suppressed: number;
   /** Exact count, used for the human label on the finding. */
   claims: number;
+  /** Exactly what this run read. Null for runs that record no manifest. */
+  manifest: ContextManifest | null;
 };
 
 function costBucket(usd: number): string {
@@ -57,9 +60,8 @@ export const startAnalysis = createServerFn({ method: "POST" })
     const profile = await resolveProfile(supabase, userId, data.profile_id);
     if (!profile) throw new Response("Forbidden", { status: 403 });
 
-    const { analysisPreset, MIN_ITEMS_FOR_RECURRENCE, NOT_ENOUGH_WORK_LINE } = await import(
-      "./analysis-presets"
-    );
+    const { analysisPreset, MIN_ITEMS_FOR_RECURRENCE, NOT_ENOUGH_WORK_LINE } =
+      await import("./analysis-presets");
     const preset = analysisPreset(data.preset_id);
     if (!preset) throw new Error("Unknown analysis.");
 
@@ -82,7 +84,7 @@ export const startAnalysis = createServerFn({ method: "POST" })
     let idempotencyKey = baseIdempotencyKey;
     const { recordEvent } = await import("./telemetry.server");
     const scopeType = target.scopeType;
-    let aiMeta: Awaited<ReturnType<typeof import("./ai.server")["resolveAiMeta"]>>;
+    let aiMeta: Awaited<ReturnType<(typeof import("./ai.server"))["resolveAiMeta"]>>;
     let session: { id: string };
     let run: { id: string };
     try {
@@ -102,12 +104,15 @@ export const startAnalysis = createServerFn({ method: "POST" })
       // feature, so running, completed and mid flight duplicates all reuse.
       const { data: existing } = await supabase
         .from("analysis_runs")
-        .select("id, session_id, status, items_read, suppressed_claims, claims_rendered")
+        .select(
+          "id, session_id, status, items_read, suppressed_claims, claims_rendered, context_manifest",
+        )
         .eq("idempotency_key", idempotencyKey)
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
       if (existing && existing.status !== "failed" && existing.session_id) {
+        const { parseManifest } = await import("./context-manifest");
         return {
           run_id: existing.id,
           session_id: existing.session_id,
@@ -115,6 +120,7 @@ export const startAnalysis = createServerFn({ method: "POST" })
           items_read: existing.items_read ?? 1,
           suppressed: existing.suppressed_claims ?? 0,
           claims: existing.claims_rendered ?? 0,
+          manifest: parseManifest(existing.context_manifest),
         };
       }
       // A previous attempt that failed must be allowed to run again, so it
@@ -161,6 +167,7 @@ export const startAnalysis = createServerFn({ method: "POST" })
         const { findRunByKey } = await import("./analysis-runs.server");
         const other = await findRunByKey(idempotencyKey);
         if (other?.session_id) {
+          const { parseManifest } = await import("./context-manifest");
           return {
             run_id: other.id,
             session_id: other.session_id,
@@ -168,6 +175,7 @@ export const startAnalysis = createServerFn({ method: "POST" })
             items_read: other.items_read ?? 1,
             suppressed: other.suppressed_claims ?? 0,
             claims: other.claims_rendered ?? 0,
+            manifest: parseManifest(other.context_manifest),
           };
         }
         throw collision;
@@ -314,12 +322,15 @@ export const startAnalysis = createServerFn({ method: "POST" })
           (lineageWritten ?? []).find((row) => row.role === "assistant")?.id ?? null;
 
         const { recordAiReads } = await import("./ai-reads.server");
-        await recordAiReads([{ workItemId: target.scopeId, ownerId: target.ownerId, depth: "full" }], {
-          surface: "ask_lasso",
-          readerRole: isOwner ? "owner" : "coach",
-          readerProfileId: profile.id,
-          messageId: lineageAnswerId,
-        });
+        await recordAiReads(
+          [{ workItemId: target.scopeId, ownerId: target.ownerId, depth: "full" }],
+          {
+            surface: "ask_lasso",
+            readerRole: isOwner ? "owner" : "coach",
+            readerProfileId: profile.id,
+            messageId: lineageAnswerId,
+          },
+        );
 
         const lineageCost = Number((drafted.usage?.costUsd ?? 0).toFixed(6));
         const lineageItems = drafted.considered + 1;
@@ -384,21 +395,21 @@ export const startAnalysis = createServerFn({ method: "POST" })
           items_read: lineageItems,
           suppressed: 0,
           claims: rendered.considered,
+          manifest: null,
         };
       }
 
       const { assembleReflectContext } = await import("./reflect-context.server");
-      const assembled = await assembleReflectContext(
-        supabase,
-        profile.id,
-        target.scope,
-        { ownerProfileId: target.ownerId, readerRole: isOwner ? "owner" : "coach" },
-      );
+      const assembled = await assembleReflectContext(supabase, profile.id, target.scope, {
+        ownerProfileId: target.ownerId,
+        readerRole: isOwner ? "owner" : "coach",
+      });
 
       const { REFLECT_SYSTEM_PROMPT } = await import("./reflect-shared");
       // The firm's own checks are part of the prompt for this preset, and the
       // analysis cannot run without at least one of them.
       let checksBlock: string | null = null;
+      let firmCheckCount = 0;
       if (preset.id === "firm_checks") {
         const { applicableFirmChecks, renderChecksBlock } = await import("./firm-checks.server");
         const checks = await applicableFirmChecks(supabase, {
@@ -407,20 +418,21 @@ export const startAnalysis = createServerFn({ method: "POST" })
           workItemId: target.scopeId,
         });
         if (checks.length === 0) await fail("no_firm_checks");
+        firmCheckCount = checks.length;
         checksBlock = renderChecksBlock(checks);
       }
       const conversation = [
         { role: "system" as const, content: REFLECT_SYSTEM_PROMPT },
         {
           role: "system" as const,
-          content: checksBlock
-            ? `${preset.systemPrompt}\n\n${checksBlock}`
-            : preset.systemPrompt,
+          content: checksBlock ? `${preset.systemPrompt}\n\n${checksBlock}` : preset.systemPrompt,
         },
         {
           role: "system" as const,
           content: `${
-            preset.scope === "thread" ? "THE CONVERSATION UNDER ANALYSIS" : "THE WORK UNDER ANALYSIS"
+            preset.scope === "thread"
+              ? "THE CONVERSATION UNDER ANALYSIS"
+              : "THE WORK UNDER ANALYSIS"
           }:\n\n${assembled.context}`,
         },
         { role: "user" as const, content: preset.openingMessage },
@@ -444,11 +456,27 @@ export const startAnalysis = createServerFn({ method: "POST" })
       );
       const answer = cutOff ? `${guarded.answer}\n\n${CUT_OFF_NOTE}` : guarded.answer;
 
+      // What this analysis actually read, recorded beside the answer.
+      const manifest = {
+        ...assembled.manifest,
+        firm_checks_applied: firmCheckCount,
+        ...(assembled.manifest.engagement
+          ? {}
+          : target.scopeType === "engagement"
+            ? { engagement: { id: target.scopeId, name: target.title } }
+            : {}),
+      };
+
       const { data: written } = await supabase
         .from("chat_messages")
         .insert([
           { session_id: session.id, role: "user", content: preset.openingMessage },
-          { session_id: session.id, role: "assistant", content: answer },
+          {
+            session_id: session.id,
+            role: "assistant",
+            content: answer,
+            context_manifest: manifest as unknown as never,
+          },
         ])
         .select("id, role");
       const answerId = (written ?? []).find((row) => row.role === "assistant")?.id ?? null;
@@ -478,6 +506,7 @@ export const startAnalysis = createServerFn({ method: "POST" })
         cost_usd: costUsd,
         claims_rendered: guarded.claims,
         suppressed_claims: guarded.suppressed,
+        context_manifest: manifest as unknown as never,
       });
 
       await recordEvent(supabase, {
@@ -551,6 +580,7 @@ export const startAnalysis = createServerFn({ method: "POST" })
         items_read: itemsRead,
         suppressed: guarded.suppressed,
         claims: guarded.claims,
+        manifest,
       };
     } catch (e) {
       const message = (e as Error).message ?? "";

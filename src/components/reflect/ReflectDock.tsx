@@ -13,6 +13,7 @@ import {
   type ChipTarget,
 } from "@/components/reflect/ChatAnalyses";
 import { MarkdownMessage } from "@/components/markdown/MarkdownMessage";
+import { ContextAudit, ThinkingTrail } from "@/components/reflect/ContextTrail";
 import {
   SaveForOneOnOneDialog,
   type SaveForOneOnOneTarget,
@@ -29,11 +30,12 @@ import { streamChatRequest } from "@/lib/stream-client";
 import type { ReflectResult } from "@/lib/reflect-run.server";
 import { mappedItemsForEngagement } from "@/lib/reflect-scope-shape";
 import { logEvent } from "@/lib/telemetry";
+import { parseManifest, type ContextManifest } from "@/lib/context-manifest";
 import type { ContextScope } from "@/lib/reflect-shared";
 import type { AnalysisPreset } from "@/lib/analysis-presets";
 import type { WorkItemRow } from "@/lib/work-types";
 
-type MessageRow = { id: number; role: string; content: string };
+type MessageRow = { id: number; role: string; content: string; context_manifest: unknown };
 
 /** Plain type words for the selector, never internal enum names. */
 const TYPE_WORD: Record<string, string> = {
@@ -84,6 +86,7 @@ export function ReflectDock({
     fullCount: number;
     summaryCount: number;
   } | null>(null);
+  const [liveManifest, setLiveManifest] = useState<ContextManifest | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const composerRef = useRef<HTMLTextAreaElement>(null);
 
@@ -224,7 +227,7 @@ export function ReflectDock({
     queryFn: async (): Promise<MessageRow[]> => {
       const { data, error: e } = await supabase
         .from("chat_messages")
-        .select("id, role, content")
+        .select("id, role, content, context_manifest")
         .eq("session_id", sessionId as string)
         .order("created_at", { ascending: true });
       if (e) throw e;
@@ -268,6 +271,7 @@ export function ReflectDock({
     if (!message || pending) return;
     setPending(true);
     setError(null);
+    setLiveManifest(null);
     try {
       const id = await ensureSession();
       if (!id) return;
@@ -283,6 +287,7 @@ export function ReflectDock({
         fullCount: result.fullCount,
         summaryCount: result.summaryCount,
       });
+      setLiveManifest(result.manifest ?? null);
       await queryClient.invalidateQueries({ queryKey: ["reflect-messages", id] });
       await queryClient.invalidateQueries({ queryKey: ["reflect-sessions"] });
     } catch (e) {
@@ -441,6 +446,7 @@ export function ReflectDock({
             ) : (
               <>
                 <MarkdownMessage content={message.content} />
+                <ContextAudit manifest={parseManifest(message.context_manifest)} />
                 <AnswerSources sources={sourcesByMessage?.[Number(message.id)] ?? []} />
                 <button
                   type="button"
@@ -465,7 +471,19 @@ export function ReflectDock({
             <MarkdownMessage content={streamed} />
           </div>
         ) : null}
-        {pending && !streamed ? <ThinkingIndicator /> : null}
+        {pending ? (
+          <ThinkingTrail
+            items={selectedItems.map((item) => ({ id: item.id, title: item.title }))}
+            finalPhase="Writing"
+            manifest={liveManifest}
+          />
+        ) : null}
+        {analyses.running ? (
+          <ThinkingTrail
+            items={selectedItems.map((item) => ({ id: item.id, title: item.title }))}
+            finalPhase={`Applying ${analyses.running.label}`}
+          />
+        ) : null}
         {coverage?.truncated ? <CoverageNote {...coverage} /> : null}
         <div ref={bottomRef} />
       </div>
@@ -499,7 +517,9 @@ export function ReflectDock({
           <Textarea
             ref={composerRef}
             value={draft}
-            onChange={(event) => onDraftChange(event.target.value, event.target.selectionStart ?? 0)}
+            onChange={(event) =>
+              onDraftChange(event.target.value, event.target.selectionStart ?? 0)
+            }
             onKeyDown={(event) => {
               if (!mention || mentionMatches.length === 0) return;
               if (event.key === "ArrowDown") {

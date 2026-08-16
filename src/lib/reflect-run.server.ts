@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import type { ContextSource } from "@/lib/reflect-shared";
 import type { AnalysisPresetId } from "@/lib/analysis-presets";
+import type { ContextManifest } from "@/lib/context-manifest";
 
 export type ReflectInput = {
   session_id: string;
@@ -23,6 +24,8 @@ export type ReflectResult = {
   cutOff: boolean;
   /** "inline" pours the scope in; "catalogue" indexes it and fetches. */
   contextMode: "inline" | "catalogue";
+  /** Exactly what was read to produce this answer. Null when unknown. */
+  manifest: ContextManifest | null;
 };
 
 /** Bucketed so an exact count never leaves as a dimension. */
@@ -143,6 +146,11 @@ export async function runReflectTurn(
     );
     const answerCat = cutOffCat ? `${guardedCat.answer}\n\n${CUT_OFF}` : guardedCat.answer;
 
+    const { manifestFromSources } = await import("./context-manifest");
+    const catalogueManifest = manifestFromSources(run.sources, {
+      briefIncluded: run.catalogue.brief.itemIds.length > 0,
+    });
+
     if (run.catalogue.entries.length > 0 && run.itemsFetched === 0) {
       const { logHealth } = await import("./health.server");
       void logHealth({
@@ -167,6 +175,7 @@ export async function runReflectTurn(
       profileId: profile.id,
       scopeMode: scope.mode,
       title: session.title,
+      manifest: catalogueManifest,
     });
 
     const { recordAiReads } = await import("./ai-reads.server");
@@ -224,6 +233,7 @@ export async function runReflectTurn(
       sources: run.sources,
       cutOff: cutOffCat,
       contextMode,
+      manifest: catalogueManifest,
     };
   }
 
@@ -288,7 +298,12 @@ export async function runReflectTurn(
     .from("chat_messages")
     .insert([
       { session_id: session.id, role: "user", content: message },
-      { session_id: session.id, role: "assistant", content: answer },
+      {
+        session_id: session.id,
+        role: "assistant",
+        content: answer,
+        context_manifest: assembled.manifest as unknown as never,
+      },
     ])
     .select("id, role");
   if (insertError) throw new Error(insertError.message);
@@ -356,6 +371,7 @@ export async function runReflectTurn(
     sources: assembled.sources,
     cutOff,
     contextMode,
+    manifest: assembled.manifest,
   };
 }
 
@@ -407,13 +423,19 @@ async function persistTurn(
     profileId: string;
     scopeMode: string;
     title: string | null;
+    manifest?: ContextManifest | null;
   },
 ): Promise<{ messageId: number | null; title: string }> {
   const { data: written, error: insertError } = await supabase
     .from("chat_messages")
     .insert([
       { session_id: input.sessionId, role: "user", content: input.question },
-      { session_id: input.sessionId, role: "assistant", content: input.answer },
+      {
+        session_id: input.sessionId,
+        role: "assistant",
+        content: input.answer,
+        context_manifest: input.manifest ? (input.manifest as unknown as never) : null,
+      },
     ])
     .select("id, role");
   if (insertError) throw new Error(insertError.message);
