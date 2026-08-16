@@ -28,14 +28,32 @@ async function loadSource() {
   }
 }
 
-/** Drop the paper-white background to transparency and trim to the subject. */
+/** Flood-fill the paper-white background in from the borders only, so interior
+ *  whites (the cap, the circuit lines) survive, then trim to the subject. */
 async function spiderCutout() {
   const src = await loadSource();
   const { data, info } = await sharp(src).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
-  for (let i = 0; i < data.length; i += 4) {
-    if (data[i] > 243 && data[i + 1] > 243 && data[i + 2] > 243) data[i + 3] = 0;
+  const { width: w, height: h } = info;
+  const isBg = (i) => data[i + 3] < 8 || (data[i] > 236 && data[i + 1] > 236 && data[i + 2] > 236);
+  const seen = new Uint8Array(w * h);
+  const stack = [];
+  for (let x = 0; x < w; x++) stack.push(x, (h - 1) * w + x);
+  for (let y = 0; y < h; y++) stack.push(y * w, y * w + w - 1);
+  while (stack.length) {
+    const p = stack.pop();
+    if (seen[p]) continue;
+    seen[p] = 1;
+    const i = p * 4;
+    if (!isBg(i)) continue;
+    data[i + 3] = 0;
+    const x = p % w;
+    const y = (p / w) | 0;
+    if (x > 0) stack.push(p - 1);
+    if (x < w - 1) stack.push(p + 1);
+    if (y > 0) stack.push(p - w);
+    if (y < h - 1) stack.push(p + w);
   }
-  return sharp(data, { raw: { width: info.width, height: info.height, channels: 4 } })
+  return sharp(data, { raw: { width: w, height: h, channels: 4 } })
     .trim({ threshold: 1 })
     .png()
     .toBuffer();
