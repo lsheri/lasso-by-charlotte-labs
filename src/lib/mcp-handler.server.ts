@@ -860,8 +860,8 @@ async function pushConversation(owner: Owner, args: Obj, id: unknown): Promise<R
     if (turnsError) return rpcError(id, -32603, turnsError.message);
   }
 
-  const storedCount = storedTurns?.length ?? 0;
-  const extraStored = Math.max(0, storedCount - messages.length);
+  const storedCount = storedBefore + newRows.length;
+  const extraStored = win ? 0 : Math.max(0, storedBefore - messages.length);
 
   // ---- attachments (match by source_artifact_id, then title) ---------------
   let saved = 0;
