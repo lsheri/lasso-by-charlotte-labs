@@ -17,11 +17,13 @@ export function ThreadViewerById({
     queryFn: async (): Promise<WorkItemRow | null> => {
       const { data: row, error } = await supabase
         .from("work_items")
-        .select("id, title, type, source, visibility, captured_at, content_ref")
+        .select("id, title, type, source, visibility, captured_at, content_ref, meta")
         .eq("id", workItemId as string)
         .maybeSingle();
       if (error) throw error;
-      return row ? { ...row, work_item_tasks: [] } : null;
+      return row
+        ? ({ ...row, meta: (row.meta ?? null), work_item_tasks: [] } as unknown as WorkItemRow)
+        : null;
     },
   });
 

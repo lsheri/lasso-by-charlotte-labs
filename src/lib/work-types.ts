@@ -40,6 +40,7 @@ export type WorkItemRow = {
         warnings?: string[];
         models?: string[];
         role?: string | null;
+        expected_total?: number | null;
         brief_scope?: BriefScope | null;
       }
     | null

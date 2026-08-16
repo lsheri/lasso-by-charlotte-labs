@@ -28,6 +28,13 @@ const MAX_TURNS = 500;
 const MAX_THREAD_BYTES = 2 * 1024 * 1024;
 const MAX_DOC_BYTES = 5 * 1024 * 1024;
 const MAX_ATTACHMENTS = 12;
+/** A re-push may improve the record; it may never shrink it silently. */
+const SHRINK_RATIO = 0.6;
+const SHRINK_FLOOR = 200;
+
+function looksCondensed(incomingChars: number, storedChars: number): boolean {
+  return storedChars > SHRINK_FLOOR && incomingChars < storedChars * SHRINK_RATIO;
+}
 
 const SITE_URL = "https://pilot-platform.charlotte-labs.dev";
 const ICONS = [
@@ -111,7 +118,9 @@ const TOOLS = [
     title: "Push a conversation",
     icons: ICONS,
     description:
-      "When the user says 'Push to Lasso', 'send to Lasso', or similar: call push_conversation EXACTLY ONCE with the ENTIRE conversation, every message, verbatim, unabridged, plus any artifact, canvas or file that already existed as its own object in this app, as attachments. Never summarize the transcript. Never compose new summaries, recaps or section write-ups and send them as attachments. Never split one conversation across multiple calls or use push_document for conversation artifacts.",
+      "When the user says 'Push to Lasso', 'send to Lasso', or similar: call push_conversation with the ENTIRE conversation, every message, verbatim, unabridged, plus any artifact, canvas or file that already existed as its own object in this app, as attachments. Never summarize the transcript. Never compose new summaries, recaps or section write-ups and send them as attachments. Never use push_document for conversation artifacts. Verbatim is non-negotiable: never substitute a summary, paraphrase, or shortened version of a message at any position, the server rejects shrunken overwrites. Before pushing, assess how many messages you can reproduce word-for-word in a single call given their actual lengths. If the whole conversation fits, push it whole. If not, push it in consecutive windows using window {from, to, total}: start with the first window sized to what you can reproduce verbatim, then follow the server's response, which tells you the next starting position, until all messages are stored. When re-pushing a conversation that grew, push only the new messages as a window, never re-send earlier messages unless correcting them. A smaller window is always the answer; a shorter message never is.",
+    // Windowing is the only sanctioned way to split a push, and only because
+    // the alternative the model reaches for otherwise is shortening messages.
     inputSchema: {
       type: "object",
       properties: {
@@ -144,7 +153,7 @@ const TOOLS = [
           type: "array",
           maxItems: MAX_TURNS,
           description:
-            "Every message in order, complete and verbatim. Include timestamps ONLY if actually known from the source; NEVER invent timestamps.",
+            "Messages in order, complete and verbatim. Without window, this must be the whole conversation starting at message 1. With window {from, to, total}, this is exactly the messages for positions from..to of a long conversation, still complete and verbatim. Include timestamps ONLY if actually known from the source; NEVER invent timestamps.",
           items: {
             type: "object",
             properties: {
@@ -188,6 +197,20 @@ const TOOLS = [
             research_mode: { type: "string", enum: ["none", "web_search", "deep_research"] },
             notes: { type: "string" },
           },
+        },
+        window: {
+          type: "object",
+          description:
+            "Use for long conversations you cannot reproduce verbatim in one call. 1-indexed and inclusive: messages[i] is conversation position from+i. Windows must be consecutive with no gaps; the server tells you the next starting position.",
+          properties: {
+            from: { type: "integer", description: "Position of the first message in this call." },
+            to: { type: "integer", description: "Position of the last message in this call." },
+            total: {
+              type: "integer",
+              description: "Total number of messages in the whole conversation. Required.",
+            },
+          },
+          required: ["from", "to", "total"],
         },
       },
       required: ["title", "vendor", "orig_conversation_id", "messages"],
@@ -505,6 +528,21 @@ function slugify(value: string): string {
   );
 }
 
+/** Size of the stored version of a known attachment, 0 when it cannot be read. */
+async function storedAttachmentChars(match: {
+  content_ref: string | null;
+  source_meta: unknown;
+}): Promise<number> {
+  const meta =
+    match.source_meta && typeof match.source_meta === "object"
+      ? (match.source_meta as { chars?: unknown })
+      : null;
+  if (typeof meta?.chars === "number" && meta.chars > 0) return meta.chars;
+  if (!match.content_ref) return 0;
+  const { data } = await supabaseAdmin.storage.from("work-files").download(match.content_ref);
+  return data ? data.size : 0;
+}
+
 /**
  * The canonical push. One call = one conversation: a transcript work item plus
  * one work item per attachment, all sharing orig_conversation_id so the app can
@@ -555,6 +593,33 @@ async function pushConversation(owner: Owner, args: Obj, id: unknown): Promise<R
     return rpcError(id, -32602, "Conversation is larger than the 2MB limit. Push it in parts.");
   }
 
+  // ---- optional window: this call covers positions from..to of the whole thread
+  const rawWindow = args["window"];
+  let win: { from: number; to: number; total: number } | null = null;
+  if (rawWindow && typeof rawWindow === "object" && !Array.isArray(rawWindow)) {
+    const w = rawWindow as { from?: unknown; to?: unknown; total?: unknown };
+    const from = Number(w.from);
+    const to = Number(w.to);
+    const total = Number(w.total);
+    if (!Number.isInteger(total) || total < 1) {
+      return rpcError(id, -32602, "window.total is required: the full conversation length.");
+    }
+    if (!Number.isInteger(from) || from < 1) {
+      return rpcError(id, -32602, "window.from must be an integer of at least 1.");
+    }
+    if (!Number.isInteger(to) || to < from) {
+      return rpcError(id, -32602, "window.to must be an integer greater than or equal to from.");
+    }
+    if (messages.length !== to - from + 1) {
+      return rpcError(
+        id,
+        -32602,
+        `window covers ${to - from + 1} positions but ${messages.length} messages were sent. Send exactly the messages for positions ${from} to ${to}.`,
+      );
+    }
+    win = { from, to, total };
+  }
+
   const rawAttachments = Array.isArray(args["attachments"])
     ? (args["attachments"] as (Partial<IncomingAttachment> & { source_artifact_id?: unknown })[])
     : [];
@@ -600,11 +665,11 @@ async function pushConversation(owner: Owner, args: Obj, id: unknown): Promise<R
   };
 
   // ---- locate the existing thread: source_url, then orig id, then continuation
-  let existingThread: { id: string } | null = null;
+  let existingThread: { id: string; meta: unknown } | null = null;
   if (sourceUrl) {
     const { data } = await supabaseAdmin
       .from("work_items")
-      .select("id")
+      .select("id, meta")
       .eq("owner_id", owner.profileId)
       .eq("type", "ai_thread")
       .eq("meta->>source_url", sourceUrl)
@@ -614,7 +679,7 @@ async function pushConversation(owner: Owner, args: Obj, id: unknown): Promise<R
   if (!existingThread) {
     const { data } = await supabaseAdmin
       .from("work_items")
-      .select("id")
+      .select("id, meta")
       .eq("owner_id", owner.profileId)
       .eq("orig_conversation_id", origId)
       .eq("type", "ai_thread")
@@ -649,6 +714,16 @@ async function pushConversation(owner: Owner, args: Obj, id: unknown): Promise<R
     }
   }
 
+  const priorThreadMeta =
+    existingThread?.meta && typeof existingThread.meta === "object" && !Array.isArray(existingThread.meta)
+      ? (existingThread.meta as Record<string, unknown>)
+      : {};
+  const priorExpectedTotal =
+    typeof priorThreadMeta["expected_total"] === "number"
+      ? (priorThreadMeta["expected_total"] as number)
+      : null;
+  const expectedTotal = win?.total ?? priorExpectedTotal;
+
   const threadFields = {
     owner_id: owner.profileId,
     org_id: owner.orgId,
@@ -661,7 +736,12 @@ async function pushConversation(owner: Owner, args: Obj, id: unknown): Promise<R
     ts_precision: "capture" as const,
     content_hash: await sha256Hex(serialized),
     source_meta: { ...sharedMeta, role: "transcript" } as unknown as Json,
-    meta: { assistant_transcribed: true, ...(sourceUrl ? { source_url: sourceUrl } : {}) },
+    meta: {
+      ...priorThreadMeta,
+      assistant_transcribed: true,
+      ...(sourceUrl ? { source_url: sourceUrl } : {}),
+      ...(expectedTotal ? { expected_total: expectedTotal } : {}),
+    } as unknown as Json,
   };
 
   let threadId: string;
@@ -685,24 +765,37 @@ async function pushConversation(owner: Owner, args: Obj, id: unknown): Promise<R
   // ---- reconcile turns: append-only, never delete -------------------------
   const { data: storedTurns, error: storedError } = await supabaseAdmin
     .from("turns")
-    .select("id, turn_no, content_hash, meta")
+    .select("id, turn_no, role, content, content_hash, meta")
     .eq("work_item_id", threadId)
     .order("turn_no", { ascending: true });
   if (storedError) return rpcError(id, -32603, storedError.message);
   const stored = new Map(
     (storedTurns ?? []).map((t) => [
       t.turn_no,
-      { id: t.id, content_hash: t.content_hash, meta: t.meta },
+      { id: t.id, role: t.role, content: t.content, content_hash: t.content_hash, meta: t.meta },
     ]),
   );
+  const storedBefore = storedTurns?.length ?? 0;
+
+  // No gaps: a window may correct stored positions or continue from the end,
+  // never start past it, or the record would have a hole in the middle.
+  if (win && win.from > storedBefore + 1) {
+    return rpcError(
+      id,
+      -32602,
+      `That window starts at message ${win.from} but only ${storedBefore} message${storedBefore === 1 ? " is" : "s are"} stored, which would leave a gap. Start the next window at message ${storedBefore + 1}.`,
+    );
+  }
+  const offset = win ? win.from - 1 : 0;
 
   let unchangedCount = 0;
   let changedCount = 0;
   const newRows: Record<string, unknown>[] = [];
+  const degradedTurns: { turn_no: number; stored_chars: number; incoming_chars: number }[] = [];
 
   for (let i = 0; i < messages.length; i += 1) {
     const m = messages[i]!;
-    const turnNo = i + 1;
+    const turnNo = offset + i + 1;
     const hash = await sha256Hex(m.content);
     const prior = stored.get(turnNo);
     if (!prior) {
@@ -723,11 +816,40 @@ async function pushConversation(owner: Owner, args: Obj, id: unknown): Promise<R
       unchangedCount += 1;
       continue;
     }
+    // A re-push may improve a turn; it may not quietly replace verbatim with
+    // a condensed retelling. We keep what we have and say so.
+    const storedChars = (prior.content ?? "").length;
+    if (looksCondensed(m.content.length, storedChars)) {
+      degradedTurns.push({
+        turn_no: turnNo,
+        stored_chars: storedChars,
+        incoming_chars: m.content.length,
+      });
+      continue;
+    }
     // Edited or branched upstream: update in place so the turn id survives.
     const priorMeta =
       prior.meta && typeof prior.meta === "object" && !Array.isArray(prior.meta)
         ? (prior.meta as Record<string, unknown>)
         : {};
+    // Preserve the prior version before overwriting it. If that fails, the
+    // overwrite does not happen: no version is lost without a copy first.
+    const { error: revError } = await supabaseAdmin.from("turn_revisions").insert({
+      turn_id: prior.id,
+      work_item_id: threadId,
+      turn_no: turnNo,
+      role: String(prior.role),
+      content: prior.content ?? "",
+      content_hash: prior.content_hash,
+      replaced_at: new Date().toISOString(),
+    });
+    if (revError) {
+      return rpcError(
+        id,
+        -32603,
+        `Could not preserve the previous version of message ${turnNo}, so it was not overwritten: ${revError.message}`,
+      );
+    }
     const { error: updError } = await supabaseAdmin
       .from("turns")
       .update({
@@ -753,14 +875,15 @@ async function pushConversation(owner: Owner, args: Obj, id: unknown): Promise<R
     if (turnsError) return rpcError(id, -32603, turnsError.message);
   }
 
-  const storedCount = storedTurns?.length ?? 0;
-  const extraStored = Math.max(0, storedCount - messages.length);
+  const storedCount = storedBefore + newRows.length;
+  const extraStored = win ? 0 : Math.max(0, storedBefore - messages.length);
 
   // ---- attachments (match by source_artifact_id, then title) ---------------
   let saved = 0;
   const capturedIds: string[] = [threadId];
   const problems: string[] = [];
   const rejected: RejectedAttachment[] = [];
+  const degradedAttachments: { title: string; stored_chars: number; incoming_chars: number }[] = [];
   const transcriptText = messages.map((m) => m.content).join("\n\n");
   const messageTexts = messages.map((m) => m.content);
   if (attachments.length > 0 && !owner.userId) {
@@ -801,6 +924,19 @@ async function pushConversation(owner: Owner, args: Obj, id: unknown): Promise<R
             ((row.source_meta as { source_artifact_id?: string } | null)?.source_artifact_id ??
               "") === attachment.sourceArtifactId,
         ) ?? (existingAttachments ?? []).find((row) => row.title === attachment.title);
+      // Same guard as turns: a known artifact can grow or be edited, but a
+      // condensed replacement is a loss, so the stored version stays.
+      if (match) {
+        const storedChars = await storedAttachmentChars(match);
+        if (storedChars > 0 && looksCondensed(attachment.content.length, storedChars)) {
+          degradedAttachments.push({
+            title: attachment.title,
+            stored_chars: storedChars,
+            incoming_chars: attachment.content.length,
+          });
+          continue;
+        }
+      }
       // Reuse the stored path for a known attachment; give new ones a collision-proof suffix.
       const suffix = (await sha256Hex(attachment.sourceArtifactId)).slice(0, 8);
       const path =
@@ -833,6 +969,7 @@ async function pushConversation(owner: Owner, args: Obj, id: unknown): Promise<R
           language: attachment.language ?? null,
           filename: attachment.title,
           source_artifact_id: attachment.sourceArtifactId,
+          chars: attachment.content.length,
           duplicate_of_transcript: false,
         } as unknown as Json,
         meta: { assistant_transcribed: true },
@@ -889,6 +1026,8 @@ async function pushConversation(owner: Owner, args: Obj, id: unknown): Promise<R
       attachment_count: attachmentBucket(attachments.length),
       rejected_attachments: flaggedBucket(rejected.length),
       mode: pushMode,
+      windowed: win ? "yes" : "no",
+      degraded_refusals: flaggedBucket(degradedTurns.length + degradedAttachments.length),
     },
   });
   await recordEvent(supabaseAdmin, {
@@ -952,11 +1091,31 @@ async function pushConversation(owner: Owner, args: Obj, id: unknown): Promise<R
     extraStored > 0
       ? " This push had fewer messages than what is already stored. Nothing was removed."
       : "";
+  const degradedNote =
+    degradedTurns.length > 0
+      ? ` Kept the stored verbatim version of ${degradedTurns.length} message${degradedTurns.length === 1 ? "" : "s"} (position${degradedTurns.length === 1 ? "" : "s"} ${degradedTurns
+          .map((d) => d.turn_no)
+          .join(
+            ", ",
+          )}) because the incoming version looked condensed. Re-push those positions verbatim in a smaller window.`
+      : "";
+  const degradedAttachmentNote =
+    degradedAttachments.length > 0
+      ? ` Kept the stored version of ${degradedAttachments.length} attachment${degradedAttachments.length === 1 ? "" : "s"} (${degradedAttachments
+          .map((a) => `'${a.title}'`)
+          .join(", ")}) because the incoming version looked condensed. Re-send it in full.`
+      : "";
+  const total = expectedTotal;
+  const cursor = total
+    ? storedCount >= total
+      ? ` All ${total} messages captured.`
+      : ` Stored ${storedCount} of ${total} messages. Continue with a window starting at message ${storedCount + 1}.`
+    : "";
   const continuation = continuationOrigId
     ? ` This looks like a continuation of an existing conversation in Lasso. To keep them together next time, reuse orig_conversation_id '${continuationOrigId}'.`
     : "";
   return textResult(
     id,
-    `${verb} '${title}' in Lasso${tail}.${counts}${shortNote} It stays private until the user maps it.${rejectedNote}${warn}${continuation}`,
+    `${verb} '${title}' in Lasso${tail}.${counts}${shortNote}${degradedNote}${degradedAttachmentNote}${cursor} It stays private until the user maps it.${rejectedNote}${warn}${continuation}`,
   );
 }
