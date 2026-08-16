@@ -1857,6 +1857,47 @@ export type Database = {
           },
         ]
       }
+      turn_revisions: {
+        Row: {
+          content: string
+          content_hash: string
+          id: string
+          replaced_at: string
+          role: string
+          turn_id: string
+          turn_no: number
+          work_item_id: string
+        }
+        Insert: {
+          content: string
+          content_hash: string
+          id?: string
+          replaced_at?: string
+          role: string
+          turn_id: string
+          turn_no: number
+          work_item_id: string
+        }
+        Update: {
+          content?: string
+          content_hash?: string
+          id?: string
+          replaced_at?: string
+          role?: string
+          turn_id?: string
+          turn_no?: number
+          work_item_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "turn_revisions_turn_id_fkey"
+            columns: ["turn_id"]
+            isOneToOne: false
+            referencedRelation: "turns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       turns: {
         Row: {
           content: string
