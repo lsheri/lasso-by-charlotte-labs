@@ -35,20 +35,39 @@ async function loadSource() {
  *  so no fragment of the neighbouring blue pig mascot survives the crop. */
 function maskNeighbour(data, w, h) {
   const STRIP_X = 560;
+  const green = new Uint8Array(w * h);
+  for (let p = 0; p < w * h; p++) {
+    const i = p * 4;
+    const [r, g, b] = [data[i], data[i + 1], data[i + 2]];
+    if (data[i + 3] > 40 && g > 120 && g > b + 35 && g >= r) green[p] = 1;
+  }
+  // Dilate the green mask so the spider's own navy outline survives, while the
+  // neighbouring mascot's navy/blue fills do not.
+  const R = 14;
+  const near = new Uint8Array(w * h);
   for (let y = 0; y < h; y++) {
     for (let x = STRIP_X; x < w; x++) {
-      const i = (y * w + x) * 4;
-      const [r, g, b] = [data[i], data[i + 1], data[i + 2]];
-      const isGreen = g > 120 && g > b + 35 && g >= r;
-      const isNavy = r < 90 && g < 110 && b < 150 && b >= g;
-      const isLight = r > 225 && g > 225 && b > 225;
-      const keep = y > 300 && (isGreen || isNavy || isLight);
-      if (!keep) {
-        data[i] = BG.r;
-        data[i + 1] = BG.g;
-        data[i + 2] = BG.b;
-        data[i + 3] = 0;
+      if (!green[y * w + x]) continue;
+      for (let dy = -R; dy <= R; dy++) {
+        const yy = y + dy;
+        if (yy < 0 || yy >= h) continue;
+        for (let dx = -R; dx <= R; dx++) {
+          const xx = x + dx;
+          if (xx < 0 || xx >= w) continue;
+          near[yy * w + xx] = 1;
+        }
       }
+    }
+  }
+  for (let y = 0; y < h; y++) {
+    for (let x = STRIP_X; x < w; x++) {
+      const p = y * w + x;
+      const i = p * 4;
+      if (green[p] || (near[p] && y > 300)) continue;
+      data[i] = BG.r;
+      data[i + 1] = BG.g;
+      data[i + 2] = BG.b;
+      data[i + 3] = 0;
     }
   }
   return data;
