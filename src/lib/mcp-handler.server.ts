@@ -543,16 +543,6 @@ async function storedAttachmentChars(match: {
   return data ? data.size : 0;
 }
 
-function unusedSlugify(value: string): string {
-  return (
-    value
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-|-$/g, "")
-      .slice(0, 60) || "attachment"
-  );
-}
-
 /**
  * The canonical push. One call = one conversation: a transcript work item plus
  * one work item per attachment, all sharing orig_conversation_id so the app can
