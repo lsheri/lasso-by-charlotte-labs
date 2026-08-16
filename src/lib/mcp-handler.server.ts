@@ -118,7 +118,7 @@ const TOOLS = [
     title: "Push a conversation",
     icons: ICONS,
     description:
-      "When the user says 'Push to Lasso', 'send to Lasso', or similar: call push_conversation EXACTLY ONCE with the ENTIRE conversation, every message, verbatim, unabridged, plus any artifact, canvas or file that already existed as its own object in this app, as attachments. Never summarize the transcript. Never compose new summaries, recaps or section write-ups and send them as attachments. Never split one conversation across multiple calls or use push_document for conversation artifacts.",
+      "When the user says 'Push to Lasso', 'send to Lasso', or similar: call push_conversation with the ENTIRE conversation, every message, verbatim, unabridged, plus any artifact, canvas or file that already existed as its own object in this app, as attachments. Never summarize the transcript. Never compose new summaries, recaps or section write-ups and send them as attachments. Never use push_document for conversation artifacts. Verbatim is non-negotiable: never substitute a summary, paraphrase, or shortened version of a message at any position, the server rejects shrunken overwrites. Before pushing, assess how many messages you can reproduce word-for-word in a single call given their actual lengths. If the whole conversation fits, push it whole. If not, push it in consecutive windows using window {from, to, total}: start with the first window sized to what you can reproduce verbatim, then follow the server's response, which tells you the next starting position, until all messages are stored. When re-pushing a conversation that grew, push only the new messages as a window, never re-send earlier messages unless correcting them. A smaller window is always the answer; a shorter message never is.",
     // Windowing is the only sanctioned way to split a push, and only because
     // the alternative the model reaches for otherwise is shortening messages.
     inputSchema: {
@@ -153,7 +153,7 @@ const TOOLS = [
           type: "array",
           maxItems: MAX_TURNS,
           description:
-            "Every message in order, complete and verbatim. Include timestamps ONLY if actually known from the source; NEVER invent timestamps.",
+            "Messages in order, complete and verbatim. Without window, this must be the whole conversation starting at message 1. With window {from, to, total}, this is exactly the messages for positions from..to of a long conversation, still complete and verbatim. Include timestamps ONLY if actually known from the source; NEVER invent timestamps.",
           items: {
             type: "object",
             properties: {
@@ -197,6 +197,20 @@ const TOOLS = [
             research_mode: { type: "string", enum: ["none", "web_search", "deep_research"] },
             notes: { type: "string" },
           },
+        },
+        window: {
+          type: "object",
+          description:
+            "Use for long conversations you cannot reproduce verbatim in one call. 1-indexed and inclusive: messages[i] is conversation position from+i. Windows must be consecutive with no gaps; the server tells you the next starting position.",
+          properties: {
+            from: { type: "integer", description: "Position of the first message in this call." },
+            to: { type: "integer", description: "Position of the last message in this call." },
+            total: {
+              type: "integer",
+              description: "Total number of messages in the whole conversation. Required.",
+            },
+          },
+          required: ["from", "to", "total"],
         },
       },
       required: ["title", "vendor", "orig_conversation_id", "messages"],
