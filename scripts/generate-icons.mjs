@@ -63,7 +63,8 @@ function maskNeighbour(data, w, h) {
     for (let x = STRIP_X; x < w; x++) {
       const p = y * w + x;
       const i = p * 4;
-      if (y > 320 && (green[p] || near[p])) continue;
+      const blueish = data[i + 2] > data[i + 1] + 28 && data[i + 2] > 110;
+      if (y > 320 && !blueish && (green[p] || near[p])) continue;
       data[i] = BG.r;
       data[i + 1] = BG.g;
       data[i + 2] = BG.b;
