@@ -750,24 +750,37 @@ async function pushConversation(owner: Owner, args: Obj, id: unknown): Promise<R
   // ---- reconcile turns: append-only, never delete -------------------------
   const { data: storedTurns, error: storedError } = await supabaseAdmin
     .from("turns")
-    .select("id, turn_no, content_hash, meta")
+    .select("id, turn_no, role, content, content_hash, meta")
     .eq("work_item_id", threadId)
     .order("turn_no", { ascending: true });
   if (storedError) return rpcError(id, -32603, storedError.message);
   const stored = new Map(
     (storedTurns ?? []).map((t) => [
       t.turn_no,
-      { id: t.id, content_hash: t.content_hash, meta: t.meta },
+      { id: t.id, role: t.role, content: t.content, content_hash: t.content_hash, meta: t.meta },
     ]),
   );
+  const storedBefore = storedTurns?.length ?? 0;
+
+  // No gaps: a window may correct stored positions or continue from the end,
+  // never start past it, or the record would have a hole in the middle.
+  if (win && win.from > storedBefore + 1) {
+    return rpcError(
+      id,
+      -32602,
+      `That window starts at message ${win.from} but only ${storedBefore} message${storedBefore === 1 ? " is" : "s are"} stored, which would leave a gap. Start the next window at message ${storedBefore + 1}.`,
+    );
+  }
+  const offset = win ? win.from - 1 : 0;
 
   let unchangedCount = 0;
   let changedCount = 0;
   const newRows: Record<string, unknown>[] = [];
+  const degradedTurns: { turn_no: number; stored_chars: number; incoming_chars: number }[] = [];
 
   for (let i = 0; i < messages.length; i += 1) {
     const m = messages[i]!;
-    const turnNo = i + 1;
+    const turnNo = offset + i + 1;
     const hash = await sha256Hex(m.content);
     const prior = stored.get(turnNo);
     if (!prior) {
@@ -788,11 +801,40 @@ async function pushConversation(owner: Owner, args: Obj, id: unknown): Promise<R
       unchangedCount += 1;
       continue;
     }
+    // A re-push may improve a turn; it may not quietly replace verbatim with
+    // a condensed retelling. We keep what we have and say so.
+    const storedChars = (prior.content ?? "").length;
+    if (looksCondensed(m.content.length, storedChars)) {
+      degradedTurns.push({
+        turn_no: turnNo,
+        stored_chars: storedChars,
+        incoming_chars: m.content.length,
+      });
+      continue;
+    }
     // Edited or branched upstream: update in place so the turn id survives.
     const priorMeta =
       prior.meta && typeof prior.meta === "object" && !Array.isArray(prior.meta)
         ? (prior.meta as Record<string, unknown>)
         : {};
+    // Preserve the prior version before overwriting it. If that fails, the
+    // overwrite does not happen: no version is lost without a copy first.
+    const { error: revError } = await supabaseAdmin.from("turn_revisions").insert({
+      turn_id: prior.id,
+      work_item_id: threadId,
+      turn_no: turnNo,
+      role: String(prior.role),
+      content: prior.content ?? "",
+      content_hash: prior.content_hash,
+      replaced_at: new Date().toISOString(),
+    });
+    if (revError) {
+      return rpcError(
+        id,
+        -32603,
+        `Could not preserve the previous version of message ${turnNo}, so it was not overwritten: ${revError.message}`,
+      );
+    }
     const { error: updError } = await supabaseAdmin
       .from("turns")
       .update({
