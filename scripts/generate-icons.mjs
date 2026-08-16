@@ -54,18 +54,45 @@ function maskNeighbour(data, w, h) {
   return data;
 }
 
+/** Flood-fill the paper-white background in from the borders and make it
+ *  transparent, so leftover white between the two mascots does not show up
+ *  as a pale block on the navy tile. Interior whites (cap, circuits) stay. */
+function clearBackground(data, w, h) {
+  const isBg = (i) =>
+    data[i + 3] < 8 || (data[i] > 232 && data[i + 1] > 232 && data[i + 2] > 232);
+  const seen = new Uint8Array(w * h);
+  const stack = [];
+  for (let x = 0; x < w; x++) {
+    stack.push(x, (h - 1) * w + x);
+  }
+  for (let y = 0; y < h; y++) {
+    stack.push(y * w, y * w + w - 1);
+  }
+  while (stack.length) {
+    const p = stack.pop();
+    if (seen[p]) continue;
+    seen[p] = 1;
+    const i = p * 4;
+    if (!isBg(i)) continue;
+    data[i] = 255;
+    data[i + 1] = 255;
+    data[i + 2] = 255;
+    data[i + 3] = 0;
+    const x = p % w;
+    const y = (p / w) | 0;
+    if (x > 0) stack.push(p - 1);
+    if (x < w - 1) stack.push(p + 1);
+    if (y > 0) stack.push(p - w);
+    if (y < h - 1) stack.push(p + w);
+  }
+}
+
 async function spiderCutout() {
   const src = await loadSource();
   const cropped = sharp(src).extract(CROP).ensureAlpha();
   const { data, info } = await cropped.raw().toBuffer({ resolveWithObject: true });
   maskNeighbour(data, info.width, info.height);
-  // Drop the white paper background to transparency so it sits on the brand navy.
-  for (let i = 0; i < data.length; i += 4) {
-    if (data[i] > 235 && data[i + 1] > 235 && data[i + 2] > 235 && data[i + 3] > 0) {
-      // only outside pixels; handled by trim of edges below via flood is overkill,
-      // keep white (it is part of the cap/circuits) — no-op.
-    }
-  }
+  clearBackground(data, info.width, info.height);
   return sharp(data, { raw: { width: info.width, height: info.height, channels: 4 } })
     .png()
     .toBuffer();
