@@ -10,7 +10,7 @@ const PUBLIC_DIR = path.join(ROOT, "public");
 const CACHE = path.join(ROOT, "node_modules", ".cache", "coach-lasso-spider.png");
 const CDN_ORIGIN = "https://pilot-platform.charlotte-labs.dev";
 
-const BG = { r: 0x0b, g: 0x2a, b: 0x4a, alpha: 1 }; // #0B2A4A
+const BG = { r: 0xf7, g: 0xf5, b: 0xf2, alpha: 1 }; // #F7F5F2 bone/off-white
 
 async function loadSource() {
   try {
