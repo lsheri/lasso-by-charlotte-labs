@@ -650,11 +650,11 @@ async function pushConversation(owner: Owner, args: Obj, id: unknown): Promise<R
   };
 
   // ---- locate the existing thread: source_url, then orig id, then continuation
-  let existingThread: { id: string } | null = null;
+  let existingThread: { id: string; meta: unknown } | null = null;
   if (sourceUrl) {
     const { data } = await supabaseAdmin
       .from("work_items")
-      .select("id")
+      .select("id, meta")
       .eq("owner_id", owner.profileId)
       .eq("type", "ai_thread")
       .eq("meta->>source_url", sourceUrl)
@@ -664,7 +664,7 @@ async function pushConversation(owner: Owner, args: Obj, id: unknown): Promise<R
   if (!existingThread) {
     const { data } = await supabaseAdmin
       .from("work_items")
-      .select("id")
+      .select("id, meta")
       .eq("owner_id", owner.profileId)
       .eq("orig_conversation_id", origId)
       .eq("type", "ai_thread")
@@ -699,6 +699,16 @@ async function pushConversation(owner: Owner, args: Obj, id: unknown): Promise<R
     }
   }
 
+  const priorThreadMeta =
+    existingThread?.meta && typeof existingThread.meta === "object" && !Array.isArray(existingThread.meta)
+      ? (existingThread.meta as Record<string, unknown>)
+      : {};
+  const priorExpectedTotal =
+    typeof priorThreadMeta["expected_total"] === "number"
+      ? (priorThreadMeta["expected_total"] as number)
+      : null;
+  const expectedTotal = win?.total ?? priorExpectedTotal;
+
   const threadFields = {
     owner_id: owner.profileId,
     org_id: owner.orgId,
@@ -711,7 +721,12 @@ async function pushConversation(owner: Owner, args: Obj, id: unknown): Promise<R
     ts_precision: "capture" as const,
     content_hash: await sha256Hex(serialized),
     source_meta: { ...sharedMeta, role: "transcript" } as unknown as Json,
-    meta: { assistant_transcribed: true, ...(sourceUrl ? { source_url: sourceUrl } : {}) },
+    meta: {
+      ...priorThreadMeta,
+      assistant_transcribed: true,
+      ...(sourceUrl ? { source_url: sourceUrl } : {}),
+      ...(expectedTotal ? { expected_total: expectedTotal } : {}),
+    } as unknown as Json,
   };
 
   let threadId: string;
