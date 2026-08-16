@@ -23,6 +23,7 @@ export type CompleteRunFields = Pick<
   | "cost_usd"
   | "claims_rendered"
   | "suppressed_claims"
+  | "context_manifest"
 >;
 
 export async function createRun(fields: CreateRunFields): Promise<{ id: string }> {
@@ -62,11 +63,14 @@ export async function findRunByKey(key: string): Promise<{
   items_read: number | null;
   suppressed_claims: number | null;
   claims_rendered: number | null;
+  context_manifest: unknown;
 } | null> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data } = await supabaseAdmin
     .from("analysis_runs")
-    .select("id, session_id, status, items_read, suppressed_claims, claims_rendered")
+    .select(
+      "id, session_id, status, items_read, suppressed_claims, claims_rendered, context_manifest",
+    )
     .eq("idempotency_key", key)
     .order("created_at", { ascending: false })
     .limit(1)

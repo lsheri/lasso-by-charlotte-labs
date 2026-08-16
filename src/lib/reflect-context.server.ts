@@ -4,6 +4,13 @@ import type { Database } from "@/integrations/supabase/types";
 
 import type { AiReadInput, AiReadRole } from "./ai-reads.server";
 import { loadBriefContext } from "./brief.server";
+import {
+  manifestKind,
+  wordCountLabel,
+  type ContextManifest,
+  type ManifestExcluded,
+  type ManifestItem,
+} from "./context-manifest";
 import { ensureExtract, type ClassifiableItem } from "./extract.server";
 import { ITEM_TEXT_COLUMNS, getItemText, type ItemTextStatus } from "./item-text.server";
 import type { ContextScope, ContextSource } from "./reflect-shared";
@@ -86,7 +93,84 @@ export type AssembledContext = {
   unreadableCount: number;
   reads: AiReadInput[];
   sources: ContextSource[];
+  /** Exactly what went into the prompt, for the person to inspect after. */
+  manifest: ContextManifest;
 };
+
+/**
+ * The proof line for one item, derived from the text that actually went into
+ * the prompt. A conversation reports the turns that are in there, a file
+ * reports the words that are in there. Nothing is estimated.
+ */
+function detailFor(item: ItemRow, raw: string): string {
+  const cut = raw.includes(OMITTED_MARKER);
+  if (item.type === "ai_thread") {
+    const turns = [...raw.matchAll(/^TURN (\d+) /gm)].map((m) => Number(m[1]));
+    if (turns.length > 0) {
+      const first = Math.min(...turns);
+      const last = Math.max(...turns);
+      const range = first === last ? `turn ${first}` : `turns ${first}\u2013${last}`;
+      return cut ? `${range}, middle omitted` : range;
+    }
+  }
+  const words = wordCountLabel(raw);
+  return cut ? `${words} read, middle omitted` : words;
+}
+
+/**
+ * For a hand picked set of items, the engagement they sit in and the work in
+ * that engagement that was left out. Both are things the person can check.
+ */
+async function selectionContext(
+  supabase: Db,
+  ownerId: string,
+  includedIds: string[],
+): Promise<{ engagement: { id: string; name: string } | null; excluded: ManifestExcluded[] }> {
+  const none = { engagement: null, excluded: [] as ManifestExcluded[] };
+  if (includedIds.length === 0 || includedIds.length > 50) return none;
+  const { data: links } = await supabase
+    .from("work_item_tasks")
+    .select("task_id")
+    .in("work_item_id", includedIds);
+  const taskIds = [...new Set((links ?? []).map((l) => l.task_id))];
+  if (taskIds.length === 0) return none;
+  const { data: tasks } = await supabase
+    .from("tasks")
+    .select("id, engagement_id, engagements(id, title)")
+    .in("id", taskIds);
+  const first = (tasks ?? []).find((t) => t.engagements) as
+    { engagement_id: string; engagements: { id: string; title: string } } | undefined;
+  if (!first) return none;
+  const engagement = { id: first.engagements.id, name: first.engagements.title };
+
+  const { data: siblingTasks } = await supabase
+    .from("tasks")
+    .select("id")
+    .eq("owner_id", ownerId)
+    .eq("engagement_id", first.engagement_id);
+  const siblingTaskIds = (siblingTasks ?? []).map((t) => t.id);
+  if (siblingTaskIds.length === 0) return { engagement, excluded: [] };
+  const { data: siblingLinks } = await supabase
+    .from("work_item_tasks")
+    .select("work_item_id")
+    .in("task_id", siblingTaskIds);
+  const included = new Set(includedIds);
+  const leftOut = [...new Set((siblingLinks ?? []).map((l) => l.work_item_id))].filter(
+    (id) => !included.has(id),
+  );
+  if (leftOut.length === 0) return { engagement, excluded: [] };
+  const { data: leftOutItems } = await supabase
+    .from("work_items")
+    .select("id, title")
+    .in("id", leftOut.slice(0, 40));
+  return {
+    engagement,
+    excluded: (leftOutItems ?? []).map((row) => ({
+      title: row.title,
+      reason: "not selected for this question",
+    })),
+  };
+}
 
 /**
  * The honesty guard. An item we could not open still appears in the context,
@@ -422,6 +506,59 @@ export async function assembleReflectContext(
   const tier1 = items.length + brief.itemIds.length;
   const extractOnly = tier1 - tier2;
 
+  // The manifest: built from what was assembled above, never from the answer.
+  const manifestItems: ManifestItem[] = [];
+  const excluded: ManifestExcluded[] = [];
+  for (const item of oldestFirst) {
+    const raw = fullText.get(item.id) ?? null;
+    const blocked = unreadable.get(item.id);
+    if (raw) {
+      manifestItems.push({
+        id: item.id,
+        title: item.title,
+        kind: manifestKind(item.type),
+        detail: detailFor(item, raw),
+      });
+    } else if (blocked) {
+      excluded.push({
+        title: item.title,
+        reason: blocked.note ?? "the stored file could not be read",
+      });
+    } else {
+      manifestItems.push({
+        id: item.id,
+        title: item.title,
+        kind: manifestKind(item.type),
+        detail: extractFor.get(item.id) ? "summary only, full text not opened" : "no stored text",
+      });
+    }
+  }
+  if (anyCut) {
+    excluded.push({
+      title: "Part of the longest items",
+      reason: "over the context limit, the middle of those items was left out",
+    });
+  }
+  const selection =
+    scope.mode === "items"
+      ? await selectionContext(
+          supabase,
+          ownerId,
+          items.map((i) => i.id),
+        )
+      : { engagement: null, excluded: [] as ManifestExcluded[] };
+  const scopeEngagement = tasks.find((t) => t.engagements)?.engagements ?? null;
+  const manifest: ContextManifest = {
+    engagement: scopeEngagement
+      ? { id: scopeEngagement.id, name: scopeEngagement.title }
+      : selection.engagement,
+    brief_included: brief.present,
+    firm_checks_applied: 0,
+    items: manifestItems,
+    excluded: [...excluded, ...selection.excluded],
+    assembled_at: new Date().toISOString(),
+  };
+
   return {
     context: parts.join("\n\n---\n\n") || "(No recorded work in this scope yet.)",
     quotable: quotableParts.join("\n\n"),
@@ -432,5 +569,6 @@ export async function assembleReflectContext(
     unreadableCount,
     reads,
     sources,
+    manifest,
   };
 }
