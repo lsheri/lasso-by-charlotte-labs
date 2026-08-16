@@ -196,6 +196,37 @@ export function headAndTail(text: string, cap = PER_ITEM_CHARS): { text: string;
 export { RAW_BUDGET };
 
 /**
+ * An @ mention narrows one message to exactly what the person pointed at.
+ * Everything else in the session's scope is honestly listed as not read, and
+ * anything pointed at that does not belong to this scope is refused.
+ */
+export async function narrowToPointed(
+  supabase: Db,
+  ownerId: string,
+  sessionScope: ContextScope,
+  pointedIds: string[],
+): Promise<{ scope: ContextScope; excluded: ManifestExcluded[] }> {
+  const { items } = await loadScopeData(supabase, ownerId, sessionScope);
+  const inScope = new Map(items.map((i) => [i.id, i.title]));
+  const wanted = new Set(pointedIds);
+  const allowed = pointedIds.filter((id) => inScope.has(id));
+  if (allowed.length === 0) return { scope: sessionScope, excluded: [] };
+
+  const excluded: ManifestExcluded[] = [];
+  for (const [id, title] of inScope) {
+    if (!wanted.has(id)) excluded.push({ title, reason: "not pointed at for this question" });
+  }
+  const strays = pointedIds.filter((id) => !inScope.has(id));
+  if (strays.length > 0) {
+    const { data } = await supabase.from("work_items").select("id, title").in("id", strays);
+    for (const row of data ?? []) {
+      excluded.push({ title: row.title, reason: "not part of this engagement" });
+    }
+  }
+  return { scope: { mode: "items", ids: allowed }, excluded };
+}
+
+/**
  * Steps 1 to 3 of assembly: which tasks, which mapping links, which items.
  * Shared with the catalogue so both paths see exactly the same scope.
  */
@@ -333,7 +364,7 @@ export async function assembleReflectContext(
   supabase: Db,
   profileId: string,
   scope: ContextScope,
-  options?: { ownerProfileId?: string; readerRole?: AiReadRole },
+  options?: { ownerProfileId?: string; readerRole?: AiReadRole; pointedAt?: boolean },
 ): Promise<AssembledContext> {
   const ownerId = options?.ownerProfileId ?? profileId;
 
@@ -540,13 +571,24 @@ export async function assembleReflectContext(
     });
   }
   const selection =
-    scope.mode === "items"
+    scope.mode === "items" && !options?.pointedAt
       ? await selectionContext(
           supabase,
           ownerId,
           items.map((i) => i.id),
         )
-      : { engagement: null, excluded: [] as ManifestExcluded[] };
+      : scope.mode === "items"
+        ? {
+            engagement: (
+              await selectionContext(
+                supabase,
+                ownerId,
+                items.map((i) => i.id),
+              )
+            ).engagement,
+            excluded: [] as ManifestExcluded[],
+          }
+        : { engagement: null, excluded: [] as ManifestExcluded[] };
   const scopeEngagement = tasks.find((t) => t.engagements)?.engagements ?? null;
   const manifest: ContextManifest = {
     engagement: scopeEngagement

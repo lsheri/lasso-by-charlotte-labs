@@ -45,6 +45,7 @@ export function ThinkingTrail({
   items,
   finalPhase,
   manifest,
+  lead,
 }: {
   /** Titles the person selected. Shown before the server answers. */
   items: { id: string; title: string }[];
@@ -52,6 +53,8 @@ export function ThinkingTrail({
   finalPhase: string;
   /** Once the server responds, the trail switches to the real manifest. */
   manifest?: ContextManifest | null;
+  /** The first line. Defaults to the record the person chose. */
+  lead?: string | undefined;
 }) {
   const reduced = useReducedMotion();
   const lines: TrailLine[] = manifest
@@ -99,7 +102,7 @@ export function ThinkingTrail({
     <div className={`${MONO} space-y-1 text-muted-foreground`} aria-live="polite">
       <p className="flex items-center gap-2">
         <Tick />
-        <span>Reading the record you chose</span>
+        <span>{lead ?? "Reading the record you chose"}</span>
       </p>
       {visible.map((line, index) => {
         const done = manifest ? true : index < visible.length - 1;

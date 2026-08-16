@@ -11,6 +11,8 @@ export type ReflectInput = {
   profile_id?: string | undefined;
   surface?: "reflect" | "ask_lasso" | undefined;
   preset?: AnalysisPresetId | undefined;
+  /** Item ids the message points at with @. Narrows this message only. */
+  pointed_at?: string[] | undefined;
 };
 
 export type ReflectResult = {
@@ -84,7 +86,19 @@ export async function runReflectTurn(
 
   const { parseScope, titleFromMessage, REFLECT_SYSTEM_PROMPT } = await import("./reflect-shared");
   const { analysisPreset } = await import("./analysis-presets");
-  const scope = parseScope(session.context_scope);
+  const sessionScope = parseScope(session.context_scope);
+  let scope = sessionScope;
+  // An @ mention dials the read set down to exactly those pieces of work, for
+  // this message only. The brief stays ambient.
+  const pointed = (data.pointed_at ?? []).filter(Boolean);
+  let pointedExcluded: { title: string; reason: string }[] = [];
+  if (pointed.length > 0) {
+    const { narrowToPointed } = await import("./reflect-context.server");
+    const narrowed = await narrowToPointed(supabase, profile.id, sessionScope, pointed);
+    scope = narrowed.scope;
+    pointedExcluded = narrowed.excluded;
+  }
+  const isPointed = pointedExcluded.length > 0 || (pointed.length > 0 && scope !== sessionScope);
   const preset = data.preset ? analysisPreset(data.preset) : null;
 
   const { data: history } = await supabase
@@ -150,6 +164,7 @@ export async function runReflectTurn(
     const catalogueManifest = manifestFromSources(run.sources, {
       briefIncluded: run.catalogue.brief.itemIds.length > 0,
     });
+    catalogueManifest.excluded = [...catalogueManifest.excluded, ...pointedExcluded];
 
     if (run.catalogue.entries.length > 0 && run.itemsFetched === 0) {
       const { logHealth } = await import("./health.server");
@@ -238,7 +253,12 @@ export async function runReflectTurn(
   }
 
   const { assembleReflectContext } = await import("./reflect-context.server");
-  const assembled = await assembleReflectContext(supabase, profile.id, scope);
+  const assembled = await assembleReflectContext(supabase, profile.id, scope, {
+    pointedAt: isPointed,
+  });
+  if (pointedExcluded.length > 0) {
+    assembled.manifest.excluded = [...assembled.manifest.excluded, ...pointedExcluded];
+  }
 
   // The defect class that cost trust before: items were in scope and none of
   // them could be read. Structural counts only, no content.
