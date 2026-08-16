@@ -528,6 +528,31 @@ function slugify(value: string): string {
   );
 }
 
+/** Size of the stored version of a known attachment, 0 when it cannot be read. */
+async function storedAttachmentChars(match: {
+  content_ref: string | null;
+  source_meta: unknown;
+}): Promise<number> {
+  const meta =
+    match.source_meta && typeof match.source_meta === "object"
+      ? (match.source_meta as { chars?: unknown })
+      : null;
+  if (typeof meta?.chars === "number" && meta.chars > 0) return meta.chars;
+  if (!match.content_ref) return 0;
+  const { data } = await supabaseAdmin.storage.from("work-files").download(match.content_ref);
+  return data ? data.size : 0;
+}
+
+function unusedSlugify(value: string): string {
+  return (
+    value
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "")
+      .slice(0, 60) || "attachment"
+  );
+}
+
 /**
  * The canonical push. One call = one conversation: a transcript work item plus
  * one work item per attachment, all sharing orig_conversation_id so the app can
