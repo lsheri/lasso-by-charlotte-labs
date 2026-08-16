@@ -1026,6 +1026,8 @@ async function pushConversation(owner: Owner, args: Obj, id: unknown): Promise<R
       attachment_count: attachmentBucket(attachments.length),
       rejected_attachments: flaggedBucket(rejected.length),
       mode: pushMode,
+      windowed: win ? "yes" : "no",
+      degraded_refusals: flaggedBucket(degradedTurns.length + degradedAttachments.length),
     },
   });
   await recordEvent(supabaseAdmin, {
@@ -1089,11 +1091,31 @@ async function pushConversation(owner: Owner, args: Obj, id: unknown): Promise<R
     extraStored > 0
       ? " This push had fewer messages than what is already stored. Nothing was removed."
       : "";
+  const degradedNote =
+    degradedTurns.length > 0
+      ? ` Kept the stored verbatim version of ${degradedTurns.length} message${degradedTurns.length === 1 ? "" : "s"} (position${degradedTurns.length === 1 ? "" : "s"} ${degradedTurns
+          .map((d) => d.turn_no)
+          .join(
+            ", ",
+          )}) because the incoming version looked condensed. Re-push those positions verbatim in a smaller window.`
+      : "";
+  const degradedAttachmentNote =
+    degradedAttachments.length > 0
+      ? ` Kept the stored version of ${degradedAttachments.length} attachment${degradedAttachments.length === 1 ? "" : "s"} (${degradedAttachments
+          .map((a) => `'${a.title}'`)
+          .join(", ")}) because the incoming version looked condensed. Re-send it in full.`
+      : "";
+  const total = expectedTotal;
+  const cursor = total
+    ? storedCount >= total
+      ? ` All ${total} messages captured.`
+      : ` Stored ${storedCount} of ${total} messages. Continue with a window starting at message ${storedCount + 1}.`
+    : "";
   const continuation = continuationOrigId
     ? ` This looks like a continuation of an existing conversation in Lasso. To keep them together next time, reuse orig_conversation_id '${continuationOrigId}'.`
     : "";
   return textResult(
     id,
-    `${verb} '${title}' in Lasso${tail}.${counts}${shortNote} It stays private until the user maps it.${rejectedNote}${warn}${continuation}`,
+    `${verb} '${title}' in Lasso${tail}.${counts}${shortNote}${degradedNote}${degradedAttachmentNote}${cursor} It stays private until the user maps it.${rejectedNote}${warn}${continuation}`,
   );
 }
