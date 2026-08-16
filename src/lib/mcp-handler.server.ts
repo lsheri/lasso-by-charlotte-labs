@@ -119,6 +119,8 @@ const TOOLS = [
     icons: ICONS,
     description:
       "When the user says 'Push to Lasso', 'send to Lasso', or similar: call push_conversation EXACTLY ONCE with the ENTIRE conversation, every message, verbatim, unabridged, plus any artifact, canvas or file that already existed as its own object in this app, as attachments. Never summarize the transcript. Never compose new summaries, recaps or section write-ups and send them as attachments. Never split one conversation across multiple calls or use push_document for conversation artifacts.",
+    // Windowing is the only sanctioned way to split a push, and only because
+    // the alternative the model reaches for otherwise is shortening messages.
     inputSchema: {
       type: "object",
       properties: {
