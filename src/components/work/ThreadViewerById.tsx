@@ -21,7 +21,9 @@ export function ThreadViewerById({
         .eq("id", workItemId as string)
         .maybeSingle();
       if (error) throw error;
-      return row ? { ...row, work_item_tasks: [] } : null;
+      return row
+        ? ({ ...row, meta: (row.meta ?? null), work_item_tasks: [] } as unknown as WorkItemRow)
+        : null;
     },
   });
 
