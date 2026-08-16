@@ -578,6 +578,33 @@ async function pushConversation(owner: Owner, args: Obj, id: unknown): Promise<R
     return rpcError(id, -32602, "Conversation is larger than the 2MB limit. Push it in parts.");
   }
 
+  // ---- optional window: this call covers positions from..to of the whole thread
+  const rawWindow = args["window"];
+  let win: { from: number; to: number; total: number } | null = null;
+  if (rawWindow && typeof rawWindow === "object" && !Array.isArray(rawWindow)) {
+    const w = rawWindow as { from?: unknown; to?: unknown; total?: unknown };
+    const from = Number(w.from);
+    const to = Number(w.to);
+    const total = Number(w.total);
+    if (!Number.isInteger(total) || total < 1) {
+      return rpcError(id, -32602, "window.total is required: the full conversation length.");
+    }
+    if (!Number.isInteger(from) || from < 1) {
+      return rpcError(id, -32602, "window.from must be an integer of at least 1.");
+    }
+    if (!Number.isInteger(to) || to < from) {
+      return rpcError(id, -32602, "window.to must be an integer greater than or equal to from.");
+    }
+    if (messages.length !== to - from + 1) {
+      return rpcError(
+        id,
+        -32602,
+        `window covers ${to - from + 1} positions but ${messages.length} messages were sent. Send exactly the messages for positions ${from} to ${to}.`,
+      );
+    }
+    win = { from, to, total };
+  }
+
   const rawAttachments = Array.isArray(args["attachments"])
     ? (args["attachments"] as (Partial<IncomingAttachment> & { source_artifact_id?: unknown })[])
     : [];
