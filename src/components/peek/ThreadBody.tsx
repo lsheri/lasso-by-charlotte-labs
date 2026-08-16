@@ -11,12 +11,25 @@ type Turn = {
   content: string;
   ts: string | null;
   model?: string | null;
+  meta?: unknown;
 };
 
 function turnTime(ts: string | null): string | null {
   if (!ts) return null;
   const date = new Date(ts);
   return Number.isNaN(date.getTime()) ? null : date.toLocaleString();
+}
+
+/** A turn a later push rewrote. The record says so, quietly. */
+function revisedLabel(turn: Turn): string | null {
+  const meta =
+    turn.meta && typeof turn.meta === "object" && !Array.isArray(turn.meta)
+      ? (turn.meta as { revised_at?: unknown })
+      : null;
+  if (typeof meta?.revised_at !== "string") return null;
+  const date = new Date(meta.revised_at);
+  if (Number.isNaN(date.getTime())) return null;
+  return `Revised by a re-push · ${date.toLocaleDateString()}`;
 }
 
 /** The conversation itself, shared by the peek panel and the standalone viewer. */
@@ -27,7 +40,7 @@ export function ThreadBody({ item, enabled = true }: { item: WorkItemRow; enable
     queryFn: async (): Promise<Turn[]> => {
       const { data, error: turnsError } = await supabase
         .from("turns")
-        .select("id, turn_no, role, content, ts, model")
+        .select("id, turn_no, role, content, ts, model, meta")
         .eq("work_item_id", item.id)
         .order("turn_no", { ascending: true });
       if (turnsError) throw turnsError;
@@ -37,6 +50,9 @@ export function ThreadBody({ item, enabled = true }: { item: WorkItemRow; enable
 
   const meta = item.source_meta ?? null;
   const model = meta?.model ?? null;
+  const expectedTotal =
+    typeof item.meta?.expected_total === "number" ? item.meta.expected_total : null;
+  const turnCount = turns?.length ?? 0;
   const metaBits = [
     meta?.skills_used && meta.skills_used.length > 0
       ? `Skills: ${meta.skills_used.join(", ")}`
@@ -64,6 +80,12 @@ export function ThreadBody({ item, enabled = true }: { item: WorkItemRow; enable
 
       {error ? <p className="text-sm text-destructive">{(error as Error).message}</p> : null}
 
+      {expectedTotal && turns && turnCount < expectedTotal ? (
+        <p className="text-xs text-muted-foreground">
+          {turnCount} of {expectedTotal} messages captured so far.
+        </p>
+      ) : null}
+
       {item.content_fidelity === "summary" ? (
         <p className="rounded-[var(--radius)] border border-border bg-secondary/60 px-4 py-3 text-sm text-foreground">
           Copilot exports contain summaries, not full replies. For work that matters, paste the
@@ -82,6 +104,9 @@ export function ThreadBody({ item, enabled = true }: { item: WorkItemRow; enable
               <div className="max-w-[90%] whitespace-pre-wrap rounded-[var(--radius)] bg-primary px-4 py-3 font-mono text-xs leading-relaxed text-primary-foreground">
                 {turn.content}
               </div>
+              {revisedLabel(turn) ? (
+                <p className="mt-1 text-[11px] text-muted-foreground">{revisedLabel(turn)}</p>
+              ) : null}
             </div>
           ) : (
             <div key={turn.id}>
@@ -93,6 +118,9 @@ export function ThreadBody({ item, enabled = true }: { item: WorkItemRow; enable
               <div className="max-w-[90%] whitespace-pre-wrap rounded-[var(--radius)] border border-border bg-card px-4 py-3 font-mono text-xs leading-relaxed text-foreground shadow-card">
                 {turn.content}
               </div>
+              {revisedLabel(turn) ? (
+                <p className="mt-1 text-[11px] text-muted-foreground">{revisedLabel(turn)}</p>
+              ) : null}
             </div>
           ),
         )}
