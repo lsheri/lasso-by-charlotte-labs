@@ -1,5 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
+import { DeliverableKindSelect } from "@/components/work/DeliverableKindSelect";
 import { SourceMark } from "@/components/work/SourceMark";
 import { TypeBadge } from "@/components/work/TypeIcon";
 import { Button } from "@/components/ui/button";
@@ -11,8 +14,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useFirmChecks } from "@/hooks/use-firm-checks";
+import { useBriefs } from "@/hooks/use-briefs";
+import { setDeliverableKind, useInvalidateWorkItems } from "@/hooks/use-deliverable-kind";
 import { supabase } from "@/integrations/supabase/client";
 import type { AnalysisPreset } from "@/lib/analysis-presets";
+import {
+  deliverableKindLabel,
+  deliverableKindOf,
+  suggestDeliverableKind,
+  type DeliverableKind,
+} from "@/lib/deliverable-kinds";
 import type { WorkItemRow } from "@/lib/work-types";
 
 /** What a confirm step is pointed at, taken from the run request itself. */
@@ -35,6 +46,7 @@ type ItemRow = {
   source_vendor: WorkItemRow["source_vendor"];
   source_meta: WorkItemRow["source_meta"];
   meta: WorkItemRow["meta"];
+  content_ref?: string | null;
 };
 
 /**
@@ -64,7 +76,7 @@ export function AnalysisConfirm({
     queryFn: async (): Promise<ItemRow | null> => {
       const { data } = await supabase
         .from("work_items")
-        .select("id, title, type, source, source_vendor, source_meta, meta")
+        .select("id, title, type, source, source_vendor, source_meta, meta, content_ref")
         .eq("id", (target as { id: string }).id)
         .maybeSingle();
       return (data ?? null) as ItemRow | null;
@@ -76,6 +88,34 @@ export function AnalysisConfirm({
     engagementId: target?.kind === "engagement" ? target.id : null,
     subjectProfileId: profileId ?? null,
   });
+
+  const { data: briefs } = useBriefs(profileId);
+  const invalidateWork = useInvalidateWorkItems();
+  const isDeliverableRun = target?.kind === "item" && target.scope === "deliverable";
+  const savedKind = deliverableKindOf(item?.meta);
+  const [kind, setKind] = useState<DeliverableKind | null>(null);
+  const [suggested, setSuggested] = useState(false);
+  const [editingKind, setEditingKind] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!isDeliverableRun || !item) return;
+    if (savedKind) {
+      setKind(savedKind);
+      setSuggested(false);
+      setEditingKind(false);
+      return;
+    }
+    const guess = suggestDeliverableKind({
+      title: item.title,
+      type: item.type,
+      fileHint: item.content_ref ?? null,
+      briefText: (briefs ?? []).map((b) => b.title).join(" "),
+    });
+    setKind(guess);
+    setSuggested(Boolean(guess));
+    setEditingKind(true);
+  }, [isDeliverableRun, item, savedKind, briefs]);
 
   if (!request || !preset || !target) return null;
 
@@ -93,6 +133,17 @@ export function AnalysisConfirm({
         <form
           onSubmit={(event) => {
             event.preventDefault();
+            if (isDeliverableRun && item && kind && kind !== savedKind) {
+              setSaving(true);
+              void setDeliverableKind(item.id, kind)
+                .then(() => invalidateWork())
+                .catch((error: unknown) => toast.error((error as Error).message))
+                .finally(() => {
+                  setSaving(false);
+                  onConfirm();
+                });
+              return;
+            }
             onConfirm();
           }}
           className="space-y-4"
@@ -143,9 +194,35 @@ export function AnalysisConfirm({
             </ul>
           </div>
 
+          {isDeliverableRun ? (
+            <div data-testid="deliverable-kind-block">
+              {savedKind && !editingKind ? (
+                <p className="text-xs text-muted-foreground">
+                  Kind: {deliverableKindLabel(savedKind)}{" "}
+                  <button
+                    type="button"
+                    onClick={() => setEditingKind(true)}
+                    className="text-accent-deep underline underline-offset-2"
+                  >
+                    Change
+                  </button>
+                </p>
+              ) : (
+                <DeliverableKindSelect
+                  value={kind}
+                  onChange={(next) => {
+                    setKind(next);
+                    setSuggested(false);
+                  }}
+                  suggested={suggested}
+                />
+              )}
+            </div>
+          ) : null}
+
           <div className="flex flex-wrap items-center gap-2">
-            <Button type="submit" autoFocus>
-              Run analysis
+            <Button type="submit" autoFocus disabled={saving}>
+              {saving ? "Saving…" : "Run analysis"}
             </Button>
             <Button type="button" variant="outline" onClick={onCancel}>
               Cancel
