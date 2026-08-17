@@ -11,6 +11,8 @@ type StartInput = {
   work_item_id?: string | undefined;
   engagement_id?: string | undefined;
   profile_id?: string | undefined;
+  /** "shown" when the person confirmed a two step activation before the run. */
+  confirm_step?: "shown" | undefined;
 };
 
 export type AnalysisRunResult = {
@@ -131,7 +133,11 @@ export const startAnalysis = createServerFn({ method: "POST" })
         eventType: "analysis.started",
         orgId: profile.org_id,
         userId,
-        dims: { preset: preset.id, scope_type: preset.scope },
+        dims: {
+          preset: preset.id,
+          scope_type: preset.scope,
+          ...(data.confirm_step === "shown" ? { confirm_step: "shown" } : {}),
+        },
       });
 
       const { data: createdSession, error: sessionError } = await supabase
@@ -228,7 +234,11 @@ export const startAnalysis = createServerFn({ method: "POST" })
       const { recordEventV2 } = await import("./telemetry-v2.server");
       await recordEventV2(supabase, userId, {
         eventName: "analysis.started",
-        props: { preset: presetId, scope: scopeType },
+        props: {
+          preset: presetId,
+          scope: scopeType,
+          ...(data.confirm_step === "shown" ? { confirm_step: "shown" as const } : {}),
+        },
         profileId: profile.id,
       });
     }

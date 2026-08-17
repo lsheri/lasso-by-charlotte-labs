@@ -433,6 +433,9 @@ export function ReflectDock({
             engagementHasBrief={engagementBrief ?? false}
             firmCheckCount={(firmChecks ?? []).length}
             orgName={profile?.org_name}
+            orgId={profile?.org_id}
+            profileId={profile?.id}
+            onAdjust={() => setPickerOpen(true)}
             canAuthorChecks={profile?.role === "coach" || profile?.role === "admin"}
             onAuthorCheck={() => onOpenChange(false)}
             readsDetail={

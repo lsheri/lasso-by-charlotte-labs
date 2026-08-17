@@ -6,6 +6,7 @@ import { useState } from "react";
 import { SuggestDot, Suggested } from "@/components/common/Suggested";
 import { MarkdownMessage } from "@/components/markdown/MarkdownMessage";
 import { AnalysisInfoPanel } from "@/components/reflect/AnalysisInfoPanel";
+import { AnalysisConfirm, type AnalysisConfirmRequest } from "@/components/reflect/AnalysisConfirm";
 import { FindingLabel } from "@/components/reflect/FindingLabel";
 import { supabase } from "@/integrations/supabase/client";
 import { isBriefItem } from "@/lib/brief-shared";
@@ -231,6 +232,7 @@ export function useChatAnalyses(profileId: string | undefined, orgId: string | u
       const result = await run({
         data: {
           preset_id: preset.id,
+          confirm_step: "shown" as const,
           ...(target.kind === "engagement"
             ? { engagement_id: target.id }
             : { work_item_id: target.id }),
@@ -357,6 +359,8 @@ export function AnalysisChips({
   orgName,
   canAuthorChecks = false,
   onAuthorCheck,
+  orgId,
+  profileId,
 }: {
   target: ChipTarget;
   readsDetail: string;
@@ -371,7 +375,10 @@ export function AnalysisChips({
   orgName?: string | undefined;
   canAuthorChecks?: boolean | undefined;
   onAuthorCheck?: (() => void) | undefined;
+  orgId?: string | undefined;
+  profileId?: string | undefined;
 }) {
+  const [confirming, setConfirming] = useState<AnalysisConfirmRequest | null>(null);
   if (target.kind === "none") {
     return (
       <Suggested className={className}>
@@ -432,6 +439,17 @@ export function AnalysisChips({
 
   return (
     <Suggested className={className}>
+      <AnalysisConfirm
+        request={confirming}
+        orgId={orgId}
+        profileId={profileId}
+        onCancel={() => setConfirming(null)}
+        onConfirm={() => {
+          const preset = confirming?.preset;
+          setConfirming(null);
+          if (preset) onRun(preset);
+        }}
+      />
       <FirmSection
         orgName={orgName}
         firmCheckCount={firmCheckCount}
@@ -442,7 +460,7 @@ export function AnalysisChips({
         running={running}
         disabled={firmCheckCount === 0}
         reason={firmCheckCount === 0 ? NO_FIRM_CHECKS_LINE : null}
-        onRun={() => firmPreset && onRun(firmPreset)}
+        onRun={() => firmPreset && setConfirming({ preset: firmPreset, target })}
       />
       <div className="mt-4">
         <p className="micro-label mb-2">Lasso analyses</p>
@@ -457,7 +475,7 @@ export function AnalysisChips({
                 running={running}
                 disabled={blocked}
                 reason={blocked ? NOT_ENOUGH_WORK_LINE : null}
-                onClick={() => onRun(preset)}
+                onClick={() => setConfirming({ preset, target })}
               />
             );
           })}
@@ -567,6 +585,9 @@ export function SelectionAnalysisChips({
   orgName,
   canAuthorChecks = false,
   onAuthorCheck,
+  orgId,
+  profileId,
+  onAdjust,
 }: {
   selected: WorkItemRow[];
   engagement: { id: string; title: string };
@@ -580,7 +601,14 @@ export function SelectionAnalysisChips({
   orgName?: string | undefined;
   canAuthorChecks?: boolean | undefined;
   onAuthorCheck?: (() => void) | undefined;
+  orgId?: string | undefined;
+  profileId?: string | undefined;
+  onAdjust?: (() => void) | undefined;
 }) {
+  const [confirming, setConfirming] = useState<{
+    request: AnalysisConfirmRequest;
+    target: ChipTarget;
+  } | null>(null);
   const chips = selectionChips(
     selected,
     engagement,
@@ -597,6 +625,17 @@ export function SelectionAnalysisChips({
     .map((c) => ({ label: c.preset.label, reason: c.reason as string }));
   return (
     <Suggested className={className}>
+      <AnalysisConfirm
+        request={confirming?.request ?? null}
+        orgId={orgId}
+        profileId={profileId}
+        onCancel={() => setConfirming(null)}
+        onConfirm={() => {
+          const pending = confirming;
+          setConfirming(null);
+          if (pending) onRun(pending.request.preset, pending.target);
+        }}
+      />
       <FirmSection
         orgName={orgName}
         firmCheckCount={firmCheckCount}
@@ -608,7 +647,12 @@ export function SelectionAnalysisChips({
         disabled={!firmChip?.target}
         reason={firmChip?.reason ?? null}
         onRun={() => {
-          if (firmChip?.target) onRun(firmChip.preset, firmChip.target);
+          if (firmChip?.target && firmChip.target.kind !== "none") {
+            setConfirming({
+              request: { preset: firmChip.preset, target: firmChip.target, onAdjust },
+              target: firmChip.target,
+            });
+          }
         }}
       />
       <div className="mt-4">
@@ -622,7 +666,11 @@ export function SelectionAnalysisChips({
               running={running}
               disabled={target === null}
               reason={reason}
-              onClick={() => target && onRun(preset, target)}
+              onClick={() =>
+                target && target.kind !== "none"
+                  ? setConfirming({ request: { preset, target, onAdjust }, target })
+                  : undefined
+              }
             />
           ))}
         </div>

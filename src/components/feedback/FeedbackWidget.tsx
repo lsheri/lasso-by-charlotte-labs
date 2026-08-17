@@ -153,10 +153,10 @@ export function FeedbackDialog({ trigger }: { trigger: ReactNode }) {
   );
 }
 
-/** Floating, unobtrusive entry point on every authenticated route. */
+/** Floating desktop entry point. On phones the header button is the entry. */
 export function FeedbackWidget() {
   return (
-    <div className="fixed bottom-4 right-4 z-40 print:hidden">
+    <div className="fixed bottom-4 right-4 z-40 hidden md:block print:hidden">
       <FeedbackDialog
         trigger={
           <button
