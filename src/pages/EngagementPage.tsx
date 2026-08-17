@@ -16,6 +16,7 @@ import { InviteDialog } from "@/components/invites/InviteDialog";
 import { SubjectCoachingSection } from "@/components/coaching/SubjectCoachingSection";
 import { AnalysisLens } from "@/components/reflect/AnalysisLens";
 import { ReflectDock } from "@/components/reflect/ReflectDock";
+import { useRegisterAskLasso } from "@/components/reflect/ask-lasso-context";
 import { TaskWorkflow, type WorkflowElement } from "@/components/work/TaskWorkflow";
 import { useProfile } from "@/hooks/use-profile";
 import { supabase } from "@/integrations/supabase/client";
@@ -51,6 +52,10 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
   const [prepOpen, setPrepOpen] = useState(false);
   const [taskName, setTaskName] = useState("");
   const [error, setError] = useState<string | null>(null);
+
+  // On phones the floating button is the only Ask Lasso entry, and on this page
+  // it opens this engagement's dock rather than navigating to Reflect.
+  useRegisterAskLasso(() => setAskOpen(true));
 
   const engagementQuery = useQuery({
     queryKey: ["engagement", engagementId],
@@ -134,7 +139,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
             <button
               type="button"
               onClick={() => setAskOpen(true)}
-              className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+              className="hidden shrink-0 items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground md:inline-flex"
             >
               <Sparkle className="h-3.5 w-3.5" aria-hidden /> Ask Lasso
             </button>
