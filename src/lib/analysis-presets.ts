@@ -1,5 +1,6 @@
 import { libraryForPrompt, TECHNIQUE_CATEGORIES } from "@/lib/analysis-library";
 import { BRIEF_PROMPT_RULES } from "@/lib/brief-shared";
+import type { HandoffKind } from "@/lib/handoffs-shared";
 
 /**
  * The analysis preset registry. Every analysis in the product is an entry here,
@@ -70,6 +71,12 @@ export type AnalysisPreset = {
   };
   attribution: string | null;
   coachMayRun: boolean;
+  /**
+   * The structured handoff kind this analysis may draft, if any. The schema and
+   * the tail instruction live in handoffs-shared; nothing here edits a prompt.
+   * Person-shaped presets have none and the server refuses one anyway.
+   */
+  handoffSchema?: HandoffKind | undefined;
 };
 
 export const ANALYSIS_PRESET_IDS = [
