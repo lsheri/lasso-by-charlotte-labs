@@ -1,3 +1,4 @@
+import { TypeBadge } from "@/components/work/TypeIcon";
 import { useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
