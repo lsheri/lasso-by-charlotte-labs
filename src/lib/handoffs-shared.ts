@@ -232,7 +232,15 @@ export function createHoldback(emit: (delta: string) => void): {
   return {
     push(delta: string) {
       held += delta;
-      if (held.includes(HANDOFF_SENTINEL)) return;
+      if (held.includes(HANDOFF_SENTINEL)) {
+        // Release anything that arrived before the fence, then hold the rest.
+        const start = sentinelFenceStart(held);
+        if (start > 0) {
+          emit(held.slice(0, start));
+          held = held.slice(start);
+        }
+        return;
+      }
       const fence = held.lastIndexOf("```");
       if (fence === -1) {
         emit(held);
