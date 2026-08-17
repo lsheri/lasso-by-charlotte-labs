@@ -332,6 +332,33 @@ export type Database = {
           },
         ]
       }
+      clients: {
+        Row: {
+          code: string | null
+          created_at: string
+          id: string
+          name: string
+          org_id: string
+          quick_folder: boolean
+        }
+        Insert: {
+          code?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          org_id: string
+          quick_folder?: boolean
+        }
+        Update: {
+          code?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          org_id?: string
+          quick_folder?: boolean
+        }
+        Relationships: []
+      }
       coaching_notes: {
         Row: {
           author_id: string
@@ -650,6 +677,7 @@ export type Database = {
         Row: {
           brief: string | null
           brief_by: string | null
+          client_id: string | null
           client_label: string | null
           code: string
           created_at: string
@@ -662,6 +690,7 @@ export type Database = {
         Insert: {
           brief?: string | null
           brief_by?: string | null
+          client_id?: string | null
           client_label?: string | null
           code: string
           created_at?: string
@@ -674,6 +703,7 @@ export type Database = {
         Update: {
           brief?: string | null
           brief_by?: string | null
+          client_id?: string | null
           client_label?: string | null
           code?: string
           created_at?: string
@@ -684,6 +714,13 @@ export type Database = {
           title?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "engagements_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "engagements_org_id_fkey"
             columns: ["org_id"]
