@@ -142,7 +142,7 @@ export function PeekPanel({
       description="Work item preview"
     >
       <header className="shrink-0 border-b border-border px-4 pb-4 pt-[calc(1.5rem+env(safe-area-inset-top))] sm:px-6">
-        <div className="flex flex-wrap items-center gap-1.5 pr-8">
+        <div className="flex flex-wrap items-center gap-1.5 pr-12">
           <TypeChip item={active} />
           {vendor ? <Chip tone="accent">{vendorLabel(vendor)}</Chip> : null}
           {active.content_fidelity === "summary" ? <Chip>Summary</Chip> : null}
