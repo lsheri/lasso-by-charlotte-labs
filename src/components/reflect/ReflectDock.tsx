@@ -403,9 +403,7 @@ export function ReflectDock({
                   />
                   <span className="min-w-0">
                     <span className="break-words">{item.title}</span>{" "}
-                    <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
-                      {TYPE_WORD[item.type] ?? item.type}
-                    </span>
+                    <TypeBadge item={item} size="sm" />
                   </span>
                 </label>
               ))
@@ -527,9 +525,7 @@ export function ReflectDock({
                 }`}
               >
                 <span className="break-words">{item.title}</span>{" "}
-                <span className="font-mono text-[10px] uppercase tracking-[0.08em]">
-                  {TYPE_WORD[item.type] ?? item.type}
-                </span>
+                <TypeBadge item={item} size="sm" />
               </button>
             ))}
           </div>
