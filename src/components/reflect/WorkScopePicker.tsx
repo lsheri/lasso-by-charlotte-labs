@@ -7,6 +7,7 @@ import type { EngagementSummary } from "@/hooks/use-engagements";
 import type { ContextScope } from "@/lib/reflect-shared";
 import { chipShape, itemsInScope, mappedItemsForEngagement } from "@/lib/reflect-scope-shape";
 import { effectiveWorkDate, formatDate, type WorkItemRow } from "@/lib/work-types";
+import { TypeBadge } from "@/components/work/TypeIcon";
 
 /** The scope as a plain sentence, never a count of tokens or a cost. */
 export function scopeSentence(
