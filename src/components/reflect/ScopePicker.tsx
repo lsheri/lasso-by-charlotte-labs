@@ -41,14 +41,19 @@ export function ScopePicker({
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tasks")
-        .select("id, name, engagements(code)")
+        .select("id, name, engagements(code, title, client_label, clients(id, name, quick_folder))")
         .eq("owner_id", profile?.id as string)
         .order("position", { ascending: true });
       if (error) throw error;
       return (data ?? []) as unknown as {
         id: string;
         name: string;
-        engagements: { code: string } | null;
+        engagements: {
+          code: string;
+          title: string;
+          client_label: string | null;
+          clients: { id: string; name: string; quick_folder: boolean } | null;
+        } | null;
       }[];
     },
   });
