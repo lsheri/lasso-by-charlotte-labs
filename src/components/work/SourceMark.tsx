@@ -12,7 +12,7 @@ import {
 
 import { useVendorVisible } from "@/hooks/use-vendor-display";
 import { vendorLabel } from "@/lib/conversation-shared";
-import { hueStyles, vendorHue, workIdentity, workIdentityLabel } from "@/lib/work-identity";
+import { hueStyles, vendorHue, workIdentity } from "@/lib/work-identity";
 import { sourceLabel, type WorkItemRow } from "@/lib/work-types";
 
 /**
@@ -42,14 +42,14 @@ const VENDOR_BRANDS: Record<string, Brand> = {
 };
 
 /** Vendors with no simple-icons entry: they wear the lettermark fallback. */
-const LETTERMARKS: Record<string, string> = {
-  chatgpt: "GPT",
-  openai: "GPT",
-  slack: "SL",
-  granola: "GR",
-  onedrive: "OD",
-  sharepoint: "SP",
-  microsoft: "MS",
+const LETTERMARKS: Record<string, { letters: string; label: string }> = {
+  chatgpt: { letters: "GPT", label: "ChatGPT" },
+  openai: { letters: "GPT", label: "OpenAI" },
+  slack: { letters: "SL", label: "Slack" },
+  granola: { letters: "GR", label: "Granola" },
+  onedrive: { letters: "OD", label: "OneDrive" },
+  sharepoint: { letters: "SP", label: "SharePoint" },
+  microsoft: { letters: "MS", label: "Microsoft" },
 };
 
 type SourceItem = {
@@ -119,7 +119,8 @@ export function SourceMark({
   // Coaches in a vendor-neutral org do not get to read the brand off a logo.
   if (!key || !visible) return null;
   const brand = sourceBrand(item);
-  const label = brand?.title ?? vendorLabel(key);
+  const letters = LETTERMARKS[key];
+  const label = brand?.title ?? letters?.label ?? vendorLabel(key);
 
   if (brand) {
     return (
@@ -137,7 +138,6 @@ export function SourceMark({
     );
   }
 
-  const letters = LETTERMARKS[key];
   if (!letters) return null;
   const hue = vendorHue(key);
   const styles = hue ? hueStyles(hue) : null;
@@ -153,7 +153,7 @@ export function SourceMark({
           : { color: "var(--muted-foreground)", backgroundColor: "var(--secondary)" }
       }
     >
-      {letters}
+      {letters.letters}
     </span>
   );
 }
@@ -177,7 +177,7 @@ export function ArtifactNote({
       className={`whitespace-nowrap text-xs font-normal ${className}`}
       style={{ color: hueStyles(identity.hue).color }}
     >
-      (artifact, {workIdentityLabel(item).toLowerCase()})
+      (artifact, {identity.label.toLowerCase()})
     </span>
   );
 }
