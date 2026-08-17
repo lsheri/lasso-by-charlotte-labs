@@ -167,6 +167,7 @@ export function WorkScopePicker({
                           />
                           <span className="min-w-0 leading-snug">
                             <span className="block break-words">{item.title}</span>
+                            <TypeBadge item={item} size="sm" className="mt-1 mr-1.5" />
                             <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
                               {formatDate(effectiveWorkDate(item))}
                             </span>
