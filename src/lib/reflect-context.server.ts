@@ -142,12 +142,24 @@ async function selectionContext(
   if (taskIds.length === 0) return none;
   const { data: tasks } = await supabase
     .from("tasks")
-    .select("id, engagement_id, engagements(id, title)")
+    .select(
+      "id, engagement_id, engagements(id, title, code, client_label, clients(id, name, quick_folder))",
+    )
     .in("id", taskIds);
   const first = (tasks ?? []).find((t) => t.engagements) as
-    { engagement_id: string; engagements: { id: string; title: string } } | undefined;
+    | {
+        engagement_id: string;
+        engagements: {
+          id: string;
+          title: string;
+          code: string;
+          client_label: string | null;
+          clients: { id: string; name: string; quick_folder: boolean } | null;
+        };
+      }
+    | undefined;
   if (!first) return none;
-  const engagement = { id: first.engagements.id, name: first.engagements.title };
+  const engagement = { id: first.engagements.id, name: engagementDisplayTitle(first.engagements) };
 
   const { data: siblingTasks } = await supabase
     .from("tasks")

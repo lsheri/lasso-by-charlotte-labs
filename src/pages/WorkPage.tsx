@@ -47,6 +47,7 @@ import { captureChannelOf, logV2 } from "@/lib/telemetry-v2";
 import { vendorLabel } from "@/lib/conversation-shared";
 import { engagementHue } from "@/lib/work-identity";
 import {
+import { engagementLabel } from "@/lib/clients";
   groupConversations,
   isConversationGroup,
   type ConversationGroup,
@@ -362,7 +363,7 @@ export function WorkPage() {
       const key = engagement?.id ?? "unfiled";
       const bucket = buckets.get(key) ?? {
         id: engagement?.id ?? null,
-        label: engagement ? `${engagement.code} · ${engagement.title}` : "Mapped elsewhere",
+        label: engagement ? engagementLabel(engagement) : "Mapped elsewhere",
         items: [],
       };
       bucket.items.push(item);

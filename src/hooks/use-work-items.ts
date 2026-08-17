@@ -26,7 +26,9 @@ export async function fetchWorkItems(): Promise<WorkItemsResult> {
   // show the work itself rather than blanking the page.
   const mapping = await supabase
     .from("work_item_tasks")
-    .select("work_item_id, task_id, tasks(id, name, engagement_id, engagements(id, code, title))")
+    .select(
+      "work_item_id, task_id, tasks(id, name, engagement_id, engagements(id, code, title, client_label, clients(id, name, quick_folder)))",
+    )
     .in(
       "work_item_id",
       items.map((i) => i.id),
