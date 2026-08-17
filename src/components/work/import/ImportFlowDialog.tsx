@@ -167,7 +167,7 @@ export function ImportFlowDialog({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-4xl">
+      <DialogContent className="max-h-[calc(90dvh-env(safe-area-inset-top))] overflow-y-auto sm:max-w-4xl">
         <DialogHeader>
           <DialogTitle className="page-title">
             {vendor ? `Import from ${VENDORS[vendor].label}` : "Bring in your AI history"}
