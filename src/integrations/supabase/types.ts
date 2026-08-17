@@ -140,6 +140,7 @@ export type Database = {
           cost_usd: number | null
           created_at: string
           error_class: string | null
+          handoffs: Json | null
           id: string
           idempotency_key: string | null
           items_read: number | null
@@ -162,6 +163,7 @@ export type Database = {
           cost_usd?: number | null
           created_at?: string
           error_class?: string | null
+          handoffs?: Json | null
           id?: string
           idempotency_key?: string | null
           items_read?: number | null
@@ -184,6 +186,7 @@ export type Database = {
           cost_usd?: number | null
           created_at?: string
           error_class?: string | null
+          handoffs?: Json | null
           id?: string
           idempotency_key?: string | null
           items_read?: number | null
