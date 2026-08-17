@@ -1,7 +1,7 @@
 import { CircleDashed, Lock } from "lucide-react";
 
 import { EngagementChip, TypeBadge, TypeIcon } from "@/components/work/TypeIcon";
-import { VendorMark } from "@/components/work/VendorMark";
+import { ArtifactNote, SourceMark, VendorMark } from "@/components/work/SourceMark";
 import { engagementHue, workIdentityLabel } from "@/lib/work-identity";
 import { effectiveWorkDate, formatDate, type WorkItemRow } from "@/lib/work-types";
 
@@ -103,11 +103,12 @@ export function WorkRow({
                 aria-label="Private"
               />
             ) : null}
+            <SourceMark item={item} />
             <p
               title={item.title}
               className="line-clamp-2 min-w-0 break-words text-sm font-medium text-foreground"
             >
-              {item.title}
+              {item.title} <ArtifactNote item={item} />
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-1.5">

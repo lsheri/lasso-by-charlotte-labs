@@ -11,7 +11,14 @@ export type EpisodeView = {
   status: string;
   opened_at: string;
   closed_at: string | null;
-  items: { work_item_id: string; item_role: string; title: string; type: string }[];
+  items: {
+    work_item_id: string;
+    item_role: string;
+    title: string;
+    type: string;
+    source: string;
+    source_vendor: string | null;
+  }[];
 };
 
 function emailOf(claims: unknown): string | null {
@@ -106,19 +113,26 @@ export const episodeForTask = createServerFn({ method: "POST" })
     if (!episode) return null;
     const { data: items } = await supabase
       .from("episode_items")
-      .select("work_item_id, item_role, work_items(title, type)")
+      .select("work_item_id, item_role, work_items(title, type, source, source_vendor)")
       .eq("episode_id", episode.id);
     return {
       ...(episode as Omit<EpisodeView, "items">),
       items: ((items ?? []) as unknown as {
         work_item_id: string;
         item_role: string;
-        work_items: { title: string; type: string } | null;
+        work_items: {
+          title: string;
+          type: string;
+          source: string;
+          source_vendor: string | null;
+        } | null;
       }[]).map((row) => ({
         work_item_id: row.work_item_id,
         item_role: row.item_role,
         title: row.work_items?.title ?? "Untitled",
         type: row.work_items?.type ?? "document",
+        source: row.work_items?.source ?? "manual",
+        source_vendor: row.work_items?.source_vendor ?? null,
       })),
     };
   });

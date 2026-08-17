@@ -1,3 +1,4 @@
+import { SourceMark } from "@/components/work/SourceMark";
 import { attachmentKindLabel, vendorLabel } from "@/lib/conversation-shared";
 import type { WorkItemRow } from "@/lib/work-types";
 
@@ -14,7 +15,8 @@ export function ConversationChips({ item }: { item: WorkItemRow }) {
         </span>
       ) : null}
       {vendor ? (
-        <span className="mt-1 inline-block rounded-full bg-accent-soft px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-accent-deep">
+        <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-accent-soft px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-accent-deep">
+          <SourceMark item={item} size={11} />
           {vendorLabel(vendor)}
         </span>
       ) : null}

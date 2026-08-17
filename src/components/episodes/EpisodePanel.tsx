@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { SourceMark } from "@/components/work/SourceMark";
 import {
   closeEpisode,
   episodeForTask,
@@ -112,6 +113,7 @@ export function EpisodePanel({
               <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
                 {ROLE_LABELS[item.item_role] ?? item.item_role}
               </span>
+              <SourceMark item={{ source: item.source, source_vendor: item.source_vendor }} />
               <span className="min-w-0 truncate text-foreground">{item.title}</span>
             </li>
           ))}

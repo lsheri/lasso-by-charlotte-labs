@@ -7,6 +7,7 @@ import type { EngagementSummary } from "@/hooks/use-engagements";
 import type { ContextScope } from "@/lib/reflect-shared";
 import { chipShape, itemsInScope, mappedItemsForEngagement } from "@/lib/reflect-scope-shape";
 import { effectiveWorkDate, formatDate, type WorkItemRow } from "@/lib/work-types";
+import { ArtifactNote, SourceMark } from "@/components/work/SourceMark";
 import { TypeBadge } from "@/components/work/TypeIcon";
 
 /** The scope as a plain sentence, never a count of tokens or a cost. */
@@ -167,7 +168,10 @@ export function WorkScopePicker({
                             onCheckedChange={() => toggle(item.id)}
                           />
                           <span className="min-w-0 leading-snug">
-                            <span className="block break-words">{item.title}</span>
+                            <span className="block break-words">
+                              <SourceMark item={item} className="mr-1.5" />
+                              {item.title} <ArtifactNote item={item} />
+                            </span>
                             <TypeBadge item={item} size="sm" className="mt-1 mr-1.5" />
                             <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
                               {formatDate(effectiveWorkDate(item))}
