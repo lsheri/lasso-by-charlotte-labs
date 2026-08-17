@@ -149,8 +149,10 @@ export function PeekPanel({
         </div>
         <div className="mt-2 flex items-start gap-2.5">
           <TypeIcon item={active} />
-          <h2 className="page-title min-w-0 break-words text-[19px] leading-snug">
-            {active.title}
+          <h2 className="page-title flex min-w-0 flex-wrap items-center gap-1.5 break-words text-[19px] leading-snug">
+            <SourceMark item={active} size={15} />
+            <span className="min-w-0 break-words">{active.title}</span>
+            <ArtifactNote item={active} />
           </h2>
         </div>
         {isBriefItem(active) ? (
@@ -176,6 +178,7 @@ export function PeekPanel({
                 }
               >
                 <TypeIcon item={item} size="sm" />
+                <SourceMark item={item} size={12} />
                 <span className="truncate">
                   {item.type === "ai_thread" ? "Transcript" : item.title}
                 </span>
