@@ -15,7 +15,7 @@ export function ThreadViewer({
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-3xl">
+      <DialogContent className="max-h-[calc(85dvh-env(safe-area-inset-top))] overflow-y-auto sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle className="page-title">{item?.title ?? "Thread"}</DialogTitle>
           {item ? (

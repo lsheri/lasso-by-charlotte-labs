@@ -1,3 +1,4 @@
+import { TypeBadge } from "@/components/work/TypeIcon";
 import { useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -167,7 +168,8 @@ export function SelectionTable({
                   />
                 </td>
                 <td className="px-3 py-2">
-                  <span className="text-foreground">{conv.title}</span>
+                  <span className="text-foreground">{conv.title}</span>{" "}
+                  <TypeBadge item={{ type: "ai_thread" }} size="sm" />
                   {conv.warnings.map((warning) => (
                     <span
                       key={warning}

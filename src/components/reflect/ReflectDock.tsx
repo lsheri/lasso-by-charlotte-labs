@@ -34,19 +34,9 @@ import { parseManifest, type ContextManifest } from "@/lib/context-manifest";
 import type { ContextScope } from "@/lib/reflect-shared";
 import type { AnalysisPreset } from "@/lib/analysis-presets";
 import type { WorkItemRow } from "@/lib/work-types";
+import { TypeBadge } from "@/components/work/TypeIcon";
 
 type MessageRow = { id: number; role: string; content: string; context_manifest: unknown };
-
-/** Plain type words for the selector, never internal enum names. */
-const TYPE_WORD: Record<string, string> = {
-  ai_thread: "conversation",
-  document: "document",
-  deck: "deck",
-  sheet: "sheet",
-  email: "email",
-  note: "note",
-  transcript: "transcript",
-};
 
 /**
  * Reflect, docked beside an engagement. Same machinery as /reflect, the only
@@ -316,7 +306,7 @@ export function ReflectDock({
       description="Reflect on this engagement"
     >
       <header className="shrink-0 border-b border-border px-4 pb-4 pt-[calc(1.5rem+env(safe-area-inset-top))] sm:px-6">
-        <p className="micro-label">Ask Lasso</p>
+        <p className="micro-label pr-12">Ask Lasso</p>
         <h2 className="page-title mt-1 break-words text-[19px] leading-snug">{engagementTitle}</h2>
         <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2">
           <span className="rounded-full bg-accent-soft px-3 py-1 font-mono text-[11px] uppercase tracking-[0.08em] text-accent-deep">
@@ -355,6 +345,19 @@ export function ReflectDock({
             {historyOpen ? "Hide earlier sessions" : "Earlier sessions"}
           </button>
         </div>
+        {draftPointed.length > 0 ? (
+          <div className="mt-2 flex flex-wrap items-center gap-1.5" data-testid="pointed-chips">
+            {draftPointed.map((item) => (
+              <span
+                key={item.id}
+                className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-border bg-secondary px-2 py-0.5 text-xs text-foreground"
+              >
+                <TypeBadge item={item} size="sm" />
+                <span className="truncate">{item.title}</span>
+              </span>
+            ))}
+          </div>
+        ) : null}
 
         {historyOpen ? (
           <div className="mt-3 max-h-48 space-y-1 overflow-y-auto rounded-[var(--radius-md)] border border-border bg-secondary/40 px-3 py-3">
@@ -403,9 +406,7 @@ export function ReflectDock({
                   />
                   <span className="min-w-0">
                     <span className="break-words">{item.title}</span>{" "}
-                    <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
-                      {TYPE_WORD[item.type] ?? item.type}
-                    </span>
+                    <TypeBadge item={item} size="sm" />
                   </span>
                 </label>
               ))
@@ -527,9 +528,7 @@ export function ReflectDock({
                 }`}
               >
                 <span className="break-words">{item.title}</span>{" "}
-                <span className="font-mono text-[10px] uppercase tracking-[0.08em]">
-                  {TYPE_WORD[item.type] ?? item.type}
-                </span>
+                <TypeBadge item={item} size="sm" />
               </button>
             ))}
           </div>

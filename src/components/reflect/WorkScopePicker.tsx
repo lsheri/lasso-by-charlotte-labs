@@ -7,6 +7,7 @@ import type { EngagementSummary } from "@/hooks/use-engagements";
 import type { ContextScope } from "@/lib/reflect-shared";
 import { chipShape, itemsInScope, mappedItemsForEngagement } from "@/lib/reflect-scope-shape";
 import { effectiveWorkDate, formatDate, type WorkItemRow } from "@/lib/work-types";
+import { TypeBadge } from "@/components/work/TypeIcon";
 
 /** The scope as a plain sentence, never a count of tokens or a cost. */
 export function scopeSentence(
@@ -167,6 +168,7 @@ export function WorkScopePicker({
                           />
                           <span className="min-w-0 leading-snug">
                             <span className="block break-words">{item.title}</span>
+                            <TypeBadge item={item} size="sm" className="mt-1 mr-1.5" />
                             <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
                               {formatDate(effectiveWorkDate(item))}
                             </span>

@@ -30,20 +30,43 @@ export function TypeIcon({ item, size = "md" }: { item: IdentityItem; size?: "sm
   );
 }
 
-/** Icon + name, for headers and dialogs where the label should be spelled out. */
-export function TypeChip({ item }: { item: IdentityItem }) {
+/**
+ * The one type badge used everywhere a work item's type is named: lists, peek
+ * headers, pickers, mention menus, import tables. One hue per type, icon plus
+ * word so the meaning never rests on colour alone.
+ */
+export function TypeBadge({
+  item,
+  size = "md",
+  className = "",
+}: {
+  item: IdentityItem;
+  size?: "sm" | "md";
+  className?: string;
+}) {
   const identity = workIdentity(item);
   const Icon = identity.icon;
   const styles = hueStyles(identity.hue);
+  const pad = size === "sm" ? "px-1.5 py-0.5 text-[9px]" : "px-2 py-0.5 text-[10px]";
+  const glyph = size === "sm" ? "h-2.5 w-2.5" : "h-3 w-3";
   return (
     <span
-      className="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em]"
-      style={{ backgroundColor: styles.background, color: styles.color }}
+      className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border font-mono font-medium uppercase tracking-[0.08em] ${pad} ${className}`}
+      style={{
+        backgroundColor: styles.background,
+        borderColor: styles.border,
+        color: styles.color,
+      }}
     >
-      <Icon className="h-3 w-3" aria-hidden />
+      <Icon className={`${glyph} shrink-0`} aria-hidden />
       {workIdentityLabel(item)}
     </span>
   );
+}
+
+/** Icon + name, for headers and dialogs where the label should be spelled out. */
+export function TypeChip({ item }: { item: IdentityItem }) {
+  return <TypeBadge item={item} />;
 }
 
 /** Where a mapped item lives, in that engagement's own colour. */

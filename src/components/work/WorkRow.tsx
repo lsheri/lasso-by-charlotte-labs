@@ -1,6 +1,6 @@
 import { CircleDashed, Lock } from "lucide-react";
 
-import { EngagementChip, TypeIcon } from "@/components/work/TypeIcon";
+import { EngagementChip, TypeBadge, TypeIcon } from "@/components/work/TypeIcon";
 import { VendorMark } from "@/components/work/VendorMark";
 import { engagementHue, workIdentityLabel } from "@/lib/work-identity";
 import { effectiveWorkDate, formatDate, type WorkItemRow } from "@/lib/work-types";
@@ -111,6 +111,7 @@ export function WorkRow({
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-1.5">
+            <TypeBadge item={item} className="mt-1" size={nested ? "sm" : "md"} />
             {item.content_fidelity === "summary" ? (
               <span className="mt-1 inline-block rounded-full border border-border bg-secondary px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
                 Summary
