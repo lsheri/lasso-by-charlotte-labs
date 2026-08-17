@@ -289,3 +289,25 @@ export function tailInstruction(kind: HandoffKind): string {
     "Introduce nothing in the block that your answer did not already say. If there is nothing to list, omit the fenced block entirely.",
   ].join("\n");
 }
+
+/** The verbatim spans inside one item, so they can face the same quote check. */
+export function quoteFields(kind: HandoffKind, fields: HandoffFields): string[] {
+  if (kind === "open_checks") return [(fields as OpenCheckItem).claim_quote];
+  if (kind === "departures") {
+    const f = fields as DepartureItem;
+    return [f.brief_quote, f.work_quote];
+  }
+  if (kind === "check_results") {
+    const q = (fields as CheckResultItem).evidence_quote;
+    return q ? [q] : [];
+  }
+  return [];
+}
+
+/** Content free bucket for telemetry. */
+export function handoffsBucket(n: number): "0" | "1-3" | "4-8" | "9+" {
+  if (n <= 0) return "0";
+  if (n <= 3) return "1-3";
+  if (n <= 8) return "4-8";
+  return "9+";
+}
