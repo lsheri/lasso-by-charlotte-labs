@@ -34,19 +34,9 @@ import { parseManifest, type ContextManifest } from "@/lib/context-manifest";
 import type { ContextScope } from "@/lib/reflect-shared";
 import type { AnalysisPreset } from "@/lib/analysis-presets";
 import type { WorkItemRow } from "@/lib/work-types";
+import { TypeBadge } from "@/components/work/TypeIcon";
 
 type MessageRow = { id: number; role: string; content: string; context_manifest: unknown };
-
-/** Plain type words for the selector, never internal enum names. */
-const TYPE_WORD: Record<string, string> = {
-  ai_thread: "conversation",
-  document: "document",
-  deck: "deck",
-  sheet: "sheet",
-  email: "email",
-  note: "note",
-  transcript: "transcript",
-};
 
 /**
  * Reflect, docked beside an engagement. Same machinery as /reflect, the only
