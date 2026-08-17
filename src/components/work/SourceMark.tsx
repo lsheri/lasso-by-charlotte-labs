@@ -10,9 +10,10 @@ import {
   siNotion,
 } from "simple-icons";
 
+import { useVendorVisible } from "@/hooks/use-vendor-display";
 import { vendorLabel } from "@/lib/conversation-shared";
 import { hueStyles, vendorHue, workIdentity, workIdentityLabel } from "@/lib/work-identity";
-import type { WorkItemRow } from "@/lib/work-types";
+import { sourceLabel, type WorkItemRow } from "@/lib/work-types";
 
 /**
  * The one place a work item's ORIGIN is drawn. Official brand marks, official
@@ -112,8 +113,10 @@ export function SourceMark({
   size?: number;
   className?: string;
 }) {
+  const visible = useVendorVisible();
   const key = sourceVendorKey(item);
-  if (!key) return null;
+  // Coaches in a vendor-neutral org do not get to read the brand off a logo.
+  if (!key || !visible) return null;
   const brand = sourceBrand(item);
   const label = brand?.title ?? vendorLabel(key);
 
@@ -174,6 +177,28 @@ export function ArtifactNote({
       style={{ color: hueStyles(identity.hue).color }}
     >
       (artifact, {workIdentityLabel(item).toLowerCase()})
+    </span>
+  );
+}
+
+/**
+ * Where a piece of work came from, said quietly in words. Muted, smaller than
+ * the title, and absent entirely when we do not actually know the source.
+ */
+export function VendorMark({ item }: { item: SourceItem }) {
+  const visible = useVendorVisible();
+  const vendor = item.source_vendor ?? null;
+  const label = vendor
+    ? visible
+      ? vendorLabel(vendor)
+      : "AI"
+    : item.source
+      ? sourceLabel(item.source)
+      : null;
+  if (!label || label === "mcp" || label === "manual") return null;
+  return (
+    <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+      {label}
     </span>
   );
 }
