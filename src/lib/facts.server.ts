@@ -431,6 +431,14 @@ export const DERIVED_FEATURES: {
     missingness_rule: "Unconfirmed drafts are excluded from handoff rates.",
   },
   {
+    feature_name: "analysis_handoff_confirmed",
+    definition:
+      "A draft item from an analysis that the owner confirmed into a destination they chose.",
+    eligible_evidence: ["analysis_runs", "one_on_one_notes", "decisions"],
+    missingness_rule:
+      "Drafts that were never acted on are absent, not negative, and are never counted as a rate.",
+  },
+  {
     feature_name: "outcome_declared",
     definition: "A human declared outcome on a closed episode, with its source of authority.",
     eligible_evidence: ["episode_outcomes"],
