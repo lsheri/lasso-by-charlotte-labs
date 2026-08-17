@@ -11,7 +11,7 @@ const LINKS = [
 export function PublicHeader({ current }: { current?: "/" | "/why" | "/trust" }) {
   return (
     <header className="border-b border-border">
-      <div className="mx-auto grid max-w-5xl grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-4 sm:px-6 md:px-10">
+      <div className="mx-auto grid max-w-5xl grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 pb-4 pt-[calc(1rem+env(safe-area-inset-top))] sm:px-6 md:px-10">
         <Link
           to="/"
           className="flex min-w-0 items-center gap-2 font-mono text-sm tracking-[0.24em] text-foreground"
