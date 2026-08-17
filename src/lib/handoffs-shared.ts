@@ -1,0 +1,267 @@
+/**
+ * STRUCTURED HANDOFFS.
+ *
+ * A deliverable-scoped analysis may end its answer with one fenced block that
+ * carries the checkable items it just made in prose. The block is stripped
+ * server side and never reaches a reader: the prose contract of every preset
+ * is unchanged, and the block is only a draft list the OWNER may confirm.
+ *
+ * Nothing here writes anywhere. Every item is a draft until the person taps.
+ */
+
+export const HANDOFF_SENTINEL = "LASSO_HANDOFFS_V1";
+
+/** The four handoff kinds, one per preset that emits them. */
+export const HANDOFF_KINDS = [
+  "open_checks",
+  "decision_candidates",
+  "departures",
+  "check_results",
+] as const;
+export type HandoffKind = (typeof HANDOFF_KINDS)[number];
+
+/**
+ * Only these four presets emit handoffs. Person-shaped presets (ai_fluency_4d,
+ * working_the_model) emit nothing, ever: nothing about a person flows anywhere.
+ * what_recurs emits nothing this pass and what_fed_this already owns its own
+ * confirm flow in the lineage drafter.
+ */
+export const HANDOFF_PRESETS: Record<string, HandoffKind> = {
+  verification: "open_checks",
+  decision_origin: "decision_candidates",
+  still_on_brief: "departures",
+  firm_checks: "check_results",
+};
+
+/** Presets that must never carry a handoff block, enforced server side. */
+export const PERSON_SHAPED_PRESETS = ["ai_fluency_4d", "working_the_model"] as const;
+export const NO_HANDOFF_PRESETS = [
+  ...PERSON_SHAPED_PRESETS,
+  "what_recurs",
+  "what_fed_this",
+] as const;
+
+export type HandoffState = "draft" | "confirmed" | "discarded";
+
+export type OpenCheckItem = {
+  claim_quote: string;
+  location: string;
+  verdict: "nothing_visible" | "contradicted";
+  suggested_check: string;
+};
+
+export type DecisionCandidateItem = {
+  call: string;
+  origin: string;
+  what_it_decided: string;
+  evidence_turn_id?: string;
+  deliverable_location?: string;
+};
+
+export type DepartureItem = {
+  class: "ADDED" | "DROPPED" | "CHANGED" | "REFRAMED";
+  brief_quote: string;
+  work_quote: string;
+  entered_at: string;
+  acknowledged: boolean;
+};
+
+export type CheckResultItem = {
+  check_id: string;
+  status: "addressed" | "partly" | "not_visible";
+  evidence_quote: string;
+};
+
+export type HandoffFields =
+  | OpenCheckItem
+  | DecisionCandidateItem
+  | DepartureItem
+  | CheckResultItem;
+
+export type HandoffItem = {
+  /** Server minted. A model supplied id would collide across runs. */
+  id: string;
+  state: HandoffState;
+  confirmed_at?: string;
+  discarded_at?: string;
+  fields: HandoffFields;
+};
+
+export type HandoffBlock = {
+  v: 1;
+  kind: HandoffKind;
+  items: HandoffItem[];
+};
+
+/** Item cap per run, so one analysis can never flood the destinations. */
+export const MAX_HANDOFF_ITEMS = 12;
+
+const MAX_FIELD_CHARS = 1200;
+
+function str(value: unknown, max = MAX_FIELD_CHARS): string | null {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  return trimmed.slice(0, max);
+}
+
+function oneOf<T extends string>(value: unknown, allowed: readonly T[]): T | null {
+  return typeof value === "string" && (allowed as readonly string[]).includes(value)
+    ? (value as T)
+    : null;
+}
+
+/**
+ * Per item validation. An item that does not validate is dropped; the rest are
+ * kept. Nothing half parsed is ever stored.
+ */
+function validateItem(kind: HandoffKind, raw: unknown): HandoffFields | null {
+  if (!raw || typeof raw !== "object") return null;
+  const row = raw as Record<string, unknown>;
+  if (kind === "open_checks") {
+    const claim_quote = str(row["claim_quote"]);
+    const location = str(row["location"], 200);
+    const verdict = oneOf(row["verdict"], ["nothing_visible", "contradicted"] as const);
+    const suggested_check = str(row["suggested_check"], 400);
+    if (!claim_quote || !location || !verdict || !suggested_check) return null;
+    return { claim_quote, location, verdict, suggested_check };
+  }
+  if (kind === "decision_candidates") {
+    const call = str(row["call"], 400);
+    const origin = str(row["origin"], 400);
+    const what_it_decided = str(row["what_it_decided"], 600);
+    if (!call || !origin || !what_it_decided) return null;
+    const evidence_turn_id = str(row["evidence_turn_id"], 120);
+    const deliverable_location = str(row["deliverable_location"], 200);
+    if (!evidence_turn_id && !deliverable_location) return null;
+    return {
+      call,
+      origin,
+      what_it_decided,
+      ...(evidence_turn_id ? { evidence_turn_id } : {}),
+      ...(deliverable_location ? { deliverable_location } : {}),
+    };
+  }
+  if (kind === "departures") {
+    const cls = oneOf(row["class"], ["ADDED", "DROPPED", "CHANGED", "REFRAMED"] as const);
+    const brief_quote = str(row["brief_quote"]);
+    const work_quote = str(row["work_quote"]);
+    const entered_at = str(row["entered_at"], 200);
+    if (!cls || !brief_quote || !work_quote || !entered_at) return null;
+    return {
+      class: cls,
+      brief_quote,
+      work_quote,
+      entered_at,
+      acknowledged: row["acknowledged"] === true,
+    };
+  }
+  const check_id = str(row["check_id"], 120);
+  const status = oneOf(row["status"], ["addressed", "partly", "not_visible"] as const);
+  const evidence_quote = str(row["evidence_quote"]);
+  if (!check_id || !status) return null;
+  return { check_id, status, evidence_quote: evidence_quote ?? "" };
+}
+
+/** Where the sentinel fence begins in a piece of text, or -1. */
+export function sentinelFenceStart(text: string): number {
+  const marker = text.indexOf(HANDOFF_SENTINEL);
+  if (marker === -1) return -1;
+  const fence = text.lastIndexOf("```", marker);
+  return fence === -1 ? -1 : fence;
+}
+
+export type StripResult = {
+  /** The prose the reader sees. Never contains the fence. */
+  prose: string;
+  /** Null when there was no block, or the block did not validate. */
+  block: Omit<HandoffBlock, "items"> & { items: HandoffFields[] } | null;
+  /** Why nothing was stored, for health logging. Content free. */
+  parse: "ok" | "none" | "malformed";
+};
+
+/**
+ * Strip and parse the fenced tail. The fence is only removed when it carries
+ * the sentinel AND parses AND at least one item validates. A fenced block that
+ * is part of the answer itself (quoted code, for instance) has no sentinel and
+ * is left exactly where it is.
+ */
+export function stripHandoffTail(text: string, kind: HandoffKind | null): StripResult {
+  const start = sentinelFenceStart(text);
+  if (start === -1) return { prose: text, block: null, parse: "none" };
+
+  const prose = text.slice(0, start).trimEnd();
+  const fenced = text.slice(start);
+  const body = fenced.replace(/^```[a-zA-Z]*\s*/, "").replace(/```\s*$/, "");
+  const jsonStart = body.indexOf("{");
+  if (!kind || jsonStart === -1) return { prose, block: null, parse: "malformed" };
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(body.slice(jsonStart));
+  } catch {
+    return { prose, block: null, parse: "malformed" };
+  }
+  const root = parsed as Record<string, unknown> | null;
+  if (!root || typeof root !== "object") return { prose, block: null, parse: "malformed" };
+  const rawItems = root[kind] ?? root["items"];
+  if (!Array.isArray(rawItems)) return { prose, block: null, parse: "malformed" };
+
+  const items = rawItems
+    .slice(0, MAX_HANDOFF_ITEMS)
+    .map((item) => validateItem(kind, item))
+    .filter((item): item is HandoffFields => item !== null);
+  if (items.length === 0) return { prose, block: null, parse: "malformed" };
+  return { prose, block: { v: 1, kind, items }, parse: "ok" };
+}
+
+/**
+ * The streaming holdback. Deltas are passed through until the sentinel fence
+ * can begin; from there the text is buffered. If the stream ends inside a
+ * fence that never validated, the buffer is flushed as prose, so a reader can
+ * never lose an answer to this feature.
+ */
+export function createHoldback(emit: (delta: string) => void): {
+  push: (delta: string) => void;
+  end: () => void;
+} {
+  let held = "";
+  let holding = false;
+  // The longest prefix of the sentinel that could still be completing.
+  const tailKeep = HANDOFF_SENTINEL.length + 8;
+
+  function couldStartFence(text: string): boolean {
+    const idx = text.lastIndexOf("```");
+    if (idx === -1) return false;
+    const after = text.slice(idx);
+    return after.length <= tailKeep && HANDOFF_SENTINEL.startsWith(after.replace(/^```[a-zA-Z]*\s*/, "").trim().slice(0, HANDOFF_SENTINEL.length))
+      ? true
+      : after.includes(HANDOFF_SENTINEL);
+  }
+
+  return {
+    push(delta: string) {
+      if (holding) {
+        held += delta;
+        return;
+      }
+      const combined = held + delta;
+      const fence = combined.lastIndexOf("```");
+      if (fence !== -1 && couldStartFence(combined.slice(fence))) {
+        emit(combined.slice(0, fence));
+        held = combined.slice(fence);
+        holding = combined.slice(fence).includes(HANDOFF_SENTINEL);
+        return;
+      }
+      emit(combined);
+      held = "";
+    },
+    end() {
+      if (!held) return;
+      // A held buffer that never became a valid sentinel block is the answer.
+      if (!held.includes(HANDOFF_SENTINEL)) emit(held);
+      held = "";
+      holding = false;
+    },
+  };
+}
