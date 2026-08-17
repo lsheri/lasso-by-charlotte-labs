@@ -225,6 +225,8 @@ export function AiRecordPage() {
                       }}
                       readsDetail="every piece of work mapped into this engagement, oldest first"
                       running={analyses.running}
+                      orgId={profile?.org_id}
+                      profileId={profile?.id}
                       onRun={(preset) =>
                         void analyses.runPreset(
                           preset,
