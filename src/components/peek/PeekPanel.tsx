@@ -11,10 +11,13 @@ import { VersionHistory } from "@/components/peek/VersionHistory";
 import { WhatFedThis } from "@/components/peek/WhatFedThis";
 import { DraftDecisionsButton } from "@/components/decisions/DraftDecisionsButton";
 import { MarkBriefDialog } from "@/components/work/MarkBriefDialog";
+import { DeliverableKindSelect } from "@/components/work/DeliverableKindSelect";
 import { ArtifactNote, SourceMark } from "@/components/work/SourceMark";
 import { TypeChip, TypeIcon } from "@/components/work/TypeIcon";
+import { setDeliverableKind, useInvalidateWorkItems } from "@/hooks/use-deliverable-kind";
 import { isBriefItem } from "@/lib/brief-shared";
 import { vendorLabel } from "@/lib/conversation-shared";
+import { deliverableKindOf, type DeliverableKind } from "@/lib/deliverable-kinds";
 import { isDeliverableType } from "@/lib/lineage-shared";
 import { peekFormat } from "@/lib/peek-format";
 import { getWorkFileUrl } from "@/lib/work-files.functions";
@@ -104,6 +107,12 @@ export function PeekPanel({
   const items = entry ? entryItems(entry) : [];
   const [tab, setTab] = useState(0);
   const [briefOpen, setBriefOpen] = useState(false);
+  const invalidateWork = useInvalidateWorkItems();
+  const [kindDraft, setKindDraft] = useState<DeliverableKind | null>(null);
+
+  useEffect(() => {
+    setKindDraft(null);
+  }, [entry, focusId]);
 
   useEffect(() => {
     if (!entry) return;
@@ -164,6 +173,22 @@ export function PeekPanel({
         <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
           {sourceLabel(active.source)} · {formatDate(effectiveWorkDate(active))}
         </p>
+
+        {canEdit && isDeliverableType(active.type) ? (
+          <div className="mt-3">
+            <DeliverableKindSelect
+              id={`peek-kind-${active.id}`}
+              label="Kind of deliverable"
+              value={kindDraft ?? deliverableKindOf(active.meta)}
+              onChange={(next) => {
+                setKindDraft(next);
+                void setDeliverableKind(active.id, next)
+                  .then(() => invalidateWork())
+                  .catch((error: unknown) => toast.error((error as Error).message));
+              }}
+            />
+          </div>
+        ) : null}
 
         {items.length > 1 ? (
           <div className="-mb-4 mt-3 flex gap-1 overflow-x-auto">

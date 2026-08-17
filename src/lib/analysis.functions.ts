@@ -136,6 +136,7 @@ export const startAnalysis = createServerFn({ method: "POST" })
         dims: {
           preset: preset.id,
           scope_type: preset.scope,
+          deliverable_kind: target.deliverableKind ?? "unset",
           ...(data.confirm_step === "shown" ? { confirm_step: "shown" } : {}),
         },
       });
@@ -237,6 +238,7 @@ export const startAnalysis = createServerFn({ method: "POST" })
         props: {
           preset: presetId,
           scope: scopeType,
+          deliverable_kind: target.deliverableKind ?? "unset",
           ...(data.confirm_step === "shown" ? { confirm_step: "shown" as const } : {}),
         },
         profileId: profile.id,
@@ -431,6 +433,12 @@ export const startAnalysis = createServerFn({ method: "POST" })
         firmCheckCount = checks.length;
         checksBlock = renderChecksBlock(checks);
       }
+      // The owner's own label for the artifact, one line, prompts stay generic.
+      const { deliverableKindLabel } = await import("./deliverable-kinds");
+      const kindLine =
+        preset.scope === "deliverable" && target.deliverableKind
+          ? `\n\nThe deliverable is a ${deliverableKindLabel(target.deliverableKind)}.`
+          : "";
       const conversation = [
         { role: "system" as const, content: REFLECT_SYSTEM_PROMPT },
         {
@@ -443,7 +451,7 @@ export const startAnalysis = createServerFn({ method: "POST" })
             preset.scope === "thread"
               ? "THE CONVERSATION UNDER ANALYSIS"
               : "THE WORK UNDER ANALYSIS"
-          }:\n\n${assembled.context}`,
+          }:\n\n${assembled.context}${kindLine}`,
         },
         { role: "user" as const, content: preset.openingMessage },
       ];
