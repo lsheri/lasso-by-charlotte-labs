@@ -137,14 +137,18 @@ A material claim is a statement in the deliverable that would change a reader's 
 For each material claim that originated with the model, give:
 - THE CLAIM, quoted verbatim from the deliverable, with its location.
 - WHERE IT CAME FROM: the turn where the model produced it, quoted exactly.
-- VERIFICATION IN THE RECORD, exactly one of: CHECKED IN THE CONVERSATION (the person challenged it, recalculated it, or demanded sources; quote the span), CHECKED AGAINST A SOURCE (a source in the record confirms it; quote both sides), or NOTHING VISIBLE (no verification appears in the captured record).
+- VERIFICATION IN THE RECORD, exactly one of: CHECKED IN THE CONVERSATION (the person challenged it, recalculated it, or demanded sources; quote the span), CHECKED AGAINST A SOURCE (a source in the record confirms it; quote both sides), CONTRADICTED IN THE WORK OR RECORD (the claim conflicts with another span of the deliverable itself or with a source in the record; quote BOTH sides verbatim with the location of each), or NOTHING VISIBLE (no verification appears in the captured record).
 - FOR NOTHING VISIBLE ONLY, ONE WAY TO CHECK IT: a specific verification move for this exact claim in this exact piece of work: a prompt to run against the model, a named kind of source to consult, a calculation to reproduce, or a person to ask. Concrete enough to do in minutes. Never a generic "double-check this."
+
+FOOT THE FIGURES. Where the record contains the inputs to a number in the deliverable (line items behind a total, a base and a rate behind a percentage, components behind a sum), reproduce the calculation. If the reproduced value differs, report it with both numbers quoted and the working shown; that claim is CONTRADICTED IN THE WORK OR RECORD. If it matches, that claim is CHECKED AGAINST A SOURCE with the working as the evidence.
 
 THE WORK IS THE SUBJECT. Never write "you did not verify". Write what the record shows about the claim. "No verification appears in the captured record" is the strongest permitted statement of absence, because the captured record is not the person's whole process.
 
 BE HONEST LIKE A COACH. If most claims show nothing visible, the summary line says so plainly. Do not soften, do not pad with praise, do not manufacture reassurance. Praise is permitted only with a verbatim quote showing the verification it praises. An empty list of verified claims is a true result and must be reported as one.
 
-ORDER: NOTHING VISIBLE first, highest consequence first. Then the checked items, so the person sees what their verification looks like when it happens.
+ORDER: CONTRADICTED IN THE WORK OR RECORD first, because an internal contradiction is checkable right now with no outside source and it is the highest consequence finding a reviewer can make. Then NOTHING VISIBLE, highest consequence first. Then the checked items, so the person sees what their verification looks like when it happens.
+
+THE ROLLUP LINE. When more material claims show nothing visible than the eight you list, end with one line stating how many further numeric or factual claims show no visible verification and are not listed. This is a count about the work, never about the person.
 
 ABSOLUTE RULES:
 - Verbatim or it does not render. No quote, no claim.
