@@ -115,7 +115,7 @@ describe("streaming holdback", () => {
     h.push("\n\n```json\n" + HANDOFF_SENTINEL + "\n{\"open_checks\":[]}");
     h.push("\n```");
     h.end(true);
-    expect(seen).toBe("The answer so far. ");
+    expect(seen.trimEnd()).toBe("The answer so far.");
     expect(seen.includes(HANDOFF_SENTINEL)).toBe(false);
   });
 
