@@ -8,6 +8,7 @@ import { Suggested, SuggestDot } from "@/components/common/Suggested";
 import { MarkdownMessage } from "@/components/markdown/MarkdownMessage";
 import { SlideOver } from "@/components/peek/SlideOver";
 import { AnalysisInfoPanel } from "@/components/reflect/AnalysisInfoPanel";
+import { AnalysisConfirm, type AnalysisConfirmRequest } from "@/components/reflect/AnalysisConfirm";
 import { ContextAudit, ThinkingTrail } from "@/components/reflect/ContextTrail";
 import { FindingLabel } from "@/components/reflect/FindingLabel";
 import { Button } from "@/components/ui/button";
@@ -73,6 +74,7 @@ export function AnalysisLens({
   const [draft, setDraft] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [confirming, setConfirming] = useState<AnalysisConfirmRequest | null>(null);
   const started = useRef<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   // Firm checks apply org wide, per engagement, or per person. The server
@@ -126,6 +128,7 @@ export function AnalysisLens({
       const result = await run({
         data: {
           preset_id: preset.id,
+          confirm_step: "shown" as const,
           ...(target.kind === "engagement"
             ? { engagement_id: target.id }
             : { work_item_id: target.id }),
@@ -148,11 +151,15 @@ export function AnalysisLens({
     }
   }
 
-  // One run per opening when a preset was chosen from the row it opened from.
+  // One confirm step per opening when a preset was chosen from the row it
+  // opened from. Nothing runs until the person confirms.
   useEffect(() => {
     if (!open || started.current || !initialPreset) return;
     const preset = presets.find((p) => p.id === initialPreset);
-    if (preset) void runPreset(preset);
+    if (preset) {
+      started.current = preset.id;
+      setConfirming({ preset, target });
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
@@ -198,6 +205,17 @@ export function AnalysisLens({
       title={active ? active.label : "Analyse this work"}
       description="Observations over your own work"
     >
+      <AnalysisConfirm
+        request={confirming}
+        orgId={orgId}
+        profileId={profileId}
+        onCancel={() => setConfirming(null)}
+        onConfirm={() => {
+          const preset = confirming?.preset;
+          setConfirming(null);
+          if (preset) void runPreset(preset);
+        }}
+      />
       <header className="shrink-0 border-b border-border px-6 pb-4 pt-6">
         <p className="micro-label">{active ? active.label : "Analyse this work"}</p>
         <h2 className="page-title mt-1 break-words text-[19px] leading-snug">{target.title}</h2>
@@ -285,7 +303,7 @@ export function AnalysisLens({
                     title={
                       noChecks ? NO_FIRM_CHECKS_LINE : blocked ? NOT_ENOUGH_WORK_LINE : undefined
                     }
-                    onClick={() => void runPreset(preset)}
+                    onClick={() => setConfirming({ preset, target })}
                     className={`rounded-full px-3 py-1 text-xs font-medium transition-opacity hover:opacity-85 disabled:opacity-50 ${
                       active?.id === preset.id
                         ? "bg-ember text-ember-foreground"
