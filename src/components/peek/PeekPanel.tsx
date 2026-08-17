@@ -11,6 +11,7 @@ import { VersionHistory } from "@/components/peek/VersionHistory";
 import { WhatFedThis } from "@/components/peek/WhatFedThis";
 import { DraftDecisionsButton } from "@/components/decisions/DraftDecisionsButton";
 import { MarkBriefDialog } from "@/components/work/MarkBriefDialog";
+import { ArtifactNote, SourceMark } from "@/components/work/SourceMark";
 import { TypeChip, TypeIcon } from "@/components/work/TypeIcon";
 import { isBriefItem } from "@/lib/brief-shared";
 import { vendorLabel } from "@/lib/conversation-shared";

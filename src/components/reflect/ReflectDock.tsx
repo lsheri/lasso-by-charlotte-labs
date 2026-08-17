@@ -34,6 +34,7 @@ import { parseManifest, type ContextManifest } from "@/lib/context-manifest";
 import type { ContextScope } from "@/lib/reflect-shared";
 import type { AnalysisPreset } from "@/lib/analysis-presets";
 import type { WorkItemRow } from "@/lib/work-types";
+import { ArtifactNote, SourceMark } from "@/components/work/SourceMark";
 import { TypeBadge } from "@/components/work/TypeIcon";
 
 type MessageRow = { id: number; role: string; content: string; context_manifest: unknown };
@@ -352,6 +353,7 @@ export function ReflectDock({
                 key={item.id}
                 className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-border bg-secondary px-2 py-0.5 text-xs text-foreground"
               >
+                <SourceMark item={item} size={12} />
                 <TypeBadge item={item} size="sm" />
                 <span className="truncate">{item.title}</span>
               </span>
@@ -405,7 +407,9 @@ export function ReflectDock({
                     }
                   />
                   <span className="min-w-0">
+                    <SourceMark item={item} className="mr-1.5" />
                     <span className="break-words">{item.title}</span>{" "}
+                    <ArtifactNote item={item} />{" "}
                     <TypeBadge item={item} size="sm" />
                   </span>
                 </label>
@@ -527,7 +531,9 @@ export function ReflectDock({
                   index === mentionIndex ? "bg-secondary text-foreground" : "text-muted-foreground"
                 }`}
               >
+                <SourceMark item={item} className="mr-1.5" />
                 <span className="break-words">{item.title}</span>{" "}
+                <ArtifactNote item={item} />{" "}
                 <TypeBadge item={item} size="sm" />
               </button>
             ))}
