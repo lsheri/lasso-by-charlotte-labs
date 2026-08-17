@@ -10,8 +10,8 @@ import {
 } from "@/lib/attachment-guard";
 import { workTypeForFile } from "@/lib/work-types";
 import { recordEvent } from "@/lib/telemetry.server";
-import {
 import { clientDisplayName, engagementDisplayTitle, isQuickFolder } from "@/lib/clients";
+import {
   ATTACHMENT_KINDS,
   CONVERSATION_VENDORS,
   attachmentBucket,
