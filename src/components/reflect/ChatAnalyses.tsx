@@ -232,6 +232,7 @@ export function useChatAnalyses(profileId: string | undefined, orgId: string | u
       const result = await run({
         data: {
           preset_id: preset.id,
+          confirm_step: "shown" as const,
           ...(target.kind === "engagement"
             ? { engagement_id: target.id }
             : { work_item_id: target.id }),

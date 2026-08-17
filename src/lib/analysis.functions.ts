@@ -234,7 +234,11 @@ export const startAnalysis = createServerFn({ method: "POST" })
       const { recordEventV2 } = await import("./telemetry-v2.server");
       await recordEventV2(supabase, userId, {
         eventName: "analysis.started",
-        props: { preset: presetId, scope: scopeType },
+        props: {
+          preset: presetId,
+          scope: scopeType,
+          ...(data.confirm_step === "shown" ? { confirm_step: "shown" as const } : {}),
+        },
         profileId: profile.id,
       });
     }

@@ -126,7 +126,9 @@ const SCHEMAS = {
     .strict(),
   "question.refined": z.object({ question_chars: count }).strict(),
   "question.result_used": z.object({ surface: term }).strict(),
-  "analysis.started": z.object({ preset: term, scope: term }).strict(),
+  "analysis.started": z
+    .object({ preset: term, scope: term, confirm_step: term.optional() })
+    .strict(),
   // scope travels with the completion so a finding can be read by scope, and
   // the failure carries the reason class the analysis path actually emits.
   "analysis.completed": z
