@@ -52,7 +52,8 @@ const LETTERMARKS: Record<string, string> = {
   microsoft: "MS",
 };
 
-type SourceItem = Pick<WorkItemRow, "source"> & {
+type SourceItem = {
+  source?: WorkItemRow["source"] | undefined;
   source_vendor?: WorkItemRow["source_vendor"];
   source_meta?: WorkItemRow["source_meta"];
   meta?: WorkItemRow["meta"];

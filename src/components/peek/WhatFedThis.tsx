@@ -8,6 +8,7 @@ import { toast } from "sonner";
 
 import { SuggestDot } from "@/components/common/Suggested";
 import { Button } from "@/components/ui/button";
+import { ArtifactNote, SourceMark } from "@/components/work/SourceMark";
 import { ThreadViewerById } from "@/components/work/ThreadViewerById";
 import { useProfile } from "@/hooks/use-profile";
 import { vendorLabel } from "@/lib/conversation-shared";
@@ -66,9 +67,16 @@ function ContributorRow({
           <button
             type="button"
             onClick={onOpen}
-            className="block max-w-full truncate text-left text-sm font-medium text-foreground hover:underline"
+            className="flex max-w-full items-center gap-1.5 text-left text-sm font-medium text-foreground hover:underline"
           >
-            {link.item.title}
+            <SourceMark item={{ source_vendor: link.item.source_vendor }} />
+            <span className="min-w-0 truncate">{link.item.title}</span>
+            <ArtifactNote
+              item={{
+                type: link.item.type as WorkType,
+                source_meta: link.item.kind ? { kind: link.item.kind, role: "attachment" } : null,
+              }}
+            />
           </button>
           <p className="mt-0.5 flex flex-wrap items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
             {isDraft ? <SuggestDot /> : null}

@@ -1,6 +1,7 @@
 import { ChevronRight } from "lucide-react";
 import { useState } from "react";
 
+import { SourceMark } from "@/components/work/SourceMark";
 import { ThreadViewerById } from "@/components/work/ThreadViewerById";
 import { vendorLabel } from "@/lib/conversation-shared";
 import { SOURCE_GROUPS, type ContextSource } from "@/lib/reflect-shared";
@@ -21,6 +22,7 @@ function SourceRow({ source, onOpen }: { source: ContextSource; onOpen: () => vo
       >
         <Icon className="h-3 w-3" aria-hidden />
       </span>
+      <SourceMark item={{ source_vendor: source.source_vendor }} size={12} />
       <button
         type="button"
         onClick={onOpen}

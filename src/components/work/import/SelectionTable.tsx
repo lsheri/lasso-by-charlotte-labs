@@ -1,3 +1,4 @@
+import { SourceMark } from "@/components/work/SourceMark";
 import { TypeBadge } from "@/components/work/TypeIcon";
 import { useMemo, useState } from "react";
 
@@ -6,6 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { ParsedConversation } from "@/lib/import-parsers";
+import type { ImportVendor } from "@/lib/import-vendors";
 
 function dayOf(iso: string | null): string {
   return iso ? iso.slice(0, 10) : "";
@@ -22,10 +24,13 @@ export function SelectionTable({
   conversations,
   selected,
   onChange,
+  vendor,
 }: {
   conversations: ParsedConversation[];
   selected: Set<string>;
   onChange: (next: Set<string>) => void;
+  /** The tool this export came from, so each row can wear its logo. */
+  vendor?: ImportVendor | undefined;
 }) {
   const [search, setSearch] = useState("");
   const [from, setFrom] = useState("");
@@ -168,6 +173,7 @@ export function SelectionTable({
                   />
                 </td>
                 <td className="px-3 py-2">
+                  <SourceMark item={{ source_vendor: vendor ?? null }} className="mr-1.5" />
                   <span className="text-foreground">{conv.title}</span>{" "}
                   <TypeBadge item={{ type: "ai_thread" }} size="sm" />
                   {conv.warnings.map((warning) => (

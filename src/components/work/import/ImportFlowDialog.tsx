@@ -284,6 +284,7 @@ export function ImportFlowDialog({
             ) : null}
 
             <SelectionTable
+              vendor={vendor}
               conversations={conversations}
               selected={selected}
               onChange={setSelected}
