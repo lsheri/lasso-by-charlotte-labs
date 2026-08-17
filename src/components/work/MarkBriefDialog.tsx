@@ -17,6 +17,7 @@ import { briefScopeOf, type BriefScope } from "@/lib/brief-shared";
 import { logEvent } from "@/lib/telemetry";
 import { logV2 } from "@/lib/telemetry-v2";
 import type { WorkItemRow } from "@/lib/work-types";
+import { engagementLabel } from "@/lib/clients";
 
 type TaskRow = { id: string; name: string; engagement_id: string };
 
@@ -106,7 +107,7 @@ export function MarkBriefDialog({
             return (
               <div key={engagement.id} className="space-y-1">
                 <p className="micro-label">
-                  {engagement.code} · {engagement.title}
+                  {engagementLabel(engagement)}
                 </p>
                 <ChoiceRow
                   label="The whole engagement"

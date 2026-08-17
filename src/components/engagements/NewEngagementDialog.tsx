@@ -2,6 +2,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useState, type ReactNode } from "react";
 
+import { ClientPicker } from "@/components/engagements/ClientPicker";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -13,8 +14,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { createQuickFolder, useInvalidateClients } from "@/hooks/use-clients";
 import { useProfile } from "@/hooks/use-profile";
 import { supabase } from "@/integrations/supabase/client";
+import { logEvent } from "@/lib/telemetry";
+
+type Mode = "choose" | "engagement" | "folder";
 
 export function NewEngagementDialog({
   trigger,
@@ -25,18 +30,41 @@ export function NewEngagementDialog({
 }) {
   const { data: profile } = useProfile();
   const queryClient = useQueryClient();
+  const invalidateClients = useInvalidateClients();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const [mode, setMode] = useState<Mode>("choose");
   const [code, setCode] = useState("");
   const [title, setTitle] = useState("");
-  const [clientLabel, setClientLabel] = useState("");
+  const [clientId, setClientId] = useState<string | null>(null);
   const [brief, setBrief] = useState("");
+  const [folderName, setFolderName] = useState("");
+  const [confirmNoBrief, setConfirmNoBrief] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  function reset() {
+    setMode("choose");
+    setCode("");
+    setTitle("");
+    setClientId(null);
+    setBrief("");
+    setFolderName("");
+    setConfirmNoBrief(false);
+    setError(null);
+  }
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     if (!profile) return;
+
+    // Ask twice, never block. The first submit with an empty brief surfaces one
+    // honest sentence about what stays unanswerable without it.
+    if (!brief.trim() && !confirmNoBrief) {
+      setConfirmNoBrief(true);
+      return;
+    }
+
     setPending(true);
     setError(null);
 
@@ -50,7 +78,7 @@ export function NewEngagementDialog({
       org_id: profile.org_id,
       code: code.trim(),
       title: title.trim(),
-      client_label: clientLabel.trim() || null,
+      client_id: clientId,
       brief: brief.trim() || null,
     });
 
@@ -71,78 +99,187 @@ export function NewEngagementDialog({
       return;
     }
 
+    logEvent("engagement.updated", profile.org_id, {
+      created: "true",
+      brief_skipped: brief.trim() ? "false" : "true",
+      has_client: clientId ? "true" : "false",
+    });
+
     await queryClient.invalidateQueries({ queryKey: ["engagements"] });
     setPending(false);
     setOpen(false);
-    setCode("");
-    setTitle("");
-    setClientLabel("");
-    setBrief("");
+    reset();
     onDone?.();
     navigate({ to: "/engagements/$id", params: { id: engagementId } });
   }
 
+  async function handleFolder(event: React.FormEvent) {
+    event.preventDefault();
+    if (!profile || !folderName.trim()) return;
+    setPending(true);
+    setError(null);
+    try {
+      const { engagementId } = await createQuickFolder({
+        orgId: profile.org_id,
+        profileId: profile.id,
+        name: folderName.trim(),
+      });
+      logEvent("engagement.updated", profile.org_id, {
+        created: "true",
+        quick_folder: "true",
+        brief_skipped: "true",
+      });
+      invalidateClients();
+      await queryClient.invalidateQueries({ queryKey: ["engagements"] });
+      setOpen(false);
+      reset();
+      onDone?.();
+      navigate({ to: "/engagements/$id", params: { id: engagementId } });
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setPending(false);
+    }
+  }
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        if (!next) reset();
+      }}
+    >
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="page-title">New engagement</DialogTitle>
+          <DialogTitle className="page-title">
+            {mode === "folder" ? "New quick folder" : "New engagement"}
+          </DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-3 gap-3">
+
+        {mode === "choose" ? (
+          <div className="space-y-3">
+            <button
+              type="button"
+              onClick={() => setMode("engagement")}
+              className="w-full rounded-[var(--radius)] border border-border bg-card px-4 py-3 text-left shadow-card transition-colors hover:border-accent-deep"
+            >
+              <p className="text-sm font-medium text-foreground">Full engagement</p>
+              <p className="mt-0.5 text-sm text-muted-foreground">
+                A code, a client, a brief, and workstreams underneath it.
+              </p>
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode("folder")}
+              className="w-full rounded-[var(--radius)] border border-border bg-card px-4 py-3 text-left shadow-card transition-colors hover:border-accent-deep"
+            >
+              <p className="text-sm font-medium text-foreground">Quick folder</p>
+              <p className="mt-0.5 text-sm text-muted-foreground">
+                A simple place to keep and analyze work for one client. You can turn it into a full
+                engagement later.
+              </p>
+            </button>
+          </div>
+        ) : null}
+
+        {mode === "folder" ? (
+          <form onSubmit={handleFolder} className="space-y-4">
             <div className="space-y-1.5">
-              <Label htmlFor="eng-code" className="micro-label">
-                Code
+              <Label htmlFor="folder-name" className="micro-label">
+                Client or folder name
               </Label>
               <Input
-                id="eng-code"
+                id="folder-name"
                 required
-                value={code}
-                onChange={(e) => setCode(e.target.value)}
-                className="font-mono"
-                placeholder="ACME-1"
+                autoFocus
+                value={folderName}
+                onChange={(e) => setFolderName(e.target.value)}
+                placeholder="Northwind"
               />
             </div>
-            <div className="col-span-2 space-y-1.5">
-              <Label htmlFor="eng-title" className="micro-label">
-                Title
-              </Label>
-              <Input
-                id="eng-title"
-                required
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Growth strategy refresh"
-              />
+            {error ? <p className="text-sm text-destructive">{error}</p> : null}
+            <Button type="submit" className="w-full" disabled={pending}>
+              {pending ? "Creating…" : "Create folder"}
+            </Button>
+          </form>
+        ) : null}
+
+        {mode === "engagement" ? (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-3 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="eng-code" className="micro-label">
+                  Code
+                </Label>
+                <Input
+                  id="eng-code"
+                  required
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
+                  className="font-mono"
+                  placeholder="ACME-1"
+                />
+              </div>
+              <div className="col-span-2 space-y-1.5">
+                <Label htmlFor="eng-title" className="micro-label">
+                  Title
+                </Label>
+                <Input
+                  id="eng-title"
+                  required
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Growth strategy refresh"
+                />
+              </div>
             </div>
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="eng-client" className="micro-label">
-              Client label (optional)
-            </Label>
-            <Input
+
+            <ClientPicker
+              orgId={profile?.org_id}
+              value={clientId}
+              onChange={setClientId}
               id="eng-client"
-              value={clientLabel}
-              onChange={(e) => setClientLabel(e.target.value)}
             />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="eng-brief" className="micro-label">
-              Brief (optional)
-            </Label>
-            <Textarea
-              id="eng-brief"
-              rows={3}
-              value={brief}
-              onChange={(e) => setBrief(e.target.value)}
-            />
-          </div>
-          {error ? <p className="text-sm text-destructive">{error}</p> : null}
-          <Button type="submit" className="w-full" disabled={pending}>
-            {pending ? "Creating…" : "Create engagement"}
-          </Button>
-        </form>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="eng-brief" className="micro-label">
+                Brief (optional)
+              </Label>
+              <Textarea
+                id="eng-brief"
+                rows={3}
+                value={brief}
+                onChange={(e) => {
+                  setBrief(e.target.value);
+                  setConfirmNoBrief(false);
+                }}
+              />
+              {!brief.trim() ? (
+                <p className="text-xs text-muted-foreground">
+                  A brief is what the work is measured against. A sentence is enough.
+                </p>
+              ) : null}
+            </div>
+
+            {confirmNoBrief && !brief.trim() ? (
+              <p className="rounded-[var(--radius)] border border-border bg-secondary/40 px-3 py-2 text-sm text-foreground">
+                Create without a brief? Drift analysis and Firm checks will say no brief is in the
+                record until one exists.
+              </p>
+            ) : null}
+
+            {error ? <p className="text-sm text-destructive">{error}</p> : null}
+            <Button type="submit" className="w-full" disabled={pending}>
+              {pending
+                ? "Creating…"
+                : confirmNoBrief && !brief.trim()
+                  ? "Create without a brief"
+                  : "Create engagement"}
+            </Button>
+          </form>
+        ) : null}
       </DialogContent>
     </Dialog>
   );

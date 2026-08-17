@@ -4,6 +4,7 @@ import type { Database } from "@/integrations/supabase/types";
 import { deliverableKindOf, type DeliverableKind } from "@/lib/deliverable-kinds";
 import { RELATION_LABEL, type LineageRelation } from "@/lib/lineage-shared";
 import type { ContextScope } from "@/lib/reflect-shared";
+import { engagementDisplayTitle } from "@/lib/clients";
 
 type Db = SupabaseClient<Database>;
 
@@ -72,14 +73,14 @@ export async function resolveAnalysisTarget(
     if (!args.engagementId) throw new Error("Nothing to analyse.");
     const { data: engagement } = await supabase
       .from("engagements")
-      .select("id, title")
+      .select("id, title, client_label, code, clients(id, name, quick_folder)")
       .eq("id", args.engagementId)
       .maybeSingle();
     if (!engagement) throw new Error("That engagement is gone.");
     const ids = await engagementItemIds(supabase, args.profileId, engagement.id);
     return {
       ownerId: args.profileId,
-      title: engagement.title,
+      title: engagementDisplayTitle(engagement as never),
       scopeId: engagement.id,
       scopeType: "engagement",
       scope: { mode: "engagements", ids: [engagement.id] },

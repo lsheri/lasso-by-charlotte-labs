@@ -87,7 +87,7 @@ export type AnalysisPresetId = (typeof ANALYSIS_PRESET_IDS)[number];
 const FLUENCY_PROMPT = `You are running the AI Fluency lens over ONE of this person's own AI conversations. Structure your response on the four Ds:
 
 DELEGATION: what they chose to hand to the AI and what they kept for themselves, and whether that split served the work.
-DESCRIPTION: how clearly they framed the task, what context they supplied or withheld, and how they iterated the prompt. When a brief is present, judge how they framed the task against what the brief actually asked for: what the brief asked for and they carried into the framing, and what the brief asked for and they left out.
+DESCRIPTION: how clearly they framed the ask, what context they supplied or withheld, and how they iterated the prompt. When a brief is present, judge how they framed the ask against what the brief actually asked for: what the brief asked for and they carried into the framing, and what the brief asked for and they left out.
 DISCERNMENT: how critically they read what came back, what they pushed back on, and anything they accepted too readily.
 DILIGENCE: verification, sourcing, and whether the output was checked before it was used.
 
@@ -271,7 +271,7 @@ export const ANALYSIS_PRESETS: AnalysisPreset[] = [
       reads: (detail) => detail,
       looksFor: [
         "Delegation: what you handed over and what you kept",
-        "Description: how the task was framed and iterated",
+        "Description: how the ask was framed and iterated",
         "Discernment: how critically the answers were read",
         "Diligence: verification and sourcing before use",
       ],

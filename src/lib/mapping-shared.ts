@@ -6,7 +6,8 @@ export type MappingSuggestion = {
 };
 
 export const SUGGEST_SYSTEM_PROMPT = [
-  "Match work items to the task they most likely belong to, using titles, codes, dates, and the organization's naming conventions.",
+  "Match work items to the workstream they most likely belong to, using titles, codes, dates, and the organization's naming conventions.",
+  "In the payload each workstream carries an id; return that id in the task_id field.",
   "Only suggest when there is a real signal (matching code, client name, topic overlap).",
   "Omit items with no good match.",
   "Reasons are short and factual ('title contains EMP-COAL') and never longer than 60 characters.",
@@ -16,7 +17,8 @@ export const SUGGEST_TOOL = {
   type: "function" as const,
   function: {
     name: "record_suggestions",
-    description: "Record work item to task mapping suggestions.",
+    description:
+      "Record work item to workstream mapping suggestions. task_id carries the workstream id.",
     parameters: {
       type: "object",
       properties: {

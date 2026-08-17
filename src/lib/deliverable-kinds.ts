@@ -11,6 +11,7 @@ export const DELIVERABLE_KINDS = [
   "memo_or_report",
   "email_or_comms",
   "code",
+  "creative_or_design",
   "other",
 ] as const;
 
@@ -22,7 +23,8 @@ export const DELIVERABLE_KIND_LABELS: Record<DeliverableKind, string> = {
   model_or_budget: "Model or budget",
   memo_or_report: "Memo or report",
   email_or_comms: "Email or comms",
-  code: "Code",
+  code: "Code or implementation",
+  creative_or_design: "Creative or design",
   other: "Other",
 };
 
@@ -50,6 +52,11 @@ const EXTENSION_KIND: Record<string, DeliverableKind> = {
   pptx: "deck",
   ppt: "deck",
   key: "deck",
+  fig: "creative_or_design",
+  psd: "creative_or_design",
+  ai: "creative_or_design",
+  indd: "creative_or_design",
+  sketch: "creative_or_design",
   xlsx: "model_or_budget",
   xls: "model_or_budget",
   csv: "model_or_budget",
@@ -74,6 +81,10 @@ const KEYWORD_KIND: [RegExp, DeliverableKind][] = [
   [/\b(memo|report|note|analysis|findings|summary|paper)\b/, "memo_or_report"],
   [/\b(email|e-mail|comms|newsletter|announcement|letter)\b/, "email_or_comms"],
   [/\b(code|repo|script|migration|api|component)\b/, "code"],
+  [
+    /\b(creative|design|brand|branding|identity|logo|artwork|copy|campaign|storyboard|mockup|wireframe)\b/,
+    "creative_or_design",
+  ],
 ];
 
 const TYPE_KIND: Record<string, DeliverableKind> = {
@@ -81,6 +92,7 @@ const TYPE_KIND: Record<string, DeliverableKind> = {
   sheet: "model_or_budget",
   document: "memo_or_report",
   email: "email_or_comms",
+  image: "creative_or_design",
 };
 
 /**

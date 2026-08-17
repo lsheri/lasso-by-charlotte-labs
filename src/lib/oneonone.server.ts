@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/integrations/supabase/types";
+import { engagementDisplayCode, engagementDisplayTitle } from "@/lib/clients";
 
 type Db = SupabaseClient<Database>;
 
@@ -38,7 +39,9 @@ export async function buildOneOnOneCorpus(
   const { data: linkData } = inWindow.length
     ? await supabase
         .from("work_item_tasks")
-        .select("work_item_id, step_no, tasks(id, name, engagement_id, engagements(code, title))")
+        .select(
+          "work_item_id, step_no, tasks(id, name, engagement_id, engagements(code, title, client_label, clients(id, name, quick_folder)))",
+        )
         .in(
           "work_item_id",
           inWindow.map((i) => i.id),
@@ -51,7 +54,12 @@ export async function buildOneOnOneCorpus(
       id: string;
       name: string;
       engagement_id: string;
-      engagements: { code: string; title: string } | null;
+      engagements: {
+        code: string;
+        title: string;
+        client_label: string | null;
+        clients: { id: string; name: string; quick_folder: boolean } | null;
+      } | null;
     } | null;
   }[];
 
@@ -95,13 +103,13 @@ export async function buildOneOnOneCorpus(
     status: string;
   }[];
 
-  // Group by task so the brief can be grouped by task.
+  // Group by workstream so the brief can be grouped by workstream.
   const groups = new Map<string, string[]>();
   for (const item of items) {
     const task = taskOf.get(item.id);
     const key = task
-      ? `${task.engagements ? `${task.engagements.code} · ` : ""}${task.name}`
-      : "Not mapped to a task";
+      ? `${task.engagements ? `${engagementDisplayCode(task.engagements) ?? engagementDisplayTitle(task.engagements)} · ` : ""}${task.name}`
+      : "Not mapped to a workstream";
     const extract = extractFor.get(item.id);
     const line = [
       `  - ${item.title} (${item.type}, ${(item.work_date ?? item.created_at_source ?? item.captured_at).slice(0, 10)})${item.visibility === "private" ? " [private]" : ""}`,
@@ -120,10 +128,10 @@ export async function buildOneOnOneCorpus(
   const prompt = [
     `TIME WINDOW: the last ${days} days.`,
     "",
-    "WORK IN THE WINDOW, GROUPED BY TASK:",
+    "WORK IN THE WINDOW, GROUPED BY WORKSTREAM:",
     ...(groups.size === 0
       ? ["  (nothing recorded in this window)"]
-      : Array.from(groups.entries()).map(([task, lines]) => `TASK: ${task}\n${lines.join("\n")}`)),
+      : Array.from(groups.entries()).map(([task, lines]) => `WORKSTREAM: ${task}\n${lines.join("\n")}`)),
     "",
     "CONFIRMED DECISIONS IN THE WINDOW:",
     ...(confirmed.length === 0

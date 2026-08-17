@@ -13,6 +13,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { ClientPicker } from "@/components/engagements/ClientPicker";
+import { createClient, useInvalidateClients } from "@/hooks/use-clients";
 import { useProfile } from "@/hooks/use-profile";
 import { supabase } from "@/integrations/supabase/client";
 import { logEvent } from "@/lib/telemetry";
@@ -20,6 +22,7 @@ import { logEvent } from "@/lib/telemetry";
 export type EditableEngagement = {
   id: string;
   title: string;
+  client_id?: string | null;
   client_label: string | null;
   brief: string | null;
   term_label: string | null;
@@ -28,22 +31,42 @@ export type EditableEngagement = {
 export function EditEngagementDialog({ engagement }: { engagement: EditableEngagement }) {
   const { data: profile } = useProfile();
   const queryClient = useQueryClient();
+  const invalidateClients = useInvalidateClients();
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState(engagement.title);
-  const [clientLabel, setClientLabel] = useState(engagement.client_label ?? "");
+  const [clientId, setClientId] = useState<string | null>(engagement.client_id ?? null);
   const [brief, setBrief] = useState(engagement.brief ?? "");
   const [term, setTerm] = useState(engagement.term_label ?? "");
+  const [converting, setConverting] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) return;
     setTitle(engagement.title);
-    setClientLabel(engagement.client_label ?? "");
+    setClientId(engagement.client_id ?? null);
     setBrief(engagement.brief ?? "");
     setTerm(engagement.term_label ?? "");
     setError(null);
   }, [open, engagement]);
+
+  async function convertLabel() {
+    if (!profile || !engagement.client_label) return;
+    setConverting(true);
+    try {
+      const id = await createClient({
+        orgId: profile.org_id,
+        name: engagement.client_label,
+        quickFolder: false,
+      });
+      invalidateClients();
+      setClientId(id);
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setConverting(false);
+    }
+  }
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -53,7 +76,7 @@ export function EditEngagementDialog({ engagement }: { engagement: EditableEngag
       .from("engagements")
       .update({
         title: title.trim(),
-        client_label: clientLabel.trim() || null,
+        client_id: clientId,
         brief: brief.trim() || null,
         term_label: term.trim() || null,
       })
@@ -97,16 +120,25 @@ export function EditEngagementDialog({ engagement }: { engagement: EditableEngag
               onChange={(e) => setTitle(e.target.value)}
             />
           </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="edit-eng-client" className="micro-label">
-              Client / context label
-            </Label>
-            <Input
-              id="edit-eng-client"
-              value={clientLabel}
-              onChange={(e) => setClientLabel(e.target.value)}
-            />
-          </div>
+          <ClientPicker
+            orgId={profile?.org_id}
+            value={clientId}
+            onChange={setClientId}
+            id="edit-eng-client"
+          />
+          {!clientId && engagement.client_label ? (
+            <p className="text-xs text-muted-foreground">
+              Old label: {engagement.client_label}{" "}
+              <button
+                type="button"
+                disabled={converting}
+                onClick={() => void convertLabel()}
+                className="text-accent-deep underline underline-offset-2"
+              >
+                Convert to client
+              </button>
+            </p>
+          ) : null}
           <div className="space-y-1.5">
             <Label htmlFor="edit-eng-brief" className="micro-label">
               Description

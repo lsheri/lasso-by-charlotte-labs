@@ -98,7 +98,7 @@ export function EpisodePanel({
         <Input
           value={objective ?? episode.objective ?? ""}
           onChange={(e) => setObjective(e.target.value)}
-          placeholder="What is this piece of work meant to do?"
+          placeholder="Task line: what is this piece of work meant to do?"
           className="h-8 text-sm"
         />
         <Button type="submit" size="sm" variant="outline" disabled={pending}>

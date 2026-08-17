@@ -20,12 +20,19 @@ import { useRegisterAskLasso } from "@/components/reflect/ask-lasso-context";
 import { TaskWorkflow, type WorkflowElement } from "@/components/work/TaskWorkflow";
 import { useProfile } from "@/hooks/use-profile";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  clientDisplayName,
+  engagementDisplayCode,
+  engagementDisplayTitle,
+} from "@/lib/clients";
 
 type Engagement = {
   id: string;
   code: string;
   title: string;
   client_label: string | null;
+  client_id: string | null;
+  clients: { id: string; name: string; quick_folder: boolean } | null;
   brief: string | null;
   brief_by: string | null;
   term_label: string | null;
@@ -62,7 +69,9 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
     queryFn: async (): Promise<Engagement | null> => {
       const { data, error: e } = await supabase
         .from("engagements")
-        .select("id, code, title, client_label, brief, brief_by, term_label")
+        .select(
+          "id, code, title, client_label, client_id, brief, brief_by, term_label, clients(id, name, quick_folder)",
+        )
         .eq("id", engagementId)
         .maybeSingle();
       if (e) throw e;
@@ -129,9 +138,10 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
       <header className="mb-8">
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4">
           <div className="min-w-0">
-            <h1 className="page-title">{engagement.title}</h1>
+            <h1 className="page-title">{engagementDisplayTitle(engagement)}</h1>
             <p className="mt-1.5 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
-              {engagement.code}
+              {engagementDisplayCode(engagement) ?? "Quick folder"}
+              {clientDisplayName(engagement) ? ` · ${clientDisplayName(engagement)}` : ""}
               {engagement.term_label ? ` · ${engagement.term_label}` : ""}
             </p>
           </div>
@@ -199,7 +209,9 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
           <div className="mt-3 space-y-3 rounded-[var(--radius)] border border-border bg-card px-5 py-4 shadow-card">
             <div>
               <p className="micro-label">Client</p>
-              <p className="mt-1 text-sm text-foreground">{engagement.client_label ?? "Not set"}</p>
+              <p className="mt-1 text-sm text-foreground">
+                {clientDisplayName(engagement) ?? "Not set"}
+              </p>
             </div>
             <div>
               <p className="micro-label">Brief</p>
@@ -224,7 +236,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
       ) : null}
 
       <section>
-        <h2 className="micro-label">Tasks</h2>
+        <h2 className="micro-label">Workstreams</h2>
         <div className="mt-3 space-y-2">
           {(tasksQuery.data ?? []).map((task) => {
             const elements: WorkflowElement[] = task.work_item_tasks
@@ -278,7 +290,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
             <Input
               value={taskName}
               onChange={(e) => setTaskName(e.target.value)}
-              placeholder="Add a task and press enter"
+              placeholder="Add a workstream and press enter"
             />
           </form>
           {error ? <p className="text-sm text-destructive">{error}</p> : null}

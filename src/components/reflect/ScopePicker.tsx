@@ -9,11 +9,12 @@ import { useProfile } from "@/hooks/use-profile";
 import { useWorkItems } from "@/hooks/use-work-items";
 import { supabase } from "@/integrations/supabase/client";
 import { SCOPE_MODES, type ContextScope, type ScopeMode } from "@/lib/reflect-shared";
+import { engagementDisplayCode, engagementDisplayTitle, engagementLabel } from "@/lib/clients";
 
 const MODE_LABEL: Record<ScopeMode, string> = {
   whole: "Whole record",
   engagements: "Pick engagements",
-  tasks: "Pick tasks",
+  tasks: "Pick workstreams",
   items: "Pick work items",
 };
 
@@ -40,25 +41,32 @@ export function ScopePicker({
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tasks")
-        .select("id, name, engagements(code)")
+        .select("id, name, engagements(code, title, client_label, clients(id, name, quick_folder))")
         .eq("owner_id", profile?.id as string)
         .order("position", { ascending: true });
       if (error) throw error;
       return (data ?? []) as unknown as {
         id: string;
         name: string;
-        engagements: { code: string } | null;
+        engagements: {
+          code: string;
+          title: string;
+          client_label: string | null;
+          clients: { id: string; name: string; quick_folder: boolean } | null;
+        } | null;
       }[];
     },
   });
 
   const options: { id: string; label: string }[] =
     mode === "engagements"
-      ? (engagements ?? []).map((e) => ({ id: e.id, label: `${e.code} · ${e.title}` }))
+      ? (engagements ?? []).map((e) => ({ id: e.id, label: engagementLabel(e) }))
       : mode === "tasks"
         ? (tasks ?? []).map((t) => ({
             id: t.id,
-            label: t.engagements ? `${t.engagements.code} · ${t.name}` : t.name,
+            label: t.engagements
+              ? `${engagementDisplayCode(t.engagements) ?? engagementDisplayTitle(t.engagements)} · ${t.name}`
+              : t.name,
           }))
         : mode === "items"
           ? (work?.items ?? []).map((i) => ({ id: i.id, label: i.title }))
@@ -112,7 +120,7 @@ export function ScopePicker({
           </div>
         ) : (
           <p className="text-sm text-muted-foreground">
-            Everything you have recorded, engagements, tasks, and every work item you own.
+            Everything you have recorded, engagements, workstreams, and every work item you own.
           </p>
         )}
 

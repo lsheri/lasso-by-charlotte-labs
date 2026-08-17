@@ -83,6 +83,22 @@ export function AnalysisConfirm({
     },
   });
 
+  // The task line lives on the episode this piece of work belongs to. It is
+  // shown here so the person sees the intent Lasso will read alongside the work.
+  const { data: taskLine } = useQuery({
+    queryKey: ["confirm-task-line", target?.kind === "item" ? target.id : null],
+    enabled: target?.kind === "item",
+    queryFn: async (): Promise<string | null> => {
+      const { data } = await supabase
+        .from("episode_items")
+        .select("work_episodes(objective)")
+        .eq("work_item_id", (target as { id: string }).id)
+        .limit(1);
+      const row = (data ?? [])[0] as { work_episodes: { objective: string | null } | null } | undefined;
+      return row?.work_episodes?.objective ?? null;
+    },
+  });
+
   const { data: checks } = useFirmChecks({
     orgId,
     engagementId: target?.kind === "engagement" ? target.id : null,
@@ -169,6 +185,12 @@ export function AnalysisConfirm({
                   </span>
                 </li>
               )}
+              {taskLine ? (
+                <li className="rounded-[var(--radius)] border border-border px-3 py-2">
+                  <p className="micro-label">Task line</p>
+                  <p className="mt-0.5 text-sm text-foreground">{taskLine}</p>
+                </li>
+              ) : null}
               {includesBrief ? (
                 <li className="rounded-[var(--radius)] border border-border px-3 py-2 text-sm text-muted-foreground">
                   The engagement brief, when one is written.

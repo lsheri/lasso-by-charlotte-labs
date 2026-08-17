@@ -3,6 +3,7 @@ import { useQueries, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Profile } from "@/hooks/use-profile";
 import type { WorkItemRow } from "@/lib/work-types";
+import { engagementDisplayCode, engagementDisplayTitle } from "@/lib/clients";
 
 export type CoachSubject = {
   engagement_id: string;
@@ -22,7 +23,9 @@ export type CoachSubject = {
 export async function fetchCoachSubjects(coachProfileId: string): Promise<CoachSubject[]> {
   const { data: coached, error: coachedError } = await supabase
     .from("engagement_members")
-    .select("engagement_id, engagements(id, code, title)")
+    .select(
+      "engagement_id, engagements(id, code, title, client_label, clients(id, name, quick_folder))",
+    )
     .eq("profile_id", coachProfileId)
     .eq("member_role", "coach");
   if (coachedError) throw coachedError;
@@ -30,7 +33,13 @@ export async function fetchCoachSubjects(coachProfileId: string): Promise<CoachS
   const engagements = (
     (coached ?? []) as unknown as {
       engagement_id: string;
-      engagements: { id: string; code: string; title: string } | null;
+      engagements: {
+        id: string;
+        code: string;
+        title: string;
+        client_label: string | null;
+        clients: { id: string; name: string; quick_folder: boolean } | null;
+      } | null;
     }[]
   ).filter((row) => row.engagements !== null);
   if (engagements.length === 0) return [];
@@ -99,8 +108,12 @@ export async function fetchCoachSubjects(coachProfileId: string): Promise<CoachS
 
       return {
         engagement_id: row.engagement_id,
-        engagement_code: engagement?.engagements?.code ?? "Not set",
-        engagement_title: engagement?.engagements?.title ?? "Engagement",
+        engagement_code: engagement?.engagements
+          ? (engagementDisplayCode(engagement.engagements) ?? "Folder")
+          : "Not set",
+        engagement_title: engagement?.engagements
+          ? engagementDisplayTitle(engagement.engagements)
+          : "Engagement",
         subject_id: row.profile_id,
         subject_name: row.profiles?.display_name ?? "Colleague",
         last_note_at: since,
@@ -187,6 +200,7 @@ export type Packet = {
     client_label: string | null;
     brief: string | null;
     term_label: string | null;
+    clients: { id: string; name: string; quick_folder: boolean } | null;
   } | null;
   subject: { id: string; display_name: string; title_band: string | null } | null;
   tasks: PacketTask[];
@@ -206,7 +220,7 @@ export async function fetchPacket(engagementId: string, subjectId: string): Prom
   const [engagementRes, subjectRes, tasksRes, decisionsRes, notesRes] = await Promise.all([
     supabase
       .from("engagements")
-      .select("id, code, title, client_label, brief, term_label")
+      .select("id, code, title, client_label, brief, term_label, clients(id, name, quick_folder)")
       .eq("id", engagementId)
       .maybeSingle(),
     supabase

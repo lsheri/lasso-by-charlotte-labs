@@ -14,6 +14,7 @@ import { useEngagements } from "@/hooks/use-engagements";
 import { useProfile } from "@/hooks/use-profile";
 import { supabase } from "@/integrations/supabase/client";
 import { dateLabel } from "@/lib/decisions-shared";
+import { engagementLabel } from "@/lib/clients";
 
 export function AddDecisionDialog({ trigger }: { trigger: React.ReactNode }) {
   const { data: profile } = useProfile();
@@ -85,7 +86,7 @@ export function AddDecisionDialog({ trigger }: { trigger: React.ReactNode }) {
               <option value="">No engagement</option>
               {(engagements ?? []).map((e) => (
                 <option key={e.id} value={e.id}>
-                  {e.code} · {e.title}
+                  {engagementLabel(e)}
                 </option>
               ))}
             </select>
