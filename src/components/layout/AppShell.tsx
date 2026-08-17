@@ -7,7 +7,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useProfile } from "@/hooks/use-profile";
 
 import { AppSidebar } from "./AppSidebar";
-import { FeedbackWidget } from "@/components/feedback/FeedbackWidget";
+import { FeedbackDialog, FeedbackWidget } from "@/components/feedback/FeedbackWidget";
+import { AskLassoFab } from "@/components/reflect/AskLassoFab";
 
 export function AppShell() {
   const { data: profile, profiles } = useProfile();
@@ -41,6 +42,17 @@ export function AppShell() {
           </span>
           <div className="flex min-w-0 items-center gap-2">
             <span className="max-w-[38vw] truncate text-xs text-muted-foreground">{userName}</span>
+            <FeedbackDialog
+              trigger={
+                <button
+                  type="button"
+                  aria-label="Send feedback"
+                  className="grid h-11 w-11 shrink-0 place-items-center rounded-md text-foreground/70 transition-colors hover:bg-secondary"
+                >
+                  <MessageSquare className="h-5 w-5" />
+                </button>
+              }
+            />
             <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
               <SheetTrigger
                 className="grid h-11 w-11 shrink-0 place-items-center rounded-md text-foreground/70 transition-colors hover:bg-secondary"
@@ -66,13 +78,14 @@ export function AppShell() {
           </div>
         </header>
 
-        <main className="flex-1 px-4 pb-[calc(2rem+env(safe-area-inset-bottom))] pt-6 md:px-12 md:py-14">
+        <main className="flex-1 px-4 pb-[calc(7rem+env(safe-area-inset-bottom))] pt-6 md:px-12 md:py-14 md:pb-14">
           <div className="mx-auto max-w-3xl">
             <Outlet />
           </div>
         </main>
       </div>
       <FeedbackWidget />
+      <AskLassoFab />
     </div>
   );
 }
