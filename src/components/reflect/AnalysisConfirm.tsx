@@ -13,6 +13,7 @@ import {
 import { useFirmChecks } from "@/hooks/use-firm-checks";
 import { supabase } from "@/integrations/supabase/client";
 import type { AnalysisPreset } from "@/lib/analysis-presets";
+import type { WorkItemRow } from "@/lib/work-types";
 
 /** What a confirm step is pointed at, taken from the run request itself. */
 export type ConfirmTarget =
@@ -29,11 +30,11 @@ export type AnalysisConfirmRequest = {
 type ItemRow = {
   id: string;
   title: string;
-  type: string;
-  source: string;
-  source_vendor: string | null;
-  source_meta: Record<string, unknown> | null;
-  meta: Record<string, unknown> | null;
+  type: WorkItemRow["type"];
+  source: WorkItemRow["source"];
+  source_vendor: WorkItemRow["source_vendor"];
+  source_meta: WorkItemRow["source_meta"];
+  meta: WorkItemRow["meta"];
 };
 
 /**
