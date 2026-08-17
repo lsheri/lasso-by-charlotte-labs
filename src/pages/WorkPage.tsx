@@ -46,8 +46,8 @@ import { logEvent } from "@/lib/telemetry";
 import { captureChannelOf, logV2 } from "@/lib/telemetry-v2";
 import { vendorLabel } from "@/lib/conversation-shared";
 import { engagementHue } from "@/lib/work-identity";
-import {
 import { engagementLabel } from "@/lib/clients";
+import {
   groupConversations,
   isConversationGroup,
   type ConversationGroup,
