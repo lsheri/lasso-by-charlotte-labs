@@ -345,6 +345,19 @@ export function ReflectDock({
             {historyOpen ? "Hide earlier sessions" : "Earlier sessions"}
           </button>
         </div>
+        {draftPointed.length > 0 ? (
+          <div className="mt-2 flex flex-wrap items-center gap-1.5" data-testid="pointed-chips">
+            {draftPointed.map((item) => (
+              <span
+                key={item.id}
+                className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-border bg-secondary px-2 py-0.5 text-xs text-foreground"
+              >
+                <TypeBadge item={item} size="sm" />
+                <span className="truncate">{item.title}</span>
+              </span>
+            ))}
+          </div>
+        ) : null}
 
         {historyOpen ? (
           <div className="mt-3 max-h-48 space-y-1 overflow-y-auto rounded-[var(--radius-md)] border border-border bg-secondary/40 px-3 py-3">
