@@ -11,6 +11,7 @@ import { AnalysisInfoPanel } from "@/components/reflect/AnalysisInfoPanel";
 import { AnalysisConfirm, type AnalysisConfirmRequest } from "@/components/reflect/AnalysisConfirm";
 import { ContextAudit, ThinkingTrail } from "@/components/reflect/ContextTrail";
 import { FindingLabel } from "@/components/reflect/FindingLabel";
+import { HandoffDrafts } from "@/components/reflect/HandoffDrafts";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
@@ -278,6 +279,7 @@ export function AnalysisLens({
               <p className="mt-3 text-xs text-muted-foreground">{active.attribution}</p>
             ) : null}
             <FindingLabel preset={active.id} claims={claims} profileId={profileId} runId={runId} />
+            <HandoffDrafts runId={runId} profileId={profileId} />
           </div>
         ) : null}
         <div ref={bottomRef} />
