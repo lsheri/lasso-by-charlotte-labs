@@ -265,3 +265,27 @@ export function createHoldback(emit: (delta: string) => void): {
     },
   };
 }
+
+/**
+ * The tail instruction, appended to an analysis as a SEPARATE message block.
+ * It never edits a preset's own prompt, and it says nothing about how the
+ * prose should read: the eight presets keep their output contract exactly.
+ */
+export function tailInstruction(kind: HandoffKind): string {
+  const shape: Record<HandoffKind, string> = {
+    open_checks: `{"open_checks":[{"claim_quote":"<verbatim span from the work>","location":"<where it sits>","verdict":"nothing_visible|contradicted","suggested_check":"<the check a reviewer could run>"}]}`,
+    decision_candidates: `{"decision_candidates":[{"call":"<the call that was made>","origin":"<where it came from>","what_it_decided":"<what it settled>","evidence_turn_id":"<turn number or id, or omit>","deliverable_location":"<where in the work, or omit>"}]}`,
+    departures: `{"departures":[{"class":"ADDED|DROPPED|CHANGED|REFRAMED","brief_quote":"<verbatim span from the brief>","work_quote":"<verbatim span from the work>","entered_at":"<where it entered>","acknowledged":true}]}`,
+    check_results: `{"check_results":[{"check_id":"<the check number from the CHECKS block>","status":"addressed|partly|not_visible","evidence_quote":"<verbatim span, or an empty string>"}]}`,
+  };
+  return [
+    "AFTER your answer, and only after it is complete, append one fenced code block.",
+    "The block is machine read and stripped before anyone sees the answer, so it must not change one word of the answer above it.",
+    `The first line inside the fence is exactly ${HANDOFF_SENTINEL}.`,
+    "The remaining lines are a single JSON object in this shape:",
+    shape[kind],
+    `List at most ${MAX_HANDOFF_ITEMS} items, drawn only from what your answer already established.`,
+    "Every quote in the block is copied character for character from the work supplied to you. If you cannot copy it exactly, leave that item out.",
+    "Introduce nothing in the block that your answer did not already say. If there is nothing to list, omit the fenced block entirely.",
+  ].join("\n");
+}
