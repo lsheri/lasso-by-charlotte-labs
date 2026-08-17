@@ -30,7 +30,10 @@ export function DeliverableKindSelect({
         {label}
       </label>
       <div className="flex items-center gap-2">
-        <Select value={value ?? undefined} onValueChange={(next) => onChange(next as DeliverableKind)}>
+        <Select
+          {...(value ? { value } : {})}
+          onValueChange={(next) => onChange(next as DeliverableKind)}
+        >
           <SelectTrigger id={id} className="h-9 w-[220px] text-sm" data-deliverable-kind={value ?? "unset"}>
             <SelectValue placeholder="Pick a kind" />
           </SelectTrigger>
