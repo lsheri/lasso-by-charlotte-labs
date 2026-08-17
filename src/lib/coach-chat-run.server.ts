@@ -134,8 +134,8 @@ export async function runCoachChat(
       const row = extractFor.get(id);
       return row ? { summary: row.summary, decisions: row.decisions } : null;
     }),
-    tasks: tasks.map((task) => ({
-      task_id: task.id,
+    workstreams: tasks.map((task) => ({
+      workstream_id: task.id,
       name: task.name,
       goal: task.goal,
       when: task.when_label,

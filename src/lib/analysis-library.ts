@@ -28,7 +28,7 @@ export const TECHNIQUE_CATEGORIES: TechniqueCategory[] = [
   { id: "A", label: "Output control", plain: "the shape and length of what comes back" },
   { id: "B", label: "What you send", plain: "what goes into the conversation, and in what order" },
   { id: "C", label: "Conversation structure", plain: "how threads are started, split and ended" },
-  { id: "D", label: "Task framing", plain: "how the ask itself is written" },
+  { id: "D", label: "Ask framing", plain: "how the ask itself is written" },
   { id: "E", label: "Verification", plain: "how the answer is checked before it is used" },
 ];
 

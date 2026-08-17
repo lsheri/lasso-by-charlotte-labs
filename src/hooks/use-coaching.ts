@@ -187,6 +187,7 @@ export type Packet = {
     client_label: string | null;
     brief: string | null;
     term_label: string | null;
+    clients: { id: string; name: string; quick_folder: boolean } | null;
   } | null;
   subject: { id: string; display_name: string; title_band: string | null } | null;
   tasks: PacketTask[];
@@ -206,7 +207,7 @@ export async function fetchPacket(engagementId: string, subjectId: string): Prom
   const [engagementRes, subjectRes, tasksRes, decisionsRes, notesRes] = await Promise.all([
     supabase
       .from("engagements")
-      .select("id, code, title, client_label, brief, term_label")
+      .select("id, code, title, client_label, brief, term_label, clients(id, name, quick_folder)")
       .eq("id", engagementId)
       .maybeSingle(),
     supabase

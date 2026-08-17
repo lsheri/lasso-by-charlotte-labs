@@ -5,6 +5,11 @@ import type { Database } from "@/integrations/supabase/types";
 import { ITEM_TEXT_COLUMNS, ensureExtract, pullItemText } from "./extract.server";
 import type { ClassifiableItem } from "./extract.server";
 import { loadBriefContext } from "./brief.server";
+import {
+  clientDisplayName,
+  engagementDisplayCode,
+  engagementDisplayTitle,
+} from "@/lib/clients";
 
 type Db = SupabaseClient<Database>;
 
@@ -27,7 +32,7 @@ export type EngagementCorpus = {
 type Row = ClassifiableItem & { visibility: string; captured_at: string; work_date: string | null };
 
 /**
- * Everything mapped into one engagement, as one prompt: the brief and tasks as
+ * Everything mapped into one engagement, as one prompt: the brief and workstreams as
  * the frame, an extract for every item so nothing is invisible, and raw text
  * for as much as the budget allows. Read as the caller, so policies decide.
  */
@@ -38,7 +43,7 @@ export async function buildEngagementCorpus(
 ): Promise<EngagementCorpus> {
   const { data: engagement } = await supabase
     .from("engagements")
-    .select("code, title, client_label, brief, term_label, outcome")
+    .select("code, title, client_label, brief, term_label, outcome, clients(id, name, quick_folder)")
     .eq("id", engagementId)
     .maybeSingle();
 
@@ -146,13 +151,13 @@ export async function buildEngagementCorpus(
   }
 
   const header = [
-    `ENGAGEMENT ${engagement?.code ?? ""}: ${engagement?.title ?? ""}`,
-    engagement?.client_label ? `Client context: ${engagement.client_label}` : null,
+    `ENGAGEMENT ${engagement ? (engagementDisplayCode(engagement) ?? "(folder)") : ""}: ${engagement ? engagementDisplayTitle(engagement) : ""}`,
+    engagement && clientDisplayName(engagement) ? `Client: ${clientDisplayName(engagement)}` : null,
     engagement?.term_label ? `Term: ${engagement.term_label}` : null,
     engagement?.brief ? `Brief: ${engagement.brief}` : null,
     engagement?.outcome ? `Outcome: ${engagement.outcome}` : null,
     "",
-    "TASKS:",
+    "WORKSTREAMS:",
     ...taskRows.map(
       (t) =>
         `  ${t.name} (status ${t.status})${t.goal ? ` Goal: ${t.goal}` : ""}${t.detail ? ` Detail: ${t.detail}` : ""}`,

@@ -5,12 +5,12 @@ export function windowDim(days: number): "7d" | "14d" | "30d" {
   return days === 30 ? "30d" : days === 14 ? "14d" : "7d";
 }
 
-export const ONEONONE_SYSTEM_PROMPT = `You write a short brief that one person takes into their own 1:1 with their manager. You are given their recorded work for a time window: engagements, tasks, a compact summary of each work item, the decisions they confirmed, and anything still open.
+export const ONEONONE_SYSTEM_PROMPT = `You write a short brief that one person takes into their own 1:1 with their manager. You are given their recorded work for a time window: engagements, workstreams, a compact summary of each work item, the decisions they confirmed, and anything still open.
 
 Write markdown with exactly these three sections and nothing else:
 
 ## What I worked on
-Grouped by task. Three to six lines total. Plain language, first person, what they actually did and what it was for. No filler.
+Grouped by workstream. Three to six lines total. Plain language, first person, what they actually did and what it was for. No filler.
 
 ## Decisions I made
 One line per confirmed decision: the call, then the why. If there are none, write one line saying no decisions were confirmed in this window.

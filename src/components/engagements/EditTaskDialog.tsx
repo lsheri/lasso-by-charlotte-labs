@@ -63,7 +63,7 @@ export function EditTaskDialog({
       <DialogTrigger asChild>
         <button
           type="button"
-          aria-label="Edit task"
+          aria-label="Edit workstream"
           className="shrink-0 text-muted-foreground transition-colors hover:text-foreground"
         >
           <Pencil className="h-3.5 w-3.5" aria-hidden />
@@ -71,7 +71,7 @@ export function EditTaskDialog({
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="page-title">Edit task</DialogTitle>
+          <DialogTitle className="page-title">Edit workstream</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">

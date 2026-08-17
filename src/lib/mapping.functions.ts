@@ -4,6 +4,11 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { SUGGEST_SYSTEM_PROMPT, SUGGEST_TOOL, type MappingSuggestion } from "@/lib/mapping-shared";
 import { validateProfileId } from "@/lib/connectors-shared";
 import { resolveProfile } from "@/lib/profile-resolve";
+import {
+  clientDisplayName,
+  engagementDisplayCode,
+  engagementDisplayTitle,
+} from "@/lib/clients";
 
 export const suggestMappings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -26,7 +31,7 @@ export const suggestMappings = createServerFn({ method: "POST" })
 
     const { data: memberships, error: memberError } = await supabase
       .from("engagement_members")
-      .select("engagements(id, code, title, client_label)")
+      .select("engagements(id, code, title, client_label, clients(id, name, quick_folder))")
       .eq("profile_id", profile.id);
     if (memberError) throw new Error(memberError.message);
 
@@ -37,6 +42,7 @@ export const suggestMappings = createServerFn({ method: "POST" })
           code: string;
           title: string;
           client_label: string | null;
+          clients: { id: string; name: string; quick_folder: boolean } | null;
         } | null;
       }[]
     )
@@ -64,8 +70,13 @@ export const suggestMappings = createServerFn({ method: "POST" })
 
     const payload = {
       naming_conventions: typeof conventions === "string" ? conventions : null,
-      engagements,
-      tasks,
+      engagements: engagements.map((e) => ({
+        id: e.id,
+        code: engagementDisplayCode(e),
+        title: engagementDisplayTitle(e),
+        client: clientDisplayName(e),
+      })),
+      workstreams: tasks,
       work_items: items.map((item) => ({
         id: item.id,
         title: item.title,

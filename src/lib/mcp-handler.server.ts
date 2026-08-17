@@ -11,6 +11,7 @@ import {
 import { workTypeForFile } from "@/lib/work-types";
 import { recordEvent } from "@/lib/telemetry.server";
 import {
+import { clientDisplayName, engagementDisplayTitle, isQuickFolder } from "@/lib/clients";
   ATTACHMENT_KINDS,
   CONVERSATION_VENDORS,
   attachmentBucket,
@@ -275,7 +276,7 @@ const TOOLS = [
     title: "List engagements",
     icons: ICONS,
     description:
-      "List the user's engagements and tasks so a pushed item can mention where it might belong. Read-only.",
+      "List the user's engagements and workstreams so a pushed item can mention where it might belong. Read-only.",
     inputSchema: { type: "object", properties: {} },
   },
 ];
@@ -481,16 +482,26 @@ async function listEngagements(owner: Owner, id: unknown): Promise<Response> {
 
   const { data: engagements } = await supabaseAdmin
     .from("engagements")
-    .select("id, code, title")
+    .select("id, code, title, client_label, clients(id, name, quick_folder)")
     .in("id", ids);
   const { data: tasks } = await supabaseAdmin
     .from("tasks")
     .select("engagement_id, name")
     .in("engagement_id", ids);
 
-  const lines = (engagements ?? []).map((e) => {
+  const lines = (engagements ?? []).map((row) => {
+    const e = row as unknown as {
+      id: string;
+      code: string;
+      title: string;
+      client_label: string | null;
+      clients: { name: string; quick_folder: boolean } | null;
+    };
     const names = (tasks ?? []).filter((t) => t.engagement_id === e.id).map((t) => `  - ${t.name}`);
-    return [`${e.code}, ${e.title}`, ...(names.length ? names : ["  (no tasks yet)"])].join("\n");
+    const header = isQuickFolder(e)
+      ? `${engagementDisplayTitle(e)} (folder)`
+      : `${e.code}, ${e.title}${clientDisplayName(e) ? ` for ${clientDisplayName(e)}` : ""}`;
+    return [header, ...(names.length ? names : ["  (no workstreams yet)"])].join("\n");
   });
   await logPush(owner, { tool: "list_engagements" });
   return textResult(id, lines.join("\n\n"));

@@ -8,6 +8,7 @@ import { useProfile } from "@/hooks/use-profile";
 import { FirmChecksCard } from "@/components/coaching/FirmChecksCard";
 import { isBriefItem } from "@/lib/brief-shared";
 import { logEvent } from "@/lib/telemetry";
+import { engagementLabel } from "@/lib/clients";
 
 const SEEN_PREFIX = "lasso.packet_seen.";
 
@@ -103,7 +104,7 @@ export function PacketPage({
         ) : null}
         <h1 className="page-title mt-1.5">{subjectName}</h1>
         <p className="mt-1.5 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
-          {data.engagement.code} · {data.engagement.title}
+          {engagementLabel(data.engagement)}
           {data.engagement.term_label ? ` · ${data.engagement.term_label}` : ""}
         </p>
         {sharedBriefs.length > 0 ? (

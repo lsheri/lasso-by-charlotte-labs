@@ -6,6 +6,7 @@ import { useEngagements } from "@/hooks/use-engagements";
 import { useProfile } from "@/hooks/use-profile";
 
 import { navGroups } from "./nav-config";
+import { engagementDisplayCode, engagementDisplayTitle } from "@/lib/clients";
 
 const linkClass =
   "rounded-md px-3 py-1.5 text-sm text-foreground/80 transition-colors hover:bg-accent-soft hover:text-accent-deep";
@@ -74,9 +75,9 @@ export function SidebarNav({ onNavigate }: { onNavigate?: (() => void) | undefin
                     activeProps={{ className: "bg-accent-soft text-accent-deep font-medium" }}
                   >
                     <span className="font-mono text-xs text-muted-foreground">
-                      {engagement.code}
+                      {engagementDisplayCode(engagement) ?? "Folder"}
                     </span>{" "}
-                    <span className="truncate">{engagement.title}</span>
+                    <span className="truncate">{engagementDisplayTitle(engagement)}</span>
                   </Link>
                 ))}
                 {engagements && engagements.length === 0 ? (

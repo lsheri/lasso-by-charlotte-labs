@@ -248,7 +248,7 @@ export function WorkPage() {
               : "Remap"
             : groupLabel
               ? "Map conversation"
-              : "Map to a task"}
+              : "Map to a workstream"}
         </RowAction>
         {group && group.length > 1 ? (
           <RowAction onClick={() => openMap(item)}>Map just this</RowAction>
@@ -452,7 +452,7 @@ export function WorkPage() {
                   }}
                   className="text-xs font-medium text-accent-deep transition-opacity hover:opacity-70 disabled:opacity-40"
                 >
-                  Map to a task{chosen.size ? ` (${chosen.size})` : ""}
+                  Map to a workstream{chosen.size ? ` (${chosen.size})` : ""}
                 </button>
                 <button
                   type="button"
@@ -623,14 +623,14 @@ export function WorkPage() {
 
           <WorkSection
             label="Mapped"
-            hint="Visible to your coach through the tasks you mapped it to."
+            hint="Visible to your coach through the workstreams you mapped it to."
             count={mapped.length}
             tone="teal"
             icon={CheckCircle2}
           >
             {mapped.length === 0 ? (
               <p className="rounded-[var(--radius)] border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
-                Nothing mapped yet. Map a piece of work to a task and it shows up here.
+                Nothing mapped yet. Map a piece of work to a workstream and it shows up here.
               </p>
             ) : (
               mappedByEngagement.map((bucket) => (

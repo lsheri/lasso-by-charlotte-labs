@@ -232,7 +232,7 @@ export function PeekPanel({
       <footer className="flex shrink-0 flex-wrap items-center gap-x-4 gap-y-1 border-t border-border bg-card px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 sm:px-6 sm:pt-4">
         {canEdit && onMap ? (
           <FooterAction primary onClick={() => onMap(active, group)}>
-            {active.visibility === "mapped" ? "Remap" : "Map to a task"}
+            {active.visibility === "mapped" ? "Remap" : "Map to a workstream"}
           </FooterAction>
         ) : null}
         {canEdit && onWorkDate ? (

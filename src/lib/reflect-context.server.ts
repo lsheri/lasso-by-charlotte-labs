@@ -1,6 +1,11 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/integrations/supabase/types";
+import {
+  clientDisplayName,
+  engagementDisplayCode,
+  engagementDisplayTitle,
+} from "@/lib/clients";
 
 import type { AiReadInput, AiReadRole } from "./ai-reads.server";
 import { loadBriefContext } from "./brief.server";
@@ -60,6 +65,7 @@ export type TaskRow = {
     brief: string | null;
     term_label: string | null;
     outcome: string | null;
+    clients: { id: string; name: string; quick_folder: boolean } | null;
   } | null;
 };
 
@@ -238,7 +244,7 @@ export async function loadScopeData(
   let taskQuery = supabase
     .from("tasks")
     .select(
-      "id, name, goal, detail, when_label, status, position, engagement_id, engagements(id, code, title, client_label, brief, term_label, outcome)",
+      "id, name, goal, detail, when_label, status, position, engagement_id, engagements(id, code, title, client_label, brief, term_label, outcome, clients(id, name, quick_folder))",
     )
     .eq("owner_id", ownerId);
   if (scope.mode === "engagements" && scope.ids.length > 0) {
@@ -298,7 +304,7 @@ export function taskLabels(tasks: TaskRow[], linkRows: LinkRow[]): Map<string, s
   return taskNameFor;
 }
 
-/** The engagement and task structure block, identical in both paths. */
+/** The engagement and workstream structure block, identical in both paths. */
 export function buildEngagementBlocks(
   tasks: TaskRow[],
   linkRows: LinkRow[],
@@ -320,7 +326,7 @@ export function buildEngagementBlocks(
           return `      ${l.step_no ?? index + 1}. ${item?.title ?? "(item)"}${l.step_confirmed ? " [confirmed sequence]" : ""}`;
         });
       return [
-        `    TASK: ${t.name}${t.when_label ? ` (${t.when_label})` : ""}, status ${t.status}`,
+        `    WORKSTREAM: ${t.name}${t.when_label ? ` (${t.when_label})` : ""}, status ${t.status}`,
         t.goal ? `      Goal: ${t.goal}` : null,
         t.detail ? `      Detail: ${t.detail}` : null,
         ...steps,
@@ -331,8 +337,8 @@ export function buildEngagementBlocks(
     engagementBlocks.set(
       engagement.id,
       [
-        `ENGAGEMENT ${engagement.code}: ${engagement.title}`,
-        engagement.client_label ? `  Client/context: ${engagement.client_label}` : null,
+        `ENGAGEMENT ${engagementDisplayCode(engagement) ?? "(folder)"}: ${engagementDisplayTitle(engagement)}`,
+        clientDisplayName(engagement) ? `  Client: ${clientDisplayName(engagement)}` : null,
         engagement.term_label ? `  Term: ${engagement.term_label}` : null,
         engagement.brief ? `  Brief: ${engagement.brief}` : null,
         engagement.outcome ? `  Outcome: ${engagement.outcome}` : null,

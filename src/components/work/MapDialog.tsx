@@ -14,6 +14,7 @@ import { detachEpisodeItems, syncEpisodeForMapping } from "@/lib/episodes.functi
 import { logEvent } from "@/lib/telemetry";
 import { captureChannelOf, logV2 } from "@/lib/telemetry-v2";
 import type { WorkItemRow } from "@/lib/work-types";
+import { engagementDisplayCode, engagementDisplayTitle } from "@/lib/clients";
 
 type TaskRow = { id: string; name: string };
 
@@ -126,7 +127,7 @@ export function MapDialog({
       .select("id")
       .maybeSingle();
     if (createError || !data) {
-      setError(createError?.message ?? "Could not create the task.");
+      setError(createError?.message ?? "Could not create the workstream.");
       setPending(false);
       return;
     }
@@ -145,7 +146,7 @@ export function MapDialog({
     >
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle className="page-title">Map to a task</DialogTitle>
+          <DialogTitle className="page-title">Map to a workstream</DialogTitle>
         </DialogHeader>
 
         {item ? (
@@ -175,8 +176,12 @@ export function MapDialog({
                   style={{ backgroundColor: `var(${engagementHue(engagement.id)})` }}
                   aria-hidden
                 />
-                <span className="font-mono text-xs text-muted-foreground">{engagement.code}</span>
-                <span className="text-sm text-foreground">{engagement.title}</span>
+                <span className="font-mono text-xs text-muted-foreground">
+                  {engagementDisplayCode(engagement) ?? "Folder"}
+                </span>
+                <span className="text-sm text-foreground">
+                  {engagementDisplayTitle(engagement)}
+                </span>
               </button>
             ))}
             {engagements && engagements.length === 0 ? (
@@ -194,7 +199,7 @@ export function MapDialog({
             >
               ← Engagements
             </button>
-            <p className="micro-label">Choose a task</p>
+            <p className="micro-label">Choose a workstream</p>
             {(tasks ?? []).map((task) => (
               <button
                 key={task.id}
@@ -216,7 +221,7 @@ export function MapDialog({
               <Input
                 value={newTask}
                 onChange={(e) => setNewTask(e.target.value)}
-                placeholder="Or type a new task name"
+                placeholder="Or type a new workstream name"
               />
               <Button type="submit" disabled={pending || !newTask.trim()}>
                 Add

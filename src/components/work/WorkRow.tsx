@@ -70,7 +70,7 @@ export function WorkRow({
               tabIndex: 0,
               // Without an explicit name, the row's accessible name is built
               // from everything inside it, including the action labels, so the
-              // row itself answers to "Map to a task". Naming it after the item
+              // row itself answers to "Map to a workstream". Naming it after the item
               // keeps each action addressable as itself.
               "aria-label": item.title,
               onClick: onOpen,

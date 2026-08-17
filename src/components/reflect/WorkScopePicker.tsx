@@ -9,6 +9,7 @@ import { chipShape, itemsInScope, mappedItemsForEngagement } from "@/lib/reflect
 import { effectiveWorkDate, formatDate, type WorkItemRow } from "@/lib/work-types";
 import { ArtifactNote, SourceMark } from "@/components/work/SourceMark";
 import { TypeBadge } from "@/components/work/TypeIcon";
+import { engagementDisplayCode, engagementLabel } from "@/lib/clients";
 
 /** The scope as a plain sentence, never a count of tokens or a cost. */
 export function scopeSentence(
@@ -23,7 +24,7 @@ export function scopeSentence(
     const engagement = engagements.find((e) => e.id === shape.engagementId);
     const whole = mappedItemsForEngagement(all, shape.engagementId).length;
     if (engagement && resolved.length === whole) {
-      return `All work in ${engagement.code} ${engagement.title}`;
+      return `All work in ${engagementLabel(engagement)}`;
     }
   }
   if (resolved.length === 1) return `1 piece of work selected`;
@@ -145,7 +146,7 @@ export function WorkScopePicker({
                       : "rounded-full border border-border px-3 py-1 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
                   }
                 >
-                  {engagement.code}
+                  {engagementDisplayCode(engagement) ?? "Folder"}
                 </button>
               ))}
             </div>

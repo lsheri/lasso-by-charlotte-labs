@@ -33,7 +33,7 @@ export function OrganizeStep({ onDone }: { onDone: () => void }) {
                 {item?.title ?? "Conversation"}
               </p>
               <SuggestionChip
-                label={taskLabels?.[suggestion.task_id] ?? "task"}
+                label={taskLabels?.[suggestion.task_id] ?? "workstream"}
                 reason={suggestion.reason}
                 pending={acceptPending}
                 onAccept={() =>

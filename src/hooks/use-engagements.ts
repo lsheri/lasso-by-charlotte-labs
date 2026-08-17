@@ -9,12 +9,15 @@ export type EngagementSummary = {
   client_label: string | null;
   brief: string | null;
   term_label: string | null;
+  clients: { id: string; name: string; quick_folder: boolean } | null;
 };
 
 export async function fetchMyEngagements(profileId: string): Promise<EngagementSummary[]> {
   const { data, error } = await supabase
     .from("engagement_members")
-    .select("engagements(id, code, title, client_label, brief, term_label)")
+    .select(
+      "engagements(id, code, title, client_label, brief, term_label, clients(id, name, quick_folder))",
+    )
     .eq("profile_id", profileId);
   if (error) throw error;
   const rows = (data ?? []) as unknown as { engagements: EngagementSummary | null }[];
