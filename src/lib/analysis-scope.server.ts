@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/integrations/supabase/types";
+import { deliverableKindOf, type DeliverableKind } from "@/lib/deliverable-kinds";
 import { RELATION_LABEL, type LineageRelation } from "@/lib/lineage-shared";
 import type { ContextScope } from "@/lib/reflect-shared";
 
@@ -14,6 +15,8 @@ export type AnalysisTarget = {
   scope: ContextScope;
   /** Mapped items in scope, used only to decide whether a preset may run. */
   itemsInScope: number;
+  /** The owner's own label for what kind of deliverable this is, when set. */
+  deliverableKind?: DeliverableKind | null;
 };
 
 /**
@@ -81,13 +84,14 @@ export async function resolveAnalysisTarget(
       scopeType: "engagement",
       scope: { mode: "engagements", ids: [engagement.id] },
       itemsInScope: ids.length,
+      deliverableKind: null,
     };
   }
 
   if (!args.workItemId) throw new Error("Nothing to analyse.");
   const { data: item, error } = await supabase
     .from("work_items")
-    .select("id, title, owner_id")
+    .select("id, title, owner_id, meta")
     .eq("id", args.workItemId)
     .maybeSingle();
   if (error) throw new Error(error.message);
@@ -103,6 +107,7 @@ export async function resolveAnalysisTarget(
     scopeType: args.scope === "deliverable" ? "deliverable" : "item",
     scope: { mode: "items", ids },
     itemsInScope: ids.length,
+    deliverableKind: deliverableKindOf(item.meta),
   };
 }
 
