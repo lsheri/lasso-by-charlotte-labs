@@ -38,6 +38,7 @@ export type TelemetryEvent =
   | "analysis.run"
   | "analysis.completed"
   | "analysis.failed"
+  | "analysis.handoff_acted"
   | "member.deactivated"
   | "member.reactivated"
   | "member.role_changed"

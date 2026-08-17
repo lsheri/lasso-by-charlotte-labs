@@ -77,6 +77,7 @@ export const EVENTS_ANALYSIS = [
   "analysis.started",
   "analysis.completed",
   "analysis.failed",
+  "analysis.handoff_acted",
   "finding.generated",
   "finding.confirmed",
   "finding.edited",

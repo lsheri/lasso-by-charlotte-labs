@@ -242,6 +242,12 @@ export function AnalysisConfirm({
             </div>
           ) : null}
 
+          {preset.handoffSchema ? (
+            <p className="text-xs text-muted-foreground">
+              This will also draft items you can confirm afterwards.
+            </p>
+          ) : null}
+
           <div className="flex flex-wrap items-center gap-2">
             <Button type="submit" autoFocus disabled={saving}>
               {saving ? "Saving…" : "Run analysis"}

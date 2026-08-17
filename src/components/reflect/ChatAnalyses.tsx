@@ -8,6 +8,7 @@ import { MarkdownMessage } from "@/components/markdown/MarkdownMessage";
 import { AnalysisInfoPanel } from "@/components/reflect/AnalysisInfoPanel";
 import { AnalysisConfirm, type AnalysisConfirmRequest } from "@/components/reflect/AnalysisConfirm";
 import { FindingLabel } from "@/components/reflect/FindingLabel";
+import { HandoffDrafts } from "@/components/reflect/HandoffDrafts";
 import { supabase } from "@/integrations/supabase/client";
 import { isBriefItem } from "@/lib/brief-shared";
 import {
@@ -289,7 +290,7 @@ export function InlineAnalysisBlocks({
 }) {
   return (
     <>
-      {results.map((result) => (
+      {results.map((result, index) => (
         <div key={result.key}>
           <p className="micro-label">Lasso · {result.preset.label}</p>
           {result.reused ? (
@@ -331,6 +332,14 @@ export function InlineAnalysisBlocks({
               claims={result.claims}
               profileId={profileId}
               runId={result.runId}
+            />
+            <HandoffDrafts
+              runId={result.runId}
+              profileId={profileId}
+              superseded={results.some(
+                (other, otherIndex) =>
+                  otherIndex > index && other.preset.id === result.preset.id,
+              )}
             />
           </div>
         </div>

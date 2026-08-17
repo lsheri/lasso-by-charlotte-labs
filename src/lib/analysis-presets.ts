@@ -1,5 +1,6 @@
 import { libraryForPrompt, TECHNIQUE_CATEGORIES } from "@/lib/analysis-library";
 import { BRIEF_PROMPT_RULES } from "@/lib/brief-shared";
+import type { HandoffKind } from "@/lib/handoffs-shared";
 
 /**
  * The analysis preset registry. Every analysis in the product is an entry here,
@@ -70,6 +71,12 @@ export type AnalysisPreset = {
   };
   attribution: string | null;
   coachMayRun: boolean;
+  /**
+   * The structured handoff kind this analysis may draft, if any. The schema and
+   * the tail instruction live in handoffs-shared; nothing here edits a prompt.
+   * Person-shaped presets have none and the server refuses one anyway.
+   */
+  handoffSchema?: HandoffKind | undefined;
 };
 
 export const ANALYSIS_PRESET_IDS = [
@@ -301,6 +308,7 @@ export const ANALYSIS_PRESETS: AnalysisPreset[] = [
   },
   {
     id: "verification",
+    handoffSchema: "open_checks",
     dbPreset: "verification",
     label: "What to verify",
     description: "Which claims in this work rest on the model's word, and how to check them.",
@@ -325,6 +333,7 @@ export const ANALYSIS_PRESETS: AnalysisPreset[] = [
   },
   {
     id: "still_on_brief",
+    handoffSchema: "departures",
     dbPreset: "still_on_brief",
     label: "Drift analysis",
     description:
@@ -350,6 +359,7 @@ export const ANALYSIS_PRESETS: AnalysisPreset[] = [
   },
   {
     id: "decision_origin",
+    handoffSchema: "decision_candidates",
     dbPreset: "decision_origin",
     label: "Who decided what",
     description: "Every significant call in this work, and where it came from.",
@@ -418,6 +428,7 @@ export const ANALYSIS_PRESETS: AnalysisPreset[] = [
   },
   {
     id: "firm_checks",
+    handoffSchema: "check_results",
     dbPreset: "firm_checks",
     label: "Firm checks",
     description: "Your firm's checks, run against this work.",

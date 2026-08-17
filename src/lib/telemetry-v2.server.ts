@@ -143,10 +143,22 @@ const SCHEMAS = {
       items_read: count,
       claims_rendered: count,
       suppressed: count,
+      handoffs_emitted: term.optional(),
+      handoff_parse: term.optional(),
     })
     .strict(),
   "analysis.failed": z
     .object({ preset: term, scope: term.optional(), reason_class: term })
+    .strict(),
+  // Confirm and discard happen minutes after the run, on another surface, so
+  // they cannot ride the run's own event without falsifying its timing.
+  "analysis.handoff_acted": z
+    .object({
+      preset: term,
+      kind: term,
+      action: z.enum(["confirmed", "discarded", "batch_confirmed"]),
+      destination: term,
+    })
     .strict(),
   "finding.generated": z.object({ preset: term, claims_rendered: count }).strict(),
   "finding.confirmed": z.object({ preset: term, claims_rendered: count }).strict(),
@@ -225,6 +237,7 @@ const V1_MIRRORED = new Set<string>([
   "analysis.started",
   "analysis.completed",
   "analysis.failed",
+  "analysis.handoff_acted",
   "decision.drafted",
   "lineage.drafted",
   "lineage.confirmed",

@@ -288,8 +288,12 @@ export async function runReflectTurn(
     ...historyMessages,
     { role: "user" as const, content: message },
   ];
+  // Chat never asks for a structured tail, but if a model ever emits the
+  // sentinel fence it is held back rather than flashed into the answer.
+  const { createHoldback, stripHandoffTail } = await import("./handoffs-shared");
+  const holdback = onDelta ? createHoldback(onDelta) : null;
   const completion = onDelta
-    ? await streamChat(conversation, onDelta, {
+    ? await streamChat(conversation, (delta) => holdback!.push(delta), {
         tier: "smart",
         maxTokens: 8000,
         timeoutMs: ANSWER_TIMEOUT_MS,
@@ -304,8 +308,13 @@ export async function runReflectTurn(
   void chatComplete;
   const cutOff = completion.finishReason === "length";
   const { CUT_OFF_NOTE } = await import("./quote-check");
-  const raw =
+  const streamed =
     completion.text || "I couldn't draw an answer out of that. Try asking a different way.";
+  // No chat preset carries a handoff kind, so a fence here is never a valid
+  // block: it is flushed back as prose and the answer stays whole.
+  const strippedChat = stripHandoffTail(streamed, null);
+  holdback?.end(strippedChat.block !== null);
+  const raw = strippedChat.block ? strippedChat.prose : streamed;
 
   // Prevent, verify, repair, then refuse. The reader never sees a warning.
   const { guardQuotes } = await import("./quote-guard.server");
