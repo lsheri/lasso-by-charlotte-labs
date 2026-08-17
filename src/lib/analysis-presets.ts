@@ -308,6 +308,7 @@ export const ANALYSIS_PRESETS: AnalysisPreset[] = [
   },
   {
     id: "verification",
+    handoffSchema: "open_checks",
     dbPreset: "verification",
     label: "What to verify",
     description: "Which claims in this work rest on the model's word, and how to check them.",
@@ -332,6 +333,7 @@ export const ANALYSIS_PRESETS: AnalysisPreset[] = [
   },
   {
     id: "still_on_brief",
+    handoffSchema: "departures",
     dbPreset: "still_on_brief",
     label: "Drift analysis",
     description:
@@ -357,6 +359,7 @@ export const ANALYSIS_PRESETS: AnalysisPreset[] = [
   },
   {
     id: "decision_origin",
+    handoffSchema: "decision_candidates",
     dbPreset: "decision_origin",
     label: "Who decided what",
     description: "Every significant call in this work, and where it came from.",
@@ -425,6 +428,7 @@ export const ANALYSIS_PRESETS: AnalysisPreset[] = [
   },
   {
     id: "firm_checks",
+    handoffSchema: "check_results",
     dbPreset: "firm_checks",
     label: "Firm checks",
     description: "Your firm's checks, run against this work.",
