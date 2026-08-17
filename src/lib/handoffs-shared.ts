@@ -216,52 +216,44 @@ export function stripHandoffTail(text: string, kind: HandoffKind | null): StripR
 }
 
 /**
- * The streaming holdback. Deltas are passed through until the sentinel fence
- * can begin; from there the text is buffered. If the stream ends inside a
- * fence that never validated, the buffer is flushed as prose, so a reader can
- * never lose an answer to this feature.
+ * The streaming holdback. Deltas pass straight through until a fence that
+ * could be the sentinel tail begins; from there the text is buffered. If the
+ * block never validates, or the stream ends mid fence, the buffer is flushed
+ * as prose, so a reader can never lose an answer to this feature.
  */
 export function createHoldback(emit: (delta: string) => void): {
   push: (delta: string) => void;
-  end: () => void;
+  end: (blockValidated: boolean) => void;
 } {
   let held = "";
-  let holding = false;
-  // The longest prefix of the sentinel that could still be completing.
-  const tailKeep = HANDOFF_SENTINEL.length + 8;
-
-  function couldStartFence(text: string): boolean {
-    const idx = text.lastIndexOf("```");
-    if (idx === -1) return false;
-    const after = text.slice(idx);
-    return after.length <= tailKeep && HANDOFF_SENTINEL.startsWith(after.replace(/^```[a-zA-Z]*\s*/, "").trim().slice(0, HANDOFF_SENTINEL.length))
-      ? true
-      : after.includes(HANDOFF_SENTINEL);
-  }
+  /** Enough characters to tell a sentinel fence from an ordinary one. */
+  const DECIDE_AT = 12 + HANDOFF_SENTINEL.length;
 
   return {
     push(delta: string) {
-      if (holding) {
-        held += delta;
+      held += delta;
+      if (held.includes(HANDOFF_SENTINEL)) return;
+      const fence = held.lastIndexOf("```");
+      if (fence === -1) {
+        emit(held);
+        held = "";
         return;
       }
-      const combined = held + delta;
-      const fence = combined.lastIndexOf("```");
-      if (fence !== -1 && couldStartFence(combined.slice(fence))) {
-        emit(combined.slice(0, fence));
-        held = combined.slice(fence);
-        holding = combined.slice(fence).includes(HANDOFF_SENTINEL);
+      const candidate = held.slice(fence);
+      if (candidate.length < DECIDE_AT) {
+        // Undecided: hold just the candidate, release everything before it.
+        if (fence > 0) emit(held.slice(0, fence));
+        held = candidate;
         return;
       }
-      emit(combined);
+      // Long enough to decide and no sentinel: an ordinary fence in the answer.
+      emit(held);
       held = "";
     },
-    end() {
+    end(blockValidated: boolean) {
       if (!held) return;
-      // A held buffer that never became a valid sentinel block is the answer.
-      if (!held.includes(HANDOFF_SENTINEL)) emit(held);
+      if (!(blockValidated && held.includes(HANDOFF_SENTINEL))) emit(held);
       held = "";
-      holding = false;
     },
   };
 }
