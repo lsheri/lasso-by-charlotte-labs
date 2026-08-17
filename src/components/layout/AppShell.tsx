@@ -9,6 +9,7 @@ import { useProfile } from "@/hooks/use-profile";
 import { AppSidebar } from "./AppSidebar";
 import { FeedbackDialog, FeedbackWidget } from "@/components/feedback/FeedbackWidget";
 import { AskLassoFab } from "@/components/reflect/AskLassoFab";
+import { AskLassoProvider } from "@/components/reflect/ask-lasso-context";
 
 export function AppShell() {
   const { data: profile, profiles } = useProfile();
@@ -22,6 +23,7 @@ export function AppShell() {
   }
 
   return (
+    <AskLassoProvider>
     <div className="flex min-h-screen w-full bg-background">
       <aside className="hidden w-[264px] shrink-0 border-r border-border md:block">
         <div className="sticky top-0 h-screen">
@@ -87,5 +89,6 @@ export function AppShell() {
       <FeedbackWidget />
       <AskLassoFab />
     </div>
+    </AskLassoProvider>
   );
 }
