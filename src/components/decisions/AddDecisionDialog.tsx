@@ -16,14 +16,36 @@ import { supabase } from "@/integrations/supabase/client";
 import { dateLabel } from "@/lib/decisions-shared";
 import { engagementLabel } from "@/lib/clients";
 
-export function AddDecisionDialog({ trigger }: { trigger: React.ReactNode }) {
+/**
+ * A prefilled draft, for instance a decision candidate the person confirmed
+ * from an analysis. It fills the fields and nothing else: the decision is not
+ * recorded until the person saves it here.
+ */
+export type DecisionPrefill = { situation?: string; call?: string; why?: string };
+
+export function AddDecisionDialog({
+  trigger,
+  prefill,
+  open: openProp,
+  onOpenChange,
+}: {
+  trigger?: React.ReactNode;
+  prefill?: DecisionPrefill | undefined;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+}) {
   const { data: profile } = useProfile();
   const { data: engagements } = useEngagements(profile?.id);
   const queryClient = useQueryClient();
-  const [open, setOpen] = useState(false);
-  const [situation, setSituation] = useState("");
-  const [callText, setCallText] = useState("");
-  const [why, setWhy] = useState("");
+  const [openState, setOpenState] = useState(false);
+  const open = openProp ?? openState;
+  const setOpen = (next: boolean) => {
+    setOpenState(next);
+    onOpenChange?.(next);
+  };
+  const [situation, setSituation] = useState(prefill?.situation ?? "");
+  const [callText, setCallText] = useState(prefill?.call ?? "");
+  const [why, setWhy] = useState(prefill?.why ?? "");
   const [engagementId, setEngagementId] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -57,7 +79,7 @@ export function AddDecisionDialog({ trigger }: { trigger: React.ReactNode }) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{trigger}</DialogTrigger>
+      {trigger ? <DialogTrigger asChild>{trigger}</DialogTrigger> : null}
       <DialogContent className="sm:max-w-xl">
         <DialogHeader>
           <DialogTitle className="page-title">Add a decision</DialogTitle>
