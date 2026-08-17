@@ -456,6 +456,20 @@ export const startAnalysis = createServerFn({ method: "POST" })
         { role: "user" as const, content: preset.openingMessage },
       ];
 
+      // The structured tail is a SEPARATE message block. No preset prompt is
+      // edited by it, so the answer a person reads keeps its own contract.
+      const { HANDOFF_PRESETS, NO_HANDOFF_PRESETS, tailInstruction } =
+        await import("./handoffs-shared");
+      const handoffKind = (NO_HANDOFF_PRESETS as readonly string[]).includes(preset.id)
+        ? null
+        : (HANDOFF_PRESETS[preset.id] ?? null);
+      if (handoffKind) {
+        conversation.splice(conversation.length - 1, 0, {
+          role: "system" as const,
+          content: tailInstruction(handoffKind),
+        });
+      }
+
       const { chatComplete } = await import("./ai.server");
       const completion = await chatComplete(conversation, {
         tier: "smart",
@@ -464,9 +478,42 @@ export const startAnalysis = createServerFn({ method: "POST" })
       });
       const cutOff = completion.finishReason === "length";
       const { CUT_OFF_NOTE } = await import("./quote-check");
+
+      // Strip the tail BEFORE the quote guard and before anything is stored,
+      // so no reader ever meets the fence, in the answer or in the history.
+      const { stripHandoffTail, quoteFields, handoffsBucket } = await import("./handoffs-shared");
+      const stripped = stripHandoffTail(
+        completion.text || "Nothing came back for that. Try again.",
+        handoffKind,
+      );
+      let handoffCount = 0;
+      if (stripped.block) {
+        const { unmatchedQuotes } = await import("./quote-check");
+        // A handoff quote gets no exemption from the quote promise.
+        const verified = stripped.block.items.filter((item) =>
+          quoteFields(stripped.block!.kind, item).every(
+            (quote) => unmatchedQuotes(`"${quote}"`, assembled.quotable).length === 0,
+          ),
+        );
+        handoffCount = verified.length;
+        if (verified.length > 0) {
+          const { writeHandoffs } = await import("./handoffs.server");
+          await writeHandoffs(runId, preset.id, stripped.block.kind, verified);
+        }
+      } else if (stripped.parse === "malformed") {
+        const { logHealth } = await import("./health.server");
+        void logHealth({
+          kind: "anomaly",
+          surface: "analysis",
+          orgId: profile.org_id,
+          ownerId: target.ownerId,
+          detail: "handoff_parse_failed",
+          meta: { preset: preset.id },
+        }).catch(() => undefined);
+      }
       const { guardQuotes } = await import("./quote-guard.server");
       const guarded = await guardQuotes(
-        completion.text || "Nothing came back for that. Try again.",
+        stripped.prose || "Nothing came back for that. Try again.",
         assembled.quotable,
         cutOff,
         conversation,
@@ -552,6 +599,8 @@ export const startAnalysis = createServerFn({ method: "POST" })
           suppressed_bucket: smallBucket(guarded.suppressed),
           cost_bucket: costBucket(costUsd),
           tokens_in_bucket: tokensBucket(tokensIn),
+          handoffs_emitted: handoffsBucket(handoffCount),
+          handoff_parse: stripped.parse,
         },
       });
 
@@ -564,6 +613,8 @@ export const startAnalysis = createServerFn({ method: "POST" })
           items_read: itemsRead,
           claims_rendered: guarded.claims,
           suppressed: guarded.suppressed,
+          handoffs_emitted: handoffsBucket(handoffCount),
+          handoff_parse: stripped.parse,
         },
         profileId: profile.id,
       });
