@@ -1,5 +1,5 @@
 import { Outlet, useNavigate } from "@tanstack/react-router";
-import { Menu } from "lucide-react";
+import { Menu, MessageSquare } from "lucide-react";
 import { useState } from "react";
 
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
