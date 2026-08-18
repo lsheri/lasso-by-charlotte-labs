@@ -5,6 +5,17 @@ import type { InviteEmailResult } from "./invites-shared";
 
 type Client = SupabaseClient<Database>;
 
+/**
+ * Email clients ignore CSS custom properties, so the app palette is mirrored
+ * here as one small token map, the only place literals may appear in email.
+ */
+const MAIL = {
+  card: "#ffffff",
+  ink: "#16302b",
+  muted: "#4f6260",
+  cta: "#2bd97b",
+} as const;
+
 function escapeHtml(value: string): string {
   return value
     .replace(/&/g, "&amp;")
