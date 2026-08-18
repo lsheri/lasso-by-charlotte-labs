@@ -147,20 +147,25 @@
  * state also carries an icon, a label and a border treatment.
  */
 :root {
-  --ember: #c05621; /* white text: 4.57:1 */
-  --ember-deep: #9c4221; /* ember text on bone: 6.0:1 */
-  --ember-foreground: #ffffff;
-  --ember-wash: color-mix(in oklab, var(--ember) 10%, transparent);
+  --ember: #2bd97b; /* electric CTA green, ink text: 8.9:1 */
+  --ember-deep: #0e7a4a; /* action text on base: 4.9:1 */
+  --ember-foreground: #16302b;
+  --ember-deep-foreground: #ffffff;
+  --ember-wash: color-mix(in oklab, var(--ember) 14%, transparent);
+  /* Secondary high-value blue, the pig's family. */
+  --electric: #35aef2;
+  --electric-deep: #0a628f; /* blue text on base: 5.3:1 */
+  --electric-wash: color-mix(in oklab, var(--electric) 14%, transparent);
 
-  --state-amber: #b45309; /* needs mapping — 4.61:1 on bone */
+  --state-amber: #9a6011; /* needs mapping */
   --state-amber-wash: color-mix(in oklab, var(--state-amber) 8%, transparent);
   --state-amber-band: color-mix(in oklab, var(--state-amber) 10%, transparent);
 
-  --state-teal: #0f766e; /* mapped — 5.03:1 on bone */
+  --state-teal: #0e7160; /* mapped */
   --state-teal-wash: color-mix(in oklab, var(--state-teal) 8%, transparent);
   --state-teal-band: color-mix(in oklab, var(--state-teal) 10%, transparent);
 
-  --state-indigo: #4c51bf; /* private — 5.96:1 on bone */
+  --state-indigo: #3f5bb5; /* private */
   --state-indigo-wash: color-mix(in oklab, var(--state-indigo) 8%, transparent);
   --state-indigo-band: color-mix(in oklab, var(--state-indigo) 10%, transparent);
 
@@ -201,25 +206,25 @@
  * as a full-strength icon colour on a ~12% tint of themselves.
  */
 :root {
-  --hue-slate-blue: #3d5f88;
-  --hue-sand: #8a6a2a;
-  --hue-moss: #3f7030;
-  --hue-clay: #a5502c;
-  --hue-sage: #437a5c;
-  --hue-plum: #7a3f74;
-  --hue-amber: #9c6c10;
-  --hue-indigo: #4a4a99;
-  --hue-neutral: #736d59;
-  --hue-cyan: #1f6a86;
+  --hue-slate-blue: #2f5f8c;
+  --hue-sand: #7d6423;
+  --hue-moss: #346b3f;
+  --hue-clay: #9a4a2c;
+  --hue-sage: #276b53;
+  --hue-plum: #6f3a6c;
+  --hue-amber: #8a6110;
+  --hue-indigo: #414a94;
+  --hue-neutral: #55625f;
+  --hue-cyan: #14657f;
   /* Stable per-engagement accents, chosen by hashing the engagement id. */
-  --engagement-1: #3d5f88;
-  --engagement-2: #3f7030;
-  --engagement-3: #a5502c;
-  --engagement-4: #7a3f74;
-  --engagement-5: #8a6a2a;
-  --engagement-6: #4a4a99;
-  --engagement-7: #437a5c;
-  --engagement-8: #8a4c4c;
+  --engagement-1: #2f5f8c;
+  --engagement-2: #346b3f;
+  --engagement-3: #9a4a2c;
+  --engagement-4: #6f3a6c;
+  --engagement-5: #7d6423;
+  --engagement-6: #414a94;
+  --engagement-7: #276b53;
+  --engagement-8: #85474a;
 }
 
 .dark {
@@ -412,31 +417,31 @@
 .hljs-selector-tag,
 .hljs-literal,
 .hljs-doctag {
-  color: #7a4a8c;
+  color: var(--code-keyword);
 }
 .hljs-string,
 .hljs-regexp,
 .hljs-addition {
-  color: #3c6a4a;
+  color: var(--code-string);
 }
 .hljs-number,
 .hljs-built_in,
 .hljs-attr,
 .hljs-variable,
 .hljs-template-variable {
-  color: #8a5a20;
+  color: var(--code-number);
 }
 .hljs-title,
 .hljs-section,
 .hljs-name,
 .hljs-type {
-  color: #2a4a7c;
+  color: var(--code-title);
 }
 .hljs-meta,
 .hljs-symbol,
 .hljs-bullet,
 .hljs-deletion {
-  color: #9a4a3a;
+  color: var(--code-meta);
 }
 .hljs-emphasis {
   font-style: italic;
@@ -448,7 +453,7 @@
 /* Interactive affordances: visible weight, never grey-on-grey. */
 @layer base {
   :focus-visible {
-    outline: 2px solid var(--ember);
+    outline: 2px solid var(--ring);
     outline-offset: 2px;
   }
 }
@@ -471,7 +476,7 @@
   font-family: var(--font-mono);
   font-size: 10px;
   font-weight: 500;
-  color: #ffffff;
+  color: var(--card);
 }
 
 /* Compact variant of the prose styles for AI chat bubbles. */
