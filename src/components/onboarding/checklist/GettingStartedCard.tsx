@@ -9,7 +9,13 @@ import { requestGuide } from "@/lib/onboarding-guide";
 
 import { ChecklistStep } from "./ChecklistStep";
 import { WelcomeCard } from "./WelcomeCard";
-import { COACH_PRIVACY_LINE, completedRequired, requiredCount, stepsFor, type ChecklistStepDef } from "./steps";
+import {
+  COACH_PRIVACY_LINE,
+  completedRequired,
+  requiredCount,
+  stepsFor,
+  type ChecklistStepDef,
+} from "./steps";
 
 /**
  * Pinned at the top of the workspace on first run. Every step is computed

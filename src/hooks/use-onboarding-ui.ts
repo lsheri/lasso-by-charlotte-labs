@@ -3,11 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { useProfile } from "@/hooks/use-profile";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  DEFAULT_ONBOARDING_UI,
-  readOnboardingUi,
-  type OnboardingUi,
-} from "@/lib/onboarding-ui";
+import { DEFAULT_ONBOARDING_UI, readOnboardingUi, type OnboardingUi } from "@/lib/onboarding-ui";
 
 /**
  * Reads and writes only the three UI keys, per profile row, through the

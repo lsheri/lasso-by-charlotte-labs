@@ -78,7 +78,10 @@ export const getOnboardingProgress = createServerFn({ method: "POST" })
         .select("id", head)
         .eq(isCoach ? "run_by_profile_id" : "owner_id", profile.id),
       supabase.from("invites").select("code", head).eq("org_id", profile.org_id),
-      supabase.from("engagement_members").select("engagement_id", head).eq("profile_id", profile.id),
+      supabase
+        .from("engagement_members")
+        .select("engagement_id", head)
+        .eq("profile_id", profile.id),
       supabase.from("firm_checks").select("id", head).eq("author_profile_id", profile.id),
       supabase.from("one_on_one_notes").select("id", head).eq("owner_id", profile.id),
       supabase.from("profiles").select("id", head).eq("org_id", profile.org_id),

@@ -151,10 +151,14 @@ export function WorkPage() {
     if (upd.error) return setActionError(upd.error.message);
     if (profile) {
       logEvent("workitem.marked_private", profile.org_id, { type: item.type, source: item.source });
-      logV2("work_item.marked_private", { item_type: item.type }, {
-        profileId: profile.id,
-        workItemId: item.id,
-      });
+      logV2(
+        "work_item.marked_private",
+        { item_type: item.type },
+        {
+          profileId: profile.id,
+          workItemId: item.id,
+        },
+      );
     }
     await queryClient.invalidateQueries({ queryKey: ["work-items"] });
   }
@@ -167,10 +171,14 @@ export function WorkPage() {
       .eq("id", item.id);
     if (upd.error) return setActionError(upd.error.message);
     if (profile) {
-      logV2("work_item.unmapped", { item_type: item.type }, {
-        profileId: profile.id,
-        workItemId: item.id,
-      });
+      logV2(
+        "work_item.unmapped",
+        { item_type: item.type },
+        {
+          profileId: profile.id,
+          workItemId: item.id,
+        },
+      );
     }
     await queryClient.invalidateQueries({ queryKey: ["work-items"] });
   }

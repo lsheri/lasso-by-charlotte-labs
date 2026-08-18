@@ -21,10 +21,7 @@ const workerSteps: ChecklistStepDef[] = [
     label: "Connect where your AI work happens",
     hint: "One source is enough to start.",
     to: "/connectors",
-    done: (p) =>
-      p.counts.capture > 0
-        ? `${p.counts.capture} capture route connected`
-        : null,
+    done: (p) => (p.counts.capture > 0 ? `${p.counts.capture} capture route connected` : null),
   },
   {
     id: "capture",
@@ -117,9 +114,6 @@ export function requiredCount(steps: ChecklistStepDef[]): number {
   return steps.filter((s) => !s.optional).length;
 }
 
-export function completedRequired(
-  steps: ChecklistStepDef[],
-  progress: OnboardingProgress,
-): number {
+export function completedRequired(steps: ChecklistStepDef[], progress: OnboardingProgress): number {
   return steps.filter((s) => !s.optional && s.done(progress) !== null).length;
 }
