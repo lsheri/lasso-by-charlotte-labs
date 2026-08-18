@@ -28,13 +28,13 @@ function body(inviter: string, url: string) {
     "Charlotte Labs",
   ].join("\n");
 
-  const html = `<!doctype html><html><body style="margin:0;padding:24px;background:#ffffff;font-family:Helvetica,Arial,sans-serif;color:#2a2820">
+  const html = `<!doctype html><html><body style="margin:0;padding:24px;background:${MAIL.card};font-family:Helvetica,Arial,sans-serif;color:${MAIL.ink}">
 <div style="max-width:520px;margin:0 auto">
 <p style="font-size:15px;line-height:1.6">${escapeHtml(inviter)} invited you to Lasso.</p>
 <p style="font-size:15px;line-height:1.6">${escapeHtml(roleLine)} You will only ever see the work they choose to share with you. Nothing else in their workspace is visible to you.</p>
-<p style="margin:28px 0"><a href="${escapeHtml(url)}" style="display:inline-block;background:#c05621;color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:8px;font-size:14px">Accept the invitation</a></p>
-<p style="font-size:13px;line-height:1.6;color:#6b6558">Or paste this link into your browser:<br>${escapeHtml(url)}</p>
-<p style="font-size:12px;color:#908870;margin-top:32px">Charlotte Labs</p>
+<p style="margin:28px 0"><a href="${escapeHtml(url)}" style="display:inline-block;background:${MAIL.cta};color:${MAIL.ink};text-decoration:none;padding:12px 20px;border-radius:8px;font-size:14px">Accept the invitation</a></p>
+<p style="font-size:13px;line-height:1.6;color:${MAIL.muted}">Or paste this link into your browser:<br>${escapeHtml(url)}</p>
+<p style="font-size:12px;color:${MAIL.muted};margin-top:32px">Charlotte Labs</p>
 </div></body></html>`;
 
   return { text, html };
