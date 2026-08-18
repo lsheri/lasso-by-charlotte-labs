@@ -87,50 +87,57 @@
 
 :root {
   --radius: 12px;
-  --background: #f7f5f2;
-  --foreground: #2a2820;
+  --background: #faf8f2;
+  --foreground: #16302b;
   --card: #ffffff;
-  --card-foreground: #2a2820;
+  --card-foreground: #16302b;
   --popover: #ffffff;
-  --popover-foreground: #2a2820;
-  --primary: #3a3830;
-  --primary-foreground: #d8d0b8;
-  --secondary: #eeeae4;
-  --secondary-foreground: #2a2820;
-  --muted: #ddd8d0;
-  --muted-foreground: #908870;
-  --accent: #607060;
+  --popover-foreground: #16302b;
+  /* Electric CTA green — the spider's family. Ink text rides on it. */
+  --primary: #2bd97b;
+  --primary-foreground: #16302b;
+  --secondary: #f3eee3;
+  --secondary-foreground: #16302b;
+  --muted: #e6ece9;
+  --muted-foreground: #4f6260;
+  --accent: #2f5d52;
   --accent-foreground: #ffffff;
-  --accent-soft: #e7ece7;
-  --accent-deep: #9c4221; /* link/action text — 6.0:1 on bone */
-  --navy: #0b2a4a;
-  --mint: #6ffac6;
-  /* Lasso suggested it, a person decides. Surface treatment only, never text. */
-  --suggest: #6ffac6;
-  --suggest-wash: color-mix(in oklab, var(--suggest) 16%, transparent);
-  --suggest-edge: color-mix(in oklab, var(--suggest) 70%, #0f766e 30%);
-  --cream: #efece4;
-  --pattern-bg: #fffbeb;
-  --pattern-border: #fbbf24;
-  --pattern-fg: #78350f;
-  --destructive: #9c3418;
+  --accent-soft: #e4f0e8;
+  --accent-deep: #0a628f; /* link/action text — deep of the pig blue */
+  --navy: #14403a; /* deep green-teal ink family replaces navy in UI */
+  --mint: #2bd97b;
+  /* Lasso suggested it, a person decides. Whistle yellow, surface only. */
+  --suggest: #e8f24c;
+  --suggest-wash: color-mix(in oklab, var(--suggest) 22%, transparent);
+  --suggest-edge: color-mix(in oklab, var(--suggest) 60%, #16302b 40%);
+  --cream: #f3eee3;
+  --pattern-bg: #dfe9f1;
+  --pattern-border: #9dc2dc;
+  --pattern-fg: #0a4a68;
+  --destructive: #a34234; /* muted brick */
   --destructive-foreground: #ffffff;
-  --border: #ddd8d0;
-  --input: #ddd8d0;
-  --ring: #c05621;
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: #eeeae4;
-  --sidebar-foreground: #2a2820;
-  --sidebar-primary: #3a3830;
-  --sidebar-primary-foreground: #d8d0b8;
-  --sidebar-accent: #e7ece7;
-  --sidebar-accent-foreground: #3c4a3c;
-  --sidebar-border: #ddd8d0;
-  --sidebar-ring: #607060;
+  --border: #d5dee4;
+  --input: #d5dee4;
+  --ring: #35aef2; /* electric blue focus */
+  --chart-1: #2bd97b;
+  --chart-2: #35aef2;
+  --chart-3: #2f5d52;
+  --chart-4: #a8630b;
+  --chart-5: #7a3f74;
+  --sidebar: #f3eee3;
+  --sidebar-foreground: #16302b;
+  --sidebar-primary: #2bd97b;
+  --sidebar-primary-foreground: #16302b;
+  --sidebar-accent: #dfe9f1;
+  --sidebar-accent-foreground: #16302b;
+  --sidebar-border: #d5dee4;
+  --sidebar-ring: #35aef2;
+  /* Code colours live in the token layer too. */
+  --code-keyword: #6c3f8a;
+  --code-string: #1c6a4a;
+  --code-number: #8a5a20;
+  --code-title: #0a628f;
+  --code-meta: #a34234;
 }
 
 /*
