@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 
 import type { Profile } from "@/hooks/use-profile";
 import { FeedbackDialog } from "@/components/feedback/FeedbackWidget";
+import { ChecklistLauncher } from "@/components/onboarding/checklist/ChecklistLauncher";
 
 import { OrgSwitcher } from "./OrgSwitcher";
 import { LassoLogo } from "./LassoLogo";
@@ -45,6 +46,7 @@ export function AppSidebar({
         >
           Why Lasso
         </Link>
+        <ChecklistLauncher />
         <FeedbackDialog
           trigger={
             <button

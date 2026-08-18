@@ -10,6 +10,8 @@ import { AppSidebar } from "./AppSidebar";
 import { FeedbackDialog, FeedbackWidget } from "@/components/feedback/FeedbackWidget";
 import { AskLassoFab } from "@/components/reflect/AskLassoFab";
 import { AskLassoProvider } from "@/components/reflect/ask-lasso-context";
+import { ChecklistLauncher } from "@/components/onboarding/checklist/ChecklistLauncher";
+import { StepPopover } from "@/components/onboarding/checklist/StepPopover";
 
 export function AppShell() {
   const { data: profile, profiles } = useProfile();
@@ -43,7 +45,8 @@ export function AppShell() {
             LASSO
           </span>
           <div className="flex min-w-0 items-center gap-2">
-            <span className="max-w-[38vw] truncate text-xs text-muted-foreground">{userName}</span>
+            <span className="max-w-[28vw] truncate text-xs text-muted-foreground">{userName}</span>
+            <ChecklistLauncher className="shrink-0 whitespace-nowrap rounded-md px-2 py-3 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground" />
             <FeedbackDialog
               trigger={
                 <button
@@ -88,6 +91,7 @@ export function AppShell() {
       </div>
       <FeedbackWidget />
       <AskLassoFab />
+      <StepPopover />
     </div>
     </AskLassoProvider>
   );
