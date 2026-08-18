@@ -30,6 +30,10 @@
   --color-ember-deep: var(--ember-deep);
   --color-ember-foreground: var(--ember-foreground);
   --color-ember-wash: var(--ember-wash);
+  --color-ember-deep-foreground: var(--ember-deep-foreground);
+  --color-electric: var(--electric);
+  --color-electric-deep: var(--electric-deep);
+  --color-electric-wash: var(--electric-wash);
   --color-state-amber: var(--state-amber);
   --color-state-teal: var(--state-teal);
   --color-state-indigo: var(--state-indigo);
@@ -183,12 +187,15 @@
 }
 
 .dark {
-  --ember: #e2793f;
-  --ember-deep: #f0a476;
-  --ember-foreground: #221a12;
-  --state-amber: #e0a862;
+  --ember: #2bd97b;
+  --ember-deep: #5ce89b;
+  --ember-foreground: #0d211d;
+  --ember-deep-foreground: #0d211d;
+  --electric: #35aef2;
+  --electric-deep: #7fcdf8;
+  --state-amber: #e0b06b;
   --state-teal: #5cc3b4;
-  --state-indigo: #a3a3e0;
+  --state-indigo: #a3b0e8;
   --vendor-claude: #e39c84;
   --vendor-chatgpt: #6fc4b2;
   --vendor-gemini: #8fb1ea;
