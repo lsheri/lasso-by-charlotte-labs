@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { GettingStartedCard } from "@/components/onboarding/checklist/GettingStartedCard";
 import { MapDialog } from "@/components/work/MapDialog";
 import { RowMenu } from "@/components/work/RowMenu";
 import { AnalysisLens } from "@/components/reflect/AnalysisLens";
@@ -150,10 +151,14 @@ export function WorkPage() {
     if (upd.error) return setActionError(upd.error.message);
     if (profile) {
       logEvent("workitem.marked_private", profile.org_id, { type: item.type, source: item.source });
-      logV2("work_item.marked_private", { item_type: item.type }, {
-        profileId: profile.id,
-        workItemId: item.id,
-      });
+      logV2(
+        "work_item.marked_private",
+        { item_type: item.type },
+        {
+          profileId: profile.id,
+          workItemId: item.id,
+        },
+      );
     }
     await queryClient.invalidateQueries({ queryKey: ["work-items"] });
   }
@@ -166,10 +171,14 @@ export function WorkPage() {
       .eq("id", item.id);
     if (upd.error) return setActionError(upd.error.message);
     if (profile) {
-      logV2("work_item.unmapped", { item_type: item.type }, {
-        profileId: profile.id,
-        workItemId: item.id,
-      });
+      logV2(
+        "work_item.unmapped",
+        { item_type: item.type },
+        {
+          profileId: profile.id,
+          workItemId: item.id,
+        },
+      );
     }
     await queryClient.invalidateQueries({ queryKey: ["work-items"] });
   }
@@ -410,6 +419,7 @@ export function WorkPage() {
 
   return (
     <div>
+      <GettingStartedCard />
       <header className="mb-8 flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="page-title">Work</h1>
@@ -507,10 +517,7 @@ export function WorkPage() {
         <p className="text-sm text-muted-foreground">Loading your work…</p>
       ) : all.length === 0 ? (
         <div className="mx-auto max-w-lg rounded-[var(--radius)] border border-border bg-card px-8 py-12 text-center shadow-card">
-          <p className="text-sm text-foreground">
-            Your work lands here. Paste an AI thread or drop a file, organize it whenever you're
-            ready.
-          </p>
+          <p className="text-sm text-foreground">Your work lands here.</p>
           <div className="mt-6 flex flex-wrap justify-center gap-2">
             <ConnectorBrowseActions />
             <PasteThreadDialog trigger={<Button type="button">Paste a thread</Button>} />

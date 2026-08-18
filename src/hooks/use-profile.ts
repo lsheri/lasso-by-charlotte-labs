@@ -11,6 +11,7 @@ export type Profile = {
   display_name: string;
   title_band: string | null;
   org_name: string;
+  onboarding: unknown;
 };
 
 /** Active profiles, plus whether the user holds only deactivated ones. */
@@ -57,7 +58,9 @@ export async function fetchProfileState(): Promise<ProfileState> {
   if (!user) return { profiles: [], hasDeactivated: false };
   const { data, error } = await supabase
     .from("profiles")
-    .select("id, user_id, org_id, role, display_name, title_band, deactivated_at, orgs(name)")
+    .select(
+      "id, user_id, org_id, role, display_name, title_band, onboarding, deactivated_at, orgs(name)",
+    )
     .eq("user_id", user.id)
     .order("created_at", { ascending: true });
   if (error) throw error;

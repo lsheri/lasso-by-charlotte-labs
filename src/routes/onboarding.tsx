@@ -274,7 +274,8 @@ function OnboardingInner() {
             <p className="micro-label mt-6">Step two</p>
             <h1 className="page-title mt-2">Set up your first work</h1>
             <p className="mt-1.5 text-sm text-muted-foreground">
-              Start with one source. You can add the rest any time.
+              Start with one source. The rest is waiting for you in your workspace, on the
+              getting started card.
             </p>
 
             <div className="mt-6">
