@@ -1706,6 +1706,7 @@ export type Database = {
           experience_band: string | null
           function_area: string | null
           id: string
+          onboarding: Json | null
           org_id: string
           primary_work_types: string[] | null
           role: Database["public"]["Enums"]["app_role"]
@@ -1722,6 +1723,7 @@ export type Database = {
           experience_band?: string | null
           function_area?: string | null
           id?: string
+          onboarding?: Json | null
           org_id: string
           primary_work_types?: string[] | null
           role?: Database["public"]["Enums"]["app_role"]
@@ -1738,6 +1740,7 @@ export type Database = {
           experience_band?: string | null
           function_area?: string | null
           id?: string
+          onboarding?: Json | null
           org_id?: string
           primary_work_types?: string[] | null
           role?: Database["public"]["Enums"]["app_role"]
