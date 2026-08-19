@@ -253,51 +253,64 @@ export async function loadScopeData(
   ownerId: string,
   scope: ContextScope,
 ): Promise<{ tasks: TaskRow[]; linkRows: LinkRow[]; items: ItemRow[] }> {
-  let taskQuery = supabase
-    .from("tasks")
-    .select(
-      "id, name, goal, detail, when_label, status, position, engagement_id, engagements(id, code, title, client_label, brief, term_label, outcome, clients(id, name, quick_folder))",
-    )
-    .eq("owner_id", ownerId);
-  if (scope.mode === "engagements" && scope.ids.length > 0) {
-    taskQuery = taskQuery.in("engagement_id", scope.ids);
-  } else if (scope.mode === "tasks" && scope.ids.length > 0) {
-    taskQuery = taskQuery.in("id", scope.ids);
-  }
-  const tasksRes = scope.mode === "items" ? { data: [], error: null } : await taskQuery;
-  if (tasksRes.error) throw new Error(tasksRes.error.message);
-  const tasks = (tasksRes.data ?? []) as unknown as TaskRow[];
+  async function loadTasksAndLinks(): Promise<{ tasks: TaskRow[]; linkRows: LinkRow[] }> {
+    let taskQuery = supabase
+      .from("tasks")
+      .select(
+        "id, name, goal, detail, when_label, status, position, engagement_id, engagements(id, code, title, client_label, brief, term_label, outcome, clients(id, name, quick_folder))",
+      )
+      .eq("owner_id", ownerId);
+    if (scope.mode === "engagements" && scope.ids.length > 0) {
+      taskQuery = taskQuery.in("engagement_id", scope.ids);
+    } else if (scope.mode === "tasks" && scope.ids.length > 0) {
+      taskQuery = taskQuery.in("id", scope.ids);
+    }
+    const tasksRes = scope.mode === "items" ? { data: [], error: null } : await taskQuery;
+    if (tasksRes.error) throw new Error(tasksRes.error.message);
+    const tasks = (tasksRes.data ?? []) as unknown as TaskRow[];
 
-  const links = tasks.length
-    ? await supabase
-        .from("work_item_tasks")
-        .select("work_item_id, task_id, step_no, step_confirmed")
-        .in(
-          "task_id",
-          tasks.map((t) => t.id),
-        )
-    : { data: [], error: null };
-  if (links.error) throw new Error(links.error.message);
-  const linkRows = (links.data ?? []) as LinkRow[];
-
-  let itemQuery = supabase
-    .from("work_items")
-    .select(
-      `${ITEM_TEXT_COLUMNS}, source, visibility, captured_at, work_date, created_at_source, content_fidelity, source_vendor`,
-    )
-    .eq("owner_id", ownerId)
-    .order("captured_at", { ascending: false })
-    .limit(300);
-  if (scope.mode === "items" && scope.ids.length > 0) {
-    itemQuery = itemQuery.in("id", scope.ids);
-  } else if (scope.mode !== "whole") {
-    const ids = linkRows.map((l) => l.work_item_id);
-    if (ids.length === 0) itemQuery = itemQuery.in("id", ["00000000-0000-0000-0000-000000000000"]);
-    else itemQuery = itemQuery.in("id", ids);
+    const links = tasks.length
+      ? await supabase
+          .from("work_item_tasks")
+          .select("work_item_id, task_id, step_no, step_confirmed")
+          .in(
+            "task_id",
+            tasks.map((t) => t.id),
+          )
+      : { data: [], error: null };
+    if (links.error) throw new Error(links.error.message);
+    return { tasks, linkRows: (links.data ?? []) as LinkRow[] };
   }
-  const itemsRes = await itemQuery;
-  if (itemsRes.error) throw new Error(itemsRes.error.message);
-  return { tasks, linkRows, items: (itemsRes.data ?? []) as unknown as ItemRow[] };
+
+  async function loadItems(linkRows: LinkRow[] | null): Promise<ItemRow[]> {
+    let itemQuery = supabase
+      .from("work_items")
+      .select(
+        `${ITEM_TEXT_COLUMNS}, source, visibility, captured_at, work_date, created_at_source, content_fidelity, source_vendor`,
+      )
+      .eq("owner_id", ownerId)
+      .order("captured_at", { ascending: false })
+      .limit(300);
+    if (scope.mode === "items" && scope.ids.length > 0) {
+      itemQuery = itemQuery.in("id", scope.ids);
+    } else if (scope.mode !== "whole") {
+      const ids = (linkRows ?? []).map((l) => l.work_item_id);
+      if (ids.length === 0) itemQuery = itemQuery.in("id", ["00000000-0000-0000-0000-000000000000"]);
+      else itemQuery = itemQuery.in("id", ids);
+    }
+    const itemsRes = await itemQuery;
+    if (itemsRes.error) throw new Error(itemsRes.error.message);
+    return (itemsRes.data ?? []) as unknown as ItemRow[];
+  }
+
+  // Only "items" and "whole" leave the item query independent of the mapping
+  // links. Engagement and task scopes keep their genuine dependency chain.
+  if (scope.mode === "items" || scope.mode === "whole") {
+    const [taskData, items] = await Promise.all([loadTasksAndLinks(), loadItems(null)]);
+    return { ...taskData, items };
+  }
+  const { tasks, linkRows } = await loadTasksAndLinks();
+  return { tasks, linkRows, items: await loadItems(linkRows) };
 }
 
 /** "ENG-1 · Discovery" for a mapped item, undefined when unmapped. */
