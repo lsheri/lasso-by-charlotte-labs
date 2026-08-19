@@ -11,7 +11,6 @@ import { ThreadViewerById } from "@/components/work/ThreadViewerById";
 import { useDecisionActions } from "@/hooks/use-decision-actions";
 import { useEngagementSlice } from "@/hooks/use-engagement-page";
 import { srcsOf, useEngagementDecisions, type DecisionRow } from "@/hooks/use-decisions";
-import { supabase } from "@/integrations/supabase/client";
 import { draftEngagementDecisions } from "@/lib/decisions.functions";
 
 /**

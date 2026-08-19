@@ -27,18 +27,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { clientDisplayName, engagementDisplayCode, engagementDisplayTitle } from "@/lib/clients";
 import { INVITE_ADMIN_ONLY_LINE } from "@/lib/invites-shared";
 
-type Engagement = {
-  id: string;
-  code: string;
-  title: string;
-  client_label: string | null;
-  client_id: string | null;
-  clients: { id: string; name: string; quick_folder: boolean } | null;
-  brief: string | null;
-  brief_by: string | null;
-  term_label: string | null;
-};
-
 type TaskWithWork = {
   id: string;
   name: string;
