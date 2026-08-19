@@ -88,18 +88,23 @@ export function NewEngagementDialog({
       return;
     }
 
-    const { error: memberError } = await supabase.from("engagement_members").insert({
-      engagement_id: engagementId,
-      profile_id: profile.id,
-      member_role: "em",
-    });
+    const insertMembership = () =>
+      supabase.from("engagement_members").insert({
+        engagement_id: engagementId,
+        profile_id: profile.id,
+        member_role: "em",
+      });
+
+    let { error: memberError } = await insertMembership();
+    if (memberError) {
+      // One retry. A transient refusal should not cost the person their work.
+      ({ error: memberError } = await insertMembership());
+    }
     if (memberError) {
       // The engagement exists and cannot be removed from here, so the honest
       // course is to say what happened rather than to imply a clean failure.
       await queryClient.invalidateQueries({ queryKey: ["engagements"] });
-      setError(
-        "Created, but you were not attached to it. Open it from your engagements list and add yourself before renaming or sharing it.",
-      );
+      setError("Created, but you were not attached. Ask an admin to add you.");
       setPending(false);
       return;
     }
