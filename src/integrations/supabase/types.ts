@@ -1892,7 +1892,9 @@ export type Database = {
       }
       tasks: {
         Row: {
+          accepted_at: string | null
           created_at: string
+          delivered_at: string | null
           detail: string | null
           engagement_id: string
           goal: string | null
@@ -1907,7 +1909,9 @@ export type Database = {
           when_label: string | null
         }
         Insert: {
+          accepted_at?: string | null
           created_at?: string
+          delivered_at?: string | null
           detail?: string | null
           engagement_id: string
           goal?: string | null
@@ -1922,7 +1926,9 @@ export type Database = {
           when_label?: string | null
         }
         Update: {
+          accepted_at?: string | null
           created_at?: string
+          delivered_at?: string | null
           detail?: string | null
           engagement_id?: string
           goal?: string | null
@@ -2408,6 +2414,10 @@ export type Database = {
       my_profile_ids: { Args: never; Returns: string[] }
       my_role: { Args: never; Returns: Database["public"]["Enums"]["app_role"] }
       reactivate_member: { Args: { p_profile: string }; Returns: undefined }
+      set_firm_check_active: {
+        Args: { p_active: boolean; p_check: string }
+        Returns: undefined
+      }
       set_member_role: {
         Args: {
           p_profile: string
