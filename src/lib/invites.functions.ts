@@ -3,6 +3,30 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 import type { InviteEmailResult } from "./invites-shared";
+import type { BlockedState, InviteState } from "./invite-state";
+
+/**
+ * Public on purpose: the accept page must render honest states before anyone
+ * signs in. The handler proves the session from the bearer header when there
+ * is one, and the projection is minimal either way.
+ */
+export const getInviteState = createServerFn({ method: "POST" })
+  .inputValidator((input: { code: string; eng?: string | undefined }) => input)
+  .handler(async ({ data }): Promise<InviteState> => {
+    const { readOptionalViewer } = await import("./invite-viewer.server");
+    const { loadInviteState } = await import("./invites.server");
+    const viewer = await readOptionalViewer();
+    return loadInviteState(data.code ?? "", data.eng ?? null, viewer);
+  });
+
+/** Content-free record of an accept that could not proceed. No addresses. */
+export const recordInviteBlocked = createServerFn({ method: "POST" })
+  .inputValidator((input: { code: string; state: BlockedState }) => input)
+  .handler(async ({ data }): Promise<{ ok: true }> => {
+    const { recordInviteBlockedByCode } = await import("./invites.server");
+    await recordInviteBlockedByCode(data.code, data.state);
+    return { ok: true };
+  });
 
 type Input = {
   profile_id?: string | undefined;

@@ -44,6 +44,7 @@ export type TelemetryEvent =
   | "member.role_changed"
   | "invite.revoked"
   | "invite.email_sent"
+  | "invite.blocked"
   | "oneonone.prepared"
   | "oneonone.saved_to_drive"
   | "link.drafted"
