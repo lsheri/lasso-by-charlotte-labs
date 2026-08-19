@@ -68,10 +68,12 @@ export function normalizeDeliverableStatus(raw: string | null | undefined): Deli
 export function taskLifecyclePatch(
   status: DeliverableStatus,
   now: string,
+  currentDeliveredAt: string | null = null,
 ): { status: DeliverableStatus; delivered_at: string | null; accepted_at: string | null } {
-  if (status === "delivered") return { status, delivered_at: now, accepted_at: null };
-  if (status === "accepted") return { status, delivered_at: now, accepted_at: now };
-  if (status === "open") return { status, delivered_at: null, accepted_at: null };
+  if (status === "delivered")
+    return { status, delivered_at: currentDeliveredAt ?? now, accepted_at: null };
+  if (status === "accepted")
+    return { status, delivered_at: currentDeliveredAt ?? now, accepted_at: now };
   return { status, delivered_at: null, accepted_at: null };
 }
 
