@@ -469,33 +469,21 @@ export async function assembleReflectContext(
   let rawUsed = 0;
   let anyCut = false;
   const textStarted = Date.now();
-  for (const item of priority) {
+  // Files are opened a few at a time, in priority order, and then accounted
+  // for one by one in that same order, so every inclusion decision is the one
+  // the old serial pass would have made.
+  for (let i = 0; i < priority.length; i += TEXT_FETCH_CHUNK) {
     // Once the budget or the clock is gone, stop opening files entirely: the
     // remaining items still appear, as their extract.
     if (rawUsed >= rawBudget || Date.now() - textStarted > TEXT_BUDGET_MS) break;
-    const result = await getItemText(supabase, item);
-    if (result.status === "unsupported" || result.status === "failed") {
-      unreadable.set(item.id, { status: result.status, note: result.note ?? null });
-      continue;
-    }
-    if (result.status === "unreadable" && item.content_ref) {
-      unreadable.set(item.id, { status: "unreadable", note: result.note ?? null });
-      continue;
-    }
-    const text = (result.text ?? "").trim();
-    if (!text) continue;
-    const clipped = headAndTail(text);
-    if (clipped.cut) anyCut = true;
-    const remaining = rawBudget - rawUsed;
-    if (clipped.text.length > remaining) {
-      anyCut = true;
-      const room = headAndTail(clipped.text, remaining);
-      fullText.set(item.id, room.text);
-      rawUsed = rawBudget;
-      break;
-    }
-    fullText.set(item.id, clipped.text);
-    rawUsed += clipped.text.length;
+    const chunk = priority.slice(i, i + TEXT_FETCH_CHUNK);
+    const fetched = await Promise.all(
+      chunk.map(async (item) => ({ item, result: await getItemText(supabase, item) })),
+    );
+    const applied = accountTextResults(fetched, rawBudget, { fullText, unreadable, rawUsed });
+    rawUsed = applied.rawUsed;
+    if (applied.anyCut) anyCut = true;
+    if (applied.stop) break;
   }
   console.log(
     `[reflect-context] text pass: ${fullText.size} full, ${unreadable.size} unreadable, ${Date.now() - textStarted}ms`,
