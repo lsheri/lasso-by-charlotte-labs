@@ -43,7 +43,7 @@ export async function callMemberRpc(
     eventType,
     orgId: profile.org_id,
     userId: context.userId,
-    dims: { reason },
+    dims: {},
   });
   return { ok: true };
 }
@@ -150,7 +150,7 @@ export async function revokeInviteByCode(
     eventType: "invite.revoked",
     orgId: profile.org_id,
     userId: context.userId,
-    dims: {},
+    dims: { reason },
   });
   return { ok: true };
 }
