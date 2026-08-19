@@ -5,6 +5,7 @@ import type { Database } from "@/integrations/supabase/types";
 import { analysisPreset } from "./analysis-presets";
 import {
   DELIVERABLE_STATUS_LABELS,
+  CYCLE_TIME_SUPPRESSED_SENTENCE,
   MIN_ACTIVITY,
   MIN_ACTORS,
   MIN_ASSURANCE_RUNS,
@@ -234,7 +235,7 @@ export async function buildFirmDashboard(
           cycleMedian,
           `Median ${cycleMedian} day${cycleMedian === 1 ? "" : "s"} from delivered to accepted, across ${cycleSamples.length} pieces of work.`,
         )
-      : suppressedStat("Not enough data yet to show how long acceptance takes.");
+      : suppressedStat(CYCLE_TIME_SUPPRESSED_SENTENCE);
 
   const analyses = analysesRes.data ?? [];
   const analysesByPreset = toLabelled(

@@ -63,14 +63,18 @@ export function ChecksLibrary({
           <div key={check.id} className="rounded-[var(--radius)] border border-border px-4 py-3">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <p className="text-sm font-medium text-foreground">{check.title}</p>
-              <button
-                type="button"
-                onClick={() => void toggle(check.id, !check.active)}
-                disabled={setActive.isPending}
-                className="text-xs text-muted-foreground transition-colors hover:text-foreground"
-              >
-                {check.active ? "Retire" : "Restore"}
-              </button>
+              {check.scope === "firm" ? (
+                <button
+                  type="button"
+                  onClick={() => void toggle(check.id, !check.active)}
+                  disabled={setActive.isPending}
+                  className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  {check.active ? "Retire" : "Restore"}
+                </button>
+              ) : (
+                <span className="text-xs text-muted-foreground">Managed where it was written</span>
+              )}
             </div>
             <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{check.body}</p>
             <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">

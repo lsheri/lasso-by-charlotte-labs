@@ -16,6 +16,13 @@ export const MIN_ASSURANCE_RUNS = 5;
 /** Cycle time needs this many accepted pieces of work with both timestamps. */
 export const MIN_CYCLE_SAMPLES = 5;
 
+/** The exact words the assurance panel shows below its floor. */
+export const ASSURANCE_SUPPRESSED_SENTENCE =
+  "The firm has not run enough checks this period for a count to say anything yet.";
+/** The exact words the cycle time stat shows below its floor. */
+export const CYCLE_TIME_SUPPRESSED_SENTENCE =
+  "Not enough data yet to show how long acceptance takes.";
+
 /** A value of null means the metric is suppressed and only the sentence shows. */
 export type Stat = { value: number | null; sentence: string };
 

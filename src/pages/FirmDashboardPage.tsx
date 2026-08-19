@@ -6,7 +6,7 @@ import { PrivacyPanel } from "@/components/firm/PrivacyPanel";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { useFirmDashboard } from "@/hooks/use-firm-dashboard";
 import { isBusinessOrg, useProfile } from "@/hooks/use-profile";
-import { relativeDayPhrase } from "@/lib/firm-dashboard-shared";
+import { ASSURANCE_SUPPRESSED_SENTENCE, relativeDayPhrase } from "@/lib/firm-dashboard-shared";
 
 export function FirmDashboardPage() {
   const { data: profile } = useProfile();
@@ -124,9 +124,7 @@ export function FirmDashboardPage() {
                   <CountRow label="Firm checks analyses run" count={data.assurance.firm_check_runs} />
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground">
-                  The firm has not run enough checks this period for a count to say anything yet.
-                </p>
+                <p className="text-sm text-muted-foreground">{ASSURANCE_SUPPRESSED_SENTENCE}</p>
               )}
             </Panel>
 
