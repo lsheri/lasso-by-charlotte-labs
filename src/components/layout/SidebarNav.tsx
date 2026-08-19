@@ -5,7 +5,7 @@ import { useDecisions } from "@/hooks/use-decisions";
 import { useEngagements } from "@/hooks/use-engagements";
 import { isBusinessOrg, useProfile } from "@/hooks/use-profile";
 
-import { navGroups } from "./nav-config";
+import { coachNavGroups, navGroups } from "./nav-config";
 import { engagementDisplayCode, engagementDisplayTitle } from "@/lib/clients";
 
 const linkClass =
@@ -22,23 +22,34 @@ export function SidebarNav({ onNavigate }: { onNavigate?: (() => void) | undefin
   // A solo workspace has no roster to administer, only the coaches it invited.
   const membersLabel = isBusinessOrg(profile) ? "Members" : "Your coaches";
 
+  // A coach gets their own short nav. Worker and admin items are unchanged.
+  if (isCoach) {
+    return (
+      <nav className="flex flex-col gap-7">
+        {coachNavGroups.map((group) => (
+          <div key={group.label}>
+            <div className="micro-label px-3">{group.label}</div>
+            <div className="mt-2 flex flex-col gap-0.5">
+              {group.items.map((item) => (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  onClick={onNavigate}
+                  className={linkClass}
+                  activeProps={{ className: "bg-accent-soft text-accent-deep font-medium" }}
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </div>
+          </div>
+        ))}
+      </nav>
+    );
+  }
+
   return (
     <nav className="flex flex-col gap-7">
-      {profile?.role === "coach" ? (
-        <div>
-          <div className="micro-label px-3">Coaching</div>
-          <div className="mt-2 flex flex-col gap-0.5">
-            <Link
-              to="/coaching"
-              onClick={onNavigate}
-              className={linkClass}
-              activeProps={{ className: "bg-accent-soft text-accent-deep font-medium" }}
-            >
-              People you coach
-            </Link>
-          </div>
-        </div>
-      ) : null}
       {navGroups.map((group) => (
         <div key={group.label}>
           <div className="micro-label px-3">{group.label}</div>
