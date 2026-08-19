@@ -42,8 +42,36 @@ export const COACH_POLL = {
 /** The counts move far more slowly than the roster, so they are cached longer. */
 export const COACH_ACTIVITY_STALE_TIME = 5 * 60_000;
 
-/** Engagements this profile coaches, grouped by the person doing the work. */
-export async function fetchCoachSubjects(coachProfileId: string): Promise<CoachSubject[]> {
+type CoachEngagementRow = {
+  engagement_id: string;
+  engagements: {
+    id: string;
+    code: string;
+    title: string;
+    client_label: string | null;
+    clients: { id: string; name: string; quick_folder: boolean } | null;
+  } | null;
+};
+
+export type CoachRoster = {
+  engagements: CoachEngagementRow[];
+  subjects: {
+    engagement_id: string;
+    profile_id: string;
+    profiles: { id: string; display_name: string } | null;
+  }[];
+};
+
+export type CoachActivity = {
+  notes: { subject_id: string; engagement_id: string | null; created_at: string }[];
+  decisions: { owner_id: string; engagement_id: string | null; created_at: string }[];
+  mapped: { mapped_at: string; tasks: { engagement_id: string; owner_id: string } | null }[];
+};
+
+export const EMPTY_COACH_ACTIVITY: CoachActivity = { notes: [], decisions: [], mapped: [] };
+
+/** Who this profile coaches. Small and cheap, so this is the read that polls. */
+export async function fetchCoachRoster(coachProfileId: string): Promise<CoachRoster> {
   const { data: coached, error: coachedError } = await supabase
     .from("engagement_members")
     .select(
@@ -53,19 +81,10 @@ export async function fetchCoachSubjects(coachProfileId: string): Promise<CoachS
     .eq("member_role", "coach");
   if (coachedError) throw coachedError;
 
-  const engagements = (
-    (coached ?? []) as unknown as {
-      engagement_id: string;
-      engagements: {
-        id: string;
-        code: string;
-        title: string;
-        client_label: string | null;
-        clients: { id: string; name: string; quick_folder: boolean } | null;
-      } | null;
-    }[]
-  ).filter((row) => row.engagements !== null);
-  if (engagements.length === 0) return [];
+  const engagements = ((coached ?? []) as unknown as CoachEngagementRow[]).filter(
+    (row) => row.engagements !== null,
+  );
+  if (engagements.length === 0) return { engagements: [], subjects: [] };
 
   const engagementIds = engagements.map((row) => row.engagement_id);
 
@@ -76,17 +95,21 @@ export async function fetchCoachSubjects(coachProfileId: string): Promise<CoachS
     .eq("member_role", "em");
   if (subjectsError) throw subjectsError;
 
+  return { engagements, subjects: (subjects ?? []) as unknown as CoachRoster["subjects"] };
+}
+
+/** The counts behind each row. Slower moving, so these are cached for longer. */
+export async function fetchCoachActivity(
+  coachProfileId: string,
+  engagementIds: string[],
+): Promise<CoachActivity> {
+  if (engagementIds.length === 0) return EMPTY_COACH_ACTIVITY;
+
   const { data: notes } = await supabase
     .from("coaching_notes")
     .select("subject_id, engagement_id, created_at")
     .eq("author_id", coachProfileId)
     .order("created_at", { ascending: false });
-
-  const lastNote = new Map<string, string>();
-  for (const note of notes ?? []) {
-    const key = `${note.engagement_id ?? ""}:${note.subject_id}`;
-    if (!lastNote.has(key)) lastNote.set(key, note.created_at);
-  }
 
   const { data: decisions } = await supabase
     .from("decisions")
@@ -99,25 +122,36 @@ export async function fetchCoachSubjects(coachProfileId: string): Promise<CoachS
     .select("mapped_at, tasks!inner(engagement_id, owner_id)")
     .in("tasks.engagement_id", engagementIds);
 
-  const mapped = (links ?? []) as unknown as {
-    mapped_at: string;
-    tasks: { engagement_id: string; owner_id: string } | null;
-  }[];
+  return {
+    notes: (notes ?? []) as CoachActivity["notes"],
+    decisions: (decisions ?? []) as CoachActivity["decisions"],
+    mapped: (links ?? []) as unknown as CoachActivity["mapped"],
+  };
+}
 
-  const rows: CoachSubject[] = (
-    (subjects ?? []) as unknown as {
-      engagement_id: string;
-      profile_id: string;
-      profiles: { id: string; display_name: string } | null;
-    }[]
-  )
+/** Pure join of the two reads, so neither query has to know about the other. */
+export function composeCoachSubjects(
+  coachProfileId: string,
+  roster: CoachRoster,
+  activity: CoachActivity,
+): CoachSubject[] {
+  const { engagements, subjects } = roster;
+  const lastNote = new Map<string, string>();
+  for (const note of activity.notes) {
+    const key = `${note.engagement_id ?? ""}:${note.subject_id}`;
+    if (!lastNote.has(key)) lastNote.set(key, note.created_at);
+  }
+  const decisions = activity.decisions;
+  const mapped = activity.mapped;
+
+  const rows: CoachSubject[] = subjects
     .filter((row) => row.profiles !== null && row.profile_id !== coachProfileId)
     .map((row) => {
       const engagement = engagements.find((e) => e.engagement_id === row.engagement_id);
       const since = lastNote.get(`${row.engagement_id}:${row.profile_id}`) ?? null;
       const after = (iso: string) => (since ? new Date(iso) > new Date(since) : true);
 
-      const subjectDecisions = (decisions ?? []).filter(
+      const subjectDecisions = decisions.filter(
         (d) => d.owner_id === row.profile_id && d.engagement_id === row.engagement_id,
       );
       const subjectElements = mapped.filter(
@@ -151,12 +185,53 @@ export async function fetchCoachSubjects(coachProfileId: string): Promise<CoachS
   return rows.sort((a, b) => (b.last_activity ?? "").localeCompare(a.last_activity ?? ""));
 }
 
+/** Kept whole for callers and tests that want one call rather than two queries. */
+export async function fetchCoachSubjects(coachProfileId: string): Promise<CoachSubject[]> {
+  const roster = await fetchCoachRoster(coachProfileId);
+  if (roster.engagements.length === 0) return [];
+  const activity = await fetchCoachActivity(
+    coachProfileId,
+    roster.engagements.map((row) => row.engagement_id),
+  );
+  return composeCoachSubjects(coachProfileId, roster, activity);
+}
+
+export function coachRosterKey(coachProfileId: string) {
+  return ["coach-subjects", coachProfileId] as const;
+}
+
+export function coachActivityKey(coachProfileId: string) {
+  return ["coach-activity", coachProfileId] as const;
+}
+
 export function useCoachSubjects(coachProfileId: string | undefined) {
-  return useQuery({
-    queryKey: ["coach-subjects", coachProfileId],
-    queryFn: () => fetchCoachSubjects(coachProfileId as string),
+  const roster = useQuery({
+    queryKey: coachRosterKey(coachProfileId ?? ""),
+    queryFn: () => fetchCoachRoster(coachProfileId as string),
     enabled: Boolean(coachProfileId),
+    ...COACH_POLL,
   });
+  const ids = (roster.data?.engagements ?? []).map((row) => row.engagement_id);
+  const activity = useQuery({
+    queryKey: [...coachActivityKey(coachProfileId ?? ""), ids.join(",")],
+    queryFn: () => fetchCoachActivity(coachProfileId as string, ids),
+    enabled: Boolean(coachProfileId) && ids.length > 0,
+    staleTime: COACH_ACTIVITY_STALE_TIME,
+  });
+
+  const data = roster.data
+    ? composeCoachSubjects(
+        coachProfileId as string,
+        roster.data,
+        activity.data ?? EMPTY_COACH_ACTIVITY,
+      )
+    : undefined;
+
+  return {
+    data,
+    isLoading: roster.isLoading,
+    error: (roster.error ?? null) as Error | null,
+  };
 }
 
 export type CoachSubjectAcrossOrgs = CoachSubject & {
@@ -167,17 +242,31 @@ export type CoachSubjectAcrossOrgs = CoachSubject & {
 /** A coach may hold profiles in several orgs; the queue spans all of them. */
 export function useAllCoachSubjects(profiles: Profile[]) {
   const coachProfiles = profiles.filter((p) => p.role === "coach");
-  const results = useQueries({
+  const rosters = useQueries({
     queries: coachProfiles.map((profile) => ({
-      queryKey: ["coach-subjects", profile.id],
-      queryFn: () => fetchCoachSubjects(profile.id),
+      queryKey: coachRosterKey(profile.id),
+      queryFn: () => fetchCoachRoster(profile.id),
+      ...COACH_POLL,
     })),
   });
 
-  const data: CoachSubjectAcrossOrgs[] = results.flatMap((result, index) => {
+  const activities = useQueries({
+    queries: coachProfiles.map((profile, index) => {
+      const ids = (rosters[index]?.data?.engagements ?? []).map((row) => row.engagement_id);
+      return {
+        queryKey: [...coachActivityKey(profile.id), ids.join(",")],
+        queryFn: () => fetchCoachActivity(profile.id, ids),
+        enabled: ids.length > 0,
+        staleTime: COACH_ACTIVITY_STALE_TIME,
+      };
+    }),
+  });
+
+  const data: CoachSubjectAcrossOrgs[] = rosters.flatMap((result, index) => {
     const profile = coachProfiles[index];
     if (!profile || !result.data) return [];
-    return result.data.map((subject) => ({
+    const activity = activities[index]?.data ?? EMPTY_COACH_ACTIVITY;
+    return composeCoachSubjects(profile.id, result.data, activity).map((subject) => ({
       ...subject,
       coach_profile_id: profile.id,
       org_name: profile.org_name,
@@ -186,8 +275,8 @@ export function useAllCoachSubjects(profiles: Profile[]) {
 
   return {
     data: data.sort((a, b) => (b.last_activity ?? "").localeCompare(a.last_activity ?? "")),
-    isLoading: results.some((r) => r.isLoading),
-    error: (results.find((r) => r.error)?.error ?? null) as Error | null,
+    isLoading: rosters.some((r) => r.isLoading),
+    error: (rosters.find((r) => r.error)?.error ?? null) as Error | null,
   };
 }
 
