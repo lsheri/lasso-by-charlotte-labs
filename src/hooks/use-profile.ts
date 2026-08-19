@@ -11,8 +11,15 @@ export type Profile = {
   display_name: string;
   title_band: string | null;
   org_name: string;
+  /** "company" when the workspace is a firm, "personal" for a solo workspace. */
+  org_type: "company" | "personal";
   onboarding: unknown;
 };
+
+/** Business orgs get the members console; personal ones get "Your coaches". */
+export function isBusinessOrg(profile: { org_type: string } | null | undefined): boolean {
+  return profile?.org_type === "company";
+}
 
 /** Active profiles, plus whether the user holds only deactivated ones. */
 export type ProfileState = { profiles: Profile[]; hasDeactivated: boolean };
@@ -59,14 +66,14 @@ export async function fetchProfileState(): Promise<ProfileState> {
   const { data, error } = await supabase
     .from("profiles")
     .select(
-      "id, user_id, org_id, role, display_name, title_band, onboarding, deactivated_at, orgs(name)",
+      "id, user_id, org_id, role, display_name, title_band, onboarding, deactivated_at, orgs(name, settings)",
     )
     .eq("user_id", user.id)
     .order("created_at", { ascending: true });
   if (error) throw error;
-  const rows = (data ?? []) as unknown as (Omit<Profile, "org_name"> & {
+  const rows = (data ?? []) as unknown as (Omit<Profile, "org_name" | "org_type"> & {
     deactivated_at: string | null;
-    orgs: { name: string } | null;
+    orgs: { name: string; settings: Record<string, unknown> | null } | null;
   })[];
   // A deactivated profile is simply omitted, the switcher and every query
   // behave as if that workspace isn't there.
@@ -75,6 +82,9 @@ export async function fetchProfileState(): Promise<ProfileState> {
     .map(({ orgs, deactivated_at: _deactivated, ...rest }) => ({
       ...rest,
       org_name: orgs?.name ?? "Workspace",
+      org_type: (orgs?.settings?.["type"] === "company" ? "company" : "personal") as
+        | "company"
+        | "personal",
     }));
   return { profiles, hasDeactivated: rows.some((row) => row.deactivated_at) };
 }
