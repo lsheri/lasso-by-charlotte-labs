@@ -26,7 +26,7 @@ function Notice({ children }: { children: React.ReactNode }) {
 }
 
 const DRIVE_CAVEAT =
-  "This preview comes from Google Drive and needs your own Drive access. Use Open in source if it stays blank.";
+  "This preview comes from Google Drive and needs your own Drive access. Use Open in Drive if it stays blank.";
 
 /**
  * The file never leaves Google: the frame loads in the reader's own Drive
