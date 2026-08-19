@@ -8,8 +8,7 @@ import { EngagementLineage } from "@/components/peek/EngagementLineage";
 import { OneOnOneBrief } from "@/components/oneonone/OneOnOneBrief";
 import { CaptureCoverage } from "@/components/common/CaptureCoverage";
 import { EditEngagementDialog } from "@/components/engagements/EditEngagementDialog";
-import { EpisodePanel } from "@/components/episodes/EpisodePanel";
-import { EditTaskDialog } from "@/components/engagements/EditTaskDialog";
+import { WorkstreamCard } from "@/components/engagements/WorkstreamCard";
 import { EngagementBriefSection } from "@/components/engagements/EngagementBriefSection";
 import { SharedWithSection } from "@/components/engagements/SharedWithSection";
 import { FirmChecksCard } from "@/components/coaching/FirmChecksCard";
@@ -252,38 +251,19 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
               profile.role !== "coach" &&
               elements.every((e) => e.work_items.owner_id === profile.id);
             return (
-              <div
+              <WorkstreamCard
                 key={task.id}
-                className="rounded-[var(--radius)] border border-border bg-card px-4 py-3 shadow-card"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-foreground">{task.name}</p>
-                    {task.detail ? (
-                      <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">
-                        {task.detail}
-                      </p>
-                    ) : null}
-                  </div>
-                  {profile && profile.role !== "coach" && task.owner_id === profile.id ? (
-                    <EditTaskDialog task={task} engagementId={engagementId} />
-                  ) : null}
-                </div>
-                <EpisodePanel taskId={task.id} profileId={profile?.id} />
-                <div className="mt-2">
-                  <TaskWorkflow
-                    taskId={task.id}
-                    elements={elements}
-                    canEdit={canEdit}
-                    orgId={profile?.org_id}
-                    onChanged={async () => {
-                      await queryClient.invalidateQueries({
-                        queryKey: ["engagement-tasks", engagementId],
-                      });
-                    }}
-                  />
-                </div>
-              </div>
+                task={task}
+                engagementId={engagementId}
+                elements={elements}
+                canEdit={canEdit}
+                profile={profile}
+                onChanged={async () => {
+                  await queryClient.invalidateQueries({
+                    queryKey: ["engagement-tasks", engagementId],
+                  });
+                }}
+              />
             );
           })}
 
