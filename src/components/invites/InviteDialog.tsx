@@ -18,7 +18,8 @@ import { useMembers } from "@/hooks/use-members";
 import { useShareInvalidation } from "@/hooks/use-coach-share";
 import { supabase } from "@/integrations/supabase/client";
 import { sharedSuccessLine } from "@/lib/coach-share-shared";
-import { sendInviteEmail } from "@/lib/invites.functions";
+import { createInvite, sendInviteEmail } from "@/lib/invites.functions";
+import { INVITE_ADMIN_ONLY_LINE } from "@/lib/invites-shared";
 import { coachToShareWithInstead, findMemberByEmail, type MemberRow } from "@/lib/members-shared";
 import { logEvent } from "@/lib/telemetry";
 
@@ -104,6 +105,7 @@ export function InviteDialog({
 }) {
   const { data: profile } = useProfile();
   const emailInvite = useServerFn(sendInviteEmail);
+  const mintInvite = useServerFn(createInvite);
   const [open, setOpen] = useState(false);
   const [role, setRole] = useState<InviteRole>(defaultRole);
   const [email, setEmail] = useState("");
@@ -138,7 +140,8 @@ export function InviteDialog({
     setOpen(false);
   }
 
-  const canInvite = profile?.role === "admin" || profile?.role === "lead";
+  // Admission is an admin act. Leads keep the console, they cannot mint links.
+  const canInvite = profile?.role === "admin";
   // Only ever the list this viewer may already read. It never answers whether
   // an address exists anywhere else.
   const { data: members } = useMembers(canInvite ? profile?.id : undefined);
@@ -166,24 +169,32 @@ export function InviteDialog({
     setLink(null);
     setEmailState(null);
 
-    const args: { p_role: InviteRole; p_org_id: string; p_email?: string } = {
-      p_role: role,
-      p_org_id: profile.org_id,
-    };
-    if (email.trim()) args.p_email = email.trim();
-    const { data, error: rpcError } = await supabase.rpc("make_invite", args);
-
-    setPending(false);
-    if (rpcError) {
-      setError(rpcError.message);
+    let result: Awaited<ReturnType<typeof mintInvite>>;
+    try {
+      result = await mintInvite({
+        data: {
+          profile_id: profile.id,
+          role,
+          ...(email.trim() ? { email: email.trim() } : {}),
+        },
+      });
+    } catch (e) {
+      setPending(false);
+      setError(e instanceof Error ? e.message : INVITE_ADMIN_ONLY_LINE);
       return;
     }
 
-    const params = new URLSearchParams({ code: String(data) });
+    setPending(false);
+    if (!result.ok) {
+      setError(result.message);
+      return;
+    }
+    const code = result.code;
+
+    const params = new URLSearchParams({ code });
     if (engagementId) params.set("eng", engagementId);
     const url = `${window.location.origin}/join?${params.toString()}`;
     setLink(url);
-    logEvent("coach.invite_created", profile.org_id, { role });
 
     const recipient = email.trim();
     if (recipient) {
@@ -191,7 +202,7 @@ export function InviteDialog({
         const result = await emailInvite({
           data: {
             profile_id: profile.id,
-            code: String(data),
+            code,
             email: recipient,
             accept_url: url,
           },
