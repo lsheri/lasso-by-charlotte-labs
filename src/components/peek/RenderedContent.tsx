@@ -6,6 +6,8 @@ import { useEffect, useState } from "react";
 import { PdfView } from "@/components/peek/PdfView";
 import { highlight, toSafeHtml } from "@/lib/markdown";
 import { getWorkFileUrl } from "@/lib/work-files.functions";
+import { getItemTextPane } from "@/lib/item-text.functions";
+import { contentsUnread, textStatusOf, textStatusReason } from "@/lib/text-status";
 import { fileNameFor, needsTextFetch, peekFormat, type PeekFormat } from "@/lib/peek-format";
 import type { WorkItemRow } from "@/lib/work-types";
 
@@ -23,6 +25,64 @@ function Notice({ children }: { children: React.ReactNode }) {
   return <p className="text-sm text-muted-foreground">{children}</p>;
 }
 
+const DRIVE_CAVEAT =
+  "This preview comes from Google Drive and needs your own Drive access. Use Open in source if it stays blank.";
+
+/**
+ * The file never leaves Google: the frame loads in the reader's own Drive
+ * session, so no bytes pass through Lasso or any third party viewer.
+ * Future note: a Content-Security-Policy on this app must allow
+ * frame-src https://drive.google.com or this preview goes blank.
+ */
+function DrivePreview({ fileId, title }: { fileId: string; title: string }) {
+  return (
+    <div>
+      <div className="aspect-[3/4] w-full overflow-hidden rounded-[var(--radius)] border border-border md:aspect-[4/3]">
+        <iframe
+          src={`https://drive.google.com/file/d/${fileId}/preview`}
+          title={title}
+          className="h-full w-full"
+          allow="autoplay"
+          referrerPolicy="no-referrer"
+        />
+      </div>
+      <p className="mt-2 text-xs text-muted-foreground">{DRIVE_CAVEAT}</p>
+    </div>
+  );
+}
+
+/** Plain text for formats a browser cannot render. No layout, and it says so. */
+function TextPane({ item }: { item: WorkItemRow }) {
+  const fetchText = useServerFn(getItemTextPane);
+  const query = useQuery({
+    queryKey: ["item-text-pane", item.id],
+    staleTime: 5 * 60 * 1000,
+    queryFn: async () => await fetchText({ data: { work_item_id: item.id } }),
+  });
+
+  if (query.isPending) return <Notice>Reading the file…</Notice>;
+  if (query.isError) return <Notice>{(query.error as Error).message}</Notice>;
+  const pane = query.data;
+  if (!pane?.text) {
+    return (
+      <Notice>
+        Lasso could not read this file&apos;s contents
+        {pane?.note ? `: ${pane.note}.` : "."} You can still download the original.
+      </Notice>
+    );
+  }
+  return (
+    <div>
+      <p className="text-xs text-muted-foreground">
+        Text extracted from the original file. Layout and images are not shown.
+      </p>
+      <pre className="mt-2 max-h-[70vh] overflow-auto whitespace-pre-wrap rounded-[var(--radius)] border border-border bg-secondary px-4 py-3 text-[13px] leading-relaxed">
+        {pane.text}
+      </pre>
+    </div>
+  );
+}
+
 export function FallbackCard({
   item,
   label,
@@ -33,10 +93,18 @@ export function FallbackCard({
   onDownload: () => void;
 }) {
   const link = item.meta?.web_view_link ?? null;
+  const unread = contentsUnread(item.meta as never);
+  const reason = textStatusReason(item.meta as never);
   return (
     <div className="rounded-[var(--radius)] border border-border bg-card px-5 py-6 shadow-card">
       <p className="text-sm text-foreground">Preview isn&apos;t available for this format.</p>
       <p className="mt-1 text-sm text-muted-foreground">{label}</p>
+      {unread ? (
+        <p className="mt-1 text-sm text-muted-foreground">
+          Lasso could not read this file&apos;s contents{reason ? `: ${reason}` : ""}. Only its
+          title is available to analysis.
+        </p>
+      ) : null}
       <div className="mt-4 flex flex-wrap items-center gap-3">
         <button
           type="button"
