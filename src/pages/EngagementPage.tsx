@@ -19,6 +19,8 @@ import { ReflectDock } from "@/components/reflect/ReflectDock";
 import { useRegisterAskLasso } from "@/components/reflect/ask-lasso-context";
 import { TaskWorkflow, type WorkflowElement } from "@/components/work/TaskWorkflow";
 import { useProfile } from "@/hooks/use-profile";
+import { isBusinessOrg } from "@/hooks/use-profile";
+import { useMyEngagementMembership } from "@/hooks/use-engagement-membership";
 import { useEngagementCoaches } from "@/hooks/use-coach-share";
 import { supabase } from "@/integrations/supabase/client";
 import { clientDisplayName, engagementDisplayCode, engagementDisplayTitle } from "@/lib/clients";
@@ -57,6 +59,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
   const [taskName, setTaskName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const coaches = useEngagementCoaches(engagementId);
+  const membership = useMyEngagementMembership(engagementId, profile?.id);
 
   // On phones the floating button is the only Ask Lasso entry, and on this page
   // it opens this engagement's dock rather than navigating to Reflect.
@@ -126,11 +129,19 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
   }
 
   if (engagementQuery.error) {
-    return <p className="text-sm text-destructive">{(engagementQuery.error as Error).message}</p>;
+    return (
+      <p className="text-sm text-muted-foreground">
+        We could not load this engagement just now. Try again in a moment.
+      </p>
+    );
   }
 
   if (!engagement) {
-    return <p className="text-sm text-muted-foreground">This engagement isn't available.</p>;
+    return (
+      <p className="text-sm text-muted-foreground">
+        This engagement is not available to you. It may no longer be shared.
+      </p>
+    );
   }
 
   return (
@@ -173,7 +184,14 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
         />
 
         <div className="mt-4 flex flex-wrap items-center gap-2">
-          {profile?.role !== "coach" ? <EditEngagementDialog engagement={engagement} /> : null}
+          {profile && profile.role !== "coach" && !isQuickFolder && hasCoaches ? (
+            <a
+              href="#shared-with"
+              className="rounded-full border border-accent bg-accent-soft px-3 py-1 font-mono text-[11px] uppercase tracking-[0.08em] text-accent-deep transition-colors hover:opacity-80"
+            >
+              Share with a coach
+            </a>
+          ) : null}
           {profile && profile.role !== "coach" && !isQuickFolder ? (
             <a
               href="#shared-with"
@@ -184,14 +202,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
                 : `Shared with ${coaches.data?.length} coach${(coaches.data?.length ?? 0) === 1 ? "" : "es"}`}
             </a>
           ) : null}
-          {profile && profile.role !== "coach" && !isQuickFolder && hasCoaches ? (
-            <a
-              href="#shared-with"
-              className="rounded-full border border-accent bg-accent-soft px-3 py-1 font-mono text-[11px] uppercase tracking-[0.08em] text-accent-deep transition-colors hover:opacity-80"
-            >
-              Share with a coach
-            </a>
-          ) : null}
+          {membership.data?.isMember ? <EditEngagementDialog engagement={engagement} /> : null}
           <button
             type="button"
             onClick={() => setAboutOpen((v) => !v)}
@@ -303,6 +314,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
           engagementId={engagementId}
           orgId={profile.org_id}
           quickFolder={isQuickFolder}
+          personalOrg={!isBusinessOrg(profile)}
         />
       ) : null}
 

@@ -15,7 +15,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { useProfile } from "@/hooks/use-profile";
 import { useMembers } from "@/hooks/use-members";
+import { useShareInvalidation } from "@/hooks/use-coach-share";
 import { supabase } from "@/integrations/supabase/client";
+import { sharedSuccessLine } from "@/lib/coach-share-shared";
 import { sendInviteEmail } from "@/lib/invites.functions";
 import { coachToShareWithInstead, findMemberByEmail, type MemberRow } from "@/lib/members-shared";
 import { logEvent } from "@/lib/telemetry";
@@ -110,6 +112,31 @@ export function InviteDialog({
   const [emailState, setEmailState] = useState<"sent" | "not_configured" | "failed" | null>(null);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [sharing, setSharing] = useState(false);
+  const invalidateShares = useShareInvalidation();
+
+  /**
+   * In engagement context the dialog can finish the job itself: one tap calls
+   * the same RPC the roster calls, so nobody is sent off to find a list.
+   */
+  async function shareHere(member: MemberRow) {
+    if (!engagementId || !profile) return;
+    setSharing(true);
+    setError(null);
+    const { error: e } = await supabase.rpc("share_engagement_with_coach", {
+      p_engagement: engagementId,
+      p_coach_profile: member.id,
+    });
+    setSharing(false);
+    if (e) {
+      setError(e.message);
+      return;
+    }
+    logEvent("coach.engagement_shared", profile.org_id, { action: "shared" });
+    await invalidateShares();
+    toast.success(sharedSuccessLine(member.display_name));
+    setOpen(false);
+  }
 
   const canInvite = profile?.role === "admin" || profile?.role === "lead";
   // Only ever the list this viewer may already read. It never answers whether
@@ -257,7 +284,19 @@ export function InviteDialog({
                   {existing.display_name} is already in this workspace, so they do not need an
                   invite.
                 </p>
-                {shareInstead && onShareInstead ? (
+                {shareInstead && engagementId ? (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    disabled={sharing}
+                    onClick={() => void shareHere(shareInstead)}
+                  >
+                    {sharing
+                      ? "Sharing…"
+                      : `Share this engagement with ${shareInstead.display_name.split(" ")[0]}`}
+                  </Button>
+                ) : shareInstead && onShareInstead ? (
                   <Button
                     type="button"
                     size="sm"

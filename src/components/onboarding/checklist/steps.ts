@@ -50,7 +50,14 @@ const workerSteps: ChecklistStepDef[] = [
     hint: "Optional. Share an engagement with a coach who is already here, or invite a new one. They see only what you share.",
     optional: true,
     to: "/members",
-    done: (p) => (p.counts.invites > 0 ? `${p.counts.invites} invites created` : null),
+    // Sharing is the point of the step, so a share counts before an invite
+    // does. Both are read from the record, and both are scoped to this person.
+    done: (p) =>
+      p.counts.shared_by_me > 0
+        ? `${p.counts.shared_by_me} engagements shared`
+        : p.counts.invites_by_me > 0
+          ? `${p.counts.invites_by_me} invites created`
+          : null,
   },
 ];
 

@@ -14,7 +14,11 @@ export type OnboardingProgress = {
     mapped: number;
     analyses: number;
     invites: number;
+    /** Invites this person created, not the whole workspace's. */
+    invites_by_me: number;
     shared_engagements: number;
+    /** Engagements this person works on and has shared with a coach. */
+    shared_by_me: number;
     firm_checks: number;
     one_on_one: number;
     members: number;
@@ -36,12 +40,33 @@ export const getOnboardingProgress = createServerFn({ method: "POST" })
   .inputValidator((input: { profile_id?: string | undefined }) => input)
   .handler(async ({ data, context }): Promise<OnboardingProgress | null> => {
     const { resolveProfile } = await import("./profile-resolve");
+    const { sharedByMeCount } = await import("./coach-share-shared");
     const supabase = context.supabase;
     const profile = await resolveProfile(supabase, context.userId, data.profile_id);
     if (!profile) return null;
 
     const head = { count: "exact" as const, head: true };
     const isCoach = profile.role === "coach";
+
+    /**
+     * Engagements this person works on that carry a coach membership. Two
+     * scoped head reads, then a distinct count in memory. No schema.
+     */
+    const sharedByMe = (async (): Promise<number> => {
+      const mine = await supabase
+        .from("engagement_members")
+        .select("engagement_id")
+        .eq("profile_id", profile.id)
+        .neq("member_role", "coach");
+      const ids = (mine.data ?? []).map((row) => row.engagement_id);
+      if (ids.length === 0) return 0;
+      const theirs = await supabase
+        .from("engagement_members")
+        .select("engagement_id")
+        .eq("member_role", "coach")
+        .in("engagement_id", ids);
+      return sharedByMeCount(ids, theirs.data ?? []);
+    })();
 
     const [
       tokens,
@@ -50,6 +75,8 @@ export const getOnboardingProgress = createServerFn({ method: "POST" })
       mapped,
       analyses,
       invites,
+      invitesByMe,
+      sharedByMeTotal,
       sharedEngagements,
       firmChecks,
       oneOnOne,
@@ -79,6 +106,12 @@ export const getOnboardingProgress = createServerFn({ method: "POST" })
         .eq(isCoach ? "run_by_profile_id" : "owner_id", profile.id),
       supabase.from("invites").select("code", head).eq("org_id", profile.org_id),
       supabase
+        .from("invites")
+        .select("code", head)
+        .eq("org_id", profile.org_id)
+        .eq("created_by", profile.id),
+      sharedByMe,
+      supabase
         .from("engagement_members")
         .select("engagement_id", head)
         .eq("profile_id", profile.id),
@@ -101,7 +134,9 @@ export const getOnboardingProgress = createServerFn({ method: "POST" })
         mapped: mapped.count ?? 0,
         analyses: analyses.count ?? 0,
         invites: invites.count ?? 0,
+        invites_by_me: invitesByMe.count ?? 0,
         shared_engagements: sharedEngagements.count ?? 0,
+        shared_by_me: sharedByMeTotal,
         firm_checks: firmChecks.count ?? 0,
         one_on_one: oneOnOne.count ?? 0,
         members: members.count ?? 0,

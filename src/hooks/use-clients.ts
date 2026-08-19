@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { supabase } from "@/integrations/supabase/client";
 import { QUICK_FOLDER_ENGAGEMENT_TITLE } from "@/lib/clients";
+import { CLIENT_RENAME_REFUSAL, saveOutcome } from "@/lib/save-guard";
 
 export type ClientRow = {
   id: string;
@@ -49,6 +50,19 @@ export async function createClient(input: {
   });
   if (error) throw new Error(error.message);
   return id;
+}
+
+/**
+ * Renames a client. The row comes back so a refusal cannot read as a save.
+ */
+export async function renameClient(input: { clientId: string; name: string }): Promise<void> {
+  const result = await supabase
+    .from("clients")
+    .update({ name: input.name })
+    .eq("id", input.clientId)
+    .select("id");
+  const outcome = saveOutcome(result, CLIENT_RENAME_REFUSAL);
+  if (!outcome.ok) throw new Error(outcome.message);
 }
 
 /**

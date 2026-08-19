@@ -184,3 +184,80 @@ export async function fetchShareableEngagements(
     })
     .sort((a, b) => a.title.localeCompare(b.title));
 }
+
+/* ------------------------------------------------------------------ roster */
+
+export type OrgCoach = { id: string; display_name: string };
+
+export type SharedCoach = {
+  id: string;
+  added_at: string | null;
+  added_by_name: string | null;
+};
+
+export type RosterRow = {
+  id: string;
+  display_name: string;
+  shared: boolean;
+  added_at: string | null;
+  added_by_name: string | null;
+};
+
+/**
+ * One row per active coach in the workspace, in name order, carrying whether
+ * this engagement is already shared with them. Optimistic overrides win so a
+ * tap reads immediately and rolls back cleanly when the RPC refuses.
+ */
+export function rosterFor(
+  coaches: OrgCoach[],
+  shared: SharedCoach[],
+  optimistic: Record<string, boolean> = {},
+): RosterRow[] {
+  const sharedById = new Map(shared.map((row) => [row.id, row]));
+  return [...coaches]
+    .sort((a, b) => a.display_name.localeCompare(b.display_name))
+    .map((coach) => {
+      const match = sharedById.get(coach.id);
+      return {
+        id: coach.id,
+        display_name: coach.display_name,
+        shared: optimistic[coach.id] ?? Boolean(match),
+        added_at: match?.added_at ?? null,
+        added_by_name: match?.added_by_name ?? null,
+      };
+    });
+}
+
+export function sharedSuccessLine(name: string): string {
+  return `Shared. ${name} can now see this engagement.`;
+}
+
+/** Removal is a change of sight, not a deletion, and it says so. */
+export function removalLine(name: string): string {
+  return `Removed. ${name} no longer sees this engagement. Nothing is deleted, and their past notes remain theirs.`;
+}
+
+/**
+ * Engagements the caller has shared with a coach: distinct engagement ids that
+ * carry a coach membership AND that the caller works on themselves.
+ */
+export function sharedByMeCount(
+  mineIds: string[],
+  coachRows: { engagement_id: string }[],
+): number {
+  const mine = new Set(mineIds);
+  const shared = new Set<string>();
+  for (const row of coachRows) if (mine.has(row.engagement_id)) shared.add(row.engagement_id);
+  return shared.size;
+}
+
+/**
+ * One event per bulk action rather than one per row, so an easy tap cannot
+ * inflate the series. Dims carry the count only: never a name, never an id.
+ */
+export function bulkShareDims(
+  action: "shared" | "unshared",
+  count: number,
+): { action: string; bulk: boolean; count: number } {
+  return { action, bulk: true, count };
+}
