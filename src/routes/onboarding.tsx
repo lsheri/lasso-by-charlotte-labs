@@ -172,7 +172,13 @@ function OnboardingInner() {
       if (orgId) logEvent("org.created", orgId, { org_type: orgType });
     }
 
-    await queryClient.invalidateQueries();
+    // Narrowed on purpose: only the keys this step can have changed.
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["profiles"] }),
+      queryClient.invalidateQueries({ queryKey: ["onboarding-progress"] }),
+      queryClient.invalidateQueries({ queryKey: ["work-items"] }),
+      queryClient.invalidateQueries({ queryKey: ["engagements"] }),
+    ]);
     setPending(false);
     setStage(orgType === "personal" ? "tools" : "why");
   }

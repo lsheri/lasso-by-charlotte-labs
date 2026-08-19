@@ -13,6 +13,7 @@ import type { MembersPayload } from "@/lib/members-shared";
 export function useMembers(profileId: string | undefined) {
   return useQuery({
     queryKey: ["members", profileId],
+    staleTime: 60_000,
     enabled: Boolean(profileId),
     queryFn: (): Promise<MembersPayload> =>
       listMembers({ data: { profile_id: profileId as string } }),

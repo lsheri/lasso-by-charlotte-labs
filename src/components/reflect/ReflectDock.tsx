@@ -106,6 +106,7 @@ export function ReflectDock({
   // and that counts for the analyses that need one.
   const { data: engagementBrief } = useQuery({
     queryKey: ["engagement-brief-present", engagementId],
+    enabled: open,
     queryFn: async (): Promise<boolean> => {
       const { data } = await supabase
         .from("engagements")

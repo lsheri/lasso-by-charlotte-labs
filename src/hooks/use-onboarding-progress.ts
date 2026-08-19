@@ -18,6 +18,7 @@ export function useOnboardingProgress(enabled: boolean) {
   const run = useServerFn(getOnboardingProgress);
   return useQuery<OnboardingProgress | null>({
     queryKey: ["onboarding-progress", profile?.id ?? null],
+    staleTime: 60_000,
     enabled: enabled && Boolean(profile),
     staleTime: 60_000,
     queryFn: () => run({ data: { profile_id: profile?.id } }),

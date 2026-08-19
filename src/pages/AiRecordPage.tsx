@@ -112,20 +112,21 @@ export function AiRecordPage() {
   const [openGroup, setOpenGroup] = useState<string | null>(null);
 
   const threads = (work?.items ?? []).filter((i) => i.type === "ai_thread");
+  // The id list is sorted before it becomes part of a key, so a reordered but
+  // identical set of threads does not churn the cache and repaint the page.
+  const threadIds = threads.map((i) => i.id);
+  const threadKey = [...threadIds].sort().join(",");
   const groups = groupItems(threads);
   const analyses = useChatAnalyses(profile?.id, profile?.org_id);
 
   const { data: turnCounts } = useQuery({
-    queryKey: ["ai-record-turns", threads.map((i) => i.id).join(",")],
+    queryKey: ["ai-record-turns", threadKey],
     enabled: threads.length > 0,
     queryFn: async (): Promise<Record<string, number>> => {
       const { data } = await supabase
         .from("turns")
         .select("work_item_id")
-        .in(
-          "work_item_id",
-          threads.map((i) => i.id),
-        );
+        .in("work_item_id", threadIds);
       const counts: Record<string, number> = {};
       for (const row of data ?? []) {
         counts[row.work_item_id] = (counts[row.work_item_id] ?? 0) + 1;
@@ -135,16 +136,13 @@ export function AiRecordPage() {
   });
 
   const { data: fed } = useQuery({
-    queryKey: ["ai-record-links", threads.map((i) => i.id).join(",")],
+    queryKey: ["ai-record-links", threadKey],
     enabled: threads.length > 0,
     queryFn: async (): Promise<Record<string, string[]>> => {
       const { data } = await supabase
         .from("work_item_links")
         .select("from_item_id, to_item_id, status")
-        .in(
-          "from_item_id",
-          threads.map((i) => i.id),
-        );
+        .in("from_item_id", threadIds);
       const byThread: Record<string, string[]> = {};
       const targets = new Set<string>();
       for (const row of data ?? []) {
