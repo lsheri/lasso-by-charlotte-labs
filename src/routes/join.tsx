@@ -99,17 +99,18 @@ function JoinPage() {
   const [override, setOverride] = useState<BlockedState | null>(null);
   const blocked = override ?? (state ? blockedStateFor(state, viewerEmail ?? null) : null);
 
-  // One content-free record per blocked view, never an address.
+  // One content-free record per blocked view, never an address. A creator
+  // opening their own link is also a member, but that is a preview, not a block.
   const reported = useRef<string | null>(null);
   useEffect(() => {
-    if (!code || !blocked) return;
+    if (!code || !blocked || state?.created_by_you) return;
     const key = `${code}:${blocked}`;
     if (reported.current === key) return;
     reported.current = key;
     void reportBlocked({ data: { code, state: blocked } }).catch(() => {
       /* telemetry must never surface to the user */
     });
-  }, [code, blocked, reportBlocked]);
+  }, [code, blocked, state?.created_by_you, reportBlocked]);
 
   async function signOutAndStay() {
     await queryClient.cancelQueries();
