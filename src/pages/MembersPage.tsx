@@ -135,6 +135,7 @@ export function MembersPage() {
 
       {data ? (
         <div className="space-y-10">
+          <PlanSection entitlement={data.entitlement} business={business} />
           <section>
             <div className="flex items-center justify-between gap-3">
               <h2 className="micro-label">{copy.people}</h2>
