@@ -189,6 +189,7 @@ function MembersConsole() {
                 <InviteDialog
                   showHistory={false}
                   {...(business ? {} : { defaultRole: "coach" as const })}
+                  onShareInstead={(member) => setShareTarget(member)}
                   trigger={
                     <Button type="button" size="sm" variant="outline">
                       {copy.invite}
@@ -217,6 +218,16 @@ function MembersConsole() {
                   ) : (
                     <Badge tone="accent">Active</Badge>
                   )}
+                  {member.role === "coach" && !member.deactivated_at && profile ? (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setShareTarget(member)}
+                    >
+                      Share work with {member.display_name.split(" ")[0]}
+                    </Button>
+                  ) : null}
                   {isAdmin || (member.role === "coach" && !member.deactivated_at) ? (
                     <DropdownMenu>
                       <DropdownMenuTrigger
@@ -226,11 +237,6 @@ function MembersConsole() {
                         <MoreHorizontal className="h-4 w-4" />
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        {member.role === "coach" && !member.deactivated_at && profile ? (
-                          <DropdownMenuItem onSelect={() => setShareTarget(member)}>
-                            Share work with {member.display_name.split(" ")[0]}
-                          </DropdownMenuItem>
-                        ) : null}
                         {isAdmin && member.deactivated_at ? (
                           <DropdownMenuItem
                             onSelect={() =>
