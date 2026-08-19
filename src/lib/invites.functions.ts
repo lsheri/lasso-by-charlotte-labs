@@ -2,10 +2,13 @@ import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-import type { InviteEmailResult } from "./invites-shared";
+import {
+  INVITE_ADMIN_ONLY_LINE,
+  INVITE_BLOCKED_STATES,
+  type CreateInviteResult,
+  type InviteEmailResult,
+} from "./invites-shared";
 import type { InviteState } from "./invite-state";
-
-const BLOCKED_STATES = ["mismatch", "expired", "revoked", "used", "already_member"] as const;
 
 /**
  * Public on purpose: the accept page must render honest states before anyone
@@ -30,7 +33,7 @@ export const recordInviteBlocked = createServerFn({ method: "POST" })
   .inputValidator((input: { code: string; state: string }) => input)
   .handler(async ({ data }): Promise<{ ok: true }> => {
     const state = data?.state;
-    if (typeof state !== "string" || !(BLOCKED_STATES as readonly string[]).includes(state)) {
+    if (typeof state !== "string" || !(INVITE_BLOCKED_STATES as readonly string[]).includes(state)) {
       return { ok: true };
     }
     const { recordInviteBlockedByCode } = await import("./invites.server");
@@ -88,4 +91,57 @@ export const sendInviteEmail = createServerFn({ method: "POST" })
     });
 
     return result;
+  });
+
+/**
+ * Creating an invite is admission to the workspace, so it runs here rather than
+ * from the browser. The admin check mirrors make_invite, which refuses anyone
+ * else anyway; this way the refusal is typed, honest and recorded.
+ */
+export const createInvite = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: { profile_id?: string | undefined; role: "coach" | "em"; email?: string | undefined }) =>
+      input,
+  )
+  .handler(async ({ data, context }): Promise<CreateInviteResult> => {
+    const { resolveProfile } = await import("@/lib/profile-resolve");
+    const { recordEvent } = await import("@/lib/telemetry.server");
+
+    const profile = await resolveProfile(context.supabase, context.userId, data.profile_id);
+    if (!profile) throw new Response("Forbidden", { status: 403 });
+
+    const { data: row } = await context.supabase
+      .from("profiles")
+      .select("deactivated_at")
+      .eq("id", profile.id)
+      .maybeSingle();
+
+    if (profile.role !== "admin" || row?.deactivated_at) {
+      // Content free: the state only, never the address or the intended role.
+      await recordEvent(context.supabase, {
+        eventType: "invite.blocked",
+        orgId: profile.org_id,
+        userId: context.userId,
+        dims: { state: "not_permitted" },
+      });
+      return { ok: false, reason: "not_permitted", message: INVITE_ADMIN_ONLY_LINE };
+    }
+
+    const email = (data.email ?? "").trim();
+    const { data: code, error } = await context.supabase.rpc("make_invite", {
+      p_role: data.role,
+      p_org_id: profile.org_id,
+      ...(email ? { p_email: email } : {}),
+    });
+    if (error || !code) throw new Error(error?.message ?? "Could not create an invite.");
+
+    await recordEvent(context.supabase, {
+      eventType: "coach.invite_created",
+      orgId: profile.org_id,
+      userId: context.userId,
+      dims: { role: data.role },
+    });
+
+    return { ok: true, code: String(code) };
   });
