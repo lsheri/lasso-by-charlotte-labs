@@ -19,6 +19,7 @@ import { ReflectDock } from "@/components/reflect/ReflectDock";
 import { useRegisterAskLasso } from "@/components/reflect/ask-lasso-context";
 import { TaskWorkflow, type WorkflowElement } from "@/components/work/TaskWorkflow";
 import { useProfile } from "@/hooks/use-profile";
+import { useEngagementCoaches } from "@/hooks/use-coach-share";
 import { supabase } from "@/integrations/supabase/client";
 import {
   clientDisplayName,
@@ -59,6 +60,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
   const [prepOpen, setPrepOpen] = useState(false);
   const [taskName, setTaskName] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const coaches = useEngagementCoaches(engagementId);
 
   // On phones the floating button is the only Ask Lasso entry, and on this page
   // it opens this engagement's dock rather than navigating to Reflect.
@@ -174,6 +176,16 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
 
         <div className="mt-4 flex flex-wrap items-center gap-2">
           {profile?.role !== "coach" ? <EditEngagementDialog engagement={engagement} /> : null}
+          {profile && profile.role !== "coach" ? (
+            <a
+              href="#shared-with"
+              className="rounded-full border border-border bg-card px-3 py-1 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+            >
+              {(coaches.data ?? []).length === 0
+                ? "Not shared with anyone"
+                : `Shared with ${coaches.data?.length} coach${(coaches.data?.length ?? 0) === 1 ? "" : "es"}`}
+            </a>
+          ) : null}
           <button
             type="button"
             onClick={() => setAboutOpen((v) => !v)}
