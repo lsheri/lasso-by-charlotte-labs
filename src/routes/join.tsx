@@ -399,6 +399,7 @@ function AcceptForm({
     }
 
     setActiveProfileId(profileId as string);
+    clearPendingInvite();
 
     const { data: invite } = await supabase
       .from("invites")

@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchProfile } from "@/hooks/use-profile";
+import { readPendingInvite } from "@/lib/pending-invite";
 import { logEvent } from "@/lib/telemetry";
 import {
   loadToolsUsed,
@@ -65,6 +66,18 @@ export const Route = createFileRoute("/onboarding")({
     const profile = await fetchProfile();
     // `?setup=1` is how an existing member reopens the tool setup from Connectors.
     if (profile && !search.setup) throw redirect({ to: "/work" });
+    // Someone who arrived on an invite should never be asked for the code
+    // again. The accept page owns every invite state, including redeemed.
+    if (!profile && !search.setup) {
+      const pending = readPendingInvite();
+      if (pending) {
+        throw redirect({
+          to: "/join",
+          search: pending.eng ? { code: pending.code, eng: pending.eng } : { code: pending.code },
+          replace: true,
+        });
+      }
+    }
   },
   head: () => ({
     meta: [
