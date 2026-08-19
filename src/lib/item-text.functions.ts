@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { TextItem } from "./item-text.server";
 
 export type ItemTextPane = {
   text: string | null;
@@ -20,7 +21,7 @@ export const getItemTextPane = createServerFn({ method: "POST" })
     return { work_item_id: input.work_item_id };
   })
   .handler(async ({ data, context }): Promise<ItemTextPane> => {
-    const { ITEM_TEXT_COLUMNS, getItemText, type TextItem } = await import("./item-text.server");
+    const { ITEM_TEXT_COLUMNS, getItemText } = await import("./item-text.server");
     const { data: item, error } = await context.supabase
       .from("work_items")
       .select(ITEM_TEXT_COLUMNS)
