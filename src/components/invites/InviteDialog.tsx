@@ -14,8 +14,10 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { useProfile } from "@/hooks/use-profile";
+import { useMembers } from "@/hooks/use-members";
 import { supabase } from "@/integrations/supabase/client";
 import { sendInviteEmail } from "@/lib/invites.functions";
+import { coachToShareWithInstead, findMemberByEmail, type MemberRow } from "@/lib/members-shared";
 import { logEvent } from "@/lib/telemetry";
 
 type InviteRole = "coach" | "em";
@@ -85,12 +87,18 @@ export function InviteDialog({
   engagementId,
   defaultRole = "coach",
   showHistory = true,
+  onShareInstead,
 }: {
   trigger: ReactNode;
   engagementId?: string | undefined;
   defaultRole?: InviteRole;
   /** The members console lists invites itself, so it turns this off. */
   showHistory?: boolean;
+  /**
+   * Offered when the typed address already belongs to a coach here. Without
+   * it the dialog still blocks the duplicate, it just cannot hand over.
+   */
+  onShareInstead?: (member: MemberRow) => void;
 }) {
   const { data: profile } = useProfile();
   const emailInvite = useServerFn(sendInviteEmail);
@@ -104,11 +112,28 @@ export function InviteDialog({
   const [error, setError] = useState<string | null>(null);
 
   const canInvite = profile?.role === "admin" || profile?.role === "lead";
+  // Only ever the list this viewer may already read. It never answers whether
+  // an address exists anywhere else.
+  const { data: members } = useMembers(canInvite ? profile?.id : undefined);
   if (!canInvite) return null;
+
+  // An invite is for someone new. A coach invite is always bound to an
+  // address, so a link cannot be passed on to someone else.
+  const emailRequired = role === "coach" || lockEmail;
+  const existing = findMemberByEmail(members?.members ?? [], email);
+  const shareInstead = coachToShareWithInstead(members?.members ?? [], email);
 
   async function createInvite(event: React.FormEvent) {
     event.preventDefault();
     if (!profile) return;
+    if (existing) {
+      setError(`${existing.display_name} is already in this workspace.`);
+      return;
+    }
+    if (emailRequired && !email.trim()) {
+      setError("Add their email address. Coach invites are always locked to one person.");
+      return;
+    }
     setPending(true);
     setError(null);
     setLink(null);
