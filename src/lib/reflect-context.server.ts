@@ -462,8 +462,8 @@ export async function assembleReflectContext(
       unreadable.set(item.id, { status: result.status, note: result.note ?? null });
       continue;
     }
-    if (result.status === "empty" && item.content_ref) {
-      unreadable.set(item.id, { status: "empty", note: result.note ?? null });
+    if (result.status === "unreadable" && item.content_ref) {
+      unreadable.set(item.id, { status: "unreadable", note: result.note ?? null });
       continue;
     }
     const text = (result.text ?? "").trim();
