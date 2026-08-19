@@ -152,18 +152,19 @@ export const setEpisodeObjective = createServerFn({ method: "POST" })
 /**
  * Closing is a human declaration. The owner declares for themselves; a coach
  * closing the same piece of work is a manager validation, and that difference
- * is recorded rather than flattened.
+ * is recorded rather than flattened. Reopening runs the same guards and puts
+ * the lifecycle back to open without inventing a second outcome.
  */
 export const closeEpisode = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
     (input: {
       episode_id: string;
-      status: "delivered" | "accepted" | "abandoned";
+      status: "open" | "delivered" | "accepted" | "abandoned";
       detail?: string | undefined;
       profile_id?: string | undefined;
     }) => {
-      if (!["delivered", "accepted", "abandoned"].includes(input.status)) {
+      if (!["open", "delivered", "accepted", "abandoned"].includes(input.status)) {
         throw new Error("Unknown close reason.");
       }
       return input;
@@ -195,6 +196,50 @@ export const closeEpisode = createServerFn({ method: "POST" })
     }
 
     const now = new Date();
+    const writerFor = async () =>
+      isOwner ? supabase : (await import("@/integrations/supabase/client.server")).supabaseAdmin;
+
+    if (data.status === "open") {
+      const reopenWriter = await writerFor();
+      const { error: reopenError } = await reopenWriter
+        .from("work_episodes")
+        .update({ status: "open" as EpisodeStatus, closed_at: null })
+        .eq("id", episode.id);
+      if (reopenError) throw new Error("That could not be reopened. Try again.");
+
+      if (episode.task_id) {
+        const { taskLifecyclePatch } = await import("./firm-dashboard-shared");
+        await reopenWriter
+          .from("tasks")
+          .update(taskLifecyclePatch("open", now.toISOString()))
+          .eq("id", episode.task_id);
+      }
+
+      const { episodeItemCount: countForReopen } = await import("./episodes.server");
+      const reopenCount = await countForReopen(supabase, episode.id);
+      const { recordEventV2: record } = await import("./telemetry-v2.server");
+      await record(supabase, userId, {
+        eventName: "episode.closed",
+        props: {
+          status: "open" as EpisodeStatus,
+          item_count: reopenCount,
+          days_open: daysBetween(episode.opened_at, now),
+          reopened: true,
+        },
+        profileId: profile.id,
+        subjectProfileId: episode.owner_id,
+        episodeId: episode.id,
+        email: emailOf(context.claims),
+      });
+
+      const { writeEpisodeFact: writeFact } = await import("./facts.server");
+      await writeFact(
+        { supabase, orgId: profile.org_id, profileId: episode.owner_id },
+        episode.id,
+      );
+      return { ok: true };
+    }
+
     const outcomeSource = isOwner ? "self_reported" : "manager_validated";
     const outcomeKind =
       data.status === "delivered"
