@@ -51,7 +51,7 @@ export type InviteState = {
   invited_role: string | null;
   org_name: string | null;
   is_email_bound: boolean;
-  /** Full address only when the caller is signed in. Null otherwise. */
+  /** Full address only for the person it is bound to. Null otherwise. */
   email: string | null;
   /** Masked form, safe for an anonymous link holder. */
   email_hint: string | null;
@@ -59,7 +59,7 @@ export type InviteState = {
   created_by_you: boolean;
   expires_at: string | null;
   engagement_title: string | null;
-  viewer: { signed_in: boolean; is_member: boolean };
+  viewer: { signed_in: boolean; is_member: boolean; email_matches: boolean };
 };
 
 /** Malformed and unknown codes return the exact same shape, deliberately. */
@@ -74,7 +74,7 @@ export function notFoundState(signedIn: boolean): InviteState {
     created_by_you: false,
     expires_at: null,
     engagement_title: null,
-    viewer: { signed_in: signedIn, is_member: false },
+    viewer: { signed_in: signedIn, is_member: false, email_matches: false },
   };
 }
 
@@ -88,8 +88,9 @@ export function blockedStateFor(state: InviteState, viewerEmail: string | null):
   if (state.status === "not_found") return null;
   if (!state.viewer.signed_in) return null;
   if (state.viewer.is_member) return "already_member";
-  if (state.is_email_bound && state.email && !emailsMatch(state.email, viewerEmail))
-    return "mismatch";
+  // email_matches is decided server-side against the verified claim, so the
+  // card is right even when the bound address is withheld from this viewer.
+  if (state.is_email_bound && !state.viewer.email_matches) return "mismatch";
   return null;
 }
 
