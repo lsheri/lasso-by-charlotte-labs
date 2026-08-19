@@ -21,11 +21,7 @@ import { TaskWorkflow, type WorkflowElement } from "@/components/work/TaskWorkfl
 import { useProfile } from "@/hooks/use-profile";
 import { useEngagementCoaches } from "@/hooks/use-coach-share";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  clientDisplayName,
-  engagementDisplayCode,
-  engagementDisplayTitle,
-} from "@/lib/clients";
+import { clientDisplayName, engagementDisplayCode, engagementDisplayTitle } from "@/lib/clients";
 
 type Engagement = {
   id: string;

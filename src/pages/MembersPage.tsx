@@ -87,7 +87,8 @@ function PlanSection({
   if (!business) {
     return (
       <p className="text-sm text-muted-foreground">
-        {planLine(entitlement)}. {renewal === "No end date" ? "No end date." : `Runs to ${renewal}.`}
+        {planLine(entitlement)}.{" "}
+        {renewal === "No end date" ? "No end date." : `Runs to ${renewal}.`}
       </p>
     );
   }
@@ -292,9 +293,8 @@ function MembersConsole() {
                           onRevoke: () =>
                             run({ kind: "revoke", code: invite.code }, "Invite withdrawn"),
                           onResend: () =>
-                            run(
-                              { kind: "resend", code: invite.code },
-                              (result) => resendMessage(result),
+                            run({ kind: "resend", code: invite.code }, (result) =>
+                              resendMessage(result),
                             ),
                           busy: action.isPending,
                         }

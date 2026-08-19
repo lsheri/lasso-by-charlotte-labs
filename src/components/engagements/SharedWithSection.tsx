@@ -110,7 +110,12 @@ export function SharedWithSection({
         p_coach_profile: coach.id,
       });
       if (error) {
-        results.push({ id: coach.id, label: coach.display_name, ok: false, message: error.message });
+        results.push({
+          id: coach.id,
+          label: coach.display_name,
+          ok: false,
+          message: error.message,
+        });
       } else {
         logEvent("coach.engagement_shared", orgId, { action: "shared" });
         results.push({ id: coach.id, label: coach.display_name, ok: true });
@@ -193,7 +198,7 @@ export function SharedWithSection({
           </Select>
           <Button
             type="button"
-              disabled={!pickedCoach || change.isPending || sharingAll}
+            disabled={!pickedCoach || change.isPending || sharingAll}
             className="w-full md:w-auto"
             onClick={() =>
               pickedCoach
@@ -207,17 +212,17 @@ export function SharedWithSection({
           >
             {pickedCoach ? `Share with ${pickedCoach.display_name}` : "Share"}
           </Button>
-            {available.length > 1 ? (
-              <Button
-                type="button"
-                variant="outline"
-                disabled={change.isPending || sharingAll}
-                className="w-full md:w-auto"
-                onClick={() => void shareWithAll()}
-              >
-                {sharingAll ? "Sharing…" : `Share with all ${available.length} coaches`}
-              </Button>
-            ) : null}
+          {available.length > 1 ? (
+            <Button
+              type="button"
+              variant="outline"
+              disabled={change.isPending || sharingAll}
+              className="w-full md:w-auto"
+              onClick={() => void shareWithAll()}
+            >
+              {sharingAll ? "Sharing…" : `Share with all ${available.length} coaches`}
+            </Button>
+          ) : null}
         </div>
       ) : (
         <p className="mt-4 text-sm text-muted-foreground">

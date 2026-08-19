@@ -212,9 +212,7 @@ export function ShareWorkDialog({
                         onClick={() => setConfirmGroup({ ...group })}
                         className="rounded-full border border-accent bg-accent-soft px-3 py-1 font-mono text-[11px] uppercase tracking-[0.08em] text-accent-deep transition-opacity disabled:opacity-50"
                       >
-                        {groupBusy
-                          ? "Sharing…"
-                          : `Share all ${unshared.length} with ${firstName}`}
+                        {groupBusy ? "Sharing…" : `Share all ${unshared.length} with ${firstName}`}
                       </button>
                     ) : null}
                   </div>

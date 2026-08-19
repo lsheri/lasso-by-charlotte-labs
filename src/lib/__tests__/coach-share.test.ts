@@ -167,8 +167,16 @@ describe("grouping by client", () => {
       [
         filed("a", "Pilot Budget", "c2", "Northwind"),
         filed("b", "DV Architecture review", "c1", "DV Partners"),
-        { ...filed("c", "Loose thread", "c1", "DV Partners"), engagements: {
-          id: "c", code: "E9", title: "Loose thread", client_label: null, clients: null } },
+        {
+          ...filed("c", "Loose thread", "c1", "DV Partners"),
+          engagements: {
+            id: "c",
+            code: "E9",
+            title: "Loose thread",
+            client_label: null,
+            clients: null,
+          },
+        },
       ],
       [],
     ]);
@@ -198,8 +206,8 @@ describe("multi share reporting is honest", () => {
 
   it("says the same for the coach side of the sheet", () => {
     expect(coachResultsLine([ok("a", "One"), ok("b", "Two")])).toMatch(/^Shared with 2 coaches/);
-    expect(
-      coachResultsLine([{ id: "b", label: "Ada Vale", ok: false, message: "refused" }]),
-    ).toBe("Shared with 0 of 1 coaches. Ada Vale did not share: refused.");
+    expect(coachResultsLine([{ id: "b", label: "Ada Vale", ok: false, message: "refused" }])).toBe(
+      "Shared with 0 of 1 coaches. Ada Vale did not share: refused.",
+    );
   });
 });

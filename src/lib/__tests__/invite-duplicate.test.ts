@@ -13,7 +13,10 @@ const member = (over: Partial<MemberRow>): MemberRow => ({
 });
 
 describe("duplicate invite check", () => {
-  const members = [member({}), member({ id: "m2", display_name: "Ben Ro", email: "ben@firm.com", role: "em" })];
+  const members = [
+    member({}),
+    member({ id: "m2", display_name: "Ben Ro", email: "ben@firm.com", role: "em" }),
+  ];
 
   it("matches case and whitespace insensitively", () => {
     expect(findMemberByEmail(members, "  ADA@firm.com ")?.id).toBe("m1");
@@ -29,7 +32,10 @@ describe("duplicate invite check", () => {
     expect(coachToShareWithInstead(members, "ada@firm.com")?.id).toBe("m1");
     expect(coachToShareWithInstead(members, "ben@firm.com")).toBeNull();
     expect(
-      coachToShareWithInstead([member({ deactivated_at: "2026-02-01T00:00:00.000Z" })], "ada@firm.com"),
+      coachToShareWithInstead(
+        [member({ deactivated_at: "2026-02-01T00:00:00.000Z" })],
+        "ada@firm.com",
+      ),
     ).toBeNull();
   });
 });

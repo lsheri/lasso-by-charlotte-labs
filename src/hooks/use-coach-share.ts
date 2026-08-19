@@ -27,11 +27,13 @@ export function useEngagementCoaches(engagementId: string) {
         .eq("engagement_id", engagementId)
         .eq("member_role", "coach");
       if (error) throw error;
-      return ((data ?? []) as unknown as {
-        added_at: string | null;
-        profiles: { id: string; display_name: string } | null;
-        added_by_profile: { display_name: string } | null;
-      }[])
+      return (
+        (data ?? []) as unknown as {
+          added_at: string | null;
+          profiles: { id: string; display_name: string } | null;
+          added_by_profile: { display_name: string } | null;
+        }[]
+      )
         .filter((row) => row.profiles !== null)
         .map((row) => ({
           id: row.profiles!.id,
