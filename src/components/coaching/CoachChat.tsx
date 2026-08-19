@@ -24,10 +24,13 @@ export function CoachChat({
   subjectId,
   engagementId,
   subjectName,
+  titleOnlyCount = 0,
 }: {
   subjectId: string;
   engagementId: string;
   subjectName: string;
+  /** How many in scope items Lasso holds a title for and nothing more. */
+  titleOnlyCount?: number;
 }) {
   const { data: profile } = useProfile();
   const [question, setQuestion] = useState("");
@@ -81,6 +84,13 @@ export function CoachChat({
         Answers come only from what {subjectName} has shared here. {subjectName} can see every
         question you ask.
       </p>
+      {titleOnlyCount > 0 ? (
+        <p className="mt-1.5 text-xs text-muted-foreground">
+          {titleOnlyCount === 1
+            ? "1 item is title only, its contents could not be read."
+            : `${titleOnlyCount} items are title only, their contents could not be read.`}
+        </p>
+      ) : null}
 
       <div className="mt-4 space-y-4">
         {exchanges.map((exchange, index) => (
