@@ -115,10 +115,8 @@ function OnboardingInner() {
   const [selected, setSelected] = useState<"company" | "personal" | "invite" | null>(
     intent ?? null,
   );
-  const [mode, setMode] = useState<"create" | "join">("create");
   const [displayName, setDisplayName] = useState("");
   const [orgName, setOrgName] = useState("");
-  const [code, setCode] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -151,19 +149,16 @@ function OnboardingInner() {
     setPending(true);
     setError(null);
 
-    const { error: rpcError } =
-      mode === "create"
-        ? await supabase.rpc("create_org_with_profile", {
-            p_display_name: displayName.trim(),
-            p_org_name:
-              orgType === "personal"
-                ? orgName.trim() || `${displayName.trim()}'s workspace`
-                : orgName.trim(),
-          })
-        : await supabase.rpc("join_org_with_invite", {
-            p_display_name: displayName.trim(),
-            p_code: code.trim(),
-          });
+    // Redeeming an invite belongs to /join, which owns every honest state.
+    // This surface only ever creates a workspace, so no database message
+    // about invites can reach the screen from here.
+    const { error: rpcError } = await supabase.rpc("create_org_with_profile", {
+      p_display_name: displayName.trim(),
+      p_org_name:
+        orgType === "personal"
+          ? orgName.trim() || `${displayName.trim()}'s workspace`
+          : orgName.trim(),
+    });
 
     if (rpcError) {
       setError(rpcError.message);
@@ -171,17 +166,15 @@ function OnboardingInner() {
       return;
     }
 
-    if (mode === "create") {
-      const profile = await fetchProfile();
-      if (profile) {
-        const orgId = await applyOrgType(profile.id, orgType);
-        if (orgId) logEvent("org.created", orgId, { org_type: orgType });
-      }
+    const profile = await fetchProfile();
+    if (profile) {
+      const orgId = await applyOrgType(profile.id, orgType);
+      if (orgId) logEvent("org.created", orgId, { org_type: orgType });
     }
 
     await queryClient.invalidateQueries();
     setPending(false);
-    setStage(orgType === "personal" && mode === "create" ? "tools" : "why");
+    setStage(orgType === "personal" ? "tools" : "why");
   }
 
   function finish() {
