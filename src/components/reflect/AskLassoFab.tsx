@@ -57,6 +57,16 @@ export function AskLassoFab() {
     }
   }
 
+  useEffect(() => {
+    if (hintSeen) return;
+    const onTap = () => {
+      writeHintSeen();
+      setHintSeen(true);
+    };
+    document.addEventListener("pointerdown", onTap, { once: true });
+    return () => document.removeEventListener("pointerdown", onTap);
+  }, [hintSeen]);
+
   if (path.startsWith("/reflect")) return null;
   // A coach has no personal Reflect space, so a page with no context of its own
   // would send them nowhere useful. Show nothing rather than a dead affordance.
