@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { supabase } from "@/integrations/supabase/client";
+import { useEngagementSlice } from "@/hooks/use-engagement-page";
 import type { Database } from "@/integrations/supabase/types";
 
 export type DecisionRow = Database["public"]["Tables"]["decisions"]["Row"];
@@ -21,20 +22,13 @@ export function useDecisions() {
 }
 
 export function useEngagementDecisions(engagementId: string | undefined) {
-  return useQuery({
-    queryKey: ["decisions", "engagement", engagementId],
-    enabled: Boolean(engagementId),
-    queryFn: async (): Promise<DecisionRow[]> => {
-      const { data, error } = await supabase
-        .from("decisions")
-        .select("*")
-        .eq("engagement_id", engagementId as string)
-        .in("status", ["draft", "confirmed"])
-        .order("created_at", { ascending: true });
-      if (error) throw error;
-      return data ?? [];
-    },
-  });
+  // Passthrough onto the consolidated engagement payload; the key is unchanged
+  // so ["decisions"] invalidations still refresh this list.
+  return useEngagementSlice<DecisionRow[]>(
+    engagementId,
+    ["decisions", "engagement", engagementId],
+    (payload) => payload.decisions,
+  );
 }
 
 export function srcsOf(row: DecisionRow): DecisionSrc[] {
