@@ -22,6 +22,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { InviteDialog } from "@/components/invites/InviteDialog";
+import {
+  INVITE_ADMIN_ONLY_LINE,
+  INVITE_RESEND_ADMIN_ONLY_LINE,
+} from "@/lib/invites-shared";
 import { ShareWorkDialog } from "@/components/coaching/ShareWorkDialog";
 import { useMemberAction, useMembers } from "@/hooks/use-members";
 import { isBusinessOrg, ROLE_LABELS, useProfile } from "@/hooks/use-profile";
@@ -119,6 +123,8 @@ function MembersConsole() {
   const [shareTarget, setShareTarget] = useState<MemberRow | null>(null);
 
   const isAdmin = data?.viewer_role === "admin";
+  // Leads read the console and can withdraw a link. Only admins issue one.
+  const canManageInvites = isAdmin || data?.viewer_role === "lead";
   // A solo workspace has no roster: the only other people in it are coaches.
   const business = isBusinessOrg(profile);
   const copy = business
@@ -272,14 +278,22 @@ function MembersConsole() {
               ))}
             </ul>
             {!isAdmin ? (
-              <p className="mt-2 text-xs text-muted-foreground">
-                Leads can see the list. Only an admin can change it.
-              </p>
+              <>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Leads can see the list. Only an admin can change it.
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">{INVITE_ADMIN_ONLY_LINE}</p>
+              </>
             ) : null}
           </section>
 
           <section>
             <h2 className="micro-label">Pending invites</h2>
+            {!isAdmin && canManageInvites ? (
+              <p className="mt-2 text-xs text-muted-foreground">
+                {INVITE_RESEND_ADMIN_ONLY_LINE}
+              </p>
+            ) : null}
             {pending.length === 0 ? (
               <p className="mt-2 text-sm text-muted-foreground">{copy.empty}</p>
             ) : (
@@ -288,15 +302,21 @@ function MembersConsole() {
                   <InviteLine
                     key={invite.code}
                     invite={invite}
-                    {...(isAdmin
+                    {...(canManageInvites
                       ? {
                           onRevoke: () =>
                             run({ kind: "revoke", code: invite.code }, "Invite withdrawn"),
-                          onResend: () =>
-                            run({ kind: "resend", code: invite.code }, (result) =>
-                              resendMessage(result),
-                            ),
                           busy: action.isPending,
+                          // Minting is admin only now, so a lead's resend would
+                          // be refused server side. Copy link and Withdraw stay.
+                          ...(isAdmin
+                            ? {
+                                onResend: () =>
+                                  run({ kind: "resend", code: invite.code }, (result) =>
+                                    resendMessage(result),
+                                  ),
+                              }
+                            : {}),
                         }
                       : {})}
                   />
