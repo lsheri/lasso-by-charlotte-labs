@@ -25,6 +25,7 @@ import {
   type DeliverableKind,
 } from "@/lib/deliverable-kinds";
 import type { WorkItemRow } from "@/lib/work-types";
+import { contentsUnread } from "@/lib/text-status";
 
 /** What a confirm step is pointed at, taken from the run request itself. */
 export type ConfirmTarget =
@@ -105,6 +106,25 @@ export function AnalysisConfirm({
     subjectProfileId: profileId ?? null,
   });
 
+  // Never promise to read what could not be read: the same field the work list
+  // marks is what adjusts this count.
+  const { data: unreadCount } = useQuery({
+    queryKey: ["confirm-unread", target?.kind === "engagement" ? target.id : null],
+    enabled: target?.kind === "engagement",
+    queryFn: async (): Promise<number> => {
+      const { data: mapped } = await supabase
+        .from("work_item_tasks")
+        .select("work_item_id, tasks!inner(engagement_id)")
+        .eq("tasks.engagement_id", (target as { id: string }).id);
+      const ids = Array.from(
+        new Set((mapped ?? []).map((row) => (row as { work_item_id: string }).work_item_id)),
+      );
+      if (ids.length === 0) return 0;
+      const { data: rows } = await supabase.from("work_items").select("id, meta").in("id", ids);
+      return (rows ?? []).filter((row) => contentsUnread(row.meta as never)).length;
+    },
+  });
+
   const { data: briefs } = useBriefs(profileId);
   const invalidateWork = useInvalidateWorkItems();
   const isDeliverableRun = target?.kind === "item" && target.scope === "deliverable";
@@ -137,6 +157,10 @@ export function AnalysisConfirm({
 
   const isFirmChecks = preset.id === "firm_checks";
   const includesBrief = preset.scope !== "thread";
+  const itemUnread = target.kind === "item" && contentsUnread(item?.meta as never);
+  const engagementUnread = target.kind === "engagement" ? (unreadCount ?? 0) : 0;
+  const readableCount =
+    target.kind === "engagement" ? Math.max(target.itemCount - engagementUnread, 0) : 0;
 
   return (
     <Dialog open onOpenChange={(next) => (next ? undefined : onCancel())}>
@@ -174,15 +198,27 @@ export function AnalysisConfirm({
                     {item?.title ?? target.title}
                   </span>
                   {item ? <TypeBadge item={item} size="sm" /> : null}
+                  {itemUnread ? (
+                    <span className="w-full text-xs text-muted-foreground">
+                      Title only, contents could not be read.
+                    </span>
+                  ) : null}
                 </li>
               ) : (
                 <li className="rounded-[var(--radius)] border border-border px-3 py-2 text-sm text-foreground">
                   {target.title}
                   <span className="ml-1 text-muted-foreground">
-                    {target.itemCount === 1
+                    {readableCount === 1
                       ? "(1 piece of work mapped into this engagement)"
-                      : `(${target.itemCount} pieces of work mapped into this engagement)`}
+                      : `(${readableCount} pieces of work mapped into this engagement)`}
                   </span>
+                  {engagementUnread > 0 ? (
+                    <span className="mt-1 block text-xs text-muted-foreground">
+                      {engagementUnread === 1
+                        ? "1 more is title only, its contents could not be read."
+                        : `${engagementUnread} more are title only, their contents could not be read.`}
+                    </span>
+                  ) : null}
                 </li>
               )}
               {taskLine ? (
