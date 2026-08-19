@@ -64,7 +64,12 @@ const SCHEMAS = {
   "episode.created": z.object({ has_task: z.boolean(), item_count: count }).strict(),
   "episode.objective_confirmed": z.object({ objective_chars: count }).strict(),
   "episode.closed": z
-    .object({ status: z.enum(EPISODE_STATUSES), item_count: count, days_open: count })
+    .object({
+      status: z.enum(EPISODE_STATUSES),
+      item_count: count,
+      days_open: count,
+      reopened: z.boolean().optional(),
+    })
     .strict(),
   "work_item.captured": z
     .object({
