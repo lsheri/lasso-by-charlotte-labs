@@ -83,9 +83,13 @@ export function MembersPage() {
         empty: "No invites outstanding.",
       };
 
-  function run(input: Parameters<typeof action.mutate>[0], success: string) {
+  function run(
+    input: Parameters<typeof action.mutate>[0],
+    success: string | ((result: unknown) => string),
+  ) {
     action.mutate(input, {
-      onSuccess: () => toast.success(success),
+      onSuccess: (result) =>
+        toast.success(typeof success === "function" ? success(result) : success),
       onError: (e) => toast.error((e as Error).message),
     });
   }
