@@ -60,6 +60,11 @@ describe("workstream status menu wiring", () => {
   });
 
   it("keeps the set-aside wording and the explainer copy", () => {
+    expect(taskLifecyclePatch("open", "2026-08-19T00:00:00Z", "2026-08-01T00:00:00Z")).toEqual({
+      status: "open",
+      delivered_at: null,
+      accepted_at: null,
+    });
     expect(WORKSTREAM_STATUS_LABELS["abandoned"]).toBe("Set aside");
     expect(STATUS_EXPLAINER).toBe(
       "Record what happened to this deliverable. This is yours; nobody is grading it.",
