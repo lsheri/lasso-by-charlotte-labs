@@ -645,21 +645,34 @@ export type Database = {
       }
       engagement_members: {
         Row: {
+          added_at: string | null
+          added_by: string | null
           engagement_id: string
           member_role: Database["public"]["Enums"]["app_role"]
           profile_id: string
         }
         Insert: {
+          added_at?: string | null
+          added_by?: string | null
           engagement_id: string
           member_role: Database["public"]["Enums"]["app_role"]
           profile_id: string
         }
         Update: {
+          added_at?: string | null
+          added_by?: string | null
           engagement_id?: string
           member_role?: Database["public"]["Enums"]["app_role"]
           profile_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "engagement_members_added_by_fkey"
+            columns: ["added_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "engagement_members_engagement_id_fkey"
             columns: ["engagement_id"]
