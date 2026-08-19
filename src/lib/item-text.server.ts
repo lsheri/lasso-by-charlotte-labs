@@ -14,23 +14,31 @@ export type TextItem = Pick<
   "id" | "title" | "type" | "content_ref" | "source_meta" | "meta"
 > & { content_hash?: string | null | undefined };
 
-export type ItemTextStatus = "ok" | "empty" | "unsupported" | "failed";
+/** Mirrors the shared TextStatus, minus "not_attempted" which is an absence. */
+export type ItemTextStatus = "ok" | "unreadable" | "unsupported" | "failed";
 
 export type ItemTextResult = {
   text: string | null;
   status: ItemTextStatus;
   note?: string;
+  /** Short machine-readable reason, stored as meta.text_error when not ok. */
+  reason?: string;
 };
 
 const MAX_ROWS_PER_SHEET = 500;
 /** Below this, a PDF page layer is effectively empty: a scan, not a document. */
 const MIN_PDF_CHARS = 40;
+/** Nothing larger is decoded inline: a capture request must not be starved. */
+const MAX_DECODE_BYTES = 15 * 1024 * 1024;
+/** Page ceiling for PDF text extraction, for the same reason. */
+const PDF_PAGE_CAP = 80;
 
 type TextMeta = {
   text_ref?: string;
   text_chars?: number;
   text_status?: ItemTextStatus;
   text_note?: string;
+  text_error?: string;
   text_source_hash?: string;
   text_extracted_at?: string;
 };
@@ -45,9 +53,15 @@ function extensionOf(name: string): string {
 }
 
 /** Which binary decoder, if any, can turn this item's bytes into plain text. */
-type BinaryShape = "docx" | "xlsx" | "pdf" | "pptx" | null;
+type BinaryShape = "docx" | "xlsx" | "pdf" | "pptx" | "odt" | "ods" | "odp" | null;
 
-function binaryShape(item: TextItem): BinaryShape {
+const OPEN_DOCUMENT_MIME: Record<string, BinaryShape> = {
+  "application/vnd.oasis.opendocument.text": "odt",
+  "application/vnd.oasis.opendocument.spreadsheet": "ods",
+  "application/vnd.oasis.opendocument.presentation": "odp",
+};
+
+export function binaryShape(item: TextItem): BinaryShape {
   const mime = item.meta?.mime_type ?? null;
   if (mime === "application/pdf") return "pdf";
   if (mime === "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
@@ -63,12 +77,16 @@ function binaryShape(item: TextItem): BinaryShape {
     mime === "application/vnd.ms-powerpoint"
   )
     return "pptx";
+  if (mime && OPEN_DOCUMENT_MIME[mime]) return OPEN_DOCUMENT_MIME[mime] ?? null;
 
   const ext = extensionOf(fileNameFor(item as WorkItemRow));
   if (ext === "pdf") return "pdf";
   if (ext === "docx" || ext === "doc") return "docx";
   if (ext === "xlsx" || ext === "xls") return "xlsx";
   if (ext === "pptx" || ext === "ppt") return "pptx";
+  if (ext === "odt") return "odt";
+  if (ext === "ods") return "ods";
+  if (ext === "odp") return "odp";
   return null;
 }
 
@@ -109,6 +127,7 @@ async function writeCache(item: TextItem, hash: string, result: ItemTextResult):
       text_extracted_at: new Date().toISOString(),
     };
     if (result.note) patch.text_note = result.note;
+    if (result.status !== "ok") patch.text_error = result.reason ?? "unknown";
     if (result.text) {
       const path = derivedPath(item, hash);
       const upload = await supabaseAdmin.storage
@@ -129,13 +148,52 @@ async function writeCache(item: TextItem, hash: string, result: ItemTextResult):
   }
 }
 
+/** One health row per unreadable file, always carrying the work item id. */
+async function reportUnread(item: TextItem, result: ItemTextResult, shape: string): Promise<void> {
+  if (result.status === "ok") return;
+  const { logHealth } = await import("@/lib/health.server");
+  await logHealth({
+    kind: result.status === "failed" ? "error" : "empty_context",
+    surface: "item_text",
+    detail: result.reason ?? result.status,
+    meta: {
+      work_item_id: item.id,
+      text_status: result.status,
+      reason: result.reason ?? "unknown",
+      shape,
+    },
+  });
+}
+
+/**
+ * Every exit from getItemText goes through here: the status a person is later
+ * shown is written on the same path that produced it, so a silent failure
+ * cannot leave a file looking readable.
+ */
+async function finish(
+  item: TextItem,
+  hash: string,
+  result: ItemTextResult,
+  shape: string,
+): Promise<ItemTextResult> {
+  await writeCache(item, hash, result);
+  await reportUnread(item, result, shape);
+  return result;
+}
+
 async function extractDocx(bytes: Uint8Array): Promise<ItemTextResult> {
   const mammoth = (await import("mammoth")).default;
   const result = await mammoth.extractRawText({
     buffer: Buffer.from(bytes as unknown as ArrayBuffer),
   });
   const text = (result.value ?? "").trim();
-  if (!text) return { text: null, status: "empty", note: "this document has no readable text" };
+  if (!text)
+    return {
+      text: null,
+      status: "unreadable",
+      note: "this document has no readable text",
+      reason: "empty_document",
+    };
   return { text, status: "ok" };
 }
 
@@ -163,7 +221,13 @@ async function extractXlsx(bytes: Uint8Array): Promise<ItemTextResult> {
     );
   }
   const text = blocks.join("\n\n").trim();
-  if (!text) return { text: null, status: "empty", note: "this spreadsheet has no cell contents" };
+  if (!text)
+    return {
+      text: null,
+      status: "unreadable",
+      note: "this spreadsheet has no cell contents",
+      reason: "empty_spreadsheet",
+    };
   return { text, status: "ok" };
 }
 
@@ -176,7 +240,8 @@ async function extractPdf(bytes: Uint8Array): Promise<ItemTextResult> {
     useSystemFonts: false,
   }).promise;
   const pages: string[] = [];
-  for (let n = 1; n <= doc.numPages; n += 1) {
+  const limit = Math.min(doc.numPages, PDF_PAGE_CAP);
+  for (let n = 1; n <= limit; n += 1) {
     const page = await doc.getPage(n);
     const content = await page.getTextContent();
     const line = content.items
@@ -186,15 +251,30 @@ async function extractPdf(bytes: Uint8Array): Promise<ItemTextResult> {
       .trim();
     if (line) pages.push(line);
   }
+  if (doc.numPages > limit) {
+    pages.push(
+      `[this file was cut after ${limit} pages, ${doc.numPages - limit} more pages are not shown]`,
+    );
+  }
   const text = pages.join("\n\n").trim();
   if (text.length < MIN_PDF_CHARS) {
     return {
       text: null,
-      status: "empty",
+      status: "unreadable",
       note: "this looks like a scanned document with no text layer",
+      reason: "pdf_no_text_layer",
     };
   }
   return { text, status: "ok" };
+}
+
+function unescapeXml(value: string): string {
+  return value
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&amp;/g, "&");
 }
 
 async function extractPptx(bytes: Uint8Array): Promise<ItemTextResult> {
@@ -213,23 +293,78 @@ async function extractPptx(bytes: Uint8Array): Promise<ItemTextResult> {
     if (!entry) return;
     const xml = strFromU8(entry);
     const runs = Array.from(xml.matchAll(/<a:t>([\s\S]*?)<\/a:t>/g)).map((m) =>
-      (m[1] ?? "")
-        .replace(/&lt;/g, "<")
-        .replace(/&gt;/g, ">")
-        .replace(/&amp;/g, "&")
-        .replace(/&quot;/g, '"')
-        .replace(/&apos;/g, "'")
-        .trim(),
+      unescapeXml(m[1] ?? "").trim(),
     );
     const body = runs.filter(Boolean).join("\n");
     if (body) blocks.push(`## Slide ${index + 1}\n${body}`);
   });
   const text = blocks.join("\n\n").trim();
-  if (!text) return { text: null, status: "empty", note: "no text was found on these slides" };
+  if (!text)
+    return {
+      text: null,
+      status: "unreadable",
+      note: "no text was found on these slides",
+      reason: "empty_slides",
+    };
   return {
     text: `[Slide text only, layout and images are not captured.]\n\n${text}`,
     status: "ok",
   };
+}
+
+/**
+ * OpenDocument text, spreadsheets and presentations are zip containers whose
+ * whole body lives in content.xml. Deterministic, no service, no model.
+ */
+export function openDocumentText(xml: string): string {
+  const withBreaks = xml
+    .replace(/<text:line-break\s*\/>/g, "\n")
+    .replace(/<text:tab\s*\/>/g, "\t")
+    .replace(/<\/text:(p|h)>/g, "\n")
+    .replace(/<\/table:table-row>/g, "\n")
+    .replace(/<\/table:table-cell>/g, "\t")
+    .replace(/<\/draw:frame>/g, "\n")
+    .replace(/<\/office:body>/g, "\n");
+  const stripped = withBreaks.replace(/<[^>]+>/g, "");
+  return unescapeXml(stripped)
+    .split("\n")
+    .map((line) => line.replace(/[ \t]+$/g, "").trimStart())
+    .filter((line, index, all) => line.trim() !== "" || (all[index - 1] ?? "").trim() !== "")
+    .join("\n")
+    .trim();
+}
+
+const OPEN_DOCUMENT_LABEL: Record<"odt" | "ods" | "odp", string> = {
+  odt: "document",
+  ods: "spreadsheet",
+  odp: "presentation",
+};
+
+async function extractOpenDocument(
+  bytes: Uint8Array,
+  shape: "odt" | "ods" | "odp",
+): Promise<ItemTextResult> {
+  const { unzipSync, strFromU8 } = await import("fflate");
+  const files = unzipSync(bytes);
+  const entry = files["content.xml"];
+  if (!entry) {
+    return {
+      text: null,
+      status: "failed",
+      note: "this OpenDocument file has no content part",
+      reason: "odf_no_content_xml",
+    };
+  }
+  const text = openDocumentText(strFromU8(entry));
+  if (!text) {
+    return {
+      text: null,
+      status: "unreadable",
+      note: `this ${OPEN_DOCUMENT_LABEL[shape]} has no readable text`,
+      reason: "empty_document",
+    };
+  }
+  return { text, status: "ok" };
 }
 
 async function decode(
@@ -239,7 +374,8 @@ async function decode(
   if (shape === "docx") return extractDocx(bytes);
   if (shape === "xlsx") return extractXlsx(bytes);
   if (shape === "pdf") return extractPdf(bytes);
-  return extractPptx(bytes);
+  if (shape === "pptx") return extractPptx(bytes);
+  return extractOpenDocument(bytes, shape);
 }
 
 /**
@@ -261,27 +397,74 @@ export async function getItemText(supabase: Db, item: TextItem): Promise<ItemTex
     const text = (data ?? [])
       .map((t) => `TURN ${t.turn_no} ${t.role.toUpperCase()}: ${t.content}`)
       .join("\n\n");
-    return text.trim() ? { text, status: "ok" } : { text: null, status: "empty" };
+    const turnHash = `turns:${(data ?? []).length}:${text.length}`;
+    return finish(
+      item,
+      turnHash,
+      text.trim()
+        ? { text, status: "ok" }
+        : {
+            text: null,
+            status: "unreadable",
+            note: "no turns are stored for this conversation",
+            reason: "empty_thread",
+          },
+      "thread",
+    );
   }
 
   if (!item.content_ref) {
-    return { text: null, status: "empty", note: "nothing is stored for this item" };
+    return finish(
+      item,
+      "none",
+      {
+        text: null,
+        status: "unreadable",
+        note: "nothing is stored for this item",
+        reason: "no_stored_bytes",
+      },
+      "none",
+    );
   }
 
   if (needsTextFetch(format)) {
     const raw = await downloadText(item.content_ref);
-    if (raw === null)
-      return { text: null, status: "failed", note: "the stored file could not be opened" };
-    return raw.trim() ? { text: raw, status: "ok" } : { text: null, status: "empty" };
+    if (raw === null) {
+      return finish(
+        item,
+        item.content_hash ?? "text",
+        {
+          text: null,
+          status: "failed",
+          note: "the stored file could not be opened",
+          reason: "download_failed",
+        },
+        format.kind,
+      );
+    }
+    return finish(
+      item,
+      item.content_hash ?? `text:${raw.length}`,
+      raw.trim()
+        ? { text: raw, status: "ok" }
+        : { text: null, status: "unreadable", note: "this file is empty", reason: "empty_file" },
+      format.kind,
+    );
   }
 
   const shape = binaryShape(item);
   if (!shape) {
-    return {
-      text: null,
-      status: "unsupported",
-      note: format.kind === "image" ? "this is an image" : "this format cannot be read as text",
-    };
+    return finish(
+      item,
+      item.content_hash ?? "unsupported",
+      {
+        text: null,
+        status: "unsupported",
+        note: format.kind === "image" ? "this is an image" : "this format cannot be read as text",
+        reason: format.kind === "image" ? "image_format" : "unsupported_format",
+      },
+      format.kind,
+    );
   }
 
   const meta = metaOf(item);
@@ -299,7 +482,19 @@ export async function getItemText(supabase: Db, item: TextItem): Promise<ItemTex
   }
 
   const bytes = await downloadBytes(item.content_ref);
-  if (!bytes) return { text: null, status: "failed", note: "the stored file could not be opened" };
+  if (!bytes) {
+    return finish(
+      item,
+      item.content_hash ?? "missing",
+      {
+        text: null,
+        status: "failed",
+        note: "the stored file could not be opened",
+        reason: "download_failed",
+      },
+      shape,
+    );
+  }
   const hash = await sha256Hex(bytes);
 
   if (known && knownHash === hash) {
@@ -311,19 +506,40 @@ export async function getItemText(supabase: Db, item: TextItem): Promise<ItemTex
     }
   }
 
+  // A very large file is never decoded inline: the capture request that asked
+  // for it would time out and take every later item in the batch with it.
+  if (bytes.byteLength > MAX_DECODE_BYTES) {
+    return finish(
+      item,
+      hash,
+      {
+        text: null,
+        status: "unreadable",
+        note: "this file is too large to read here",
+        reason: "too_large",
+      },
+      shape,
+    );
+  }
+
   let result: ItemTextResult;
   try {
     result = await decode(shape, bytes);
   } catch (e) {
     const reason = (e as Error).message ?? "unknown error";
-    result = {
-      text: null,
-      status: "failed",
-      note: /password|encrypt/i.test(reason)
-        ? "this file is password protected"
-        : `this file could not be decoded (${reason.slice(0, 120)})`,
-    };
+    result = /password|encrypt/i.test(reason)
+      ? {
+          text: null,
+          status: "failed",
+          note: "this file is password protected",
+          reason: "password_protected",
+        }
+      : {
+          text: null,
+          status: "failed",
+          note: `this file could not be decoded (${reason.slice(0, 120)})`,
+          reason: "decode_error",
+        };
   }
-  await writeCache(item, hash, result);
-  return result;
+  return finish(item, hash, result, shape);
 }
