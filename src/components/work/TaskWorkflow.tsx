@@ -1,6 +1,13 @@
 import { useState } from "react";
+import { MoreHorizontal } from "lucide-react";
 
 import { TypeIcon } from "@/components/work/TypeIcon";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { workIdentityLabel } from "@/lib/work-identity";
 import { WorkDateDialog } from "@/components/work/WorkDateDialog";
 import { OpenFileAction } from "@/components/work/OpenFileAction";
@@ -173,31 +180,31 @@ export function TaskWorkflow({
                 {canEdit ? (
                   <div className="flex shrink-0 items-center gap-2">
                     {item.content_ref ? <OpenFileAction workItemId={item.id} /> : null}
-                    <button
-                      type="button"
-                      aria-label="Move up"
-                      disabled={busy || index === 0}
-                      onClick={() => move(index, index - 1)}
-                      className="text-xs text-muted-foreground hover:text-foreground disabled:opacity-30"
-                    >
-                      ↑
-                    </button>
-                    <button
-                      type="button"
-                      aria-label="Move down"
-                      disabled={busy || index === combined.length - 1}
-                      onClick={() => move(index, index + 1)}
-                      className="text-xs text-muted-foreground hover:text-foreground disabled:opacity-30"
-                    >
-                      ↓
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setDateItem(item)}
-                      className="text-xs text-muted-foreground hover:text-foreground"
-                    >
-                      Work date
-                    </button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger
+                        aria-label={`Actions for ${item.title}`}
+                        className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                      >
+                        <MoreHorizontal className="h-4 w-4" />
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          disabled={busy || index === 0}
+                          onSelect={() => move(index, index - 1)}
+                        >
+                          Move up
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          disabled={busy || index === combined.length - 1}
+                          onSelect={() => move(index, index + 1)}
+                        >
+                          Move down
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => setDateItem(item)}>
+                          Work date
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 ) : null}
               </div>

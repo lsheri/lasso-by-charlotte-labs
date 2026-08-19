@@ -8,8 +8,7 @@ import { EngagementLineage } from "@/components/peek/EngagementLineage";
 import { OneOnOneBrief } from "@/components/oneonone/OneOnOneBrief";
 import { CaptureCoverage } from "@/components/common/CaptureCoverage";
 import { EditEngagementDialog } from "@/components/engagements/EditEngagementDialog";
-import { EpisodePanel } from "@/components/episodes/EpisodePanel";
-import { EditTaskDialog } from "@/components/engagements/EditTaskDialog";
+import { WorkstreamCard } from "@/components/engagements/WorkstreamCard";
 import { EngagementBriefSection } from "@/components/engagements/EngagementBriefSection";
 import { SharedWithSection } from "@/components/engagements/SharedWithSection";
 import { FirmChecksCard } from "@/components/coaching/FirmChecksCard";
@@ -20,6 +19,7 @@ import { ReflectDock } from "@/components/reflect/ReflectDock";
 import { useRegisterAskLasso } from "@/components/reflect/ask-lasso-context";
 import { TaskWorkflow, type WorkflowElement } from "@/components/work/TaskWorkflow";
 import { useProfile } from "@/hooks/use-profile";
+import { useEngagementCoaches } from "@/hooks/use-coach-share";
 import { supabase } from "@/integrations/supabase/client";
 import {
   clientDisplayName,
@@ -60,6 +60,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
   const [prepOpen, setPrepOpen] = useState(false);
   const [taskName, setTaskName] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const coaches = useEngagementCoaches(engagementId);
 
   // On phones the floating button is the only Ask Lasso entry, and on this page
   // it opens this engagement's dock rather than navigating to Reflect.
@@ -175,6 +176,16 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
 
         <div className="mt-4 flex flex-wrap items-center gap-2">
           {profile?.role !== "coach" ? <EditEngagementDialog engagement={engagement} /> : null}
+          {profile && profile.role !== "coach" ? (
+            <a
+              href="#shared-with"
+              className="rounded-full border border-border bg-card px-3 py-1 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+            >
+              {(coaches.data ?? []).length === 0
+                ? "Not shared with anyone"
+                : `Shared with ${coaches.data?.length} coach${(coaches.data?.length ?? 0) === 1 ? "" : "es"}`}
+            </a>
+          ) : null}
           <button
             type="button"
             onClick={() => setAboutOpen((v) => !v)}
@@ -252,38 +263,19 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
               profile.role !== "coach" &&
               elements.every((e) => e.work_items.owner_id === profile.id);
             return (
-              <div
+              <WorkstreamCard
                 key={task.id}
-                className="rounded-[var(--radius)] border border-border bg-card px-4 py-3 shadow-card"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-foreground">{task.name}</p>
-                    {task.detail ? (
-                      <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">
-                        {task.detail}
-                      </p>
-                    ) : null}
-                  </div>
-                  {profile && profile.role !== "coach" && task.owner_id === profile.id ? (
-                    <EditTaskDialog task={task} engagementId={engagementId} />
-                  ) : null}
-                </div>
-                <EpisodePanel taskId={task.id} profileId={profile?.id} />
-                <div className="mt-2">
-                  <TaskWorkflow
-                    taskId={task.id}
-                    elements={elements}
-                    canEdit={canEdit}
-                    orgId={profile?.org_id}
-                    onChanged={async () => {
-                      await queryClient.invalidateQueries({
-                        queryKey: ["engagement-tasks", engagementId],
-                      });
-                    }}
-                  />
-                </div>
-              </div>
+                task={task}
+                engagementId={engagementId}
+                elements={elements}
+                canEdit={canEdit}
+                profile={profile}
+                onChanged={async () => {
+                  await queryClient.invalidateQueries({
+                    queryKey: ["engagement-tasks", engagementId],
+                  });
+                }}
+              />
             );
           })}
 

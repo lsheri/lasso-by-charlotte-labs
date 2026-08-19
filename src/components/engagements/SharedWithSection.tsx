@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -11,6 +11,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
+import { useEngagementCoaches, useShareInvalidation } from "@/hooks/use-coach-share";
+import { sharedLine } from "@/lib/coach-share-shared";
 import { logEvent } from "@/lib/telemetry";
 
 type CoachRow = { id: string; display_name: string };
@@ -26,23 +28,11 @@ export function SharedWithSection({
   engagementId: string;
   orgId: string;
 }) {
-  const queryClient = useQueryClient();
+  const invalidateShares = useShareInvalidation();
   const [picked, setPicked] = useState<string>("");
+  const [confirmation, setConfirmation] = useState<string | null>(null);
 
-  const shared = useQuery({
-    queryKey: ["engagement-coaches", engagementId],
-    queryFn: async (): Promise<CoachRow[]> => {
-      const { data, error } = await supabase
-        .from("engagement_members")
-        .select("profile_id, member_role, profiles(id, display_name)")
-        .eq("engagement_id", engagementId)
-        .eq("member_role", "coach");
-      if (error) throw error;
-      return (data ?? [])
-        .map((row) => (row as unknown as { profiles: CoachRow | null }).profiles)
-        .filter((row): row is CoachRow => Boolean(row));
-    },
-  });
+  const shared = useEngagementCoaches(engagementId);
 
   const orgCoaches = useQuery({
     queryKey: ["org-coaches", orgId],
@@ -60,7 +50,11 @@ export function SharedWithSection({
   });
 
   const change = useMutation({
-    mutationFn: async (input: { coachId: string; action: "shared" | "unshared" }) => {
+    mutationFn: async (input: {
+      coachId: string;
+      coachName: string;
+      action: "shared" | "unshared";
+    }) => {
       const { error } =
         input.action === "shared"
           ? await supabase.rpc("share_engagement_with_coach", {
@@ -72,15 +66,20 @@ export function SharedWithSection({
               p_coach_profile: input.coachId,
             });
       if (error) throw new Error(error.message);
-      return input.action;
+      return input;
     },
-    onSuccess: async (action) => {
+    onSuccess: async ({ action, coachName }) => {
       logEvent("coach.engagement_shared", orgId, { action });
       setPicked("");
-      await queryClient.invalidateQueries({ queryKey: ["engagement-coaches", engagementId] });
+      setConfirmation(
+        action === "shared"
+          ? `Shared. ${coachName} can now see this engagement.`
+          : `Removed. ${coachName} can no longer see this engagement.`,
+      );
+      await invalidateShares();
       toast.success(
         action === "shared"
-          ? "Shared. They can see this engagement now."
+          ? `Shared. ${coachName} can now see this engagement.`
           : "Removed. They can no longer see this engagement.",
       );
     },
@@ -90,9 +89,10 @@ export function SharedWithSection({
   const current = shared.data ?? [];
   const currentIds = new Set(current.map((row) => row.id));
   const available = (orgCoaches.data ?? []).filter((row) => !currentIds.has(row.id));
+  const pickedCoach = available.find((row) => row.id === picked);
 
   return (
-    <section>
+    <section id="shared-with" className="scroll-mt-24">
       <h2 className="micro-label">Shared with</h2>
       <p className="mt-1.5 text-sm text-muted-foreground">
         Coaches you choose here can see this engagement. Nothing else in your workspace is visible
@@ -105,11 +105,24 @@ export function SharedWithSection({
             key={coach.id}
             className="flex flex-wrap items-center justify-between gap-2 rounded-[var(--radius)] border border-border bg-card px-4 py-3 shadow-card"
           >
-            <p className="text-sm text-foreground">{coach.display_name}</p>
+            <div className="min-w-0">
+              <p className="text-sm text-foreground">{coach.display_name}</p>
+              {sharedLine(coach.added_at, coach.added_by_name) ? (
+                <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+                  {sharedLine(coach.added_at, coach.added_by_name)}
+                </p>
+              ) : null}
+            </div>
             <button
               type="button"
               disabled={change.isPending}
-              onClick={() => change.mutate({ coachId: coach.id, action: "unshared" })}
+              onClick={() =>
+                change.mutate({
+                  coachId: coach.id,
+                  coachName: coach.display_name,
+                  action: "unshared",
+                })
+              }
               className="rounded-full border border-border px-3 py-1 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
             >
               Remove
@@ -124,9 +137,15 @@ export function SharedWithSection({
       </div>
 
       {available.length > 0 ? (
-        <div className="mt-4 flex flex-wrap items-center gap-2">
-          <Select value={picked} onValueChange={setPicked}>
-            <SelectTrigger className="w-[240px]">
+        <div className="mt-4 flex flex-col gap-2 md:flex-row md:items-center">
+          <Select
+            value={picked}
+            onValueChange={(next) => {
+              setConfirmation(null);
+              setPicked(next);
+            }}
+          >
+            <SelectTrigger className="w-full md:w-[240px]">
               <SelectValue placeholder="Add a coach" />
             </SelectTrigger>
             <SelectContent>
@@ -139,11 +158,19 @@ export function SharedWithSection({
           </Select>
           <Button
             type="button"
-            size="sm"
-            disabled={!picked || change.isPending}
-            onClick={() => change.mutate({ coachId: picked, action: "shared" })}
+            disabled={!pickedCoach || change.isPending}
+            className="w-full md:w-auto"
+            onClick={() =>
+              pickedCoach
+                ? change.mutate({
+                    coachId: pickedCoach.id,
+                    coachName: pickedCoach.display_name,
+                    action: "shared",
+                  })
+                : undefined
+            }
           >
-            Share
+            {pickedCoach ? `Share with ${pickedCoach.display_name}` : "Share"}
           </Button>
         </div>
       ) : (
@@ -155,6 +182,13 @@ export function SharedWithSection({
               : "No coaches in this workspace yet. Invite one, then share this engagement with them."}
         </p>
       )}
+
+      {pickedCoach && !change.isPending ? (
+        <p className="mt-2 text-sm text-muted-foreground">
+          Nothing is shared until you press Share.
+        </p>
+      ) : null}
+      {confirmation ? <p className="mt-2 text-sm text-accent-deep">{confirmation}</p> : null}
     </section>
   );
 }
