@@ -19,6 +19,14 @@ export type CoachSubject = {
   last_activity: string | null;
 };
 
+/**
+ * engagement_members has two foreign keys to profiles (profile_id and
+ * added_by), so every embed must name the relationship. This pins the
+ * subject side; the sharer side uses engagement_members_added_by_fkey.
+ */
+export const COACH_SUBJECTS_SELECT =
+  "engagement_id, profile_id, profiles!engagement_members_profile_id_fkey(id, display_name)";
+
 /** Engagements this profile coaches, grouped by the person doing the work. */
 export async function fetchCoachSubjects(coachProfileId: string): Promise<CoachSubject[]> {
   const { data: coached, error: coachedError } = await supabase
@@ -48,7 +56,7 @@ export async function fetchCoachSubjects(coachProfileId: string): Promise<CoachS
 
   const { data: subjects, error: subjectsError } = await supabase
     .from("engagement_members")
-    .select("engagement_id, profile_id, profiles(id, display_name)")
+    .select(COACH_SUBJECTS_SELECT)
     .in("engagement_id", engagementIds)
     .eq("member_role", "em");
   if (subjectsError) throw subjectsError;

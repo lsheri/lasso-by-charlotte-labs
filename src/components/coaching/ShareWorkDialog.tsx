@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { Checkbox } from "@/components/ui/checkbox";
@@ -86,6 +86,11 @@ export function ShareWorkDialog({
 
   const rows = list.data ?? [];
 
+  const listFailed = Boolean(list.error);
+  useEffect(() => {
+    if (listFailed) toast.error("We could not load your engagements just now.");
+  }, [listFailed]);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
@@ -99,7 +104,9 @@ export function ShareWorkDialog({
 
         {list.isLoading ? <p className="text-sm text-muted-foreground">Loading…</p> : null}
         {list.error ? (
-          <p className="text-sm text-destructive">{(list.error as Error).message}</p>
+          <p className="text-sm text-muted-foreground">
+            We could not load your engagements just now. Close this and try again in a moment.
+          </p>
         ) : null}
 
         {!list.isLoading && rows.length === 0 ? (

@@ -1,5 +1,7 @@
 import { useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { toast } from "sonner";
 
 import { EnterInviteCode } from "@/components/invites/EnterInviteCode";
 import { useAllCoachSubjects } from "@/hooks/use-coaching";
@@ -19,6 +21,12 @@ export function CoachingPage() {
   const { data: subjects, isLoading, error } = useAllCoachSubjects(profiles);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  // A failed read should not paint API text above the fold. The honest empty
+  // state stands, and the failure is said plainly in a toast.
+  const failed = Boolean(error);
+  useEffect(() => {
+    if (failed) toast.error("We could not load the people you coach just now.");
+  }, [failed]);
   const multiOrg = new Set(subjects.map((s) => s.coach_profile_id)).size > 1;
   // A coach should always be able to see which workspace they are coaching in,
   // even before anything has been shared with them.
@@ -48,7 +56,6 @@ export function CoachingPage() {
       </header>
 
       {isLoading ? <p className="text-sm text-muted-foreground">Loading…</p> : null}
-      {error ? <p className="text-sm text-destructive">{error.message}</p> : null}
 
       <div className="space-y-2">
         {subjects.map((subject) => (
