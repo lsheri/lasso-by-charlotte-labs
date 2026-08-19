@@ -9,6 +9,7 @@ import {
   STATUS_MENU,
   WORKSTREAM_STATUS_LABELS,
 } from "../workstream-status";
+import { taskLifecyclePatch } from "../firm-dashboard-shared";
 
 describe("workstream status menu wiring", () => {
   it("offers the four states in order with the agreed labels", () => {
