@@ -20,7 +20,7 @@ export const getItemTextPane = createServerFn({ method: "POST" })
     return { work_item_id: input.work_item_id };
   })
   .handler(async ({ data, context }): Promise<ItemTextPane> => {
-    const { ITEM_TEXT_COLUMNS, getItemText } = await import("./item-text.server");
+    const { ITEM_TEXT_COLUMNS, getItemText, type TextItem } = await import("./item-text.server");
     const { data: item, error } = await context.supabase
       .from("work_items")
       .select(ITEM_TEXT_COLUMNS)
@@ -29,7 +29,7 @@ export const getItemTextPane = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     if (!item) throw new Error("That item is not available to you.");
 
-    const result = await getItemText(context.supabase, item);
+    const result = await getItemText(context.supabase, item as unknown as TextItem);
     return {
       text: result.text ? result.text.slice(0, 200_000) : null,
       status: result.status,
