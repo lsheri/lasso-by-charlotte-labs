@@ -1,14 +1,18 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { CoachChat } from "@/components/coaching/CoachChat";
 import { NoteComposer, type CitationOption } from "@/components/coaching/NoteComposer";
+import { PeekPanel } from "@/components/peek/PeekPanel";
+import { AnalysisLens } from "@/components/reflect/AnalysisLens";
 import { TaskWorkflow, type WorkflowElement } from "@/components/work/TaskWorkflow";
 import { usePacket, type PacketElement } from "@/hooks/use-coaching";
 import { useProfile } from "@/hooks/use-profile";
 import { FirmChecksCard } from "@/components/coaching/FirmChecksCard";
 import { isBriefItem } from "@/lib/brief-shared";
+import { contentsUnread } from "@/lib/text-status";
 import { logEvent } from "@/lib/telemetry";
 import { engagementLabel } from "@/lib/clients";
+import type { WorkItemRow } from "@/lib/work-types";
 
 const SEEN_PREFIX = "lasso.packet_seen.";
 
@@ -47,6 +51,8 @@ export function PacketPage({
 }) {
   const { data: profile } = useProfile();
   const { data, isLoading, error } = usePacket(engagementId, subjectId);
+  const [peekItem, setPeekItem] = useState<WorkItemRow | null>(null);
+  const [lensItem, setLensItem] = useState<WorkItemRow | null>(null);
 
   const seenKey = `${engagementId}.${subjectId}`;
 
@@ -72,6 +78,19 @@ export function PacketPage({
     if (profile?.org_id) logEvent("packet.viewed", profile.org_id, {});
     writeSeen(seenKey, new Date().toISOString());
   }, [profile?.org_id, data?.engagement, seenKey]);
+
+  // Honesty for the coach: the same field the work list marks is what says
+  // how much of this record could actually be read.
+  const titleOnlyCount = useMemo(() => {
+    if (!data) return 0;
+    const seen = new Map<string, unknown>();
+    for (const task of data.tasks) {
+      for (const element of task.work_item_tasks ?? []) {
+        if (element.work_items) seen.set(element.work_items.id, element.work_items.meta);
+      }
+    }
+    return Array.from(seen.values()).filter((meta) => contentsUnread(meta as never)).length;
+  }, [data]);
 
   if (isLoading) return <p className="text-sm text-muted-foreground">Loading…</p>;
   if (error) return <p className="text-sm text-destructive">{(error as Error).message}</p>;
@@ -149,6 +168,7 @@ export function PacketPage({
                   canEdit={false}
                   orgId={profile?.org_id}
                   onChanged={() => undefined}
+                  onOpen={(item) => setPeekItem(item)}
                 />
               </div>
             </div>
@@ -227,7 +247,40 @@ export function PacketPage({
         subjectId={subjectId}
         engagementId={engagementId}
         subjectName={subjectName.split(" ")[0] ?? subjectName}
+        titleOnlyCount={titleOnlyCount}
       />
+
+      <PeekPanel
+        entry={peekItem}
+        open={peekItem !== null}
+        onOpenChange={(next) => {
+          if (!next) setPeekItem(null);
+        }}
+        canEdit={false}
+        onFluency={(item) => {
+          setPeekItem(null);
+          setLensItem(item);
+        }}
+      />
+
+      {profile && lensItem ? (
+        <AnalysisLens
+          key={lensItem.id}
+          open
+          onOpenChange={(next) => {
+            if (!next) setLensItem(null);
+          }}
+          target={{
+            kind: "item",
+            id: lensItem.id,
+            title: lensItem.title,
+            scope: lensItem.type === "ai_thread" ? "thread" : "deliverable",
+          }}
+          profileId={profile.id}
+          orgId={profile.org_id}
+          isCoach
+        />
+      ) : null}
     </div>
   );
 }

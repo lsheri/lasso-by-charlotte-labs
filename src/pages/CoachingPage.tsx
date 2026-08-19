@@ -34,7 +34,12 @@ export function CoachingPage() {
 
   function openPacket(coachProfileId: string, engagementId: string, subjectId: string) {
     setActiveProfileId(coachProfileId);
-    void queryClient.invalidateQueries();
+    // Switching the active profile changes who the next reads run as. Only the
+    // three surfaces that depend on that need refreshing: the profile itself,
+    // this queue, and the packet about to open.
+    void queryClient.invalidateQueries({ queryKey: ["profiles"] });
+    void queryClient.invalidateQueries({ queryKey: ["coach-subjects"] });
+    void queryClient.invalidateQueries({ queryKey: ["packet", engagementId, subjectId] });
     navigate({
       to: "/coaching/$engagementId/$subjectId",
       params: { engagementId, subjectId },
@@ -55,7 +60,16 @@ export function CoachingPage() {
         </p>
       </header>
 
-      {isLoading ? <p className="text-sm text-muted-foreground">Loading…</p> : null}
+      {isLoading ? (
+        <div className="space-y-2" aria-busy="true">
+          {[0, 1, 2].map((row) => (
+            <div
+              key={row}
+              className="h-[104px] animate-pulse rounded-[var(--radius)] border border-border bg-card shadow-card"
+            />
+          ))}
+        </div>
+      ) : null}
 
       <div className="space-y-2">
         {subjects.map((subject) => (

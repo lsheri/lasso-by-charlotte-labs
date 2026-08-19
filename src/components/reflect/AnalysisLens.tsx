@@ -50,6 +50,7 @@ export function AnalysisLens({
   profileId,
   orgId,
   initialPreset,
+  isCoach = false,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -57,12 +58,14 @@ export function AnalysisLens({
   profileId: string;
   orgId: string;
   initialPreset?: AnalysisPresetId;
+  /** A coach sees only the analyses a coach may run, and never Reflect. */
+  isCoach?: boolean;
 }) {
   const queryClient = useQueryClient();
   const run = useServerFn(startAnalysis);
   const send = useServerFn(sendReflectMessage);
   const scope = target.kind === "engagement" ? "engagement" : target.scope;
-  const presets = presetsForScope(scope, false);
+  const presets = presetsForScope(scope, isCoach);
   const [active, setActive] = useState<AnalysisPreset | null>(
     presets.find((p) => p.id === initialPreset) ?? null,
   );
@@ -221,7 +224,9 @@ export function AnalysisLens({
         <p className="micro-label">{active ? active.label : "Analyse this work"}</p>
         <h2 className="page-title mt-1 break-words text-[19px] leading-snug">{target.title}</h2>
         <p className="mt-2 text-xs text-muted-foreground">
-          Private to you. Observations only, never a score.
+          {isCoach
+            ? "Reads only what has been shared with you. Observations only, never a score."
+            : "Private to you. Observations only, never a score."}
         </p>
       </header>
 
@@ -337,12 +342,14 @@ export function AnalysisLens({
             {pending ? <WorkingLabel>Working</WorkingLabel> : "Send"}
           </Button>
         </div>
-        <Link
-          to="/reflect"
-          className="mt-3 inline-block text-xs font-medium text-accent-deep transition-opacity hover:opacity-70"
-        >
-          Open in Reflect →
-        </Link>
+        {isCoach ? null : (
+          <Link
+            to="/reflect"
+            className="mt-3 inline-block text-xs font-medium text-accent-deep transition-opacity hover:opacity-70"
+          >
+            Open in Reflect →
+          </Link>
+        )}
       </footer>
     </SlideOver>
   );
