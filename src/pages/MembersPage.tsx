@@ -216,9 +216,7 @@ export function MembersPage() {
                           onResend: () =>
                             run(
                               { kind: "resend", code: invite.code },
-                              invite.email
-                                ? "New invite sent, the old link no longer works"
-                                : "New link created, the old one no longer works",
+                              (result) => resendMessage(result),
                             ),
                           busy: action.isPending,
                         }
