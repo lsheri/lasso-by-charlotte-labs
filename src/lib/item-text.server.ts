@@ -468,7 +468,7 @@ export async function getItemText(supabase: Db, item: TextItem): Promise<ItemTex
   }
 
   const meta = metaOf(item);
-  const known = meta.text_status;
+  const known = normalizeStatus(meta.text_status);
   const knownHash = meta.text_source_hash;
 
   // A cheap cache hit: the stored content hash still matches what we decoded.
