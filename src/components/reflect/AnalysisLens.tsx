@@ -224,7 +224,9 @@ export function AnalysisLens({
         <p className="micro-label">{active ? active.label : "Analyse this work"}</p>
         <h2 className="page-title mt-1 break-words text-[19px] leading-snug">{target.title}</h2>
         <p className="mt-2 text-xs text-muted-foreground">
-          Private to you. Observations only, never a score.
+          {isCoach
+            ? "Reads only what has been shared with you. Observations only, never a score."
+            : "Private to you. Observations only, never a score."}
         </p>
       </header>
 
