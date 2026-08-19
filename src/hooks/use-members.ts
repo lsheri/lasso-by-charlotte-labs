@@ -5,6 +5,7 @@ import {
   deactivateMember,
   listMembers,
   reactivateMember,
+  resendInvite,
   revokeInvite,
 } from "@/lib/members.functions";
 import type { MembersPayload } from "@/lib/members-shared";
@@ -22,7 +23,8 @@ type Action =
   | { kind: "deactivate"; member_id: string }
   | { kind: "reactivate"; member_id: string }
   | { kind: "role"; member_id: string; role: "em" | "lead" }
-  | { kind: "revoke"; code: string };
+  | { kind: "revoke"; code: string }
+  | { kind: "resend"; code: string };
 
 export function useMemberAction(profileId: string | undefined) {
   const queryClient = useQueryClient();
@@ -36,6 +38,10 @@ export function useMemberAction(profileId: string | undefined) {
       if (action.kind === "role")
         return changeMemberRole({
           data: { profile_id, member_id: action.member_id, role: action.role },
+        });
+      if (action.kind === "resend")
+        return resendInvite({
+          data: { profile_id, code: action.code, origin: window.location.origin },
         });
       return revokeInvite({ data: { profile_id, code: action.code } });
     },
