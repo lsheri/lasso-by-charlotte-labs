@@ -99,7 +99,9 @@ export function ShareWorkDialog({
 
         {list.isLoading ? <p className="text-sm text-muted-foreground">Loading…</p> : null}
         {list.error ? (
-          <p className="text-sm text-destructive">{(list.error as Error).message}</p>
+          <p className="text-sm text-muted-foreground">
+            We could not load your engagements just now. Close this and try again in a moment.
+          </p>
         ) : null}
 
         {!list.isLoading && rows.length === 0 ? (
