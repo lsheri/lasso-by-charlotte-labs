@@ -18,7 +18,7 @@ import { useMembers } from "@/hooks/use-members";
 import { useShareInvalidation } from "@/hooks/use-coach-share";
 import { supabase } from "@/integrations/supabase/client";
 import { sharedSuccessLine } from "@/lib/coach-share-shared";
-import { createInvite, sendInviteEmail } from "@/lib/invites.functions";
+import { createInvite as createInviteFn, sendInviteEmail } from "@/lib/invites.functions";
 import { INVITE_ADMIN_ONLY_LINE } from "@/lib/invites-shared";
 import { coachToShareWithInstead, findMemberByEmail, type MemberRow } from "@/lib/members-shared";
 import { logEvent } from "@/lib/telemetry";
@@ -105,7 +105,7 @@ export function InviteDialog({
 }) {
   const { data: profile } = useProfile();
   const emailInvite = useServerFn(sendInviteEmail);
-  const mintInvite = useServerFn(createInvite);
+  const mintInvite = useServerFn(createInviteFn);
   const [open, setOpen] = useState(false);
   const [role, setRole] = useState<InviteRole>(defaultRole);
   const [email, setEmail] = useState("");
