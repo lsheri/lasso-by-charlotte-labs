@@ -24,7 +24,8 @@ import {
   type AnalysisPresetId,
 } from "@/lib/analysis-presets";
 import { useFirmChecks } from "@/hooks/use-firm-checks";
-import { startAnalysis } from "@/lib/analysis.functions";
+import type { AnalysisRunResult } from "@/lib/analysis.functions";
+import { streamChatRequest } from "@/lib/stream-client";
 import { sendReflectMessage } from "@/lib/reflect.functions";
 import { logEvent } from "@/lib/telemetry";
 import { parseManifest, type ContextManifest } from "@/lib/context-manifest";
@@ -62,7 +63,6 @@ export function AnalysisLens({
   isCoach?: boolean;
 }) {
   const queryClient = useQueryClient();
-  const run = useServerFn(startAnalysis);
   const send = useServerFn(sendReflectMessage);
   const scope = target.kind === "engagement" ? "engagement" : target.scope;
   const presets = presetsForScope(scope, isCoach);
@@ -76,6 +76,7 @@ export function AnalysisLens({
   const [reused, setReused] = useState(false);
   const [liveManifest, setLiveManifest] = useState<ContextManifest | null>(null);
   const [draft, setDraft] = useState("");
+  const [streamed, setStreamed] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirming, setConfirming] = useState<AnalysisConfirmRequest | null>(null);
@@ -126,11 +127,13 @@ export function AnalysisLens({
     setRunId(undefined);
     setReused(false);
     setLiveManifest(null);
+    setStreamed("");
     setPending(true);
     setError(null);
     try {
-      const result = await run({
-        data: {
+      const result = await streamChatRequest<AnalysisRunResult>(
+        "/api/analysis/stream",
+        {
           preset_id: preset.id,
           confirm_step: "shown" as const,
           ...(target.kind === "engagement"
@@ -138,7 +141,8 @@ export function AnalysisLens({
             : { work_item_id: target.id }),
           profile_id: profileId,
         },
-      });
+        (delta) => setStreamed((prev) => prev + delta),
+      );
       setSessionId(result.session_id);
       setSuppressed(result.suppressed);
       setClaims(result.claims);
@@ -152,6 +156,7 @@ export function AnalysisLens({
       setError((e as Error).message);
     } finally {
       setPending(false);
+      setStreamed("");
     }
   }
 
@@ -262,11 +267,14 @@ export function AnalysisLens({
         )}
 
         {pending ? (
-          <ThinkingTrail
-            items={target.kind === "item" ? [{ id: target.id, title: target.title }] : []}
-            finalPhase={active ? `Applying ${active.label}` : "Working"}
-            manifest={liveManifest}
-          />
+          <>
+            <ThinkingTrail
+              items={target.kind === "item" ? [{ id: target.id, title: target.title }] : []}
+              finalPhase={active ? `Applying ${active.label}` : "Working"}
+              manifest={liveManifest}
+            />
+            {streamed ? <MarkdownMessage content={streamed} /> : null}
+          </>
         ) : null}
 
         {suppressed > 0 ? (
