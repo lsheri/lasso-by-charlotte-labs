@@ -217,10 +217,19 @@ export const closeEpisode = createServerFn({ method: "POST" })
     // read from tasks, so the two must never drift apart.
     if (episode.task_id) {
       const { taskLifecyclePatch } = await import("./firm-dashboard-shared");
+      const { data: currentTask } = await writer
+        .from("tasks")
+        .select("delivered_at")
+        .eq("id", episode.task_id)
+        .maybeSingle();
       const lifecycle =
         data.status === "abandoned"
           ? taskLifecyclePatch("set_aside", now.toISOString())
-          : taskLifecyclePatch(data.status, now.toISOString());
+          : taskLifecyclePatch(
+              data.status,
+              now.toISOString(),
+              currentTask?.delivered_at ?? null,
+            );
       await writer.from("tasks").update(lifecycle).eq("id", episode.task_id);
     }
 
