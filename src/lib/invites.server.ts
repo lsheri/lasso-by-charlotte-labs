@@ -107,9 +107,11 @@ export async function assertInviteInOrg(supabase: Client, code: string, orgId: s
 export async function loadInviteState(
   code: string,
   engagementId: string | null,
-  viewer: { userId: string } | null,
+  viewer: { userId: string; email: string | null } | null,
 ): Promise<import("./invite-state").InviteState> {
-  const { notFoundState, resolveInviteStatus, maskEmail } = await import("./invite-state");
+  const { notFoundState, resolveInviteStatus, maskEmail, emailsMatch } = await import(
+    "./invite-state"
+  );
   const signedIn = Boolean(viewer);
   if (!code || !/^[a-zA-Z0-9-]{4,64}$/.test(code)) return notFoundState(signedIn);
 
@@ -125,7 +127,14 @@ export async function loadInviteState(
   const [{ data: org }, { data: engagement }, { data: mine }] = await Promise.all([
     supabaseAdmin.from("orgs").select("name").eq("id", invite.org_id).maybeSingle(),
     engagementId
-      ? supabaseAdmin.from("engagements").select("title").eq("id", engagementId).maybeSingle()
+      ? supabaseAdmin
+          .from("engagements")
+          .select("title")
+          .eq("id", engagementId)
+          // Scoped to the invite's org: the caller supplies this id and is not
+          // yet a member, so an unscoped read would expose other orgs' titles.
+          .eq("org_id", invite.org_id)
+          .maybeSingle()
       : Promise.resolve({ data: null as { title: string } | null }),
     viewer
       ? supabaseAdmin.from("profiles").select("id, org_id").eq("user_id", viewer.userId)
@@ -133,12 +142,15 @@ export async function loadInviteState(
   ]);
 
   const profiles = mine ?? [];
+  // The bound address is revealed only to the person it is bound to. Any other
+  // signed in link holder sees the same masked hint an anonymous one sees.
+  const emailMatches = emailsMatch(invite.email, viewer?.email ?? null);
   return {
     status: resolveInviteStatus(invite),
     invited_role: invite.invited_role,
     org_name: org?.name ?? null,
     is_email_bound: Boolean(invite.email),
-    email: signedIn ? invite.email : null,
+    email: emailMatches ? invite.email : null,
     email_hint: maskEmail(invite.email),
     created_by_you: Boolean(
       invite.created_by && profiles.some((row) => row.id === invite.created_by),
@@ -148,6 +160,7 @@ export async function loadInviteState(
     viewer: {
       signed_in: signedIn,
       is_member: profiles.some((row) => row.org_id === invite.org_id),
+      email_matches: emailMatches,
     },
   };
 }

@@ -83,9 +83,25 @@ export function MembersPage() {
         empty: "No invites outstanding.",
       };
 
-  function run(input: Parameters<typeof action.mutate>[0], success: string) {
+  /** The resend result decides the wording, so a failed send never reads as sent. */
+  function resendMessage(result: unknown): string {
+    const r = (result ?? {}) as { delivered?: boolean; reason?: string; old_revoked?: boolean };
+    if (r.old_revoked === false)
+      return "New link created, the old one is still active. Withdraw it from the list.";
+    if (r.delivered) return "New invite sent, the old link no longer works";
+    if (r.reason === "no_email") return "New link created, the old one no longer works";
+    if (r.reason === "not_configured")
+      return "New link created. Email is not set up, so copy the link and send it yourself.";
+    return "New link created, but the email did not send. Copy the link and send it yourself.";
+  }
+
+  function run(
+    input: Parameters<typeof action.mutate>[0],
+    success: string | ((result: unknown) => string),
+  ) {
     action.mutate(input, {
-      onSuccess: () => toast.success(success),
+      onSuccess: (result) =>
+        toast.success(typeof success === "function" ? success(result) : success),
       onError: (e) => toast.error((e as Error).message),
     });
   }
@@ -212,9 +228,7 @@ export function MembersPage() {
                           onResend: () =>
                             run(
                               { kind: "resend", code: invite.code },
-                              invite.email
-                                ? "New invite sent, the old link no longer works"
-                                : "New link created, the old one no longer works",
+                              (result) => resendMessage(result),
                             ),
                           busy: action.isPending,
                         }

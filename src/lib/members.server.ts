@@ -57,7 +57,7 @@ export async function resendInviteByCode(
   profileId: string | null | undefined,
   code: string,
   acceptOrigin: string,
-): Promise<{ code: string; delivered: boolean; reason: string }> {
+): Promise<{ code: string; delivered: boolean; reason: string; old_revoked: boolean }> {
   const { profile, supabaseAdmin } = await requireConsoleAccess(
     context.supabase,
     context.userId,
@@ -81,7 +81,14 @@ export async function resendInviteByCode(
   });
   if (mintError || !minted) throw new Error(mintError?.message ?? "Could not create a new invite.");
 
-  await revokeInviteByCode(context, profileId, code, "resend");
+  // Minting first is deliberate. If the withdraw leg fails the new link still
+  // works, so we report the old one as live rather than throwing after a mint.
+  let oldRevoked = true;
+  try {
+    await revokeInviteByCode(context, profileId, code, "resend");
+  } catch {
+    oldRevoked = false;
+  }
 
   let delivered = false;
   let reason = "no_email";
@@ -109,7 +116,7 @@ export async function resendInviteByCode(
     dims: { delivered, reason, resend: true },
   });
 
-  return { code: minted as string, delivered, reason };
+  return { code: minted as string, delivered, reason, old_revoked: oldRevoked };
 }
 
 /**
