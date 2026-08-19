@@ -14,6 +14,7 @@ export type ClientRow = {
 export function useClients(orgId: string | undefined) {
   return useQuery({
     queryKey: ["clients", orgId],
+    staleTime: 60_000,
     enabled: Boolean(orgId),
     queryFn: async (): Promise<ClientRow[]> => {
       const { data, error } = await supabase

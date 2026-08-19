@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 
@@ -40,6 +41,9 @@ import { chipShape, itemsInScope } from "@/lib/reflect-scope-shape";
 import { DEFAULT_SCOPE, parseScope, type ContextScope } from "@/lib/reflect-shared";
 import { logEvent } from "@/lib/telemetry";
 import { parseManifest, type ContextManifest } from "@/lib/context-manifest";
+
+import { getReflectBoot } from "@/lib/reflect-boot.functions";
+import type { ReflectBoot } from "@/lib/reflect-boot-shared";
 
 type SessionRow = {
   id: string;
@@ -103,18 +107,21 @@ export function ReflectPage() {
     if (isCoach) navigate({ to: "/coaching", replace: true });
   }, [isCoach, navigate]);
 
+  // One load, two keys: the session list and the open thread arrive together,
+  // and both key literals stay subscribed so every existing invalidation of
+  // ["reflect-sessions"] or ["reflect-messages", id] still refetches.
+  const fetchBoot = useServerFn(getReflectBoot);
+  const bootOptions = {
+    queryKey: ["reflect-boot", profile?.id ?? null, activeId] as const,
+    queryFn: (): Promise<ReflectBoot> =>
+      fetchBoot({ data: { profile_id: profile?.id ?? null, session_id: activeId } }),
+  };
+
   const { data: sessions } = useQuery({
     queryKey: ["reflect-sessions", profile?.id],
     enabled: Boolean(profile?.id),
-    queryFn: async (): Promise<SessionRow[]> => {
-      const { data, error: sessionError } = await supabase
-        .from("chat_sessions")
-        .select("id, title, context_scope, updated_at")
-        .eq("profile_id", profile?.id as string)
-        .order("updated_at", { ascending: false });
-      if (sessionError) throw sessionError;
-      return (data ?? []) as SessionRow[];
-    },
+    queryFn: async (): Promise<SessionRow[]> =>
+      (await queryClient.fetchQuery(bootOptions)).sessions as SessionRow[],
   });
 
   const active = (sessions ?? []).find((s) => s.id === activeId) ?? null;
@@ -122,16 +129,9 @@ export function ReflectPage() {
 
   const { data: messages } = useQuery({
     queryKey: ["reflect-messages", activeId],
-    enabled: Boolean(activeId),
-    queryFn: async (): Promise<MessageRow[]> => {
-      const { data, error: messageError } = await supabase
-        .from("chat_messages")
-        .select("id, role, content, created_at, context_manifest")
-        .eq("session_id", activeId as string)
-        .order("created_at", { ascending: true });
-      if (messageError) throw messageError;
-      return (data ?? []) as MessageRow[];
-    },
+    enabled: Boolean(activeId) && Boolean(profile?.id),
+    queryFn: async (): Promise<MessageRow[]> =>
+      (await queryClient.fetchQuery(bootOptions)).messages as MessageRow[],
   });
 
   const { data: sourcesByMessage } = useAnswerSources(

@@ -423,7 +423,14 @@ function AcceptForm({
 
     if (invite?.org_id) logEvent("coach.joined", invite.org_id, { role: memberRole });
 
-    await queryClient.invalidateQueries();
+    // Narrowed on purpose: only the keys this step can have changed.
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["profiles"] }),
+      queryClient.invalidateQueries({ queryKey: ["members"] }),
+      queryClient.invalidateQueries({ queryKey: ["engagements"] }),
+      queryClient.invalidateQueries({ queryKey: ["coach-subjects"] }),
+      queryClient.invalidateQueries({ queryKey: ["onboarding-progress"] }),
+    ]);
     setPending(false);
     if (eng && memberRole === "coach") {
       const { data: subjects } = await supabase

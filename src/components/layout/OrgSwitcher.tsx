@@ -18,6 +18,8 @@ export function OrgSwitcher({ profiles, active }: { profiles: Profile[]; active:
               type="button"
               onClick={() => {
                 setActiveProfileId(profile.id);
+                // Deliberately unfiltered: switching workspace invalidates every
+                // profile scoped key, so no previous workspace data can linger.
                 void queryClient.invalidateQueries();
               }}
               className={

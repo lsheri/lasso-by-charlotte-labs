@@ -56,6 +56,7 @@ export function SharedWithSection({
 
   const orgCoaches = useQuery({
     queryKey: ["org-coaches", orgId],
+    staleTime: 60_000,
     queryFn: async (): Promise<OrgCoach[]> => {
       const { data, error } = await supabase
         .from("profiles")
