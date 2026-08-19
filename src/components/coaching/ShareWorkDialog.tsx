@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { Checkbox } from "@/components/ui/checkbox";
@@ -85,6 +85,11 @@ export function ShareWorkDialog({
   });
 
   const rows = list.data ?? [];
+
+  const listFailed = Boolean(list.error);
+  useEffect(() => {
+    if (listFailed) toast.error("We could not load your engagements just now.");
+  }, [listFailed]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
