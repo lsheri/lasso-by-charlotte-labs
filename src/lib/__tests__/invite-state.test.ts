@@ -90,21 +90,41 @@ function state(overrides: Partial<InviteState>): InviteState {
 }
 
 describe("blockedStateFor", () => {
-  it("reports mismatch when the signed in email differs", () => {
+  it("reports mismatch when the signed in viewer is not the bound address", () => {
+    const s = state({
+      is_email_bound: true,
+      email: null,
+      email_hint: "a•••@firm.com",
+      viewer: { signed_in: true, is_member: false, email_matches: false },
+    });
+    expect(blockedStateFor(s, "sam@firm.com")).toBe("mismatch");
+  });
+
+  it("does not block the viewer the invite is bound to", () => {
     const s = state({
       is_email_bound: true,
       email: "alex@firm.com",
-      viewer: { signed_in: true, is_member: false },
+      viewer: { signed_in: true, is_member: false, email_matches: true },
     });
-    expect(blockedStateFor(s, "sam@firm.com")).toBe("mismatch");
     expect(blockedStateFor(s, "ALEX@firm.com")).toBeNull();
+  });
+
+  it("withholds the bound address from a non matching viewer", () => {
+    const s = state({
+      is_email_bound: true,
+      email: null,
+      email_hint: "a•••@firm.com",
+      viewer: { signed_in: true, is_member: false, email_matches: false },
+    });
+    expect(s.email).toBeNull();
+    expect(s.email_hint).toBe("a•••@firm.com");
   });
 
   it("reports already_member before any email comparison", () => {
     const s = state({
       is_email_bound: true,
       email: "alex@firm.com",
-      viewer: { signed_in: true, is_member: true },
+      viewer: { signed_in: true, is_member: true, email_matches: false },
     });
     expect(blockedStateFor(s, "sam@firm.com")).toBe("already_member");
   });
@@ -114,7 +134,7 @@ describe("blockedStateFor", () => {
       is_email_bound: true,
       email: null,
       email_hint: "a•••@firm.com",
-      viewer: { signed_in: false, is_member: false },
+      viewer: { signed_in: false, is_member: false, email_matches: false },
     });
     expect(blockedStateFor(s, null)).toBeNull();
   });
