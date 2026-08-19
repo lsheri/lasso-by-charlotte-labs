@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   closeEpisodePayload,
   isCloseChoice,
+  isStatusChoice,
   REOPEN_SUPPORTED,
   STATUS_EXPLAINER,
   STATUS_MENU,
@@ -19,14 +20,25 @@ describe("workstream status menu wiring", () => {
     ]);
   });
 
-  it("keeps Open disabled while no reopen write path exists", () => {
-    expect(REOPEN_SUPPORTED).toBe(false);
-    expect(STATUS_MENU.find((o) => o.value === "open")?.enabled).toBe(false);
+  it("offers Open now that closeEpisode accepts a reopen", () => {
+    expect(REOPEN_SUPPORTED).toBe(true);
+    expect(STATUS_MENU.find((o) => o.value === "open")?.enabled).toBe(true);
     expect(STATUS_MENU.filter((o) => o.enabled).map((o) => o.value)).toEqual([
+      "open",
       "delivered",
       "accepted",
       "abandoned",
     ]);
+  });
+
+  it("builds the reopen payload the same way as a close", () => {
+    expect(closeEpisodePayload("ep-1", "open", "p-1")).toEqual({
+      episode_id: "ep-1",
+      status: "open",
+      profile_id: "p-1",
+    });
+    expect(isStatusChoice("open")).toBe(true);
+    expect(isStatusChoice("closed")).toBe(false);
   });
 
   it("builds exactly the payload closeEpisode validates", () => {
