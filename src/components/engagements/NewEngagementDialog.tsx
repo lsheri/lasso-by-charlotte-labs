@@ -94,7 +94,12 @@ export function NewEngagementDialog({
       member_role: "em",
     });
     if (memberError) {
-      setError(memberError.message);
+      // The engagement exists and cannot be removed from here, so the honest
+      // course is to say what happened rather than to imply a clean failure.
+      await queryClient.invalidateQueries({ queryKey: ["engagements"] });
+      setError(
+        "Created, but you were not attached to it. Open it from your engagements list and add yourself before renaming or sharing it.",
+      );
       setPending(false);
       return;
     }

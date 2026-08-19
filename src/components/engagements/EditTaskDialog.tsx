@@ -1,6 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { Pencil } from "lucide-react";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -16,6 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useProfile } from "@/hooks/use-profile";
 import { supabase } from "@/integrations/supabase/client";
 import { logEvent } from "@/lib/telemetry";
+import { saveOutcome, WORKSTREAM_RENAME_REFUSAL } from "@/lib/save-guard";
 
 export function EditTaskDialog({
   task,
@@ -43,12 +45,16 @@ export function EditTaskDialog({
     event.preventDefault();
     setPending(true);
     setError(null);
-    const { error: e } = await supabase
+    const result = await supabase
       .from("tasks")
       .update({ name: name.trim(), detail: detail.trim() || null })
-      .eq("id", task.id);
-    if (e) {
-      setError(e.message);
+      .eq("id", task.id)
+      .select("id");
+    // Zero rows back means the write was refused, so nothing is claimed saved.
+    const outcome = saveOutcome(result, WORKSTREAM_RENAME_REFUSAL);
+    if (!outcome.ok) {
+      setError(outcome.message);
+      toast.error(outcome.message);
       setPending(false);
       return;
     }

@@ -12,7 +12,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -24,11 +23,14 @@ import { useShareInvalidation } from "@/hooks/use-coach-share";
 import { supabase } from "@/integrations/supabase/client";
 import {
   ADMIN_HONESTY_LINE,
+  bulkShareDims,
   coachShareKey,
   fetchShareableEngagements,
   groupByClient,
+  removalLine,
   shareResultsLine,
   sharedLine,
+  sharedSuccessLine,
   type ShareableEngagement,
   type ShareQueryClient,
   type ShareResult,
@@ -93,6 +95,8 @@ export function ShareWorkDialog({
   async function callRpc(
     engagement: { id: string; title: string },
     action: "shared" | "unshared",
+    /** Bulk actions log one event for the whole run, so rows stay silent. */
+    silent = false,
   ): Promise<ShareResult> {
     const { error } =
       action === "shared"
@@ -106,7 +110,7 @@ export function ShareWorkDialog({
           });
     if (error)
       return { id: engagement.id, label: engagement.title, ok: false, message: error.message };
-    logEvent("coach.engagement_shared", orgId, { action });
+    if (!silent) logEvent("coach.engagement_shared", orgId, { action });
     return { id: engagement.id, label: engagement.title, ok: true };
   }
 
@@ -126,9 +130,7 @@ export function ShareWorkDialog({
       toast.error(result.message ?? "That did not save.");
     } else {
       toast.success(
-        next
-          ? `Shared. ${coach.display_name} can now see this engagement.`
-          : `Removed. ${coach.display_name} can no longer see this engagement.`,
+        next ? sharedSuccessLine(coach.display_name) : removalLine(coach.display_name),
       );
       await invalidateShares();
     }
@@ -145,8 +147,12 @@ export function ShareWorkDialog({
     });
     const results: ShareResult[] = [];
     for (const row of targets) {
-      results.push(await callRpc({ id: row.id, title: engagementDisplayTitle(row) }, "shared"));
+      results.push(
+        await callRpc({ id: row.id, title: engagementDisplayTitle(row) }, "shared", true),
+      );
     }
+    const done = results.filter((row) => row.ok).length;
+    if (done > 0) logEvent("coach.engagement_shared", orgId, bulkShareDims("shared", done));
     setOptimistic((current) => {
       const copy = { ...current };
       for (const result of results) if (!result.ok) delete copy[result.id];
@@ -179,7 +185,7 @@ export function ShareWorkDialog({
           <DialogHeader>
             <DialogTitle>Share work with {coach.display_name}</DialogTitle>
             <DialogDescription>
-              Tick an engagement to let {firstName} see it. Untick to take it back. Nothing else in
+              Share an engagement to let {firstName} see it. Remove to take it back. Nothing else in
               your workspace is visible to them.
             </DialogDescription>
           </DialogHeader>
@@ -221,27 +227,17 @@ export function ShareWorkDialog({
                     {group.engagements.map((row) => {
                       const shared = isShared(row);
                       const line = sharedLine(row.added_at, row.added_by_name);
+                      const busy = groupBusy || busyId === row.id;
                       const meta = [
                         engagementDisplayCode(row),
                         shared && row.shared ? line : null,
-                        busyId === row.id || groupBusy ? "saving" : null,
                       ].filter((part): part is string => Boolean(part));
                       return (
                         <li
                           key={row.id}
-                          className="flex items-start gap-3 rounded-[var(--radius)] border border-border bg-card px-4 py-3"
+                          className="flex flex-wrap items-center justify-between gap-2 rounded-[var(--radius)] border border-border bg-card px-4 py-3"
                         >
-                          <Checkbox
-                            id={`share-${row.id}`}
-                            checked={shared}
-                            disabled={groupBusy || busyId === row.id}
-                            onCheckedChange={(next) => void toggleOne(row, next === true)}
-                            className="mt-0.5"
-                          />
-                          <label
-                            htmlFor={`share-${row.id}`}
-                            className="min-w-0 flex-1 cursor-pointer"
-                          >
+                          <div className="min-w-0 flex-1">
                             <span className="block truncate text-sm text-foreground">
                               {engagementDisplayTitle(row)}
                             </span>
@@ -250,7 +246,31 @@ export function ShareWorkDialog({
                                 {meta.join(" · ")}
                               </span>
                             ) : null}
-                          </label>
+                          </div>
+                          {shared ? (
+                            <div className="flex shrink-0 items-center gap-2">
+                              <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+                                {busy ? "Saving…" : "Shared"}
+                              </span>
+                              <button
+                                type="button"
+                                disabled={busy}
+                                onClick={() => void toggleOne(row, false)}
+                                className="rounded-full border border-border px-3 py-1 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50"
+                              >
+                                Remove
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              disabled={busy}
+                              onClick={() => void toggleOne(row, true)}
+                              className="shrink-0 rounded-full border border-accent bg-accent-soft px-4 py-1 font-mono text-[11px] uppercase tracking-[0.08em] text-accent-deep transition-opacity disabled:opacity-50"
+                            >
+                              {busy ? "Saving…" : "Share"}
+                            </button>
+                          )}
                         </li>
                       );
                     })}

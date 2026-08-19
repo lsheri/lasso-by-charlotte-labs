@@ -1,6 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { Pencil } from "lucide-react";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -18,6 +19,7 @@ import { createClient, useInvalidateClients } from "@/hooks/use-clients";
 import { useProfile } from "@/hooks/use-profile";
 import { supabase } from "@/integrations/supabase/client";
 import { logEvent } from "@/lib/telemetry";
+import { ENGAGEMENT_RENAME_REFUSAL, saveOutcome } from "@/lib/save-guard";
 
 export type EditableEngagement = {
   id: string;
@@ -72,7 +74,7 @@ export function EditEngagementDialog({ engagement }: { engagement: EditableEngag
     event.preventDefault();
     setPending(true);
     setError(null);
-    const { error: e } = await supabase
+    const result = await supabase
       .from("engagements")
       .update({
         title: title.trim(),
@@ -80,9 +82,14 @@ export function EditEngagementDialog({ engagement }: { engagement: EditableEngag
         brief: brief.trim() || null,
         term_label: term.trim() || null,
       })
-      .eq("id", engagement.id);
-    if (e) {
-      setError(e.message);
+      .eq("id", engagement.id)
+      .select("id");
+    // Zero rows back means a policy refused the write. The dialog stays open,
+    // the line is honest, and no success event is logged.
+    const outcome = saveOutcome(result, ENGAGEMENT_RENAME_REFUSAL);
+    if (!outcome.ok) {
+      setError(outcome.message);
+      toast.error(outcome.message);
       setPending(false);
       return;
     }

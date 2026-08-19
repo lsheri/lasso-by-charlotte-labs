@@ -1,46 +1,62 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-import { Button } from "@/components/ui/button";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useEngagementCoaches, useShareInvalidation } from "@/hooks/use-coach-share";
-import { coachResultsLine, sharedLine, type ShareResult } from "@/lib/coach-share-shared";
+import {
+  bulkShareDims,
+  coachResultsLine,
+  removalLine,
+  rosterFor,
+  sharedLine,
+  sharedSuccessLine,
+  type OrgCoach,
+  type ShareResult,
+} from "@/lib/coach-share-shared";
 import { logEvent } from "@/lib/telemetry";
 
-type CoachRow = { id: string; display_name: string };
-
 /**
- * Sharing is owner driven and explicit. The two RPCs decide who may share, so
- * this surface only offers the choice and reflects the result.
+ * The roster. Every active coach in the workspace is listed by name with one
+ * button: Share when they cannot see this engagement, Shared plus Remove when
+ * they can. Sharing is owner driven and the two RPCs stay the only authority,
+ * so this surface offers the choice and reports exactly what came back.
  */
 export function SharedWithSection({
   engagementId,
   orgId,
   quickFolder = false,
+  personalOrg = false,
 }: {
   engagementId: string;
   orgId: string;
   /** A quick folder holds unfiled work, so it is never shareable. */
   quickFolder?: boolean;
+  /** Personal workspaces say "your coaches" rather than "the workspace". */
+  personalOrg?: boolean;
 }) {
   const invalidateShares = useShareInvalidation();
-  const [picked, setPicked] = useState<string>("");
-  const [confirmation, setConfirmation] = useState<string | null>(null);
+  const [optimistic, setOptimistic] = useState<Record<string, boolean>>({});
+  const [busyId, setBusyId] = useState<string | null>(null);
   const [sharingAll, setSharingAll] = useState(false);
+  const [confirmAll, setConfirmAll] = useState(false);
+  const [confirmation, setConfirmation] = useState<string | null>(null);
 
   const shared = useEngagementCoaches(engagementId);
 
   const orgCoaches = useQuery({
     queryKey: ["org-coaches", orgId],
-    queryFn: async (): Promise<CoachRow[]> => {
+    queryFn: async (): Promise<OrgCoach[]> => {
       const { data, error } = await supabase
         .from("profiles")
         .select("id, display_name")
@@ -53,74 +69,82 @@ export function SharedWithSection({
     },
   });
 
-  const change = useMutation({
-    mutationFn: async (input: {
-      coachId: string;
-      coachName: string;
-      action: "shared" | "unshared";
-    }) => {
-      const { error } =
-        input.action === "shared"
-          ? await supabase.rpc("share_engagement_with_coach", {
-              p_engagement: engagementId,
-              p_coach_profile: input.coachId,
-            })
-          : await supabase.rpc("unshare_engagement_coach", {
-              p_engagement: engagementId,
-              p_coach_profile: input.coachId,
-            });
-      if (error) throw new Error(error.message);
-      return input;
-    },
-    onSuccess: async ({ action, coachName }) => {
-      logEvent("coach.engagement_shared", orgId, { action });
-      setPicked("");
-      setConfirmation(
-        action === "shared"
-          ? `Shared. ${coachName} can now see this engagement.`
-          : `Removed. ${coachName} can no longer see this engagement.`,
-      );
-      await invalidateShares();
-      toast.success(
-        action === "shared"
-          ? `Shared. ${coachName} can now see this engagement.`
-          : "Removed. They can no longer see this engagement.",
-      );
-    },
-    onError: (e) => toast.error((e as Error).message),
-  });
-
-  const current = shared.data ?? [];
   const readFailed = Boolean(shared.error || orgCoaches.error);
   useEffect(() => {
     if (readFailed) toast.error("We could not load sharing for this engagement just now.");
   }, [readFailed]);
-  const currentIds = new Set(current.map((row) => row.id));
-  const available = (orgCoaches.data ?? []).filter((row) => !currentIds.has(row.id));
-  const pickedCoach = available.find((row) => row.id === picked);
+
+  const roster = rosterFor(orgCoaches.data ?? [], shared.data ?? [], optimistic);
+  const unshared = roster.filter((row) => !row.shared);
+  const sharedCount = roster.length - unshared.length;
+
+  function clearOptimistic(id: string) {
+    setOptimistic((current) => {
+      const copy = { ...current };
+      delete copy[id];
+      return copy;
+    });
+  }
+
+  /** One tap each way, shown immediately and rolled back if refused. */
+  async function toggle(row: { id: string; display_name: string }, next: boolean) {
+    setBusyId(row.id);
+    setConfirmation(null);
+    setOptimistic((current) => ({ ...current, [row.id]: next }));
+    const { error } = next
+      ? await supabase.rpc("share_engagement_with_coach", {
+          p_engagement: engagementId,
+          p_coach_profile: row.id,
+        })
+      : await supabase.rpc("unshare_engagement_coach", {
+          p_engagement: engagementId,
+          p_coach_profile: row.id,
+        });
+    if (error) {
+      clearOptimistic(row.id);
+      setConfirmation(error.message);
+      toast.error(error.message);
+      setBusyId(null);
+      return;
+    }
+    logEvent("coach.engagement_shared", orgId, { action: next ? "shared" : "unshared" });
+    const line = next ? sharedSuccessLine(row.display_name) : removalLine(row.display_name);
+    setConfirmation(line);
+    toast.success(line);
+    await invalidateShares();
+    setBusyId(null);
+  }
 
   /** Sequential calls so a refusal on one coach never reads as success. */
   async function shareWithAll() {
+    const targets = [...unshared];
     setSharingAll(true);
     setConfirmation(null);
+    setOptimistic((current) => {
+      const copy = { ...current };
+      for (const row of targets) copy[row.id] = true;
+      return copy;
+    });
     const results: ShareResult[] = [];
-    for (const coach of available) {
+    for (const coach of targets) {
       const { error } = await supabase.rpc("share_engagement_with_coach", {
         p_engagement: engagementId,
         p_coach_profile: coach.id,
       });
-      if (error) {
-        results.push({
-          id: coach.id,
-          label: coach.display_name,
-          ok: false,
-          message: error.message,
-        });
-      } else {
-        logEvent("coach.engagement_shared", orgId, { action: "shared" });
-        results.push({ id: coach.id, label: coach.display_name, ok: true });
-      }
+      results.push(
+        error
+          ? { id: coach.id, label: coach.display_name, ok: false, message: error.message }
+          : { id: coach.id, label: coach.display_name, ok: true },
+      );
     }
+    setOptimistic((current) => {
+      const copy = { ...current };
+      for (const result of results) if (!result.ok) delete copy[result.id];
+      return copy;
+    });
+    const done = results.filter((row) => row.ok).length;
+    // One event for the whole action, count only, no names and no ids.
+    if (done > 0) logEvent("coach.engagement_shared", orgId, bulkShareDims("shared", done));
     const line = coachResultsLine(results);
     setConfirmation(line);
     if (results.some((row) => !row.ok)) toast.error(line);
@@ -131,115 +155,111 @@ export function SharedWithSection({
 
   if (quickFolder) return null;
 
+  const heading = personalOrg ? "Your coaches" : "Shared with";
+  const intro = personalOrg
+    ? "A coach you share with here can see this engagement. Nothing else in your workspace is visible to them."
+    : "Coaches you choose here can see this engagement. Nothing else in your workspace is visible to them.";
+
   return (
     <section id="shared-with" className="scroll-mt-24">
-      <h2 className="micro-label">Shared with</h2>
-      <p className="mt-1.5 text-sm text-muted-foreground">
-        Coaches you choose here can see this engagement. Nothing else in your workspace is visible
-        to them.
-      </p>
-
-      <div className="mt-3 space-y-2">
-        {current.map((coach) => (
-          <div
-            key={coach.id}
-            className="flex flex-wrap items-center justify-between gap-2 rounded-[var(--radius)] border border-border bg-card px-4 py-3 shadow-card"
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="micro-label">{heading}</h2>
+        {unshared.length > 1 ? (
+          <button
+            type="button"
+            disabled={sharingAll || busyId !== null}
+            onClick={() => setConfirmAll(true)}
+            className="rounded-full border border-accent bg-accent-soft px-3 py-1 font-mono text-[11px] uppercase tracking-[0.08em] text-accent-deep transition-opacity disabled:opacity-50"
           >
-            <div className="min-w-0">
-              <p className="text-sm text-foreground">{coach.display_name}</p>
-              {sharedLine(coach.added_at, coach.added_by_name) ? (
-                <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
-                  {sharedLine(coach.added_at, coach.added_by_name)}
-                </p>
-              ) : null}
-            </div>
-            <button
-              type="button"
-              disabled={change.isPending}
-              onClick={() =>
-                change.mutate({
-                  coachId: coach.id,
-                  coachName: coach.display_name,
-                  action: "unshared",
-                })
-              }
-              className="rounded-full border border-border px-3 py-1 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
-            >
-              Remove
-            </button>
-          </div>
-        ))}
-        {current.length === 0 && !shared.isLoading ? (
-          <p className="text-sm text-muted-foreground">
-            Not shared with anyone. This engagement is yours alone.
-          </p>
+            {sharingAll ? "Sharing…" : `Share with all ${unshared.length} coaches`}
+          </button>
         ) : null}
       </div>
+      <p className="mt-1.5 text-sm text-muted-foreground">{intro}</p>
 
-      {available.length > 0 ? (
-        <div className="mt-4 flex flex-col gap-2 md:flex-row md:items-center">
-          <Select
-            value={picked}
-            onValueChange={(next) => {
-              setConfirmation(null);
-              setPicked(next);
-            }}
-          >
-            <SelectTrigger className="w-full md:w-[240px]">
-              <SelectValue placeholder="Add a coach" />
-            </SelectTrigger>
-            <SelectContent>
-              {available.map((coach) => (
-                <SelectItem key={coach.id} value={coach.id}>
-                  {coach.display_name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Button
-            type="button"
-            disabled={!pickedCoach || change.isPending || sharingAll}
-            className="w-full md:w-auto"
-            onClick={() =>
-              pickedCoach
-                ? change.mutate({
-                    coachId: pickedCoach.id,
-                    coachName: pickedCoach.display_name,
-                    action: "shared",
-                  })
-                : undefined
-            }
-          >
-            {pickedCoach ? `Share with ${pickedCoach.display_name}` : "Share"}
-          </Button>
-          {available.length > 1 ? (
-            <Button
-              type="button"
-              variant="outline"
-              disabled={change.isPending || sharingAll}
-              className="w-full md:w-auto"
-              onClick={() => void shareWithAll()}
+      <div className="mt-3 space-y-2">
+        {roster.map((coach) => {
+          const line = sharedLine(coach.added_at, coach.added_by_name);
+          const busy = busyId === coach.id || sharingAll;
+          return (
+            <div
+              key={coach.id}
+              className="flex flex-wrap items-center justify-between gap-2 rounded-[var(--radius)] border border-border bg-card px-4 py-3 shadow-card"
             >
-              {sharingAll ? "Sharing…" : `Share with all ${available.length} coaches`}
-            </Button>
-          ) : null}
-        </div>
-      ) : (
-        <p className="mt-4 text-sm text-muted-foreground">
-          {orgCoaches.isLoading
-            ? "Loading…"
-            : current.length > 0
-              ? "Every coach in this workspace already has this engagement."
-              : "No coaches in this workspace yet. Invite one, then share this engagement with them."}
-        </p>
-      )}
+              <div className="min-w-0">
+                <p className="text-sm text-foreground">{coach.display_name}</p>
+                {coach.shared && line ? (
+                  <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+                    {line}
+                  </p>
+                ) : null}
+              </div>
+              {coach.shared ? (
+                <div className="flex shrink-0 items-center gap-2">
+                  <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+                    {busy ? "Saving…" : "Shared"}
+                  </span>
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => void toggle(coach, false)}
+                    className="rounded-full border border-border px-3 py-1 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => void toggle(coach, true)}
+                  className="shrink-0 rounded-full border border-accent bg-accent-soft px-4 py-1 font-mono text-[11px] uppercase tracking-[0.08em] text-accent-deep transition-opacity disabled:opacity-50"
+                >
+                  {busy ? "Saving…" : "Share"}
+                </button>
+              )}
+            </div>
+          );
+        })}
+      </div>
 
-      {pickedCoach && !change.isPending ? (
+      {roster.length === 0 && !orgCoaches.isLoading ? (
+        <p className="mt-3 text-sm text-muted-foreground">
+          {personalOrg
+            ? "No coaches here yet. Invite one, then share this engagement with them."
+            : "No coaches in this workspace yet. Invite one, then share this engagement with them."}
+        </p>
+      ) : null}
+      {roster.length > 0 && sharedCount === 0 && !shared.isLoading ? (
         <p className="mt-2 text-sm text-muted-foreground">
-          Nothing is shared until you press Share.
+          Not shared with anyone. This engagement is yours alone.
         </p>
       ) : null}
       {confirmation ? <p className="mt-2 text-sm text-accent-deep">{confirmation}</p> : null}
+
+      <AlertDialog open={confirmAll} onOpenChange={setConfirmAll}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Share this engagement with {unshared.length} coaches?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {unshared.map((row) => row.display_name).join(", ")} will see the work mapped into this
+              engagement. Nothing else in your workspace becomes visible, and you can take it back
+              from any of them at any time.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setConfirmAll(false);
+                void shareWithAll();
+              }}
+            >
+              Share with them
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </section>
   );
 }
