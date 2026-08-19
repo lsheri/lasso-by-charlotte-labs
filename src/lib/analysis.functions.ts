@@ -79,6 +79,14 @@ export const startAnalysis = createServerFn({ method: "POST" })
     if (preset.id === "what_recurs" && target.itemsInScope < MIN_ITEMS_FOR_RECURRENCE) {
       throw new Error(NOT_ENOUGH_WORK_LINE);
     }
+    // Nothing readable means nothing to analyse. This refusal comes before any
+    // run row is created, so an empty scope never leaves a record behind. It
+    // is what a coach meets when a share is taken back mid session.
+    if (target.itemsInScope === 0) {
+      throw new Error(
+        "There is nothing here to read. This work may no longer be shared with you.",
+      );
+    }
     const profileOrgId = profile.org_id;
     const presetId = preset.id;
 
