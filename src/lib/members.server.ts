@@ -43,9 +43,73 @@ export async function callMemberRpc(
     eventType,
     orgId: profile.org_id,
     userId: context.userId,
-    dims: {},
+    dims: { reason },
   });
   return { ok: true };
+}
+
+/**
+ * Resend mints a fresh invite first, then withdraws the old one. That order
+ * matters: if minting fails the recipient still holds a working link.
+ */
+export async function resendInviteByCode(
+  context: AuthedContext,
+  profileId: string | null | undefined,
+  code: string,
+  acceptOrigin: string,
+): Promise<{ code: string; delivered: boolean; reason: string }> {
+  const { profile, supabaseAdmin } = await requireConsoleAccess(
+    context.supabase,
+    context.userId,
+    profileId,
+  );
+
+  const { data: invite, error: readError } = await supabaseAdmin
+    .from("invites")
+    .select("code, org_id, invited_role, email, used_by, revoked_at")
+    .eq("code", code)
+    .maybeSingle();
+  if (readError) throw new Error(readError.message);
+  if (!invite || invite.org_id !== profile.org_id) throw new Error("Invite not found");
+  if (invite.used_by) throw new Error("Invite already used");
+  if (invite.revoked_at) throw new Error("Invite already withdrawn");
+
+  const { data: minted, error: mintError } = await context.supabase.rpc("make_invite", {
+    p_role: invite.invited_role,
+    p_email: invite.email,
+    p_org_id: profile.org_id,
+  });
+  if (mintError || !minted) throw new Error(mintError?.message ?? "Could not create a new invite.");
+
+  await revokeInviteByCode(context, profileId, code, "resend");
+
+  let delivered = false;
+  let reason = "no_email";
+  if (invite.email) {
+    const { data: me } = await context.supabase
+      .from("profiles")
+      .select("display_name")
+      .eq("id", profile.id)
+      .maybeSingle();
+    const { sendInviteViaResend } = await import("./invites.server");
+    const result = await sendInviteViaResend({
+      to: invite.email,
+      inviterName: me?.display_name || "Someone at your firm",
+      acceptUrl: `${acceptOrigin}/join?code=${encodeURIComponent(minted as string)}`,
+    });
+    delivered = result.sent;
+    reason = result.reason;
+  }
+
+  const { recordEvent } = await import("./telemetry.server");
+  await recordEvent(supabaseAdmin, {
+    eventType: "invite.email_sent",
+    orgId: profile.org_id,
+    userId: context.userId,
+    dims: { delivered, reason, resend: true },
+  });
+
+  return { code: minted as string, delivered, reason };
 }
 
 /**
@@ -57,6 +121,7 @@ export async function revokeInviteByCode(
   context: AuthedContext,
   profileId: string | null | undefined,
   code: string,
+  reason: "manual" | "resend" = "manual",
 ): Promise<{ ok: true }> {
   const { profile, supabaseAdmin } = await requireConsoleAccess(
     context.supabase,
