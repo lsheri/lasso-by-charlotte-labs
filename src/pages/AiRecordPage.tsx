@@ -240,7 +240,14 @@ export function AiRecordPage() {
                         )
                       }
                     />
-                    {analyses.running ? <ThinkingIndicator /> : null}
+                    {analyses.running ? (
+                      <>
+                        <ThinkingIndicator />
+                        {analyses.streamed ? (
+                          <MarkdownMessage content={analyses.streamed} />
+                        ) : null}
+                      </>
+                    ) : null}
                     {analyses.error ? (
                       <p className="text-sm text-destructive">{analyses.error}</p>
                     ) : null}
