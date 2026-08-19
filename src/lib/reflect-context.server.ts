@@ -399,12 +399,15 @@ export async function assembleReflectContext(
 ): Promise<AssembledContext> {
   const ownerId = options?.ownerProfileId ?? profileId;
 
-  // 1 to 3. Tasks, mapping links, and the work items themselves.
-  const { tasks, linkRows, items: allItems } = await loadScopeData(supabase, ownerId, scope);
+  // 1 to 3. Tasks, mapping links, and the work items themselves. The brief is
+  // an independent read, so it happens alongside rather than after.
+  const [{ tasks, linkRows, items: allItems }, brief] = await Promise.all([
+    loadScopeData(supabase, ownerId, scope),
+    loadBriefContext(supabase, ownerId, scope),
+  ]);
 
-  // Tier 0. The brief is loaded first, is never budgeted away, and is removed
-  // from the ordinary item list so it cannot also appear as an extract.
-  const brief = await loadBriefContext(supabase, ownerId, scope);
+  // Tier 0. The brief is never budgeted away, and is removed from the ordinary
+  // item list so it cannot also appear as an extract.
   const briefIds = new Set(brief.itemIds);
   const items = allItems.filter((item) => !briefIds.has(item.id));
   // Brief characters come out of the tier 2 budget, so total context does not grow.
@@ -430,10 +433,10 @@ export async function assembleReflectContext(
     const inline = missing.slice(0, MAX_BACKFILL_INLINE);
     const deferred = missing.slice(MAX_BACKFILL_INLINE);
     const started = Date.now();
-    const made: string[] = [];
-    for (const id of inline) {
-      if (await ensureExtract(id)) made.push(id);
-    }
+    const results = await Promise.all(
+      inline.map(async (id) => ({ id, ok: await ensureExtract(id) })),
+    );
+    const made = results.filter((r) => r.ok).map((r) => r.id);
     console.log(
       `[reflect-context] inline backfill ${made.length}/${inline.length} in ${Date.now() - started}ms, ${deferred.length} deferred`,
     );
