@@ -178,7 +178,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
 
         <div className="mt-4 flex flex-wrap items-center gap-2">
           {profile?.role !== "coach" ? <EditEngagementDialog engagement={engagement} /> : null}
-          {profile && profile.role !== "coach" ? (
+          {profile && profile.role !== "coach" && !isQuickFolder ? (
             <a
               href="#shared-with"
               className="rounded-full border border-border bg-card px-3 py-1 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
