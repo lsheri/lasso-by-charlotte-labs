@@ -24,6 +24,7 @@ import { useMyEngagementMembership } from "@/hooks/use-engagement-membership";
 import { useEngagementCoaches } from "@/hooks/use-coach-share";
 import { supabase } from "@/integrations/supabase/client";
 import { clientDisplayName, engagementDisplayCode, engagementDisplayTitle } from "@/lib/clients";
+import { INVITE_ADMIN_ONLY_LINE } from "@/lib/invites-shared";
 
 type Engagement = {
   id: string;
