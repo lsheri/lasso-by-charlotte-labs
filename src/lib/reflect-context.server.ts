@@ -215,6 +215,54 @@ export function headAndTail(text: string, cap = PER_ITEM_CHARS): { text: string;
 
 export { RAW_BUDGET };
 
+export type TextFetchResult = {
+  item: { id: string; content_ref?: string | null };
+  result: { status: ItemTextStatus; text?: string | null; note?: string | null };
+};
+
+/**
+ * The budget, clip and stop decisions for a batch of fetched texts, applied in
+ * the order given. Pure apart from the two maps it fills, which is what makes
+ * the parallel fetch above safe: order in, order out.
+ */
+export function accountTextResults(
+  fetched: TextFetchResult[],
+  rawBudget: number,
+  state: {
+    fullText: Map<string, string>;
+    unreadable: Map<string, { status: ItemTextStatus; note: string | null }>;
+    rawUsed: number;
+  },
+): { rawUsed: number; anyCut: boolean; stop: boolean } {
+  let rawUsed = state.rawUsed;
+  let anyCut = false;
+  for (const { item, result } of fetched) {
+    if (rawUsed >= rawBudget) return { rawUsed, anyCut, stop: true };
+    if (result.status === "unsupported" || result.status === "failed") {
+      state.unreadable.set(item.id, { status: result.status, note: result.note ?? null });
+      continue;
+    }
+    if (result.status === "unreadable" && item.content_ref) {
+      state.unreadable.set(item.id, { status: "unreadable", note: result.note ?? null });
+      continue;
+    }
+    const text = (result.text ?? "").trim();
+    if (!text) continue;
+    const clipped = headAndTail(text);
+    if (clipped.cut) anyCut = true;
+    const remaining = rawBudget - rawUsed;
+    if (clipped.text.length > remaining) {
+      anyCut = true;
+      const room = headAndTail(clipped.text, remaining);
+      state.fullText.set(item.id, room.text);
+      return { rawUsed: rawBudget, anyCut, stop: true };
+    }
+    state.fullText.set(item.id, clipped.text);
+    rawUsed += clipped.text.length;
+  }
+  return { rawUsed, anyCut, stop: false };
+}
+
 /**
  * An @ mention narrows one message to exactly what the person pointed at.
  * Everything else in the session's scope is honestly listed as not read, and
