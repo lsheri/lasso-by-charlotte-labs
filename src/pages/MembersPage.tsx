@@ -87,7 +87,8 @@ function PlanSection({
   if (!business) {
     return (
       <p className="text-sm text-muted-foreground">
-        {planLine(entitlement)}. {renewal === "No end date" ? "No end date." : `Runs to ${renewal}.`}
+        {planLine(entitlement)}.{" "}
+        {renewal === "No end date" ? "No end date." : `Runs to ${renewal}.`}
       </p>
     );
   }
@@ -189,6 +190,7 @@ function MembersConsole() {
                 <InviteDialog
                   showHistory={false}
                   {...(business ? {} : { defaultRole: "coach" as const })}
+                  onShareInstead={(member) => setShareTarget(member)}
                   trigger={
                     <Button type="button" size="sm" variant="outline">
                       {copy.invite}
@@ -217,7 +219,17 @@ function MembersConsole() {
                   ) : (
                     <Badge tone="accent">Active</Badge>
                   )}
-                  {isAdmin || (member.role === "coach" && !member.deactivated_at) ? (
+                  {member.role === "coach" && !member.deactivated_at && profile ? (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setShareTarget(member)}
+                    >
+                      Share work with {member.display_name.split(" ")[0]}
+                    </Button>
+                  ) : null}
+                  {isAdmin ? (
                     <DropdownMenu>
                       <DropdownMenuTrigger
                         aria-label={`Actions for ${member.display_name}`}
@@ -226,11 +238,6 @@ function MembersConsole() {
                         <MoreHorizontal className="h-4 w-4" />
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        {member.role === "coach" && !member.deactivated_at && profile ? (
-                          <DropdownMenuItem onSelect={() => setShareTarget(member)}>
-                            Share work with {member.display_name.split(" ")[0]}
-                          </DropdownMenuItem>
-                        ) : null}
                         {isAdmin && member.deactivated_at ? (
                           <DropdownMenuItem
                             onSelect={() =>
@@ -286,9 +293,8 @@ function MembersConsole() {
                           onRevoke: () =>
                             run({ kind: "revoke", code: invite.code }, "Invite withdrawn"),
                           onResend: () =>
-                            run(
-                              { kind: "resend", code: invite.code },
-                              (result) => resendMessage(result),
+                            run({ kind: "resend", code: invite.code }, (result) =>
+                              resendMessage(result),
                             ),
                           busy: action.isPending,
                         }

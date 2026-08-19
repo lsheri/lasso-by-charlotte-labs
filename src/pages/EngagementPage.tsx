@@ -21,11 +21,7 @@ import { TaskWorkflow, type WorkflowElement } from "@/components/work/TaskWorkfl
 import { useProfile } from "@/hooks/use-profile";
 import { useEngagementCoaches } from "@/hooks/use-coach-share";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  clientDisplayName,
-  engagementDisplayCode,
-  engagementDisplayTitle,
-} from "@/lib/clients";
+import { clientDisplayName, engagementDisplayCode, engagementDisplayTitle } from "@/lib/clients";
 
 type Engagement = {
   id: string;
@@ -112,6 +108,8 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
   }
 
   const engagement = engagementQuery.data;
+  const isQuickFolder = engagement?.clients?.quick_folder === true;
+  const hasCoaches = (coaches.data ?? []).length > 0;
 
   // Mapped items in this engagement, the only input to whether "What recurs"
   // has enough work to run. No count is ever shown to the person.
@@ -176,7 +174,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
 
         <div className="mt-4 flex flex-wrap items-center gap-2">
           {profile?.role !== "coach" ? <EditEngagementDialog engagement={engagement} /> : null}
-          {profile && profile.role !== "coach" ? (
+          {profile && profile.role !== "coach" && !isQuickFolder ? (
             <a
               href="#shared-with"
               className="rounded-full border border-border bg-card px-3 py-1 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
@@ -186,6 +184,14 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
                 : `Shared with ${coaches.data?.length} coach${(coaches.data?.length ?? 0) === 1 ? "" : "es"}`}
             </a>
           ) : null}
+          {profile && profile.role !== "coach" && !isQuickFolder && hasCoaches ? (
+            <a
+              href="#shared-with"
+              className="rounded-full border border-accent bg-accent-soft px-3 py-1 font-mono text-[11px] uppercase tracking-[0.08em] text-accent-deep transition-colors hover:opacity-80"
+            >
+              Share with a coach
+            </a>
+          ) : null}
           <button
             type="button"
             onClick={() => setAboutOpen((v) => !v)}
@@ -193,7 +199,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
           >
             About this engagement {aboutOpen ? "−" : "+"}
           </button>
-          {profile?.role === "admin" || profile?.role === "lead" ? (
+          {(profile?.role === "admin" || profile?.role === "lead") && !isQuickFolder ? (
             <InviteDialog
               engagementId={engagementId}
               trigger={
@@ -201,7 +207,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
                   type="button"
                   className="rounded-full border border-border bg-card px-3 py-1 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
                 >
-                  Invite a coach
+                  {hasCoaches ? "Invite a new coach" : "Invite a coach"}
                 </button>
               }
             />
@@ -293,7 +299,11 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
       <SubjectCoachingSection profileId={profile?.id} engagementId={engagementId} />
 
       {profile && profile.role !== "coach" ? (
-        <SharedWithSection engagementId={engagementId} orgId={profile.org_id} />
+        <SharedWithSection
+          engagementId={engagementId}
+          orgId={profile.org_id}
+          quickFolder={isQuickFolder}
+        />
       ) : null}
 
       <FirmChecksCard

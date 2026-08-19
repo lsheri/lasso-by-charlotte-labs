@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useEngagementCoaches, useShareInvalidation } from "@/hooks/use-coach-share";
-import { sharedLine } from "@/lib/coach-share-shared";
+import { coachResultsLine, sharedLine, type ShareResult } from "@/lib/coach-share-shared";
 import { logEvent } from "@/lib/telemetry";
 
 type CoachRow = { id: string; display_name: string };
@@ -24,13 +24,17 @@ type CoachRow = { id: string; display_name: string };
 export function SharedWithSection({
   engagementId,
   orgId,
+  quickFolder = false,
 }: {
   engagementId: string;
   orgId: string;
+  /** A quick folder holds unfiled work, so it is never shareable. */
+  quickFolder?: boolean;
 }) {
   const invalidateShares = useShareInvalidation();
   const [picked, setPicked] = useState<string>("");
   const [confirmation, setConfirmation] = useState<string | null>(null);
+  const [sharingAll, setSharingAll] = useState(false);
 
   const shared = useEngagementCoaches(engagementId);
 
@@ -94,6 +98,38 @@ export function SharedWithSection({
   const currentIds = new Set(current.map((row) => row.id));
   const available = (orgCoaches.data ?? []).filter((row) => !currentIds.has(row.id));
   const pickedCoach = available.find((row) => row.id === picked);
+
+  /** Sequential calls so a refusal on one coach never reads as success. */
+  async function shareWithAll() {
+    setSharingAll(true);
+    setConfirmation(null);
+    const results: ShareResult[] = [];
+    for (const coach of available) {
+      const { error } = await supabase.rpc("share_engagement_with_coach", {
+        p_engagement: engagementId,
+        p_coach_profile: coach.id,
+      });
+      if (error) {
+        results.push({
+          id: coach.id,
+          label: coach.display_name,
+          ok: false,
+          message: error.message,
+        });
+      } else {
+        logEvent("coach.engagement_shared", orgId, { action: "shared" });
+        results.push({ id: coach.id, label: coach.display_name, ok: true });
+      }
+    }
+    const line = coachResultsLine(results);
+    setConfirmation(line);
+    if (results.some((row) => !row.ok)) toast.error(line);
+    else toast.success(line);
+    await invalidateShares();
+    setSharingAll(false);
+  }
+
+  if (quickFolder) return null;
 
   return (
     <section id="shared-with" className="scroll-mt-24">
@@ -162,7 +198,7 @@ export function SharedWithSection({
           </Select>
           <Button
             type="button"
-            disabled={!pickedCoach || change.isPending}
+            disabled={!pickedCoach || change.isPending || sharingAll}
             className="w-full md:w-auto"
             onClick={() =>
               pickedCoach
@@ -176,6 +212,17 @@ export function SharedWithSection({
           >
             {pickedCoach ? `Share with ${pickedCoach.display_name}` : "Share"}
           </Button>
+          {available.length > 1 ? (
+            <Button
+              type="button"
+              variant="outline"
+              disabled={change.isPending || sharingAll}
+              className="w-full md:w-auto"
+              onClick={() => void shareWithAll()}
+            >
+              {sharingAll ? "Sharing…" : `Share with all ${available.length} coaches`}
+            </Button>
+          ) : null}
         </div>
       ) : (
         <p className="mt-4 text-sm text-muted-foreground">

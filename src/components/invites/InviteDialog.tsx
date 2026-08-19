@@ -14,8 +14,10 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { useProfile } from "@/hooks/use-profile";
+import { useMembers } from "@/hooks/use-members";
 import { supabase } from "@/integrations/supabase/client";
 import { sendInviteEmail } from "@/lib/invites.functions";
+import { coachToShareWithInstead, findMemberByEmail, type MemberRow } from "@/lib/members-shared";
 import { logEvent } from "@/lib/telemetry";
 
 type InviteRole = "coach" | "em";
@@ -85,12 +87,18 @@ export function InviteDialog({
   engagementId,
   defaultRole = "coach",
   showHistory = true,
+  onShareInstead,
 }: {
   trigger: ReactNode;
   engagementId?: string | undefined;
   defaultRole?: InviteRole;
   /** The members console lists invites itself, so it turns this off. */
   showHistory?: boolean;
+  /**
+   * Offered when the typed address already belongs to a coach here. Without
+   * it the dialog still blocks the duplicate, it just cannot hand over.
+   */
+  onShareInstead?: (member: MemberRow) => void;
 }) {
   const { data: profile } = useProfile();
   const emailInvite = useServerFn(sendInviteEmail);
@@ -104,11 +112,28 @@ export function InviteDialog({
   const [error, setError] = useState<string | null>(null);
 
   const canInvite = profile?.role === "admin" || profile?.role === "lead";
+  // Only ever the list this viewer may already read. It never answers whether
+  // an address exists anywhere else.
+  const { data: members } = useMembers(canInvite ? profile?.id : undefined);
   if (!canInvite) return null;
+
+  // An invite is for someone new. A coach invite is always bound to an
+  // address, so a link cannot be passed on to someone else.
+  const emailRequired = role === "coach" || lockEmail;
+  const existing = findMemberByEmail(members?.members ?? [], email);
+  const shareInstead = coachToShareWithInstead(members?.members ?? [], email);
 
   async function createInvite(event: React.FormEvent) {
     event.preventDefault();
     if (!profile) return;
+    if (existing) {
+      setError(`${existing.display_name} is already in this workspace.`);
+      return;
+    }
+    if (emailRequired && !email.trim()) {
+      setError("Add their email address. Coach invites are always locked to one person.");
+      return;
+    }
     setPending(true);
     setError(null);
     setLink(null);
@@ -172,6 +197,10 @@ export function InviteDialog({
         </DialogHeader>
 
         <form onSubmit={createInvite} className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            An invite is for someone who is not here yet. If they already have an account in this
+            workspace, share the work with them instead.
+          </p>
           <div className="space-y-2">
             <p className="micro-label">Their role</p>
             <div className="space-y-1.5">
@@ -197,24 +226,55 @@ export function InviteDialog({
             <label className="flex items-center gap-2 text-sm text-foreground">
               <input
                 type="checkbox"
-                checked={lockEmail}
+                checked={emailRequired}
+                disabled={role === "coach"}
                 onChange={(e) => {
                   setLockEmail(e.target.checked);
                   if (!e.target.checked) setEmail("");
                 }}
-                className="h-4 w-4 accent-[var(--accent-deep)]"
+                className="h-4 w-4 accent-[var(--accent-deep)] disabled:opacity-60"
               />
               Lock this invite to their email
-              <span className="text-muted-foreground">(recommended)</span>
+              <span className="text-muted-foreground">
+                {role === "coach" ? "(always, for coaches)" : "(recommended)"}
+              </span>
             </label>
-            {lockEmail ? (
+            {emailRequired ? (
               <Input
                 id="invite-email"
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setError(null);
+                }}
                 placeholder="them@firm.com"
               />
+            ) : null}
+            {existing ? (
+              <div className="space-y-2 rounded-[var(--radius)] border border-accent bg-accent-soft px-4 py-3">
+                <p className="text-sm text-foreground">
+                  {existing.display_name} is already in this workspace, so they do not need an
+                  invite.
+                </p>
+                {shareInstead && onShareInstead ? (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setOpen(false);
+                      onShareInstead(shareInstead);
+                    }}
+                  >
+                    Share work with {shareInstead.display_name.split(" ")[0]} instead
+                  </Button>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    Use Shared with on the engagement to give them access.
+                  </p>
+                )}
+              </div>
             ) : null}
           </div>
 
@@ -224,7 +284,7 @@ export function InviteDialog({
             {engagementId ? " They'll land straight in this engagement when they accept." : ""}
           </p>
 
-          <Button type="submit" disabled={pending}>
+          <Button type="submit" disabled={pending || Boolean(existing)}>
             {pending ? <WorkingLabel>Creating</WorkingLabel> : "Create invite link"}
           </Button>
         </form>
