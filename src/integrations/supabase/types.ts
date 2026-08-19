@@ -2415,8 +2415,16 @@ export type Database = {
         }
         Returns: undefined
       }
+      share_engagement_with_coach: {
+        Args: { p_coach_profile: string; p_engagement: string }
+        Returns: undefined
+      }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
+      unshare_engagement_coach: {
+        Args: { p_coach_profile: string; p_engagement: string }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "em" | "coach" | "lead" | "admin"
