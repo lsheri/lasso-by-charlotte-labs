@@ -210,7 +210,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
           >
             About this engagement {aboutOpen ? "−" : "+"}
           </button>
-          {(profile?.role === "admin" || profile?.role === "lead") && !isQuickFolder ? (
+          {profile?.role === "admin" && !isQuickFolder ? (
             <InviteDialog
               engagementId={engagementId}
               trigger={
