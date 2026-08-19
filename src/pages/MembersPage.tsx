@@ -63,6 +63,50 @@ function Badge({
 }
 
 export function MembersPage() {
+  return <MembersConsole />;
+}
+
+/**
+ * Display only. The plan is stated honestly, including when it is comped, and
+ * nothing here blocks anyone or offers an upgrade.
+ */
+function PlanSection({
+  entitlement,
+  business,
+}: {
+  entitlement: EntitlementSummary | null;
+  business: boolean;
+}) {
+  if (!entitlement) {
+    return <p className="text-sm text-muted-foreground">No plan on file.</p>;
+  }
+
+  const renewal = entitlement.ends_at ? dateLabel(entitlement.ends_at) : "No end date";
+
+  if (!business) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        {planLine(entitlement)}. {renewal === "No end date" ? "No end date." : `Runs to ${renewal}.`}
+      </p>
+    );
+  }
+
+  return (
+    <section className="rounded-[var(--radius)] border border-border bg-card px-5 py-4 shadow-card">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h2 className="micro-label">Plan</h2>
+        {entitlement.status === "active" ? null : <Badge>{entitlement.status}</Badge>}
+      </div>
+      <p className="mt-2 text-sm font-medium text-foreground">{planLine(entitlement)}</p>
+      <p className="mt-1 text-sm text-muted-foreground">{seatsLine(entitlement)}</p>
+      <p className="mt-1 text-sm text-muted-foreground">
+        {renewal === "No end date" ? "No end date." : `Runs to ${renewal}.`}
+      </p>
+    </section>
+  );
+}
+
+function MembersConsole() {
   const { data: profile } = useProfile();
   const { data, isLoading, error } = useMembers(profile?.id);
   const action = useMemberAction(profile?.id);
