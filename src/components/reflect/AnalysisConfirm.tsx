@@ -25,7 +25,7 @@ import {
   type DeliverableKind,
 } from "@/lib/deliverable-kinds";
 import type { WorkItemRow } from "@/lib/work-types";
-import { contentsUnread } from "@/lib/text-status";
+import { TITLE_ONLY_LINE, contentsUnread, readCounts } from "@/lib/text-status";
 
 /** What a confirm step is pointed at, taken from the run request itself. */
 export type ConfirmTarget =
@@ -158,9 +158,12 @@ export function AnalysisConfirm({
   const isFirmChecks = preset.id === "firm_checks";
   const includesBrief = preset.scope !== "thread";
   const itemUnread = target.kind === "item" && contentsUnread(item?.meta as never);
-  const engagementUnread = target.kind === "engagement" ? (unreadCount ?? 0) : 0;
-  const readableCount =
-    target.kind === "engagement" ? Math.max(target.itemCount - engagementUnread, 0) : 0;
+  const counts =
+    target.kind === "engagement"
+      ? readCounts(target.itemCount, unreadCount ?? 0)
+      : { readable: 0, titleOnly: 0 };
+  const engagementUnread = counts.titleOnly;
+  const readableCount = counts.readable;
 
   return (
     <Dialog open onOpenChange={(next) => (next ? undefined : onCancel())}>
@@ -199,9 +202,7 @@ export function AnalysisConfirm({
                   </span>
                   {item ? <TypeBadge item={item} size="sm" /> : null}
                   {itemUnread ? (
-                    <span className="w-full text-xs text-muted-foreground">
-                      Title only, contents could not be read.
-                    </span>
+                    <span className="w-full text-xs text-muted-foreground">{TITLE_ONLY_LINE}</span>
                   ) : null}
                 </li>
               ) : (
