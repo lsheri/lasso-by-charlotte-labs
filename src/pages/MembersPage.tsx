@@ -320,8 +320,20 @@ function MembersConsole() {
         </div>
       ) : null}
 
+      {shareTarget && profile ? (
+        <ShareWorkDialog
+          open={Boolean(shareTarget)}
+          onOpenChange={(next) => {
+            if (!next) setShareTarget(null);
+          }}
+          profileId={profile.id}
+          orgId={profile.org_id}
+          coach={{ id: shareTarget.id, display_name: shareTarget.display_name }}
+          viewerRole={profile.role}
+        />
+      ) : null}
+
       <AlertDialog open={Boolean(confirm)} onOpenChange={(open) => !open && setConfirm(null)}>
-        {null}
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Deactivate {confirm?.display_name}?</AlertDialogTitle>
