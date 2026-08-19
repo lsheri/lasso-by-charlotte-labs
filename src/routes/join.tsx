@@ -18,6 +18,7 @@ import {
   type InviteState,
 } from "@/lib/invite-state";
 import { getInviteState, recordInviteBlocked } from "@/lib/invites.functions";
+import { clearPendingInvite, rememberPendingInvite } from "@/lib/pending-invite";
 import { logEvent } from "@/lib/telemetry";
 
 type JoinSearch = { code?: string | undefined; eng?: string | undefined };
@@ -98,6 +99,12 @@ function JoinPage() {
 
   const [override, setOverride] = useState<BlockedState | null>(null);
   const blocked = override ?? (state ? blockedStateFor(state, viewerEmail ?? null) : null);
+
+  // If sign up takes them away from this page, the breadcrumb brings them back
+  // rather than dropping them on a chooser that asks for the code again.
+  useEffect(() => {
+    if (code) rememberPendingInvite(eng ? { code, eng } : { code });
+  }, [code, eng]);
 
   // One content-free record per blocked view, never an address. A creator
   // opening their own link is also a member, but that is a preview, not a block.
@@ -241,26 +248,44 @@ function JoinPage() {
   }
 
   if (!state.viewer.signed_in) {
+    const coachInvite = state.invited_role === "coach";
+    const personLed = !state.org_is_company && state.inviter_name;
+    const title = coachInvite
+      ? personLed
+        ? `${state.inviter_name} would like you to coach their work`
+        : state.org_is_company
+          ? `You are invited to coach at ${org}`
+          : `You are invited to coach in ${org}`
+      : `You have been invited to ${org}`;
     return (
       <Shell>
-        <StateCard label="Invite" title={`You have been invited to ${org}`}>
-          <p>You will join as a {roleWord}.</p>
+        <StateCard label={coachInvite ? "Coaching invite" : "Invite"} title={title}>
+          {coachInvite ? (
+            <p>
+              You will join as a coach. You see only the work that is chosen to be shared with
+              you, and nothing else in the workspace.
+            </p>
+          ) : (
+            <p>You will join as a {roleWord}.</p>
+          )}
+          <p>Set up your account next, and you will land straight back here to accept.</p>
           {state.is_email_bound ? (
             <p>
               This invite is locked to {state.email_hint ?? "one address"}. Sign in or create your
               account with that address, or it will not be accepted.
             </p>
-          ) : (
-            <p>Create an account or sign in, and you will land straight here again.</p>
-          )}
+          ) : null}
           <div className="pt-1">
             <Button
               type="button"
               onClick={() => navigate({ to: "/auth", search: { next: joinHref } })}
             >
-              Sign in or create an account
+              Set up your account
             </Button>
           </div>
+          <p className="text-xs">
+            Already have an account? The same button signs you in.
+          </p>
         </StateCard>
       </Shell>
     );

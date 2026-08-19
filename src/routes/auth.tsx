@@ -88,7 +88,13 @@ function AuthPage() {
       const { data, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
-        options: { emailRedirectTo: window.location.origin },
+        // Carry the destination through confirmation, so an invite is never
+        // lost between the email link and the accept page.
+        options: {
+          emailRedirectTo: next
+            ? `${window.location.origin}${next}`
+            : window.location.origin,
+        },
       });
       if (signUpError) setError(signUpError.message);
       else if (data.session) goOn();
