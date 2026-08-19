@@ -144,6 +144,8 @@ export function RenderedContent({
   const [failed, setFailed] = useState<string | null>(null);
 
   const url = urlQuery.data ?? null;
+  const driveFileId = item.meta?.drive_file_id ?? null;
+  const readStatus = textStatusOf(item.meta as never);
 
   useEffect(() => {
     if (!wantsText || !url) return;
@@ -177,7 +179,14 @@ export function RenderedContent({
       <Notice>Nothing is stored for this item, it&apos;s a record of work, not a file.</Notice>
     );
   }
+  // A Drive file is shown by Drive itself, in the reader's own session.
+  if (driveFileId) return <DrivePreview fileId={driveFileId} title={item.title} />;
   if (shape.kind === "unsupported") {
+    // Office and OpenDocument files cannot be rendered, but their text can be
+    // read, and that text is what analysis sees.
+    if (readStatus === "ok" || readStatus === "not_attempted") {
+      return <TextPane item={item} />;
+    }
     return <FallbackCard item={item} label={shape.label} onDownload={onDownload} />;
   }
   if (urlQuery.isError) {
