@@ -24,7 +24,14 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { InviteDialog } from "@/components/invites/InviteDialog";
 import { useMemberAction, useMembers } from "@/hooks/use-members";
 import { isBusinessOrg, ROLE_LABELS, useProfile } from "@/hooks/use-profile";
-import { maskCode, type InviteRow, type MemberRow } from "@/lib/members-shared";
+import {
+  maskCode,
+  planLine,
+  seatsLine,
+  type EntitlementSummary,
+  type InviteRow,
+  type MemberRow,
+} from "@/lib/members-shared";
 
 function dateLabel(iso: string | null): string {
   if (!iso) return "Not set";
