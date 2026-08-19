@@ -81,7 +81,10 @@ export function notFoundState(signedIn: boolean): InviteState {
 /** Which blocked state, if any, the accept route should record and render. */
 export type BlockedState = "mismatch" | "expired" | "revoked" | "used" | "already_member";
 
-export function blockedStateFor(state: InviteState, viewerEmail: string | null): BlockedState | null {
+export function blockedStateFor(
+  state: InviteState,
+  _viewerEmail: string | null,
+): BlockedState | null {
   if (state.status === "revoked") return "revoked";
   if (state.status === "used") return "used";
   if (state.status === "expired") return "expired";
