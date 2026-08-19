@@ -355,7 +355,7 @@ function InviteLine({
               Copy link
             </DropdownMenuItem>
             {onResend ? (
-              <DropdownMenuItem disabled={busy} onSelect={() => onResend()}>
+              <DropdownMenuItem disabled={busy ?? false} onSelect={() => onResend()}>
                 Resend
               </DropdownMenuItem>
             ) : null}
