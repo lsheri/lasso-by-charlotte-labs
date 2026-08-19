@@ -23,6 +23,9 @@ export function SessionHeader() {
   }, []);
 
   async function handleSignOut() {
+    // A leftover invite breadcrumb must not follow the next person on a
+    // shared device.
+    clearPendingInvite();
     await supabase.auth.signOut();
     navigate({ to: "/auth", replace: true });
   }

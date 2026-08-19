@@ -39,6 +39,7 @@ function NoAccessPage() {
             type="button"
             className="mt-6"
             onClick={async () => {
+              clearPendingInvite();
               await supabase.auth.signOut();
               navigate({ to: "/auth", replace: true });
             }}
