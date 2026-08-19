@@ -76,7 +76,7 @@ export async function resendInviteByCode(
 
   const { data: minted, error: mintError } = await context.supabase.rpc("make_invite", {
     p_role: invite.invited_role,
-    p_email: invite.email,
+    p_email: invite.email ?? undefined,
     p_org_id: profile.org_id,
   });
   if (mintError || !minted) throw new Error(mintError?.message ?? "Could not create a new invite.");
