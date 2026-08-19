@@ -79,7 +79,8 @@ describe("invite trigger gates", () => {
   it("hides resend from leads and keeps copy link plus withdraw", () => {
     const page = read("pages/MembersPage.tsx");
     expect(page).toContain("canManageInvites");
-    expect(page).toContain(INVITE_RESEND_ADMIN_ONLY_LINE);
+    expect(page).toContain("INVITE_RESEND_ADMIN_ONLY_LINE");
+    expect(INVITE_RESEND_ADMIN_ONLY_LINE).toBe("Only an admin can issue a new link.");
     const resendIndex = page.indexOf("onResend: () =>");
     expect(page.slice(0, resendIndex)).toContain("...(isAdmin");
   });
