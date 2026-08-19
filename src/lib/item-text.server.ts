@@ -47,6 +47,14 @@ function metaOf(item: TextItem): Record<string, unknown> & TextMeta {
   return (item.meta ?? {}) as Record<string, unknown> & TextMeta;
 }
 
+/** Older rows carry "empty"; it means the same thing as "unreadable". */
+function normalizeStatus(raw: string | null | undefined): ItemTextStatus | null {
+  if (!raw) return null;
+  if (raw === "empty") return "unreadable";
+  if (raw === "ok" || raw === "unsupported" || raw === "unreadable" || raw === "failed") return raw;
+  return null;
+}
+
 function extensionOf(name: string): string {
   const parts = name.split(".");
   return parts.length > 1 ? (parts.pop() as string).toLowerCase() : "";
