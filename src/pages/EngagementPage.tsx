@@ -235,6 +235,14 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
           ) : null}
         </div>
 
+        {profile &&
+        profile.role !== "coach" &&
+        profile.role !== "admin" &&
+        isBusinessOrg(profile) &&
+        !isQuickFolder ? (
+          <p className="mt-2 text-xs text-muted-foreground">{INVITE_ADMIN_ONLY_LINE}</p>
+        ) : null}
+
         {aboutOpen ? (
           <div className="mt-3 space-y-3 rounded-[var(--radius)] border border-border bg-card px-5 py-4 shadow-card">
             <div>
