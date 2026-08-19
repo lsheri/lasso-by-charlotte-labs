@@ -112,6 +112,8 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
   }
 
   const engagement = engagementQuery.data;
+  const isQuickFolder = engagement?.clients?.quick_folder === true;
+  const hasCoaches = (coaches.data ?? []).length > 0;
 
   // Mapped items in this engagement, the only input to whether "What recurs"
   // has enough work to run. No count is ever shown to the person.
