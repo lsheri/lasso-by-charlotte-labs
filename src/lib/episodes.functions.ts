@@ -177,7 +177,7 @@ export const closeEpisode = createServerFn({ method: "POST" })
 
     const { data: episode } = await supabase
       .from("work_episodes")
-      .select("id, owner_id, opened_at, status")
+      .select("id, owner_id, opened_at, status, task_id")
       .eq("id", data.episode_id)
       .maybeSingle();
     if (!episode) throw new Error("That piece of work could not be found.");
@@ -212,6 +212,26 @@ export const closeEpisode = createServerFn({ method: "POST" })
       .update({ status: data.status as EpisodeStatus, closed_at: now.toISOString() })
       .eq("id", episode.id);
     if (updateError) throw new Error("That could not be closed. Try again.");
+
+    // The same declaration is the deliverable's lifecycle. Firm view counts
+    // read from tasks, so the two must never drift apart.
+    if (episode.task_id) {
+      const { taskLifecyclePatch } = await import("./firm-dashboard-shared");
+      const { data: currentTask } = await writer
+        .from("tasks")
+        .select("delivered_at")
+        .eq("id", episode.task_id)
+        .maybeSingle();
+      const lifecycle =
+        data.status === "abandoned"
+          ? taskLifecyclePatch("set_aside", now.toISOString())
+          : taskLifecyclePatch(
+              data.status,
+              now.toISOString(),
+              currentTask?.delivered_at ?? null,
+            );
+      await writer.from("tasks").update(lifecycle).eq("id", episode.task_id);
+    }
 
     await writer.from("episode_outcomes").insert({
       episode_id: episode.id,

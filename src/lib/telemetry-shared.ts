@@ -28,6 +28,7 @@ export type TelemetryEvent =
   | "coach.joined"
   | "coach.engagement_shared"
   | "packet.viewed"
+  | "admin.dashboard_viewed"
   | "note.created"
   | "coachchat.asked"
   | "engagement.updated"

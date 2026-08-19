@@ -13,6 +13,7 @@ export const navGroups: NavGroup[] = [
       { label: "AI record", to: "/ai-record" },
       { label: "1:1 prep", to: "/one-on-one" },
       { label: "Decision log", to: "/decisions" },
+      { label: "Firm view", to: "/firm" },
       { label: "Members", to: "/members" },
       { label: "Settings", to: "/settings" },
     ],

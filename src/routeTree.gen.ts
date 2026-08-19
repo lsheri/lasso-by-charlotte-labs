@@ -20,6 +20,7 @@ import { Route as WhyRouteImport } from './routes/why'
 import { Route as AuthenticatedAiRecordRouteImport } from './routes/_authenticated/ai-record'
 import { Route as AuthenticatedConnectorsRouteImport } from './routes/_authenticated/connectors'
 import { Route as AuthenticatedDecisionsRouteImport } from './routes/_authenticated/decisions'
+import { Route as AuthenticatedFirmRouteImport } from './routes/_authenticated/firm'
 import { Route as AuthenticatedMembersRouteImport } from './routes/_authenticated/members'
 import { Route as AuthenticatedOneOnOneRouteImport } from './routes/_authenticated/one-on-one'
 import { Route as AuthenticatedOverviewRouteImport } from './routes/_authenticated/overview'
@@ -85,6 +86,11 @@ const AuthenticatedConnectorsRoute = AuthenticatedConnectorsRouteImport.update({
 const AuthenticatedDecisionsRoute = AuthenticatedDecisionsRouteImport.update({
   id: '/decisions',
   path: '/decisions',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedFirmRoute = AuthenticatedFirmRouteImport.update({
+  id: '/firm',
+  path: '/firm',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedMembersRoute = AuthenticatedMembersRouteImport.update({
@@ -162,6 +168,7 @@ export interface FileRoutesByFullPath {
   '/ai-record': typeof AuthenticatedAiRecordRoute
   '/connectors': typeof AuthenticatedConnectorsRoute
   '/decisions': typeof AuthenticatedDecisionsRoute
+  '/firm': typeof AuthenticatedFirmRoute
   '/members': typeof AuthenticatedMembersRoute
   '/one-on-one': typeof AuthenticatedOneOnOneRoute
   '/overview': typeof AuthenticatedOverviewRoute
@@ -186,6 +193,7 @@ export interface FileRoutesByTo {
   '/ai-record': typeof AuthenticatedAiRecordRoute
   '/connectors': typeof AuthenticatedConnectorsRoute
   '/decisions': typeof AuthenticatedDecisionsRoute
+  '/firm': typeof AuthenticatedFirmRoute
   '/members': typeof AuthenticatedMembersRoute
   '/one-on-one': typeof AuthenticatedOneOnOneRoute
   '/overview': typeof AuthenticatedOverviewRoute
@@ -212,6 +220,7 @@ export interface FileRoutesById {
   '/_authenticated/ai-record': typeof AuthenticatedAiRecordRoute
   '/_authenticated/connectors': typeof AuthenticatedConnectorsRoute
   '/_authenticated/decisions': typeof AuthenticatedDecisionsRoute
+  '/_authenticated/firm': typeof AuthenticatedFirmRoute
   '/_authenticated/members': typeof AuthenticatedMembersRoute
   '/_authenticated/one-on-one': typeof AuthenticatedOneOnOneRoute
   '/_authenticated/overview': typeof AuthenticatedOverviewRoute
@@ -238,6 +247,7 @@ export interface FileRouteTypes {
     | '/ai-record'
     | '/connectors'
     | '/decisions'
+    | '/firm'
     | '/members'
     | '/one-on-one'
     | '/overview'
@@ -262,6 +272,7 @@ export interface FileRouteTypes {
     | '/ai-record'
     | '/connectors'
     | '/decisions'
+    | '/firm'
     | '/members'
     | '/one-on-one'
     | '/overview'
@@ -287,6 +298,7 @@ export interface FileRouteTypes {
     | '/_authenticated/ai-record'
     | '/_authenticated/connectors'
     | '/_authenticated/decisions'
+    | '/_authenticated/firm'
     | '/_authenticated/members'
     | '/_authenticated/one-on-one'
     | '/_authenticated/overview'
@@ -394,6 +406,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDecisionsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/firm': {
+      id: '/_authenticated/firm'
+      path: '/firm'
+      fullPath: '/firm'
+      preLoaderRoute: typeof AuthenticatedFirmRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/members': {
       id: '/_authenticated/members'
       path: '/members'
@@ -485,6 +504,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAiRecordRoute: typeof AuthenticatedAiRecordRoute
   AuthenticatedConnectorsRoute: typeof AuthenticatedConnectorsRoute
   AuthenticatedDecisionsRoute: typeof AuthenticatedDecisionsRoute
+  AuthenticatedFirmRoute: typeof AuthenticatedFirmRoute
   AuthenticatedMembersRoute: typeof AuthenticatedMembersRoute
   AuthenticatedOneOnOneRoute: typeof AuthenticatedOneOnOneRoute
   AuthenticatedOverviewRoute: typeof AuthenticatedOverviewRoute
@@ -500,6 +520,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAiRecordRoute: AuthenticatedAiRecordRoute,
   AuthenticatedConnectorsRoute: AuthenticatedConnectorsRoute,
   AuthenticatedDecisionsRoute: AuthenticatedDecisionsRoute,
+  AuthenticatedFirmRoute: AuthenticatedFirmRoute,
   AuthenticatedMembersRoute: AuthenticatedMembersRoute,
   AuthenticatedOneOnOneRoute: AuthenticatedOneOnOneRoute,
   AuthenticatedOverviewRoute: AuthenticatedOverviewRoute,

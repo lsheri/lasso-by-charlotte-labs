@@ -19,6 +19,9 @@ export function SidebarNav({ onNavigate }: { onNavigate?: (() => void) | undefin
   // Reflect is the owner's private space, it never appears for a coach profile.
   const isCoach = profile?.role === "coach";
   const canManageMembers = profile?.role === "admin" || profile?.role === "lead";
+  // The firm view aggregates a roster. A solo workspace has none, so the link
+  // is absent as well as the route being refused server side.
+  const canSeeFirmView = canManageMembers && isBusinessOrg(profile);
   // A solo workspace has no roster to administer, only the coaches it invited.
   const membersLabel = isBusinessOrg(profile) ? "Members" : "Your coaches";
 
@@ -57,6 +60,7 @@ export function SidebarNav({ onNavigate }: { onNavigate?: (() => void) | undefin
             {group.items
               .filter((item) => !(isCoach && item.to === "/reflect"))
               .filter((item) => !(item.to === "/members" && !canManageMembers))
+              .filter((item) => !(item.to === "/firm" && !canSeeFirmView))
               .map((item) => (
                 <Link
                   key={item.to}
