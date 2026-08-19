@@ -18,3 +18,19 @@ export const navGroups: NavGroup[] = [
     ],
   },
 ];
+
+/**
+ * A coach is a guest: they have no work of their own and no engagements of
+ * their own, so the worker nav would be mostly dead ends. Worker and admin
+ * items above are untouched.
+ */
+export const coachNavGroups: NavGroup[] = [
+  { label: "Coaching", items: [{ label: "People you coach", to: "/coaching" }] },
+  {
+    label: "Your account",
+    items: [
+      { label: "1:1 prep", to: "/one-on-one" },
+      { label: "Settings", to: "/settings" },
+    ],
+  },
+];
