@@ -107,3 +107,24 @@ describe("engagement payload helpers", () => {
     });
   });
 });
+
+describe("analysis streaming wiring", () => {
+  const run = readFileSync(join(SRC, "lib/analysis-run.server.ts"), "utf8");
+
+  it("streams deltas through the handoff holdback, like the chat path", () => {
+    expect(run).toContain("const holdback = onDelta ? createHoldback(onDelta) : null;");
+    expect(run).toContain("streamChat(conversation, (delta) => holdback!.push(delta)");
+    expect(run).toContain("holdback?.end(stripped.block !== null);");
+  });
+
+  it("ends the holdback only after the tail has been stripped", () => {
+    expect(run.indexOf("stripHandoffTail(")).toBeLessThan(run.indexOf("holdback?.end("));
+  });
+});
+
+describe("work items read", () => {
+  it("keeps the mapping read bounded by the ids on the page", () => {
+    const hook = readFileSync(join(SRC, "hooks/use-work-items.ts"), "utf8");
+    expect(hook).toContain('.in(\n      "work_item_id"');
+  });
+});
