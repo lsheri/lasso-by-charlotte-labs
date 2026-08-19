@@ -667,6 +667,7 @@ export async function runAnalysis(
       suppressed: guarded.suppressed,
       claims: guarded.claims,
       manifest,
+      answer,
     };
   } catch (e) {
     const message = (e as Error).message ?? "";
