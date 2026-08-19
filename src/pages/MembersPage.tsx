@@ -321,6 +321,7 @@ function MembersConsole() {
       ) : null}
 
       <AlertDialog open={Boolean(confirm)} onOpenChange={(open) => !open && setConfirm(null)}>
+        {null}
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Deactivate {confirm?.display_name}?</AlertDialogTitle>
