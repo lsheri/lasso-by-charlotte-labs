@@ -508,10 +508,13 @@ export function ReflectDock({
           />
         ) : null}
         {analyses.running ? (
-          <ThinkingTrail
-            items={selectedItems.map((item) => ({ id: item.id, title: item.title }))}
-            finalPhase={`Applying ${analyses.running.label}`}
-          />
+          <>
+            <ThinkingTrail
+              items={selectedItems.map((item) => ({ id: item.id, title: item.title }))}
+              finalPhase={`Applying ${analyses.running.label}`}
+            />
+            {analyses.streamed ? <MarkdownMessage content={analyses.streamed} /> : null}
+          </>
         ) : null}
         {coverage?.truncated ? <CoverageNote {...coverage} /> : null}
         <div ref={bottomRef} />
