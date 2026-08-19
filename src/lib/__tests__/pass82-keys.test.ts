@@ -24,6 +24,9 @@ function subscribedKeys(): Set<string> {
     for (const match of text.matchAll(/queryKey:\s*\[\s*"([^"]+)"/g)) keys.add(match[1] as string);
     for (const match of text.matchAll(/return\s*\[\s*"([^"]+)"[^\]]*\]\s*as const/g))
       keys.add(match[1] as string);
+    // Passthrough slices pass their key as a positional array argument.
+    for (const match of text.matchAll(/^\s*\[\s*"([^"]+)",[^\]]*\],\s*$/gm))
+      keys.add(match[1] as string);
   }
   return keys;
 }
