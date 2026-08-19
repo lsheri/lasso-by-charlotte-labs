@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { InviteDialog } from "@/components/invites/InviteDialog";
+import { ShareWorkDialog } from "@/components/coaching/ShareWorkDialog";
 import { useMemberAction, useMembers } from "@/hooks/use-members";
 import { isBusinessOrg, ROLE_LABELS, useProfile } from "@/hooks/use-profile";
 import {
@@ -114,6 +115,7 @@ function MembersConsole() {
   const [roleTarget, setRoleTarget] = useState<MemberRow | null>(null);
   const [nextRole, setNextRole] = useState<"em" | "lead">("em");
   const [showHistory, setShowHistory] = useState(false);
+  const [shareTarget, setShareTarget] = useState<MemberRow | null>(null);
 
   const isAdmin = data?.viewer_role === "admin";
   // A solo workspace has no roster: the only other people in it are coaches.
@@ -224,6 +226,11 @@ function MembersConsole() {
                         <MoreHorizontal className="h-4 w-4" />
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
+                        {member.role === "coach" && !member.deactivated_at && profile ? (
+                          <DropdownMenuItem onSelect={() => setShareTarget(member)}>
+                            Share work with {member.display_name.split(" ")[0]}
+                          </DropdownMenuItem>
+                        ) : null}
                         {member.deactivated_at ? (
                           <DropdownMenuItem
                             onSelect={() =>
