@@ -217,7 +217,7 @@ function MembersConsole() {
                   ) : (
                     <Badge tone="accent">Active</Badge>
                   )}
-                  {isAdmin ? (
+                  {isAdmin || (member.role === "coach" && !member.deactivated_at) ? (
                     <DropdownMenu>
                       <DropdownMenuTrigger
                         aria-label={`Actions for ${member.display_name}`}
@@ -231,7 +231,7 @@ function MembersConsole() {
                             Share work with {member.display_name.split(" ")[0]}
                           </DropdownMenuItem>
                         ) : null}
-                        {member.deactivated_at ? (
+                        {isAdmin && member.deactivated_at ? (
                           <DropdownMenuItem
                             onSelect={() =>
                               run(
@@ -242,12 +242,13 @@ function MembersConsole() {
                           >
                             Reactivate
                           </DropdownMenuItem>
-                        ) : (
+                        ) : null}
+                        {isAdmin && !member.deactivated_at ? (
                           <DropdownMenuItem onSelect={() => setConfirm(member)}>
                             Deactivate
                           </DropdownMenuItem>
-                        )}
-                        {business && member.role !== "coach" ? (
+                        ) : null}
+                        {isAdmin && business && member.role !== "coach" ? (
                           <DropdownMenuItem
                             onSelect={() => {
                               setRoleTarget(member);
