@@ -1,3 +1,5 @@
+import { clearPendingInvite } from "@/lib/pending-invite";
+
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
