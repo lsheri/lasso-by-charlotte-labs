@@ -34,6 +34,8 @@ const OMITTED_MARKER = "[... middle of this item omitted ...]";
 const MAX_BACKFILL_INLINE = 2;
 /** Pulling raw text is I/O plus parsing. Stop spending on it after this. */
 const TEXT_BUDGET_MS = 25_000;
+/** How many files are opened at once. Accounting stays strictly serial. */
+const TEXT_FETCH_CHUNK = 4;
 
 type Db = SupabaseClient<Database>;
 
