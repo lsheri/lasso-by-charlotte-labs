@@ -3,6 +3,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { SessionHeader } from "@/components/layout/SessionHeader";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { clearPendingInvite } from "@/lib/pending-invite";
 
 export const Route = createFileRoute("/no-access")({
   ssr: false,
@@ -39,6 +40,7 @@ function NoAccessPage() {
             type="button"
             className="mt-6"
             onClick={async () => {
+              clearPendingInvite();
               await supabase.auth.signOut();
               navigate({ to: "/auth", replace: true });
             }}
