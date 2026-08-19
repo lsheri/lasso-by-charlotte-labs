@@ -49,12 +49,15 @@ export function TaskWorkflow({
   canEdit,
   orgId,
   onChanged,
+  onOpen,
 }: {
   taskId: string;
   elements: WorkflowElement[];
   canEdit: boolean;
   orgId: string | undefined;
   onChanged: () => Promise<void> | void;
+  /** A read only way into the item, used where the row cannot be edited. */
+  onOpen?: ((item: WorkItemRow) => void) | undefined;
 }) {
   const { placed, unplaced, confirmed } = orderElements(elements);
   const combined = [...placed, ...unplaced];
@@ -177,6 +180,15 @@ export function TaskWorkflow({
                     {formatDate(effectiveWorkDate(item))}
                   </p>
                 </div>
+                {!canEdit && onOpen ? (
+                  <button
+                    type="button"
+                    onClick={() => onOpen(item)}
+                    className="shrink-0 rounded-md border border-border px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                  >
+                    Open
+                  </button>
+                ) : null}
                 {canEdit ? (
                   <div className="flex shrink-0 items-center gap-2">
                     {item.content_ref ? <OpenFileAction workItemId={item.id} /> : null}
