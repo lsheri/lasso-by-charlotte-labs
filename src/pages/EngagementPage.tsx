@@ -11,6 +11,7 @@ import { EditEngagementDialog } from "@/components/engagements/EditEngagementDia
 import { EpisodePanel } from "@/components/episodes/EpisodePanel";
 import { EditTaskDialog } from "@/components/engagements/EditTaskDialog";
 import { EngagementBriefSection } from "@/components/engagements/EngagementBriefSection";
+import { SharedWithSection } from "@/components/engagements/SharedWithSection";
 import { FirmChecksCard } from "@/components/coaching/FirmChecksCard";
 import { InviteDialog } from "@/components/invites/InviteDialog";
 import { SubjectCoachingSection } from "@/components/coaching/SubjectCoachingSection";
