@@ -340,12 +340,14 @@ export function AnalysisLens({
             {pending ? <WorkingLabel>Working</WorkingLabel> : "Send"}
           </Button>
         </div>
-        <Link
-          to="/reflect"
-          className="mt-3 inline-block text-xs font-medium text-accent-deep transition-opacity hover:opacity-70"
-        >
-          Open in Reflect →
-        </Link>
+        {isCoach ? null : (
+          <Link
+            to="/reflect"
+            className="mt-3 inline-block text-xs font-medium text-accent-deep transition-opacity hover:opacity-70"
+          >
+            Open in Reflect →
+          </Link>
+        )}
       </footer>
     </SlideOver>
   );
