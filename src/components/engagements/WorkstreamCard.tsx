@@ -16,8 +16,7 @@ import { TaskWorkflow, type WorkflowElement } from "@/components/work/TaskWorkfl
 import { closeEpisode, episodeForTask, setEpisodeObjective } from "@/lib/episodes.functions";
 import {
   closeEpisodePayload,
-  isCloseChoice,
-  REOPEN_UNAVAILABLE_LINE,
+  isStatusChoice,
   STATUS_EXPLAINER,
   STATUS_EXPLAINER_SEEN_KEY,
   STATUS_MENU,
@@ -78,14 +77,14 @@ export function WorkstreamCard({
   });
 
   const isOwner = Boolean(profile && task.owner_id === profile.id);
-  const canDeclare = Boolean(episode) && episode?.status === "open";
+  const isOpen = episode?.status === "open";
 
   async function refresh() {
     await queryClient.invalidateQueries({ queryKey: ["episode", task.id] });
   }
 
   async function onPick(value: string) {
-    if (!episode || !isCloseChoice(value)) return;
+    if (!episode || !isStatusChoice(value)) return;
     setPending(true);
     try {
       await close({ data: closeEpisodePayload(episode.id, value, profile?.id) });
@@ -123,7 +122,11 @@ export function WorkstreamCard({
                 {STATUS_MENU.map((option) => (
                   <DropdownMenuItem
                     key={option.value}
-                    disabled={!option.enabled || pending || (option.enabled && !canDeclare)}
+                    disabled={
+                      !option.enabled ||
+                      pending ||
+                      (option.value === "open" ? isOpen : !isOpen)
+                    }
                     onSelect={() => void onPick(option.value)}
                   >
                     {option.label}
@@ -140,9 +143,6 @@ export function WorkstreamCard({
 
       {explainer ? (
         <p className="mt-1.5 text-xs text-muted-foreground">{STATUS_EXPLAINER}</p>
-      ) : null}
-      {episode && episode.status !== "open" ? (
-        <p className="mt-1.5 text-xs text-muted-foreground">{REOPEN_UNAVAILABLE_LINE}</p>
       ) : null}
 
       {task.detail ? (
