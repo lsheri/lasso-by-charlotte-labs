@@ -59,6 +59,9 @@ function joinTarget(next: string | undefined) {
 function AuthPage() {
   const navigate = useNavigate();
   const { next, intent } = Route.useSearch();
+  // Arriving from an invite: the page should read as the next step of that
+  // invitation, not as a generic sign in wall.
+  const invited = Boolean(joinTarget(next));
 
   function goOn() {
     const target = joinTarget(next);
@@ -67,7 +70,7 @@ function AuthPage() {
     else navigate({ to: "/overview", replace: true });
   }
 
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [mode, setMode] = useState<"signin" | "signup">(invited ? "signup" : "signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [pending, setPending] = useState(false);
@@ -88,7 +91,13 @@ function AuthPage() {
       const { data, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
-        options: { emailRedirectTo: window.location.origin },
+        // Carry the destination through confirmation, so an invite is never
+        // lost between the email link and the accept page.
+        options: {
+          emailRedirectTo: next
+            ? `${window.location.origin}${next}`
+            : window.location.origin,
+        },
       });
       if (signUpError) setError(signUpError.message);
       else if (data.session) goOn();
@@ -110,10 +119,22 @@ function AuthPage() {
         <Wordmark size="lg" />
 
         <div className="mt-6 rounded-[var(--radius)] border border-border bg-card p-6 shadow-card">
-          <p className="micro-label">{mode === "signin" ? "Sign in" : "Create account"}</p>
-          <h1 className="mt-2 page-title">{mode === "signin" ? "Welcome back" : "Get started"}</h1>
+          <p className="micro-label">
+            {invited ? "Your invite" : mode === "signin" ? "Sign in" : "Create account"}
+          </p>
+          <h1 className="mt-2 page-title">
+            {invited
+              ? mode === "signup"
+                ? "Set up your account"
+                : "Sign in to accept"
+              : mode === "signin"
+                ? "Welcome back"
+                : "Get started"}
+          </h1>
           <p className="mt-1.5 text-sm text-muted-foreground">
-            Coaching context for engagement managers.
+            {invited
+              ? "One step left. You will land straight back on your invite."
+              : "Coaching context for engagement managers."}
           </p>
 
           <form onSubmit={handleSubmit} className="mt-6 space-y-4">

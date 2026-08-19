@@ -159,3 +159,51 @@ describe("blockedStateFromRpcError", () => {
     expect(blockedStateFromRpcError("a company email address is required")).toBeNull();
   });
 });
+
+describe("public invite payload shape", () => {
+  const ANON_KEYS = [
+    "status",
+    "invited_role",
+    "org_name",
+    "org_is_company",
+    "inviter_name",
+    "is_email_bound",
+    "email",
+    "email_hint",
+    "created_by_you",
+    "expires_at",
+    "engagement_title",
+    "viewer",
+  ];
+
+  it("carries no org id and no ids of any kind", () => {
+    const keys = Object.keys(notFoundState(false));
+    expect(keys.sort()).toEqual([...ANON_KEYS].sort());
+    expect(keys.some((key) => key.endsWith("_id") || key === "id")).toBe(false);
+  });
+
+  it("says nothing about whether an account exists", () => {
+    const anonymous = notFoundState(false);
+    const signedIn = notFoundState(true);
+    expect({ ...anonymous, viewer: null }).toEqual({ ...signedIn, viewer: null });
+    expect(anonymous.viewer.is_member).toBe(false);
+    expect(anonymous.viewer.email_matches).toBe(false);
+  });
+
+  it("never carries an unmasked email for an anonymous holder", () => {
+    const s = state({
+      is_email_bound: true,
+      email: null,
+      email_hint: "a•••@firm.com",
+      org_is_company: true,
+      viewer: { signed_in: false, is_member: false, email_matches: false },
+    });
+    expect(s.email).toBeNull();
+    expect(s.email_hint).not.toContain("alex");
+  });
+
+  it("defaults org_is_company and inviter_name to the safe values", () => {
+    expect(notFoundState(false).org_is_company).toBe(false);
+    expect(notFoundState(false).inviter_name).toBeNull();
+  });
+});

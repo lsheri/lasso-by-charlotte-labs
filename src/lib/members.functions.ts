@@ -17,7 +17,7 @@ export const listMembers = createServerFn({ method: "POST" })
       data.profile_id,
     );
 
-    const [{ data: profiles, error }, { data: invites }] = await Promise.all([
+    const [{ data: profiles, error }, { data: invites }, { data: entitlement }] = await Promise.all([
       supabaseAdmin
         .from("profiles")
         .select("id, user_id, display_name, role, created_at, deactivated_at")
@@ -29,8 +29,20 @@ export const listMembers = createServerFn({ method: "POST" })
         .eq("org_id", profile.org_id)
         .order("expires_at", { ascending: false })
         .limit(50),
+      // Admin client, so the org filter is the only thing standing between
+      // this read and another workspace's plan. It is mandatory.
+      supabaseAdmin
+        .from("entitlements")
+        .select("plan, source, status, seats, guest_seats_counted, ends_at")
+        .eq("org_id", profile.org_id)
+        .eq("status", "active")
+        .maybeSingle(),
     ]);
     if (error) throw new Error(error.message);
+
+    const active = (profiles ?? []).filter((row) => !row.deactivated_at);
+    const seatsUsed = active.filter((row) => row.role !== "coach").length;
+    const coaches = active.filter((row) => row.role === "coach").length;
 
     const emails = new Map<string, string>();
     try {
@@ -42,6 +54,18 @@ export const listMembers = createServerFn({ method: "POST" })
 
     return {
       viewer_role: profile.role,
+      entitlement: entitlement
+        ? {
+            plan: entitlement.plan,
+            source: entitlement.source,
+            status: entitlement.status,
+            seats: entitlement.seats,
+            seats_used: seatsUsed,
+            guest_seats_counted: entitlement.guest_seats_counted,
+            ends_at: entitlement.ends_at,
+            coaches,
+          }
+        : null,
       members: (profiles ?? []).map((row) => ({
         id: row.id,
         display_name: row.display_name,

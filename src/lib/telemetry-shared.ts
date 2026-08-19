@@ -26,6 +26,7 @@ export type TelemetryEvent =
   | "workflow.reset"
   | "coach.invite_created"
   | "coach.joined"
+  | "coach.engagement_shared"
   | "packet.viewed"
   | "note.created"
   | "coachchat.asked"

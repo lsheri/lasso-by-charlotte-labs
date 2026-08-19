@@ -59,7 +59,7 @@ const coachSteps: ChecklistStepDef[] = [
     id: "shared-engagement",
     label: "Open an engagement shared with you",
     hint: "Shared work is the only work you can open.",
-    to: "/work",
+    to: "/coaching",
     done: (p) =>
       p.counts.shared_engagements > 0
         ? `${p.counts.shared_engagements} engagements shared with you`
@@ -69,7 +69,7 @@ const coachSteps: ChecklistStepDef[] = [
     id: "coach-analysis",
     label: "Run an analysis on shared work",
     hint: "Scoped to one engagement, never to a person.",
-    to: "/reflect",
+    to: "/coaching",
     done: (p) => (p.counts.analyses > 0 ? `${p.counts.analyses} analyses run` : null),
   },
   {

@@ -15,11 +15,14 @@ function sinceLabel(iso: string | null): string {
 }
 
 export function CoachingPage() {
-  const { profiles } = useProfile();
+  const { data: profile, profiles } = useProfile();
   const { data: subjects, isLoading, error } = useAllCoachSubjects(profiles);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const multiOrg = new Set(subjects.map((s) => s.coach_profile_id)).size > 1;
+  // A coach should always be able to see which workspace they are coaching in,
+  // even before anything has been shared with them.
+  const orgLine = profile?.org_name ? `You coach at ${profile.org_name}` : null;
 
   function openPacket(coachProfileId: string, engagementId: string, subjectId: string) {
     setActiveProfileId(coachProfileId);
@@ -34,6 +37,11 @@ export function CoachingPage() {
     <div>
       <header className="mb-8">
         <h1 className="page-title">People you coach</h1>
+        {orgLine ? (
+          <p className="mt-1.5 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+            {orgLine}
+          </p>
+        ) : null}
         <p className="mt-1.5 text-sm text-muted-foreground">
           The work each colleague has chosen to share with you.
         </p>
@@ -89,9 +97,16 @@ export function CoachingPage() {
 
         {subjects.length === 0 && !isLoading ? (
           <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              When someone invites you to coach their work, it appears here.
-            </p>
+            <div className="rounded-[var(--radius)] border border-border bg-card px-5 py-4 shadow-card">
+              <p className="micro-label">Nothing shared yet</p>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Nothing has been shared with you so far. That is the normal starting point: work
+                stays private to the person who did it until they choose to share an engagement.
+              </p>
+              <p className="mt-2 text-sm text-muted-foreground">
+                The moment someone shares one, it appears here. Nothing else is needed from you.
+              </p>
+            </div>
             <div className="max-w-lg">
               <EnterInviteCode label="Have an invite?" />
             </div>
