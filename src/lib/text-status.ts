@@ -29,3 +29,14 @@ export function textStatusReason(meta: MetaLike): string | null {
   const note = meta?.text_note ?? null;
   return note && note.trim() ? note.trim() : null;
 }
+
+export const TITLE_ONLY_LINE = "Title only, contents could not be read.";
+
+/**
+ * What a confirm step may honestly promise: only the items whose contents were
+ * actually read count as "will read".
+ */
+export function readCounts(total: number, unread: number): { readable: number; titleOnly: number } {
+  const titleOnly = Math.min(Math.max(unread, 0), Math.max(total, 0));
+  return { readable: Math.max(total, 0) - titleOnly, titleOnly };
+}
