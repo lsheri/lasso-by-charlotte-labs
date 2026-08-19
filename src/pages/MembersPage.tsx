@@ -117,6 +117,8 @@ export function MembersPage() {
               <h2 className="micro-label">{copy.people}</h2>
               {isAdmin ? (
                 <InviteDialog
+                  showHistory={false}
+                  {...(business ? {} : { defaultRole: "coach" as const })}
                   trigger={
                     <Button type="button" size="sm" variant="outline">
                       {copy.invite}
