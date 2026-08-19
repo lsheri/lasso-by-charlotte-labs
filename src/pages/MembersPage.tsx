@@ -228,7 +228,7 @@ function MembersConsole() {
                       Share work with {member.display_name.split(" ")[0]}
                     </Button>
                   ) : null}
-                  {isAdmin || (member.role === "coach" && !member.deactivated_at) ? (
+                  {isAdmin ? (
                     <DropdownMenu>
                       <DropdownMenuTrigger
                         aria-label={`Actions for ${member.display_name}`}

@@ -186,6 +186,14 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
                 : `Shared with ${coaches.data?.length} coach${(coaches.data?.length ?? 0) === 1 ? "" : "es"}`}
             </a>
           ) : null}
+          {profile && profile.role !== "coach" && !isQuickFolder && hasCoaches ? (
+            <a
+              href="#shared-with"
+              className="rounded-full border border-accent bg-accent-soft px-3 py-1 font-mono text-[11px] uppercase tracking-[0.08em] text-accent-deep transition-colors hover:opacity-80"
+            >
+              Share with a coach
+            </a>
+          ) : null}
           <button
             type="button"
             onClick={() => setAboutOpen((v) => !v)}
@@ -193,7 +201,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
           >
             About this engagement {aboutOpen ? "−" : "+"}
           </button>
-          {profile?.role === "admin" || profile?.role === "lead" ? (
+          {(profile?.role === "admin" || profile?.role === "lead") && !isQuickFolder ? (
             <InviteDialog
               engagementId={engagementId}
               trigger={
@@ -201,7 +209,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
                   type="button"
                   className="rounded-full border border-border bg-card px-3 py-1 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
                 >
-                  Invite a coach
+                  {hasCoaches ? "Invite a new coach" : "Invite a coach"}
                 </button>
               }
             />
@@ -293,7 +301,11 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
       <SubjectCoachingSection profileId={profile?.id} engagementId={engagementId} />
 
       {profile && profile.role !== "coach" ? (
-        <SharedWithSection engagementId={engagementId} orgId={profile.org_id} />
+        <SharedWithSection
+          engagementId={engagementId}
+          orgId={profile.org_id}
+          quickFolder={isQuickFolder}
+        />
       ) : null}
 
       <FirmChecksCard
