@@ -147,6 +147,7 @@ export async function runAnalysis(
         suppressed: existing.suppressed_claims ?? 0,
         claims: existing.claims_rendered ?? 0,
         manifest: parseManifest(existing.context_manifest),
+        answer: await priorAnswer(supabase, existing.session_id),
       };
     }
     // A previous attempt that failed must be allowed to run again, so it
@@ -207,6 +208,7 @@ export async function runAnalysis(
           suppressed: other.suppressed_claims ?? 0,
           claims: other.claims_rendered ?? 0,
           manifest: parseManifest(other.context_manifest),
+          answer: await priorAnswer(supabase, other.session_id),
         };
       }
       throw collision;
@@ -432,6 +434,7 @@ export async function runAnalysis(
         suppressed: 0,
         claims: rendered.considered,
         manifest: null,
+        answer: rendered.text,
       };
     }
 
@@ -463,23 +466,6 @@ export async function runAnalysis(
       preset.scope === "deliverable" && target.deliverableKind
         ? `\n\nThe deliverable is a ${deliverableKindLabel(target.deliverableKind)}.`
         : "";
-    const conversation = [
-      { role: "system" as const, content: REFLECT_SYSTEM_PROMPT },
-      {
-        role: "system" as const,
-        content: checksBlock ? `${preset.systemPrompt}\n\n${checksBlock}` : preset.systemPrompt,
-      },
-      {
-        role: "system" as const,
-        content: `${
-          preset.scope === "thread"
-            ? "THE CONVERSATION UNDER ANALYSIS"
-            : "THE WORK UNDER ANALYSIS"
-        }:\n\n${assembled.context}${kindLine}`,
-      },
-      { role: "user" as const, content: preset.openingMessage },
-    ];
-
     // The structured tail is a SEPARATE message block. No preset prompt is
     // edited by it, so the answer a person reads keeps its own contract.
     const { HANDOFF_PRESETS, NO_HANDOFF_PRESETS, tailInstruction } =
@@ -487,19 +473,26 @@ export async function runAnalysis(
     const handoffKind = (NO_HANDOFF_PRESETS as readonly string[]).includes(preset.id)
       ? null
       : (HANDOFF_PRESETS[preset.id] ?? null);
-    if (handoffKind) {
-      conversation.splice(conversation.length - 1, 0, {
-        role: "system" as const,
-        content: tailInstruction(handoffKind),
-      });
-    }
-
-    const { chatComplete } = await import("./ai.server");
-    const completion = await chatComplete(conversation, {
-      tier: "smart",
-      maxTokens: 8000,
-      meta: aiMeta,
+    // The firm's checks are their own message, so the preset prefix ahead of
+    // them is byte identical between runs and can be cached by the model.
+    const { buildAnalysisConversation } = await import("./prompt-assembly");
+    const conversation = buildAnalysisConversation({
+      systemPrompt: REFLECT_SYSTEM_PROMPT,
+      presetPrompt: preset.systemPrompt,
+      checksBlock,
+      heading:
+        preset.scope === "thread" ? "THE CONVERSATION UNDER ANALYSIS" : "THE WORK UNDER ANALYSIS",
+      context: assembled.context,
+      kindLine,
+      tailInstruction: handoffKind ? tailInstruction(handoffKind) : null,
+      openingMessage: preset.openingMessage,
     });
+
+    const { chatComplete, streamChat } = await import("./ai.server");
+    const options = { tier: "smart" as const, maxTokens: 8000, meta: aiMeta };
+    const completion = onDelta
+      ? await streamChat(conversation, onDelta, options)
+      : await chatComplete(conversation, options);
     const cutOff = completion.finishReason === "length";
     const { CUT_OFF_NOTE } = await import("./quote-check");
 
