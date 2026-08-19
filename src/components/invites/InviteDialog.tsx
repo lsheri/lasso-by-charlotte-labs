@@ -197,6 +197,10 @@ export function InviteDialog({
         </DialogHeader>
 
         <form onSubmit={createInvite} className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            An invite is for someone who is not here yet. If they already have an account in this
+            workspace, share the work with them instead.
+          </p>
           <div className="space-y-2">
             <p className="micro-label">Their role</p>
             <div className="space-y-1.5">
@@ -222,24 +226,55 @@ export function InviteDialog({
             <label className="flex items-center gap-2 text-sm text-foreground">
               <input
                 type="checkbox"
-                checked={lockEmail}
+                checked={emailRequired}
+                disabled={role === "coach"}
                 onChange={(e) => {
                   setLockEmail(e.target.checked);
                   if (!e.target.checked) setEmail("");
                 }}
-                className="h-4 w-4 accent-[var(--accent-deep)]"
+                className="h-4 w-4 accent-[var(--accent-deep)] disabled:opacity-60"
               />
               Lock this invite to their email
-              <span className="text-muted-foreground">(recommended)</span>
+              <span className="text-muted-foreground">
+                {role === "coach" ? "(always, for coaches)" : "(recommended)"}
+              </span>
             </label>
-            {lockEmail ? (
+            {emailRequired ? (
               <Input
                 id="invite-email"
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setError(null);
+                }}
                 placeholder="them@firm.com"
               />
+            ) : null}
+            {existing ? (
+              <div className="space-y-2 rounded-[var(--radius)] border border-accent bg-accent-soft px-4 py-3">
+                <p className="text-sm text-foreground">
+                  {existing.display_name} is already in this workspace, so they do not need an
+                  invite.
+                </p>
+                {shareInstead && onShareInstead ? (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setOpen(false);
+                      onShareInstead(shareInstead);
+                    }}
+                  >
+                    Share work with {shareInstead.display_name.split(" ")[0]} instead
+                  </Button>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    Use Shared with on the engagement to give them access.
+                  </p>
+                )}
+              </div>
             ) : null}
           </div>
 
@@ -249,7 +284,7 @@ export function InviteDialog({
             {engagementId ? " They'll land straight in this engagement when they accept." : ""}
           </p>
 
-          <Button type="submit" disabled={pending}>
+          <Button type="submit" disabled={pending || Boolean(existing)}>
             {pending ? <WorkingLabel>Creating</WorkingLabel> : "Create invite link"}
           </Button>
         </form>
