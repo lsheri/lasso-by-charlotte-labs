@@ -50,6 +50,13 @@ export type InviteState = {
   status: InviteStatus;
   invited_role: string | null;
   org_name: string | null;
+  /** True when the workspace is a firm. Drives company vs person framing. */
+  org_is_company: boolean;
+  /**
+   * Personal workspaces only, and only for an email bound invite, so the
+   * welcome can name the person you would be coaching.
+   */
+  inviter_name: string | null;
   is_email_bound: boolean;
   /** Full address only for the person it is bound to. Null otherwise. */
   email: string | null;
@@ -68,6 +75,8 @@ export function notFoundState(signedIn: boolean): InviteState {
     status: "not_found",
     invited_role: null,
     org_name: null,
+    org_is_company: false,
+    inviter_name: null,
     is_email_bound: false,
     email: null,
     email_hint: null,

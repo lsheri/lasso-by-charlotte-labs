@@ -125,7 +125,7 @@ export async function loadInviteState(
   if (!invite) return notFoundState(signedIn);
 
   const [{ data: org }, { data: engagement }, { data: mine }] = await Promise.all([
-    supabaseAdmin.from("orgs").select("name").eq("id", invite.org_id).maybeSingle(),
+    supabaseAdmin.from("orgs").select("name, settings").eq("id", invite.org_id).maybeSingle(),
     engagementId
       ? supabaseAdmin
           .from("engagements")
@@ -142,6 +142,23 @@ export async function loadInviteState(
   ]);
 
   const profiles = mine ?? [];
+  const settings = (org?.settings ?? {}) as Record<string, unknown>;
+  const orgIsCompany = settings["type"] === "company";
+
+  // A personal workspace has no company to name, so the welcome names the
+  // person instead. Only for an email bound invite, where the link holder is
+  // the presumed recipient, never for an open link.
+  let inviterName: string | null = null;
+  if (!orgIsCompany && invite.email && invite.created_by) {
+    const { data: inviter } = await supabaseAdmin
+      .from("profiles")
+      .select("display_name")
+      .eq("id", invite.created_by)
+      .eq("org_id", invite.org_id)
+      .maybeSingle();
+    inviterName = inviter?.display_name ?? null;
+  }
+
   // The bound address is revealed only to the person it is bound to. Any other
   // signed in link holder sees the same masked hint an anonymous one sees.
   const emailMatches = emailsMatch(invite.email, viewer?.email ?? null);
@@ -149,6 +166,8 @@ export async function loadInviteState(
     status: resolveInviteStatus(invite),
     invited_role: invite.invited_role,
     org_name: org?.name ?? null,
+    org_is_company: orgIsCompany,
+    inviter_name: inviterName,
     is_email_bound: Boolean(invite.email),
     email: emailMatches ? invite.email : null,
     email_hint: maskEmail(invite.email),
