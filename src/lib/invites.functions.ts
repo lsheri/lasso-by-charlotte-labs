@@ -3,7 +3,9 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 import type { InviteEmailResult } from "./invites-shared";
-import type { BlockedState, InviteState } from "./invite-state";
+import type { InviteState } from "./invite-state";
+
+const BLOCKED_STATES = ["mismatch", "expired", "revoked", "used", "already_member"] as const;
 
 /**
  * Public on purpose: the accept page must render honest states before anyone
@@ -19,12 +21,20 @@ export const getInviteState = createServerFn({ method: "POST" })
     return loadInviteState(data.code ?? "", data.eng ?? null, viewer);
   });
 
-/** Content-free record of an accept that could not proceed. No addresses. */
+/**
+ * Content-free record of an accept that could not proceed. No addresses.
+ * Public, so the state is whitelisted at runtime rather than trusted from the
+ * type. Anything else is a silent no-op: a prober learns nothing either way.
+ */
 export const recordInviteBlocked = createServerFn({ method: "POST" })
-  .inputValidator((input: { code: string; state: BlockedState }) => input)
+  .inputValidator((input: { code: string; state: string }) => input)
   .handler(async ({ data }): Promise<{ ok: true }> => {
+    const state = data?.state;
+    if (typeof state !== "string" || !(BLOCKED_STATES as readonly string[]).includes(state)) {
+      return { ok: true };
+    }
     const { recordInviteBlockedByCode } = await import("./invites.server");
-    await recordInviteBlockedByCode(data.code, data.state);
+    await recordInviteBlockedByCode(data.code ?? "", state);
     return { ok: true };
   });
 
