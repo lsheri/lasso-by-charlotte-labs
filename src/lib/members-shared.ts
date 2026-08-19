@@ -67,3 +67,24 @@ export function maskCode(code: string): string {
   if (code.length <= 8) return code;
   return `${code.slice(0, 4)}…${code.slice(-4)}`;
 }
+
+/**
+ * Compose time duplicate check. It only ever runs over the admin gated member
+ * list the viewer can already read, so it can never answer "does this account
+ * exist" for anyone else. A non admin viewer passes an empty list and the
+ * check quietly returns nothing.
+ */
+export function findMemberByEmail(members: MemberRow[], email: string): MemberRow | null {
+  const wanted = email.trim().toLowerCase();
+  if (!wanted) return null;
+  return members.find((row) => (row.email ?? "").trim().toLowerCase() === wanted) ?? null;
+}
+
+/** The match only turns into a "share instead" offer for an active coach. */
+export function coachToShareWithInstead(members: MemberRow[], email: string): MemberRow | null {
+  const match = findMemberByEmail(members, email);
+  if (!match) return null;
+  if (match.role !== "coach") return null;
+  if (match.deactivated_at) return null;
+  return match;
+}
