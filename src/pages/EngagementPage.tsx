@@ -300,6 +300,10 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
 
       <SubjectCoachingSection profileId={profile?.id} engagementId={engagementId} />
 
+      {profile && profile.role !== "coach" ? (
+        <SharedWithSection engagementId={engagementId} orgId={profile.org_id} />
+      ) : null}
+
       <FirmChecksCard
         orgId={profile?.org_id}
         authorProfileId={profile?.id}
