@@ -19,7 +19,7 @@ import {
   presetsForScope,
   type AnalysisPreset,
 } from "@/lib/analysis-presets";
-import { startAnalysis } from "@/lib/analysis.functions";
+import type { AnalysisRunResult } from "@/lib/analysis.functions";
 import { parseManifest, type ContextManifest } from "@/lib/context-manifest";
 import { ContextAudit } from "@/components/reflect/ContextTrail";
 import { logEvent } from "@/lib/telemetry";
