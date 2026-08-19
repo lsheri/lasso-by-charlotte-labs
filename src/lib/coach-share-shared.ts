@@ -18,6 +18,66 @@ export type ShareableEngagement = {
 export const ADMIN_HONESTY_LINE =
   "Only engagements you work on are listed. Sharing is done by the people doing the work.";
 
+/**
+ * A quick folder is the catch all behind a personal workspace. It holds
+ * unfiled work, so it is never offered for sharing and never shows a share
+ * section on its page.
+ */
+export function isShareableEngagement(engagement: {
+  clients: { quick_folder: boolean } | null;
+}): boolean {
+  return engagement.clients?.quick_folder !== true;
+}
+
+export type ClientGroup = {
+  key: string;
+  name: string;
+  engagements: ShareableEngagement[];
+};
+
+/** Grouped by client, falling back to the old free text label, then Unfiled. */
+export function groupByClient(rows: ShareableEngagement[]): ClientGroup[] {
+  const groups = new Map<string, ClientGroup>();
+  for (const row of rows) {
+    const key = row.clients?.id ?? row.client_label ?? "unfiled";
+    const name = row.clients?.name ?? row.client_label ?? "Unfiled";
+    const group = groups.get(key) ?? { key, name, engagements: [] };
+    group.engagements.push(row);
+    groups.set(key, group);
+  }
+  return [...groups.values()].sort((a, b) => {
+    if (a.key === "unfiled") return 1;
+    if (b.key === "unfiled") return -1;
+    return a.name.localeCompare(b.name);
+  });
+}
+
+/** One result per RPC call, so a partial failure is never hidden. */
+export type ShareResult = { id: string; label: string; ok: boolean; message?: string | null };
+
+function failureLines(failed: ShareResult[]): string[] {
+  return failed.map((row) => `${row.label} did not share: ${row.message ?? "no reason given"}.`);
+}
+
+/** "Shared 3 of 4. Pilot Budget did not share: not permitted." */
+export function shareResultsLine(results: ShareResult[], subject: string): string {
+  const failed = results.filter((row) => !row.ok);
+  if (results.length === 0) return "Nothing left to share.";
+  if (failed.length === 0) return `Shared all ${results.length} with ${subject}.`;
+  const ok = results.length - failed.length;
+  return [`Shared ${ok} of ${results.length}.`, ...failureLines(failed)].join(" ");
+}
+
+/** The coach side of the same honesty rule, used by the engagement section. */
+export function coachResultsLine(results: ShareResult[]): string {
+  const failed = results.filter((row) => !row.ok);
+  if (results.length === 0) return "Nothing left to share.";
+  if (failed.length === 0)
+    return `Shared with ${results.length} coaches. They can see this engagement now.`;
+  const ok = results.length - failed.length;
+  return [`Shared with ${ok} of ${results.length} coaches.`, ...failureLines(failed)].join(" ");
+}
+
 /** Every surface that shows share state invalidates these, so none goes stale. */
 export function coachShareKey(profileId: string, coachProfileId: string) {
   return ["coach-share", profileId, coachProfileId] as const;
@@ -85,7 +145,9 @@ export async function fetchShareableEngagements(
   };
   if (mine.error) throw new Error(mine.error.message);
 
-  const rows = (mine.data ?? []).filter((row) => row.engagements !== null);
+  const rows = (mine.data ?? []).filter(
+    (row) => row.engagements !== null && isShareableEngagement(row.engagements),
+  );
   if (rows.length === 0) return [];
   const ids = rows.map((row) => row.engagement_id);
 
