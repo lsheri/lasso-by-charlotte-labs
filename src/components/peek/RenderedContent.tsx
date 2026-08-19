@@ -139,12 +139,16 @@ export function RenderedContent({
 }) {
   const shape = format ?? peekFormat(item);
   const wantsText = needsTextFetch(shape);
-  const urlQuery = useFileUrl(item, shape.kind !== "none" && shape.kind !== "unsupported");
+  const driveFileId = item.meta?.drive_file_id ?? null;
+  // A Drive file is shown by Drive itself, so no signed storage URL is minted.
+  const urlQuery = useFileUrl(
+    item,
+    !driveFileId && shape.kind !== "none" && shape.kind !== "unsupported",
+  );
   const [rendered, setRendered] = useState<string | null>(null);
   const [failed, setFailed] = useState<string | null>(null);
 
   const url = urlQuery.data ?? null;
-  const driveFileId = item.meta?.drive_file_id ?? null;
   const readStatus = textStatusOf(item.meta as never);
 
   useEffect(() => {
