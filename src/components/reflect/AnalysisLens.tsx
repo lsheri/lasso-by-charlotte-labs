@@ -50,6 +50,7 @@ export function AnalysisLens({
   profileId,
   orgId,
   initialPreset,
+  isCoach = false,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -57,12 +58,14 @@ export function AnalysisLens({
   profileId: string;
   orgId: string;
   initialPreset?: AnalysisPresetId;
+  /** A coach sees only the analyses a coach may run, and never Reflect. */
+  isCoach?: boolean;
 }) {
   const queryClient = useQueryClient();
   const run = useServerFn(startAnalysis);
   const send = useServerFn(sendReflectMessage);
   const scope = target.kind === "engagement" ? "engagement" : target.scope;
-  const presets = presetsForScope(scope, false);
+  const presets = presetsForScope(scope, isCoach);
   const [active, setActive] = useState<AnalysisPreset | null>(
     presets.find((p) => p.id === initialPreset) ?? null,
   );
