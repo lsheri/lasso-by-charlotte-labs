@@ -282,7 +282,7 @@ export async function ensureExtracts(ids: string[]): Promise<void> {
   for (const id of ids) {
     if (Date.now() - started > BATCH_BUDGET_MS) {
       await logHealth({
-        kind: "error",
+        kind: "anomaly",
         surface: "extract",
         detail: "batch_budget_exhausted",
         meta: { work_item_id: id, reason: "batch_budget_exhausted" },
