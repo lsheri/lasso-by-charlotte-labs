@@ -34,6 +34,8 @@ const OMITTED_MARKER = "[... middle of this item omitted ...]";
 const MAX_BACKFILL_INLINE = 2;
 /** Pulling raw text is I/O plus parsing. Stop spending on it after this. */
 const TEXT_BUDGET_MS = 25_000;
+/** How many files are opened at once. Accounting stays strictly serial. */
+const TEXT_FETCH_CHUNK = 4;
 
 type Db = SupabaseClient<Database>;
 
@@ -213,6 +215,54 @@ export function headAndTail(text: string, cap = PER_ITEM_CHARS): { text: string;
 
 export { RAW_BUDGET };
 
+export type TextFetchResult = {
+  item: { id: string; content_ref?: string | null };
+  result: { status: ItemTextStatus; text?: string | null; note?: string | null };
+};
+
+/**
+ * The budget, clip and stop decisions for a batch of fetched texts, applied in
+ * the order given. Pure apart from the two maps it fills, which is what makes
+ * the parallel fetch above safe: order in, order out.
+ */
+export function accountTextResults(
+  fetched: TextFetchResult[],
+  rawBudget: number,
+  state: {
+    fullText: Map<string, string>;
+    unreadable: Map<string, { status: ItemTextStatus; note: string | null }>;
+    rawUsed: number;
+  },
+): { rawUsed: number; anyCut: boolean; stop: boolean } {
+  let rawUsed = state.rawUsed;
+  let anyCut = false;
+  for (const { item, result } of fetched) {
+    if (rawUsed >= rawBudget) return { rawUsed, anyCut, stop: true };
+    if (result.status === "unsupported" || result.status === "failed") {
+      state.unreadable.set(item.id, { status: result.status, note: result.note ?? null });
+      continue;
+    }
+    if (result.status === "unreadable" && item.content_ref) {
+      state.unreadable.set(item.id, { status: "unreadable", note: result.note ?? null });
+      continue;
+    }
+    const text = (result.text ?? "").trim();
+    if (!text) continue;
+    const clipped = headAndTail(text);
+    if (clipped.cut) anyCut = true;
+    const remaining = rawBudget - rawUsed;
+    if (clipped.text.length > remaining) {
+      anyCut = true;
+      const room = headAndTail(clipped.text, remaining);
+      state.fullText.set(item.id, room.text);
+      return { rawUsed: rawBudget, anyCut, stop: true };
+    }
+    state.fullText.set(item.id, clipped.text);
+    rawUsed += clipped.text.length;
+  }
+  return { rawUsed, anyCut, stop: false };
+}
+
 /**
  * An @ mention narrows one message to exactly what the person pointed at.
  * Everything else in the session's scope is honestly listed as not read, and
@@ -253,51 +303,64 @@ export async function loadScopeData(
   ownerId: string,
   scope: ContextScope,
 ): Promise<{ tasks: TaskRow[]; linkRows: LinkRow[]; items: ItemRow[] }> {
-  let taskQuery = supabase
-    .from("tasks")
-    .select(
-      "id, name, goal, detail, when_label, status, position, engagement_id, engagements(id, code, title, client_label, brief, term_label, outcome, clients(id, name, quick_folder))",
-    )
-    .eq("owner_id", ownerId);
-  if (scope.mode === "engagements" && scope.ids.length > 0) {
-    taskQuery = taskQuery.in("engagement_id", scope.ids);
-  } else if (scope.mode === "tasks" && scope.ids.length > 0) {
-    taskQuery = taskQuery.in("id", scope.ids);
-  }
-  const tasksRes = scope.mode === "items" ? { data: [], error: null } : await taskQuery;
-  if (tasksRes.error) throw new Error(tasksRes.error.message);
-  const tasks = (tasksRes.data ?? []) as unknown as TaskRow[];
+  async function loadTasksAndLinks(): Promise<{ tasks: TaskRow[]; linkRows: LinkRow[] }> {
+    let taskQuery = supabase
+      .from("tasks")
+      .select(
+        "id, name, goal, detail, when_label, status, position, engagement_id, engagements(id, code, title, client_label, brief, term_label, outcome, clients(id, name, quick_folder))",
+      )
+      .eq("owner_id", ownerId);
+    if (scope.mode === "engagements" && scope.ids.length > 0) {
+      taskQuery = taskQuery.in("engagement_id", scope.ids);
+    } else if (scope.mode === "tasks" && scope.ids.length > 0) {
+      taskQuery = taskQuery.in("id", scope.ids);
+    }
+    const tasksRes = scope.mode === "items" ? { data: [], error: null } : await taskQuery;
+    if (tasksRes.error) throw new Error(tasksRes.error.message);
+    const tasks = (tasksRes.data ?? []) as unknown as TaskRow[];
 
-  const links = tasks.length
-    ? await supabase
-        .from("work_item_tasks")
-        .select("work_item_id, task_id, step_no, step_confirmed")
-        .in(
-          "task_id",
-          tasks.map((t) => t.id),
-        )
-    : { data: [], error: null };
-  if (links.error) throw new Error(links.error.message);
-  const linkRows = (links.data ?? []) as LinkRow[];
-
-  let itemQuery = supabase
-    .from("work_items")
-    .select(
-      `${ITEM_TEXT_COLUMNS}, source, visibility, captured_at, work_date, created_at_source, content_fidelity, source_vendor`,
-    )
-    .eq("owner_id", ownerId)
-    .order("captured_at", { ascending: false })
-    .limit(300);
-  if (scope.mode === "items" && scope.ids.length > 0) {
-    itemQuery = itemQuery.in("id", scope.ids);
-  } else if (scope.mode !== "whole") {
-    const ids = linkRows.map((l) => l.work_item_id);
-    if (ids.length === 0) itemQuery = itemQuery.in("id", ["00000000-0000-0000-0000-000000000000"]);
-    else itemQuery = itemQuery.in("id", ids);
+    const links = tasks.length
+      ? await supabase
+          .from("work_item_tasks")
+          .select("work_item_id, task_id, step_no, step_confirmed")
+          .in(
+            "task_id",
+            tasks.map((t) => t.id),
+          )
+      : { data: [], error: null };
+    if (links.error) throw new Error(links.error.message);
+    return { tasks, linkRows: (links.data ?? []) as LinkRow[] };
   }
-  const itemsRes = await itemQuery;
-  if (itemsRes.error) throw new Error(itemsRes.error.message);
-  return { tasks, linkRows, items: (itemsRes.data ?? []) as unknown as ItemRow[] };
+
+  async function loadItems(linkRows: LinkRow[] | null): Promise<ItemRow[]> {
+    let itemQuery = supabase
+      .from("work_items")
+      .select(
+        `${ITEM_TEXT_COLUMNS}, source, visibility, captured_at, work_date, created_at_source, content_fidelity, source_vendor`,
+      )
+      .eq("owner_id", ownerId)
+      .order("captured_at", { ascending: false })
+      .limit(300);
+    if (scope.mode === "items" && scope.ids.length > 0) {
+      itemQuery = itemQuery.in("id", scope.ids);
+    } else if (scope.mode !== "whole") {
+      const ids = (linkRows ?? []).map((l) => l.work_item_id);
+      if (ids.length === 0) itemQuery = itemQuery.in("id", ["00000000-0000-0000-0000-000000000000"]);
+      else itemQuery = itemQuery.in("id", ids);
+    }
+    const itemsRes = await itemQuery;
+    if (itemsRes.error) throw new Error(itemsRes.error.message);
+    return (itemsRes.data ?? []) as unknown as ItemRow[];
+  }
+
+  // Only "items" and "whole" leave the item query independent of the mapping
+  // links. Engagement and task scopes keep their genuine dependency chain.
+  if (scope.mode === "items" || scope.mode === "whole") {
+    const [taskData, items] = await Promise.all([loadTasksAndLinks(), loadItems(null)]);
+    return { ...taskData, items };
+  }
+  const { tasks, linkRows } = await loadTasksAndLinks();
+  return { tasks, linkRows, items: await loadItems(linkRows) };
 }
 
 /** "ENG-1 · Discovery" for a mapped item, undefined when unmapped. */
@@ -386,12 +449,15 @@ export async function assembleReflectContext(
 ): Promise<AssembledContext> {
   const ownerId = options?.ownerProfileId ?? profileId;
 
-  // 1 to 3. Tasks, mapping links, and the work items themselves.
-  const { tasks, linkRows, items: allItems } = await loadScopeData(supabase, ownerId, scope);
+  // 1 to 3. Tasks, mapping links, and the work items themselves. The brief is
+  // an independent read, so it happens alongside rather than after.
+  const [{ tasks, linkRows, items: allItems }, brief] = await Promise.all([
+    loadScopeData(supabase, ownerId, scope),
+    loadBriefContext(supabase, ownerId, scope),
+  ]);
 
-  // Tier 0. The brief is loaded first, is never budgeted away, and is removed
-  // from the ordinary item list so it cannot also appear as an extract.
-  const brief = await loadBriefContext(supabase, ownerId, scope);
+  // Tier 0. The brief is never budgeted away, and is removed from the ordinary
+  // item list so it cannot also appear as an extract.
   const briefIds = new Set(brief.itemIds);
   const items = allItems.filter((item) => !briefIds.has(item.id));
   // Brief characters come out of the tier 2 budget, so total context does not grow.
@@ -417,10 +483,10 @@ export async function assembleReflectContext(
     const inline = missing.slice(0, MAX_BACKFILL_INLINE);
     const deferred = missing.slice(MAX_BACKFILL_INLINE);
     const started = Date.now();
-    const made: string[] = [];
-    for (const id of inline) {
-      if (await ensureExtract(id)) made.push(id);
-    }
+    const results = await Promise.all(
+      inline.map(async (id) => ({ id, ok: await ensureExtract(id) })),
+    );
+    const made = results.filter((r) => r.ok).map((r) => r.id);
     console.log(
       `[reflect-context] inline backfill ${made.length}/${inline.length} in ${Date.now() - started}ms, ${deferred.length} deferred`,
     );
@@ -453,33 +519,21 @@ export async function assembleReflectContext(
   let rawUsed = 0;
   let anyCut = false;
   const textStarted = Date.now();
-  for (const item of priority) {
+  // Files are opened a few at a time, in priority order, and then accounted
+  // for one by one in that same order, so every inclusion decision is the one
+  // the old serial pass would have made.
+  for (let i = 0; i < priority.length; i += TEXT_FETCH_CHUNK) {
     // Once the budget or the clock is gone, stop opening files entirely: the
     // remaining items still appear, as their extract.
     if (rawUsed >= rawBudget || Date.now() - textStarted > TEXT_BUDGET_MS) break;
-    const result = await getItemText(supabase, item);
-    if (result.status === "unsupported" || result.status === "failed") {
-      unreadable.set(item.id, { status: result.status, note: result.note ?? null });
-      continue;
-    }
-    if (result.status === "unreadable" && item.content_ref) {
-      unreadable.set(item.id, { status: "unreadable", note: result.note ?? null });
-      continue;
-    }
-    const text = (result.text ?? "").trim();
-    if (!text) continue;
-    const clipped = headAndTail(text);
-    if (clipped.cut) anyCut = true;
-    const remaining = rawBudget - rawUsed;
-    if (clipped.text.length > remaining) {
-      anyCut = true;
-      const room = headAndTail(clipped.text, remaining);
-      fullText.set(item.id, room.text);
-      rawUsed = rawBudget;
-      break;
-    }
-    fullText.set(item.id, clipped.text);
-    rawUsed += clipped.text.length;
+    const chunk = priority.slice(i, i + TEXT_FETCH_CHUNK);
+    const fetched = await Promise.all(
+      chunk.map(async (item) => ({ item, result: await getItemText(supabase, item) })),
+    );
+    const applied = accountTextResults(fetched, rawBudget, { fullText, unreadable, rawUsed });
+    rawUsed = applied.rawUsed;
+    if (applied.anyCut) anyCut = true;
+    if (applied.stop) break;
   }
   console.log(
     `[reflect-context] text pass: ${fullText.size} full, ${unreadable.size} unreadable, ${Date.now() - textStarted}ms`,

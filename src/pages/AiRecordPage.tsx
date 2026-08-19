@@ -3,6 +3,7 @@ import { useState } from "react";
 
 import { CaptureCoverage } from "@/components/common/CaptureCoverage";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { MarkdownMessage } from "@/components/markdown/MarkdownMessage";
 import { PeekPanel, type PeekEntry } from "@/components/peek/PeekPanel";
 import {
   AnalysisChips,
@@ -240,7 +241,14 @@ export function AiRecordPage() {
                         )
                       }
                     />
-                    {analyses.running ? <ThinkingIndicator /> : null}
+                    {analyses.running ? (
+                      <>
+                        <ThinkingIndicator />
+                        {analyses.streamed ? (
+                          <MarkdownMessage content={analyses.streamed} />
+                        ) : null}
+                      </>
+                    ) : null}
                     {analyses.error ? (
                       <p className="text-sm text-destructive">{analyses.error}</p>
                     ) : null}

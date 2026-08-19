@@ -447,13 +447,16 @@ export function ReflectPage() {
                   />
                 ) : null}
                 {analyses.running ? (
-                  <ThinkingTrail
-                    items={itemsInScope(scope, all).map((item) => ({
-                      id: item.id,
-                      title: item.title,
-                    }))}
-                    finalPhase={`Applying ${analyses.running.label}`}
-                  />
+                  <>
+                    <ThinkingTrail
+                      items={itemsInScope(scope, all).map((item) => ({
+                        id: item.id,
+                        title: item.title,
+                      }))}
+                      finalPhase={`Applying ${analyses.running.label}`}
+                    />
+                    {analyses.streamed ? <MarkdownMessage content={analyses.streamed} /> : null}
+                  </>
                 ) : null}
                 {coverage?.truncated ? <CoverageNote {...coverage} /> : null}
                 <div ref={bottomRef} />

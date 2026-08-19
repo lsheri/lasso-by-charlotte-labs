@@ -279,15 +279,14 @@ export async function runReflectTurn(
     });
   }
 
-  const conversation = [
-    ...prompts,
-    {
-      role: "system" as const,
-      content: `THE PERSON'S RECORDED WORK (scope: ${scope.mode}):\n\n${assembled.context}`,
-    },
-    ...historyMessages,
-    { role: "user" as const, content: message },
-  ];
+  const { buildReflectConversation } = await import("./prompt-assembly");
+  const conversation = buildReflectConversation({
+    prompts,
+    historyMessages,
+    scopeMode: scope.mode,
+    context: assembled.context,
+    message,
+  });
   // Chat never asks for a structured tail, but if a model ever emits the
   // sentinel fence it is held back rather than flashed into the answer.
   const { createHoldback, stripHandoffTail } = await import("./handoffs-shared");

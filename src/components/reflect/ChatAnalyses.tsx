@@ -1,6 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 
 import { SuggestDot, Suggested } from "@/components/common/Suggested";
@@ -19,7 +18,7 @@ import {
   presetsForScope,
   type AnalysisPreset,
 } from "@/lib/analysis-presets";
-import { startAnalysis } from "@/lib/analysis.functions";
+import type { AnalysisRunResult } from "@/lib/analysis.functions";
 import { parseManifest, type ContextManifest } from "@/lib/context-manifest";
 import { ContextAudit } from "@/components/reflect/ContextTrail";
 import { logEvent } from "@/lib/telemetry";
@@ -220,18 +219,21 @@ export type InlineAnalysis = {
  */
 export function useChatAnalyses(profileId: string | undefined, orgId: string | undefined) {
   const queryClient = useQueryClient();
-  const run = useServerFn(startAnalysis);
   const [results, setResults] = useState<InlineAnalysis[]>([]);
   const [running, setRunning] = useState<AnalysisPreset | null>(null);
+  const [streamed, setStreamed] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   async function runPreset(preset: AnalysisPreset, target: ChipTarget, readsDetail: string) {
     if (running || target.kind === "none" || !profileId) return;
     setRunning(preset);
+    setStreamed("");
     setError(null);
     try {
-      const result = await run({
-        data: {
+      const { streamChatRequest } = await import("@/lib/stream-client");
+      const result = await streamChatRequest<AnalysisRunResult>(
+        "/api/analysis/stream",
+        {
           preset_id: preset.id,
           confirm_step: "shown" as const,
           ...(target.kind === "engagement"
@@ -239,19 +241,23 @@ export function useChatAnalyses(profileId: string | undefined, orgId: string | u
             : { work_item_id: target.id }),
           profile_id: profileId,
         },
-      });
+        (delta) => setStreamed((prev) => prev + delta),
+      );
       const { data } = await supabase
         .from("chat_messages")
         .select("id, role, content, context_manifest")
         .eq("session_id", result.session_id)
         .order("created_at", { ascending: true });
       const answer = (data ?? []).filter((m) => m.role === "assistant").pop();
+      // The guarded text always wins over whatever streamed past the reader.
+      const finalText =
+        result.answer ?? answer?.content ?? "Nothing came back for that. Try again.";
       setResults((prev) => [
         ...prev,
         {
           key: `${preset.id}:${result.session_id}:${prev.length}`,
           preset,
-          text: answer?.content ?? "Nothing came back for that. Try again.",
+          text: finalText,
           suppressed: result.suppressed,
           claims: result.claims,
           readsDetail,
@@ -267,6 +273,7 @@ export function useChatAnalyses(profileId: string | undefined, orgId: string | u
       setError((e as Error).message);
     } finally {
       setRunning(null);
+      setStreamed("");
     }
   }
 
@@ -275,7 +282,7 @@ export function useChatAnalyses(profileId: string | undefined, orgId: string | u
     setError(null);
   }
 
-  return { results, running, error, runPreset, clear };
+  return { results, running, streamed, error, runPreset, clear };
 }
 
 export function InlineAnalysisBlocks({
