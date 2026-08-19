@@ -3,6 +3,7 @@ import { useState } from "react";
 
 import { CaptureCoverage } from "@/components/common/CaptureCoverage";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { MarkdownMessage } from "@/components/markdown/MarkdownMessage";
 import { PeekPanel, type PeekEntry } from "@/components/peek/PeekPanel";
 import {
   AnalysisChips,
