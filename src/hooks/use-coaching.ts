@@ -27,6 +27,21 @@ export type CoachSubject = {
 export const COACH_SUBJECTS_SELECT =
   "engagement_id, profile_id, profiles!engagement_members_profile_id_fkey(id, display_name)";
 
+/**
+ * A coach sitting on their own page should see a new share without having to
+ * touch anything. A one minute refresh of their own shared list is enough at
+ * human tempo, and a hidden tab refreshes nothing at all.
+ */
+export const COACH_POLL = {
+  refetchOnWindowFocus: true,
+  refetchOnMount: "always",
+  refetchInterval: 60_000,
+  refetchIntervalInBackground: false,
+} as const;
+
+/** The counts move far more slowly than the roster, so they are cached longer. */
+export const COACH_ACTIVITY_STALE_TIME = 5 * 60_000;
+
 /** Engagements this profile coaches, grouped by the person doing the work. */
 export async function fetchCoachSubjects(coachProfileId: string): Promise<CoachSubject[]> {
   const { data: coached, error: coachedError } = await supabase
