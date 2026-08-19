@@ -733,6 +733,59 @@ export type Database = {
           },
         ]
       }
+      entitlements: {
+        Row: {
+          created_at: string
+          ends_at: string | null
+          external_ref: string | null
+          guest_seats_counted: boolean
+          id: string
+          notes: string | null
+          org_id: string
+          plan: string
+          seats: number | null
+          source: string
+          starts_at: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          ends_at?: string | null
+          external_ref?: string | null
+          guest_seats_counted?: boolean
+          id?: string
+          notes?: string | null
+          org_id: string
+          plan?: string
+          seats?: number | null
+          source: string
+          starts_at?: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          ends_at?: string | null
+          external_ref?: string | null
+          guest_seats_counted?: boolean
+          id?: string
+          notes?: string | null
+          org_id?: string
+          plan?: string
+          seats?: number | null
+          source?: string
+          starts_at?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entitlements_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       episode_items: {
         Row: {
           added_at: string
