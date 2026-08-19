@@ -111,6 +111,11 @@ export function ShareWorkDialog({
         <ul className="space-y-1.5">
           {rows.map((row) => {
             const line = sharedLine(row.added_at, row.added_by_name);
+            const meta = [
+              engagementDisplayCode(row),
+              row.shared ? line : null,
+              busyId === row.id && change.isPending ? "saving" : null,
+            ].filter((part): part is string => Boolean(part));
             return (
               <li
                 key={row.id}
@@ -133,11 +138,11 @@ export function ShareWorkDialog({
                   <span className="block truncate text-sm text-foreground">
                     {engagementDisplayTitle(row)}
                   </span>
-                  <span className="mt-0.5 block truncate font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
-                    {engagementDisplayCode(row)}
-                    {row.shared && line ? ` · ${line}` : ""}
-                    {busyId === row.id && change.isPending ? " · saving" : ""}
-                  </span>
+                  {meta.length > 0 ? (
+                    <span className="mt-0.5 block truncate font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+                      {meta.join(" · ")}
+                    </span>
+                  ) : null}
                 </label>
               </li>
             );
