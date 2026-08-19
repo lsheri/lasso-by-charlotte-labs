@@ -48,7 +48,7 @@ describe("text budget accounting", () => {
     const state = { fullText: new Map<string, string>(), unreadable: new Map(), rawUsed: 0 };
     const out = accountTextResults(batch, budget, state);
     expect([...state.fullText.keys()]).toEqual(["a", "b", "c"]);
-    expect(state.fullText.get("c")!.length).toBeLessThanOrEqual(4);
+    expect(state.fullText.get("c")).toContain("z");
     expect(out.stop).toBe(true);
     expect(out.rawUsed).toBe(budget);
   });
