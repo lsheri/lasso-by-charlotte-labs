@@ -61,6 +61,19 @@ const workerSteps: ChecklistStepDef[] = [
   },
 ];
 
+/**
+ * Without invite rights the same step is a sharing step only, and it points at
+ * the engagement list rather than the member console.
+ */
+const shareOnlyCoachStep: ChecklistStepDef = {
+  id: "invite-coach",
+  label: "Share work with a coach",
+  hint: "Optional. Share an engagement with a coach who is already here. They see only what you share.",
+  optional: true,
+  to: "/engagements",
+  done: (p) => (p.counts.shared_by_me > 0 ? `${p.counts.shared_by_me} engagements shared` : null),
+};
+
 const coachSteps: ChecklistStepDef[] = [
   {
     id: "shared-engagement",
@@ -114,10 +127,15 @@ const adminSteps: ChecklistStepDef[] = [
 
 export function stepsFor(progress: OnboardingProgress): ChecklistStepDef[] {
   const base = progress.role_variant === "coach" ? coachSteps : workerSteps;
-  // Inviting runs through the member console, which is admin and lead only.
-  // A non-admin worker would land on a 403, so the step is not shown to them.
-  const scoped = progress.is_admin ? base : base.filter((s) => s.id !== "invite-coach");
-  return progress.is_admin ? [...scoped, ...adminSteps] : scoped;
+  // Sharing stays open to everyone. Only the invite wording and the member
+  // console link are admin only, so a worker keeps the step in share form.
+  const scoped = progress.can_invite
+    ? base
+    : base.map((step) => (step.id === "invite-coach" ? shareOnlyCoachStep : step));
+  if (!progress.is_admin) return scoped;
+  // Admin extras: naming for the console, inviting only where minting is allowed.
+  const extras = progress.can_invite ? adminSteps : adminSteps.filter((s) => s.id !== "invite-team");
+  return [...scoped, ...extras];
 }
 
 export function requiredCount(steps: ChecklistStepDef[]): number {
