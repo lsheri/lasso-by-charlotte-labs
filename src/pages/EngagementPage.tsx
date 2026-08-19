@@ -24,6 +24,7 @@ import { useMyEngagementMembership } from "@/hooks/use-engagement-membership";
 import { useEngagementCoaches } from "@/hooks/use-coach-share";
 import { supabase } from "@/integrations/supabase/client";
 import { clientDisplayName, engagementDisplayCode, engagementDisplayTitle } from "@/lib/clients";
+import { INVITE_ADMIN_ONLY_LINE } from "@/lib/invites-shared";
 
 type Engagement = {
   id: string;
@@ -210,7 +211,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
           >
             About this engagement {aboutOpen ? "−" : "+"}
           </button>
-          {(profile?.role === "admin" || profile?.role === "lead") && !isQuickFolder ? (
+          {profile?.role === "admin" && !isQuickFolder ? (
             <InviteDialog
               engagementId={engagementId}
               trigger={
@@ -233,6 +234,14 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
             </button>
           ) : null}
         </div>
+
+        {profile &&
+        profile.role !== "coach" &&
+        profile.role !== "admin" &&
+        isBusinessOrg(profile) &&
+        !isQuickFolder ? (
+          <p className="mt-2 text-xs text-muted-foreground">{INVITE_ADMIN_ONLY_LINE}</p>
+        ) : null}
 
         {aboutOpen ? (
           <div className="mt-3 space-y-3 rounded-[var(--radius)] border border-border bg-card px-5 py-4 shadow-card">

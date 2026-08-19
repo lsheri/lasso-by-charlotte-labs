@@ -6,7 +6,10 @@ export type OnboardingRoleVariant = "worker" | "coach";
 
 export type OnboardingProgress = {
   role_variant: OnboardingRoleVariant;
+  /** Console access: admin or lead. Reading the member list, not admission. */
   is_admin: boolean;
+  /** Minting an invite is admin only, so the invite steps hang off this. */
+  can_invite: boolean;
   quick_folder: boolean;
   counts: {
     capture: number;
@@ -127,6 +130,7 @@ export const getOnboardingProgress = createServerFn({ method: "POST" })
     return {
       role_variant: isCoach ? "coach" : "worker",
       is_admin: adminRole.data === true,
+      can_invite: profile.role === "admin",
       quick_folder: settings["type"] === "personal",
       counts: {
         capture: (tokens.count ?? 0) + (connectors.count ?? 0),
