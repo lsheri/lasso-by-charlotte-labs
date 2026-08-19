@@ -46,8 +46,8 @@ const workerSteps: ChecklistStepDef[] = [
   },
   {
     id: "invite-coach",
-    label: "Invite a coach",
-    hint: "Optional. They see only what you map.",
+    label: "Share work with a coach",
+    hint: "Optional. Share an engagement with a coach who is already here, or invite a new one. They see only what you share.",
     optional: true,
     to: "/members",
     done: (p) => (p.counts.invites > 0 ? `${p.counts.invites} invites created` : null),
