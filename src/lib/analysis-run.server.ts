@@ -29,9 +29,6 @@ export type AnalysisRunResult = {
   answer: string | null;
 };
 
-/** Long enough that a real analysis is never cut off, short enough to fail loudly. */
-const ANSWER_TIMEOUT_MS = 180_000;
-
 function costBucket(usd: number): string {
   if (usd <= 0.01) return "<=0.01";
   if (usd <= 0.05) return "0.01-0.05";
@@ -490,8 +487,13 @@ export async function runAnalysis(
 
     const { chatComplete, streamChat } = await import("./ai.server");
     const options = { tier: "smart" as const, maxTokens: 8000, meta: aiMeta };
+    // Analysis presets DO ask for a structured tail, so deltas go through the
+    // same holdback the chat path uses: the sentinel fence is never flashed at
+    // a reader, and an ordinary fence is released as prose.
+    const { createHoldback } = await import("./handoffs-shared");
+    const holdback = onDelta ? createHoldback(onDelta) : null;
     const completion = onDelta
-      ? await streamChat(conversation, onDelta, options)
+      ? await streamChat(conversation, (delta) => holdback!.push(delta), options)
       : await chatComplete(conversation, options);
     const cutOff = completion.finishReason === "length";
     const { CUT_OFF_NOTE } = await import("./quote-check");
@@ -503,6 +505,7 @@ export async function runAnalysis(
       completion.text || "Nothing came back for that. Try again.",
       handoffKind,
     );
+    holdback?.end(stripped.block !== null);
     let handoffCount = 0;
     if (stripped.block) {
       const { unmatchedQuotes } = await import("./quote-check");

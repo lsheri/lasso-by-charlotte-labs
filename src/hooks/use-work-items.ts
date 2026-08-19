@@ -6,22 +6,12 @@ import type { MappedTask, WorkItemRow } from "@/lib/work-types";
 export type WorkItemsResult = { items: WorkItemRow[]; mappingError: string | null };
 
 export async function fetchWorkItems(): Promise<WorkItemsResult> {
-  // The two reads no longer wait on each other: mapping rows are scoped by the
-  // same policies as the items themselves, so they can be fetched in parallel
-  // and joined in memory.
-  const [itemsRes, mapping] = await Promise.all([
-    supabase
-      .from("work_items")
-      .select(
-        "id, title, type, source, visibility, captured_at, content_ref, created_at_source, work_date, content_fidelity, source_vendor, orig_conversation_id, source_meta, meta",
-      )
-      .order("captured_at", { ascending: false }),
-    supabase
-      .from("work_item_tasks")
-      .select(
-        "work_item_id, task_id, tasks(id, name, engagement_id, engagements(id, code, title, client_label, clients(id, name, quick_folder)))",
-      ),
-  ]);
+  const itemsRes = await supabase
+    .from("work_items")
+    .select(
+      "id, title, type, source, visibility, captured_at, content_ref, created_at_source, work_date, content_fidelity, source_vendor, orig_conversation_id, source_meta, meta",
+    )
+    .order("captured_at", { ascending: false });
   if (itemsRes.error) throw itemsRes.error;
 
   const items: WorkItemRow[] = (itemsRes.data ?? []).map((row) => ({
@@ -33,7 +23,17 @@ export async function fetchWorkItems(): Promise<WorkItemsResult> {
   if (items.length === 0) return { items, mappingError: null };
 
   // Mapping labels live behind engagement policies; if those reads fail we still
-  // show the work itself rather than blanking the page.
+  // show the work itself rather than blanking the page. The mapping read stays
+  // bounded by the ids actually on the page, so no extra rows cross the wire.
+  const mapping = await supabase
+    .from("work_item_tasks")
+    .select(
+      "work_item_id, task_id, tasks(id, name, engagement_id, engagements(id, code, title, client_label, clients(id, name, quick_folder)))",
+    )
+    .in(
+      "work_item_id",
+      items.map((item) => item.id),
+    );
   if (mapping.error) return { items, mappingError: mapping.error.message };
 
   const byId = new Map(items.map((item) => [item.id, item]));
