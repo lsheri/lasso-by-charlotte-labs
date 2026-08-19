@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -87,6 +87,10 @@ export function SharedWithSection({
   });
 
   const current = shared.data ?? [];
+  const readFailed = Boolean(shared.error || orgCoaches.error);
+  useEffect(() => {
+    if (readFailed) toast.error("We could not load sharing for this engagement just now.");
+  }, [readFailed]);
   const currentIds = new Set(current.map((row) => row.id));
   const available = (orgCoaches.data ?? []).filter((row) => !currentIds.has(row.id));
   const pickedCoach = available.find((row) => row.id === picked);
