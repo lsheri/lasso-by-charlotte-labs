@@ -169,3 +169,12 @@ export function personIdentifyingPaths(value: unknown, path = "$"): string[] {
   if (typeof value === "string" && (UUID.test(value) || HEX64.test(value))) found.push(path);
   return found;
 }
+
+export type FirmCheckLibraryRow = {
+  id: string;
+  title: string;
+  body: string;
+  scope: "firm" | "engagement" | "person";
+  active: boolean;
+  created_at: string;
+};

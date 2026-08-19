@@ -2,8 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-import type { FirmDashboard } from "./firm-dashboard-shared";
-import type { FirmCheckLibraryRow } from "./firm-dashboard.server";
+import type { FirmCheckLibraryRow, FirmDashboard } from "./firm-dashboard-shared";
 
 type Ctx = { profile_id?: string | undefined };
 

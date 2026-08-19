@@ -5,8 +5,7 @@ import {
   getFirmDashboard,
   setFirmCheckActive,
 } from "@/lib/firm-dashboard.functions";
-import type { FirmDashboard } from "@/lib/firm-dashboard-shared";
-import type { FirmCheckLibraryRow } from "@/lib/firm-dashboard.server";
+import type { FirmCheckLibraryRow, FirmDashboard } from "@/lib/firm-dashboard-shared";
 
 export function useFirmDashboard(profileId: string | undefined) {
   return useQuery({

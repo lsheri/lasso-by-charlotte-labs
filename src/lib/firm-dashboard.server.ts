@@ -17,6 +17,7 @@ import {
   suppressedStat,
   type DeliverableStatus,
   type FirmDashboard,
+  type FirmCheckLibraryRow,
   type LabelledCount,
 } from "./firm-dashboard-shared";
 import { sha256Hex } from "./telemetry.server";
@@ -312,15 +313,6 @@ export async function buildFirmDashboard(
     panels_shown: 6,
   };
 }
-
-export type FirmCheckLibraryRow = {
-  id: string;
-  title: string;
-  body: string;
-  scope: "firm" | "engagement" | "person";
-  active: boolean;
-  created_at: string;
-};
 
 /** The whole library, active and retired, for the org the caller administers. */
 export async function listFirmCheckLibrary(
