@@ -1,7 +1,15 @@
+export type JsonValue =
+  | string
+  | number
+  | boolean
+  | null
+  | JsonValue[]
+  | { [key: string]: JsonValue };
+
 export type ReflectSessionRow = {
   id: string;
   title: string | null;
-  context_scope: unknown;
+  context_scope: JsonValue;
   updated_at: string;
 };
 
@@ -10,7 +18,7 @@ export type ReflectMessageRow = {
   role: string;
   content: string;
   created_at: string;
-  context_manifest: unknown;
+  context_manifest: JsonValue;
 };
 
 /** What the Reflect page needs on load: the session list and the open thread. */
