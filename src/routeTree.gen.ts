@@ -29,6 +29,7 @@ import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedWorkRouteImport } from './routes/_authenticated/work'
 import { Route as AuthenticatedCoachingIndexRouteImport } from './routes/_authenticated/coaching.index'
 import { Route as AuthenticatedEngagementsIdRouteImport } from './routes/_authenticated/engagements.$id'
+import { Route as ApiAnalysisStreamRouteImport } from './routes/api/analysis.stream'
 import { Route as ApiCoachChatStreamRouteImport } from './routes/api/coach-chat.stream'
 import { Route as ApiMcpTokenRouteImport } from './routes/api/mcp.$token'
 import { Route as ApiReflectStreamRouteImport } from './routes/api/reflect.stream'
@@ -135,6 +136,11 @@ const AuthenticatedEngagementsIdRoute =
     path: '/engagements/$id',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const ApiAnalysisStreamRoute = ApiAnalysisStreamRouteImport.update({
+  id: '/api/analysis/stream',
+  path: '/api/analysis/stream',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiCoachChatStreamRoute = ApiCoachChatStreamRouteImport.update({
   id: '/api/coach-chat/stream',
   path: '/api/coach-chat/stream',
@@ -176,6 +182,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AuthenticatedSettingsRoute
   '/work': typeof AuthenticatedWorkRoute
   '/engagements/$id': typeof AuthenticatedEngagementsIdRoute
+  '/api/analysis/stream': typeof ApiAnalysisStreamRoute
   '/api/coach-chat/stream': typeof ApiCoachChatStreamRoute
   '/api/mcp/$token': typeof ApiMcpTokenRoute
   '/api/reflect/stream': typeof ApiReflectStreamRoute
@@ -201,6 +208,7 @@ export interface FileRoutesByTo {
   '/settings': typeof AuthenticatedSettingsRoute
   '/work': typeof AuthenticatedWorkRoute
   '/engagements/$id': typeof AuthenticatedEngagementsIdRoute
+  '/api/analysis/stream': typeof ApiAnalysisStreamRoute
   '/api/coach-chat/stream': typeof ApiCoachChatStreamRoute
   '/api/mcp/$token': typeof ApiMcpTokenRoute
   '/api/reflect/stream': typeof ApiReflectStreamRoute
@@ -228,6 +236,7 @@ export interface FileRoutesById {
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/work': typeof AuthenticatedWorkRoute
   '/_authenticated/engagements/$id': typeof AuthenticatedEngagementsIdRoute
+  '/api/analysis/stream': typeof ApiAnalysisStreamRoute
   '/api/coach-chat/stream': typeof ApiCoachChatStreamRoute
   '/api/mcp/$token': typeof ApiMcpTokenRoute
   '/api/reflect/stream': typeof ApiReflectStreamRoute
@@ -255,6 +264,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/work'
     | '/engagements/$id'
+    | '/api/analysis/stream'
     | '/api/coach-chat/stream'
     | '/api/mcp/$token'
     | '/api/reflect/stream'
@@ -280,6 +290,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/work'
     | '/engagements/$id'
+    | '/api/analysis/stream'
     | '/api/coach-chat/stream'
     | '/api/mcp/$token'
     | '/api/reflect/stream'
@@ -306,6 +317,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings'
     | '/_authenticated/work'
     | '/_authenticated/engagements/$id'
+    | '/api/analysis/stream'
     | '/api/coach-chat/stream'
     | '/api/mcp/$token'
     | '/api/reflect/stream'
@@ -322,6 +334,7 @@ export interface RootRouteChildren {
   OnboardingRoute: typeof OnboardingRoute
   TrustRoute: typeof TrustRoute
   WhyRoute: typeof WhyRoute
+  ApiAnalysisStreamRoute: typeof ApiAnalysisStreamRoute
   ApiCoachChatStreamRoute: typeof ApiCoachChatStreamRoute
   ApiMcpTokenRoute: typeof ApiMcpTokenRoute
   ApiReflectStreamRoute: typeof ApiReflectStreamRoute
@@ -469,6 +482,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEngagementsIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/analysis/stream': {
+      id: '/api/analysis/stream'
+      path: '/api/analysis/stream'
+      fullPath: '/api/analysis/stream'
+      preLoaderRoute: typeof ApiAnalysisStreamRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/coach-chat/stream': {
       id: '/api/coach-chat/stream'
       path: '/api/coach-chat/stream'
@@ -545,6 +565,7 @@ const rootRouteChildren: RootRouteChildren = {
   OnboardingRoute: OnboardingRoute,
   TrustRoute: TrustRoute,
   WhyRoute: WhyRoute,
+  ApiAnalysisStreamRoute: ApiAnalysisStreamRoute,
   ApiCoachChatStreamRoute: ApiCoachChatStreamRoute,
   ApiMcpTokenRoute: ApiMcpTokenRoute,
   ApiReflectStreamRoute: ApiReflectStreamRoute,
