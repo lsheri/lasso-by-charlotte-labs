@@ -1,4 +1,4 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Sparkle } from "lucide-react";
 
@@ -21,6 +21,7 @@ import { TaskWorkflow, type WorkflowElement } from "@/components/work/TaskWorkfl
 import { useProfile } from "@/hooks/use-profile";
 import { isBusinessOrg } from "@/hooks/use-profile";
 import { useMyEngagementMembership } from "@/hooks/use-engagement-membership";
+import { useEngagementPage, useEngagementSlice } from "@/hooks/use-engagement-page";
 import { useEngagementCoaches } from "@/hooks/use-coach-share";
 import { supabase } from "@/integrations/supabase/client";
 import { clientDisplayName, engagementDisplayCode, engagementDisplayTitle } from "@/lib/clients";
@@ -66,35 +67,15 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
   // it opens this engagement's dock rather than navigating to Reflect.
   useRegisterAskLasso(() => setAskOpen(true));
 
-  const engagementQuery = useQuery({
-    queryKey: ["engagement", engagementId],
-    queryFn: async (): Promise<Engagement | null> => {
-      const { data, error: e } = await supabase
-        .from("engagements")
-        .select(
-          "id, code, title, client_label, client_id, brief, brief_by, term_label, clients(id, name, quick_folder)",
-        )
-        .eq("id", engagementId)
-        .maybeSingle();
-      if (e) throw e;
-      return data;
-    },
-  });
-
-  const tasksQuery = useQuery({
-    queryKey: ["engagement-tasks", engagementId],
-    queryFn: async (): Promise<TaskWithWork[]> => {
-      const { data, error: e } = await supabase
-        .from("tasks")
-        .select(
-          "id, name, owner_id, detail, work_item_tasks(step_no, step_confirmed, work_items(id, owner_id, title, type, source, visibility, captured_at, content_ref, created_at_source, work_date, content_fidelity, meta))",
-        )
-        .eq("engagement_id", engagementId)
-        .order("position", { ascending: true });
-      if (e) throw e;
-      return (data ?? []) as unknown as TaskWithWork[];
-    },
-  });
+  // One consolidated read for this engagement: the record, its workstreams,
+  // the coaches it is shared with, the caller's own membership, the decisions
+  // and the sequence order all arrive together.
+  const engagementQuery = useEngagementPage(engagementId);
+  const tasksQuery = useEngagementSlice<TaskWithWork[]>(
+    engagementId,
+    ["engagement-tasks", engagementId],
+    (payload) => payload.tasks as unknown as TaskWithWork[],
+  );
 
   async function addTask(event: React.FormEvent) {
     event.preventDefault();
@@ -111,7 +92,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
     await queryClient.invalidateQueries({ queryKey: ["engagement-tasks", engagementId] });
   }
 
-  const engagement = engagementQuery.data;
+  const engagement = engagementQuery.data?.engagement ?? null;
   const isQuickFolder = engagement?.clients?.quick_folder === true;
   const hasCoaches = (coaches.data ?? []).length > 0;
 

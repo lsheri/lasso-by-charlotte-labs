@@ -1,4 +1,4 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Sparkle } from "lucide-react";
 import { useState } from "react";
@@ -9,6 +9,7 @@ import { SuggestDot } from "@/components/common/Suggested";
 import { Button } from "@/components/ui/button";
 import { ThreadViewerById } from "@/components/work/ThreadViewerById";
 import { useDecisionActions } from "@/hooks/use-decision-actions";
+import { useEngagementSlice } from "@/hooks/use-engagement-page";
 import { srcsOf, useEngagementDecisions, type DecisionRow } from "@/hooks/use-decisions";
 import { supabase } from "@/integrations/supabase/client";
 import { draftEngagementDecisions } from "@/lib/decisions.functions";
@@ -36,26 +37,11 @@ export function EngagementDecisions({
 
   // Confirmed sequence order: a decision sits where its earliest cited item
   // sits in the workflow. Everything unsequenced falls to the end, oldest first.
-  const { data: steps } = useQuery({
-    queryKey: ["engagement-step-order", engagementId],
-    queryFn: async (): Promise<Record<string, number>> => {
-      const { data } = await supabase
-        .from("work_item_tasks")
-        .select("work_item_id, step_no, step_confirmed, tasks!inner(engagement_id, position)")
-        .eq("tasks.engagement_id", engagementId);
-      const order: Record<string, number> = {};
-      for (const row of (data ?? []) as unknown as {
-        work_item_id: string;
-        step_no: number | null;
-        tasks: { position: number } | null;
-      }[]) {
-        const rank = (row.tasks?.position ?? 0) * 1000 + (row.step_no ?? 999);
-        const current = order[row.work_item_id];
-        if (current === undefined || rank < current) order[row.work_item_id] = rank;
-      }
-      return order;
-    },
-  });
+  const { data: steps } = useEngagementSlice<Record<string, number>>(
+    engagementId,
+    ["engagement-step-order", engagementId],
+    (payload) => payload.stepOrder,
+  );
 
   function rankOf(decision: DecisionRow): number {
     const ranks = srcsOf(decision)
