@@ -11,7 +11,7 @@ const COACH = "28b1dec6-03f5-414d-9ddf-3693f19bdcff";
 
 type Call = { table: string; columns: string; filters: [string, string, unknown][] };
 
-function stub(responses: Record<string, unknown>[]): { client: ShareQueryClient; calls: Call[] } {
+function stub(responses: unknown[][]): { client: ShareQueryClient; calls: Call[] } {
   const calls: Call[] = [];
   let index = 0;
   const client = {
