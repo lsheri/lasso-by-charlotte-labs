@@ -59,6 +59,9 @@ const FORMAT_LABELS: Record<string, string> = {
   pages: "Pages document",
   zip: "Archive",
   eml: "Email file",
+  odt: "OpenDocument document",
+  ods: "OpenDocument spreadsheet",
+  odp: "OpenDocument presentation",
 };
 
 export function fileNameFor(item: WorkItemRow): string {

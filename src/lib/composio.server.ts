@@ -238,14 +238,23 @@ export async function fetchDriveFileBytes(
   const webViewLink = (data["display_url"] as string | undefined) ?? null;
   const name = file.name ?? "Untitled file";
 
-  const native = sourceMime ?? null;
+  // A Google-native file must be exported as structured text. Falling through
+  // to the PDF render is what left documents readable only as page images.
+  const reported = (data["mimeType"] as string | undefined) ?? file.mimetype ?? null;
+  const native =
+    sourceMime ?? (reported && reported.startsWith("application/vnd.google-apps") ? reported : null);
   if (native && GOOGLE_EXPORTS[native]) {
     const exported = await exportGoogleDoc(entityId, fileId, native, name);
-    if (exported) return { ...exported, webViewLink };
+    if (exported) {
+      console.log(`[drive] ${fileId} exported as ${exported.mimeType} from ${native}`);
+      return { ...exported, webViewLink };
+    }
+    console.log(`[drive] ${fileId} export failed for ${native}, falling back to stored render`);
   }
 
   const response = await fetch(file.s3url);
   if (!response.ok) return null;
+  console.log(`[drive] ${fileId} taken as ${file.mimetype ?? "unknown"} bytes`);
   return {
     bytes: new Uint8Array(await response.arrayBuffer()),
     mimeType: file.mimetype ?? "application/octet-stream",

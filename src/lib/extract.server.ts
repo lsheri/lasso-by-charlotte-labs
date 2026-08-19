@@ -13,6 +13,8 @@ type Db = SupabaseClient<Database>;
 export const EXTRACT_MODEL = MODELS.fast;
 export const EXTRACT_SCHEMA_VERSION = 1;
 const MAX_SOURCE_CHARS = 60_000;
+/** A capture request stops opening files after this, and says so. */
+const BATCH_BUDGET_MS = 60_000;
 
 /** The subset of a work item the classifier and the text puller need. */
 export type ClassifiableItem = TextItem;
@@ -154,7 +156,7 @@ export async function prepareExtract(workItemId: string): Promise<PreparedExtrac
       orgId: item.org_id,
       ownerId: item.owner_id,
       detail: "no_readable_text",
-      meta: { source_chars: 0 },
+      meta: { work_item_id: workItemId, source_chars: 0, reason: "no_readable_text" },
     });
     return null;
   }
@@ -226,7 +228,25 @@ export async function ensureExtract(workItemId: string): Promise<boolean> {
       orgName: await orgNameFor(supabaseAdmin as unknown as Db, prepared.item.org_id),
     };
     const { fields, tokensIn, costUsd } = await generate(prepared.item.title, prepared.text, meta);
-    if (!fields) return false;
+    if (!fields) {
+      // The model answered but the card could not be read back. Say so out
+      // loud: a silent false here is how a file ends up with no extract and
+      // no explanation.
+      await logHealth({
+        kind: "error",
+        surface: "extract",
+        orgId: prepared.item.org_id,
+        ownerId: prepared.item.owner_id,
+        model: EXTRACT_MODEL,
+        detail: "extract_card_unparsable",
+        meta: {
+          work_item_id: prepared.item.id,
+          reason: "unparsable_json",
+          source_chars: prepared.text.length,
+        },
+      });
+      return false;
+    }
 
     const { usageDims } = await import("./ai-usage");
     const { recordEvent } = await import("./telemetry.server");
@@ -240,6 +260,12 @@ export async function ensureExtract(workItemId: string): Promise<boolean> {
     return await writeExtract(prepared, fields);
   } catch (e) {
     console.error("[extract] ensureExtract failed:", (e as Error).message);
+    await logHealth({
+      kind: "error",
+      surface: "extract",
+      detail: (e as Error).message,
+      meta: { work_item_id: workItemId, reason: "ensure_extract_threw" },
+    });
     return false;
   }
 }
@@ -250,5 +276,29 @@ export async function ensureExtract(workItemId: string): Promise<boolean> {
  * the morning is readable the same morning.
  */
 export async function ensureExtracts(ids: string[]): Promise<void> {
-  for (const id of ids) await ensureExtract(id);
+  // One bad file must never take the rest of the batch with it, and the batch
+  // must never outlive the request that asked for it.
+  const started = Date.now();
+  for (const id of ids) {
+    if (Date.now() - started > BATCH_BUDGET_MS) {
+      await logHealth({
+        kind: "error",
+        surface: "extract",
+        detail: "batch_budget_exhausted",
+        meta: { work_item_id: id, reason: "batch_budget_exhausted" },
+      });
+      break;
+    }
+    try {
+      await ensureExtract(id);
+    } catch (e) {
+      console.error("[extract] batch item failed:", id, (e as Error).message);
+      await logHealth({
+        kind: "error",
+        surface: "extract",
+        detail: (e as Error).message,
+        meta: { work_item_id: id, reason: "batch_item_threw" },
+      });
+    }
+  }
 }

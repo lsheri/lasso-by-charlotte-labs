@@ -2,6 +2,7 @@ import { CircleDashed, Lock } from "lucide-react";
 
 import { EngagementChip, TypeBadge, TypeIcon } from "@/components/work/TypeIcon";
 import { ArtifactNote, SourceMark, VendorMark } from "@/components/work/SourceMark";
+import { UNREAD_MARKER_LINE, contentsUnread, textStatusReason } from "@/lib/text-status";
 import { engagementHue, workIdentityLabel } from "@/lib/work-identity";
 import { effectiveWorkDate, formatDate, type WorkItemRow } from "@/lib/work-types";
 
@@ -120,6 +121,14 @@ export function WorkRow({
             ) : null}
             {chips}
           </div>
+          {contentsUnread(item.meta as never) ? (
+            <p className="mt-1 text-xs text-muted-foreground">
+              {UNREAD_MARKER_LINE}
+              {textStatusReason(item.meta as never)
+                ? `: ${textStatusReason(item.meta as never)}`
+                : ""}
+            </p>
+          ) : null}
           <p className="mt-0.5 flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5 break-words font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
             <span>{workIdentityLabel(item)}</span>
             <span aria-hidden>·</span>

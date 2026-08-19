@@ -64,6 +64,11 @@ export function UploadFilesButton({
           title: file.name,
           content_ref: path,
           ts_precision: "capture",
+          // The reader guesses formats from the extension when it must, but a
+          // file named "export" with no suffix is unreadable unless the
+          // browser's own mime type is kept here at capture time.
+          meta: { mime_type: file.type || null },
+          source_meta: { filename: file.name },
         })
         .select("id")
         .maybeSingle();
