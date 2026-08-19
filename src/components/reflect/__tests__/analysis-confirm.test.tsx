@@ -19,12 +19,12 @@ const unreadItem = {
 };
 
 vi.mock("@/integrations/supabase/client", () => {
-  const result = (data: unknown) => {
+  const result = (data: unknown, single?: unknown) => {
     const chain: Record<string, unknown> = {};
     for (const key of ["select", "eq", "in", "limit", "order"]) {
       chain[key] = () => chain;
     }
-    chain["maybeSingle"] = async () => ({ data, error: null });
+    chain["maybeSingle"] = async () => ({ data: single ?? data, error: null });
     chain["then"] = (resolve: (v: unknown) => unknown) => Promise.resolve({ data, error: null }).then(resolve);
     return chain;
   };
@@ -34,7 +34,7 @@ vi.mock("@/integrations/supabase/client", () => {
         if (table === "work_items") {
           // Item lookup and the engagement unread scan share this table; both
           // answers describe the same unreadable file.
-          return result([unreadItem]) as never;
+          return result([unreadItem], unreadItem) as never;
         }
         if (table === "work_item_tasks") return result([{ work_item_id: "item-1" }]) as never;
         return result([]) as never;
