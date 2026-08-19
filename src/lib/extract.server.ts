@@ -13,6 +13,8 @@ type Db = SupabaseClient<Database>;
 export const EXTRACT_MODEL = MODELS.fast;
 export const EXTRACT_SCHEMA_VERSION = 1;
 const MAX_SOURCE_CHARS = 60_000;
+/** A capture request stops opening files after this, and says so. */
+const BATCH_BUDGET_MS = 60_000;
 
 /** The subset of a work item the classifier and the text puller need. */
 export type ClassifiableItem = TextItem;
