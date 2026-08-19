@@ -25,7 +25,7 @@ export const listMembers = createServerFn({ method: "POST" })
         .order("created_at", { ascending: true }),
       supabaseAdmin
         .from("invites")
-        .select("code, invited_role, email, expires_at, used_at, revoked_at")
+        .select("code, invited_role, email, expires_at, used_at, revoked_at, created_by")
         .eq("org_id", profile.org_id)
         .order("expires_at", { ascending: false })
         .limit(50),
@@ -58,6 +58,9 @@ export const listMembers = createServerFn({ method: "POST" })
         expires_at: row.expires_at,
         used_at: row.used_at,
         revoked_at: row.revoked_at,
+        created_by_name: row.created_by
+          ? ((profiles ?? []).find((p) => p.id === row.created_by)?.display_name ?? null)
+          : null,
       })),
     };
   });
@@ -98,4 +101,16 @@ export const revokeInvite = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { revokeInviteByCode } = await import("./members.server");
     return revokeInviteByCode(context, data.profile_id, data.code);
+  });
+
+/** Mints a replacement invite, withdraws the old one, and emails when it can. */
+export const resendInvite = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: Ctx & { code: string; origin: string }) => {
+    if (!/^https?:\/\//.test(input.origin ?? "")) throw new Error("Missing invite link origin.");
+    return input;
+  })
+  .handler(async ({ data, context }) => {
+    const { resendInviteByCode } = await import("./members.server");
+    return resendInviteByCode(context, data.profile_id, data.code, data.origin.replace(/\/$/, ""));
   });

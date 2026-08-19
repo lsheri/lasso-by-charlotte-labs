@@ -23,7 +23,7 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { InviteDialog } from "@/components/invites/InviteDialog";
 import { useMemberAction, useMembers } from "@/hooks/use-members";
-import { ROLE_LABELS, useProfile } from "@/hooks/use-profile";
+import { isBusinessOrg, ROLE_LABELS, useProfile } from "@/hooks/use-profile";
 import { maskCode, type InviteRow, type MemberRow } from "@/lib/members-shared";
 
 function dateLabel(iso: string | null): string {
@@ -65,6 +65,23 @@ export function MembersPage() {
   const [showHistory, setShowHistory] = useState(false);
 
   const isAdmin = data?.viewer_role === "admin";
+  // A solo workspace has no roster: the only other people in it are coaches.
+  const business = isBusinessOrg(profile);
+  const copy = business
+    ? {
+        title: "Members",
+        blurb: "Who belongs to this workspace, and the invites still outstanding.",
+        people: "People",
+        invite: "Invite someone",
+        empty: "Nothing outstanding.",
+      }
+    : {
+        title: "Your coaches",
+        blurb: "Who you have invited to look at your work, and the invites still outstanding.",
+        people: "People with access",
+        invite: "Invite a coach",
+        empty: "No invites outstanding.",
+      };
 
   function run(input: Parameters<typeof action.mutate>[0], success: string) {
     action.mutate(input, {
@@ -82,10 +99,8 @@ export function MembersPage() {
   return (
     <div>
       <header className="mb-8">
-        <h1 className="page-title">Members</h1>
-        <p className="mt-1.5 text-sm text-muted-foreground">
-          Who belongs to this workspace, and the invites still outstanding.
-        </p>
+        <h1 className="page-title">{copy.title}</h1>
+        <p className="mt-1.5 text-sm text-muted-foreground">{copy.blurb}</p>
       </header>
 
       {isLoading ? <p className="text-sm text-muted-foreground">Loading…</p> : null}
@@ -99,12 +114,14 @@ export function MembersPage() {
         <div className="space-y-10">
           <section>
             <div className="flex items-center justify-between gap-3">
-              <h2 className="micro-label">People</h2>
+              <h2 className="micro-label">{copy.people}</h2>
               {isAdmin ? (
                 <InviteDialog
+                  showHistory={false}
+                  {...(business ? {} : { defaultRole: "coach" as const })}
                   trigger={
                     <Button type="button" size="sm" variant="outline">
-                      Invite someone
+                      {copy.invite}
                     </Button>
                   }
                 />
@@ -155,14 +172,16 @@ export function MembersPage() {
                             Deactivate
                           </DropdownMenuItem>
                         )}
-                        <DropdownMenuItem
-                          onSelect={() => {
-                            setRoleTarget(member);
-                            setNextRole(member.role === "lead" ? "lead" : "em");
-                          }}
-                        >
-                          Change role
-                        </DropdownMenuItem>
+                        {business && member.role !== "coach" ? (
+                          <DropdownMenuItem
+                            onSelect={() => {
+                              setRoleTarget(member);
+                              setNextRole(member.role === "lead" ? "lead" : "em");
+                            }}
+                          >
+                            Change role
+                          </DropdownMenuItem>
+                        ) : null}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   ) : null}
@@ -179,7 +198,7 @@ export function MembersPage() {
           <section>
             <h2 className="micro-label">Pending invites</h2>
             {pending.length === 0 ? (
-              <p className="mt-2 text-sm text-muted-foreground">Nothing outstanding.</p>
+              <p className="mt-2 text-sm text-muted-foreground">{copy.empty}</p>
             ) : (
               <ul className="mt-3 space-y-1.5">
                 {pending.map((invite) => (
@@ -189,7 +208,15 @@ export function MembersPage() {
                     {...(isAdmin
                       ? {
                           onRevoke: () =>
-                            run({ kind: "revoke", code: invite.code }, "Invite revoked"),
+                            run({ kind: "revoke", code: invite.code }, "Invite withdrawn"),
+                          onResend: () =>
+                            run(
+                              { kind: "resend", code: invite.code },
+                              invite.email
+                                ? "New invite sent, the old link no longer works"
+                                : "New link created, the old one no longer works",
+                            ),
+                          busy: action.isPending,
                         }
                       : {})}
                   />
@@ -224,8 +251,8 @@ export function MembersPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Deactivate {confirm?.display_name}?</AlertDialogTitle>
             <AlertDialogDescription>
-              They will no longer be able to access this workspace. Nothing is deleted, and this can
-              be undone.
+              They will no longer be able to open this workspace or see anything in it. Nothing is
+              deleted, and you can turn their access back on at any time.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -280,7 +307,17 @@ export function MembersPage() {
   );
 }
 
-function InviteLine({ invite, onRevoke }: { invite: InviteRow; onRevoke?: () => void }) {
+function InviteLine({
+  invite,
+  onRevoke,
+  onResend,
+  busy,
+}: {
+  invite: InviteRow;
+  onRevoke?: () => void;
+  onResend?: () => void;
+  busy?: boolean;
+}) {
   const expired = new Date(invite.expires_at) < new Date();
   const status = invite.revoked_at
     ? "Revoked"
@@ -296,29 +333,35 @@ function InviteLine({ invite, onRevoke }: { invite: InviteRow; onRevoke?: () => 
       <Badge>{ROLE_LABELS[invite.invited_role] ?? invite.invited_role}</Badge>
       <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
         {invite.email ?? "Open link"} · {status}
+        {invite.created_by_name ? ` · invited by ${invite.created_by_name}` : ""}
       </span>
       {onRevoke ? (
-        <>
-          <button
-            type="button"
-            onClick={() => {
-              void navigator.clipboard.writeText(
-                `${window.location.origin}/join?code=${invite.code}`,
-              );
-              toast.success("Invite link copied");
-            }}
-            className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            aria-label={`Actions for invite ${maskCode(invite.code)}`}
+            className="rounded-md p-1.5 text-foreground/60 transition-colors hover:bg-secondary"
           >
-            Copy link
-          </button>
-          <button
-            type="button"
-            onClick={onRevoke}
-            className="text-xs text-muted-foreground transition-colors hover:text-foreground"
-          >
-            Revoke
-          </button>
-        </>
+            <MoreHorizontal className="h-4 w-4" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem
+              onSelect={() => {
+                void navigator.clipboard.writeText(
+                  `${window.location.origin}/join?code=${invite.code}`,
+                );
+                toast.success("Invite link copied");
+              }}
+            >
+              Copy link
+            </DropdownMenuItem>
+            {onResend ? (
+              <DropdownMenuItem disabled={busy ?? false} onSelect={() => onResend()}>
+                Resend
+              </DropdownMenuItem>
+            ) : null}
+            <DropdownMenuItem onSelect={() => onRevoke()}>Withdraw</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       ) : null}
     </li>
   );

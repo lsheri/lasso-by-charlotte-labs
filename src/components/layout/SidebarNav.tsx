@@ -3,7 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { NewEngagementDialog } from "@/components/engagements/NewEngagementDialog";
 import { useDecisions } from "@/hooks/use-decisions";
 import { useEngagements } from "@/hooks/use-engagements";
-import { useProfile } from "@/hooks/use-profile";
+import { isBusinessOrg, useProfile } from "@/hooks/use-profile";
 
 import { navGroups } from "./nav-config";
 import { engagementDisplayCode, engagementDisplayTitle } from "@/lib/clients";
@@ -19,6 +19,8 @@ export function SidebarNav({ onNavigate }: { onNavigate?: (() => void) | undefin
   // Reflect is the owner's private space, it never appears for a coach profile.
   const isCoach = profile?.role === "coach";
   const canManageMembers = profile?.role === "admin" || profile?.role === "lead";
+  // A solo workspace has no roster to administer, only the coaches it invited.
+  const membersLabel = isBusinessOrg(profile) ? "Members" : "Your coaches";
 
   return (
     <nav className="flex flex-col gap-7">
@@ -53,7 +55,7 @@ export function SidebarNav({ onNavigate }: { onNavigate?: (() => void) | undefin
                   activeProps={{ className: "bg-accent-soft text-accent-deep font-medium" }}
                 >
                   <span className="flex items-center justify-between gap-2">
-                    <span>{item.label}</span>
+                    <span>{item.to === "/members" ? membersLabel : item.label}</span>
                     {item.to === "/decisions" && decisionCount > 0 ? (
                       <span className="rounded-full bg-muted px-2 py-0.5 font-mono text-[10px] text-muted-foreground">
                         {decisionCount}

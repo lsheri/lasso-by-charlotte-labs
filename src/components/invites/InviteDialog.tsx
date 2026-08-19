@@ -84,10 +84,13 @@ export function InviteDialog({
   trigger,
   engagementId,
   defaultRole = "coach",
+  showHistory = true,
 }: {
   trigger: ReactNode;
   engagementId?: string | undefined;
   defaultRole?: InviteRole;
+  /** The members console lists invites itself, so it turns this off. */
+  showHistory?: boolean;
 }) {
   const { data: profile } = useProfile();
   const emailInvite = useServerFn(sendInviteEmail);
@@ -261,7 +264,7 @@ export function InviteDialog({
 
         {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
-        <IssuedInvites orgId={profile.org_id} refreshKey={link ?? ""} />
+        {showHistory ? <IssuedInvites orgId={profile.org_id} refreshKey={link ?? ""} /> : null}
       </DialogContent>
     </Dialog>
   );

@@ -1,14 +1,23 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 
-import { Wordmark } from "@/components/layout/Wordmark";
 import { SessionHeader } from "@/components/layout/SessionHeader";
+import { Wordmark } from "@/components/layout/Wordmark";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { setActiveProfileId, useProfiles } from "@/hooks/use-profile";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  blockedStateFor,
+  blockedStateFromRpcError,
+  type BlockedState,
+  type InviteState,
+} from "@/lib/invite-state";
+import { getInviteState, recordInviteBlocked } from "@/lib/invites.functions";
 import { logEvent } from "@/lib/telemetry";
 
 type JoinSearch = { code?: string | undefined; eng?: string | undefined };
@@ -19,15 +28,6 @@ export const Route = createFileRoute("/join")({
     code: typeof search["code"] === "string" ? search["code"] : undefined,
     eng: typeof search["eng"] === "string" ? search["eng"] : undefined,
   }),
-  beforeLoad: async ({ search }) => {
-    const { data } = await supabase.auth.getUser();
-    if (!data.user) {
-      const params = new URLSearchParams();
-      if (search.code) params.set("code", search.code);
-      if (search.eng) params.set("eng", search.eng);
-      throw redirect({ to: "/auth", search: { next: `/join?${params.toString()}` } });
-    }
-  },
   head: () => ({
     meta: [
       { title: "Accept your invite | Lasso" },
@@ -44,52 +44,306 @@ export const Route = createFileRoute("/join")({
   component: JoinPage,
 });
 
-function InviteContext({ code, eng }: { code: string | undefined; eng: string | undefined }) {
-  const { data } = useQuery({
-    queryKey: ["invite-context", code, eng],
-    queryFn: async () => {
-      const [inviteRes, engRes] = await Promise.all([
-        code
-          ? supabase
-              .from("invites")
-              .select("invited_role, orgs(name)")
-              .eq("code", code)
-              .maybeSingle()
-          : Promise.resolve({ data: null }),
-        eng
-          ? supabase.from("engagements").select("title").eq("id", eng).maybeSingle()
-          : Promise.resolve({ data: null }),
-      ]);
-      return {
-        org: (inviteRes.data as { orgs?: { name: string } | null } | null)?.orgs?.name ?? null,
-        role: (inviteRes.data as { invited_role?: string } | null)?.invited_role ?? null,
-        engagement: (engRes.data as { title: string } | null)?.title ?? null,
-      };
-    },
-    enabled: Boolean(code),
-  });
+const ROLE_WORD: Record<string, string> = {
+  coach: "coach",
+  em: "teammate",
+  lead: "lead",
+  admin: "admin",
+};
 
-  if (!data || (!data.org && !data.engagement)) return null;
-
+/** Every accept state is one of these cards, so nothing can dead end. */
+function StateCard({
+  label,
+  title,
+  children,
+}: {
+  label: string;
+  title: string;
+  children: React.ReactNode;
+}) {
   return (
-    <div className="mb-4 rounded-[var(--radius)] border border-border bg-secondary px-4 py-3">
-      {data.org ? <p className="micro-label">{data.org}</p> : null}
-      {data.engagement ? (
-        <p className="mt-1 text-sm text-foreground">
-          You&apos;ve been invited to {data.role === "coach" ? "coach on" : "join"}{" "}
-          {data.engagement}
-        </p>
-      ) : null}
+    <div className="mt-8 rounded-[var(--radius)] border border-border bg-card px-6 py-6 shadow-card">
+      <p className="micro-label">{label}</p>
+      <h1 className="mt-2 page-title">{title}</h1>
+      <div className="mt-3 space-y-3 text-sm text-muted-foreground">{children}</div>
     </div>
   );
+}
+
+function useViewerEmail() {
+  return useQuery({
+    queryKey: ["viewer-email"],
+    queryFn: async () => {
+      const { data } = await supabase.auth.getUser();
+      return data.user?.email ?? null;
+    },
+    staleTime: 30_000,
+  });
 }
 
 function JoinPage() {
   const { code, eng } = Route.useSearch();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const loadState = useServerFn(getInviteState);
+  const reportBlocked = useServerFn(recordInviteBlocked);
+
+  const { data: viewerEmail, isLoading: viewerLoading } = useViewerEmail();
+  const { data: state, isLoading: stateLoading } = useQuery({
+    queryKey: ["invite-state", code, eng],
+    enabled: Boolean(code),
+    queryFn: (): Promise<InviteState> =>
+      loadState({ data: { code: code as string, ...(eng ? { eng } : {}) } }),
+  });
+
+  const [override, setOverride] = useState<BlockedState | null>(null);
+  const blocked = override ?? (state ? blockedStateFor(state, viewerEmail ?? null) : null);
+
+  // One content-free record per blocked view, never an address.
+  const reported = useRef<string | null>(null);
+  useEffect(() => {
+    if (!code || !blocked) return;
+    const key = `${code}:${blocked}`;
+    if (reported.current === key) return;
+    reported.current = key;
+    void reportBlocked({ data: { code, state: blocked } }).catch(() => {
+      /* telemetry must never surface to the user */
+    });
+  }, [code, blocked, reportBlocked]);
+
+  async function signOutAndStay() {
+    await queryClient.cancelQueries();
+    queryClient.clear();
+    await supabase.auth.signOut();
+    navigate({
+      to: "/join",
+      search: eng ? { code, eng } : { code },
+      replace: true,
+    });
+  }
+
+  const joinHref = `/join?${new URLSearchParams({
+    ...(code ? { code } : {}),
+    ...(eng ? { eng } : {}),
+  }).toString()}`;
+
+  function Shell({ children }: { children: React.ReactNode }) {
+    return (
+      <>
+        <SessionHeader />
+        <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-background px-4 pb-16 pt-[calc(4rem+env(safe-area-inset-top))]">
+          <div className="w-full max-w-md">
+            <Wordmark size="lg" />
+            {children}
+          </div>
+        </main>
+      </>
+    );
+  }
+
+  if (!code) {
+    return (
+      <Shell>
+        <StateCard label="Invite" title="This link is missing its code">
+          <p>Ask whoever invited you for a fresh link, then open it again.</p>
+        </StateCard>
+      </Shell>
+    );
+  }
+
+  if (stateLoading || viewerLoading || !state) {
+    return (
+      <Shell>
+        <StateCard label="Invite" title="Checking your invite">
+          <p>One moment.</p>
+        </StateCard>
+      </Shell>
+    );
+  }
+
+  const org = state.org_name ?? "this workspace";
+  const roleWord = ROLE_WORD[state.invited_role ?? ""] ?? "member";
+
+  if (state.status === "not_found") {
+    return (
+      <Shell>
+        <StateCard label="Invite" title="We could not find this invite">
+          <p>The code may have been mistyped, or the link may be incomplete.</p>
+          <p>Ask whoever invited you to send it again.</p>
+        </StateCard>
+      </Shell>
+    );
+  }
+
+  if (state.status === "revoked") {
+    return (
+      <Shell>
+        <StateCard label="Invite" title="This invite was withdrawn">
+          <p>Whoever created it has since cancelled it. Nothing was shared with you.</p>
+          <p>Ask {org} for a new one if you still need access.</p>
+        </StateCard>
+      </Shell>
+    );
+  }
+
+  if (state.status === "used") {
+    return (
+      <Shell>
+        <StateCard label="Invite" title="This invite has already been accepted">
+          <p>Invites work once. If that was you, sign in with the account you used.</p>
+          <Link to="/auth" className="inline-block text-accent-deep underline">
+            Go to sign in
+          </Link>
+        </StateCard>
+      </Shell>
+    );
+  }
+
+  if (state.status === "expired") {
+    return (
+      <Shell>
+        <StateCard label="Invite" title="This invite has expired">
+          <p>Invites last 14 days. This one is past that, so it can no longer be used.</p>
+          <p>Ask {org} for a fresh link.</p>
+        </StateCard>
+      </Shell>
+    );
+  }
+
+  if (state.created_by_you) {
+    return (
+      <Shell>
+        <StateCard label="Your invite" title="You created this invite">
+          <p>
+            {state.email
+              ? `It is for ${state.email}. Share the link with them.`
+              : "It is an open link. Share it with the person you want to invite."}
+          </p>
+          <p>Opening it yourself does nothing. You are already in {org}.</p>
+          <div className="flex flex-wrap gap-2 pt-1">
+            <Button
+              type="button"
+              onClick={() => {
+                void navigator.clipboard.writeText(`${window.location.origin}${joinHref}`);
+                toast.success("Invite link copied");
+              }}
+            >
+              Copy link
+            </Button>
+            <Button type="button" variant="outline" onClick={() => navigate({ to: "/overview" })}>
+              Go to workspace
+            </Button>
+          </div>
+        </StateCard>
+      </Shell>
+    );
+  }
+
+  if (!state.viewer.signed_in) {
+    return (
+      <Shell>
+        <StateCard label="Invite" title={`You have been invited to ${org}`}>
+          <p>You will join as a {roleWord}.</p>
+          {state.is_email_bound ? (
+            <p>
+              This invite is locked to {state.email_hint ?? "one address"}. Sign in or create your
+              account with that address, or it will not be accepted.
+            </p>
+          ) : (
+            <p>Create an account or sign in, and you will land straight here again.</p>
+          )}
+          <div className="pt-1">
+            <Button
+              type="button"
+              onClick={() => navigate({ to: "/auth", search: { next: joinHref } })}
+            >
+              Sign in or create an account
+            </Button>
+          </div>
+        </StateCard>
+      </Shell>
+    );
+  }
+
+  if (blocked === "already_member") {
+    return (
+      <Shell>
+        <StateCard label="Invite" title={`You are already in ${org}`}>
+          <p>
+            This account{viewerEmail ? `, ${viewerEmail},` : ""} already belongs to {org}, so there
+            is nothing to accept.
+          </p>
+          <p>
+            If the invite was meant for someone else, sign out and let them open the link. It stays
+            valid until it expires.
+          </p>
+          <div className="flex flex-wrap gap-2 pt-1">
+            <Button type="button" onClick={() => navigate({ to: "/overview" })}>
+              Go to workspace
+            </Button>
+            <Button type="button" variant="outline" onClick={() => void signOutAndStay()}>
+              Sign out and continue
+            </Button>
+          </div>
+        </StateCard>
+      </Shell>
+    );
+  }
+
+  if (blocked === "mismatch") {
+    return (
+      <Shell>
+        <StateCard label="Invite" title="This invite is for a different account">
+          <p>
+            This invite is for {state.email ?? state.email_hint ?? "another address"}. You are
+            signed in as {viewerEmail ?? "another account"}.
+          </p>
+          <p>
+            Nothing was shared with this account. The invite stays valid until it expires, so you
+            can sign out and open it with the right one.
+          </p>
+          <div className="flex flex-wrap gap-2 pt-1">
+            <Button type="button" onClick={() => void signOutAndStay()}>
+              Sign out and continue
+            </Button>
+            <Button type="button" variant="outline" onClick={() => navigate({ to: "/overview" })}>
+              Go to workspace
+            </Button>
+          </div>
+        </StateCard>
+      </Shell>
+    );
+  }
+
+  return (
+    <Shell>
+      <AcceptForm
+        code={code}
+        eng={eng}
+        state={state}
+        onBlocked={(next) => setOverride(next)}
+      />
+    </Shell>
+  );
+}
+
+function AcceptForm({
+  code,
+  eng,
+  state,
+  onBlocked,
+}: {
+  code: string;
+  eng: string | undefined;
+  state: InviteState;
+  onBlocked: (next: BlockedState) => void;
+}) {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [displayName, setDisplayName] = useState("");
   const { data: existingProfiles } = useProfiles();
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Someone who already has a profile shouldn't retype their name.
   useEffect(() => {
@@ -97,15 +351,8 @@ function JoinPage() {
     if (recent?.display_name) setDisplayName((current) => current || recent.display_name);
   }, [existingProfiles]);
 
-  const [pending, setPending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
-    if (!code) {
-      setError("This link is missing its invite code. Ask for a fresh link.");
-      return;
-    }
     setPending(true);
     setError(null);
 
@@ -115,8 +362,13 @@ function JoinPage() {
     });
 
     if (joinError || !profileId) {
-      setError(joinError?.message ?? "Could not accept this invite.");
+      const message = joinError?.message ?? "Could not accept this invite.";
+      const mapped = blockedStateFromRpcError(message);
       setPending(false);
+      // A race, for instance a revoke between load and submit, must still land
+      // on an honest card rather than a raw database message.
+      if (mapped) onBlocked(mapped);
+      else setError(message);
       return;
     }
 
@@ -170,46 +422,46 @@ function JoinPage() {
   }
 
   return (
-    <>
-      <SessionHeader />
-      <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-background px-4 py-16">
-        <div className="w-full max-w-md">
-          <Wordmark size="lg" />
-          <div className="mt-8 rounded-[var(--radius)] border border-border bg-card px-6 py-6 shadow-card">
-            <InviteContext code={code} eng={eng} />
-            <h1 className="page-title">Accept your invite</h1>
-            <p className="mt-1.5 text-sm text-muted-foreground">
-              {eng
-                ? "You'll land straight in the engagement you were invited to."
-                : "Tell us how your name should appear to your team."}
-            </p>
+    <div className="mt-8 rounded-[var(--radius)] border border-border bg-card px-6 py-6 shadow-card">
+      <div className="mb-4 rounded-[var(--radius)] border border-border bg-secondary px-4 py-3">
+        {state.org_name ? <p className="micro-label">{state.org_name}</p> : null}
+        <p className="mt-1 text-sm text-foreground">
+          {state.engagement_title
+            ? `You've been invited to ${state.invited_role === "coach" ? "coach on" : "join"} ${state.engagement_title}`
+            : `You'll join as a ${ROLE_WORD[state.invited_role ?? ""] ?? "member"}`}
+        </p>
+      </div>
 
-            <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-              <div className="space-y-1.5">
-                <Label htmlFor="join-name" className="micro-label">
-                  Your name
-                </Label>
-                <Input
-                  id="join-name"
-                  required
-                  value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
-                  placeholder="Alex Rivera"
-                />
-              </div>
-              <Button type="submit" disabled={pending || !displayName.trim()}>
-                {pending ? "Joining…" : "Join"}
-              </Button>
-            </form>
+      <h1 className="page-title">Accept your invite</h1>
+      <p className="mt-1.5 text-sm text-muted-foreground">
+        {state.engagement_title
+          ? "You'll land straight in the engagement you were invited to."
+          : "Tell us how your name should appear to your team."}
+      </p>
 
-            {error ? (
-              <p className="mt-4 rounded-[var(--radius)] border border-border bg-secondary px-4 py-3 text-sm text-foreground">
-                {error}
-              </p>
-            ) : null}
-          </div>
+      <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+        <div className="space-y-1.5">
+          <Label htmlFor="join-name" className="micro-label">
+            Your name
+          </Label>
+          <Input
+            id="join-name"
+            required
+            value={displayName}
+            onChange={(e) => setDisplayName(e.target.value)}
+            placeholder="Alex Rivera"
+          />
         </div>
-      </main>
-    </>
+        <Button type="submit" disabled={pending || !displayName.trim()}>
+          {pending ? "Joining…" : "Join"}
+        </Button>
+      </form>
+
+      {error ? (
+        <p className="mt-4 rounded-[var(--radius)] border border-border bg-secondary px-4 py-3 text-sm text-foreground">
+          {error}
+        </p>
+      ) : null}
+    </div>
   );
 }

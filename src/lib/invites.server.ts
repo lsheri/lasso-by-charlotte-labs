@@ -97,3 +97,75 @@ export async function assertInviteInOrg(supabase: Client, code: string, orgId: s
   if (error) throw new Error(error.message);
   if (!data || data.org_id !== orgId) throw new Error("That invite is not yours to send.");
 }
+
+/**
+ * Reads one invite with the admin client and projects the minimum an accept
+ * page needs. The projection never includes the org id, never says whether an
+ * address has an account, and only reveals the bound address to a signed in
+ * caller. Unknown and malformed codes return the identical not-found shape.
+ */
+export async function loadInviteState(
+  code: string,
+  engagementId: string | null,
+  viewer: { userId: string } | null,
+): Promise<import("./invite-state").InviteState> {
+  const { notFoundState, resolveInviteStatus, maskEmail } = await import("./invite-state");
+  const signedIn = Boolean(viewer);
+  if (!code || !/^[a-zA-Z0-9-]{4,64}$/.test(code)) return notFoundState(signedIn);
+
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+  const { data: invite } = await supabaseAdmin
+    .from("invites")
+    .select("code, org_id, invited_role, email, created_by, expires_at, used_at, revoked_at")
+    .eq("code", code)
+    .maybeSingle();
+  if (!invite) return notFoundState(signedIn);
+
+  const [{ data: org }, { data: engagement }, { data: mine }] = await Promise.all([
+    supabaseAdmin.from("orgs").select("name").eq("id", invite.org_id).maybeSingle(),
+    engagementId
+      ? supabaseAdmin.from("engagements").select("title").eq("id", engagementId).maybeSingle()
+      : Promise.resolve({ data: null as { title: string } | null }),
+    viewer
+      ? supabaseAdmin.from("profiles").select("id, org_id").eq("user_id", viewer.userId)
+      : Promise.resolve({ data: null as { id: string; org_id: string }[] | null }),
+  ]);
+
+  const profiles = mine ?? [];
+  return {
+    status: resolveInviteStatus(invite),
+    invited_role: invite.invited_role,
+    org_name: org?.name ?? null,
+    is_email_bound: Boolean(invite.email),
+    email: signedIn ? invite.email : null,
+    email_hint: maskEmail(invite.email),
+    created_by_you: Boolean(
+      invite.created_by && profiles.some((row) => row.id === invite.created_by),
+    ),
+    expires_at: invite.expires_at,
+    engagement_title: engagement?.title ?? null,
+    viewer: {
+      signed_in: signedIn,
+      is_member: profiles.some((row) => row.org_id === invite.org_id),
+    },
+  };
+}
+
+/** Resolves the invite's org server-side so the client never handles an org id. */
+export async function recordInviteBlockedByCode(code: string, state: string): Promise<void> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data: invite } = await supabaseAdmin
+    .from("invites")
+    .select("org_id")
+    .eq("code", code)
+    .maybeSingle();
+  if (!invite) return;
+  const { recordEvent } = await import("./telemetry.server");
+  await recordEvent(supabaseAdmin, {
+    eventType: "invite.blocked",
+    orgId: invite.org_id,
+    userId: null,
+    dims: { state },
+  });
+}
