@@ -107,7 +107,10 @@ const adminSteps: ChecklistStepDef[] = [
 
 export function stepsFor(progress: OnboardingProgress): ChecklistStepDef[] {
   const base = progress.role_variant === "coach" ? coachSteps : workerSteps;
-  return progress.is_admin ? [...base, ...adminSteps] : base;
+  // Inviting runs through the member console, which is admin and lead only.
+  // A non-admin worker would land on a 403, so the step is not shown to them.
+  const scoped = progress.is_admin ? base : base.filter((s) => s.id !== "invite-coach");
+  return progress.is_admin ? [...scoped, ...adminSteps] : scoped;
 }
 
 export function requiredCount(steps: ChecklistStepDef[]): number {
