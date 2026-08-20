@@ -1,9 +1,10 @@
 @import "tailwindcss" source(none);
 @source "../src";
 @import "tw-animate-css";
-@import "@fontsource/dm-sans/400.css";
-@import "@fontsource/dm-sans/500.css";
-@import "@fontsource/dm-sans/600.css";
+@import "@fontsource/archivo/400.css";
+@import "@fontsource/archivo/500.css";
+@import "@fontsource/archivo/600.css";
+@import "@fontsource/archivo/700.css";
 @import "@fontsource/jetbrains-mono/400.css";
 @import "@fontsource/jetbrains-mono/500.css";
 
@@ -24,7 +25,7 @@
  */
 
 @theme inline {
-  --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Archivo", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
   --color-ember: var(--ember);
   --color-ember-deep: var(--ember-deep);
@@ -46,7 +47,21 @@
   --color-pattern-bg: var(--pattern-bg);
   --color-pattern-border: var(--pattern-border);
   --color-pattern-fg: var(--pattern-fg);
-  --shadow-card: 0 1px 2px rgba(42, 40, 32, 0.04), 0 4px 16px rgba(42, 40, 32, 0.05);
+  /* Notebook-named tokens. Later passes consume these directly; the semantic
+     names above stay as the compatibility layer. */
+  --color-nb-white: var(--nb-white);
+  --color-paper: var(--nb-paper);
+  --color-grey-1: var(--nb-grey-1);
+  --color-grey-2: var(--nb-grey-2);
+  --color-rule: var(--nb-rule);
+  --color-ink: var(--nb-ink);
+  --color-graphite: var(--nb-graphite);
+  --color-mid: var(--nb-mid);
+  --color-soft: var(--nb-soft);
+  --color-green: var(--nb-green);
+  --color-blue: var(--nb-blue);
+  --shadow-card: none;
+  --radius-control: 6px;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -90,58 +105,81 @@
 }
 
 :root {
-  --radius: 12px;
-  --background: #faf8f2;
-  --foreground: #16302b;
-  --card: #ffffff;
-  --card-foreground: #16302b;
-  --popover: #ffffff;
-  --popover-foreground: #16302b;
-  /* Electric CTA green — the spider's family. Ink text rides on it. */
-  --primary: #2bd97b;
-  --primary-foreground: #16302b;
-  --secondary: #f3eee3;
-  --secondary-foreground: #16302b;
-  --muted: #e6ece9;
-  --muted-foreground: #4f6260;
-  --accent: #2f5d52;
-  --accent-foreground: #ffffff;
-  --accent-soft: #e4f0e8;
-  --accent-deep: #0a628f; /* link/action text — deep of the pig blue */
-  --navy: #14403a; /* deep green-teal ink family replaces navy in UI */
-  --mint: #2bd97b;
-  /* Lasso suggested it, a person decides. Whistle yellow, surface only. */
-  --suggest: #e8f24c;
-  --suggest-wash: color-mix(in oklab, var(--suggest) 22%, transparent);
-  --suggest-edge: color-mix(in oklab, var(--suggest) 60%, #16302b 40%);
-  --cream: #f3eee3;
-  --pattern-bg: #dfe9f1;
-  --pattern-border: #9dc2dc;
-  --pattern-fg: #0a4a68;
-  --destructive: #a34234; /* muted brick */
+  --radius: 8px;
+  --radius-control: 6px;
+
+  /* Notebook palette, the single source of truth for this identity. */
+  --nb-white: #ffffff;
+  --nb-paper: #fafafa;
+  --nb-grey-1: #f4f5f4;
+  --nb-grey-2: #ecedec;
+  --nb-rule: #e3e5e1;
+  --nb-ink: #111413;
+  --nb-graphite: #2f3331;
+  --nb-mid: #5a5d5c;
+  --nb-soft: #8b8f8d;
+  --nb-green: #12653d;
+  --nb-green-deep: #0e4f30;
+  --nb-blue: #1d6fe0;
+
+  /* Motion. */
+  --nb-ease: cubic-bezier(0.2, 0, 0, 1);
+  --nb-fast: 120ms;
+  --nb-base: 160ms;
+  --nb-move: 200ms;
+  --nb-max: 500ms;
+
+  --background: var(--nb-paper);
+  --foreground: var(--nb-ink);
+  --card: var(--nb-white);
+  --card-foreground: var(--nb-ink);
+  --popover: var(--nb-white);
+  --popover-foreground: var(--nb-ink);
+  /* One green action per screen. */
+  --primary: var(--nb-green);
+  --primary-foreground: var(--nb-white);
+  --secondary: var(--nb-grey-1);
+  --secondary-foreground: var(--nb-ink);
+  --muted: var(--nb-grey-2);
+  --muted-foreground: var(--nb-mid);
+  --accent: var(--nb-rule);
+  --accent-foreground: var(--nb-ink);
+  --accent-soft: var(--nb-grey-1);
+  --accent-deep: var(--nb-blue);
+  --navy: var(--nb-ink);
+  --mint: var(--nb-white);
+  /* Lasso suggested it, a person decides. Interim neutral treatment. */
+  --suggest: var(--nb-blue);
+  --suggest-wash: var(--nb-grey-2);
+  --suggest-edge: var(--nb-blue);
+  --cream: var(--nb-grey-1);
+  --pattern-bg: var(--nb-grey-1);
+  --pattern-border: var(--nb-rule);
+  --pattern-fg: var(--nb-ink);
+  --destructive: #b3261e;
   --destructive-foreground: #ffffff;
-  --border: #d5dee4;
-  --input: #d5dee4;
-  --ring: #35aef2; /* electric blue focus */
-  --chart-1: #2bd97b;
-  --chart-2: #35aef2;
-  --chart-3: #2f5d52;
-  --chart-4: #a8630b;
-  --chart-5: #7a3f74;
-  --sidebar: #f3eee3;
-  --sidebar-foreground: #16302b;
-  --sidebar-primary: #2bd97b;
-  --sidebar-primary-foreground: #16302b;
-  --sidebar-accent: #dfe9f1;
-  --sidebar-accent-foreground: #16302b;
-  --sidebar-border: #d5dee4;
-  --sidebar-ring: #35aef2;
+  --border: var(--nb-rule);
+  --input: var(--nb-rule);
+  --ring: var(--nb-blue);
+  --chart-1: var(--nb-green);
+  --chart-2: var(--nb-blue);
+  --chart-3: var(--nb-graphite);
+  --chart-4: var(--nb-mid);
+  --chart-5: var(--nb-soft);
+  --sidebar: var(--nb-ink);
+  --sidebar-foreground: var(--nb-white);
+  --sidebar-primary: var(--nb-white);
+  --sidebar-primary-foreground: var(--nb-ink);
+  --sidebar-accent: var(--nb-graphite);
+  --sidebar-accent-foreground: var(--nb-white);
+  --sidebar-border: var(--nb-graphite);
+  --sidebar-ring: var(--nb-blue);
   /* Code colours live in the token layer too. */
-  --code-keyword: #6c3f8a;
-  --code-string: #1c6a4a;
-  --code-number: #8a5a20;
-  --code-title: #0a628f;
-  --code-meta: #a34234;
+  --code-keyword: #5b3d8a;
+  --code-string: #12653d;
+  --code-number: #7a5a1f;
+  --code-title: #1d6fe0;
+  --code-meta: #b3261e;
 }
 
 /*
@@ -151,29 +189,28 @@
  * state also carries an icon, a label and a border treatment.
  */
 :root {
-  --ember: #2bd97b; /* electric CTA green, ink text: 8.9:1 */
-  --ember-deep: #0e7a4a; /* action text on base: 4.9:1 */
-  --ember-foreground: #16302b;
-  --ember-deep-foreground: #ffffff;
-  --ember-wash: color-mix(in oklab, var(--ember) 14%, transparent);
-  /* Secondary high-value blue, the pig's family. */
-  --electric: #35aef2;
-  --electric-deep: #0a628f; /* blue text on base: 5.3:1 */
-  --electric-wash: color-mix(in oklab, var(--electric) 14%, transparent);
+  --ember: var(--nb-green); /* the one action colour */
+  --ember-deep: var(--nb-green-deep); /* hover */
+  --ember-foreground: var(--nb-white);
+  --ember-deep-foreground: var(--nb-white);
+  --ember-wash: var(--nb-grey-1);
+  --electric: var(--nb-blue);
+  --electric-deep: var(--nb-blue);
+  --electric-wash: var(--nb-grey-1);
 
-  --state-amber: #9a6011; /* needs mapping */
-  --state-amber-wash: color-mix(in oklab, var(--state-amber) 8%, transparent);
-  --state-amber-band: color-mix(in oklab, var(--state-amber) 10%, transparent);
+  --state-amber: var(--nb-ink); /* needs mapping */
+  --state-amber-wash: var(--nb-grey-1);
+  --state-amber-band: var(--nb-grey-1);
 
-  --state-teal: #0e7160; /* mapped */
-  --state-teal-wash: color-mix(in oklab, var(--state-teal) 8%, transparent);
-  --state-teal-band: color-mix(in oklab, var(--state-teal) 10%, transparent);
+  --state-teal: var(--nb-green); /* mapped */
+  --state-teal-wash: var(--nb-grey-1);
+  --state-teal-band: var(--nb-grey-1);
 
-  --state-indigo: #3f5bb5; /* private */
-  --state-indigo-wash: color-mix(in oklab, var(--state-indigo) 8%, transparent);
-  --state-indigo-band: color-mix(in oklab, var(--state-indigo) 10%, transparent);
+  --state-indigo: var(--nb-mid); /* private */
+  --state-indigo-wash: var(--nb-grey-1);
+  --state-indigo-band: var(--nb-grey-1);
 
-  /* Vendor tones, brand-adjacent but pulled into the bone palette. */
+  /* Vendor tones, brand-adjacent but pulled into the notebook palette. */
   --vendor-claude: #a8452a;
   --vendor-chatgpt: #0f6b5c;
   --vendor-gemini: #2d5bb9;
@@ -321,17 +358,54 @@
   font-family: var(--font-mono);
   font-size: 0.6875rem;
   font-weight: 500;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--muted-foreground);
+  color: var(--nb-mid);
 }
 
 @utility page-title {
   font-family: var(--font-sans);
   font-size: 26px;
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--foreground);
+}
+
+@utility section-title {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 600;
+  color: var(--nb-ink);
+}
+
+@utility body-secondary {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--nb-mid);
+}
+
+@utility label {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 16px;
+  font-weight: 500;
+  color: var(--nb-ink);
+}
+
+@utility sidebar-group {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--nb-ink);
+}
+
+@utility sidebar-item {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--nb-mid);
 }
 
 /* Peek panel: Notion-like reading typography for rendered markdown/HTML. */
@@ -497,7 +571,8 @@
   font-family: var(--font-mono);
   font-size: 10px;
   font-weight: 500;
-  color: var(--card);
+  background: var(--nb-grey-2);
+  color: var(--nb-ink);
 }
 
 /* Compact variant of the prose styles for AI chat bubbles. */

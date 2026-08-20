@@ -157,7 +157,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
           {profile && profile.role !== "coach" && !isQuickFolder && hasCoaches ? (
             <a
               href="#shared-with"
-              className="rounded-full border border-accent bg-accent-soft px-3 py-1 font-mono text-[11px] uppercase tracking-[0.08em] text-accent-deep transition-colors hover:opacity-80"
+              className="rounded-full border border-accent bg-accent-soft px-3 py-1 font-mono text-[11px] uppercase tracking-[0.08em] text-foreground transition-colors hover:opacity-80"
             >
               Share with a coach
             </a>

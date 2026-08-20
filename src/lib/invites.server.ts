@@ -11,9 +11,9 @@ type Client = SupabaseClient<Database>;
  */
 const MAIL = {
   card: "#ffffff",
-  ink: "#16302b",
-  muted: "#4f6260",
-  cta: "#2bd97b",
+  ink: "#111413",
+  muted: "#5a5d5c",
+  cta: "#12653d",
 } as const;
 
 function escapeHtml(value: string): string {
@@ -43,7 +43,7 @@ function body(inviter: string, url: string) {
 <div style="max-width:520px;margin:0 auto">
 <p style="font-size:15px;line-height:1.6">${escapeHtml(inviter)} invited you to Lasso.</p>
 <p style="font-size:15px;line-height:1.6">${escapeHtml(roleLine)} You will only ever see the work they choose to share with you. Nothing else in their workspace is visible to you.</p>
-<p style="margin:28px 0"><a href="${escapeHtml(url)}" style="display:inline-block;background:${MAIL.cta};color:${MAIL.ink};text-decoration:none;padding:12px 20px;border-radius:8px;font-size:14px">Accept the invitation</a></p>
+<p style="margin:28px 0"><a href="${escapeHtml(url)}" style="display:inline-block;background:${MAIL.cta};color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:8px;font-size:14px">Accept the invitation</a></p>
 <p style="font-size:13px;line-height:1.6;color:${MAIL.muted}">Or paste this link into your browser:<br>${escapeHtml(url)}</p>
 <p style="font-size:12px;color:${MAIL.muted};margin-top:32px">Charlotte Labs</p>
 </div></body></html>`;
