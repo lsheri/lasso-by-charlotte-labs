@@ -107,7 +107,7 @@ export function CoachingPage() {
               </span>
             </div>
             {subject.last_note_at && (subject.new_decisions > 0 || subject.new_elements > 0) ? (
-              <p className="mt-2 inline-block rounded-full bg-accent-soft px-3 py-1 font-mono text-[11px] tracking-[0.06em] text-accent-deep">
+              <p className="mt-2 inline-block rounded-full bg-accent-soft px-3 py-1 font-mono text-[11px] tracking-[0.06em] text-foreground">
                 New since your last note: {subject.new_decisions} decision
                 {subject.new_decisions === 1 ? "" : "s"}, {subject.new_elements} work element
                 {subject.new_elements === 1 ? "" : "s"}

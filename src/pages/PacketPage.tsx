@@ -117,7 +117,7 @@ export function PacketPage({
       <header>
         <p className="micro-label">What {subjectName} has chosen to share</p>
         {hasNewer ? (
-          <p className="mt-2 inline-block rounded-full bg-accent-soft px-3 py-1 font-mono text-[11px] tracking-[0.06em] text-accent-deep">
+          <p className="mt-2 inline-block rounded-full bg-accent-soft px-3 py-1 font-mono text-[11px] tracking-[0.06em] text-foreground">
             Newer material since your last visit
           </p>
         ) : null}

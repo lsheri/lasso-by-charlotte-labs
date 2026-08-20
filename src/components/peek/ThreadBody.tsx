@@ -101,7 +101,7 @@ export function ThreadBody({ item, enabled = true }: { item: WorkItemRow; enable
                 Turn {turn.turn_no} · {turn.role}
                 {turnTime(turn.ts) ? ` · ${turnTime(turn.ts)}` : ""}
               </div>
-              <div className="max-w-[90%] whitespace-pre-wrap rounded-[var(--radius)] bg-primary px-4 py-3 font-mono text-xs leading-relaxed text-primary-foreground">
+              <div className="max-w-[90%] whitespace-pre-wrap rounded-[var(--radius)] bg-grey-2 px-4 py-3 font-mono text-xs leading-relaxed text-foreground">
                 {turn.content}
               </div>
               {revisedLabel(turn) ? (

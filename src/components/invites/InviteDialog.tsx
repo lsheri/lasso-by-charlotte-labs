@@ -72,7 +72,7 @@ function IssuedInvites({ orgId, refreshKey }: { orgId: string; refreshKey: strin
             <span
               className={
                 invite.used_at
-                  ? "rounded-full bg-accent-soft px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-accent-deep"
+                  ? "rounded-full bg-accent-soft px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-foreground"
                   : "rounded-full bg-muted px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground"
               }
             >

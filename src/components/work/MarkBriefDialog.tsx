@@ -173,7 +173,7 @@ function ChoiceRow({
       onClick={onSelect}
       className={`flex w-full items-center justify-between gap-3 rounded-[var(--radius)] border px-3 py-2 text-left text-sm transition-colors disabled:opacity-60 ${
         selected
-          ? "border-accent-deep bg-accent-soft text-accent-deep"
+          ? "border-accent-deep bg-accent-soft text-foreground"
           : "border-border bg-card text-foreground hover:border-accent"
       } ${indent ? "ml-4" : ""}`}
     >

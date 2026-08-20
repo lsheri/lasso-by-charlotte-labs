@@ -197,7 +197,7 @@ export function ReflectPage() {
         type="button"
         onClick={() => setScopeOpen(true)}
         aria-label="Change which work feeds this conversation"
-        className="rounded-full bg-accent-soft px-4 py-1.5 text-sm text-accent-deep transition-opacity hover:opacity-85"
+        className="rounded-full bg-accent-soft px-4 py-1.5 text-sm text-foreground transition-opacity hover:opacity-85"
       >
         {scopeSentence(scope, all, engagements ?? [])} · change
       </button>

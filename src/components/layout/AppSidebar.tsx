@@ -58,7 +58,7 @@ export function AppSidebar({
           }
         />
       </div>
-      <div className="rounded-[var(--radius)] bg-navy p-4 shadow-card">
+      <div className="rounded-[var(--radius)] bg-navy p-4">
         <div className="flex items-center gap-3">
           <LassoLogo size="md" />
           <div>
