@@ -73,7 +73,7 @@ export function FeedbackDialog({ trigger }: { trigger: ReactNode }) {
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="page-title">Feedback</DialogTitle>
+          <DialogTitle className="page-title">Send feedback</DialogTitle>
           <DialogDescription>
             Tell us what's working and what isn't. It goes straight to the founder.
           </DialogDescription>

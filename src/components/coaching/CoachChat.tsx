@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { useRegisterAskLasso } from "@/components/reflect/ask-lasso-context";
 
 import { Button } from "@/components/ui/button";
 import { ThinkingIndicator, WorkingLabel } from "@/components/common/Working";
@@ -38,6 +39,14 @@ export function CoachChat({
   const [pending, setPending] = useState(false);
   const [streamed, setStreamed] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // The mobile Ask Lasso button belongs to whatever the page is about. Here that
+  // is this question box, so bring it into view and put the cursor in it.
+  useRegisterAskLasso(() => {
+    inputRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    inputRef.current?.focus();
+  });
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
@@ -118,6 +127,7 @@ export function CoachChat({
 
       <form onSubmit={submit} className="mt-4 flex gap-2">
         <Input
+          ref={inputRef}
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
           placeholder="How did they approach the pricing question?"
