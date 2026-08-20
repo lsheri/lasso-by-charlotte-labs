@@ -57,9 +57,9 @@ export function WorkSection({
           >
             {label}
           </span>
-          <span className="count-pill shrink-0" style={{ backgroundColor: color }}>
-            {count}
-          </span>
+          {/* The pill keeps its token styling: an inline tone background would
+              collide with the ink label now that tones are neutral. */}
+          <span className="count-pill shrink-0">{count}</span>
         </button>
         {accessory ? <div className="ml-auto flex items-center gap-3">{accessory}</div> : null}
       </div>

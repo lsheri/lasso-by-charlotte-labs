@@ -6,7 +6,7 @@ import { useAskLassoHandler } from "@/components/reflect/ask-lasso-context";
 import { useProfile } from "@/hooks/use-profile";
 
 const FAB_CLASS =
-  "fixed right-4 bottom-[calc(1rem+env(safe-area-inset-bottom))] z-30 inline-flex min-h-[56px] items-center gap-2 rounded-full border border-accent-deep/30 bg-accent-deep px-5 text-sm text-accent-foreground shadow-card transition-opacity hover:opacity-90 md:hidden print:hidden";
+  "fixed right-4 bottom-[calc(1rem+env(safe-area-inset-bottom))] z-30 inline-flex min-h-[56px] items-center gap-2 rounded-full border border-accent-deep/30 bg-accent-deep px-5 text-sm text-[var(--nb-white)] shadow-card transition-opacity hover:opacity-90 md:hidden print:hidden";
 
 const HINT_KEY = "lasso.askfab_hint_seen";
 
