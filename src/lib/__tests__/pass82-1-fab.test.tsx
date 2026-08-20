@@ -8,7 +8,11 @@ const profileState: { role: string } = { role: "coach" };
 vi.mock("@tanstack/react-router", () => ({
   useRouterState: ({ select }: { select: (s: unknown) => unknown }) =>
     select({ location: { pathname: routerState.pathname } }),
-  Link: ({ children, ...rest }: never) => <a {...(rest as object)}>{children as never}</a>,
+  Link: (props: Record<string, unknown>) => (
+    <a className={props["className"] as string} aria-label={props["aria-label"] as string}>
+      {props["children"] as never}
+    </a>
+  ),
 }));
 
 vi.mock("@/hooks/use-profile", () => ({
