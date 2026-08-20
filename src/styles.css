@@ -166,13 +166,14 @@
   --chart-3: var(--nb-graphite);
   --chart-4: var(--nb-mid);
   --chart-5: var(--nb-soft);
-  --sidebar: var(--nb-ink);
-  --sidebar-foreground: var(--nb-white);
-  --sidebar-primary: var(--nb-white);
-  --sidebar-primary-foreground: var(--nb-ink);
-  --sidebar-accent: var(--nb-graphite);
-  --sidebar-accent-foreground: var(--nb-white);
-  --sidebar-border: var(--nb-graphite);
+  /* The notebook sidebar is a LIGHT surface: paper ground, ink actives. */
+  --sidebar: var(--nb-paper);
+  --sidebar-foreground: var(--nb-ink);
+  --sidebar-primary: var(--nb-ink);
+  --sidebar-primary-foreground: var(--nb-white);
+  --sidebar-accent: var(--nb-grey-1);
+  --sidebar-accent-foreground: var(--nb-ink);
+  --sidebar-border: var(--nb-rule);
   --sidebar-ring: var(--nb-blue);
   /* Code colours live in the token layer too. */
   --code-keyword: #5b3d8a;
