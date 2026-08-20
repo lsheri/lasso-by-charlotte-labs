@@ -9,7 +9,9 @@ vi.mock("@tanstack/react-router", () => ({
   useRouterState: ({ select }: { select: (s: unknown) => unknown }) =>
     select({ location: { pathname: routerState.pathname } }),
   Link: (props: Record<string, unknown>) => (
-    <a className={props["className"] as string} aria-label={props["aria-label"] as string}>
+    <a className={props["className"] as string} aria-label={props["aria-label"] as string}
+      onClick={props["onClick"] as () => void}
+    >
       {props["children"] as never}
     </a>
   ),
