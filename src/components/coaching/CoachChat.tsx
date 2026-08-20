@@ -44,8 +44,10 @@ export function CoachChat({
   // The mobile Ask Lasso button belongs to whatever the page is about. Here that
   // is this question box, so bring it into view and put the cursor in it.
   useRegisterAskLasso(() => {
+    // iOS Safari scrolls on focus, which fights a smooth scroll started first.
+    // Focus without its own scroll, then bring the field into view.
+    inputRef.current?.focus({ preventScroll: true });
     inputRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-    inputRef.current?.focus();
   });
 
   async function submit(event: React.FormEvent) {
