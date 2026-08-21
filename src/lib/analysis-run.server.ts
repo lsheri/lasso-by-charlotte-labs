@@ -107,11 +107,30 @@ export async function runAnalysis(
       "There is nothing here to read. This work may no longer be shared with you.",
     );
   }
+  // One named check, resolved BEFORE any run row exists, so a retired or
+  // inapplicable check is refused honestly with nothing written. Only the id
+  // travels from the browser; the wording always comes from the record.
+  let singleCheck: { title: string; body: string } | null = null;
+  if (preset.id === "firm_checks" && data.check_id) {
+    const { resolveSingleCheck, CHECK_UNAVAILABLE_LINE } = await import("./firm-checks.server");
+    singleCheck = await resolveSingleCheck(supabase, {
+      orgId: profile.org_id,
+      ownerProfileId: target.ownerId,
+      workItemId: target.scopeId,
+      checkId: data.check_id,
+    });
+    if (!singleCheck) throw new Error(CHECK_UNAVAILABLE_LINE);
+  }
+
   const profileOrgId = profile.org_id;
   const presetId = preset.id;
 
-  const baseIdempotencyKey = `${preset.id}:${target.scopeType}:${target.scopeId}:${profile.id}`;
+  // A single check run is its own piece of work, so it never reuses the run
+  // row of "all checks" or of a different check.
+  const checkKeyPart = singleCheck && data.check_id ? `:check:${data.check_id}` : "";
+  const baseIdempotencyKey = `${preset.id}:${target.scopeType}:${target.scopeId}:${profile.id}${checkKeyPart}`;
   let idempotencyKey = baseIdempotencyKey;
+
   const { recordEvent } = await import("./telemetry.server");
   const scopeType = target.scopeType;
   let aiMeta: Awaited<ReturnType<(typeof import("./ai.server"))["resolveAiMeta"]>>;
