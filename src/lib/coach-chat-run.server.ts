@@ -206,6 +206,7 @@ export async function runCoachChat(
     subject_id: data.subject_id,
     scope: "engagement",
     question: data.question,
+    engagement_id: data.engagement_id,
   });
 
   const { usageDims } = await import("./ai-usage");

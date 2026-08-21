@@ -189,6 +189,7 @@ export async function runReflectTurn(
       answer: answerCat,
       profileId: profile.id,
       scopeMode: scope.mode,
+      scopeIds: scope.mode === "whole" ? [] : (scope.ids ?? []),
       title: session.title,
       manifest: catalogueManifest,
     });
@@ -355,6 +356,7 @@ export async function runReflectTurn(
     question: message,
     profileId: profile.id,
     scopeMode: scope.mode,
+    scopeIds: scope.mode === "whole" ? [] : (scope.ids ?? []),
     title: session.title,
     messageId: answerId,
   });
@@ -411,6 +413,8 @@ async function finishTurn(
     question: string;
     profileId: string;
     scopeMode: string;
+    /** The ids the scope genuinely targeted; never widened or invented. */
+    scopeIds?: string[] | undefined;
     title: string | null;
     messageId: number | null;
   },
@@ -424,12 +428,18 @@ async function finishTurn(
         : input.scopeMode === "tasks"
           ? "task"
           : "item";
+  // A question is only stamped with a scope it actually ran against: one
+  // engagement, or one piece of work. Anything wider stays unscoped.
+  const ids = input.scopeIds ?? [];
+  const single = ids.length === 1 ? ids[0]! : null;
   const { error: logError } = await supabase.from("query_log").insert({
     asker_id: input.profileId,
     subject_id: input.profileId,
     scope: scopeLabelForLog,
     question: input.question,
     answer_ref: input.messageId === null ? null : String(input.messageId),
+    engagement_id: input.scopeMode === "engagements" ? single : null,
+    work_item_id: input.scopeMode === "items" ? single : null,
   });
   if (logError) console.error("[query_log] insert failed:", logError.message);
 
@@ -450,6 +460,7 @@ async function persistTurn(
     answer: string;
     profileId: string;
     scopeMode: string;
+    scopeIds?: string[] | undefined;
     title: string | null;
     manifest?: ContextManifest | null;
   },
