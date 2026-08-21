@@ -1,21 +1,26 @@
-export type NavItem = { label: string; to: string };
+import type { GraphiteIconName } from "@/components/notebook/icons";
+
+export type NavItem = { label: string; to: string; icon: GraphiteIconName };
 export type NavGroup = { label: string; items: NavItem[]; emptyState?: string };
 
 export const navGroups: NavGroup[] = [
-  { label: "Connectors", items: [{ label: "Where work lives", to: "/connectors" }] },
-  { label: "Work", items: [{ label: "All work & mapping", to: "/work" }] },
+  {
+    label: "Connectors",
+    items: [{ label: "Where work lives", to: "/connectors", icon: "connectors" }],
+  },
+  { label: "Work", items: [{ label: "All work & mapping", to: "/work", icon: "work" }] },
   { label: "Engagements", items: [], emptyState: "No engagements yet" },
   {
     label: "Your work",
     items: [
-      { label: "Overview", to: "/overview" },
-      { label: "Reflect", to: "/reflect" },
-      { label: "AI record", to: "/ai-record" },
-      { label: "1:1 prep", to: "/one-on-one" },
-      { label: "Decision log", to: "/decisions" },
-      { label: "Firm view", to: "/firm" },
-      { label: "Members", to: "/members" },
-      { label: "Settings", to: "/settings" },
+      { label: "Overview", to: "/overview", icon: "overview" },
+      { label: "Reflect", to: "/reflect", icon: "reflect" },
+      { label: "AI record", to: "/ai-record", icon: "ai-record" },
+      { label: "1:1 prep", to: "/one-on-one", icon: "one-on-one" },
+      { label: "Decision log", to: "/decisions", icon: "decisions" },
+      { label: "Firm view", to: "/firm", icon: "firm" },
+      { label: "Members", to: "/members", icon: "members" },
+      { label: "Settings", to: "/settings", icon: "settings" },
     ],
   },
 ];
@@ -26,12 +31,12 @@ export const navGroups: NavGroup[] = [
  * items above are untouched.
  */
 export const coachNavGroups: NavGroup[] = [
-  { label: "Coaching", items: [{ label: "People you coach", to: "/coaching" }] },
+  { label: "Coaching", items: [{ label: "People you coach", to: "/coaching", icon: "members" }] },
   {
     label: "Your account",
     items: [
-      { label: "1:1 prep", to: "/one-on-one" },
-      { label: "Settings", to: "/settings" },
+      { label: "1:1 prep", to: "/one-on-one", icon: "one-on-one" },
+      { label: "Settings", to: "/settings", icon: "settings" },
     ],
   },
 ];

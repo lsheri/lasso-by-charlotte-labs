@@ -659,3 +659,223 @@
   padding-left: env(safe-area-inset-left);
   padding-right: env(safe-area-inset-right);
 }
+
+/* ==========================================================================
+   Notebook icons (pass 84). Ported verbatim from the Design Lab reference,
+   unscoped: production is the notebook. The draw-in and signature timings are
+   a deliberate authored exception to the 500ms product-motion ceiling; they
+   are decorative and only run on hover/focus/mount.
+   ========================================================================== */
+
+.nb-ico {
+  display: inline-block;
+  flex: none;
+  vertical-align: middle;
+  overflow: visible;
+}
+.nb-ico path {
+  stroke-dasharray: 1;
+  animation: nb-ico-draw 1440ms var(--nb-ease) both;
+  transform-box: fill-box;
+}
+
+a:hover .nb-ico[data-anim="1"] .nb-sig,
+a:focus-visible .nb-ico[data-anim="1"] .nb-sig,
+button:hover .nb-ico[data-anim="1"] .nb-sig,
+button:focus-visible .nb-ico[data-anim="1"] .nb-sig,
+[role="button"]:hover .nb-ico[data-anim="1"] .nb-sig,
+[role="button"]:focus-visible .nb-ico[data-anim="1"] .nb-sig,
+.nb-ico[data-anim="1"]:hover .nb-sig {
+  animation: var(--nb-sig) 1800ms var(--nb-ease) both;
+}
+.nb-ico[data-play="1"] .nb-sig {
+  animation: var(--nb-sig) 1920ms var(--nb-ease) 600ms both;
+}
+a:hover .nb-ico[data-icon="drag-handle"] .nb-sig:nth-of-type(2),
+button:hover .nb-ico[data-icon="drag-handle"] .nb-sig:nth-of-type(2),
+.nb-ico[data-icon="drag-handle"]:hover .nb-sig:nth-of-type(2) {
+  animation-delay: 90ms;
+}
+a:hover .nb-ico[data-icon="drag-handle"] .nb-sig:nth-of-type(3),
+button:hover .nb-ico[data-icon="drag-handle"] .nb-sig:nth-of-type(3),
+.nb-ico[data-icon="drag-handle"]:hover .nb-sig:nth-of-type(3) {
+  animation-delay: 180ms;
+}
+a:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
+button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
+.nb-ico[data-icon="close"]:hover .nb-sig:nth-of-type(2) {
+  animation-delay: 120ms;
+}
+
+@keyframes nb-ico-draw {
+  from { stroke-dashoffset: 1; }
+  to { stroke-dashoffset: 0; }
+}
+@keyframes nb-sig-seat {
+  0% { transform: translateY(0); }
+  45% { transform: translateY(1px); }
+  100% { transform: translateY(0); }
+}
+@keyframes nb-sig-lift {
+  0% { transform: translateY(0) rotate(0deg); }
+  40% { transform: translateY(-1.2px) rotate(-2deg); }
+  100% { transform: translateY(0) rotate(0deg); }
+}
+@keyframes nb-sig-flap {
+  0% { transform: rotate(0deg); }
+  45% { transform: rotate(-7deg); }
+  100% { transform: rotate(0deg); }
+}
+@keyframes nb-sig-rise {
+  0% { transform: translateY(0); }
+  45% { transform: translateY(-1.5px); }
+  100% { transform: translateY(0); }
+}
+@keyframes nb-sig-tilt {
+  0% { transform: rotate(0deg); }
+  45% { transform: rotate(4deg); }
+  100% { transform: rotate(0deg); }
+}
+@keyframes nb-sig-pop {
+  0% { transform: scale(1); }
+  45% { transform: scale(1.06); }
+  100% { transform: scale(1); }
+}
+@keyframes nb-sig-lean {
+  0% { transform: rotate(0deg); }
+  45% { transform: rotate(-4deg); }
+  100% { transform: rotate(0deg); }
+}
+@keyframes nb-sig-lean-in {
+  0% { transform: translateX(0); }
+  45% { transform: translateX(-1.2px); }
+  100% { transform: translateX(0); }
+}
+@keyframes nb-sig-scuff {
+  0% { transform: translate(0, 0); }
+  45% { transform: translate(0.8px, -0.8px); }
+  100% { transform: translate(0, 0); }
+}
+@keyframes nb-sig-nudge {
+  0% { transform: translateY(0); }
+  45% { transform: translateY(-1px); }
+  100% { transform: translateY(0); }
+}
+@keyframes nb-sig-slide {
+  0% { transform: translateX(0); }
+  45% { transform: translateX(2px); }
+  100% { transform: translateX(0); }
+}
+@keyframes nb-sig-flick {
+  0% { transform: rotate(0deg); }
+  45% { transform: rotate(-10deg); }
+  100% { transform: rotate(0deg); }
+}
+@keyframes nb-sig-sweep {
+  0% { transform: rotate(0deg); }
+  55% { transform: rotate(20deg); }
+  100% { transform: rotate(0deg); }
+}
+@keyframes nb-sig-scan {
+  0% { transform: translate(0, 0); }
+  45% { transform: translate(0.9px, 0.9px); }
+  100% { transform: translate(0, 0); }
+}
+@keyframes nb-sig-lens {
+  0% { transform: scale(1); }
+  45% { transform: scale(1.07); }
+  100% { transform: scale(1); }
+}
+@keyframes nb-sig-fly {
+  0% { transform: translate(0, 0); }
+  45% { transform: translate(1.4px, -1.4px); }
+  100% { transform: translate(0, 0); }
+}
+@keyframes nb-sig-pinch {
+  0% { transform: scale(1) rotate(0deg); }
+  45% { transform: scale(0.95) rotate(-4deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+@keyframes nb-sig-turn {
+  0% { transform: rotate(0deg); }
+  45% { transform: rotate(90deg); }
+  100% { transform: rotate(0deg); }
+}
+@keyframes nb-sig-flick-2 {
+  0% { transform: rotate(0deg); }
+  45% { transform: rotate(6deg); }
+  100% { transform: rotate(0deg); }
+}
+@keyframes nb-sig-forward {
+  0% { transform: translateX(0); }
+  45% { transform: translateX(1.6px); }
+  100% { transform: translateX(0); }
+}
+@keyframes nb-sig-wave {
+  0% { transform: translateY(0); }
+  45% { transform: translateY(-1.1px); }
+  100% { transform: translateY(0); }
+}
+@keyframes nb-sig-overshoot {
+  0% { transform: scale(1) rotate(0deg); }
+  45% { transform: scale(1.05) rotate(-2deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+@keyframes nb-sig-leap {
+  0% { transform: translate(0, 0); }
+  45% { transform: translate(1.2px, -1.2px); }
+  100% { transform: translate(0, 0); }
+}
+
+/* Reduced motion: icons are fully static. Disable, never decelerate. */
+@media (prefers-reduced-motion: reduce) {
+  .nb-ico path,
+  .nb-ico .nb-sig {
+    stroke-dasharray: none;
+    animation: none !important;
+    transform: none !important;
+  }
+}
+
+/* Sidebar grammar (pass 84). */
+.nb-group-header {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--nb-ink);
+}
+.nb-nav-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: var(--radius-control);
+  padding: 5px 8px;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--nb-mid);
+  transition:
+    background-color 120ms var(--nb-ease),
+    color 120ms var(--nb-ease);
+}
+.nb-nav-item:hover {
+  background: var(--nb-grey-1);
+  color: var(--nb-ink);
+}
+.nb-nav-item-active {
+  color: var(--nb-ink);
+  font-weight: 600;
+  background: var(--nb-grey-2);
+}
+.nb-nav-item-active::before {
+  content: "";
+  position: absolute;
+  left: -2px;
+  top: 4px;
+  bottom: 4px;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--nb-ink);
+}

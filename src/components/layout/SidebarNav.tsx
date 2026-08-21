@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 
 import { NewEngagementDialog } from "@/components/engagements/NewEngagementDialog";
+import { GraphiteIcon } from "@/components/notebook/icons";
 import { useDecisions } from "@/hooks/use-decisions";
 import { useEngagements } from "@/hooks/use-engagements";
 import { isBusinessOrg, useProfile } from "@/hooks/use-profile";
@@ -8,8 +9,8 @@ import { isBusinessOrg, useProfile } from "@/hooks/use-profile";
 import { coachNavGroups, navGroups } from "./nav-config";
 import { engagementDisplayCode, engagementDisplayTitle } from "@/lib/clients";
 
-const linkClass =
-  "rounded-md px-3 py-1.5 text-sm text-foreground/80 transition-colors hover:bg-accent-soft hover:text-accent-deep";
+const linkClass = "nb-nav-item";
+const activeProps = { className: "nb-nav-item-active" };
 
 export function SidebarNav({ onNavigate }: { onNavigate?: (() => void) | undefined }) {
   const { data: profile } = useProfile();
@@ -31,7 +32,7 @@ export function SidebarNav({ onNavigate }: { onNavigate?: (() => void) | undefin
       <nav className="flex flex-col gap-7">
         {coachNavGroups.map((group) => (
           <div key={group.label}>
-            <div className="micro-label px-3">{group.label}</div>
+            <div className="nb-group-header px-2">{group.label}</div>
             <div className="mt-2 flex flex-col gap-0.5">
               {group.items.map((item) => (
                 <Link
@@ -39,9 +40,10 @@ export function SidebarNav({ onNavigate }: { onNavigate?: (() => void) | undefin
                   to={item.to}
                   onClick={onNavigate}
                   className={linkClass}
-                  activeProps={{ className: "bg-accent-soft text-accent-deep font-medium" }}
+                  activeProps={activeProps}
                 >
-                  {item.label}
+                  <GraphiteIcon name={item.icon} size={16} />
+                  <span>{item.label}</span>
                 </Link>
               ))}
             </div>
@@ -55,7 +57,7 @@ export function SidebarNav({ onNavigate }: { onNavigate?: (() => void) | undefin
     <nav className="flex flex-col gap-7">
       {navGroups.map((group) => (
         <div key={group.label}>
-          <div className="micro-label px-3">{group.label}</div>
+          <div className="nb-group-header px-2">{group.label}</div>
           <div className="mt-2 flex flex-col gap-0.5">
             {group.items
               .filter((item) => !(isCoach && item.to === "/reflect"))
@@ -67,14 +69,15 @@ export function SidebarNav({ onNavigate }: { onNavigate?: (() => void) | undefin
                   to={item.to}
                   onClick={onNavigate}
                   className={linkClass}
-                  activeProps={{ className: "bg-accent-soft text-accent-deep font-medium" }}
+                  activeProps={activeProps}
                 >
-                  <span className="flex items-center justify-between gap-2">
-                    <span>{item.to === "/members" ? membersLabel : item.label}</span>
+                  <GraphiteIcon name={item.icon} size={16} />
+                  <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
+                    <span className="truncate">
+                      {item.to === "/members" ? membersLabel : item.label}
+                    </span>
                     {item.to === "/decisions" && decisionCount > 0 ? (
-                      <span className="rounded-full bg-muted px-2 py-0.5 font-mono text-[10px] text-muted-foreground">
-                        {decisionCount}
-                      </span>
+                      <span className="count-pill">{decisionCount}</span>
                     ) : null}
                   </span>
                 </Link>
@@ -89,25 +92,26 @@ export function SidebarNav({ onNavigate }: { onNavigate?: (() => void) | undefin
                     params={{ id: engagement.id }}
                     onClick={onNavigate}
                     className={linkClass}
-                    activeProps={{ className: "bg-accent-soft text-accent-deep font-medium" }}
+                    activeProps={activeProps}
                   >
-                    <span className="font-mono text-xs text-muted-foreground">
-                      {engagementDisplayCode(engagement) ?? "Folder"}
-                    </span>{" "}
-                    <span className="truncate">{engagementDisplayTitle(engagement)}</span>
+                    <GraphiteIcon name="engagement" size={16} />
+                    <span className="flex min-w-0 items-center gap-1.5">
+                      <span className="font-mono text-xs text-muted-foreground">
+                        {engagementDisplayCode(engagement) ?? "Folder"}
+                      </span>
+                      <span className="truncate">{engagementDisplayTitle(engagement)}</span>
+                    </span>
                   </Link>
                 ))}
                 {engagements && engagements.length === 0 ? (
-                  <p className="px-3 py-1.5 text-sm text-muted-foreground">No engagements yet</p>
+                  <p className="px-2 py-1.5 text-sm text-muted-foreground">No engagements yet</p>
                 ) : null}
                 <NewEngagementDialog
                   onDone={onNavigate}
                   trigger={
-                    <button
-                      type="button"
-                      className="rounded-md px-3 py-1.5 text-left text-sm text-accent-deep transition-colors hover:bg-accent-soft"
-                    >
-                      + New engagement
+                    <button type="button" className="nb-nav-item w-full text-left">
+                      <GraphiteIcon name="plus" size={16} />
+                      <span>New engagement</span>
                     </button>
                   }
                 />
@@ -115,7 +119,7 @@ export function SidebarNav({ onNavigate }: { onNavigate?: (() => void) | undefin
             ) : null}
 
             {group.emptyState && group.label !== "Engagements" ? (
-              <p className="px-3 py-1.5 text-sm text-muted-foreground">{group.emptyState}</p>
+              <p className="px-2 py-1.5 text-sm text-muted-foreground">{group.emptyState}</p>
             ) : null}
           </div>
         </div>

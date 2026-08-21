@@ -1,7 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import { GraphiteIcon } from "@/components/notebook/icons";
 import { useAskLassoHandler } from "@/components/reflect/ask-lasso-context";
 import { useProfile } from "@/hooks/use-profile";
 
@@ -78,7 +78,7 @@ export function AskLassoFab() {
 
   const label = (
     <>
-      <Sparkles className="h-4 w-4 shrink-0" aria-hidden />
+      <GraphiteIcon name="ask-lasso" size={16} />
       Ask Lasso
     </>
   );
