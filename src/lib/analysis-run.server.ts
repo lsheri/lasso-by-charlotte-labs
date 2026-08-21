@@ -11,9 +11,16 @@ export type AnalysisInput = {
   work_item_id?: string | undefined;
   engagement_id?: string | undefined;
   profile_id?: string | undefined;
+  /**
+   * One firm check, by id only. Never the check text: the server resolves the
+   * id through the caller's client and refuses if it is retired or no longer
+   * applies. Ignored by every preset other than firm_checks.
+   */
+  check_id?: string | undefined;
   /** "shown" when the person confirmed a two step activation before the run. */
   confirm_step?: "shown" | undefined;
 };
+
 
 export type AnalysisRunResult = {
   run_id: string;
