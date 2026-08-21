@@ -399,73 +399,93 @@ export function ReflectPage() {
             <>
               {scopeBar}
 
-              <div className="flex-1 space-y-4 overflow-y-auto px-5 py-5">
-                {(messages ?? []).length === 0 && analyses.results.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">
-                    Private to you. Your coach never sees this.
-                  </p>
-                ) : null}
-                {(messages ?? []).map((message) => (
-                  <div key={message.id}>
-                    <p
-                      className={`micro-label text-[color:var(--nb-blue)]${
-                        message.role === "user" ? "" : " nb-speaker-ai"
-                      }`}
-                    >
-                      {message.role === "user" ? "You" : "AI"}
+              <div className="nb-binder min-h-0 flex-1 overflow-y-auto">
+                <div className="nb-binder-body px-5">
+                  {(messages ?? []).length === 0 && analyses.results.length === 0 ? (
+                    <p className="nb-binder-line text-sm text-muted-foreground">
+                      Private to you. Your coach never sees this.
                     </p>
-                    {message.role === "user" ? (
-                      <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-foreground">
-                        {message.content}
+                  ) : null}
+                  {(messages ?? []).map((message) => (
+                    <div key={message.id}>
+                      <p
+                        className={`nb-binder-label${
+                          message.role === "user" ? "" : " nb-speaker-ai"
+                        }`}
+                      >
+                        {message.role === "user" ? "You" : "AI"}
                       </p>
-                    ) : (
-                      <>
-                        <MarkdownMessage content={message.content} />
-                        <ContextAudit manifest={parseManifest(message.context_manifest)} />
-                        <AnswerSources sources={sourcesByMessage?.[Number(message.id)] ?? []} />
-                      </>
-                    )}
-                  </div>
-                ))}
+                      {message.role === "user" ? (
+                        <p className="nb-binder-line whitespace-pre-wrap text-sm text-foreground">
+                          {message.content}
+                        </p>
+                      ) : (
+                        <>
+                          <MarkdownMessage content={message.content} variant="binder" />
+                          <div className="nb-binder-inset">
+                            <ContextAudit manifest={parseManifest(message.context_manifest)} />
+                            <AnswerSources
+                              sources={sourcesByMessage?.[Number(message.id)] ?? []}
+                            />
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  ))}
 
-                <InlineAnalysisBlocks results={analyses.results} profileId={profile?.id} />
+                  {analyses.results.length > 0 ? (
+                    <div className="nb-binder-inset">
+                      <InlineAnalysisBlocks results={analyses.results} profileId={profile?.id} />
+                    </div>
+                  ) : null}
 
-                {scopeNotes.map((note, index) => (
-                  <p key={`${note}:${index}`} className="text-xs text-muted-foreground">
-                    {note}
-                  </p>
-                ))}
+                  {scopeNotes.map((note, index) => (
+                    <p key={`${note}:${index}`} className="nb-binder-line text-xs text-muted-foreground">
+                      {note}
+                    </p>
+                  ))}
 
-                {pending && streamed ? (
-                  <div>
-                    <p className="micro-label nb-speaker-ai">AI</p>
-                    <MarkdownMessage content={streamed} />
-                  </div>
-                ) : null}
-                {pending ? (
-                  <ThinkingTrail
-                    items={itemsInScope(scope, all).map((item) => ({
-                      id: item.id,
-                      title: item.title,
-                    }))}
-                    finalPhase="Writing"
-                    manifest={liveManifest}
-                  />
-                ) : null}
-                {analyses.running ? (
-                  <>
-                    <ThinkingTrail
-                      items={itemsInScope(scope, all).map((item) => ({
-                        id: item.id,
-                        title: item.title,
-                      }))}
-                      finalPhase={`Applying ${analyses.running.label}`}
-                    />
-                    {analyses.streamed ? <MarkdownMessage content={analyses.streamed} /> : null}
-                  </>
-                ) : null}
-                {coverage?.truncated ? <CoverageNote {...coverage} /> : null}
-                <div ref={bottomRef} />
+                  {pending && streamed ? (
+                    <div>
+                      <p className="nb-binder-label nb-speaker-ai">AI</p>
+                      <MarkdownMessage content={streamed} variant="binder" className="nb-stream" />
+                    </div>
+                  ) : null}
+                  {pending ? (
+                    <div className="nb-binder-inset">
+                      <ThinkingTrail
+                        items={itemsInScope(scope, all).map((item) => ({
+                          id: item.id,
+                          title: item.title,
+                        }))}
+                        finalPhase="Writing"
+                        manifest={liveManifest}
+                      />
+                    </div>
+                  ) : null}
+                  {analyses.running ? (
+                    <>
+                      <div className="nb-binder-inset">
+                        <ThinkingTrail
+                          items={itemsInScope(scope, all).map((item) => ({
+                            id: item.id,
+                            title: item.title,
+                          }))}
+                          finalPhase={`Applying ${analyses.running.label}`}
+                        />
+                      </div>
+                      {analyses.streamed ? (
+                        <MarkdownMessage content={analyses.streamed} variant="binder" />
+                      ) : null}
+                    </>
+                  ) : null}
+                  {coverage?.truncated ? (
+                    <div className="nb-binder-inset">
+                      <CoverageNote {...coverage} />
+                    </div>
+                  ) : null}
+                  <div ref={bottomRef} />
+                </div>
               </div>
 
               {error || analyses.error ? (

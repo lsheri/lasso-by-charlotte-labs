@@ -690,7 +690,7 @@ button:focus-visible .nb-ico[data-anim="1"] path,
 [role="button"]:focus-visible .nb-ico[data-anim="1"] path,
 .nb-ico[data-anim="1"]:hover path,
 .nb-ico[data-anim="1"]:focus-visible path {
-  animation: nb-ico-draw var(--nb-ico-draw, 560ms) var(--nb-ease) both;
+  animation: nb-ico-draw var(--nb-ico-draw, 700ms) var(--nb-ease) both;
 }
 a:hover .nb-ico[data-anim="1"] .nb-sig,
 a:focus-visible .nb-ico[data-anim="1"] .nb-sig,
@@ -701,8 +701,8 @@ button:focus-visible .nb-ico[data-anim="1"] .nb-sig,
 .nb-ico[data-anim="1"]:hover .nb-sig,
 .nb-ico[data-anim="1"]:focus-visible .nb-sig {
   animation:
-    nb-ico-draw var(--nb-ico-draw, 560ms) var(--nb-ease) both,
-    var(--nb-sig) 600ms var(--nb-ease) var(--nb-ico-draw, 560ms) both;
+    nb-ico-draw var(--nb-ico-draw, 700ms) var(--nb-ease) both,
+    var(--nb-sig) 600ms var(--nb-ease) var(--nb-ico-draw, 700ms) both;
 }
 .nb-ico[data-play="1"] .nb-sig {
   animation: var(--nb-sig) 900ms var(--nb-ease) 300ms both;
@@ -710,17 +710,17 @@ button:focus-visible .nb-ico[data-anim="1"] .nb-sig,
 a:hover .nb-ico[data-icon="drag-handle"] .nb-sig:nth-of-type(2),
 button:hover .nb-ico[data-icon="drag-handle"] .nb-sig:nth-of-type(2),
 .nb-ico[data-icon="drag-handle"]:hover .nb-sig:nth-of-type(2) {
-  animation-delay: 0ms, calc(var(--nb-ico-draw, 560ms) + 120ms);
+  animation-delay: 0ms, calc(var(--nb-ico-draw, 700ms) + 120ms);
 }
 a:hover .nb-ico[data-icon="drag-handle"] .nb-sig:nth-of-type(3),
 button:hover .nb-ico[data-icon="drag-handle"] .nb-sig:nth-of-type(3),
 .nb-ico[data-icon="drag-handle"]:hover .nb-sig:nth-of-type(3) {
-  animation-delay: 0ms, calc(var(--nb-ico-draw, 560ms) + 240ms);
+  animation-delay: 0ms, calc(var(--nb-ico-draw, 700ms) + 240ms);
 }
 a:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 .nb-ico[data-icon="close"]:hover .nb-sig:nth-of-type(2) {
-  animation-delay: 0ms, calc(var(--nb-ico-draw, 560ms) + 180ms);
+  animation-delay: 0ms, calc(var(--nb-ico-draw, 700ms) + 180ms);
 }
 
 @keyframes nb-ico-draw {
@@ -729,87 +729,87 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 }
 @keyframes nb-sig-seat {
   0% { transform: translateY(0); }
-  45% { transform: translateY(1px); }
+  45% { transform: translateY(2px); }
   100% { transform: translateY(0); }
 }
 @keyframes nb-sig-lift {
   0% { transform: translateY(0) rotate(0deg); }
-  40% { transform: translateY(-1.2px) rotate(-2deg); }
+  40% { transform: translateY(-2.4px) rotate(-4deg); }
   100% { transform: translateY(0) rotate(0deg); }
 }
 @keyframes nb-sig-flap {
   0% { transform: rotate(0deg); }
-  45% { transform: rotate(-7deg); }
+  45% { transform: rotate(-14deg); }
   100% { transform: rotate(0deg); }
 }
 @keyframes nb-sig-rise {
   0% { transform: translateY(0); }
-  45% { transform: translateY(-1.5px); }
+  45% { transform: translateY(-3px); }
   100% { transform: translateY(0); }
 }
 @keyframes nb-sig-tilt {
   0% { transform: rotate(0deg); }
-  45% { transform: rotate(4deg); }
+  45% { transform: rotate(8deg); }
   100% { transform: rotate(0deg); }
 }
 @keyframes nb-sig-pop {
   0% { transform: scale(1); }
-  45% { transform: scale(1.06); }
+  45% { transform: scale(1.12); }
   100% { transform: scale(1); }
 }
 @keyframes nb-sig-lean {
   0% { transform: rotate(0deg); }
-  45% { transform: rotate(-4deg); }
+  45% { transform: rotate(-8deg); }
   100% { transform: rotate(0deg); }
 }
 @keyframes nb-sig-lean-in {
   0% { transform: translateX(0); }
-  45% { transform: translateX(-1.2px); }
+  45% { transform: translateX(-2.4px); }
   100% { transform: translateX(0); }
 }
 @keyframes nb-sig-scuff {
   0% { transform: translate(0, 0); }
-  45% { transform: translate(0.8px, -0.8px); }
+  45% { transform: translate(1.6px, -1.6px); }
   100% { transform: translate(0, 0); }
 }
 @keyframes nb-sig-nudge {
   0% { transform: translateY(0); }
-  45% { transform: translateY(-1px); }
+  45% { transform: translateY(-2px); }
   100% { transform: translateY(0); }
 }
 @keyframes nb-sig-slide {
   0% { transform: translateX(0); }
-  45% { transform: translateX(2px); }
+  45% { transform: translateX(4px); }
   100% { transform: translateX(0); }
 }
 @keyframes nb-sig-flick {
   0% { transform: rotate(0deg); }
-  45% { transform: rotate(-10deg); }
+  45% { transform: rotate(-20deg); }
   100% { transform: rotate(0deg); }
 }
 @keyframes nb-sig-sweep {
   0% { transform: rotate(0deg); }
-  55% { transform: rotate(20deg); }
+  55% { transform: rotate(40deg); }
   100% { transform: rotate(0deg); }
 }
 @keyframes nb-sig-scan {
   0% { transform: translate(0, 0); }
-  45% { transform: translate(0.9px, 0.9px); }
+  45% { transform: translate(1.8px, 1.8px); }
   100% { transform: translate(0, 0); }
 }
 @keyframes nb-sig-lens {
   0% { transform: scale(1); }
-  45% { transform: scale(1.07); }
+  45% { transform: scale(1.14); }
   100% { transform: scale(1); }
 }
 @keyframes nb-sig-fly {
   0% { transform: translate(0, 0); }
-  45% { transform: translate(1.4px, -1.4px); }
+  45% { transform: translate(2.8px, -2.8px); }
   100% { transform: translate(0, 0); }
 }
 @keyframes nb-sig-pinch {
   0% { transform: scale(1) rotate(0deg); }
-  45% { transform: scale(0.95) rotate(-4deg); }
+  45% { transform: scale(0.9) rotate(-8deg); }
   100% { transform: scale(1) rotate(0deg); }
 }
 @keyframes nb-sig-turn {
@@ -819,27 +819,27 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 }
 @keyframes nb-sig-flick-2 {
   0% { transform: rotate(0deg); }
-  45% { transform: rotate(6deg); }
+  45% { transform: rotate(12deg); }
   100% { transform: rotate(0deg); }
 }
 @keyframes nb-sig-forward {
   0% { transform: translateX(0); }
-  45% { transform: translateX(1.6px); }
+  45% { transform: translateX(3.2px); }
   100% { transform: translateX(0); }
 }
 @keyframes nb-sig-wave {
   0% { transform: translateY(0); }
-  45% { transform: translateY(-1.1px); }
+  45% { transform: translateY(-2.2px); }
   100% { transform: translateY(0); }
 }
 @keyframes nb-sig-overshoot {
   0% { transform: scale(1) rotate(0deg); }
-  45% { transform: scale(1.05) rotate(-2deg); }
+  45% { transform: scale(1.1) rotate(-4deg); }
   100% { transform: scale(1) rotate(0deg); }
 }
 @keyframes nb-sig-leap {
   0% { transform: translate(0, 0); }
-  45% { transform: translate(1.2px, -1.2px); }
+  45% { transform: translate(2.4px, -2.4px); }
   100% { transform: translate(0, 0); }
 }
 
@@ -1012,6 +1012,18 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   color: var(--nb-ink);
   font-weight: 600;
 }
+/* Unlayered author CSS beats Tailwind's layered md:hidden, so the desktop
+   hide has to live here too. */
+@media (min-width: 768px) {
+  .nb-tabbar {
+    display: none;
+  }
+}
+@media print {
+  .nb-tabbar {
+    display: none;
+  }
+}
 
 /* Reduced motion: pile and matrix swap instantly, both directions. */
 @media (prefers-reduced-motion: reduce) {
@@ -1126,7 +1138,7 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 .nb-binder-inset {
   /* Padding plus border must add up to a whole baseline, so an off-grid card
      never pushes the lines after it off the rules. */
-  padding: var(--nb-baseline) 10px calc(var(--nb-baseline) / 2) 10px;
+  padding: var(--nb-baseline) 10px;
 }
 
 /* The audit trail is a sticky note: the one yellow surface in the product,
