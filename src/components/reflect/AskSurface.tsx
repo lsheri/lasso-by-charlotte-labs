@@ -348,8 +348,12 @@ function AnalysesTab({
           onAuthorCheck={onClose}
           readsDetail={readsDetail}
           running={ask.analyses.running}
-          onRun={(preset: AnalysisPreset, target: ChipTarget, checkId?: string) =>
-            void ask.analyses.runPreset(preset, target, readsDetail, checkId)
+          onRun={(
+            preset: AnalysisPreset,
+            target: ChipTarget,
+            checkId?: string,
+            extraItemIds?: string[],
+          ) => void ask.analyses.runPreset(preset, target, readsDetail, checkId, extraItemIds)
           }
 
         />

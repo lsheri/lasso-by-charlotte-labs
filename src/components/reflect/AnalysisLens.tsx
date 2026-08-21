@@ -122,7 +122,7 @@ export function AnalysisLens({
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages?.length, pending]);
 
-  async function runPreset(preset: AnalysisPreset, checkId?: string) {
+  async function runPreset(preset: AnalysisPreset, checkId?: string, extraItemIds?: string[]) {
     if (pending) return;
     started.current = preset.id;
     setActive(preset);
@@ -146,6 +146,9 @@ export function AnalysisLens({
             : { work_item_id: target.id }),
           // The id alone: the check's wording is read from the record.
           ...(checkId ? { check_id: checkId } : {}),
+          ...(extraItemIds && extraItemIds.length > 0 && target.kind !== "engagement"
+            ? { extra_item_ids: extraItemIds }
+            : {}),
           profile_id: profileId,
         },
 
@@ -223,10 +226,10 @@ export function AnalysisLens({
         orgId={orgId}
         profileId={profileId}
         onCancel={() => setConfirming(null)}
-        onConfirm={() => {
+        onConfirm={(extraItemIds) => {
           const pending_ = confirming;
           setConfirming(null);
-          if (pending_) void runPreset(pending_.preset, pending_.check?.id);
+          if (pending_) void runPreset(pending_.preset, pending_.check?.id, extraItemIds);
         }}
 
       />
