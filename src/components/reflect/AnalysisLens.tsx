@@ -355,6 +355,22 @@ export function AnalysisLens({
           </Link>
         )}
       </footer>
+    </>
+  );
+
+  // Embedded inside the Ask surface there is no dialog shell: the same content
+  // fills the panel it was opened in. Every other mount keeps the slide over.
+  if (embedded) return <div className="flex min-h-0 flex-1 flex-col">{body}</div>;
+
+  return (
+    <SlideOver
+      open={open}
+      onOpenChange={onOpenChange}
+      title={active ? active.label : "Analyse this work"}
+      description="Observations over your own work"
+    >
+      {body}
     </SlideOver>
   );
+
 }
