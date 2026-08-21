@@ -238,14 +238,20 @@ export function AnalysisConfirm({
               ) : null}
               {isFirmChecks ? (
                 <li className="rounded-[var(--radius)] border border-border px-3 py-2">
-                  <p className="micro-label">Checks that apply</p>
+                  <p className="micro-label">
+                    {request?.check ? "The check that runs" : "Checks that apply"}
+                  </p>
                   <ul className="mt-1 space-y-0.5">
-                    {(checks ?? []).map((check) => (
-                      <li key={check.id} className="text-sm text-foreground">
-                        {check.title}
-                      </li>
-                    ))}
-                    {(checks ?? []).length === 0 ? (
+                    {request?.check ? (
+                      <li className="text-sm text-foreground">{request.check.title}</li>
+                    ) : (
+                      (checks ?? []).map((check) => (
+                        <li key={check.id} className="text-sm text-foreground">
+                          {check.title}
+                        </li>
+                      ))
+                    )}
+                    {!request?.check && (checks ?? []).length === 0 ? (
                       <li className="text-sm text-muted-foreground">
                         No checks apply to this work yet.
                       </li>
@@ -255,6 +261,7 @@ export function AnalysisConfirm({
               ) : null}
             </ul>
           </div>
+
 
           {isDeliverableRun ? (
             <div data-testid="deliverable-kind-block">
