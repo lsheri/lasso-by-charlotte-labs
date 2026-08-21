@@ -4,11 +4,79 @@ import type { Database } from "@/integrations/supabase/types";
 
 type Client = SupabaseClient<Database>;
 
+/** What a person meets when a check was retired between picking it and running. */
+export const CHECK_UNAVAILABLE_LINE =
+  "That check is no longer available for this work. It may have been retired or it no longer applies here.";
+
+export type CheckScopeRow = {
+  engagement_id: string | null;
+  subject_profile_id: string | null;
+};
+
+/**
+ * Whether one check applies to the work under analysis. Pure, so the scoping
+ * rule can be tested without a database: org wide checks apply everywhere,
+ * engagement checks only inside their engagement, person checks only to the
+ * person who owns the work.
+ */
+export function checkApplies(
+  check: CheckScopeRow,
+  args: { engagementIds: readonly string[]; ownerProfileId: string },
+): boolean {
+  const engagementOk =
+    check.engagement_id === null || args.engagementIds.includes(check.engagement_id);
+  const subjectOk =
+    check.subject_profile_id === null || check.subject_profile_id === args.ownerProfileId;
+  return engagementOk && subjectOk;
+}
+
+/** The engagements one piece of work is mapped into, read through the caller client. */
+export async function engagementIdsForWorkItem(
+  supabase: Client,
+  workItemId: string | null | undefined,
+): Promise<string[]> {
+  if (!workItemId) return [];
+  const { data: mapped } = await supabase
+    .from("work_item_tasks")
+    .select("tasks(engagement_id)")
+    .eq("work_item_id", workItemId);
+  return Array.from(
+    new Set(
+      (mapped ?? [])
+        .map((row) => (row.tasks as { engagement_id: string } | null)?.engagement_id)
+        .filter((id): id is string => Boolean(id)),
+    ),
+  );
+}
+
+/**
+ * ONE check, named by id only. The client never sends check text: the id is
+ * resolved here through the caller client, so RLS decides visibility, and the
+ * row still has to be active, in the caller's org, and applicable to this work.
+ * Null means refuse: the check was retired or does not apply any more.
+ */
+export async function resolveSingleCheck(
+  supabase: Client,
+  args: { orgId: string; ownerProfileId: string; workItemId?: string | null; checkId: string },
+): Promise<{ title: string; body: string } | null> {
+  const { data, error } = await supabase
+    .from("firm_checks")
+    .select("title, body, engagement_id, subject_profile_id, active, org_id")
+    .eq("id", args.checkId)
+    .maybeSingle();
+  if (error || !data) return null;
+  if (data.active !== true || data.org_id !== args.orgId) return null;
+  const engagementIds = await engagementIdsForWorkItem(supabase, args.workItemId);
+  if (!checkApplies(data, { engagementIds, ownerProfileId: args.ownerProfileId })) return null;
+  return { title: data.title, body: data.body };
+}
+
 /**
  * The active checks that apply to one piece of work: written for the whole org,
  * for the engagement this work is mapped into, or for the person who owns it.
  * Read through the caller client so RLS decides what is visible.
  */
+
 export async function applicableFirmChecks(
   supabase: Client,
   args: { orgId: string; ownerProfileId: string; workItemId?: string | null },
