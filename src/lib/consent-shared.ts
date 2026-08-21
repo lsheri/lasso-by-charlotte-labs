@@ -1,7 +1,7 @@
 import type { ConsentPurpose } from "./telemetry-v2-shared";
 
 /** The version of the plain language shown below. Bump it when the copy changes. */
-export const CONSENT_POLICY_VERSION = "dp-2026-08";
+export const CONSENT_POLICY_VERSION = "dp-2026-09";
 
 /** Highest granted purpose wins, and operate is always on. */
 export const PURPOSE_RANK: Record<ConsentPurpose, number> = {
@@ -31,15 +31,17 @@ export const PURPOSE_COPY: PurposeCopy[] = [
     purpose: "customer_analytics",
     title: "Analytics for your organisation",
     unlocks:
-      "Lets your admins see how your own teams are working with AI, using your data and nobody else's.",
-    declining: "Declining means your admins see no organisation level picture, only their own work.",
+      "Allows aggregate, team-level reporting for your admins. It never includes individual people's prompts or conversations. Reporting views are on the way; until then this records your firm's choice.",
+    declining:
+      "Declining means your admins will see no organisation-level picture, only their own work.",
   },
   {
     purpose: "deidentified_improvement",
     title: "Deidentified product improvement and benchmarking",
     unlocks:
-      "Lets us improve Lasso and show you how your patterns compare with similar organisations, using pseudonymous records with no names, no titles and no content.",
-    declining: "Declining means no comparison to other organisations, and your data shapes nothing outside your workspace.",
+      "Allows de-identified data to inform product improvement and future benchmarking. No names, titles or content are included. Comparison views are on the way; until then this records your firm's choice.",
+    declining:
+      "Declining means no comparison to other organisations, and your data shapes nothing outside your workspace.",
   },
   {
     purpose: "research",
