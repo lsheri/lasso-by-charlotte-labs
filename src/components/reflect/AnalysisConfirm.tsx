@@ -69,7 +69,8 @@ export function AnalysisConfirm({
   orgId?: string | undefined;
   profileId?: string | undefined;
   onCancel: () => void;
-  onConfirm: () => void;
+  /** The extra work kept ticked travels with the run. */
+  onConfirm: (extraItemIds: string[]) => void;
 }) {
   const target = request?.target ?? null;
   const preset = request?.preset ?? null;
@@ -127,6 +128,59 @@ export function AnalysisConfirm({
       return (rows ?? []).filter((row) => contentsUnread(row.meta as never)).length;
     },
   });
+
+  // Pass 95: an analysis reads the person's whole context by default, not the
+  // one item it was launched from. These are the other pieces of work mapped
+  // into the same engagement, every one of them ticked until they say
+  // otherwise.
+  const { data: companions } = useQuery({
+    queryKey: ["confirm-companions", target?.kind === "item" ? target.id : null],
+    enabled: target?.kind === "item",
+    queryFn: async (): Promise<ItemRow[]> => {
+      const itemId = (target as { id: string }).id;
+      const { data: mine } = await supabase
+        .from("work_item_tasks")
+        .select("tasks(engagement_id)")
+        .eq("work_item_id", itemId);
+      const engagementIds = Array.from(
+        new Set(
+          (mine ?? [])
+            .map((row) => (row as { tasks: { engagement_id: string } | null }).tasks?.engagement_id)
+            .filter((id): id is string => Boolean(id)),
+        ),
+      );
+      if (engagementIds.length === 0) return [];
+      const { data: tasks } = await supabase
+        .from("tasks")
+        .select("id")
+        .in("engagement_id", engagementIds);
+      const taskIds = (tasks ?? []).map((task) => task.id);
+      if (taskIds.length === 0) return [];
+      const { data: links } = await supabase
+        .from("work_item_tasks")
+        .select("work_item_id")
+        .in("task_id", taskIds);
+      const ids = Array.from(
+        new Set((links ?? []).map((row) => (row as { work_item_id: string }).work_item_id)),
+      ).filter((id) => id !== itemId);
+      if (ids.length === 0) return [];
+      const { data: rows } = await supabase
+        .from("work_items")
+        .select("id, title, type, source, source_vendor, source_meta, meta, content_ref")
+        .in("id", ids)
+        .order("created_at", { ascending: false })
+        .limit(60);
+      return (rows ?? []) as ItemRow[];
+    },
+  });
+  const [excluded, setExcluded] = useState<Set<string>>(new Set());
+  const [showContext, setShowContext] = useState(false);
+  useEffect(() => {
+    setExcluded(new Set());
+    setShowContext(false);
+  }, [target?.kind === "item" ? target.id : null]);
+  const companionList = target?.kind === "item" ? (companions ?? []) : [];
+  const extraIds = companionList.map((row) => row.id).filter((id) => !excluded.has(id));
 
   const { data: briefs } = useBriefs(profileId);
   const invalidateWork = useInvalidateWorkItems();
@@ -186,11 +240,11 @@ export function AnalysisConfirm({
                 .catch((error: unknown) => toast.error((error as Error).message))
                 .finally(() => {
                   setSaving(false);
-                  onConfirm();
+                  onConfirm(extraIds);
                 });
               return;
             }
-            onConfirm();
+            onConfirm(extraIds);
           }}
           className="space-y-4"
         >
@@ -262,6 +316,66 @@ export function AnalysisConfirm({
             </ul>
           </div>
 
+          {companionList.length > 0 ? (
+            <div data-testid="confirm-context-block">
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <p className="micro-label">
+                  {extraIds.length === companionList.length
+                    ? `Plus the rest of this engagement (${companionList.length})`
+                    : `Plus ${extraIds.length} of ${companionList.length} in this engagement`}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setShowContext((prev) => !prev)}
+                  className="text-xs text-accent-deep underline underline-offset-2"
+                >
+                  {showContext ? "Hide" : "Choose what to include"}
+                </button>
+              </div>
+              {showContext ? (
+                <div className="mt-2 max-h-52 space-y-1 overflow-y-auto rounded-[var(--radius)] border border-border p-2">
+                  <div className="flex gap-3 pb-1">
+                    <button
+                      type="button"
+                      onClick={() => setExcluded(new Set())}
+                      className="text-xs text-accent-deep underline underline-offset-2"
+                    >
+                      Select all
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setExcluded(new Set(companionList.map((row) => row.id)))}
+                      className="text-xs text-accent-deep underline underline-offset-2"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                  {companionList.map((row) => (
+                    <label key={row.id} className="flex items-start gap-2 py-1 text-sm">
+                      <input
+                        type="checkbox"
+                        aria-label={row.title}
+                        checked={!excluded.has(row.id)}
+                        onChange={() =>
+                          setExcluded((prev) => {
+                            const next = new Set(prev);
+                            if (next.has(row.id)) next.delete(row.id);
+                            else next.add(row.id);
+                            return next;
+                          })
+                        }
+                        className="mt-1"
+                      />
+                      <span className="min-w-0 break-words leading-snug text-foreground">
+                        <SourceMark item={row as never} className="mr-1.5" />
+                        {row.title}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
 
           {isDeliverableRun ? (
             <div data-testid="deliverable-kind-block">

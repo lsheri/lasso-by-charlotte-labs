@@ -16,6 +16,8 @@ export type AnalysisTarget = {
   scope: ContextScope;
   /** Mapped items in scope, used only to decide whether a preset may run. */
   itemsInScope: number;
+  /** Extra work added on top of the launching item, in the order chosen. */
+  extraIds: string[];
   /** The owner's own label for what kind of deliverable this is, when set. */
   deliverableKind?: DeliverableKind | null;
 };
@@ -57,6 +59,21 @@ export async function engagementItemIds(
 }
 
 /**
+ * The extra ids the person kept ticked, filtered to what they may actually
+ * read. Anything unreadable simply falls away rather than failing the run.
+ */
+async function readableIds(
+  supabase: Db,
+  extra: readonly string[] | null | undefined,
+  already: readonly string[],
+): Promise<string[]> {
+  const wanted = Array.from(new Set(extra ?? [])).filter((id) => !already.includes(id));
+  if (wanted.length === 0) return [];
+  const { data } = await supabase.from("work_items").select("id").in("id", wanted);
+  return (data ?? []).map((row) => row.id);
+}
+
+/**
  * What a run is pointed at, whatever its scope. Thread and deliverable runs
  * name a work item; engagement runs name an engagement.
  */
@@ -67,6 +84,12 @@ export async function resolveAnalysisTarget(
     profileId: string;
     workItemId?: string | null;
     engagementId?: string | null;
+    /**
+     * Extra work the person kept ticked in the confirm step. They widen an
+     * item scoped run beyond the one item it was launched from. Each id is
+     * read back through the caller's client, so RLS decides what survives.
+     */
+    extraItemIds?: readonly string[] | null;
   },
 ): Promise<AnalysisTarget> {
   if (args.scope === "engagement") {
@@ -85,6 +108,7 @@ export async function resolveAnalysisTarget(
       scopeType: "engagement",
       scope: { mode: "engagements", ids: [engagement.id] },
       itemsInScope: ids.length,
+      extraIds: [],
       deliverableKind: null,
     };
   }
@@ -98,8 +122,10 @@ export async function resolveAnalysisTarget(
   if (error) throw new Error(error.message);
   if (!item) throw new Error("That item is gone.");
 
-  const ids =
+  const extras = await readableIds(supabase, args.extraItemIds, []);
+  const base =
     args.scope === "deliverable" ? await deliverableScopeIds(supabase, item.id) : [item.id];
+  const ids = Array.from(new Set([...base, ...extras]));
 
   return {
     ownerId: item.owner_id,
@@ -108,6 +134,7 @@ export async function resolveAnalysisTarget(
     scopeType: args.scope === "deliverable" ? "deliverable" : "item",
     scope: { mode: "items", ids },
     itemsInScope: ids.length,
+    extraIds: extras.filter((id) => !base.includes(id)).sort(),
     deliverableKind: deliverableKindOf(item.meta),
   };
 }

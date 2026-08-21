@@ -178,8 +178,8 @@ export function ReflectPage() {
       target={chipTarget}
       readsDetail={readsDetail}
       running={analyses.running}
-      onRun={(preset, checkId) =>
-        void analyses.runPreset(preset, chipTarget, readsDetail, checkId)
+      onRun={(preset, checkId, extraItemIds) =>
+        void analyses.runPreset(preset, chipTarget, readsDetail, checkId, extraItemIds)
       }
 
       firmCheckCount={(firmChecks ?? []).length}

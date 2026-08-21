@@ -244,6 +244,7 @@ export function useChatAnalyses(profileId: string | undefined, orgId: string | u
     target: ChipTarget,
     readsDetail: string,
     checkId?: string,
+    extraItemIds?: string[],
   ) {
     if (running || target.kind === "none" || !profileId) return;
     setRunning(preset);
@@ -261,6 +262,10 @@ export function useChatAnalyses(profileId: string | undefined, orgId: string | u
             : { work_item_id: target.id }),
           // Only the id travels: the check's wording is read server side.
           ...(checkId ? { check_id: checkId } : {}),
+          // The rest of the context the person kept ticked in the confirm step.
+          ...(extraItemIds && extraItemIds.length > 0 && target.kind !== "engagement"
+            ? { extra_item_ids: extraItemIds }
+            : {}),
           profile_id: profileId,
         },
 
@@ -405,7 +410,7 @@ export function AnalysisChips({
   readsDetail: string;
   running: AnalysisPreset | null;
   /** checkId names one firm check; absent means the preset's own behaviour. */
-  onRun: (preset: AnalysisPreset, checkId?: string) => void;
+  onRun: (preset: AnalysisPreset, checkId?: string, extraItemIds?: string[]) => void;
 
   isCoach?: boolean;
   className?: string;
@@ -494,10 +499,10 @@ export function AnalysisChips({
         orgId={orgId}
         profileId={profileId}
         onCancel={() => setConfirming(null)}
-        onConfirm={() => {
+        onConfirm={(extraItemIds) => {
           const pending = confirming;
           setConfirming(null);
-          if (pending) onRun(pending.preset, pending.check?.id);
+          if (pending) onRun(pending.preset, pending.check?.id, extraItemIds);
         }}
       />
       <FirmSection
@@ -655,7 +660,12 @@ export function SelectionAnalysisChips({
   firmCheckCount?: number;
   readsDetail: string;
   running: AnalysisPreset | null;
-  onRun: (preset: AnalysisPreset, target: ChipTarget, checkId?: string) => void;
+  onRun: (
+    preset: AnalysisPreset,
+    target: ChipTarget,
+    checkId?: string,
+    extraItemIds?: string[],
+  ) => void;
   className?: string;
   orgName?: string | undefined;
   canAuthorChecks?: boolean | undefined;
@@ -694,10 +704,16 @@ export function SelectionAnalysisChips({
         orgId={orgId}
         profileId={profileId}
         onCancel={() => setConfirming(null)}
-        onConfirm={() => {
+        onConfirm={(extraItemIds) => {
           const pending = confirming;
           setConfirming(null);
-          if (pending) onRun(pending.request.preset, pending.target, pending.request.check?.id);
+          if (pending)
+            onRun(
+              pending.request.preset,
+              pending.target,
+              pending.request.check?.id,
+              extraItemIds,
+            );
         }}
       />
       <FirmSection

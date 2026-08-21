@@ -17,6 +17,12 @@ export type AnalysisInput = {
    * applies. Ignored by every preset other than firm_checks.
    */
   check_id?: string | undefined;
+  /**
+   * Work the person kept ticked in the confirm step, widening an item scoped
+   * run to the rest of the context they chose. Ignored for engagement runs,
+   * whose scope is already every mapped item.
+   */
+  extra_item_ids?: string[] | undefined;
   /** "shown" when the person confirmed a two step activation before the run. */
   confirm_step?: "shown" | undefined;
 };
@@ -93,6 +99,7 @@ export async function runAnalysis(
     profileId: profile.id,
     workItemId: data.work_item_id ?? null,
     engagementId: data.engagement_id ?? null,
+    extraItemIds: data.extra_item_ids ?? null,
   });
   const isOwner = target.ownerId === profile.id;
   if (!isOwner && !preset.coachMayRun) throw new Response("Forbidden", { status: 403 });
@@ -131,7 +138,13 @@ export async function runAnalysis(
   // A single check run is its own piece of work, so it never reuses the run
   // row of "all checks" or of a different check.
   const checkKeyPart = singleCheck && data.check_id ? `:check:${data.check_id}` : "";
-  const baseIdempotencyKey = `${preset.id}:${target.scopeType}:${target.scopeId}:${profile.id}${checkKeyPart}`;
+  // A run over a wider set of work is a different run, so the reuse key has
+  // to carry that set and not only the item it was launched from.
+  const extraKeyPart =
+    target.scopeType === "engagement" || target.extraIds.length === 0
+      ? ""
+      : `:with:${target.extraIds.join(",")}`;
+  const baseIdempotencyKey = `${preset.id}:${target.scopeType}:${target.scopeId}:${profile.id}${checkKeyPart}${extraKeyPart}`;
   let idempotencyKey = baseIdempotencyKey;
 
   const { recordEvent } = await import("./telemetry.server");
