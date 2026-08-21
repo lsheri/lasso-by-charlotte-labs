@@ -1138,7 +1138,7 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 .nb-binder-inset {
   /* Padding plus border must add up to a whole baseline, so an off-grid card
      never pushes the lines after it off the rules. */
-  padding: var(--nb-baseline) 10px calc(var(--nb-baseline) / 2) 10px;
+  padding: var(--nb-baseline) 10px;
 }
 
 /* The audit trail is a sticky note: the one yellow surface in the product,
