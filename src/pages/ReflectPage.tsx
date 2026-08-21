@@ -178,7 +178,10 @@ export function ReflectPage() {
       target={chipTarget}
       readsDetail={readsDetail}
       running={analyses.running}
-      onRun={(preset) => void analyses.runPreset(preset, chipTarget, readsDetail)}
+      onRun={(preset, checkId) =>
+        void analyses.runPreset(preset, chipTarget, readsDetail, checkId)
+      }
+
       firmCheckCount={(firmChecks ?? []).length}
       orgName={profile?.org_name}
       orgId={profile?.org_id}
