@@ -7,7 +7,14 @@ import { MarkdownMessage } from "@/components/markdown/MarkdownMessage";
 import { AnalysisInfoPanel } from "@/components/reflect/AnalysisInfoPanel";
 import { AnalysisConfirm, type AnalysisConfirmRequest } from "@/components/reflect/AnalysisConfirm";
 import { FindingLabel } from "@/components/reflect/FindingLabel";
+import {
+  FIRM_CHECK_BUBBLE_CLASS,
+  FirmCheckBubbles,
+  runAllChecksLabel,
+} from "@/components/reflect/FirmCheckBubbles";
+import { useFirmChecks, type FirmCheck } from "@/hooks/use-firm-checks";
 import { HandoffDrafts } from "@/components/reflect/HandoffDrafts";
+
 import { supabase } from "@/integrations/supabase/client";
 import { isBriefItem } from "@/lib/brief-shared";
 import {
