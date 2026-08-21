@@ -126,7 +126,18 @@ export const setDataUse = createServerFn({ method: "POST" })
     for (const purpose of CONSENT_PURPOSES) {
       if (current[purpose] && PURPOSE_RANK[purpose] > PURPOSE_RANK[tier]) tier = purpose;
     }
-    await supabaseAdmin.from("orgs").update({ data_use_tier: tier }).eq("id", profile.org_id);
+    const { error: tierError } = await supabaseAdmin
+      .from("orgs")
+      .update({ data_use_tier: tier })
+      .eq("id", profile.org_id);
+    if (tierError) {
+      console.error("[consent] tier update failed", {
+        orgId: profile.org_id,
+        tier,
+        message: tierError.message,
+      });
+    }
+
 
     const { recordEventV2 } = await import("./telemetry-v2.server");
     const eventName = data.granted
