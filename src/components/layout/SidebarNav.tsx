@@ -9,6 +9,8 @@ import { isBusinessOrg, useProfile } from "@/hooks/use-profile";
 
 import {
   groupEngagementsByClient,
+  isSyntheticShelf,
+  UNMAPPED_SHELF_ID,
   readCollapsedClients,
   writeCollapsedClients,
   type NavEngagement,
@@ -24,12 +26,16 @@ const activeProps = { className: "nb-nav-item-active" };
 function EngagementRow({
   engagement,
   nested,
+  hideCode,
   onNavigate,
 }: {
   engagement: NavEngagement;
   nested?: boolean;
+  /** Inside the Unmapped shelf the shelf already says it; the code adds nothing. */
+  hideCode?: boolean;
   onNavigate?: (() => void) | undefined;
 }) {
+  const code = hideCode ? null : (engagementDisplayCode(engagement) ?? "Folder");
   return (
     <Link
       to="/engagements/$id"
@@ -38,11 +44,9 @@ function EngagementRow({
       className={nested ? `${linkClass} nb-nav-item-nested` : linkClass}
       activeProps={activeProps}
     >
-      <GraphiteIcon name="engagement" size={16} />
+      <GraphiteIcon name={nested ? "chevron-right" : "engagement"} size={nested ? 14 : 16} />
       <span className="flex min-w-0 items-center gap-1.5">
-        <span className="font-mono text-xs text-muted-foreground">
-          {engagementDisplayCode(engagement) ?? "Folder"}
-        </span>
+        {code ? <span className="font-mono text-xs text-muted-foreground">{code}</span> : null}
         <span className="truncate">{engagementDisplayTitle(engagement)}</span>
       </span>
     </Link>
@@ -155,12 +159,20 @@ export function SidebarNav({ onNavigate }: { onNavigate?: (() => void) | undefin
                         onClick={() => toggleClient(shelf.clientId)}
                         className={`${linkClass} nb-nav-shelf w-full text-left`}
                       >
+                        <GraphiteIcon name="engagement" size={16} />
+                        <span className="flex min-w-0 flex-1 items-center gap-1.5">
+                          <span className="truncate">{shelf.name}</span>
+                          {isSyntheticShelf(shelf.clientId) ? (
+                            <span className="font-mono text-[10px] text-muted-foreground">
+                              · {shelf.engagements.length}
+                            </span>
+                          ) : null}
+                        </span>
                         <GraphiteIcon
                           name="chevron-right"
-                          size={14}
+                          size={13}
                           className={collapsed ? "" : "rotate-90"}
                         />
-                        <span className="truncate">{shelf.name}</span>
                       </button>
 
                       {collapsed
@@ -170,6 +182,7 @@ export function SidebarNav({ onNavigate }: { onNavigate?: (() => void) | undefin
                               key={engagement.id}
                               engagement={engagement}
                               nested
+                              hideCode={shelf.clientId === UNMAPPED_SHELF_ID}
                               onNavigate={onNavigate}
                             />
                           ))}
