@@ -1167,4 +1167,8 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
     animation: none !important;
     opacity: 1;
   }
+  .nb-pile-card {
+    transition: none !important;
+    transition-delay: 0ms !important;
+  }
 }
