@@ -24,6 +24,7 @@ import { RowAction, WorkRow } from "@/components/work/WorkRow";
 import { EngagementFold, WorkSection } from "@/components/work/WorkSection";
 import { WorkPile } from "@/components/work/WorkPile";
 import { ConversationChips } from "@/components/work/ConversationChips";
+import { ConversationCard } from "@/components/work/ConversationCard";
 import { FlaggedMarker, isFlaggedRestatement } from "@/components/work/FlaggedMarker";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -203,9 +204,9 @@ export function WorkPage() {
         key={group.key}
         group={group}
         variant={variant}
-        onOpen={(item) => setPeek({ entry: group, focusId: item.id })}
+        onOpen={(item: WorkItemRow) => setPeek({ entry: group, focusId: item.id })}
         actions={rowActions(head, variant, group.items)}
-        footerFor={(piece) =>
+        footerFor={(piece: WorkItemRow) =>
           isFlaggedRestatement(piece) ? <FlaggedMarker item={piece} /> : undefined
         }
       />
