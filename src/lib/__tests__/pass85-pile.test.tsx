@@ -1,10 +1,9 @@
 // @vitest-environment jsdom
 import { readFileSync } from "node:fs";
-import { render, screen, fireEvent, cleanup } from "@testing-library/react";
+import { cleanup } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { BUCKETS, bucketFor } from "@/components/work/work-buckets";
-import { WorkPile } from "@/components/work/WorkPile";
 import type { WorkItemRow } from "@/lib/work-types";
 
 afterEach(cleanup);
@@ -43,46 +42,20 @@ describe("pass 85 type matrix", () => {
   });
 });
 
-describe("pass 85 pile", () => {
-  const entries = [
-    item("a", "document", "Scope note"),
-    item("b", "deck", "Steerco deck"),
-    item("c", "ai_thread", "Claude thread"),
-  ];
-
-  it("shows the stack first and resolves to the matrix from the toggle", () => {
-    render(<WorkPile entries={entries} renderEntry={(e) => <div>{(e as WorkItemRow).title}</div>} />);
-    expect(screen.getByRole("button", { name: /Open as matrix/ })).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Matrix" }));
-    expect(screen.getByText("Documents")).toBeTruthy();
-    expect(screen.getByText("Steerco deck")).toBeTruthy();
-  });
-
-  it("pins the matrix when the rows themselves are needed", () => {
-    render(
-      <WorkPile
-        entries={entries}
-        forceMatrix
-        renderEntry={(e) => <div>{(e as WorkItemRow).title}</div>}
-      />,
-    );
-    expect(screen.queryByRole("button", { name: /Open as matrix/ })).toBeNull();
-    expect(screen.getByText("Claude thread")).toBeTruthy();
-  });
-});
-
 describe("pass 85 css", () => {
   const css = readFileSync("src/styles.css", "utf8");
 
-  it("ships the quad surface, the stacked pile card and the tab bar", () => {
+  // Pass 94 replaced the stacked pile with the scatter field; the quad surface
+  // and the tab bar survive the swap.
+  it("ships the quad surface, the paper card and the tab bar", () => {
     expect(css).toContain(".nb-quad");
-    expect(css).toContain('.nb-pile-card[data-stacked="1"]');
+    expect(css).toContain(".nb-paper");
     expect(css).toContain(".nb-tabbar");
   });
 
   it("swaps instantly under reduced motion", () => {
     const block = css.slice(css.lastIndexOf("@media (prefers-reduced-motion: reduce)"));
-    expect(block).toContain(".nb-pile-card");
+    expect(block).toContain(".nb-paper");
     expect(block).toContain("transition: none !important");
   });
 });
