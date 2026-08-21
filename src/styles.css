@@ -1330,6 +1330,10 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 .nb-spider-static { display: none; }
 
 @media (prefers-reduced-motion: reduce) {
+  .nb-note-caret,
+  .nb-hi {
+    transition: none !important;
+  }
   .nb-mark path {
     stroke-dasharray: none;
     animation: none !important;
@@ -1498,4 +1502,56 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 @keyframes nb-mark-draw {
   from { stroke-dashoffset: 1; }
   to { stroke-dashoffset: 0; }
+}
+
+/* ── Engagement notes: two orange sticky notes, shut until you want them ──
+   The engagement page carries exactly two of these. Closed is the resting
+   state; the whole head is the toggle, and the actions inside wear the one
+   highlighter yellow so the next move is never in doubt. */
+.nb-note {
+  background: #fdead0;
+  border: 1px solid #e8bf8a;
+  border-radius: 6px;
+  box-shadow: 0 1px 0 rgb(17 20 19 / 0.06);
+  color: var(--nb-ink);
+}
+.nb-note-head {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  text-align: left;
+  min-height: 48px;
+}
+.nb-note-body {
+  border-top: 1px solid #e8bf8a;
+  padding: 12px 14px 14px;
+}
+.nb-note-caret {
+  transition: transform 200ms var(--nb-ease);
+}
+.nb-note[data-open="true"] .nb-note-caret {
+  transform: rotate(90deg);
+}
+
+/* The highlighter. Used only inside a note, only on things you can act on. */
+.nb-hi {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  border: 1px solid #e0c33a;
+  background: #fdf0a0;
+  color: var(--nb-ink);
+  padding: 6px 12px;
+  font-family: var(--font-mono, ui-monospace), monospace;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  transition: background-color 160ms var(--nb-ease);
+}
+.nb-hi:hover {
+  background: #fbe775;
 }

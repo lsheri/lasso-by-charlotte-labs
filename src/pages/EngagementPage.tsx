@@ -9,6 +9,7 @@ import { EditEngagementDialog } from "@/components/engagements/EditEngagementDia
 import { EngagementCanvas, type CanvasTask } from "@/components/engagements/EngagementCanvas";
 import { EngagementBriefSection } from "@/components/engagements/EngagementBriefSection";
 import { SharedWithSection } from "@/components/engagements/SharedWithSection";
+import { EngagementNote } from "@/components/engagements/EngagementNote";
 import { InviteDialog } from "@/components/invites/InviteDialog";
 import { SubjectCoachingSection } from "@/components/coaching/SubjectCoachingSection";
 import { ReflectDock } from "@/components/reflect/ReflectDock";
@@ -117,97 +118,80 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
         />
 
         {profile && profile.role !== "coach" ? (
-          <section className="mt-5">
-            <p className="micro-label micro-label-section">Coaching</p>
-            <div className="mt-2 flex flex-wrap items-center gap-2">
-              {!isQuickFolder && hasCoaches ? (
-                <a
-                  href="#shared-with"
-                  className="rounded-full border border-accent bg-accent-soft px-3 py-1 font-mono text-[11px] uppercase tracking-[0.08em] text-foreground transition-colors hover:opacity-80"
-                >
-                  Share with a coach
-                </a>
-              ) : null}
-              {!isQuickFolder ? (
-                <a
-                  href="#shared-with"
-                  className="rounded-full border border-border bg-card px-3 py-1 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
-                >
-                  {(coaches.data ?? []).length === 0
+          <div className="mt-5 grid gap-3 md:grid-cols-2">
+            <EngagementNote
+              title="Coaching and sharing"
+              summary={
+                isQuickFolder
+                  ? "Quick folder, not shareable"
+                  : (coaches.data ?? []).length === 0
                     ? "Not shared with anyone"
-                    : `Shared with ${coaches.data?.length} coach${(coaches.data?.length ?? 0) === 1 ? "" : "es"}`}
-                </a>
+                    : `Shared with ${coaches.data?.length} coach${(coaches.data?.length ?? 0) === 1 ? "" : "es"}`
+              }
+            >
+              <div className="flex flex-wrap items-center gap-2">
+                {profile.role === "admin" && !isQuickFolder ? (
+                  <InviteDialog
+                    engagementId={engagementId}
+                    trigger={
+                      <button type="button" className="nb-hi">
+                        {hasCoaches ? "Invite a new coach" : "Invite a coach"}
+                      </button>
+                    }
+                  />
+                ) : null}
+                <button type="button" onClick={() => setPrepOpen(true)} className="nb-hi">
+                  Prepare a 1:1
+                </button>
+              </div>
+              {profile.role !== "admin" && isBusinessOrg(profile) && !isQuickFolder ? (
+                <p className="mt-2 text-xs text-muted-foreground">{INVITE_ADMIN_ONLY_LINE}</p>
               ) : null}
-              {profile.role === "admin" && !isQuickFolder ? (
-                <InviteDialog
+              <div className="mt-4">
+                <SharedWithSection
                   engagementId={engagementId}
-                  trigger={
-                    <button
-                      type="button"
-                      className="rounded-full border border-border bg-card px-3 py-1 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
-                    >
-                      {hasCoaches ? "Invite a new coach" : "Invite a coach"}
-                    </button>
-                  }
+                  orgId={profile.org_id}
+                  quickFolder={isQuickFolder}
+                  personalOrg={!isBusinessOrg(profile)}
                 />
-              ) : null}
-              <button
-                type="button"
-                onClick={() => setPrepOpen(true)}
-                className="rounded-full border border-border bg-card px-3 py-1 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
-              >
-                Prepare a 1:1
-              </button>
-            </div>
-            {profile.role !== "admin" && isBusinessOrg(profile) && !isQuickFolder ? (
-              <p className="mt-2 text-xs text-muted-foreground">{INVITE_ADMIN_ONLY_LINE}</p>
-            ) : null}
-          </section>
+              </div>
+            </EngagementNote>
+
+            <EngagementNote
+              title="Brief and details"
+              summary={engagement.brief ?? "No brief yet"}
+            >
+              <div className="space-y-3">
+                <div>
+                  <p className="micro-label">Client</p>
+                  <p className="mt-1 text-sm text-foreground">
+                    {clientDisplayName(engagement) ?? "Not set"}
+                  </p>
+                </div>
+                <div>
+                  <p className="micro-label">Brief</p>
+                  <p className="mt-1 whitespace-pre-wrap text-sm text-foreground">
+                    {engagement.brief ?? "Not set"}
+                  </p>
+                </div>
+                {membership.data?.isMember ? (
+                  <EditEngagementDialog engagement={engagement} />
+                ) : null}
+                <EngagementBriefSection
+                  engagementId={engagementId}
+                  profileId={profile.id}
+                  orgId={profile.org_id}
+                  taskIds={(tasksQuery.data ?? []).map((task) => task.id)}
+                  hasMappedWork={(tasksQuery.data ?? []).some(
+                    (task) => (task.work_item_tasks ?? []).length > 0,
+                  )}
+                />
+              </div>
+            </EngagementNote>
+          </div>
         ) : null}
 
-        <section className="mt-4 rounded-[var(--radius)] border border-border bg-card px-5 py-4 shadow-card">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <p className="micro-label micro-label-section">Details</p>
-            {membership.data?.isMember ? <EditEngagementDialog engagement={engagement} /> : null}
-          </div>
-          <div className="mt-3 space-y-3">
-            <div>
-              <p className="micro-label">Client</p>
-              <p className="mt-1 text-sm text-foreground">
-                {clientDisplayName(engagement) ?? "Not set"}
-              </p>
-            </div>
-            <div>
-              <p className="micro-label">Brief</p>
-              <p className="mt-1 whitespace-pre-wrap text-sm text-foreground">
-                {engagement.brief ?? "Not set"}
-              </p>
-            </div>
-          </div>
-        </section>
-
       </header>
-
-      {profile && profile.role !== "coach" ? (
-        <SharedWithSection
-          engagementId={engagementId}
-          orgId={profile.org_id}
-          quickFolder={isQuickFolder}
-          personalOrg={!isBusinessOrg(profile)}
-        />
-      ) : null}
-
-      {profile && profile.role !== "coach" ? (
-        <EngagementBriefSection
-          engagementId={engagementId}
-          profileId={profile.id}
-          orgId={profile.org_id}
-          taskIds={(tasksQuery.data ?? []).map((task) => task.id)}
-          hasMappedWork={(tasksQuery.data ?? []).some(
-            (task) => (task.work_item_tasks ?? []).length > 0,
-          )}
-        />
-      ) : null}
 
       <EngagementCanvas
         engagementId={engagementId}

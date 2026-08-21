@@ -47,12 +47,13 @@ describe("90.2 analyses move into Ask", () => {
 describe("90.3 header regroup", () => {
   const page = read("src/pages/EngagementPage.tsx");
 
-  it("has a coaching section holding every coaching affordance", () => {
-    expect(page).toContain(">Coaching<");
-    expect(page).toContain("Share with a coach");
+  // Pass 95: the coaching affordances now live inside an orange sticky note
+  // that is shut by default, so the section heading became the note title.
+  it("has a coaching note holding every coaching affordance", () => {
+    expect(page).toContain('title="Coaching and sharing"');
+    expect(page).toContain("SharedWithSection");
     expect(page).toContain("Prepare a 1:1");
     expect(page).toContain("Invite a coach");
-    expect(page).toContain("#shared-with");
   });
 
   it("keeps the existing gates", () => {
@@ -61,8 +62,8 @@ describe("90.3 header regroup", () => {
     expect(page).toContain('profile.role === "admin"');
   });
 
-  it("merges About into a details section with the edit dialog", () => {
-    expect(page).toContain(">Details<");
+  it("merges About into a brief note with the edit dialog", () => {
+    expect(page).toContain('title="Brief and details"');
     expect(page).toContain("EditEngagementDialog");
     expect(page).not.toContain("About this engagement");
     expect(page).not.toContain("aboutOpen");
