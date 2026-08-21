@@ -135,17 +135,20 @@ export async function runAnalysis(
   const profileOrgId = profile.org_id;
   const presetId = preset.id;
 
-  // A single check run is its own piece of work, so it never reuses the run
-  // row of "all checks" or of a different check.
-  const checkKeyPart = singleCheck && data.check_id ? `:check:${data.check_id}` : "";
-  // A run over a wider set of work is a different run, so the reuse key has
-  // to carry that set and not only the item it was launched from.
-  const extraKeyPart =
-    target.scopeType === "engagement" || target.extraIds.length === 0
-      ? ""
-      : `:with:${target.extraIds.join(",")}`;
-  const baseIdempotencyKey = `${preset.id}:${target.scopeType}:${target.scopeId}:${profile.id}${checkKeyPart}${extraKeyPart}`;
+  // A single check run is its own piece of work, and a run over a wider set of
+  // work is its own run too, so the reuse key carries the anchor, the check
+  // and the extras it was given.
+  const { analysisIdempotencyKey } = await import("./analysis-key");
+  const baseIdempotencyKey = analysisIdempotencyKey({
+    presetId: preset.id,
+    scopeType: target.scopeType,
+    scopeId: target.scopeId,
+    profileId: profile.id,
+    checkId: singleCheck && data.check_id ? data.check_id : null,
+    extraIds: target.extraIds,
+  });
   let idempotencyKey = baseIdempotencyKey;
+
 
   const { recordEvent } = await import("./telemetry.server");
   const scopeType = target.scopeType;

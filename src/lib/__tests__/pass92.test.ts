@@ -60,8 +60,11 @@ describe("92.1 server side single check", () => {
   });
 
   it("keeps a single check run apart from the run all result", () => {
-    expect(server).toContain(":check:${data.check_id}");
+    // Pass 95 moved the key into analysis-key; the check id still shapes it.
+    expect(server).toContain("checkId: singleCheck && data.check_id ? data.check_id : null");
+    expect(read("src/lib/analysis-key.ts")).toContain(":check:");
   });
+
 
   it("applies an org wide check anywhere", () => {
     expect(

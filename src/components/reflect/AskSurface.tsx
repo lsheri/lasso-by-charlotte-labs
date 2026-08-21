@@ -353,7 +353,16 @@ function AnalysesTab({
             target: ChipTarget,
             checkId?: string,
             extraItemIds?: string[],
-          ) => void ask.analyses.runPreset(preset, target, readsDetail, checkId, extraItemIds)
+            anchorItemId?: string | null,
+          ) =>
+            void ask.analyses.runPreset(
+              preset,
+              target,
+              readsDetail,
+              checkId,
+              extraItemIds,
+              anchorItemId,
+            )
           }
 
         />
