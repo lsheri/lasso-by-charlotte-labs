@@ -226,7 +226,7 @@ export function AiRecordPage() {
                       running={analyses.running}
                       orgId={profile?.org_id}
                       profileId={profile?.id}
-                      onRun={(preset) =>
+                      onRun={(preset, checkId) =>
                         void analyses.runPreset(
                           preset,
                           {
@@ -236,8 +236,10 @@ export function AiRecordPage() {
                             itemCount: group.items.length,
                           },
                           "every piece of work mapped into this engagement, oldest first",
+                          checkId,
                         )
                       }
+
                     />
                     {analyses.running ? (
                       <>
