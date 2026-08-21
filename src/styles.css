@@ -1142,6 +1142,9 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   margin-top: var(--nb-baseline);
   margin-bottom: var(--nb-baseline);
 }
+.nb-sticky :is(p, div) {
+  line-height: var(--nb-baseline);
+}
 .nb-sticky .nb-sticky-toggle {
   color: var(--nb-ink);
   min-height: calc(var(--nb-baseline) * 2);

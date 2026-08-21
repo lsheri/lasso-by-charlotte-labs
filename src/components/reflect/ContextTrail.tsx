@@ -156,10 +156,10 @@ export function ContextAudit({ manifest }: { manifest: ContextManifest | null })
         </span>
       </button>
       {open ? (
-        <div className={`${MONO} mt-2 space-y-2 border-l border-[#e3d27f] pl-3`}>
+        <div className={`${MONO} mt-[1.75rem] border-l border-[#e3d27f] pl-3`}>
           {manifest.engagement ? <p>Engagement: {manifest.engagement.name}</p> : null}
           {manifest.items.length > 0 ? (
-            <div className="space-y-1">
+            <div>
               <p className="uppercase tracking-[0.08em]">Read</p>
               {manifest.items.map((item) => (
                 <p key={item.id || item.title} className="break-words">
@@ -179,7 +179,7 @@ export function ContextAudit({ manifest }: { manifest: ContextManifest | null })
             </p>
           ) : null}
           {manifest.excluded.length > 0 ? (
-            <div className="space-y-1 opacity-70">
+            <div className="opacity-70">
               <p className="uppercase tracking-[0.08em]">Not read</p>
               {manifest.excluded.map((entry) => (
                 <p key={entry.title} className="break-words">
