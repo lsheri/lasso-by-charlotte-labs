@@ -1,4 +1,6 @@
 import { useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,7 +36,9 @@ export function ChecksLibrary({
   runCount: number;
 }) {
   const { data: profile } = useProfile();
+  const queryClient = useQueryClient();
   const canAuthor = profile?.role === "admin" || profile?.role === "lead";
+
   const { data: checks } = useFirmCheckLibrary(profileId);
   const setActive = useSetFirmCheckActive(profileId);
   const { add } = useWriteFirmCheck();
