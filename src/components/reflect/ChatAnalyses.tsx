@@ -239,7 +239,12 @@ export function useChatAnalyses(profileId: string | undefined, orgId: string | u
   const [streamed, setStreamed] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  async function runPreset(preset: AnalysisPreset, target: ChipTarget, readsDetail: string) {
+  async function runPreset(
+    preset: AnalysisPreset,
+    target: ChipTarget,
+    readsDetail: string,
+    checkId?: string,
+  ) {
     if (running || target.kind === "none" || !profileId) return;
     setRunning(preset);
     setStreamed("");
@@ -254,8 +259,11 @@ export function useChatAnalyses(profileId: string | undefined, orgId: string | u
           ...(target.kind === "engagement"
             ? { engagement_id: target.id }
             : { work_item_id: target.id }),
+          // Only the id travels: the check's wording is read server side.
+          ...(checkId ? { check_id: checkId } : {}),
           profile_id: profileId,
         },
+
         (delta) => setStreamed((prev) => prev + delta),
       );
       const { data } = await supabase
