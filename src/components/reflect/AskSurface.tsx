@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { useState } from "react";
 
 import { AnswerSources } from "@/components/reflect/AnswerSources";
 import { CoverageNote } from "@/components/reflect/CoverageNote";
@@ -10,6 +11,7 @@ import {
 import { GraphiteIcon, type GraphiteIconName } from "@/components/notebook/icons";
 import { MarkdownMessage } from "@/components/markdown/MarkdownMessage";
 import { ContextAudit, ThinkingTrail } from "@/components/reflect/ContextTrail";
+import { AnalysisLens } from "@/components/reflect/AnalysisLens";
 import { SaveForOneOnOneDialog } from "@/components/oneonone/SaveForOneOnOne";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -37,6 +39,7 @@ const TABS: { id: AskTab; label: string; icon: GraphiteIconName }[] = [
   { id: "messages", label: "Messages", icon: "messages" },
   { id: "history", label: "History", icon: "history" },
   { id: "analyses", label: "Analyses", icon: "analyses" },
+  { id: "analyse", label: "Analyse engagement", icon: "analyses" },
 ];
 
 export function AskTabs({ tab, onTab }: { tab: AskTab; onTab: (tab: AskTab) => void }) {
@@ -219,7 +222,13 @@ function MessagesTab({ ask }: { ask: AskLasso }) {
 }
 
 /** Only the chats that belong to this engagement, and nothing until we know. */
+const HISTORY_DEFAULT_SHOWN = 2;
+
 function HistoryTab({ ask }: { ask: AskLasso }) {
+  const [expanded, setExpanded] = useState(false);
+  const sessions = ask.sessions ?? [];
+  const shown = expanded ? sessions : sessions.slice(0, HISTORY_DEFAULT_SHOWN);
+
   return (
     <div className="min-h-0 flex-1 space-y-1 overflow-y-auto px-4 py-4">
       <button
@@ -234,24 +243,43 @@ function HistoryTab({ ask }: { ask: AskLasso }) {
           <NbDots label="Loading earlier sessions" />
           <span className="text-sm text-muted-foreground">Finding this engagement's chats</span>
         </div>
-      ) : (ask.sessions ?? []).length === 0 ? (
+      ) : sessions.length === 0 ? (
         <p className="text-sm text-muted-foreground">No earlier chats on this engagement yet.</p>
       ) : (
-        (ask.sessions ?? []).map((row) => (
-          <button
-            key={row.id}
-            type="button"
-            onClick={() => ask.openSession(row.id)}
-            className={`block min-h-11 w-full truncate text-left text-sm transition-colors hover:text-foreground ${
-              row.id === ask.sessionId ? "text-foreground" : "text-muted-foreground"
-            }`}
-          >
-            {row.title ?? "Untitled"}{" "}
-            <span className="font-mono text-[10px] uppercase tracking-[0.08em]">
-              {new Date(row.created_at).toLocaleDateString()}
-            </span>
-          </button>
-        ))
+        <>
+          {shown.map((row) => (
+            <button
+              key={row.id}
+              type="button"
+              onClick={() => ask.openSession(row.id)}
+              className={`block min-h-11 w-full truncate text-left text-sm transition-colors hover:text-foreground ${
+                row.id === ask.sessionId ? "text-foreground" : "text-muted-foreground"
+              }`}
+            >
+              {row.title ?? "Untitled"}{" "}
+              <span className="font-mono text-[10px] uppercase tracking-[0.08em]">
+                {new Date(row.created_at).toLocaleDateString()}
+              </span>
+            </button>
+          ))}
+          {sessions.length > HISTORY_DEFAULT_SHOWN ? (
+            <button
+              type="button"
+              aria-expanded={expanded}
+              onClick={() => setExpanded((v) => !v)}
+              className="mt-1 flex min-h-11 w-full items-center gap-1.5 rounded-[var(--radius-control)] border border-border px-3 text-left font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+            >
+              <GraphiteIcon
+                name="chevron-right"
+                size={14}
+                className={expanded ? "rotate-[-90deg]" : "rotate-90"}
+              />
+              <span>
+                {expanded ? "Show fewer chats" : `Show all ${sessions.length} chats`}
+              </span>
+            </button>
+          ) : null}
+        </>
       )}
     </div>
   );
@@ -407,6 +435,7 @@ export function AskSurface({
   engagementTitle,
   profileId,
   orgId,
+  itemCount,
   onClose,
   mobile,
 }: {
@@ -417,6 +446,8 @@ export function AskSurface({
   engagementTitle: string;
   profileId: string;
   orgId: string;
+  /** Mapped pieces of work in this engagement, already counted by the page. */
+  itemCount: number;
   onClose: () => void;
   mobile?: boolean;
 }) {
@@ -441,6 +472,22 @@ export function AskSurface({
           engagementTitle={engagementTitle}
           profileId={profileId}
           onClose={onClose}
+        />
+      ) : null}
+
+      {tab === "analyse" ? (
+        <AnalysisLens
+          embedded
+          open
+          onOpenChange={() => onTab("messages")}
+          target={{
+            kind: "engagement",
+            id: engagementId,
+            title: engagementTitle,
+            itemCount,
+          }}
+          profileId={profileId}
+          orgId={orgId}
         />
       ) : null}
 

@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { useState } from "react";
 
 import { NewEngagementDialog } from "@/components/engagements/NewEngagementDialog";
 import { GraphiteIcon } from "@/components/notebook/icons";
@@ -6,11 +7,47 @@ import { useDecisions } from "@/hooks/use-decisions";
 import { useEngagements } from "@/hooks/use-engagements";
 import { isBusinessOrg, useProfile } from "@/hooks/use-profile";
 
+import {
+  groupEngagementsByClient,
+  readCollapsedClients,
+  writeCollapsedClients,
+  type NavEngagement,
+} from "@/lib/nav-groups";
+
 import { coachNavGroups, navGroups } from "./nav-config";
 import { engagementDisplayCode, engagementDisplayTitle } from "@/lib/clients";
 
 const linkClass = "nb-nav-item";
 const activeProps = { className: "nb-nav-item-active" };
+
+/** One engagement row, at top level or nested under a client shelf. */
+function EngagementRow({
+  engagement,
+  nested,
+  onNavigate,
+}: {
+  engagement: NavEngagement;
+  nested?: boolean;
+  onNavigate?: (() => void) | undefined;
+}) {
+  return (
+    <Link
+      to="/engagements/$id"
+      params={{ id: engagement.id }}
+      onClick={onNavigate}
+      className={nested ? `${linkClass} nb-nav-item-nested` : linkClass}
+      activeProps={activeProps}
+    >
+      <GraphiteIcon name="engagement" size={16} />
+      <span className="flex min-w-0 items-center gap-1.5">
+        <span className="font-mono text-xs text-muted-foreground">
+          {engagementDisplayCode(engagement) ?? "Folder"}
+        </span>
+        <span className="truncate">{engagementDisplayTitle(engagement)}</span>
+      </span>
+    </Link>
+  );
+}
 
 export function SidebarNav({ onNavigate }: { onNavigate?: (() => void) | undefined }) {
   const { data: profile } = useProfile();
@@ -25,6 +62,22 @@ export function SidebarNav({ onNavigate }: { onNavigate?: (() => void) | undefin
   const canSeeFirmView = canManageMembers && isBusinessOrg(profile);
   // A solo workspace has no roster to administer, only the coaches it invited.
   const membersLabel = isBusinessOrg(profile) ? "Members" : "Your coaches";
+
+  // Engagements sit under their client, with quick folders and clientless
+  // engagements flat at top level. Grouping reads only the joined relation.
+  const { groups, flat } = groupEngagementsByClient(
+    (engagements ?? []) as unknown as NavEngagement[],
+  );
+  const [collapsedClients, setCollapsedClients] = useState<string[]>(() => readCollapsedClients());
+  function toggleClient(clientId: string) {
+    setCollapsedClients((prev) => {
+      const next = prev.includes(clientId)
+        ? prev.filter((id) => id !== clientId)
+        : [...prev, clientId];
+      writeCollapsedClients(next);
+      return next;
+    });
+  }
 
   // A coach gets their own short nav. Worker and admin items are unchanged.
   if (isCoach) {
@@ -85,24 +138,43 @@ export function SidebarNav({ onNavigate }: { onNavigate?: (() => void) | undefin
 
             {group.label === "Engagements" ? (
               <>
-                {(engagements ?? []).map((engagement) => (
-                  <Link
+                {flat.map((engagement) => (
+                  <EngagementRow
                     key={engagement.id}
-                    to="/engagements/$id"
-                    params={{ id: engagement.id }}
-                    onClick={onNavigate}
-                    className={linkClass}
-                    activeProps={activeProps}
-                  >
-                    <GraphiteIcon name="engagement" size={16} />
-                    <span className="flex min-w-0 items-center gap-1.5">
-                      <span className="font-mono text-xs text-muted-foreground">
-                        {engagementDisplayCode(engagement) ?? "Folder"}
-                      </span>
-                      <span className="truncate">{engagementDisplayTitle(engagement)}</span>
-                    </span>
-                  </Link>
+                    engagement={engagement}
+                    onNavigate={onNavigate}
+                  />
                 ))}
+                {groups.map((shelf) => {
+                  const collapsed = collapsedClients.includes(shelf.clientId);
+                  return (
+                    <div key={shelf.clientId}>
+                      <button
+                        type="button"
+                        aria-expanded={!collapsed}
+                        onClick={() => toggleClient(shelf.clientId)}
+                        className={`${linkClass} w-full text-left`}
+                      >
+                        <GraphiteIcon
+                          name="chevron-right"
+                          size={14}
+                          className={collapsed ? "" : "rotate-90"}
+                        />
+                        <span className="truncate">{shelf.name}</span>
+                      </button>
+                      {collapsed
+                        ? null
+                        : shelf.engagements.map((engagement) => (
+                            <EngagementRow
+                              key={engagement.id}
+                              engagement={engagement}
+                              nested
+                              onNavigate={onNavigate}
+                            />
+                          ))}
+                    </div>
+                  );
+                })}
                 {engagements && engagements.length === 0 ? (
                   <p className="px-2 py-1.5 text-sm text-muted-foreground">No engagements yet</p>
                 ) : null}

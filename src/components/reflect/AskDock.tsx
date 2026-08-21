@@ -22,8 +22,10 @@ export function AskDock(props: {
   engagementTitle: string;
   profileId: string;
   orgId: string;
+  itemCount: number;
 }) {
-  const { open, onOpenChange, engagementId, engagementTitle, profileId, orgId } = props;
+  const { open, onOpenChange, engagementId, engagementTitle, profileId, orgId, itemCount } =
+    props;
   const { width, setWidth, tab, setTab } = useAskDockState();
   const ask = useAskLasso({ open, engagementId, engagementTitle, profileId, orgId });
   const dragging = useRef(false);
@@ -92,6 +94,7 @@ export function AskDock(props: {
         engagementTitle={engagementTitle}
         profileId={profileId}
         orgId={orgId}
+        itemCount={itemCount}
         onClose={() => onOpenChange(false)}
       />
     </aside>

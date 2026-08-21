@@ -18,6 +18,8 @@ export function ReflectDock(props: {
   engagementTitle: string;
   profileId: string;
   orgId: string;
+  /** Mapped pieces of work, counted once by the page and threaded down. */
+  itemCount: number;
 }) {
   const isMobile = useIsMobile();
   return isMobile ? <AskSheet {...props} /> : <AskDock {...props} />;
