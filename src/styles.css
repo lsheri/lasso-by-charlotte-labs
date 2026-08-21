@@ -851,6 +851,10 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
     animation: none !important;
     transform: none !important;
   }
+  .nb-mark path {
+    stroke-dasharray: none;
+    animation: none !important;
+  }
 }
 
 /* Sidebar grammar (pass 84). */
@@ -1259,6 +1263,10 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .nb-mark path {
+    stroke-dasharray: none;
+    animation: none !important;
+  }
   .nb-dot,
   .nb-stream {
     animation: none !important;
@@ -1396,4 +1404,21 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 }
 .nb-canvas-dot-active {
   background: var(--nb-ink);
+}
+
+/* ==========================================================================
+   Graphite marks (pass 88). Three strokes, drawn only on a human action.
+   Same idiom as the icons: pathLength 1, dash offset 1 to 0, under 300ms.
+   ========================================================================== */
+.nb-mark {
+  overflow: visible;
+}
+.nb-mark path {
+  fill: none;
+  stroke-dasharray: 1;
+  animation: nb-mark-draw 270ms var(--nb-ease) both;
+}
+@keyframes nb-mark-draw {
+  from { stroke-dashoffset: 1; }
+  to { stroke-dashoffset: 0; }
 }
