@@ -153,15 +153,19 @@ describe("90.5 sidebar grouping", () => {
 
   it("groups by client id and sorts rows by code", () => {
     const { groups } = groupEngagementsByClient(rows);
-    expect(groups).toHaveLength(1);
+    // Pass 92: real client shelves first, the synthetic Internal shelf last.
+    expect(groups).toHaveLength(2);
     expect(groups[0]?.name).toBe("Acme");
     expect(groups[0]?.engagements.map((e) => e.code)).toEqual(["SF-001", "SF-002"]);
+    expect(groups[1]?.name).toBe("Internal");
   });
 
-  it("keeps quick folders, clientless and label only engagements flat", () => {
-    const { flat } = groupEngagementsByClient(rows);
-    expect(flat.map((e) => e.id).sort()).toEqual(["e3", "e4", "e5"]);
+  it("keeps quick folders flat and collects the rest under Internal", () => {
+    const { groups, flat } = groupEngagementsByClient(rows);
+    expect(flat.map((e) => e.id)).toEqual(["e3"]);
+    expect(groups[1]?.engagements.map((e) => e.id).sort()).toEqual(["e4", "e5"]);
   });
+
 
   it("renders nested rows with an indented variant", () => {
     expect(read("src/components/layout/SidebarNav.tsx")).toContain("nb-nav-item-nested");
