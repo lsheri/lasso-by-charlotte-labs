@@ -1,6 +1,4 @@
 import { useRef, useState } from "react";
-import { useRegisterAskLasso } from "@/components/reflect/ask-lasso-context";
-
 import { Button } from "@/components/ui/button";
 import { ThinkingIndicator, WorkingLabel } from "@/components/common/Working";
 import { MarkdownMessage } from "@/components/markdown/MarkdownMessage";
@@ -41,14 +39,9 @@ export function CoachChat({
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // The mobile Ask Lasso button belongs to whatever the page is about. Here that
-  // is this question box, so bring it into view and put the cursor in it.
-  useRegisterAskLasso(() => {
-    // iOS Safari scrolls on focus, which fights a smooth scroll started first.
-    // Focus without its own scroll, then bring the field into view.
-    inputRef.current?.focus({ preventScroll: true });
-    inputRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-  });
+  // Pass 87: a coach's Ask lives in its own tab (CoachAskSheet), so this box no
+  // longer registers itself as the mobile Ask target. Nothing coach facing
+  // touches the member Ask machinery.
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();

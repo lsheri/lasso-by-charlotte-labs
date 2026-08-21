@@ -1,6 +1,7 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useState } from "react";
 
+import { CoachAskSheet } from "@/components/coaching/CoachAskSheet";
 import { GraphiteIcon, type GraphiteIconName } from "@/components/notebook/icons";
 import { FeedbackDialog } from "@/components/feedback/FeedbackWidget";
 import { useAskLassoHandler } from "@/components/reflect/ask-lasso-context";
@@ -23,6 +24,7 @@ export function MobileTabBar() {
   const path = useRouterState({ select: (s) => s.location.pathname });
   const handler = useAskLassoHandler();
   const [youOpen, setYouOpen] = useState(false);
+  const [coachAskOpen, setCoachAskOpen] = useState(false);
   const [engOpen, setEngOpen] = useState(false);
   const { data: engagements } = useEngagements(profile?.id);
 
@@ -52,10 +54,11 @@ export function MobileTabBar() {
         { label: "Where work lives", to: "/connectors", icon: "connectors" },
       ];
 
-  const tabs: (Dest | { label: string; icon: GraphiteIconName; action: "ask" | "you" | "engagements" })[] = isCoach
+  const tabs: (Dest | { label: string; icon: GraphiteIconName; action: "ask" | "coach-ask" | "you" | "engagements" })[] = isCoach
     ? [
         { label: "Coaching", to: "/coaching", icon: "members" },
         { label: "1:1 prep", to: "/one-on-one", icon: "one-on-one" },
+        { label: "Ask", icon: "ask-lasso", action: "coach-ask" },
         { label: "You", icon: "overview", action: "you" },
       ]
     : [
@@ -64,6 +67,7 @@ export function MobileTabBar() {
         { label: "Ask", icon: "ask-lasso", action: "ask" },
         { label: "You", icon: "overview", action: "you" },
       ];
+
 
   function askLasso() {
     if (handler) handler();
@@ -98,11 +102,13 @@ export function MobileTabBar() {
               type="button"
               onClick={() => {
                 if (tab.action === "ask") askLasso();
+                else if (tab.action === "coach-ask") setCoachAskOpen(true);
                 else if (tab.action === "engagements") setEngOpen(true);
                 else setYouOpen(true);
               }}
               className={`nb-tab ${
                 (tab.action === "you" && youOpen) ||
+                (tab.action === "coach-ask" && coachAskOpen) ||
                 (tab.action === "engagements" && (engOpen || path.startsWith("/engagements")))
                   ? "nb-tab-active"
                   : ""
@@ -114,6 +120,8 @@ export function MobileTabBar() {
           ),
         )}
       </nav>
+
+      {isCoach ? <CoachAskSheet open={coachAskOpen} onOpenChange={setCoachAskOpen} /> : null}
 
       <Sheet open={engOpen} onOpenChange={setEngOpen}>
         <SheetContent
