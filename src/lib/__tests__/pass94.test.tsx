@@ -145,8 +145,10 @@ describe("94.3 scatter css", () => {
   });
 
   it("renders the organised grid on touch and under reduced motion", () => {
-    const mobile = css.indexOf("@media (max-width: 767px)");
-    expect(mobile).toBeGreaterThan(css.indexOf('.nb-scatter[data-scatter="1"] .nb-paper'));
+    const base = css.indexOf('.nb-scatter[data-scatter="1"] .nb-paper');
+    expect(base).toBeGreaterThan(0);
+    // The responsive override must come after the base rule it overrides.
+    expect(css.indexOf("@media (max-width: 767px)", base)).toBeGreaterThan(base);
     const reduced = css.slice(css.lastIndexOf("@media (prefers-reduced-motion: reduce)"));
     expect(reduced).toContain(".nb-paper");
     expect(reduced).toContain("transform: none !important");
