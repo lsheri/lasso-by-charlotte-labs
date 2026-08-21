@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+
 import { describe, expect, it, vi } from "vitest";
 
 import {
@@ -148,3 +150,36 @@ describe("shared write helpers keep the list behaviour", () => {
   });
 });
 
+
+/**
+ * The pointer path is component state (refs, window listeners), not pure logic,
+ * so it cannot be exercised without a DOM harness. What is asserted here is the
+ * shape the recheck required; the gesture outcomes themselves were traced by
+ * hand: mouse down then 8px lifts and drops without peeking, a still tap peeks,
+ * a long press opens the sheet only, and a release outside the canvas ends it.
+ */
+describe("canvas pointer wiring", () => {
+  const source = readFileSync("src/components/engagements/EngagementCanvas.tsx", "utf8");
+
+  it("lifts a mouse drag once movement passes the slop", () => {
+    expect(source).toMatch(/if \(Math\.hypot\(dx, dy\) < SLOP\) return;\s*\n\s*lift\(start,/);
+  });
+
+  it("guards the click with a moved ref rather than the cleared start ref", () => {
+    expect(source).toContain("if (movedRef.current) {");
+    expect(source).not.toContain("!startRef.current?.lifted");
+  });
+
+  it("tracks the drag on the window, not on the scroll container", () => {
+    expect(source).toContain('window.addEventListener("pointermove", onMove, { passive: false })');
+    expect(source).toContain('window.addEventListener("pointerup", onUp)');
+    expect(source).toContain('window.addEventListener("pointercancel", onCancel)');
+    expect(source).not.toContain("onPointerMove={movePointer}");
+  });
+
+  it("keeps the shared write helpers as the only write path", () => {
+    expect(source).toContain("persistOrder(");
+    expect(source).toContain("remapItems(");
+    expect(source).toContain("resetOrder(");
+  });
+});
