@@ -1384,13 +1384,3 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 .nb-canvas-dot-active {
   background: var(--nb-ink);
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .nb-canvas-card,
-  .nb-canvas-card[data-lifted="true"],
-  .nb-canvas-ghost,
-  .nb-canvas-dot {
-    transition: none !important;
-    animation: none !important;
-  }
-}
