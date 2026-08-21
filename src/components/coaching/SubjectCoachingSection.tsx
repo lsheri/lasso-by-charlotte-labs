@@ -17,7 +17,7 @@ export function SubjectCoachingSection({
   engagementId: string;
 }) {
   const { data: notes } = useNotesAboutMe(profileId, engagementId);
-  const { data: queries } = useQueriesAboutMe(profileId);
+  const { data: queries } = useQueriesAboutMe(profileId, engagementId);
 
   const hasNotes = (notes ?? []).length > 0;
   const hasQueries = (queries ?? []).length > 0;

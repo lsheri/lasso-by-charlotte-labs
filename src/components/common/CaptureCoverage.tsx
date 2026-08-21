@@ -83,14 +83,16 @@ export function CaptureCoverage({
 
   const channels = data?.channels ?? [];
   const channelText =
-    channels.length > 0 ? `Connected: ${channels.join(", ")}.` : "No tools connected yet.";
+    channels.length > 0
+      ? `Connected across your record: ${channels.join(", ")}.`
+      : "No tools connected yet.";
 
   return (
     <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
       Based on the {itemCount} {itemCount === 1 ? "piece" : "pieces"} of work in {scopeLabel}
       {spanText ? `, ${spanText}` : ""}. {channelText}
       {isOwner && (data?.privateCount ?? 0) > 0
-        ? ` ${data!.privateCount} ${data!.privateCount === 1 ? "item is" : "items are"} kept private and read by nobody else.`
+        ? ` Across your record, ${data!.privateCount} ${data!.privateCount === 1 ? "item is" : "items are"} kept private and read by nobody else.`
         : ""}
       {typeof eligibleEpisodes === "number"
         ? ` Read across ${eligibleEpisodes} ${eligibleEpisodes === 1 ? "piece" : "pieces"} of work.`

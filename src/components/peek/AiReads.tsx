@@ -17,9 +17,9 @@ const SURFACE_LABEL: Record<string, string> = {
  * owner sees everything about themselves; a coach never sees this at all,
  * because the section only renders for the owner.
  */
-function QuestionsAsked({ profileId }: { profileId: string }) {
+function QuestionsAsked({ profileId, workItemId }: { profileId: string; workItemId: string }) {
   const { data } = useQuery({
-    queryKey: ["query-log", profileId],
+    queryKey: ["query-log", profileId, workItemId],
     queryFn: async () => {
       const { data: rows, error } = await supabase
         .from("query_log")
@@ -27,6 +27,7 @@ function QuestionsAsked({ profileId }: { profileId: string }) {
           "id, question, scope, created_at, asker_id, profiles!query_log_asker_id_fkey(display_name)",
         )
         .eq("subject_id", profileId)
+        .eq("work_item_id", workItemId)
         .neq("asker_id", profileId)
         .order("created_at", { ascending: false })
         .limit(10);
@@ -96,7 +97,7 @@ export function AiReads({ workItemId }: { workItemId: string }) {
           </ul>
         </section>
       ) : null}
-      {profile ? <QuestionsAsked profileId={profile.id} /> : null}
+      {profile ? <QuestionsAsked profileId={profile.id} workItemId={workItemId} /> : null}
     </>
   );
 }
