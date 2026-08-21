@@ -442,7 +442,7 @@ export function AskSurface({
 
       {ask.error ? <p className="px-4 pb-2 text-sm text-destructive">{ask.error}</p> : null}
 
-      {tab === "messages" ? <AskComposer ask={ask} mobile={mobile} /> : null}
+      {tab === "messages" ? <AskComposer ask={ask} mobile={mobile ?? false} /> : null}
 
       {!mobile ? (
         <Link
