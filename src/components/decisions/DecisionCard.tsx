@@ -2,6 +2,7 @@ import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { SuggestDot } from "@/components/common/Suggested";
+import { DrawnCheck, DrawnStrike, useMark } from "@/components/notebook/marks";
 import { Textarea } from "@/components/ui/textarea";
 import { srcsOf, useDecisionSourceItems, type DecisionRow } from "@/hooks/use-decisions";
 
@@ -23,6 +24,8 @@ export function DecisionCard({
   const [situation, setSituation] = useState(decision.situation);
   const [callText, setCallText] = useState(decision.call_text);
   const [why, setWhy] = useState(decision.why);
+  const check = useMark();
+  const strike = useMark();
 
   const srcs = srcsOf(decision);
   const sourceItems = Array.from(new Set(srcs.map((s) => s.work_item_id)));
@@ -41,8 +44,8 @@ export function DecisionCard({
     <article
       className={
         isDraft
-          ? "rounded-[var(--radius)] border border-dashed border-muted-foreground/50 border-l-[3px] px-6 py-5"
-          : "rounded-[var(--radius)] border border-border bg-card px-6 py-5 shadow-card"
+          ? "relative rounded-[var(--radius)] border border-dashed border-muted-foreground/50 border-l-[3px] px-6 py-5"
+          : "relative rounded-[var(--radius)] border border-border bg-card px-6 py-5 shadow-card"
       }
       style={
         isDraft
@@ -55,10 +58,16 @@ export function DecisionCard({
       }
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <span className="micro-label flex items-center gap-2">
+        <span className="micro-label relative flex items-center gap-2">
           {isDraft ? <SuggestDot /> : null}
           {isDraft ? "Drafted by Lasso · Awaiting your review" : "Confirmed"}
+          {strike.shown ? <DrawnStrike key={strike.markKey} /> : null}
         </span>
+        {check.shown ? (
+          <span className="pointer-events-none absolute right-4 top-3">
+            <DrawnCheck key={check.markKey} />
+          </span>
+        ) : null}
         {decision.date_label ? (
           <span className="font-mono text-[11px] text-muted-foreground">{decision.date_label}</span>
         ) : null}
@@ -105,13 +114,14 @@ export function DecisionCard({
         </div>
       ) : null}
 
-      <div className="mt-6 flex flex-wrap items-center gap-3">
+      <div className="mt-6 flex flex-col items-stretch gap-3 md:flex-row md:flex-wrap md:items-center">
         {editing ? (
           <>
             <Button
               type="button"
               size="sm"
               onClick={() => {
+                check.fire();
                 onSaveEdit({ situation, call_text: callText, why });
                 setEditing(false);
               }}
@@ -128,20 +138,31 @@ export function DecisionCard({
           </>
         ) : isDraft ? (
           <>
-            <Button type="button" size="sm" onClick={onConfirm}>
+            <Button
+              type="button"
+              size="sm"
+              className="w-full md:w-auto"
+              onClick={() => {
+                check.fire();
+                onConfirm();
+              }}
+            >
               Confirm as written
             </Button>
             <button
               type="button"
-              className="text-xs text-accent-deep hover:opacity-70"
+              className="w-full py-1 text-xs text-accent-deep hover:opacity-70 md:w-auto md:py-0"
               onClick={() => setEditing(true)}
             >
               Edit before confirming
             </button>
             <button
               type="button"
-              className="text-xs text-muted-foreground hover:text-foreground"
-              onClick={onDiscard}
+              className="w-full py-1 text-xs text-muted-foreground hover:text-foreground md:w-auto md:py-0"
+              onClick={() => {
+                strike.fire();
+                onDiscard();
+              }}
             >
               Discard
             </button>
@@ -158,7 +179,10 @@ export function DecisionCard({
             <button
               type="button"
               className="text-xs text-muted-foreground hover:text-foreground"
-              onClick={onDiscard}
+              onClick={() => {
+                strike.fire();
+                onDiscard();
+              }}
             >
               Delete
             </button>

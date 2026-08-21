@@ -12,6 +12,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { DrawnEllipse, useMark } from "@/components/notebook/marks";
 import { supabase } from "@/integrations/supabase/client";
 import { useEngagementCoaches, useShareInvalidation } from "@/hooks/use-coach-share";
 import {
@@ -51,6 +52,7 @@ export function SharedWithSection({
   const [sharingAll, setSharingAll] = useState(false);
   const [confirmAll, setConfirmAll] = useState(false);
   const [confirmation, setConfirmation] = useState<string | null>(null);
+  const ellipse = useMark();
 
   const shared = useEngagementCoaches(engagementId);
 
@@ -164,7 +166,10 @@ export function SharedWithSection({
   return (
     <section id="shared-with" className="scroll-mt-24">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="micro-label">{heading}</h2>
+        <h2 className="micro-label relative">
+          {heading}
+          {ellipse.shown ? <DrawnEllipse key={ellipse.markKey} /> : null}
+        </h2>
         {unshared.length > 1 ? (
           <button
             type="button"
@@ -213,7 +218,10 @@ export function SharedWithSection({
                 <button
                   type="button"
                   disabled={busy}
-                  onClick={() => void toggle(coach, true)}
+                  onClick={() => {
+                    ellipse.fire();
+                    void toggle(coach, true);
+                  }}
                   className="shrink-0 rounded-full border border-accent bg-accent-soft px-4 py-1 font-mono text-[11px] uppercase tracking-[0.08em] text-accent-deep transition-opacity disabled:opacity-50"
                 >
                   {busy ? "Saving…" : "Share"}
@@ -253,6 +261,7 @@ export function SharedWithSection({
             <AlertDialogAction
               onClick={() => {
                 setConfirmAll(false);
+                ellipse.fire();
                 void shareWithAll();
               }}
             >

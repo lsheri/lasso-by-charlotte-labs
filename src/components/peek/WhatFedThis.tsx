@@ -7,6 +7,7 @@ import { logV2 } from "@/lib/telemetry-v2";
 import { toast } from "sonner";
 
 import { SuggestDot } from "@/components/common/Suggested";
+import { DrawnCheck, DrawnStrike, useMark } from "@/components/notebook/marks";
 import { Button } from "@/components/ui/button";
 import { ArtifactNote, SourceMark } from "@/components/work/SourceMark";
 import { ThreadViewerById } from "@/components/work/ThreadViewerById";
@@ -135,6 +136,8 @@ export function WhatFedThis({
   const [busy, setBusy] = useState(false);
   const [showAll, setShowAll] = useState(false);
   const [openThread, setOpenThread] = useState<string | null>(null);
+  const check = useMark();
+  const strike = useMark();
 
   const { data, isLoading } = useQuery({
     queryKey: ["lineage", workItemId, profile?.id],
@@ -167,6 +170,8 @@ export function WhatFedThis({
   }
 
   async function act(linkId: string, action: "confirmed" | "discarded") {
+    if (action === "confirmed") check.fire();
+    else strike.fire();
     try {
       await review({ data: { link_id: linkId, action, profile_id: profile?.id } });
       await refresh();
@@ -202,7 +207,11 @@ export function WhatFedThis({
 
   return (
     <section className="mt-8 border-t border-border pt-4">
-      <h3 className="micro-label">What fed this</h3>
+      <h3 className="micro-label relative inline-flex items-center gap-2">
+        What fed this
+        {strike.shown ? <DrawnStrike key={strike.markKey} /> : null}
+        {check.shown ? <DrawnCheck key={check.markKey} size={16} /> : null}
+      </h3>
 
       {isLoading ? (
         <p className="mt-2 text-sm text-muted-foreground">Loading…</p>

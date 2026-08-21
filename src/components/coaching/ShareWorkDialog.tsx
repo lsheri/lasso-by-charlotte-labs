@@ -20,6 +20,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useShareInvalidation } from "@/hooks/use-coach-share";
+import { DrawnEllipse, useMark } from "@/components/notebook/marks";
 import { supabase } from "@/integrations/supabase/client";
 import {
   ADMIN_HONESTY_LINE,
@@ -63,6 +64,7 @@ export function ShareWorkDialog({
   /** Shown immediately, rolled back if the call is refused. */
   const [optimistic, setOptimistic] = useState<Record<string, boolean>>({});
   const [busyId, setBusyId] = useState<string | null>(null);
+  const ellipse = useMark();
   const [busyGroup, setBusyGroup] = useState<string | null>(null);
   const [groupLine, setGroupLine] = useState<Record<string, string>>({});
   const [confirmGroup, setConfirmGroup] = useState<{
@@ -210,7 +212,10 @@ export function ShareWorkDialog({
               return (
                 <div key={group.key} className="space-y-1.5">
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <p className="micro-label">{group.name}</p>
+                    <p className="micro-label relative">
+                      {group.name}
+                      {ellipse.shown ? <DrawnEllipse key={ellipse.markKey} /> : null}
+                    </p>
                     {unshared.length > 1 ? (
                       <button
                         type="button"
@@ -265,7 +270,10 @@ export function ShareWorkDialog({
                             <button
                               type="button"
                               disabled={busy}
-                              onClick={() => void toggleOne(row, true)}
+                              onClick={() => {
+                          ellipse.fire();
+                          void toggleOne(row, true);
+                        }}
                               className="shrink-0 rounded-full border border-accent bg-accent-soft px-4 py-1 font-mono text-[11px] uppercase tracking-[0.08em] text-accent-deep transition-opacity disabled:opacity-50"
                             >
                               {busy ? "Saving…" : "Share"}
@@ -311,7 +319,10 @@ export function ShareWorkDialog({
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
-                if (confirmGroup) void shareGroup(confirmGroup);
+                if (confirmGroup) {
+                  ellipse.fire();
+                  void shareGroup(confirmGroup);
+                }
                 setConfirmGroup(null);
               }}
             >
