@@ -265,6 +265,17 @@ export function EngagementCanvas({
     return correctSameColumn(from, { col, index: col === from.col ? index + (index >= from.index ? 1 : 0) : index });
   }
 
+  /** The card leaves the page and enters the hand. One place, every path. */
+  function lift(start: NonNullable<typeof startRef.current>, x: number, y: number) {
+    startRef.current = { ...start, lifted: true };
+    movedRef.current = true;
+    const next = { id: start.id, from: start.pos, x, y, width: start.width };
+    dragRef.current = next;
+    setDrag(next);
+    setDropCol(start.pos.col);
+    setLive(announceGrab(cards.get(start.id)?.work_items.title ?? "Card"));
+  }
+
   function beginPointer(
     event: React.PointerEvent,
     pos: CanvasPos,
@@ -274,27 +285,25 @@ export function EngagementCanvas({
     if (!canEdit || busy) return;
     const touch = event.pointerType !== "mouse";
     if (!touch && event.button !== 0) return;
-    startRef.current = { x: event.clientX, y: event.clientY, lifted: false, touch };
+    movedRef.current = false;
     const width = cardRefs.current.get(id)?.getBoundingClientRect().width ?? 240;
-
-    const lift = () => {
-      startRef.current = { ...startRef.current!, lifted: true };
-      setDrag({ id, from: pos, x: event.clientX, y: event.clientY, width });
-      setDropCol(pos.col);
-      setLive(announceGrab(cards.get(id)?.work_items.title ?? "Card"));
-    };
+    const start = { x: event.clientX, y: event.clientY, lifted: false, touch, pos, id, width };
+    startRef.current = start;
+    setGesture((n) => n + 1);
 
     if (touch && fromHandle) {
-      lift();
+      lift(start, event.clientX, event.clientY);
     } else if (touch) {
       holdRef.current = window.setTimeout(() => {
         holdRef.current = null;
+        // The sheet is a move, not a click: the tap that follows must not peek.
+        movedRef.current = true;
         setMoveSheet({ id, from: pos });
       }, HOLD_MS);
     }
   }
 
-  function movePointer(event: React.PointerEvent) {
+  function movePointer(event: { clientX: number; clientY: number }) {
     const start = startRef.current;
     if (!start) return;
     const dx = event.clientX - start.x;
@@ -306,21 +315,21 @@ export function EngagementCanvas({
       return;
     }
     if (!start.lifted) {
-      // Dominant axis decides: a sideways or downward intent is the page
-      // scrolling, never a lift.
+      // Touch never lifts on movement alone: the handle lifts, the hold opens
+      // the sheet, and a plain drag on the body is the page scrolling.
       if (start.touch) return;
       if (Math.hypot(dx, dy) < SLOP) return;
-      return;
+      lift(start, event.clientX, event.clientY);
     }
     if (start.touch && Math.abs(dx) > Math.abs(dy)) {
       endPointer(true);
       return;
     }
-    setDrag((prev) => (prev ? { ...prev, x: event.clientX, y: event.clientY } : prev));
-    if (drag) {
-      const to = placeAt(event.clientX, event.clientY, drag.from);
-      setDropCol(to.col);
-    }
+    const from = startRef.current?.pos ?? start.pos;
+    const next = { id: start.id, from, x: event.clientX, y: event.clientY, width: start.width };
+    dragRef.current = next;
+    setDrag(next);
+    setDropCol(placeAt(event.clientX, event.clientY, from).col);
   }
 
   function endPointer(cancel = false) {
@@ -328,8 +337,9 @@ export function EngagementCanvas({
       window.clearTimeout(holdRef.current);
       holdRef.current = null;
     }
-    const current = drag;
+    const current = dragRef.current;
     startRef.current = null;
+    dragRef.current = null;
     setDrag(null);
     setDropCol(null);
     if (!current) return;
@@ -341,6 +351,32 @@ export function EngagementCanvas({
     setLive(announceDrop(cards.get(current.id)?.work_items.title ?? "Card"));
     applyMove(current.from, to, current.id, false);
   }
+
+  /**
+   * The drag belongs to the window, not to the scroll container: a pointer that
+   * wanders off the canvas keeps tracking, and a release anywhere still ends it.
+   */
+  const gestureHandlers = useRef({ move: movePointer, end: endPointer });
+  gestureHandlers.current = { move: movePointer, end: endPointer };
+
+  useEffect(() => {
+    if (gesture === 0) return;
+    const onMove = (event: PointerEvent) => {
+      if (startRef.current?.lifted) event.preventDefault();
+      gestureHandlers.current.move(event);
+    };
+    const onUp = () => gestureHandlers.current.end(false);
+    const onCancel = () => gestureHandlers.current.end(true);
+    window.addEventListener("pointermove", onMove, { passive: false });
+    window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onCancel);
+    return () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onCancel);
+    };
+  }, [gesture]);
+
 
   // ── Keyboard ──────────────────────────────────────────────────────────────
 
