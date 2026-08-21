@@ -502,7 +502,14 @@ export function WorkPage() {
             )
           ) : null}
           <ConnectorBrowseActions />
-          <PasteThreadDialog trigger={<Button type="button">Paste a thread</Button>} />
+          {/* On phones the one green primary anchors the bottom of the screen. */}
+          <PasteThreadDialog
+            trigger={
+              <Button type="button" className="hidden md:inline-flex">
+                Paste a thread
+              </Button>
+            }
+          />
           <UploadFilesButton />
           <TranscriptsAction />
           <ImportFlowDialog
@@ -694,6 +701,18 @@ export function WorkPage() {
 
         </div>
       )}
+
+      {!isCoach && all.length > 0 ? (
+        <div className="fixed inset-x-4 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-30 md:hidden print:hidden">
+          <PasteThreadDialog
+            trigger={
+              <Button type="button" className="w-full shadow-card">
+                Paste a thread
+              </Button>
+            }
+          />
+        </div>
+      ) : null}
 
       <MapDialog
         item={mapItem}
