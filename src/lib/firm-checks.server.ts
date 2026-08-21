@@ -57,7 +57,15 @@ export async function engagementIdsForWorkItem(
  */
 export async function resolveSingleCheck(
   supabase: Client,
-  args: { orgId: string; ownerProfileId: string; workItemId?: string | null; checkId: string },
+  args: {
+    orgId: string;
+    ownerProfileId: string;
+    /** Set for a run over one piece of work; its engagements are read here. */
+    workItemId?: string | null;
+    /** Set for a run over a whole engagement, which is the scope directly. */
+    engagementId?: string | null;
+    checkId: string;
+  },
 ): Promise<{ title: string; body: string } | null> {
   const { data, error } = await supabase
     .from("firm_checks")
@@ -66,10 +74,13 @@ export async function resolveSingleCheck(
     .maybeSingle();
   if (error || !data) return null;
   if (data.active !== true || data.org_id !== args.orgId) return null;
-  const engagementIds = await engagementIdsForWorkItem(supabase, args.workItemId);
+  const engagementIds = args.engagementId
+    ? [args.engagementId]
+    : await engagementIdsForWorkItem(supabase, args.workItemId);
   if (!checkApplies(data, { engagementIds, ownerProfileId: args.ownerProfileId })) return null;
   return { title: data.title, body: data.body };
 }
+
 
 /**
  * The active checks that apply to one piece of work: written for the whole org,
