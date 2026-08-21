@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { AddDecisionDialog } from "@/components/decisions/AddDecisionDialog";
 import { Button } from "@/components/ui/button";
+import { DrawnCheck, DrawnStrike, useMark } from "@/components/notebook/marks";
 import {
   confirmHandoffBatch,
   confirmHandoffItem,
@@ -132,6 +133,8 @@ export function HandoffDrafts({
   const [block, setBlock] = useState<HandoffBlock | null>(null);
   const [duplicate, setDuplicate] = useState(false);
   const [prefill, setPrefill] = useState<DecisionCandidateItem | null>(null);
+  const check = useMark();
+  const strike = useMark();
 
   const query = useQuery({
     queryKey: ["handoffs", runId, profileId],
@@ -172,8 +175,16 @@ export function HandoffDrafts({
 
       <div className="mt-3 space-y-3">
         {drafts.map((item) => (
-          <div key={item.id} className="rounded-md border border-border bg-card p-3">
-            <ItemBody kind={current.kind} item={item} />
+          <div key={item.id} className="relative rounded-md border border-border bg-card p-3">
+            {check.shown ? (
+              <span className="pointer-events-none absolute right-2 top-2">
+                <DrawnCheck key={check.markKey} />
+              </span>
+            ) : null}
+            <div className="relative">
+              {strike.shown ? <DrawnStrike key={strike.markKey} /> : null}
+              <ItemBody kind={current.kind} item={item} />
+            </div>
             <p className="mt-2 text-xs text-muted-foreground">
               {DESTINATION_LINE[current.kind]}
             </p>
@@ -186,6 +197,7 @@ export function HandoffDrafts({
                   if (current.kind === "decision_candidates") {
                     setPrefill(item.fields as DecisionCandidateItem);
                   }
+                  check.fire();
                   act.mutate({ kind: "confirm", ids: [item.id] });
                 }}
               >
@@ -196,7 +208,10 @@ export function HandoffDrafts({
                 variant="ghost"
                 className="min-h-11 sm:min-h-9"
                 disabled={act.isPending || !runId}
-                onClick={() => act.mutate({ kind: "discard", ids: [item.id] })}
+                onClick={() => {
+                  strike.fire();
+                  act.mutate({ kind: "discard", ids: [item.id] });
+                }}
               >
                 Discard
               </Button>
@@ -211,7 +226,10 @@ export function HandoffDrafts({
           variant="outline"
           className="mt-3 min-h-11 sm:min-h-9"
           disabled={act.isPending}
-          onClick={() => act.mutate({ kind: "batch", ids: drafts.map((item) => item.id) })}
+          onClick={() => {
+            check.fire();
+            act.mutate({ kind: "batch", ids: drafts.map((item) => item.id) });
+          }}
         >
           Confirm all remaining
         </Button>
