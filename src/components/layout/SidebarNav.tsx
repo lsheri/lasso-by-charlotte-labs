@@ -153,7 +153,7 @@ export function SidebarNav({ onNavigate }: { onNavigate?: (() => void) | undefin
                         type="button"
                         aria-expanded={!collapsed}
                         onClick={() => toggleClient(shelf.clientId)}
-                        className={`${linkClass} w-full text-left`}
+                        className={`${linkClass} nb-nav-shelf w-full text-left`}
                       >
                         <GraphiteIcon
                           name="chevron-right"
@@ -162,6 +162,7 @@ export function SidebarNav({ onNavigate }: { onNavigate?: (() => void) | undefin
                         />
                         <span className="truncate">{shelf.name}</span>
                       </button>
+
                       {collapsed
                         ? null
                         : shelf.engagements.map((engagement) => (

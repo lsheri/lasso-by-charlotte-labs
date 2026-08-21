@@ -319,9 +319,10 @@ function AnalysesTab({
           onAuthorCheck={onClose}
           readsDetail={readsDetail}
           running={ask.analyses.running}
-          onRun={(preset: AnalysisPreset, target: ChipTarget) =>
-            void ask.analyses.runPreset(preset, target, readsDetail)
+          onRun={(preset: AnalysisPreset, target: ChipTarget, checkId?: string) =>
+            void ask.analyses.runPreset(preset, target, readsDetail, checkId)
           }
+
         />
       ) : (
         <p className="text-sm text-muted-foreground">

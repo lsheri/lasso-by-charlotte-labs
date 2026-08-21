@@ -7,7 +7,14 @@ import { MarkdownMessage } from "@/components/markdown/MarkdownMessage";
 import { AnalysisInfoPanel } from "@/components/reflect/AnalysisInfoPanel";
 import { AnalysisConfirm, type AnalysisConfirmRequest } from "@/components/reflect/AnalysisConfirm";
 import { FindingLabel } from "@/components/reflect/FindingLabel";
+import {
+  FIRM_CHECK_BUBBLE_CLASS,
+  FirmCheckBubbles,
+  runAllChecksLabel,
+} from "@/components/reflect/FirmCheckBubbles";
+import { useFirmChecks, type FirmCheck } from "@/hooks/use-firm-checks";
 import { HandoffDrafts } from "@/components/reflect/HandoffDrafts";
+
 import { supabase } from "@/integrations/supabase/client";
 import { isBriefItem } from "@/lib/brief-shared";
 import {
@@ -107,8 +114,8 @@ function DisabledReasons({ rows }: { rows: { label: string; reason: string }[] }
 }
 
 /**
- * The firm's own checks, given their own section above Lasso's analyses. This
- * is the part a manager should read as "my knowledge, running on this work".
+ * The firm's own checks, given their own section above Lasso's analyses. Each
+ * active check is its own bubble: a check runs on its own, never as one blob.
  */
 function FirmSection({
   orgName,
@@ -120,6 +127,7 @@ function FirmSection({
   running,
   disabled,
   reason,
+  checks,
   onRun,
 }: {
   orgName?: string | undefined;
@@ -131,7 +139,8 @@ function FirmSection({
   running: AnalysisPreset | null;
   disabled: boolean;
   reason: string | null;
-  onRun: () => void;
+  checks: readonly FirmCheck[];
+  onRun: (check: FirmCheck | null) => void;
 }) {
   const label = `${orgName ? `${orgName} ` : ""}Firm checks`;
   const hasChecks = firmCheckCount > 0;
@@ -141,27 +150,32 @@ function FirmSection({
       {hasChecks ? (
         <>
           {preset ? (
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                disabled={Boolean(running) || disabled}
-                title={reason ?? undefined}
-                onClick={onRun}
-                className={`rounded-full px-3 py-1 text-xs font-medium transition-opacity hover:opacity-85 disabled:opacity-50 ${
-                  running?.id === preset.id
-                    ? "bg-ember text-ember-foreground"
-                    : "bg-accent-soft text-accent-deep"
-                }`}
-              >
-                Run firm checks
-              </button>
+            <div className="flex items-start gap-1">
+              {checks.length > 0 ? (
+                <FirmCheckBubbles
+                  checks={checks}
+                  disabled={Boolean(running) || disabled}
+                  reason={reason}
+                  onPick={onRun}
+                />
+              ) : (
+                <button
+                  type="button"
+                  disabled={Boolean(running) || disabled}
+                  title={reason ?? undefined}
+                  onClick={() => onRun(null)}
+                  className={FIRM_CHECK_BUBBLE_CLASS}
+                >
+                  {runAllChecksLabel(firmCheckCount)}
+                </button>
+              )}
               <AnalysisInfoPanel preset={preset} readsDetail={readsDetail} iconOnly />
             </div>
           ) : null}
           <p className="mt-1.5 text-[11px] text-muted-foreground">
             {firmCheckCount === 1
               ? "1 check applies to this work."
-              : `${firmCheckCount} checks apply to this work.`}
+              : `${firmCheckCount} checks apply to this work. Each one runs on its own.`}
             {canAuthorChecks && onAuthorCheck ? (
               <>
                 {" "}
@@ -177,6 +191,7 @@ function FirmSection({
           </p>
         </>
       ) : (
+
         <p className="text-[11px] text-muted-foreground">
           Checks your firm writes appear here and run against your work.
           {canAuthorChecks && onAuthorCheck ? (
@@ -224,7 +239,12 @@ export function useChatAnalyses(profileId: string | undefined, orgId: string | u
   const [streamed, setStreamed] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  async function runPreset(preset: AnalysisPreset, target: ChipTarget, readsDetail: string) {
+  async function runPreset(
+    preset: AnalysisPreset,
+    target: ChipTarget,
+    readsDetail: string,
+    checkId?: string,
+  ) {
     if (running || target.kind === "none" || !profileId) return;
     setRunning(preset);
     setStreamed("");
@@ -239,8 +259,11 @@ export function useChatAnalyses(profileId: string | undefined, orgId: string | u
           ...(target.kind === "engagement"
             ? { engagement_id: target.id }
             : { work_item_id: target.id }),
+          // Only the id travels: the check's wording is read server side.
+          ...(checkId ? { check_id: checkId } : {}),
           profile_id: profileId,
         },
+
         (delta) => setStreamed((prev) => prev + delta),
       );
       const { data } = await supabase
@@ -381,7 +404,9 @@ export function AnalysisChips({
   target: ChipTarget;
   readsDetail: string;
   running: AnalysisPreset | null;
-  onRun: (preset: AnalysisPreset) => void;
+  /** checkId names one firm check; absent means the preset's own behaviour. */
+  onRun: (preset: AnalysisPreset, checkId?: string) => void;
+
   isCoach?: boolean;
   className?: string;
   engagementOptions?: ChipEngagement[];
@@ -395,6 +420,15 @@ export function AnalysisChips({
   profileId?: string | undefined;
 }) {
   const [confirming, setConfirming] = useState<AnalysisConfirmRequest | null>(null);
+  // Each active check is offered on its own, so the chips need the checks
+  // themselves and not only how many of them there are.
+  const { data: firmChecks } = useFirmChecks(
+    target.kind === "engagement"
+      ? { orgId, engagementId: target.id, subjectProfileId: profileId ?? null }
+      : { orgId, subjectProfileId: profileId ?? null },
+  );
+
+
   if (target.kind === "none") {
     return (
       <Suggested className={className}>
@@ -461,9 +495,9 @@ export function AnalysisChips({
         profileId={profileId}
         onCancel={() => setConfirming(null)}
         onConfirm={() => {
-          const preset = confirming?.preset;
+          const pending = confirming;
           setConfirming(null);
-          if (preset) onRun(preset);
+          if (pending) onRun(pending.preset, pending.check?.id);
         }}
       />
       <FirmSection
@@ -476,8 +510,17 @@ export function AnalysisChips({
         running={running}
         disabled={firmCheckCount === 0}
         reason={firmCheckCount === 0 ? NO_FIRM_CHECKS_LINE : null}
-        onRun={() => firmPreset && setConfirming({ preset: firmPreset, target })}
+        checks={firmChecks ?? []}
+        onRun={(check) =>
+          firmPreset &&
+          setConfirming({
+            preset: firmPreset,
+            target,
+            ...(check ? { check: { id: check.id, title: check.title } } : {}),
+          })
+        }
       />
+
       <div className="mt-4">
         <p className="micro-label micro-label-ai mb-2">Lasso analyses</p>
         <div className="flex flex-wrap gap-2">
@@ -612,7 +655,7 @@ export function SelectionAnalysisChips({
   firmCheckCount?: number;
   readsDetail: string;
   running: AnalysisPreset | null;
-  onRun: (preset: AnalysisPreset, target: ChipTarget) => void;
+  onRun: (preset: AnalysisPreset, target: ChipTarget, checkId?: string) => void;
   className?: string;
   orgName?: string | undefined;
   canAuthorChecks?: boolean | undefined;
@@ -625,6 +668,11 @@ export function SelectionAnalysisChips({
     request: AnalysisConfirmRequest;
     target: ChipTarget;
   } | null>(null);
+  const { data: firmChecks } = useFirmChecks({
+    orgId,
+    engagementId: engagement.id,
+    subjectProfileId: profileId ?? null,
+  });
   const chips = selectionChips(
     selected,
     engagement,
@@ -649,7 +697,7 @@ export function SelectionAnalysisChips({
         onConfirm={() => {
           const pending = confirming;
           setConfirming(null);
-          if (pending) onRun(pending.request.preset, pending.target);
+          if (pending) onRun(pending.request.preset, pending.target, pending.request.check?.id);
         }}
       />
       <FirmSection
@@ -662,13 +710,20 @@ export function SelectionAnalysisChips({
         running={running}
         disabled={!firmChip?.target}
         reason={firmChip?.reason ?? null}
-        onRun={() => {
+        checks={firmChecks ?? []}
+        onRun={(check) => {
           if (firmChip?.target && firmChip.target.kind !== "none") {
             setConfirming({
-              request: { preset: firmChip.preset, target: firmChip.target, onAdjust },
+              request: {
+                preset: firmChip.preset,
+                target: firmChip.target,
+                onAdjust,
+                ...(check ? { check: { id: check.id, title: check.title } } : {}),
+              },
               target: firmChip.target,
             });
           }
+
         }}
       />
       <div className="mt-4">

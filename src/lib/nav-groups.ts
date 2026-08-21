@@ -33,20 +33,28 @@ function byCode(a: NavEngagement, b: NavEngagement): number {
   return (a.code ?? "").localeCompare(b.code ?? "");
 }
 
+/** The display only shelf for work that belongs to no client. Never a clients row. */
+export const INTERNAL_SHELF_ID = "__internal__";
+export const INTERNAL_SHELF_NAME = "Internal";
+
 /**
- * A client shelf exists only for a real client row that is not a quick folder.
- * Quick folders render exactly as they always did, and a label only engagement
- * (client_label with no clients row) is ungrouped, never a group of its own.
+ * A client shelf exists for a real client row that is not a quick folder.
+ * Engagements with no client row (and label only leftovers) collect under the
+ * synthetic "Internal" shelf, which always renders last. Quick folders stay
+ * flat at top level exactly as they always did, never inside any shelf.
  */
 export function groupEngagementsByClient<T extends NavEngagement>(
   engagements: readonly T[],
 ): NavEngagementGroups<T> {
   const shelves = new Map<string, ClientShelf<T>>();
+  const internal: T[] = [];
   const flat: T[] = [];
 
   for (const engagement of engagements) {
     const client = engagement.clients;
-    if (client && client.quick_folder === false && client.id) {
+    if (client && client.quick_folder === true) {
+      flat.push(engagement);
+    } else if (client && client.quick_folder === false && client.id) {
       const shelf = shelves.get(client.id) ?? {
         clientId: client.id,
         name: client.name,
@@ -55,7 +63,7 @@ export function groupEngagementsByClient<T extends NavEngagement>(
       shelf.engagements.push(engagement);
       shelves.set(client.id, shelf);
     } else {
-      flat.push(engagement);
+      internal.push(engagement);
     }
   }
 
@@ -63,8 +71,17 @@ export function groupEngagementsByClient<T extends NavEngagement>(
     .map((shelf) => ({ ...shelf, engagements: [...shelf.engagements].sort(byCode) }))
     .sort((a, b) => a.name.localeCompare(b.name));
 
+  if (internal.length > 0) {
+    groups.push({
+      clientId: INTERNAL_SHELF_ID,
+      name: INTERNAL_SHELF_NAME,
+      engagements: [...internal].sort(byCode),
+    });
+  }
+
   return { groups, flat: [...flat].sort(byCode) };
 }
+
 
 const COLLAPSE_KEY = "lasso.nav.clients";
 

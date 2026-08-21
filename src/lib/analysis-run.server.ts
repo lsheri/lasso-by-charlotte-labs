@@ -11,9 +11,16 @@ export type AnalysisInput = {
   work_item_id?: string | undefined;
   engagement_id?: string | undefined;
   profile_id?: string | undefined;
+  /**
+   * One firm check, by id only. Never the check text: the server resolves the
+   * id through the caller's client and refuses if it is retired or no longer
+   * applies. Ignored by every preset other than firm_checks.
+   */
+  check_id?: string | undefined;
   /** "shown" when the person confirmed a two step activation before the run. */
   confirm_step?: "shown" | undefined;
 };
+
 
 export type AnalysisRunResult = {
   run_id: string;
@@ -100,11 +107,33 @@ export async function runAnalysis(
       "There is nothing here to read. This work may no longer be shared with you.",
     );
   }
+  // One named check, resolved BEFORE any run row exists, so a retired or
+  // inapplicable check is refused honestly with nothing written. Only the id
+  // travels from the browser; the wording always comes from the record.
+  let singleCheck: { title: string; body: string } | null = null;
+  if (preset.id === "firm_checks" && data.check_id) {
+    const { resolveSingleCheck, CHECK_UNAVAILABLE_LINE } = await import("./firm-checks.server");
+    singleCheck = await resolveSingleCheck(supabase, {
+      orgId: profile.org_id,
+      ownerProfileId: target.ownerId,
+      ...(target.scopeType === "engagement"
+        ? { engagementId: target.scopeId }
+        : { workItemId: target.scopeId }),
+      checkId: data.check_id,
+    });
+
+    if (!singleCheck) throw new Error(CHECK_UNAVAILABLE_LINE);
+  }
+
   const profileOrgId = profile.org_id;
   const presetId = preset.id;
 
-  const baseIdempotencyKey = `${preset.id}:${target.scopeType}:${target.scopeId}:${profile.id}`;
+  // A single check run is its own piece of work, so it never reuses the run
+  // row of "all checks" or of a different check.
+  const checkKeyPart = singleCheck && data.check_id ? `:check:${data.check_id}` : "";
+  const baseIdempotencyKey = `${preset.id}:${target.scopeType}:${target.scopeId}:${profile.id}${checkKeyPart}`;
   let idempotencyKey = baseIdempotencyKey;
+
   const { recordEvent } = await import("./telemetry.server");
   const scopeType = target.scopeType;
   let aiMeta: Awaited<ReturnType<(typeof import("./ai.server"))["resolveAiMeta"]>>;
@@ -450,16 +479,22 @@ export async function runAnalysis(
       const { applicableFirmChecksForChat, renderChecksBlock } = await import(
         "./firm-checks.server"
       );
-      const { checks } = await applicableFirmChecksForChat(supabase, {
-        orgId: profile.org_id,
-        ownerProfileId: target.ownerId,
-        workItemId: target.scopeId,
-      });
+      // A named check runs alone: only its own wording reaches the prompt.
+      const checks = singleCheck
+        ? [singleCheck]
+        : (
+            await applicableFirmChecksForChat(supabase, {
+              orgId: profile.org_id,
+              ownerProfileId: target.ownerId,
+              workItemId: target.scopeId,
+            })
+          ).checks;
 
       if (checks.length === 0) await fail("no_firm_checks");
       firmCheckCount = checks.length;
       checksBlock = renderChecksBlock(checks);
     }
+
     // The owner's own label for the artifact, one line, prompts stay generic.
     const { deliverableKindLabel } = await import("./deliverable-kinds");
     const kindLine =

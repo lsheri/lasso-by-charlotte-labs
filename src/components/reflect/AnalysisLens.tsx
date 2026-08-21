@@ -9,6 +9,8 @@ import { MarkdownMessage } from "@/components/markdown/MarkdownMessage";
 import { SlideOver } from "@/components/peek/SlideOver";
 import { AnalysisInfoPanel } from "@/components/reflect/AnalysisInfoPanel";
 import { AnalysisConfirm, type AnalysisConfirmRequest } from "@/components/reflect/AnalysisConfirm";
+import { FirmCheckBubbles } from "@/components/reflect/FirmCheckBubbles";
+
 import { ContextAudit, ThinkingTrail } from "@/components/reflect/ContextTrail";
 import { FindingLabel } from "@/components/reflect/FindingLabel";
 import { HandoffDrafts } from "@/components/reflect/HandoffDrafts";
@@ -90,6 +92,8 @@ export function AnalysisLens({
   // filters exactly; here we only decide whether the chip can be pressed.
   const { data: firmChecks } = useFirmChecks({ orgId, subjectProfileId: profileId });
   const firmCheckCount = (firmChecks ?? []).length;
+  const firmPreset = presets.find((preset) => preset.id === "firm_checks") ?? null;
+
 
   const { data: turnCount } = useQuery({
     queryKey: ["thread-turn-count", target.id],
@@ -121,7 +125,7 @@ export function AnalysisLens({
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages?.length, pending]);
 
-  async function runPreset(preset: AnalysisPreset) {
+  async function runPreset(preset: AnalysisPreset, checkId?: string) {
     if (pending) return;
     started.current = preset.id;
     setActive(preset);
@@ -143,8 +147,11 @@ export function AnalysisLens({
           ...(target.kind === "engagement"
             ? { engagement_id: target.id }
             : { work_item_id: target.id }),
+          // The id alone: the check's wording is read from the record.
+          ...(checkId ? { check_id: checkId } : {}),
           profile_id: profileId,
         },
+
         (delta) => setStreamed((prev) => prev + delta),
       );
       setSessionId(result.session_id);
@@ -220,10 +227,11 @@ export function AnalysisLens({
         profileId={profileId}
         onCancel={() => setConfirming(null)}
         onConfirm={() => {
-          const preset = confirming?.preset;
+          const pending_ = confirming;
           setConfirming(null);
-          if (preset) void runPreset(preset);
+          if (pending_) void runPreset(pending_.preset, pending_.check?.id);
         }}
+
       />
       <header className="shrink-0 border-b border-border px-6 pb-4 pt-6">
         <p className="micro-label micro-label-ai">{active ? active.label : "Analyse this work"}</p>
@@ -307,31 +315,52 @@ export function AnalysisLens({
             <p className="text-xs text-ember-deep">Analyses Lasso can run on this work</p>
           </div>
           <div className="mt-2 flex flex-wrap gap-2">
-            {presets.map((preset) => {
-              const noChecks = preset.id === "firm_checks" && firmCheckCount === 0;
-              const blocked = (preset.id === "what_recurs" && notEnoughWork) || noChecks;
-              return (
-                <div key={preset.id} className="flex items-center gap-1.5">
-                  <button
-                    type="button"
-                    disabled={pending || blocked}
-                    title={
-                      noChecks ? NO_FIRM_CHECKS_LINE : blocked ? NOT_ENOUGH_WORK_LINE : undefined
-                    }
-                    onClick={() => setConfirming({ preset, target })}
-                    className={`rounded-full px-3 py-1 text-xs font-medium transition-opacity hover:opacity-85 disabled:opacity-50 ${
-                      active?.id === preset.id
-                        ? "bg-ember text-ember-foreground"
-                        : "border border-border bg-card text-foreground"
-                    }`}
-                  >
-                    {preset.label}
-                  </button>
-                  <AnalysisInfoPanel preset={preset} readsDetail={readsDetail} iconOnly />
-                </div>
-              );
-            })}
+            {presets
+              .filter((preset) => preset.id !== "firm_checks")
+              .map((preset) => {
+                const blocked = preset.id === "what_recurs" && notEnoughWork;
+                return (
+                  <div key={preset.id} className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      disabled={pending || blocked}
+                      title={blocked ? NOT_ENOUGH_WORK_LINE : undefined}
+                      onClick={() => setConfirming({ preset, target })}
+                      className={`rounded-full px-3 py-1 text-xs font-medium transition-opacity hover:opacity-85 disabled:opacity-50 ${
+                        active?.id === preset.id
+                          ? "bg-ember text-ember-foreground"
+                          : "border border-border bg-card text-foreground"
+                      }`}
+                    >
+                      {preset.label}
+                    </button>
+                    <AnalysisInfoPanel preset={preset} readsDetail={readsDetail} iconOnly />
+                  </div>
+                );
+              })}
           </div>
+          {/* Pass 92: the firm's own checks, one bubble each, in the accent
+              treatment so they read as the firm's knowledge, not Lasso's. */}
+          {firmPreset && firmCheckCount > 0 ? (
+            <div className="mt-2 flex items-start gap-1.5">
+              <FirmCheckBubbles
+                checks={firmChecks ?? []}
+                disabled={pending}
+                onPick={(check) =>
+                  setConfirming({
+                    preset: firmPreset,
+                    target,
+                    ...(check ? { check: { id: check.id, title: check.title } } : {}),
+                  })
+                }
+              />
+              <AnalysisInfoPanel preset={firmPreset} readsDetail={readsDetail} iconOnly />
+            </div>
+          ) : null}
+          {firmPreset && firmCheckCount === 0 ? (
+            <p className="mt-2 text-xs text-muted-foreground">{NO_FIRM_CHECKS_LINE}</p>
+          ) : null}
+
           {notEnoughWork ? (
             <p className="mt-2 text-xs text-muted-foreground">{NOT_ENOUGH_WORK_LINE}</p>
           ) : null}
