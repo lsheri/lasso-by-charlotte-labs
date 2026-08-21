@@ -10,6 +10,8 @@ export type ParsedCheckRules = {
   drafts: CheckDraft[];
   /** True when the document held more than the cap and the tail was dropped. */
   truncated: boolean;
+  /** Sections found before the cap was applied. */
+  total: number;
 };
 
 /** Nobody reviews fifty drafts honestly, so an upload stops at twenty. */
@@ -55,12 +57,13 @@ export function parseCheckRules(fileName: string, text: string): ParsedCheckRule
 
   if (withHeadings.length === 0) {
     const body = text.trim();
-    if (!body) return { drafts: [], truncated: false };
-    return { drafts: [{ title: titleFromFileName(fileName), body }], truncated: false };
+    if (!body) return { drafts: [], truncated: false, total: 0 };
+    return { drafts: [{ title: titleFromFileName(fileName), body }], truncated: false, total: 1 };
   }
 
   return {
     drafts: withHeadings.slice(0, MAX_CHECK_DRAFTS),
     truncated: withHeadings.length > MAX_CHECK_DRAFTS,
+    total: withHeadings.length,
   };
 }

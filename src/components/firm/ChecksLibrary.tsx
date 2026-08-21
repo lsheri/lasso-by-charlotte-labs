@@ -8,7 +8,6 @@ import { useWriteFirmCheck } from "@/hooks/use-firm-checks";
 import { useProfile } from "@/hooks/use-profile";
 import { insertFirmCheck } from "@/hooks/use-firm-checks";
 import {
-  MAX_CHECK_DRAFTS,
   UPLOAD_HONESTY_LINE,
   parseCheckRules,
   truncationLine,
@@ -98,7 +97,7 @@ export function ChecksLibrary({
         error: null,
       })),
     );
-    setUploadNote(parsed.truncated ? truncationLine(parsed.drafts.length + MAX_CHECK_DRAFTS) : null);
+    setUploadNote(parsed.truncated ? truncationLine(parsed.total) : null);
     if (fileRef.current) fileRef.current.value = "";
   }
 
@@ -126,7 +125,6 @@ export function ChecksLibrary({
     }
     setDrafts(remaining);
     setSavingDrafts(false);
-    await add.reset();
   }
 
   return (
