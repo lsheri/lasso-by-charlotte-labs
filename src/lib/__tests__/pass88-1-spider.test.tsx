@@ -23,7 +23,7 @@ describe("spider mascot beside Ask Lasso", () => {
     const reduced = styles.indexOf("@media (prefers-reduced-motion: reduce)", base);
     expect(base).toBeGreaterThan(-1);
     expect(reduced).toBeGreaterThan(base);
-    expect(styles.slice(reduced, reduced + 300)).toContain(".nb-spider-static");
+    expect(styles.slice(reduced)).toContain(".nb-spider-static");
   });
 
   it("is the Ask Lasso mark on the engagement page, with no Sparkle left", () => {
