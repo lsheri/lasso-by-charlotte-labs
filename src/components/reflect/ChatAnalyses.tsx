@@ -487,9 +487,9 @@ export function AnalysisChips({
         profileId={profileId}
         onCancel={() => setConfirming(null)}
         onConfirm={() => {
-          const preset = confirming?.preset;
+          const pending = confirming;
           setConfirming(null);
-          if (preset) onRun(preset);
+          if (pending) onRun(pending.preset, pending.check?.id);
         }}
       />
       <FirmSection
@@ -502,8 +502,17 @@ export function AnalysisChips({
         running={running}
         disabled={firmCheckCount === 0}
         reason={firmCheckCount === 0 ? NO_FIRM_CHECKS_LINE : null}
-        onRun={() => firmPreset && setConfirming({ preset: firmPreset, target })}
+        checks={firmChecks ?? []}
+        onRun={(check) =>
+          firmPreset &&
+          setConfirming({
+            preset: firmPreset,
+            target,
+            ...(check ? { check: { id: check.id, title: check.title } } : {}),
+          })
+        }
       />
+
       <div className="mt-4">
         <p className="micro-label micro-label-ai mb-2">Lasso analyses</p>
         <div className="flex flex-wrap gap-2">
