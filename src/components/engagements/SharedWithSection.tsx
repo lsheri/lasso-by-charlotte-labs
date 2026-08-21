@@ -261,6 +261,7 @@ export function SharedWithSection({
             <AlertDialogAction
               onClick={() => {
                 setConfirmAll(false);
+                ellipse.fire();
                 void shareWithAll();
               }}
             >
