@@ -12,8 +12,18 @@ export function validateAnalysisInput(input: AnalysisInput): AnalysisInput {
     throw new Error("Unknown analysis.");
   }
   if (!input.work_item_id && !input.engagement_id) throw new Error("Nothing to analyse.");
+  // A check id is only meaningful for the firm checks preset, and only ever an
+  // id: the wording is read from the record server side.
+  if (input.check_id !== undefined && typeof input.check_id !== "string") {
+    throw new Error("Unknown check.");
+  }
+  if (input.preset_id !== "firm_checks" && input.check_id) {
+    const { check_id: _ignored, ...rest } = input;
+    return rest;
+  }
   return input;
 }
+
 
 /**
  * The non streaming entry point. Every rule, the daily cap included, lives in
