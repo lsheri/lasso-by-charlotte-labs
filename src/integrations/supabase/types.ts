@@ -1831,28 +1831,34 @@ export type Database = {
           answer_ref: string | null
           asker_id: string
           created_at: string
+          engagement_id: string | null
           id: string
           question: string
           scope: string
           subject_id: string
+          work_item_id: string | null
         }
         Insert: {
           answer_ref?: string | null
           asker_id: string
           created_at?: string
+          engagement_id?: string | null
           id?: string
           question: string
           scope: string
           subject_id: string
+          work_item_id?: string | null
         }
         Update: {
           answer_ref?: string | null
           asker_id?: string
           created_at?: string
+          engagement_id?: string | null
           id?: string
           question?: string
           scope?: string
           subject_id?: string
+          work_item_id?: string | null
         }
         Relationships: [
           {
@@ -1863,10 +1869,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "query_log_engagement_id_fkey"
+            columns: ["engagement_id"]
+            isOneToOne: false
+            referencedRelation: "engagements"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "query_log_subject_id_fkey"
             columns: ["subject_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "query_log_work_item_id_fkey"
+            columns: ["work_item_id"]
+            isOneToOne: false
+            referencedRelation: "work_items"
             referencedColumns: ["id"]
           },
         ]
