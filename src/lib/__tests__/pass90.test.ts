@@ -109,7 +109,10 @@ describe("90.4 check rules parsing", () => {
     expect(source).toContain("Upload rules (.txt or .md)");
     expect(source).toContain('accept=".txt,.md,text/plain,text/markdown"');
     expect(source).toContain("file.text()");
-    expect(source).toContain("nothing is saved until you save each check");
+    expect(source).toContain("UPLOAD_HONESTY_LINE");
+    expect(read("src/lib/check-rules.ts")).toContain(
+      "nothing is saved until you save each check",
+    );
     expect(source).not.toContain("storage.from");
   });
 });
