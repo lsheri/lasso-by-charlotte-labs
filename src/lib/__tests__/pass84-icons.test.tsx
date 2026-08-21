@@ -46,3 +46,18 @@ describe("notebook icon css", () => {
     expect(styles).toContain(".nb-nav-item-active::before");
   });
 });
+
+describe("GraphiteIcon inside an anchor", () => {
+  it("carries data-icon and stroke-width 1.75", () => {
+    const { container } = render(
+      <a href="/work">
+        <GraphiteIcon name="work" />
+        <span>All work</span>
+      </a>,
+    );
+    const svg = container.querySelector("svg");
+    expect(svg?.getAttribute("data-icon")).toBe("work");
+    expect(svg?.getAttribute("stroke-width")).toBe("1.75");
+    expect(svg?.getAttribute("data-anim")).toBe("1");
+  });
+});
