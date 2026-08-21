@@ -35,9 +35,12 @@ export type ConfirmTarget =
 export type AnalysisConfirmRequest = {
   preset: AnalysisPreset;
   target: ConfirmTarget;
+  /** One named firm check, when the run is for that check alone. */
+  check?: { id: string; title: string } | undefined;
   /** Called when the person adjusts the selection instead of running. */
   onAdjust?: (() => void) | undefined;
 };
+
 
 type ItemRow = {
   id: string;
