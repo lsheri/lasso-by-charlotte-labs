@@ -6,6 +6,7 @@ import { SuggestDot, Suggested } from "@/components/common/Suggested";
 import { MarkdownMessage } from "@/components/markdown/MarkdownMessage";
 import { AnalysisInfoPanel } from "@/components/reflect/AnalysisInfoPanel";
 import { AnalysisConfirm, type AnalysisConfirmRequest } from "@/components/reflect/AnalysisConfirm";
+import type { CompanionRow } from "@/lib/analysis-companions";
 import { FindingLabel } from "@/components/reflect/FindingLabel";
 import {
   FIRM_CHECK_BUBBLE_CLASS,
@@ -412,7 +413,12 @@ export function AnalysisChips({
   readsDetail: string;
   running: AnalysisPreset | null;
   /** checkId names one firm check; absent means the preset's own behaviour. */
-  onRun: (preset: AnalysisPreset, checkId?: string, extraItemIds?: string[]) => void;
+  onRun: (
+    preset: AnalysisPreset,
+    checkId?: string,
+    extraItemIds?: string[],
+    anchorItemId?: string | null,
+  ) => void;
 
   isCoach?: boolean;
   className?: string;
@@ -501,10 +507,10 @@ export function AnalysisChips({
         orgId={orgId}
         profileId={profileId}
         onCancel={() => setConfirming(null)}
-        onConfirm={(extraItemIds) => {
+        onConfirm={(anchorItemId, extraItemIds) => {
           const pending = confirming;
           setConfirming(null);
-          if (pending) onRun(pending.preset, pending.check?.id, extraItemIds);
+          if (pending) onRun(pending.preset, pending.check?.id, extraItemIds, anchorItemId);
         }}
       />
       <FirmSection
@@ -667,6 +673,7 @@ export function SelectionAnalysisChips({
     target: ChipTarget,
     checkId?: string,
     extraItemIds?: string[],
+    anchorItemId?: string | null,
   ) => void;
   className?: string;
   orgName?: string | undefined;
@@ -692,6 +699,11 @@ export function SelectionAnalysisChips({
     engagementHasBrief,
     firmCheckCount,
   );
+  // A run anchors on one deliverable; the others in the selection remain
+  // available so the person can point the run at the right one.
+  const selectionAnchors = selected
+    .filter((row) => isDeliverableType(row.type))
+    .map((row) => row as unknown as CompanionRow);
   const firmChip = chips.find((c) => c.preset.id === "firm_checks") ?? null;
   const stock = chips
     .filter((c) => c.preset.id !== "firm_checks")
@@ -706,7 +718,7 @@ export function SelectionAnalysisChips({
         orgId={orgId}
         profileId={profileId}
         onCancel={() => setConfirming(null)}
-        onConfirm={(extraItemIds) => {
+        onConfirm={(anchorItemId, extraItemIds) => {
           const pending = confirming;
           setConfirming(null);
           if (pending)
@@ -715,6 +727,7 @@ export function SelectionAnalysisChips({
               pending.target,
               pending.request.check?.id,
               extraItemIds,
+              anchorItemId,
             );
         }}
       />
@@ -736,6 +749,8 @@ export function SelectionAnalysisChips({
                 preset: firmChip.preset,
                 target: firmChip.target,
                 onAdjust,
+                anchorOptions: selectionAnchors,
+                preselectedIds: selected.map((row) => row.id),
                 ...(check ? { check: { id: check.id, title: check.title } } : {}),
               },
               target: firmChip.target,
@@ -757,7 +772,16 @@ export function SelectionAnalysisChips({
               reason={reason}
               onClick={() =>
                 target && target.kind !== "none"
-                  ? setConfirming({ request: { preset, target, onAdjust }, target })
+                  ? setConfirming({
+                      request: {
+                        preset,
+                        target,
+                        onAdjust,
+                        anchorOptions: selectionAnchors,
+                        preselectedIds: selected.map((row) => row.id),
+                      },
+                      target,
+                    })
                   : undefined
               }
             />
