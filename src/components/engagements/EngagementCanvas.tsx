@@ -94,13 +94,33 @@ export function EngagementCanvas({
   const [dropCol, setDropCol] = useState<number | null>(null);
   const [moveSheet, setMoveSheet] = useState<{ id: string; from: CanvasPos } | null>(null);
   const [page, setPage] = useState(0);
+  // Bumped on every pointerdown that could become a drag; the window listeners
+  // are keyed on it so tracking survives the pointer leaving the canvas.
+  const [gesture, setGesture] = useState(0);
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const colRefs = useRef<(HTMLDivElement | null)[]>([]);
   const cardRefs = useRef<Map<string, HTMLElement>>(new Map());
   const holdRef = useRef<number | null>(null);
-  const startRef = useRef<{ x: number; y: number; lifted: boolean; touch: boolean } | null>(null);
+  const startRef = useRef<{
+    x: number;
+    y: number;
+    lifted: boolean;
+    touch: boolean;
+    pos: CanvasPos;
+    id: string;
+    width: number;
+  } | null>(null);
+  /**
+   * True from the moment a gesture stops being a plain click: a lift, or the
+   * hold timer opening the move sheet. The click that the browser dispatches
+   * afterwards checks and clears this instead of reading startRef, which is
+   * already null by then.
+   */
+  const movedRef = useRef(false);
+  const dragRef = useRef<typeof drag>(null);
   const focusAfter = useRef<string | null>(null);
+
 
   const canEdit = Boolean(profile && profile.role !== "coach");
 
