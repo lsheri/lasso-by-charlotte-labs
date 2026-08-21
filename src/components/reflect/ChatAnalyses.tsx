@@ -396,7 +396,9 @@ export function AnalysisChips({
   target: ChipTarget;
   readsDetail: string;
   running: AnalysisPreset | null;
-  onRun: (preset: AnalysisPreset) => void;
+  /** checkId names one firm check; absent means the preset's own behaviour. */
+  onRun: (preset: AnalysisPreset, checkId?: string) => void;
+
   isCoach?: boolean;
   className?: string;
   engagementOptions?: ChipEngagement[];
