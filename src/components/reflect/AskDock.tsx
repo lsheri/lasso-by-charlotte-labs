@@ -3,9 +3,9 @@ import { X } from "lucide-react";
 
 import { AskSurface } from "@/components/reflect/AskSurface";
 import {
-  DOCK_MAX_WIDTH,
   DOCK_MIN_WIDTH,
   clampDockWidth,
+  maxDockWidth,
   useAskDockState,
 } from "@/components/reflect/ask-dock-state";
 import { useAskLasso } from "@/components/reflect/use-ask-lasso";
@@ -51,10 +51,22 @@ export function AskDock(props: {
 
   if (!open) return null;
 
+  /** A typed draft is work in progress: a stray backdrop click must not bin it. */
+  const hasDraft = ask.draft.trim().length > 0;
+
   return (
+    <>
+      <div
+        data-testid="ask-dock-backdrop"
+        aria-hidden
+        onClick={() => {
+          if (!hasDraft) onOpenChange(false);
+        }}
+        className="nb-ask-backdrop fixed inset-0 z-30"
+      />
     <aside
       aria-label="Ask Lasso"
-      className="fixed inset-y-0 right-0 z-40 flex flex-col border-l border-border bg-background"
+      className="nb-ask-plain fixed inset-y-0 right-0 z-40 flex flex-col border-l border-border bg-background"
       style={{ width }}
     >
       <div
@@ -62,7 +74,7 @@ export function AskDock(props: {
         aria-label="Resize Ask Lasso"
         aria-orientation="vertical"
         aria-valuemin={DOCK_MIN_WIDTH}
-        aria-valuemax={DOCK_MAX_WIDTH}
+        aria-valuemax={maxDockWidth()}
         aria-valuenow={width}
         tabIndex={0}
         onPointerDown={(event) => {
@@ -96,5 +108,6 @@ export function AskDock(props: {
         onClose={() => onOpenChange(false)}
       />
     </aside>
+    </>
   );
 }

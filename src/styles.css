@@ -1097,6 +1097,9 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   .nb-scatter[data-scatter="1"] .nb-paper {
     transform: none !important;
   }
+  .nb-ask-backdrop {
+    animation: none !important;
+  }
   .nb-canvas-card,
   .nb-canvas-card[data-lifted="true"],
   .nb-canvas-ghost,
@@ -1302,6 +1305,30 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   background: var(--nb-grey-2);
   outline: none;
 }
+/* Ask Lasso's dock reads as plain white paper: the dock keeps its border and
+   header, the ruled binder texture stops at its edge. */
+.nb-ask-plain .nb-binder,
+.nb-ask-plain .nb-binder-body {
+  background-image: none;
+  background-color: var(--nb-white);
+}
+
+/* The page behind the open dock softens so focus lands on the chat. It sits
+   under the dock and under dialogs/toasts, so nothing above it is blocked. */
+.nb-ask-backdrop {
+  background: color-mix(in oklab, var(--nb-ink) 8%, transparent);
+  backdrop-filter: blur(3px);
+  animation: nb-ask-backdrop-in 160ms ease-out;
+}
+@keyframes nb-ask-backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 .nb-ask-tabs {
   display: flex;
   gap: 4px;
@@ -1350,6 +1377,9 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   /* No scatter animation: the organised grid is the only state. */
   .nb-scatter[data-scatter="1"] .nb-paper {
     transform: none !important;
+  }
+  .nb-ask-backdrop {
+    animation: none !important;
   }
   .nb-canvas-card,
   .nb-canvas-card[data-lifted="true"],
