@@ -228,7 +228,6 @@ function HistoryTab({ ask }: { ask: AskLasso }) {
   const [expanded, setExpanded] = useState(false);
   const sessions = ask.sessions ?? [];
   const shown = expanded ? sessions : sessions.slice(0, HISTORY_DEFAULT_SHOWN);
-  const hidden = sessions.length - shown.length;
 
   return (
     <div className="min-h-0 flex-1 space-y-1 overflow-y-auto px-4 py-4">
@@ -270,10 +269,13 @@ function HistoryTab({ ask }: { ask: AskLasso }) {
               onClick={() => setExpanded((v) => !v)}
               className="mt-1 flex min-h-11 w-full items-center gap-1.5 rounded-[var(--radius-control)] border border-border px-3 text-left font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
             >
-              <GraphiteIcon name={expanded ? "chevron-up" : "chevron-down"} size={14} />
+              <GraphiteIcon
+                name="chevron-right"
+                size={14}
+                className={expanded ? "rotate-[-90deg]" : "rotate-90"}
+              />
               <span>
                 {expanded ? "Show fewer chats" : `Show all ${sessions.length} chats`}
-                {expanded || hidden <= 0 ? "" : ""}
               </span>
             </button>
           ) : null}
