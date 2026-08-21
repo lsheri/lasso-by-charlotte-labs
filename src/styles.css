@@ -1262,6 +1262,11 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   border-bottom-color: var(--nb-blue);
 }
 
+/* Lasso spider mascot (hotfix 88.1): animated frame by default, static first
+   frame under reduced motion. Base rules first, the swap below. */
+.nb-spider-anim { display: inline-block; }
+.nb-spider-static { display: none; }
+
 @media (prefers-reduced-motion: reduce) {
   .nb-mark path {
     stroke-dasharray: none;
@@ -1283,6 +1288,8 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
     transition: none !important;
     animation: none !important;
   }
+  .nb-spider-anim { display: none; }
+  .nb-spider-static { display: inline-block; }
 }
 
 /* ---------------------------------------------------------------------------

@@ -1,7 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Sparkle } from "lucide-react";
 
+import { SpiderMark } from "@/components/notebook/SpiderMark";
 import { EngagementDecisions } from "@/components/decisions/EngagementDecisions";
 import { EngagementLineage } from "@/components/peek/EngagementLineage";
 import { PeekPanel } from "@/components/peek/PeekPanel";
@@ -110,7 +110,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
               onClick={() => setAskOpen(true)}
               className="hidden shrink-0 items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground md:inline-flex"
             >
-              <Sparkle className="h-3.5 w-3.5" aria-hidden /> Ask Lasso
+              <SpiderMark size={18} /> Ask Lasso
             </button>
           ) : null}
           {profile && profile.role !== "coach" ? (
