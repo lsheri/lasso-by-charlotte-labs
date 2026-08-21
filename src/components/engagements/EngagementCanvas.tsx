@@ -446,7 +446,7 @@ export function EngagementCanvas({
 
   return (
     <section>
-      <h2 className="micro-label">Workstreams</h2>
+      <h2 className="micro-label micro-label-section">Workstreams</h2>
 
       <div className="nb-canvas mt-3">
         <div

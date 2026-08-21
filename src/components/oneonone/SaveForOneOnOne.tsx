@@ -189,7 +189,7 @@ export function SavedForOneOnOne({ profileId }: { profileId: string }) {
 
   return (
     <section className="mb-6">
-      <h2 className="micro-label">You wanted to talk about</h2>
+      <h2 className="micro-label micro-label-section">You wanted to talk about</h2>
       <div className="mt-3 space-y-3">
         {notes.map((note) => (
           <div

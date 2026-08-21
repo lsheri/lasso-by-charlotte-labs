@@ -11,7 +11,7 @@ export function Panel({
 }) {
   return (
     <section className="rounded-[var(--radius)] border border-border bg-card px-5 py-4 shadow-card">
-      <h2 className="micro-label">{title}</h2>
+      <h2 className="micro-label micro-label-section">{title}</h2>
       {note ? <p className="mt-1 text-xs text-muted-foreground">{note}</p> : null}
       <div className="mt-4 space-y-4">{children}</div>
     </section>

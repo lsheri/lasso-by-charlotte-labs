@@ -44,7 +44,7 @@ function QuestionsAsked({ profileId }: { profileId: string }) {
   if (!data || data.length === 0) return null;
   return (
     <div className="mt-8 border-t border-border pt-4">
-      <h3 className="micro-label">Questions asked about your work</h3>
+      <h3 className="micro-label micro-label-ai">Questions asked about your work</h3>
       <ul className="mt-2 space-y-1.5">
         {data.map((row) => (
           <li key={row.id} className="text-xs text-muted-foreground">
@@ -83,7 +83,7 @@ export function AiReads({ workItemId }: { workItemId: string }) {
     <>
       {hasReads ? (
         <section className="mt-8 border-t border-border pt-4">
-          <h3 className="micro-label">AI reads</h3>
+          <h3 className="micro-label micro-label-ai">AI reads</h3>
           <ul className="mt-2 space-y-1">
             {(data ?? []).map((read) => (
               <li key={read.id} className="text-xs text-muted-foreground">

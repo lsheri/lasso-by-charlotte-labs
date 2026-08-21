@@ -79,7 +79,7 @@ export function DecisionsPage() {
         <div className="space-y-10">
           {drafts.length > 0 ? (
             <section>
-              <h2 className="micro-label">Awaiting your review</h2>
+              <h2 className="micro-label micro-label-section">Awaiting your review</h2>
               <div className="mt-3 space-y-4">
                 {drafts.map((decision) => (
                   <DecisionCard
@@ -123,7 +123,7 @@ export function DecisionsPage() {
 
           {confirmed.length > 0 ? (
             <section>
-              <h2 className="micro-label">Confirmed</h2>
+              <h2 className="micro-label micro-label-section">Confirmed</h2>
               <div className="mt-3 space-y-4">
                 {confirmed.map((decision) => (
                   <DecisionCard

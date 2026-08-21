@@ -127,7 +127,7 @@ export function YourWorkCard() {
 
   return (
     <section>
-      <h2 className="micro-label">Your work</h2>
+      <h2 className="micro-label micro-label-section">Your work</h2>
       <div className="mt-3 space-y-4 rounded-[var(--radius)] border border-border bg-card px-4 py-4 shadow-card">
         <p className="text-sm text-muted-foreground">
           This helps Lasso make decisions and 1:1 prep more relevant. It is never shown to anyone as

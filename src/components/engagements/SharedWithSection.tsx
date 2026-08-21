@@ -166,7 +166,7 @@ export function SharedWithSection({
   return (
     <section id="shared-with" className="scroll-mt-24">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="micro-label relative">
+        <h2 className="micro-label micro-label-section relative">
           {heading}
           {ellipse.markId === "shared-with" ? <DrawnEllipse key={ellipse.markKey} /> : null}
         </h2>

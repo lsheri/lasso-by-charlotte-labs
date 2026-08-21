@@ -36,7 +36,7 @@ export function AccountEmailCard() {
 
   return (
     <section>
-      <h2 className="micro-label">Account</h2>
+      <h2 className="micro-label micro-label-section">Account</h2>
       <div className="mt-3 space-y-3 rounded-[var(--radius)] border border-border bg-card px-4 py-4 shadow-card">
         <p className="text-sm text-muted-foreground">
           Your work record belongs to your account. If you&apos;re leaving a company, switch to a

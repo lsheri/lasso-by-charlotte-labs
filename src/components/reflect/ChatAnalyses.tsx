@@ -479,7 +479,7 @@ export function AnalysisChips({
         onRun={() => firmPreset && setConfirming({ preset: firmPreset, target })}
       />
       <div className="mt-4">
-        <p className="micro-label mb-2">Lasso analyses</p>
+        <p className="micro-label micro-label-ai mb-2">Lasso analyses</p>
         <div className="flex flex-wrap gap-2">
           {stock.map((preset) => {
             const blocked = preset.id === "what_recurs" && notEnoughWork;
@@ -672,7 +672,7 @@ export function SelectionAnalysisChips({
         }}
       />
       <div className="mt-4">
-        <p className="micro-label mb-2">Lasso analyses</p>
+        <p className="micro-label micro-label-ai mb-2">Lasso analyses</p>
         <div className="flex flex-wrap gap-2">
           {stock.map(({ preset, target, reason }) => (
             <StockPill

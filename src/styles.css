@@ -364,6 +364,17 @@
   color: var(--nb-mid);
 }
 
+/* Pass 91: three-level label hierarchy. Blue names a region of the page,
+   green names something Lasso produced, plain micro-label stays grey for
+   field labels nested inside a card. Text-level only, no filled surfaces. */
+@utility micro-label-section {
+  color: var(--nb-blue);
+}
+
+@utility micro-label-ai {
+  color: var(--nb-green);
+}
+
 @utility page-title {
   font-family: var(--font-sans);
   font-size: 26px;

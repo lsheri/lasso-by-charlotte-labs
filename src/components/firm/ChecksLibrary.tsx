@@ -142,7 +142,7 @@ export function ChecksLibrary({
     <section className="rounded-[var(--radius)] border border-border bg-card px-5 py-4 shadow-card">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="micro-label">Checks library</h2>
+          <h2 className="micro-label micro-label-section">Checks library</h2>
           <p className="mt-1 text-xs text-muted-foreground">
             What this firm asks of its work. Everyone the check applies to can read it. Admins and
             leads write firm wide checks here; narrower checks are written on an engagement or in a
