@@ -11,9 +11,9 @@ import { useEngagements } from "@/hooks/use-engagements";
 import { useProfile } from "@/hooks/use-profile";
 import { supabase } from "@/integrations/supabase/client";
 import { detachEpisodeItems, syncEpisodeForMapping } from "@/lib/episodes.functions";
-import { logEvent } from "@/lib/telemetry";
-import { captureChannelOf, logV2 } from "@/lib/telemetry-v2";
+import { remapItems } from "@/lib/workflow-order";
 import type { WorkItemRow } from "@/lib/work-types";
+
 import { engagementDisplayCode, engagementDisplayTitle } from "@/lib/clients";
 
 type TaskRow = { id: string; name: string };
@@ -69,54 +69,26 @@ export function MapDialog({
 
     // A conversation maps as a unit: transcript and every attachment together.
     const targets = groupItems && groupItems.length > 0 ? groupItems : [item];
-    const ids = targets.map((t) => t.id);
 
-    const cleanup = await supabase.from("work_item_tasks").delete().in("work_item_id", ids);
-    if (cleanup.error) {
-      setError(cleanup.error.message);
+    const result = await remapItems({
+      targets,
+      taskId,
+      profile: { id: profile.id, org_id: profile.org_id },
+      detachEpisode: detachEpisode as never,
+      syncEpisode: syncEpisode as never,
+      invalidate: (queryKey) => queryClient.invalidateQueries({ queryKey: [...queryKey] }),
+    });
+    if (result.error) {
+      setError(result.error);
       setPending(false);
       return;
     }
 
-    const link = await supabase
-      .from("work_item_tasks")
-      .insert(ids.map((workItemId) => ({ work_item_id: workItemId, task_id: taskId })));
-    if (link.error) {
-      setError(link.error.message);
-      setPending(false);
-      return;
-    }
-
-    const update = await supabase.from("work_items").update({ visibility: "mapped" }).in("id", ids);
-    if (update.error) {
-      setError(update.error.message);
-      setPending(false);
-      return;
-    }
-
-    // Mapping is the product action that assembles the piece of work.
-    await detachEpisode({ data: { work_item_ids: ids } });
-    await syncEpisode({ data: { task_id: taskId, work_item_ids: ids, profile_id: profile.id } });
-    await queryClient.invalidateQueries({ queryKey: ["episode", taskId] });
-
-    for (const target of targets) {
-      logEvent("workitem.mapped", profile.org_id, { type: target.type, source: target.source });
-      logV2(
-        "work_item.mapped",
-        {
-          item_type: target.type,
-          channel: captureChannelOf(target.source),
-          bulk: targets.length,
-        },
-        { profileId: profile.id, workItemId: target.id },
-      );
-    }
-    await queryClient.invalidateQueries({ queryKey: ["work-items"] });
-    await queryClient.invalidateQueries({ queryKey: ["engagement"] });
     setPending(false);
     onOpenChange(false);
     reset();
   }
+
 
   async function createAndMap() {
     if (!engagementId || !profile || !newTask.trim()) return;

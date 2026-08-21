@@ -2,13 +2,13 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Sparkle } from "lucide-react";
 
-import { Input } from "@/components/ui/input";
 import { EngagementDecisions } from "@/components/decisions/EngagementDecisions";
 import { EngagementLineage } from "@/components/peek/EngagementLineage";
+import { PeekPanel } from "@/components/peek/PeekPanel";
 import { OneOnOneBrief } from "@/components/oneonone/OneOnOneBrief";
 import { CaptureCoverage } from "@/components/common/CaptureCoverage";
 import { EditEngagementDialog } from "@/components/engagements/EditEngagementDialog";
-import { WorkstreamCard } from "@/components/engagements/WorkstreamCard";
+import { EngagementCanvas, type CanvasTask } from "@/components/engagements/EngagementCanvas";
 import { EngagementBriefSection } from "@/components/engagements/EngagementBriefSection";
 import { SharedWithSection } from "@/components/engagements/SharedWithSection";
 import { FirmChecksCard } from "@/components/coaching/FirmChecksCard";
@@ -17,27 +17,17 @@ import { SubjectCoachingSection } from "@/components/coaching/SubjectCoachingSec
 import { AnalysisLens } from "@/components/reflect/AnalysisLens";
 import { ReflectDock } from "@/components/reflect/ReflectDock";
 import { useRegisterAskLasso } from "@/components/reflect/ask-lasso-context";
-import { TaskWorkflow, type WorkflowElement } from "@/components/work/TaskWorkflow";
 import { useProfile } from "@/hooks/use-profile";
 import { isBusinessOrg } from "@/hooks/use-profile";
 import { useMyEngagementMembership } from "@/hooks/use-engagement-membership";
 import { useEngagementPage, useEngagementSlice } from "@/hooks/use-engagement-page";
 import { useEngagementCoaches } from "@/hooks/use-coach-share";
-import { supabase } from "@/integrations/supabase/client";
 import { clientDisplayName, engagementDisplayCode, engagementDisplayTitle } from "@/lib/clients";
 import { INVITE_ADMIN_ONLY_LINE } from "@/lib/invites-shared";
+import type { WorkItemRow } from "@/lib/work-types";
 
-type TaskWithWork = {
-  id: string;
-  name: string;
-  owner_id: string;
-  detail: string | null;
-  work_item_tasks: {
-    step_no: number | null;
-    step_confirmed: boolean;
-    work_items: WorkflowElement["work_items"] | null;
-  }[];
-};
+
+type TaskWithWork = CanvasTask;
 
 export function EngagementPage({ engagementId }: { engagementId: string }) {
   const { data: profile } = useProfile();
@@ -46,8 +36,8 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
   const [askOpen, setAskOpen] = useState(false);
   const [analyseOpen, setAnalyseOpen] = useState(false);
   const [prepOpen, setPrepOpen] = useState(false);
-  const [taskName, setTaskName] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [peekItem, setPeekItem] = useState<WorkItemRow | null>(null);
+
   const coaches = useEngagementCoaches(engagementId);
   const membership = useMyEngagementMembership(engagementId, profile?.id);
 
@@ -65,20 +55,8 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
     (payload) => payload.tasks as unknown as TaskWithWork[],
   );
 
-  async function addTask(event: React.FormEvent) {
-    event.preventDefault();
-    if (!profile || !taskName.trim()) return;
-    setError(null);
-    const { error: e } = await supabase
-      .from("tasks")
-      .insert({ engagement_id: engagementId, owner_id: profile.id, name: taskName.trim() });
-    if (e) {
-      setError(e.message);
-      return;
-    }
-    setTaskName("");
-    await queryClient.invalidateQueries({ queryKey: ["engagement-tasks", engagementId] });
-  }
+
+
 
   const engagement = engagementQuery.data?.engagement ?? null;
   const isQuickFolder = engagement?.clients?.quick_folder === true;
@@ -242,48 +220,27 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
         />
       ) : null}
 
-      <section>
-        <h2 className="micro-label">Workstreams</h2>
-        <div className="mt-3 space-y-2">
-          {(tasksQuery.data ?? []).map((task) => {
-            const elements: WorkflowElement[] = task.work_item_tasks
-              .filter((link) => link.work_items !== null)
-              .map((link) => ({
-                step_no: link.step_no,
-                step_confirmed: link.step_confirmed,
-                work_items: { ...link.work_items!, work_item_tasks: [] },
-              }));
-            const canEdit =
-              !!profile &&
-              profile.role !== "coach" &&
-              elements.every((e) => e.work_items.owner_id === profile.id);
-            return (
-              <WorkstreamCard
-                key={task.id}
-                task={task}
-                engagementId={engagementId}
-                elements={elements}
-                canEdit={canEdit}
-                profile={profile}
-                onChanged={async () => {
-                  await queryClient.invalidateQueries({
-                    queryKey: ["engagement-tasks", engagementId],
-                  });
-                }}
-              />
-            );
-          })}
+      <EngagementCanvas
+        engagementId={engagementId}
+        tasks={tasksQuery.data ?? []}
+        profile={profile}
+        onChanged={async () => {
+          await queryClient.invalidateQueries({
+            queryKey: ["engagement-tasks", engagementId],
+          });
+        }}
+        onOpen={(item) => setPeekItem(item)}
+      />
 
-          <form onSubmit={addTask} className="pt-2">
-            <Input
-              value={taskName}
-              onChange={(e) => setTaskName(e.target.value)}
-              placeholder="Add a workstream and press enter"
-            />
-          </form>
-          {error ? <p className="text-sm text-destructive">{error}</p> : null}
-        </div>
-      </section>
+      <PeekPanel
+        entry={peekItem}
+        open={peekItem !== null}
+        onOpenChange={(next) => {
+          if (!next) setPeekItem(null);
+        }}
+        canEdit={false}
+      />
+
 
       <SubjectCoachingSection profileId={profile?.id} engagementId={engagementId} />
 

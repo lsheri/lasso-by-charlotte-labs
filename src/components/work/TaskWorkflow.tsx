@@ -11,9 +11,9 @@ import {
 import { workIdentityLabel } from "@/lib/work-identity";
 import { WorkDateDialog } from "@/components/work/WorkDateDialog";
 import { OpenFileAction } from "@/components/work/OpenFileAction";
-import { supabase } from "@/integrations/supabase/client";
-import { logEvent } from "@/lib/telemetry";
+import { persistOrder, resetOrder } from "@/lib/workflow-order";
 import { effectiveWorkDate, formatDate, sourceLabel, type WorkItemRow } from "@/lib/work-types";
+
 
 export type WorkflowElement = {
   step_no: number | null;
@@ -73,37 +73,24 @@ export function TaskWorkflow({
   async function persist(order: WorkflowElement[]) {
     setBusy(true);
     setError(null);
-    for (const [index, element] of order.entries()) {
-      const { error: e } = await supabase
-        .from("work_item_tasks")
-        .update({ step_no: index + 1, step_confirmed: true })
-        .eq("task_id", taskId)
-        .eq("work_item_id", element.work_items.id);
-      if (e) {
-        setError(e.message);
-        setBusy(false);
-        return;
-      }
-    }
-    if (orgId) logEvent("workflow.reordered", orgId, { item_count: order.length });
-    await onChanged();
+    const result = await persistOrder({
+      taskId,
+      workItemIds: order.map((element) => element.work_items.id),
+      orgId,
+      onChanged,
+    });
+    if (result.error) setError(result.error);
     setBusy(false);
   }
 
   async function reset() {
     setBusy(true);
     setError(null);
-    const { error: e } = await supabase
-      .from("work_item_tasks")
-      .update({ step_no: null, step_confirmed: false })
-      .eq("task_id", taskId);
-    if (e) setError(e.message);
-    else {
-      if (orgId) logEvent("workflow.reset", orgId, {});
-      await onChanged();
-    }
+    const result = await resetOrder({ taskId, orgId, onChanged });
+    if (result.error) setError(result.error);
     setBusy(false);
   }
+
 
   function move(from: number, to: number) {
     if (from === to || to < 0 || to >= combined.length) return;
