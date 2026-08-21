@@ -121,13 +121,13 @@ describe("92.3 the Internal shelf", () => {
     expect(flat).toEqual([]);
   });
 
-  it("keeps quick folders flat, never inside a shelf", () => {
+  it("shelves quick folders under Unmapped, after Internal (pass 93)", () => {
     const { groups, flat } = groupEngagementsByClient([
       eng("q", "Q", { id: "qf", name: "Quick", quick_folder: true }),
       eng("1", "A"),
     ]);
-    expect(flat.map((e) => e.id)).toEqual(["q"]);
-    expect(groups.map((g) => g.clientId)).toEqual([INTERNAL_SHELF_ID]);
+    expect(flat).toEqual([]);
+    expect(groups.map((g) => g.clientId)).toEqual([INTERNAL_SHELF_ID, "__unmapped__"]);
   });
 
   it("omits the Internal shelf when every engagement has a client", () => {

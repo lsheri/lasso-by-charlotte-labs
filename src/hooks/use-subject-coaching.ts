@@ -42,21 +42,27 @@ export type SubjectQuery = {
   profiles: { display_name: string } | null;
 };
 
-export async function fetchQueriesAboutMe(subjectId: string): Promise<SubjectQuery[]> {
+export async function fetchQueriesAboutMe(
+  subjectId: string,
+  engagementId: string,
+): Promise<SubjectQuery[]> {
+  // A question belongs to the engagement it was asked in. Anything unscoped
+  // stays in the chat history rather than surfacing under the wrong folder.
   const { data, error } = await supabase
     .from("query_log")
     .select("id, question, created_at, profiles!query_log_asker_id_fkey(display_name)")
     .eq("subject_id", subjectId)
+    .eq("engagement_id", engagementId)
     .order("created_at", { ascending: false })
     .limit(50);
   if (error) throw error;
   return (data ?? []) as unknown as SubjectQuery[];
 }
 
-export function useQueriesAboutMe(subjectId: string | undefined) {
+export function useQueriesAboutMe(subjectId: string | undefined, engagementId: string) {
   return useQuery({
-    queryKey: ["queries-about-me", subjectId],
-    queryFn: () => fetchQueriesAboutMe(subjectId as string),
+    queryKey: ["queries-about-me", subjectId, engagementId],
+    queryFn: () => fetchQueriesAboutMe(subjectId as string, engagementId),
     enabled: Boolean(subjectId),
   });
 }

@@ -37,23 +37,34 @@ function byCode(a: NavEngagement, b: NavEngagement): number {
 export const INTERNAL_SHELF_ID = "__internal__";
 export const INTERNAL_SHELF_NAME = "Internal";
 
+/** The display only shelf that gathers quick folders. Never a clients row. */
+export const UNMAPPED_SHELF_ID = "__unmapped__";
+export const UNMAPPED_SHELF_NAME = "Unmapped";
+
+/** The two synthetic shelves carry a quiet count; real client shelves do not. */
+export function isSyntheticShelf(clientId: string): boolean {
+  return clientId === INTERNAL_SHELF_ID || clientId === UNMAPPED_SHELF_ID;
+}
+
 /**
  * A client shelf exists for a real client row that is not a quick folder.
  * Engagements with no client row (and label only leftovers) collect under the
- * synthetic "Internal" shelf, which always renders last. Quick folders stay
- * flat at top level exactly as they always did, never inside any shelf.
+ * synthetic "Internal" shelf; quick folders collect under "Unmapped". Real
+ * clients sort A to Z first, then Internal, then Unmapped last, and each
+ * synthetic shelf appears only when it holds something.
  */
 export function groupEngagementsByClient<T extends NavEngagement>(
   engagements: readonly T[],
 ): NavEngagementGroups<T> {
   const shelves = new Map<string, ClientShelf<T>>();
   const internal: T[] = [];
+  const unmapped: T[] = [];
   const flat: T[] = [];
 
   for (const engagement of engagements) {
     const client = engagement.clients;
     if (client && client.quick_folder === true) {
-      flat.push(engagement);
+      unmapped.push(engagement);
     } else if (client && client.quick_folder === false && client.id) {
       const shelf = shelves.get(client.id) ?? {
         clientId: client.id,
@@ -79,8 +90,17 @@ export function groupEngagementsByClient<T extends NavEngagement>(
     });
   }
 
+  if (unmapped.length > 0) {
+    groups.push({
+      clientId: UNMAPPED_SHELF_ID,
+      name: UNMAPPED_SHELF_NAME,
+      engagements: [...unmapped].sort(byCode),
+    });
+  }
+
   return { groups, flat: [...flat].sort(byCode) };
 }
+
 
 
 const COLLAPSE_KEY = "lasso.nav.clients";
