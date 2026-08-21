@@ -143,12 +143,12 @@ export function ContextAudit({ manifest }: { manifest: ContextManifest | null })
   if (chips.length === 0 && manifest.excluded.length === 0) return null;
 
   return (
-    <div className="mt-2">
+    <div className="nb-sticky">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        className={`${MONO} flex min-h-11 w-full items-start gap-2 text-left text-muted-foreground transition-colors hover:text-foreground`}
+        className={`${MONO} nb-sticky-toggle flex min-h-11 w-full items-start gap-2 text-left`}
       >
         <span aria-hidden>{open ? "\u2212" : "+"}</span>
         <span className="min-w-0 break-words">
@@ -156,7 +156,7 @@ export function ContextAudit({ manifest }: { manifest: ContextManifest | null })
         </span>
       </button>
       {open ? (
-        <div className={`${MONO} mt-2 space-y-2 border-l border-border pl-3 text-muted-foreground`}>
+        <div className={`${MONO} mt-2 space-y-2 border-l border-[#e3d27f] pl-3`}>
           {manifest.engagement ? <p>Engagement: {manifest.engagement.name}</p> : null}
           {manifest.items.length > 0 ? (
             <div className="space-y-1">

@@ -144,7 +144,11 @@ function MessagesTab({ ask }: { ask: AskLasso }) {
 
         {messages.map((message) => (
           <div key={message.id}>
-            <p className="nb-binder-label">{message.role === "user" ? "You" : "Reflect"}</p>
+            <p
+              className={`nb-binder-label${message.role === "user" ? "" : " nb-speaker-ai"}`}
+            >
+              {message.role === "user" ? "You" : "AI"}
+            </p>
             {message.role === "user" ? (
               <p className="nb-binder-line whitespace-pre-wrap text-sm text-foreground">
                 {message.content}
@@ -176,7 +180,7 @@ function MessagesTab({ ask }: { ask: AskLasso }) {
 
         {ask.pending && ask.streamed ? (
           <div>
-            <p className="nb-binder-label">Reflect</p>
+            <p className="nb-binder-label nb-speaker-ai">AI</p>
             <MarkdownMessage content={ask.streamed} variant="binder" className="nb-stream" />
           </div>
         ) : null}
@@ -419,7 +423,7 @@ export function AskSurface({
   return (
     <>
       <header className="shrink-0 border-b border-border px-4 pb-2 pt-[calc(1rem+env(safe-area-inset-top))]">
-        <p className="micro-label pr-12">Ask Lasso</p>
+        <p className="micro-label pr-12 text-[color:var(--nb-blue)]">Ask Lasso</p>
         <h2 className="page-title mt-1 break-words text-[17px] leading-snug">{engagementTitle}</h2>
         <div className="mt-2">
           <AskTabs tab={tab} onTab={onTab} />

@@ -49,8 +49,8 @@ export function MarkdownMessage({
   if (html === null) {
     return (
       <p
-        className={`mt-1 whitespace-pre-wrap text-sm text-foreground ${
-          variant === "binder" ? "nb-binder-line" : "leading-relaxed"
+        className={`whitespace-pre-wrap text-sm text-foreground ${
+          variant === "binder" ? "nb-binder-line" : "mt-1 leading-relaxed"
         }`}
       >
         {content}
@@ -61,7 +61,7 @@ export function MarkdownMessage({
   return (
     <div
       ref={ref}
-      className={`peek-prose chat-prose mt-1 ${variant === "binder" ? "chat-binder" : ""} ${className ?? ""}`}
+      className={`peek-prose chat-prose ${variant === "binder" ? "chat-binder" : "mt-1"} ${className ?? ""}`}
       dangerouslySetInnerHTML={{ __html: html }}
     />
   );

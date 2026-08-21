@@ -407,7 +407,13 @@ export function ReflectPage() {
                 ) : null}
                 {(messages ?? []).map((message) => (
                   <div key={message.id}>
-                    <p className="micro-label">{message.role === "user" ? "You" : "Reflect"}</p>
+                    <p
+                      className={`micro-label text-[color:var(--nb-blue)]${
+                        message.role === "user" ? "" : " nb-speaker-ai"
+                      }`}
+                    >
+                      {message.role === "user" ? "You" : "AI"}
+                    </p>
                     {message.role === "user" ? (
                       <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-foreground">
                         {message.content}
@@ -432,7 +438,7 @@ export function ReflectPage() {
 
                 {pending && streamed ? (
                   <div>
-                    <p className="micro-label">Reflect</p>
+                    <p className="micro-label nb-speaker-ai">AI</p>
                     <MarkdownMessage content={streamed} />
                   </div>
                 ) : null}
