@@ -40,15 +40,20 @@ const HEADING = /^\s{0,3}(#{1,3})\s+(.+?)\s*#*\s*$/;
 export function parseCheckRules(fileName: string, text: string): ParsedCheckRules {
   const lines = text.replace(/\r\n?/g, "\n").split("\n");
   const sections: CheckDraft[] = [];
+  const preambleLines: string[] = [];
   let current: { title: string; body: string[] } | null = null;
+  let seenHeading = false;
 
   for (const line of lines) {
     const match = HEADING.exec(line);
     if (match) {
+      seenHeading = true;
       if (current) sections.push({ title: current.title, body: current.body.join("\n").trim() });
       current = { title: (match[2] ?? "").trim(), body: [] };
     } else if (current) {
       current.body.push(line);
+    } else if (!seenHeading) {
+      preambleLines.push(line);
     }
   }
   if (current) sections.push({ title: current.title, body: current.body.join("\n").trim() });
@@ -61,9 +66,17 @@ export function parseCheckRules(fileName: string, text: string): ParsedCheckRule
     return { drafts: [{ title: titleFromFileName(fileName), body }], truncated: false, total: 1 };
   }
 
+  // Text above the first heading is still someone's rule: it becomes the first
+  // draft, named after the file, rather than being dropped in silence.
+  const preamble = preambleLines.join("\n").trim();
+  const all = preamble
+    ? [{ title: titleFromFileName(fileName), body: preamble }, ...withHeadings]
+    : withHeadings;
+
   return {
-    drafts: withHeadings.slice(0, MAX_CHECK_DRAFTS),
-    truncated: withHeadings.length > MAX_CHECK_DRAFTS,
-    total: withHeadings.length,
+    drafts: all.slice(0, MAX_CHECK_DRAFTS),
+    truncated: all.length > MAX_CHECK_DRAFTS,
+    total: all.length,
   };
 }
+

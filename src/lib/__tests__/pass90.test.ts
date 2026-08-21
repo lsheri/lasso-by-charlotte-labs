@@ -100,6 +100,30 @@ describe("90.4 check rules parsing", () => {
     expect(parseCheckRules("empty.md", "   ").drafts).toHaveLength(0);
   });
 
+  it("keeps preamble text above the first heading as the first draft", () => {
+    const parsed = parseCheckRules("firm-rules.md", "always cite\n\n# One\nbody one");
+    expect(parsed.drafts).toHaveLength(2);
+    expect(parsed.drafts[0]).toEqual({ title: "firm-rules", body: "always cite" });
+    expect(parsed.drafts[1]?.title).toBe("One");
+    expect(parsed.total).toBe(2);
+  });
+
+  it("counts the preamble toward the cap", () => {
+    const text = `intro\n${Array.from({ length: 25 }, (_, i) => `# H${i}\nbody ${i}`).join("\n")}`;
+    const parsed = parseCheckRules("many.md", text);
+    expect(parsed.drafts[0]?.title).toBe("many");
+    expect(parsed.drafts).toHaveLength(MAX_CHECK_DRAFTS);
+    expect(parsed.total).toBe(26);
+    expect(parsed.truncated).toBe(true);
+  });
+
+  it("saving uploaded drafts refreshes the library lists", () => {
+    const source = read("src/components/firm/ChecksLibrary.tsx");
+    expect(source).toContain("useQueryClient");
+    expect(source).toContain('invalidateQueries({ queryKey: ["firm-check-library"] })');
+  });
+
+
   it("strips the extension for the fallback title", () => {
     expect(titleFromFileName("a/b/checks.markdown")).toBe("checks");
   });
