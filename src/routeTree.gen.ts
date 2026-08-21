@@ -28,6 +28,7 @@ import { Route as AuthenticatedReflectRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedWorkRouteImport } from './routes/_authenticated/work'
 import { Route as AuthenticatedCoachingIndexRouteImport } from './routes/_authenticated/coaching.index'
+import { Route as AuthenticatedDesignIconsRouteImport } from './routes/_authenticated/design.icons'
 import { Route as AuthenticatedEngagementsIdRouteImport } from './routes/_authenticated/engagements.$id'
 import { Route as ApiAnalysisStreamRouteImport } from './routes/api/analysis.stream'
 import { Route as ApiCoachChatStreamRouteImport } from './routes/api/coach-chat.stream'
@@ -130,6 +131,12 @@ const AuthenticatedCoachingIndexRoute =
     path: '/coaching/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedDesignIconsRoute =
+  AuthenticatedDesignIconsRouteImport.update({
+    id: '/design/icons',
+    path: '/design/icons',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedEngagementsIdRoute =
   AuthenticatedEngagementsIdRouteImport.update({
     id: '/engagements/$id',
@@ -181,6 +188,7 @@ export interface FileRoutesByFullPath {
   '/reflect': typeof AuthenticatedReflectRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/work': typeof AuthenticatedWorkRoute
+  '/design/icons': typeof AuthenticatedDesignIconsRoute
   '/engagements/$id': typeof AuthenticatedEngagementsIdRoute
   '/api/analysis/stream': typeof ApiAnalysisStreamRoute
   '/api/coach-chat/stream': typeof ApiCoachChatStreamRoute
@@ -207,6 +215,7 @@ export interface FileRoutesByTo {
   '/reflect': typeof AuthenticatedReflectRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/work': typeof AuthenticatedWorkRoute
+  '/design/icons': typeof AuthenticatedDesignIconsRoute
   '/engagements/$id': typeof AuthenticatedEngagementsIdRoute
   '/api/analysis/stream': typeof ApiAnalysisStreamRoute
   '/api/coach-chat/stream': typeof ApiCoachChatStreamRoute
@@ -235,6 +244,7 @@ export interface FileRoutesById {
   '/_authenticated/reflect': typeof AuthenticatedReflectRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/work': typeof AuthenticatedWorkRoute
+  '/_authenticated/design/icons': typeof AuthenticatedDesignIconsRoute
   '/_authenticated/engagements/$id': typeof AuthenticatedEngagementsIdRoute
   '/api/analysis/stream': typeof ApiAnalysisStreamRoute
   '/api/coach-chat/stream': typeof ApiCoachChatStreamRoute
@@ -263,6 +273,7 @@ export interface FileRouteTypes {
     | '/reflect'
     | '/settings'
     | '/work'
+    | '/design/icons'
     | '/engagements/$id'
     | '/api/analysis/stream'
     | '/api/coach-chat/stream'
@@ -289,6 +300,7 @@ export interface FileRouteTypes {
     | '/reflect'
     | '/settings'
     | '/work'
+    | '/design/icons'
     | '/engagements/$id'
     | '/api/analysis/stream'
     | '/api/coach-chat/stream'
@@ -316,6 +328,7 @@ export interface FileRouteTypes {
     | '/_authenticated/reflect'
     | '/_authenticated/settings'
     | '/_authenticated/work'
+    | '/_authenticated/design/icons'
     | '/_authenticated/engagements/$id'
     | '/api/analysis/stream'
     | '/api/coach-chat/stream'
@@ -475,6 +488,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCoachingIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/design/icons': {
+      id: '/_authenticated/design/icons'
+      path: '/design/icons'
+      fullPath: '/design/icons'
+      preLoaderRoute: typeof AuthenticatedDesignIconsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/engagements/$id': {
       id: '/_authenticated/engagements/$id'
       path: '/engagements/$id'
@@ -531,6 +551,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedReflectRoute: typeof AuthenticatedReflectRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedWorkRoute: typeof AuthenticatedWorkRoute
+  AuthenticatedDesignIconsRoute: typeof AuthenticatedDesignIconsRoute
   AuthenticatedEngagementsIdRoute: typeof AuthenticatedEngagementsIdRoute
   AuthenticatedCoachingIndexRoute: typeof AuthenticatedCoachingIndexRoute
   AuthenticatedCoachingEngagementIdSubjectIdRoute: typeof AuthenticatedCoachingEngagementIdSubjectIdRoute
@@ -547,6 +568,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedReflectRoute: AuthenticatedReflectRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedWorkRoute: AuthenticatedWorkRoute,
+  AuthenticatedDesignIconsRoute: AuthenticatedDesignIconsRoute,
   AuthenticatedEngagementsIdRoute: AuthenticatedEngagementsIdRoute,
   AuthenticatedCoachingIndexRoute: AuthenticatedCoachingIndexRoute,
   AuthenticatedCoachingEngagementIdSubjectIdRoute:
