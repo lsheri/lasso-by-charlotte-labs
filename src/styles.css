@@ -690,7 +690,7 @@ button:focus-visible .nb-ico[data-anim="1"] path,
 [role="button"]:focus-visible .nb-ico[data-anim="1"] path,
 .nb-ico[data-anim="1"]:hover path,
 .nb-ico[data-anim="1"]:focus-visible path {
-  animation: nb-ico-draw var(--nb-ico-draw, 560ms) var(--nb-ease) both;
+  animation: nb-ico-draw var(--nb-ico-draw, 700ms) var(--nb-ease) both;
 }
 a:hover .nb-ico[data-anim="1"] .nb-sig,
 a:focus-visible .nb-ico[data-anim="1"] .nb-sig,
@@ -701,8 +701,8 @@ button:focus-visible .nb-ico[data-anim="1"] .nb-sig,
 .nb-ico[data-anim="1"]:hover .nb-sig,
 .nb-ico[data-anim="1"]:focus-visible .nb-sig {
   animation:
-    nb-ico-draw var(--nb-ico-draw, 560ms) var(--nb-ease) both,
-    var(--nb-sig) 600ms var(--nb-ease) var(--nb-ico-draw, 560ms) both;
+    nb-ico-draw var(--nb-ico-draw, 700ms) var(--nb-ease) both,
+    var(--nb-sig) 600ms var(--nb-ease) var(--nb-ico-draw, 700ms) both;
 }
 .nb-ico[data-play="1"] .nb-sig {
   animation: var(--nb-sig) 900ms var(--nb-ease) 300ms both;
@@ -710,17 +710,17 @@ button:focus-visible .nb-ico[data-anim="1"] .nb-sig,
 a:hover .nb-ico[data-icon="drag-handle"] .nb-sig:nth-of-type(2),
 button:hover .nb-ico[data-icon="drag-handle"] .nb-sig:nth-of-type(2),
 .nb-ico[data-icon="drag-handle"]:hover .nb-sig:nth-of-type(2) {
-  animation-delay: 0ms, calc(var(--nb-ico-draw, 560ms) + 120ms);
+  animation-delay: 0ms, calc(var(--nb-ico-draw, 700ms) + 120ms);
 }
 a:hover .nb-ico[data-icon="drag-handle"] .nb-sig:nth-of-type(3),
 button:hover .nb-ico[data-icon="drag-handle"] .nb-sig:nth-of-type(3),
 .nb-ico[data-icon="drag-handle"]:hover .nb-sig:nth-of-type(3) {
-  animation-delay: 0ms, calc(var(--nb-ico-draw, 560ms) + 240ms);
+  animation-delay: 0ms, calc(var(--nb-ico-draw, 700ms) + 240ms);
 }
 a:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 .nb-ico[data-icon="close"]:hover .nb-sig:nth-of-type(2) {
-  animation-delay: 0ms, calc(var(--nb-ico-draw, 560ms) + 180ms);
+  animation-delay: 0ms, calc(var(--nb-ico-draw, 700ms) + 180ms);
 }
 
 @keyframes nb-ico-draw {
