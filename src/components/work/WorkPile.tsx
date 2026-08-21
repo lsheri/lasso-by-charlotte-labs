@@ -30,11 +30,15 @@ const ROTATIONS = ["0deg", "-1.4deg", "2.1deg", "-2.8deg", "3.6deg"];
 export function WorkPile({
   entries,
   renderEntry,
+  forceMatrix = false,
 }: {
   entries: WorkEntry[];
   renderEntry: (entry: WorkEntry) => React.ReactNode;
+  /** Select mode and live suggestions need the rows themselves on screen. */
+  forceMatrix?: boolean;
 }) {
   const [view, setView] = useState<"pile" | "matrix">("pile");
+  const shown = forceMatrix ? "matrix" : view;
   const startY = useRef<number | null>(null);
   const startX = useRef<number | null>(null);
 
@@ -54,7 +58,7 @@ export function WorkPile({
         <div className="nb-seg" role="group" aria-label="Unmapped view">
           <button
             type="button"
-            aria-pressed={view === "pile"}
+            aria-pressed={shown === "pile"}
             onClick={() => setView("pile")}
             className="nb-seg-item"
           >
@@ -62,7 +66,7 @@ export function WorkPile({
           </button>
           <button
             type="button"
-            aria-pressed={view === "matrix"}
+            aria-pressed={shown === "matrix"}
             onClick={() => setView("matrix")}
             className="nb-seg-item"
           >
@@ -74,7 +78,7 @@ export function WorkPile({
         </p>
       </div>
 
-      {view === "pile" ? (
+      {shown === "pile" ? (
         <div
           className="nb-quad rounded-[var(--radius)] border border-border p-4 sm:p-6"
           onPointerDown={(event) => {
