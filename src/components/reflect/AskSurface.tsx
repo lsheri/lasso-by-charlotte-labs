@@ -435,6 +435,7 @@ export function AskSurface({
   engagementTitle,
   profileId,
   orgId,
+  itemCount,
   onClose,
   mobile,
 }: {
@@ -445,6 +446,8 @@ export function AskSurface({
   engagementTitle: string;
   profileId: string;
   orgId: string;
+  /** Mapped pieces of work in this engagement, already counted by the page. */
+  itemCount: number;
   onClose: () => void;
   mobile?: boolean;
 }) {
@@ -469,6 +472,22 @@ export function AskSurface({
           engagementTitle={engagementTitle}
           profileId={profileId}
           onClose={onClose}
+        />
+      ) : null}
+
+      {tab === "analyse" ? (
+        <AnalysisLens
+          embedded
+          open
+          onOpenChange={() => onTab("messages")}
+          target={{
+            kind: "engagement",
+            id: engagementId,
+            title: engagementTitle,
+            itemCount,
+          }}
+          profileId={profileId}
+          orgId={orgId}
         />
       ) : null}
 
