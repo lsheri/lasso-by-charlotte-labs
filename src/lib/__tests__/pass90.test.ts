@@ -153,17 +153,18 @@ describe("90.5 sidebar grouping", () => {
 
   it("groups by client id and sorts rows by code", () => {
     const { groups } = groupEngagementsByClient(rows);
-    // Pass 92: real client shelves first, the synthetic Internal shelf last.
-    expect(groups).toHaveLength(2);
+    // Pass 93: real client shelves first, then Internal, then Unmapped.
+    expect(groups).toHaveLength(3);
     expect(groups[0]?.name).toBe("Acme");
     expect(groups[0]?.engagements.map((e) => e.code)).toEqual(["SF-001", "SF-002"]);
-    expect(groups[1]?.name).toBe("Internal");
+    expect(groups.map((g) => g.name)).toEqual(["Acme", "Internal", "Unmapped"]);
   });
 
-  it("keeps quick folders flat and collects the rest under Internal", () => {
+  it("shelves quick folders under Unmapped and collects the rest under Internal", () => {
     const { groups, flat } = groupEngagementsByClient(rows);
-    expect(flat.map((e) => e.id)).toEqual(["e3"]);
+    expect(flat).toEqual([]);
     expect(groups[1]?.engagements.map((e) => e.id).sort()).toEqual(["e4", "e5"]);
+    expect(groups[2]?.engagements.map((e) => e.id)).toEqual(["e3"]);
   });
 
 
