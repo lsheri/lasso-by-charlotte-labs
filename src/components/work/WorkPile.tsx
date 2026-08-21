@@ -168,7 +168,7 @@ export function WorkPile({
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
           {grouped.map(({ bucket, entries: bucketEntries }) => (
             <section key={bucket.key} className="min-w-0">
               <h3 className="nb-matrix-head flex items-center gap-1.5">
