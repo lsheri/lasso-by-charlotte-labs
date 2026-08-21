@@ -27,7 +27,10 @@ export function AppSidebar({
   return (
     <div className="flex h-full w-full flex-col gap-8 bg-sidebar px-4 py-5">
       <UserCard name={userName} role={userRole} onSignOut={onSignOut} />
-      <div className="flex-1 overflow-y-auto">
+      {/* pl-[3px] keeps the 2px active rail (::before at left:-2px) inside the
+          scroll container, which clips overflow-x once overflow-y is auto. */}
+      <div className="flex-1 overflow-y-auto pl-[3px]">
+
         <SidebarNav onNavigate={onNavigate} />
       </div>
       <OrgSwitcher profiles={profiles} active={activeProfile} />
