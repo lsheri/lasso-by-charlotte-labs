@@ -14,7 +14,6 @@ import { SharedWithSection } from "@/components/engagements/SharedWithSection";
 import { FirmChecksCard } from "@/components/coaching/FirmChecksCard";
 import { InviteDialog } from "@/components/invites/InviteDialog";
 import { SubjectCoachingSection } from "@/components/coaching/SubjectCoachingSection";
-import { AnalysisLens } from "@/components/reflect/AnalysisLens";
 import { ReflectDock } from "@/components/reflect/ReflectDock";
 import { useRegisterAskLasso } from "@/components/reflect/ask-lasso-context";
 import { useProfile } from "@/hooks/use-profile";
@@ -32,9 +31,7 @@ type TaskWithWork = CanvasTask;
 export function EngagementPage({ engagementId }: { engagementId: string }) {
   const { data: profile } = useProfile();
   const queryClient = useQueryClient();
-  const [aboutOpen, setAboutOpen] = useState(false);
   const [askOpen, setAskOpen] = useState(false);
-  const [analyseOpen, setAnalyseOpen] = useState(false);
   const [prepOpen, setPrepOpen] = useState(false);
   const [peekItem, setPeekItem] = useState<WorkItemRow | null>(null);
 
@@ -111,15 +108,6 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
               className="hidden shrink-0 items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground md:inline-flex"
             >
               <SpiderMark size={18} /> Ask Lasso
-            </button>
-          ) : null}
-          {profile && profile.role !== "coach" ? (
-            <button
-              type="button"
-              onClick={() => setAnalyseOpen(true)}
-              className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
-            >
-              Analyse this engagement
             </button>
           ) : null}
         </div>
@@ -283,21 +271,6 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
       ) : null}
 
       {profile && profile.role !== "coach" ? (
-        <AnalysisLens
-          open={analyseOpen}
-          onOpenChange={setAnalyseOpen}
-          target={{
-            kind: "engagement",
-            id: engagementId,
-            title: engagement.title,
-            itemCount: mappedItemCount,
-          }}
-          profileId={profile.id}
-          orgId={profile.org_id}
-        />
-      ) : null}
-
-      {profile && profile.role !== "coach" ? (
         <ReflectDock
           open={askOpen}
           onOpenChange={setAskOpen}
@@ -305,6 +278,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
           engagementTitle={engagement.title}
           profileId={profile.id}
           orgId={profile.org_id}
+          itemCount={mappedItemCount}
         />
       ) : null}
     </div>
