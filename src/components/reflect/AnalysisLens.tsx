@@ -9,6 +9,8 @@ import { MarkdownMessage } from "@/components/markdown/MarkdownMessage";
 import { SlideOver } from "@/components/peek/SlideOver";
 import { AnalysisInfoPanel } from "@/components/reflect/AnalysisInfoPanel";
 import { AnalysisConfirm, type AnalysisConfirmRequest } from "@/components/reflect/AnalysisConfirm";
+import { FirmCheckBubbles } from "@/components/reflect/FirmCheckBubbles";
+
 import { ContextAudit, ThinkingTrail } from "@/components/reflect/ContextTrail";
 import { FindingLabel } from "@/components/reflect/FindingLabel";
 import { HandoffDrafts } from "@/components/reflect/HandoffDrafts";
