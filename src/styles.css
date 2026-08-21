@@ -899,6 +899,13 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   border-radius: 2px;
   background: var(--nb-ink);
 }
+/* Pass 90: an engagement nested under a client shelf. Indent only. */
+.nb-nav-item-nested {
+  padding-left: 22px;
+}
+.nb-nav-item-nested.nb-nav-item-active::before {
+  left: 8px;
+}
 
 /* ---------------------------------------------------------------------------
    Pass 85: quad surface, the unmapped pile, the segmented toggle and the
