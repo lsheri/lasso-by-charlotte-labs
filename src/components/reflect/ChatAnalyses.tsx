@@ -107,8 +107,8 @@ function DisabledReasons({ rows }: { rows: { label: string; reason: string }[] }
 }
 
 /**
- * The firm's own checks, given their own section above Lasso's analyses. This
- * is the part a manager should read as "my knowledge, running on this work".
+ * The firm's own checks, given their own section above Lasso's analyses. Each
+ * active check is its own bubble: a check runs on its own, never as one blob.
  */
 function FirmSection({
   orgName,
@@ -120,6 +120,7 @@ function FirmSection({
   running,
   disabled,
   reason,
+  checks,
   onRun,
 }: {
   orgName?: string | undefined;
@@ -131,7 +132,8 @@ function FirmSection({
   running: AnalysisPreset | null;
   disabled: boolean;
   reason: string | null;
-  onRun: () => void;
+  checks: readonly FirmCheck[];
+  onRun: (check: FirmCheck | null) => void;
 }) {
   const label = `${orgName ? `${orgName} ` : ""}Firm checks`;
   const hasChecks = firmCheckCount > 0;
@@ -141,27 +143,32 @@ function FirmSection({
       {hasChecks ? (
         <>
           {preset ? (
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                disabled={Boolean(running) || disabled}
-                title={reason ?? undefined}
-                onClick={onRun}
-                className={`rounded-full px-3 py-1 text-xs font-medium transition-opacity hover:opacity-85 disabled:opacity-50 ${
-                  running?.id === preset.id
-                    ? "bg-ember text-ember-foreground"
-                    : "bg-accent-soft text-accent-deep"
-                }`}
-              >
-                Run firm checks
-              </button>
+            <div className="flex items-start gap-1">
+              {checks.length > 0 ? (
+                <FirmCheckBubbles
+                  checks={checks}
+                  disabled={Boolean(running) || disabled}
+                  reason={reason}
+                  onPick={onRun}
+                />
+              ) : (
+                <button
+                  type="button"
+                  disabled={Boolean(running) || disabled}
+                  title={reason ?? undefined}
+                  onClick={() => onRun(null)}
+                  className={FIRM_CHECK_BUBBLE_CLASS}
+                >
+                  {runAllChecksLabel(firmCheckCount)}
+                </button>
+              )}
               <AnalysisInfoPanel preset={preset} readsDetail={readsDetail} iconOnly />
             </div>
           ) : null}
           <p className="mt-1.5 text-[11px] text-muted-foreground">
             {firmCheckCount === 1
               ? "1 check applies to this work."
-              : `${firmCheckCount} checks apply to this work.`}
+              : `${firmCheckCount} checks apply to this work. Each one runs on its own.`}
             {canAuthorChecks && onAuthorCheck ? (
               <>
                 {" "}
@@ -177,6 +184,7 @@ function FirmSection({
           </p>
         </>
       ) : (
+
         <p className="text-[11px] text-muted-foreground">
           Checks your firm writes appear here and run against your work.
           {canAuthorChecks && onAuthorCheck ? (
