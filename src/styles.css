@@ -1376,7 +1376,10 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 /* Phones read one workstream per screen; the desktop lays them side by side. */
 .nb-canvas-scroll {
   display: flex;
-  align-items: flex-start;
+  align-items: stretch;
+  /* The canvas reads as a real grid surface from the first visit: twice the
+     height a single row of cards would need, whatever work is on it. */
+  min-height: 26rem;
   overflow-x: auto;
   scroll-snap-type: x mandatory;
   overscroll-behavior-x: contain;
@@ -1399,6 +1402,7 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 }
 @media (min-width: 768px) {
   .nb-canvas-scroll {
+    min-height: 40rem;
     scroll-snap-type: none;
     /* Snap is off on desktop, but the container must still scroll when the
        columns outgrow it, or the last workstreams are unreachable. */

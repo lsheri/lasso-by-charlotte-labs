@@ -2,8 +2,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
 import { SpiderMark } from "@/components/notebook/SpiderMark";
-import { EngagementDecisions } from "@/components/decisions/EngagementDecisions";
-import { EngagementLineage } from "@/components/peek/EngagementLineage";
 import { PeekPanel } from "@/components/peek/PeekPanel";
 import { OneOnOneBrief } from "@/components/oneonone/OneOnOneBrief";
 import { CaptureCoverage } from "@/components/common/CaptureCoverage";
@@ -11,7 +9,6 @@ import { EditEngagementDialog } from "@/components/engagements/EditEngagementDia
 import { EngagementCanvas, type CanvasTask } from "@/components/engagements/EngagementCanvas";
 import { EngagementBriefSection } from "@/components/engagements/EngagementBriefSection";
 import { SharedWithSection } from "@/components/engagements/SharedWithSection";
-import { FirmChecksCard } from "@/components/coaching/FirmChecksCard";
 import { InviteDialog } from "@/components/invites/InviteDialog";
 import { SubjectCoachingSection } from "@/components/coaching/SubjectCoachingSection";
 import { ReflectDock } from "@/components/reflect/ReflectDock";
@@ -192,6 +189,15 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
       </header>
 
       {profile && profile.role !== "coach" ? (
+        <SharedWithSection
+          engagementId={engagementId}
+          orgId={profile.org_id}
+          quickFolder={isQuickFolder}
+          personalOrg={!isBusinessOrg(profile)}
+        />
+      ) : null}
+
+      {profile && profile.role !== "coach" ? (
         <EngagementBriefSection
           engagementId={engagementId}
           profileId={profile.id}
@@ -226,34 +232,6 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
 
 
       <SubjectCoachingSection profileId={profile?.id} engagementId={engagementId} />
-
-      {profile && profile.role !== "coach" ? (
-        <SharedWithSection
-          engagementId={engagementId}
-          orgId={profile.org_id}
-          quickFolder={isQuickFolder}
-          personalOrg={!isBusinessOrg(profile)}
-        />
-      ) : null}
-
-      <FirmChecksCard
-        orgId={profile?.org_id}
-        authorProfileId={profile?.id}
-        role={profile?.role}
-        engagementId={engagementId}
-      />
-
-      {profile && profile.role !== "coach" ? (
-        <EngagementDecisions
-          engagementId={engagementId}
-          profileId={profile.id}
-          canEdit={profile.role !== "coach"}
-        />
-      ) : null}
-
-      {profile && profile.role !== "coach" ? (
-        <EngagementLineage engagementId={engagementId} profileId={profile.id} />
-      ) : null}
 
       {profile && profile.role !== "coach" ? (
         <OneOnOneBrief
