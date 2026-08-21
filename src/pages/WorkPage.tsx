@@ -47,7 +47,6 @@ import { removeWorkItems } from "@/lib/work-bulk.functions";
 import { detachEpisodeItems, syncEpisodeForMapping } from "@/lib/episodes.functions";
 import { logEvent } from "@/lib/telemetry";
 import { captureChannelOf, logV2 } from "@/lib/telemetry-v2";
-import { vendorLabel } from "@/lib/conversation-shared";
 import { engagementHue } from "@/lib/work-identity";
 import { engagementLabel } from "@/lib/clients";
 import {
