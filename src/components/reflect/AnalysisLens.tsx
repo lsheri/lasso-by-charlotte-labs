@@ -90,6 +90,8 @@ export function AnalysisLens({
   // filters exactly; here we only decide whether the chip can be pressed.
   const { data: firmChecks } = useFirmChecks({ orgId, subjectProfileId: profileId });
   const firmCheckCount = (firmChecks ?? []).length;
+  const firmPreset = presets.find((preset) => preset.id === "firm_checks") ?? null;
+
 
   const { data: turnCount } = useQuery({
     queryKey: ["thread-turn-count", target.id],
