@@ -232,11 +232,13 @@ export function AnalysisLens({
         orgId={orgId}
         profileId={profileId}
         onCancel={() => setConfirming(null)}
-        onConfirm={(extraItemIds) => {
+        onConfirm={(anchorItemId, extraItemIds) => {
           const pending_ = confirming;
           setConfirming(null);
-          if (pending_) void runPreset(pending_.preset, pending_.check?.id, extraItemIds);
+          if (pending_)
+            void runPreset(pending_.preset, pending_.check?.id, extraItemIds, anchorItemId);
         }}
+
 
       />
       <header className="shrink-0 border-b border-border px-6 pb-4 pt-6">
