@@ -702,6 +702,8 @@ export function WorkPage() {
         </div>
       )}
 
+      {!isCoach && all.length > 0 ? <div aria-hidden className="h-16 md:hidden" /> : null}
+
       {!isCoach && all.length > 0 ? (
         <div className="fixed inset-x-4 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-30 md:hidden print:hidden">
           <PasteThreadDialog
