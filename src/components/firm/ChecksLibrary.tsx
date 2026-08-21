@@ -105,6 +105,7 @@ export function ChecksLibrary({
     if (!profile?.org_id || !profile?.id || savingDrafts) return;
     setSavingDrafts(true);
     const remaining: ReviewDraft[] = [];
+    let saved = 0;
     for (const draft of drafts) {
       if (!draft.title.trim() || !draft.body.trim()) {
         remaining.push({ ...draft, error: "A check needs both a name and a body." });
@@ -119,13 +120,19 @@ export function ChecksLibrary({
           engagementId: null,
           subjectProfileId: null,
         });
+        saved += 1;
       } catch (e) {
         remaining.push({ ...draft, error: `Not saved: ${(e as Error).message}` });
       }
     }
+    if (saved > 0) {
+      void queryClient.invalidateQueries({ queryKey: ["firm-checks"] });
+      void queryClient.invalidateQueries({ queryKey: ["firm-check-library"] });
+    }
     setDrafts(remaining);
     setSavingDrafts(false);
   }
+
 
   return (
     <section className="rounded-[var(--radius)] border border-border bg-card px-5 py-4 shadow-card">
