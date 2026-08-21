@@ -647,7 +647,7 @@ export function SelectionAnalysisChips({
   firmCheckCount?: number;
   readsDetail: string;
   running: AnalysisPreset | null;
-  onRun: (preset: AnalysisPreset, target: ChipTarget) => void;
+  onRun: (preset: AnalysisPreset, target: ChipTarget, checkId?: string) => void;
   className?: string;
   orgName?: string | undefined;
   canAuthorChecks?: boolean | undefined;
@@ -660,6 +660,11 @@ export function SelectionAnalysisChips({
     request: AnalysisConfirmRequest;
     target: ChipTarget;
   } | null>(null);
+  const { data: firmChecks } = useFirmChecks({
+    orgId,
+    engagementId: engagement.id,
+    subjectProfileId: profileId ?? null,
+  });
   const chips = selectionChips(
     selected,
     engagement,
@@ -684,7 +689,7 @@ export function SelectionAnalysisChips({
         onConfirm={() => {
           const pending = confirming;
           setConfirming(null);
-          if (pending) onRun(pending.request.preset, pending.target);
+          if (pending) onRun(pending.request.preset, pending.target, pending.request.check?.id);
         }}
       />
       <FirmSection
@@ -697,13 +702,20 @@ export function SelectionAnalysisChips({
         running={running}
         disabled={!firmChip?.target}
         reason={firmChip?.reason ?? null}
-        onRun={() => {
+        checks={firmChecks ?? []}
+        onRun={(check) => {
           if (firmChip?.target && firmChip.target.kind !== "none") {
             setConfirming({
-              request: { preset: firmChip.preset, target: firmChip.target, onAdjust },
+              request: {
+                preset: firmChip.preset,
+                target: firmChip.target,
+                onAdjust,
+                ...(check ? { check: { id: check.id, title: check.title } } : {}),
+              },
               target: firmChip.target,
             });
           }
+
         }}
       />
       <div className="mt-4">
