@@ -1330,6 +1330,10 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 .nb-spider-static { display: none; }
 
 @media (prefers-reduced-motion: reduce) {
+  .nb-note-caret,
+  .nb-hi {
+    transition: none !important;
+  }
   .nb-mark path {
     stroke-dasharray: none;
     animation: none !important;
@@ -1550,11 +1554,4 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 }
 .nb-hi:hover {
   background: #fbe775;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .nb-note-caret,
-  .nb-hi {
-    transition: none !important;
-  }
 }
