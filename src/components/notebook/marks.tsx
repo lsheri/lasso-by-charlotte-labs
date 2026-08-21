@@ -28,21 +28,38 @@ export function resetMarkGate(): void {
 }
 
 /**
- * Fire-and-forget trigger for a mark. `fire()` shows the mark; it clears
- * itself once the stroke has landed. Callers never await it.
+ * Fire-and-forget trigger for a mark. `fire(id)` shows the mark and records
+ * which element was acted on; list sites render the mark only where
+ * `markId === theirId`. It clears itself once the stroke has landed.
  */
-export function useMark(hold = 900): { shown: boolean; markKey: number; fire: () => void } {
-  const [state, setState] = useState<{ shown: boolean; key: number }>({ shown: false, key: 0 });
+export function useMark(hold = 900): {
+  shown: boolean;
+  markId: string | null;
+  markKey: number;
+  fire: (id?: string) => void;
+} {
+  const [state, setState] = useState<{ shown: boolean; id: string | null; key: number }>({
+    shown: false,
+    id: null,
+    key: 0,
+  });
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const fire = useCallback(() => {
-    setState((prev) => ({ shown: true, key: prev.key + 1 }));
-    if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(() => setState((prev) => ({ ...prev, shown: false })), hold);
-  }, [hold]);
+  const fire = useCallback(
+    (id?: string) => {
+      setState((prev) => ({ shown: true, id: id ?? null, key: prev.key + 1 }));
+      if (timer.current) clearTimeout(timer.current);
+      timer.current = setTimeout(
+        () => setState((prev) => ({ ...prev, shown: false, id: null })),
+        hold,
+      );
+    },
+    [hold],
+  );
 
-  return { shown: state.shown, markKey: state.key, fire };
+  return { shown: state.shown, markId: state.id, markKey: state.key, fire };
 }
+
 
 function useClaim(): boolean {
   const [claimed] = useState(() => claimMark(Date.now()));

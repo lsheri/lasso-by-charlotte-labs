@@ -214,7 +214,7 @@ export function ShareWorkDialog({
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <p className="micro-label relative">
                       {group.name}
-                      {ellipse.shown ? <DrawnEllipse key={ellipse.markKey} /> : null}
+                      {ellipse.markId === group.key ? <DrawnEllipse key={ellipse.markKey} /> : null}
                     </p>
                     {unshared.length > 1 ? (
                       <button
@@ -271,7 +271,7 @@ export function ShareWorkDialog({
                               type="button"
                               disabled={busy}
                               onClick={() => {
-                          ellipse.fire();
+                          ellipse.fire(group.key);
                           void toggleOne(row, true);
                         }}
                               className="shrink-0 rounded-full border border-accent bg-accent-soft px-4 py-1 font-mono text-[11px] uppercase tracking-[0.08em] text-accent-deep transition-opacity disabled:opacity-50"
@@ -320,7 +320,7 @@ export function ShareWorkDialog({
             <AlertDialogAction
               onClick={() => {
                 if (confirmGroup) {
-                  ellipse.fire();
+                  ellipse.fire(confirmGroup.key);
                   void shareGroup(confirmGroup);
                 }
                 setConfirmGroup(null);

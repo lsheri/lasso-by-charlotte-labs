@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
 import { readFileSync } from "node:fs";
-import { render } from "@testing-library/react";
+import { fireEvent, render } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { DrawnCheck, DrawnEllipse, DrawnStrike, claimMark, resetMarkGate } from "@/components/notebook/marks";
+import { DrawnCheck, DrawnEllipse, DrawnStrike, claimMark, resetMarkGate, useMark } from "@/components/notebook/marks";
 
 describe("mark gate", () => {
   beforeEach(() => resetMarkGate());
@@ -84,5 +84,33 @@ describe("marks and the gallery stay presentation only", () => {
     expect(pkg).not.toContain("framer-motion");
     expect(marks).not.toContain("framer-motion");
     expect(gallery).not.toContain("framer-motion");
+  });
+});
+
+describe("id-aware marks in list-shaped sites", () => {
+  beforeEach(() => resetMarkGate());
+
+  function List({ ids }: { ids: string[] }) {
+    const check = useMark();
+    return (
+      <ul>
+        {ids.map((id) => (
+          <li key={id} data-testid={`row-${id}`}>
+            <button type="button" onClick={() => check.fire(id)}>
+              {`confirm-${id}`}
+            </button>
+            {check.markId === id ? <DrawnCheck key={check.markKey} /> : null}
+          </li>
+        ))}
+      </ul>
+    );
+  }
+
+  it("draws the mark on the acted row only", () => {
+    const { getByText, getByTestId } = render(<List ids={["a", "b", "c"]} />);
+    fireEvent.click(getByText("confirm-c"));
+    expect(getByTestId("row-a").querySelector("svg")).toBeNull();
+    expect(getByTestId("row-b").querySelector("svg")).toBeNull();
+    expect(getByTestId("row-c").querySelector("svg")).not.toBeNull();
   });
 });
