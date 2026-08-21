@@ -42,7 +42,7 @@ export function EngagementLineage({
 
   return (
     <section className="rounded-[var(--radius)] border border-border bg-card px-5 py-5 shadow-card">
-      <h2 className="micro-label">Lineage</h2>
+      <h2 className="micro-label micro-label-section">Lineage</h2>
       <p className="mt-1.5 text-sm text-muted-foreground">
         Lasso can look across this engagement and propose what fed each document, deck and sheet.
         Every proposal is a draft you confirm or discard.

@@ -69,7 +69,7 @@ export function FirmChecksCard({
     <section className="rounded-[var(--radius)] border border-border bg-card px-5 py-4 shadow-card">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h2 className="micro-label">Firm checks</h2>
+          <h2 className="micro-label micro-label-section">Firm checks</h2>
           <p className="mt-1 text-xs text-muted-foreground">
             What this firm asks of work like this. Lasso can run these against a finished piece of
             work.

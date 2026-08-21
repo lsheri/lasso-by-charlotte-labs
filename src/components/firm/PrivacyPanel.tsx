@@ -5,7 +5,7 @@
 export function PrivacyPanel() {
   return (
     <section className="rounded-[var(--radius)] border border-border bg-muted/40 px-5 py-4">
-      <h2 className="micro-label">What this view can and cannot show</h2>
+      <h2 className="micro-label micro-label-section">What this view can and cannot show</h2>
       <p className="mt-2 text-sm text-foreground">
         This page shows counts and structure for the workspace as a whole. It is built so that the
         work itself stays with the person who did it.

@@ -94,7 +94,7 @@ export function NoteComposer({
 
   return (
     <section className="rounded-[var(--radius)] border border-border bg-card px-5 py-5 shadow-card">
-      <h2 className="micro-label">Write a coaching note</h2>
+      <h2 className="micro-label micro-label-section">Write a coaching note</h2>
       <p className="mt-1.5 text-sm text-muted-foreground">
         Your words, in your voice. Your colleague sees this note.
       </p>

@@ -207,7 +207,7 @@ export function WhatFedThis({
 
   return (
     <section className="mt-8 border-t border-border pt-4">
-      <h3 className="micro-label relative inline-flex items-center gap-2">
+      <h3 className="micro-label micro-label-ai relative inline-flex items-center gap-2">
         What fed this
         {strike.shown ? <DrawnStrike key={strike.markKey} /> : null}
         {check.shown ? <DrawnCheck key={check.markKey} size={16} /> : null}
@@ -289,7 +289,7 @@ export function WhatFedThis({
 
       {prompts.length > 0 ? (
         <div className="mt-6">
-          <h3 className="micro-label">Your prompts behind this work</h3>
+          <h3 className="micro-label micro-label-ai">Your prompts behind this work</h3>
           <ul className="mt-2 space-y-2">
             {shown.map((prompt) => (
               <li key={prompt.turn_id}>

@@ -100,7 +100,7 @@ function PlanSection({
   return (
     <section className="rounded-[var(--radius)] border border-border bg-card px-5 py-4 shadow-card">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="micro-label">Plan</h2>
+        <h2 className="micro-label micro-label-section">Plan</h2>
         {entitlement.status === "active" ? null : <Badge>{entitlement.status}</Badge>}
       </div>
       <p className="mt-2 text-sm font-medium text-foreground">{planLine(entitlement)}</p>
@@ -191,7 +191,7 @@ function MembersConsole() {
           <PlanSection entitlement={data.entitlement} business={business} />
           <section>
             <div className="flex items-center justify-between gap-3">
-              <h2 className="micro-label">{copy.people}</h2>
+              <h2 className="micro-label micro-label-section">{copy.people}</h2>
               {isAdmin ? (
                 <InviteDialog
                   showHistory={false}
@@ -288,7 +288,7 @@ function MembersConsole() {
           </section>
 
           <section>
-            <h2 className="micro-label">Pending invites</h2>
+            <h2 className="micro-label micro-label-section">Pending invites</h2>
             {!isAdmin && canManageInvites ? (
               <p className="mt-2 text-xs text-muted-foreground">
                 {INVITE_RESEND_ADMIN_ONLY_LINE}

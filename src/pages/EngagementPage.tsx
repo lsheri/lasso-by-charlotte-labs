@@ -121,7 +121,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
 
         {profile && profile.role !== "coach" ? (
           <section className="mt-5">
-            <p className="micro-label">Coaching</p>
+            <p className="micro-label micro-label-section">Coaching</p>
             <div className="mt-2 flex flex-wrap items-center gap-2">
               {!isQuickFolder && hasCoaches ? (
                 <a
@@ -170,7 +170,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
 
         <section className="mt-4 rounded-[var(--radius)] border border-border bg-card px-5 py-4 shadow-card">
           <div className="flex flex-wrap items-start justify-between gap-3">
-            <p className="micro-label">Details</p>
+            <p className="micro-label micro-label-section">Details</p>
             {membership.data?.isMember ? <EditEngagementDialog engagement={engagement} /> : null}
           </div>
           <div className="mt-3 space-y-3">

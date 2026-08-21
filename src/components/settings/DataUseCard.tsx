@@ -56,7 +56,7 @@ export function DataUseCard() {
 
   return (
     <section>
-      <h2 className="section-title">Data use</h2>
+      <h2 className="micro-label micro-label-section">Data use</h2>
       <p className="mt-1.5 text-sm text-muted-foreground">
         {state.is_admin
           ? "What your workspace data may be used for. You can change any of these at any time."

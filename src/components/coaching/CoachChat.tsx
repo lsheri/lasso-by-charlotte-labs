@@ -83,7 +83,7 @@ export function CoachChat({
 
   return (
     <section className="rounded-[var(--radius)] border border-border bg-card px-5 py-5 shadow-card">
-      <h2 className="micro-label">Ask about this work</h2>
+      <h2 className="micro-label micro-label-ai">Ask about this work</h2>
       <p className="mt-1.5 text-sm text-muted-foreground">
         Answers come only from what {subjectName} has shared here. {subjectName} can see every
         question you ask.

@@ -115,7 +115,7 @@ export function PacketPage({
   return (
     <div className="space-y-10">
       <header>
-        <p className="micro-label">What {subjectName} has chosen to share</p>
+        <p className="micro-label micro-label-section">What {subjectName} has chosen to share</p>
         {hasNewer ? (
           <p className="mt-2 inline-block rounded-full bg-accent-soft px-3 py-1 font-mono text-[11px] tracking-[0.06em] text-foreground">
             Newer material since your last visit
@@ -128,7 +128,7 @@ export function PacketPage({
         </p>
         {sharedBriefs.length > 0 ? (
           <div className="mt-4 rounded-[var(--radius)] border border-accent bg-card px-5 py-4 shadow-card">
-            <p className="micro-label">What {subjectName} was asked to do</p>
+            <p className="micro-label micro-label-section">What {subjectName} was asked to do</p>
             {sharedBriefs.map((item) => (
               <p key={item.id} className="mt-1.5 text-sm font-medium text-foreground">
                 {item.title}
@@ -150,7 +150,7 @@ export function PacketPage({
       </header>
 
       <section>
-        <h2 className="micro-label">How the work ran</h2>
+        <h2 className="micro-label micro-label-section">How the work ran</h2>
         <div className="mt-3 space-y-2">
           {data.tasks.map((task) => (
             <div
@@ -190,7 +190,7 @@ export function PacketPage({
 
       {data.decisions.length > 0 ? (
         <section>
-          <h2 className="micro-label">Confirmed decisions</h2>
+          <h2 className="micro-label micro-label-section">Confirmed decisions</h2>
           <div className="mt-3 space-y-2">
             {data.decisions.map((decision) => (
               <article
@@ -224,7 +224,7 @@ export function PacketPage({
 
       {data.notes.length > 0 ? (
         <section>
-          <h2 className="micro-label">Earlier coaching notes</h2>
+          <h2 className="micro-label micro-label-section">Earlier coaching notes</h2>
           <div className="mt-3 space-y-2">
             {data.notes.map((note) => (
               <CoachingNoteCard

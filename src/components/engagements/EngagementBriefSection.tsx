@@ -106,7 +106,7 @@ export function EngagementBriefSection({
   if (!brief) {
     return (
       <section className="mb-8 rounded-[var(--radius)] border border-dashed border-accent bg-accent-soft/40 px-5 py-4">
-        <h2 className="micro-label">The brief</h2>
+        <h2 className="micro-label micro-label-section">The brief</h2>
         <p className="mt-2 text-sm font-medium text-foreground">Add the brief.</p>
         <p className="mt-1 text-sm text-muted-foreground">
           What was this work supposed to do? An SOW, an assignment, a client request, or your own
@@ -158,7 +158,7 @@ export function EngagementBriefSection({
       <div className="rounded-[var(--radius)] border border-accent bg-card px-5 py-4 shadow-card">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
-            <h2 className="micro-label">The brief</h2>
+            <h2 className="micro-label micro-label-section">The brief</h2>
             <p className="mt-1.5 text-sm font-medium text-foreground">{brief.title}</p>
             <p className="mt-0.5 text-sm text-muted-foreground">
               What this work was asked to do.

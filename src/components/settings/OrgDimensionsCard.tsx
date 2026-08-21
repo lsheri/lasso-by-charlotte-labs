@@ -113,7 +113,7 @@ export function OrgDimensionsCard() {
 
   return (
     <section>
-      <h2 className="micro-label">About this workspace</h2>
+      <h2 className="micro-label micro-label-section">About this workspace</h2>
       <div className="mt-3 space-y-4 rounded-[var(--radius)] border border-border bg-card px-4 py-4 shadow-card">
         <p className="text-sm text-muted-foreground">
           All optional. It helps Lasso make suggestions that fit how your organisation works.
