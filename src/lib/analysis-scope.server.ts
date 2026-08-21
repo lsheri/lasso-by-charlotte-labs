@@ -16,6 +16,8 @@ export type AnalysisTarget = {
   scope: ContextScope;
   /** Mapped items in scope, used only to decide whether a preset may run. */
   itemsInScope: number;
+  /** Extra work added on top of the launching item, in the order chosen. */
+  extraIds: string[];
   /** The owner's own label for what kind of deliverable this is, when set. */
   deliverableKind?: DeliverableKind | null;
 };
@@ -106,6 +108,7 @@ export async function resolveAnalysisTarget(
       scopeType: "engagement",
       scope: { mode: "engagements", ids: [engagement.id] },
       itemsInScope: ids.length,
+      extraIds: [],
       deliverableKind: null,
     };
   }
@@ -119,9 +122,10 @@ export async function resolveAnalysisTarget(
   if (error) throw new Error(error.message);
   if (!item) throw new Error("That item is gone.");
 
+  const extras = await readableIds(supabase, args.extraItemIds, []);
   const base =
     args.scope === "deliverable" ? await deliverableScopeIds(supabase, item.id) : [item.id];
-  const ids = Array.from(new Set([...base, ...(await readableIds(supabase, args.extraItemIds, base))]));
+  const ids = Array.from(new Set([...base, ...extras]));
 
   return {
     ownerId: item.owner_id,
@@ -130,6 +134,7 @@ export async function resolveAnalysisTarget(
     scopeType: args.scope === "deliverable" ? "deliverable" : "item",
     scope: { mode: "items", ids },
     itemsInScope: ids.length,
+    extraIds: extras.filter((id) => !base.includes(id)).sort(),
     deliverableKind: deliverableKindOf(item.meta),
   };
 }

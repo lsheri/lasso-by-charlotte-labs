@@ -17,6 +17,13 @@ export function validateAnalysisInput(input: AnalysisInput): AnalysisInput {
   if (input.check_id !== undefined && typeof input.check_id !== "string") {
     throw new Error("Unknown check.");
   }
+  // Extra work is only ever a list of ids, and only ever a modest one.
+  if (input.extra_item_ids !== undefined) {
+    if (!Array.isArray(input.extra_item_ids) || input.extra_item_ids.some((id) => typeof id !== "string")) {
+      throw new Error("Unknown work.");
+    }
+    if (input.extra_item_ids.length > 60) throw new Error("That is too much work for one run.");
+  }
   if (input.preset_id !== "firm_checks" && input.check_id) {
     const { check_id: _ignored, ...rest } = input;
     return rest;
