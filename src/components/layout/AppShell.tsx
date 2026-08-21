@@ -60,7 +60,9 @@ export function AppShell() {
             </div>
           </header>
 
-          <main className="flex-1 px-4 pb-[calc(9rem+env(safe-area-inset-bottom))] pt-6 md:px-12 md:py-14 md:pb-14">
+          {/* Clears the 56px tab bar plus a 32px breathing gap. Pages with a
+              sticky CTA (Work) add their own spacer rather than taxing every page. */}
+          <main className="flex-1 px-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))] pt-6 md:px-12 md:py-14 md:pb-14">
             <div className="mx-auto max-w-3xl">
               <Outlet />
             </div>
