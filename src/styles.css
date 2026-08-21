@@ -1336,6 +1336,8 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   border: 1px solid var(--nb-rule);
   border-radius: 8px;
   touch-action: pan-y;
+  -webkit-user-select: none;
+  user-select: none;
   transition:
     transform 200ms var(--nb-ease),
     border-color 200ms var(--nb-ease);
