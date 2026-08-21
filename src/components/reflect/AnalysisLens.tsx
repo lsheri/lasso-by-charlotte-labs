@@ -207,13 +207,9 @@ export function AnalysisLens({
             turnCount === 1 ? "" : "s"
           }, read in full`;
 
-  return (
-    <SlideOver
-      open={open}
-      onOpenChange={onOpenChange}
-      title={active ? active.label : "Analyse this work"}
-      description="Observations over your own work"
-    >
+  const body = (
+    <>
+
       <AnalysisConfirm
         request={confirming}
         orgId={orgId}
