@@ -273,7 +273,6 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
           engagementTitle={engagement.title}
           profileId={profile.id}
           orgId={profile.org_id}
-          itemCount={mappedItemCount}
         />
       ) : null}
     </div>
