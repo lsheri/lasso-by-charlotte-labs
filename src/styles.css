@@ -686,25 +686,25 @@ button:focus-visible .nb-ico[data-anim="1"] .nb-sig,
 [role="button"]:hover .nb-ico[data-anim="1"] .nb-sig,
 [role="button"]:focus-visible .nb-ico[data-anim="1"] .nb-sig,
 .nb-ico[data-anim="1"]:hover .nb-sig {
-  animation: var(--nb-sig) 1800ms var(--nb-ease) both;
+  animation: var(--nb-sig) 600ms var(--nb-ease) both;
 }
 .nb-ico[data-play="1"] .nb-sig {
-  animation: var(--nb-sig) 1920ms var(--nb-ease) 600ms both;
+  animation: var(--nb-sig) 900ms var(--nb-ease) 300ms both;
 }
 a:hover .nb-ico[data-icon="drag-handle"] .nb-sig:nth-of-type(2),
 button:hover .nb-ico[data-icon="drag-handle"] .nb-sig:nth-of-type(2),
 .nb-ico[data-icon="drag-handle"]:hover .nb-sig:nth-of-type(2) {
-  animation-delay: 90ms;
+  animation-delay: 120ms;
 }
 a:hover .nb-ico[data-icon="drag-handle"] .nb-sig:nth-of-type(3),
 button:hover .nb-ico[data-icon="drag-handle"] .nb-sig:nth-of-type(3),
 .nb-ico[data-icon="drag-handle"]:hover .nb-sig:nth-of-type(3) {
-  animation-delay: 180ms;
+  animation-delay: 240ms;
 }
 a:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 .nb-ico[data-icon="close"]:hover .nb-sig:nth-of-type(2) {
-  animation-delay: 120ms;
+  animation-delay: 180ms;
 }
 
 @keyframes nb-ico-draw {
