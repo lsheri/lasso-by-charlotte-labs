@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Switch } from "@/components/ui/switch";
@@ -36,14 +36,20 @@ export function DataUseCard() {
     });
   }, [state?.is_admin, present, profile?.id]);
 
+  const [saveError, setSaveError] = useState<string | null>(null);
+
   const mutation = useMutation({
     mutationFn: (input: { purpose: ConsentPurpose; granted: boolean }) =>
       save({ data: { ...input, profile_id: profile?.id } }),
+    onMutate: () => setSaveError(null),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["data-use", profile?.id] });
       toast.success("Saved");
     },
-    onError: () => toast.error("That could not be saved. Try again."),
+    onError: (e: unknown) => {
+      setSaveError((e as Error)?.message || "That could not be saved. Try again.");
+      toast.error("That could not be saved. Try again.");
+    },
   });
 
   if (!state) return null;
@@ -56,6 +62,8 @@ export function DataUseCard() {
           ? "What your workspace data may be used for. You can change any of these at any time."
           : "What your workspace data may be used for. Only an admin can change these."}
       </p>
+      {saveError ? <p className="mt-2 text-sm text-destructive">{saveError}</p> : null}
+
       <div className="mt-4 space-y-3">
         {PURPOSE_COPY.map((purpose) => {
           const on = purpose.alwaysOn || state.grants[purpose.purpose] === true;

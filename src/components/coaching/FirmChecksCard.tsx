@@ -142,7 +142,14 @@ export function FirmChecksCard({
               {canWrite && check.author_profile_id === authorProfileId ? (
                 <button
                   type="button"
-                  onClick={() => void deactivate.mutateAsync(check.id)}
+                  onClick={() => {
+                    setError(null);
+                    deactivate
+                      .mutateAsync(check.id)
+                      .catch((e) =>
+                        setError(`That check could not be deactivated: ${(e as Error).message}`),
+                      );
+                  }}
                   className="text-xs text-muted-foreground transition-colors hover:text-foreground"
                 >
                   Deactivate
@@ -155,6 +162,8 @@ export function FirmChecksCard({
             </p>
           </div>
         ))}
+        {error ? <p className="text-xs text-destructive">{error}</p> : null}
+
         {rows.length === 0 ? (
           <p className="text-sm text-muted-foreground">No firm checks written yet.</p>
         ) : null}

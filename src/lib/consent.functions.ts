@@ -100,7 +100,18 @@ export const setDataUse = createServerFn({ method: "POST" })
       granted: data.granted,
       policy_version: CONSENT_POLICY_VERSION,
     });
-    if (error) throw new Error("That could not be saved. Try again.");
+    if (error) {
+      // Every purpose takes the same path, so a purpose specific rejection can
+      // only come from the database. Say which one failed and why.
+      console.error("[consent] ledger write failed", {
+        orgId: profile.org_id,
+        purpose: data.purpose,
+        granted: data.granted,
+        message: error.message,
+      });
+      throw new Error(`That could not be saved (${data.purpose}): ${error.message}`);
+    }
+
 
     // The tier on the org is the highest purpose currently granted.
     const { data: rows } = await supabase
@@ -115,7 +126,18 @@ export const setDataUse = createServerFn({ method: "POST" })
     for (const purpose of CONSENT_PURPOSES) {
       if (current[purpose] && PURPOSE_RANK[purpose] > PURPOSE_RANK[tier]) tier = purpose;
     }
-    await supabaseAdmin.from("orgs").update({ data_use_tier: tier }).eq("id", profile.org_id);
+    const { error: tierError } = await supabaseAdmin
+      .from("orgs")
+      .update({ data_use_tier: tier })
+      .eq("id", profile.org_id);
+    if (tierError) {
+      console.error("[consent] tier update failed", {
+        orgId: profile.org_id,
+        tier,
+        message: tierError.message,
+      });
+    }
+
 
     const { recordEventV2 } = await import("./telemetry-v2.server");
     const eventName = data.granted

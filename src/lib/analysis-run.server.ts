@@ -447,12 +447,15 @@ export async function runAnalysis(
     let checksBlock: string | null = null;
     let firmCheckCount = 0;
     if (preset.id === "firm_checks") {
-      const { applicableFirmChecks, renderChecksBlock } = await import("./firm-checks.server");
-      const checks = await applicableFirmChecks(supabase, {
+      const { applicableFirmChecksForChat, renderChecksBlock } = await import(
+        "./firm-checks.server"
+      );
+      const { checks } = await applicableFirmChecksForChat(supabase, {
         orgId: profile.org_id,
         ownerProfileId: target.ownerId,
         workItemId: target.scopeId,
       });
+
       if (checks.length === 0) await fail("no_firm_checks");
       firmCheckCount = checks.length;
       checksBlock = renderChecksBlock(checks);

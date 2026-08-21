@@ -63,28 +63,45 @@ export function useFirmChecks(args: {
   });
 }
 
+export type NewFirmCheck = {
+  orgId: string;
+  authorProfileId: string;
+  title: string;
+  body: string;
+  engagementId?: string | null;
+  subjectProfileId?: string | null;
+};
+
+/**
+ * The one write path for a check. RLS requires author_profile_id to be the
+ * caller's own profile, so the caller passes its own id and nobody else's.
+ * The row is selected back so the surface can show what was actually stored.
+ */
+export async function insertFirmCheck(input: NewFirmCheck): Promise<FirmCheck> {
+  const { data, error } = await supabase
+    .from("firm_checks")
+    .insert({
+      org_id: input.orgId,
+      author_profile_id: input.authorProfileId,
+      title: input.title.trim(),
+      body: input.body.trim(),
+      engagement_id: input.engagementId ?? null,
+      subject_profile_id: input.subjectProfileId ?? null,
+    })
+    .select(COLUMNS)
+    .single();
+  if (error) throw error;
+  return data as FirmCheck;
+}
+
 export function useWriteFirmCheck() {
   const client = useQueryClient();
   const add = useMutation({
-    mutationFn: async (input: {
-      orgId: string;
-      authorProfileId: string;
-      title: string;
-      body: string;
-      engagementId?: string | null;
-      subjectProfileId?: string | null;
-    }) => {
-      const { error } = await supabase.from("firm_checks").insert({
-        org_id: input.orgId,
-        author_profile_id: input.authorProfileId,
-        title: input.title.trim(),
-        body: input.body.trim(),
-        engagement_id: input.engagementId ?? null,
-        subject_profile_id: input.subjectProfileId ?? null,
-      });
-      if (error) throw error;
+    mutationFn: (input: NewFirmCheck) => insertFirmCheck(input),
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: ["firm-checks"] });
+      void client.invalidateQueries({ queryKey: ["firm-check-library"] });
     },
-    onSuccess: () => void client.invalidateQueries({ queryKey: ["firm-checks"] }),
   });
 
   const deactivate = useMutation({
@@ -92,8 +109,12 @@ export function useWriteFirmCheck() {
       const { error } = await supabase.from("firm_checks").update({ active: false }).eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => void client.invalidateQueries({ queryKey: ["firm-checks"] }),
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: ["firm-checks"] });
+      void client.invalidateQueries({ queryKey: ["firm-check-library"] });
+    },
   });
 
   return { add, deactivate };
 }
+
