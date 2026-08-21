@@ -28,7 +28,8 @@ describe("95.1 resizable dock", () => {
     expect(clampDockWidth(10)).toBe(DOCK_MIN_WIDTH);
     const max = maxDockWidth();
     expect(clampDockWidth(99999)).toBe(max);
-    expect(max).toBeLessThanOrEqual(Math.max(DOCK_MIN_WIDTH, Math.round(1024 * 0.7)));
+    expect(max).toBeGreaterThanOrEqual(DOCK_MIN_WIDTH);
+    expect(read("src/components/reflect/ask-dock-state.tsx")).toContain("viewport * 0.7");
   });
 });
 

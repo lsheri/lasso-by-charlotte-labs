@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 import { sessionRelatedToEngagement } from "@/lib/reflect-scope-shape";
-import { clampDockWidth } from "@/components/reflect/ask-dock-state";
+import { clampDockWidth, maxDockWidth } from "@/components/reflect/ask-dock-state";
 
 const WHERE = { engagementId: "e1", mappedItemIds: ["i1", "i2"], taskIds: ["t1"] };
 
@@ -43,7 +43,8 @@ describe("sessionRelatedToEngagement", () => {
 describe("ask dock width", () => {
   it("clamps to 320-560", () => {
     expect(clampDockWidth(100)).toBe(320);
-    expect(clampDockWidth(900)).toBe(560);
+    // Pass 95.1 raised the ceiling to about seven tenths of the window.
+    expect(clampDockWidth(9000)).toBe(maxDockWidth());
     expect(clampDockWidth(400)).toBe(400);
     expect(clampDockWidth(Number.NaN)).toBe(380);
   });
