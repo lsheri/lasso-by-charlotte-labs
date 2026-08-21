@@ -1,14 +1,12 @@
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
+import { MappedWorkChecklist } from "@/components/reflect/MappedWorkChecklist";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { EngagementSummary } from "@/hooks/use-engagements";
 import type { ContextScope } from "@/lib/reflect-shared";
 import { chipShape, itemsInScope, mappedItemsForEngagement } from "@/lib/reflect-scope-shape";
-import { effectiveWorkDate, formatDate, type WorkItemRow } from "@/lib/work-types";
-import { ArtifactNote, SourceMark } from "@/components/work/SourceMark";
-import { TypeBadge } from "@/components/work/TypeIcon";
+import type { WorkItemRow } from "@/lib/work-types";
 import { engagementDisplayCode, engagementLabel } from "@/lib/clients";
 
 /** The scope as a plain sentence, never a count of tokens or a cost. */
@@ -29,26 +27,6 @@ export function scopeSentence(
   }
   if (resolved.length === 1) return `1 piece of work selected`;
   return `${resolved.length} pieces of work selected`;
-}
-
-type TaskGroup = { taskId: string; name: string; items: WorkItemRow[] };
-
-function groupByTask(items: WorkItemRow[], engagementId: string): TaskGroup[] {
-  const groups = new Map<string, TaskGroup>();
-  for (const item of items) {
-    for (const mapping of item.work_item_tasks) {
-      if (mapping.tasks?.engagement_id !== engagementId) continue;
-      const key = mapping.task_id;
-      const group = groups.get(key) ?? {
-        taskId: key,
-        name: mapping.tasks?.name ?? "Not set",
-        items: [],
-      };
-      if (!group.items.some((i) => i.id === item.id)) group.items.push(item);
-      groups.set(key, group);
-    }
-  }
-  return Array.from(groups.values()).sort((a, b) => a.name.localeCompare(b.name));
 }
 
 /**
@@ -94,7 +72,6 @@ export function WorkScopePicker({
   }, [open]);
 
   const universe = engagementId ? mappedItemsForEngagement(all, engagementId) : [];
-  const groups = engagementId ? groupByTask(universe, engagementId) : [];
 
   function toggle(id: string) {
     setChecked((prev) => {
@@ -152,38 +129,12 @@ export function WorkScopePicker({
             </div>
 
             <div className="max-h-80 space-y-4 overflow-y-auto rounded-[var(--radius)] border border-border bg-card p-3">
-              {groups.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  Nothing is mapped into this engagement yet.
-                </p>
-              ) : (
-                groups.map((group) => (
-                  <div key={group.taskId}>
-                    <p className="micro-label">{group.name}</p>
-                    <div className="mt-1 space-y-1">
-                      {group.items.map((item) => (
-                        <label key={item.id} className="flex items-start gap-3 px-1 py-1.5 text-sm">
-                          <Checkbox
-                            aria-label={item.title}
-                            checked={checked.has(item.id)}
-                            onCheckedChange={() => toggle(item.id)}
-                          />
-                          <span className="min-w-0 leading-snug">
-                            <span className="block break-words">
-                              <SourceMark item={item} className="mr-1.5" />
-                              {item.title} <ArtifactNote item={item} />
-                            </span>
-                            <TypeBadge item={item} size="sm" className="mt-1 mr-1.5" />
-                            <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
-                              {formatDate(effectiveWorkDate(item))}
-                            </span>
-                          </span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                ))
-              )}
+              <MappedWorkChecklist
+                items={universe}
+                engagementId={engagementId ?? ""}
+                checked={checked}
+                onToggle={toggle}
+              />
             </div>
           </>
         )}
