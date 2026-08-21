@@ -1319,7 +1319,9 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 @media (min-width: 768px) {
   .nb-canvas-scroll {
     scroll-snap-type: none;
-    overflow-x: visible;
+    /* Snap is off on desktop, but the container must still scroll when the
+       columns outgrow it, or the last workstreams are unreachable. */
+    overflow-x: auto;
   }
   .nb-col {
     flex: 1 1 0;
@@ -1359,6 +1361,15 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   background: var(--nb-grey-1);
   color: var(--nb-mid);
   touch-action: none;
+}
+
+/* Author CSS is unlayered and beats Tailwind's md:hidden utility, so the touch
+   drag handle has to be hidden here (same trap as .nb-tabbar in 86.2). This
+   must sit after the base rule, which has equal specificity. */
+@media (min-width: 768px) {
+  .nb-canvas-handle {
+    display: none;
+  }
 }
 
 /* The card in the hand: follows the pointer, tilted, above everything. */
