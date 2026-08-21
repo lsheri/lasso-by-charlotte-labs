@@ -168,7 +168,7 @@ export function SharedWithSection({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="micro-label relative">
           {heading}
-          {ellipse.shown ? <DrawnEllipse key={ellipse.markKey} /> : null}
+          {ellipse.markId === "shared-with" ? <DrawnEllipse key={ellipse.markKey} /> : null}
         </h2>
         {unshared.length > 1 ? (
           <button
@@ -219,7 +219,7 @@ export function SharedWithSection({
                   type="button"
                   disabled={busy}
                   onClick={() => {
-                    ellipse.fire();
+                    ellipse.fire("shared-with");
                     void toggle(coach, true);
                   }}
                   className="shrink-0 rounded-full border border-accent bg-accent-soft px-4 py-1 font-mono text-[11px] uppercase tracking-[0.08em] text-accent-deep transition-opacity disabled:opacity-50"
@@ -261,7 +261,7 @@ export function SharedWithSection({
             <AlertDialogAction
               onClick={() => {
                 setConfirmAll(false);
-                ellipse.fire();
+                ellipse.fire("shared-with");
                 void shareWithAll();
               }}
             >

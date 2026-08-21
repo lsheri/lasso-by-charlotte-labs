@@ -176,13 +176,13 @@ export function HandoffDrafts({
       <div className="mt-3 space-y-3">
         {drafts.map((item) => (
           <div key={item.id} className="relative rounded-md border border-border bg-card p-3">
-            {check.shown ? (
+            {check.markId === item.id ? (
               <span className="pointer-events-none absolute right-2 top-2">
                 <DrawnCheck key={check.markKey} />
               </span>
             ) : null}
             <div className="relative">
-              {strike.shown ? <DrawnStrike key={strike.markKey} /> : null}
+              {strike.markId === item.id ? <DrawnStrike key={strike.markKey} /> : null}
               <ItemBody kind={current.kind} item={item} />
             </div>
             <p className="mt-2 text-xs text-muted-foreground">
@@ -197,7 +197,7 @@ export function HandoffDrafts({
                   if (current.kind === "decision_candidates") {
                     setPrefill(item.fields as DecisionCandidateItem);
                   }
-                  check.fire();
+                  check.fire(item.id);
                   act.mutate({ kind: "confirm", ids: [item.id] });
                 }}
               >
@@ -209,7 +209,7 @@ export function HandoffDrafts({
                 className="min-h-11 sm:min-h-9"
                 disabled={act.isPending || !runId}
                 onClick={() => {
-                  strike.fire();
+                  strike.fire(item.id);
                   act.mutate({ kind: "discard", ids: [item.id] });
                 }}
               >
@@ -227,7 +227,7 @@ export function HandoffDrafts({
           className="mt-3 min-h-11 sm:min-h-9"
           disabled={act.isPending}
           onClick={() => {
-            check.fire();
+            check.fire(drafts[0]?.id);
             act.mutate({ kind: "batch", ids: drafts.map((item) => item.id) });
           }}
         >
