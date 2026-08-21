@@ -87,3 +87,25 @@ export function chipShape(scope: ContextScope, all: WorkItemRow[]): ChipShape {
   const anyMapped = all.some((i) => i.visibility === "mapped" && engagementIdsOf(i).length > 0);
   return { kind: "none", reason: anyMapped ? "multiple" : "empty" };
 }
+
+/**
+ * Whether a saved chat belongs on an engagement page. The founder's rule:
+ * an engagement lists only the chats scoped to that engagement, one of its
+ * workstreams, or a piece of work mapped into it. A whole record chat is a
+ * chat about everything, so it is not "related to" this engagement.
+ */
+export function sessionRelatedToEngagement(
+  scope: ContextScope,
+  where: { engagementId: string; mappedItemIds: Iterable<string>; taskIds: Iterable<string> },
+): boolean {
+  if (!scope || scope.mode === "whole") return false;
+  const ids = scope.ids ?? [];
+  if (ids.length === 0) return false;
+  if (scope.mode === "engagements") return ids.includes(where.engagementId);
+  if (scope.mode === "tasks") {
+    const tasks = new Set(where.taskIds);
+    return ids.some((id) => tasks.has(id));
+  }
+  const items = new Set(where.mappedItemIds);
+  return ids.some((id) => items.has(id));
+}
