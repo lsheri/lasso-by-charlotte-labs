@@ -1,7 +1,7 @@
 import type { ConsentPurpose } from "./telemetry-v2-shared";
 
 /** The version of the plain language shown below. Bump it when the copy changes. */
-export const CONSENT_POLICY_VERSION = "dp-2026-08";
+export const CONSENT_POLICY_VERSION = "dp-2026-09";
 
 /** Highest granted purpose wins, and operate is always on. */
 export const PURPOSE_RANK: Record<ConsentPurpose, number> = {
