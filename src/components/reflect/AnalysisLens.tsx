@@ -52,6 +52,7 @@ export function AnalysisLens({
   orgId,
   initialPreset,
   isCoach = false,
+  embedded = false,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -61,7 +62,10 @@ export function AnalysisLens({
   initialPreset?: AnalysisPresetId;
   /** A coach sees only the analyses a coach may run, and never Reflect. */
   isCoach?: boolean;
+  /** Rendered inside a panel that is already open, with no dialog shell. */
+  embedded?: boolean;
 }) {
+
   const queryClient = useQueryClient();
   const send = useServerFn(sendReflectMessage);
   const scope = target.kind === "engagement" ? "engagement" : target.scope;
