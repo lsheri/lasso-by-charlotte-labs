@@ -476,16 +476,22 @@ export async function runAnalysis(
       const { applicableFirmChecksForChat, renderChecksBlock } = await import(
         "./firm-checks.server"
       );
-      const { checks } = await applicableFirmChecksForChat(supabase, {
-        orgId: profile.org_id,
-        ownerProfileId: target.ownerId,
-        workItemId: target.scopeId,
-      });
+      // A named check runs alone: only its own wording reaches the prompt.
+      const checks = singleCheck
+        ? [singleCheck]
+        : (
+            await applicableFirmChecksForChat(supabase, {
+              orgId: profile.org_id,
+              ownerProfileId: target.ownerId,
+              workItemId: target.scopeId,
+            })
+          ).checks;
 
       if (checks.length === 0) await fail("no_firm_checks");
       firmCheckCount = checks.length;
       checksBlock = renderChecksBlock(checks);
     }
+
     // The owner's own label for the artifact, one line, prompts stay generic.
     const { deliverableKindLabel } = await import("./deliverable-kinds");
     const kindLine =
