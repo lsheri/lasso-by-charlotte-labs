@@ -8,6 +8,7 @@ import { AppSidebar } from "./AppSidebar";
 import { MobileTabBar } from "./MobileTabBar";
 import { FeedbackDialog, FeedbackWidget } from "@/components/feedback/FeedbackWidget";
 import { AskLassoProvider } from "@/components/reflect/ask-lasso-context";
+import { AskDockStateProvider } from "@/components/reflect/ask-dock-state";
 import { ChecklistLauncher } from "@/components/onboarding/checklist/ChecklistLauncher";
 import { StepPopover } from "@/components/onboarding/checklist/StepPopover";
 
@@ -23,6 +24,7 @@ export function AppShell() {
 
   return (
     <AskLassoProvider>
+      <AskDockStateProvider>
       <div className="flex min-h-screen w-full bg-background">
         <aside className="hidden w-[264px] shrink-0 border-r border-border md:block">
           <div className="sticky top-0 h-screen">
@@ -72,6 +74,7 @@ export function AppShell() {
         <MobileTabBar />
         <StepPopover />
       </div>
+      </AskDockStateProvider>
     </AskLassoProvider>
   );
 }
