@@ -412,6 +412,14 @@ export function AnalysisChips({
   profileId?: string | undefined;
 }) {
   const [confirming, setConfirming] = useState<AnalysisConfirmRequest | null>(null);
+  // Each active check is offered on its own, so the chips need the checks
+  // themselves and not only how many of them there are.
+  const { data: firmChecks } = useFirmChecks({
+    orgId,
+    engagementId: target.kind === "engagement" ? target.id : undefined,
+    subjectProfileId: profileId ?? undefined,
+  });
+
   if (target.kind === "none") {
     return (
       <Suggested className={className}>
