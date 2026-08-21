@@ -679,14 +679,30 @@
   transform-box: fill-box;
 }
 
+/* Hover/focus/tap: the glyph redraws from scratch, then the signature move
+   fires once the draw has landed. One chained declaration, so a re-hover
+   restarts the whole thing instead of stacking. */
+a:hover .nb-ico[data-anim="1"] path,
+a:focus-visible .nb-ico[data-anim="1"] path,
+button:hover .nb-ico[data-anim="1"] path,
+button:focus-visible .nb-ico[data-anim="1"] path,
+[role="button"]:hover .nb-ico[data-anim="1"] path,
+[role="button"]:focus-visible .nb-ico[data-anim="1"] path,
+.nb-ico[data-anim="1"]:hover path,
+.nb-ico[data-anim="1"]:focus-visible path {
+  animation: nb-ico-draw var(--nb-ico-draw, 560ms) var(--nb-ease) both;
+}
 a:hover .nb-ico[data-anim="1"] .nb-sig,
 a:focus-visible .nb-ico[data-anim="1"] .nb-sig,
 button:hover .nb-ico[data-anim="1"] .nb-sig,
 button:focus-visible .nb-ico[data-anim="1"] .nb-sig,
 [role="button"]:hover .nb-ico[data-anim="1"] .nb-sig,
 [role="button"]:focus-visible .nb-ico[data-anim="1"] .nb-sig,
-.nb-ico[data-anim="1"]:hover .nb-sig {
-  animation: var(--nb-sig) 600ms var(--nb-ease) both;
+.nb-ico[data-anim="1"]:hover .nb-sig,
+.nb-ico[data-anim="1"]:focus-visible .nb-sig {
+  animation:
+    nb-ico-draw var(--nb-ico-draw, 560ms) var(--nb-ease) both,
+    var(--nb-sig) 600ms var(--nb-ease) var(--nb-ico-draw, 560ms) both;
 }
 .nb-ico[data-play="1"] .nb-sig {
   animation: var(--nb-sig) 900ms var(--nb-ease) 300ms both;
@@ -694,17 +710,17 @@ button:focus-visible .nb-ico[data-anim="1"] .nb-sig,
 a:hover .nb-ico[data-icon="drag-handle"] .nb-sig:nth-of-type(2),
 button:hover .nb-ico[data-icon="drag-handle"] .nb-sig:nth-of-type(2),
 .nb-ico[data-icon="drag-handle"]:hover .nb-sig:nth-of-type(2) {
-  animation-delay: 120ms;
+  animation-delay: 0ms, calc(var(--nb-ico-draw, 560ms) + 120ms);
 }
 a:hover .nb-ico[data-icon="drag-handle"] .nb-sig:nth-of-type(3),
 button:hover .nb-ico[data-icon="drag-handle"] .nb-sig:nth-of-type(3),
 .nb-ico[data-icon="drag-handle"]:hover .nb-sig:nth-of-type(3) {
-  animation-delay: 240ms;
+  animation-delay: 0ms, calc(var(--nb-ico-draw, 560ms) + 240ms);
 }
 a:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 .nb-ico[data-icon="close"]:hover .nb-sig:nth-of-type(2) {
-  animation-delay: 180ms;
+  animation-delay: 0ms, calc(var(--nb-ico-draw, 560ms) + 180ms);
 }
 
 @keyframes nb-ico-draw {
@@ -1051,9 +1067,48 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   font-family: var(--font-mono);
   font-size: 11px;
   line-height: var(--nb-baseline);
+  margin: 0;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--nb-mid);
+  color: var(--nb-blue);
+}
+/* The assistant speaks in spider green. Display copy only. */
+.nb-speaker-ai {
+  color: var(--nb-green);
+}
+
+/* ── Baseline law, enforced inside the transcript ───────────────────────────
+   Anything with a line-height or vertical margin that is not a whole multiple
+   of the pitch drifts the whole page down. So: nothing is. */
+.nb-binder-body .chat-prose,
+.nb-binder-body .chat-binder {
+  font-size: 14px;
+  line-height: var(--nb-baseline);
+  margin-top: 0;
+}
+.nb-binder-body .chat-prose > * + * {
+  margin-top: 0;
+}
+.nb-binder-body :is(p, li, ul, ol, blockquote, h1, h2, h3, h4, h5, h6) {
+  line-height: var(--nb-baseline);
+  margin-top: 0;
+  margin-bottom: 0;
+}
+.nb-binder-body :is(h1, h2, h3, h4, h5, h6) {
+  font-size: 14px;
+}
+.nb-binder-body :is(ul, ol) {
+  padding-left: 1.25rem;
+}
+.nb-binder-body li + li {
+  margin-top: 0;
+}
+.nb-binder-body .chat-prose > * + :is(h1, h2, h3, h4, h5, h6) {
+  margin-top: var(--nb-baseline);
+}
+/* Message to message: exactly one baseline. */
+.nb-binder-body > * + * {
+  margin-top: var(--nb-baseline);
 }
 
 /* Anything that cannot hold the grid rides on a plain white card. */
@@ -1070,6 +1125,23 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 }
 .nb-binder-inset {
   padding: 8px 10px;
+}
+
+/* The audit trail is a sticky note: the one yellow surface in the product,
+   and it is data, never chrome. */
+.nb-sticky {
+  display: block;
+  background: #fdf6c9;
+  border: 1px solid #e3d27f;
+  border-radius: 6px;
+  box-shadow: 0 0 0 4px var(--nb-white);
+  color: var(--nb-ink);
+  padding: 8px 10px;
+  margin-top: var(--nb-baseline);
+  margin-bottom: var(--nb-baseline);
+}
+.nb-sticky .nb-sticky-toggle {
+  color: var(--nb-ink);
 }
 
 /* A decorative ruled strip behind an engagement title. The only other use. */
@@ -1153,12 +1225,12 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   margin-bottom: -1px;
   border-bottom: 2px solid transparent;
   font-size: 13px;
-  color: var(--nb-mid);
+  color: var(--nb-blue);
 }
 .nb-ask-tab[aria-selected="true"] {
-  color: var(--nb-ink);
+  color: var(--nb-blue);
   font-weight: 600;
-  border-bottom-color: var(--nb-ink);
+  border-bottom-color: var(--nb-blue);
 }
 
 @media (prefers-reduced-motion: reduce) {
