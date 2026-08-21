@@ -116,9 +116,12 @@ export async function runAnalysis(
     singleCheck = await resolveSingleCheck(supabase, {
       orgId: profile.org_id,
       ownerProfileId: target.ownerId,
-      workItemId: target.scopeId,
+      ...(target.scopeType === "engagement"
+        ? { engagementId: target.scopeId }
+        : { workItemId: target.scopeId }),
       checkId: data.check_id,
     });
+
     if (!singleCheck) throw new Error(CHECK_UNAVAILABLE_LINE);
   }
 
