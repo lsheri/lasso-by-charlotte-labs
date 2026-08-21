@@ -11,10 +11,9 @@ import {
 import { GraphiteIcon, type GraphiteIconName } from "@/components/notebook/icons";
 import { MarkdownMessage } from "@/components/markdown/MarkdownMessage";
 import { ContextAudit, ThinkingTrail } from "@/components/reflect/ContextTrail";
-import { AnalysisLens } from "@/components/reflect/AnalysisLens";
 import { SaveForOneOnOneDialog } from "@/components/oneonone/SaveForOneOnOne";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
+import { MappedWorkChecklist } from "@/components/reflect/MappedWorkChecklist";
 import { Textarea } from "@/components/ui/textarea";
 import { parseManifest } from "@/lib/context-manifest";
 import type { AnalysisPreset } from "@/lib/analysis-presets";
@@ -39,10 +38,22 @@ const TABS: { id: AskTab; label: string; icon: GraphiteIconName }[] = [
   { id: "messages", label: "Messages", icon: "messages" },
   { id: "history", label: "History", icon: "history" },
   { id: "analyses", label: "Analyses", icon: "analyses" },
-  { id: "analyse", label: "Analyse engagement", icon: "analyses" },
 ];
 
-export function AskTabs({ tab, onTab }: { tab: AskTab; onTab: (tab: AskTab) => void }) {
+/**
+ * Three panels and one action. "New chat" sits in the same row because that is
+ * where people look for it, but it is a button, not a tab: it never holds
+ * selection, it starts a fresh session and lands you on Messages.
+ */
+export function AskTabs({
+  tab,
+  onTab,
+  onNewChat,
+}: {
+  tab: AskTab;
+  onTab: (tab: AskTab) => void;
+  onNewChat?: (() => void) | undefined;
+}) {
   return (
     <div className="nb-ask-tabs" role="tablist" aria-label="Ask Lasso">
       {TABS.map((entry) => (
@@ -58,6 +69,17 @@ export function AskTabs({ tab, onTab }: { tab: AskTab; onTab: (tab: AskTab) => v
           <span>{entry.label}</span>
         </button>
       ))}
+      {onNewChat ? (
+        <button
+          type="button"
+          role="button"
+          onClick={onNewChat}
+          className="nb-ask-tab"
+        >
+          <GraphiteIcon name="plus" size={16} />
+          <span>New chat</span>
+        </button>
+      ) : null}
     </div>
   );
 }
@@ -90,35 +112,28 @@ export function AskScopeChip({ ask, block }: { ask: AskLasso; block?: boolean })
   );
 }
 
-function WorkPicker({ ask }: { ask: AskLasso }) {
+function WorkPicker({ ask, engagementId }: { ask: AskLasso; engagementId: string }) {
   if (!ask.pickerOpen) return null;
+  const checked = new Set(ask.selectedItems.map((i) => i.id));
   return (
-    <div className="max-h-56 space-y-1.5 overflow-y-auto border-b border-border bg-secondary/40 px-4 py-3">
-      {ask.mapped.length === 0 ? (
-        <p className="text-xs text-muted-foreground">No work is mapped into this engagement yet.</p>
-      ) : (
-        ask.mapped.map((item: WorkItemRow) => (
-          <label key={item.id} className="flex items-start gap-2 text-sm text-foreground">
-            <Checkbox
-              aria-label={item.title}
-              checked={ask.selected ? ask.selected.has(item.id) : true}
-              onCheckedChange={(value) =>
-                ask.setSelected((prev) => {
-                  const next = new Set(prev ?? ask.mapped.map((i) => i.id));
-                  if (value === true) next.add(item.id);
-                  else next.delete(item.id);
-                  return next;
-                })
-              }
-            />
-            <span className="min-w-0">
-              <SourceMark item={item} className="mr-1.5" />
-              <span className="break-words">{item.title}</span> <ArtifactNote item={item} />{" "}
-              <TypeBadge item={item} size="sm" />
-            </span>
-          </label>
-        ))
-      )}
+    <div className="max-h-56 space-y-3 overflow-y-auto border-b border-border bg-secondary/40 px-4 py-3">
+      <MappedWorkChecklist
+        items={ask.mapped}
+        engagementId={engagementId}
+        checked={checked}
+        onToggle={(id) =>
+          ask.setSelected((prev) => {
+            const next = new Set(prev ?? ask.mapped.map((i) => i.id));
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
+            return next;
+          })
+        }
+        empty="No work is mapped into this engagement yet."
+      />
+      <p className="text-xs text-muted-foreground">
+        Only work you have mapped appears here. Private and unmapped work stays out.
+      </p>
     </div>
   );
 }
@@ -302,8 +317,22 @@ function AnalysesTab({
     ask.selectedItems.length === 1
       ? "The piece of work you selected, and the brief when one exists."
       : "The pieces of work you selected, and the brief when one exists.";
+  const all = ask.selectedItems.length === ask.mapped.length;
+  const scopeLine = all
+    ? "All work in this engagement"
+    : `${ask.selectedItems.length} ${ask.selectedItems.length === 1 ? "piece" : "pieces"} selected`;
   return (
     <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4">
+      {ask.mapped.length > 0 ? (
+        <button
+          type="button"
+          onClick={() => ask.setPickerOpen(!ask.pickerOpen)}
+          className="flex w-full items-center gap-2 text-left font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <span className="truncate">{scopeLine}</span>
+          <span className="shrink-0 text-accent-deep">· Change</span>
+        </button>
+      ) : null}
       {ask.mapped.length > 0 ? (
         <SelectionAnalysisChips
           selected={ask.selectedItems}
@@ -436,7 +465,6 @@ export function AskSurface({
   engagementTitle,
   profileId,
   orgId,
-  itemCount,
   onClose,
   mobile,
 }: {
@@ -447,8 +475,6 @@ export function AskSurface({
   engagementTitle: string;
   profileId: string;
   orgId: string;
-  /** Mapped pieces of work in this engagement, already counted by the page. */
-  itemCount: number;
   onClose: () => void;
   mobile?: boolean;
 }) {
@@ -458,11 +484,18 @@ export function AskSurface({
         <p className="micro-label micro-label-ai pr-12">Ask Lasso</p>
         <h2 className="page-title mt-1 break-words text-[17px] leading-snug">{engagementTitle}</h2>
         <div className="mt-2">
-          <AskTabs tab={tab} onTab={onTab} />
+          <AskTabs
+            tab={tab}
+            onTab={onTab}
+            onNewChat={() => {
+              ask.newSession();
+              onTab("messages");
+            }}
+          />
         </div>
       </header>
 
-      <WorkPicker ask={ask} />
+      <WorkPicker ask={ask} engagementId={engagementId} />
 
       {tab === "messages" ? <MessagesTab ask={ask} /> : null}
       {tab === "history" ? <HistoryTab ask={ask} /> : null}
@@ -473,22 +506,6 @@ export function AskSurface({
           engagementTitle={engagementTitle}
           profileId={profileId}
           onClose={onClose}
-        />
-      ) : null}
-
-      {tab === "analyse" ? (
-        <AnalysisLens
-          embedded
-          open
-          onOpenChange={() => onTab("messages")}
-          target={{
-            kind: "engagement",
-            id: engagementId,
-            title: engagementTitle,
-            itemCount,
-          }}
-          profileId={profileId}
-          orgId={orgId}
         />
       ) : null}
 
