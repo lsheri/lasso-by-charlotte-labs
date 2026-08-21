@@ -1004,3 +1004,171 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
     transition-delay: 0ms !important;
   }
 }
+
+/* ── Binder paper and the 28px baseline law ───────────────────────────────
+   Chat transcripts, and only chat transcripts, sit on ruled paper. The pitch
+   is rem based, so at 200% text the rules grow with the type ramp and the
+   baseline law still holds. */
+:root {
+  --nb-baseline: 1.75rem;
+}
+
+.nb-binder {
+  background: var(--nb-white);
+}
+
+.nb-binder-body {
+  /* Rules scroll with the content, not with the viewport. */
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent calc(var(--nb-baseline) - 1px),
+    var(--nb-rule) calc(var(--nb-baseline) - 1px),
+    var(--nb-rule) var(--nb-baseline)
+  );
+  background-attachment: local;
+  background-position: left top;
+  /* Whole multiples of the pitch, so every line lands just above a rule. */
+  padding-top: var(--nb-baseline);
+  padding-bottom: calc(var(--nb-baseline) * 2);
+  font-size: 14px;
+  line-height: var(--nb-baseline);
+}
+
+.nb-binder-body p,
+.nb-binder-body li,
+.nb-binder-body h1,
+.nb-binder-body h2,
+.nb-binder-body h3,
+.nb-binder-body h4,
+.nb-binder-line {
+  line-height: var(--nb-baseline);
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.nb-binder-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: var(--nb-baseline);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--nb-mid);
+}
+
+/* Anything that cannot hold the grid rides on a plain white card. */
+.nb-binder-inset,
+.chat-binder pre,
+.chat-binder table,
+.chat-binder img {
+  display: block;
+  background: var(--nb-white);
+  box-shadow: 0 0 0 4px var(--nb-white);
+  border-radius: 8px;
+  margin-top: var(--nb-baseline);
+  margin-bottom: var(--nb-baseline);
+}
+.nb-binder-inset {
+  padding: 8px 10px;
+}
+
+/* A decorative ruled strip behind an engagement title. The only other use. */
+.nb-title-strip {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent calc(var(--nb-baseline) - 1px),
+    var(--nb-rule) calc(var(--nb-baseline) - 1px),
+    var(--nb-rule) var(--nb-baseline)
+  );
+}
+
+/* Thinking: three grey dots. No spinners, no shimmer, anywhere in the dock. */
+.nb-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.nb-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--nb-soft);
+  animation: nb-dot-pulse 1200ms var(--nb-ease) infinite;
+}
+.nb-dot:nth-child(2) {
+  animation-delay: 160ms;
+}
+.nb-dot:nth-child(3) {
+  animation-delay: 320ms;
+}
+@keyframes nb-dot-pulse {
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Streaming answers arrive as a quiet fade, never a layout jump. */
+.nb-stream {
+  animation: nb-fade-in 220ms var(--nb-ease);
+}
+@keyframes nb-fade-in {
+  from {
+    opacity: 0.4;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Ask dock chrome. */
+.nb-dock-grip {
+  position: absolute;
+  inset-block: 0;
+  left: -3px;
+  width: 8px;
+  cursor: col-resize;
+  background: transparent;
+}
+.nb-dock-grip:hover,
+.nb-dock-grip:focus-visible {
+  background: var(--nb-grey-2);
+  outline: none;
+}
+.nb-ask-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--nb-rule);
+}
+.nb-ask-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 8px;
+  margin-bottom: -1px;
+  border-bottom: 2px solid transparent;
+  font-size: 13px;
+  color: var(--nb-mid);
+}
+.nb-ask-tab[aria-selected="true"] {
+  color: var(--nb-ink);
+  font-weight: 600;
+  border-bottom-color: var(--nb-ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nb-dot,
+  .nb-stream {
+    animation: none !important;
+    opacity: 1;
+  }
+  .nb-pile-card {
+    transition: none !important;
+    transition-delay: 0ms !important;
+  }
+}

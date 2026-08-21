@@ -119,7 +119,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
       <header className="mb-8">
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4">
           <div className="min-w-0">
-            <h1 className="page-title">{engagementDisplayTitle(engagement)}</h1>
+            <h1 className="nb-title-strip page-title">{engagementDisplayTitle(engagement)}</h1>
             <p className="mt-1.5 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
               {engagementDisplayCode(engagement) ?? "Quick folder"}
               {clientDisplayName(engagement) ? ` · ${clientDisplayName(engagement)}` : ""}

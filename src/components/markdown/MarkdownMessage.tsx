@@ -7,7 +7,16 @@ import { toSafeHtml } from "@/lib/markdown";
  * the peek panel uses. Code blocks get highlighted after the sanitized HTML
  * lands, using the same highlight.js bundle.
  */
-export function MarkdownMessage({ content, className }: { content: string; className?: string }) {
+export function MarkdownMessage({
+  content,
+  className,
+  variant,
+}: {
+  content: string;
+  className?: string;
+  /** "binder" snaps every line onto the 28px ruled baseline. */
+  variant?: "binder";
+}) {
   const [html, setHtml] = useState<string | null>(null);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -39,14 +48,20 @@ export function MarkdownMessage({ content, className }: { content: string; class
 
   if (html === null) {
     return (
-      <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-foreground">{content}</p>
+      <p
+        className={`mt-1 whitespace-pre-wrap text-sm text-foreground ${
+          variant === "binder" ? "nb-binder-line" : "leading-relaxed"
+        }`}
+      >
+        {content}
+      </p>
     );
   }
 
   return (
     <div
       ref={ref}
-      className={`peek-prose chat-prose mt-1 ${className ?? ""}`}
+      className={`peek-prose chat-prose mt-1 ${variant === "binder" ? "chat-binder" : ""} ${className ?? ""}`}
       dangerouslySetInnerHTML={{ __html: html }}
     />
   );
