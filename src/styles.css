@@ -1422,3 +1422,22 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   from { stroke-dashoffset: 1; }
   to { stroke-dashoffset: 0; }
 }
+
+/* ==========================================================================
+   Lasso spider mascot (hotfix 88.1). Animated frame by default; the static
+   first frame replaces it under reduced motion. Source order matters.
+   ========================================================================== */
+.nb-spider-anim {
+  display: inline-block;
+}
+.nb-spider-static {
+  display: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .nb-spider-anim {
+    display: none;
+  }
+  .nb-spider-static {
+    display: inline-block;
+  }
+}
