@@ -458,9 +458,6 @@ export function EngagementCanvas({
             const width = first?.getBoundingClientRect().width ?? 1;
             setPage(Math.round(node.scrollLeft / Math.max(width, 1)));
           }}
-          onPointerMove={movePointer}
-          onPointerUp={() => endPointer(false)}
-          onPointerCancel={() => endPointer(true)}
         >
           {view.map((column, colIndex) => {
             const task = tasks.find((t) => t.id === column.id);
@@ -518,7 +515,13 @@ export function EngagementCanvas({
                           onKeyDown={(e) => onCardKeyDown(e, pos, cardId)}
                           onPointerDown={(e) => beginPointer(e, pos, cardId, false)}
                           onClick={() => {
-                            if (!startRef.current?.lifted) onOpen(item);
+                            // A drag or a long press already consumed this
+                            // gesture; only a plain click peeks.
+                            if (movedRef.current) {
+                              movedRef.current = false;
+                              return;
+                            }
+                            onOpen(item);
                           }}
                           className="nb-canvas-card flex min-w-0 flex-1 items-start gap-2 px-3 py-2 text-left"
                         >
