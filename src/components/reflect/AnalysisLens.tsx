@@ -223,10 +223,11 @@ export function AnalysisLens({
         profileId={profileId}
         onCancel={() => setConfirming(null)}
         onConfirm={() => {
-          const preset = confirming?.preset;
+          const pending_ = confirming;
           setConfirming(null);
-          if (preset) void runPreset(preset);
+          if (pending_) void runPreset(pending_.preset, pending_.check?.id);
         }}
+
       />
       <header className="shrink-0 border-b border-border px-6 pb-4 pt-6">
         <p className="micro-label micro-label-ai">{active ? active.label : "Analyse this work"}</p>
