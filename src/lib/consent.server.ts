@@ -15,7 +15,16 @@ export async function writeFactConsent(
 ): Promise<void> {
   try {
     const key = process.env["TELEMETRY_SALT"];
-    if (!key) return;
+    if (!key) {
+      console.error("[consent] fact write skipped: TELEMETRY_SALT is not set", {
+        orgId,
+        profileId,
+        purpose,
+        granted,
+        policy_version: CONSENT_POLICY_VERSION,
+      });
+      return;
+    }
     const ids = await pseudonyms(key, orgId, profileId, null);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const core = (supabaseAdmin as unknown as { schema: (s: string) => any }).schema(
@@ -28,8 +37,23 @@ export async function writeFactConsent(
       granted,
       policy_version: CONSENT_POLICY_VERSION,
     });
-    if (error) console.error("[consent] fact write failed:", error.message);
+    if (error) {
+      console.error("[consent] fact write failed", {
+        orgId,
+        profileId,
+        purpose,
+        granted,
+        message: error.message,
+      });
+    }
   } catch (e) {
-    console.error("[consent] fact write threw:", (e as Error).message);
+    console.error("[consent] fact write threw", {
+      orgId,
+      profileId,
+      purpose,
+      granted,
+      message: (e as Error).message,
+    });
   }
 }
+
