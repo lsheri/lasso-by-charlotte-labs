@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { DeliverableKindSelect } from "@/components/work/DeliverableKindSelect";
@@ -18,6 +18,8 @@ import { useBriefs } from "@/hooks/use-briefs";
 import { setDeliverableKind, useInvalidateWorkItems } from "@/hooks/use-deliverable-kind";
 import { supabase } from "@/integrations/supabase/client";
 import type { AnalysisPreset } from "@/lib/analysis-presets";
+import { fetchEngagementCompanions, type CompanionRow } from "@/lib/analysis-companions";
+import { isDeliverableType } from "@/lib/lineage-shared";
 import {
   deliverableKindLabel,
   deliverableKindOf,
@@ -39,19 +41,20 @@ export type AnalysisConfirmRequest = {
   check?: { id: string; title: string } | undefined;
   /** Called when the person adjusts the selection instead of running. */
   onAdjust?: (() => void) | undefined;
+  /**
+   * The deliverables a run may anchor on, when the launching surface already
+   * knows them (the picker selection). Absent means the eligible anchors are
+   * the deliverables among this engagement's companions.
+   */
+  anchorOptions?: CompanionRow[] | undefined;
+  /**
+   * The work the launching surface already had selected. Absent means every
+   * companion starts ticked; present means exactly these do.
+   */
+  preselectedIds?: string[] | undefined;
 };
 
-
-type ItemRow = {
-  id: string;
-  title: string;
-  type: WorkItemRow["type"];
-  source: WorkItemRow["source"];
-  source_vendor: WorkItemRow["source_vendor"];
-  source_meta: WorkItemRow["source_meta"];
-  meta: WorkItemRow["meta"];
-  content_ref?: string | null;
-};
+type ItemRow = CompanionRow & { type: WorkItemRow["type"] };
 
 /**
  * Step one of running an analysis: what Lasso is about to read, built from the
@@ -69,20 +72,31 @@ export function AnalysisConfirm({
   orgId?: string | undefined;
   profileId?: string | undefined;
   onCancel: () => void;
-  /** The extra work kept ticked travels with the run. */
-  onConfirm: (extraItemIds: string[]) => void;
+  /** The anchor the run reads from, plus the extra work kept ticked. */
+  onConfirm: (anchorItemId: string | null, extraItemIds: string[]) => void;
 }) {
   const target = request?.target ?? null;
   const preset = request?.preset ?? null;
+  const baseAnchorId = target?.kind === "item" ? target.id : null;
 
-  const { data: item } = useQuery({
-    queryKey: ["confirm-item", target?.kind === "item" ? target.id : null],
-    enabled: target?.kind === "item",
+  // Which deliverable the run anchors on. It starts as the one the surface
+  // launched from and the person may swap it for another in context.
+  const [anchorId, setAnchorId] = useState<string | null>(baseAnchorId);
+  const [pickingAnchor, setPickingAnchor] = useState(false);
+  useEffect(() => {
+    setAnchorId(baseAnchorId);
+    setPickingAnchor(false);
+  }, [baseAnchorId]);
+  const effectiveAnchor = anchorId ?? baseAnchorId;
+
+  const { data: baseItem } = useQuery({
+    queryKey: ["confirm-item", baseAnchorId],
+    enabled: Boolean(baseAnchorId),
     queryFn: async (): Promise<ItemRow | null> => {
       const { data } = await supabase
         .from("work_items")
         .select("id, title, type, source, source_vendor, source_meta, meta, content_ref")
-        .eq("id", (target as { id: string }).id)
+        .eq("id", baseAnchorId as string)
         .maybeSingle();
       return (data ?? null) as ItemRow | null;
     },
@@ -91,13 +105,13 @@ export function AnalysisConfirm({
   // The task line lives on the episode this piece of work belongs to. It is
   // shown here so the person sees the intent Lasso will read alongside the work.
   const { data: taskLine } = useQuery({
-    queryKey: ["confirm-task-line", target?.kind === "item" ? target.id : null],
-    enabled: target?.kind === "item",
+    queryKey: ["confirm-task-line", effectiveAnchor],
+    enabled: Boolean(effectiveAnchor),
     queryFn: async (): Promise<string | null> => {
       const { data } = await supabase
         .from("episode_items")
         .select("work_episodes(objective)")
-        .eq("work_item_id", (target as { id: string }).id)
+        .eq("work_item_id", effectiveAnchor as string)
         .limit(1);
       const row = (data ?? [])[0] as { work_episodes: { objective: string | null } | null } | undefined;
       return row?.work_episodes?.objective ?? null;
@@ -131,68 +145,68 @@ export function AnalysisConfirm({
 
   // Pass 95: an analysis reads the person's whole context by default, not the
   // one item it was launched from. These are the other pieces of work mapped
-  // into the same engagement, every one of them ticked until they say
-  // otherwise.
+  // into the same engagement.
   const { data: companions } = useQuery({
-    queryKey: ["confirm-companions", target?.kind === "item" ? target.id : null],
-    enabled: target?.kind === "item",
-    queryFn: async (): Promise<ItemRow[]> => {
-      const itemId = (target as { id: string }).id;
-      const { data: mine } = await supabase
-        .from("work_item_tasks")
-        .select("tasks(engagement_id)")
-        .eq("work_item_id", itemId);
-      const engagementIds = Array.from(
-        new Set(
-          (mine ?? [])
-            .map((row) => (row as { tasks: { engagement_id: string } | null }).tasks?.engagement_id)
-            .filter((id): id is string => Boolean(id)),
-        ),
-      );
-      if (engagementIds.length === 0) return [];
-      const { data: tasks } = await supabase
-        .from("tasks")
-        .select("id")
-        .in("engagement_id", engagementIds);
-      const taskIds = (tasks ?? []).map((task) => task.id);
-      if (taskIds.length === 0) return [];
-      const { data: links } = await supabase
-        .from("work_item_tasks")
-        .select("work_item_id")
-        .in("task_id", taskIds);
-      const ids = Array.from(
-        new Set((links ?? []).map((row) => (row as { work_item_id: string }).work_item_id)),
-      ).filter((id) => id !== itemId);
-      if (ids.length === 0) return [];
-      const { data: rows } = await supabase
-        .from("work_items")
-        .select("id, title, type, source, source_vendor, source_meta, meta, content_ref")
-        .in("id", ids)
-        .order("created_at", { ascending: false })
-        .limit(60);
-      return (rows ?? []) as ItemRow[];
-    },
+    queryKey: ["confirm-companions", baseAnchorId],
+    enabled: Boolean(baseAnchorId),
+    queryFn: () => fetchEngagementCompanions(supabase, baseAnchorId as string),
   });
-  const [excluded, setExcluded] = useState<Set<string>>(new Set());
+
+  // Everything the confirm step knows about, the launched item included, so
+  // swapping the anchor simply moves one row between the two lists.
+  const pool = useMemo<ItemRow[]>(() => {
+    const rows = new Map<string, ItemRow>();
+    if (baseItem) rows.set(baseItem.id, baseItem);
+    for (const row of request?.anchorOptions ?? []) rows.set(row.id, row as ItemRow);
+    for (const row of companions ?? []) rows.set(row.id, row as ItemRow);
+    return Array.from(rows.values());
+  }, [baseItem, companions, request?.anchorOptions]);
+
+  const anchorItem = pool.find((row) => row.id === effectiveAnchor) ?? baseItem ?? null;
+  const companionList = pool.filter((row) => row.id !== effectiveAnchor);
+  const eligibleAnchors = (
+    request?.anchorOptions ?? pool.filter((row) => isDeliverableType(row.type))
+  ).filter((row) => row.id !== effectiveAnchor);
+
+  const [included, setIncluded] = useState<Set<string>>(new Set());
   const [showContext, setShowContext] = useState(false);
+  const poolKey = pool.map((row) => row.id).sort().join(",");
+  const preselectKey = (request?.preselectedIds ?? []).join(",");
   useEffect(() => {
-    setExcluded(new Set());
+    const ids = request?.preselectedIds ?? pool.map((row) => row.id);
+    const next = new Set(ids);
+    if (effectiveAnchor) next.delete(effectiveAnchor);
+    setIncluded(next);
     setShowContext(false);
-  }, [target?.kind === "item" ? target.id : null]);
-  const companionList = target?.kind === "item" ? (companions ?? []) : [];
-  const extraIds = companionList.map((row) => row.id).filter((id) => !excluded.has(id));
+    // Defaults follow the launched context, not each anchor swap.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [poolKey, preselectKey, baseAnchorId]);
+
+  function swapAnchor(nextId: string) {
+    const previous = effectiveAnchor;
+    setAnchorId(nextId);
+    setPickingAnchor(false);
+    setIncluded((prev) => {
+      const next = new Set(prev);
+      next.delete(nextId);
+      if (previous) next.add(previous);
+      return next;
+    });
+  }
+
+  const extraIds = companionList.map((row) => row.id).filter((id) => included.has(id));
 
   const { data: briefs } = useBriefs(profileId);
   const invalidateWork = useInvalidateWorkItems();
   const isDeliverableRun = target?.kind === "item" && target.scope === "deliverable";
-  const savedKind = deliverableKindOf(item?.meta);
+  const savedKind = deliverableKindOf(anchorItem?.meta);
   const [kind, setKind] = useState<DeliverableKind | null>(null);
   const [suggested, setSuggested] = useState(false);
   const [editingKind, setEditingKind] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (!isDeliverableRun || !item) return;
+    if (!isDeliverableRun || !anchorItem) return;
     if (savedKind) {
       setKind(savedKind);
       setSuggested(false);
@@ -200,21 +214,21 @@ export function AnalysisConfirm({
       return;
     }
     const guess = suggestDeliverableKind({
-      title: item.title,
-      type: item.type,
-      fileHint: item.content_ref ?? null,
+      title: anchorItem.title,
+      type: anchorItem.type,
+      fileHint: anchorItem.content_ref ?? null,
       briefText: (briefs ?? []).map((b) => b.title).join(" "),
     });
     setKind(guess);
     setSuggested(Boolean(guess));
     setEditingKind(true);
-  }, [isDeliverableRun, item, savedKind, briefs]);
+  }, [isDeliverableRun, anchorItem, savedKind, briefs]);
 
   if (!request || !preset || !target) return null;
 
   const isFirmChecks = preset.id === "firm_checks";
   const includesBrief = preset.scope !== "thread";
-  const itemUnread = target.kind === "item" && contentsUnread(item?.meta as never);
+  const itemUnread = target.kind === "item" && contentsUnread(anchorItem?.meta as never);
   const counts =
     target.kind === "engagement"
       ? readCounts(target.itemCount, unreadCount ?? 0)
@@ -233,18 +247,18 @@ export function AnalysisConfirm({
         <form
           onSubmit={(event) => {
             event.preventDefault();
-            if (isDeliverableRun && item && kind && kind !== savedKind) {
+            if (isDeliverableRun && anchorItem && kind && kind !== savedKind) {
               setSaving(true);
-              void setDeliverableKind(item.id, kind)
+              void setDeliverableKind(anchorItem.id, kind)
                 .then(() => invalidateWork())
                 .catch((error: unknown) => toast.error((error as Error).message))
                 .finally(() => {
                   setSaving(false);
-                  onConfirm(extraIds);
+                  onConfirm(effectiveAnchor, extraIds);
                 });
               return;
             }
-            onConfirm(extraIds);
+            onConfirm(effectiveAnchor, extraIds);
           }}
           className="space-y-4"
         >
@@ -252,14 +266,41 @@ export function AnalysisConfirm({
             <p className="micro-label mb-2">This will read:</p>
             <ul className="space-y-2">
               {target.kind === "item" ? (
-                <li className="flex flex-wrap items-center gap-2 rounded-[var(--radius)] border border-border px-3 py-2">
-                  {item ? <SourceMark item={item} /> : null}
-                  <span className="min-w-0 break-words text-sm text-foreground">
-                    {item?.title ?? target.title}
-                  </span>
-                  {item ? <TypeBadge item={item} size="sm" /> : null}
-                  {itemUnread ? (
-                    <span className="w-full text-xs text-muted-foreground">{TITLE_ONLY_LINE}</span>
+                <li className="rounded-[var(--radius)] border border-border px-3 py-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    {anchorItem ? <SourceMark item={anchorItem as never} /> : null}
+                    <span className="min-w-0 break-words text-sm text-foreground">
+                      {anchorItem?.title ?? target.title}
+                    </span>
+                    {anchorItem ? <TypeBadge item={anchorItem as never} size="sm" /> : null}
+                    {eligibleAnchors.length > 0 ? (
+                      <button
+                        type="button"
+                        data-testid="anchor-change"
+                        onClick={() => setPickingAnchor((prev) => !prev)}
+                        className="text-xs text-accent-deep underline underline-offset-2"
+                      >
+                        {pickingAnchor ? "Keep this" : "Change"}
+                      </button>
+                    ) : null}
+                    {itemUnread ? (
+                      <span className="w-full text-xs text-muted-foreground">{TITLE_ONLY_LINE}</span>
+                    ) : null}
+                  </div>
+                  {pickingAnchor ? (
+                    <div className="mt-2 space-y-1" data-testid="anchor-options">
+                      <p className="micro-label">Run this on</p>
+                      {eligibleAnchors.map((row) => (
+                        <button
+                          key={row.id}
+                          type="button"
+                          onClick={() => swapAnchor(row.id)}
+                          className="block w-full break-words text-left text-sm text-accent-deep underline underline-offset-2"
+                        >
+                          {row.title}
+                        </button>
+                      ))}
+                    </div>
                   ) : null}
                 </li>
               ) : (
@@ -337,14 +378,14 @@ export function AnalysisConfirm({
                   <div className="flex gap-3 pb-1">
                     <button
                       type="button"
-                      onClick={() => setExcluded(new Set())}
+                      onClick={() => setIncluded(new Set(companionList.map((row) => row.id)))}
                       className="text-xs text-accent-deep underline underline-offset-2"
                     >
                       Select all
                     </button>
                     <button
                       type="button"
-                      onClick={() => setExcluded(new Set(companionList.map((row) => row.id)))}
+                      onClick={() => setIncluded(new Set())}
                       className="text-xs text-accent-deep underline underline-offset-2"
                     >
                       Clear
@@ -355,9 +396,9 @@ export function AnalysisConfirm({
                       <input
                         type="checkbox"
                         aria-label={row.title}
-                        checked={!excluded.has(row.id)}
+                        checked={included.has(row.id)}
                         onChange={() =>
-                          setExcluded((prev) => {
+                          setIncluded((prev) => {
                             const next = new Set(prev);
                             if (next.has(row.id)) next.delete(row.id);
                             else next.add(row.id);
@@ -369,6 +410,9 @@ export function AnalysisConfirm({
                       <span className="min-w-0 break-words leading-snug text-foreground">
                         <SourceMark item={row as never} className="mr-1.5" />
                         {row.title}
+                        {contentsUnread(row.meta as never) ? (
+                          <span className="ml-1.5 text-xs text-muted-foreground">title only</span>
+                        ) : null}
                       </span>
                     </label>
                   ))}
