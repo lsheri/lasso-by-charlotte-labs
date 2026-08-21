@@ -17,9 +17,8 @@ export function AskSheet(props: {
   engagementTitle: string;
   profileId: string;
   orgId: string;
-  itemCount: number;
 }) {
-  const { open, onOpenChange, engagementId, engagementTitle, profileId, orgId, itemCount } =
+  const { open, onOpenChange, engagementId, engagementTitle, profileId, orgId } =
     props;
   const { tab, setTab } = useAskDockState();
   const ask = useAskLasso({ open, engagementId, engagementTitle, profileId, orgId });
@@ -40,7 +39,6 @@ export function AskSheet(props: {
           engagementTitle={engagementTitle}
           profileId={profileId}
           orgId={orgId}
-          itemCount={itemCount}
           onClose={() => onOpenChange(false)}
           mobile
         />

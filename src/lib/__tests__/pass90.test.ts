@@ -36,14 +36,11 @@ describe("90.2 analyses move into Ask", () => {
     expect(page).not.toContain("AnalysisLens");
   });
 
-  it("renders AnalysisLens embedded in the Ask surface with the page's item count", () => {
-    expect(surface).toContain("AnalysisLens");
-    expect(surface).toContain("embedded");
-    expect(surface).toContain("itemCount");
-  });
-
-  it("threads the already computed count down instead of re-querying", () => {
-    expect(page).toContain("itemCount={mappedItemCount}");
+  // Pass 94 removed the embedded lens tab: analyses live in the selection
+  // driven Analyses tab, and the itemCount thread went with it.
+  it("keeps analyses inside the Ask surface, selection driven", () => {
+    expect(surface).toContain("SelectionAnalysisChips");
+    expect(surface).not.toContain("AnalysisLens");
   });
 });
 

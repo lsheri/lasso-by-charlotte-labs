@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 
-export type AskTab = "messages" | "history" | "analyses" | "analyse";
+export type AskTab = "messages" | "history" | "analyses";
 
 export const DOCK_MIN_WIDTH = 320;
 export const DOCK_MAX_WIDTH = 560;

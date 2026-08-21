@@ -1,6 +1,9 @@
 import { useRef, useState } from "react";
 
 import { BUCKETS, bucketFor, type BucketKey } from "@/components/work/work-buckets";
+import { SCATTER_CAP, scatterFor } from "@/components/work/pile-scatter";
+import { SourceMark } from "@/components/work/SourceMark";
+import { TypeIcon } from "@/components/work/TypeIcon";
 import {
   isConversationGroup,
   type ConversationGroup,
@@ -18,14 +21,40 @@ function keyOf(entry: WorkEntry): string {
   return isConversationGroup(entry) ? entry.key : entry.id;
 }
 
-/** Shallow-3D stack: a few sheets, all under 8 degrees. */
-const SHEETS = 5;
-const ROTATIONS = ["0deg", "-1.4deg", "2.1deg", "-2.8deg", "3.6deg"];
+/**
+ * One piece of unmapped work as a small sheet of paper: its name clamped to two
+ * lines, and the mark that says where it came from (the LLM's logo for a
+ * conversation, the type glyph otherwise).
+ */
+function PaperCard({ entry, onClick }: { entry: WorkEntry; onClick: () => void }) {
+  const head = headOf(entry);
+  const { dx, dy, rot } = scatterFor(keyOf(entry));
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="nb-paper"
+      style={
+        {
+          "--nb-dx": `${dx}px`,
+          "--nb-dy": `${dy}px`,
+          "--nb-rot": `${rot}deg`,
+        } as React.CSSProperties
+      }
+    >
+      <span className="nb-paper-mark">
+        {head.type === "ai_thread" ? <SourceMark item={head} /> : <TypeIcon item={head} size="sm" />}
+      </span>
+      <span className="nb-paper-title">{head.title}</span>
+    </button>
+  );
+}
 
 /**
- * The unmapped set as a pile of paper on quad ruling, resolving into a type
- * matrix. The segmented toggle and the swipe-up gesture do exactly the same
- * thing, so the gesture is never the only way through.
+ * The unmapped set as loose paper scattered on quad ruling, organising itself
+ * into a neat grid on hover and resolving into a type matrix on click. The
+ * segmented toggle and the gesture do exactly the same thing, so the gesture is
+ * never the only way through.
  */
 export function WorkPile({
   entries,
@@ -50,7 +79,8 @@ export function WorkPile({
   const counts = new Map<BucketKey, number>();
   for (const group of grouped) counts.set(group.bucket.key, group.entries.length);
 
-  const top = entries.slice(0, SHEETS);
+  const papers = entries.slice(0, SCATTER_CAP);
+  const overflow = entries.length - papers.length;
 
   return (
     <div className="space-y-3">
@@ -97,47 +127,27 @@ export function WorkPile({
             if (dy > 40 && dy > dx) setView("matrix");
           }}
         >
-          <button
-            type="button"
-            className="nb-pile"
-            onClick={() => setView("matrix")}
+          <div
+            className="nb-scatter"
+            data-scatter="1"
+            role="group"
             aria-label={`Unmapped work, ${entries.length} item${
               entries.length === 1 ? "" : "s"
-            }. Open as matrix.`}
+            }. Hover to organise, or open as matrix.`}
           >
-            <span className="relative block" style={{ minHeight: `${72 + SHEETS * 4}px` }}>
-              {top
-                .slice(1)
-                .reverse()
-                .map((entry, index) => {
-                  const depth = top.length - 1 - index;
-                  return (
-                    <span
-                      key={keyOf(entry)}
-                      aria-hidden
-                      data-stacked="1"
-                      className="nb-pile-card"
-                      style={
-                        {
-                          "--nb-i": depth,
-                          "--nb-rot": ROTATIONS[depth] ?? "0deg",
-                        } as React.CSSProperties
-                      }
-                    />
-                  );
-                })}
-              <span data-stacked="0" className="nb-pile-card block px-4 py-4">
-                <span className="block truncate text-sm font-medium text-foreground">
-                  {top[0] ? headOf(top[0]).title : "Nothing waiting"}
-                </span>
-                <span className="mt-2 block font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
-                  {entries.length > SHEETS
-                    ? `+ ${entries.length - SHEETS} more · tap to sort by type`
-                    : "Tap to sort by type"}
-                </span>
-              </span>
-            </span>
-          </button>
+            {papers.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Nothing waiting.</p>
+            ) : (
+              papers.map((entry) => (
+                <PaperCard key={keyOf(entry)} entry={entry} onClick={() => setView("matrix")} />
+              ))
+            )}
+            {overflow > 0 ? (
+              <button type="button" onClick={() => setView("matrix")} className="nb-paper nb-paper-more">
+                <span className="nb-paper-title">+ {overflow} more</span>
+              </button>
+            ) : null}
+          </div>
           <div className="mt-4 flex flex-wrap gap-2">
             {grouped.map(({ bucket }) => (
               <span
