@@ -245,6 +245,7 @@ export function useChatAnalyses(profileId: string | undefined, orgId: string | u
     readsDetail: string,
     checkId?: string,
     extraItemIds?: string[],
+    anchorItemId?: string | null,
   ) {
     if (running || target.kind === "none" || !profileId) return;
     setRunning(preset);
@@ -259,13 +260,14 @@ export function useChatAnalyses(profileId: string | undefined, orgId: string | u
           confirm_step: "shown" as const,
           ...(target.kind === "engagement"
             ? { engagement_id: target.id }
-            : { work_item_id: target.id }),
+            : { work_item_id: anchorItemId ?? target.id }),
           // Only the id travels: the check's wording is read server side.
           ...(checkId ? { check_id: checkId } : {}),
           // The rest of the context the person kept ticked in the confirm step.
           ...(extraItemIds && extraItemIds.length > 0 && target.kind !== "engagement"
             ? { extra_item_ids: extraItemIds }
             : {}),
+
           profile_id: profileId,
         },
 
