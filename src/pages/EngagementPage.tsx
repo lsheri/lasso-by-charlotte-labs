@@ -119,67 +119,61 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
           isOwner={profile?.role !== "coach"}
         />
 
-        <div className="mt-4 flex flex-wrap items-center gap-2">
-          {profile && profile.role !== "coach" && !isQuickFolder && hasCoaches ? (
-            <a
-              href="#shared-with"
-              className="rounded-full border border-accent bg-accent-soft px-3 py-1 font-mono text-[11px] uppercase tracking-[0.08em] text-foreground transition-colors hover:opacity-80"
-            >
-              Share with a coach
-            </a>
-          ) : null}
-          {profile && profile.role !== "coach" && !isQuickFolder ? (
-            <a
-              href="#shared-with"
-              className="rounded-full border border-border bg-card px-3 py-1 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
-            >
-              {(coaches.data ?? []).length === 0
-                ? "Not shared with anyone"
-                : `Shared with ${coaches.data?.length} coach${(coaches.data?.length ?? 0) === 1 ? "" : "es"}`}
-            </a>
-          ) : null}
-          {membership.data?.isMember ? <EditEngagementDialog engagement={engagement} /> : null}
-          <button
-            type="button"
-            onClick={() => setAboutOpen((v) => !v)}
-            className="rounded-full border border-border bg-card px-3 py-1 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
-          >
-            About this engagement {aboutOpen ? "−" : "+"}
-          </button>
-          {profile?.role === "admin" && !isQuickFolder ? (
-            <InviteDialog
-              engagementId={engagementId}
-              trigger={
-                <button
-                  type="button"
+        {profile && profile.role !== "coach" ? (
+          <section className="mt-5">
+            <p className="micro-label">Coaching</p>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              {!isQuickFolder && hasCoaches ? (
+                <a
+                  href="#shared-with"
+                  className="rounded-full border border-accent bg-accent-soft px-3 py-1 font-mono text-[11px] uppercase tracking-[0.08em] text-foreground transition-colors hover:opacity-80"
+                >
+                  Share with a coach
+                </a>
+              ) : null}
+              {!isQuickFolder ? (
+                <a
+                  href="#shared-with"
                   className="rounded-full border border-border bg-card px-3 py-1 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
                 >
-                  {hasCoaches ? "Invite a new coach" : "Invite a coach"}
-                </button>
-              }
-            />
-          ) : null}
-          {profile && profile.role !== "coach" ? (
-            <button
-              type="button"
-              onClick={() => setPrepOpen(true)}
-              className="rounded-full border border-border bg-card px-3 py-1 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
-            >
-              Prepare a 1:1
-            </button>
-          ) : null}
-        </div>
-
-        {profile &&
-        profile.role !== "coach" &&
-        profile.role !== "admin" &&
-        isBusinessOrg(profile) &&
-        !isQuickFolder ? (
-          <p className="mt-2 text-xs text-muted-foreground">{INVITE_ADMIN_ONLY_LINE}</p>
+                  {(coaches.data ?? []).length === 0
+                    ? "Not shared with anyone"
+                    : `Shared with ${coaches.data?.length} coach${(coaches.data?.length ?? 0) === 1 ? "" : "es"}`}
+                </a>
+              ) : null}
+              {profile.role === "admin" && !isQuickFolder ? (
+                <InviteDialog
+                  engagementId={engagementId}
+                  trigger={
+                    <button
+                      type="button"
+                      className="rounded-full border border-border bg-card px-3 py-1 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+                    >
+                      {hasCoaches ? "Invite a new coach" : "Invite a coach"}
+                    </button>
+                  }
+                />
+              ) : null}
+              <button
+                type="button"
+                onClick={() => setPrepOpen(true)}
+                className="rounded-full border border-border bg-card px-3 py-1 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+              >
+                Prepare a 1:1
+              </button>
+            </div>
+            {profile.role !== "admin" && isBusinessOrg(profile) && !isQuickFolder ? (
+              <p className="mt-2 text-xs text-muted-foreground">{INVITE_ADMIN_ONLY_LINE}</p>
+            ) : null}
+          </section>
         ) : null}
 
-        {aboutOpen ? (
-          <div className="mt-3 space-y-3 rounded-[var(--radius)] border border-border bg-card px-5 py-4 shadow-card">
+        <section className="mt-4 rounded-[var(--radius)] border border-border bg-card px-5 py-4 shadow-card">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <p className="micro-label">Details</p>
+            {membership.data?.isMember ? <EditEngagementDialog engagement={engagement} /> : null}
+          </div>
+          <div className="mt-3 space-y-3">
             <div>
               <p className="micro-label">Client</p>
               <p className="mt-1 text-sm text-foreground">
@@ -193,7 +187,8 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
               </p>
             </div>
           </div>
-        ) : null}
+        </section>
+
       </header>
 
       {profile && profile.role !== "coach" ? (
