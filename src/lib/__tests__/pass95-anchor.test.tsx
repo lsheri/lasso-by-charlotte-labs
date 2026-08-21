@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { validateAnalysisInput } from "@/lib/analysis.functions";
@@ -189,6 +189,7 @@ describe("pass 95 anchor chooser", () => {
     fireEvent.click(await screen.findByTestId("anchor-change"));
     fireEvent.click(await screen.findByText("Pricing deck"));
     fireEvent.click(screen.getByRole("button", { name: "Run analysis" }));
+    await waitFor(() => expect(calls.length).toBe(1));
     expect(calls[0]?.[0]).toBe("deck2");
     expect(calls[0]?.[1]).toContain("deck");
   });
@@ -200,6 +201,7 @@ describe("pass 95 anchor chooser", () => {
     );
     await screen.findByTestId("confirm-context-block");
     fireEvent.click(screen.getByRole("button", { name: "Run analysis" }));
+    await waitFor(() => expect(calls.length).toBe(1));
     expect(calls[0]?.[1].sort()).toEqual(["thread"]);
   });
 
@@ -208,6 +210,7 @@ describe("pass 95 anchor chooser", () => {
     renderConfirm({}, (anchor, extras) => calls.push([anchor, extras]));
     await screen.findByTestId("confirm-context-block");
     fireEvent.click(screen.getByRole("button", { name: "Run analysis" }));
+    await waitFor(() => expect(calls.length).toBe(1));
     expect(calls[0]?.[1].sort()).toEqual(["deck2", "thread"]);
   });
 });
