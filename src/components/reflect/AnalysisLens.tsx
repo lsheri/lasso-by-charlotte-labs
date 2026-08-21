@@ -121,7 +121,7 @@ export function AnalysisLens({
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages?.length, pending]);
 
-  async function runPreset(preset: AnalysisPreset) {
+  async function runPreset(preset: AnalysisPreset, checkId?: string) {
     if (pending) return;
     started.current = preset.id;
     setActive(preset);
@@ -143,8 +143,11 @@ export function AnalysisLens({
           ...(target.kind === "engagement"
             ? { engagement_id: target.id }
             : { work_item_id: target.id }),
+          // The id alone: the check's wording is read from the record.
+          ...(checkId ? { check_id: checkId } : {}),
           profile_id: profileId,
         },
+
         (delta) => setStreamed((prev) => prev + delta),
       );
       setSessionId(result.session_id);
