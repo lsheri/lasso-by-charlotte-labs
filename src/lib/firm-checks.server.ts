@@ -116,13 +116,8 @@ export async function applicableFirmChecks(
   }
 
   return (data ?? [])
-    .filter((check) => {
-      const engagementOk =
-        check.engagement_id === null || engagementIds.includes(check.engagement_id);
-      const subjectOk =
-        check.subject_profile_id === null || check.subject_profile_id === args.ownerProfileId;
-      return engagementOk && subjectOk;
-    })
+    .filter((check) => checkApplies(check, { engagementIds, ownerProfileId: args.ownerProfileId }))
+
     .map((check) => ({ title: check.title, body: check.body }));
 }
 
