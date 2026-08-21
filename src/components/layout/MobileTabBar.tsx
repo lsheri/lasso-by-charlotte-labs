@@ -5,7 +5,9 @@ import { GraphiteIcon, type GraphiteIconName } from "@/components/notebook/icons
 import { FeedbackDialog } from "@/components/feedback/FeedbackWidget";
 import { useAskLassoHandler } from "@/components/reflect/ask-lasso-context";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
+import { useEngagements } from "@/hooks/use-engagements";
 import { isBusinessOrg, useProfile } from "@/hooks/use-profile";
+import { engagementDisplayCode, engagementDisplayTitle } from "@/lib/clients";
 import { supabase } from "@/integrations/supabase/client";
 
 type Dest = { label: string; to: string; icon: GraphiteIconName };
@@ -21,6 +23,8 @@ export function MobileTabBar() {
   const path = useRouterState({ select: (s) => s.location.pathname });
   const handler = useAskLassoHandler();
   const [youOpen, setYouOpen] = useState(false);
+  const [engOpen, setEngOpen] = useState(false);
+  const { data: engagements } = useEngagements(profile?.id);
 
   const isCoach = profile?.role === "coach";
   const canManageMembers = profile?.role === "admin" || profile?.role === "lead";
@@ -48,7 +52,7 @@ export function MobileTabBar() {
         { label: "Where work lives", to: "/connectors", icon: "connectors" },
       ];
 
-  const tabs: (Dest | { label: string; icon: GraphiteIconName; action: "ask" | "you" })[] = isCoach
+  const tabs: (Dest | { label: string; icon: GraphiteIconName; action: "ask" | "you" | "engagements" })[] = isCoach
     ? [
         { label: "Coaching", to: "/coaching", icon: "members" },
         { label: "1:1 prep", to: "/one-on-one", icon: "one-on-one" },
@@ -56,7 +60,7 @@ export function MobileTabBar() {
       ]
     : [
         { label: "Work", to: "/work", icon: "work" },
-        { label: "Engagements", to: "/engagements", icon: "engagement" },
+        { label: "Engagements", icon: "engagement", action: "engagements" },
         { label: "Ask", icon: "ask-lasso", action: "ask" },
         { label: "You", icon: "overview", action: "you" },
       ];
@@ -92,9 +96,16 @@ export function MobileTabBar() {
             <button
               key={tab.label}
               type="button"
-              onClick={() => (tab.action === "ask" ? askLasso() : setYouOpen(true))}
+              onClick={() => {
+                if (tab.action === "ask") askLasso();
+                else if (tab.action === "engagements") setEngOpen(true);
+                else setYouOpen(true);
+              }}
               className={`nb-tab ${
-                tab.action === "you" && youOpen ? "nb-tab-active" : ""
+                (tab.action === "you" && youOpen) ||
+                (tab.action === "engagements" && (engOpen || path.startsWith("/engagements")))
+                  ? "nb-tab-active"
+                  : ""
               }`}
             >
               <GraphiteIcon name={tab.icon} size={18} />
@@ -103,6 +114,40 @@ export function MobileTabBar() {
           ),
         )}
       </nav>
+
+      <Sheet open={engOpen} onOpenChange={setEngOpen}>
+        <SheetContent
+          side="bottom"
+          className="max-h-[85vh] overflow-y-auto border-border bg-card pb-[calc(1rem+env(safe-area-inset-bottom))]"
+        >
+          <SheetTitle className="font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
+            Engagements
+          </SheetTitle>
+          <div className="mt-3 flex flex-col gap-0.5">
+            {(engagements ?? []).map((engagement) => (
+              <Link
+                key={engagement.id}
+                to="/engagements/$id"
+                params={{ id: engagement.id }}
+                onClick={() => setEngOpen(false)}
+                className="nb-nav-item min-h-[48px]"
+                activeProps={{ className: "nb-nav-item-active" }}
+              >
+                <GraphiteIcon name="engagement" size={16} />
+                <span className="flex min-w-0 items-center gap-1.5">
+                  <span className="font-mono text-xs text-muted-foreground">
+                    {engagementDisplayCode(engagement) ?? "Folder"}
+                  </span>
+                  <span className="truncate">{engagementDisplayTitle(engagement)}</span>
+                </span>
+              </Link>
+            ))}
+            {engagements && engagements.length === 0 ? (
+              <p className="px-2 py-1.5 text-sm text-muted-foreground">No engagements yet</p>
+            ) : null}
+          </div>
+        </SheetContent>
+      </Sheet>
 
       <Sheet open={youOpen} onOpenChange={setYouOpen}>
         <SheetContent
