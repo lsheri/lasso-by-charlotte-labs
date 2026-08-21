@@ -1,14 +1,12 @@
 import { Outlet, useNavigate } from "@tanstack/react-router";
-import { Menu, MessageSquare } from "lucide-react";
-import { useState } from "react";
+import { MessageSquare } from "lucide-react";
 
-import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { supabase } from "@/integrations/supabase/client";
 import { useProfile } from "@/hooks/use-profile";
 
 import { AppSidebar } from "./AppSidebar";
+import { MobileTabBar } from "./MobileTabBar";
 import { FeedbackDialog, FeedbackWidget } from "@/components/feedback/FeedbackWidget";
-import { AskLassoFab } from "@/components/reflect/AskLassoFab";
 import { AskLassoProvider } from "@/components/reflect/ask-lasso-context";
 import { ChecklistLauncher } from "@/components/onboarding/checklist/ChecklistLauncher";
 import { StepPopover } from "@/components/onboarding/checklist/StepPopover";
@@ -16,7 +14,6 @@ import { StepPopover } from "@/components/onboarding/checklist/StepPopover";
 export function AppShell() {
   const { data: profile, profiles } = useProfile();
   const navigate = useNavigate();
-  const [mobileOpen, setMobileOpen] = useState(false);
   const userName = profile?.display_name ?? "Signed in";
 
   async function handleSignOut() {
@@ -60,39 +57,17 @@ export function AppShell() {
                   </button>
                 }
               />
-              <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-                <SheetTrigger
-                  className="grid h-11 w-11 shrink-0 place-items-center rounded-md text-foreground/70 transition-colors hover:bg-secondary"
-                  aria-label="Open navigation"
-                >
-                  <Menu className="h-5 w-5" />
-                </SheetTrigger>
-                <SheetContent
-                  side="left"
-                  className="w-[280px] max-w-[85vw] overflow-y-auto border-border bg-sidebar p-0 pb-[env(safe-area-inset-bottom)] pt-[env(safe-area-inset-top)]"
-                >
-                  <SheetTitle className="sr-only">Navigation</SheetTitle>
-                  <AppSidebar
-                    userName={userName}
-                    userRole={profile?.role}
-                    profiles={profiles}
-                    activeProfile={profile}
-                    onSignOut={handleSignOut}
-                    onNavigate={() => setMobileOpen(false)}
-                  />
-                </SheetContent>
-              </Sheet>
             </div>
           </header>
 
-          <main className="flex-1 px-4 pb-[calc(7rem+env(safe-area-inset-bottom))] pt-6 md:px-12 md:py-14 md:pb-14">
+          <main className="flex-1 px-4 pb-[calc(9rem+env(safe-area-inset-bottom))] pt-6 md:px-12 md:py-14 md:pb-14">
             <div className="mx-auto max-w-3xl">
               <Outlet />
             </div>
           </main>
         </div>
         <FeedbackWidget />
-        <AskLassoFab />
+        <MobileTabBar />
         <StepPopover />
       </div>
     </AskLassoProvider>

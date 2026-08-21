@@ -1,4 +1,4 @@
-import { CheckCircle2, CircleDashed, Lock } from "lucide-react";
+import { CheckCircle2, CircleDashed } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
@@ -22,6 +22,7 @@ import { TranscriptsAction } from "@/components/work/TranscriptsAction";
 import { WorkDateDialog } from "@/components/work/WorkDateDialog";
 import { RowAction, WorkRow } from "@/components/work/WorkRow";
 import { EngagementFold, WorkSection } from "@/components/work/WorkSection";
+import { WorkPile } from "@/components/work/WorkPile";
 import { ConversationChips } from "@/components/work/ConversationChips";
 import { FlaggedMarker, isFlaggedRestatement } from "@/components/work/FlaggedMarker";
 import { Button } from "@/components/ui/button";
@@ -79,6 +80,8 @@ export function WorkPage() {
   const [confirmRemove, setConfirmRemove] = useState(false);
   const [removing, setRemoving] = useState(false);
   const [removingFlagged, setRemovingFlagged] = useState(false);
+  // Private stopped being a section: it is a per-row chip and this filter.
+  const [showPrivate, setShowPrivate] = useState(true);
 
   const all = data?.items ?? [];
   const mappingError = data?.mappingError ?? null;
@@ -237,7 +240,9 @@ export function WorkPage() {
     variant: "mapped" | "unmapped" | "private",
     group?: WorkItemRow[],
   ) {
-    if (variant === "private") {
+    // A private row keeps its own action set wherever it renders, now that the
+    // pile holds private and unmapped work side by side.
+    if (item.visibility === "private") {
       return (
         <>
           {item.content_ref ? <OpenFileAction workItemId={item.id} /> : null}
@@ -357,10 +362,15 @@ export function WorkPage() {
   }
 
   const isCoach = profile?.role === "coach";
-  const unmappedEntries = groupConversations(unmapped);
-  // Only standalone items are bulk-selectable; a conversation stays whole.
+  // The pile IS the unmapped set. Private items are unmapped work you withheld,
+  // so they join it behind a filter rather than getting a section of their own.
+  const pileItems = showPrivate ? [...unmapped, ...priv] : unmapped;
+  const unmappedEntries = groupConversations(pileItems);
+  // Only standalone items are bulk-selectable; a conversation stays whole, and
+  // a private item has no mapping path at all.
   const selectable = unmappedEntries
     .filter((entry): entry is WorkItemRow => !isConversationGroup(entry))
+    .filter((i) => i.visibility === "unmapped")
     .map((i) => i.id);
   const allChosen = selectable.length > 0 && selectable.every((id) => chosen.has(id));
 
@@ -492,7 +502,14 @@ export function WorkPage() {
             )
           ) : null}
           <ConnectorBrowseActions />
-          <PasteThreadDialog trigger={<Button type="button">Paste a thread</Button>} />
+          {/* On phones the one green primary anchors the bottom of the screen. */}
+          <PasteThreadDialog
+            trigger={
+              <Button type="button" className="hidden md:inline-flex">
+                Paste a thread
+              </Button>
+            }
+          />
           <UploadFilesButton />
           <TranscriptsAction />
           <ImportFlowDialog
@@ -552,14 +569,26 @@ export function WorkPage() {
             </div>
           ) : null}
           <WorkSection
-            label="Needs mapping"
+            label="Unmapped"
             hint="Private by default until you map it, nothing is shared with your coach yet."
             count={unmappedEntries.length}
             tone="amber"
             icon={CircleDashed}
             defaultOpen
+            accessory={
+              priv.length > 0 ? (
+                <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
+                  <Checkbox
+                    checked={showPrivate}
+                    onCheckedChange={(next) => setShowPrivate(next === true)}
+                    aria-label="Show private work"
+                  />
+                  Show private ({priv.length})
+                </label>
+              ) : undefined
+            }
           >
-            {unmapped.length === 0 ? (
+            {pileItems.length === 0 ? (
               <p className="rounded-[var(--radius)] border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
                 Nothing waiting. Every piece of work here has a home.
               </p>
@@ -602,29 +631,33 @@ export function WorkPage() {
                   </div>
                 )}
 
-                {unmappedEntries.map((entry) =>
-                  isConversationGroup(entry) ? (
-                    renderGroup(entry, "unmapped")
-                  ) : (
-                    <WorkRow
-                      key={entry.id}
-                      item={entry}
-                      lead={
-                        selectMode && !isCoach ? (
-                          <Checkbox
-                            checked={chosen.has(entry.id)}
-                            onCheckedChange={() => toggleChosen(entry.id)}
-                            aria-label={`Select ${entry.title}`}
-                          />
-                        ) : undefined
-                      }
-                      onOpen={openItem(entry)}
-                      chips={<ConversationChips item={entry} />}
-                      actions={rowActions(entry, "unmapped")}
-                      footer={suggestionFor(entry)}
-                    />
-                  ),
-                )}
+                <WorkPile
+                  entries={unmappedEntries}
+                  forceMatrix={selectMode || active.length > 0}
+                  renderEntry={(entry) =>
+                    isConversationGroup(entry) ? (
+                      renderGroup(entry, "unmapped")
+                    ) : (
+                      <WorkRow
+                        key={entry.id}
+                        item={entry}
+                        lead={
+                          selectMode && !isCoach && entry.visibility === "unmapped" ? (
+                            <Checkbox
+                              checked={chosen.has(entry.id)}
+                              onCheckedChange={() => toggleChosen(entry.id)}
+                              aria-label={`Select ${entry.title}`}
+                            />
+                          ) : undefined
+                        }
+                        onOpen={openItem(entry)}
+                        chips={<ConversationChips item={entry} />}
+                        actions={rowActions(entry, "unmapped")}
+                        footer={suggestionFor(entry)}
+                      />
+                    )
+                  }
+                />
               </div>
             )}
           </WorkSection>
@@ -666,35 +699,20 @@ export function WorkPage() {
             )}
           </WorkSection>
 
-          <WorkSection
-            label="Private"
-            hint="Never visible to anyone but you."
-            count={priv.length}
-            tone="indigo"
-            icon={Lock}
-          >
-            {priv.length === 0 ? (
-              <p className="rounded-[var(--radius)] border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
-                Nothing marked private. Anything you set aside stays here, for your eyes only.
-              </p>
-            ) : (
-              groupConversations(priv).map((entry) =>
-                isConversationGroup(entry) ? (
-                  renderGroup(entry, "private")
-                ) : (
-                  <WorkRow
-                    key={entry.id}
-                    item={entry}
-                    onOpen={openItem(entry)}
-                    chips={<ConversationChips item={entry} />}
-                    actions={rowActions(entry, "private")}
-                  />
-                ),
-              )
-            )}
-          </WorkSection>
         </div>
       )}
+
+      {!isCoach && all.length > 0 ? (
+        <div className="fixed inset-x-4 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-30 md:hidden print:hidden">
+          <PasteThreadDialog
+            trigger={
+              <Button type="button" className="w-full shadow-card">
+                Paste a thread
+              </Button>
+            }
+          />
+        </div>
+      ) : null}
 
       <MapDialog
         item={mapItem}

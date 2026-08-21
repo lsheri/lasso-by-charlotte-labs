@@ -114,6 +114,12 @@ export function WorkRow({
           </div>
           <div className="flex flex-wrap items-center gap-1.5">
             <TypeBadge item={item} className="mt-1" size={nested ? "sm" : "md"} />
+            {state === "private" ? (
+              <span className="mt-1 inline-flex items-center gap-1 rounded-full border border-border bg-secondary px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+                <Lock className="h-2.5 w-2.5" aria-hidden />
+                Private
+              </span>
+            ) : null}
             {item.content_fidelity === "summary" ? (
               <span className="mt-1 inline-block rounded-full border border-border bg-secondary px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
                 Summary
