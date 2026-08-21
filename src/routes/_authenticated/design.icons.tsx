@@ -429,7 +429,7 @@ function MarksSection() {
 
       <div className="mt-4 space-y-4 text-sm">
         <div className="flex flex-wrap items-center gap-4">
-          <Button type="button" size="sm" variant="outline" onClick={check.fire}>
+          <Button type="button" size="sm" variant="outline" onClick={() => check.fire()}>
             Draw the check
           </Button>
           <span className="flex items-center gap-2">
@@ -441,7 +441,7 @@ function MarksSection() {
         </div>
 
         <div className="flex flex-wrap items-center gap-4">
-          <Button type="button" size="sm" variant="outline" onClick={ellipse.fire}>
+          <Button type="button" size="sm" variant="outline" onClick={() => ellipse.fire()}>
             Draw the ellipse
           </Button>
           <span className="flex items-center gap-2">
@@ -454,7 +454,7 @@ function MarksSection() {
         </div>
 
         <div className="flex flex-wrap items-center gap-4">
-          <Button type="button" size="sm" variant="outline" onClick={strike.fire}>
+          <Button type="button" size="sm" variant="outline" onClick={() => strike.fire()}>
             Draw the strike
           </Button>
           <span className="flex items-center gap-2">
