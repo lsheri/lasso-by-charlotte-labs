@@ -459,6 +459,12 @@ const RAW_ANALYSIS_PRESETS: AnalysisPreset[] = [
   },
 ];
 
+/** Every preset, with the shared output discipline block appended once. */
+export const ANALYSIS_PRESETS: AnalysisPreset[] = RAW_ANALYSIS_PRESETS.map((preset) => ({
+  ...preset,
+  systemPrompt: `${preset.systemPrompt}\n\n${OUTPUT_DISCIPLINE}`,
+}));
+
 /** Appended to the firm checks preset at run time; empty means the chip is disabled. */
 export const NO_FIRM_CHECKS_LINE = "no firm checks written yet";
 
