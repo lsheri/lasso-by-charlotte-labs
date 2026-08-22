@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 
 import { BUCKETS, bucketFor, type BucketKey } from "@/components/work/work-buckets";
 import { SCATTER_CAP, scatterFor } from "@/components/work/pile-scatter";
-import { SourceMark } from "@/components/work/SourceMark";
+import { SourceMark, sourceVendorKey } from "@/components/work/SourceMark";
 import { TypeIcon } from "@/components/work/TypeIcon";
 import {
   isConversationGroup,
@@ -29,6 +29,9 @@ function keyOf(entry: WorkEntry): string {
 function PaperCard({ entry, onClick }: { entry: WorkEntry; onClick: () => void }) {
   const head = headOf(entry);
   const { dx, dy, rot } = scatterFor(keyOf(entry));
+  // The brand mark is the truth about where the work came from; the type glyph
+  // is the honest fallback when we cannot name a vendor.
+  const brand = <SourceMark item={head} size={14} />;
   return (
     <button
       type="button"
@@ -43,29 +46,33 @@ function PaperCard({ entry, onClick }: { entry: WorkEntry; onClick: () => void }
       }
     >
       <span className="nb-paper-mark">
-        {head.type === "ai_thread" ? <SourceMark item={head} /> : <TypeIcon item={head} size="sm" />}
+        {sourceVendorKey(head) ? brand : <TypeIcon item={head} size="sm" />}
       </span>
       <span className="nb-paper-title">{head.title}</span>
     </button>
   );
 }
 
+
 /**
- * The unmapped set as loose paper scattered on quad ruling, organising itself
- * into a neat grid on hover and resolving into a type matrix on click. The
- * segmented toggle and the gesture do exactly the same thing, so the gesture is
- * never the only way through.
+ * The unmapped set, two ways of looking at the same work: loose paper on quad
+ * ruling (the default) and the type matrix. Clicking a paper opens that piece
+ * of work; the toggle is the only thing that changes the view.
  */
 export function WorkPile({
   entries,
   renderEntry,
+  onOpenEntry,
   forceMatrix = false,
 }: {
   entries: WorkEntry[];
   renderEntry: (entry: WorkEntry) => React.ReactNode;
+  /** Opens a piece of work from the pile, without changing the view. */
+  onOpenEntry?: (entry: WorkEntry) => void;
   /** Select mode and live suggestions need the rows themselves on screen. */
   forceMatrix?: boolean;
 }) {
+
   const [view, setView] = useState<"pile" | "matrix">("pile");
   const shown = forceMatrix ? "matrix" : view;
   const startY = useRef<number | null>(null);
@@ -109,24 +116,7 @@ export function WorkPile({
       </div>
 
       {shown === "pile" ? (
-        <div
-          className="nb-quad rounded-[var(--radius)] border border-border p-4 sm:p-6"
-          onPointerDown={(event) => {
-            startY.current = event.clientY;
-            startX.current = event.clientX;
-          }}
-          onPointerUp={(event) => {
-            const y0 = startY.current;
-            const x0 = startX.current;
-            startY.current = null;
-            startX.current = null;
-            if (y0 === null || x0 === null) return;
-            const dy = y0 - event.clientY;
-            const dx = Math.abs(event.clientX - x0);
-            // Dominant-axis check: an ambiguous drag belongs to the page.
-            if (dy > 40 && dy > dx) setView("matrix");
-          }}
-        >
+        <div className="nb-quad rounded-[var(--radius)] border border-border p-4 sm:p-6">
           <div
             className="nb-scatter"
             data-scatter="1"
@@ -139,7 +129,11 @@ export function WorkPile({
               <p className="text-sm text-muted-foreground">Nothing waiting.</p>
             ) : (
               papers.map((entry) => (
-                <PaperCard key={keyOf(entry)} entry={entry} onClick={() => setView("matrix")} />
+                <PaperCard
+                  key={keyOf(entry)}
+                  entry={entry}
+                  onClick={() => onOpenEntry?.(entry)}
+                />
               ))
             )}
             {overflow > 0 ? (
@@ -148,6 +142,7 @@ export function WorkPile({
               </button>
             ) : null}
           </div>
+
           <div className="mt-4 flex flex-wrap gap-2">
             {grouped.map(({ bucket }) => (
               <span
@@ -168,7 +163,9 @@ export function WorkPile({
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+        // Buckets stack full width and their rows flow across the page, so a
+        // row gets the width it needs instead of a narrow column.
+        <div className="space-y-6">
           {grouped.map(({ bucket, entries: bucketEntries }) => (
             <section key={bucket.key} className="min-w-0">
               <h3 className="nb-matrix-head flex items-center gap-1.5">
@@ -182,15 +179,18 @@ export function WorkPile({
                 <span style={{ color: bucket.textColor }}>{bucket.label}</span>
                 <span className="count-pill ml-1">{bucketEntries.length}</span>
               </h3>
-              <div className="mt-2 space-y-2">
+              <div className="mt-2 grid grid-cols-1 gap-2 lg:grid-cols-2 2xl:grid-cols-3">
                 {bucketEntries.map((entry) => (
-                  <div key={keyOf(entry)}>{renderEntry(entry)}</div>
+                  <div key={keyOf(entry)} className="min-w-0">
+                    {renderEntry(entry)}
+                  </div>
                 ))}
               </div>
             </section>
           ))}
         </div>
       )}
+
     </div>
   );
 }
