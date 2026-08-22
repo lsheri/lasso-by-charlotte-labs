@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { validateAnalysisInput } from "@/lib/analysis.functions";
@@ -187,7 +187,9 @@ describe("pass 95 anchor chooser", () => {
       (anchor, extras) => calls.push([anchor, extras]),
     );
     fireEvent.click(await screen.findByTestId("anchor-change"));
-    fireEvent.click(await screen.findByText("Pricing deck"));
+    // The companion list also names the other deck now, so pick from the chooser.
+    const options = await screen.findByTestId("anchor-options");
+    fireEvent.click(within(options).getByText("Pricing deck"));
     fireEvent.click(screen.getByRole("button", { name: "Run analysis" }));
     await waitFor(() => expect(calls.length).toBe(1));
     expect(calls[0]?.[0]).toBe("deck2");
