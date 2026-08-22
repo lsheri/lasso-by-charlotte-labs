@@ -173,7 +173,6 @@ export function AnalysisConfirm({
   ).filter((row) => row.id !== effectiveAnchor);
 
   const [included, setIncluded] = useState<Set<string>>(new Set());
-  const [showContext, setShowContext] = useState(false);
   const poolKey = pool.map((row) => row.id).sort().join(",");
   const preselectKey = (request?.preselectedIds ?? []).join(",");
   useEffect(() => {
@@ -181,7 +180,6 @@ export function AnalysisConfirm({
     const next = new Set(ids);
     if (effectiveAnchor) next.delete(effectiveAnchor);
     setIncluded(next);
-    setShowContext(false);
     // Defaults follow the launched context, not each anchor swap.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [poolKey, preselectKey, baseAnchorId]);
