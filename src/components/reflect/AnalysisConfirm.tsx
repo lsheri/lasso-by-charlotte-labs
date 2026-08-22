@@ -381,8 +381,7 @@ export function AnalysisConfirm({
           {shape === "deliverable" && companionList.length > 0 ? (
             <div data-testid="confirm-context-block">
               <p className="micro-label">{contextLabel}</p>
-              {true ? (
-                <div className="mt-2 max-h-52 space-y-1 overflow-y-auto rounded-[var(--radius)] border border-border p-2">
+              <div className="mt-2 max-h-52 space-y-1 overflow-y-auto rounded-[var(--radius)] border border-border p-2">
                   <div className="flex gap-3 pb-1">
                     <button
                       type="button"
@@ -424,8 +423,7 @@ export function AnalysisConfirm({
                       </span>
                     </label>
                   ))}
-                </div>
-              ) : null}
+              </div>
             </div>
           ) : null}
 
