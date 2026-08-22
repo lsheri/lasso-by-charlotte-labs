@@ -29,6 +29,9 @@ function keyOf(entry: WorkEntry): string {
 function PaperCard({ entry, onClick }: { entry: WorkEntry; onClick: () => void }) {
   const head = headOf(entry);
   const { dx, dy, rot } = scatterFor(keyOf(entry));
+  // The brand mark is the truth about where the work came from; the type glyph
+  // is the honest fallback when we cannot name a vendor.
+  const brand = <SourceMark item={head} size={14} />;
   return (
     <button
       type="button"
@@ -43,12 +46,13 @@ function PaperCard({ entry, onClick }: { entry: WorkEntry; onClick: () => void }
       }
     >
       <span className="nb-paper-mark">
-        {head.type === "ai_thread" ? <SourceMark item={head} /> : <TypeIcon item={head} size="sm" />}
+        {sourceVendorKey(head) ? brand : <TypeIcon item={head} size="sm" />}
       </span>
       <span className="nb-paper-title">{head.title}</span>
     </button>
   );
 }
+
 
 /**
  * The unmapped set as loose paper scattered on quad ruling, organising itself
