@@ -163,7 +163,11 @@ export function AnalysisConfirm({
   }, [baseItem, companions, request?.anchorOptions]);
 
   const anchorItem = pool.find((row) => row.id === effectiveAnchor) ?? baseItem ?? null;
-  const companionList = pool.filter((row) => row.id !== effectiveAnchor);
+  // Conversations first, then everything else. Within each group the query
+  // order already holds, which is newest captured first.
+  const companionList = pool
+    .filter((row) => row.id !== effectiveAnchor)
+    .sort((a, b) => Number(b.type === "ai_thread") - Number(a.type === "ai_thread"));
   const eligibleAnchors = (
     request?.anchorOptions ?? pool.filter((row) => isDeliverableType(row.type))
   ).filter((row) => row.id !== effectiveAnchor);
