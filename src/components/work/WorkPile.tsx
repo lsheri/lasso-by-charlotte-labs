@@ -116,24 +116,7 @@ export function WorkPile({
       </div>
 
       {shown === "pile" ? (
-        <div
-          className="nb-quad rounded-[var(--radius)] border border-border p-4 sm:p-6"
-          onPointerDown={(event) => {
-            startY.current = event.clientY;
-            startX.current = event.clientX;
-          }}
-          onPointerUp={(event) => {
-            const y0 = startY.current;
-            const x0 = startX.current;
-            startY.current = null;
-            startX.current = null;
-            if (y0 === null || x0 === null) return;
-            const dy = y0 - event.clientY;
-            const dx = Math.abs(event.clientX - x0);
-            // Dominant-axis check: an ambiguous drag belongs to the page.
-            if (dy > 40 && dy > dx) setView("matrix");
-          }}
-        >
+        <div className="nb-quad rounded-[var(--radius)] border border-border p-4 sm:p-6">
           <div
             className="nb-scatter"
             data-scatter="1"
@@ -146,7 +129,11 @@ export function WorkPile({
               <p className="text-sm text-muted-foreground">Nothing waiting.</p>
             ) : (
               papers.map((entry) => (
-                <PaperCard key={keyOf(entry)} entry={entry} onClick={() => setView("matrix")} />
+                <PaperCard
+                  key={keyOf(entry)}
+                  entry={entry}
+                  onClick={() => onOpenEntry?.(entry)}
+                />
               ))
             )}
             {overflow > 0 ? (
@@ -155,6 +142,7 @@ export function WorkPile({
               </button>
             ) : null}
           </div>
+
           <div className="mt-4 flex flex-wrap gap-2">
             {grouped.map(({ bucket }) => (
               <span
