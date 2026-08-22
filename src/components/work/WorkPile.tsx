@@ -163,7 +163,9 @@ export function WorkPile({
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+        // Buckets stack full width and their rows flow across the page, so a
+        // row gets the width it needs instead of a narrow column.
+        <div className="space-y-6">
           {grouped.map(({ bucket, entries: bucketEntries }) => (
             <section key={bucket.key} className="min-w-0">
               <h3 className="nb-matrix-head flex items-center gap-1.5">
@@ -177,15 +179,18 @@ export function WorkPile({
                 <span style={{ color: bucket.textColor }}>{bucket.label}</span>
                 <span className="count-pill ml-1">{bucketEntries.length}</span>
               </h3>
-              <div className="mt-2 space-y-2">
+              <div className="mt-2 grid grid-cols-1 gap-2 lg:grid-cols-2 2xl:grid-cols-3">
                 {bucketEntries.map((entry) => (
-                  <div key={keyOf(entry)}>{renderEntry(entry)}</div>
+                  <div key={keyOf(entry)} className="min-w-0">
+                    {renderEntry(entry)}
+                  </div>
                 ))}
               </div>
             </section>
           ))}
         </div>
       )}
+
     </div>
   );
 }
