@@ -122,7 +122,9 @@ export async function resolveAnalysisTarget(
   if (error) throw new Error(error.message);
   if (!item) throw new Error("That item is gone.");
 
-  const extras = await readableIds(supabase, args.extraItemIds, []);
+  // Thread analyses read one conversation by design, so extras are ignored there.
+  const extras =
+    args.scope === "thread" ? [] : await readableIds(supabase, args.extraItemIds, []);
   const base =
     args.scope === "deliverable" ? await deliverableScopeIds(supabase, item.id) : [item.id];
   const ids = Array.from(new Set([...base, ...extras]));

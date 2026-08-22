@@ -163,13 +163,16 @@ export function AnalysisConfirm({
   }, [baseItem, companions, request?.anchorOptions]);
 
   const anchorItem = pool.find((row) => row.id === effectiveAnchor) ?? baseItem ?? null;
-  const companionList = pool.filter((row) => row.id !== effectiveAnchor);
+  // Conversations first, then everything else. Within each group the query
+  // order already holds, which is newest captured first.
+  const companionList = pool
+    .filter((row) => row.id !== effectiveAnchor)
+    .sort((a, b) => Number(b.type === "ai_thread") - Number(a.type === "ai_thread"));
   const eligibleAnchors = (
     request?.anchorOptions ?? pool.filter((row) => isDeliverableType(row.type))
   ).filter((row) => row.id !== effectiveAnchor);
 
   const [included, setIncluded] = useState<Set<string>>(new Set());
-  const [showContext, setShowContext] = useState(false);
   const poolKey = pool.map((row) => row.id).sort().join(",");
   const preselectKey = (request?.preselectedIds ?? []).join(",");
   useEffect(() => {
@@ -177,7 +180,6 @@ export function AnalysisConfirm({
     const next = new Set(ids);
     if (effectiveAnchor) next.delete(effectiveAnchor);
     setIncluded(next);
-    setShowContext(false);
     // Defaults follow the launched context, not each anchor swap.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [poolKey, preselectKey, baseAnchorId]);
@@ -227,7 +229,24 @@ export function AnalysisConfirm({
   if (!request || !preset || !target) return null;
 
   const isFirmChecks = preset.id === "firm_checks";
-  const includesBrief = preset.scope !== "thread";
+  const includesBrief = true;
+  /**
+   * The confirm sheet's shape follows what the chosen analysis actually reads:
+   * one conversation, one deliverable and its record, or a whole engagement.
+   */
+  const shape: "thread" | "deliverable" | "engagement" =
+    target.kind === "engagement" ? "engagement" : preset.scope === "thread" ? "thread" : "deliverable";
+  const readingLine =
+    shape === "thread"
+      ? "Reads this one conversation."
+      : shape === "engagement"
+        ? "Reads every mapped piece of work in this engagement."
+        : "Reads the work and the record behind it.";
+  const sentExtraIds = shape === "thread" ? [] : extraIds;
+  const contextLabel =
+    preset.id === "what_fed_this"
+      ? `Candidates it checks for links (${companionList.length})`
+      : `The record behind it (${companionList.length})`;
   const itemUnread = target.kind === "item" && contentsUnread(anchorItem?.meta as never);
   const counts =
     target.kind === "engagement"
@@ -241,7 +260,7 @@ export function AnalysisConfirm({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="page-title text-[19px]">{preset.label}</DialogTitle>
-          <DialogDescription>{preset.description}</DialogDescription>
+          <DialogDescription>{readingLine}</DialogDescription>
         </DialogHeader>
 
         <form
@@ -254,16 +273,18 @@ export function AnalysisConfirm({
                 .catch((error: unknown) => toast.error((error as Error).message))
                 .finally(() => {
                   setSaving(false);
-                  onConfirm(effectiveAnchor, extraIds);
+                  onConfirm(effectiveAnchor, sentExtraIds);
                 });
               return;
             }
-            onConfirm(effectiveAnchor, extraIds);
+            onConfirm(effectiveAnchor, sentExtraIds);
           }}
           className="space-y-4"
         >
           <div>
-            <p className="micro-label mb-2">This will read:</p>
+            <p className="micro-label mb-2">
+              {shape === "thread" ? "The conversation" : shape === "engagement" ? "The engagement" : "The work"}
+            </p>
             <ul className="space-y-2">
               {target.kind === "item" ? (
                 <li className="rounded-[var(--radius)] border border-border px-3 py-2">
@@ -273,7 +294,7 @@ export function AnalysisConfirm({
                       {anchorItem?.title ?? target.title}
                     </span>
                     {anchorItem ? <TypeBadge item={anchorItem as never} size="sm" /> : null}
-                    {eligibleAnchors.length > 0 ? (
+                    {shape === "deliverable" && eligibleAnchors.length > 0 ? (
                       <button
                         type="button"
                         data-testid="anchor-change"
@@ -357,24 +378,10 @@ export function AnalysisConfirm({
             </ul>
           </div>
 
-          {companionList.length > 0 ? (
+          {shape === "deliverable" && companionList.length > 0 ? (
             <div data-testid="confirm-context-block">
-              <div className="flex flex-wrap items-baseline justify-between gap-2">
-                <p className="micro-label">
-                  {extraIds.length === companionList.length
-                    ? `Plus the rest of this engagement (${companionList.length})`
-                    : `Plus ${extraIds.length} of ${companionList.length} in this engagement`}
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setShowContext((prev) => !prev)}
-                  className="text-xs text-accent-deep underline underline-offset-2"
-                >
-                  {showContext ? "Hide" : "Choose what to include"}
-                </button>
-              </div>
-              {showContext ? (
-                <div className="mt-2 max-h-52 space-y-1 overflow-y-auto rounded-[var(--radius)] border border-border p-2">
+              <p className="micro-label">{contextLabel}</p>
+              <div className="mt-2 max-h-52 space-y-1 overflow-y-auto rounded-[var(--radius)] border border-border p-2">
                   <div className="flex gap-3 pb-1">
                     <button
                       type="button"
@@ -416,8 +423,7 @@ export function AnalysisConfirm({
                       </span>
                     </label>
                   ))}
-                </div>
-              ) : null}
+              </div>
             </div>
           ) : null}
 

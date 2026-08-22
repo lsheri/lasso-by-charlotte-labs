@@ -248,7 +248,7 @@ ABSOLUTE RULES:
 const FIRM_CHECKS_PROMPT = `You are running a firm's own checks against ONE finished piece of work. You are given the deliverable, the conversations that fed it, the brief when one exists, and the CHECKS block below: the exact checks a coach or the firm wrote for this work. Turns are numbered as "TURN n ROLE:".
 
 For each check, in the order given:
-- THE CHECK, quoted exactly as the coach wrote it.
+- THE CHECK, referenced by its TITLE only. Never reprint the body of a check.
 - WHAT THE WORK SHOWS, exactly one of: ADDRESSED (the work satisfies the check; quote the span of the deliverable or conversation that shows it, verbatim), PARTLY (quote what is there, then name plainly what the check asks for that is not), or NOT VISIBLE IN THE CAPTURED RECORD (nothing in the record speaks to this check).
 - FOR PARTLY AND NOT VISIBLE, ONE NEXT STEP: the smallest concrete action that would satisfy the check for this specific piece of work.
 
@@ -264,7 +264,16 @@ ABSOLUTE RULES:
 - No count of checks addressed, no pass rate, no score, no judgement of the person.
 - Never use an em dash.`;
 
-export const ANALYSIS_PRESETS: AnalysisPreset[] = [
+/**
+ * Appended to every analysis system prompt. Brevity comes from cutting preamble
+ * and echo, never from cutting evidence or honesty.
+ */
+export const OUTPUT_DISCIPLINE = `OUTPUT DISCIPLINE:
+- Start with the first finding. No preamble, no restatement of these instructions, no summary of what you were given.
+- Beyond the quotes the rules above require, each finding gets at most two sentences.
+- No closing summary, no encouragement, no offer to help further. When a mandated coverage or rollup line exists, it is the last line.`;
+
+const RAW_ANALYSIS_PRESETS: AnalysisPreset[] = [
   {
     id: "ai_fluency_4d",
     dbPreset: "ai_fluency_4d",
@@ -449,6 +458,12 @@ export const ANALYSIS_PRESETS: AnalysisPreset[] = [
     coachMayRun: true,
   },
 ];
+
+/** Every preset, with the shared output discipline block appended once. */
+export const ANALYSIS_PRESETS: AnalysisPreset[] = RAW_ANALYSIS_PRESETS.map((preset) => ({
+  ...preset,
+  systemPrompt: `${preset.systemPrompt}\n\n${OUTPUT_DISCIPLINE}`,
+}));
 
 /** Appended to the firm checks preset at run time; empty means the chip is disabled. */
 export const NO_FIRM_CHECKS_LINE = "no firm checks written yet";
