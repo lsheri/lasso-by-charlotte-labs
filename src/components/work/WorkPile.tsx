@@ -55,21 +55,24 @@ function PaperCard({ entry, onClick }: { entry: WorkEntry; onClick: () => void }
 
 
 /**
- * The unmapped set as loose paper scattered on quad ruling, organising itself
- * into a neat grid on hover and resolving into a type matrix on click. The
- * segmented toggle and the gesture do exactly the same thing, so the gesture is
- * never the only way through.
+ * The unmapped set, two ways of looking at the same work: loose paper on quad
+ * ruling (the default) and the type matrix. Clicking a paper opens that piece
+ * of work; the toggle is the only thing that changes the view.
  */
 export function WorkPile({
   entries,
   renderEntry,
+  onOpenEntry,
   forceMatrix = false,
 }: {
   entries: WorkEntry[];
   renderEntry: (entry: WorkEntry) => React.ReactNode;
+  /** Opens a piece of work from the pile, without changing the view. */
+  onOpenEntry?: (entry: WorkEntry) => void;
   /** Select mode and live suggestions need the rows themselves on screen. */
   forceMatrix?: boolean;
 }) {
+
   const [view, setView] = useState<"pile" | "matrix">("pile");
   const shown = forceMatrix ? "matrix" : view;
   const startY = useRef<number | null>(null);
