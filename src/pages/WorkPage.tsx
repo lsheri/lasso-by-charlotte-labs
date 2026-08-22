@@ -611,7 +611,14 @@ export function WorkPage() {
 
                 <WorkPile
                   entries={unmappedEntries}
+                  onOpenEntry={(entry) => {
+                    const head = isConversationGroup(entry)
+                      ? (entry.transcript ?? entry.items[0]!)
+                      : entry;
+                    openItem(head, isConversationGroup(entry) ? entry : head)();
+                  }}
                   forceMatrix={selectMode || active.length > 0}
+
                   renderEntry={(entry) =>
                     isConversationGroup(entry) ? (
                       renderGroup(entry, "unmapped")
