@@ -264,7 +264,16 @@ ABSOLUTE RULES:
 - No count of checks addressed, no pass rate, no score, no judgement of the person.
 - Never use an em dash.`;
 
-export const ANALYSIS_PRESETS: AnalysisPreset[] = [
+/**
+ * Appended to every analysis system prompt. Brevity comes from cutting preamble
+ * and echo, never from cutting evidence or honesty.
+ */
+export const OUTPUT_DISCIPLINE = `OUTPUT DISCIPLINE:
+- Start with the first finding. No preamble, no restatement of these instructions, no summary of what you were given.
+- Beyond the quotes the rules above require, each finding gets at most two sentences.
+- No closing summary, no encouragement, no offer to help further. When a mandated coverage or rollup line exists, it is the last line.`;
+
+const RAW_ANALYSIS_PRESETS: AnalysisPreset[] = [
   {
     id: "ai_fluency_4d",
     dbPreset: "ai_fluency_4d",
