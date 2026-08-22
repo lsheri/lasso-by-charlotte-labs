@@ -229,7 +229,23 @@ export function AnalysisConfirm({
   if (!request || !preset || !target) return null;
 
   const isFirmChecks = preset.id === "firm_checks";
-  const includesBrief = preset.scope !== "thread";
+  const includesBrief = true;
+  /**
+   * The confirm sheet's shape follows what the chosen analysis actually reads:
+   * one conversation, one deliverable and its record, or a whole engagement.
+   */
+  const shape: "thread" | "deliverable" | "engagement" =
+    target.kind === "engagement" ? "engagement" : preset.scope === "thread" ? "thread" : "deliverable";
+  const readingLine =
+    shape === "thread"
+      ? "Reads this one conversation."
+      : shape === "engagement"
+        ? "Reads every mapped piece of work in this engagement."
+        : "Reads the work and the record behind it.";
+  const contextLabel =
+    preset.id === "what_fed_this"
+      ? `Candidates it checks for links (${companionList.length})`
+      : `The record behind it (${companionList.length})`;
   const itemUnread = target.kind === "item" && contentsUnread(anchorItem?.meta as never);
   const counts =
     target.kind === "engagement"
