@@ -242,6 +242,7 @@ export function AnalysisConfirm({
       : shape === "engagement"
         ? "Reads every mapped piece of work in this engagement."
         : "Reads the work and the record behind it.";
+  const sentExtraIds = shape === "thread" ? [] : extraIds;
   const contextLabel =
     preset.id === "what_fed_this"
       ? `Candidates it checks for links (${companionList.length})`
@@ -259,7 +260,7 @@ export function AnalysisConfirm({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="page-title text-[19px]">{preset.label}</DialogTitle>
-          <DialogDescription>{preset.description}</DialogDescription>
+          <DialogDescription>{readingLine}</DialogDescription>
         </DialogHeader>
 
         <form
@@ -272,16 +273,18 @@ export function AnalysisConfirm({
                 .catch((error: unknown) => toast.error((error as Error).message))
                 .finally(() => {
                   setSaving(false);
-                  onConfirm(effectiveAnchor, extraIds);
+                  onConfirm(effectiveAnchor, sentExtraIds);
                 });
               return;
             }
-            onConfirm(effectiveAnchor, extraIds);
+            onConfirm(effectiveAnchor, sentExtraIds);
           }}
           className="space-y-4"
         >
           <div>
-            <p className="micro-label mb-2">This will read:</p>
+            <p className="micro-label mb-2">
+              {shape === "thread" ? "The conversation" : shape === "engagement" ? "The engagement" : "The work"}
+            </p>
             <ul className="space-y-2">
               {target.kind === "item" ? (
                 <li className="rounded-[var(--radius)] border border-border px-3 py-2">
@@ -291,7 +294,7 @@ export function AnalysisConfirm({
                       {anchorItem?.title ?? target.title}
                     </span>
                     {anchorItem ? <TypeBadge item={anchorItem as never} size="sm" /> : null}
-                    {eligibleAnchors.length > 0 ? (
+                    {shape === "deliverable" && eligibleAnchors.length > 0 ? (
                       <button
                         type="button"
                         data-testid="anchor-change"
