@@ -248,7 +248,7 @@ ABSOLUTE RULES:
 const FIRM_CHECKS_PROMPT = `You are running a firm's own checks against ONE finished piece of work. You are given the deliverable, the conversations that fed it, the brief when one exists, and the CHECKS block below: the exact checks a coach or the firm wrote for this work. Turns are numbered as "TURN n ROLE:".
 
 For each check, in the order given:
-- THE CHECK, quoted exactly as the coach wrote it.
+- THE CHECK, referenced by its TITLE only. Never reprint the body of a check.
 - WHAT THE WORK SHOWS, exactly one of: ADDRESSED (the work satisfies the check; quote the span of the deliverable or conversation that shows it, verbatim), PARTLY (quote what is there, then name plainly what the check asks for that is not), or NOT VISIBLE IN THE CAPTURED RECORD (nothing in the record speaks to this check).
 - FOR PARTLY AND NOT VISIBLE, ONE NEXT STEP: the smallest concrete action that would satisfy the check for this specific piece of work.
 
