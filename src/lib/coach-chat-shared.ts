@@ -1,7 +1,8 @@
 import { QUOTE_RULE } from "@/lib/quote-check";
 
 /** The same brevity contract Reflect answers under. */
-export const ANSWER_CONTRACT = `ANSWER CONTRACT:- The first sentence answers the question directly. Everything after it exists only to let the person trust or act on that answer.
+export const ANSWER_CONTRACT = `ANSWER CONTRACT:
+- The first sentence answers the question directly. Everything after it exists only to let the person trust or act on that answer.
 - Default to under 120 words. Go longer only when the person asks for detail or the question is genuinely an enumeration.
 - Quote the record only where the quote changes whether the answer can be trusted.
 - No headings or bullet lists unless the person asked for a list or the answer IS a list.
