@@ -378,23 +378,10 @@ export function AnalysisConfirm({
             </ul>
           </div>
 
-          {companionList.length > 0 ? (
+          {shape === "deliverable" && companionList.length > 0 ? (
             <div data-testid="confirm-context-block">
-              <div className="flex flex-wrap items-baseline justify-between gap-2">
-                <p className="micro-label">
-                  {extraIds.length === companionList.length
-                    ? `Plus the rest of this engagement (${companionList.length})`
-                    : `Plus ${extraIds.length} of ${companionList.length} in this engagement`}
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setShowContext((prev) => !prev)}
-                  className="text-xs text-accent-deep underline underline-offset-2"
-                >
-                  {showContext ? "Hide" : "Choose what to include"}
-                </button>
-              </div>
-              {showContext ? (
+              <p className="micro-label">{contextLabel}</p>
+              {true ? (
                 <div className="mt-2 max-h-52 space-y-1 overflow-y-auto rounded-[var(--radius)] border border-border p-2">
                   <div className="flex gap-3 pb-1">
                     <button
