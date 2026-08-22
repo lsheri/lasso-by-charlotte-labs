@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 
 import { BUCKETS, bucketFor, type BucketKey } from "@/components/work/work-buckets";
 import { SCATTER_CAP, scatterFor } from "@/components/work/pile-scatter";
-import { SourceMark } from "@/components/work/SourceMark";
+import { SourceMark, sourceVendorKey } from "@/components/work/SourceMark";
 import { TypeIcon } from "@/components/work/TypeIcon";
 import {
   isConversationGroup,
