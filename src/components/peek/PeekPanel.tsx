@@ -270,6 +270,18 @@ export function PeekPanel({
             {active.type === "ai_thread" ? "Analyse this conversation" : "Analyse this work"}
           </FooterAction>
         ) : null}
+        {owned && engagementId ? (
+          <FooterAction onClick={() => setRemoveOpen(true)}>{REMOVE_LABEL}</FooterAction>
+        ) : null}
+        {owned ? (
+          <button
+            type="button"
+            onClick={() => setDeleteOpen(true)}
+            className="text-xs text-destructive transition-opacity hover:opacity-70"
+          >
+            {DELETE_LABEL}
+          </button>
+        ) : null}
         <div className="ml-auto">
           {link ? (
             <a
