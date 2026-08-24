@@ -53,7 +53,7 @@ function DrivePreview({ fileId, title }: { fileId: string; title: string }) {
 }
 
 /** Plain text for formats a browser cannot render. No layout, and it says so. */
-function TextPane({ item, canEdit }: { item: WorkItemRow; canEdit?: boolean }) {
+function TextPane({ item, canEdit }: { item: WorkItemRow; canEdit?: boolean | undefined }) {
   const fetchText = useServerFn(getItemTextPane);
   const query = useQuery({
     queryKey: ["item-text-pane", item.id],
