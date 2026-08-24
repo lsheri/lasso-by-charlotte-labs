@@ -41,7 +41,6 @@ export function ConnectToWorkSheet({
   const [streamId, setStreamId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [landed, setLanded] = useState(0);
-  console.log("render", { open, itemCount: (data?.items ?? []).length, items: (data?.items ?? []).map((i) => i.id) });
   // Everything that already existed when the sheet opened. Whatever shows up
   // after that is what this session imported.
   const seen = useRef<Set<string> | null>(null);
