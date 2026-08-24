@@ -113,6 +113,35 @@ export function anchorStitches(
   return { anchors, orphans };
 }
 
+/** One page's text runs in page pixels at the given scale. */
+export async function readPageRuns(
+  pdfjs: { Util: { transform: (a: number[], b: number[]) => number[] } },
+  pdfPage: unknown,
+  scale: number,
+): Promise<TextRun[]> {
+  const api = pdfPage as {
+    getViewport: (o: { scale: number }) => { transform: number[] };
+    getTextContent: () => Promise<{ items: unknown[] }>;
+  };
+  const viewport = api.getViewport({ scale });
+  const content = await api.getTextContent();
+  const runs: TextRun[] = [];
+  for (const raw of content.items) {
+    const item = raw as { str?: string; transform?: number[]; width?: number; height?: number };
+    if (!item.str || !item.transform) continue;
+    const t = pdfjs.Util.transform(viewport.transform, item.transform);
+    const h = (item.height ?? 10) * scale;
+    runs.push({
+      text: item.str,
+      x: t[4] as number,
+      y: (t[5] as number) - h,
+      w: (item.width ?? 0) * scale,
+      h,
+    });
+  }
+  return runs;
+}
+
 function useReduceMotion(): boolean {
   const [reduce, setReduce] = useState(false);
   useEffect(() => {
