@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -93,7 +94,11 @@ describe("re-extract affordance", () => {
 
   it("shows for the owner when the contents could not be read", async () => {
     const { FallbackCard } = await import("@/components/peek/RenderedContent");
-    render(<FallbackCard item={failed} label="PDF" onDownload={() => {}} canEdit />);
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <FallbackCard item={failed} label="PDF" onDownload={() => {}} canEdit />
+      </QueryClientProvider>,
+    );
     expect(screen.getByText("Try reading it again")).toBeTruthy();
   });
 
