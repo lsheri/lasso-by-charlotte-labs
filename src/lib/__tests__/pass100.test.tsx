@@ -146,3 +146,52 @@ describe("pass 100: span_provenance is never a chooser chip", () => {
     }
   });
 });
+
+describe("pass 100: reading is the access check", () => {
+  /** A client that only returns rows the caller is allowed to see. */
+  function clientFor(readableIds: string[]) {
+    const builder = (table: string) => {
+      const state: { ids: string[] } = { ids: [] };
+      const api: Record<string, unknown> = {};
+      const self = () => api as never;
+      api["select"] = self;
+      api["order"] = self;
+      api["limit"] = () => ({ then: undefined, ...api, data: [] });
+      api["in"] = () => api;
+      api["eq"] = (_col: string, value: string) => {
+        state.ids = [value];
+        return api;
+      };
+      api["maybeSingle"] = async () => ({
+        data:
+          table === "work_items" && readableIds.includes(state.ids[0] as string)
+            ? {
+                id: state.ids[0],
+                title: "The deck",
+                type: "deck",
+                source: "upload",
+                source_vendor: null,
+                source_meta: null,
+                meta: { text_status: "ok", text_ref: null },
+                content_ref: null,
+                captured_at: "2026-01-02T00:00:00Z",
+                created_at_source: null,
+                work_date: null,
+                ts_precision: "capture",
+                owner_id: "owner-1",
+                org_id: "org-1",
+              }
+            : null,
+      });
+      return api;
+    };
+    return { from: (table: string) => builder(table) } as never;
+  }
+
+  it("refuses a span question on work the caller cannot read", async () => {
+    const { loadSpanScope } = await import("@/lib/span-audit.server");
+    await expect(loadSpanScope(clientFor([]), "deck-1", "owner-1")).rejects.toThrow(
+      /not available to you/,
+    );
+  });
+});
