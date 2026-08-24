@@ -17,6 +17,7 @@ import {
   attachmentBucket,
   type SourceMeta,
 } from "@/lib/conversation-shared";
+import { safeChatUrl } from "@/lib/chat-url";
 
 const PROTOCOL_VERSION = "2025-11-25";
 const ACCEPTED_PROTOCOLS = new Set([
