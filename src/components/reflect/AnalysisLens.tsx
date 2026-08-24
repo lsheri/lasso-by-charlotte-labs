@@ -130,6 +130,12 @@ export function AnalysisLens({
     anchorItemId?: string | null,
   ) {
     if (pending) return;
+    // Same handover as the chat surface: the lineage question opens the audit.
+    if (preset.id === "what_fed_this" && target.kind === "item") {
+      const { openProvenanceAudit } = await import("@/components/provenance/audit-state");
+      openProvenanceAudit({ anchorId: anchorItemId ?? target.id, anchorTitle: target.title });
+      return;
+    }
     started.current = preset.id;
     setActive(preset);
     setSessionId(null);
