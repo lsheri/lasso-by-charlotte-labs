@@ -73,6 +73,8 @@ export type SourceMeta = {
   research_mode?: string;
   notes?: string;
   filename?: string;
+  /** The conversation URL in the source app, validated against a host allowlist. */
+  url?: string;
   /** Set when the pushed attachment was substantially already in the transcript. */
   duplicate_of_transcript?: boolean;
 };
