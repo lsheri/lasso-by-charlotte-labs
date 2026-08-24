@@ -305,7 +305,13 @@ export const OUTPUT_DISCIPLINE = `OUTPUT DISCIPLINE:
 - Beyond the quotes the rules above require, each finding gets at most two sentences.
 - No closing summary, no encouragement, no offer to help further. When a mandated coverage or rollup line exists, it is the last line.`;
 
+/** Below this, "What recurs" has nothing to compare and must not run. */
+export const MIN_ITEMS_FOR_RECURRENCE = 3;
+/** Below this, there is no order to reconstruct, only one piece of work. */
+export const MIN_ITEMS_FOR_SEQUENCE = 2;
+
 const RAW_ANALYSIS_PRESETS: AnalysisPreset[] = [
+
   {
     id: "ai_fluency_4d",
     dbPreset: "ai_fluency_4d",
