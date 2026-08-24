@@ -36,6 +36,7 @@ export function ConnectToWorkSheet({
   const syncEpisode = useServerFn(syncEpisodeForMapping);
   const detachEpisode = useServerFn(detachEpisodeItems);
   const { data } = useWorkItems();
+  console.log("render", { open, itemCount: (data?.items ?? []).length, items: (data?.items ?? []).map((i) => i.id) });
 
   const [open, setOpen] = useState(false);
   const [streamId, setStreamId] = useState<string | null>(null);
