@@ -106,7 +106,7 @@ export function WorkPile({
           <button
             type="button"
             aria-pressed={shown === "pile"}
-            onClick={() => setView("pile")}
+            onClick={() => chooseView("pile")}
             className="nb-seg-item"
           >
             Pile
@@ -114,7 +114,7 @@ export function WorkPile({
           <button
             type="button"
             aria-pressed={shown === "matrix"}
-            onClick={() => setView("matrix")}
+            onClick={() => chooseView("matrix")}
             className="nb-seg-item"
           >
             Matrix
@@ -147,7 +147,13 @@ export function WorkPile({
               ))
             )}
             {overflow > 0 ? (
-              <button type="button" onClick={() => setView("matrix")} className="nb-paper nb-paper-more">
+              // Nothing inside the pile switches the view; the rest of the
+              // papers simply join the field where they already belong.
+              <button
+                type="button"
+                onClick={() => setShowAll(true)}
+                className="nb-paper nb-paper-more"
+              >
                 <span className="nb-paper-title">+ {overflow} more</span>
               </button>
             ) : null}
