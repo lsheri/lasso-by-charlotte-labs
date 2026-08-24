@@ -93,6 +93,8 @@ export function PeekPanel({
   onWorkDate,
   onMakePrivate,
   onFluency,
+  engagementId,
+  viewerProfileId,
 }: {
   entry: PeekEntry | null;
   focusId?: string | undefined;
@@ -103,11 +105,16 @@ export function PeekPanel({
   onWorkDate?: ((item: WorkItemRow) => void) | undefined;
   onMakePrivate?: ((item: WorkItemRow) => void) | undefined;
   onFluency?: ((item: WorkItemRow) => void) | undefined;
+  /** Set when the peek is read inside one engagement. */
+  engagementId?: string | undefined;
+  viewerProfileId?: string | null | undefined;
 }) {
   const fetchUrl = useServerFn(getWorkFileUrl);
   const items = entry ? entryItems(entry) : [];
   const [tab, setTab] = useState(0);
   const [briefOpen, setBriefOpen] = useState(false);
+  const [removeOpen, setRemoveOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const invalidateWork = useInvalidateWorkItems();
   const [kindDraft, setKindDraft] = useState<DeliverableKind | null>(null);
 
