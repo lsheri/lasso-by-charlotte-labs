@@ -72,12 +72,19 @@ export type AnalysisPreset = {
   attribution: string | null;
   coachMayRun: boolean;
   /**
+   * The smallest number of pieces of work this analysis can honestly read.
+   * Engagement scoped analyses each set their own: "What recurs" needs three
+   * to call anything a recurrence, a sequence needs two to have an order.
+   */
+  minItems?: number | undefined;
+  /**
    * The structured handoff kind this analysis may draft, if any. The schema and
    * the tail instruction live in handoffs-shared; nothing here edits a prompt.
    * Person-shaped presets have none and the server refuses one anyway.
    */
   handoffSchema?: HandoffKind | undefined;
 };
+
 
 export const ANALYSIS_PRESET_IDS = [
   "ai_fluency_4d",
