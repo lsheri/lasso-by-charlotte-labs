@@ -119,7 +119,7 @@ describe("re-extract affordance", () => {
       source: "connector:googledrive",
       visibility: "unmapped",
       captured_at: "2026-01-01T00:00:00Z",
-      content_ref: null,
+      content_ref: "gdrive/plan-gdoc",
       meta: { drive_file_id: "abc123", text_status: "failed", text_note: "export failed" },
     } as never;
     render(
