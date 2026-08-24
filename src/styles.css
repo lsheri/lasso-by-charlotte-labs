@@ -1585,3 +1585,39 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 .nb-hi:hover {
   background: #fbe775;
 }
+
+/* Pass 101: lasso ink. The ink settling onto the text it enclosed, the quiet
+   dash march while the record is read, and the thread across the gutter. */
+@keyframes nb-lasso-settle {
+  from { opacity: 0; transform: scale(1.04); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes nb-dash-march {
+  to { stroke-dashoffset: -24; }
+}
+@keyframes nb-thread-in {
+  from { stroke-dashoffset: 1200; }
+  to { stroke-dashoffset: 0; }
+}
+.nb-lasso-wrap {
+  animation: nb-lasso-settle 150ms ease-out;
+  transform-origin: center;
+}
+.nb-lasso-resolving {
+  stroke-dasharray: 6 6;
+  animation: nb-dash-march 900ms linear infinite;
+}
+.nb-lasso-resolving-static {
+  stroke-dasharray: 6 6;
+}
+.nb-thread-draw {
+  stroke-dasharray: 1200;
+  animation: nb-thread-in 300ms ease-out forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .nb-lasso-wrap,
+  .nb-lasso-resolving,
+  .nb-thread-draw {
+    animation: none;
+  }
+}
