@@ -40,7 +40,7 @@ export function RowMenu({
   const [briefOpen, setBriefOpen] = useState(false);
   const [removeOpen, setRemoveOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const profile = useProfile();
+  const profile = useProfile().data;
   const isThread = item.type === "ai_thread";
   const isDeliverable = ["document", "deck", "sheet"].includes(item.type);
   const readable = isThread || ["document", "deck", "sheet"].includes(item.type);
