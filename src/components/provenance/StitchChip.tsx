@@ -1,27 +1,44 @@
 import { ChatUrlLink } from "@/components/work/ChatUrlLink";
 import type { AuditStitch } from "@/lib/span-provenance.functions";
 import { spanStatusLabel, spanVerificationLine } from "@/lib/span-provenance-shared";
+import { spanStatusClass } from "@/lib/span-status-style";
 
 /**
  * One answered span: what the record supports, quoted verbatim or not at all.
- * Shared by the text sections and the rendered pages so both read identically.
+ * Shared by the text sections and the rendered pages so both read identically,
+ * and coloured by its status so the eye finds the strong ones first.
  */
 export function StitchChip({
   stitch,
   onGoToSource,
+  reduceMotion = false,
+  lifted = false,
+  onHoverChange,
 }: {
   stitch: AuditStitch;
   onGoToSource: (stitch: AuditStitch) => void;
+  reduceMotion?: boolean;
+  /** True while its span is hovered in the other half of the pairing. */
+  lifted?: boolean;
+  onHoverChange?: (hovered: boolean) => void;
 }) {
   return (
-    <div className="mt-2 rounded-[var(--radius-md)] border border-border bg-card px-3 py-2">
-      <p className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+    <div
+      data-stitch-id={stitch.id}
+      data-testid={`stitch-chip-${stitch.id}`}
+      onMouseEnter={() => onHoverChange?.(true)}
+      onMouseLeave={() => onHoverChange?.(false)}
+      className={`mt-2 rounded-[var(--radius-md)] border border-border px-3 py-2 nb-stitch-chip ${spanStatusClass(
+        stitch.status,
+      )} ${reduceMotion ? "nb-pin-static" : "nb-pin-in"} ${lifted ? "nb-chip-lift" : ""}`}
+    >
+      <p className="font-mono text-[10px] uppercase tracking-[0.08em] nb-stitch-status">
         {spanStatusLabel(stitch.status)}
         {stitch.to_item_title ? ` · ${stitch.to_item_title}` : ""}
         {stitch.to_turn_no ? ` · turn ${stitch.to_turn_no}` : ""}
       </p>
       {stitch.quote ? (
-        <blockquote className="mt-1.5 border-l-2 border-accent pl-2 text-sm text-foreground">
+        <blockquote className="mt-1.5 border-l-2 pl-2 text-sm text-foreground nb-stitch-quote">
           {stitch.quote}
         </blockquote>
       ) : null}

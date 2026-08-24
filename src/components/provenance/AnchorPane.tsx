@@ -11,6 +11,7 @@ import {
   sectionsFromText,
   type SpanLocator,
 } from "@/lib/span-provenance-shared";
+import { spanStatusClass } from "@/lib/span-status-style";
 import { TITLE_ONLY_LINE } from "@/lib/text-status";
 
 const DEFAULT_QUESTION = "Where did this come from?";
@@ -56,6 +57,11 @@ export function AnchorPane({
   onGoToSource: (stitch: AuditStitch) => void;
 }) {
   const paneRef = useRef<HTMLDivElement>(null);
+  const [hovered, setHovered] = useState<string | null>(null);
+  const reduceMotion =
+    typeof window !== "undefined"
+      ? (window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ?? false)
+      : false;
   const [pending, setPending] = useState<{ locator: SpanLocator; question: string } | null>(null);
 
   const sections = anchor.text ? sectionsFromText(anchor.text) : [];
@@ -129,7 +135,15 @@ export function AnchorPane({
           parts.push(
             <mark
               key={`${entry.stitch.id}-${i}`}
-              className="rounded-[3px] bg-accent-soft px-0.5 text-foreground"
+              data-stitch-id={entry.stitch.id}
+              data-testid={`span-mark-${entry.stitch.id}`}
+              onMouseEnter={() => setHovered(entry.stitch.id)}
+              onMouseLeave={() => setHovered(null)}
+              className={`rounded-[3px] px-0.5 text-foreground nb-span-mark ${spanStatusClass(
+                entry.stitch.status,
+              )} ${reduceMotion ? "nb-span-pulse-static" : "nb-span-pulse"} ${
+                hovered === entry.stitch.id ? "nb-span-lit" : ""
+              }`}
             >
               {section.text.slice(entry.start, entry.end)}
             </mark>,
@@ -152,7 +166,14 @@ export function AnchorPane({
               {parts.length > 0 ? parts : section.text}
             </div>
             {placed.map((entry) => (
-              <StitchChip key={entry.stitch.id} stitch={entry.stitch} onGoToSource={onGoToSource} />
+              <StitchChip
+                key={entry.stitch.id}
+                stitch={entry.stitch}
+                reduceMotion={reduceMotion}
+                lifted={hovered === entry.stitch.id}
+                onHoverChange={(on) => setHovered(on ? entry.stitch.id : null)}
+                onGoToSource={onGoToSource}
+              />
             ))}
           </section>
         );
@@ -166,7 +187,12 @@ export function AnchorPane({
             in the wrong spot.
           </p>
           {orphans.map((stitch) => (
-            <StitchChip key={stitch.id} stitch={stitch} onGoToSource={onGoToSource} />
+            <StitchChip
+              key={stitch.id}
+              stitch={stitch}
+              reduceMotion={reduceMotion}
+              onGoToSource={onGoToSource}
+            />
           ))}
         </div>
       ) : null}

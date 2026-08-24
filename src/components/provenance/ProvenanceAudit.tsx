@@ -41,11 +41,13 @@ function AuditSurface({ anchorId, title }: { anchorId: string; title: string }) 
     from: { x: number; y: number };
     targetId: string | null;
     sourced: boolean;
+    status: AuditStitch["status"];
   } | null>(null);
   const [focus, setFocus] = useState<{
     itemId: string;
     turnId: string | null;
     token: number;
+    status: AuditStitch["status"];
   } | null>(null);
   const reduceMotion =
     typeof window !== "undefined"
@@ -69,6 +71,12 @@ function AuditSurface({ anchorId, title }: { anchorId: string; title: string }) 
     text: data?.anchor.text ?? null,
   });
 
+  const citations: Record<string, number> = {};
+  (data?.stitches ?? []).forEach((stitch) => {
+    if (!stitch.to_item_id) return;
+    citations[stitch.to_item_id] = (citations[stitch.to_item_id] ?? 0) + 1;
+  });
+
   async function askSpan(locator: SpanLocator, question: string) {
     if (busy) return;
     setBusy(true);
@@ -88,10 +96,16 @@ function AuditSurface({ anchorId, title }: { anchorId: string; title: string }) 
         from: { x: origin.left, y: origin.top + origin.height / 2 },
         targetId: stitch.to_item_id ? `audit-item-${stitch.to_item_id}` : null,
         sourced: Boolean(stitch.to_item_id),
+        status: stitch.status,
       });
     }
     if (!stitch.to_item_id) return;
-    setFocus({ itemId: stitch.to_item_id, turnId: stitch.to_turn_id, token: Date.now() });
+    setFocus({
+      itemId: stitch.to_item_id,
+      turnId: stitch.to_turn_id,
+      token: Date.now(),
+      status: stitch.status,
+    });
   }
 
   return (
@@ -155,7 +169,12 @@ function AuditSurface({ anchorId, title }: { anchorId: string; title: string }) 
       ) : (
         <div className="flex min-h-0 flex-1 flex-col-reverse lg:flex-row">
           <div className="min-h-0 flex-1 overflow-y-auto border-border px-4 py-4 lg:w-1/2 lg:border-r">
-            <UpstreamPane items={data.upstream} baseline={data.baseline} focus={focus} />
+            <UpstreamPane
+              items={data.upstream}
+              baseline={data.baseline}
+              focus={focus}
+              citations={citations}
+            />
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 lg:w-1/2">
             {showSlides && visual?.kind === "pdf" ? (
@@ -189,7 +208,9 @@ function AuditSurface({ anchorId, title }: { anchorId: string; title: string }) 
           from={thread.from}
           targetId={thread.targetId}
           sourced={thread.sourced}
+          status={thread.status}
           reduceMotion={reduceMotion}
+          onDone={() => setThread(null)}
         />
       ) : null}
     </div>

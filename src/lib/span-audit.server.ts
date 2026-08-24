@@ -15,6 +15,20 @@ const PER_ITEM_CHARS = 24_000;
 const MAX_UPSTREAM = 24;
 const MAX_TURNS = 300;
 
+/**
+ * Where a Drive import actually keeps its viewer link. Production writes it to
+ * meta; older imports left it on source_meta, so both are read, meta first.
+ */
+export function webViewLinkOf(item: {
+  meta?: Record<string, unknown> | null;
+  source_meta?: Record<string, unknown> | null;
+}): string | null {
+  const fromMeta = item.meta?.["web_view_link"];
+  if (typeof fromMeta === "string" && fromMeta.length > 0) return fromMeta;
+  const legacy = item.source_meta?.["web_view_link"];
+  return typeof legacy === "string" && legacy.length > 0 ? legacy : null;
+}
+
 export type AuditItem = {
   id: string;
   title: string;
@@ -22,6 +36,8 @@ export type AuditItem = {
   source: string;
   source_vendor: string | null;
   source_meta: Record<string, unknown> | null;
+  /** The item's own meta, where Drive imports keep web_view_link. */
+  meta: Record<string, unknown> | null;
   date_line: string;
   /** Extracted text for documents, numbered turns for conversations. */
   text: string | null;
@@ -84,6 +100,7 @@ export async function loadAuditItem(supabase: Db, row: Record<string, unknown>):
       source: String(row["source"] ?? ""),
       source_vendor: (row["source_vendor"] as string | null) ?? null,
       source_meta: (row["source_meta"] as Record<string, unknown> | null) ?? null,
+      meta: (row["meta"] as Record<string, unknown> | null) ?? null,
       date_line: dateLine,
       text: numberedTurns(turns),
       text_status: "ok",
@@ -101,6 +118,7 @@ export async function loadAuditItem(supabase: Db, row: Record<string, unknown>):
     source: String(row["source"] ?? ""),
     source_vendor: (row["source_vendor"] as string | null) ?? null,
     source_meta: (row["source_meta"] as Record<string, unknown> | null) ?? null,
+    meta: (row["meta"] as Record<string, unknown> | null) ?? null,
     date_line: dateLine,
     text: result.text ? result.text.slice(0, PER_ITEM_CHARS) : null,
     text_status: result.status,

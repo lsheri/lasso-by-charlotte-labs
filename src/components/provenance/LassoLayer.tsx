@@ -37,7 +37,7 @@ export function LassoLayer({
   /** The rect the ink settled on, kept while the ask card is open. */
   wrapped: BBox | null;
   resolving: boolean;
-  onLasso: (result: { snippet: string; box: BBox }) => void;
+  onLasso: (result: { snippet: string; box: BBox; firstRunIndex: number }) => void;
   onEmpty: () => void;
 }) {
   const svgRef = useRef<SVGSVGElement>(null);
@@ -64,7 +64,8 @@ export function LassoLayer({
       return;
     }
     setEmpty(false);
-    onLasso({ snippet, box });
+    const first = inside[0];
+    onLasso({ snippet, box, firstRunIndex: first ? runs.indexOf(first) : 0 });
   }
 
   return (
