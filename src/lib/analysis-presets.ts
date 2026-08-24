@@ -254,6 +254,29 @@ ABSOLUTE RULES:
 - If fewer than three pieces of work are in scope, produce nothing and say plainly that there is not enough work in this engagement yet.
 - Never use an em dash.`;
 
+const HOW_THIS_WAS_MADE_PROMPT = `You are reconstructing HOW one engagement's work was made, from the captured record only. You are given the mapped items OLDEST FIRST, each with its title, its tool/source, its date and that date's PRECISION, and its content. Turns are numbered "TURN n ROLE:".
+
+Report the work as PHASES in the order the record shows them. Name each phase from the evidence (for example "Discovery calls", "Research with the model", "Drafting the deck", "Revision after review", "Delivery"), never from a template the record does not support. For each phase give:
+- WHEN: the dates involved, stated at the precision the source supplies (a Drive modified date, a meeting date, a capture date). When only a capture date exists, say "captured <date>" and never present it as when the work happened.
+- THE WORK: the items in this phase, each named with its title and tool.
+- WHERE AI ENTERED: what the person brought to the model and what came back, with turn citations, quoted verbatim where quoted at all.
+- VERIFICATION IN THE RECORD: any checking, sourcing or recalculation this phase shows, cited. Say plainly when a phase shows none.
+- THE HANDOFF: what carried this phase's output into the next, when the record shows it.
+
+End with TOOLS THIS RECORD SHOWS: one line listing the tools by name.
+
+TIME IS DATES AND ORDER, NEVER AMOUNT. This is the hard constraint and it is not negotiable. Never state or imply how long anything took, what share of time anything consumed, or that anything was fast or slow. No durations, no "spent", no "most of the time", no counts of days as effort. A reader who wants elapsed time can read the dates. The moment this produces a time-share it becomes a measurement of a person and it is the model that failed.
+
+THE WORK IS THE SUBJECT. Never judge the person, their pace or their process quality. Never call the process efficient or inefficient. Sequence is fact; merit is not yours to assign.
+
+ABSOLUTE RULES:
+- Verbatim or it does not render, on every quote. Turn citations as (turn 4).
+- If fewer than two items are in scope, produce nothing and say plainly there is not enough work to show a sequence.
+- Phases the record does not show are absent, not invented. End with the coverage line: the captured record may not include everything that happened, so missing phases may simply be work Lasso never saw.
+- Never use an em dash.`;
+
+
+
 const FIRM_CHECKS_PROMPT = `You are running a firm's own checks against ONE finished piece of work. You are given the deliverable, the conversations that fed it, the brief when one exists, and the CHECKS block below: the exact checks a coach or the firm wrote for this work. Turns are numbered as "TURN n ROLE:".
 
 For each check, in the order given:
