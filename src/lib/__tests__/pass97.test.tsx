@@ -20,7 +20,7 @@ vi.mock("@/hooks/use-work-items", () => ({
 }));
 
 vi.mock("@/lib/workflow-order", () => ({
-  remapItems: (...args: unknown[]) => remapItems(...args),
+  remapItems: (args: unknown) => remapItems(args as never),
 }));
 
 vi.mock("@tanstack/react-start", async () => {
