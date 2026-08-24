@@ -587,7 +587,7 @@ export async function assembleReflectContext(
     const lines = [
       `WORK ITEM: ${item.title}`,
       `  Type: ${item.type} · Source: ${item.source}${item.source_vendor ? ` (${item.source_vendor})` : ""} · Fidelity: ${item.content_fidelity ?? "unknown"}`,
-      `  Date: ${effectiveDate(item).slice(0, 10)} · ${mapped ? `Mapped to ${mapped}` : "Unmapped"}${item.visibility === "private" ? " · MARKED PRIVATE" : ""}`,
+      `  Date: ${isEngagementScope ? datePrecisionLine(item) : effectiveDate(item).slice(0, 10)} · ${mapped ? `Mapped to ${mapped}` : "Unmapped"}${item.visibility === "private" ? " · MARKED PRIVATE" : ""}`,
     ];
     if (extract) {
       lines.push(...extractLines(extract));
