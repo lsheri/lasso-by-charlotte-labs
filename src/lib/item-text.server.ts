@@ -244,6 +244,8 @@ async function extractPdf(bytes: Uint8Array): Promise<ItemTextResult> {
   // tries to resolve the worker file from disk, which this bundled server
   // runtime has no module for. Handing it the already-bundled worker module on
   // globalThis makes the resolution step unnecessary, so no file is looked up.
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore the worker build ships no types
   const workerModule = await import("pdfjs-dist/legacy/build/pdf.worker.mjs");
   (globalThis as unknown as { pdfjsWorker?: unknown }).pdfjsWorker = workerModule;
   // The legacy build is the one that runs outside a browser.
@@ -252,9 +254,8 @@ async function extractPdf(bytes: Uint8Array): Promise<ItemTextResult> {
     data: bytes,
     isEvalSupported: false,
     useSystemFonts: false,
-    // Bundled with the package, so no network fetch and no missing-font throw.
-    standardFontDataUrl: STANDARD_FONTS,
   }).promise;
+
 
   const pages: string[] = [];
   const limit = Math.min(doc.numPages, PDF_PAGE_CAP);
