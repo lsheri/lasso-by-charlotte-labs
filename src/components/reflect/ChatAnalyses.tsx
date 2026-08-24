@@ -631,9 +631,10 @@ export function selectionChips(
         reason: null,
       };
     }
-    if (selected.length < MIN_ITEMS_FOR_RECURRENCE) {
-      return { preset, target: null, reason: "needs at least three pieces of work selected" };
+    if (selected.length < minItemsFor(preset)) {
+      return { preset, target: null, reason: needsMoreSelectedLine(preset) };
     }
+
     return {
       preset,
       target: {
