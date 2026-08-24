@@ -240,13 +240,22 @@ async function extractXlsx(bytes: Uint8Array): Promise<ItemTextResult> {
 }
 
 async function extractPdf(bytes: Uint8Array): Promise<ItemTextResult> {
+  // pdf.js always sets up a "fake worker" outside the browser, and that setup
+  // tries to resolve the worker file from disk, which this bundled server
+  // runtime has no module for. Handing it the already-bundled worker module on
+  // globalThis makes the resolution step unnecessary, so no file is looked up.
+  const workerModule = await import("pdfjs-dist/legacy/build/pdf.worker.mjs");
+  (globalThis as unknown as { pdfjsWorker?: unknown }).pdfjsWorker = workerModule;
   // The legacy build is the one that runs outside a browser.
   const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
   const doc = await pdfjs.getDocument({
     data: bytes,
     isEvalSupported: false,
     useSystemFonts: false,
+    // Bundled with the package, so no network fetch and no missing-font throw.
+    standardFontDataUrl: STANDARD_FONTS,
   }).promise;
+
   const pages: string[] = [];
   const limit = Math.min(doc.numPages, PDF_PAGE_CAP);
   for (let n = 1; n <= limit; n += 1) {
