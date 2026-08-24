@@ -4,6 +4,7 @@ import { Download, ExternalLink } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { PdfView } from "@/components/peek/PdfView";
+import { ReextractAction } from "@/components/peek/ReextractAction";
 import { highlight, toSafeHtml } from "@/lib/markdown";
 import { getWorkFileUrl } from "@/lib/work-files.functions";
 import { getItemTextPane } from "@/lib/item-text.functions";
@@ -52,7 +53,7 @@ function DrivePreview({ fileId, title }: { fileId: string; title: string }) {
 }
 
 /** Plain text for formats a browser cannot render. No layout, and it says so. */
-function TextPane({ item }: { item: WorkItemRow }) {
+function TextPane({ item, canEdit }: { item: WorkItemRow; canEdit?: boolean }) {
   const fetchText = useServerFn(getItemTextPane);
   const query = useQuery({
     queryKey: ["item-text-pane", item.id],
@@ -65,10 +66,13 @@ function TextPane({ item }: { item: WorkItemRow }) {
   const pane = query.data;
   if (!pane?.text) {
     return (
-      <Notice>
-        Lasso could not read this file&apos;s contents
-        {pane?.note ? `: ${pane.note}.` : "."} You can still download the original.
-      </Notice>
+      <div className="space-y-2">
+        <Notice>
+          Lasso could not read this file&apos;s contents
+          {pane?.note ? `: ${pane.note}.` : "."} You can still download the original.
+        </Notice>
+        {canEdit ? <ReextractAction workItemId={item.id} /> : null}
+      </div>
     );
   }
   return (
@@ -87,10 +91,12 @@ export function FallbackCard({
   item,
   label,
   onDownload,
+  canEdit,
 }: {
   item: WorkItemRow;
   label: string;
   onDownload: () => void;
+  canEdit?: boolean;
 }) {
   const link = item.meta?.web_view_link ?? null;
   const unread = contentsUnread(item.meta as never);
@@ -123,6 +129,7 @@ export function FallbackCard({
             <ExternalLink className="h-3.5 w-3.5" aria-hidden /> Open in Drive
           </a>
         ) : null}
+        {unread && canEdit ? <ReextractAction workItemId={item.id} /> : null}
       </div>
     </div>
   );
@@ -132,10 +139,12 @@ export function RenderedContent({
   item,
   format,
   onDownload,
+  canEdit,
 }: {
   item: WorkItemRow;
   format?: PeekFormat;
   onDownload: () => void;
+  canEdit?: boolean;
 }) {
   const shape = format ?? peekFormat(item);
   const wantsText = needsTextFetch(shape);
@@ -189,9 +198,9 @@ export function RenderedContent({
     // Office and OpenDocument files cannot be rendered, but their text can be
     // read, and that text is what analysis sees.
     if (readStatus === "ok" || readStatus === "not_attempted") {
-      return <TextPane item={item} />;
+      return <TextPane item={item} canEdit={canEdit} />;
     }
-    return <FallbackCard item={item} label={shape.label} onDownload={onDownload} />;
+    return <FallbackCard item={item} label={shape.label} onDownload={onDownload} canEdit={canEdit} />;
   }
   if (urlQuery.isError) {
     return <Notice>{(urlQuery.error as Error).message}</Notice>;
@@ -212,7 +221,8 @@ export function RenderedContent({
   // which is what left a grey broken-file box here. We render it ourselves.
   if (shape.kind === "pdf") return <PdfView url={url} title={item.title} />;
 
-  if (failed) return <FallbackCard item={item} label={failed} onDownload={onDownload} />;
+  if (failed)
+    return <FallbackCard item={item} label={failed} onDownload={onDownload} canEdit={canEdit} />;
   if (rendered === null) return <Notice>Loading preview…</Notice>;
 
   if (shape.kind === "code") {
