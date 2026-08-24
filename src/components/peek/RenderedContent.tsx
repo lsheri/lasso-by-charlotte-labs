@@ -8,9 +8,15 @@ import { ReextractAction } from "@/components/peek/ReextractAction";
 import { highlight, toSafeHtml } from "@/lib/markdown";
 import { getWorkFileUrl } from "@/lib/work-files.functions";
 import { getItemTextPane } from "@/lib/item-text.functions";
-import { contentsUnread, textStatusOf, textStatusReason } from "@/lib/text-status";
+import {
+  contentsUnread,
+  textStatusOf,
+  textStatusReason,
+  UNREAD_MARKER_LINE,
+} from "@/lib/text-status";
 import { fileNameFor, needsTextFetch, peekFormat, type PeekFormat } from "@/lib/peek-format";
 import type { WorkItemRow } from "@/lib/work-types";
+
 
 function useFileUrl(item: WorkItemRow, enabled: boolean) {
   const fetchUrl = useServerFn(getWorkFileUrl);
