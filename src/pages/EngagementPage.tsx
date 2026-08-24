@@ -7,6 +7,7 @@ import { OneOnOneBrief } from "@/components/oneonone/OneOnOneBrief";
 import { CaptureCoverage } from "@/components/common/CaptureCoverage";
 import { EditEngagementDialog } from "@/components/engagements/EditEngagementDialog";
 import { EngagementCanvas, type CanvasTask } from "@/components/engagements/EngagementCanvas";
+import { ConnectToWorkSheet } from "@/components/engagements/ConnectToWorkSheet";
 import { EngagementBriefSection } from "@/components/engagements/EngagementBriefSection";
 import { SharedWithSection } from "@/components/engagements/SharedWithSection";
 import { EngagementNote } from "@/components/engagements/EngagementNote";
@@ -203,6 +204,20 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
           });
         }}
         onOpen={(item) => setPeekItem(item)}
+        headerAction={
+          profile && profile.role !== "coach" && membership.data?.isMember ? (
+            <ConnectToWorkSheet
+              engagementId={engagementId}
+              streams={(tasksQuery.data ?? []).map((task) => ({ id: task.id, name: task.name }))}
+              profile={{ id: profile.id, org_id: profile.org_id }}
+              onChanged={async () => {
+                await queryClient.invalidateQueries({
+                  queryKey: ["engagement-tasks", engagementId],
+                });
+              }}
+            />
+          ) : null
+        }
       />
 
       <PeekPanel
