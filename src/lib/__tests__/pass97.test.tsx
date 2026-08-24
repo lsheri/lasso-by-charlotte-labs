@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { render, screen, fireEvent, cleanup } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
 
@@ -36,6 +37,11 @@ function item(overrides: Partial<WorkItemRow> = {}): WorkItemRow {
   } as WorkItemRow;
 }
 
+function withQuery(ui: React.ReactNode) {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return <QueryClientProvider client={client}>{ui}</QueryClientProvider>;
+}
+
 describe("pass 97 — work view persistence", () => {
   it("defaults to pile and persists the choice under lasso.work.view", () => {
     expect(WORK_VIEW_KEY).toBe("lasso.work.view");
@@ -50,11 +56,11 @@ describe("pass 97 — work view persistence", () => {
   it("restores the stored view and never switches view on a paper click", () => {
     const onOpenEntry = vi.fn();
     render(
-      <WorkPile
+      withQuery(<WorkPile
         entries={[item()]}
         renderEntry={() => <div data-testid="matrix-row" />}
         onOpenEntry={onOpenEntry}
-      />,
+      />),
     );
     // First visit lands on pile: the scatter field is present, no matrix rows.
     expect(document.querySelector("[data-scatter]")).not.toBeNull();
@@ -67,7 +73,7 @@ describe("pass 97 — work view persistence", () => {
   });
 
   it("writes the view when the toggle is used", () => {
-    render(<WorkPile entries={[item()]} renderEntry={() => <div />} />);
+    render(withQuery(<WorkPile entries={[item()]} renderEntry={() => <div />} />));
     fireEvent.click(screen.getByText("Matrix"));
     expect(window.localStorage.getItem(WORK_VIEW_KEY)).toBe("matrix");
   });
