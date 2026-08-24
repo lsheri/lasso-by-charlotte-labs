@@ -114,6 +114,7 @@ function useReduceMotion(): boolean {
  */
 export function SlidesPane({
   url,
+  anchorId,
   unit,
   stitches,
   armed,
@@ -121,8 +122,10 @@ export function SlidesPane({
   canAsk,
   onAsk,
   onGoToSource,
+  onReload,
 }: {
   url: string;
+  anchorId?: string;
   unit: "slide" | "page";
   stitches: AuditStitch[];
   armed: boolean;
@@ -130,23 +133,36 @@ export function SlidesPane({
   canAsk: boolean;
   onAsk: (locator: SpanLocator, question: string) => void;
   onGoToSource: (stitch: AuditStitch, origin: DOMRect | null) => void;
+  onReload?: () => void;
 }) {
   const [doc, setDoc] = useState<unknown>(null);
   const [pages, setPages] = useState(0);
   const [truncated, setTruncated] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
   const [pageTexts, setPageTexts] = useState<Map<number, PageText>>(new Map());
   const [hovered, setHovered] = useState<string | null>(null);
   const reduceMotion = useReduceMotion();
 
+  // The signed url is re-minted on every fetch, so it is read at load time
+  // rather than depended on: a new signature for the same bytes must not tear
+  // down a document that is already rendered.
+  const urlRef = useRef(url);
+  urlRef.current = url;
+  const docRef = useRef<unknown>(null);
+  docRef.current = doc;
+
+  const loadKey = anchorId ?? url;
+
   useEffect(() => {
+    if (docRef.current) return;
     let cancelled = false;
     void (async () => {
       try {
         const pdfjs = await import("pdfjs-dist");
         const workerUrl = (await import("pdfjs-dist/build/pdf.worker.min.mjs?url")).default;
         pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
-        const loaded = await pdfjs.getDocument({ url }).promise;
+        const loaded = await pdfjs.getDocument({ url: urlRef.current }).promise;
         if (cancelled) return;
         setDoc(loaded);
         setPages(Math.min(loaded.numPages, MAX_PAGES));
@@ -158,7 +174,7 @@ export function SlidesPane({
     return () => {
       cancelled = true;
     };
-  }, [url]);
+  }, [loadKey, attempt]);
 
   const reportPage = useCallback((pageNumber: number, text: PageText) => {
     setPageTexts((prev) => {
@@ -168,12 +184,27 @@ export function SlidesPane({
     });
   }, []);
 
+  const reload = useCallback(() => {
+    setError(null);
+    setDoc(null);
+    docRef.current = null;
+    setPageTexts(new Map());
+    setPages(0);
+    onReload?.();
+    setAttempt((prev) => prev + 1);
+  }, [onReload]);
+
   const placed = useMemo(() => anchorStitches(pageTexts, stitches), [pageTexts, stitches]);
   const allRendered = pageTexts.size >= pages && pages > 0;
 
   if (error)
     return (
-      <p className="text-sm text-muted-foreground">Couldn&apos;t render these pages: {error}</p>
+      <div className="space-y-2">
+        <p className="text-sm text-muted-foreground">Couldn&apos;t render these pages: {error}</p>
+        <Button type="button" size="sm" variant="outline" onClick={reload}>
+          Reload pages
+        </Button>
+      </div>
     );
   if (!doc) return <p className="text-sm text-muted-foreground">Loading pages…</p>;
 
@@ -193,6 +224,7 @@ export function SlidesPane({
           hovered={hovered}
           onHover={setHovered}
           onPageText={reportPage}
+          onError={setError}
           onAsk={onAsk}
           onGoToSource={onGoToSource}
         />
