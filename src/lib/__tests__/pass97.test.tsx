@@ -10,26 +10,17 @@ import { connectStreamKey, defaultStream, rememberStream } from "@/lib/connect-t
 import { ChatUrlLink } from "@/components/work/ChatUrlLink";
 import { WorkPile } from "@/components/work/WorkPile";
 import { ConnectToWorkSheet } from "@/components/engagements/ConnectToWorkSheet";
+import { remapItems } from "@/lib/workflow-order";
 import type { WorkItemRow } from "@/lib/work-types";
 
 let mockWorkItems: WorkItemRow[] = [];
-const remapItems = vi.fn(
-  async (_opts: {
-    targets: { id: string; type: string; source: string }[];
-    taskId: string;
-    profile: unknown;
-    detachEpisode: unknown;
-    syncEpisode: unknown;
-    invalidate: unknown;
-  }) => ({ error: null }),
-);
 
 vi.mock("@/hooks/use-work-items", () => ({
   useWorkItems: () => ({ data: { items: mockWorkItems }, isLoading: false, error: null }),
 }));
 
 vi.mock("@/lib/workflow-order", () => ({
-  remapItems: (args: unknown) => remapItems(args as never),
+  remapItems: vi.fn(async () => ({ error: null })),
 }));
 
 vi.mock("@tanstack/react-start", async () => {
