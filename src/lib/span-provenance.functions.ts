@@ -16,6 +16,8 @@ export type AuditPaneItem = {
   source: string;
   source_vendor: string | null;
   source_url: string | null;
+  /** Drive's own link, the only honest evidence that a page is a slide. */
+  web_view_link: string | null;
   date_line: string;
   text: string | null;
   text_status: string;
@@ -160,6 +162,7 @@ export const getSpanAudit = createServerFn({ method: "POST" })
       source: item.source,
       source_vendor: item.source_vendor,
       source_url: (item.source_meta?.["url"] as string | undefined) ?? null,
+      web_view_link: (item.source_meta?.["web_view_link"] as string | undefined) ?? null,
       date_line: item.date_line,
       text: item.text,
       text_status: item.text_status,
