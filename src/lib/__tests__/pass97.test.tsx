@@ -13,7 +13,16 @@ import { ConnectToWorkSheet } from "@/components/engagements/ConnectToWorkSheet"
 import type { WorkItemRow } from "@/lib/work-types";
 
 let mockWorkItems: WorkItemRow[] = [];
-const remapItems = vi.fn(async () => ({ error: null }));
+const remapItems = vi.fn(
+  async (_opts: {
+    targets: { id: string; type: string; source: string }[];
+    taskId: string;
+    profile: unknown;
+    detachEpisode: unknown;
+    syncEpisode: unknown;
+    invalidate: unknown;
+  }) => ({ error: null }),
+);
 
 vi.mock("@/hooks/use-work-items", () => ({
   useWorkItems: () => ({ data: { items: mockWorkItems }, isLoading: false, error: null }),
