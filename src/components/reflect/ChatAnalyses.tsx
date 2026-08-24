@@ -495,12 +495,16 @@ export function AnalysisChips({
   const scope = target.kind === "engagement" ? "engagement" : target.scope;
   const presets = presetsForScope(scope, isCoach);
   if (presets.length === 0) return null;
-  const notEnoughWork = target.kind === "engagement" && target.itemCount < MIN_ITEMS_FOR_RECURRENCE;
+  // Per preset, not per surface: each engagement analysis states its own
+  // minimum and its own honest reason for being short of it.
+  const shortFor = (preset: AnalysisPreset) =>
+    target.kind === "engagement" && target.itemCount < minItemsFor(preset);
   const firmPreset = presets.find((p) => p.id === "firm_checks") ?? null;
   const stock = presets.filter((p) => p.id !== "firm_checks").sort(byStockOrder);
   const disabledRows = stock
-    .filter((p) => p.id === "what_recurs" && notEnoughWork)
-    .map((p) => ({ label: p.label, reason: NOT_ENOUGH_WORK_LINE }));
+    .filter((p) => shortFor(p))
+    .map((p) => ({ label: p.label, reason: notEnoughWorkLine(p) }));
+
 
   return (
     <Suggested className={className}>
