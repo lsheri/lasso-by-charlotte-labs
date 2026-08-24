@@ -121,6 +121,15 @@
   --nb-green: #12653d;
   --nb-green-deep: #0e4f30;
   --nb-blue: #1d6fe0;
+  --nb-amber: #a8600b;
+
+  /* Pass 101.1: one colour per provenance status, borders and washes only. */
+  --status-exact: var(--nb-green);
+  --status-exact-wash: #e9f2ed;
+  --status-paraphrase: var(--nb-amber);
+  --status-paraphrase-wash: #f8efe3;
+  --status-unsourced: var(--nb-soft);
+  --status-unsourced-wash: var(--nb-grey-1);
 
   /* Motion. */
   --nb-ease: cubic-bezier(0.2, 0, 0, 1);
@@ -1613,4 +1622,83 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 .nb-thread-draw {
   stroke-dasharray: 1200;
   animation: nb-thread-in 300ms ease-out forwards;
+}
+
+/* Pass 101.1: the provenance status language. A stitch, its span and its
+   thread all read the same colour, and unsourced is dashed rather than loud. */
+.nb-span {
+  --span-color: var(--status-unsourced);
+  --span-wash: var(--status-unsourced-wash);
+}
+.nb-span-exact {
+  --span-color: var(--status-exact);
+  --span-wash: var(--status-exact-wash);
+}
+.nb-span-paraphrase {
+  --span-color: var(--status-paraphrase);
+  --span-wash: var(--status-paraphrase-wash);
+}
+.nb-stitch-chip {
+  border-left-width: 3px;
+  border-left-style: solid;
+  border-left-color: var(--span-color);
+  background-color: var(--span-wash);
+  transition: box-shadow var(--nb-fast) var(--nb-ease), transform var(--nb-fast) var(--nb-ease);
+}
+.nb-span-unsourced.nb-stitch-chip {
+  border-left-style: dashed;
+}
+.nb-stitch-status {
+  color: var(--span-color);
+}
+.nb-stitch-quote {
+  border-left-color: var(--span-color);
+}
+.nb-chip-lift {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px -6px var(--span-color);
+}
+.nb-span-mark {
+  background-color: var(--span-wash);
+  box-shadow: inset 0 -2px 0 var(--span-color);
+}
+.nb-span-lit {
+  box-shadow: inset 0 -2px 0 var(--span-color), 0 0 0 2px var(--span-wash);
+}
+@keyframes nb-pin-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes nb-span-pulse {
+  0% { filter: none; }
+  40% { filter: brightness(0.94) saturate(1.4); }
+  100% { filter: none; }
+}
+.nb-pin-in {
+  animation: nb-pin-in 150ms var(--nb-ease);
+}
+.nb-pin-static {
+  animation: none;
+}
+.nb-span-pulse {
+  animation: nb-span-pulse 600ms var(--nb-ease) 1;
+}
+.nb-span-pulse-static {
+  animation: none;
+}
+.nb-page-armed {
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--accent-deep) 35%, transparent);
+  transition: box-shadow var(--nb-base) var(--nb-ease);
+}
+.nb-page-armed-static {
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--accent-deep) 35%, transparent);
+  transition: none;
+}
+.nb-turn-lit {
+  background-color: var(--span-wash);
+  border-left-color: var(--span-color) !important;
+}
+.nb-thread-fade {
+  transition: opacity var(--nb-move) var(--nb-ease);
+  opacity: 0;
 }

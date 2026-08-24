@@ -1,16 +1,16 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { LassoLayer } from "@/components/provenance/LassoLayer";
 import { StitchChip } from "@/components/provenance/StitchChip";
 import { Button } from "@/components/ui/button";
-import {
-  normalizeBBox,
-  pageLabel,
-  type BBox,
-  type TextRun,
-} from "@/lib/lasso-geometry";
+import { normalizeBBox, pageLabel, type BBox, type TextRun } from "@/lib/lasso-geometry";
 import type { AuditStitch } from "@/lib/span-provenance.functions";
-import { countOccurrences, findSnippetOffset, type SpanLocator } from "@/lib/span-provenance-shared";
+import {
+  countOccurrences,
+  findSnippetOffset,
+  type SpanLocator,
+} from "@/lib/span-provenance-shared";
+import { spanStatusClass, spanStatusWash } from "@/lib/span-status-style";
 
 const MAX_PAGES = 60;
 const DEFAULT_QUESTION = "Where did this come from?";
@@ -29,19 +29,74 @@ export function joinRuns(runs: TextRun[]): PageText {
   return { runs, text: text.trim(), offsets };
 }
 
+/** The runs covered by a span of the page's joined text. */
+export function runsForOffsets(page: PageText, start: number, end: number): TextRun[] {
+  return page.runs.filter((run, i) => {
+    const from = page.offsets[i] ?? 0;
+    return from + run.text.length > start && from < end;
+  });
+}
+
 /** The rects to highlight for a snippet already asked about on this page. */
-export function runsForSnippet(
-  page: PageText,
-  snippet: string,
-  occurrence: number,
-): TextRun[] {
+export function runsForSnippet(page: PageText, snippet: string, occurrence: number): TextRun[] {
   const found = findSnippetOffset(page.text, snippet, occurrence);
   if (!found) return [];
-  return page.runs.filter((run, i) => {
-    const start = page.offsets[i] ?? 0;
-    const end = start + run.text.length;
-    return end > found.start && start < found.end;
+  return runsForOffsets(page, found.start, found.end);
+}
+
+/**
+ * Which instance of this wording the ink went around. Counting the whole page
+ * would always point at the last one, so the count stops where the enclosed
+ * text begins.
+ */
+export function occurrenceAtOffset(page: PageText, snippet: string, startOffset: number): number {
+  const before = page.text.slice(0, Math.max(0, startOffset));
+  return countOccurrences(before, snippet) + 1;
+}
+
+export type StitchAnchor = { stitch: AuditStitch; page: number; start: number; end: number };
+
+/**
+ * Where each stitch actually lands on the rendered pages. A locator that names
+ * a page is tried first; anything asked in text view is re-anchored by its
+ * wording alone, first page that contains it. A stitch that anchors nowhere is
+ * an orphan and is shown as such rather than drawn in a guessed place.
+ */
+export function anchorStitches(
+  pages: Map<number, PageText>,
+  stitches: AuditStitch[],
+): { anchors: StitchAnchor[]; orphans: AuditStitch[] } {
+  const order = [...pages.keys()].sort((a, b) => a - b);
+  const anchors: StitchAnchor[] = [];
+  const orphans: AuditStitch[] = [];
+
+  stitches.forEach((stitch) => {
+    const snippet = stitch.locator?.snippet ?? "";
+    if (!snippet) {
+      orphans.push(stitch);
+      return;
+    }
+    const named = stitch.locator.index;
+    const namedPage = pages.get(named);
+    if (namedPage && (stitch.locator.unit === "page" || stitch.locator.unit === "slide")) {
+      const hit = findSnippetOffset(namedPage.text, snippet, stitch.locator.occurrence ?? 1);
+      if (hit) {
+        anchors.push({ stitch, page: named, start: hit.start, end: hit.end });
+        return;
+      }
+    }
+    for (const pageNumber of order) {
+      const page = pages.get(pageNumber) as PageText;
+      const hit = findSnippetOffset(page.text, snippet, 1);
+      if (hit) {
+        anchors.push({ stitch, page: pageNumber, start: hit.start, end: hit.end });
+        return;
+      }
+    }
+    orphans.push(stitch);
   });
+
+  return { anchors, orphans };
 }
 
 function useReduceMotion(): boolean {
@@ -80,6 +135,9 @@ export function SlidesPane({
   const [pages, setPages] = useState(0);
   const [truncated, setTruncated] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pageTexts, setPageTexts] = useState<Map<number, PageText>>(new Map());
+  const [hovered, setHovered] = useState<string | null>(null);
+  const reduceMotion = useReduceMotion();
 
   useEffect(() => {
     let cancelled = false;
@@ -102,8 +160,21 @@ export function SlidesPane({
     };
   }, [url]);
 
+  const reportPage = useCallback((pageNumber: number, text: PageText) => {
+    setPageTexts((prev) => {
+      const next = new Map(prev);
+      next.set(pageNumber, text);
+      return next;
+    });
+  }, []);
+
+  const placed = useMemo(() => anchorStitches(pageTexts, stitches), [pageTexts, stitches]);
+  const allRendered = pageTexts.size >= pages && pages > 0;
+
   if (error)
-    return <p className="text-sm text-muted-foreground">Couldn&apos;t render these pages: {error}</p>;
+    return (
+      <p className="text-sm text-muted-foreground">Couldn&apos;t render these pages: {error}</p>
+    );
   if (!doc) return <p className="text-sm text-muted-foreground">Loading pages…</p>;
 
   return (
@@ -114,20 +185,41 @@ export function SlidesPane({
           doc={doc}
           pageNumber={pageNumber}
           unit={unit}
-          stitches={stitches.filter(
-            (stitch) =>
-              stitch.locator?.index === pageNumber &&
-              (stitch.locator.unit === "page" || stitch.locator.unit === "slide"),
-          )}
+          anchors={placed.anchors.filter((anchor) => anchor.page === pageNumber)}
           armed={armed}
           busy={busy}
           canAsk={canAsk}
+          reduceMotion={reduceMotion}
+          hovered={hovered}
+          onHover={setHovered}
+          onPageText={reportPage}
           onAsk={onAsk}
           onGoToSource={onGoToSource}
         />
       ))}
       {truncated ? (
         <p className="text-xs text-muted-foreground">Showing the first {MAX_PAGES} pages.</p>
+      ) : null}
+
+      {allRendered && placed.orphans.length > 0 ? (
+        <div
+          data-testid="slides-orphan-rail"
+          className="rounded-[var(--radius-md)] border border-dashed border-border px-3 py-3"
+        >
+          <p className="micro-label micro-label-field">Previously asked</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            This wording is not on any rendered page, so these answers are kept here rather than
+            placed in the wrong spot.
+          </p>
+          {placed.orphans.map((stitch) => (
+            <StitchChip
+              key={stitch.id}
+              stitch={stitch}
+              reduceMotion={reduceMotion}
+              onGoToSource={(selected) => onGoToSource(selected, null)}
+            />
+          ))}
+        </div>
       ) : null}
     </div>
   );
@@ -137,33 +229,43 @@ function PdfPage({
   doc,
   pageNumber,
   unit,
-  stitches,
+  anchors,
   armed,
   busy,
   canAsk,
+  reduceMotion,
+  hovered,
+  onHover,
+  onPageText,
   onAsk,
   onGoToSource,
 }: {
   doc: unknown;
   pageNumber: number;
   unit: "slide" | "page";
-  stitches: AuditStitch[];
+  anchors: StitchAnchor[];
   armed: boolean;
   busy: boolean;
   canAsk: boolean;
+  reduceMotion: boolean;
+  hovered: string | null;
+  onHover: (id: string | null) => void;
+  onPageText: (pageNumber: number, text: PageText) => void;
   onAsk: (locator: SpanLocator, question: string) => void;
   onGoToSource: (stitch: AuditStitch, origin: DOMRect | null) => void;
 }) {
   const holderRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
-  const reduceMotion = useReduceMotion();
   const [visible, setVisible] = useState(false);
   const [size, setSize] = useState({ width: 0, height: 0 });
   const [page, setPage] = useState<PageText>({ runs: [], text: "", offsets: [] });
-  const [pending, setPending] = useState<{ snippet: string; box: BBox; question: string } | null>(
-    null,
-  );
+  const [pending, setPending] = useState<{
+    snippet: string;
+    box: BBox;
+    occurrence: number;
+    question: string;
+  } | null>(null);
 
   useEffect(() => {
     const holder = holderRef.current;
@@ -187,7 +289,11 @@ function PdfPage({
       const pdfjs = await import("pdfjs-dist");
       const pdfPage = await (doc as { getPage: (n: number) => Promise<never> }).getPage(pageNumber);
       const api = pdfPage as unknown as {
-        getViewport: (o: { scale: number }) => { width: number; height: number; transform: number[] };
+        getViewport: (o: { scale: number }) => {
+          width: number;
+          height: number;
+          transform: number[];
+        };
         render: (o: unknown) => { promise: Promise<void> };
         getTextContent: () => Promise<{ items: unknown[] }>;
       };
@@ -222,22 +328,25 @@ function PdfPage({
           h,
         });
       }
-      setPage(joinRuns(runs));
+      const joined = joinRuns(runs);
+      setPage(joined);
+      onPageText(pageNumber, joined);
     })();
     return () => {
       cancelled = true;
     };
-  }, [visible, doc, pageNumber]);
+  }, [visible, doc, pageNumber, onPageText]);
 
   const highlights = useMemo(
     () =>
-      stitches.flatMap((stitch) =>
-        runsForSnippet(page, stitch.locator.snippet, stitch.locator.occurrence ?? 1).map((run) => ({
-          id: stitch.id,
+      anchors.flatMap((anchor) =>
+        runsForOffsets(page, anchor.start, anchor.end).map((run) => ({
+          id: anchor.stitch.id,
+          status: anchor.stitch.status,
           run,
         })),
       ),
-    [stitches, page],
+    [anchors, page],
   );
 
   return (
@@ -245,23 +354,36 @@ function PdfPage({
       <p className="micro-label micro-label-field">{pageLabel(unit, pageNumber)}</p>
       <div
         ref={wrapRef}
-        className="relative w-full overflow-hidden rounded-[var(--radius)] border border-border bg-white"
+        data-testid={`page-card-${pageNumber}`}
+        className={`relative w-full overflow-hidden rounded-[var(--radius)] border border-border bg-white ${
+          armed && canAsk ? (reduceMotion ? "nb-page-armed-static" : "nb-page-armed") : ""
+        }`}
         style={size.height ? { aspectRatio: `${size.width} / ${size.height}` } : undefined}
       >
         <canvas ref={canvasRef} className="block w-full" />
         <svg
-          className="pointer-events-none absolute inset-0 h-full w-full"
+          className="absolute inset-0 h-full w-full"
+          style={{ pointerEvents: "none" }}
           viewBox={`0 0 ${size.width || 1} ${size.height || 1}`}
         >
           {highlights.map((entry, i) => (
             <rect
               key={`${entry.id}-${i}`}
+              data-stitch-id={entry.id}
+              data-testid={`span-rect-${entry.id}`}
               x={entry.run.x}
               y={entry.run.y}
               width={entry.run.w}
               height={entry.run.h}
               rx={2}
-              fill="var(--accent-soft, rgba(0,0,0,0.08))"
+              fill={spanStatusWash(entry.status)}
+              stroke={hovered === entry.id ? "currentColor" : "none"}
+              className={`${spanStatusClass(entry.status)} ${
+                reduceMotion ? "nb-span-pulse-static" : "nb-span-pulse"
+              } ${hovered === entry.id ? "nb-span-lit" : ""}`}
+              style={{ pointerEvents: "auto" }}
+              onMouseEnter={() => onHover(entry.id)}
+              onMouseLeave={() => onHover(null)}
             />
           ))}
         </svg>
@@ -273,8 +395,13 @@ function PdfPage({
           reduceMotion={reduceMotion}
           wrapped={pending?.box ?? null}
           resolving={busy && pending !== null}
-          onLasso={({ snippet, box }) =>
-            setPending({ snippet, box, question: DEFAULT_QUESTION })
+          onLasso={({ snippet, box, firstRunIndex }) =>
+            setPending({
+              snippet,
+              box,
+              occurrence: occurrenceAtOffset(page, snippet, page.offsets[firstRunIndex] ?? 0),
+              question: DEFAULT_QUESTION,
+            })
           }
           onEmpty={() => setPending(null)}
         />
@@ -305,7 +432,7 @@ function PdfPage({
                     unit,
                     index: pageNumber,
                     snippet: pending.snippet,
-                    occurrence: Math.max(1, countOccurrences(page.text, pending.snippet)),
+                    occurrence: pending.occurrence,
                     bbox: normalizeBBox(pending.box, size.width || 1, size.height || 1),
                   },
                   pending.question.trim() || DEFAULT_QUESTION,
@@ -326,10 +453,13 @@ function PdfPage({
         </div>
       ) : null}
 
-      {stitches.map((stitch) => (
+      {anchors.map((anchor) => (
         <StitchChip
-          key={stitch.id}
-          stitch={stitch}
+          key={anchor.stitch.id}
+          stitch={anchor.stitch}
+          reduceMotion={reduceMotion}
+          lifted={hovered === anchor.stitch.id}
+          onHoverChange={(on) => onHover(on ? anchor.stitch.id : null)}
           onGoToSource={(selected: AuditStitch) =>
             onGoToSource(selected, wrapRef.current?.getBoundingClientRect() ?? null)
           }

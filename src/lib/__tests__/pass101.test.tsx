@@ -217,8 +217,7 @@ describe("pass 101: rendition access", () => {
         id: "d1",
         content_ref: "org/deck.pptx",
         meta: {
-          mime_type:
-            "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+          mime_type: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
         },
       }),
       "d1",
@@ -247,5 +246,141 @@ describe("pass 101: stitches survive the view toggle", () => {
       "Margin held again",
     ]);
     expect(runsForSnippet(page, "nothing like this", 1)).toEqual([]);
+  });
+});
+
+describe("pass 101.1: the status colour language", () => {
+  it("gives each status its own stable classes", async () => {
+    const { spanStatusClass, spanStatusStroke, spanStatusWash } =
+      await import("@/lib/span-status-style");
+    expect(spanStatusClass("exact")).toBe("nb-span nb-span-exact");
+    expect(spanStatusClass("paraphrase")).toBe("nb-span nb-span-paraphrase");
+    expect(spanStatusClass("unsourced")).toBe("nb-span nb-span-unsourced");
+    expect(
+      new Set([
+        spanStatusStroke("exact"),
+        spanStatusStroke("paraphrase"),
+        spanStatusStroke("unsourced"),
+      ]).size,
+    ).toBe(3);
+    expect(spanStatusWash("exact")).toBe("var(--status-exact-wash)");
+  });
+
+  it("colours the chip and pins it in, or stays still under reduced motion", async () => {
+    const { StitchChip } = await import("@/components/provenance/StitchChip");
+    const stitch = {
+      id: "s1",
+      locator: { unit: "page", index: 1, snippet: "margin held", occurrence: 1 },
+      question: "Where did this come from?",
+      quote: "margin held",
+      status: "paraphrase",
+      verification: "none_in_record",
+      verification_note: null,
+      to_item_id: "u1",
+      to_item_title: "Kickoff",
+      to_item_url: null,
+      to_turn_id: null,
+      to_turn_no: null,
+      asked_by: "p1",
+      asked_by_name: null,
+      created_at: "2026-01-01",
+    } as never;
+    cleanup();
+    render(<StitchChip stitch={stitch} onGoToSource={() => {}} />);
+    const moving = screen.getByTestId("stitch-chip-s1").getAttribute("class") ?? "";
+    expect(moving).toContain("nb-span-paraphrase");
+    expect(moving).toContain("nb-stitch-chip");
+    expect(moving).toContain("nb-pin-in");
+    cleanup();
+    render(<StitchChip stitch={stitch} onGoToSource={() => {}} reduceMotion />);
+    const still = screen.getByTestId("stitch-chip-s1").getAttribute("class") ?? "";
+    expect(still).toContain("nb-pin-static");
+    expect(still).not.toContain("nb-pin-in");
+  });
+
+  it("defines one token per status rather than raw colour at point of use", async () => {
+    const { readFileSync } = await import("node:fs");
+    const css = readFileSync("src/styles.css", "utf8");
+    ["--status-exact", "--status-paraphrase", "--status-unsourced"].forEach((token) => {
+      expect(css).toContain(`${token}:`);
+      expect(css).toContain(`${token}-wash:`);
+    });
+    expect(css).toContain(".nb-span-unsourced.nb-stitch-chip");
+  });
+});
+
+describe("pass 101.1: the loader reads the link where production keeps it", () => {
+  it("prefers meta.web_view_link over source_meta", async () => {
+    const { webViewLinkOf } = await import("@/lib/span-audit.server");
+    const link = "https://docs.google.com/presentation/d/1/edit";
+    expect(webViewLinkOf({ meta: { web_view_link: link }, source_meta: {} })).toBe(link);
+    expect(webViewLinkOf({ meta: {}, source_meta: { web_view_link: link } })).toBe(link);
+    expect(webViewLinkOf({ meta: null, source_meta: null })).toBeNull();
+    expect(pageUnitFor({ webViewLink: webViewLinkOf({ meta: { web_view_link: link } }) })).toBe(
+      "slide",
+    );
+  });
+});
+
+describe("pass 101.1: the lasso names the instance it circled", () => {
+  it("counts the occurrence at the enclosed run, not the whole page", async () => {
+    const { joinRuns, occurrenceAtOffset } = await import("@/components/provenance/SlidesPane");
+    const page = joinRuns([
+      { text: "Margin held", x: 0, y: 0, w: 100, h: 10 },
+      { text: "other words", x: 0, y: 20, w: 100, h: 10 },
+      { text: "Margin held", x: 0, y: 40, w: 100, h: 10 },
+    ]);
+    const first = page.offsets[0] as number;
+    const second = page.offsets[2] as number;
+    expect(occurrenceAtOffset(page, "Margin held", first)).toBe(1);
+    expect(occurrenceAtOffset(page, "Margin held", second)).toBe(2);
+  });
+});
+
+describe("pass 101.1: stitches cross the view boundary", () => {
+  it("re-anchors a text view stitch onto the page that holds its wording", async () => {
+    const { anchorStitches, joinRuns } = await import("@/components/provenance/SlidesPane");
+    const pages = new Map([
+      [1, joinRuns([{ text: "Opening remarks", x: 0, y: 0, w: 90, h: 10 }])],
+      [2, joinRuns([{ text: "Margin held at nineteen percent", x: 0, y: 0, w: 200, h: 10 }])],
+    ]);
+    const make = (id: string, snippet: string) =>
+      ({
+        id,
+        status: "exact",
+        locator: { unit: "section", index: 7, snippet, occurrence: 1 },
+      }) as never;
+    const { anchors, orphans } = anchorStitches(pages, [
+      make("s1", "Margin held at nineteen percent"),
+      make("s2", "a line that is nowhere on these pages"),
+    ]);
+    expect(anchors).toHaveLength(1);
+    expect(anchors[0]?.page).toBe(2);
+    expect(orphans.map((o) => o.id)).toEqual(["s2"]);
+  });
+});
+
+describe("pass 101.1: the thread retires", () => {
+  it("carries the status colour and calls back when it is done", async () => {
+    vi.useFakeTimers();
+    const { ThreadLine, THREAD_LIFE_MS } = await import("@/components/provenance/ThreadLine");
+    const onDone = vi.fn();
+    cleanup();
+    render(
+      <ThreadLine
+        from={{ x: 300, y: 100 }}
+        targetId={null}
+        sourced={false}
+        reduceMotion
+        status="exact"
+        onDone={onDone}
+      />,
+    );
+    const line = screen.getByTestId("audit-thread").querySelector("line");
+    expect(line?.getAttribute("stroke")).toBe("var(--status-exact)");
+    expect(line?.getAttribute("stroke-dasharray")).toBe("4 4");
+    vi.advanceTimersByTime(THREAD_LIFE_MS + 10);
+    expect(onDone).toHaveBeenCalled();
+    vi.useRealTimers();
   });
 });

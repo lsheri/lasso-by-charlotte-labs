@@ -101,7 +101,7 @@ export const getSpanAudit = createServerFn({ method: "POST" })
   })
   .handler(async ({ data, context }): Promise<SpanAudit> => {
     const supabase = context.supabase;
-    const { AUDIT_ITEM_COLUMNS, loadAuditItem, loadUpstreamItems } = await import(
+    const { AUDIT_ITEM_COLUMNS, loadAuditItem, loadUpstreamItems, webViewLinkOf } = await import(
       "./span-audit.server"
     );
     const { data: anchorRow } = await supabase
@@ -165,7 +165,7 @@ export const getSpanAudit = createServerFn({ method: "POST" })
       source: item.source,
       source_vendor: item.source_vendor,
       source_url: (item.source_meta?.["url"] as string | undefined) ?? null,
-      web_view_link: (item.source_meta?.["web_view_link"] as string | undefined) ?? null,
+      web_view_link: webViewLinkOf(item),
       date_line: item.date_line,
       text: item.text,
       text_status: item.text_status,

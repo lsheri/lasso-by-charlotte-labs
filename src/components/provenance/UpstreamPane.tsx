@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { ChatUrlLink } from "@/components/work/ChatUrlLink";
 import { SourceMark } from "@/components/work/SourceMark";
 import type { AuditPaneItem } from "@/lib/span-provenance.functions";
+import type { SpanStatus } from "@/lib/span-provenance-shared";
+import { spanStatusClass } from "@/lib/span-status-style";
 
 /**
  * The upstream spine: the engagement's other work, oldest first, each one
@@ -13,11 +15,19 @@ export function UpstreamPane({
   items,
   baseline,
   focus,
+  citations = {},
 }: {
   items: AuditPaneItem[];
   baseline: { id: string; title: string }[];
-  /** The source a stitch chip pointed at: item id, and a turn id when it has one. */
-  focus: { itemId: string; turnId: string | null; token: number } | null;
+  /** The source a stitch chip pointed at, and the status colour it carries. */
+  focus: {
+    itemId: string;
+    turnId: string | null;
+    token: number;
+    status?: SpanStatus;
+  } | null;
+  /** How many stitches cite each upstream item. Uncited items stay quiet. */
+  citations?: Record<string, number>;
 }) {
   const [open, setOpen] = useState<Set<string>>(new Set());
 
@@ -42,7 +52,7 @@ export function UpstreamPane({
           {baseline.map((entry) => (
             <span
               key={entry.id}
-              className="rounded-full border border-border bg-secondary px-2 py-0.5 text-[11px] text-muted-foreground"
+              className="rounded-full border border-accent-deep bg-transparent px-2 py-0.5 text-[11px] text-accent-deep"
             >
               Linked: {entry.title}
             </span>
@@ -60,11 +70,15 @@ export function UpstreamPane({
       <ul className="space-y-2">
         {items.map((item) => {
           const isOpen = open.has(item.id);
+          const cited = citations[item.id] ?? 0;
           return (
             <li
               key={item.id}
               id={`audit-item-${item.id}`}
-              className="rounded-[var(--radius-md)] border border-border bg-card"
+              data-cited={cited > 0 ? "true" : "false"}
+              className={`rounded-[var(--radius-md)] border border-border bg-card ${
+                cited > 0 ? "border-l-[3px] border-l-accent-deep" : ""
+              }`}
             >
               <button
                 type="button"
@@ -79,15 +93,29 @@ export function UpstreamPane({
                 className="flex w-full items-start gap-2 px-3 py-2.5 text-left"
               >
                 {isOpen ? (
-                  <ChevronDown className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+                  <ChevronDown
+                    className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground"
+                    aria-hidden
+                  />
                 ) : (
-                  <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+                  <ChevronRight
+                    className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground"
+                    aria-hidden
+                  />
                 )}
                 <span className="min-w-0 flex-1">
                   <span className="flex items-center gap-1.5 text-sm font-medium text-foreground">
                     <SourceMark item={{ source_vendor: item.source_vendor }} />
                     <span className="min-w-0 truncate">{item.title}</span>
                   </span>
+                  {cited > 0 ? (
+                    <span
+                      data-testid={`cited-count-${item.id}`}
+                      className="mt-1 inline-block rounded-full border border-border bg-secondary px-2 py-0.5 text-[10px] text-muted-foreground"
+                    >
+                      {cited} {cited === 1 ? "link" : "links"}
+                    </span>
+                  ) : null}
                   <span className="mt-0.5 block font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
                     {item.type} · {item.date_line}
                   </span>
@@ -103,7 +131,12 @@ export function UpstreamPane({
                         <li
                           key={turn.id}
                           id={`audit-turn-${turn.id}`}
-                          className="rounded-[var(--radius-md)] border-l-2 border-border bg-secondary/40 px-3 py-2"
+                          data-lit={focus?.turnId === turn.id ? "true" : "false"}
+                          className={`rounded-[var(--radius-md)] border-l-2 border-border bg-secondary/40 px-3 py-2 ${
+                            focus?.turnId === turn.id
+                              ? `nb-turn-lit ${spanStatusClass(focus.status ?? "unsourced")}`
+                              : ""
+                          }`}
                         >
                           <p className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
                             Turn {turn.turn_no} · {turn.role}
