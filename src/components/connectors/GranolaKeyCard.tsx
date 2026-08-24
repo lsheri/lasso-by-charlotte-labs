@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { BrandLogo } from "@/components/connectors/BrandLogo";
 import { ConnectorPicker } from "@/components/connectors/ConnectorPicker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -65,7 +66,8 @@ export function GranolaKeyCard() {
   return (
     <div className="rounded-[var(--radius)] border border-border bg-card px-4 py-3 shadow-card">
       <div className="flex flex-wrap items-center gap-4">
-        <div className="min-w-0 flex-1">
+        <BrandLogo brand="granola" size={30} />
+        <div className="min-w-0 flex-1 basis-48">
           <p className="text-sm font-medium text-foreground">Granola</p>
           <p className="mt-0.5 text-sm text-muted-foreground">
             Meeting notes and transcripts from your calls.

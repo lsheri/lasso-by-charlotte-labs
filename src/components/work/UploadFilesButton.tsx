@@ -2,6 +2,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useRef, useState } from "react";
 
+import { BrandLogo } from "@/components/connectors/BrandLogo";
 import { Button } from "@/components/ui/button";
 import { WorkingLabel } from "@/components/common/Working";
 import { useProfile } from "@/hooks/use-profile";
@@ -122,8 +123,10 @@ export function UploadFilesButton({
         type="button"
         variant={variant}
         disabled={pending}
+        className="gap-2"
         onClick={() => inputRef.current?.click()}
       >
+        {pending ? null : <BrandLogo brand="upload" size={17} />}
         {pending ? (
           <WorkingLabel>
             {progress && progress.total > 1

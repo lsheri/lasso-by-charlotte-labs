@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { BrandPair } from "@/components/connectors/BrandLogo";
 import { Button } from "@/components/ui/button";
 import { useProfile } from "@/hooks/use-profile";
 import { createMcpToken, getMcpToken, revokeMcpToken } from "@/lib/mcp-tokens.functions";
@@ -73,9 +74,12 @@ export function ConnectYourAiCard() {
     <section id="connect-your-ai" className="scroll-mt-8">
       <h2 className="micro-label">Connect your AI · MCP</h2>
       <div className="mt-3 rounded-[var(--radius)] border border-border bg-card px-5 py-5 shadow-card">
-        <p className="text-sm font-medium text-foreground">
-          Let Claude or ChatGPT push work straight into Lasso
-        </p>
+        <div className="flex items-center gap-3">
+          <BrandPair brands={["claude", "chatgpt"]} size={26} />
+          <p className="text-sm font-medium text-foreground">
+            Let Claude or ChatGPT push work straight into Lasso
+          </p>
+        </div>
         <p className="mt-1.5 max-w-2xl text-sm text-muted-foreground">
           Add Lasso as a custom connector in your AI once. Then, at the end of any working session,
           just say “push this conversation to Lasso.” Everything lands private and unmapped, only

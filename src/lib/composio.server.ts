@@ -222,32 +222,77 @@ async function exportGoogleDoc(
   return null;
 }
 
-export async function fetchDriveFileBytes(
-  entityId: string,
-  fileId: string,
-  sourceMime?: string | null,
-): Promise<{
+export type DriveFetch = {
   bytes: Uint8Array;
   mimeType: string;
   name: string;
   webViewLink: string | null;
-} | null> {
+  /** The file's own Drive mimeType, including Google-native types. */
+  sourceMime?: string | null;
+  /** Set only when a Google-native file was exported to a readable format. */
+  exportMime?: string | null;
+  createdTime?: string | null;
+  modifiedTime?: string | null;
+};
+
+/**
+ * Drive's own timestamps for one file. Best effort on purpose: when Drive does
+ * not answer, the dates stay absent rather than being invented.
+ */
+async function driveFileTimes(
+  entityId: string,
+  fileId: string,
+): Promise<{ createdTime: string | null; modifiedTime: string | null; mimeType: string | null }> {
+  const empty = { createdTime: null, modifiedTime: null, mimeType: null };
+  try {
+    const data = await run("GOOGLEDRIVE_GET_FILE_METADATA", entityId, {
+      file_id: fileId,
+      fields: "id,name,mimeType,createdTime,modifiedTime",
+    });
+    const file = (data["file"] ?? data) as Record<string, unknown>;
+    const pick = (key: string, alt: string) => {
+      const value = file[key] ?? file[alt];
+      return typeof value === "string" ? value : null;
+    };
+    return {
+      createdTime: pick("createdTime", "created_time"),
+      modifiedTime: pick("modifiedTime", "modified_time"),
+      mimeType: pick("mimeType", "mime_type"),
+    };
+  } catch {
+    return empty;
+  }
+}
+
+export async function fetchDriveFileBytes(
+  entityId: string,
+  fileId: string,
+  sourceMime?: string | null,
+): Promise<DriveFetch | null> {
   const data = await run("GOOGLEDRIVE_PARSE_FILE", entityId, { file_id: fileId });
   const file = data["file"] as { s3url?: string; mimetype?: string; name?: string } | undefined;
   if (!file?.s3url) return null;
   const webViewLink = (data["display_url"] as string | undefined) ?? null;
   const name = file.name ?? "Untitled file";
 
+  const times = await driveFileTimes(entityId, fileId);
+
   // A Google-native file must be exported as structured text. Falling through
   // to the PDF render is what left documents readable only as page images.
-  const reported = (data["mimeType"] as string | undefined) ?? file.mimetype ?? null;
+  const reported =
+    (data["mimeType"] as string | undefined) ?? times.mimeType ?? file.mimetype ?? null;
   const native =
     sourceMime ?? (reported && reported.startsWith("application/vnd.google-apps") ? reported : null);
+  const dates = {
+    sourceMime: native ?? reported,
+    createdTime: times.createdTime,
+    modifiedTime: times.modifiedTime,
+  };
   if (native && GOOGLE_EXPORTS[native]) {
     const exported = await exportGoogleDoc(entityId, fileId, native, name);
     if (exported) {
       console.log(`[drive] ${fileId} exported as ${exported.mimeType} from ${native}`);
-      return { ...exported, webViewLink };
+      return { ...exported, webViewLink, ...dates, exportMime: exported.mimeType };
     }
     console.log(`[drive] ${fileId} export failed for ${native}, falling back to stored render`);
   }
@@ -260,7 +305,10 @@ export async function fetchDriveFileBytes(
     mimeType: file.mimetype ?? "application/octet-stream",
     name,
     webViewLink,
+    ...dates,
+    exportMime: null,
   };
 }
+
 
 // --------------------------------------------------------------------- Granola

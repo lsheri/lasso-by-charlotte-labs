@@ -1,3 +1,4 @@
+import { BrandLogo } from "@/components/connectors/BrandLogo";
 import { Button } from "@/components/ui/button";
 import { ConnectorPicker } from "@/components/connectors/ConnectorPicker";
 import { useConnectorAccounts } from "@/hooks/use-connector-accounts";
@@ -15,7 +16,8 @@ export function ConnectorBrowseActions() {
         <ConnectorPicker
           kind="googledrive"
           trigger={
-            <Button type="button" variant="outline">
+            <Button type="button" variant="outline" className="gap-2">
+              <BrandLogo brand="googledrive" size={17} />
               Browse Drive files
             </Button>
           }
@@ -25,7 +27,8 @@ export function ConnectorBrowseActions() {
         <ConnectorPicker
           kind="gmail"
           trigger={
-            <Button type="button" variant="outline">
+            <Button type="button" variant="outline" className="gap-2">
+              <BrandLogo brand="gmail" size={17} />
               Browse Gmail
             </Button>
           }
@@ -35,7 +38,8 @@ export function ConnectorBrowseActions() {
         <ConnectorPicker
           kind="granola"
           trigger={
-            <Button type="button" variant="outline">
+            <Button type="button" variant="outline" className="gap-2">
+              <BrandLogo brand="granola" size={17} />
               Browse meetings
             </Button>
           }

@@ -240,6 +240,14 @@ async function extractXlsx(bytes: Uint8Array): Promise<ItemTextResult> {
 }
 
 async function extractPdf(bytes: Uint8Array): Promise<ItemTextResult> {
+  // pdf.js always sets up a "fake worker" outside the browser, and that setup
+  // tries to resolve the worker file from disk, which this bundled server
+  // runtime has no module for. Handing it the already-bundled worker module on
+  // globalThis makes the resolution step unnecessary, so no file is looked up.
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore the worker build ships no types
+  const workerModule = await import("pdfjs-dist/legacy/build/pdf.worker.mjs");
+  (globalThis as unknown as { pdfjsWorker?: unknown }).pdfjsWorker = workerModule;
   // The legacy build is the one that runs outside a browser.
   const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
   const doc = await pdfjs.getDocument({
@@ -247,6 +255,8 @@ async function extractPdf(bytes: Uint8Array): Promise<ItemTextResult> {
     isEvalSupported: false,
     useSystemFonts: false,
   }).promise;
+
+
   const pages: string[] = [];
   const limit = Math.min(doc.numPages, PDF_PAGE_CAP);
   for (let n = 1; n <= limit; n += 1) {
@@ -375,7 +385,8 @@ async function extractOpenDocument(
   return { text, status: "ok" };
 }
 
-async function decode(
+/** Exported for tests: the pure bytes-to-text step, no database involved. */
+export async function decode(
   shape: Exclude<BinaryShape, null>,
   bytes: Uint8Array,
 ): Promise<ItemTextResult> {

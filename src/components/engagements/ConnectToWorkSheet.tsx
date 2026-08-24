@@ -2,6 +2,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
 
+import { BrandLogo, BrandPair } from "@/components/connectors/BrandLogo";
 import { ConnectorBrowseActions } from "@/components/connectors/ConnectorBrowseActions";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -142,7 +143,8 @@ export function ConnectToWorkSheet({
               <ConnectorBrowseActions />
               <PasteThreadDialog
                 trigger={
-                  <Button type="button" variant="outline">
+                  <Button type="button" variant="outline" className="gap-2">
+                    <BrandPair brands={["claude", "chatgpt"]} size={16} />
                     Paste a thread
                   </Button>
                 }

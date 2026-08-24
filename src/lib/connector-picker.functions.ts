@@ -344,6 +344,7 @@ export const importGmailThreads = createServerFn({ method: "POST" })
         skipped += 1;
         continue;
       }
+      const { defaultWorkDate } = await import("@/lib/source-dates");
       const bytes = new TextEncoder().encode(thread.markdown);
       const path = await storeFile(
         userId,
@@ -365,7 +366,12 @@ export const importGmailThreads = createServerFn({ method: "POST" })
           content_fidelity: "verbatim",
           ts_precision: thread.date ? "source" : "capture",
           created_at_source: thread.date,
-          source_meta: { filename: `${thread.subject}.md`, mime_type: "text/markdown" },
+          source_meta: {
+            filename: `${thread.subject}.md`,
+            mime_type: "text/markdown",
+            ...(thread.date ? { sent_at: thread.date } : {}),
+          },
+          work_date: defaultWorkDate(null, thread.date),
           meta: { gmail_thread_id: id },
         })
         .select("id")

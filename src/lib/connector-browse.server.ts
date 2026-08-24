@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/integrations/supabase/types";
 import type { PickerPage } from "@/lib/connector-picker-shared";
+import { defaultWorkDate, driveSourceMeta } from "@/lib/source-dates";
 import { looksLikeTranscript, transcriptHint } from "@/lib/transcript-detect";
 import {
   driveWorkType,
@@ -192,12 +193,18 @@ export async function importConnectorFiles(
     args.toolkit === "googledrive" ? null : await auth(supabase, args.profileId, args.toolkit);
 
   for (const id of args.ids) {
-    let file: {
-      bytes: Uint8Array;
-      mimeType: string;
-      name: string;
-      webViewLink: string | null;
-    } | null = null;
+    let file:
+      | {
+          bytes: Uint8Array;
+          mimeType: string;
+          name: string;
+          webViewLink: string | null;
+          sourceMime?: string | null;
+          exportMime?: string | null;
+          createdTime?: string | null;
+          modifiedTime?: string | null;
+        }
+      | null = null;
 
     if (args.toolkit === "googledrive") {
       const { fetchDriveFileBytes } = await import("@/lib/composio.server");
@@ -257,7 +264,16 @@ export async function importConnectorFiles(
         content_hash: hash,
         content_fidelity: isTranscript ? "transcribed" : "verbatim",
         ts_precision: "capture",
-        source_meta: { filename: file.name, mime_type: file.mimeType },
+        source_meta: driveSourceMeta({
+          filename: file.name,
+          storedMime: file.mimeType,
+          sourceMime: file.sourceMime ?? null,
+          exportMime: file.exportMime ?? null,
+          createdTime: file.createdTime ?? null,
+          modifiedTime: file.modifiedTime ?? null,
+        }),
+        // The provider's own date when it has one. Never invented.
+        work_date: defaultWorkDate(null, file.modifiedTime ?? null),
         meta: {
           [idKey]: id,
           mime_type: file.mimeType,

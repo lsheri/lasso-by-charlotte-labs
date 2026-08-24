@@ -222,7 +222,12 @@ export function PeekPanel({
         {format.kind === "thread" ? (
           <ThreadBody item={active} enabled={open} />
         ) : (
-          <RenderedContent item={active} format={format} onDownload={() => void download(active)} />
+          <RenderedContent
+            item={active}
+            format={format}
+            canEdit={canEdit}
+            onDownload={() => void download(active)}
+          />
         )}
         {canEdit ? <AiReads workItemId={active.id} /> : null}
         {isDeliverableType(active.type) ? (
