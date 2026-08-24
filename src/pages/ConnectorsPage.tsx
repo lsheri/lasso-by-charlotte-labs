@@ -5,6 +5,7 @@ import { useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { BrandLogo, brandForToolkit, type BrandKey } from "@/components/connectors/BrandLogo";
 import { ConnectYourAiCard } from "@/components/connectors/ConnectYourAiCard";
 import { ConnectorPicker, type PickerKind } from "@/components/connectors/ConnectorPicker";
 import { GranolaKeyCard } from "@/components/connectors/GranolaKeyCard";
@@ -120,6 +121,7 @@ export function ConnectorsPage() {
     return (
       <ConnectorCard
         key={toolkit}
+        brand={brandForToolkit(toolkit)}
         name={TOOLKIT_LABELS[toolkit]}
         description={DESCRIPTIONS[toolkit]}
         account={account}
@@ -265,7 +267,8 @@ function TranscriptsCard({
 }) {
   return (
     <div className="flex flex-wrap items-center gap-4 rounded-[var(--radius)] border border-border bg-card px-4 py-3 shadow-card">
-      <div className="min-w-0 flex-1">
+      <BrandLogo brand="granola" size={30} />
+      <div className="min-w-0 flex-1 basis-48">
         <p className="text-sm font-medium text-foreground">Call transcripts (Google Drive)</p>
         <p className="mt-0.5 text-sm text-muted-foreground">
           Recordings and transcripts already in your Drive. Uses the same connection.
@@ -318,6 +321,7 @@ function Category({
 }
 
 function ConnectorCard({
+  brand,
   name,
   description,
   account,
@@ -325,6 +329,7 @@ function ConnectorCard({
   busy,
   identity,
 }: {
+  brand: BrandKey;
   name: string;
   description: string;
   account: ConnectorAccount | undefined;
@@ -334,7 +339,8 @@ function ConnectorCard({
 }) {
   return (
     <div className="flex flex-wrap items-center gap-4 rounded-[var(--radius)] border border-border bg-card px-4 py-3 shadow-card">
-      <div className="min-w-0 flex-1">
+      <BrandLogo brand={brand} size={30} />
+      <div className="min-w-0 flex-1 basis-48">
         <p className="text-sm font-medium text-foreground">{name}</p>
         <p className="mt-0.5 text-sm text-muted-foreground">{description}</p>
         {identity}
