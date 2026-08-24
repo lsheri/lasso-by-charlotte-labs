@@ -214,7 +214,12 @@ export function AnalysisLens({
     }
   }
 
-  const notEnoughWork = target.kind === "engagement" && target.itemCount < MIN_ITEMS_FOR_RECURRENCE;
+  // Each engagement preset states its own minimum, so a two item engagement
+  // can run a sequence while a recurrence stays honestly out of reach.
+  const shortFor = (preset: AnalysisPreset) =>
+    target.kind === "engagement" && target.itemCount < minItemsFor(preset);
+  const notEnoughWork = presets.some((preset) => shortFor(preset));
+
 
   const readsDetail =
     target.kind === "engagement"
