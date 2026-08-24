@@ -319,57 +319,81 @@ function PdfPage({
   useEffect(() => {
     if (!visible) return;
     let cancelled = false;
+    const guard = makeRenderGuard();
     void (async () => {
-      const pdfjs = await import("pdfjs-dist");
-      const pdfPage = await (doc as { getPage: (n: number) => Promise<never> }).getPage(pageNumber);
-      const api = pdfPage as unknown as {
-        getViewport: (o: { scale: number }) => {
-          width: number;
-          height: number;
-          transform: number[];
+      try {
+        const pdfjs = await import("pdfjs-dist");
+        const pdfPage = await (doc as { getPage: (n: number) => Promise<never> }).getPage(
+          pageNumber,
+        );
+        const api = pdfPage as unknown as {
+          getViewport: (o: { scale: number }) => {
+            width: number;
+            height: number;
+            transform: number[];
+          };
+          render: (o: unknown) => { promise: Promise<void>; cancel: () => void };
+          getTextContent: () => Promise<{ items: unknown[] }>;
         };
-        render: (o: unknown) => { promise: Promise<void> };
-        getTextContent: () => Promise<{ items: unknown[] }>;
-      };
-      const base = api.getViewport({ scale: 1 });
-      const width = holderRef.current?.clientWidth || 720;
-      const scale = Math.min(2, width / base.width);
-      const viewport = api.getViewport({ scale });
-      if (cancelled) return;
-      setSize({ width: Math.floor(viewport.width), height: Math.floor(viewport.height) });
+        const base = api.getViewport({ scale: 1 });
+        const width = holderRef.current?.clientWidth || 720;
+        const scale = Math.min(2, width / base.width);
+        const viewport = api.getViewport({ scale });
+        if (cancelled) return;
+        setSize({ width: Math.floor(viewport.width), height: Math.floor(viewport.height) });
 
-      const canvas = canvasRef.current;
-      if (canvas) {
-        canvas.width = Math.floor(viewport.width);
-        canvas.height = Math.floor(viewport.height);
-        const ctx = canvas.getContext("2d");
-        if (ctx) await api.render({ canvasContext: ctx, viewport }).promise;
-      }
+        const canvas = canvasRef.current;
+        if (canvas) {
+          canvas.width = Math.floor(viewport.width);
+          canvas.height = Math.floor(viewport.height);
+          const ctx = canvas.getContext("2d");
+          if (ctx) {
+            const task = api.render({ canvasContext: ctx, viewport });
+            guard.set(task);
+            try {
+              await task.promise;
+            } catch (e) {
+              if ((e as { name?: string }).name === "RenderingCancelledException") return;
+              throw e;
+            } finally {
+              guard.set(null);
+            }
+          }
+        }
 
-      const content = await api.getTextContent();
-      if (cancelled) return;
-      const runs: TextRun[] = [];
-      for (const raw of content.items) {
-        const item = raw as { str?: string; transform?: number[]; width?: number; height?: number };
-        if (!item.str || !item.transform) continue;
-        const t = pdfjs.Util.transform(viewport.transform, item.transform) as number[];
-        const h = (item.height ?? 10) * scale;
-        runs.push({
-          text: item.str,
-          x: t[4] as number,
-          y: (t[5] as number) - h,
-          w: (item.width ?? 0) * scale,
-          h,
-        });
+        const content = await api.getTextContent();
+        if (cancelled) return;
+        const runs: TextRun[] = [];
+        for (const raw of content.items) {
+          const item = raw as {
+            str?: string;
+            transform?: number[];
+            width?: number;
+            height?: number;
+          };
+          if (!item.str || !item.transform) continue;
+          const t = pdfjs.Util.transform(viewport.transform, item.transform) as number[];
+          const h = (item.height ?? 10) * scale;
+          runs.push({
+            text: item.str,
+            x: t[4] as number,
+            y: (t[5] as number) - h,
+            w: (item.width ?? 0) * scale,
+            h,
+          });
+        }
+        const joined = joinRuns(runs);
+        setPage(joined);
+        onPageText(pageNumber, joined);
+      } catch (e) {
+        if (!cancelled) onError((e as Error).message);
       }
-      const joined = joinRuns(runs);
-      setPage(joined);
-      onPageText(pageNumber, joined);
     })();
     return () => {
       cancelled = true;
+      guard.cancel();
     };
-  }, [visible, doc, pageNumber, onPageText]);
+  }, [visible, doc, pageNumber, onPageText, onError]);
 
   const highlights = useMemo(
     () =>
