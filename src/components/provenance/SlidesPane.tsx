@@ -4,6 +4,7 @@ import { LassoLayer } from "@/components/provenance/LassoLayer";
 import { StitchChip } from "@/components/provenance/StitchChip";
 import { Button } from "@/components/ui/button";
 import { normalizeBBox, pageLabel, type BBox, type TextRun } from "@/lib/lasso-geometry";
+import { makeRenderGuard } from "@/lib/rendition-query";
 import type { AuditStitch } from "@/lib/span-provenance.functions";
 import {
   countOccurrences,
