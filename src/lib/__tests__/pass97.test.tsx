@@ -48,7 +48,7 @@ afterEach(() => {
   cleanup();
   window.localStorage.clear();
   mockWorkItems = [];
-  remapItems.mockClear();
+  vi.clearAllMocks();
 });
 
 function item(overrides: Partial<WorkItemRow> = {}): WorkItemRow {
