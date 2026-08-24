@@ -5,7 +5,11 @@ import { StitchChip } from "@/components/provenance/StitchChip";
 import { Button } from "@/components/ui/button";
 import { normalizeBBox, pageLabel, type BBox, type TextRun } from "@/lib/lasso-geometry";
 import type { AuditStitch } from "@/lib/span-provenance.functions";
-import { countOccurrences, findSnippetOffset, type SpanLocator } from "@/lib/span-provenance-shared";
+import {
+  countOccurrences,
+  findSnippetOffset,
+  type SpanLocator,
+} from "@/lib/span-provenance-shared";
 import { spanStatusClass, spanStatusWash } from "@/lib/span-status-style";
 
 const MAX_PAGES = 60;

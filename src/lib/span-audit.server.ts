@@ -60,9 +60,7 @@ export async function engagementForItem(supabase: Db, itemId: string): Promise<s
   return row?.tasks?.engagement_id ?? null;
 }
 
-function numberedTurns(
-  turns: { turn_no: number; role: string; content: string }[],
-): string {
+function numberedTurns(turns: { turn_no: number; role: string; content: string }[]): string {
   return turns
     .map((turn) => `TURN ${turn.turn_no} ${turn.role.toUpperCase()}:\n${turn.content}`)
     .join("\n\n")
@@ -74,7 +72,10 @@ function numberedTurns(
  * conversation, its extracted text when it is a document, and a date line at
  * the precision the source actually supplies.
  */
-export async function loadAuditItem(supabase: Db, row: Record<string, unknown>): Promise<AuditItem> {
+export async function loadAuditItem(
+  supabase: Db,
+  row: Record<string, unknown>,
+): Promise<AuditItem> {
   const { datePrecisionLine } = await import("./reflect-context.server");
   const id = row["id"] as string;
   const dateLine = datePrecisionLine(row as never);

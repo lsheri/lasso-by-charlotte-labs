@@ -8,10 +8,7 @@ import { AnchorPane } from "@/components/provenance/AnchorPane";
 import { SlidesPane } from "@/components/provenance/SlidesPane";
 import { ThreadLine } from "@/components/provenance/ThreadLine";
 import { UpstreamPane } from "@/components/provenance/UpstreamPane";
-import {
-  closeProvenanceAudit,
-  useProvenanceAudit,
-} from "@/components/provenance/audit-state";
+import { closeProvenanceAudit, useProvenanceAudit } from "@/components/provenance/audit-state";
 import { pageUnitFor } from "@/lib/lasso-geometry";
 import { getRenditionUrl } from "@/lib/rendition.functions";
 import { askSpanProvenance, getSpanAudit } from "@/lib/span-provenance.functions";
@@ -26,7 +23,9 @@ import type { SpanLocator } from "@/lib/span-provenance-shared";
 export function ProvenanceAudit() {
   const request = useProvenanceAudit();
   if (!request) return null;
-  return <AuditSurface key={request.anchorId} anchorId={request.anchorId} title={request.anchorTitle} />;
+  return (
+    <AuditSurface key={request.anchorId} anchorId={request.anchorId} title={request.anchorTitle} />
+  );
 }
 
 function AuditSurface({ anchorId, title }: { anchorId: string; title: string }) {
@@ -216,4 +215,3 @@ function AuditSurface({ anchorId, title }: { anchorId: string; title: string }) 
     </div>
   );
 }
-

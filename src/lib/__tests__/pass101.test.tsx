@@ -217,8 +217,7 @@ describe("pass 101: rendition access", () => {
         id: "d1",
         content_ref: "org/deck.pptx",
         meta: {
-          mime_type:
-            "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+          mime_type: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
         },
       }),
       "d1",
@@ -252,9 +251,8 @@ describe("pass 101: stitches survive the view toggle", () => {
 
 describe("pass 101.1: the status colour language", () => {
   it("gives each status its own stable classes", async () => {
-    const { spanStatusClass, spanStatusStroke, spanStatusWash } = await import(
-      "@/lib/span-status-style"
-    );
+    const { spanStatusClass, spanStatusStroke, spanStatusWash } =
+      await import("@/lib/span-status-style");
     expect(spanStatusClass("exact")).toBe("nb-span nb-span-exact");
     expect(spanStatusClass("paraphrase")).toBe("nb-span nb-span-paraphrase");
     expect(spanStatusClass("unsourced")).toBe("nb-span nb-span-unsourced");
@@ -326,9 +324,7 @@ describe("pass 101.1: the loader reads the link where production keeps it", () =
 
 describe("pass 101.1: the lasso names the instance it circled", () => {
   it("counts the occurrence at the enclosed run, not the whole page", async () => {
-    const { joinRuns, occurrenceAtOffset } = await import(
-      "@/components/provenance/SlidesPane"
-    );
+    const { joinRuns, occurrenceAtOffset } = await import("@/components/provenance/SlidesPane");
     const page = joinRuns([
       { text: "Margin held", x: 0, y: 0, w: 100, h: 10 },
       { text: "other words", x: 0, y: 20, w: 100, h: 10 },
