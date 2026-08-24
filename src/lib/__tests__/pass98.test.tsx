@@ -109,4 +109,26 @@ describe("re-extract affordance", () => {
     render(<FallbackCard item={failed} label="PDF" onDownload={() => {}} />);
     expect(screen.queryByText("Try reading it again")).toBeNull();
   });
+
+  it("shows in the Drive embed preview when the owner could not read contents", async () => {
+    const { RenderedContent } = await import("@/components/peek/RenderedContent");
+    const driveFailed = {
+      id: "w2",
+      title: "Plan.gdoc",
+      type: "doc",
+      source: "connector:googledrive",
+      visibility: "unmapped",
+      captured_at: "2026-01-01T00:00:00Z",
+      content_ref: null,
+      meta: { drive_file_id: "abc123", text_status: "failed", text_note: "export failed" },
+    } as never;
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <RenderedContent item={driveFailed} canEdit />
+      </QueryClientProvider>,
+    );
+    expect(screen.getByText("Try reading it again")).toBeTruthy();
+    expect(screen.getByText(/Lasso could not read this file's contents/)).toBeTruthy();
+  });
 });
+
