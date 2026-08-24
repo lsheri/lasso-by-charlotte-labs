@@ -41,22 +41,41 @@ const DRIVE_CAVEAT =
  * Future note: a Content-Security-Policy on this app must allow
  * frame-src https://drive.google.com or this preview goes blank.
  */
-function DrivePreview({ fileId, title }: { fileId: string; title: string }) {
+function DrivePreview({
+  item,
+  canEdit,
+}: {
+  item: WorkItemRow;
+  canEdit?: boolean | undefined;
+}) {
+  const fileId = item.meta?.drive_file_id ?? "";
+  const unread = contentsUnread(item.meta as never);
+  const reason = textStatusReason(item.meta as never);
   return (
     <div>
       <div className="aspect-[3/4] w-full overflow-hidden rounded-[var(--radius)] border border-border md:aspect-[4/3]">
         <iframe
           src={`https://drive.google.com/file/d/${fileId}/preview`}
-          title={title}
+          title={item.title}
           className="h-full w-full"
           allow="autoplay"
           referrerPolicy="no-referrer"
         />
       </div>
       <p className="mt-2 text-xs text-muted-foreground">{DRIVE_CAVEAT}</p>
+      {unread && canEdit ? (
+        <div className="mt-3 space-y-2">
+          <Notice>
+            {UNREAD_MARKER_LINE}
+            {reason ? `: ${reason}` : ""}. Only its title is available to analysis.
+          </Notice>
+          <ReextractAction workItemId={item.id} />
+        </div>
+      ) : null}
     </div>
   );
 }
+
 
 /** Plain text for formats a browser cannot render. No layout, and it says so. */
 function TextPane({ item, canEdit }: { item: WorkItemRow; canEdit?: boolean | undefined }) {
