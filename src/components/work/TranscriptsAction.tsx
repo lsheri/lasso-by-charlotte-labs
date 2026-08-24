@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 
+import { BrandLogo } from "@/components/connectors/BrandLogo";
 import { Button } from "@/components/ui/button";
 import { ConnectorPicker } from "@/components/connectors/ConnectorPicker";
 import { useConnectorAccounts } from "@/hooks/use-connector-accounts";
@@ -22,7 +23,8 @@ export function TranscriptsAction() {
     <ConnectorPicker
       kind="transcripts"
       trigger={
-        <Button type="button" variant="outline">
+        <Button type="button" variant="outline" className="gap-2">
+          <BrandLogo brand="granola" size={17} />
           Find call transcripts
         </Button>
       }
