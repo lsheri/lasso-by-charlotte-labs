@@ -1,10 +1,12 @@
 // @vitest-environment jsdom
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { BrandLogo, brandForToolkit, type BrandKey } from "@/components/connectors/BrandLogo";
 import { dateOnly, defaultWorkDate, driveSourceMeta } from "@/lib/source-dates";
+
+afterEach(() => cleanup());
 
 vi.mock("@tanstack/react-start", async (importOriginal) => ({
   ...(await importOriginal<Record<string, unknown>>()),
