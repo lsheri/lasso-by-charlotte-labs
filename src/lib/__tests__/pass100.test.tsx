@@ -1,5 +1,8 @@
 // @vitest-environment jsdom
-import { describe, expect, it } from "vitest";
+import { cleanup } from "@testing-library/react";
+import { afterEach, describe, expect, it } from "vitest";
+
+afterEach(() => cleanup());
 
 import { ANALYSIS_PRESET_IDS, presetsForScope } from "@/lib/analysis-presets";
 import {
