@@ -57,8 +57,9 @@ const STOCK_ORDER: readonly string[] = [
   "what_fed_this",
   "what_recurs",
   "how_this_was_made",
-
+  "ai_fluency_4d",
   "working_the_model",
+
 ];
 
 function byStockOrder(a: AnalysisPreset, b: AnalysisPreset): number {
