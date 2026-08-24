@@ -85,6 +85,9 @@ function validLocator(raw: unknown): SpanLocator {
   };
 }
 
+/** Exported for the locator contract tests only. */
+export const validLocatorForTest = validLocator;
+
 /**
  * Everything the provenance audit view reads in one trip: the deliverable's own
  * text, the engagement's other work oldest first, the span links already asked,

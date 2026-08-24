@@ -163,11 +163,6 @@ describe("pass 101: page labels are never guessed", () => {
 
 describe("pass 101: the page unit reaches the server contract", () => {
   it("accepts unit page and rejects an unknown unit", async () => {
-    const mod = (await import("@/lib/span-provenance.functions")) as unknown as Record<
-      string,
-      unknown
-    >;
-    void mod;
     const { validLocatorForTest } = await import("@/lib/span-provenance.functions");
     const locator = validLocatorForTest({
       unit: "page",
