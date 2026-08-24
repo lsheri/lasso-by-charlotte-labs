@@ -71,6 +71,7 @@ export function AppShell() {
           </main>
 
         </div>
+        <ProvenanceAudit />
         <FeedbackWidget />
         <MobileTabBar />
         <StepPopover />
