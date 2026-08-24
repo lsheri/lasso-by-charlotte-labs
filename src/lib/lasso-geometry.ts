@@ -34,13 +34,27 @@ export function pointInPolygon(point: Point, polygon: Point[]): boolean {
   return inside;
 }
 
+/**
+ * Reading order: down the page first, then across. The one comparator both the
+ * lasso and the joined page text use, so a circled snippet is always findable
+ * in the text it came from.
+ */
+export function readingOrder(a: TextRun, b: TextRun): number {
+  return Math.abs(a.y - b.y) > Math.max(a.h, b.h) * 0.6 ? a.y - b.y : a.x - b.x;
+}
+
+/** The runs in reading order, whatever order they arrived in. */
+export function sortReadingOrder(runs: TextRun[]): TextRun[] {
+  return runs.slice().sort(readingOrder);
+}
+
 /** The runs whose centre the ink actually went around, in reading order. */
 export function enclosedRuns(runs: TextRun[], polygon: Point[]): TextRun[] {
-  return runs
-    .filter((run) => pointInPolygon({ x: run.x + run.w / 2, y: run.y + run.h / 2 }, polygon))
-    .slice()
-    .sort((a, b) => (Math.abs(a.y - b.y) > Math.max(a.h, b.h) * 0.6 ? a.y - b.y : a.x - b.x));
+  return sortReadingOrder(
+    runs.filter((run) => pointInPolygon({ x: run.x + run.w / 2, y: run.y + run.h / 2 }, polygon)),
+  );
 }
+
 
 /** Reading order text for a set of runs, capped the way a span is capped. */
 export function snippetFromRuns(runs: TextRun[]): string {
