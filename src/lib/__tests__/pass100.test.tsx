@@ -208,6 +208,7 @@ describe("pass 100: an unreadable anchor stays honest", () => {
     source: "upload",
     source_vendor: null,
     source_url: null,
+    web_view_link: null,
     date_line: "captured 2026-01-02",
     text: null,
     text_status: "failed",

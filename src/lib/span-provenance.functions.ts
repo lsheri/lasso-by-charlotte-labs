@@ -16,6 +16,8 @@ export type AuditPaneItem = {
   source: string;
   source_vendor: string | null;
   source_url: string | null;
+  /** Drive's own link, the only honest evidence that a page is a slide. */
+  web_view_link: string | null;
   date_line: string;
   text: string | null;
   text_status: string;
@@ -52,10 +54,20 @@ export type SpanAudit = {
   baseline: { id: string; title: string }[];
 };
 
+/** The wrap rect, only when it is genuinely four finite 0..1 numbers. */
+function validBBox(raw: unknown): SpanLocator["bbox"] | null {
+  const box = (raw ?? null) as Record<string, unknown> | null;
+  if (!box) return null;
+  const parts = ["x", "y", "w", "h"].map((key) => Number(box[key]));
+  if (parts.some((value) => !Number.isFinite(value))) return null;
+  const [x, y, w, h] = parts as [number, number, number, number];
+  return { x, y, w, h };
+}
+
 function validLocator(raw: unknown): SpanLocator {
   const input = (raw ?? {}) as Record<string, unknown>;
   const unit = input["unit"];
-  if (unit !== "slide" && unit !== "section" && unit !== "paragraph") {
+  if (unit !== "slide" && unit !== "section" && unit !== "paragraph" && unit !== "page") {
     throw new Error("That selection could not be placed.");
   }
   const snippet = typeof input["snippet"] === "string" ? input["snippet"].trim() : "";
@@ -69,8 +81,12 @@ function validLocator(raw: unknown): SpanLocator {
     occurrence: Number.isFinite(occurrence) && occurrence > 0 ? occurrence : 1,
     ...(Number.isFinite(Number(input["start"])) ? { start: Number(input["start"]) } : {}),
     ...(Number.isFinite(Number(input["end"])) ? { end: Number(input["end"]) } : {}),
+    ...(validBBox(input["bbox"]) ? { bbox: validBBox(input["bbox"]) as SpanLocator["bbox"] } : {}),
   };
 }
+
+/** Exported for the locator contract tests only. */
+export const validLocatorForTest = validLocator;
 
 /**
  * Everything the provenance audit view reads in one trip: the deliverable's own
@@ -149,6 +165,7 @@ export const getSpanAudit = createServerFn({ method: "POST" })
       source: item.source,
       source_vendor: item.source_vendor,
       source_url: (item.source_meta?.["url"] as string | undefined) ?? null,
+      web_view_link: (item.source_meta?.["web_view_link"] as string | undefined) ?? null,
       date_line: item.date_line,
       text: item.text,
       text_status: item.text_status,

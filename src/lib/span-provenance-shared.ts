@@ -4,7 +4,7 @@
  * server that validates a claim agree on what a span actually is.
  */
 
-export type SpanUnit = "slide" | "section" | "paragraph";
+export type SpanUnit = "slide" | "section" | "paragraph" | "page";
 export type SpanStatus = "exact" | "paraphrase" | "unsourced";
 export type SpanVerification = "found" | "none_in_record";
 
@@ -17,6 +17,11 @@ export type SpanLocator = {
   occurrence: number;
   start?: number | undefined;
   end?: number | undefined;
+  /**
+   * Where the ink wrapped, in 0..1 page coordinates. Advisory only: the snippet
+   * stays the authoritative record of what was asked about.
+   */
+  bbox?: { x: number; y: number; w: number; h: number } | undefined;
 };
 
 /** Anything shorter than this is not a span, it is a stray click. */
