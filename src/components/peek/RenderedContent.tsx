@@ -218,7 +218,7 @@ export function RenderedContent({
     );
   }
   // A Drive file is shown by Drive itself, in the reader's own session.
-  if (driveFileId) return <DrivePreview fileId={driveFileId} title={item.title} />;
+  if (driveFileId) return <DrivePreview item={item} canEdit={canEdit} />;
   if (shape.kind === "unsupported") {
     // Office and OpenDocument files cannot be rendered, but their text can be
     // read, and that text is what analysis sees.
