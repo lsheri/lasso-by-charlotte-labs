@@ -384,3 +384,31 @@ describe("pass 101.1: the thread retires", () => {
     vi.useRealTimers();
   });
 });
+
+describe("pass 101.2: the rendition query stops churning", () => {
+  it("keeps the signed url fresh for ten minutes and ignores window focus", async () => {
+    const { renditionQueryOptions, RENDITION_STALE_MS } = await import("@/lib/rendition-query");
+    expect(RENDITION_STALE_MS).toBe(10 * 60 * 1000);
+    expect(renditionQueryOptions.staleTime).toBeGreaterThan(0);
+    expect(renditionQueryOptions.refetchOnWindowFocus).toBe(false);
+  });
+
+  it("cancels a superseded render and swallows the cancellation", async () => {
+    const { makeRenderGuard } = await import("@/lib/rendition-query");
+    const cancel = vi.fn();
+    const guard = makeRenderGuard();
+    guard.set({ cancel });
+    guard.cancel();
+    expect(cancel).toHaveBeenCalledTimes(1);
+    guard.cancel();
+    expect(cancel).toHaveBeenCalledTimes(1);
+
+    const throwing = makeRenderGuard();
+    throwing.set({
+      cancel: () => {
+        throw new Error("RenderingCancelledException");
+      },
+    });
+    expect(() => throwing.cancel()).not.toThrow();
+  });
+});

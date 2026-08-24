@@ -4,6 +4,7 @@ import { LassoLayer } from "@/components/provenance/LassoLayer";
 import { StitchChip } from "@/components/provenance/StitchChip";
 import { Button } from "@/components/ui/button";
 import { normalizeBBox, pageLabel, type BBox, type TextRun } from "@/lib/lasso-geometry";
+import { makeRenderGuard } from "@/lib/rendition-query";
 import type { AuditStitch } from "@/lib/span-provenance.functions";
 import {
   countOccurrences,
@@ -114,6 +115,7 @@ function useReduceMotion(): boolean {
  */
 export function SlidesPane({
   url,
+  anchorId,
   unit,
   stitches,
   armed,
@@ -121,8 +123,10 @@ export function SlidesPane({
   canAsk,
   onAsk,
   onGoToSource,
+  onReload,
 }: {
   url: string;
+  anchorId?: string;
   unit: "slide" | "page";
   stitches: AuditStitch[];
   armed: boolean;
@@ -130,23 +134,36 @@ export function SlidesPane({
   canAsk: boolean;
   onAsk: (locator: SpanLocator, question: string) => void;
   onGoToSource: (stitch: AuditStitch, origin: DOMRect | null) => void;
+  onReload?: () => void;
 }) {
   const [doc, setDoc] = useState<unknown>(null);
   const [pages, setPages] = useState(0);
   const [truncated, setTruncated] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
   const [pageTexts, setPageTexts] = useState<Map<number, PageText>>(new Map());
   const [hovered, setHovered] = useState<string | null>(null);
   const reduceMotion = useReduceMotion();
 
+  // The signed url is re-minted on every fetch, so it is read at load time
+  // rather than depended on: a new signature for the same bytes must not tear
+  // down a document that is already rendered.
+  const urlRef = useRef(url);
+  urlRef.current = url;
+  const docRef = useRef<unknown>(null);
+  docRef.current = doc;
+
+  const loadKey = anchorId ?? url;
+
   useEffect(() => {
+    if (docRef.current) return;
     let cancelled = false;
     void (async () => {
       try {
         const pdfjs = await import("pdfjs-dist");
         const workerUrl = (await import("pdfjs-dist/build/pdf.worker.min.mjs?url")).default;
         pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
-        const loaded = await pdfjs.getDocument({ url }).promise;
+        const loaded = await pdfjs.getDocument({ url: urlRef.current }).promise;
         if (cancelled) return;
         setDoc(loaded);
         setPages(Math.min(loaded.numPages, MAX_PAGES));
@@ -158,7 +175,7 @@ export function SlidesPane({
     return () => {
       cancelled = true;
     };
-  }, [url]);
+  }, [loadKey, attempt]);
 
   const reportPage = useCallback((pageNumber: number, text: PageText) => {
     setPageTexts((prev) => {
@@ -168,12 +185,27 @@ export function SlidesPane({
     });
   }, []);
 
+  const reload = useCallback(() => {
+    setError(null);
+    setDoc(null);
+    docRef.current = null;
+    setPageTexts(new Map());
+    setPages(0);
+    onReload?.();
+    setAttempt((prev) => prev + 1);
+  }, [onReload]);
+
   const placed = useMemo(() => anchorStitches(pageTexts, stitches), [pageTexts, stitches]);
   const allRendered = pageTexts.size >= pages && pages > 0;
 
   if (error)
     return (
-      <p className="text-sm text-muted-foreground">Couldn&apos;t render these pages: {error}</p>
+      <div className="space-y-2">
+        <p className="text-sm text-muted-foreground">Couldn&apos;t render these pages: {error}</p>
+        <Button type="button" size="sm" variant="outline" onClick={reload}>
+          Reload pages
+        </Button>
+      </div>
     );
   if (!doc) return <p className="text-sm text-muted-foreground">Loading pages…</p>;
 
@@ -193,6 +225,7 @@ export function SlidesPane({
           hovered={hovered}
           onHover={setHovered}
           onPageText={reportPage}
+          onError={setError}
           onAsk={onAsk}
           onGoToSource={onGoToSource}
         />
@@ -237,6 +270,7 @@ function PdfPage({
   hovered,
   onHover,
   onPageText,
+  onError,
   onAsk,
   onGoToSource,
 }: {
@@ -251,6 +285,7 @@ function PdfPage({
   hovered: string | null;
   onHover: (id: string | null) => void;
   onPageText: (pageNumber: number, text: PageText) => void;
+  onError: (message: string) => void;
   onAsk: (locator: SpanLocator, question: string) => void;
   onGoToSource: (stitch: AuditStitch, origin: DOMRect | null) => void;
 }) {
@@ -285,57 +320,81 @@ function PdfPage({
   useEffect(() => {
     if (!visible) return;
     let cancelled = false;
+    const guard = makeRenderGuard();
     void (async () => {
-      const pdfjs = await import("pdfjs-dist");
-      const pdfPage = await (doc as { getPage: (n: number) => Promise<never> }).getPage(pageNumber);
-      const api = pdfPage as unknown as {
-        getViewport: (o: { scale: number }) => {
-          width: number;
-          height: number;
-          transform: number[];
+      try {
+        const pdfjs = await import("pdfjs-dist");
+        const pdfPage = await (doc as { getPage: (n: number) => Promise<never> }).getPage(
+          pageNumber,
+        );
+        const api = pdfPage as unknown as {
+          getViewport: (o: { scale: number }) => {
+            width: number;
+            height: number;
+            transform: number[];
+          };
+          render: (o: unknown) => { promise: Promise<void>; cancel: () => void };
+          getTextContent: () => Promise<{ items: unknown[] }>;
         };
-        render: (o: unknown) => { promise: Promise<void> };
-        getTextContent: () => Promise<{ items: unknown[] }>;
-      };
-      const base = api.getViewport({ scale: 1 });
-      const width = holderRef.current?.clientWidth || 720;
-      const scale = Math.min(2, width / base.width);
-      const viewport = api.getViewport({ scale });
-      if (cancelled) return;
-      setSize({ width: Math.floor(viewport.width), height: Math.floor(viewport.height) });
+        const base = api.getViewport({ scale: 1 });
+        const width = holderRef.current?.clientWidth || 720;
+        const scale = Math.min(2, width / base.width);
+        const viewport = api.getViewport({ scale });
+        if (cancelled) return;
+        setSize({ width: Math.floor(viewport.width), height: Math.floor(viewport.height) });
 
-      const canvas = canvasRef.current;
-      if (canvas) {
-        canvas.width = Math.floor(viewport.width);
-        canvas.height = Math.floor(viewport.height);
-        const ctx = canvas.getContext("2d");
-        if (ctx) await api.render({ canvasContext: ctx, viewport }).promise;
-      }
+        const canvas = canvasRef.current;
+        if (canvas) {
+          canvas.width = Math.floor(viewport.width);
+          canvas.height = Math.floor(viewport.height);
+          const ctx = canvas.getContext("2d");
+          if (ctx) {
+            const task = api.render({ canvasContext: ctx, viewport });
+            guard.set(task);
+            try {
+              await task.promise;
+            } catch (e) {
+              if ((e as { name?: string }).name === "RenderingCancelledException") return;
+              throw e;
+            } finally {
+              guard.set(null);
+            }
+          }
+        }
 
-      const content = await api.getTextContent();
-      if (cancelled) return;
-      const runs: TextRun[] = [];
-      for (const raw of content.items) {
-        const item = raw as { str?: string; transform?: number[]; width?: number; height?: number };
-        if (!item.str || !item.transform) continue;
-        const t = pdfjs.Util.transform(viewport.transform, item.transform) as number[];
-        const h = (item.height ?? 10) * scale;
-        runs.push({
-          text: item.str,
-          x: t[4] as number,
-          y: (t[5] as number) - h,
-          w: (item.width ?? 0) * scale,
-          h,
-        });
+        const content = await api.getTextContent();
+        if (cancelled) return;
+        const runs: TextRun[] = [];
+        for (const raw of content.items) {
+          const item = raw as {
+            str?: string;
+            transform?: number[];
+            width?: number;
+            height?: number;
+          };
+          if (!item.str || !item.transform) continue;
+          const t = pdfjs.Util.transform(viewport.transform, item.transform) as number[];
+          const h = (item.height ?? 10) * scale;
+          runs.push({
+            text: item.str,
+            x: t[4] as number,
+            y: (t[5] as number) - h,
+            w: (item.width ?? 0) * scale,
+            h,
+          });
+        }
+        const joined = joinRuns(runs);
+        setPage(joined);
+        onPageText(pageNumber, joined);
+      } catch (e) {
+        if (!cancelled) onError((e as Error).message);
       }
-      const joined = joinRuns(runs);
-      setPage(joined);
-      onPageText(pageNumber, joined);
     })();
     return () => {
       cancelled = true;
+      guard.cancel();
     };
-  }, [visible, doc, pageNumber, onPageText]);
+  }, [visible, doc, pageNumber, onPageText, onError]);
 
   const highlights = useMemo(
     () =>

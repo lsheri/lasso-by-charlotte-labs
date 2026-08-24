@@ -10,6 +10,7 @@ import { ThreadLine } from "@/components/provenance/ThreadLine";
 import { UpstreamPane } from "@/components/provenance/UpstreamPane";
 import { closeProvenanceAudit, useProvenanceAudit } from "@/components/provenance/audit-state";
 import { pageUnitFor } from "@/lib/lasso-geometry";
+import { renditionQueryOptions } from "@/lib/rendition-query";
 import { getRenditionUrl } from "@/lib/rendition.functions";
 import { askSpanProvenance, getSpanAudit } from "@/lib/span-provenance.functions";
 import type { AuditStitch } from "@/lib/span-provenance.functions";
@@ -58,9 +59,10 @@ function AuditSurface({ anchorId, title }: { anchorId: string; title: string }) 
     queryFn: () => load({ data: { work_item_id: anchorId } }),
   });
 
-  const { data: visual } = useQuery({
+  const { data: visual, refetch: refetchRendition } = useQuery({
     queryKey: ["span-audit-rendition", anchorId],
     queryFn: () => rendition({ data: { work_item_id: anchorId } }),
+    ...renditionQueryOptions,
   });
 
   const hasVisual = visual?.kind === "pdf";
@@ -179,6 +181,8 @@ function AuditSurface({ anchorId, title }: { anchorId: string; title: string }) 
             {showSlides && visual?.kind === "pdf" ? (
               <SlidesPane
                 url={visual.url}
+                anchorId={anchorId}
+                onReload={() => void refetchRendition()}
                 unit={unit}
                 stitches={data.stitches}
                 armed={armed}
