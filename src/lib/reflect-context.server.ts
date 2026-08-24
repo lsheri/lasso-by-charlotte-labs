@@ -48,7 +48,9 @@ export type ItemRow = ClassifiableItem & {
   created_at_source: string | null;
   content_fidelity: string | null;
   source_vendor: string | null;
+  ts_precision?: string | null;
 };
+
 
 export type TaskRow = {
   id: string;
