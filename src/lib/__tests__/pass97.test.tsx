@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { render, screen, fireEvent, cleanup } from "@testing-library/react";
+import { render, screen, fireEvent, cleanup, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
@@ -9,11 +9,46 @@ import { WORK_VIEW_KEY, readWorkView, writeWorkView } from "@/lib/work-view";
 import { connectStreamKey, defaultStream, rememberStream } from "@/lib/connect-to-work";
 import { ChatUrlLink } from "@/components/work/ChatUrlLink";
 import { WorkPile } from "@/components/work/WorkPile";
+import { ConnectToWorkSheet } from "@/components/engagements/ConnectToWorkSheet";
 import type { WorkItemRow } from "@/lib/work-types";
+
+let mockWorkItems: WorkItemRow[] = [];
+const remapItems = vi.fn(async () => ({ error: null }));
+
+vi.mock("@/hooks/use-work-items", () => ({
+  useWorkItems: () => ({ data: { items: mockWorkItems }, isLoading: false, error: null }),
+}));
+
+vi.mock("@/lib/workflow-order", () => ({
+  remapItems: (...args: unknown[]) => remapItems(...args),
+}));
+
+vi.mock("@tanstack/react-start", async () => {
+  const actual = await vi.importActual<typeof import("@tanstack/react-start")>("@tanstack/react-start");
+  return {
+    ...actual,
+    useServerFn: (fn: unknown) => fn,
+  };
+});
+
+vi.mock("@/components/connectors/ConnectorBrowseActions", () => ({
+  ConnectorBrowseActions: () => <div data-testid="browse-actions" />,
+}));
+vi.mock("@/components/work/PasteThreadDialog", () => ({
+  PasteThreadDialog: () => <div data-testid="paste-dialog" />,
+}));
+vi.mock("@/components/work/UploadFilesButton", () => ({
+  UploadFilesButton: () => <div data-testid="upload-button" />,
+}));
+vi.mock("@/components/work/TranscriptsAction", () => ({
+  TranscriptsAction: () => <div data-testid="transcripts-action" />,
+}));
 
 afterEach(() => {
   cleanup();
   window.localStorage.clear();
+  mockWorkItems = [];
+  remapItems.mockClear();
 });
 
 function item(overrides: Partial<WorkItemRow> = {}): WorkItemRow {
