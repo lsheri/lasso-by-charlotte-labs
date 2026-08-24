@@ -559,10 +559,16 @@ export async function assembleReflectContext(
     `[reflect-context] text pass: ${fullText.size} full, ${unreadable.size} unreadable, ${Date.now() - textStarted}ms`,
   );
 
-  // 7. Serialize oldest to newest so the record reads as a story.
-  const oldestFirst = [...items].sort(
-    (a, b) => new Date(effectiveDate(a)).getTime() - new Date(effectiveDate(b)).getTime(),
-  );
+  // 7. Serialize oldest to newest so the record reads as a story. Engagement
+  // scope orders on the day the work carries (work_date, else capture) so a
+  // reconstruction of sequence reads the same order a person would.
+  const isEngagementScope = scope.mode === "engagements";
+  const sortKey = (item: ItemRow) =>
+    new Date(
+      isEngagementScope ? (item.work_date ?? item.captured_at) : effectiveDate(item),
+    ).getTime();
+  const oldestFirst = [...items].sort((a, b) => sortKey(a) - sortKey(b));
+
 
   // The brief sits above the engagement structure and above every item: long
   // framing material belongs at the top, and a stable prefix caches well.
