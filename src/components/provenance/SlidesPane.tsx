@@ -4,6 +4,8 @@ import { LassoLayer } from "@/components/provenance/LassoLayer";
 import { StitchChip } from "@/components/provenance/StitchChip";
 import { Button } from "@/components/ui/button";
 import {
+  denormalizeBBox,
+  isUsableBBox,
   normalizeBBox,
   pageLabel,
   sortReadingOrder,
@@ -50,6 +52,34 @@ export function runsForOffsets(page: PageText, start: number, end: number): Text
   });
 }
 
+/**
+ * The rectangles to paint on one page: the ink's own rectangle when the stitch
+ * carries one, otherwise the runs its wording covers.
+ */
+export function highlightRects(
+  anchors: StitchAnchor[],
+  page: PageText,
+  width: number,
+  height: number,
+): { id: string; status: AuditStitch["status"]; run: BBox }[] {
+  return anchors.flatMap((anchor) => {
+    if (anchor.bbox) {
+      return [
+        {
+          id: anchor.stitch.id,
+          status: anchor.stitch.status,
+          run: denormalizeBBox(anchor.bbox, width, height),
+        },
+      ];
+    }
+    return runsForOffsets(page, anchor.start, anchor.end).map((run) => ({
+      id: anchor.stitch.id,
+      status: anchor.stitch.status,
+      run: { x: run.x, y: run.y, w: run.w, h: run.h } as BBox,
+    }));
+  });
+}
+
 
 /** The rects to highlight for a snippet already asked about on this page. */
 export function runsForSnippet(page: PageText, snippet: string, occurrence: number): TextRun[] {
@@ -68,13 +98,22 @@ export function occurrenceAtOffset(page: PageText, snippet: string, startOffset:
   return countOccurrences(before, snippet) + 1;
 }
 
-export type StitchAnchor = { stitch: AuditStitch; page: number; start: number; end: number };
+export type StitchAnchor = {
+  stitch: AuditStitch;
+  page: number;
+  start: number;
+  end: number;
+  /** Set when the ink's own rectangle is the truth, in 0..1 page coordinates. */
+  bbox?: BBox;
+};
 
 /**
- * Where each stitch actually lands on the rendered pages. A locator that names
- * a page is tried first; anything asked in text view is re-anchored by its
- * wording alone, first page that contains it. A stitch that anchors nowhere is
- * an orphan and is shown as such rather than drawn in a guessed place.
+ * Where each stitch actually lands on the rendered pages. A stitch that carries
+ * the rectangle the ink wrapped is placed there: renditions are immutable, so
+ * that position stays true even when the wording crosses columns and is never
+ * contiguous in reading order. Otherwise the wording is searched for, page
+ * named first, then any page. A stitch that anchors neither way is an orphan
+ * and is shown as such rather than drawn in a guessed place.
  */
 export function anchorStitches(
   pages: Map<number, PageText>,
@@ -85,17 +124,25 @@ export function anchorStitches(
   const orphans: AuditStitch[] = [];
 
   stitches.forEach((stitch) => {
+    const named = stitch.locator?.index;
+    const namedPage = named === undefined ? undefined : pages.get(named);
+    const onPageUnit = stitch.locator?.unit === "page" || stitch.locator?.unit === "slide";
+    const bbox = stitch.locator?.bbox;
+
+    if (onPageUnit && namedPage && isUsableBBox(bbox)) {
+      anchors.push({ stitch, page: named as number, start: 0, end: 0, bbox });
+      return;
+    }
+
     const snippet = stitch.locator?.snippet ?? "";
     if (!snippet) {
       orphans.push(stitch);
       return;
     }
-    const named = stitch.locator.index;
-    const namedPage = pages.get(named);
-    if (namedPage && (stitch.locator.unit === "page" || stitch.locator.unit === "slide")) {
+    if (namedPage && onPageUnit) {
       const hit = findSnippetOffset(namedPage.text, snippet, stitch.locator.occurrence ?? 1);
       if (hit) {
-        anchors.push({ stitch, page: named, start: hit.start, end: hit.end });
+        anchors.push({ stitch, page: named as number, start: hit.start, end: hit.end });
         return;
       }
     }
@@ -112,6 +159,7 @@ export function anchorStitches(
 
   return { anchors, orphans };
 }
+
 
 /** One page's text runs in page pixels at the given scale. */
 export async function readPageRuns(
@@ -455,16 +503,10 @@ function PdfPage({
   }, [visible, doc, pageNumber, onPageText, onError]);
 
   const highlights = useMemo(
-    () =>
-      anchors.flatMap((anchor) =>
-        runsForOffsets(page, anchor.start, anchor.end).map((run) => ({
-          id: anchor.stitch.id,
-          status: anchor.stitch.status,
-          run,
-        })),
-      ),
-    [anchors, page],
+    () => highlightRects(anchors, page, size.width || 1, size.height || 1),
+    [anchors, page, size.width, size.height],
   );
+
 
   return (
     <section ref={holderRef} data-page={pageNumber} className="space-y-1.5">
