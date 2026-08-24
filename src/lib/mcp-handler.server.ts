@@ -113,6 +113,12 @@ async function logPush(owner: Owner, dims: Record<string, string>): Promise<void
   }
 }
 
+const CHAT_URL_FIELD = {
+  type: "string",
+  description:
+    "Optional. The https URL of this conversation in the source app, if you can see it. Stored only for claude.ai, chatgpt.com, chat.openai.com and gemini.google.com; anything else is ignored.",
+};
+
 const TOOLS = [
   {
     name: "push_conversation",
@@ -150,6 +156,7 @@ const TOOLS = [
           description:
             "The conversation's URL in the source app, if you can see it. This is the most stable way to recognise the same conversation later.",
         },
+        chat_url: CHAT_URL_FIELD,
         messages: {
           type: "array",
           maxItems: MAX_TURNS,
@@ -232,6 +239,7 @@ const TOOLS = [
             "The conversation/document title EXACTLY as it appears in the source app, verbatim.",
         },
         source_ai: { type: "string", enum: ["claude", "chatgpt", "gemini", "other"] },
+        chat_url: CHAT_URL_FIELD,
         turns: {
           type: "array",
           maxItems: MAX_TURNS,
@@ -388,6 +396,7 @@ async function pushThread(owner: Owner, args: Obj, id: unknown): Promise<Respons
       content_fidelity: "transcribed",
       ts_precision: "capture",
       content_hash: await sha256Hex(serialized),
+      ...(safeChatUrl(args["chat_url"]) ? { source_meta: { url: safeChatUrl(args["chat_url"])! } } : {}),
       meta: { assistant_transcribed: true },
     })
     .select("id")
@@ -664,9 +673,11 @@ async function pushConversation(owner: Owner, args: Obj, id: unknown): Promise<R
     research_mode?: unknown;
     notes?: unknown;
   };
+  const chatUrl = safeChatUrl(args["chat_url"]);
   const sharedMeta: SourceMeta = {
     vendor,
     model,
+    ...(chatUrl ? { url: chatUrl } : {}),
     ...(Array.isArray(metaIn.skills_used)
       ? { skills_used: metaIn.skills_used.filter((s): s is string => typeof s === "string") }
       : {}),
