@@ -1614,10 +1614,3 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   stroke-dasharray: 1200;
   animation: nb-thread-in 300ms ease-out forwards;
 }
-@media (prefers-reduced-motion: reduce) {
-  .nb-lasso-wrap,
-  .nb-lasso-resolving,
-  .nb-thread-draw {
-    animation: none;
-  }
-}
