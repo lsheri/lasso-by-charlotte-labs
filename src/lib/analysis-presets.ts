@@ -94,8 +94,10 @@ export const ANALYSIS_PRESET_IDS = [
   "still_on_brief",
   "what_fed_this",
   "what_recurs",
+  "how_this_was_made",
   "firm_checks",
 ] as const;
+
 export type AnalysisPresetId = (typeof ANALYSIS_PRESET_IDS)[number];
 
 const FLUENCY_PROMPT = `You are running the AI Fluency lens over ONE of this person's own AI conversations. Structure your response on the four Ds:
