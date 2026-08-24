@@ -330,7 +330,7 @@ function PdfPage({
         <StitchChip
           key={stitch.id}
           stitch={stitch}
-          onGoToSource={(selected) =>
+          onGoToSource={(selected: AuditStitch) =>
             onGoToSource(selected, wrapRef.current?.getBoundingClientRect() ?? null)
           }
         />
