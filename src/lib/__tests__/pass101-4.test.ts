@@ -13,13 +13,13 @@ function page(text: string[]): PageText {
   return joinRuns(text.map((t, i) => ({ text: t, x: 10, y: 20 * i, w: 100, h: 12 })));
 }
 
-function stitch(id: string, locator: AuditStitch["locator"]): AuditStitch {
+function stitch(id: string, locator: Omit<AuditStitch["locator"], "occurrence"> & { occurrence?: number }): AuditStitch {
   return {
     id,
     status: "exact",
     question: "Where did this come from?",
     answer: "",
-    locator,
+    locator: { occurrence: 1, ...locator },
     sources: [],
   } as unknown as AuditStitch;
 }
