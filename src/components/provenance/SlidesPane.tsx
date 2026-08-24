@@ -52,6 +52,34 @@ export function runsForOffsets(page: PageText, start: number, end: number): Text
   });
 }
 
+/**
+ * The rectangles to paint on one page: the ink's own rectangle when the stitch
+ * carries one, otherwise the runs its wording covers.
+ */
+export function highlightRects(
+  anchors: StitchAnchor[],
+  page: PageText,
+  width: number,
+  height: number,
+): { id: string; status: AuditStitch["status"]; run: BBox }[] {
+  return anchors.flatMap((anchor) => {
+    if (anchor.bbox) {
+      return [
+        {
+          id: anchor.stitch.id,
+          status: anchor.stitch.status,
+          run: denormalizeBBox(anchor.bbox, width, height),
+        },
+      ];
+    }
+    return runsForOffsets(page, anchor.start, anchor.end).map((run) => ({
+      id: anchor.stitch.id,
+      status: anchor.stitch.status,
+      run: { x: run.x, y: run.y, w: run.w, h: run.h } as BBox,
+    }));
+  });
+}
+
 
 /** The rects to highlight for a snippet already asked about on this page. */
 export function runsForSnippet(page: PageText, snippet: string, occurrence: number): TextRun[] {
