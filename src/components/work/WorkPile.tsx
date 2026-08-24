@@ -1,4 +1,6 @@
-import { useRef, useState } from "react";
+import { useEffect, useState } from "react";
+
+import { readWorkView, writeWorkView, type WorkView } from "@/lib/work-view";
 
 import { BUCKETS, bucketFor, type BucketKey } from "@/components/work/work-buckets";
 import { SCATTER_CAP, scatterFor } from "@/components/work/pile-scatter";
