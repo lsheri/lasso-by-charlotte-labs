@@ -90,7 +90,7 @@ export const reextractItemText = createServerFn({ method: "POST" })
 
     const { logHealth } = await import("@/lib/health.server");
     await logHealth({
-      kind: result.status === "ok" ? "info" : "error",
+      kind: result.status === "ok" ? "anomaly" : "error",
       surface: "item_text",
       detail: `reextract_${result.status}`,
       meta: {
