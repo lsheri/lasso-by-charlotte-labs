@@ -88,8 +88,7 @@ export async function runAnalysis(
   const profile = await resolveProfile(supabase, userId, data.profile_id);
   if (!profile) throw new Response("Forbidden", { status: 403 });
 
-  const { analysisPreset, MIN_ITEMS_FOR_RECURRENCE, NOT_ENOUGH_WORK_LINE } =
-    await import("./analysis-presets");
+  const { analysisPreset, minItemsFor, notEnoughWorkLine } = await import("./analysis-presets");
   const preset = analysisPreset(data.preset_id);
   if (!preset) throw new Error("Unknown analysis.");
 
@@ -103,9 +102,12 @@ export async function runAnalysis(
   });
   const isOwner = target.ownerId === profile.id;
   if (!isOwner && !preset.coachMayRun) throw new Response("Forbidden", { status: 403 });
-  if (preset.id === "what_recurs" && target.itemsInScope < MIN_ITEMS_FOR_RECURRENCE) {
-    throw new Error(NOT_ENOUGH_WORK_LINE);
+  // Each engagement scoped preset carries its own minimum: three for a
+  // recurrence, two for a sequence.
+  if (preset.scope === "engagement" && target.itemsInScope < minItemsFor(preset)) {
+    throw new Error(notEnoughWorkLine(preset));
   }
+
   // Nothing readable means nothing to analyse. This refusal comes before any
   // run row is created, so an empty scope never leaves a record behind. It
   // is what a coach meets when a share is taken back mid session.
