@@ -204,8 +204,9 @@ describe("pass 97 — connect to work", () => {
     rerender(sheetElement);
 
     await waitFor(() => expect(remapItems).toHaveBeenCalledTimes(1));
-    const call = remapItems.mock.calls[0][0];
-    expect(call.targets.map((t: { id: string }) => t.id)).toEqual(["upload-item"]);
-    expect(call.targets.some((t: { source: string }) => t.source.startsWith("mcp:"))).toBe(false);
+    const call = remapItems.mock.calls[0]?.[0];
+    expect(call).toBeDefined();
+    expect(call!.targets.map((t: { id: string }) => t.id)).toEqual(["upload-item"]);
+    expect(call!.targets.some((t: { source: string }) => t.source.startsWith("mcp:"))).toBe(false);
   });
 });
