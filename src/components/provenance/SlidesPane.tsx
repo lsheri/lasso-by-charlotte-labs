@@ -198,6 +198,40 @@ export function SlidesPane({
     });
   }, []);
 
+  // Text is read for every page as soon as the document opens, even the pages
+  // no one has scrolled to. Painting stays lazy; anchoring does not depend on
+  // it, so a stitch that belongs on page forty is either drawn there or shown
+  // honestly as an orphan instead of quietly disappearing.
+  useEffect(() => {
+    if (!doc || pages === 0) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const pdfjs = await import("pdfjs-dist");
+        for (let pageNumber = 1; pageNumber <= pages; pageNumber += 1) {
+          if (cancelled) return;
+          const pdfPage = await (doc as { getPage: (n: number) => Promise<unknown> }).getPage(
+            pageNumber,
+          );
+          const runs = await readPageRuns(pdfjs, pdfPage, 1);
+          if (cancelled) return;
+          setPageTexts((prev) => {
+            if (prev.has(pageNumber)) return prev;
+            const next = new Map(prev);
+            next.set(pageNumber, joinRuns(runs));
+            return next;
+          });
+        }
+      } catch {
+        // A text pass that fails leaves painting and the rail as they were.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [doc, pages]);
+
+
   const reload = useCallback(() => {
     setError(null);
     setDoc(null);
