@@ -12,6 +12,7 @@ import { WhatFedThis } from "@/components/peek/WhatFedThis";
 import { DraftDecisionsButton } from "@/components/decisions/DraftDecisionsButton";
 import { MarkBriefDialog } from "@/components/work/MarkBriefDialog";
 import { DeliverableKindSelect } from "@/components/work/DeliverableKindSelect";
+import { ChatUrlLink } from "@/components/work/ChatUrlLink";
 import { ArtifactNote, SourceMark } from "@/components/work/SourceMark";
 import { TypeChip, TypeIcon } from "@/components/work/TypeIcon";
 import { setDeliverableKind, useInvalidateWorkItems } from "@/hooks/use-deliverable-kind";
@@ -172,6 +173,9 @@ export function PeekPanel({
         ) : null}
         <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
           {sourceLabel(active.source)} · {formatDate(effectiveWorkDate(active))}
+        </p>
+        <p className="mt-1">
+          <ChatUrlLink item={active} />
         </p>
 
         {canEdit && isDeliverableType(active.type) ? (

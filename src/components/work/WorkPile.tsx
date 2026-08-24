@@ -1,4 +1,6 @@
-import { useRef, useState } from "react";
+import { useEffect, useState } from "react";
+
+import { readWorkView, writeWorkView, type WorkView } from "@/lib/work-view";
 
 import { BUCKETS, bucketFor, type BucketKey } from "@/components/work/work-buckets";
 import { SCATTER_CAP, scatterFor } from "@/components/work/pile-scatter";
@@ -73,10 +75,18 @@ export function WorkPile({
   forceMatrix?: boolean;
 }) {
 
-  const [view, setView] = useState<"pile" | "matrix">("pile");
+  // Pile is what a first visit lands on; after that the person's own last
+  // choice is restored. Reading in an effect keeps SSR and hydration identical.
+  const [view, setView] = useState<WorkView>("pile");
+  const [showAll, setShowAll] = useState(false);
+  useEffect(() => {
+    setView(readWorkView());
+  }, []);
+  function chooseView(next: WorkView) {
+    setView(next);
+    writeWorkView(next);
+  }
   const shown = forceMatrix ? "matrix" : view;
-  const startY = useRef<number | null>(null);
-  const startX = useRef<number | null>(null);
 
   const grouped = BUCKETS.map((bucket) => ({
     bucket,
@@ -86,7 +96,7 @@ export function WorkPile({
   const counts = new Map<BucketKey, number>();
   for (const group of grouped) counts.set(group.bucket.key, group.entries.length);
 
-  const papers = entries.slice(0, SCATTER_CAP);
+  const papers = showAll ? entries : entries.slice(0, SCATTER_CAP);
   const overflow = entries.length - papers.length;
 
   return (
@@ -96,7 +106,7 @@ export function WorkPile({
           <button
             type="button"
             aria-pressed={shown === "pile"}
-            onClick={() => setView("pile")}
+            onClick={() => chooseView("pile")}
             className="nb-seg-item"
           >
             Pile
@@ -104,7 +114,7 @@ export function WorkPile({
           <button
             type="button"
             aria-pressed={shown === "matrix"}
-            onClick={() => setView("matrix")}
+            onClick={() => chooseView("matrix")}
             className="nb-seg-item"
           >
             Matrix
@@ -123,7 +133,7 @@ export function WorkPile({
             role="group"
             aria-label={`Unmapped work, ${entries.length} item${
               entries.length === 1 ? "" : "s"
-            }. Hover to organise, or open as matrix.`}
+            }. Click a paper to open it.`}
           >
             {papers.length === 0 ? (
               <p className="text-sm text-muted-foreground">Nothing waiting.</p>
@@ -137,7 +147,13 @@ export function WorkPile({
               ))
             )}
             {overflow > 0 ? (
-              <button type="button" onClick={() => setView("matrix")} className="nb-paper nb-paper-more">
+              // Nothing inside the pile switches the view; the rest of the
+              // papers simply join the field where they already belong.
+              <button
+                type="button"
+                onClick={() => setShowAll(true)}
+                className="nb-paper nb-paper-more"
+              >
                 <span className="nb-paper-title">+ {overflow} more</span>
               </button>
             ) : null}

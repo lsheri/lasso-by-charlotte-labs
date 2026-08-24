@@ -71,12 +71,15 @@ export function EngagementCanvas({
   profile,
   onChanged,
   onOpen,
+  headerAction,
 }: {
   engagementId: string;
   tasks: CanvasTask[];
   profile: { id: string; org_id: string; role: string } | null | undefined;
   onChanged: () => Promise<void> | void;
   onOpen: (item: WorkItemRow) => void;
+  /** Sits beside the Workstreams heading; the page decides who may see it. */
+  headerAction?: React.ReactNode;
 }) {
   const queryClient = useQueryClient();
   const syncEpisode = useServerFn(syncEpisodeForMapping);
@@ -446,7 +449,10 @@ export function EngagementCanvas({
 
   return (
     <section>
-      <h2 className="micro-label micro-label-section">Workstreams</h2>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="micro-label micro-label-section">Workstreams</h2>
+        {headerAction}
+      </div>
 
       <div className="nb-canvas mt-3">
         <div
