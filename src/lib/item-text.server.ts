@@ -385,7 +385,8 @@ async function extractOpenDocument(
   return { text, status: "ok" };
 }
 
-async function decode(
+/** Exported for tests: the pure bytes-to-text step, no database involved. */
+export async function decode(
   shape: Exclude<BinaryShape, null>,
   bytes: Uint8Array,
 ): Promise<ItemTextResult> {
