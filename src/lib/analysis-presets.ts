@@ -466,7 +466,32 @@ const RAW_ANALYSIS_PRESETS: AnalysisPreset[] = [
     },
     attribution: null,
     coachMayRun: false,
+    minItems: MIN_ITEMS_FOR_RECURRENCE,
   },
+  {
+    id: "how_this_was_made",
+    dbPreset: "how_this_was_made",
+    label: "How this was made",
+    description: "The sequence this work actually followed, from first input to delivery.",
+    scope: "engagement",
+    systemPrompt: HOW_THIS_WAS_MADE_PROMPT,
+    openingMessage: "Reconstruct how this work was made, in the order the record shows.",
+    infoPanel: {
+      reads: (detail) => detail,
+      looksFor: [
+        "The phases the record shows, in order",
+        "The tools each phase used",
+        "Where AI entered the work, with cited turns",
+        "Verification moments in the record",
+      ],
+      never: `${NEVER_LINE} No duration, time share, or speed judgment is produced anywhere, by design.`,
+      sources: ANALYSIS_SOURCES,
+    },
+    attribution: null,
+    coachMayRun: true,
+    minItems: MIN_ITEMS_FOR_SEQUENCE,
+  },
+
   {
     id: "firm_checks",
     handoffSchema: "check_results",
