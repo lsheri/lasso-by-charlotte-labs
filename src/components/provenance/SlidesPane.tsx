@@ -3,7 +3,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LassoLayer } from "@/components/provenance/LassoLayer";
 import { StitchChip } from "@/components/provenance/StitchChip";
 import { Button } from "@/components/ui/button";
-import { normalizeBBox, pageLabel, type BBox, type TextRun } from "@/lib/lasso-geometry";
+import {
+  normalizeBBox,
+  pageLabel,
+  sortReadingOrder,
+  type BBox,
+  type TextRun,
+} from "@/lib/lasso-geometry";
 import { makeRenderGuard } from "@/lib/rendition-query";
 import type { AuditStitch } from "@/lib/span-provenance.functions";
 import {
@@ -18,8 +24,14 @@ const DEFAULT_QUESTION = "Where did this come from?";
 
 export type PageText = { runs: TextRun[]; text: string; offsets: number[] };
 
-/** Runs joined the way a reader reads them, with each run's start offset kept. */
-export function joinRuns(runs: TextRun[]): PageText {
+/**
+ * Runs joined the way a reader reads them, with each run's start offset kept.
+ * The runs are put into reading order first, the same order the lasso uses, so
+ * a circled snippet is findable in this text and every offset here indexes into
+ * the returned `runs` array.
+ */
+export function joinRuns(input: TextRun[]): PageText {
+  const runs = sortReadingOrder(input);
   const offsets: number[] = [];
   let text = "";
   runs.forEach((run) => {
@@ -37,6 +49,7 @@ export function runsForOffsets(page: PageText, start: number, end: number): Text
     return from + run.text.length > start && from < end;
   });
 }
+
 
 /** The rects to highlight for a snippet already asked about on this page. */
 export function runsForSnippet(page: PageText, snippet: string, occurrence: number): TextRun[] {
@@ -98,6 +111,35 @@ export function anchorStitches(
   });
 
   return { anchors, orphans };
+}
+
+/** One page's text runs in page pixels at the given scale. */
+export async function readPageRuns(
+  pdfjs: { Util: { transform: (a: number[], b: number[]) => number[] } },
+  pdfPage: unknown,
+  scale: number,
+): Promise<TextRun[]> {
+  const api = pdfPage as {
+    getViewport: (o: { scale: number }) => { transform: number[] };
+    getTextContent: () => Promise<{ items: unknown[] }>;
+  };
+  const viewport = api.getViewport({ scale });
+  const content = await api.getTextContent();
+  const runs: TextRun[] = [];
+  for (const raw of content.items) {
+    const item = raw as { str?: string; transform?: number[]; width?: number; height?: number };
+    if (!item.str || !item.transform) continue;
+    const t = pdfjs.Util.transform(viewport.transform, item.transform);
+    const h = (item.height ?? 10) * scale;
+    runs.push({
+      text: item.str,
+      x: t[4] as number,
+      y: (t[5] as number) - h,
+      w: (item.width ?? 0) * scale,
+      h,
+    });
+  }
+  return runs;
 }
 
 function useReduceMotion(): boolean {
@@ -184,6 +226,40 @@ export function SlidesPane({
       return next;
     });
   }, []);
+
+  // Text is read for every page as soon as the document opens, even the pages
+  // no one has scrolled to. Painting stays lazy; anchoring does not depend on
+  // it, so a stitch that belongs on page forty is either drawn there or shown
+  // honestly as an orphan instead of quietly disappearing.
+  useEffect(() => {
+    if (!doc || pages === 0) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const pdfjs = await import("pdfjs-dist");
+        for (let pageNumber = 1; pageNumber <= pages; pageNumber += 1) {
+          if (cancelled) return;
+          const pdfPage = await (doc as { getPage: (n: number) => Promise<unknown> }).getPage(
+            pageNumber,
+          );
+          const runs = await readPageRuns(pdfjs, pdfPage, 1);
+          if (cancelled) return;
+          setPageTexts((prev) => {
+            if (prev.has(pageNumber)) return prev;
+            const next = new Map(prev);
+            next.set(pageNumber, joinRuns(runs));
+            return next;
+          });
+        }
+      } catch {
+        // A text pass that fails leaves painting and the rail as they were.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [doc, pages]);
+
 
   const reload = useCallback(() => {
     setError(null);
@@ -362,30 +438,12 @@ function PdfPage({
           }
         }
 
-        const content = await api.getTextContent();
+        const runs = await readPageRuns(pdfjs, pdfPage, scale);
         if (cancelled) return;
-        const runs: TextRun[] = [];
-        for (const raw of content.items) {
-          const item = raw as {
-            str?: string;
-            transform?: number[];
-            width?: number;
-            height?: number;
-          };
-          if (!item.str || !item.transform) continue;
-          const t = pdfjs.Util.transform(viewport.transform, item.transform) as number[];
-          const h = (item.height ?? 10) * scale;
-          runs.push({
-            text: item.str,
-            x: t[4] as number,
-            y: (t[5] as number) - h,
-            w: (item.width ?? 0) * scale,
-            h,
-          });
-        }
         const joined = joinRuns(runs);
         setPage(joined);
         onPageText(pageNumber, joined);
+
       } catch (e) {
         if (!cancelled) onError((e as Error).message);
       }
