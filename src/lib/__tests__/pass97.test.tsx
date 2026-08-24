@@ -174,4 +174,38 @@ describe("pass 97 — connect to work", () => {
     expect(page).toContain("ConnectToWorkSheet");
     expect(page).toContain('profile.role !== "coach" && membership.data?.isMember');
   });
+
+  it("does not auto-map items that arrive via MCP while the sheet is open", async () => {
+    const onChanged = vi.fn();
+    const sheetElement = (
+      <QueryClientProvider
+        client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+      >
+        <ConnectToWorkSheet
+          engagementId="e1"
+          streams={[{ id: "s1", name: "Stream 1" }]}
+          profile={{ id: "p1", org_id: "o1" }}
+          onChanged={onChanged}
+        />
+      </QueryClientProvider>
+    );
+
+    const { rerender } = render(sheetElement);
+    // Open the sheet so the watcher initializes the seen set.
+    fireEvent.click(screen.getByText("Connect to work"));
+
+    // Simulate an MCP push and a regular upload arriving while the sheet is open.
+    // The MCP item was not brought in through the sheet, so mapping it would be
+    // non-consensual. The sheet must only map items from its own import actions.
+    mockWorkItems = [
+      item({ id: "mcp-item", source: "mcp:claude", visibility: "unmapped" }),
+      item({ id: "upload-item", source: "upload", visibility: "unmapped" }),
+    ];
+    rerender(sheetElement);
+
+    await waitFor(() => expect(remapItems).toHaveBeenCalledTimes(1));
+    const call = remapItems.mock.calls[0][0];
+    expect(call.targets.map((t: { id: string }) => t.id)).toEqual(["upload-item"]);
+    expect(call.targets.some((t: { source: string }) => t.source.startsWith("mcp:"))).toBe(false);
+  });
 });
