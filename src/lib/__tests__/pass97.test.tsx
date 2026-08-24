@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { render, screen, fireEvent, cleanup } from "@testing-library/react";
+import { render, screen, fireEvent, cleanup, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
@@ -9,11 +9,46 @@ import { WORK_VIEW_KEY, readWorkView, writeWorkView } from "@/lib/work-view";
 import { connectStreamKey, defaultStream, rememberStream } from "@/lib/connect-to-work";
 import { ChatUrlLink } from "@/components/work/ChatUrlLink";
 import { WorkPile } from "@/components/work/WorkPile";
+import { ConnectToWorkSheet } from "@/components/engagements/ConnectToWorkSheet";
+import { remapItems } from "@/lib/workflow-order";
 import type { WorkItemRow } from "@/lib/work-types";
+
+let mockWorkItems: WorkItemRow[] = [];
+
+vi.mock("@/hooks/use-work-items", () => ({
+  useWorkItems: () => ({ data: { items: mockWorkItems }, isLoading: false, error: null }),
+}));
+
+vi.mock("@/lib/workflow-order", () => ({
+  remapItems: vi.fn(async () => ({ error: null })),
+}));
+
+vi.mock("@tanstack/react-start", async () => {
+  const actual = await vi.importActual<typeof import("@tanstack/react-start")>("@tanstack/react-start");
+  return {
+    ...actual,
+    useServerFn: (fn: unknown) => fn,
+  };
+});
+
+vi.mock("@/components/connectors/ConnectorBrowseActions", () => ({
+  ConnectorBrowseActions: () => <div data-testid="browse-actions" />,
+}));
+vi.mock("@/components/work/PasteThreadDialog", () => ({
+  PasteThreadDialog: () => <div data-testid="paste-dialog" />,
+}));
+vi.mock("@/components/work/UploadFilesButton", () => ({
+  UploadFilesButton: () => <div data-testid="upload-button" />,
+}));
+vi.mock("@/components/work/TranscriptsAction", () => ({
+  TranscriptsAction: () => <div data-testid="transcripts-action" />,
+}));
 
 afterEach(() => {
   cleanup();
   window.localStorage.clear();
+  mockWorkItems = [];
+  vi.clearAllMocks();
 });
 
 function item(overrides: Partial<WorkItemRow> = {}): WorkItemRow {
@@ -129,5 +164,39 @@ describe("pass 97 — connect to work", () => {
     const page = readFileSync("src/pages/EngagementPage.tsx", "utf8");
     expect(page).toContain("ConnectToWorkSheet");
     expect(page).toContain('profile.role !== "coach" && membership.data?.isMember');
+  });
+
+  it("does not auto-map items that arrive via MCP while the sheet is open", async () => {
+    const onChanged = vi.fn();
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const renderSheet = () => (
+      <QueryClientProvider client={client}>
+        <ConnectToWorkSheet
+          engagementId="e1"
+          streams={[{ id: "s1", name: "Stream 1" }]}
+          profile={{ id: "p1", org_id: "o1" }}
+          onChanged={onChanged}
+        />
+      </QueryClientProvider>
+    );
+
+    const { rerender } = render(renderSheet());
+    // Open the sheet so the watcher initializes the seen set.
+    fireEvent.click(screen.getByText("Connect to work"));
+
+    // Simulate an MCP push and a regular upload arriving while the sheet is open.
+    // The MCP item was not brought in through the sheet, so mapping it would be
+    // non-consensual. The sheet must only map items from its own import actions.
+    mockWorkItems = [
+      item({ id: "mcp-item", source: "mcp:claude", visibility: "unmapped" }),
+      item({ id: "upload-item", source: "upload", visibility: "unmapped" }),
+    ];
+    rerender(renderSheet());
+
+    await waitFor(() => expect(vi.mocked(remapItems)).toHaveBeenCalledTimes(1));
+    const call = vi.mocked(remapItems).mock.calls[0]?.[0];
+    expect(call).toBeDefined();
+    expect(call!.targets.map((t: { id: string }) => t.id)).toEqual(["upload-item"]);
+    expect(call!.targets.some((t: { source: string }) => t.source.startsWith("mcp:"))).toBe(false);
   });
 });

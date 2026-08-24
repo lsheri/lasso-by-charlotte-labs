@@ -61,7 +61,13 @@ export function ConnectToWorkSheet({
     const known = seen.current;
     if (!open || !known || !streamId) return;
     const fresh = (data?.items ?? []).filter(
-      (item) => !known.has(item.id) && item.visibility !== "mapped",
+      (item) =>
+        !known.has(item.id) &&
+        item.visibility !== "mapped" &&
+        // The sheet only offers Drive/Gmail/paste/upload/transcript actions.
+        // An MCP push arriving while the sheet is open was not brought in here,
+        // so mapping it would be non-consensual. Ignore those entirely.
+        !item.source.startsWith("mcp:"),
     );
     if (fresh.length === 0) return;
     for (const item of fresh) known.add(item.id);
