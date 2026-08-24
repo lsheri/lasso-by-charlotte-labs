@@ -101,3 +101,16 @@ export function pageUnitFor(input: {
 export function pageLabel(unit: "slide" | "page", index: number): string {
   return unit === "slide" ? `Slide ${index}` : `Page ${index}`;
 }
+
+/** 0..1 page coordinates back to page pixels at the rendered size. */
+export function denormalizeBBox(box: BBox, width: number, height: number): BBox {
+  return { x: box.x * width, y: box.y * height, w: box.w * width, h: box.h * height };
+}
+
+/** A bbox is usable only when it is a real, on-page rectangle. */
+export function isUsableBBox(box: BBox | null | undefined): box is BBox {
+  if (!box) return false;
+  const values = [box.x, box.y, box.w, box.h];
+  if (values.some((v) => typeof v !== "number" || !Number.isFinite(v))) return false;
+  return box.w > 0 && box.h > 0 && box.x >= 0 && box.y >= 0 && box.x <= 1 && box.y <= 1;
+}
