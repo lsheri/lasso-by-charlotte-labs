@@ -267,7 +267,7 @@ function TranscriptsCard({
 }) {
   return (
     <div className="flex flex-wrap items-center gap-4 rounded-[var(--radius)] border border-border bg-card px-4 py-3 shadow-card">
-      <BrandLogo brand="granola" size={30} />
+      <BrandLogo brand="googledrive" size={30} />
       <div className="min-w-0 flex-1 basis-48">
         <p className="text-sm font-medium text-foreground">Call transcripts (Google Drive)</p>
         <p className="mt-0.5 text-sm text-muted-foreground">
