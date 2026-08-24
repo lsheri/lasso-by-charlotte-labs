@@ -195,3 +195,60 @@ describe("pass 100: reading is the access check", () => {
     );
   });
 });
+
+describe("pass 100: an unreadable anchor stays honest", () => {
+  const anchor = {
+    id: "deck-1",
+    title: "The deck",
+    type: "deck",
+    source: "upload",
+    source_vendor: null,
+    source_url: null,
+    date_line: "captured 2026-01-02",
+    text: null,
+    text_status: "failed",
+    text_note: "the file could not be opened",
+    turns: [],
+  };
+
+  it("shows the title only line and the existing re-extract action for the owner", async () => {
+    const { render, screen } = await import("@testing-library/react");
+    const { QueryClient, QueryClientProvider } = await import("@tanstack/react-query");
+    const { AnchorPane } = await import("@/components/provenance/AnchorPane");
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <AnchorPane
+          anchor={anchor}
+          canEdit
+          stitches={[]}
+          viewerProfileId="p1"
+          busy={false}
+          onAsk={() => {}}
+          onGoToSource={() => {}}
+        />
+      </QueryClientProvider>,
+    );
+    expect(screen.getByText(/Title only/)).toBeTruthy();
+    expect(screen.getByText("Try reading it again")).toBeTruthy();
+  });
+
+  it("offers no owner action to a coach", async () => {
+    const { render, screen } = await import("@testing-library/react");
+    const { QueryClient, QueryClientProvider } = await import("@tanstack/react-query");
+    const { AnchorPane } = await import("@/components/provenance/AnchorPane");
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <AnchorPane
+          anchor={anchor}
+          canEdit={false}
+          stitches={[]}
+          viewerProfileId="coach-1"
+          busy={false}
+          onAsk={() => {}}
+          onGoToSource={() => {}}
+        />
+      </QueryClientProvider>,
+    );
+    expect(screen.queryByText("Try reading it again")).toBeNull();
+  });
+});
