@@ -336,7 +336,7 @@ export async function loadScopeData(
     let itemQuery = supabase
       .from("work_items")
       .select(
-        `${ITEM_TEXT_COLUMNS}, source, visibility, captured_at, work_date, created_at_source, content_fidelity, source_vendor`,
+        `${ITEM_TEXT_COLUMNS}, source, visibility, captured_at, work_date, created_at_source, content_fidelity, source_vendor, ts_precision`,
       )
       .eq("owner_id", ownerId)
       .order("captured_at", { ascending: false })
