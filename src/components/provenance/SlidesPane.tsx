@@ -18,8 +18,14 @@ const DEFAULT_QUESTION = "Where did this come from?";
 
 export type PageText = { runs: TextRun[]; text: string; offsets: number[] };
 
-/** Runs joined the way a reader reads them, with each run's start offset kept. */
-export function joinRuns(runs: TextRun[]): PageText {
+/**
+ * Runs joined the way a reader reads them, with each run's start offset kept.
+ * The runs are put into reading order first, the same order the lasso uses, so
+ * a circled snippet is findable in this text and every offset here indexes into
+ * the returned `runs` array.
+ */
+export function joinRuns(input: TextRun[]): PageText {
+  const runs = sortReadingOrder(input);
   const offsets: number[] = [];
   let text = "";
   runs.forEach((run) => {
@@ -37,6 +43,7 @@ export function runsForOffsets(page: PageText, start: number, end: number): Text
     return from + run.text.length > start && from < end;
   });
 }
+
 
 /** The rects to highlight for a snippet already asked about on this page. */
 export function runsForSnippet(page: PageText, snippet: string, occurrence: number): TextRun[] {
