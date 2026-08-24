@@ -73,10 +73,18 @@ export function WorkPile({
   forceMatrix?: boolean;
 }) {
 
-  const [view, setView] = useState<"pile" | "matrix">("pile");
+  // Pile is what a first visit lands on; after that the person's own last
+  // choice is restored. Reading in an effect keeps SSR and hydration identical.
+  const [view, setView] = useState<WorkView>("pile");
+  const [showAll, setShowAll] = useState(false);
+  useEffect(() => {
+    setView(readWorkView());
+  }, []);
+  function chooseView(next: WorkView) {
+    setView(next);
+    writeWorkView(next);
+  }
   const shown = forceMatrix ? "matrix" : view;
-  const startY = useRef<number | null>(null);
-  const startX = useRef<number | null>(null);
 
   const grouped = BUCKETS.map((bucket) => ({
     bucket,
@@ -86,7 +94,7 @@ export function WorkPile({
   const counts = new Map<BucketKey, number>();
   for (const group of grouped) counts.set(group.bucket.key, group.entries.length);
 
-  const papers = entries.slice(0, SCATTER_CAP);
+  const papers = showAll ? entries : entries.slice(0, SCATTER_CAP);
   const overflow = entries.length - papers.length;
 
   return (
