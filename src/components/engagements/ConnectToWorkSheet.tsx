@@ -59,6 +59,7 @@ export function ConnectToWorkSheet({
 
   useEffect(() => {
     const known = seen.current;
+    console.log("watcher", { open, known: known?.size, streamId, items: (data?.items ?? []).map((i) => ({ id: i.id, source: i.source, visibility: i.visibility })) });
     if (!open || !known || !streamId) return;
     const fresh = (data?.items ?? []).filter(
       (item) =>
