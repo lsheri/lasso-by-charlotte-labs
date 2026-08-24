@@ -168,10 +168,9 @@ describe("pass 97 — connect to work", () => {
 
   it("does not auto-map items that arrive via MCP while the sheet is open", async () => {
     const onChanged = vi.fn();
-    const sheetElement = (
-      <QueryClientProvider
-        client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
-      >
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const renderSheet = () => (
+      <QueryClientProvider client={client}>
         <ConnectToWorkSheet
           engagementId="e1"
           streams={[{ id: "s1", name: "Stream 1" }]}
@@ -181,7 +180,7 @@ describe("pass 97 — connect to work", () => {
       </QueryClientProvider>
     );
 
-    const { rerender } = render(sheetElement);
+    const { rerender } = render(renderSheet());
     // Open the sheet so the watcher initializes the seen set.
     fireEvent.click(screen.getByText("Connect to work"));
 
@@ -192,7 +191,7 @@ describe("pass 97 — connect to work", () => {
       item({ id: "mcp-item", source: "mcp:claude", visibility: "unmapped" }),
       item({ id: "upload-item", source: "upload", visibility: "unmapped" }),
     ];
-    rerender(sheetElement);
+    rerender(renderSheet());
 
     await waitFor(() => expect(vi.mocked(remapItems)).toHaveBeenCalledTimes(1));
     const call = vi.mocked(remapItems).mock.calls[0]?.[0];
