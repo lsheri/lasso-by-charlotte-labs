@@ -234,6 +234,8 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
             peekItem?.owner_id &&
             peekItem.owner_id === profile.id,
         )}
+        engagementId={engagementId}
+        viewerProfileId={profile?.id ?? null}
       />
 
 
