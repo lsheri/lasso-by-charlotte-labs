@@ -11,6 +11,11 @@ import { VersionHistory } from "@/components/peek/VersionHistory";
 import { WhatFedThis } from "@/components/peek/WhatFedThis";
 import { DraftDecisionsButton } from "@/components/decisions/DraftDecisionsButton";
 import { MarkBriefDialog } from "@/components/work/MarkBriefDialog";
+import { DeleteWorkItemDialog, DELETE_LABEL } from "@/components/work/DeleteWorkItemDialog";
+import {
+  RemoveFromEngagementDialog,
+  REMOVE_LABEL,
+} from "@/components/work/RemoveFromEngagementDialog";
 import { DeliverableKindSelect } from "@/components/work/DeliverableKindSelect";
 import { ChatUrlLink } from "@/components/work/ChatUrlLink";
 import { ArtifactNote, SourceMark } from "@/components/work/SourceMark";
