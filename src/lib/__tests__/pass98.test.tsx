@@ -124,9 +124,10 @@ describe("re-extract affordance", () => {
     } as never;
     render(
       <QueryClientProvider client={new QueryClient()}>
-        <RenderedContent item={driveFailed} canEdit />
+        <RenderedContent item={driveFailed} onDownload={() => {}} canEdit />
       </QueryClientProvider>,
     );
+
     expect(screen.getByText("Try reading it again")).toBeTruthy();
     expect(screen.getByText(/Lasso could not read this file's contents/)).toBeTruthy();
   });
