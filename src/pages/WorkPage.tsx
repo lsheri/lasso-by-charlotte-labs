@@ -722,6 +722,7 @@ export function WorkPage() {
         focusId={peek?.focusId}
         open={peek !== null}
         canEdit={!isCoach}
+        viewerProfileId={profile?.id ?? null}
         onMap={(item, group) => {
           setPeek(null);
           openMap(item, group);
