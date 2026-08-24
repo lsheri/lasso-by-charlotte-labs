@@ -179,7 +179,7 @@ export function BrandPair({
 
 /** Connector toolkit ids to their brand mark. */
 export function brandForToolkit(toolkit: string): BrandKey {
-  const key = toolkit.toLowerCase();
+  const key = toolkit.toLowerCase().replace(/[_\s-]/g, "");
   if (key.startsWith("googledrive") || key === "gdrive") return "googledrive";
   if (key.startsWith("gmail")) return "gmail";
   if (key.startsWith("onedrive")) return "onedrive";

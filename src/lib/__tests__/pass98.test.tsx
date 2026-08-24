@@ -68,10 +68,35 @@ describe("brand logos", () => {
 
   it("maps connector toolkits to their mark", () => {
     expect(brandForToolkit("googledrive")).toBe("googledrive");
-    expect(brandForToolkit("one_drive")).toBe("unknown");
+    expect(brandForToolkit("one_drive")).toBe("onedrive");
     expect(brandForToolkit("onedrive")).toBe("onedrive");
     expect(brandForToolkit("sharepoint_graph")).toBe("sharepoint");
     expect(brandForToolkit("granola_mcp")).toBe("granola");
     expect(brandForToolkit("gmail")).toBe("gmail");
+  });
+});
+
+describe("re-extract affordance", () => {
+  const failed = {
+    id: "w1",
+    title: "Deck.pdf",
+    type: "deck",
+    source: "connector:googledrive",
+    visibility: "unmapped",
+    captured_at: "2026-01-01T00:00:00Z",
+    content_ref: "u/deck.pdf",
+    meta: { text_status: "failed", text_note: "the file could not be opened" },
+  } as never;
+
+  it("shows for the owner when the contents could not be read", async () => {
+    const { FallbackCard } = await import("@/components/peek/RenderedContent");
+    render(<FallbackCard item={failed} label="PDF" onDownload={() => {}} canEdit />);
+    expect(screen.getByText("Try reading it again")).toBeTruthy();
+  });
+
+  it("stays hidden for a reader who does not own the item", async () => {
+    const { FallbackCard } = await import("@/components/peek/RenderedContent");
+    render(<FallbackCard item={failed} label="PDF" onDownload={() => {}} />);
+    expect(screen.queryByText("Try reading it again")).toBeNull();
   });
 });
