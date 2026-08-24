@@ -332,13 +332,14 @@ export function AnalysisLens({
             {presets
               .filter((preset) => preset.id !== "firm_checks")
               .map((preset) => {
-                const blocked = preset.id === "what_recurs" && notEnoughWork;
+                const blocked = shortFor(preset);
                 return (
                   <div key={preset.id} className="flex items-center gap-1.5">
                     <button
                       type="button"
                       disabled={pending || blocked}
-                      title={blocked ? NOT_ENOUGH_WORK_LINE : undefined}
+                      title={blocked ? notEnoughWorkLine(preset) : undefined}
+
                       onClick={() => setConfirming({ preset, target })}
                       className={`rounded-full px-3 py-1 text-xs font-medium transition-opacity hover:opacity-85 disabled:opacity-50 ${
                         active?.id === preset.id
