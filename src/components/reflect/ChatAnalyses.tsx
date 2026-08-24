@@ -19,13 +19,15 @@ import { HandoffDrafts } from "@/components/reflect/HandoffDrafts";
 import { supabase } from "@/integrations/supabase/client";
 import { isBriefItem } from "@/lib/brief-shared";
 import {
-  MIN_ITEMS_FOR_RECURRENCE,
-  NOT_ENOUGH_WORK_LINE,
+  minItemsFor,
+  needsMoreSelectedLine,
+  notEnoughWorkLine,
   NO_FIRM_CHECKS_LINE,
   ANALYSIS_PRESETS,
   presetsForScope,
   type AnalysisPreset,
 } from "@/lib/analysis-presets";
+
 import type { AnalysisRunResult } from "@/lib/analysis.functions";
 import { parseManifest, type ContextManifest } from "@/lib/context-manifest";
 import { ContextAudit } from "@/components/reflect/ContextTrail";
