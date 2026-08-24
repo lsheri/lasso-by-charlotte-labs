@@ -253,6 +253,13 @@ export function useChatAnalyses(profileId: string | undefined, orgId: string | u
     anchorItemId?: string | null,
   ) {
     if (running || target.kind === "none" || !profileId) return;
+    // "What fed this" is an audit now, not an answer: the confirm hands over to
+    // the two pane provenance view rather than streaming prose into the chat.
+    if (preset.id === "what_fed_this" && target.kind === "item") {
+      const { openProvenanceAudit } = await import("@/components/provenance/audit-state");
+      openProvenanceAudit({ anchorId: anchorItemId ?? target.id, anchorTitle: target.title });
+      return;
+    }
     setRunning(preset);
     setStreamed("");
     setError(null);

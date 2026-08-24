@@ -7,6 +7,7 @@ import { useProfile } from "@/hooks/use-profile";
 import { AppSidebar } from "./AppSidebar";
 import { MobileTabBar } from "./MobileTabBar";
 import { FeedbackDialog, FeedbackWidget } from "@/components/feedback/FeedbackWidget";
+import { ProvenanceAudit } from "@/components/provenance/ProvenanceAudit";
 import { AskLassoProvider } from "@/components/reflect/ask-lasso-context";
 import { AskDockStateProvider } from "@/components/reflect/ask-dock-state";
 import { ChecklistLauncher } from "@/components/onboarding/checklist/ChecklistLauncher";
@@ -71,6 +72,7 @@ export function AppShell() {
           </main>
 
         </div>
+        <ProvenanceAudit />
         <FeedbackWidget />
         <MobileTabBar />
         <StepPopover />

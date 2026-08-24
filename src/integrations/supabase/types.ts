@@ -1923,6 +1923,113 @@ export type Database = {
           },
         ]
       }
+      span_links: {
+        Row: {
+          asked_by: string
+          created_at: string
+          from_item_id: string
+          id: string
+          locator: Json
+          org_id: string
+          owner_id: string
+          question: string | null
+          quote: string | null
+          run_id: string | null
+          status: string
+          to_item_id: string | null
+          to_locator: Json | null
+          to_turn_id: string | null
+          verification: string
+          verification_note: string | null
+        }
+        Insert: {
+          asked_by: string
+          created_at?: string
+          from_item_id: string
+          id?: string
+          locator: Json
+          org_id: string
+          owner_id: string
+          question?: string | null
+          quote?: string | null
+          run_id?: string | null
+          status: string
+          to_item_id?: string | null
+          to_locator?: Json | null
+          to_turn_id?: string | null
+          verification?: string
+          verification_note?: string | null
+        }
+        Update: {
+          asked_by?: string
+          created_at?: string
+          from_item_id?: string
+          id?: string
+          locator?: Json
+          org_id?: string
+          owner_id?: string
+          question?: string | null
+          quote?: string | null
+          run_id?: string | null
+          status?: string
+          to_item_id?: string | null
+          to_locator?: Json | null
+          to_turn_id?: string | null
+          verification?: string
+          verification_note?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "span_links_asked_by_fkey"
+            columns: ["asked_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "span_links_from_item_id_fkey"
+            columns: ["from_item_id"]
+            isOneToOne: false
+            referencedRelation: "work_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "span_links_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "span_links_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "span_links_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "analysis_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "span_links_to_item_id_fkey"
+            columns: ["to_item_id"]
+            isOneToOne: false
+            referencedRelation: "work_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "span_links_to_turn_id_fkey"
+            columns: ["to_turn_id"]
+            isOneToOne: false
+            referencedRelation: "turns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tasks: {
         Row: {
           accepted_at: string | null
