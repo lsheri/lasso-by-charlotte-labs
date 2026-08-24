@@ -475,16 +475,10 @@ function PdfPage({
   }, [visible, doc, pageNumber, onPageText, onError]);
 
   const highlights = useMemo(
-    () =>
-      anchors.flatMap((anchor) =>
-        runsForOffsets(page, anchor.start, anchor.end).map((run) => ({
-          id: anchor.stitch.id,
-          status: anchor.stitch.status,
-          run,
-        })),
-      ),
-    [anchors, page],
+    () => highlightRects(anchors, page, size.width || 1, size.height || 1),
+    [anchors, page, size.width, size.height],
   );
+
 
   return (
     <section ref={holderRef} data-page={pageNumber} className="space-y-1.5">
