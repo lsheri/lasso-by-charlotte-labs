@@ -376,9 +376,14 @@ export function AnalysisLens({
             <p className="mt-2 text-xs text-muted-foreground">{NO_FIRM_CHECKS_LINE}</p>
           ) : null}
 
-          {notEnoughWork ? (
-            <p className="mt-2 text-xs text-muted-foreground">{NOT_ENOUGH_WORK_LINE}</p>
-          ) : null}
+          {notEnoughWork
+            ? [...new Set(presets.filter(shortFor).map(notEnoughWorkLine))].map((line) => (
+                <p key={line} className="mt-2 text-xs text-muted-foreground">
+                  {line}
+                </p>
+              ))
+            : null}
+
         </Suggested>
 
         <div className="flex items-end gap-2">
