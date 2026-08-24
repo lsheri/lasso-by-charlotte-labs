@@ -206,6 +206,24 @@ export function effectiveDate(item: ItemRow): string {
   return item.work_date ?? item.created_at_source ?? item.captured_at;
 }
 
+/**
+ * The date line for an item, stated at the precision the source actually
+ * supplies. A capture date is never dressed up as the day the work happened,
+ * so a reconstruction of sequence can say what it knows and no more.
+ */
+export function datePrecisionLine(item: ItemRow): string {
+  const meta = (item.source_meta ?? null) as {
+    modified_at?: string | null;
+    sent_at?: string | null;
+  } | null;
+  const day = (value: string) => value.slice(0, 10);
+  if (meta?.modified_at) return `modified ${day(meta.modified_at)}`;
+  if (meta?.sent_at) return `sent ${day(meta.sent_at)}`;
+  if (item.work_date && item.ts_precision === "source") return day(item.work_date);
+  return `captured ${day(item.captured_at)}`;
+}
+
+
 /** Endings carry the decisions, so a cut item keeps its head AND its tail. */
 export function headAndTail(text: string, cap = PER_ITEM_CHARS): { text: string; cut: boolean } {
   if (text.length <= cap) return { text, cut: false };
