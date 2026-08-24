@@ -96,7 +96,7 @@ export function FallbackCard({
   item: WorkItemRow;
   label: string;
   onDownload: () => void;
-  canEdit?: boolean;
+  canEdit?: boolean | undefined;
 }) {
   const link = item.meta?.web_view_link ?? null;
   const unread = contentsUnread(item.meta as never);
@@ -144,7 +144,7 @@ export function RenderedContent({
   item: WorkItemRow;
   format?: PeekFormat;
   onDownload: () => void;
-  canEdit?: boolean;
+  canEdit?: boolean | undefined;
 }) {
   const shape = format ?? peekFormat(item);
   const wantsText = needsTextFetch(shape);
