@@ -269,6 +269,7 @@ function PdfPage({
   hovered,
   onHover,
   onPageText,
+  onError,
   onAsk,
   onGoToSource,
 }: {
@@ -283,6 +284,7 @@ function PdfPage({
   hovered: string | null;
   onHover: (id: string | null) => void;
   onPageText: (pageNumber: number, text: PageText) => void;
+  onError: (message: string) => void;
   onAsk: (locator: SpanLocator, question: string) => void;
   onGoToSource: (stitch: AuditStitch, origin: DOMRect | null) => void;
 }) {
