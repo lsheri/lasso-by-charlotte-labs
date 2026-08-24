@@ -18,6 +18,9 @@ export type MappedTask = {
 
 export type WorkItemRow = {
   id: string;
+  /** Present wherever ownership decides an affordance, absent in lean reads. */
+  owner_id?: string | null | undefined;
+
   title: string;
   type: WorkType;
   source: string;

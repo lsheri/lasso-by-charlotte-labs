@@ -226,8 +226,16 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
         onOpenChange={(next) => {
           if (!next) setPeekItem(null);
         }}
-        canEdit={false}
+        // Ownership truth, not page truth: a person gets their own affordances
+        // on their own items here, and a coach or another member stays read only.
+        canEdit={Boolean(
+          profile &&
+            profile.role !== "coach" &&
+            peekItem?.owner_id &&
+            peekItem.owner_id === profile.id,
+        )}
       />
+
 
 
       <SubjectCoachingSection profileId={profile?.id} engagementId={engagementId} />

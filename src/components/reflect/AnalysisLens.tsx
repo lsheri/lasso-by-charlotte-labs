@@ -18,13 +18,14 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  MIN_ITEMS_FOR_RECURRENCE,
-  NOT_ENOUGH_WORK_LINE,
+  minItemsFor,
+  notEnoughWorkLine,
   NO_FIRM_CHECKS_LINE,
   presetsForScope,
   type AnalysisPreset,
   type AnalysisPresetId,
 } from "@/lib/analysis-presets";
+
 import { useFirmChecks } from "@/hooks/use-firm-checks";
 import type { AnalysisRunResult } from "@/lib/analysis.functions";
 import { streamChatRequest } from "@/lib/stream-client";
@@ -213,7 +214,12 @@ export function AnalysisLens({
     }
   }
 
-  const notEnoughWork = target.kind === "engagement" && target.itemCount < MIN_ITEMS_FOR_RECURRENCE;
+  // Each engagement preset states its own minimum, so a two item engagement
+  // can run a sequence while a recurrence stays honestly out of reach.
+  const shortFor = (preset: AnalysisPreset) =>
+    target.kind === "engagement" && target.itemCount < minItemsFor(preset);
+  const notEnoughWork = presets.some((preset) => shortFor(preset));
+
 
   const readsDetail =
     target.kind === "engagement"
@@ -326,13 +332,14 @@ export function AnalysisLens({
             {presets
               .filter((preset) => preset.id !== "firm_checks")
               .map((preset) => {
-                const blocked = preset.id === "what_recurs" && notEnoughWork;
+                const blocked = shortFor(preset);
                 return (
                   <div key={preset.id} className="flex items-center gap-1.5">
                     <button
                       type="button"
                       disabled={pending || blocked}
-                      title={blocked ? NOT_ENOUGH_WORK_LINE : undefined}
+                      title={blocked ? notEnoughWorkLine(preset) : undefined}
+
                       onClick={() => setConfirming({ preset, target })}
                       className={`rounded-full px-3 py-1 text-xs font-medium transition-opacity hover:opacity-85 disabled:opacity-50 ${
                         active?.id === preset.id
@@ -369,9 +376,14 @@ export function AnalysisLens({
             <p className="mt-2 text-xs text-muted-foreground">{NO_FIRM_CHECKS_LINE}</p>
           ) : null}
 
-          {notEnoughWork ? (
-            <p className="mt-2 text-xs text-muted-foreground">{NOT_ENOUGH_WORK_LINE}</p>
-          ) : null}
+          {notEnoughWork
+            ? [...new Set(presets.filter(shortFor).map(notEnoughWorkLine))].map((line) => (
+                <p key={line} className="mt-2 text-xs text-muted-foreground">
+                  {line}
+                </p>
+              ))
+            : null}
+
         </Suggested>
 
         <div className="flex items-end gap-2">

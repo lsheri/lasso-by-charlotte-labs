@@ -48,7 +48,9 @@ export type ItemRow = ClassifiableItem & {
   created_at_source: string | null;
   content_fidelity: string | null;
   source_vendor: string | null;
+  ts_precision?: string | null;
 };
+
 
 export type TaskRow = {
   id: string;
@@ -204,6 +206,24 @@ export function effectiveDate(item: ItemRow): string {
   return item.work_date ?? item.created_at_source ?? item.captured_at;
 }
 
+/**
+ * The date line for an item, stated at the precision the source actually
+ * supplies. A capture date is never dressed up as the day the work happened,
+ * so a reconstruction of sequence can say what it knows and no more.
+ */
+export function datePrecisionLine(item: ItemRow): string {
+  const meta = (item.source_meta ?? null) as {
+    modified_at?: string | null;
+    sent_at?: string | null;
+  } | null;
+  const day = (value: string) => value.slice(0, 10);
+  if (meta?.modified_at) return `modified ${day(meta.modified_at)}`;
+  if (meta?.sent_at) return `sent ${day(meta.sent_at)}`;
+  if (item.work_date && item.ts_precision === "source") return day(item.work_date);
+  return `captured ${day(item.captured_at)}`;
+}
+
+
 /** Endings carry the decisions, so a cut item keeps its head AND its tail. */
 export function headAndTail(text: string, cap = PER_ITEM_CHARS): { text: string; cut: boolean } {
   if (text.length <= cap) return { text, cut: false };
@@ -336,7 +356,7 @@ export async function loadScopeData(
     let itemQuery = supabase
       .from("work_items")
       .select(
-        `${ITEM_TEXT_COLUMNS}, source, visibility, captured_at, work_date, created_at_source, content_fidelity, source_vendor`,
+        `${ITEM_TEXT_COLUMNS}, source, visibility, captured_at, work_date, created_at_source, content_fidelity, source_vendor, ts_precision`,
       )
       .eq("owner_id", ownerId)
       .order("captured_at", { ascending: false })
@@ -539,10 +559,16 @@ export async function assembleReflectContext(
     `[reflect-context] text pass: ${fullText.size} full, ${unreadable.size} unreadable, ${Date.now() - textStarted}ms`,
   );
 
-  // 7. Serialize oldest to newest so the record reads as a story.
-  const oldestFirst = [...items].sort(
-    (a, b) => new Date(effectiveDate(a)).getTime() - new Date(effectiveDate(b)).getTime(),
-  );
+  // 7. Serialize oldest to newest so the record reads as a story. Engagement
+  // scope orders on the day the work carries (work_date, else capture) so a
+  // reconstruction of sequence reads the same order a person would.
+  const isEngagementScope = scope.mode === "engagements";
+  const sortKey = (item: ItemRow) =>
+    new Date(
+      isEngagementScope ? (item.work_date ?? item.captured_at) : effectiveDate(item),
+    ).getTime();
+  const oldestFirst = [...items].sort((a, b) => sortKey(a) - sortKey(b));
+
 
   // The brief sits above the engagement structure and above every item: long
   // framing material belongs at the top, and a stable prefix caches well.
@@ -561,7 +587,7 @@ export async function assembleReflectContext(
     const lines = [
       `WORK ITEM: ${item.title}`,
       `  Type: ${item.type} · Source: ${item.source}${item.source_vendor ? ` (${item.source_vendor})` : ""} · Fidelity: ${item.content_fidelity ?? "unknown"}`,
-      `  Date: ${effectiveDate(item).slice(0, 10)} · ${mapped ? `Mapped to ${mapped}` : "Unmapped"}${item.visibility === "private" ? " · MARKED PRIVATE" : ""}`,
+      `  Date: ${isEngagementScope ? datePrecisionLine(item) : effectiveDate(item).slice(0, 10)} · ${mapped ? `Mapped to ${mapped}` : "Unmapped"}${item.visibility === "private" ? " · MARKED PRIVATE" : ""}`,
     ];
     if (extract) {
       lines.push(...extractLines(extract));

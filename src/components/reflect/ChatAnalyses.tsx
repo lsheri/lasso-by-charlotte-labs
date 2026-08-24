@@ -19,13 +19,15 @@ import { HandoffDrafts } from "@/components/reflect/HandoffDrafts";
 import { supabase } from "@/integrations/supabase/client";
 import { isBriefItem } from "@/lib/brief-shared";
 import {
-  MIN_ITEMS_FOR_RECURRENCE,
-  NOT_ENOUGH_WORK_LINE,
+  minItemsFor,
+  needsMoreSelectedLine,
+  notEnoughWorkLine,
   NO_FIRM_CHECKS_LINE,
   ANALYSIS_PRESETS,
   presetsForScope,
   type AnalysisPreset,
 } from "@/lib/analysis-presets";
+
 import type { AnalysisRunResult } from "@/lib/analysis.functions";
 import { parseManifest, type ContextManifest } from "@/lib/context-manifest";
 import { ContextAudit } from "@/components/reflect/ContextTrail";
@@ -54,8 +56,10 @@ const STOCK_ORDER: readonly string[] = [
   "decision_origin",
   "what_fed_this",
   "what_recurs",
+  "how_this_was_made",
   "ai_fluency_4d",
   "working_the_model",
+
 ];
 
 function byStockOrder(a: AnalysisPreset, b: AnalysisPreset): number {
@@ -493,12 +497,16 @@ export function AnalysisChips({
   const scope = target.kind === "engagement" ? "engagement" : target.scope;
   const presets = presetsForScope(scope, isCoach);
   if (presets.length === 0) return null;
-  const notEnoughWork = target.kind === "engagement" && target.itemCount < MIN_ITEMS_FOR_RECURRENCE;
+  // Per preset, not per surface: each engagement analysis states its own
+  // minimum and its own honest reason for being short of it.
+  const shortFor = (preset: AnalysisPreset) =>
+    target.kind === "engagement" && target.itemCount < minItemsFor(preset);
   const firmPreset = presets.find((p) => p.id === "firm_checks") ?? null;
   const stock = presets.filter((p) => p.id !== "firm_checks").sort(byStockOrder);
   const disabledRows = stock
-    .filter((p) => p.id === "what_recurs" && notEnoughWork)
-    .map((p) => ({ label: p.label, reason: NOT_ENOUGH_WORK_LINE }));
+    .filter((p) => shortFor(p))
+    .map((p) => ({ label: p.label, reason: notEnoughWorkLine(p) }));
+
 
   return (
     <Suggested className={className}>
@@ -538,7 +546,7 @@ export function AnalysisChips({
         <p className="micro-label micro-label-ai mb-2">Lasso analyses</p>
         <div className="flex flex-wrap gap-2">
           {stock.map((preset) => {
-            const blocked = preset.id === "what_recurs" && notEnoughWork;
+            const blocked = shortFor(preset);
             return (
               <StockPill
                 key={preset.id}
@@ -546,7 +554,8 @@ export function AnalysisChips({
                 readsDetail={readsDetail}
                 running={running}
                 disabled={blocked}
-                reason={blocked ? NOT_ENOUGH_WORK_LINE : null}
+                reason={blocked ? notEnoughWorkLine(preset) : null}
+
                 onClick={() => setConfirming({ preset, target })}
               />
             );
@@ -624,9 +633,10 @@ export function selectionChips(
         reason: null,
       };
     }
-    if (selected.length < MIN_ITEMS_FOR_RECURRENCE) {
-      return { preset, target: null, reason: "needs at least three pieces of work selected" };
+    if (selected.length < minItemsFor(preset)) {
+      return { preset, target: null, reason: needsMoreSelectedLine(preset) };
     }
+
     return {
       preset,
       target: {
