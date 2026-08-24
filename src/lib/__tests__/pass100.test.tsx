@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
 
 import { ANALYSIS_PRESET_IDS, presetsForScope } from "@/lib/analysis-presets";
