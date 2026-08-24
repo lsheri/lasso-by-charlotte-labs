@@ -18,13 +18,14 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  MIN_ITEMS_FOR_RECURRENCE,
-  NOT_ENOUGH_WORK_LINE,
+  minItemsFor,
+  notEnoughWorkLine,
   NO_FIRM_CHECKS_LINE,
   presetsForScope,
   type AnalysisPreset,
   type AnalysisPresetId,
 } from "@/lib/analysis-presets";
+
 import { useFirmChecks } from "@/hooks/use-firm-checks";
 import type { AnalysisRunResult } from "@/lib/analysis.functions";
 import { streamChatRequest } from "@/lib/stream-client";
