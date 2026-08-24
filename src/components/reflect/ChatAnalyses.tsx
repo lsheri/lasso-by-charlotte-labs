@@ -544,7 +544,7 @@ export function AnalysisChips({
         <p className="micro-label micro-label-ai mb-2">Lasso analyses</p>
         <div className="flex flex-wrap gap-2">
           {stock.map((preset) => {
-            const blocked = preset.id === "what_recurs" && notEnoughWork;
+            const blocked = shortFor(preset);
             return (
               <StockPill
                 key={preset.id}
@@ -552,7 +552,8 @@ export function AnalysisChips({
                 readsDetail={readsDetail}
                 running={running}
                 disabled={blocked}
-                reason={blocked ? NOT_ENOUGH_WORK_LINE : null}
+                reason={blocked ? notEnoughWorkLine(preset) : null}
+
                 onClick={() => setConfirming({ preset, target })}
               />
             );
