@@ -5,7 +5,10 @@ import { describe, expect, it, vi } from "vitest";
 import { BrandLogo, brandForToolkit, type BrandKey } from "@/components/connectors/BrandLogo";
 import { dateOnly, defaultWorkDate, driveSourceMeta } from "@/lib/source-dates";
 
-vi.mock("@tanstack/react-start", () => ({ useServerFn: () => vi.fn() }));
+vi.mock("@tanstack/react-start", async (importOriginal) => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  useServerFn: () => vi.fn(),
+}));
 
 describe("honest source dates", () => {
   it("records the real mime, export mime and both timestamps", () => {
