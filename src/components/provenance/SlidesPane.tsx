@@ -4,6 +4,8 @@ import { LassoLayer } from "@/components/provenance/LassoLayer";
 import { StitchChip } from "@/components/provenance/StitchChip";
 import { Button } from "@/components/ui/button";
 import {
+  denormalizeBBox,
+  isUsableBBox,
   normalizeBBox,
   pageLabel,
   sortReadingOrder,
