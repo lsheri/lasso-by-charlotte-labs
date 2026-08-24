@@ -52,10 +52,20 @@ export type SpanAudit = {
   baseline: { id: string; title: string }[];
 };
 
+/** The wrap rect, only when it is genuinely four finite 0..1 numbers. */
+function validBBox(raw: unknown): SpanLocator["bbox"] | null {
+  const box = (raw ?? null) as Record<string, unknown> | null;
+  if (!box) return null;
+  const parts = ["x", "y", "w", "h"].map((key) => Number(box[key]));
+  if (parts.some((value) => !Number.isFinite(value))) return null;
+  const [x, y, w, h] = parts as [number, number, number, number];
+  return { x, y, w, h };
+}
+
 function validLocator(raw: unknown): SpanLocator {
   const input = (raw ?? {}) as Record<string, unknown>;
   const unit = input["unit"];
-  if (unit !== "slide" && unit !== "section" && unit !== "paragraph") {
+  if (unit !== "slide" && unit !== "section" && unit !== "paragraph" && unit !== "page") {
     throw new Error("That selection could not be placed.");
   }
   const snippet = typeof input["snippet"] === "string" ? input["snippet"].trim() : "";
@@ -69,6 +79,7 @@ function validLocator(raw: unknown): SpanLocator {
     occurrence: Number.isFinite(occurrence) && occurrence > 0 ? occurrence : 1,
     ...(Number.isFinite(Number(input["start"])) ? { start: Number(input["start"]) } : {}),
     ...(Number.isFinite(Number(input["end"])) ? { end: Number(input["end"]) } : {}),
+    ...(validBBox(input["bbox"]) ? { bbox: validBBox(input["bbox"]) as SpanLocator["bbox"] } : {}),
   };
 }
 
