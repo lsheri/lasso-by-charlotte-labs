@@ -309,6 +309,25 @@ export function PeekPanel({
         </div>
       </footer>
       <MarkBriefDialog item={active} open={briefOpen} onOpenChange={setBriefOpen} />
+      {owned && engagementId ? (
+        <RemoveFromEngagementDialog
+          workItemId={active.id}
+          title={active.title}
+          engagementId={engagementId}
+          open={removeOpen}
+          onOpenChange={setRemoveOpen}
+          onDone={() => onOpenChange(false)}
+        />
+      ) : null}
+      {owned ? (
+        <DeleteWorkItemDialog
+          workItemId={active.id}
+          title={active.title}
+          open={deleteOpen}
+          onOpenChange={setDeleteOpen}
+          onDone={() => onOpenChange(false)}
+        />
+      ) : null}
     </SlideOver>
   );
 }
