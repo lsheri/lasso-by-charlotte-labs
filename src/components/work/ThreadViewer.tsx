@@ -1,5 +1,6 @@
 import { DraftDecisionsButton } from "@/components/decisions/DraftDecisionsButton";
 import { ThreadBody } from "@/components/peek/ThreadBody";
+import { ChatUrlLink } from "@/components/work/ChatUrlLink";
 import { ArtifactNote, SourceMark } from "@/components/work/SourceMark";
 import { TypeChip } from "@/components/work/TypeIcon";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -26,6 +27,7 @@ export function ThreadViewer({
           {item ? (
             <div className="flex flex-wrap items-center gap-1.5 pt-1">
               <TypeChip item={item} />
+              <ChatUrlLink item={item} />
             </div>
           ) : null}
         </DialogHeader>

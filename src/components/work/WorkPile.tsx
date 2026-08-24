@@ -133,7 +133,7 @@ export function WorkPile({
             role="group"
             aria-label={`Unmapped work, ${entries.length} item${
               entries.length === 1 ? "" : "s"
-            }. Hover to organise, or open as matrix.`}
+            }. Click a paper to open it.`}
           >
             {papers.length === 0 ? (
               <p className="text-sm text-muted-foreground">Nothing waiting.</p>
