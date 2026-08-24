@@ -409,30 +409,12 @@ function PdfPage({
           }
         }
 
-        const content = await api.getTextContent();
+        const runs = await readPageRuns(pdfjs, pdfPage, scale);
         if (cancelled) return;
-        const runs: TextRun[] = [];
-        for (const raw of content.items) {
-          const item = raw as {
-            str?: string;
-            transform?: number[];
-            width?: number;
-            height?: number;
-          };
-          if (!item.str || !item.transform) continue;
-          const t = pdfjs.Util.transform(viewport.transform, item.transform) as number[];
-          const h = (item.height ?? 10) * scale;
-          runs.push({
-            text: item.str,
-            x: t[4] as number,
-            y: (t[5] as number) - h,
-            w: (item.width ?? 0) * scale,
-            h,
-          });
-        }
         const joined = joinRuns(runs);
         setPage(joined);
         onPageText(pageNumber, joined);
+
       } catch (e) {
         if (!cancelled) onError((e as Error).message);
       }
