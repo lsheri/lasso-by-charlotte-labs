@@ -525,13 +525,34 @@ export const ANALYSIS_PRESETS: AnalysisPreset[] = RAW_ANALYSIS_PRESETS.map((pres
 /** Appended to the firm checks preset at run time; empty means the chip is disabled. */
 export const NO_FIRM_CHECKS_LINE = "no firm checks written yet";
 
-/** Below this, "What recurs" has nothing to compare and must not run. */
-export const MIN_ITEMS_FOR_RECURRENCE = 3;
 export const NOT_ENOUGH_WORK_LINE = "There is not enough work in this engagement yet.";
+export const NOT_ENOUGH_FOR_SEQUENCE_LINE =
+  "There is not enough work in this engagement to show a sequence yet.";
+
+/**
+ * The minimum this preset can honestly read, and the plain reason when the
+ * selection is short of it. Every chip surface asks these two, so a new
+ * engagement preset carries its own gate rather than inheriting one.
+ */
+export function minItemsFor(preset: AnalysisPreset): number {
+  return preset.minItems ?? 1;
+}
+
+export function notEnoughWorkLine(preset: AnalysisPreset): string {
+  return preset.id === "how_this_was_made" ? NOT_ENOUGH_FOR_SEQUENCE_LINE : NOT_ENOUGH_WORK_LINE;
+}
+
+/** The wording used where the person is choosing items, not viewing a scope. */
+export function needsMoreSelectedLine(preset: AnalysisPreset): string {
+  const min = minItemsFor(preset);
+  const word = min === 2 ? "two" : min === 3 ? "three" : String(min);
+  return `needs at least ${word} pieces of work selected`;
+}
 
 export function analysisPreset(id: string): AnalysisPreset | null {
   return ANALYSIS_PRESETS.find((p) => p.id === id) ?? null;
 }
+
 
 export function presetsForScope(scope: AnalysisScope, isCoach: boolean): AnalysisPreset[] {
   return ANALYSIS_PRESETS.filter((p) => p.scope === scope && (p.coachMayRun || !isCoach));
