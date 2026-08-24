@@ -1,15 +1,19 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { X } from "lucide-react";
+import { Pencil, X } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
 import { AnchorPane } from "@/components/provenance/AnchorPane";
+import { SlidesPane } from "@/components/provenance/SlidesPane";
+import { ThreadLine } from "@/components/provenance/ThreadLine";
 import { UpstreamPane } from "@/components/provenance/UpstreamPane";
 import {
   closeProvenanceAudit,
   useProvenanceAudit,
 } from "@/components/provenance/audit-state";
+import { pageUnitFor } from "@/lib/lasso-geometry";
+import { getRenditionUrl } from "@/lib/rendition.functions";
 import { askSpanProvenance, getSpanAudit } from "@/lib/span-provenance.functions";
 import type { AuditStitch } from "@/lib/span-provenance.functions";
 import type { SpanLocator } from "@/lib/span-provenance-shared";
