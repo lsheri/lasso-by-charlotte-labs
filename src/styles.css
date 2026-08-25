@@ -104,6 +104,19 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
+/* Global heading/paragraph scale: all h2 and p are larger and semibold. */
+h2 {
+  font-size: 1.5rem !important;
+  font-weight: 600 !important;
+  line-height: 1.75rem;
+}
+
+p {
+  font-size: 1.25rem !important;
+  font-weight: 600 !important;
+  line-height: 1.75rem;
+}
+
 :root {
   --radius: 8px;
   --radius-control: 6px;
