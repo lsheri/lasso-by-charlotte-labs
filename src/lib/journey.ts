@@ -28,7 +28,9 @@ export type JourneyItemInput = {
   /** Turns in this thread, a fact about the record. Absent when not a thread. */
   turn_count?: number | null | undefined;
   /** Opaque source evidence carried through for the card's real provider mark. */
-  markItem?: Pick<WorkItemRow, "source" | "source_vendor" | "type" | "meta" | "source_meta"> | undefined;
+  markItem?: Partial<
+    Pick<WorkItemRow, "source" | "source_vendor" | "type" | "meta" | "source_meta">
+  > | undefined;
 };
 
 /** One real span_link: a question asked of the record and what it found. */
