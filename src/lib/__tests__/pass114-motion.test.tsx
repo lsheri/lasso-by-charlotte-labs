@@ -79,8 +79,9 @@ describe("pass 114 · determinism", () => {
   });
 
   it("produces byte identical path data for the same record", () => {
-    const one = buildJourneyPath({ ids: ["a", "b", "c", "d"], width: 640 });
-    const two = buildJourneyPath({ ids: ["a", "b", "c", "d"], width: 640 });
+    const stitchCounts = { b: 1 };
+    const one = buildJourneyPath({ ids: ["a", "b", "c", "d"], width: 640, stitchCounts });
+    const two = buildJourneyPath({ ids: ["a", "b", "c", "d"], width: 640, stitchCounts });
     expect(one.segments.map((s) => s.stroke.d)).toEqual(two.segments.map((s) => s.stroke.d));
     expect(one.nodes).toEqual(two.nodes);
     const other = buildJourneyPath({ ids: ["a", "b", "c", "z"], width: 640 });
@@ -104,6 +105,20 @@ describe("pass 114 · determinism", () => {
     const spread = Math.abs((narrow.nodes[0]?.x ?? 0) - (narrow.nodes[1]?.x ?? 0));
     expect(spread).toBeLessThan(140);
     expect(spread).toBeGreaterThan(0);
+  });
+
+  it("leaves at least 60px between a stitched tendril and the next card", () => {
+    const path = buildJourneyPath({
+      ids: ["source", "arrival", "deliverable"],
+      width: 640,
+      stitchCounts: { source: 2 },
+    });
+    const tendril = path.tendrils.find((entry) => entry.nodeId === "source");
+    const next = path.nodes[1];
+    expect(tendril).toBeTruthy();
+    expect(next).toBeTruthy();
+    const nextCardTop = (next?.y ?? 0) - (next?.h ?? 0) / 2;
+    expect(nextCardTop - (tendril?.end.y ?? nextCardTop)).toBeGreaterThanOrEqual(60);
   });
 });
 
@@ -138,6 +153,37 @@ describe("pass 114 · the spine as rendered", () => {
     );
     expect(screen.getByText("Board deck")).toBeTruthy();
     expect(screen.getByText(/the margin held at nineteen percent/)).toBeTruthy();
+  });
+
+  it("carries complete source evidence into the node marks", () => {
+    const journey = buildJourney({
+      anchorId: "deck",
+      items: [
+        item({
+          id: "mail",
+          type: "email",
+          markItem: { source: "connector:gmail", type: "email" },
+        }),
+        item({
+          id: "thread",
+          type: "ai_thread",
+          markItem: { source: "connector:claude", type: "ai_thread" },
+        }),
+        item({
+          id: "deck",
+          type: "deck",
+          markItem: {
+            source: "connector:googledrive",
+            type: "deck",
+            meta: { source_mime: "application/vnd.google-apps.presentation" },
+          },
+        }),
+      ],
+    });
+    render(<JourneySpine journey={journey} animate={false} width={640} />);
+    expect(screen.getByRole("img", { name: "Gmail" })).toHaveAttribute("width", "28");
+    expect(screen.getByRole("img", { name: "Claude" })).toHaveAttribute("width", "28");
+    expect(screen.getByRole("img", { name: "Google Slides" })).toHaveAttribute("width", "28");
   });
 
   it("renders the same DOM order at a narrow width", () => {

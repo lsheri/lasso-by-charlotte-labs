@@ -9,6 +9,7 @@
  */
 
 import type { SpanStatus } from "@/lib/span-provenance-shared";
+import type { WorkItemRow } from "@/lib/work-types";
 
 export type JourneyKind = "origin" | "conversation" | "deliverable";
 
@@ -26,6 +27,8 @@ export type JourneyItemInput = {
   captured_at: string;
   /** Turns in this thread, a fact about the record. Absent when not a thread. */
   turn_count?: number | null | undefined;
+  /** Opaque source evidence carried through for the card's real provider mark. */
+  markItem?: Pick<WorkItemRow, "source" | "source_vendor" | "type" | "meta" | "source_meta"> | undefined;
 };
 
 /** One real span_link: a question asked of the record and what it found. */
@@ -51,6 +54,7 @@ export type JourneyNode = {
   title: string;
   type: string;
   sourceVendor: string | null;
+  markItem?: JourneyItemInput["markItem"];
   /** The provider date, or null when the record does not hold one. */
   date: string | null;
   typeLabel: string;
@@ -127,6 +131,7 @@ function toNode(item: JourneyItemInput, kind: JourneyKind): JourneyNode {
     title: item.title,
     type: item.type,
     sourceVendor: item.source_vendor ?? null,
+    markItem: item.markItem,
     date: providerDate(item),
     typeLabel: journeyTypeLabel(item.type),
     turnCount: kind === "conversation" ? (item.turn_count ?? null) : null,
