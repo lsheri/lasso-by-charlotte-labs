@@ -163,6 +163,11 @@ function JourneySurface({
   const engagementTitle = page.data?.engagement?.title ?? anchorTitle;
   const loading = page.isLoading || (ids.length > 0 && extra.isLoading);
 
+  // The reveal is skippable until it is skipped; while it is, a click or a key
+  // press is the reader completing the beats, not the reader scrolling.
+  const skippable = useRef(true);
+  const handoff = useHandoffScroll({ reducedMotion, skippableRef: skippable });
+
   function copyLink() {
     const url = journeyLinkFor(window.location.origin, engagementId, anchorId);
     void navigator.clipboard
@@ -171,9 +176,20 @@ function JourneySurface({
       .catch(() => toast("Could not copy that link"));
   }
 
+  const legendDelayMs = journey.nodes.length
+    ? beatMs(nodeBeatS(journey.nodes.length - 1, journey.nodes.length)) +
+      beatMs(NODE_STITCH_OFFSET_S) +
+      400
+    : 0;
+
   return (
-    <div className="fixed inset-0 z-[70] overflow-y-auto bg-background">
-      <div className="mx-auto w-full max-w-[720px] px-5 pb-24 pt-[calc(1.5rem+env(safe-area-inset-top))]">
+    <div
+      ref={(node) => {
+        handoff.containerRef.current = node;
+      }}
+      className="fixed inset-0 z-[70] overflow-y-auto bg-background"
+    >
+      <div className="mx-auto w-full max-w-[720px] px-5 pt-[calc(1.5rem+env(safe-area-inset-top))]">
         <header className="flex items-start justify-between gap-4">
           <div className="flex min-w-0 items-start gap-2.5">
             <ChaliceMark size={28} className="mt-1" />
@@ -211,28 +227,54 @@ function JourneySurface({
               journey={journey}
               animate={!reducedMotion}
               notShared={items.length === 0}
+              onSkip={() => {
+                skippable.current = false;
+                handoff.requestHandoff(HANDOFF_AFTER_SKIP_MS);
+              }}
+              onLastArrival={() => {
+                skippable.current = false;
+                handoff.requestHandoff(HANDOFF_AFTER_ARRIVAL_MS);
+              }}
             />
           )}
         </div>
 
         {!loading && journey.enough ? (
-          <>
-            <GraphiteRule className="mt-10 h-[6px] w-full text-muted-foreground" />
-            <WorkArtifactPanel
-              anchorId={anchorId}
-              anchorTitle={anchorTitle}
-              canEdit={isOwner}
-              orgId={profile?.org_id}
-              profileId={profile?.id}
-              drawing={!reducedMotion}
-              startMs={sectionsStartMs(journey.nodes.length)}
-            />
-          </>
+          <figcaption
+            className={`nb-traced-legend ${reducedMotion ? "" : "is-arriving"}`}
+            data-testid="traced-legend"
+            style={reducedMotion ? undefined : { animationDelay: `${legendDelayMs}ms` }}
+          >
+            <TracedSwatch seed="legend" />
+            <span className="nb-traced-legend-text">{TRACED_LEGEND_LINE}</span>
+          </figcaption>
         ) : null}
       </div>
+
+      {!loading && journey.enough ? (
+        <div
+          ref={(node) => {
+            handoff.targetRef.current = node;
+          }}
+          className="nb-artifact-region mx-auto w-full max-w-[1200px] pb-24"
+          data-testid="artifact-region"
+        >
+          <GraphiteRule className="mt-6 h-[6px] w-full text-muted-foreground" />
+          <WorkArtifactPanel
+            anchorId={anchorId}
+            anchorTitle={anchorTitle}
+            canEdit={isOwner}
+            orgId={profile?.org_id}
+            profileId={profile?.id}
+            drawing={!reducedMotion}
+            startMs={sectionsStartMs(journey.nodes.length)}
+          />
+        </div>
+      ) : null}
     </div>
   );
 }
+
 
 /**
  * The drawing itself, pure. It takes a built journey and nothing else, so what
