@@ -93,6 +93,10 @@ export function EngagementCanvas({
   const queryClient = useQueryClient();
   const syncEpisode = useServerFn(syncEpisodeForMapping);
   const detachEpisode = useServerFn(detachEpisodeItems);
+  const perfTimer = usePerfTimerFactory();
+  // From the canvas mounting to the first frame that has columns to work with.
+  usePerfMountTimer("canvas.open", tasks.length > 0);
+
 
   const [taskName, setTaskName] = useState("");
   const [error, setError] = useState<string | null>(null);
