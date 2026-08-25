@@ -30,7 +30,7 @@ export function StitchChip({
       onMouseLeave={() => onHoverChange?.(false)}
       className={`mt-2 rounded-[var(--radius-md)] border border-border px-3 py-2 nb-stitch-chip ${spanStatusClass(
         stitch.status,
-      )} ${reduceMotion ? "nb-pin-static" : "nb-pin-in"} ${lifted ? "nb-chip-lift" : ""}`}
+      )} ${reduceMotion ? "nb-chip-enter-static" : "nb-chip-enter"} ${lifted ? "nb-chip-lift" : ""}`}
     >
       <p className="font-mono text-[10px] uppercase tracking-[0.08em] nb-stitch-status">
         {spanStatusLabel(stitch.status)}

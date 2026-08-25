@@ -114,6 +114,8 @@
   --nb-grey-1: #f4f5f4;
   --nb-grey-2: #ecedec;
   --nb-rule: #e3e5e1;
+  /* Pass 105: the pencil the lasso is drawn with. Warm, and the page shows through. */
+  --nb-ink-yellow: #e3b341;
   --nb-ink: #111413;
   --nb-graphite: #2f3331;
   --nb-mid: #5a5d5c;
@@ -1735,4 +1737,64 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 .nb-thread-fade {
   transition: opacity var(--nb-move) var(--nb-ease);
   opacity: 0;
+}
+
+
+/* Pass 105: the ink is the mark. It settles where it was drawn, marches while
+   the record is read, and stays yellow when the answer lands: the status shows
+   as a wash beneath it, so the hand that drew the loop is never overwritten. */
+@keyframes nb-ink-settle-in {
+  from { opacity: 0.5; transform: scale(1.03); }
+  to { opacity: 1; transform: scale(1); }
+}
+.nb-ink-settle {
+  animation: nb-ink-settle-in 150ms ease-out;
+  transform-origin: center;
+}
+.nb-ink-static {
+  animation: none;
+}
+.nb-ink-march {
+  stroke-dasharray: 6 6;
+  animation: nb-dash-march 900ms linear infinite;
+}
+.nb-ink-march-static {
+  stroke-dasharray: 6 6;
+}
+@keyframes nb-ink-lit-pulse {
+  0% { stroke-opacity: 0.85; }
+  50% { stroke-opacity: 1; }
+  100% { stroke-opacity: 0.85; }
+}
+.nb-ink-lit {
+  animation: nb-ink-lit-pulse 700ms var(--nb-ease) 2;
+}
+.nb-ink-lit-static {
+  stroke-opacity: 1;
+}
+@keyframes nb-underglow-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.nb-underglow {
+  animation: nb-underglow-in 200ms var(--nb-ease);
+}
+.nb-underglow-static {
+  animation: none;
+}
+.nb-dots-static .nb-dot {
+  animation: none;
+}
+/* The chip arriving: it comes up past its place and settles back, so an answer
+   landing is impossible to miss. */
+@keyframes nb-chip-enter-in {
+  0% { opacity: 0; transform: translateY(10px); }
+  70% { opacity: 1; transform: translateY(-3px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.nb-chip-enter {
+  animation: nb-chip-enter-in 250ms var(--nb-ease);
+}
+.nb-chip-enter-static {
+  animation: none;
 }

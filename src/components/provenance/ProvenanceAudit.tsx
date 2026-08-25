@@ -1,10 +1,11 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Pencil, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { AnchorPane } from "@/components/provenance/AnchorPane";
+import { StitchTabs } from "@/components/provenance/StitchTabs";
 import { SlidesPane } from "@/components/provenance/SlidesPane";
 import { ThreadLine } from "@/components/provenance/ThreadLine";
 import { UpstreamPane } from "@/components/provenance/UpstreamPane";
@@ -12,7 +13,13 @@ import { closeProvenanceAudit, useProvenanceAudit } from "@/components/provenanc
 import { pageUnitFor } from "@/lib/lasso-geometry";
 import { renditionQueryOptions } from "@/lib/rendition-query";
 import { getRenditionUrl } from "@/lib/rendition.functions";
-import { askSpanProvenance, getSpanAudit } from "@/lib/span-provenance.functions";
+import { pickResolvedStitch, runResolveChoreography } from "@/lib/span-replay";
+import { traceLinkFor } from "@/lib/trace-link";
+import {
+  askSpanProvenance,
+  deleteSpanLink,
+  getSpanAudit,
+} from "@/lib/span-provenance.functions";
 import type { AuditStitch } from "@/lib/span-provenance.functions";
 import type { SpanLocator } from "@/lib/span-provenance-shared";
 
@@ -25,18 +32,37 @@ export function ProvenanceAudit() {
   const request = useProvenanceAudit();
   if (!request) return null;
   return (
-    <AuditSurface key={request.anchorId} anchorId={request.anchorId} title={request.anchorTitle} />
+    <AuditSurface
+      key={request.anchorId}
+      anchorId={request.anchorId}
+      title={request.anchorTitle}
+      engagementId={request.engagementId ?? null}
+      initialStitchId={request.initialStitchId ?? null}
+    />
   );
 }
 
-function AuditSurface({ anchorId, title }: { anchorId: string; title: string }) {
+function AuditSurface({
+  anchorId,
+  title,
+  engagementId,
+  initialStitchId,
+}: {
+  anchorId: string;
+  title: string;
+  engagementId: string | null;
+  initialStitchId: string | null;
+}) {
   const load = useServerFn(getSpanAudit);
   const ask = useServerFn(askSpanProvenance);
   const rendition = useServerFn(getRenditionUrl);
+  const removeStitch = useServerFn(deleteSpanLink);
   const queryClient = useQueryClient();
   const [busy, setBusy] = useState(false);
   const [armed, setArmed] = useState(false);
   const [view, setView] = useState<"slides" | "text">("slides");
+  /** The question being replayed, from a tab click or a shared trace link. */
+  const [replayId, setReplayId] = useState<string | null>(initialStitchId);
   const [thread, setThread] = useState<{
     from: { x: number; y: number };
     targetId: string | null;
@@ -84,6 +110,20 @@ function AuditSurface({ anchorId, title }: { anchorId: string; title: string }) 
     try {
       await ask({ data: { work_item_id: anchorId, locator, question } });
       await queryClient.invalidateQueries({ queryKey: ["span-audit", anchorId] });
+      // The reveal, in order: the thread, then the source itself, but only when
+      // the answer actually had one. An unsourced answer opens nothing.
+      const fresh = queryClient.getQueryData<{ stitches: AuditStitch[] }>([
+        "span-audit",
+        anchorId,
+      ]);
+      const landed = pickResolvedStitch(fresh?.stitches ?? [], locator.snippet);
+      if (landed) {
+        setReplayId(landed.id);
+        runResolveChoreography(landed, {
+          onThread: () => {},
+          onFocus: (stitch) => goToSource(stitch),
+        });
+      }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "That question could not be answered.");
     } finally {
@@ -107,6 +147,37 @@ function AuditSurface({ anchorId, title }: { anchorId: string; title: string }) 
       token: Date.now(),
       status: stitch.status,
     });
+  }
+
+  // A shared trace opens straight onto its answer once the record is read.
+  const traced = initialStitchId
+    ? (data?.stitches ?? []).find((stitch) => stitch.id === initialStitchId)
+    : undefined;
+  const tracedKey = traced?.id ?? null;
+  useEffect(() => {
+    if (!traced) return;
+    setReplayId(traced.id);
+    goToSource(traced);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tracedKey]);
+
+  async function removeOne(stitch: AuditStitch) {
+    try {
+      await removeStitch({ data: { span_link_id: stitch.id } });
+      if (replayId === stitch.id) setReplayId(null);
+      await queryClient.invalidateQueries({ queryKey: ["span-audit", anchorId] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "That question could not be removed.");
+    }
+  }
+
+  function copyLink(stitch: AuditStitch) {
+    if (typeof window === "undefined") return;
+    const link = engagementId
+      ? traceLinkFor(window.location.origin, engagementId, stitch.id)
+      : `${window.location.origin}${window.location.pathname}?trace=${stitch.id}`;
+    void navigator.clipboard?.writeText(link);
+    toast.success("Link copied.");
   }
 
   return (
@@ -161,6 +232,24 @@ function AuditSurface({ anchorId, title }: { anchorId: string; title: string }) 
         </div>
       </header>
 
+      {data && data.stitches.length > 0 ? (
+        <StitchTabs
+          stitches={data.stitches}
+          activeId={replayId}
+          canDelete={data.canEdit}
+          onSelect={(stitch) => {
+            setReplayId(stitch.id);
+            goToSource(stitch);
+          }}
+          onNew={() => {
+            setReplayId(null);
+            setArmed(true);
+          }}
+          onCopyLink={copyLink}
+          onDelete={(stitch) => void removeOne(stitch)}
+        />
+      ) : null}
+
       {isLoading ? (
         <p className="px-4 py-6 text-sm text-muted-foreground">Reading the record…</p>
       ) : error || !data ? (
@@ -190,6 +279,7 @@ function AuditSurface({ anchorId, title }: { anchorId: string; title: string }) 
                 canAsk={Boolean(data.viewerProfileId)}
                 onAsk={(locator, question) => void askSpan(locator, question)}
                 onGoToSource={goToSource}
+                replayStitchId={replayId}
               />
             ) : (
               <AnchorPane

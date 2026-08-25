@@ -1,7 +1,10 @@
 import { useRef, useState } from "react";
 
 import {
+  denormalizeInk,
   enclosedRuns,
+  inkPathD,
+  isDegenerateLasso,
   snippetFromRuns,
   unionBBox,
   type BBox,
@@ -10,13 +13,16 @@ import {
 } from "@/lib/lasso-geometry";
 import { MIN_SNIPPET_CHARS } from "@/lib/span-provenance-shared";
 
-export const EMPTY_LASSO_LINE =
-  "Nothing readable inside this lasso. Circle text, or switch to Text view to select it.";
+export const TRY_AGAIN_TITLE = "That circle didn't catch any words.";
+export const TRY_AGAIN_BODY =
+  "Draw one loose loop around the fact you want to trace, like circling it with a pencil.";
+export const TRY_AGAIN_DISMISS = "Got it";
 
 /**
  * The ink over one rendered page. The path a person draws decides the span: the
- * runs it encloses become the snippet, and an empty circle is a truthful
- * outcome that costs nothing, not an error and not a model call.
+ * runs it encloses become the snippet, and the ink itself stays as the mark
+ * rather than being replaced by a rectangle. A loop that caught nothing is a
+ * truthful outcome that costs nothing, and it says so kindly.
  */
 export function LassoLayer({
   armed,
@@ -24,7 +30,8 @@ export function LassoLayer({
   width,
   height,
   reduceMotion,
-  wrapped,
+  settled,
+  replays = [],
   resolving,
   onLasso,
   onEmpty,
@@ -34,38 +41,52 @@ export function LassoLayer({
   width: number;
   height: number;
   reduceMotion: boolean;
-  /** The rect the ink settled on, kept while the ask card is open. */
-  wrapped: BBox | null;
+  /** The loop the ink settled on, kept while the ask card is open. */
+  settled: Point[] | null;
+  /** Loops already asked about on this page, redrawn where they were drawn. */
+  replays?: { id: string; ink: readonly (readonly [number, number])[]; lit?: boolean }[];
   resolving: boolean;
-  onLasso: (result: { snippet: string; box: BBox; firstRunIndex: number }) => void;
+  onLasso: (result: {
+    snippet: string;
+    box: BBox;
+    firstRunIndex: number;
+    path: Point[];
+  }) => void;
   onEmpty: () => void;
 }) {
   const svgRef = useRef<SVGSVGElement>(null);
   const [path, setPath] = useState<Point[]>([]);
   const [drawing, setDrawing] = useState(false);
-  const [empty, setEmpty] = useState(false);
+  const [tryAgain, setTryAgain] = useState(false);
 
   function at(event: React.PointerEvent): Point {
     const rect = svgRef.current?.getBoundingClientRect();
     return { x: event.clientX - (rect?.left ?? 0), y: event.clientY - (rect?.top ?? 0) };
   }
 
+  function nudge() {
+    setTryAgain(true);
+    onEmpty();
+  }
+
   function finish() {
     setDrawing(false);
     const polygon = path;
     setPath([]);
-    if (polygon.length < 3) return;
+    if (isDegenerateLasso(polygon, width, height)) {
+      nudge();
+      return;
+    }
     const inside = enclosedRuns(runs, polygon);
     const snippet = snippetFromRuns(inside);
     const box = unionBBox(inside);
     if (snippet.length < MIN_SNIPPET_CHARS || !box) {
-      setEmpty(true);
-      onEmpty();
+      nudge();
       return;
     }
-    setEmpty(false);
+    setTryAgain(false);
     const first = inside[0];
-    onLasso({ snippet, box, firstRunIndex: first ? runs.indexOf(first) : 0 });
+    onLasso({ snippet, box, firstRunIndex: first ? runs.indexOf(first) : 0, path: polygon });
   }
 
   return (
@@ -79,7 +100,7 @@ export function LassoLayer({
         className={`absolute inset-0 h-full w-full ${armed ? "cursor-crosshair" : "pointer-events-none"}`}
         onPointerDown={(event) => {
           if (!armed) return;
-          setEmpty(false);
+          setTryAgain(false);
           setDrawing(true);
           setPath([at(event)]);
         }}
@@ -94,40 +115,66 @@ export function LassoLayer({
           if (drawing) finish();
         }}
       >
-        {path.length > 1 ? (
-          <polyline
-            data-testid="lasso-path"
-            points={path.map((point) => `${point.x},${point.y}`).join(" ")}
+        {replays.map((replay) => (
+          <path
+            key={replay.id}
+            data-testid={`ink-replay-${replay.id}`}
+            data-stitch-id={replay.id}
+            d={inkPathD(denormalizeInk(replay.ink, width, height))}
             fill="none"
-            stroke="var(--accent)"
-            strokeWidth={2}
+            stroke="var(--nb-ink-yellow)"
+            strokeOpacity={0.85}
+            strokeWidth={3}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className={replay.lit ? (reduceMotion ? "nb-ink-lit-static" : "nb-ink-lit") : ""}
+          />
+        ))}
+        {path.length > 1 ? (
+          <path
+            data-testid="lasso-path"
+            d={inkPathD(path)}
+            fill="none"
+            stroke="var(--nb-ink-yellow)"
+            strokeOpacity={0.85}
+            strokeWidth={3}
             strokeLinecap="round"
             strokeLinejoin="round"
           />
         ) : null}
-        {wrapped ? (
-          <rect
-            data-testid="lasso-wrap"
-            x={wrapped.x - 4}
-            y={wrapped.y - 3}
-            width={wrapped.w + 8}
-            height={wrapped.h + 6}
-            rx={6}
+        {settled && settled.length > 1 ? (
+          <path
+            data-testid="lasso-ink"
+            d={inkPathD(settled)}
             fill="none"
-            stroke="var(--accent)"
-            strokeWidth={2}
+            stroke="var(--nb-ink-yellow)"
+            strokeOpacity={0.85}
+            strokeWidth={3}
+            strokeLinecap="round"
+            strokeLinejoin="round"
             className={
               reduceMotion
-                ? `nb-lasso-static${resolving ? " nb-lasso-resolving-static" : ""}`
-                : `nb-lasso-wrap${resolving ? " nb-lasso-resolving" : ""}`
+                ? `nb-ink-static${resolving ? " nb-ink-march-static" : ""}`
+                : `nb-ink-settle${resolving ? " nb-ink-march" : ""}`
             }
           />
         ) : null}
       </svg>
-      {empty ? (
-        <p className="absolute inset-x-0 bottom-1 z-10 px-2 text-center text-xs text-muted-foreground">
-          {EMPTY_LASSO_LINE}
-        </p>
+      {tryAgain ? (
+        <div
+          data-testid="lasso-try-again"
+          className="absolute inset-x-2 bottom-2 z-10 rounded-[var(--radius-md)] border border-border bg-card px-3 py-2 shadow-sm"
+        >
+          <p className="text-xs font-medium text-foreground">{TRY_AGAIN_TITLE}</p>
+          <p className="mt-1 text-xs text-muted-foreground">{TRY_AGAIN_BODY}</p>
+          <button
+            type="button"
+            onClick={() => setTryAgain(false)}
+            className="mt-1.5 text-xs font-medium text-accent-deep transition-opacity hover:opacity-70"
+          >
+            {TRY_AGAIN_DISMISS}
+          </button>
+        </div>
       ) : null}
     </>
   );

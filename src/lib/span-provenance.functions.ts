@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { MAX_INK_POINTS } from "@/lib/lasso-geometry";
 import {
   MAX_SNIPPET_CHARS,
   MIN_SNIPPET_CHARS,
@@ -64,6 +65,28 @@ function validBBox(raw: unknown): SpanLocator["bbox"] | null {
   return { x, y, w, h };
 }
 
+/**
+ * The drawn loop, only when every pair is a finite 0..1 point. Anything else is
+ * dropped: a stitch without ink still reads correctly, one with wrong ink would
+ * be redrawn in the wrong place.
+ */
+function validInk(raw: unknown): [number, number][] | null {
+  if (!Array.isArray(raw) || raw.length < 3) return null;
+  const points: [number, number][] = [];
+  for (const pair of raw) {
+    if (!Array.isArray(pair) || pair.length !== 2) return null;
+    const x = Number(pair[0]);
+    const y = Number(pair[1]);
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+    if (x < 0 || x > 1 || y < 0 || y > 1) return null;
+    points.push([x, y]);
+  }
+  return points.slice(0, MAX_INK_POINTS);
+}
+
+/** Exported for the locator contract tests only. */
+export const validInkForTest = validInk;
+
 function validLocator(raw: unknown): SpanLocator {
   const input = (raw ?? {}) as Record<string, unknown>;
   const unit = input["unit"];
@@ -82,6 +105,7 @@ function validLocator(raw: unknown): SpanLocator {
     ...(Number.isFinite(Number(input["start"])) ? { start: Number(input["start"]) } : {}),
     ...(Number.isFinite(Number(input["end"])) ? { end: Number(input["end"]) } : {}),
     ...(validBBox(input["bbox"]) ? { bbox: validBBox(input["bbox"]) as SpanLocator["bbox"] } : {}),
+    ...(validInk(input["ink"]) ? { ink: validInk(input["ink"]) as [number, number][] } : {}),
   };
 }
 
@@ -219,5 +243,33 @@ export const askSpanProvenance = createServerFn({ method: "POST" })
       workItemId: data.work_item_id,
       locator: data.locator,
       question: data.question,
+    });
+  });
+
+
+/**
+ * Removing one traced question. Owner of the circled work only: span_links has
+ * no client write policies, so the row is deleted with the admin client after
+ * that ownership is proved through the caller's own reads.
+ */
+export const deleteSpanLink = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { span_link_id: string }) => {
+    if (!input?.span_link_id) throw new Error("span_link_id is required");
+    return { span_link_id: input.span_link_id };
+  })
+  .handler(async ({ data, context }) => {
+    const { data: profile } = await context.supabase
+      .from("profiles")
+      .select("id, role")
+      .eq("user_id", context.userId)
+      .maybeSingle();
+    if (!profile || profile.role === "coach") throw new Response("Forbidden", { status: 403 });
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { deleteSpanLinkRow } = await import("./span-link-delete.server");
+    return deleteSpanLinkRow(context.supabase, supabaseAdmin as never, {
+      spanLinkId: data.span_link_id,
+      profileId: profile.id,
     });
   });

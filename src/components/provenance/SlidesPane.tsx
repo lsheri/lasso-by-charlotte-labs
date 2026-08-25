@@ -5,11 +5,16 @@ import { StitchChip } from "@/components/provenance/StitchChip";
 import { Button } from "@/components/ui/button";
 import {
   denormalizeBBox,
+  denormalizeInk,
+  inkPathD,
   isUsableBBox,
+  isUsableInk,
   normalizeBBox,
+  normalizeInk,
   pageLabel,
   sortReadingOrder,
   type BBox,
+  type Point,
   type TextRun,
 } from "@/lib/lasso-geometry";
 import { makeRenderGuard } from "@/lib/rendition-query";
@@ -63,6 +68,8 @@ export function highlightRects(
   height: number,
 ): { id: string; status: AuditStitch["status"]; run: BBox }[] {
   return anchors.flatMap((anchor) => {
+    // A stitch that carries its own ink is redrawn as that ink, never as a box.
+    if (anchor.ink) return [];
     if (anchor.bbox) {
       return [
         {
@@ -105,7 +112,28 @@ export type StitchAnchor = {
   end: number;
   /** Set when the ink's own rectangle is the truth, in 0..1 page coordinates. */
   bbox?: BBox;
+  /** The loop that was actually drawn, in 0..1 page coordinates. */
+  ink?: [number, number][];
 };
+
+/** The soft status wash under a circled area, one path per inked stitch. */
+export function inkUnderglows(
+  anchors: StitchAnchor[],
+  width: number,
+  height: number,
+): { id: string; status: AuditStitch["status"]; d: string }[] {
+  return anchors.flatMap((anchor) =>
+    anchor.ink
+      ? [
+          {
+            id: anchor.stitch.id,
+            status: anchor.stitch.status,
+            d: inkPathD(denormalizeInk(anchor.ink, width, height)),
+          },
+        ]
+      : [],
+  );
+}
 
 /**
  * Where each stitch actually lands on the rendered pages. A stitch that carries
@@ -128,6 +156,12 @@ export function anchorStitches(
     const namedPage = named === undefined ? undefined : pages.get(named);
     const onPageUnit = stitch.locator?.unit === "page" || stitch.locator?.unit === "slide";
     const bbox = stitch.locator?.bbox;
+    const ink = stitch.locator?.ink;
+
+    if (onPageUnit && named !== undefined && isUsableInk(ink)) {
+      anchors.push({ stitch, page: named, start: 0, end: 0, ink });
+      return;
+    }
 
     if (onPageUnit && namedPage && isUsableBBox(bbox)) {
       anchors.push({ stitch, page: named as number, start: 0, end: 0, bbox });
@@ -214,6 +248,7 @@ export function SlidesPane({
   onAsk,
   onGoToSource,
   onReload,
+  replayStitchId,
 }: {
   url: string;
   anchorId?: string;
@@ -225,6 +260,8 @@ export function SlidesPane({
   onAsk: (locator: SpanLocator, question: string) => void;
   onGoToSource: (stitch: AuditStitch, origin: DOMRect | null) => void;
   onReload?: () => void;
+  /** A question being replayed: its page is scrolled to and its ink lights up. */
+  replayStitchId?: string | null;
 }) {
   const [doc, setDoc] = useState<unknown>(null);
   const [pages, setPages] = useState(0);
@@ -320,6 +357,19 @@ export function SlidesPane({
   }, [onReload]);
 
   const placed = useMemo(() => anchorStitches(pageTexts, stitches), [pageTexts, stitches]);
+
+  // Replay: the page the question was asked on comes into view and its ink
+  // lights up, so a shared trace lands exactly where the loop was drawn.
+  useEffect(() => {
+    if (!replayStitchId) return;
+    const anchor = placed.anchors.find((entry) => entry.stitch.id === replayStitchId);
+    if (!anchor) return;
+    setHovered(replayStitchId);
+    if (typeof document === "undefined") return;
+    document
+      .querySelector(`[data-page="${anchor.page}"]`)
+      ?.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "center" });
+  }, [replayStitchId, placed, reduceMotion]);
   const allRendered = pageTexts.size >= pages && pages > 0;
 
   if (error)
@@ -422,9 +472,13 @@ function PdfPage({
   const [pending, setPending] = useState<{
     snippet: string;
     box: BBox;
+    /** The loop as drawn, in page pixels, kept so it can settle in place. */
+    path: Point[];
     occurrence: number;
     question: string;
   } | null>(null);
+  /** The ink of a question already sent, held until its stitch arrives. */
+  const [asking, setAsking] = useState<Point[] | null>(null);
 
   useEffect(() => {
     const holder = holderRef.current;
@@ -507,6 +561,18 @@ function PdfPage({
     [anchors, page, size.width, size.height],
   );
 
+  const underglows = useMemo(
+    () => inkUnderglows(anchors, size.width || 1, size.height || 1),
+    [anchors, size.width, size.height],
+  );
+
+  // The ink stays on the page while the run resolves, then the stored stitch
+  // takes over drawing it. Nothing blinks out between asking and answering.
+  useEffect(() => {
+    if (!busy) setAsking(null);
+  }, [busy]);
+
+  const settled = pending?.path ?? asking;
 
   return (
     <section ref={holderRef} data-page={pageNumber} className="space-y-1.5">
@@ -525,6 +591,18 @@ function PdfPage({
           style={{ pointerEvents: "none" }}
           viewBox={`0 0 ${size.width || 1} ${size.height || 1}`}
         >
+          {underglows.map((glow) => (
+            <path
+              key={`glow-${glow.id}`}
+              data-testid={`span-underglow-${glow.id}`}
+              d={glow.d}
+              fill={spanStatusWash(glow.status)}
+              fillOpacity={0.22}
+              stroke="none"
+              className={reduceMotion ? "nb-underglow-static" : "nb-underglow"}
+              style={{ mixBlendMode: "multiply" }}
+            />
+          ))}
           {highlights.map((entry, i) => (
             <rect
               key={`${entry.id}-${i}`}
@@ -553,18 +631,40 @@ function PdfPage({
           width={size.width || 1}
           height={size.height || 1}
           reduceMotion={reduceMotion}
-          wrapped={pending?.box ?? null}
-          resolving={busy && pending !== null}
-          onLasso={({ snippet, box, firstRunIndex }) =>
+          settled={settled}
+          replays={anchors.flatMap((anchor) =>
+            anchor.ink
+              ? [{ id: anchor.stitch.id, ink: anchor.ink, lit: hovered === anchor.stitch.id }]
+              : [],
+          )}
+          resolving={busy && asking !== null}
+          onLasso={({ snippet, box, firstRunIndex, path }) =>
             setPending({
               snippet,
               box,
+              path,
               occurrence: occurrenceAtOffset(page, snippet, page.offsets[firstRunIndex] ?? 0),
               question: DEFAULT_QUESTION,
             })
           }
           onEmpty={() => setPending(null)}
         />
+        {busy && asking ? (
+          <div
+            data-testid="reading-pill"
+            className="absolute bottom-2 left-2 z-10 flex items-center gap-1.5 rounded-full border border-border bg-card px-2.5 py-1 text-xs text-muted-foreground shadow-sm"
+          >
+            Reading the record
+            <span
+              className={`nb-dots ${reduceMotion ? "nb-dots-static" : ""}`}
+              aria-hidden="true"
+            >
+              <span className="nb-dot" />
+              <span className="nb-dot" />
+              <span className="nb-dot" />
+            </span>
+          </div>
+        ) : null}
       </div>
 
       {pending ? (
@@ -594,9 +694,11 @@ function PdfPage({
                     snippet: pending.snippet,
                     occurrence: pending.occurrence,
                     bbox: normalizeBBox(pending.box, size.width || 1, size.height || 1),
+                    ink: normalizeInk(pending.path, size.width || 1, size.height || 1),
                   },
                   pending.question.trim() || DEFAULT_QUESTION,
                 );
+                setAsking(pending.path);
                 setPending(null);
               }}
             >
@@ -612,6 +714,7 @@ function PdfPage({
           </div>
         </div>
       ) : null}
+
 
       {anchors.map((anchor) => (
         <StitchChip
