@@ -39,7 +39,8 @@ export async function buildEngagementPage(
       .from("tasks")
       .select(TASKS_SELECT)
       .eq("engagement_id", engagementId)
-      .order("position", { ascending: true }),
+      .order("position", { ascending: true })
+      .order("created_at", { ascending: true }),
     supabase
       .from("engagement_members")
       .select(COACHES_SELECT)

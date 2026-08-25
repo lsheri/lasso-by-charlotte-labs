@@ -50,7 +50,8 @@ export function MapDialog({
         .from("tasks")
         .select("id, name")
         .eq("engagement_id", engagementId as string)
-        .order("position", { ascending: true });
+        .order("position", { ascending: true })
+        .order("created_at", { ascending: true });
       if (taskError) throw taskError;
       return data ?? [];
     },

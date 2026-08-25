@@ -5,7 +5,7 @@ import type { PickerPage } from "@/lib/connector-picker-shared";
 import { defaultWorkDate, driveSourceMeta } from "@/lib/source-dates";
 import { looksLikeTranscript, transcriptHint } from "@/lib/transcript-detect";
 import {
-  driveWorkType,
+  driveTypeFromSource,
   TOOLKIT_ID_KEY,
   TOOLKIT_SOURCE,
   TOOLKIT_VENDOR,
@@ -255,7 +255,13 @@ export async function importConnectorFiles(
       .insert({
         owner_id: args.profileId,
         org_id: args.orgId,
-        type: isTranscript ? "call" : driveWorkType(file.mimeType),
+        type: isTranscript
+          ? "call"
+          : driveTypeFromSource({
+              sourceMime: file.sourceMime ?? null,
+              webViewLink: file.webViewLink,
+              storedMime: file.mimeType,
+            }),
         source: TOOLKIT_SOURCE[args.toolkit],
         source_vendor: TOOLKIT_VENDOR[args.toolkit],
         title: file.name,
@@ -277,6 +283,8 @@ export async function importConnectorFiles(
         meta: {
           [idKey]: id,
           mime_type: file.mimeType,
+          // The export mime is what we stored; the original is what it IS.
+          source_mime: file.sourceMime ?? null,
           web_view_link: file.webViewLink,
           ...(isTranscript ? { transcript_guess: true } : {}),
         },

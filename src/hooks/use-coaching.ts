@@ -129,7 +129,8 @@ export async function fetchPacket(engagementId: string, subjectId: string): Prom
       )
       .eq("engagement_id", engagementId)
       .eq("owner_id", subjectId)
-      .order("position", { ascending: true }),
+      .order("position", { ascending: true })
+      .order("created_at", { ascending: true }),
     supabase
       .from("decisions")
       .select("id, situation, call_text, why, date_label, created_at, srcs")

@@ -123,6 +123,14 @@
   --nb-blue: #1d6fe0;
   --nb-amber: #a8600b;
 
+  /* Sticky note washes. Pale paper colours for notes, never button fills:
+     the action green is a control colour and must not back a card. */
+  --nb-sticky-blue: #e4eefb;
+  --nb-sticky-blue-edge: #b9d2f0;
+  --nb-sticky-green: #e6f2e5;
+  --nb-sticky-green-edge: #bcd9ba;
+
+
   /* Pass 101.1: one colour per provenance status, borders and washes only. */
   --status-exact: var(--nb-green);
   --status-exact-wash: #e9f2ed;
@@ -1360,10 +1368,21 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   border-bottom-color: var(--nb-blue);
 }
 
-/* Lasso spider mascot (hotfix 88.1): animated frame by default, static first
-   frame under reduced motion. Base rules first, the swap below. */
-.nb-spider-anim { display: inline-block; }
-.nb-spider-static { display: none; }
+/* Lasso spider mascot (pass 103): one still frame that wobbles gently once
+   every eight seconds. No frame swapping, so nothing can flash. Reduced
+   motion, further down, leaves it completely still. */
+.nb-spider-wobble {
+  display: inline-block;
+  transform-origin: 50% 70%;
+  animation: nb-spider-wobble 8s var(--nb-ease) infinite;
+}
+@keyframes nb-spider-wobble {
+  0% { transform: rotate(0deg); }
+  1.75% { transform: rotate(-6deg); }
+  5.25% { transform: rotate(6deg); }
+  7% { transform: rotate(0deg); }
+  100% { transform: rotate(0deg); }
+}
 
 @media (prefers-reduced-motion: reduce) {
   .nb-note-caret,
@@ -1397,8 +1416,10 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
     transition: none !important;
     animation: none !important;
   }
-  .nb-spider-anim { display: none; }
-  .nb-spider-static { display: inline-block; }
+  .nb-spider-wobble {
+    animation: none !important;
+    transform: none !important;
+  }
 }
 
 /* ---------------------------------------------------------------------------
@@ -1469,6 +1490,9 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   transition:
     transform 200ms var(--nb-ease),
     border-color 200ms var(--nb-ease);
+}
+.nb-canvas-card-title {
+  padding-bottom: 3px;
 }
 .nb-canvas-card:hover {
   border-color: var(--nb-soft);
@@ -1567,6 +1591,20 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 .nb-note-body {
   border-top: 1px solid #e8bf8a;
   padding: 12px 14px 14px;
+}
+.nb-note[data-tone="blue"] {
+  background: var(--nb-sticky-blue);
+  border-color: var(--nb-sticky-blue-edge);
+}
+.nb-note[data-tone="blue"] .nb-note-body {
+  border-top-color: var(--nb-sticky-blue-edge);
+}
+.nb-note[data-tone="green"] {
+  background: var(--nb-sticky-green);
+  border-color: var(--nb-sticky-green-edge);
+}
+.nb-note[data-tone="green"] .nb-note-body {
+  border-top-color: var(--nb-sticky-green-edge);
 }
 .nb-note-caret {
   transition: transform 200ms var(--nb-ease);

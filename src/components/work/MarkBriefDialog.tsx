@@ -52,7 +52,8 @@ export function MarkBriefDialog({
         .from("tasks")
         .select("id, name, engagement_id")
         .eq("owner_id", profile!.id)
-        .order("position", { ascending: true });
+        .order("position", { ascending: true })
+        .order("created_at", { ascending: true });
       if (error) throw error;
       return (data ?? []) as TaskRow[];
     },

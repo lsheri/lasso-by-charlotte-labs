@@ -73,6 +73,10 @@ export type SourceMeta = {
   research_mode?: string;
   notes?: string;
   filename?: string;
+  /** The stored bytes' mime, and the provider's own mime when they differ. */
+  mime_type?: string;
+  mime?: string;
+
   /** The conversation URL in the source app, validated against a host allowlist. */
   url?: string;
   /** Set when the pushed attachment was substantially already in the transcript. */

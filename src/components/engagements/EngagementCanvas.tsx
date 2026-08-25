@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
+import { SourceMark } from "@/components/work/SourceMark";
 import { TypeIcon } from "@/components/work/TypeIcon";
 import { DeleteWorkItemDialog, DELETE_LABEL } from "@/components/work/DeleteWorkItemDialog";
 import {
@@ -490,6 +491,9 @@ export function EngagementCanvas({
                   confirmed={confirmedByTask.get(column.id) ?? false}
                   profile={profile}
                   canOrder={canEdit}
+                  engagementId={engagementId}
+                  canMoveLeft={colIndex > 0}
+                  canMoveRight={colIndex < view.length - 1}
                   onReset={() => void onReset(column.id)}
                 />
 
@@ -541,7 +545,10 @@ export function EngagementCanvas({
                         >
                           <TypeIcon item={item} size="sm" />
                           <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm text-foreground">{item.title}</p>
+                            <p className="nb-canvas-card-title flex min-w-0 items-center gap-1.5 truncate text-sm leading-6 text-foreground">
+                              <SourceMark item={item} />
+                              <span className="truncate">{item.title}</span>
+                            </p>
                             <p className="truncate font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
                               {workIdentityLabel(item)} · {sourceLabel(item.source)} ·{" "}
                               {formatDate(effectiveWorkDate(item))}

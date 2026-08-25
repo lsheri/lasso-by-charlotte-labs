@@ -49,3 +49,29 @@ export function driveWorkType(mimeType: string | undefined): "document" | "deck"
   if (m.includes("spreadsheet") || m.includes("excel") || m.includes("csv")) return "sheet";
   return "document";
 }
+
+/**
+ * What a Drive file IS, read from the file itself rather than from the shape we
+ * exported it as. A Google Slides deck exported to PDF is still a deck, so the
+ * original Google mime decides first, the Drive link path second, and only then
+ * the bytes we stored.
+ */
+export function driveTypeFromSource(input: {
+  sourceMime?: string | null | undefined;
+  webViewLink?: string | null | undefined;
+  storedMime?: string | null | undefined;
+}): "document" | "deck" | "sheet" {
+  const native = (input.sourceMime ?? "").toLowerCase();
+  if (native.startsWith("application/vnd.google-apps")) {
+    if (native.endsWith("presentation")) return "deck";
+    if (native.endsWith("spreadsheet")) return "sheet";
+    if (native.endsWith("document")) return "document";
+  }
+  const link = (input.webViewLink ?? "").toLowerCase();
+  if (link.includes("/presentation/")) return "deck";
+  if (link.includes("/spreadsheets/")) return "sheet";
+  if (link.includes("/document/")) return "document";
+  if (native) return driveWorkType(native);
+  return driveWorkType(input.storedMime ?? undefined);
+}
+

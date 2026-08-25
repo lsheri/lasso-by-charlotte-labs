@@ -37,6 +37,8 @@ export type WorkItemRow = {
     | {
         drive_file_id?: string;
         mime_type?: string | null;
+        /** The file's ORIGINAL provider mime, when the stored bytes were exported. */
+        source_mime?: string | null;
         web_view_link?: string | null;
         orig_id?: string;
         imported?: boolean;
