@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useProfile } from "@/hooks/use-profile";
 import { isBriefItem } from "@/lib/brief-shared";
+import { ownsWorkItem } from "@/lib/work-ownership";
 import type { WorkItemRow } from "@/lib/work-types";
 
 /**
@@ -45,9 +46,7 @@ export function RowMenu({
   const isDeliverable = ["document", "deck", "sheet"].includes(item.type);
   const readable = isThread || ["document", "deck", "sheet"].includes(item.type);
   // Ownership truth, not page truth: coaches never see these two.
-  const owned = Boolean(
-    profile && profile.role !== "coach" && item.owner_id && item.owner_id === profile.id,
-  );
+  const owned = ownsWorkItem(profile, item);
 
   return (
     <>

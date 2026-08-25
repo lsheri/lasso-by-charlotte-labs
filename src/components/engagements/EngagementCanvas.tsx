@@ -38,6 +38,7 @@ import {
   type MoveColumn,
 } from "@/lib/canvas-move";
 import { workIdentityLabel } from "@/lib/work-identity";
+import { ownsWorkItem } from "@/lib/work-ownership";
 import { persistOrder, remapItems, resetOrder } from "@/lib/workflow-order";
 import { effectiveWorkDate, formatDate, sourceLabel, type WorkItemRow } from "@/lib/work-types";
 
@@ -594,7 +595,7 @@ export function EngagementCanvas({
                                     </DropdownMenuItem>
                                   ),
                                 )}
-                                {profile && item.owner_id === profile.id ? (
+                                {ownsWorkItem(profile, item) ? (
                                   <>
                                     <DropdownMenuSeparator />
                                     <DropdownMenuItem
