@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 
 import { latestDeliverable } from "@/components/engagements/WhatFedThisButton";
-import { StitchLoop } from "@/components/notebook/marks";
+import { ChaliceMark } from "@/components/notebook/marks";
 import { ShipToFirmDialog } from "@/components/work/ShipToFirmDialog";
 import { openJourney } from "@/lib/journey-state";
 import { SHIP_ACTION_LABEL } from "@/lib/shipped-work-shared";
