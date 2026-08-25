@@ -59,6 +59,9 @@ describe("pass91 label colour hierarchy", () => {
 
   it("keeps grey field labels inside firm panels", () => {
     expect(read("src/components/firm/FirmPanels.tsx")).toContain('<p className="micro-label">{label}</p>');
-    expect(read("src/pages/FirmDashboardPage.tsx")).toContain('<p className="micro-label">Seats</p>');
+    // Pass 112 moved the firm numbers into tiles; the grey field label stays.
+    expect(read("src/components/firm/FirmMetricGrid.tsx")).toContain(
+      '<p className="micro-label">{tile.name}</p>',
+    );
   });
 });
