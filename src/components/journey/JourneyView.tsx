@@ -1,9 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { X } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
-import { ChaliceMark, GraphiteRule, JourneyStem, StitchLoop } from "@/components/notebook/marks";
+import { ChaliceMark, GraphiteRule, PencilFirework } from "@/components/notebook/marks";
 import { WorkArtifactPanel } from "@/components/journey/WorkArtifactPanel";
 import { SourceMark } from "@/components/work/SourceMark";
 import { useEngagementPage } from "@/hooks/use-engagement-page";
@@ -14,18 +14,28 @@ import {
   JOURNEY_TITLE,
   JOURNEY_VIEWER_LINE,
   buildJourney,
-  journeyDelayMs,
-  journeySpineMs,
   type Journey,
   type JourneyItemInput,
   type JourneyNode,
   type JourneyStitchInput,
 } from "@/lib/journey";
+import {
+  NODE_ARROW_OFFSET_S,
+  NODE_CARD_OFFSET_S,
+  NODE_FIREWORK_OFFSET_S,
+  NODE_SEGMENT_OFFSET_S,
+  NODE_STITCH_OFFSET_S,
+  beatMs,
+  buildJourneyPath,
+  nodeBeatS,
+  sectionsStartMs,
+} from "@/lib/journey-path";
 import { journeyLinkFor } from "@/lib/journey-link";
 import { closeJourney, useJourneyRequest } from "@/lib/journey-state";
 import { spanStatusClass } from "@/lib/span-status-style";
 import { spanStatusPhrase } from "@/lib/span-readability";
 import { formatDate } from "@/lib/work-types";
+
 
 /**
  * Pass 110: the journey. A vertical stem showing how one deliverable grew out
