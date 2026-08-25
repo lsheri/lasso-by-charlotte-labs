@@ -35,7 +35,7 @@ export type ShippedCard = {
   source: string | null;
   source_vendor: string | null;
   /** Opaque provider evidence, carried so the card can wear the right mark. */
-  source_meta: { mime?: string | null; mime_type?: string | null; vendor?: string | null } | null;
+  source_meta: { mime?: string | null; mime_type?: string | null } | null;
   meta: {
     mime_type?: string | null;
     source_mime?: string | null;

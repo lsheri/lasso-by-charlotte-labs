@@ -111,7 +111,7 @@ type JoinRow = {
     type: string;
     source: string | null;
     source_vendor: string | null;
-    source_meta: { mime?: string | null; vendor?: string | null } | null;
+    source_meta: { mime?: string | null; mime_type?: string | null } | null;
     meta: { mime_type?: string | null; source_mime?: string | null; web_view_link?: string | null } | null;
     owner_id: string | null;
     work_date: string | null;
