@@ -201,21 +201,29 @@ function JourneySurface({
           {loading ? (
             <p className="text-sm text-muted-foreground">Reading the record...</p>
           ) : (
-            <JourneySpine journey={journey} notShared={items.length === 0} />
+            <JourneySpine
+              journey={journey}
+              animate={!reducedMotion}
+              notShared={items.length === 0}
+            />
           )}
         </div>
 
         {!loading && journey.enough ? (
-          <WorkArtifactPanel
-            anchorId={anchorId}
-            anchorTitle={anchorTitle}
-            canEdit={isOwner}
-            orgId={profile?.org_id}
-            profileId={profile?.id}
-            drawing={!reducedMotion}
-            startMs={journeySpineMs(journey.nodes.length)}
-          />
+          <>
+            <GraphiteRule className="mt-10 h-[6px] w-full text-muted-foreground" />
+            <WorkArtifactPanel
+              anchorId={anchorId}
+              anchorTitle={anchorTitle}
+              canEdit={isOwner}
+              orgId={profile?.org_id}
+              profileId={profile?.id}
+              drawing={!reducedMotion}
+              startMs={sectionsStartMs(journey.nodes.length)}
+            />
+          </>
         ) : null}
+
       </div>
     </div>
   );
