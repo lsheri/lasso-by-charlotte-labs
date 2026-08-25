@@ -11,7 +11,15 @@
  */
 import { useCallback, useMemo, useRef, useState } from "react";
 
-import { HATCH_BOX, fnv1a, hatchStrokes, mulberry32, wavingSwatchD } from "@/lib/journey-path";
+import {
+  HATCH_BOX,
+  SCRIBBLE_INFLATE,
+  fnv1a,
+  hatchStrokes,
+  mulberry32,
+  scribblePath,
+  wavingSwatchD,
+} from "@/lib/journey-path";
 
 const MARK_WINDOW_MS = 400;
 
@@ -424,6 +432,116 @@ export function TracedSwatch({ seed = "legend" }: { seed?: string }) {
       data-testid="traced-legend-swatch"
     >
       <path d={d} stroke="var(--nb-ink-yellow)" strokeWidth={2} strokeLinecap="round" />
+    </svg>
+  );
+}
+
+/**
+ * The mark for work that is an app rather than a document. Hand drawn in the
+ * same construction as the chalice: line art, no fill, currentColor.
+ */
+export function RobotMark({ size = 16, className = "" }: { size?: number; className?: string }) {
+  return (
+    <svg
+      className={`pointer-events-none shrink-0 ${className}`}
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.6}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      role="img"
+      aria-label="App"
+    >
+      <title>App</title>
+      {/* the antenna */}
+      <path d="M12 3.1c.1 1 .1 1.9 0 2.8" />
+      <path d="M11.4 2.6c.5-.4 1.1-.3 1.4.2" />
+      {/* the head */}
+      <path d="M6.2 6.4c3.9-.5 7.9-.5 11.7-.1.4 3.4.4 6.8 0 10.2-3.9.4-7.9.4-11.8 0-.4-3.4-.3-6.8.1-10.1" />
+      {/* the eyes */}
+      <path d="M9.4 10.4c.1.5.1 1 0 1.5" />
+      <path d="M14.7 10.4c.1.5.1 1 0 1.5" />
+      {/* the mouth */}
+      <path d="M9.6 14.2c1.6.3 3.2.3 4.9 0" />
+      {/* the ears */}
+      <path d="M4.4 9.6c-.2 1.2-.2 2.4 0 3.6" />
+      <path d="M19.7 9.6c.2 1.2.2 2.4 0 3.6" />
+    </svg>
+  );
+}
+
+/**
+ * The completion mark: a graphite scribble crossed over the thing that is
+ * finished, plus two small dots of punctuation. Transient by contract: the
+ * host unmounts whatever it crosses out, so this end state never rests on an
+ * idle card.
+ */
+export function PencilScribble({
+  width,
+  height,
+  seed,
+  skipped = false,
+  onDone,
+  className = "",
+}: {
+  width: number;
+  height: number;
+  seed: string;
+  /** Reduced motion, or a skipped run: everything appears already drawn. */
+  skipped?: boolean;
+  onDone?: (() => void) | undefined;
+  className?: string;
+}) {
+  const { d, len } = scribblePath(width, height, seed);
+  const pad = SCRIBBLE_INFLATE;
+  const dotY = height / 2;
+
+  return (
+    <svg
+      data-testid="pencil-scribble"
+      className={`pointer-events-none absolute left-0 top-0 ${skipped ? "is-skipped" : ""} ${className}`}
+      width={width + pad * 2 + 16}
+      height={height + pad * 2}
+      viewBox={`${-pad} ${-pad} ${width + pad * 2 + 16} ${height + pad * 2}`}
+      style={{ marginLeft: -pad, marginTop: -pad }}
+      aria-hidden
+    >
+      <path
+        key={seed}
+        data-testid="pencil-scribble-path"
+        d={d}
+        fill="none"
+        stroke="var(--nb-graphite)"
+        strokeWidth={2.25}
+        strokeLinecap="round"
+        opacity={0.55}
+        strokeDasharray={len}
+        strokeDashoffset={skipped ? 0 : len}
+        style={skipped ? undefined : { animation: "nb-scribble-draw 420ms cubic-bezier(0.55, 0.06, 0.35, 0.95) forwards" }}
+        onAnimationEnd={onDone}
+      />
+      {[0, 1].map((i) => (
+        <circle
+          key={i}
+          data-testid={`pencil-scribble-dot-${i}`}
+          cx={width + 6 + i * 6}
+          cy={dotY}
+          r={1.5}
+          fill="var(--nb-graphite)"
+          opacity={0.5}
+          style={
+            skipped
+              ? undefined
+              : {
+                  transformOrigin: `${width + 6 + i * 6}px ${dotY}px`,
+                  animation: `nb-scribble-dot 80ms ease-out ${420 + i * 80}ms both`,
+                }
+          }
+        />
+      ))}
     </svg>
   );
 }

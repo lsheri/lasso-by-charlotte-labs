@@ -1,7 +1,7 @@
 import { MoreHorizontal } from "lucide-react";
 import { useEffect, useState } from "react";
 
-import { GraphiteRule } from "@/components/notebook/marks";
+import { GraphiteRule, RobotMark } from "@/components/notebook/marks";
 import { Button } from "@/components/ui/button";
 import { SourceMark } from "@/components/work/SourceMark";
 import { journeyTypeLabel } from "@/lib/journey";
@@ -38,6 +38,12 @@ export function ShippedWorkCard({
 
   const facts = recordFactsLine(card);
   const where = [card.client_label, card.engagement_code].filter(Boolean).join(" · ");
+  // The engagement is what the firm recognises; the file name is a detail.
+  const headline = card.engagement_title?.trim() || card.title;
+  const brief = card.engagement_brief?.trim() ?? "";
+  const metaLine = [journeyTypeLabel(card.type), card.title, where || null]
+    .filter(Boolean)
+    .join(" · ");
 
   return (
     <div
@@ -58,14 +64,35 @@ export function ShippedWorkCard({
         }
       >
         <span className="flex items-start gap-2">
-          <SourceMark item={{ source_vendor: card.source_vendor }} size={14} />
+          {card.type === "app" ? (
+            <RobotMark size={16} className="text-muted-foreground" />
+          ) : (
+            <SourceMark
+              item={{
+                source: card.source ?? undefined,
+                source_vendor: card.source_vendor,
+                source_meta: card.source_meta,
+                meta: card.meta,
+                type: card.type,
+              }}
+              size={14}
+            />
+          )}
           <span className="min-w-0 break-words text-sm font-medium text-foreground">
-            {card.title}
+            {headline}
           </span>
         </span>
         <GraphiteRule className="mt-1 h-[6px] w-[140px] text-muted-foreground" />
+        {brief ? (
+          <span
+            data-testid={`shipped-card-brief-${card.work_item_id}`}
+            className="mt-1 block line-clamp-2 text-xs text-muted-foreground"
+          >
+            {brief}
+          </span>
+        ) : null}
         <span className="mt-1.5 block font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
-          {[journeyTypeLabel(card.type), where || null].filter(Boolean).join(" · ")}
+          {metaLine}
         </span>
         <span className="mt-1 block text-xs text-muted-foreground">
           Shipped by {card.shipped_by_name ?? "a colleague"} · {formatDate(card.shipped_at)}

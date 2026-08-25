@@ -2184,6 +2184,9 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   .nb-pile-item {
     transition: none !important;
   }
+  .nb-ship-settle {
+    animation: none !important;
+  }
   .nb-pile[data-scatter="1"] .nb-pile-item {
     transform: none !important;
   }
@@ -2235,6 +2238,7 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 .nb-pile {
   display: flex;
   flex-wrap: wrap;
+  align-items: flex-start;
   gap: 10px;
   padding: 10px 4px;
 }
@@ -2252,4 +2256,35 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   .nb-pile[data-scatter="1"] .nb-pile-item {
     transform: none;
   }
+}
+/* Pass 116: the scribble-out. A finished thing is crossed off in graphite. */
+@keyframes nb-scribble-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes nb-scribble-dot {
+  from {
+    transform: scale(0);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+.nb-scribble-host {
+  position: relative;
+}
+@keyframes nb-ship-settle {
+  0% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+.nb-ship-settle {
+  animation: nb-ship-settle 120ms ease-out;
 }

@@ -55,6 +55,8 @@ const LETTERMARKS: Record<string, { letters: string; label: string }> = {
 
 type SourceItem = {
   source?: WorkItemRow["source"] | undefined;
+  /** Evidence for which Google app mark a Drive item wears. */
+  type?: string | null | undefined;
   source_vendor?: WorkItemRow["source_vendor"];
   source_meta?: WorkItemRow["source_meta"];
   meta?: WorkItemRow["meta"];
