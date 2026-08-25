@@ -59,7 +59,7 @@ export function StitchChip({
         {stitch.to_item_title ? (
           <span className="flex min-w-0 items-center gap-1.5 text-sm text-muted-foreground">
             from
-            <SourceMark item={{ source_vendor: sourceVendor }} size={12} />
+            {sourceVendor ? <SourceMark item={{ source_vendor: sourceVendor }} size={12} /> : null}
             <span className="min-w-0 truncate text-foreground">{stitch.to_item_title}</span>
           </span>
         ) : null}
