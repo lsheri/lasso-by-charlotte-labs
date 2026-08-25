@@ -116,6 +116,10 @@
   --nb-rule: #e3e5e1;
   /* Pass 105: the pencil the lasso is drawn with. Warm, and the page shows through. */
   --nb-ink-yellow: #e3b341;
+  /* Pass 107: the quiet blue the "What fed this" web breathes in. */
+  --nb-web-blue-1: #dbe7f6;
+  --nb-web-blue-2: #b9d2ef;
+  --nb-web-blue-3: #7fa8d8;
   --nb-ink: #111413;
   --nb-graphite: #2f3331;
   --nb-mid: #5a5d5c;
@@ -1797,4 +1801,86 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 }
 .nb-chip-enter-static {
   animation: none;
+}
+
+/* ---------------------------------------------------------------------------
+   Pass 107: the "What fed this" call to action. A wider button with a slow
+   blue gradient breathing behind it and a clear wave drifting across, so the
+   entry point into provenance looks alive without shouting. Reduced motion
+   keeps the gradient and the wave, perfectly still.
+--------------------------------------------------------------------------- */
+
+.nb-web-cta {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  transition: transform 200ms var(--nb-ease);
+}
+.nb-web-cta:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+.nb-web-cta:active:not(:disabled) {
+  transform: translateY(0);
+}
+.nb-web-cta::before {
+  content: "";
+  position: absolute;
+  inset: -40%;
+  z-index: -2;
+  background: linear-gradient(
+    115deg,
+    var(--nb-web-blue-1) 0%,
+    var(--nb-web-blue-2) 35%,
+    var(--nb-web-blue-3) 50%,
+    var(--nb-web-blue-2) 65%,
+    var(--nb-web-blue-1) 100%
+  );
+  background-size: 220% 220%;
+  opacity: 0.55;
+  animation: nb-web-drift 12s var(--nb-ease) infinite;
+}
+.nb-web-cta::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: radial-gradient(
+    120% 80% at 20% 120%,
+    rgb(255 255 255 / 0.85) 0%,
+    rgb(255 255 255 / 0.25) 45%,
+    rgb(255 255 255 / 0) 70%
+  );
+  animation: nb-web-wave 9s var(--nb-ease) infinite;
+}
+.nb-web-cta:disabled::before,
+.nb-web-cta:disabled::after {
+  animation: none;
+  opacity: 0.2;
+}
+@keyframes nb-web-drift {
+  0% { background-position: 0% 50%; opacity: 0.45; }
+  50% { background-position: 100% 50%; opacity: 0.7; }
+  100% { background-position: 0% 50%; opacity: 0.45; }
+}
+@keyframes nb-web-wave {
+  0% { transform: translateX(-12%); }
+  50% { transform: translateX(12%); }
+  100% { transform: translateX(-12%); }
+}
+.nb-web-mark {
+  transition: transform 300ms var(--nb-ease);
+}
+.nb-web-cta:hover:not(:disabled) .nb-web-mark {
+  transform: rotate(-12deg) scale(1.06);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nb-web-cta,
+  .nb-web-cta::before,
+  .nb-web-cta::after,
+  .nb-web-mark {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
 }
