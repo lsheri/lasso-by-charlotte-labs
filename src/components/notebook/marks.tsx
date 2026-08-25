@@ -11,6 +11,8 @@
  */
 import { useCallback, useRef, useState } from "react";
 
+import { fnv1a, mulberry32 } from "@/lib/journey-path";
+
 const MARK_WINDOW_MS = 400;
 
 let lastMarkAt = -Infinity;
@@ -285,8 +287,6 @@ export function GraphiteRule({ className = "" }: { className?: string }) {
  * work arrives on the path: a storyteller's beat, never a notification. It is
  * transient by design, so its resting state is invisible.
  */
-import { fnv1a, mulberry32 } from "@/lib/journey-path";
-
 const FIREWORK_ANGLES = [-80, -45, -10, 25, 115, 160, 205];
 
 export type FireworkStroke = { d: string; ink: "yellow" | "graphite" };
