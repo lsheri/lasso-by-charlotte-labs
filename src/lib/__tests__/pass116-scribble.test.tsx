@@ -112,3 +112,79 @@ describe("pass 116: the ship dialog crosses the work off", () => {
     expect(screen.getByText("Ship it")).toBeTruthy();
   });
 });
+
+describe("pass 116.1: a failed ship leaves no pencil behind", () => {
+  it("never draws when the server rejects before the settle timer", async () => {
+    setReducedMotion(false);
+    vi.useFakeTimers();
+    shipMock.run.mockRejectedValue(new Error("nope"));
+    const onOpenChange = vi.fn();
+    render(
+      <ShipToFirmDialog
+        workItemId="w3"
+        title="Q2 board deck"
+        engagementId="e1"
+        open
+        onOpenChange={onOpenChange}
+      />,
+    );
+    fireEvent.click(screen.getByText("Ship it"));
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(screen.getByTestId("ship-error")).toBeTruthy();
+    for (const step of [120, 300, 720, 1200]) {
+      act(() => {
+        vi.advanceTimersByTime(step);
+      });
+      expect(document.querySelector('[data-testid="pencil-scribble"]')).toBeNull();
+    }
+    expect(onOpenChange).not.toHaveBeenCalled();
+    expect(screen.getByText("Ship it")).toBeTruthy();
+    vi.useRealTimers();
+  });
+
+  it("removes the pencil for good when the server rejects mid draw", async () => {
+    setReducedMotion(false);
+    vi.useFakeTimers();
+    let rejectShip: ((error: Error) => void) | null = null;
+    shipMock.run.mockImplementation(
+      () =>
+        new Promise((_resolve, reject) => {
+          rejectShip = reject;
+        }),
+    );
+    const onOpenChange = vi.fn();
+    render(
+      <ShipToFirmDialog
+        workItemId="w4"
+        title="Q2 board deck"
+        engagementId="e1"
+        open
+        onOpenChange={onOpenChange}
+      />,
+    );
+    fireEvent.click(screen.getByText("Ship it"));
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
+    expect(screen.getByTestId("pencil-scribble")).toBeTruthy();
+    await act(async () => {
+      rejectShip?.(new Error("nope"));
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    for (const step of [100, 720, 1200]) {
+      act(() => {
+        vi.advanceTimersByTime(step);
+      });
+      expect(document.querySelector('[data-testid="pencil-scribble"]')).toBeNull();
+    }
+    expect(onOpenChange).not.toHaveBeenCalled();
+    expect(screen.getByTestId("ship-error")).toBeTruthy();
+    vi.useRealTimers();
+  });
+});
