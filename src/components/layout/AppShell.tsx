@@ -8,6 +8,7 @@ import { AppSidebar } from "./AppSidebar";
 import { MobileTabBar } from "./MobileTabBar";
 import { FeedbackDialog, FeedbackWidget } from "@/components/feedback/FeedbackWidget";
 import { ProvenanceAudit } from "@/components/provenance/ProvenanceAudit";
+import { JourneyView } from "@/components/journey/JourneyView";
 import { AskLassoProvider } from "@/components/reflect/ask-lasso-context";
 import { AskDockStateProvider } from "@/components/reflect/ask-dock-state";
 import { ChecklistLauncher } from "@/components/onboarding/checklist/ChecklistLauncher";
@@ -73,6 +74,7 @@ export function AppShell() {
 
         </div>
         <ProvenanceAudit />
+        <JourneyView />
         <FeedbackWidget />
         <MobileTabBar />
         <StepPopover />

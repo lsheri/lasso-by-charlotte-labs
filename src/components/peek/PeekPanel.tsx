@@ -25,6 +25,7 @@ import { isBriefItem } from "@/lib/brief-shared";
 import { vendorLabel } from "@/lib/conversation-shared";
 import { deliverableKindOf, type DeliverableKind } from "@/lib/deliverable-kinds";
 import { isDeliverableType } from "@/lib/lineage-shared";
+import { openJourney } from "@/lib/journey-state";
 import { peekFormat } from "@/lib/peek-format";
 import { getWorkFileUrl } from "@/lib/work-files.functions";
 import {
@@ -255,6 +256,19 @@ export function PeekPanel({
       </div>
 
       <footer className="flex shrink-0 flex-wrap items-center gap-x-4 gap-y-1 border-t border-border bg-card px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 sm:px-6 sm:pt-4">
+        {engagementId && isDeliverableType(active.type) ? (
+          <FooterAction
+            onClick={() =>
+              openJourney({
+                anchorId: active.id,
+                anchorTitle: active.title,
+                engagementId,
+              })
+            }
+          >
+            Journey
+          </FooterAction>
+        ) : null}
         {canEdit && onMap ? (
           <FooterAction primary onClick={() => onMap(active, group)}>
             {active.visibility === "mapped" ? "Remap" : "Map to a workstream"}
