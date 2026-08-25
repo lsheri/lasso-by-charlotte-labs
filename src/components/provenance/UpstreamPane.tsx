@@ -144,9 +144,18 @@ export function UpstreamPane({
                               : ""
                           }`}
                         >
-                          <p className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
-                            Turn {turn.turn_no} · {turn.role}
+                          <p className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+                            {focus?.turnId === turn.id && focus.stitchId && focus.number ? (
+                              <StitchBadge
+                                n={focus.number}
+                                stitchId={focus.stitchId}
+                                where="turn"
+                                filled
+                              />
+                            ) : null}
+                            {turnLabel(turn.turn_no, turn.role)}
                           </p>
+
                           <p className="mt-1 whitespace-pre-wrap text-sm text-foreground">
                             {turn.content}
                           </p>
