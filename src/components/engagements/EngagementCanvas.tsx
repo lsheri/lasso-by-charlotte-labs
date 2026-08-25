@@ -189,9 +189,19 @@ export function EngagementCanvas({
     const target = next[to.col];
     const source = columns[from.col];
     if (!target || !source || !profile) return;
+    // Timed in three beats: the optimistic paint, the server write, and the
+    // refetch that replaces the optimistic view with server truth.
+    const timer = perfTimer("workstream.drag_remap", tasks.length > 0 ? "warm" : "cold");
+    let wroteMark = false;
+    const markWrite = () => {
+      if (wroteMark) return;
+      wroteMark = true;
+      timer.mark("write");
+    };
     setBusy(true);
     setError(null);
     setLocal(next);
+    timer.markAfterPaint("paint");
     try {
       if (from.col !== to.col) {
         const element = cards.get(cardId);
@@ -205,6 +215,7 @@ export function EngagementCanvas({
           syncEpisode: syncEpisode as never,
           invalidate,
         });
+        markWrite();
         if (remap.error) {
           setError(remap.error);
           setLocal(null);
@@ -230,11 +241,15 @@ export function EngagementCanvas({
           orgId: profile.org_id,
           onChanged: refreshTasks,
         });
+        markWrite();
         if (result.error) setError(result.error);
       }
     } finally {
+      markWrite();
+      timer.mark("refetch");
       setLocal(null);
       setBusy(false);
+      timer.done("total");
     }
   }
 
