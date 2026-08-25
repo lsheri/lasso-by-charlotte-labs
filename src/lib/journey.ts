@@ -187,6 +187,11 @@ export function buildJourney(input: {
 export const JOURNEY_STEP_MS = 260;
 export const JOURNEY_MAX_TOTAL_MS = 4000;
 
+/** How long the spine takes to finish drawing, so the sections can wait for it. */
+export function journeySpineMs(count: number): number {
+  return count > 0 ? journeyDelayMs(count - 1, count) + 500 : 0;
+}
+
 export function journeyDelayMs(index: number, count: number): number {
   const step = count > 1 ? Math.min(JOURNEY_STEP_MS, JOURNEY_MAX_TOTAL_MS / count) : 0;
   return Math.round(index * step);
