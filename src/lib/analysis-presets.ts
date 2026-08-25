@@ -93,8 +93,6 @@ export const ANALYSIS_PRESET_IDS = [
   "verification",
   "still_on_brief",
   "what_fed_this",
-  "what_recurs",
-  "how_this_was_made",
   "firm_checks",
 ] as const;
 
@@ -235,45 +233,7 @@ ABSOLUTE RULES:
 - No count of how many items fed the work, no completeness claim, no number about the person.
 - Never use an em dash.`;
 
-const WHAT_RECURS_PROMPT = `You are looking across SEVERAL pieces of this person's own work in one engagement, to find what happened more than once. You are given the items and their conversations, oldest first, with dates.
 
-Report only patterns that appear in AT LEAST TWO separate pieces of work, each with its own citation. A pattern in one piece of work is an observation about that piece, not a recurrence, and it does not belong here.
-
-For each recurrence:
-- NAME THE PATTERN in plain language, as a thing that happened, not as a trait of the person. Write "the brief's constraint was restated before drafting" rather than "you are disciplined about constraints".
-- WHERE: each occurrence, by item title and date, with the exact quoted span.
-- WHAT CHANGED BETWEEN THEM, if anything. Say plainly when nothing changed. Change is not improvement and must never be written as improvement.
-
-VOCABULARY, NOT MEASUREMENT. This is the hard constraint on this analysis. You are naming things that happened repeatedly. You are not measuring a person over time, not describing a trajectory, not saying anything is developing, growing, improving, declining, strengthening or weakening. No trend language of any kind. No first-versus-latest comparison framed as progress. If you find yourself about to write that something got better, write instead what specifically differed and let the reader decide.
-
-ABSOLUTE RULES:
-- At most five recurrences, ordered by how many pieces of work they appear in.
-- Verbatim or it does not render, on every citation.
-- Never a number about the person: no counts of behaviours, no frequencies, no proportions, no "X of your Y conversations". Dates and item titles are the only identifiers permitted.
-- Never rank the person, never use a ranking adjective, never call anything a strength or a weakness.
-- If fewer than three pieces of work are in scope, produce nothing and say plainly that there is not enough work in this engagement yet.
-- Never use an em dash.`;
-
-const HOW_THIS_WAS_MADE_PROMPT = `You are reconstructing HOW one engagement's work was made, from the captured record only. You are given the mapped items OLDEST FIRST, each with its title, its tool/source, its date and that date's PRECISION, and its content. Turns are numbered "TURN n ROLE:".
-
-Report the work as PHASES in the order the record shows them. Name each phase from the evidence (for example "Discovery calls", "Research with the model", "Drafting the deck", "Revision after review", "Delivery"), never from a template the record does not support. For each phase give:
-- WHEN: the dates involved, stated at the precision the source supplies (a Drive modified date, a meeting date, a capture date). When only a capture date exists, say "captured <date>" and never present it as when the work happened.
-- THE WORK: the items in this phase, each named with its title and tool.
-- WHERE AI ENTERED: what the person brought to the model and what came back, with turn citations, quoted verbatim where quoted at all.
-- VERIFICATION IN THE RECORD: any checking, sourcing or recalculation this phase shows, cited. Say plainly when a phase shows none.
-- THE HANDOFF: what carried this phase's output into the next, when the record shows it.
-
-End with TOOLS THIS RECORD SHOWS: one line listing the tools by name.
-
-TIME IS DATES AND ORDER, NEVER AMOUNT. This is the hard constraint and it is not negotiable. Never state or imply how long anything took, what share of time anything consumed, or that anything was fast or slow. No durations, no "spent", no "most of the time", no counts of days as effort. A reader who wants elapsed time can read the dates. The moment this produces a time-share it becomes a measurement of a person and it is the model that failed.
-
-THE WORK IS THE SUBJECT. Never judge the person, their pace or their process quality. Never call the process efficient or inefficient. Sequence is fact; merit is not yours to assign.
-
-ABSOLUTE RULES:
-- Verbatim or it does not render, on every quote. Turn citations as (turn 4).
-- If fewer than two items are in scope, produce nothing and say plainly there is not enough work to show a sequence.
-- Phases the record does not show are absent, not invented. End with the coverage line: the captured record may not include everything that happened, so missing phases may simply be work Lasso never saw.
-- Never use an em dash.`;
 
 
 
@@ -305,9 +265,12 @@ export const OUTPUT_DISCIPLINE = `OUTPUT DISCIPLINE:
 - Beyond the quotes the rules above require, each finding gets at most two sentences.
 - No closing summary, no encouragement, no offer to help further. When a mandated coverage or rollup line exists, it is the last line.`;
 
-/** Below this, "What recurs" has nothing to compare and must not run. */
+/**
+ * Historic floors. The engagement-wide analyses that used them were retired in
+ * pass 103; the constants stay because old run rows and their copy still refer
+ * to them.
+ */
 export const MIN_ITEMS_FOR_RECURRENCE = 3;
-/** Below this, there is no order to reconstruct, only one piece of work. */
 export const MIN_ITEMS_FOR_SEQUENCE = 2;
 
 const RAW_ANALYSIS_PRESETS: AnalysisPreset[] = [
@@ -316,7 +279,8 @@ const RAW_ANALYSIS_PRESETS: AnalysisPreset[] = [
     id: "ai_fluency_4d",
     dbPreset: "ai_fluency_4d",
     label: "How you direct AI",
-    description: "How you delegated, described, discerned and verified in this conversation.",
+    description:
+      "How you delegated, described, discerned and verified in this one conversation of yours. Only you can run it.",
     scope: "thread",
     systemPrompt: FLUENCY_PROMPT,
     openingMessage:
@@ -338,8 +302,9 @@ const RAW_ANALYSIS_PRESETS: AnalysisPreset[] = [
   {
     id: "working_the_model",
     dbPreset: "working_the_model",
-    label: "How you worked the model",
-    description: "The techniques that would have gotten this answer in fewer turns.",
+    label: "Prompt Efficiency",
+    description:
+      "How this one conversation of yours could have reached the same answer in fewer turns. Only you can run it.",
     scope: "thread",
     systemPrompt: WORKING_THE_MODEL_PROMPT,
     openingMessage:
@@ -358,7 +323,8 @@ const RAW_ANALYSIS_PRESETS: AnalysisPreset[] = [
     handoffSchema: "open_checks",
     dbPreset: "verification",
     label: "What to verify",
-    description: "Which claims in this work rest on the model's word, and how to check them.",
+    description:
+      "Reads this deliverable and the conversation behind it, and names the claims that rest on the model's word with a way to check each one.",
     scope: "deliverable",
     systemPrompt: VERIFICATION_PROMPT,
     openingMessage:
@@ -384,7 +350,7 @@ const RAW_ANALYSIS_PRESETS: AnalysisPreset[] = [
     dbPreset: "still_on_brief",
     label: "Drift analysis",
     description:
-      "Where this work departed from the brief, and whether the departure was acknowledged.",
+      "Reads this deliverable against its brief and names each departure as added, dropped, changed or reframed, with whether the record shows it being acknowledged.",
     scope: "deliverable",
     systemPrompt: STILL_ON_BRIEF_PROMPT,
     openingMessage:
@@ -409,7 +375,8 @@ const RAW_ANALYSIS_PRESETS: AnalysisPreset[] = [
     handoffSchema: "decision_candidates",
     dbPreset: "decision_origin",
     label: "Who decided what",
-    description: "Every significant call in this work, and where it came from.",
+    description:
+      "Reads this deliverable and its conversations and sets out every significant call, and whether it came from the brief, from you, from the model, or from a source.",
     scope: "deliverable",
     systemPrompt: DECISION_ORIGIN_PROMPT,
     openingMessage:
@@ -433,7 +400,8 @@ const RAW_ANALYSIS_PRESETS: AnalysisPreset[] = [
     id: "what_fed_this",
     dbPreset: "what_fed_this",
     label: "What fed this",
-    description: "The conversations and documents that went into this piece of work.",
+    description:
+      "Opens the two-pane provenance audit: this deliverable's record beside the engagement's other work. Circle or select a span to trace where it came from.",
     scope: "deliverable",
     systemPrompt: WHAT_FED_THIS_PROMPT,
     openingMessage: "Reconstruct what fed this piece of work, with the evidence for each link.",
@@ -452,58 +420,12 @@ const RAW_ANALYSIS_PRESETS: AnalysisPreset[] = [
     coachMayRun: true,
   },
   {
-    id: "what_recurs",
-    dbPreset: "what_recurs",
-    label: "What recurs",
-    description: "Patterns that appear in more than one piece of work in this engagement.",
-    scope: "engagement",
-    systemPrompt: WHAT_RECURS_PROMPT,
-    openingMessage:
-      "Across this engagement, name what happened in more than one piece of work, with citations.",
-    infoPanel: {
-      reads: (detail) => detail,
-      looksFor: [
-        "Things that happened in at least two separate pieces of work",
-        "Where each occurrence is, by item and date",
-        "What differed between the occurrences",
-      ],
-      never: `${NEVER_LINE} No trend, no trajectory, no count and no chart is produced, by design.`,
-      sources: ANALYSIS_SOURCES,
-    },
-    attribution: null,
-    coachMayRun: false,
-    minItems: MIN_ITEMS_FOR_RECURRENCE,
-  },
-  {
-    id: "how_this_was_made",
-    dbPreset: "how_this_was_made",
-    label: "How this was made",
-    description: "The sequence this work actually followed, from first input to delivery.",
-    scope: "engagement",
-    systemPrompt: HOW_THIS_WAS_MADE_PROMPT,
-    openingMessage: "Reconstruct how this work was made, in the order the record shows.",
-    infoPanel: {
-      reads: (detail) => detail,
-      looksFor: [
-        "The phases the record shows, in order",
-        "The tools each phase used",
-        "Where AI entered the work, with cited turns",
-        "Verification moments in the record",
-      ],
-      never: `${NEVER_LINE} No duration, time share, or speed judgment is produced anywhere, by design.`,
-      sources: ANALYSIS_SOURCES,
-    },
-    attribution: null,
-    coachMayRun: true,
-    minItems: MIN_ITEMS_FOR_SEQUENCE,
-  },
-
-  {
     id: "firm_checks",
     handoffSchema: "check_results",
     dbPreset: "firm_checks",
     label: "Firm checks",
-    description: "Your firm's checks, run against this work.",
+    description:
+      "Runs each of your firm's checks against this deliverable on the server, one check at a time, by title.",
     scope: "deliverable",
     systemPrompt: FIRM_CHECKS_PROMPT,
     openingMessage: "Run my firm's checks against this piece of work.",
@@ -531,6 +453,7 @@ export const ANALYSIS_PRESETS: AnalysisPreset[] = RAW_ANALYSIS_PRESETS.map((pres
 /** Appended to the firm checks preset at run time; empty means the chip is disabled. */
 export const NO_FIRM_CHECKS_LINE = "no firm checks written yet";
 
+/** Kept for historical run rows whose preset no longer exists. */
 export const NOT_ENOUGH_WORK_LINE = "There is not enough work in this engagement yet.";
 export const NOT_ENOUGH_FOR_SEQUENCE_LINE =
   "There is not enough work in this engagement to show a sequence yet.";
@@ -545,7 +468,10 @@ export function minItemsFor(preset: AnalysisPreset): number {
 }
 
 export function notEnoughWorkLine(preset: AnalysisPreset): string {
-  return preset.id === "how_this_was_made" ? NOT_ENOUGH_FOR_SEQUENCE_LINE : NOT_ENOUGH_WORK_LINE;
+  // Sequence-shaped presets are retired; anything left says the plain line.
+  return minItemsFor(preset) >= MIN_ITEMS_FOR_SEQUENCE
+    ? NOT_ENOUGH_FOR_SEQUENCE_LINE
+    : NOT_ENOUGH_WORK_LINE;
 }
 
 /** The wording used where the person is choosing items, not viewing a scope. */

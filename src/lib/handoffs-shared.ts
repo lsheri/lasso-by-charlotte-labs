@@ -23,8 +23,7 @@ export type HandoffKind = (typeof HANDOFF_KINDS)[number];
 /**
  * Only these four presets emit handoffs. Person-shaped presets (ai_fluency_4d,
  * working_the_model) emit nothing, ever: nothing about a person flows anywhere.
- * what_recurs emits nothing this pass and what_fed_this already owns its own
- * confirm flow in the lineage drafter.
+ * what_fed_this already owns its own confirm flow in the lineage drafter.
  */
 export const HANDOFF_PRESETS: Record<string, HandoffKind> = {
   verification: "open_checks",
@@ -37,6 +36,7 @@ export const HANDOFF_PRESETS: Record<string, HandoffKind> = {
 export const PERSON_SHAPED_PRESETS = ["ai_fluency_4d", "working_the_model"] as const;
 export const NO_HANDOFF_PRESETS = [
   ...PERSON_SHAPED_PRESETS,
+  // Retired, but old run rows still carry it.
   "what_recurs",
   "what_fed_this",
 ] as const;

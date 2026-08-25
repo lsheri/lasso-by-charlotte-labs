@@ -1,6 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { Pencil } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -30,7 +30,14 @@ export type EditableEngagement = {
   term_label: string | null;
 };
 
-export function EditEngagementDialog({ engagement }: { engagement: EditableEngagement }) {
+export function EditEngagementDialog({
+  engagement,
+  trigger,
+}: {
+  engagement: EditableEngagement;
+  /** The brief sticky note passes a pencil; everywhere else keeps the pill. */
+  trigger?: ReactNode;
+}) {
   const { data: profile } = useProfile();
   const queryClient = useQueryClient();
   const invalidateClients = useInvalidateClients();
@@ -103,6 +110,7 @@ export function EditEngagementDialog({ engagement }: { engagement: EditableEngag
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
+        {trigger ?? (
         <button
           type="button"
           aria-label="Edit engagement"
@@ -110,6 +118,7 @@ export function EditEngagementDialog({ engagement }: { engagement: EditableEngag
         >
           <Pencil className="h-3 w-3" aria-hidden /> Edit
         </button>
+        )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>

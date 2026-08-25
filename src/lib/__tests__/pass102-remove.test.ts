@@ -109,12 +109,12 @@ describe("remove from engagement", () => {
       { work_item_id: "w2", task_id: "t1", step_no: 1, step_confirmed: true },
     ]);
     // Still mapped elsewhere, so it does not return to the pile.
-    expect(tables.work_items[0]!.visibility).toBe("mapped");
+    expect(tables.work_items[0]!['visibility']).toBe("mapped");
   });
 
   it("returns the item to the pile once nothing maps it", async () => {
     const tables = world();
-    tables.work_item_tasks = tables.work_item_tasks.filter((row) => row.task_id !== "t2");
+    tables.work_item_tasks = tables.work_item_tasks.filter((row) => row['task_id'] !== "t2");
     const client = stubClient(tables as never);
     const result = await removeFromEngagement(client, {
       workItemId: "w1",
@@ -122,19 +122,19 @@ describe("remove from engagement", () => {
       profileId: "p1",
     });
     expect(result.still_mapped_elsewhere).toBe(false);
-    expect(tables.work_items[0]!.visibility).toBe("unmapped");
+    expect(tables.work_items[0]!['visibility']).toBe("unmapped");
   });
 
   it("clears a brief marker scoped to the engagement it just left", async () => {
     const tables = world();
-    tables.work_items[0]!.meta = { role: "brief", brief_scope: { type: "engagement", id: "e1" } };
+    tables.work_items[0]!['meta'] = { role: "brief", brief_scope: { type: "engagement", id: "e1" } };
     const client = stubClient(tables as never);
     await removeFromEngagement(client, {
       workItemId: "w1",
       engagementId: "e1",
       profileId: "p1",
     });
-    expect(tables.work_items[0]!.meta).toEqual({});
+    expect(tables.work_items[0]!['meta']).toEqual({});
   });
 
   it("refuses a caller who does not own the item", async () => {

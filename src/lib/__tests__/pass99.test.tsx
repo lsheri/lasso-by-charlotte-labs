@@ -9,36 +9,18 @@ import {
 } from "@/lib/analysis-presets";
 import { datePrecisionLine, type ItemRow } from "@/lib/reflect-context.server";
 
-describe("pass 99 · how this was made registry", () => {
-  const preset = analysisPreset("how_this_was_made")!;
-
-  it("is an engagement scoped analysis a coach may run", () => {
-    expect(preset).toBeTruthy();
-    expect(preset.scope).toBe("engagement");
-    expect(preset.coachMayRun).toBe(true);
-    expect(minItemsFor(preset)).toBe(2);
+describe("pass 99 · retired engagement analyses", () => {
+  it("no longer registers the two presets pass 103 removed", () => {
+    expect(analysisPreset("how_this_was_made")).toBeNull();
+    expect(analysisPreset("what_recurs")).toBeNull();
   });
 
-  it("pins the time constraint and the refusal", () => {
-    expect(preset.systemPrompt).toContain("TIME IS DATES AND ORDER");
-    expect(preset.systemPrompt).toContain("If fewer than two items are in scope");
-    expect(preset.systemPrompt).not.toContain("—");
-  });
-
-  it("carries the shared output discipline", () => {
+  it("keeps the shared output discipline on what survives", () => {
+    const preset = analysisPreset("verification")!;
     expect(preset.systemPrompt).toContain(OUTPUT_DISCIPLINE.trim().split("\n")[0]!);
-  });
-});
-
-describe("pass 99 · per preset minimums", () => {
-  it("lets a two item selection run a sequence but not a recurrence", () => {
-    const sequence = analysisPreset("how_this_was_made")!;
-    const recurs = analysisPreset("what_recurs")!;
-    expect(2 >= minItemsFor(sequence)).toBe(true);
-    expect(2 >= minItemsFor(recurs)).toBe(false);
-    expect(needsMoreSelectedLine(sequence)).toBe("needs at least two pieces of work selected");
-    expect(needsMoreSelectedLine(recurs)).toBe("needs at least three pieces of work selected");
-    expect(notEnoughWorkLine(sequence)).not.toBe(notEnoughWorkLine(recurs));
+    expect(minItemsFor(preset)).toBe(1);
+    expect(needsMoreSelectedLine(preset)).toContain("at least");
+    expect(notEnoughWorkLine(preset)).toBeTruthy();
   });
 });
 

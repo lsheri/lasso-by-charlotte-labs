@@ -43,7 +43,8 @@ export function ScopePicker({
         .from("tasks")
         .select("id, name, engagements(code, title, client_label, clients(id, name, quick_folder))")
         .eq("owner_id", profile?.id as string)
-        .order("position", { ascending: true });
+        .order("position", { ascending: true })
+        .order("created_at", { ascending: true });
       if (error) throw error;
       return (data ?? []) as unknown as {
         id: string;

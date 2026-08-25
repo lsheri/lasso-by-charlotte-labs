@@ -13,6 +13,7 @@ import {
 import { useVendorVisible } from "@/hooks/use-vendor-display";
 import { vendorLabel } from "@/lib/conversation-shared";
 import { hueStyles, vendorHue, workIdentity } from "@/lib/work-identity";
+import { driveMarkKey } from "@/lib/work-mark";
 import { sourceLabel, type WorkItemRow } from "@/lib/work-types";
 
 /**
@@ -64,14 +65,13 @@ function normalise(value: string | null | undefined): string | null {
   return v ? v : null;
 }
 
-/** Google Drive files get the exact app mark their mime type implies. */
-function driveBrand(mime: string | null | undefined): Brand {
-  const m = mime ?? "";
-  if (m.includes("spreadsheet")) return siGooglesheets;
-  if (m.includes("presentation")) return siGoogleslides;
-  if (m.includes("document")) return siGoogledocs;
-  return siGoogledrive;
-}
+/** Which mark a Drive item wears is decided once, in work-mark. */
+const DRIVE_BRANDS: Record<string, Brand> = {
+  googledocs: siGoogledocs,
+  googlesheets: siGooglesheets,
+  googleslides: siGoogleslides,
+  googledrive: siGoogledrive,
+};
 
 /** The vendor key behind an item, from the vendor field or the source prefix. */
 export function sourceVendorKey(item: SourceItem): string | null {
@@ -96,7 +96,7 @@ export function sourceBrand(item: SourceItem): Brand | null {
   const key = sourceVendorKey(item);
   if (!key) return null;
   if (key === "googledrive" || key === "gdrive" || key === "google drive") {
-    return driveBrand(item.meta?.mime_type);
+    return DRIVE_BRANDS[driveMarkKey(item)] ?? siGoogledrive;
   }
   return VENDOR_BRANDS[key] ?? null;
 }

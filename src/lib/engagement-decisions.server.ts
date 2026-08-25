@@ -58,7 +58,8 @@ export async function buildEngagementCorpus(
     .select("id, name, goal, detail, status, position")
     .eq("engagement_id", engagementId)
     .eq("owner_id", ownerId)
-    .order("position", { ascending: true });
+    .order("position", { ascending: true })
+    .order("created_at", { ascending: true });
 
   const taskRows = tasks ?? [];
   const { data: links } = taskRows.length

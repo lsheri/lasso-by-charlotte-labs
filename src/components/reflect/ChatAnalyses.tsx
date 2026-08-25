@@ -55,8 +55,6 @@ const STOCK_ORDER: readonly string[] = [
   "still_on_brief",
   "decision_origin",
   "what_fed_this",
-  "what_recurs",
-  "how_this_was_made",
   "ai_fluency_4d",
   "working_the_model",
 

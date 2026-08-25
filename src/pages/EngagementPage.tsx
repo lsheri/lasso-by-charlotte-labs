@@ -1,4 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
+import { Pencil } from "lucide-react";
 import { useState } from "react";
 
 import { SpiderMark } from "@/components/notebook/SpiderMark";
@@ -33,6 +34,8 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
   const [askOpen, setAskOpen] = useState(false);
   const [prepOpen, setPrepOpen] = useState(false);
   const [peekItem, setPeekItem] = useState<WorkItemRow | null>(null);
+  // The two sticky notes are one thought: opening either opens both.
+  const [notesOpen, setNotesOpen] = useState(false);
 
   const coaches = useEngagementCoaches(engagementId);
   const membership = useMyEngagementMembership(engagementId, profile?.id);
@@ -121,6 +124,9 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
         {profile && profile.role !== "coach" ? (
           <div className="mt-5 grid gap-3 md:grid-cols-2">
             <EngagementNote
+              tone="green"
+              open={notesOpen}
+              onToggle={() => setNotesOpen((v) => !v)}
               title="Coaching and sharing"
               summary={
                 isQuickFolder
@@ -159,8 +165,27 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
             </EngagementNote>
 
             <EngagementNote
+              tone="blue"
+              open={notesOpen}
+              onToggle={() => setNotesOpen((v) => !v)}
               title="Brief and details"
               summary={engagement.brief ?? "No brief yet"}
+              action={
+                membership.data?.isMember ? (
+                  <EditEngagementDialog
+                    engagement={engagement}
+                    trigger={
+                      <button
+                        type="button"
+                        aria-label="Edit the brief and details"
+                        className="rounded-md p-1.5 text-muted-foreground transition-colors hover:text-foreground"
+                      >
+                        <Pencil className="h-3.5 w-3.5" aria-hidden />
+                      </button>
+                    }
+                  />
+                ) : null
+              }
             >
               <div className="space-y-3">
                 <div>

@@ -74,7 +74,8 @@ export async function runCoachChat(
       )
       .eq("engagement_id", data.engagement_id)
       .eq("owner_id", data.subject_id)
-      .order("position", { ascending: true }),
+      .order("position", { ascending: true })
+      .order("created_at", { ascending: true }),
     supabase
       .from("decisions")
       .select("id, situation, call_text, why, date_label, srcs")
