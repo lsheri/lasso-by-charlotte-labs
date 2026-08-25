@@ -2,6 +2,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Pencil } from "lucide-react";
 import { useState } from "react";
 
+import { GraphiteRule } from "@/components/notebook/marks";
 import { SpiderMark } from "@/components/notebook/SpiderMark";
 import { PeekPanel } from "@/components/peek/PeekPanel";
 import { OneOnOneBrief } from "@/components/oneonone/OneOnOneBrief";
@@ -9,7 +10,7 @@ import { CaptureCoverage } from "@/components/common/CaptureCoverage";
 import { EditEngagementDialog } from "@/components/engagements/EditEngagementDialog";
 import { EngagementCanvas, type CanvasTask } from "@/components/engagements/EngagementCanvas";
 import { ConnectToWorkSheet } from "@/components/engagements/ConnectToWorkSheet";
-import { EngagementBriefSection } from "@/components/engagements/EngagementBriefSection";
+import { EngagementBriefPanel } from "@/components/engagements/EngagementBriefPanel";
 import { SharedWithSection } from "@/components/engagements/SharedWithSection";
 import { EngagementNote } from "@/components/engagements/EngagementNote";
 import { InviteDialog } from "@/components/invites/InviteDialog";
@@ -34,8 +35,8 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
   const [askOpen, setAskOpen] = useState(false);
   const [prepOpen, setPrepOpen] = useState(false);
   const [peekItem, setPeekItem] = useState<WorkItemRow | null>(null);
-  // The two sticky notes are one thought: opening either opens both.
-  const [notesOpen, setNotesOpen] = useState(false);
+  // The coaching note opens on its own; the brief is always legible above it.
+  const [coachingOpen, setCoachingOpen] = useState(false);
 
   const coaches = useEngagementCoaches(engagementId);
   const membership = useMyEngagementMembership(engagementId, profile?.id);
@@ -63,13 +64,16 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
 
   // Mapped items in this engagement, the only input to whether "What recurs"
   // has enough work to run. No count is ever shown to the person.
-  const mappedItemCount = new Set(
-    (tasksQuery.data ?? []).flatMap((task) =>
-      (task.work_item_tasks ?? [])
-        .map((link) => link.work_items?.id)
-        .filter((id): id is string => Boolean(id)),
-    ),
-  ).size;
+  const canvasItems = Array.from(
+    new Map(
+      (tasksQuery.data ?? [])
+        .flatMap((task) => task.work_item_tasks ?? [])
+        .map((link) => link.work_items)
+        .filter((item): item is NonNullable<typeof item> => Boolean(item))
+        .map((item) => [item.id, item as unknown as WorkItemRow] as const),
+    ).values(),
+  );
+  const mappedItemCount = canvasItems.length;
 
   if (engagementQuery.isLoading) {
     return <p className="text-sm text-muted-foreground">Loading…</p>;
@@ -195,7 +199,14 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
         }}
         onOpen={(item) => setPeekItem(item)}
         headerAction={
-          profile && profile.role !== "coach" && membership.data?.isMember ? (
+          profile && profile.role !== "coach" ? (
+            <div className="flex items-center gap-2">
+              <WhatFedThisButton
+                items={canvasItems}
+                orgId={profile.org_id}
+                profileId={profile.id}
+              />
+              {membership.data?.isMember ? (
             <ConnectToWorkSheet
               engagementId={engagementId}
               streams={(tasksQuery.data ?? []).map((task) => ({ id: task.id, name: task.name }))}
@@ -206,6 +217,8 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
                 });
               }}
             />
+              ) : null}
+            </div>
           ) : null
         }
       />
