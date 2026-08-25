@@ -125,8 +125,6 @@
 
   /* Sticky note washes. Pale paper colours for notes, never button fills:
      the action green is a control colour and must not back a card. */
-  --nb-sticky-blue: #e4eefb;
-  --nb-sticky-blue-edge: #b9d2f0;
   --nb-sticky-green: #e6f2e5;
   --nb-sticky-green-edge: #bcd9ba;
 
@@ -1596,13 +1594,6 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 .nb-note-body {
   border-top: 1px solid #e8bf8a;
   padding: 12px 14px 14px;
-}
-.nb-note[data-tone="blue"] {
-  background: var(--nb-sticky-blue);
-  border-color: var(--nb-sticky-blue-edge);
-}
-.nb-note[data-tone="blue"] .nb-note-body {
-  border-top-color: var(--nb-sticky-blue-edge);
 }
 .nb-note[data-tone="green"] {
   background: var(--nb-sticky-green);
