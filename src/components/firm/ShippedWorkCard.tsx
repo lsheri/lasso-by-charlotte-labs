@@ -58,7 +58,7 @@ export function ShippedWorkCard({
         }
       >
         <span className="flex items-start gap-2">
-          <SourceMark item={{ source_vendor: card.source_vendor, type: card.type }} size={14} />
+          <SourceMark item={{ source_vendor: card.source_vendor }} size={14} />
           <span className="min-w-0 break-words text-sm font-medium text-foreground">
             {card.title}
           </span>

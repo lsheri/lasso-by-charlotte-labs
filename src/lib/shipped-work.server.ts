@@ -176,10 +176,11 @@ export async function listShippedCards(caller: CallerClient): Promise<ShippedCar
   const engagementIds = [
     ...new Set(present.map((row) => row.engagement_id).filter(Boolean) as string[]),
   ];
-  const counts = await countsFor(caller, itemIds, engagementIds).catch(() => ({
+  const empty: { facts: Record<string, number>; items: Record<string, number> } = {
     facts: {},
     items: {},
-  }));
+  };
+  const counts = await countsFor(caller, itemIds, engagementIds).catch(() => empty);
 
   return present.map((row) => ({
     id: row.id,
