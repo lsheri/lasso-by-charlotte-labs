@@ -116,6 +116,10 @@
   --nb-rule: #e3e5e1;
   /* Pass 105: the pencil the lasso is drawn with. Warm, and the page shows through. */
   --nb-ink-yellow: #e3b341;
+  /* Pass 107: the quiet blue the "What fed this" web breathes in. */
+  --nb-web-blue-1: #dbe7f6;
+  --nb-web-blue-2: #b9d2ef;
+  --nb-web-blue-3: #7fa8d8;
   --nb-ink: #111413;
   --nb-graphite: #2f3331;
   --nb-mid: #5a5d5c;
