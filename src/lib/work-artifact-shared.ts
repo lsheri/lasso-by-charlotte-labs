@@ -41,6 +41,10 @@ export type ArtifactRecord = {
 
 export const WORK_ARTIFACT_TITLE = "Work Artifact";
 
+/** What the small "i" beside the Work Artifact button says. */
+export const WORK_ARTIFACT_INFO =
+  "Opens the story of how this work was made, with the checked facts and the process behind them.";
+
 export const WORK_ARTIFACT_SECTIONS = {
   how: "HOW THE AI WAS USED",
   prompts: "PROMPTS THAT DID THE WORK",
