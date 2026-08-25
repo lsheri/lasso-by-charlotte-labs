@@ -77,7 +77,7 @@ function stubClient(tables: Record<string, Row[]>, calls: Row[] = []) {
   };
 }
 
-function world() {
+function world(): Record<string, Row[]> & { work_items: Row[]; work_item_tasks: Row[]; tasks: Row[] } {
   return {
     work_items: [
       { id: "w1", owner_id: "p1", content_ref: "org/w1.pdf", meta: { text_ref: "org/w1.txt" }, visibility: "mapped" },
@@ -222,11 +222,9 @@ describe("copy and freshness", () => {
   });
 
   it("invalidates every list, count and per-item cache", async () => {
-    const invalidateQueries = vi.fn(async () => undefined);
+    const invalidateQueries = vi.fn(async (_args: { queryKey: unknown[] }) => undefined);
     await invalidateAfterWorkChange({ invalidateQueries } as never, "w1");
-    const keys = invalidateQueries.mock.calls.map(
-      (call) => (call[0] as { queryKey: unknown[] }).queryKey,
-    );
+    const keys = invalidateQueries.mock.calls.map((call) => call[0].queryKey);
     for (const key of WORK_CHANGE_KEYS) expect(keys).toContainEqual([...key]);
     for (const key of [
       ["span-audit", "w1"],
