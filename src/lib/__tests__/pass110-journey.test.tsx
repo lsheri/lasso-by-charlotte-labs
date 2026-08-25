@@ -189,8 +189,9 @@ describe("pass 110: the view says only what the record says", () => {
       expect(node.classList.contains("nb-journey-node-static")).toBe(true);
       expect((node as HTMLElement).style.animationDelay).toBe("");
     });
-    expect(container.querySelectorAll(".nb-journey-stem-static").length).toBeGreaterThan(0);
-    expect(container.querySelectorAll(".nb-journey-loop-static").length).toBe(1);
+    expect(container.querySelectorAll(".nb-journey-seg").length).toBeGreaterThan(0);
+    expect(container.querySelectorAll(".nb-journey-tendril").length).toBe(1);
+    expect(container.querySelector(".nb-journey")?.classList.contains("is-skipped")).toBe(true);
   });
 
   it("colours a stitch only through the status tokens", () => {

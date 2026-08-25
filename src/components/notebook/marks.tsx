@@ -11,6 +11,8 @@
  */
 import { useCallback, useRef, useState } from "react";
 
+import { fnv1a, mulberry32 } from "@/lib/journey-path";
+
 const MARK_WINDOW_MS = 400;
 
 let lastMarkAt = -Infinity;
@@ -276,6 +278,101 @@ export function GraphiteRule({ className = "" }: { className?: string }) {
         strokeWidth={0.7}
         opacity={0.55}
       />
+    </svg>
+  );
+}
+
+/**
+ * Pass 114: the pencil firework. A small burst beside a tool's logo when its
+ * work arrives on the path: a storyteller's beat, never a notification. It is
+ * transient by design, so its resting state is invisible.
+ */
+const FIREWORK_ANGLES = [-80, -45, -10, 25, 115, 160, 205];
+
+export type FireworkStroke = { d: string; ink: "yellow" | "graphite" };
+
+/** Deterministic burst geometry for one node, keyed on its id. */
+export function fireworkStrokes(key: string): {
+  strokes: FireworkStroke[];
+  dots: { x: number; y: number }[];
+} {
+  const seed = fnv1a(key);
+  const rand = (k: number) => mulberry32((seed + Math.imul(k + 1, 0x9e3779b1)) >>> 0)();
+  const round = (value: number) => Math.round(value * 100) / 100;
+  const origin = { x: 24, y: 24 };
+
+  const strokes = FIREWORK_ANGLES.map((degrees, k) => {
+    const angle = (degrees * Math.PI) / 180;
+    const length = 8 + rand(k * 7) * 6;
+    const start = {
+      x: origin.x + Math.cos(angle) * 5,
+      y: origin.y + Math.sin(angle) * 5,
+    };
+    const end = {
+      x: origin.x + Math.cos(angle) * (5 + length),
+      y: origin.y + Math.sin(angle) * (5 + length),
+    };
+    const wobble = (rand(k * 7 + 3) * 2 - 1) * 1.2;
+    const mid = {
+      x: (start.x + end.x) / 2 - Math.sin(angle) * wobble,
+      y: (start.y + end.y) / 2 + Math.cos(angle) * wobble,
+    };
+    return {
+      d: `M ${round(start.x)} ${round(start.y)} Q ${round(mid.x)} ${round(mid.y)} ${round(end.x)} ${round(end.y)}`,
+      ink: (k % 2 === 0 ? "yellow" : "graphite") as FireworkStroke["ink"],
+    };
+  });
+
+  const dots = [0, 1].map((k) => {
+    const between = k === 0 ? 1 : 4;
+    const a = FIREWORK_ANGLES[between] as number;
+    const b = FIREWORK_ANGLES[between + 1] as number;
+    const angle = (((a + b) / 2) * Math.PI) / 180;
+    const radius = 16 + rand(k * 13 + 5) * 2;
+    return { x: round(origin.x + Math.cos(angle) * radius), y: round(origin.y + Math.sin(angle) * radius) };
+  });
+
+  return { strokes, dots };
+}
+
+/** The burst itself. Base state is invisible: a finished path holds no fireworks. */
+export function PencilFirework({
+  nodeId,
+  delayMs = 0,
+  drawing = false,
+  className = "",
+}: {
+  nodeId: string;
+  delayMs?: number;
+  drawing?: boolean;
+  className?: string;
+}) {
+  const { strokes, dots } = fireworkStrokes(nodeId);
+  return (
+    <svg
+      className={`nb-firework pointer-events-none ${className}`}
+      width={48}
+      height={48}
+      viewBox="0 0 48 48"
+      fill="none"
+      data-testid="journey-firework"
+      style={drawing ? { animationDelay: `${delayMs}ms` } : undefined}
+      aria-hidden
+    >
+      {strokes.map((stroke, k) => (
+        <path
+          key={`s${k}`}
+          className="nb-firework-stroke"
+          d={stroke.d}
+          stroke={stroke.ink === "yellow" ? "var(--nb-ink-yellow)" : "var(--nb-graphite)"}
+          strokeWidth={1.5}
+          strokeLinecap="round"
+          style={drawing ? { animationDelay: `${delayMs + k * 35}ms` } : undefined}
+        />
+      ))}
+      {dots.map((dot, k) => (
+        <circle key={`d${k}`} cx={dot.x} cy={dot.y} r={1.5} fill="var(--nb-ink-yellow)" />
+      ))}
     </svg>
   );
 }

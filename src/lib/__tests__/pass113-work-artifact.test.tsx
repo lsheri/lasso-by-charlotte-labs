@@ -138,8 +138,8 @@ describe("pass 113 · the artifact as rendered", () => {
       Number.parseInt((s as HTMLElement).style.animationDelay, 10),
     );
     expect(delays[0]).toBe(1000);
-    expect(delays[1]! - delays[0]!).toBeGreaterThanOrEqual(900);
-    expect(artifactSectionDelayMs(5, 1000)).toBe(5500);
+    expect(delays[1]! - delays[0]!).toBeGreaterThanOrEqual(500);
+    expect(artifactSectionDelayMs(5, 1000)).toBe(3900);
     expect(delays.at(-1)!).toBeLessThanOrEqual(10_000);
   });
 });

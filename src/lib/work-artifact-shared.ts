@@ -208,9 +208,27 @@ export function artifactIsEmpty(artifact: WorkArtifact): boolean {
 }
 
 /** How long each section waits before it enters. Section paced, never a rush. */
-export const ARTIFACT_SECTION_STEP_MS = 900;
-export const ARTIFACT_SECTION_ENTER_MS = 500;
+export const ARTIFACT_SECTION_ENTER_MS = 450;
+
+/**
+ * Pass 114: the sections arrive as a grid, so their beats follow the reading
+ * eye rather than the DOM. Index order is the strict list order: usage,
+ * prompts, checks, decisions, process, gaps.
+ */
+export const ARTIFACT_SECTION_OFFSETS_MS = [0, 1000, 500, 1500, 2200, 2900] as const;
+
+/** The grid area each section takes at the two column width. */
+export const ARTIFACT_SECTION_AREAS = [
+  "usage",
+  "prompts",
+  "checks",
+  "decisions",
+  "process",
+  "gaps",
+] as const;
 
 export function artifactSectionDelayMs(index: number, spineMs: number): number {
-  return Math.round(spineMs + index * ARTIFACT_SECTION_STEP_MS);
+  const offset = ARTIFACT_SECTION_OFFSETS_MS[index] ?? 0;
+  return Math.round(spineMs + offset);
 }
+
