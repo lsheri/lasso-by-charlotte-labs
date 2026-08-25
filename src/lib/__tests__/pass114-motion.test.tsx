@@ -192,6 +192,52 @@ describe("pass 114 · the spine as rendered", () => {
     expect(screen.getByRole("img", { name: "Google Slides" }).getAttribute("width")).toBe("28");
   });
 
+  it("keeps a stitched quote at least 16px clear of the next node card", () => {
+    const journey = buildJourney({
+      anchorId: "deck",
+      items: [
+        item({ id: "mail", type: "doc" }),
+        item({ id: "thread", type: "ai_thread" }),
+        item({ id: "deck", type: "deck" }),
+      ],
+      stitches: [
+        {
+          id: "s1",
+          status: "exact",
+          quote: "the margin held at nineteen percent",
+          to_item_id: "mail",
+          to_turn_no: null,
+          created_at: "2026-01-06T00:00:00.000Z",
+        },
+      ],
+    });
+    const path = buildJourneyPath({
+      ids: journey.nodes.map((node) => node.id),
+      width: 640,
+      stitchCounts: Object.fromEntries(
+        journey.nodes.map((node) => [node.id, node.stitches.length] as const),
+      ),
+    });
+    const { container } = render(<JourneySpine journey={journey} animate={false} width={640} />);
+    const stitchedItem = container.querySelectorAll<HTMLElement>(".nb-journey-item")[0];
+    const block = stitchedItem?.querySelector<HTMLElement>(".nb-journey-stitches");
+    const next = path.nodes[1];
+    expect(stitchedItem).toBeTruthy();
+    expect(block).toBeTruthy();
+    expect(next).toBeTruthy();
+
+    const anchorX = Number.parseFloat(stitchedItem?.style.left ?? "0") +
+      Number.parseFloat(block?.style.left ?? "0");
+    const width = Number.parseFloat(block?.style.maxWidth ?? "0");
+    const nextCardLeft = (next?.x ?? 0) - (next?.w ?? 0) / 2;
+    const nextCardRight = (next?.x ?? 0) + (next?.w ?? 0) / 2;
+    if (block?.style.transform === "translateX(-100%)") {
+      expect(anchorX - width).toBeGreaterThanOrEqual(nextCardRight + 16);
+    } else {
+      expect(anchorX + width).toBeLessThanOrEqual(nextCardLeft - 16);
+    }
+  });
+
   it("renders the same DOM order at a narrow width", () => {
     const journey = journeyOf(["a", "b", "c"]);
     const titles = (width: number) => {

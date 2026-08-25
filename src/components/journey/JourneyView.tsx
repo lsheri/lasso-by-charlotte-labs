@@ -380,16 +380,34 @@ export function JourneySpine({
       <ol className="nb-journey-nodes list-none">
         {journey.nodes.map((node, index) => {
           const place = path.nodes[index];
+           const nextPlace = path.nodes[index + 1];
           const tendril = tendrilFor.get(node.id);
           const beat = beatMs(nodeBeatS(index, count));
           const left = place ? place.x - place.w / 2 : 0;
           const top = place ? place.y - place.h / 2 : 0;
           const stitchesOnRight = Boolean(tendril && tendril.end.x > path.width / 2);
-          const stitchAnchorX = tendril
+           const initialStitchAnchorX = tendril
             ? stitchesOnRight
               ? Math.min(path.width, Math.max(220, tendril.end.x))
               : Math.min(path.width - 220, Math.max(0, tendril.end.x))
             : 0;
+           let stitchAnchorX = initialStitchAnchorX;
+           let stitchMaxWidth = 220;
+           if (tendril && nextPlace) {
+             const nextCardLeft = nextPlace.x - nextPlace.w / 2;
+             const nextCardRight = nextPlace.x + nextPlace.w / 2;
+             if (tendril.end.x < nextPlace.x) {
+               const available = nextCardLeft - 16 - stitchAnchorX;
+               if (available < 140) stitchAnchorX = Math.max(0, nextCardLeft - 16 - 140);
+               stitchMaxWidth = Math.min(220, Math.max(140, available));
+             } else {
+               const available = stitchAnchorX - nextCardRight - 16;
+               if (available < 140) {
+                 stitchAnchorX = Math.min(path.width, nextCardRight + 16 + 140);
+               }
+               stitchMaxWidth = Math.min(220, Math.max(140, available));
+             }
+           }
           return (
             <li
               key={node.id}
@@ -409,6 +427,7 @@ export function JourneySpine({
                   style={{
                     left: stitchAnchorX - left,
                     top: tendril.end.y - top,
+                     maxWidth: stitchMaxWidth,
                     transform: stitchesOnRight ? "translateX(-100%)" : undefined,
                   }}
                 >
