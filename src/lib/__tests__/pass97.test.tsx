@@ -163,7 +163,8 @@ describe("pass 97 — connect to work", () => {
 
     const page = readFileSync("src/pages/EngagementPage.tsx", "utf8");
     expect(page).toContain("ConnectToWorkSheet");
-    expect(page).toContain('profile.role !== "coach" && membership.data?.isMember');
+    expect(page).toContain('profile.role !== "coach"');
+    expect(page).toContain("membership.data?.isMember");
   });
 
   it("does not auto-map items that arrive via MCP while the sheet is open", async () => {

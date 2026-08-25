@@ -1,15 +1,15 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { Pencil } from "lucide-react";
 import { useState } from "react";
 
+import { GraphiteRule } from "@/components/notebook/marks";
 import { SpiderMark } from "@/components/notebook/SpiderMark";
 import { PeekPanel } from "@/components/peek/PeekPanel";
 import { OneOnOneBrief } from "@/components/oneonone/OneOnOneBrief";
 import { CaptureCoverage } from "@/components/common/CaptureCoverage";
-import { EditEngagementDialog } from "@/components/engagements/EditEngagementDialog";
 import { EngagementCanvas, type CanvasTask } from "@/components/engagements/EngagementCanvas";
 import { ConnectToWorkSheet } from "@/components/engagements/ConnectToWorkSheet";
-import { EngagementBriefSection } from "@/components/engagements/EngagementBriefSection";
+import { WhatFedThisButton } from "@/components/engagements/WhatFedThisButton";
+import { EngagementBriefPanel } from "@/components/engagements/EngagementBriefPanel";
 import { SharedWithSection } from "@/components/engagements/SharedWithSection";
 import { EngagementNote } from "@/components/engagements/EngagementNote";
 import { InviteDialog } from "@/components/invites/InviteDialog";
@@ -34,8 +34,8 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
   const [askOpen, setAskOpen] = useState(false);
   const [prepOpen, setPrepOpen] = useState(false);
   const [peekItem, setPeekItem] = useState<WorkItemRow | null>(null);
-  // The two sticky notes are one thought: opening either opens both.
-  const [notesOpen, setNotesOpen] = useState(false);
+  // The coaching note opens on its own; the brief is always legible above it.
+  const [coachingOpen, setCoachingOpen] = useState(false);
 
   const coaches = useEngagementCoaches(engagementId);
   const membership = useMyEngagementMembership(engagementId, profile?.id);
@@ -63,13 +63,16 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
 
   // Mapped items in this engagement, the only input to whether "What recurs"
   // has enough work to run. No count is ever shown to the person.
-  const mappedItemCount = new Set(
-    (tasksQuery.data ?? []).flatMap((task) =>
-      (task.work_item_tasks ?? [])
-        .map((link) => link.work_items?.id)
-        .filter((id): id is string => Boolean(id)),
-    ),
-  ).size;
+  const canvasItems = Array.from(
+    new Map(
+      (tasksQuery.data ?? [])
+        .flatMap((task) => task.work_item_tasks ?? [])
+        .map((link) => link.work_items)
+        .filter((item): item is NonNullable<typeof item> => Boolean(item))
+        .map((item) => [item.id, item as unknown as WorkItemRow] as const),
+    ).values(),
+  );
+  const mappedItemCount = canvasItems.length;
 
   if (engagementQuery.isLoading) {
     return <p className="text-sm text-muted-foreground">Loading…</p>;
@@ -96,7 +99,10 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
       <header className="mb-8">
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4">
           <div className="min-w-0">
-            <h1 className="nb-title-strip page-title">{engagementDisplayTitle(engagement)}</h1>
+            <h1 className="nb-title-strip page-title">
+              {engagementDisplayTitle(engagement)}
+              <GraphiteRule />
+            </h1>
             <p className="mt-1.5 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
               {engagementDisplayCode(engagement) ?? "Quick folder"}
               {clientDisplayName(engagement) ? ` · ${clientDisplayName(engagement)}` : ""}
@@ -122,11 +128,24 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
         />
 
         {profile && profile.role !== "coach" ? (
-          <div className="mt-5 grid gap-3 md:grid-cols-2">
+          <div className="mt-5 space-y-3">
+            <EngagementBriefPanel
+              engagement={engagement}
+              engagementId={engagementId}
+              profileId={profile.id}
+              orgId={profile.org_id}
+              taskIds={(tasksQuery.data ?? []).map((task) => task.id)}
+              hasMappedWork={(tasksQuery.data ?? []).some(
+                (task) => (task.work_item_tasks ?? []).length > 0,
+              )}
+              canEdit={Boolean(membership.data?.isMember)}
+              termLabel={engagement.term_label}
+            />
+
             <EngagementNote
               tone="green"
-              open={notesOpen}
-              onToggle={() => setNotesOpen((v) => !v)}
+              open={coachingOpen}
+              onToggle={() => setCoachingOpen((v) => !v)}
               title="Coaching and sharing"
               summary={
                 isQuickFolder
@@ -163,57 +182,6 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
                 />
               </div>
             </EngagementNote>
-
-            <EngagementNote
-              tone="blue"
-              open={notesOpen}
-              onToggle={() => setNotesOpen((v) => !v)}
-              title="Brief and details"
-              summary={engagement.brief ?? "No brief yet"}
-              action={
-                membership.data?.isMember ? (
-                  <EditEngagementDialog
-                    engagement={engagement}
-                    trigger={
-                      <button
-                        type="button"
-                        aria-label="Edit the brief and details"
-                        className="rounded-md p-1.5 text-muted-foreground transition-colors hover:text-foreground"
-                      >
-                        <Pencil className="h-3.5 w-3.5" aria-hidden />
-                      </button>
-                    }
-                  />
-                ) : null
-              }
-            >
-              <div className="space-y-3">
-                <div>
-                  <p className="micro-label">Client</p>
-                  <p className="mt-1 text-sm text-foreground">
-                    {clientDisplayName(engagement) ?? "Not set"}
-                  </p>
-                </div>
-                <div>
-                  <p className="micro-label">Brief</p>
-                  <p className="mt-1 whitespace-pre-wrap text-sm text-foreground">
-                    {engagement.brief ?? "Not set"}
-                  </p>
-                </div>
-                {membership.data?.isMember ? (
-                  <EditEngagementDialog engagement={engagement} />
-                ) : null}
-                <EngagementBriefSection
-                  engagementId={engagementId}
-                  profileId={profile.id}
-                  orgId={profile.org_id}
-                  taskIds={(tasksQuery.data ?? []).map((task) => task.id)}
-                  hasMappedWork={(tasksQuery.data ?? []).some(
-                    (task) => (task.work_item_tasks ?? []).length > 0,
-                  )}
-                />
-              </div>
-            </EngagementNote>
           </div>
         ) : null}
 
@@ -230,7 +198,14 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
         }}
         onOpen={(item) => setPeekItem(item)}
         headerAction={
-          profile && profile.role !== "coach" && membership.data?.isMember ? (
+          profile && profile.role !== "coach" ? (
+            <div className="flex items-center gap-2">
+              <WhatFedThisButton
+                items={canvasItems}
+                orgId={profile.org_id}
+                profileId={profile.id}
+              />
+              {membership.data?.isMember ? (
             <ConnectToWorkSheet
               engagementId={engagementId}
               streams={(tasksQuery.data ?? []).map((task) => ({ id: task.id, name: task.name }))}
@@ -241,6 +216,8 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
                 });
               }}
             />
+              ) : null}
+            </div>
           ) : null
         }
       />

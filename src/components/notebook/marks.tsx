@@ -136,3 +136,33 @@ export function DrawnStrike({ className = "" }: { className?: string }) {
     </svg>
   );
 }
+
+/**
+ * A ruled line under a page title, drawn by hand rather than by a border.
+ * Static art: no claim on the one-per-viewport gate, no motion. It stretches
+ * to whatever width the title occupies.
+ */
+export function GraphiteRule({ className = "" }: { className?: string }) {
+  return (
+    <svg
+      className={`nb-title-rule pointer-events-none ${className}`}
+      viewBox="0 0 300 6"
+      preserveAspectRatio="none"
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path
+        d="M1 3.4C38 2.2 74 4.2 111 3.1c36-1 72 1.4 108 .5 27-.7 54 1.1 80 .6"
+        strokeWidth={1.5}
+      />
+      <path
+        d="M1 4.2C44 3.4 88 4.8 132 4.1c40-.6 80 .9 120 .3"
+        strokeWidth={0.7}
+        opacity={0.55}
+      />
+    </svg>
+  );
+}

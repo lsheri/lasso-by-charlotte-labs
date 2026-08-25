@@ -108,20 +108,17 @@ describe("pass 103 · sticky cards and spider", () => {
   const styles = readFileSync("src/styles.css", "utf8");
   const spider = readFileSync("src/components/notebook/SpiderMark.tsx", "utf8");
 
-  it("opens both notes from either toggle, on their own paper colours", () => {
+  it("keeps the coaching note on its own green paper", () => {
     expect(note).toContain("onToggle");
     expect(note).toContain('data-tone={tone}');
-    const toggles = page.match(/onToggle=\{\(\) => setNotesOpen\(\(v\) => !v\)\}/g) ?? [];
-    expect(toggles).toHaveLength(2);
-    expect(page).toContain('tone="blue"');
     expect(page).toContain('tone="green"');
-    expect(styles).toContain("--nb-sticky-blue");
     expect(styles).toContain("--nb-sticky-green");
   });
 
-  it("gives the brief card a pencil onto the existing edit flow", () => {
-    expect(page).toContain("Edit the brief and details");
-    expect(page).toContain("<EditEngagementDialog");
+  it("gives the brief a pencil onto the existing edit flow", () => {
+    const panel = readFileSync("src/components/engagements/EngagementBriefPanel.tsx", "utf8");
+    expect(panel).toContain("Edit the brief and details");
+    expect(panel).toContain("<EditEngagementDialog");
   });
 
   it("wobbles once on one still frame, and holds still under reduced motion", () => {
