@@ -1,5 +1,4 @@
 import { CountList, CountRow } from "@/components/firm/FirmPanels";
-import { scatterFor } from "@/components/work/pile-scatter";
 import {
   WAITING_LABEL,
   buildFirmMetrics,
@@ -111,6 +110,3 @@ export function FirmMetricGrid({
     </section>
   );
 }
-
-// Re-exported so the pile and the grid share one deterministic hash source.
-export { scatterFor };
