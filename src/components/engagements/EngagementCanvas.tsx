@@ -123,7 +123,8 @@ export function EngagementCanvas({
   const movedRef = useRef(false);
   const dragRef = useRef<typeof drag>(null);
   const focusAfter = useRef<string | null>(null);
-
+  const [removeTarget, setRemoveTarget] = useState<WorkItemRow | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<WorkItemRow | null>(null);
 
   const canEdit = Boolean(profile && profile.role !== "coach");
 
