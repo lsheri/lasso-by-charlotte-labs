@@ -107,7 +107,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
               {engagementDisplayTitle(engagement)}
               <GraphiteRule />
             </h1>
-            <p className="mt-1.5 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+            <p className="page-subtitle">
               {engagementDisplayCode(engagement) ?? "Quick folder"}
               {clientDisplayName(engagement) ? ` · ${clientDisplayName(engagement)}` : ""}
               {engagement.term_label ? ` · ${engagement.term_label}` : ""}
