@@ -320,6 +320,7 @@ export function JourneySpine({
   animate = true,
   notShared = false,
   width,
+  skipped: skippedProp,
   onSkip,
   onLastArrival,
 }: {
@@ -329,12 +330,15 @@ export function JourneySpine({
   notShared?: boolean;
   /** Test seam: the measured content width the path is laid out inside. */
   width?: number | undefined;
+  /** Controlled skip: the overlay owns the affordance and tells the spine. */
+  skipped?: boolean | undefined;
   /** The reader completed the beats at once. */
   onSkip?: (() => void) | undefined;
   /** The last card finished its own arrival animation. */
   onLastArrival?: (() => void) | undefined;
 }) {
-  const [skipped, setSkipped] = useState(false);
+  const [ownSkipped, setOwnSkipped] = useState(false);
+  const skipped = skippedProp ?? ownSkipped;
   const holder = useRef<HTMLDivElement>(null);
   const [measured, setMeasured] = useState(width ?? 640);
 
@@ -350,19 +354,6 @@ export function JourneySpine({
     return () => observer.disconnect();
   }, [width]);
 
-  useEffect(() => {
-    if (!animate || skipped) return;
-    const done = () => {
-      setSkipped(true);
-      onSkip?.();
-    };
-    window.addEventListener("click", done);
-    window.addEventListener("keydown", done);
-    return () => {
-      window.removeEventListener("click", done);
-      window.removeEventListener("keydown", done);
-    };
-  }, [animate, skipped, onSkip]);
 
   const ids = journey.nodes.map((node) => node.id);
   const stitchCounts = Object.fromEntries(
