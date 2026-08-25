@@ -18,6 +18,18 @@ export function stitchTabLabel(stitch: {
   return text.length > TAB_LABEL_CHARS ? `${text.slice(0, TAB_LABEL_CHARS)}…` : text;
 }
 
+/**
+ * The whole circled wording, for surfaces with room to breathe: the rail lets
+ * CSS decide where a label stops, and the confirm says it in full.
+ */
+export function stitchTabFullLabel(stitch: {
+  locator?: { snippet?: string } | null;
+  question?: string | null;
+}): string {
+  const text = (stitch.locator?.snippet ?? stitch.question ?? "").trim();
+  return text.length === 0 ? "Untitled question" : text;
+}
+
 /** The rail is a history, so the newest question sits at the front. */
 export function tabsNewestFirst<T extends { created_at: string }>(stitches: T[]): T[] {
   return [...stitches].sort((a, b) => b.created_at.localeCompare(a.created_at));
