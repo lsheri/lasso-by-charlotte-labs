@@ -11,7 +11,15 @@
  */
 import { useCallback, useMemo, useRef, useState } from "react";
 
-import { HATCH_BOX, fnv1a, hatchStrokes, mulberry32, wavingSwatchD } from "@/lib/journey-path";
+import {
+  HATCH_BOX,
+  SCRIBBLE_INFLATE,
+  fnv1a,
+  hatchStrokes,
+  mulberry32,
+  scribblePath,
+  wavingSwatchD,
+} from "@/lib/journey-path";
 
 const MARK_WINDOW_MS = 400;
 
