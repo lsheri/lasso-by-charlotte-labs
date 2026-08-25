@@ -179,6 +179,12 @@ function JourneySurface({
   const skippable = useRef(true);
   const handoff = useHandoffScroll({ reducedMotion, skippableRef: skippable });
 
+  // Pass 118: skipping is deliberate. The story only ends early when the reader
+  // asks for it with the button, never on a stray click or key.
+  const [skipped, setSkipped] = useState(false);
+  const [storyOver, setStoryOver] = useState(false);
+  const storyPlaying = !reducedMotion && !loading && journey.enough && !skipped && !storyOver;
+
   function copyLink() {
     const url = journeyLinkFor(window.location.origin, engagementId, anchorId);
     void navigator.clipboard
@@ -192,6 +198,7 @@ function JourneySurface({
       beatMs(NODE_STITCH_OFFSET_S) +
       400
     : 0;
+
 
   return (
     <div
