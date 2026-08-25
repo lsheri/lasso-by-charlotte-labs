@@ -109,7 +109,7 @@ describe("pass 106: badge numbering", () => {
     render(
       <StitchChip stitch={stitch()} number={2} onGoToSource={() => {}} />,
     );
-    expect(screen.getByTestId("stitch-badge-card-s1")).toHaveTextContent("2");
+    expect(screen.getByTestId("stitch-badge-card-s1").textContent).toBe("2");
     expect(screen.getByText("Word for word")).toBeTruthy();
     expect(screen.getByText("Show me in the chat (turn 4)")).toBeTruthy();
     cleanup();
@@ -147,7 +147,7 @@ describe("pass 106: badge numbering", () => {
     );
     expect(screen.getByText("3 · You")).toBeTruthy();
     expect(screen.getByText(/4 · AI/)).toBeTruthy();
-    expect(screen.getByTestId("stitch-badge-turn-s1")).toHaveTextContent("2");
+    expect(screen.getByTestId("stitch-badge-turn-s1").textContent).toBe("2");
   });
 
   it("keeps the chip's status wrapper class so the border and wash stay", () => {
@@ -176,7 +176,7 @@ describe("pass 106: badge numbering", () => {
 describe("pass 106: legend and rail", () => {
   it("always shows the colour legend", () => {
     render(<SpanLegend />);
-    expect(screen.getByTestId("span-legend")).toHaveTextContent(LEGEND_LINE);
+    expect(screen.getByTestId("span-legend").textContent).toContain(LEGEND_LINE);
   });
 
   it("gives the owner Remove behind the tab menu, anchored to the tab", () => {
@@ -197,7 +197,7 @@ describe("pass 106: legend and rail", () => {
     expect(screen.getByTestId("stitch-tab-copy-s1")).toBeTruthy();
     fireEvent.click(screen.getByTestId("stitch-tab-delete-s1"));
     const confirm = screen.getByTestId("stitch-tab-confirm-s1");
-    expect(confirm).toHaveTextContent(DELETE_CONFIRM_LINE);
+    expect(confirm.textContent).toContain(DELETE_CONFIRM_LINE);
     // The confirm lives inside the tab's own menu, not floating elsewhere.
     expect(screen.getByTestId("stitch-tab-overflow-s1").contains(confirm)).toBe(true);
   });
