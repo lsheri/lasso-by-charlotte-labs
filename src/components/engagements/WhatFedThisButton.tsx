@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { CtaInfoPopover, CtaInfoTrigger } from "@/components/engagements/CtaInfo";
 import { PencilHatch } from "@/components/notebook/marks";
 import { openProvenanceAudit } from "@/components/provenance/audit-state";
+import { markOpenStart } from "@/lib/perf-timing";
 import {
   AnalysisConfirm,
   type AnalysisConfirmRequest,
@@ -102,6 +103,7 @@ export function WhatFedThisButton({
         title={ready ? undefined : WHAT_FED_THIS_EMPTY_HINT}
         onClick={() => {
           if (!anchor) return;
+          markOpenStart("audit.open");
           setConfirming({
             preset,
             target: {
