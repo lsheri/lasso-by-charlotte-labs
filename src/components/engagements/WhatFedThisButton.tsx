@@ -16,22 +16,29 @@ export const WHAT_FED_THIS_EMPTY_HINT =
 export const WHAT_FED_THIS_INFO =
   "Circle any fact on your finished work and Lasso finds where it came from in this engagement's record.";
 
-/** A corner spider web, drawn in the same graphite line as the rest of the app. */
+/** A fuller spider web mark, larger and more recognisable, drawn in graphite. */
 function WebMark() {
   return (
     <svg
-      className="nb-web-mark h-4 w-4 shrink-0"
+      className="nb-web-mark h-6 w-6 shrink-0"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth={1.3}
+      strokeWidth={1.2}
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden
     >
-      <path d="M12 12 12 2M12 12 21 7M12 12 22 12M12 12 21 17M12 12 12 22M12 12 3 17M12 12 2 12M12 12 3 7" />
-      <path d="M12 6.2c2.2 0 4 1.8 4 4M12 6.2c-2.2 0-4 1.8-4 4M16 12c0 2.2-1.8 4-4 4M8 12c0 2.2 1.8 4 4 4" />
-      <path d="M12 2.8c4.4 0 8 3.6 8 8M12 2.8c-4.4 0-8 3.6-8 8M20 12c0 4.4-3.6 8-8 8M4 12c0 4.4 3.6 8 8 8" />
+      {/* Radial spokes */}
+      <path d="M12 12 12 1M12 12 22 5M12 12 23 12M12 12 22 19M12 12 12 23M12 12 2 19M12 12 1 12M12 12 2 5" />
+      {/* Inner web ring */}
+      <path d="M12 7.5c2.5 0 4.5 2 4.5 4.5M12 7.5c-2.5 0-4.5 2-4.5 4.5M16.5 12c0 2.5-2 4.5-4.5 4.5M7.5 12c0 2.5 2 4.5 4.5 4.5" />
+      {/* Middle web ring */}
+      <path d="M12 4.5c4.1 0 7.5 3.4 7.5 7.5M12 4.5c-4.1 0-7.5 3.4-7.5 7.5M19.5 12c0 4.1-3.4 7.5-7.5 7.5M4.5 12c0 4.1 3.4 7.5 7.5 7.5" />
+      {/* Outer web ring */}
+      <path d="M12 2c5.5 0 10 4.5 10 10M12 2C6.5 2 2 6.5 2 12M22 12c0 5.5-4.5 10-10 10M2 12c0 5.5 4.5 10 10 10" />
+      {/* Small connecting ties */}
+      <path d="M6.5 4.5 8 6M17.5 4.5 16 6M20 12h-2M4 12h2M6.5 19.5 8 18M17.5 19.5 16 18" />
     </svg>
   );
 }
