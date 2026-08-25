@@ -15,6 +15,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { TypeIcon } from "@/components/work/TypeIcon";
+import { DeleteWorkItemDialog, DELETE_LABEL } from "@/components/work/DeleteWorkItemDialog";
+import {
+  RemoveFromEngagementDialog,
+  REMOVE_HELP,
+  REMOVE_LABEL,
+} from "@/components/work/RemoveFromEngagementDialog";
 import { orderElements, type WorkflowElement } from "@/components/work/TaskWorkflow";
 import { supabase } from "@/integrations/supabase/client";
 import { detachEpisodeItems, syncEpisodeForMapping } from "@/lib/episodes.functions";
@@ -32,6 +38,7 @@ import {
   type MoveColumn,
 } from "@/lib/canvas-move";
 import { workIdentityLabel } from "@/lib/work-identity";
+import { ownsWorkItem } from "@/lib/work-ownership";
 import { persistOrder, remapItems, resetOrder } from "@/lib/workflow-order";
 import { effectiveWorkDate, formatDate, sourceLabel, type WorkItemRow } from "@/lib/work-types";
 
@@ -123,7 +130,8 @@ export function EngagementCanvas({
   const movedRef = useRef(false);
   const dragRef = useRef<typeof drag>(null);
   const focusAfter = useRef<string | null>(null);
-
+  const [removeTarget, setRemoveTarget] = useState<WorkItemRow | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<WorkItemRow | null>(null);
 
   const canEdit = Boolean(profile && profile.role !== "coach");
 
@@ -587,6 +595,26 @@ export function EngagementCanvas({
                                     </DropdownMenuItem>
                                   ),
                                 )}
+                                {ownsWorkItem(profile, item) ? (
+                                  <>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem
+                                      className="flex-col items-start gap-0.5"
+                                      onSelect={() => setRemoveTarget(item)}
+                                    >
+                                      <span>{REMOVE_LABEL}</span>
+                                      <span className="text-[11px] text-muted-foreground">
+                                        {REMOVE_HELP}
+                                      </span>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      className="text-destructive focus:text-destructive"
+                                      onSelect={() => setDeleteTarget(item)}
+                                    >
+                                      {DELETE_LABEL}
+                                    </DropdownMenuItem>
+                                  </>
+                                ) : null}
                               </DropdownMenuContent>
                             </DropdownMenu>
                           ) : null}
@@ -671,6 +699,29 @@ export function EngagementCanvas({
           </div>
         </SheetContent>
       </Sheet>
+      {removeTarget ? (
+        <RemoveFromEngagementDialog
+          workItemId={removeTarget.id}
+          title={removeTarget.title}
+          engagementId={engagementId}
+          open
+          onOpenChange={(next) => {
+            if (!next) setRemoveTarget(null);
+          }}
+          onDone={() => void onChanged()}
+        />
+      ) : null}
+      {deleteTarget ? (
+        <DeleteWorkItemDialog
+          workItemId={deleteTarget.id}
+          title={deleteTarget.title}
+          open
+          onOpenChange={(next) => {
+            if (!next) setDeleteTarget(null);
+          }}
+          onDone={() => void onChanged()}
+        />
+      ) : null}
     </section>
   );
 }

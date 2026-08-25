@@ -11,6 +11,11 @@ import { VersionHistory } from "@/components/peek/VersionHistory";
 import { WhatFedThis } from "@/components/peek/WhatFedThis";
 import { DraftDecisionsButton } from "@/components/decisions/DraftDecisionsButton";
 import { MarkBriefDialog } from "@/components/work/MarkBriefDialog";
+import { DeleteWorkItemDialog, DELETE_LABEL } from "@/components/work/DeleteWorkItemDialog";
+import {
+  RemoveFromEngagementDialog,
+  REMOVE_LABEL,
+} from "@/components/work/RemoveFromEngagementDialog";
 import { DeliverableKindSelect } from "@/components/work/DeliverableKindSelect";
 import { ChatUrlLink } from "@/components/work/ChatUrlLink";
 import { ArtifactNote, SourceMark } from "@/components/work/SourceMark";
@@ -93,6 +98,8 @@ export function PeekPanel({
   onWorkDate,
   onMakePrivate,
   onFluency,
+  engagementId,
+  viewerProfileId,
 }: {
   entry: PeekEntry | null;
   focusId?: string | undefined;
@@ -103,11 +110,16 @@ export function PeekPanel({
   onWorkDate?: ((item: WorkItemRow) => void) | undefined;
   onMakePrivate?: ((item: WorkItemRow) => void) | undefined;
   onFluency?: ((item: WorkItemRow) => void) | undefined;
+  /** Set when the peek is read inside one engagement. */
+  engagementId?: string | undefined;
+  viewerProfileId?: string | null | undefined;
 }) {
   const fetchUrl = useServerFn(getWorkFileUrl);
   const items = entry ? entryItems(entry) : [];
   const [tab, setTab] = useState(0);
   const [briefOpen, setBriefOpen] = useState(false);
+  const [removeOpen, setRemoveOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const invalidateWork = useInvalidateWorkItems();
   const [kindDraft, setKindDraft] = useState<DeliverableKind | null>(null);
 
@@ -144,6 +156,10 @@ export function PeekPanel({
   const format = peekFormat(active);
   const vendor = active.source_vendor ?? active.source_meta?.vendor ?? null;
   const link = active.meta?.web_view_link ?? null;
+  // Ownership truth: removing and deleting belong to the person whose work it
+  // is, never to a coach or another member reading it.
+  const owned =
+    canEdit && Boolean(viewerProfileId) && (!active.owner_id || active.owner_id === viewerProfileId);
 
   return (
     <SlideOver
@@ -263,6 +279,18 @@ export function PeekPanel({
             {active.type === "ai_thread" ? "Analyse this conversation" : "Analyse this work"}
           </FooterAction>
         ) : null}
+        {owned && engagementId ? (
+          <FooterAction onClick={() => setRemoveOpen(true)}>{REMOVE_LABEL}</FooterAction>
+        ) : null}
+        {owned ? (
+          <button
+            type="button"
+            onClick={() => setDeleteOpen(true)}
+            className="text-xs text-destructive transition-opacity hover:opacity-70"
+          >
+            {DELETE_LABEL}
+          </button>
+        ) : null}
         <div className="ml-auto">
           {link ? (
             <a
@@ -281,6 +309,25 @@ export function PeekPanel({
         </div>
       </footer>
       <MarkBriefDialog item={active} open={briefOpen} onOpenChange={setBriefOpen} />
+      {owned && engagementId ? (
+        <RemoveFromEngagementDialog
+          workItemId={active.id}
+          title={active.title}
+          engagementId={engagementId}
+          open={removeOpen}
+          onOpenChange={setRemoveOpen}
+          onDone={() => onOpenChange(false)}
+        />
+      ) : null}
+      {owned ? (
+        <DeleteWorkItemDialog
+          workItemId={active.id}
+          title={active.title}
+          open={deleteOpen}
+          onOpenChange={setDeleteOpen}
+          onDone={() => onOpenChange(false)}
+        />
+      ) : null}
     </SlideOver>
   );
 }
