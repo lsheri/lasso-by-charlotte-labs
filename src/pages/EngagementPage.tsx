@@ -96,7 +96,10 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
       <header className="mb-8">
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4">
           <div className="min-w-0">
-            <h1 className="nb-title-strip page-title">{engagementDisplayTitle(engagement)}</h1>
+            <h1 className="nb-title-strip page-title">
+              {engagementDisplayTitle(engagement)}
+              <GraphiteRule />
+            </h1>
             <p className="mt-1.5 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
               {engagementDisplayCode(engagement) ?? "Quick folder"}
               {clientDisplayName(engagement) ? ` · ${clientDisplayName(engagement)}` : ""}
@@ -122,11 +125,24 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
         />
 
         {profile && profile.role !== "coach" ? (
-          <div className="mt-5 grid gap-3 md:grid-cols-2">
+          <div className="mt-5 space-y-3">
+            <EngagementBriefPanel
+              engagement={engagement}
+              engagementId={engagementId}
+              profileId={profile.id}
+              orgId={profile.org_id}
+              taskIds={(tasksQuery.data ?? []).map((task) => task.id)}
+              hasMappedWork={(tasksQuery.data ?? []).some(
+                (task) => (task.work_item_tasks ?? []).length > 0,
+              )}
+              canEdit={Boolean(membership.data?.isMember)}
+              termLabel={engagement.term_label}
+            />
+
             <EngagementNote
               tone="green"
-              open={notesOpen}
-              onToggle={() => setNotesOpen((v) => !v)}
+              open={coachingOpen}
+              onToggle={() => setCoachingOpen((v) => !v)}
               title="Coaching and sharing"
               summary={
                 isQuickFolder
@@ -160,57 +176,6 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
                   orgId={profile.org_id}
                   quickFolder={isQuickFolder}
                   personalOrg={!isBusinessOrg(profile)}
-                />
-              </div>
-            </EngagementNote>
-
-            <EngagementNote
-              tone="blue"
-              open={notesOpen}
-              onToggle={() => setNotesOpen((v) => !v)}
-              title="Brief and details"
-              summary={engagement.brief ?? "No brief yet"}
-              action={
-                membership.data?.isMember ? (
-                  <EditEngagementDialog
-                    engagement={engagement}
-                    trigger={
-                      <button
-                        type="button"
-                        aria-label="Edit the brief and details"
-                        className="rounded-md p-1.5 text-muted-foreground transition-colors hover:text-foreground"
-                      >
-                        <Pencil className="h-3.5 w-3.5" aria-hidden />
-                      </button>
-                    }
-                  />
-                ) : null
-              }
-            >
-              <div className="space-y-3">
-                <div>
-                  <p className="micro-label">Client</p>
-                  <p className="mt-1 text-sm text-foreground">
-                    {clientDisplayName(engagement) ?? "Not set"}
-                  </p>
-                </div>
-                <div>
-                  <p className="micro-label">Brief</p>
-                  <p className="mt-1 whitespace-pre-wrap text-sm text-foreground">
-                    {engagement.brief ?? "Not set"}
-                  </p>
-                </div>
-                {membership.data?.isMember ? (
-                  <EditEngagementDialog engagement={engagement} />
-                ) : null}
-                <EngagementBriefSection
-                  engagementId={engagementId}
-                  profileId={profile.id}
-                  orgId={profile.org_id}
-                  taskIds={(tasksQuery.data ?? []).map((task) => task.id)}
-                  hasMappedWork={(tasksQuery.data ?? []).some(
-                    (task) => (task.work_item_tasks ?? []).length > 0,
-                  )}
                 />
               </div>
             </EngagementNote>
