@@ -1,6 +1,7 @@
-import { Info } from "lucide-react";
 import { useMemo, useState } from "react";
 
+import { CtaInfoPopover, CtaInfoTrigger } from "@/components/engagements/CtaInfo";
+import { PencilHatch } from "@/components/notebook/marks";
 import { openProvenanceAudit } from "@/components/provenance/audit-state";
 import {
   AnalysisConfirm,
@@ -17,10 +18,12 @@ export const WHAT_FED_THIS_INFO =
   "Circle any fact on your finished work and Lasso finds where it came from in this engagement's record.";
 
 /** A fuller spider web mark, larger and more recognisable, drawn in graphite. */
-function WebMark() {
+export function WebMark({ size = 18 }: { size?: number } = {}) {
   return (
     <svg
-      className="nb-web-mark h-6 w-6 shrink-0"
+      className="nb-web-mark shrink-0"
+      width={size}
+      height={size}
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -109,31 +112,15 @@ export function WhatFedThisButton({
             },
           });
         }}
-        className={
-          ready
-            ? "nb-web-cta inline-flex items-center gap-2 rounded-full border border-accent px-5 py-2.5 text-sm font-medium text-foreground"
-            : "nb-web-cta inline-flex items-center gap-2 rounded-full border border-border px-5 py-2.5 text-sm text-muted-foreground opacity-60"
-        }
+        className="nb-pencil-cta"
       >
-        <WebMark />
-        What fed this
+        <PencilHatch seed="cta-web" />
+        <WebMark size={18} />
+        <span className="ml-2 mr-2.5">What fed this</span>
+        <CtaInfoTrigger open={infoOpen} onToggle={() => setInfoOpen((prev) => !prev)} />
       </button>
 
-      <button
-        type="button"
-        aria-label="How this works"
-        title="How this works"
-        aria-expanded={infoOpen}
-        onClick={() => setInfoOpen((prev) => !prev)}
-        className="inline-flex items-center text-muted-foreground transition-colors hover:text-foreground"
-      >
-        <Info className="h-3 w-3" aria-hidden />
-      </button>
-      {infoOpen ? (
-        <div className="absolute right-0 top-full z-20 mt-2 w-64 rounded-[var(--radius-md)] border border-border bg-card px-3 py-2 text-xs leading-relaxed text-muted-foreground shadow-sm">
-          {WHAT_FED_THIS_INFO}
-        </div>
-      ) : null}
+      {infoOpen ? <CtaInfoPopover>{WHAT_FED_THIS_INFO}</CtaInfoPopover> : null}
     </div>
   );
 }
