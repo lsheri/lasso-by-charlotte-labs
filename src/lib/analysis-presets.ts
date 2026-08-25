@@ -1,4 +1,3 @@
-import { libraryForPrompt, TECHNIQUE_CATEGORIES } from "@/lib/analysis-library";
 import { BRIEF_PROMPT_RULES } from "@/lib/brief-shared";
 import type { HandoffKind } from "@/lib/handoffs-shared";
 
@@ -37,9 +36,6 @@ export const ANALYSIS_SOURCES = [
     href: "https://www.anthropic.com/learn/claude-for-you",
   },
 ] as const;
-
-export const FLUENCY_ATTRIBUTION =
-  "Structured on Anthropic's AI Fluency framework (Delegation, Description, Discernment, Diligence). Charlotte Labs is not affiliated with Anthropic.";
 
 export const GROUNDING_LINE =
   "Grounded in published guidance from the model vendors. It is not a measurement, and no claim is made that following it improves outcomes.";
@@ -87,8 +83,6 @@ export type AnalysisPreset = {
 
 
 export const ANALYSIS_PRESET_IDS = [
-  "ai_fluency_4d",
-  "working_the_model",
   "decision_origin",
   "verification",
   "still_on_brief",
@@ -97,52 +91,6 @@ export const ANALYSIS_PRESET_IDS = [
 ] as const;
 
 export type AnalysisPresetId = (typeof ANALYSIS_PRESET_IDS)[number];
-
-const FLUENCY_PROMPT = `You are running the AI Fluency lens over ONE of this person's own AI conversations. Structure your response on the four Ds:
-
-DELEGATION: what they chose to hand to the AI and what they kept for themselves, and whether that split served the work.
-DESCRIPTION: how clearly they framed the ask, what context they supplied or withheld, and how they iterated the prompt. When a brief is present, judge how they framed the ask against what the brief actually asked for: what the brief asked for and they carried into the framing, and what the brief asked for and they left out.
-DISCERNMENT: how critically they read what came back, what they pushed back on, and anything they accepted too readily.
-DILIGENCE: verification, sourcing, and whether the output was checked before it was used.
-
-${BRIEF_PROMPT_RULES}
-
-ABSOLUTE RULES:
-- NEVER produce a number, rating, grade, level, score, percentage, star, or any word that ranks the person or a D (no "strong", "weak", "excellent", "poor", "advanced", "beginner"). Nothing about a person is scored, ever.
-- Write to them in second person, about what actually happened in THIS thread. Name the specific moment and cite the turn number, written as (turn 4).
-- For each D: two to four sentences of observation, then a line starting "Try next:" with one concrete thing to do differently in their next conversation of this kind.
-- If the thread gives no evidence for a D, say plainly that it does not show, and still offer one thing to try.
-- Use markdown with a heading per D. Never use an em dash.
-
-COACH STANCE:
-- Every observation of strength carries a verbatim quote showing it. No quote, no praise.
-- Name what is missing or weak as plainly as what is strong, citing the turn where it shows. If the same gap shows more than once in this thread, say so once, with each citation.
-- No generic encouragement, no summary that softens the findings, and no "overall, strong work" unless the evidence sections earned it.
-- If the thread is too thin to support an honest reading, say exactly that instead of inflating what is there.
-- End with WHAT TO TRY NEXT TIME: one or two concrete moves drawn from this thread's actual gaps, phrased as things to do, not traits to have.`;
-
-const WORKING_THE_MODEL_PROMPT = `You are running "Working efficiently with AI" over ONE of this person's own AI conversations. The transcript is supplied with each turn numbered as "TURN n ROLE:".
-
-Your job is to MATCH, not to lecture. Read the actual transcript, find which of the patterns below genuinely occurred in it, and report only those.
-
-THE LIBRARY. Each entry is a pattern that must be visible in the transcript, the technique that answers it, and why it works:
-
-${libraryForPrompt()}
-
-${BRIEF_PROMPT_RULES}
-
-DECISION ORIGIN. When a brief is present, distinguish work that was REQUIRED by the brief from a judgment call the person made themselves. Say which is which. Both matter, and conflating them makes the record useless for endorsement.
-
-ABSOLUTE RULES:
-- At most FOUR findings, ranked by how much of the conversation each one affected.
-- Every finding MUST cite the turn numbers where the pattern occurred, written as (turn 3, turn 7). A finding with no cited turn must not be written at all.
-- Quote the person's own words when showing the pattern. A quotation is a promise of exact wording, so quote character for character or write it as plain prose with no quotation marks.
-- If nothing in the library matches, say exactly this and nothing more: "This conversation was already tight. The brief was specific and you did not resend material." Then, if there is one genuinely applicable next step, add a single sentence.
-- NEVER give a token count, a cost, a percentage, a rating or any number attached to the person. Turn numbers are the only numbers permitted.
-- Never aggregate across conversations, people or time. This is about this conversation only.
-- Never call it a score, a level or efficiency. Findings are phrased as technique.
-- Format each finding as a markdown heading naming the technique in plain language, then two to four sentences: what happened here with its turn citations, then what to do instead and why it works.
-- Never use an em dash.`;
 
 const VERIFICATION_PROMPT = `You are checking ONE finished piece of work against the conversations that produced it, to establish which material claims rest on the model's word and which were verified. You are given the deliverable, the conversations that fed it, and the brief when one exists. Turns are numbered as "TURN n ROLE:".
 
@@ -275,49 +223,6 @@ export const MIN_ITEMS_FOR_SEQUENCE = 2;
 
 const RAW_ANALYSIS_PRESETS: AnalysisPreset[] = [
 
-  {
-    id: "ai_fluency_4d",
-    dbPreset: "ai_fluency_4d",
-    label: "How you direct AI",
-    description:
-      "How you delegated, described, discerned and verified in this one conversation of yours. Only you can run it.",
-    scope: "thread",
-    systemPrompt: FLUENCY_PROMPT,
-    openingMessage:
-      "Review this conversation with the AI Fluency lens: Delegation, Description, Discernment, Diligence.",
-    infoPanel: {
-      reads: (detail) => detail,
-      looksFor: [
-        "Delegation: what you handed over and what you kept",
-        "Description: how the ask was framed and iterated",
-        "Discernment: how critically the answers were read",
-        "Diligence: verification and sourcing before use",
-      ],
-      never: NEVER_LINE,
-      sources: ANALYSIS_SOURCES,
-    },
-    attribution: FLUENCY_ATTRIBUTION,
-    coachMayRun: false,
-  },
-  {
-    id: "working_the_model",
-    dbPreset: "working_the_model",
-    label: "Prompt Efficiency",
-    description:
-      "How this one conversation of yours could have reached the same answer in fewer turns. Only you can run it.",
-    scope: "thread",
-    systemPrompt: WORKING_THE_MODEL_PROMPT,
-    openingMessage:
-      "Look at how I worked with the AI in this conversation and tell me which techniques would have gotten the same result in fewer turns.",
-    infoPanel: {
-      reads: (detail) => detail,
-      looksFor: TECHNIQUE_CATEGORIES.map((c) => `${c.label}: ${c.plain}`),
-      never: NEVER_LINE,
-      sources: ANALYSIS_SOURCES,
-    },
-    attribution: null,
-    coachMayRun: false,
-  },
   {
     id: "verification",
     handoffSchema: "open_checks",
