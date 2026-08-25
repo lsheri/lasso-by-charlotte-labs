@@ -1,11 +1,12 @@
 import { useMemo, useState } from "react";
 
 import { latestDeliverable } from "@/components/engagements/WhatFedThisButton";
-import { StitchLoop } from "@/components/notebook/marks";
+import { ChaliceMark } from "@/components/notebook/marks";
 import { ShipToFirmDialog } from "@/components/work/ShipToFirmDialog";
 import { openJourney } from "@/lib/journey-state";
 import { SHIP_ACTION_LABEL } from "@/lib/shipped-work-shared";
 import { ownsWorkItem } from "@/lib/work-ownership";
+import { WORK_ARTIFACT_TITLE } from "@/lib/work-artifact-shared";
 import type { WorkItemRow } from "@/lib/work-types";
 
 export const JOURNEY_EMPTY_HINT = "Add a finished deliverable to see how it grew.";
@@ -47,8 +48,8 @@ export function CanvasDeliverableActions({
         }}
         className={ready ? QUIET_PILL : QUIET_PILL_OFF}
       >
-        <StitchLoop size={16} />
-        Journey
+        <ChaliceMark size={18} />
+        {WORK_ARTIFACT_TITLE}
       </button>
 
       {profile && profile.role !== "coach" && (canShip || !ready) ? (

@@ -217,6 +217,39 @@ export function StitchLoop({
 }
 
 /**
+ * The chalice. A grail drawn in the same hand as everything else: wide shallow
+ * cup, sturdy stem, broad base, two small handles. It leads the Work Artifact,
+ * the one card that teaches how a piece of work was actually made.
+ */
+export function ChaliceMark({ size = 24, className = "" }: { size?: number; className?: string }) {
+  return (
+    <svg
+      className={`pointer-events-none shrink-0 ${className}`}
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="var(--nb-ink-yellow)"
+      strokeWidth={1.6}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      {/* the cup */}
+      <path d="M5.4 4.3c4.3-.5 8.9-.6 13.2-.1-.2 3.9-2.6 6.9-6.5 7-3.9.1-6.4-2.9-6.7-6.9" />
+      {/* the stem */}
+      <path d="M12.1 11.2c.2 2.3-.1 4.5.1 6.8" />
+      {/* the base */}
+      <path d="M7.9 19.8c2.7-.6 5.6-.7 8.4-.1" />
+      <path d="M8.6 18.4c2.3-.5 4.7-.5 7 .1" />
+      {/* the handles */}
+      <path d="M5.6 5.2c-1.5.4-2.2 1.9-1.3 3.1.6.8 1.7 1.1 2.6.9" />
+      <path d="M18.5 5.2c1.5.3 2.3 1.8 1.4 3-.6.9-1.7 1.2-2.6 1" />
+    </svg>
+  );
+}
+
+/**
  * A ruled line under a page title, drawn by hand rather than by a border.
  * Static art: no claim on the one-per-viewport gate, no motion. It stretches
  * to whatever width the title occupies.

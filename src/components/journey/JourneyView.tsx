@@ -3,9 +3,11 @@ import { X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
-import { GraphiteRule, JourneyStem, StitchLoop } from "@/components/notebook/marks";
+import { ChaliceMark, GraphiteRule, JourneyStem, StitchLoop } from "@/components/notebook/marks";
+import { WorkArtifactPanel } from "@/components/journey/WorkArtifactPanel";
 import { SourceMark } from "@/components/work/SourceMark";
 import { useEngagementPage } from "@/hooks/use-engagement-page";
+import { useProfile } from "@/hooks/use-profile";
 import { supabase } from "@/integrations/supabase/client";
 import {
   JOURNEY_THIN_LINE,
@@ -13,6 +15,7 @@ import {
   JOURNEY_VIEWER_LINE,
   buildJourney,
   journeyDelayMs,
+  journeySpineMs,
   type Journey,
   type JourneyItemInput,
   type JourneyNode,
@@ -124,6 +127,23 @@ function JourneySurface({
     [anchorId, items, page.data, extra.data],
   );
 
+  const { data: profile } = useProfile();
+  const anchorOwnerId = useMemo(() => {
+    for (const task of page.data?.tasks ?? []) {
+      for (const link of task.work_item_tasks ?? []) {
+        if (link.work_items?.id === anchorId) return link.work_items.owner_id ?? null;
+      }
+    }
+    return null;
+  }, [page.data, anchorId]);
+  const isOwner = Boolean(
+    profile && profile.role !== "coach" && anchorOwnerId && anchorOwnerId === profile.id,
+  );
+  const reducedMotion =
+    typeof window !== "undefined" &&
+    typeof window.matchMedia === "function" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
   const engagementTitle = page.data?.engagement?.title ?? anchorTitle;
   const loading = page.isLoading || (ids.length > 0 && extra.isLoading);
 
@@ -139,11 +159,14 @@ function JourneySurface({
     <div className="fixed inset-0 z-[70] overflow-y-auto bg-background">
       <div className="mx-auto w-full max-w-[720px] px-5 pb-24 pt-[calc(1.5rem+env(safe-area-inset-top))]">
         <header className="flex items-start justify-between gap-4">
-          <div className="min-w-0">
+          <div className="flex min-w-0 items-start gap-2.5">
+            <ChaliceMark size={28} className="mt-1" />
+            <div className="min-w-0">
             <p className="micro-label text-muted-foreground">{JOURNEY_TITLE}</p>
             <h1 className="page-title mt-1 break-words text-[22px] leading-snug">
               {engagementTitle}
             </h1>
+            </div>
           </div>
           <div className="flex shrink-0 items-center gap-2">
             <button
@@ -155,7 +178,7 @@ function JourneySurface({
             </button>
             <button
               type="button"
-              aria-label="Close the journey"
+              aria-label="Close the Work Artifact"
               onClick={closeJourney}
               className="grid h-9 w-9 place-items-center rounded-md text-foreground/70 transition-colors hover:bg-secondary"
             >
@@ -171,6 +194,18 @@ function JourneySurface({
             <JourneySpine journey={journey} notShared={items.length === 0} />
           )}
         </div>
+
+        {!loading && journey.enough ? (
+          <WorkArtifactPanel
+            anchorId={anchorId}
+            anchorTitle={anchorTitle}
+            canEdit={isOwner}
+            orgId={profile?.org_id}
+            profileId={profile?.id}
+            drawing={!reducedMotion}
+            startMs={journeySpineMs(journey.nodes.length)}
+          />
+        ) : null}
       </div>
     </div>
   );

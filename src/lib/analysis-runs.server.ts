@@ -24,6 +24,8 @@ export type CompleteRunFields = Pick<
   | "claims_rendered"
   | "suppressed_claims"
   | "context_manifest"
+  /** The run's own JSON payload, used by the work artifact. */
+  | "handoffs"
 >;
 
 export async function createRun(fields: CreateRunFields): Promise<{ id: string }> {

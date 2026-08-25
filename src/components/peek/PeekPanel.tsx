@@ -269,7 +269,7 @@ export function PeekPanel({
               })
             }
           >
-            Journey
+            Work Artifact
           </FooterAction>
         ) : null}
         {owned && isDeliverableType(active.type) ? (

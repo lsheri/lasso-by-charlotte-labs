@@ -1974,7 +1974,25 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   animation: nb-chip-enter-in 320ms var(--nb-ease) both;
 }
 
+/* Pass 113: the Work Artifact reveals section by section, with a clear beat
+   between each one. Slow on purpose: it is read, not watched. */
+.nb-artifact-section {
+  opacity: 1;
+}
+.nb-artifact-section:not(.nb-artifact-section-static) {
+  animation: nb-artifact-enter 500ms var(--nb-ease) both;
+}
+@keyframes nb-artifact-enter {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .nb-artifact-section {
+    animation: none !important;
+    transform: none !important;
+    opacity: 1 !important;
+  }
   .nb-pile-item {
     transition: none !important;
   }
