@@ -17,6 +17,7 @@ import { InviteDialog } from "@/components/invites/InviteDialog";
 import { SubjectCoachingSection } from "@/components/coaching/SubjectCoachingSection";
 import { ReflectDock } from "@/components/reflect/ReflectDock";
 import { useRegisterAskLasso } from "@/components/reflect/ask-lasso-context";
+import { usePerfNavFinish } from "@/hooks/use-perf-timer";
 import { useProfile } from "@/hooks/use-profile";
 import { useTraceParam } from "@/hooks/use-trace-param";
 import { useJourneyParam } from "@/hooks/use-journey-param";
@@ -26,6 +27,7 @@ import { useEngagementPage, useEngagementSlice } from "@/hooks/use-engagement-pa
 import { useEngagementCoaches } from "@/hooks/use-coach-share";
 import { clientDisplayName, engagementDisplayCode, engagementDisplayTitle } from "@/lib/clients";
 import { INVITE_ADMIN_ONLY_LINE } from "@/lib/invites-shared";
+import { markOpenStart } from "@/lib/perf-timing";
 import type { WorkItemRow } from "@/lib/work-types";
 
 
