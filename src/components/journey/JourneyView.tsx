@@ -384,6 +384,20 @@ export function JourneySpine({
       data-testid="journey-spine"
       style={{ height: path.height }}
     >
+      {skippedProp === undefined && drawing ? (
+        <button
+          type="button"
+          data-testid="journey-skip"
+          onClick={() => {
+            setOwnSkipped(true);
+            onSkip?.();
+          }}
+          className="absolute right-0 top-0 z-10 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+        >
+          Skip the story
+        </button>
+      ) : null}
+
       <svg
         className="nb-journey-svg"
         width={path.width}
