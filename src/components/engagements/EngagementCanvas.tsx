@@ -587,6 +587,26 @@ export function EngagementCanvas({
                                     </DropdownMenuItem>
                                   ),
                                 )}
+                                {profile && item.owner_id === profile.id ? (
+                                  <>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem
+                                      className="flex-col items-start gap-0.5"
+                                      onSelect={() => setRemoveTarget(item)}
+                                    >
+                                      <span>{REMOVE_LABEL}</span>
+                                      <span className="text-[11px] text-muted-foreground">
+                                        {REMOVE_HELP}
+                                      </span>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      className="text-destructive focus:text-destructive"
+                                      onSelect={() => setDeleteTarget(item)}
+                                    >
+                                      {DELETE_LABEL}
+                                    </DropdownMenuItem>
+                                  </>
+                                ) : null}
                               </DropdownMenuContent>
                             </DropdownMenu>
                           ) : null}
