@@ -104,14 +104,14 @@ describe("pass 104 · what fed this on the canvas", () => {
   it("stays muted with no deliverable and names why", () => {
     renderButton([item("t1", "thread", "2026-01-01")]);
     const button = screen.getByRole("button", { name: "What fed this" });
-    expect(button).toBeDisabled();
+    expect((button as HTMLButtonElement).disabled).toBe(true);
     expect(button.getAttribute("title")).toBe(WHAT_FED_THIS_EMPTY_HINT);
   });
 
   it("strengthens once a deliverable exists and runs the shared confirm", () => {
     renderButton([item("t1", "thread", "2026-01-01"), item("d1", "deck", "2026-02-01")]);
     const button = screen.getByRole("button", { name: "What fed this" });
-    expect(button).toBeEnabled();
+    expect((button as HTMLButtonElement).disabled).toBe(false);
     expect(button.className).toContain("border-accent");
     fireEvent.click(button);
     expect(confirmRequests).toHaveLength(1);
@@ -131,7 +131,7 @@ describe("pass 104 · what fed this on the canvas", () => {
   it("explains itself in one line", () => {
     renderButton([item("d1", "deck", "2026-02-01")]);
     fireEvent.click(screen.getByRole("button", { name: "How this works" }));
-    expect(screen.getByText(WHAT_FED_THIS_INFO)).toBeInTheDocument();
+    expect(screen.getByText(WHAT_FED_THIS_INFO)).toBeTruthy();
   });
 
   it("is hidden from coaches on the engagement page", () => {
