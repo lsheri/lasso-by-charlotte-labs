@@ -66,7 +66,7 @@ describe("pass 112.1 · journey and ship on the canvas", () => {
 
   it("opens the journey on that anchor for an owner", () => {
     renderActions([thread, deliverable], { id: "me", role: "member" });
-    const journey = screen.getByRole("button", { name: "Journey" });
+    const journey = screen.getByRole("button", { name: "Work Artifact" });
     expect((journey as HTMLButtonElement).disabled).toBe(false);
     fireEvent.click(journey);
     expect(journeyOpened).toHaveBeenCalledWith({
@@ -78,7 +78,7 @@ describe("pass 112.1 · journey and ship on the canvas", () => {
 
   it("shows the journey to a coach but never the ship button", () => {
     renderActions([deliverable], { id: "coach", role: "coach" });
-    expect(screen.getByRole("button", { name: "Journey" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Work Artifact" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: SHIP_ACTION_LABEL })).toBeNull();
   });
 
@@ -97,7 +97,7 @@ describe("pass 112.1 · journey and ship on the canvas", () => {
 
   it("states the exact hints with no deliverable", () => {
     renderActions([thread], { id: "me", role: "member" });
-    const journey = screen.getByRole("button", { name: "Journey" });
+    const journey = screen.getByRole("button", { name: "Work Artifact" });
     const ship = screen.getByRole("button", { name: SHIP_ACTION_LABEL });
     expect((journey as HTMLButtonElement).disabled).toBe(true);
     expect((ship as HTMLButtonElement).disabled).toBe(true);
