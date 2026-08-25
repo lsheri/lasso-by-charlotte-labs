@@ -15,6 +15,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { TypeIcon } from "@/components/work/TypeIcon";
+import { DeleteWorkItemDialog, DELETE_LABEL } from "@/components/work/DeleteWorkItemDialog";
+import {
+  RemoveFromEngagementDialog,
+  REMOVE_HELP,
+  REMOVE_LABEL,
+} from "@/components/work/RemoveFromEngagementDialog";
 import { orderElements, type WorkflowElement } from "@/components/work/TaskWorkflow";
 import { supabase } from "@/integrations/supabase/client";
 import { detachEpisodeItems, syncEpisodeForMapping } from "@/lib/episodes.functions";
