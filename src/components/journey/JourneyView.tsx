@@ -219,6 +219,20 @@ function JourneySurface({
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-2">
+            {storyPlaying ? (
+              <button
+                type="button"
+                data-testid="journey-skip"
+                onClick={() => {
+                  setSkipped(true);
+                  skippable.current = false;
+                  handoff.requestHandoff(HANDOFF_AFTER_SKIP_MS);
+                }}
+                className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+              >
+                Skip the story
+              </button>
+            ) : null}
             <button
               type="button"
               onClick={copyLink}
@@ -244,18 +258,17 @@ function JourneySurface({
             <JourneySpine
               journey={journey}
               animate={!reducedMotion}
+              skipped={skipped}
               notShared={items.length === 0}
-              onSkip={() => {
-                skippable.current = false;
-                handoff.requestHandoff(HANDOFF_AFTER_SKIP_MS);
-              }}
               onLastArrival={() => {
+                setStoryOver(true);
                 skippable.current = false;
                 handoff.requestHandoff(HANDOFF_AFTER_ARRIVAL_MS);
               }}
             />
           )}
         </div>
+
 
         {!loading && journey.enough ? (
           <figcaption
