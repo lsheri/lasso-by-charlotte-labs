@@ -309,7 +309,7 @@ describe("pass 101.1: the status colour language", () => {
     render(<StitchChip stitch={stitch} onGoToSource={() => {}} reduceMotion />);
     const still = screen.getByTestId("stitch-chip-s1").getAttribute("class") ?? "";
     expect(still).toContain("nb-chip-enter-static");
-    expect(still).not.toContain("nb-chip-enter");
+    expect(still).not.toContain("nb-chip-enter ");
   });
 
   it("defines one token per status rather than raw colour at point of use", async () => {
