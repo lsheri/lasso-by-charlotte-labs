@@ -120,7 +120,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
             <button
               type="button"
               onClick={() => setAskOpen(true)}
-              className="nb-web-cta hidden shrink-0 items-center gap-2.5 rounded-full border border-border px-[18px] py-2.5 font-mono text-[16px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground md:inline-flex"
+              className="hidden shrink-0 items-center gap-2.5 rounded-full border border-border px-[18px] py-2.5 font-mono text-[16px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground md:inline-flex"
             >
               <SpiderMark size={27} /> Ask Lasso
             </button>

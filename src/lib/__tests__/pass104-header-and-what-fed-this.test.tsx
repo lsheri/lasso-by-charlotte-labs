@@ -112,7 +112,7 @@ describe("pass 104 · what fed this on the canvas", () => {
     renderButton([item("t1", "thread", "2026-01-01"), item("d1", "deck", "2026-02-01")]);
     const button = screen.getByRole("button", { name: "What fed this" });
     expect((button as HTMLButtonElement).disabled).toBe(false);
-    expect(button.className).toContain("border-accent");
+    expect(button.className).toContain("nb-pencil-cta");
     fireEvent.click(button);
     expect(confirmRequests).toHaveLength(1);
     fireEvent.click(screen.getByText("confirm-run"));

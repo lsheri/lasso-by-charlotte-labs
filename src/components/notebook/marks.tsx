@@ -9,9 +9,9 @@
  * One per viewport: a mark that starts while another started less than 400ms
  * ago renders nothing at all, statically.
  */
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 
-import { fnv1a, mulberry32 } from "@/lib/journey-path";
+import { HATCH_BOX, fnv1a, hatchStrokes, mulberry32, wavingSwatchD } from "@/lib/journey-path";
 
 const MARK_WINDOW_MS = 400;
 
@@ -373,6 +373,57 @@ export function PencilFirework({
       {dots.map((dot, k) => (
         <circle key={`d${k}`} cx={dot.x} cy={dot.y} r={1.5} fill="var(--nb-ink-yellow)" />
       ))}
+    </svg>
+  );
+}
+
+/**
+ * Pass 115: the pencil hatching that stands behind a call to action. Seeded
+ * once per literal seed, so the two heroes are drawn differently but always
+ * the same way, and never from Math.random.
+ */
+export function PencilHatch({ seed, className = "" }: { seed: string; className?: string }) {
+  const strokes = useMemo(() => hatchStrokes(seed), [seed]);
+  return (
+    <svg
+      className={`nb-hatch ${className}`}
+      viewBox={`0 0 ${HATCH_BOX.width} ${HATCH_BOX.height}`}
+      preserveAspectRatio="none"
+      fill="none"
+      aria-hidden
+      data-testid={`pencil-hatch-${seed}`}
+      data-strokes={strokes.length}
+    >
+      {strokes.map((stroke, k) => (
+        <line
+          key={k}
+          x1={stroke.x1}
+          y1={stroke.y1}
+          x2={stroke.x2}
+          y2={stroke.y2}
+          stroke="var(--nb-rule)"
+          strokeWidth={1}
+          opacity={stroke.opacity}
+        />
+      ))}
+    </svg>
+  );
+}
+
+/** The small wavering swatch of yellow thread that opens the traced legend. */
+export function TracedSwatch({ seed = "legend" }: { seed?: string }) {
+  const d = useMemo(() => wavingSwatchD(seed), [seed]);
+  return (
+    <svg
+      className="shrink-0"
+      width={28}
+      height={10}
+      viewBox="0 0 28 10"
+      fill="none"
+      aria-hidden
+      data-testid="traced-legend-swatch"
+    >
+      <path d={d} stroke="var(--nb-ink-yellow)" strokeWidth={2} strokeLinecap="round" />
     </svg>
   );
 }

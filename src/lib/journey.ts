@@ -76,6 +76,11 @@ export const JOURNEY_THIN_LINE =
 
 export const JOURNEY_TITLE = "Work Artifact";
 
+/** The one caption that explains the yellow thread, always in its final state. */
+export const TRACED_LEGEND_LINE =
+  "yellow thread = a fact in the finished work, traced back to this conversation";
+
+
 /**
  * A colleague may open a shipped card whose engagement they are not part of.
  * The record comes back empty under their own access, and saying so is the only
