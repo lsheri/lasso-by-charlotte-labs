@@ -60,14 +60,15 @@ export function ShipToFirmDialog({
     },
   });
 
+  const resetScribble = scribble.reset;
   useEffect(() => {
     if (open) return;
     pendingRef.current = null;
     setShipping(false);
     setError(null);
-    scribble.reset();
+    resetScribble();
     // Resetting on close is what keeps a scribble from resting anywhere.
-  }, [open, scribble]);
+  }, [open, resetScribble]);
 
   const start = () => {
     setError(null);
@@ -79,6 +80,8 @@ export function ShipToFirmDialog({
     pendingRef.current = pending;
     void pending.then((result) => {
       if (result.ok) return;
+      // Null the pending handle first: the settle timer must not still play.
+      pendingRef.current = null;
       scribble.reset();
       setShipping(false);
       setError(result.message);
