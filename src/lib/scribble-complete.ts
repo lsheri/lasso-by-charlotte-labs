@@ -76,6 +76,7 @@ export function useScribbleComplete({
           height: box.height,
           seed,
           skipped: reduced,
+          onDone: finish,
         });
 
   return { play, reset, overlay, state };
