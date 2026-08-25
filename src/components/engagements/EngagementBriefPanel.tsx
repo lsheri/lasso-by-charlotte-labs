@@ -33,7 +33,7 @@ export function EngagementBriefPanel({
   return (
     <section className="nb-brief-panel rounded-[var(--radius-md)] border border-border bg-card px-4 py-4">
       <div className="flex items-center justify-between gap-3">
-        <p className="micro-label">Brief and details</p>
+        <p className="micro-label underline">Brief and details</p>
         {canEdit ? (
           <EditEngagementDialog
             engagement={engagement}
