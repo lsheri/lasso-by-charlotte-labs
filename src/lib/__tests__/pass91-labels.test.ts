@@ -25,7 +25,8 @@ describe("pass91 label colour hierarchy", () => {
     // Pass 95: those two headings became sticky note titles on the same page.
     expect(eng).toContain('title="Coaching and sharing"');
     const panel = read("src/components/engagements/EngagementBriefPanel.tsx");
-    expect(panel).toContain('<p className="micro-label">Brief and details</p>');
+    // Pass 108 made the header a collapsible button; the label stays blue.
+    expect(panel).toContain('<span className="micro-label">Brief and details</span>');
     // nested field labels inside the brief panel stay grey
     expect(panel).toContain('<p className="micro-label">Client</p>');
     expect(panel).toContain('<p className="micro-label">Brief</p>');
@@ -59,6 +60,9 @@ describe("pass91 label colour hierarchy", () => {
 
   it("keeps grey field labels inside firm panels", () => {
     expect(read("src/components/firm/FirmPanels.tsx")).toContain('<p className="micro-label">{label}</p>');
-    expect(read("src/pages/FirmDashboardPage.tsx")).toContain('<p className="micro-label">Seats</p>');
+    // Pass 112 moved the firm numbers into tiles; the grey field label stays.
+    expect(read("src/components/firm/FirmMetricGrid.tsx")).toContain(
+      '<p className="micro-label">{tile.name}</p>',
+    );
   });
 });

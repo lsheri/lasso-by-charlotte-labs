@@ -1,6 +1,8 @@
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { ShippedWorkCard } from "@/components/firm/ShippedWorkCard";
+import { scatterFor } from "@/components/work/pile-scatter";
 import { useProfile } from "@/hooks/use-profile";
 import { useShippedWork, useUnshipWork } from "@/hooks/use-shipped-work";
 import { ARCHIVE_TITLE, type ShippedCard } from "@/lib/shipped-work-shared";
@@ -19,6 +21,11 @@ export function FirmArchive() {
   const { data: profile } = useProfile();
   const { data, isLoading } = useShippedWork();
   const unship = useUnshipWork();
+  const [reduceMotion, setReduceMotion] = useState(true);
+
+  useEffect(() => {
+    setReduceMotion(window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ?? false);
+  }, []);
 
   if (!profile || profile.role === "coach") return null;
 
@@ -39,20 +46,39 @@ export function FirmArchive() {
         ) : cards.length === 0 ? (
           <p className="text-sm text-muted-foreground">Nothing has been shipped yet.</p>
         ) : (
-          <div className="flex flex-wrap gap-3">
-            {cards.map((card) => (
-              <ShippedWorkCard
-                key={card.id}
-                card={card}
-                canTakeBack={canTakeBackCard(profile, card)}
-                onTakeBack={(taken) =>
-                  void unship
-                    .mutateAsync({ workItemId: taken.work_item_id })
-                    .then(() => toast("Taken back."))
-                    .catch((error: unknown) => toast.error((error as Error).message))
-                }
-              />
-            ))}
+          <div
+            className="nb-pile"
+            data-scatter={reduceMotion ? "0" : "1"}
+            data-testid="firm-archive-pile"
+          >
+            {cards.map((card) => {
+              const { dx, dy, rot } = scatterFor(card.id);
+              return (
+                <div
+                  key={card.id}
+                  className="nb-pile-item"
+                  data-testid={`firm-pile-item-${card.work_item_id}`}
+                  style={
+                    {
+                      "--nb-dx": `${dx}px`,
+                      "--nb-dy": `${dy}px`,
+                      "--nb-rot": `${rot}deg`,
+                    } as React.CSSProperties
+                  }
+                >
+                  <ShippedWorkCard
+                    card={card}
+                    canTakeBack={canTakeBackCard(profile, card)}
+                    onTakeBack={(taken) =>
+                      void unship
+                        .mutateAsync({ workItemId: taken.work_item_id })
+                        .then(() => toast("Taken back."))
+                        .catch((error: unknown) => toast.error((error as Error).message))
+                    }
+                  />
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
