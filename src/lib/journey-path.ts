@@ -306,3 +306,56 @@ export function buildJourneyPath(input: {
 
   return { width, height, nodes, segments, tendrils };
 }
+
+/* --------------------------------------------------------------------------
+   Pass 115: two more seeded pencil generators. Both are pure and keyed on a
+   literal string seed, so the same button and the same legend are drawn the
+   same way on every render, on the server and in the browser alike.
+-------------------------------------------------------------------------- */
+
+/** One diagonal pencil stroke of a hatching layer, in a 100 x 44 box. */
+export type HatchStroke = { x1: number; y1: number; x2: number; y2: number; opacity: number };
+
+export const HATCH_BOX = { width: 100, height: 44 } as const;
+
+/**
+ * The hatching behind a pencil call to action: 10 to 14 diagonal strokes at 32
+ * degrees, 7px apart, each with its own seeded opacity and jittered ends.
+ */
+export function hatchStrokes(seed: string): HatchStroke[] {
+  const base = fnv1a(seed);
+  const rand = (k: number) => mulberry32((base + Math.imul(k + 1, 0x9e3779b1)) >>> 0)();
+  const count = 10 + Math.floor(rand(0) * 5); // 10..14
+  const angle = (32 * Math.PI) / 180;
+  const dx = Math.cos(angle);
+  const dy = -Math.sin(angle);
+  const span = HATCH_BOX.width + HATCH_BOX.height;
+  const out: HatchStroke[] = [];
+  for (let i = 0; i < count; i += 1) {
+    const offset = -HATCH_BOX.height + i * 7 + rand(i * 5 + 1) * 2;
+    const jitter = (k: number) => (rand(i * 5 + k) * 2 - 1) * 2;
+    out.push({
+      x1: round(offset + jitter(2)),
+      y1: round(HATCH_BOX.height + jitter(3)),
+      x2: round(offset + dx * span + jitter(4)),
+      y2: round(HATCH_BOX.height + dy * span + jitter(5)),
+      opacity: round(0.25 + rand(i * 5 + 6) * 0.3),
+    });
+  }
+  return out;
+}
+
+/** A short wavering swatch of yellow thread, for the legend. */
+export function wavingSwatchD(seed: string, width = 28, height = 10): string {
+  const base = fnv1a(seed);
+  const rand = (k: number) => mulberry32((base + Math.imul(k + 1, 0x9e3779b1)) >>> 0)();
+  const mid = height / 2;
+  const steps = 6;
+  const points: Point[] = [];
+  for (let i = 0; i <= steps; i += 1) {
+    const t = i / steps;
+    const wobble = (rand(i) * 2 - 1) * (mid - 1.2);
+    points.push({ x: round(t * width), y: round(mid + wobble) });
+  }
+  return inkPathD(points);
+}
