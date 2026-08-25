@@ -146,8 +146,8 @@ describe("C. the wide sections layout", () => {
 
 describe("D. the pencil button system", () => {
   it("shares one class and one height across both heroes", () => {
-    expect(whatFed).toContain('className="nb-pencil-cta"');
-    expect(canvasActions).toContain('className="nb-pencil-cta"');
+    expect(whatFed).toContain('className="nb-pencil-cta pr-[42px]"');
+    expect(canvasActions).toContain('className="nb-pencil-cta pr-[42px]"');
     expect(css).toMatch(/\.nb-pencil-cta \{[\s\S]*?height: 44px;/);
     expect(css).toMatch(/\.nb-pencil-cta \{[\s\S]*?padding: 0 20px;/);
     expect(css).toMatch(/\.nb-pencil-cta \{[\s\S]*?border: 1\.5px solid var\(--nb-graphite\);/);
@@ -201,6 +201,9 @@ describe("D. the pencil button system", () => {
     const trigger = read("src/components/engagements/CtaInfo.tsx");
     expect(trigger).toContain('role="button"');
     expect(trigger).not.toContain("<button");
+    // the trigger is a sibling, so each hero button keeps its own plain name
+    expect(whatFed).toContain("</button>\n      <CtaInfoTrigger");
+    expect(canvasActions).toContain("</button>\n        <CtaInfoTrigger");
     expect(whatFed).toContain("CtaInfoTrigger");
     expect(canvasActions).toContain("CtaInfoTrigger");
     expect(WORK_ARTIFACT_INFO).toBe(
