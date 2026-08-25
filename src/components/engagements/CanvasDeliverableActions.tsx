@@ -6,6 +6,7 @@ import { ShipToFirmDialog } from "@/components/work/ShipToFirmDialog";
 import { openJourney } from "@/lib/journey-state";
 import { SHIP_ACTION_LABEL } from "@/lib/shipped-work-shared";
 import { ownsWorkItem } from "@/lib/work-ownership";
+import { WORK_ARTIFACT_TITLE } from "@/lib/work-artifact-shared";
 import type { WorkItemRow } from "@/lib/work-types";
 
 export const JOURNEY_EMPTY_HINT = "Add a finished deliverable to see how it grew.";
