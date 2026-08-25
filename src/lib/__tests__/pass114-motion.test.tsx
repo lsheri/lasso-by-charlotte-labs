@@ -181,9 +181,9 @@ describe("pass 114 · the spine as rendered", () => {
       ],
     });
     render(<JourneySpine journey={journey} animate={false} width={640} />);
-    expect(screen.getByRole("img", { name: "Gmail" })).toHaveAttribute("width", "28");
-    expect(screen.getByRole("img", { name: "Claude" })).toHaveAttribute("width", "28");
-    expect(screen.getByRole("img", { name: "Google Slides" })).toHaveAttribute("width", "28");
+    expect(screen.getByRole("img", { name: "Gmail" }).getAttribute("width")).toBe("28");
+    expect(screen.getByRole("img", { name: "Claude" }).getAttribute("width")).toBe("28");
+    expect(screen.getByRole("img", { name: "Google Slides" }).getAttribute("width")).toBe("28");
   });
 
   it("renders the same DOM order at a narrow width", () => {
