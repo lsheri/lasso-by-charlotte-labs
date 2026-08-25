@@ -1,5 +1,8 @@
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+// @vitest-environment jsdom
+import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it } from "vitest";
+
+afterEach(() => cleanup());
 
 import { JourneySpine } from "@/components/journey/JourneyView";
 import { WorkArtifactSections } from "@/components/journey/WorkArtifactSections";
