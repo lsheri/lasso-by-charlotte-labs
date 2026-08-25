@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import {
+  ARTIFACT_SECTION_AREAS,
   NO_DECISIONS_LINE,
   NO_PROCESS_LINE,
   NO_PROMPTS_LINE,
@@ -12,6 +13,7 @@ import {
   type TurnRef,
   type WorkArtifact,
 } from "@/lib/work-artifact-shared";
+
 
 /**
  * Pass 113. The artifact itself: six bordered cards that teach how the work was
