@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 
 import { ReextractAction } from "@/components/peek/ReextractAction";
+import { SpanLegend } from "@/components/provenance/SpanLegend";
 import { StitchChip } from "@/components/provenance/StitchChip";
 import { Button } from "@/components/ui/button";
 import type { AuditPaneItem, AuditStitch } from "@/lib/span-provenance.functions";
@@ -47,12 +48,18 @@ export function AnchorPane({
   busy,
   onAsk,
   onGoToSource,
+  numbers = {},
+  vendors = {},
 }: {
   anchor: AuditPaneItem;
   canEdit: boolean;
   stitches: AuditStitch[];
   viewerProfileId: string | null;
   busy: boolean;
+  /** The pairing number per question, by when it was asked. */
+  numbers?: Record<string, number>;
+  /** The upstream item's vendor, so a card can wear the right brand mark. */
+  vendors?: Record<string, string | null>;
   onAsk: (locator: SpanLocator, question: string) => void;
   onGoToSource: (stitch: AuditStitch) => void;
 }) {
@@ -124,6 +131,9 @@ export function AnchorPane({
         <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
           {anchor.date_line}
         </p>
+        <div className="mt-1.5">
+          <SpanLegend />
+        </div>
       </div>
 
       {sections.map((section) => {
@@ -170,6 +180,8 @@ export function AnchorPane({
                 key={entry.stitch.id}
                 stitch={entry.stitch}
                 reduceMotion={reduceMotion}
+                {...(numbers[entry.stitch.id] ? { number: numbers[entry.stitch.id] } : {})}
+                sourceVendor={vendors[entry.stitch.to_item_id ?? ""] ?? null}
                 lifted={hovered === entry.stitch.id}
                 onHoverChange={(on) => setHovered(on ? entry.stitch.id : null)}
                 onGoToSource={onGoToSource}
@@ -191,6 +203,8 @@ export function AnchorPane({
               key={stitch.id}
               stitch={stitch}
               reduceMotion={reduceMotion}
+              {...(numbers[stitch.id] ? { number: numbers[stitch.id] } : {})}
+              sourceVendor={vendors[stitch.to_item_id ?? ""] ?? null}
               onGoToSource={onGoToSource}
             />
           ))}
