@@ -536,11 +536,12 @@ function PdfPage({
               height={entry.run.h}
               rx={2}
               fill={spanStatusWash(entry.status)}
+              fillOpacity={0.35}
               stroke={hovered === entry.id ? "currentColor" : "none"}
               className={`${spanStatusClass(entry.status)} ${
                 reduceMotion ? "nb-span-pulse-static" : "nb-span-pulse"
               } ${hovered === entry.id ? "nb-span-lit" : ""}`}
-              style={{ pointerEvents: "auto" }}
+              style={{ pointerEvents: "auto", mixBlendMode: "multiply" }}
               onMouseEnter={() => onHover(entry.id)}
               onMouseLeave={() => onHover(null)}
             />

@@ -159,7 +159,7 @@ export function PeekPanel({
   // Ownership truth: removing and deleting belong to the person whose work it
   // is, never to a coach or another member reading it.
   const owned =
-    canEdit && Boolean(viewerProfileId) && (!active.owner_id || active.owner_id === viewerProfileId);
+    canEdit && Boolean(viewerProfileId) && active.owner_id === viewerProfileId;
 
   return (
     <SlideOver

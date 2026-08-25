@@ -45,7 +45,7 @@ export function CaptureCoverage({
   isOwner?: boolean | undefined;
   eligibleEpisodes?: number | undefined;
 }) {
-  const { data } = useQuery({
+  const { data, isPending } = useQuery({
     queryKey: ["capture-coverage", profileId],
     enabled: Boolean(profileId),
     queryFn: async () => {
@@ -82,15 +82,18 @@ export function CaptureCoverage({
       : "";
 
   const channels = data?.channels ?? [];
-  const channelText =
-    channels.length > 0
+  // While the query is in flight we say nothing about tools: claiming "none"
+  // before the answer is back is simply untrue for people who have connected.
+  const channelText = !data || isPending
+    ? ""
+    : channels.length > 0
       ? `Connected across your record: ${channels.join(", ")}.`
       : "No tools connected yet.";
 
   return (
     <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
       Based on the {itemCount} {itemCount === 1 ? "piece" : "pieces"} of work in {scopeLabel}
-      {spanText ? `, ${spanText}` : ""}. {channelText}
+      {spanText ? `, ${spanText}` : ""}.{channelText ? ` ${channelText}` : ""}
       {isOwner && (data?.privateCount ?? 0) > 0
         ? ` Across your record, ${data!.privateCount} ${data!.privateCount === 1 ? "item is" : "items are"} kept private and read by nobody else.`
         : ""}
