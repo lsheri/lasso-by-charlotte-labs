@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { ChaliceMark } from "@/components/notebook/marks";
@@ -76,6 +76,21 @@ export function WorkArtifactPanel({
   const runArtifact = useServerFn(runWorkArtifactRun);
   const [confirming, setConfirming] = useState<AnalysisConfirmRequest | null>(null);
 
+  // Any click or keypress completes the reveal at once, the same skip the
+  // spine already honours.
+  const [skipped, setSkipped] = useState(false);
+  useEffect(() => {
+    if (!drawing || skipped) return;
+    const done = () => setSkipped(true);
+    window.addEventListener("click", done);
+    window.addEventListener("keydown", done);
+    return () => {
+      window.removeEventListener("click", done);
+      window.removeEventListener("keydown", done);
+    };
+  }, [drawing, skipped]);
+  const revealing = drawing && !skipped;
+
   const stored = useQuery({
     queryKey: ["work-artifact", anchorId],
     queryFn: () => fetchArtifact({ data: { anchor_id: anchorId } }),
@@ -133,7 +148,7 @@ export function WorkArtifactPanel({
               </button>
             </div>
           ) : null}
-          <WorkArtifactSections artifact={artifact} drawing={drawing} startMs={startMs} />
+          <WorkArtifactSections artifact={artifact} drawing={revealing} startMs={startMs} />
         </>
       ) : stored.isLoading ? null : canEdit ? (
         <div className="flex flex-col items-center gap-2 rounded-[var(--radius-md)] border border-dashed border-border px-4 py-8 text-center">
