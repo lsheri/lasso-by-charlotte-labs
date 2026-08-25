@@ -54,11 +54,13 @@ function Section({
   const classes = ["nb-artifact-section", drawing ? "" : "nb-artifact-section-static"]
     .filter(Boolean)
     .join(" ");
+  const area = ARTIFACT_SECTION_AREAS[index] ?? "usage";
   return (
     <section
-      className={`${classes} rounded-[var(--radius-md)] border border-border bg-card px-4 py-3.5`}
+      className={`${classes} nb-a-${area} rounded-[var(--radius-md)] border border-border bg-card px-4 py-3.5`}
       style={drawing ? { animationDelay: `${artifactSectionDelayMs(index, startMs)}ms` } : undefined}
       data-section={label}
+      data-area={area}
     >
       <p className="micro-label text-muted-foreground">{label}</p>
       <div className="mt-2.5">{children}</div>
@@ -80,7 +82,8 @@ export function WorkArtifactSections({
   startMs?: number;
 }) {
   return (
-    <div className="space-y-4" data-testid="work-artifact">
+    <div className="nb-artifact-grid" data-testid="work-artifact">
+
       <Section label={WORK_ARTIFACT_SECTIONS.how} index={0} drawing={drawing} startMs={startMs}>
         {artifact.how_ai_was_used.length === 0 ? (
           <Quiet>{NO_STAGES_LINE}</Quiet>
