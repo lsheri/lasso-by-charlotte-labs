@@ -3,7 +3,12 @@ import { X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
-import { ChaliceMark, GraphiteRule, PencilFirework } from "@/components/notebook/marks";
+import {
+  ChaliceMark,
+  GraphiteRule,
+  PencilFirework,
+  TracedSwatch,
+} from "@/components/notebook/marks";
 import { WorkArtifactPanel } from "@/components/journey/WorkArtifactPanel";
 import { SourceMark } from "@/components/work/SourceMark";
 import { useEngagementPage } from "@/hooks/use-engagement-page";
@@ -13,6 +18,7 @@ import {
   JOURNEY_THIN_LINE,
   JOURNEY_TITLE,
   JOURNEY_VIEWER_LINE,
+  TRACED_LEGEND_LINE,
   buildJourney,
   type Journey,
   type JourneyItemInput,
@@ -30,6 +36,11 @@ import {
   nodeBeatS,
   sectionsStartMs,
 } from "@/lib/journey-path";
+import {
+  HANDOFF_AFTER_ARRIVAL_MS,
+  HANDOFF_AFTER_SKIP_MS,
+  useHandoffScroll,
+} from "@/lib/handoff-scroll";
 import { journeyLinkFor } from "@/lib/journey-link";
 import { closeJourney, useJourneyRequest } from "@/lib/journey-state";
 import { spanStatusClass } from "@/lib/span-status-style";
@@ -289,6 +300,8 @@ export function JourneySpine({
   animate = true,
   notShared = false,
   width,
+  onSkip,
+  onLastArrival,
 }: {
   journey: Journey;
   animate?: boolean;
@@ -296,6 +309,10 @@ export function JourneySpine({
   notShared?: boolean;
   /** Test seam: the measured content width the path is laid out inside. */
   width?: number | undefined;
+  /** The reader completed the beats at once. */
+  onSkip?: (() => void) | undefined;
+  /** The last card finished its own arrival animation. */
+  onLastArrival?: (() => void) | undefined;
 }) {
   const [skipped, setSkipped] = useState(false);
   const holder = useRef<HTMLDivElement>(null);
@@ -315,14 +332,17 @@ export function JourneySpine({
 
   useEffect(() => {
     if (!animate || skipped) return;
-    const done = () => setSkipped(true);
+    const done = () => {
+      setSkipped(true);
+      onSkip?.();
+    };
     window.addEventListener("click", done);
     window.addEventListener("keydown", done);
     return () => {
       window.removeEventListener("click", done);
       window.removeEventListener("keydown", done);
     };
-  }, [animate, skipped]);
+  }, [animate, skipped, onSkip]);
 
   const ids = journey.nodes.map((node) => node.id);
   const stitchCounts = Object.fromEntries(
@@ -462,6 +482,7 @@ export function JourneySpine({
                 drawing={drawing}
                 beatMsValue={beat}
                 last={index === count - 1}
+                onArrival={index === count - 1 ? onLastArrival : undefined}
               />
               {node.stitches.length > 0 && tendril ? (
                 <div
@@ -518,11 +539,13 @@ function NodeCard({
   drawing,
   beatMsValue,
   last,
+  onArrival,
 }: {
   node: JourneyNode;
   drawing: boolean;
   beatMsValue: number;
   last: boolean;
+  onArrival?: (() => void) | undefined;
 }) {
   const classes = [
     "nb-journey-node",
@@ -538,6 +561,12 @@ function NodeCard({
       style={
         drawing ? { animationDelay: `${beatMsValue + beatMs(NODE_CARD_OFFSET_S)}ms` } : undefined
       }
+      onAnimationEnd={(event) => {
+        if (!onArrival) return;
+        if (event.animationName !== "nb-journey-announce") return;
+        if (event.target !== event.currentTarget) return;
+        onArrival();
+      }}
       data-kind={node.kind}
     >
       <div className="flex items-start gap-2.5">
