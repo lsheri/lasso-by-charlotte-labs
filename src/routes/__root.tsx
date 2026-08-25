@@ -145,6 +145,15 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const router = useRouter();
+
+  // In-app navigations only: a hard document load records no start, so no
+  // engagement.load row is written for it. That is deliberate for this pass.
+  useEffect(() => {
+    return router.subscribe("onBeforeNavigate", () => {
+      markNavStart();
+    });
+  }, [router]);
 
   return (
     <QueryClientProvider client={queryClient}>
