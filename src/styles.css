@@ -1255,15 +1255,20 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   min-height: calc(var(--nb-baseline) * 2);
 }
 
-/* A decorative ruled strip behind an engagement title. The only other use. */
+/* A page title sitting clear above a hand-drawn pencil rule. */
 .nb-title-strip {
-  background-image: repeating-linear-gradient(
-    to bottom,
-    transparent 0,
-    transparent calc(var(--nb-baseline) - 1px),
-    var(--nb-rule) calc(var(--nb-baseline) - 1px),
-    var(--nb-rule) var(--nb-baseline)
-  );
+  position: relative;
+  display: block;
+  padding-bottom: 12px;
+}
+.nb-title-rule {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 6px;
+  width: 100%;
+  color: var(--nb-rule);
 }
 
 /* Thinking: three grey dots. No spinners, no shimmer, anywhere in the dock. */
