@@ -4,9 +4,8 @@ import { GraphiteIcon } from "@/components/notebook/icons";
 
 /**
  * A sticky note on the engagement page. Shut by default: the page reads as a
- * title and a canvas, and the notes open only when you want to change
- * something. The pair opens together, so the caller owns the open state, and
- * each note wears its own paper colour.
+ * title and a canvas, and the note opens only when you want to change
+ * something. It opens on its own, and it wears its own paper colour.
  */
 export function EngagementNote({
   title,
@@ -20,7 +19,7 @@ export function EngagementNote({
   title: string;
   summary?: string;
   children: ReactNode;
-  tone: "blue" | "green";
+  tone: "green";
   open: boolean;
   onToggle: () => void;
   /** A small control on the title row, such as the brief's pencil. */
