@@ -64,14 +64,35 @@ export function ShippedWorkCard({
         }
       >
         <span className="flex items-start gap-2">
-          <SourceMark item={{ source_vendor: card.source_vendor }} size={14} />
+          {card.type === "app" ? (
+            <RobotMark size={16} className="text-muted-foreground" />
+          ) : (
+            <SourceMark
+              item={{
+                source: card.source as never,
+                source_vendor: card.source_vendor,
+                source_meta: card.source_meta as never,
+                meta: card.meta as never,
+                type: card.type,
+              }}
+              size={14}
+            />
+          )}
           <span className="min-w-0 break-words text-sm font-medium text-foreground">
-            {card.title}
+            {headline}
           </span>
         </span>
         <GraphiteRule className="mt-1 h-[6px] w-[140px] text-muted-foreground" />
+        {brief ? (
+          <span
+            data-testid={`shipped-card-brief-${card.work_item_id}`}
+            className="mt-1 block line-clamp-2 text-xs text-muted-foreground"
+          >
+            {brief}
+          </span>
+        ) : null}
         <span className="mt-1.5 block font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
-          {[journeyTypeLabel(card.type), where || null].filter(Boolean).join(" · ")}
+          {metaLine}
         </span>
         <span className="mt-1 block text-xs text-muted-foreground">
           Shipped by {card.shipped_by_name ?? "a colleague"} · {formatDate(card.shipped_at)}
