@@ -11,7 +11,11 @@ export function PrivacyPanel() {
         work itself stays with the person who did it.
       </p>
       <ul className="mt-3 space-y-1.5 text-sm text-muted-foreground">
-        <li>Never the work: no documents, decks, files, or captured threads.</li>
+        <li>
+          Never the work: no documents, decks, files, or captured threads. The one exception is
+          the archive: work appears there only when the person who owns it ships it, and they can
+          take it back.
+        </li>
         <li>Never a conversation with Lasso, and never a prompt someone wrote.</li>
         <li>Never a number attached to a person&apos;s name, and never a ranking of people.</li>
         <li>Never a pass rate or a score, here or anywhere else in Lasso.</li>

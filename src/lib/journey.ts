@@ -70,6 +70,15 @@ export const JOURNEY_THIN_LINE =
 
 export const JOURNEY_TITLE = "How this work grew";
 
+/**
+ * A colleague may open a shipped card whose engagement they are not part of.
+ * The record comes back empty under their own access, and saying so is the only
+ * honest thing: it is not a thin record, it is simply not theirs to read.
+ */
+export const JOURNEY_VIEWER_LINE =
+  "The record behind this work is not shared with you. The card is what its owner shipped.";
+
+
 /** At least this many upstream items, or there is no journey to draw. */
 export const JOURNEY_MIN_UPSTREAM = 2;
 

@@ -17,6 +17,7 @@ import {
   REMOVE_LABEL,
 } from "@/components/work/RemoveFromEngagementDialog";
 import { DeliverableKindSelect } from "@/components/work/DeliverableKindSelect";
+import { ShipToFirmDialog } from "@/components/work/ShipToFirmDialog";
 import { ChatUrlLink } from "@/components/work/ChatUrlLink";
 import { ArtifactNote, SourceMark } from "@/components/work/SourceMark";
 import { TypeChip, TypeIcon } from "@/components/work/TypeIcon";
@@ -27,6 +28,7 @@ import { deliverableKindOf, type DeliverableKind } from "@/lib/deliverable-kinds
 import { isDeliverableType } from "@/lib/lineage-shared";
 import { openJourney } from "@/lib/journey-state";
 import { peekFormat } from "@/lib/peek-format";
+import { SHIP_ACTION_LABEL } from "@/lib/shipped-work-shared";
 import { getWorkFileUrl } from "@/lib/work-files.functions";
 import {
   effectiveWorkDate,
@@ -121,6 +123,7 @@ export function PeekPanel({
   const [briefOpen, setBriefOpen] = useState(false);
   const [removeOpen, setRemoveOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [shipOpen, setShipOpen] = useState(false);
   const invalidateWork = useInvalidateWorkItems();
   const [kindDraft, setKindDraft] = useState<DeliverableKind | null>(null);
 
@@ -269,6 +272,9 @@ export function PeekPanel({
             Journey
           </FooterAction>
         ) : null}
+        {owned && isDeliverableType(active.type) ? (
+          <FooterAction onClick={() => setShipOpen(true)}>{SHIP_ACTION_LABEL}</FooterAction>
+        ) : null}
         {canEdit && onMap ? (
           <FooterAction primary onClick={() => onMap(active, group)}>
             {active.visibility === "mapped" ? "Remap" : "Map to a workstream"}
@@ -323,6 +329,15 @@ export function PeekPanel({
         </div>
       </footer>
       <MarkBriefDialog item={active} open={briefOpen} onOpenChange={setBriefOpen} />
+      {owned && isDeliverableType(active.type) ? (
+        <ShipToFirmDialog
+          workItemId={active.id}
+          title={active.title}
+          engagementId={engagementId ?? null}
+          open={shipOpen}
+          onOpenChange={setShipOpen}
+        />
+      ) : null}
       {owned && engagementId ? (
         <RemoveFromEngagementDialog
           workItemId={active.id}

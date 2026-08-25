@@ -1923,6 +1923,62 @@ export type Database = {
           },
         ]
       }
+      shipped_work: {
+        Row: {
+          engagement_id: string | null
+          id: string
+          org_id: string
+          shipped_at: string
+          shipped_by: string
+          work_item_id: string
+        }
+        Insert: {
+          engagement_id?: string | null
+          id?: string
+          org_id: string
+          shipped_at?: string
+          shipped_by: string
+          work_item_id: string
+        }
+        Update: {
+          engagement_id?: string | null
+          id?: string
+          org_id?: string
+          shipped_at?: string
+          shipped_by?: string
+          work_item_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shipped_work_engagement_id_fkey"
+            columns: ["engagement_id"]
+            isOneToOne: false
+            referencedRelation: "engagements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipped_work_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipped_work_shipped_by_fkey"
+            columns: ["shipped_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipped_work_work_item_id_fkey"
+            columns: ["work_item_id"]
+            isOneToOne: false
+            referencedRelation: "work_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       span_links: {
         Row: {
           asked_by: string

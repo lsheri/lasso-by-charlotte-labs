@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 
 import { ChecksLibrary } from "@/components/firm/ChecksLibrary";
+import { FirmArchive } from "@/components/firm/FirmArchive";
 import { CountList, CountRow, Panel, StatBlock } from "@/components/firm/FirmPanels";
 import { PrivacyPanel } from "@/components/firm/PrivacyPanel";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -34,6 +35,8 @@ export function FirmDashboardPage() {
 
       <div className="space-y-5">
         <PrivacyPanel />
+
+        <FirmArchive />
 
         {error ? (
           <p className="text-sm text-destructive">That could not be loaded. Try again.</p>
