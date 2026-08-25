@@ -47,7 +47,7 @@ export function CanvasDeliverableActions({
         }}
         className={ready ? QUIET_PILL : QUIET_PILL_OFF}
       >
-        <StitchLoop size={16} aria-hidden />
+        <StitchLoop size={16} />
         Journey
       </button>
 
