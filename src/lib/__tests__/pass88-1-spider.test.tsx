@@ -28,7 +28,7 @@ describe("spider mascot beside Ask Lasso", () => {
   });
 
   it("is the Ask Lasso mark on the engagement page, with no Sparkle left", () => {
-    expect(page).toContain("<SpiderMark size={18} /> Ask Lasso");
+    expect(page).toContain("<SpiderMark size={27} /> Ask Lasso");
     expect(page).not.toContain("Sparkle");
   });
 });
