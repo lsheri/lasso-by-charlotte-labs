@@ -698,6 +698,29 @@ export function EngagementCanvas({
           </div>
         </SheetContent>
       </Sheet>
+      {removeTarget ? (
+        <RemoveFromEngagementDialog
+          workItemId={removeTarget.id}
+          title={removeTarget.title}
+          engagementId={engagementId}
+          open
+          onOpenChange={(next) => {
+            if (!next) setRemoveTarget(null);
+          }}
+          onDone={() => void onChanged()}
+        />
+      ) : null}
+      {deleteTarget ? (
+        <DeleteWorkItemDialog
+          workItemId={deleteTarget.id}
+          title={deleteTarget.title}
+          open
+          onOpenChange={(next) => {
+            if (!next) setDeleteTarget(null);
+          }}
+          onDone={() => void onChanged()}
+        />
+      ) : null}
     </section>
   );
 }
