@@ -1,5 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+
+import { usePerfOpenFinish, usePerfTimerFactory } from "@/hooks/use-perf-timer";
 import { Pencil, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -55,6 +57,7 @@ function AuditSurface({
   const rendition = useServerFn(getRenditionUrl);
   const removeStitch = useServerFn(deleteSpanLink);
   const queryClient = useQueryClient();
+  const perfTimer = usePerfTimerFactory();
   const [busy, setBusy] = useState(false);
   const [armed, setArmed] = useState(false);
   const [view, setView] = useState<"slides" | "text">("slides");
@@ -90,6 +93,9 @@ function AuditSurface({
     ...renditionQueryOptions,
   });
 
+  // The audit is usable once the record behind it has been read.
+  usePerfOpenFinish("audit.open", !isLoading && Boolean(data));
+
   const hasVisual = visual?.kind === "pdf";
   const showSlides = hasVisual && view === "slides";
   const unit = pageUnitFor({
@@ -112,6 +118,10 @@ function AuditSurface({
 
   async function askSpan(locator: SpanLocator, question: string) {
     if (busy) return;
+    // From the released ink's question to the answer card's first paint. The
+    // reveal choreography that follows is deliberate motion, not app latency,
+    // so it is deliberately outside the mark.
+    const timer = perfTimer("lasso.resolve", "warm");
     setBusy(true);
     try {
       await ask({ data: { work_item_id: anchorId, locator, question } });
@@ -122,12 +132,14 @@ function AuditSurface({
       const landed = pickResolvedStitch(fresh?.stitches ?? [], locator.snippet);
       if (landed) {
         setReplayId(landed.id);
+        timer.done("total");
         runResolveChoreography(landed, {
           onThread: () => {},
           onFocus: (stitch) => goToSource(stitch),
         });
       }
     } catch (e) {
+      timer.cancel();
       toast.error(e instanceof Error ? e.message : "That question could not be answered.");
     } finally {
       setBusy(false);
