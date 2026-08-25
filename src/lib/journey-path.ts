@@ -359,3 +359,70 @@ export function wavingSwatchD(seed: string, width = 28, height = 10): string {
   }
   return inkPathD(points);
 }
+
+/* --------------------------------------------------------------------------
+   Pass 116: the scribble-out. When a process finishes, the thing it worked on
+   is crossed off in graphite rather than faded away: a fade says "gone", a
+   strike-through says "done". Pure and seeded, so the same card is crossed off
+   the same way on the server and in the browser.
+-------------------------------------------------------------------------- */
+
+/** How far the scribble is allowed to spill past the box it crosses out. */
+export const SCRIBBLE_INFLATE = 8;
+
+/**
+ * A connected pencil scribble across a w x h box: 4 to 6 corner-to-corner
+ * diagonal sweeps, the pen never lifting, every edge touch overshooting a
+ * little, each sweep one human quadratic arc. The length is computed here
+ * because jsdom has no getTotalLength and the dash animation needs a number.
+ */
+export function scribblePath(w: number, h: number, seed: string): { d: string; len: number } {
+  const rand = seededRand([seed, "scribble"]);
+  let k = 0;
+  const next = () => rand(k++);
+
+  const n = 4 + Math.floor(next() * 3); // 4..6
+  const over = () => 2 + next() * 4;
+  const baseline = (i: number) => (h * i) / Math.max(1, n - 1) + (next() * 2 - 1) * h * 0.06;
+
+  const ys: number[] = [];
+  for (let i = 0; i < n; i += 1) ys.push(round(baseline(i)));
+
+  let x = round(-over());
+  let y = ys[0] ?? 0;
+  let d = `M ${x} ${y}`;
+  let len = 0;
+
+  for (let i = 0; i < n; i += 1) {
+    const leftToRight = i % 2 === 0;
+    const endX = round(leftToRight ? w + over() : -over());
+    const endY = ys[i + 1] ?? ys[i] ?? 0;
+    const midX = (x + endX) / 2;
+    const midY = (y + endY) / 2;
+    const dx = endX - x;
+    const dy = endY - y;
+    const norm = Math.hypot(dx, dy) || 1;
+    const bow = (2 + next() * 3) * (i % 2 === 0 ? 1 : -1);
+    const cx = round(midX + (-dy / norm) * bow);
+    const cy = round(midY + (dx / norm) * bow);
+    d += ` Q ${cx} ${cy} ${endX} ${endY}`;
+
+    // Flatten the quadratic at 16 samples and sum the chords.
+    let px = x;
+    let py = y;
+    for (let s = 1; s <= 16; s += 1) {
+      const t = s / 16;
+      const u = 1 - t;
+      const qx = u * u * x + 2 * u * t * cx + t * t * endX;
+      const qy = u * u * y + 2 * u * t * cy + t * t * endY;
+      len += Math.hypot(qx - px, qy - py);
+      px = qx;
+      py = qy;
+    }
+
+    x = endX;
+    y = endY;
+  }
+
+  return { d, len: round(len) };
+}
