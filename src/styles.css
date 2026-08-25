@@ -1814,84 +1814,96 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 }
 
 /* ---------------------------------------------------------------------------
-   Pass 107: the "What fed this" call to action. A wider button with a slow
-   blue gradient breathing behind it and a clear wave drifting across, so the
-   entry point into provenance looks alive without shouting. Reduced motion
-   keeps the gradient and the wave, perfectly still.
+   Pass 115: the pencil button system. The two feature heroes share one shape
+   and one graphite outline, and behind each sits a seeded pencil hatching that
+   breathes slowly, the pair in counterphase. Reduced motion holds it still.
 --------------------------------------------------------------------------- */
 
-.nb-web-cta {
+.nb-pencil-cta {
   position: relative;
   isolation: isolate;
   overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  height: 44px;
+  padding: 0 20px;
+  border-radius: 9999px;
+  border: 1.5px solid var(--nb-graphite);
+  background: var(--card);
+  color: var(--foreground);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
   transition: transform 200ms var(--nb-ease);
 }
-.nb-web-cta:hover:not(:disabled) {
+.nb-pencil-cta:hover:not(:disabled) {
   transform: translateY(-1px);
 }
-.nb-web-cta:active:not(:disabled) {
+.nb-pencil-cta:active:not(:disabled) {
   transform: translateY(0);
 }
-.nb-web-cta::before {
-  content: "";
-  position: absolute;
-  inset: -50%;
-  z-index: -2;
-  background: linear-gradient(
-    115deg,
-    var(--nb-web-blue-1) 0%,
-    var(--nb-web-blue-2) 35%,
-    var(--nb-web-blue-3) 50%,
-    var(--nb-web-blue-2) 65%,
-    var(--nb-web-blue-1) 100%
-  );
-  background-size: 240% 240%;
-  opacity: 0.32;
-  animation: nb-web-drift 14s var(--nb-ease) infinite;
+.nb-pencil-cta:disabled {
+  color: var(--muted-foreground);
+  border-color: var(--border);
+  opacity: 0.6;
 }
-.nb-web-cta::after {
-  content: "";
+.nb-pencil-cta > *:not(.nb-hatch) {
+  position: relative;
+  z-index: 1;
+}
+.nb-hatch {
   position: absolute;
   inset: 0;
-  z-index: -1;
-  background: radial-gradient(
-    140% 90% at 20% 120%,
-    rgb(255 255 255 / 0.7) 0%,
-    rgb(255 255 255 / 0.2) 45%,
-    rgb(255 255 255 / 0) 70%
-  );
-  animation: nb-web-wave 10s var(--nb-ease) infinite;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: hidden;
+  opacity: 0.35;
+  animation: nb-hatch-breathe 7s ease-in-out infinite;
 }
-.nb-web-cta:disabled::before,
-.nb-web-cta:disabled::after {
-  animation: none;
-  opacity: 0.15;
+.nb-hatch-counter {
+  animation-delay: -3.5s;
 }
-@keyframes nb-web-drift {
-  0% { background-position: 0% 50%; opacity: 0.25; }
-  50% { background-position: 100% 50%; opacity: 0.42; }
-  100% { background-position: 0% 50%; opacity: 0.25; }
-}
-@keyframes nb-web-wave {
-  0% { transform: translateX(-12%); }
-  50% { transform: translateX(12%); }
-  100% { transform: translateX(-12%); }
+@keyframes nb-hatch-breathe {
+  0% { opacity: 0.35; }
+  50% { opacity: 0.85; }
+  100% { opacity: 0.35; }
 }
 .nb-web-mark {
   transition: transform 300ms var(--nb-ease);
 }
-.nb-web-cta:hover:not(:disabled) .nb-web-mark {
+.nb-pencil-cta:hover:not(:disabled) .nb-web-mark {
   transform: rotate(-12deg) scale(1.06);
+}
+.nb-cta-info {
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  border: 1px solid var(--border);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  line-height: 1;
+  color: var(--muted-foreground);
+  cursor: pointer;
+}
+.nb-cta-info:hover {
+  color: var(--foreground);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .nb-web-cta,
-  .nb-web-cta::before,
-  .nb-web-cta::after,
+  .nb-pencil-cta,
   .nb-web-mark {
     animation: none !important;
     transition: none !important;
     transform: none !important;
+  }
+  .nb-hatch {
+    animation: none !important;
+    opacity: 0.6 !important;
   }
 }
 
@@ -2097,14 +2109,46 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 /* Pass 114: the six sections read as a document, two columns with the takeaway
    and the honest gaps closing it as a pair. DOM order stays the list order at
    every width; the grid only ever moves things visually. */
+.nb-traced-legend {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  opacity: 1;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--muted-foreground);
+  font-variant-caps: all-small-caps;
+}
+.nb-traced-legend.is-arriving {
+  animation: nb-legend-in 400ms ease-out backwards;
+}
+@keyframes nb-legend-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.nb-artifact-region {
+  padding-inline: 24px;
+}
+@media (min-width: 768px) {
+  .nb-artifact-region {
+    padding-inline: 32px;
+  }
+}
+
 .nb-artifact-grid {
   display: grid;
   gap: 24px 32px;
   grid-template-columns: 1fr;
 }
-@media (min-width: 560px) {
+.nb-artifact-section :is(p, li, blockquote):not(.micro-label):not(.font-mono) {
+  max-width: 65ch;
+}
+@media (min-width: 784px) {
   .nb-artifact-grid {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
     grid-template-areas:
       "usage checks"
       "prompts decisions"
@@ -2116,6 +2160,11 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   .nb-a-decisions { grid-area: decisions; }
   .nb-a-process { grid-area: process; }
   .nb-a-gaps { grid-area: gaps; }
+}
+@media (min-width: 1024px) {
+  .nb-artifact-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 .nb-artifact-section {
