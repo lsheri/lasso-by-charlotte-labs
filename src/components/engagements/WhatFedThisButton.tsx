@@ -16,7 +16,28 @@ export const WHAT_FED_THIS_EMPTY_HINT =
 export const WHAT_FED_THIS_INFO =
   "Circle any fact on your finished work and Lasso finds where it came from in this engagement's record.";
 
+/** A corner spider web, drawn in the same graphite line as the rest of the app. */
+function WebMark() {
+  return (
+    <svg
+      className="nb-web-mark h-4 w-4 shrink-0"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.3}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M12 12 12 2M12 12 21 7M12 12 22 12M12 12 21 17M12 12 12 22M12 12 3 17M12 12 2 12M12 12 3 7" />
+      <path d="M12 6.2c2.2 0 4 1.8 4 4M12 6.2c-2.2 0-4 1.8-4 4M16 12c0 2.2-1.8 4-4 4M8 12c0 2.2 1.8 4 4 4" />
+      <path d="M12 2.8c4.4 0 8 3.6 8 8M12 2.8c-4.4 0-8 3.6-8 8M20 12c0 4.4-3.6 8-8 8M4 12c0 4.4 3.6 8 8 8" />
+    </svg>
+  );
+}
+
 /** The most recent finished deliverable mapped into this engagement, if any. */
+
 export function latestDeliverable(items: WorkItemRow[]): WorkItemRow | null {
   const deliverables = items.filter((item) => isDeliverableType(item.type));
   if (deliverables.length === 0) return null;
