@@ -185,3 +185,116 @@ export type FirmCheckLibraryRow = {
   active: boolean;
   created_at: string;
 };
+
+/* ---------------------------------------------------------------------------
+ * Pass 112: the firm view as tiles. Nothing below changes what a number means
+ * or when it is withheld. It only decides whether an honest statement gets a
+ * tile or one line in the waiting strip.
+ * ------------------------------------------------------------------------- */
+
+/** Always visible, above everything else on the firm page. */
+export const TRUST_SUMMARY_LINE =
+  "Counts and structure only. The work stays with the person who did it. The archive is the one exception, shipped by its owner.";
+
+/** The toggle that opens the full honesty card. */
+export const HOW_THIS_WORKS_LABEL = "How this view works";
+
+/** The small caps heading over the collapsed withholdings. */
+export const WAITING_LABEL = "Waiting for scale";
+
+/** One withheld metric, one line. */
+export function waitingLine(name: string): string {
+  return `${name}: too small to mean anything yet.`;
+}
+
+export type MetricTile = {
+  key: string;
+  name: string;
+  /** What the tile prints big. */
+  value: string;
+  /** The caveat sentence the old section already showed. */
+  caveat: string;
+};
+
+export type FirmMetrics = { tiles: MetricTile[]; withheld: string[] };
+
+function pushStat(
+  out: FirmMetrics,
+  key: string,
+  name: string,
+  stat: Stat,
+): void {
+  if (stat.value === null) out.withheld.push(name);
+  else out.tiles.push({ key, name, value: String(stat.value), caveat: stat.sentence });
+}
+
+/**
+ * Meaningful metrics become tiles, withheld metrics become strip lines. The
+ * existing suppression flags are the only source of truth: count in, count out.
+ */
+export function buildFirmMetrics(data: FirmDashboard): FirmMetrics {
+  const out: FirmMetrics = { tiles: [], withheld: [] };
+
+  out.tiles.push({
+    key: "seats",
+    name: "Seats in use",
+    value: String(data.adoption.seats_used),
+    caveat:
+      data.adoption.seats === null
+        ? "No seat count on file."
+        : `Of ${data.adoption.seats} seats. Coaches never use a seat.`,
+  });
+
+  pushStat(out, "weekly_active", "Active in the last week", data.adoption.weekly_active);
+
+  const coverage = data.adoption.capture_coverage;
+  if (coverage.numerator === null) out.withheld.push("Capture coverage");
+  else
+    out.tiles.push({
+      key: "capture_coverage",
+      name: "Capture coverage",
+      value: `${coverage.numerator} of ${coverage.denominator}`,
+      caveat: coverage.sentence,
+    });
+
+  pushStat(
+    out,
+    "time_to_first_capture",
+    "Time to first capture",
+    data.adoption.time_to_first_capture,
+  );
+  pushStat(out, "work_captured", "Work captured", data.activity.work_items_captured);
+  pushStat(out, "cycle_time", "Delivered to accepted", data.activity.cycle_time);
+  pushStat(out, "questions_asked", "Questions asked", data.activity.questions_asked);
+
+  if (data.assurance.enough) {
+    out.tiles.push({
+      key: "verification_runs",
+      name: "Verification analyses run",
+      value: String(data.assurance.verification_runs),
+      caveat: "Counts only, never results and never a rate.",
+    });
+    out.tiles.push({
+      key: "firm_check_runs",
+      name: "Firm checks analyses run",
+      value: String(data.assurance.firm_check_runs),
+      caveat: "Counts only, never results and never a rate.",
+    });
+  } else {
+    out.withheld.push("Verification analyses run");
+    out.withheld.push("Firm checks analyses run");
+  }
+
+  if (data.coaching.coaches_active === 0) {
+    out.withheld.push("Coaching");
+  } else {
+    out.tiles.push({
+      key: "coaches_active",
+      name: "Coaches active",
+      value: String(data.coaching.coaches_active),
+      caveat: `${data.coaching.engagements_shared} engagements shared with a coach. ${data.coaching.one_on_one_preps} 1:1 preps created.`,
+    });
+  }
+
+  return out;
+}
