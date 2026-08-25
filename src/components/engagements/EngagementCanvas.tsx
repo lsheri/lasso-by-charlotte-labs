@@ -4,6 +4,7 @@ import { MoreHorizontal } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { WorkstreamColumnHeader } from "@/components/engagements/WorkstreamColumnHeader";
+import { usePerfMountTimer, usePerfTimerFactory } from "@/hooks/use-perf-timer";
 import {
   DropdownMenu,
   DropdownMenuContent,
