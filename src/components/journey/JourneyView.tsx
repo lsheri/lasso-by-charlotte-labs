@@ -260,7 +260,7 @@ function NodeRow({
         <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-foreground/70" aria-hidden />
         <div className="min-w-0">
           <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-            <SourceMark item={{ source_vendor: node.sourceVendor, source: node.type }} size={14} />
+            <SourceMark item={{ source_vendor: node.sourceVendor }} size={14} />
             <span
               className={
                 last
