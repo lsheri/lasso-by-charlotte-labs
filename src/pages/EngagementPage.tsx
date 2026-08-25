@@ -204,14 +204,21 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
         }}
         onOpen={(item) => setPeekItem(item)}
         headerAction={
-          profile && profile.role !== "coach" ? (
-            <div className="flex items-center gap-2">
-              <WhatFedThisButton
+          profile ? (
+            <div className="flex flex-wrap items-center gap-2">
+              {profile.role !== "coach" ? (
+                <WhatFedThisButton
+                  items={canvasItems}
+                  orgId={profile.org_id}
+                  profileId={profile.id}
+                />
+              ) : null}
+              <CanvasDeliverableActions
                 items={canvasItems}
-                orgId={profile.org_id}
-                profileId={profile.id}
+                engagementId={engagementId}
+                profile={profile}
               />
-              {membership.data?.isMember ? (
+              {profile.role !== "coach" && membership.data?.isMember ? (
             <ConnectToWorkSheet
               engagementId={engagementId}
               streams={(tasksQuery.data ?? []).map((task) => ({ id: task.id, name: task.name }))}
