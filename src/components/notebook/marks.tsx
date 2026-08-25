@@ -138,11 +138,91 @@ export function DrawnStrike({ className = "" }: { className?: string }) {
 }
 
 /**
+ * The journey stem: a graphite line that grows down the page between nodes.
+ * Hand-drawn strokes live only in this module, so the stem is here rather than
+ * in the journey view. Static art with an optional draw, no claim on the
+ * one-per-viewport gate.
+ */
+export function JourneyStem({
+  className = "",
+  drawing = false,
+  delayMs = 0,
+}: {
+  className?: string;
+  drawing?: boolean;
+  delayMs?: number;
+}) {
+  return (
+    <svg
+      className={`nb-journey-stem pointer-events-none ${drawing ? "" : "nb-journey-stem-static"} ${className}`}
+      viewBox="0 0 6 100"
+      preserveAspectRatio="none"
+      fill="none"
+      stroke="var(--nb-graphite)"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      style={drawing ? { animationDelay: `${delayMs}ms` } : undefined}
+      aria-hidden
+    >
+      <path
+        pathLength={1}
+        d="M3 0.5C2.1 12 3.8 24 2.9 36c-.8 11 1.4 22 .4 33 -.7 8 .5 17 -.1 30.5"
+        strokeWidth={1.4}
+      />
+      <path
+        pathLength={1}
+        d="M3.5 2C4.2 18 2.6 34 3.4 50c.7 15 -.6 31 .2 48"
+        strokeWidth={0.6}
+        opacity={0.45}
+      />
+    </svg>
+  );
+}
+
+/**
+ * A stitch moment on the stem: the same yellow loop language the lasso speaks,
+ * drawn small beside the conversation the question was asked of.
+ */
+export function StitchLoop({
+  size = 22,
+  className = "",
+  drawing = false,
+  delayMs = 0,
+}: {
+  size?: number;
+  className?: string;
+  drawing?: boolean;
+  delayMs?: number;
+}) {
+  return (
+    <svg
+      className={`nb-journey-loop ${drawing ? "" : "nb-journey-loop-static"} ${className}`}
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="var(--nb-ink-yellow)"
+      strokeWidth={1.6}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      style={drawing ? { animationDelay: `${delayMs}ms` } : undefined}
+      aria-hidden
+    >
+      <path
+        pathLength={1}
+        d="M15 5.6C9.6 3.4 3.6 6 3.2 11.4c-.4 5.2 5.4 8.6 10.4 7.8 4.6-.7 8-4.6 6.6-8.3-1-2.6-4.2-4-7-3.4"
+      />
+    </svg>
+  );
+}
+
+/**
  * A ruled line under a page title, drawn by hand rather than by a border.
  * Static art: no claim on the one-per-viewport gate, no motion. It stretches
  * to whatever width the title occupies.
  */
 export function GraphiteRule({ className = "" }: { className?: string }) {
+
   return (
     <svg
       className={`nb-title-rule pointer-events-none ${className}`}

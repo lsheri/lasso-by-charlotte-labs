@@ -1927,3 +1927,62 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   backdrop-filter: blur(4px);
   mask-image: linear-gradient(to bottom, #000 0%, transparent 100%);
 }
+
+/* ---------------------------------------------------------------------------
+   Pass 110: the journey. The stem draws itself down the page, each node
+   settles as its segment arrives, and the little yellow loops draw last on the
+   conversations that were questioned. Reduced motion renders the whole thing
+   fully drawn and perfectly still.
+--------------------------------------------------------------------------- */
+
+.nb-journey-stem path {
+  fill: none;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+}
+.nb-journey-stem:not(.nb-journey-stem-static) path {
+  animation: nb-journey-grow 460ms var(--nb-ease) both;
+  animation-delay: inherit;
+}
+@keyframes nb-journey-grow {
+  from { stroke-dashoffset: 1; }
+  to { stroke-dashoffset: 0; }
+}
+
+.nb-journey-node {
+  opacity: 1;
+}
+.nb-journey-node:not(.nb-journey-node-static) {
+  animation: nb-journey-settle 280ms var(--nb-ease) both;
+}
+@keyframes nb-journey-settle {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.nb-journey-loop path {
+  fill: none;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+}
+.nb-journey-loop:not(.nb-journey-loop-static) path {
+  animation: nb-journey-grow 380ms var(--nb-ease) both;
+  animation-delay: inherit;
+}
+
+.nb-journey-final:not(.nb-journey-node-static) {
+  animation: nb-chip-enter-in 320ms var(--nb-ease) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nb-journey-stem path,
+  .nb-journey-loop path,
+  .nb-journey-node,
+  .nb-journey-final {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+    opacity: 1 !important;
+    stroke-dashoffset: 0 !important;
+  }
+}
