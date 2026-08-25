@@ -51,7 +51,10 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
 
   // On phones the floating button is the only Ask Lasso entry, and on this page
   // it opens this engagement's dock rather than navigating to Reflect.
-  useRegisterAskLasso(() => setAskOpen(true));
+  useRegisterAskLasso(() => {
+    markOpenStart("ask_dock.open");
+    setAskOpen(true);
+  });
 
   // One consolidated read for this engagement: the record, its workstreams,
   // the coaches it is shared with, the caller's own membership, the decisions
@@ -65,6 +68,10 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
 
 
 
+
+  // In-app route transitions only. A hard document load plus hydration is a
+  // different measurement and is deliberately not covered in this pass.
+  usePerfNavFinish("engagement.load", Boolean(engagementQuery.data?.engagement));
 
   const engagement = engagementQuery.data?.engagement ?? null;
   const isQuickFolder = engagement?.clients?.quick_folder === true;
@@ -121,7 +128,10 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
           {profile && profile.role !== "coach" ? (
             <button
               type="button"
-              onClick={() => setAskOpen(true)}
+              onClick={() => {
+                markOpenStart("ask_dock.open");
+                setAskOpen(true);
+              }}
               className="hidden shrink-0 items-center gap-2.5 rounded-full border border-border px-[18px] py-2.5 font-mono text-[16px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground md:inline-flex"
             >
               <SpiderMark size={27} /> Ask Lasso
