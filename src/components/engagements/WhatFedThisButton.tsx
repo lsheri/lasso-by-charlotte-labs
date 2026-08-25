@@ -112,13 +112,13 @@ export function WhatFedThisButton({
             },
           });
         }}
-        className="nb-pencil-cta"
+        className="nb-pencil-cta pr-[42px]"
       >
         <PencilHatch seed="cta-web" />
         <WebMark size={18} />
         <span className="ml-2 mr-2.5">What fed this</span>
-        <CtaInfoTrigger open={infoOpen} onToggle={() => setInfoOpen((prev) => !prev)} />
       </button>
+      <CtaInfoTrigger open={infoOpen} onToggle={() => setInfoOpen((prev) => !prev)} />
 
       {infoOpen ? <CtaInfoPopover>{WHAT_FED_THIS_INFO}</CtaInfoPopover> : null}
     </div>

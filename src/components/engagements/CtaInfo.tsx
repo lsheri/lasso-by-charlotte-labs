@@ -1,9 +1,9 @@
 import type { ReactNode } from "react";
 
 /**
- * Pass 115: the small "i" that both pencil heroes carry. It lives inside the
- * button visually but is never a button element itself, because a button
- * inside a button is invalid and unreachable for a keyboard.
+ * Pass 115: the small "i" that both pencil heroes carry. It sits inside the
+ * button visually but is a sibling in the markup, so the button keeps its own
+ * plain accessible name and the "i" keeps its own keyboard stop.
  */
 export function CtaInfoTrigger({
   open,
@@ -22,7 +22,7 @@ export function CtaInfoTrigger({
       title={label}
       aria-expanded={open}
       data-testid="cta-info-trigger"
-      className="nb-cta-info"
+      className="nb-cta-info absolute right-[14px] top-1/2 z-[2] -translate-y-1/2"
       onClick={(event) => {
         event.preventDefault();
         event.stopPropagation();

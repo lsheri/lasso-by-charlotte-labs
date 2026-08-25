@@ -49,13 +49,13 @@ export function CanvasDeliverableActions({
             if (!anchor) return;
             openJourney({ anchorId: anchor.id, anchorTitle: anchor.title, engagementId });
           }}
-          className="nb-pencil-cta"
+          className="nb-pencil-cta pr-[42px]"
         >
           <PencilHatch seed="cta-artifact" className="nb-hatch-counter" />
           <ChaliceMark size={18} />
           <span className="ml-2 mr-2.5">{WORK_ARTIFACT_TITLE}</span>
-          <CtaInfoTrigger open={infoOpen} onToggle={() => setInfoOpen((prev) => !prev)} />
         </button>
+        <CtaInfoTrigger open={infoOpen} onToggle={() => setInfoOpen((prev) => !prev)} />
         {infoOpen ? <CtaInfoPopover>{WORK_ARTIFACT_INFO}</CtaInfoPopover> : null}
       </div>
 
