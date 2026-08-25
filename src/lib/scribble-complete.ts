@@ -35,11 +35,15 @@ export function useScribbleComplete({
   const [reduced, setReduced] = useState(false);
   const firedRef = useRef(false);
   const playedRef = useRef(false);
+  const fallbackRef = useRef<number | null>(null);
+  const holdRef = useRef<number | null>(null);
 
   const finish = useCallback(() => {
-    if (firedRef.current) return;
+    // A reset in flight means the process failed: nothing may complete.
+    if (firedRef.current || !playedRef.current) return;
     firedRef.current = true;
-    window.setTimeout(() => {
+    holdRef.current = window.setTimeout(() => {
+      holdRef.current = null;
       setState("done");
       onDone?.();
     }, holdMs);
@@ -59,10 +63,17 @@ export function useScribbleComplete({
     }
     // jsdom fires no animationend: the fallback is the guarantee, the guard
     // keeps onDone at exactly once either way.
-    window.setTimeout(finish, SCRIBBLE_DRAW_MS + SCRIBBLE_DOTS_MS + 100);
+    fallbackRef.current = window.setTimeout(() => {
+      fallbackRef.current = null;
+      finish();
+    }, SCRIBBLE_DRAW_MS + SCRIBBLE_DOTS_MS + 100);
   }, [finish, targetRef]);
 
   const reset = useCallback(() => {
+    if (fallbackRef.current !== null) window.clearTimeout(fallbackRef.current);
+    if (holdRef.current !== null) window.clearTimeout(holdRef.current);
+    fallbackRef.current = null;
+    holdRef.current = null;
     playedRef.current = false;
     firedRef.current = false;
     setState("idle");
