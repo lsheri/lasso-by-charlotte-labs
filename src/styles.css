@@ -1975,6 +1975,12 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .nb-pile-item {
+    transition: none !important;
+  }
+  .nb-pile[data-scatter="1"] .nb-pile-item {
+    transform: none !important;
+  }
   .nb-journey-stem path,
   .nb-journey-loop path,
   .nb-journey-node,
@@ -2008,13 +2014,5 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 @media (max-width: 767px) {
   .nb-pile[data-scatter="1"] .nb-pile-item {
     transform: none;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .nb-pile-item {
-    transition: none !important;
-  }
-  .nb-pile[data-scatter="1"] .nb-pile-item {
-    transform: none !important;
   }
 }
