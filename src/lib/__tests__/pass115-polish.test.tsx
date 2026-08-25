@@ -209,7 +209,7 @@ describe("D. the pencil button system", () => {
   });
 
   it("leaves Ship to firm as the quiet pill without hatching", () => {
-    const ship = canvasActions.slice(canvasActions.indexOf("SHIP_ACTION_LABEL"));
+    const ship = canvasActions.slice(canvasActions.lastIndexOf("SHIP_ACTION_LABEL"));
     expect(ship).not.toContain("PencilHatch");
   });
 });
