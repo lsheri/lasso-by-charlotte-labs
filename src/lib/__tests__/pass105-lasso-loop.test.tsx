@@ -187,9 +187,12 @@ describe("pass 105: the tab rail is the history", () => {
     fireEvent.click(screen.getByTestId("stitch-tab-b"));
     expect(onSelect).toHaveBeenCalledWith(stitches[1]);
 
+    fireEvent.click(screen.getByTestId("stitch-tab-menu-a"));
     fireEvent.click(screen.getByTestId("stitch-tab-delete-a"));
     expect(screen.getByText(DELETE_CONFIRM_LINE)).toBeTruthy();
-    fireEvent.click(screen.getByText("Remove"));
+    fireEvent.click(
+      screen.getByTestId("stitch-tab-confirm-a").querySelector("button") as HTMLElement,
+    );
     expect(onDelete).toHaveBeenCalledWith(stitches[0]);
   });
 
@@ -205,6 +208,7 @@ describe("pass 105: the tab rail is the history", () => {
         onDelete={() => {}}
       />,
     );
+    fireEvent.click(screen.getByTestId("stitch-tab-menu-a"));
     expect(screen.queryByTestId("stitch-tab-delete-a")).toBeNull();
     expect(screen.getByTestId("stitch-tab-copy-a")).toBeTruthy();
   });
