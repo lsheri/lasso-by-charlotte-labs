@@ -83,12 +83,14 @@ export function WhatFedThisButton({
         }}
         className={
           ready
-            ? "rounded-full border border-accent px-3 py-1 text-xs font-medium text-foreground transition-opacity hover:opacity-85"
-            : "rounded-full border border-border px-3 py-1 text-xs text-muted-foreground opacity-60"
+            ? "nb-web-cta inline-flex items-center gap-2 rounded-full border border-accent px-5 py-2.5 text-sm font-medium text-foreground"
+            : "nb-web-cta inline-flex items-center gap-2 rounded-full border border-border px-5 py-2.5 text-sm text-muted-foreground opacity-60"
         }
       >
+        <WebMark />
         What fed this
       </button>
+
       <button
         type="button"
         aria-label="How this works"
