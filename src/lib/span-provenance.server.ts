@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import {
   containsVerbatim,
+  normalizeSnippet,
   snippetHash,
   spanIdempotencyKey,
   type SpanLocator,
@@ -183,6 +184,27 @@ export async function runSpanProvenance(
     .maybeSingle();
   if (!anchor) throw new Error("That item is not available to you.");
 
+  // Asking the same question about the same span twice is the same question:
+  // return the answer already in the record rather than stacking another chip.
+  const { data: priorLinks } = await supabase
+    .from("span_links")
+    .select(
+      "id, from_item_id, locator, question, to_item_id, to_turn_id, quote, status, verification, verification_note, asked_by, created_at",
+    )
+    .eq("from_item_id", anchor.id)
+    .order("created_at", { ascending: true });
+  const wanted = normalizeSnippet(input.locator.snippet);
+  const existing = (priorLinks ?? []).find((row) => {
+    const loc = row.locator as unknown as SpanLocator | null;
+    return (
+      Boolean(loc) &&
+      loc!.unit === input.locator.unit &&
+      loc!.index === input.locator.index &&
+      normalizeSnippet(String(loc!.snippet ?? "")) === wanted
+    );
+  });
+  if (existing) return existing as unknown as SpanLinkWritten;
+
   const { loadSpanScope, sectionFor } = await import("./span-audit.server");
   const scope = await loadSpanScope(supabase, anchor.id, anchor.owner_id);
   if (scope.upstream.length === 0) {
@@ -298,7 +320,7 @@ export async function runSpanProvenance(
       quote: claim.quote,
       status: claim.status,
       verification: claim.verification,
-      verification_note: claim.verification_note ?? claim.explanation ?? null,
+      verification_note: claim.verification === "found" ? claim.verification_note : null,
       run_id: run.id,
     })
     .select(
