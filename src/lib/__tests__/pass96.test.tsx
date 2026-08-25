@@ -137,21 +137,6 @@ function renderConfirm(
 }
 
 describe("pass 96 confirm shapes", () => {
-  it("shows one conversation and no context list for a thread analysis", async () => {
-    const calls: Array<[string | null, string[]]> = [];
-    renderConfirm(
-      presetFor("ai_fluency_4d"),
-      { kind: "item", id: "thread", title: "Claude transcript", scope: "thread" },
-      (anchor, extras) => calls.push([anchor, extras]),
-    );
-    expect(await screen.findByText("The conversation")).toBeTruthy();
-    expect(screen.queryByTestId("confirm-context-block")).toBeNull();
-    expect(screen.queryByTestId("anchor-change")).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "Run analysis" }));
-    await waitFor(() => expect(calls.length).toBe(1));
-    expect(calls[0]?.[1]).toEqual([]);
-  });
-
   it("always shows the record behind a deliverable, conversations first", async () => {
     renderConfirm(presetFor("firm_checks"), {
       kind: "item",

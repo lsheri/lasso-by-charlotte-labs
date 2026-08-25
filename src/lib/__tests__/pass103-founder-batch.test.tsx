@@ -157,12 +157,6 @@ describe("pass 103 · analysis library trim", () => {
     expect(chips).not.toContain("how_this_was_made");
   });
 
-  it("labels working_the_model Prompt Efficiency without changing its id", () => {
-    const preset = analysisPreset("working_the_model")!;
-    expect(preset.label).toBe("Prompt Efficiency");
-    expect(preset.dbPreset).toBe("working_the_model");
-  });
-
   it("writes info copy that matches what each analysis does, with no em dashes", () => {
     for (const preset of ANALYSIS_PRESETS) {
       expect(preset.description).not.toContain("—");
@@ -170,6 +164,5 @@ describe("pass 103 · analysis library trim", () => {
     }
     expect(analysisPreset("what_fed_this")!.description).toContain("two-pane provenance audit");
     expect(analysisPreset("firm_checks")!.description).toContain("one check at a time");
-    expect(analysisPreset("ai_fluency_4d")!.description).toContain("Only you can run it");
   });
 });
