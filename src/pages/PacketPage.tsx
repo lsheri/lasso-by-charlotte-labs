@@ -122,7 +122,7 @@ export function PacketPage({
           </p>
         ) : null}
         <h1 className="page-title mt-1.5">{subjectName}</h1>
-        <p className="mt-1.5 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+        <p className="page-subtitle">
           {engagementLabel(data.engagement)}
           {data.engagement.term_label ? ` · ${data.engagement.term_label}` : ""}
         </p>

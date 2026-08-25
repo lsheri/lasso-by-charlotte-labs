@@ -51,7 +51,7 @@ export function DecisionsPage() {
       <header className="mb-8 flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="page-title">Decision log</h1>
-          <p className="mt-1.5 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+          <p className="page-subtitle">
             {confirmed.length} confirmed · {drafts.length} awaiting review
           </p>
         </div>

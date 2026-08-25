@@ -51,7 +51,7 @@ export function CoachingPage() {
       <header className="mb-8">
         <h1 className="page-title">People you coach</h1>
         {orgLine ? (
-          <p className="mt-1.5 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+          <p className="page-subtitle">
             {orgLine}
           </p>
         ) : null}
