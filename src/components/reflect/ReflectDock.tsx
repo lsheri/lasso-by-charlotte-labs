@@ -1,6 +1,7 @@
 import { AskDock } from "@/components/reflect/AskDock";
 import { AskSheet } from "@/components/reflect/AskSheet";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { usePerfOpenFinish } from "@/hooks/use-perf-timer";
 
 /**
  * Ask Lasso, docked beside an engagement. Same machinery as /reflect, the only
@@ -20,5 +21,6 @@ export function ReflectDock(props: {
   orgId: string;
 }) {
   const isMobile = useIsMobile();
+  usePerfOpenFinish("ask_dock.open", props.open);
   return isMobile ? <AskSheet {...props} /> : <AskDock {...props} />;
 }

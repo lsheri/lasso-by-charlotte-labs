@@ -15,6 +15,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { usePerfTimerFactory } from "@/hooks/use-perf-timer";
 import { useProfile } from "@/hooks/use-profile";
 import type { PickerItem, PickerPage } from "@/lib/connector-picker-shared";
 import type { BrowsableToolkit } from "@/lib/connector-toolkits";
@@ -128,6 +129,7 @@ export function ConnectorPicker({
   const browseThreads = useServerFn(browseGmailThreads);
   const browseTranscripts = useServerFn(browseTranscriptCandidates);
   const importFiles = useServerFn(importConnectorItems);
+  const perfTimer = usePerfTimerFactory();
   const importMeetings = useServerFn(importGranolaMeetings);
   const importThreads = useServerFn(importGmailThreads);
   const toggleWatch = useServerFn(setFolderWatch);
@@ -267,6 +269,7 @@ export function ConnectorPicker({
 
   async function handleImport() {
     if (selected.size === 0) return;
+    const timer = perfTimer("connector.sync", "warm");
     setImporting(true);
     setError(null);
     try {
@@ -301,6 +304,7 @@ export function ConnectorPicker({
           : isGmail
             ? await importThreads({ data: { profile_id: profile?.id, ids } })
             : await importMeetings({ data: { profile_id: profile?.id, ids } });
+      timer.mark("write");
       const parts: string[] = [];
       if (result.imported > 0) {
         parts.push(`${result.imported} item${result.imported === 1 ? "" : "s"} brought into Work`);
@@ -315,10 +319,12 @@ export function ConnectorPicker({
       setSelected(new Set());
       await queryClient.invalidateQueries({ queryKey: ["work-items"] });
       setPage(await load());
+      timer.mark("refetch");
     } catch (e) {
       setError((e as Error).message);
     } finally {
       setImporting(false);
+      timer.done("total");
     }
   }
 

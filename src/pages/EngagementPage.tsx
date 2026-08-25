@@ -17,6 +17,7 @@ import { InviteDialog } from "@/components/invites/InviteDialog";
 import { SubjectCoachingSection } from "@/components/coaching/SubjectCoachingSection";
 import { ReflectDock } from "@/components/reflect/ReflectDock";
 import { useRegisterAskLasso } from "@/components/reflect/ask-lasso-context";
+import { usePerfNavFinish } from "@/hooks/use-perf-timer";
 import { useProfile } from "@/hooks/use-profile";
 import { useTraceParam } from "@/hooks/use-trace-param";
 import { useJourneyParam } from "@/hooks/use-journey-param";
@@ -26,6 +27,7 @@ import { useEngagementPage, useEngagementSlice } from "@/hooks/use-engagement-pa
 import { useEngagementCoaches } from "@/hooks/use-coach-share";
 import { clientDisplayName, engagementDisplayCode, engagementDisplayTitle } from "@/lib/clients";
 import { INVITE_ADMIN_ONLY_LINE } from "@/lib/invites-shared";
+import { markOpenStart } from "@/lib/perf-timing";
 import type { WorkItemRow } from "@/lib/work-types";
 
 
@@ -49,7 +51,10 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
 
   // On phones the floating button is the only Ask Lasso entry, and on this page
   // it opens this engagement's dock rather than navigating to Reflect.
-  useRegisterAskLasso(() => setAskOpen(true));
+  useRegisterAskLasso(() => {
+    markOpenStart("ask_dock.open");
+    setAskOpen(true);
+  });
 
   // One consolidated read for this engagement: the record, its workstreams,
   // the coaches it is shared with, the caller's own membership, the decisions
@@ -63,6 +68,10 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
 
 
 
+
+  // In-app route transitions only. A hard document load plus hydration is a
+  // different measurement and is deliberately not covered in this pass.
+  usePerfNavFinish("engagement.load", Boolean(engagementQuery.data?.engagement));
 
   const engagement = engagementQuery.data?.engagement ?? null;
   const isQuickFolder = engagement?.clients?.quick_folder === true;
@@ -119,7 +128,10 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
           {profile && profile.role !== "coach" ? (
             <button
               type="button"
-              onClick={() => setAskOpen(true)}
+              onClick={() => {
+                markOpenStart("ask_dock.open");
+                setAskOpen(true);
+              }}
               className="hidden shrink-0 items-center gap-2.5 rounded-full border border-border px-[18px] py-2.5 font-mono text-[16px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground md:inline-flex"
             >
               <SpiderMark size={27} /> Ask Lasso

@@ -55,7 +55,9 @@ export type TelemetryEvent =
   | "version.recorded"
   | "brief.marked"
   | "brief.cleared"
-  | "extract.generated";
+  | "extract.generated"
+  /** Client-side interaction timing. Emitted only by src/lib/perf-timing.ts. */
+  | "perf.interaction";
 
 export type TelemetryDims = Record<
   string,
