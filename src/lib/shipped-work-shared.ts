@@ -32,12 +32,20 @@ export type ShippedCard = {
   shipped_by_name: string | null;
   title: string;
   type: string;
+  source: string | null;
   source_vendor: string | null;
+  /** Opaque provider evidence, carried so the card can wear the right mark. */
+  source_meta: Record<string, unknown> | null;
+  meta: Record<string, unknown> | null;
   owner_id: string | null;
   work_date: string | null;
   created_at_source: string | null;
   engagement_code: string | null;
   client_label: string | null;
+  /** The engagement this work belongs to: the card's headline. */
+  engagement_title: string | null;
+  /** The engagement brief, said in two lines under the headline. */
+  engagement_brief: string | null;
   /** Pieces of work in the engagement record behind this card. */
   record_items: number;
   /** Provenance stitches that traced a fact back to the record. */

@@ -109,13 +109,21 @@ type JoinRow = {
   work_items: {
     title: string;
     type: string;
+    source: string | null;
     source_vendor: string | null;
+    source_meta: Record<string, unknown> | null;
+    meta: Record<string, unknown> | null;
     owner_id: string | null;
     work_date: string | null;
     created_at_source: string | null;
   } | null;
   profiles: { display_name: string } | null;
-  engagements: { code: string | null; client_label: string | null } | null;
+  engagements: {
+    code: string | null;
+    client_label: string | null;
+    title: string | null;
+    brief: string | null;
+  } | null;
 };
 
 /**
@@ -165,7 +173,7 @@ export async function listShippedCards(caller: CallerClient): Promise<ShippedCar
   const { data, error } = await caller
     .from("shipped_work")
     .select(
-      "id, work_item_id, engagement_id, shipped_at, shipped_by, work_items(title, type, source_vendor, owner_id, work_date, created_at_source), profiles:shipped_by(display_name), engagements(code, client_label)",
+      "id, work_item_id, engagement_id, shipped_at, shipped_by, work_items(title, type, source, source_vendor, source_meta, meta, owner_id, work_date, created_at_source), profiles:shipped_by(display_name), engagements(code, client_label, title, brief)",
     )
     .order("shipped_at", { ascending: false });
   if (error) throw new Error(error.message);
@@ -191,12 +199,17 @@ export async function listShippedCards(caller: CallerClient): Promise<ShippedCar
     shipped_by_name: row.profiles?.display_name ?? null,
     title: row.work_items?.title ?? "",
     type: row.work_items?.type ?? "document",
+    source: row.work_items?.source ?? null,
     source_vendor: row.work_items?.source_vendor ?? null,
+    source_meta: row.work_items?.source_meta ?? null,
+    meta: row.work_items?.meta ?? null,
     owner_id: row.work_items?.owner_id ?? null,
     work_date: row.work_items?.work_date ?? null,
     created_at_source: row.work_items?.created_at_source ?? null,
     engagement_code: row.engagements?.code ?? null,
     client_label: row.engagements?.client_label ?? null,
+    engagement_title: row.engagements?.title ?? null,
+    engagement_brief: row.engagements?.brief ?? null,
     record_items: row.engagement_id ? (counts.items[row.engagement_id] ?? 0) : 0,
     traced_facts: counts.facts[row.work_item_id] ?? 0,
   }));
