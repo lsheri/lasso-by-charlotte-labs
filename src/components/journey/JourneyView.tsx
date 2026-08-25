@@ -179,6 +179,12 @@ function JourneySurface({
   const skippable = useRef(true);
   const handoff = useHandoffScroll({ reducedMotion, skippableRef: skippable });
 
+  // Pass 118: skipping is deliberate. The story only ends early when the reader
+  // asks for it with the button, never on a stray click or key.
+  const [skipped, setSkipped] = useState(false);
+  const [storyOver, setStoryOver] = useState(false);
+  const storyPlaying = !reducedMotion && !loading && journey.enough && !skipped && !storyOver;
+
   function copyLink() {
     const url = journeyLinkFor(window.location.origin, engagementId, anchorId);
     void navigator.clipboard
@@ -192,6 +198,7 @@ function JourneySurface({
       beatMs(NODE_STITCH_OFFSET_S) +
       400
     : 0;
+
 
   return (
     <div
@@ -212,6 +219,20 @@ function JourneySurface({
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-2">
+            {storyPlaying ? (
+              <button
+                type="button"
+                data-testid="journey-skip"
+                onClick={() => {
+                  setSkipped(true);
+                  skippable.current = false;
+                  handoff.requestHandoff(HANDOFF_AFTER_SKIP_MS);
+                }}
+                className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+              >
+                Skip the story
+              </button>
+            ) : null}
             <button
               type="button"
               onClick={copyLink}
@@ -237,18 +258,17 @@ function JourneySurface({
             <JourneySpine
               journey={journey}
               animate={!reducedMotion}
+              skipped={skipped}
               notShared={items.length === 0}
-              onSkip={() => {
-                skippable.current = false;
-                handoff.requestHandoff(HANDOFF_AFTER_SKIP_MS);
-              }}
               onLastArrival={() => {
+                setStoryOver(true);
                 skippable.current = false;
                 handoff.requestHandoff(HANDOFF_AFTER_ARRIVAL_MS);
               }}
             />
           )}
         </div>
+
 
         {!loading && journey.enough ? (
           <figcaption
@@ -300,6 +320,7 @@ export function JourneySpine({
   animate = true,
   notShared = false,
   width,
+  skipped: skippedProp,
   onSkip,
   onLastArrival,
 }: {
@@ -309,12 +330,15 @@ export function JourneySpine({
   notShared?: boolean;
   /** Test seam: the measured content width the path is laid out inside. */
   width?: number | undefined;
+  /** Controlled skip: the overlay owns the affordance and tells the spine. */
+  skipped?: boolean | undefined;
   /** The reader completed the beats at once. */
   onSkip?: (() => void) | undefined;
   /** The last card finished its own arrival animation. */
   onLastArrival?: (() => void) | undefined;
 }) {
-  const [skipped, setSkipped] = useState(false);
+  const [ownSkipped, setOwnSkipped] = useState(false);
+  const skipped = skippedProp ?? ownSkipped;
   const holder = useRef<HTMLDivElement>(null);
   const [measured, setMeasured] = useState(width ?? 640);
 
@@ -330,19 +354,6 @@ export function JourneySpine({
     return () => observer.disconnect();
   }, [width]);
 
-  useEffect(() => {
-    if (!animate || skipped) return;
-    const done = () => {
-      setSkipped(true);
-      onSkip?.();
-    };
-    window.addEventListener("click", done);
-    window.addEventListener("keydown", done);
-    return () => {
-      window.removeEventListener("click", done);
-      window.removeEventListener("keydown", done);
-    };
-  }, [animate, skipped, onSkip]);
 
   const ids = journey.nodes.map((node) => node.id);
   const stitchCounts = Object.fromEntries(
@@ -373,6 +384,20 @@ export function JourneySpine({
       data-testid="journey-spine"
       style={{ height: path.height }}
     >
+      {skippedProp === undefined && drawing ? (
+        <button
+          type="button"
+          data-testid="journey-skip"
+          onClick={() => {
+            setOwnSkipped(true);
+            onSkip?.();
+          }}
+          className="absolute right-0 top-0 z-10 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+        >
+          Skip the story
+        </button>
+      ) : null}
+
       <svg
         className="nb-journey-svg"
         width={path.width}
