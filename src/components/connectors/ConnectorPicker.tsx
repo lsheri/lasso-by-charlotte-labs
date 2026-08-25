@@ -267,6 +267,7 @@ export function ConnectorPicker({
 
   async function handleImport() {
     if (selected.size === 0) return;
+    const timer = perfTimer("connector.sync", "warm");
     setImporting(true);
     setError(null);
     try {
@@ -301,6 +302,7 @@ export function ConnectorPicker({
           : isGmail
             ? await importThreads({ data: { profile_id: profile?.id, ids } })
             : await importMeetings({ data: { profile_id: profile?.id, ids } });
+      timer.mark("write");
       const parts: string[] = [];
       if (result.imported > 0) {
         parts.push(`${result.imported} item${result.imported === 1 ? "" : "s"} brought into Work`);

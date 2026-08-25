@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { usePerfMountTimer } from "@/hooks/use-perf-timer";
+
 import { LassoLayer } from "@/components/provenance/LassoLayer";
 import { SpanLegend } from "@/components/provenance/SpanLegend";
 import { StitchBadge } from "@/components/provenance/StitchBadge";
@@ -323,6 +325,9 @@ export function SlidesPane({
   urlRef.current = url;
   const docRef = useRef<unknown>(null);
   docRef.current = doc;
+
+  // pdf.js: from the pane mounting to the first page being painted.
+  usePerfMountTimer("slide.render", Boolean(doc) && pages > 0);
 
   const loadKey = anchorId ?? url;
 

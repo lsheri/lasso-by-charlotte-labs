@@ -22,6 +22,7 @@ import { ChatUrlLink } from "@/components/work/ChatUrlLink";
 import { ArtifactNote, SourceMark } from "@/components/work/SourceMark";
 import { TypeChip, TypeIcon } from "@/components/work/TypeIcon";
 import { setDeliverableKind, useInvalidateWorkItems } from "@/hooks/use-deliverable-kind";
+import { usePerfMountTimer } from "@/hooks/use-perf-timer";
 import { isBriefItem } from "@/lib/brief-shared";
 import { vendorLabel } from "@/lib/conversation-shared";
 import { deliverableKindOf, type DeliverableKind } from "@/lib/deliverable-kinds";
@@ -126,6 +127,8 @@ export function PeekPanel({
   const [shipOpen, setShipOpen] = useState(false);
   const invalidateWork = useInvalidateWorkItems();
   const [kindDraft, setKindDraft] = useState<DeliverableKind | null>(null);
+  // Mount to the frame the panel is readable with its entry in hand.
+  usePerfMountTimer("peek.open", open && Boolean(entry));
 
   useEffect(() => {
     setKindDraft(null);
