@@ -1,5 +1,4 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { Pencil } from "lucide-react";
 import { useState } from "react";
 
 import { GraphiteRule } from "@/components/notebook/marks";
@@ -7,9 +6,9 @@ import { SpiderMark } from "@/components/notebook/SpiderMark";
 import { PeekPanel } from "@/components/peek/PeekPanel";
 import { OneOnOneBrief } from "@/components/oneonone/OneOnOneBrief";
 import { CaptureCoverage } from "@/components/common/CaptureCoverage";
-import { EditEngagementDialog } from "@/components/engagements/EditEngagementDialog";
 import { EngagementCanvas, type CanvasTask } from "@/components/engagements/EngagementCanvas";
 import { ConnectToWorkSheet } from "@/components/engagements/ConnectToWorkSheet";
+import { WhatFedThisButton } from "@/components/engagements/WhatFedThisButton";
 import { EngagementBriefPanel } from "@/components/engagements/EngagementBriefPanel";
 import { SharedWithSection } from "@/components/engagements/SharedWithSection";
 import { EngagementNote } from "@/components/engagements/EngagementNote";
