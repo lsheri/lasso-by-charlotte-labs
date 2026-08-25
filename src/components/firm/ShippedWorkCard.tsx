@@ -38,6 +38,12 @@ export function ShippedWorkCard({
 
   const facts = recordFactsLine(card);
   const where = [card.client_label, card.engagement_code].filter(Boolean).join(" · ");
+  // The engagement is what the firm recognises; the file name is a detail.
+  const headline = card.engagement_title?.trim() || card.title;
+  const brief = card.engagement_brief?.trim() ?? "";
+  const metaLine = [journeyTypeLabel(card.type), card.title, where || null]
+    .filter(Boolean)
+    .join(" · ");
 
   return (
     <div
