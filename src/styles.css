@@ -1825,7 +1825,7 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 .nb-web-cta::before {
   content: "";
   position: absolute;
-  inset: -40%;
+  inset: -50%;
   z-index: -2;
   background: linear-gradient(
     115deg,
@@ -1835,9 +1835,9 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
     var(--nb-web-blue-2) 65%,
     var(--nb-web-blue-1) 100%
   );
-  background-size: 220% 220%;
-  opacity: 0.55;
-  animation: nb-web-drift 12s var(--nb-ease) infinite;
+  background-size: 240% 240%;
+  opacity: 0.32;
+  animation: nb-web-drift 14s var(--nb-ease) infinite;
 }
 .nb-web-cta::after {
   content: "";
@@ -1845,22 +1845,22 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   inset: 0;
   z-index: -1;
   background: radial-gradient(
-    120% 80% at 20% 120%,
-    rgb(255 255 255 / 0.85) 0%,
-    rgb(255 255 255 / 0.25) 45%,
+    140% 90% at 20% 120%,
+    rgb(255 255 255 / 0.7) 0%,
+    rgb(255 255 255 / 0.2) 45%,
     rgb(255 255 255 / 0) 70%
   );
-  animation: nb-web-wave 9s var(--nb-ease) infinite;
+  animation: nb-web-wave 10s var(--nb-ease) infinite;
 }
 .nb-web-cta:disabled::before,
 .nb-web-cta:disabled::after {
   animation: none;
-  opacity: 0.2;
+  opacity: 0.15;
 }
 @keyframes nb-web-drift {
-  0% { background-position: 0% 50%; opacity: 0.45; }
-  50% { background-position: 100% 50%; opacity: 0.7; }
-  100% { background-position: 0% 50%; opacity: 0.45; }
+  0% { background-position: 0% 50%; opacity: 0.25; }
+  50% { background-position: 100% 50%; opacity: 0.42; }
+  100% { background-position: 0% 50%; opacity: 0.25; }
 }
 @keyframes nb-web-wave {
   0% { transform: translateX(-12%); }
