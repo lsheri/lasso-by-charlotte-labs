@@ -59,7 +59,9 @@ function journeyOf(ids: string[]) {
 function artifact(): WorkArtifact {
   return {
     how_ai_was_used: [{ stage: "Drafting", what_happened: "The draft came back.", turn_refs: [] }],
-    example_prompts: [{ quote: "Use the audited figures.", why_it_worked: "It named a source.", turn_ref: null }],
+    example_prompts: [
+      { quote: "Use the audited figures.", why_it_worked: "It named a source.", turn_ref: null },
+    ],
     verification_steps: [],
     decisions: [{ decision: "Keep the audited figure.", decided_by: "person", turn_refs: [] }],
     process_steps: ["Gather the figures."],
@@ -79,16 +81,21 @@ describe("pass 114 · determinism", () => {
   });
 
   it("produces byte identical path data for the same record", () => {
-    const one = buildJourneyPath({ ids: ["a", "b", "c", "d"], width: 640 });
-    const two = buildJourneyPath({ ids: ["a", "b", "c", "d"], width: 640 });
+    const stitchCounts = { b: 1 };
+    const one = buildJourneyPath({ ids: ["a", "b", "c", "d"], width: 640, stitchCounts });
+    const two = buildJourneyPath({ ids: ["a", "b", "c", "d"], width: 640, stitchCounts });
     expect(one.segments.map((s) => s.stroke.d)).toEqual(two.segments.map((s) => s.stroke.d));
     expect(one.nodes).toEqual(two.nodes);
-    const other = buildJourneyPath({ ids: ["a", "b", "c", "z"], width: 640 });
+    const other = buildJourneyPath({
+      ids: ["a", "b", "c", "z"],
+      width: 640,
+      stitchCounts: {},
+    });
     expect(other.segments.map((s) => s.stroke.d)).not.toEqual(one.segments.map((s) => s.stroke.d));
   });
 
   it("returns a real length for every wavered stroke and never hardcodes one", () => {
-    const path = buildJourneyPath({ ids: ["a", "b", "c"], width: 640 });
+    const path = buildJourneyPath({ ids: ["a", "b", "c"], width: 640, stitchCounts: {} });
     for (const segment of path.segments) {
       expect(segment.stroke.length).toBeGreaterThan(100);
       expect(segment.arrow.length).toBe(2);
@@ -97,13 +104,27 @@ describe("pass 114 · determinism", () => {
   });
 
   it("alternates lanes and degrades to a narrower path on a small screen", () => {
-    const wide = buildJourneyPath({ ids: ["a", "b", "c"], width: 640 });
+    const wide = buildJourneyPath({ ids: ["a", "b", "c"], width: 640, stitchCounts: {} });
     const [first, second] = wide.nodes;
     expect(Math.abs((first?.x ?? 0) - (second?.x ?? 0))).toBeGreaterThan(200);
-    const narrow = buildJourneyPath({ ids: ["a", "b", "c"], width: 400 });
+    const narrow = buildJourneyPath({ ids: ["a", "b", "c"], width: 400, stitchCounts: {} });
     const spread = Math.abs((narrow.nodes[0]?.x ?? 0) - (narrow.nodes[1]?.x ?? 0));
     expect(spread).toBeLessThan(140);
     expect(spread).toBeGreaterThan(0);
+  });
+
+  it("leaves at least 60px between a stitched tendril and the next card", () => {
+    const path = buildJourneyPath({
+      ids: ["source", "arrival", "deliverable"],
+      width: 640,
+      stitchCounts: { source: 2 },
+    });
+    const tendril = path.tendrils.find((entry) => entry.nodeId === "source");
+    const next = path.nodes[1];
+    expect(tendril).toBeTruthy();
+    expect(next).toBeTruthy();
+    const nextCardTop = (next?.y ?? 0) - (next?.h ?? 0) / 2;
+    expect(nextCardTop - (tendril?.end.y ?? nextCardTop)).toBeGreaterThanOrEqual(60);
   });
 });
 
@@ -138,6 +159,37 @@ describe("pass 114 · the spine as rendered", () => {
     );
     expect(screen.getByText("Board deck")).toBeTruthy();
     expect(screen.getByText(/the margin held at nineteen percent/)).toBeTruthy();
+  });
+
+  it("carries complete source evidence into the node marks", () => {
+    const journey = buildJourney({
+      anchorId: "deck",
+      items: [
+        item({
+          id: "mail",
+          type: "email",
+          markItem: { source: "connector:gmail", type: "email" },
+        }),
+        item({
+          id: "thread",
+          type: "ai_thread",
+          markItem: { source: "connector:claude", type: "ai_thread" },
+        }),
+        item({
+          id: "deck",
+          type: "deck",
+          markItem: {
+            source: "connector:googledrive",
+            type: "deck",
+            meta: { source_mime: "application/vnd.google-apps.presentation" },
+          },
+        }),
+      ],
+    });
+    render(<JourneySpine journey={journey} animate={false} width={640} />);
+    expect(screen.getByRole("img", { name: "Gmail" }).getAttribute("width")).toBe("28");
+    expect(screen.getByRole("img", { name: "Claude" }).getAttribute("width")).toBe("28");
+    expect(screen.getByRole("img", { name: "Google Slides" }).getAttribute("width")).toBe("28");
   });
 
   it("renders the same DOM order at a narrow width", () => {
@@ -186,7 +238,9 @@ describe("pass 114 · the spine as rendered", () => {
     expect(burst.strokes.length).toBe(7);
     expect(burst.dots.length).toBe(2);
     expect(burst.strokes.filter((s) => s.ink === "yellow").length).toBe(4);
-    expect(burst.strokes.map((s) => s.d)).toEqual(fireworkStrokes("node-1").strokes.map((s) => s.d));
+    expect(burst.strokes.map((s) => s.d)).toEqual(
+      fireworkStrokes("node-1").strokes.map((s) => s.d),
+    );
     expect(burst.strokes[0]?.d).not.toBe(fireworkStrokes("node-2").strokes[0]?.d);
   });
 
@@ -213,9 +267,7 @@ describe("pass 114 · the sections grid", () => {
   it("keeps list order in the DOM and closes with process beside gaps", () => {
     const { container } = render(<WorkArtifactSections artifact={artifact()} />);
     const sections = [...container.querySelectorAll("[data-section]")];
-    expect(sections.map((s) => s.getAttribute("data-area"))).toEqual([
-      ...ARTIFACT_SECTION_AREAS,
-    ]);
+    expect(sections.map((s) => s.getAttribute("data-area"))).toEqual([...ARTIFACT_SECTION_AREAS]);
     expect(sections.at(-1)?.getAttribute("data-section")).toBe(WORK_ARTIFACT_SECTIONS.gaps);
     expect(sections.at(-2)?.getAttribute("data-area")).toBe("process");
     expect(container.querySelector(".nb-artifact-grid")).toBeTruthy();

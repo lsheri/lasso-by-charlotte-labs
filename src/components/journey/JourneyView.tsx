@@ -36,7 +36,6 @@ import { spanStatusClass } from "@/lib/span-status-style";
 import { spanStatusPhrase } from "@/lib/span-readability";
 import { formatDate } from "@/lib/work-types";
 
-
 /**
  * Pass 110: the journey. A vertical stem showing how one deliverable grew out
  * of the record: the sources, the conversations, the questions actually asked
@@ -81,6 +80,13 @@ function JourneySurface({
           work_date: item.work_date ?? null,
           created_at_source: item.created_at_source ?? null,
           captured_at: item.captured_at,
+          markItem: {
+            source: item.source,
+            source_vendor: item.source_vendor ?? null,
+            type: item.type,
+            meta: item.meta,
+            source_meta: item.source_meta,
+          },
         });
       }
     }
@@ -172,10 +178,10 @@ function JourneySurface({
           <div className="flex min-w-0 items-start gap-2.5">
             <ChaliceMark size={28} className="mt-1" />
             <div className="min-w-0">
-            <p className="micro-label text-muted-foreground">{JOURNEY_TITLE}</p>
-            <h1 className="page-title mt-1 break-words text-[22px] leading-snug">
-              {engagementTitle}
-            </h1>
+              <p className="micro-label text-muted-foreground">{JOURNEY_TITLE}</p>
+              <h1 className="page-title mt-1 break-words text-[22px] leading-snug">
+                {engagementTitle}
+              </h1>
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-2">
@@ -223,7 +229,6 @@ function JourneySurface({
             />
           </>
         ) : null}
-
       </div>
     </div>
   );
@@ -278,9 +283,12 @@ export function JourneySpine({
   }, [animate, skipped]);
 
   const ids = journey.nodes.map((node) => node.id);
+  const stitchCounts = Object.fromEntries(
+    journey.nodes.map((node) => [node.id, node.stitches.length] as const),
+  );
   const path = useMemo(
-    () => buildJourneyPath({ ids: ids, width: width ?? measured }),
-    [ids.join("|"), width, measured],
+    () => buildJourneyPath({ ids, width: width ?? measured, stitchCounts }),
+    [ids.join("|"), journey.nodes.map((node) => node.stitches.length).join("|"), width, measured],
   );
 
   if (!journey.enough) {
@@ -376,6 +384,12 @@ export function JourneySpine({
           const beat = beatMs(nodeBeatS(index, count));
           const left = place ? place.x - place.w / 2 : 0;
           const top = place ? place.y - place.h / 2 : 0;
+          const stitchesOnRight = Boolean(tendril && tendril.end.x > path.width / 2);
+          const stitchAnchorX = tendril
+            ? stitchesOnRight
+              ? Math.min(path.width, Math.max(220, tendril.end.x))
+              : Math.min(path.width - 220, Math.max(0, tendril.end.x))
+            : 0;
           return (
             <li
               key={node.id}
@@ -393,9 +407,9 @@ export function JourneySpine({
                 <div
                   className="nb-journey-stitches"
                   style={{
-                    left: tendril.end.x - left,
+                    left: stitchAnchorX - left,
                     top: tendril.end.y - top,
-                    transform: tendril.end.x > path.width / 2 ? "translateX(-100%)" : undefined,
+                    transform: stitchesOnRight ? "translateX(-100%)" : undefined,
                   }}
                 >
                   <ul className="list-none space-y-2">
@@ -460,12 +474,14 @@ function NodeCard({
   return (
     <div
       className={classes}
-      style={drawing ? { animationDelay: `${beatMsValue + beatMs(NODE_CARD_OFFSET_S)}ms` } : undefined}
+      style={
+        drawing ? { animationDelay: `${beatMsValue + beatMs(NODE_CARD_OFFSET_S)}ms` } : undefined
+      }
       data-kind={node.kind}
     >
       <div className="flex items-start gap-2.5">
         <span className="nb-journey-logo relative shrink-0">
-          <SourceMark item={{ source_vendor: node.sourceVendor }} size={28} />
+          <SourceMark item={node.markItem ?? { source_vendor: node.sourceVendor }} size={28} />
           <PencilFirework
             nodeId={node.id}
             drawing={drawing}
@@ -497,4 +513,3 @@ function NodeCard({
     </div>
   );
 }
-

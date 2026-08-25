@@ -162,7 +162,12 @@ function strokeFrom(points: Point[]): PathStroke {
 }
 
 /** A hand-drawn arrowhead: two wavering strokes meeting at the tip. */
-function arrowAt(tip: Point, tangent: Point, draw: (k: number) => number, base: number): PathStroke[] {
+function arrowAt(
+  tip: Point,
+  tangent: Point,
+  draw: (k: number) => number,
+  base: number,
+): PathStroke[] {
   const angle = Math.atan2(tangent.y, tangent.x);
   const half = (57 * Math.PI) / 180 / 2;
   return [-1, 1].map((side, index) => {
@@ -190,8 +195,10 @@ function arrowAt(tip: Point, tangent: Point, draw: (k: number) => number, base: 
 export function buildJourneyPath(input: {
   ids: readonly string[];
   width?: number | undefined;
+  stitchCounts: Readonly<Record<string, number>>;
 }): JourneyPath {
   const ids = input.ids;
+  const stitchCounts = input.stitchCounts;
   const width = Math.max(380, Math.min(720, Math.round(input.width || 640)));
   const narrow = width < JOURNEY_NARROW_W;
   const rand = seededRand(ids);
@@ -220,7 +227,7 @@ export function buildJourneyPath(input: {
       w: cardW,
       h: JOURNEY_CARD_H,
     });
-    y += 150 + pick(i, 6) * 70;
+    y += 150 + pick(i, 6) * 70 + ((stitchCounts[ids[i] as string] ?? 0) > 0 ? 80 : 0);
   }
 
   const segments: PathSegment[] = [];
@@ -271,16 +278,27 @@ export function buildJourneyPath(input: {
     const drift = (pick(i, 5) > 0.5 ? 1 : -1) * 6;
     const from = horizontal
       ? {
-          x: (horizontal.from.x + horizontal.to.x) / 2,
+          x: horizontal.from.x + (horizontal.to.x - horizontal.from.x) * 0.3,
           y: horizontal.from.y,
         }
       : {
           x: a.x + (a.x <= width / 2 ? cardW / 2 : -cardW / 2),
           y: a.y + JOURNEY_CARD_H * 0.1,
         };
-    const to = { x: from.x + drift, y: from.y + dropLength };
-    const points = [{ x: round(from.x), y: round(from.y) }, ...waverRun(from, to, draw, i * 53 + 7)];
-    tendrils.push({ nodeId: a.id, stroke: strokeFrom(points), end: { x: round(to.x), y: round(to.y) } });
+    const nextCardTop = next ? next.y - JOURNEY_CARD_H / 2 : Number.POSITIVE_INFINITY;
+    const to = {
+      x: from.x + drift,
+      y: Math.min(from.y + dropLength, nextCardTop - 60),
+    };
+    const points = [
+      { x: round(from.x), y: round(from.y) },
+      ...waverRun(from, to, draw, i * 53 + 7),
+    ];
+    tendrils.push({
+      nodeId: a.id,
+      stroke: strokeFrom(points),
+      end: { x: round(to.x), y: round(to.y) },
+    });
   }
 
   const lastNode = nodes[nodes.length - 1];
