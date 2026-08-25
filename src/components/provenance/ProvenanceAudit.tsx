@@ -132,7 +132,9 @@ function AuditSurface({
       const landed = pickResolvedStitch(fresh?.stitches ?? [], locator.snippet);
       if (landed) {
         setReplayId(landed.id);
-        timer.done("total");
+        // Ends at the answer card's first paint, before the reveal begins.
+        timer.markAfterPaint("total");
+        timer.cancel();
         runResolveChoreography(landed, {
           onThread: () => {},
           onFocus: (stitch) => goToSource(stitch),
