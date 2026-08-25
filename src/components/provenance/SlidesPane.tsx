@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { LassoLayer } from "@/components/provenance/LassoLayer";
+import { SpanLegend } from "@/components/provenance/SpanLegend";
+import { StitchBadge } from "@/components/provenance/StitchBadge";
 import { StitchChip } from "@/components/provenance/StitchChip";
 import { Button } from "@/components/ui/button";
 import {
@@ -87,7 +89,6 @@ export function highlightRects(
   });
 }
 
-
 /** The rects to highlight for a snippet already asked about on this page. */
 export function runsForSnippet(page: PageText, snippet: string, occurrence: number): TextRun[] {
   const found = findSnippetOffset(page.text, snippet, occurrence);
@@ -133,6 +134,45 @@ export function inkUnderglows(
         ]
       : [],
   );
+}
+
+/**
+ * Where a question's badge sits on the page: the top right of the ink it was
+ * drawn with, of the rectangle it wrapped, or of the runs its wording covers.
+ * Returned in page pixels, so the marker sits exactly on the circle it names.
+ */
+export function badgeSpots(
+  anchors: StitchAnchor[],
+  page: PageText,
+  width: number,
+  height: number,
+): { id: string; x: number; y: number }[] {
+  return anchors.flatMap((anchor) => {
+    if (anchor.ink) {
+      const points = denormalizeInk(anchor.ink, width, height);
+      if (points.length === 0) return [];
+      return [
+        {
+          id: anchor.stitch.id,
+          x: Math.max(...points.map((point) => point.x)),
+          y: Math.min(...points.map((point) => point.y)),
+        },
+      ];
+    }
+    if (anchor.bbox) {
+      const box = denormalizeBBox(anchor.bbox, width, height);
+      return [{ id: anchor.stitch.id, x: box.x + box.w, y: box.y }];
+    }
+    const runs = runsForOffsets(page, anchor.start, anchor.end);
+    if (runs.length === 0) return [];
+    return [
+      {
+        id: anchor.stitch.id,
+        x: Math.max(...runs.map((run) => run.x + run.w)),
+        y: Math.min(...runs.map((run) => run.y)),
+      },
+    ];
+  });
 }
 
 /**
@@ -194,7 +234,6 @@ export function anchorStitches(
   return { anchors, orphans };
 }
 
-
 /** One page's text runs in page pixels at the given scale. */
 export async function readPageRuns(
   pdfjs: { Util: { transform: (a: number[], b: number[]) => number[] } },
@@ -249,6 +288,8 @@ export function SlidesPane({
   onGoToSource,
   onReload,
   replayStitchId,
+  numbers = {},
+  vendors = {},
 }: {
   url: string;
   anchorId?: string;
@@ -262,6 +303,9 @@ export function SlidesPane({
   onReload?: () => void;
   /** A question being replayed: its page is scrolled to and its ink lights up. */
   replayStitchId?: string | null;
+  /** The pairing number per question, by when it was asked. */
+  numbers?: Record<string, number>;
+  vendors?: Record<string, string | null>;
 }) {
   const [doc, setDoc] = useState<unknown>(null);
   const [pages, setPages] = useState(0);
@@ -345,7 +389,6 @@ export function SlidesPane({
     };
   }, [doc, pages]);
 
-
   const reload = useCallback(() => {
     setError(null);
     setDoc(null);
@@ -383,8 +426,23 @@ export function SlidesPane({
     );
   if (!doc) return <p className="text-sm text-muted-foreground">Loading pages…</p>;
 
+  function scrollToCard(stitchId: string) {
+    if (typeof document === "undefined") return;
+    document
+      .querySelector(`[data-testid="stitch-chip-${stitchId}"]`)
+      ?.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "center" });
+  }
+
+  function scrollToPage(pageNumber: number) {
+    if (typeof document === "undefined") return;
+    document
+      .querySelector(`[data-page="${pageNumber}"]`)
+      ?.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "center" });
+  }
+
   return (
     <div className="space-y-6">
+      <SpanLegend />
       {Array.from({ length: pages }, (_, i) => i + 1).map((pageNumber) => (
         <PdfPage
           key={pageNumber}
@@ -402,6 +460,10 @@ export function SlidesPane({
           onError={setError}
           onAsk={onAsk}
           onGoToSource={onGoToSource}
+          numbers={numbers}
+          vendors={vendors}
+          onBadgeToCard={scrollToCard}
+          onBadgeToPage={scrollToPage}
         />
       ))}
       {truncated ? (
@@ -423,6 +485,8 @@ export function SlidesPane({
               key={stitch.id}
               stitch={stitch}
               reduceMotion={reduceMotion}
+              {...(numbers[stitch.id] ? { number: numbers[stitch.id] } : {})}
+              sourceVendor={vendors[stitch.to_item_id ?? ""] ?? null}
               onGoToSource={(selected) => onGoToSource(selected, null)}
             />
           ))}
@@ -447,6 +511,10 @@ function PdfPage({
   onError,
   onAsk,
   onGoToSource,
+  numbers,
+  vendors,
+  onBadgeToCard,
+  onBadgeToPage,
 }: {
   doc: unknown;
   pageNumber: number;
@@ -462,6 +530,10 @@ function PdfPage({
   onError: (message: string) => void;
   onAsk: (locator: SpanLocator, question: string) => void;
   onGoToSource: (stitch: AuditStitch, origin: DOMRect | null) => void;
+  numbers: Record<string, number>;
+  vendors: Record<string, string | null>;
+  onBadgeToCard: (stitchId: string) => void;
+  onBadgeToPage: (pageNumber: number) => void;
 }) {
   const holderRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -545,7 +617,6 @@ function PdfPage({
         const joined = joinRuns(runs);
         setPage(joined);
         onPageText(pageNumber, joined);
-
       } catch (e) {
         if (!cancelled) onError((e as Error).message);
       }
@@ -564,6 +635,11 @@ function PdfPage({
   const underglows = useMemo(
     () => inkUnderglows(anchors, size.width || 1, size.height || 1),
     [anchors, size.width, size.height],
+  );
+
+  const badges = useMemo(
+    () => badgeSpots(anchors, page, size.width || 1, size.height || 1),
+    [anchors, page, size.width, size.height],
   );
 
   // The ink stays on the page while the run resolves, then the stored stitch
@@ -625,6 +701,26 @@ function PdfPage({
             />
           ))}
         </svg>
+        {badges.map((spot) =>
+          numbers[spot.id] ? (
+            <span
+              key={`badge-${spot.id}`}
+              className="absolute z-10 -translate-x-1/2 -translate-y-1/2"
+              style={{
+                left: `${(spot.x / (size.width || 1)) * 100}%`,
+                top: `${(spot.y / (size.height || 1)) * 100}%`,
+              }}
+            >
+              <StitchBadge
+                n={numbers[spot.id] as number}
+                stitchId={spot.id}
+                where="ink"
+                filled={hovered === spot.id}
+                onClick={() => onBadgeToCard(spot.id)}
+              />
+            </span>
+          ) : null,
+        )}
         <LassoLayer
           armed={armed && canAsk}
           runs={page.runs}
@@ -655,10 +751,7 @@ function PdfPage({
             className="absolute bottom-2 left-2 z-10 flex items-center gap-1.5 rounded-full border border-border bg-card px-2.5 py-1 text-xs text-muted-foreground shadow-sm"
           >
             Reading the record
-            <span
-              className={`nb-dots ${reduceMotion ? "nb-dots-static" : ""}`}
-              aria-hidden="true"
-            >
+            <span className={`nb-dots ${reduceMotion ? "nb-dots-static" : ""}`} aria-hidden="true">
               <span className="nb-dot" />
               <span className="nb-dot" />
               <span className="nb-dot" />
@@ -715,12 +808,14 @@ function PdfPage({
         </div>
       ) : null}
 
-
       {anchors.map((anchor) => (
         <StitchChip
           key={anchor.stitch.id}
           stitch={anchor.stitch}
           reduceMotion={reduceMotion}
+          {...(numbers[anchor.stitch.id] ? { number: numbers[anchor.stitch.id] } : {})}
+          sourceVendor={vendors[anchor.stitch.to_item_id ?? ""] ?? null}
+          onBadgeClick={() => onBadgeToPage(anchor.page)}
           lifted={hovered === anchor.stitch.id}
           onHoverChange={(on) => onHover(on ? anchor.stitch.id : null)}
           onGoToSource={(selected: AuditStitch) =>

@@ -1,10 +1,12 @@
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import { StitchBadge } from "@/components/provenance/StitchBadge";
 import { ChatUrlLink } from "@/components/work/ChatUrlLink";
 import { SourceMark } from "@/components/work/SourceMark";
 import type { AuditPaneItem } from "@/lib/span-provenance.functions";
 import type { SpanStatus } from "@/lib/span-provenance-shared";
+import { turnLabel } from "@/lib/span-readability";
 import { spanStatusClass } from "@/lib/span-status-style";
 
 /**
@@ -25,6 +27,9 @@ export function UpstreamPane({
     turnId: string | null;
     token: number;
     status?: SpanStatus;
+    /** The focused question, so the source turn wears the same badge. */
+    stitchId?: string;
+    number?: number;
   } | null;
   /** How many stitches cite each upstream item. Uncited items stay quiet. */
   citations?: Record<string, number>;
@@ -138,9 +143,18 @@ export function UpstreamPane({
                               : ""
                           }`}
                         >
-                          <p className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
-                            Turn {turn.turn_no} · {turn.role}
+                          <p className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+                            {focus?.turnId === turn.id && focus.stitchId && focus.number ? (
+                              <StitchBadge
+                                n={focus.number}
+                                stitchId={focus.stitchId}
+                                where="turn"
+                                filled
+                              />
+                            ) : null}
+                            {turnLabel(turn.turn_no, turn.role)}
                           </p>
+
                           <p className="mt-1 whitespace-pre-wrap text-sm text-foreground">
                             {turn.content}
                           </p>

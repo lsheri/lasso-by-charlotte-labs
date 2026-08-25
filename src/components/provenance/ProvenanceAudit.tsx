@@ -14,12 +14,9 @@ import { pageUnitFor } from "@/lib/lasso-geometry";
 import { renditionQueryOptions } from "@/lib/rendition-query";
 import { getRenditionUrl } from "@/lib/rendition.functions";
 import { pickResolvedStitch, runResolveChoreography } from "@/lib/span-replay";
+import { stitchNumbers } from "@/lib/span-readability";
 import { traceLinkFor } from "@/lib/trace-link";
-import {
-  askSpanProvenance,
-  deleteSpanLink,
-  getSpanAudit,
-} from "@/lib/span-provenance.functions";
+import { askSpanProvenance, deleteSpanLink, getSpanAudit } from "@/lib/span-provenance.functions";
 import type { AuditStitch } from "@/lib/span-provenance.functions";
 import type { SpanLocator } from "@/lib/span-provenance-shared";
 
@@ -74,6 +71,8 @@ function AuditSurface({
     turnId: string | null;
     token: number;
     status: AuditStitch["status"];
+    stitchId: string;
+    number?: number;
   } | null>(null);
   const reduceMotion =
     typeof window !== "undefined"
@@ -98,6 +97,13 @@ function AuditSurface({
     text: data?.anchor.text ?? null,
   });
 
+  // The pairing numbers: by when a question was asked, never by rail order.
+  const numbers = stitchNumbers(data?.stitches ?? []);
+  const vendors: Record<string, string | null> = {};
+  (data?.upstream ?? []).forEach((item) => {
+    vendors[item.id] = item.source_vendor;
+  });
+
   const citations: Record<string, number> = {};
   (data?.stitches ?? []).forEach((stitch) => {
     if (!stitch.to_item_id) return;
@@ -112,10 +118,7 @@ function AuditSurface({
       await queryClient.invalidateQueries({ queryKey: ["span-audit", anchorId] });
       // The reveal, in order: the thread, then the source itself, but only when
       // the answer actually had one. An unsourced answer opens nothing.
-      const fresh = queryClient.getQueryData<{ stitches: AuditStitch[] }>([
-        "span-audit",
-        anchorId,
-      ]);
+      const fresh = queryClient.getQueryData<{ stitches: AuditStitch[] }>(["span-audit", anchorId]);
       const landed = pickResolvedStitch(fresh?.stitches ?? [], locator.snippet);
       if (landed) {
         setReplayId(landed.id);
@@ -146,6 +149,8 @@ function AuditSurface({
       turnId: stitch.to_turn_id,
       token: Date.now(),
       status: stitch.status,
+      stitchId: stitch.id,
+      ...(numbers[stitch.id] ? { number: numbers[stitch.id] } : {}),
     });
   }
 
@@ -280,6 +285,8 @@ function AuditSurface({
                 onAsk={(locator, question) => void askSpan(locator, question)}
                 onGoToSource={goToSource}
                 replayStitchId={replayId}
+                numbers={numbers}
+                vendors={vendors}
               />
             ) : (
               <AnchorPane
@@ -290,6 +297,8 @@ function AuditSurface({
                 busy={busy}
                 onAsk={(locator, question) => void askSpan(locator, question)}
                 onGoToSource={(stitch) => goToSource(stitch)}
+                numbers={numbers}
+                vendors={vendors}
               />
             )}
           </div>
