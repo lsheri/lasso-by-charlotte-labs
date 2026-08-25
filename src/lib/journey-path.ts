@@ -195,10 +195,10 @@ function arrowAt(
 export function buildJourneyPath(input: {
   ids: readonly string[];
   width?: number | undefined;
-  stitchCounts?: Readonly<Record<string, number>> | undefined;
+  stitchCounts: Readonly<Record<string, number>>;
 }): JourneyPath {
   const ids = input.ids;
-  const stitchCounts = input.stitchCounts ?? {};
+  const stitchCounts = input.stitchCounts;
   const width = Math.max(380, Math.min(720, Math.round(input.width || 640)));
   const narrow = width < JOURNEY_NARROW_W;
   const rand = seededRand(ids);

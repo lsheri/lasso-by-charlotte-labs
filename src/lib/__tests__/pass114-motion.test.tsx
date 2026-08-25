@@ -86,12 +86,16 @@ describe("pass 114 · determinism", () => {
     const two = buildJourneyPath({ ids: ["a", "b", "c", "d"], width: 640, stitchCounts });
     expect(one.segments.map((s) => s.stroke.d)).toEqual(two.segments.map((s) => s.stroke.d));
     expect(one.nodes).toEqual(two.nodes);
-    const other = buildJourneyPath({ ids: ["a", "b", "c", "z"], width: 640 });
+    const other = buildJourneyPath({
+      ids: ["a", "b", "c", "z"],
+      width: 640,
+      stitchCounts: {},
+    });
     expect(other.segments.map((s) => s.stroke.d)).not.toEqual(one.segments.map((s) => s.stroke.d));
   });
 
   it("returns a real length for every wavered stroke and never hardcodes one", () => {
-    const path = buildJourneyPath({ ids: ["a", "b", "c"], width: 640 });
+    const path = buildJourneyPath({ ids: ["a", "b", "c"], width: 640, stitchCounts: {} });
     for (const segment of path.segments) {
       expect(segment.stroke.length).toBeGreaterThan(100);
       expect(segment.arrow.length).toBe(2);
@@ -100,10 +104,10 @@ describe("pass 114 · determinism", () => {
   });
 
   it("alternates lanes and degrades to a narrower path on a small screen", () => {
-    const wide = buildJourneyPath({ ids: ["a", "b", "c"], width: 640 });
+    const wide = buildJourneyPath({ ids: ["a", "b", "c"], width: 640, stitchCounts: {} });
     const [first, second] = wide.nodes;
     expect(Math.abs((first?.x ?? 0) - (second?.x ?? 0))).toBeGreaterThan(200);
-    const narrow = buildJourneyPath({ ids: ["a", "b", "c"], width: 400 });
+    const narrow = buildJourneyPath({ ids: ["a", "b", "c"], width: 400, stitchCounts: {} });
     const spread = Math.abs((narrow.nodes[0]?.x ?? 0) - (narrow.nodes[1]?.x ?? 0));
     expect(spread).toBeLessThan(140);
     expect(spread).toBeGreaterThan(0);
