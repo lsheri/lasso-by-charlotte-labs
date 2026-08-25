@@ -2184,6 +2184,9 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   .nb-pile-item {
     transition: none !important;
   }
+  .nb-ship-settle {
+    animation: none !important;
+  }
   .nb-pile[data-scatter="1"] .nb-pile-item {
     transform: none !important;
   }
@@ -2284,9 +2287,4 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 }
 .nb-ship-settle {
   animation: nb-ship-settle 120ms ease-out;
-}
-@media (prefers-reduced-motion: reduce) {
-  .nb-ship-settle {
-    animation: none;
-  }
 }

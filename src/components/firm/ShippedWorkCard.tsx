@@ -69,10 +69,10 @@ export function ShippedWorkCard({
           ) : (
             <SourceMark
               item={{
-                source: card.source as never,
+                source: card.source ?? undefined,
                 source_vendor: card.source_vendor,
-                source_meta: card.source_meta as never,
-                meta: card.meta as never,
+                source_meta: card.source_meta,
+                meta: card.meta,
                 type: card.type,
               }}
               size={14}
