@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 import { PageHeader } from "@/components/layout/PageHeader";
+import { ShippedShowcase } from "@/components/firm/ShippedShowcase";
 import { OneOnOneBrief } from "@/components/oneonone/OneOnOneBrief";
 import { Button } from "@/components/ui/button";
 import { useProfile } from "@/hooks/use-profile";
@@ -25,6 +26,7 @@ export function OverviewPage() {
           />
         </>
       ) : null}
+      <ShippedShowcase />
     </div>
   );
 }

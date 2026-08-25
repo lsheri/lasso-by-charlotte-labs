@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   JOURNEY_THIN_LINE,
   JOURNEY_TITLE,
+  JOURNEY_VIEWER_LINE,
   buildJourney,
   journeyDelayMs,
   type Journey,
@@ -167,7 +168,7 @@ function JourneySurface({
           {loading ? (
             <p className="text-sm text-muted-foreground">Reading the record...</p>
           ) : (
-            <JourneySpine journey={journey} />
+            <JourneySpine journey={journey} notShared={items.length === 0} />
           )}
         </div>
       </div>
@@ -182,9 +183,12 @@ function JourneySurface({
 export function JourneySpine({
   journey,
   animate = true,
+  notShared = false,
 }: {
   journey: Journey;
   animate?: boolean;
+  /** The record loaded and holds nothing for this viewer, so it is not theirs. */
+  notShared?: boolean;
 }) {
   const [skipped, setSkipped] = useState(false);
 
@@ -200,7 +204,11 @@ export function JourneySpine({
   }, [animate, skipped]);
 
   if (!journey.enough) {
-    return <p className="max-w-[46ch] text-sm text-muted-foreground">{JOURNEY_THIN_LINE}</p>;
+    return (
+      <p className="max-w-[46ch] text-sm text-muted-foreground">
+        {notShared ? JOURNEY_VIEWER_LINE : JOURNEY_THIN_LINE}
+      </p>
+    );
   }
 
   const drawing = animate && !skipped;

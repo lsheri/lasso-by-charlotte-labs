@@ -30,6 +30,7 @@ export const WORK_CHANGE_KEYS: readonly (readonly unknown[])[] = [
   ["firm-check-library"],
   ["firm-dashboard"],
   ["query-log"],
+  ["shipped-work"],
 ];
 
 /** The per-item caches, dropped alongside the lists that count the item. */
