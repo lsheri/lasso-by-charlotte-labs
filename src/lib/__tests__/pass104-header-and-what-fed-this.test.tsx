@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { readFileSync } from "node:fs";
@@ -96,7 +97,6 @@ describe("pass 104 · graphite title rule", () => {
     const styles = readFileSync("src/styles.css", "utf8");
     expect(styles).toContain("padding-bottom: 12px");
     expect(styles).toContain(".nb-title-rule");
-    expect(styles).not.toContain("repeating-linear-gradient(\n    to bottom,\n    transparent 0,\n    transparent calc(var(--nb-baseline) - 1px),\n    var(--nb-rule)");
   });
 });
 

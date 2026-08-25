@@ -63,8 +63,9 @@ describe("90.3 header regroup", () => {
   });
 
   it("merges About into a brief note with the edit dialog", () => {
-    expect(page).toContain('title="Brief and details"');
-    expect(page).toContain("EditEngagementDialog");
+    const panel = readFileSync("src/components/engagements/EngagementBriefPanel.tsx", "utf8");
+    expect(panel).toContain("Brief and details");
+    expect(panel).toContain("EditEngagementDialog");
     expect(page).not.toContain("About this engagement");
     expect(page).not.toContain("aboutOpen");
   });

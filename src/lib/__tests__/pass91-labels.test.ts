@@ -24,10 +24,11 @@ describe("pass91 label colour hierarchy", () => {
     const eng = read("src/pages/EngagementPage.tsx");
     // Pass 95: those two headings became sticky note titles on the same page.
     expect(eng).toContain('title="Coaching and sharing"');
-    expect(eng).toContain('title="Brief and details"');
-    // nested field labels inside the Details card stay grey
-    expect(eng).toContain('<p className="micro-label">Client</p>');
-    expect(eng).toContain('<p className="micro-label">Brief</p>');
+    const panel = read("src/components/engagements/EngagementBriefPanel.tsx");
+    expect(panel).toContain('<p className="micro-label">Brief and details</p>');
+    // nested field labels inside the brief panel stay grey
+    expect(panel).toContain('<p className="micro-label">Client</p>');
+    expect(panel).toContain('<p className="micro-label">Brief</p>');
 
     expect(read("src/components/firm/FirmPanels.tsx")).toContain(
       '<h2 className="micro-label micro-label-section">{title}</h2>',
