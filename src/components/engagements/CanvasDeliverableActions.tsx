@@ -47,8 +47,8 @@ export function CanvasDeliverableActions({
         }}
         className={ready ? QUIET_PILL : QUIET_PILL_OFF}
       >
-        <StitchLoop size={16} />
-        Journey
+        <ChaliceMark size={18} />
+        {WORK_ARTIFACT_TITLE}
       </button>
 
       {profile && profile.role !== "coach" && (canShip || !ready) ? (
