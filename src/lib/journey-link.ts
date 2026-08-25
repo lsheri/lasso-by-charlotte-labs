@@ -5,7 +5,7 @@
 
 export const JOURNEY_PARAM = "journey";
 
-export const JOURNEY_UNAVAILABLE_LINE = "That journey is not available to you.";
+export const JOURNEY_UNAVAILABLE_LINE = "That work artifact is not available to you.";
 
 export function journeyLinkFor(origin: string, engagementId: string, itemId: string): string {
   return `${origin.replace(/\/$/, "")}/engagements/${engagementId}?${JOURNEY_PARAM}=${itemId}`;

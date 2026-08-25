@@ -68,7 +68,7 @@ export type Journey = {
 export const JOURNEY_THIN_LINE =
   "This work does not have enough of a record yet to show a journey. Connect the conversations and sources that fed it.";
 
-export const JOURNEY_TITLE = "How this work grew";
+export const JOURNEY_TITLE = "Work Artifact";
 
 /**
  * A colleague may open a shipped card whose engagement they are not part of.
