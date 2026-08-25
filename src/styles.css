@@ -2271,3 +2271,22 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 .nb-scribble-host {
   position: relative;
 }
+@keyframes nb-ship-settle {
+  0% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+.nb-ship-settle {
+  animation: nb-ship-settle 120ms ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .nb-ship-settle {
+    animation: none;
+  }
+}
