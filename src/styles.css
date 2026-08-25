@@ -1981,6 +1981,12 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   .nb-pile[data-scatter="1"] .nb-pile-item {
     transform: none !important;
   }
+  .nb-paper {
+    transition: none !important;
+  }
+  .nb-scatter[data-scatter="1"] .nb-paper {
+    transform: none !important;
+  }
   .nb-journey-stem path,
   .nb-journey-loop path,
   .nb-journey-node,
