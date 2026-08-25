@@ -2,7 +2,7 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { EMPTY_LASSO_LINE, LassoLayer } from "@/components/provenance/LassoLayer";
+import { TRY_AGAIN_TITLE, LassoLayer } from "@/components/provenance/LassoLayer";
 import { joinRuns, runsForSnippet } from "@/components/provenance/SlidesPane";
 import {
   enclosedRuns,
@@ -52,12 +52,20 @@ describe("pass 101: the lasso hit test", () => {
   });
 });
 
+/** A drawn loop: the corners with points along each edge, the way a hand moves. */
 function drawLasso(polygon: { x: number; y: number }[]) {
   const layer = screen.getByTestId("lasso-layer");
   const first = polygon[0] as { x: number; y: number };
   fireEvent.pointerDown(layer, { clientX: first.x, clientY: first.y });
-  polygon.slice(1).forEach((point) => {
-    fireEvent.pointerMove(layer, { clientX: point.x, clientY: point.y });
+  polygon.forEach((point, i) => {
+    const from = polygon[i] as { x: number; y: number };
+    const to = polygon[(i + 1) % polygon.length] as { x: number; y: number };
+    for (let step = 1; step <= 4; step += 1) {
+      fireEvent.pointerMove(layer, {
+        clientX: from.x + ((to.x - from.x) * step) / 4,
+        clientY: from.y + ((to.y - from.y) * step) / 4,
+      });
+    }
   });
   fireEvent.pointerUp(layer);
 }
@@ -73,7 +81,7 @@ describe("pass 101: an empty lasso costs nothing", () => {
         width={300}
         height={300}
         reduceMotion={false}
-        wrapped={null}
+        settled={null}
         resolving={false}
         onLasso={onLasso}
         onEmpty={onEmpty}
@@ -87,7 +95,7 @@ describe("pass 101: an empty lasso costs nothing", () => {
     ]);
     expect(onLasso).not.toHaveBeenCalled();
     expect(onEmpty).toHaveBeenCalled();
-    expect(screen.getByText(EMPTY_LASSO_LINE)).toBeTruthy();
+    expect(screen.getByText(TRY_AGAIN_TITLE)).toBeTruthy();
   });
 
   it("hands back the enclosed snippet when the ink found text", () => {
@@ -99,7 +107,7 @@ describe("pass 101: an empty lasso costs nothing", () => {
         width={300}
         height={300}
         reduceMotion={false}
-        wrapped={null}
+        settled={null}
         resolving={false}
         onLasso={onLasso}
         onEmpty={() => {}}
@@ -112,7 +120,7 @@ describe("pass 101: an empty lasso costs nothing", () => {
 });
 
 describe("pass 101: reduced motion is static", () => {
-  function wrap(reduceMotion: boolean) {
+  function ink(reduceMotion: boolean) {
     cleanup();
     render(
       <LassoLayer
@@ -121,23 +129,29 @@ describe("pass 101: reduced motion is static", () => {
         width={300}
         height={300}
         reduceMotion={reduceMotion}
-        wrapped={{ x: 10, y: 10, w: 200, h: 20 }}
+        settled={[
+          { x: 10, y: 10 },
+          { x: 90, y: 12 },
+          { x: 88, y: 60 },
+          { x: 12, y: 58 },
+        ]}
         resolving
         onLasso={() => {}}
         onEmpty={() => {}}
       />,
     );
-    return screen.getByTestId("lasso-wrap").getAttribute("class") ?? "";
+    return screen.getByTestId("lasso-ink").getAttribute("class") ?? "";
   }
 
-  it("drops the shrink wrap animation and the dash march", () => {
-    expect(wrap(false)).toContain("nb-lasso-wrap");
-    expect(wrap(false)).toContain("nb-lasso-resolving");
-    const still = wrap(true);
-    expect(still).toContain("nb-lasso-static");
-    expect(still).not.toContain("nb-lasso-wrap");
-    expect(still).not.toContain("nb-lasso-resolving ");
+  it("drops the settle animation and the dash march", () => {
+    expect(ink(false)).toContain("nb-ink-settle");
+    expect(ink(false)).toContain("nb-ink-march");
+    const still = ink(true);
+    expect(still).toContain("nb-ink-static");
+    expect(still).toContain("nb-ink-march-static");
+    expect(still).not.toContain("nb-ink-settle");
   });
+
 
   it("draws the thread without animating it", async () => {
     const { ThreadLine } = await import("@/components/provenance/ThreadLine");
@@ -290,12 +304,12 @@ describe("pass 101.1: the status colour language", () => {
     const moving = screen.getByTestId("stitch-chip-s1").getAttribute("class") ?? "";
     expect(moving).toContain("nb-span-paraphrase");
     expect(moving).toContain("nb-stitch-chip");
-    expect(moving).toContain("nb-pin-in");
+    expect(moving).toContain("nb-chip-enter");
     cleanup();
     render(<StitchChip stitch={stitch} onGoToSource={() => {}} reduceMotion />);
     const still = screen.getByTestId("stitch-chip-s1").getAttribute("class") ?? "";
-    expect(still).toContain("nb-pin-static");
-    expect(still).not.toContain("nb-pin-in");
+    expect(still).toContain("nb-chip-enter-static");
+    expect(still).not.toContain("nb-chip-enter");
   });
 
   it("defines one token per status rather than raw colour at point of use", async () => {

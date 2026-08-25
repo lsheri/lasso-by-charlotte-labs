@@ -114,3 +114,104 @@ export function isUsableBBox(box: BBox | null | undefined): box is BBox {
   if (values.some((v) => typeof v !== "number" || !Number.isFinite(v))) return false;
   return box.w > 0 && box.h > 0 && box.x >= 0 && box.y >= 0 && box.x <= 1 && box.y <= 1;
 }
+
+/**
+ * Pass 105: the ink itself is the mark. A drawn loop is kept with the stitch in
+ * 0..1 page coordinates so it can be redrawn exactly where it was drawn, and it
+ * is decimated first: eighty points is more than enough to read as a hand-drawn
+ * circle and small enough to sit in a locator.
+ */
+export const MAX_INK_POINTS = 80;
+
+/** Fewer points than this is a tap or a flick, not a loop around a fact. */
+export const MIN_LASSO_POINTS = 8;
+
+/** A loop smaller than this share of the page is not a deliberate circle. */
+export const MIN_LASSO_AREA_RATIO = 0.01;
+
+/** Even stride sampling, always keeping the first and last point. */
+export function decimatePath(points: Point[], max = MAX_INK_POINTS): Point[] {
+  if (points.length <= max) return points.slice();
+  const stride = (points.length - 1) / (max - 1);
+  const out: Point[] = [];
+  for (let i = 0; i < max; i += 1) out.push(points[Math.round(i * stride)] as Point);
+  return out;
+}
+
+/** Page pixels to the stored ink: clamped 0..1 pairs, at most eighty of them. */
+export function normalizeInk(
+  points: Point[],
+  width: number,
+  height: number,
+): [number, number][] {
+  const w = width || 1;
+  const h = height || 1;
+  const clamp = (value: number) => Math.min(1, Math.max(0, value));
+  return decimatePath(points).map((point) => [clamp(point.x / w), clamp(point.y / h)]);
+}
+
+/** Stored ink back to page pixels at the size this page is rendered at. */
+export function denormalizeInk(
+  ink: readonly (readonly [number, number])[],
+  width: number,
+  height: number,
+): Point[] {
+  return ink.map(([x, y]) => ({ x: x * width, y: y * height }));
+}
+
+/** Ink is usable only when it is a real run of finite on-page pairs. */
+export function isUsableInk(ink: unknown): ink is [number, number][] {
+  if (!Array.isArray(ink) || ink.length < 3) return false;
+  return ink.every(
+    (pair) =>
+      Array.isArray(pair) &&
+      pair.length === 2 &&
+      pair.every((value) => typeof value === "number" && Number.isFinite(value)),
+  );
+}
+
+/** The shoelace area of a drawn loop, in whatever units it was drawn in. */
+export function polygonArea(points: Point[]): number {
+  if (points.length < 3) return 0;
+  let sum = 0;
+  for (let i = 0, j = points.length - 1; i < points.length; j = i, i += 1) {
+    const a = points[i] as Point;
+    const b = points[j] as Point;
+    sum += b.x * a.y - a.x * b.y;
+  }
+  return Math.abs(sum) / 2;
+}
+
+/**
+ * A loop that never really became one. Answered before anything is read, so a
+ * stray flick costs nothing and gets an honest nudge instead of silence.
+ */
+export function isDegenerateLasso(points: Point[], width: number, height: number): boolean {
+  if (points.length < MIN_LASSO_POINTS) return true;
+  const page = (width || 1) * (height || 1);
+  return polygonArea(points) / page < MIN_LASSO_AREA_RATIO;
+}
+
+/**
+ * The drawn loop as one gently smoothed path. Midpoints between samples become
+ * the on-curve points, so the stroke keeps the hand that drew it without the
+ * jitter a pointer stream carries.
+ */
+export function inkPathD(points: Point[]): string {
+  if (points.length === 0) return "";
+  const first = points[0] as Point;
+  if (points.length < 3) {
+    return `M ${first.x} ${first.y} ${points
+      .slice(1)
+      .map((p) => `L ${p.x} ${p.y}`)
+      .join(" ")}`;
+  }
+  let d = `M ${first.x} ${first.y}`;
+  for (let i = 1; i < points.length - 1; i += 1) {
+    const current = points[i] as Point;
+    const next = points[i + 1] as Point;
+    d += ` Q ${current.x} ${current.y} ${(current.x + next.x) / 2} ${(current.y + next.y) / 2}`;
+  }
+  const last = points[points.length - 1] as Point;
+  return `${d} L ${last.x} ${last.y}`;
+}

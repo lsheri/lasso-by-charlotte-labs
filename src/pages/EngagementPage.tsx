@@ -17,6 +17,7 @@ import { SubjectCoachingSection } from "@/components/coaching/SubjectCoachingSec
 import { ReflectDock } from "@/components/reflect/ReflectDock";
 import { useRegisterAskLasso } from "@/components/reflect/ask-lasso-context";
 import { useProfile } from "@/hooks/use-profile";
+import { useTraceParam } from "@/hooks/use-trace-param";
 import { isBusinessOrg } from "@/hooks/use-profile";
 import { useMyEngagementMembership } from "@/hooks/use-engagement-membership";
 import { useEngagementPage, useEngagementSlice } from "@/hooks/use-engagement-page";
@@ -36,6 +37,9 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
   const [peekItem, setPeekItem] = useState<WorkItemRow | null>(null);
   // The coaching note opens on its own; the brief is always legible above it.
   const [coachingOpen, setCoachingOpen] = useState(false);
+
+  // A shared "?trace=" link opens the audit on exactly what was circled.
+  useTraceParam(engagementId);
 
   const coaches = useEngagementCoaches(engagementId);
   const membership = useMyEngagementMembership(engagementId, profile?.id);

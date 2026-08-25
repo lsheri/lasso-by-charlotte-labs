@@ -22,6 +22,12 @@ export type SpanLocator = {
    * stays the authoritative record of what was asked about.
    */
   bbox?: { x: number; y: number; w: number; h: number } | undefined;
+  /**
+   * The loop a person actually drew, in 0..1 page coordinates, at most eighty
+   * points. Presentation truth: it is redrawn on replay, and its absence simply
+   * means the question was asked another way.
+   */
+  ink?: [number, number][] | undefined;
 };
 
 /** Anything shorter than this is not a span, it is a stray click. */

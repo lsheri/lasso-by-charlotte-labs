@@ -5,7 +5,14 @@ import { useSyncExternalStore } from "react";
  * confirmed, and it covers the whole screen, so its open state lives outside
  * any one surface's tree. One request at a time, by design.
  */
-export type AuditRequest = { anchorId: string; anchorTitle: string };
+export type AuditRequest = {
+  anchorId: string;
+  anchorTitle: string;
+  /** The engagement this anchor sits in, so a traced question can be shared. */
+  engagementId?: string;
+  /** A traced question to replay the moment the pages are ready. */
+  initialStitchId?: string;
+};
 
 let current: AuditRequest | null = null;
 const listeners = new Set<() => void>();
