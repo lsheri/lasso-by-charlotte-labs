@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -132,6 +133,7 @@ describe("pass 106: badge numbering", () => {
       ],
     };
     render(
+      <QueryClientProvider client={new QueryClient()}>
       <UpstreamPane
         items={[item]}
         baseline={[]}
@@ -143,7 +145,8 @@ describe("pass 106: badge numbering", () => {
           stitchId: "s1",
           number: 2,
         }}
-      />,
+      />
+      </QueryClientProvider>,
     );
     expect(screen.getByText("3 · You")).toBeTruthy();
     expect(screen.getByText(/4 · AI/)).toBeTruthy();
