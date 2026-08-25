@@ -101,7 +101,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
   return (
     <div>
       <header className="mb-8">
-        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4">
+        <div className="nb-sticky-head grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4">
           <div className="min-w-0">
             <h1 className="nb-title-strip page-title">
               {engagementDisplayTitle(engagement)}
@@ -117,9 +117,9 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
             <button
               type="button"
               onClick={() => setAskOpen(true)}
-              className="hidden shrink-0 items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground md:inline-flex"
+              className="nb-web-cta hidden shrink-0 items-center gap-2.5 rounded-full border border-border px-[18px] py-2.5 font-mono text-[16px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground md:inline-flex"
             >
-              <SpiderMark size={18} /> Ask Lasso
+              <SpiderMark size={27} /> Ask Lasso
             </button>
           ) : null}
         </div>
