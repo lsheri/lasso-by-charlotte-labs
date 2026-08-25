@@ -33,7 +33,9 @@ export function spanStatusPhrase(status: SpanStatus): string {
 
 /** The action label: where the answer actually lives. */
 export function showMeLabel(stitch: { to_turn_no: number | null }): string {
-  return stitch.to_turn_no ? `Show me in the chat (turn ${stitch.to_turn_no})` : "Show me in the doc";
+  return stitch.to_turn_no
+    ? `Show me in the chat (turn ${stitch.to_turn_no})`
+    : "Show me in the doc";
 }
 
 /** A turn's speaker, in app vocabulary. The assistant is always "AI". */
@@ -47,7 +49,6 @@ export function turnLabel(turnNo: number, role: string | null | undefined): stri
 }
 
 /** The one quiet line that explains the colours, always on, never a tooltip. */
-export const LEGEND_LINE =
-  "Green: word for word. Amber: reworded. Grey: not found in the record.";
+export const LEGEND_LINE = "Green: word for word. Amber: reworded. Grey: not found in the record.";
 
 export const RAIL_LABEL = "Where did this come from";

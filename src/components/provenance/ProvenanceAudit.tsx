@@ -16,11 +16,7 @@ import { getRenditionUrl } from "@/lib/rendition.functions";
 import { pickResolvedStitch, runResolveChoreography } from "@/lib/span-replay";
 import { stitchNumbers } from "@/lib/span-readability";
 import { traceLinkFor } from "@/lib/trace-link";
-import {
-  askSpanProvenance,
-  deleteSpanLink,
-  getSpanAudit,
-} from "@/lib/span-provenance.functions";
+import { askSpanProvenance, deleteSpanLink, getSpanAudit } from "@/lib/span-provenance.functions";
 import type { AuditStitch } from "@/lib/span-provenance.functions";
 import type { SpanLocator } from "@/lib/span-provenance-shared";
 
@@ -122,10 +118,7 @@ function AuditSurface({
       await queryClient.invalidateQueries({ queryKey: ["span-audit", anchorId] });
       // The reveal, in order: the thread, then the source itself, but only when
       // the answer actually had one. An unsourced answer opens nothing.
-      const fresh = queryClient.getQueryData<{ stitches: AuditStitch[] }>([
-        "span-audit",
-        anchorId,
-      ]);
+      const fresh = queryClient.getQueryData<{ stitches: AuditStitch[] }>(["span-audit", anchorId]);
       const landed = pickResolvedStitch(fresh?.stitches ?? [], locator.snippet);
       if (landed) {
         setReplayId(landed.id);

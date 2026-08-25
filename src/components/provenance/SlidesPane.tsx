@@ -89,7 +89,6 @@ export function highlightRects(
   });
 }
 
-
 /** The rects to highlight for a snippet already asked about on this page. */
 export function runsForSnippet(page: PageText, snippet: string, occurrence: number): TextRun[] {
   const found = findSnippetOffset(page.text, snippet, occurrence);
@@ -234,7 +233,6 @@ export function anchorStitches(
 
   return { anchors, orphans };
 }
-
 
 /** One page's text runs in page pixels at the given scale. */
 export async function readPageRuns(
@@ -390,7 +388,6 @@ export function SlidesPane({
       cancelled = true;
     };
   }, [doc, pages]);
-
 
   const reload = useCallback(() => {
     setError(null);
@@ -620,7 +617,6 @@ function PdfPage({
         const joined = joinRuns(runs);
         setPage(joined);
         onPageText(pageNumber, joined);
-
       } catch (e) {
         if (!cancelled) onError((e as Error).message);
       }
@@ -755,10 +751,7 @@ function PdfPage({
             className="absolute bottom-2 left-2 z-10 flex items-center gap-1.5 rounded-full border border-border bg-card px-2.5 py-1 text-xs text-muted-foreground shadow-sm"
           >
             Reading the record
-            <span
-              className={`nb-dots ${reduceMotion ? "nb-dots-static" : ""}`}
-              aria-hidden="true"
-            >
+            <span className={`nb-dots ${reduceMotion ? "nb-dots-static" : ""}`} aria-hidden="true">
               <span className="nb-dot" />
               <span className="nb-dot" />
               <span className="nb-dot" />
@@ -814,7 +807,6 @@ function PdfPage({
           </div>
         </div>
       ) : null}
-
 
       {anchors.map((anchor) => (
         <StitchChip

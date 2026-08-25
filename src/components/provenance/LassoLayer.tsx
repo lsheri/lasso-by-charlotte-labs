@@ -46,12 +46,7 @@ export function LassoLayer({
   /** Loops already asked about on this page, redrawn where they were drawn. */
   replays?: { id: string; ink: readonly (readonly [number, number])[]; lit?: boolean }[];
   resolving: boolean;
-  onLasso: (result: {
-    snippet: string;
-    box: BBox;
-    firstRunIndex: number;
-    path: Point[];
-  }) => void;
+  onLasso: (result: { snippet: string; box: BBox; firstRunIndex: number; path: Point[] }) => void;
   onEmpty: () => void;
 }) {
   const svgRef = useRef<SVGSVGElement>(null);

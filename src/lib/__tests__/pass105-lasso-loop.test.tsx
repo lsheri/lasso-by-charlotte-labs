@@ -4,7 +4,11 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { LassoLayer, TRY_AGAIN_TITLE } from "@/components/provenance/LassoLayer";
 import { StitchTabs, DELETE_CONFIRM_LINE } from "@/components/provenance/StitchTabs";
-import { highlightRects, inkUnderglows, type StitchAnchor } from "@/components/provenance/SlidesPane";
+import {
+  highlightRects,
+  inkUnderglows,
+  type StitchAnchor,
+} from "@/components/provenance/SlidesPane";
 import { deleteSpanLinkRow } from "@/lib/span-link-delete.server";
 import {
   MAX_INK_POINTS,
@@ -14,8 +18,18 @@ import {
   normalizeInk,
 } from "@/lib/lasso-geometry";
 import { validInkForTest } from "@/lib/span-provenance.functions";
-import { pickResolvedStitch, runResolveChoreography, stitchTabLabel, tabsNewestFirst } from "@/lib/span-replay";
-import { TRACE_UNAVAILABLE_LINE, handleTrace, readTraceId, stripTraceParam } from "@/lib/trace-link";
+import {
+  pickResolvedStitch,
+  runResolveChoreography,
+  stitchTabLabel,
+  tabsNewestFirst,
+} from "@/lib/span-replay";
+import {
+  TRACE_UNAVAILABLE_LINE,
+  handleTrace,
+  readTraceId,
+  stripTraceParam,
+} from "@/lib/trace-link";
 import type { AuditStitch } from "@/lib/span-provenance.functions";
 
 afterEach(cleanup);
@@ -71,8 +85,20 @@ describe("pass 105: the ink is stored as ink", () => {
       [1, 1],
     ];
     expect(validInkForTest(good)).toEqual(good);
-    expect(validInkForTest([[0, 0], [2, 0.5], [1, 1]])).toBeNull();
-    expect(validInkForTest([[0, 0], ["a", 1], [1, 1]])).toBeNull();
+    expect(
+      validInkForTest([
+        [0, 0],
+        [2, 0.5],
+        [1, 1],
+      ]),
+    ).toBeNull();
+    expect(
+      validInkForTest([
+        [0, 0],
+        ["a", 1],
+        [1, 1],
+      ]),
+    ).toBeNull();
     expect(validInkForTest([[0, 0]])).toBeNull();
     expect(validInkForTest("nope")).toBeNull();
     const long = Array.from({ length: 200 }, (_, i) => [i / 200, 0.5]);
@@ -114,7 +140,13 @@ describe("pass 105: replay draws what was drawn", () => {
 
   it("keeps the box highlight for a stitch with no ink", () => {
     const anchors: StitchAnchor[] = [
-      { stitch: stitch({ id: "s2" }), page: 1, start: 0, end: 5, bbox: { x: 0.1, y: 0.1, w: 0.2, h: 0.1 } },
+      {
+        stitch: stitch({ id: "s2" }),
+        page: 1,
+        start: 0,
+        end: 5,
+        bbox: { x: 0.1, y: 0.1, w: 0.2, h: 0.1 },
+      },
     ];
     const rects = highlightRects(anchors, { runs: [], text: "", offsets: [] }, 100, 100);
     expect(rects).toHaveLength(1);
@@ -143,9 +175,9 @@ describe("pass 105: the resolve opens only what it can", () => {
   it("picks the newest answer for the wording just asked about", () => {
     const older = stitch({ id: "old", created_at: "2026-01-01T00:00:00.000Z" });
     const newer = stitch({ id: "new", created_at: "2026-02-01T00:00:00.000Z" });
-    expect(
-      pickResolvedStitch([older, newer], "The margin held at nineteen percent")?.id,
-    ).toBe("new");
+    expect(pickResolvedStitch([older, newer], "The margin held at nineteen percent")?.id).toBe(
+      "new",
+    );
     expect(pickResolvedStitch([older, newer], "something else")).toBeNull();
   });
 });
@@ -311,8 +343,20 @@ describe("pass 105: the shared trace link", () => {
 
 describe("pass 105: a loop that caught nothing", () => {
   it("is degenerate when it is a flick or a speck", () => {
-    expect(isDegenerateLasso([{ x: 1, y: 1 }, { x: 2, y: 2 }], 100, 100)).toBe(true);
-    const speck = Array.from({ length: 12 }, (_, i) => ({ x: 50 + i * 0.1, y: 50 + (i % 3) * 0.1 }));
+    expect(
+      isDegenerateLasso(
+        [
+          { x: 1, y: 1 },
+          { x: 2, y: 2 },
+        ],
+        100,
+        100,
+      ),
+    ).toBe(true);
+    const speck = Array.from({ length: 12 }, (_, i) => ({
+      x: 50 + i * 0.1,
+      y: 50 + (i % 3) * 0.1,
+    }));
     expect(isDegenerateLasso(speck, 1000, 1000)).toBe(true);
     const loop = [
       { x: 0, y: 0 },

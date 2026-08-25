@@ -37,7 +37,12 @@ function stitch(over: Partial<AuditStitch> = {}): AuditStitch {
     asked_by: "p1",
     asked_by_name: "Liam",
     created_at: "2026-01-02T00:00:00.000Z",
-    locator: { unit: "page", index: 1, snippet: "The margin held at nineteen percent", occurrence: 1 },
+    locator: {
+      unit: "page",
+      index: 1,
+      snippet: "The margin held at nineteen percent",
+      occurrence: 1,
+    },
     ...over,
   } as AuditStitch;
 }
@@ -107,9 +112,7 @@ describe("pass 106: badge numbering", () => {
   });
 
   it("shows the badge on the card and on the focused source turn", () => {
-    render(
-      <StitchChip stitch={stitch()} number={2} onGoToSource={() => {}} />,
-    );
+    render(<StitchChip stitch={stitch()} number={2} onGoToSource={() => {}} />);
     expect(screen.getByTestId("stitch-badge-card-s1").textContent).toBe("2");
     expect(screen.getByText("Word for word")).toBeTruthy();
     expect(screen.getByText("Show me in the chat (turn 4)")).toBeTruthy();
@@ -134,18 +137,18 @@ describe("pass 106: badge numbering", () => {
     };
     render(
       <QueryClientProvider client={new QueryClient()}>
-      <UpstreamPane
-        items={[item]}
-        baseline={[]}
-        focus={{
-          itemId: "item-1",
-          turnId: "t4",
-          token: 1,
-          status: "exact",
-          stitchId: "s1",
-          number: 2,
-        }}
-      />
+        <UpstreamPane
+          items={[item]}
+          baseline={[]}
+          focus={{
+            itemId: "item-1",
+            turnId: "t4",
+            token: 1,
+            status: "exact",
+            stitchId: "s1",
+            number: 2,
+          }}
+        />
       </QueryClientProvider>,
     );
     expect(screen.getByText("3 · You")).toBeTruthy();
@@ -165,7 +168,14 @@ describe("pass 106: badge numbering", () => {
 
   it("scrolls the pairing into view from either badge", () => {
     const onBadgeClick = vi.fn();
-    render(<StitchChip stitch={stitch()} number={1} onBadgeClick={onBadgeClick} onGoToSource={() => {}} />);
+    render(
+      <StitchChip
+        stitch={stitch()}
+        number={1}
+        onBadgeClick={onBadgeClick}
+        onGoToSource={() => {}}
+      />,
+    );
     fireEvent.click(screen.getByTestId("stitch-badge-card-s1"));
     expect(onBadgeClick).toHaveBeenCalled();
 

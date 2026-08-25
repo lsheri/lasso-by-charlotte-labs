@@ -34,7 +34,6 @@ export function UpstreamPane({
   /** How many stitches cite each upstream item. Uncited items stay quiet. */
   citations?: Record<string, number>;
 }) {
-
   const [open, setOpen] = useState<Set<string>>(new Set());
 
   useEffect(() => {

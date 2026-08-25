@@ -12,10 +12,7 @@ export function SpanLegend() {
       className="flex items-center gap-1.5 text-[11px] leading-snug text-muted-foreground"
     >
       <span aria-hidden className="flex shrink-0 items-center gap-1">
-        <span
-          className="h-2 w-2 rounded-full"
-          style={{ backgroundColor: "var(--status-exact)" }}
-        />
+        <span className="h-2 w-2 rounded-full" style={{ backgroundColor: "var(--status-exact)" }} />
         <span
           className="h-2 w-2 rounded-full"
           style={{ backgroundColor: "var(--status-paraphrase)" }}
