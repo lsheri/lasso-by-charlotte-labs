@@ -3,8 +3,7 @@ import { Pencil } from "lucide-react";
 import { EditEngagementDialog } from "@/components/engagements/EditEngagementDialog";
 import { EngagementBriefSection } from "@/components/engagements/EngagementBriefSection";
 import { clientDisplayName } from "@/lib/clients";
-
-type PanelEngagement = Parameters<typeof EditEngagementDialog>[0]["engagement"];
+import type { EngagementRow } from "@/lib/engagement-page-shared";
 
 /**
  * The brief reads as a filled in form, not a note: it is what the work was
@@ -21,7 +20,7 @@ export function EngagementBriefPanel({
   canEdit,
   termLabel,
 }: {
-  engagement: PanelEngagement;
+  engagement: EngagementRow;
   engagementId: string;
   profileId: string;
   orgId: string;
