@@ -59,7 +59,9 @@ function journeyOf(ids: string[]) {
 function artifact(): WorkArtifact {
   return {
     how_ai_was_used: [{ stage: "Drafting", what_happened: "The draft came back.", turn_refs: [] }],
-    example_prompts: [{ quote: "Use the audited figures.", why_it_worked: "It named a source.", turn_ref: null }],
+    example_prompts: [
+      { quote: "Use the audited figures.", why_it_worked: "It named a source.", turn_ref: null },
+    ],
     verification_steps: [],
     decisions: [{ decision: "Keep the audited figure.", decided_by: "person", turn_refs: [] }],
     process_steps: ["Gather the figures."],
@@ -232,7 +234,9 @@ describe("pass 114 · the spine as rendered", () => {
     expect(burst.strokes.length).toBe(7);
     expect(burst.dots.length).toBe(2);
     expect(burst.strokes.filter((s) => s.ink === "yellow").length).toBe(4);
-    expect(burst.strokes.map((s) => s.d)).toEqual(fireworkStrokes("node-1").strokes.map((s) => s.d));
+    expect(burst.strokes.map((s) => s.d)).toEqual(
+      fireworkStrokes("node-1").strokes.map((s) => s.d),
+    );
     expect(burst.strokes[0]?.d).not.toBe(fireworkStrokes("node-2").strokes[0]?.d);
   });
 
@@ -259,9 +263,7 @@ describe("pass 114 · the sections grid", () => {
   it("keeps list order in the DOM and closes with process beside gaps", () => {
     const { container } = render(<WorkArtifactSections artifact={artifact()} />);
     const sections = [...container.querySelectorAll("[data-section]")];
-    expect(sections.map((s) => s.getAttribute("data-area"))).toEqual([
-      ...ARTIFACT_SECTION_AREAS,
-    ]);
+    expect(sections.map((s) => s.getAttribute("data-area"))).toEqual([...ARTIFACT_SECTION_AREAS]);
     expect(sections.at(-1)?.getAttribute("data-section")).toBe(WORK_ARTIFACT_SECTIONS.gaps);
     expect(sections.at(-2)?.getAttribute("data-area")).toBe("process");
     expect(container.querySelector(".nb-artifact-grid")).toBeTruthy();

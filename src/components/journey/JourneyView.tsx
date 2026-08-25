@@ -36,7 +36,6 @@ import { spanStatusClass } from "@/lib/span-status-style";
 import { spanStatusPhrase } from "@/lib/span-readability";
 import { formatDate } from "@/lib/work-types";
 
-
 /**
  * Pass 110: the journey. A vertical stem showing how one deliverable grew out
  * of the record: the sources, the conversations, the questions actually asked
@@ -179,10 +178,10 @@ function JourneySurface({
           <div className="flex min-w-0 items-start gap-2.5">
             <ChaliceMark size={28} className="mt-1" />
             <div className="min-w-0">
-            <p className="micro-label text-muted-foreground">{JOURNEY_TITLE}</p>
-            <h1 className="page-title mt-1 break-words text-[22px] leading-snug">
-              {engagementTitle}
-            </h1>
+              <p className="micro-label text-muted-foreground">{JOURNEY_TITLE}</p>
+              <h1 className="page-title mt-1 break-words text-[22px] leading-snug">
+                {engagementTitle}
+              </h1>
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-2">
@@ -230,7 +229,6 @@ function JourneySurface({
             />
           </>
         ) : null}
-
       </div>
     </div>
   );
@@ -476,7 +474,9 @@ function NodeCard({
   return (
     <div
       className={classes}
-      style={drawing ? { animationDelay: `${beatMsValue + beatMs(NODE_CARD_OFFSET_S)}ms` } : undefined}
+      style={
+        drawing ? { animationDelay: `${beatMsValue + beatMs(NODE_CARD_OFFSET_S)}ms` } : undefined
+      }
       data-kind={node.kind}
     >
       <div className="flex items-start gap-2.5">
@@ -513,4 +513,3 @@ function NodeCard({
     </div>
   );
 }
-

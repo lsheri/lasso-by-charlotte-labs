@@ -162,7 +162,12 @@ function strokeFrom(points: Point[]): PathStroke {
 }
 
 /** A hand-drawn arrowhead: two wavering strokes meeting at the tip. */
-function arrowAt(tip: Point, tangent: Point, draw: (k: number) => number, base: number): PathStroke[] {
+function arrowAt(
+  tip: Point,
+  tangent: Point,
+  draw: (k: number) => number,
+  base: number,
+): PathStroke[] {
   const angle = Math.atan2(tangent.y, tangent.x);
   const half = (57 * Math.PI) / 180 / 2;
   return [-1, 1].map((side, index) => {
@@ -285,8 +290,15 @@ export function buildJourneyPath(input: {
       x: from.x + drift,
       y: Math.min(from.y + dropLength, nextCardTop - 60),
     };
-    const points = [{ x: round(from.x), y: round(from.y) }, ...waverRun(from, to, draw, i * 53 + 7)];
-    tendrils.push({ nodeId: a.id, stroke: strokeFrom(points), end: { x: round(to.x), y: round(to.y) } });
+    const points = [
+      { x: round(from.x), y: round(from.y) },
+      ...waverRun(from, to, draw, i * 53 + 7),
+    ];
+    tendrils.push({
+      nodeId: a.id,
+      stroke: strokeFrom(points),
+      end: { x: round(to.x), y: round(to.y) },
+    });
   }
 
   const lastNode = nodes[nodes.length - 1];
