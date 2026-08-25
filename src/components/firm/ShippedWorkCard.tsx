@@ -1,7 +1,7 @@
 import { MoreHorizontal } from "lucide-react";
 import { useEffect, useState } from "react";
 
-import { GraphiteRule } from "@/components/notebook/marks";
+import { GraphiteRule, RobotMark } from "@/components/notebook/marks";
 import { Button } from "@/components/ui/button";
 import { SourceMark } from "@/components/work/SourceMark";
 import { journeyTypeLabel } from "@/lib/journey";
