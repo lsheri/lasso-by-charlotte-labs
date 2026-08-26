@@ -112,104 +112,116 @@ export function SidebarNav({ onNavigate }: { onNavigate?: (() => void) | undefin
 
   return (
     <nav className="flex flex-col gap-7">
-      {navGroups.map((group) => (
-        <div key={group.label}>
-          <div className="nb-group-header px-2">{group.label}</div>
-          <div className="mt-2 flex flex-col gap-0.5">
-            {group.items
-              .filter((item) => !(isCoach && item.to === "/reflect"))
-              .filter((item) => !(item.to === "/members" && !canManageMembers))
-              .filter((item) => !(item.to === "/firm" && !canSeeFirmView))
-              .map((item) => (
-                <Link
-                  key={item.to}
-                  to={item.to}
-                  onClick={onNavigate}
-                  className={linkClass}
-                  activeProps={activeProps}
-                >
-                  <GraphiteIcon name={item.icon} size={16} />
-                  <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
-                    <span className="truncate">
-                      {item.to === "/members" ? membersLabel : item.label}
-                    </span>
-                    {item.to === "/decisions" && decisionCount > 0 ? (
-                      <span className="count-pill">{decisionCount}</span>
-                    ) : null}
-                  </span>
-                </Link>
-              ))}
+      {navGroups.map((group) => {
+        const isEngagementGroup = group.label === "Engagements";
 
-            {group.label === "Engagements" ? (
-              <>
-                {flat.map((engagement) => (
-                  <EngagementRow
-                    key={engagement.id}
-                    engagement={engagement}
-                    onNavigate={onNavigate}
-                  />
-                ))}
-                {groups.map((shelf) => {
-                  const collapsed = collapsedClients.includes(shelf.clientId);
-                  return (
-                    <div key={shelf.clientId}>
-                      <button
-                        type="button"
-                        aria-expanded={!collapsed}
-                        onClick={() => toggleClient(shelf.clientId)}
-                        className={`${linkClass} nb-nav-shelf w-full text-left`}
-                      >
-                        <GraphiteIcon name="engagement" size={16} />
-                        <span className="flex min-w-0 flex-1 items-center gap-1.5">
-                          <span className="truncate">{shelf.name}</span>
-                          {isSyntheticShelf(shelf.clientId) ? (
-                            <span className="font-mono text-[10px] text-muted-foreground">
-                              · {shelf.engagements.length}
-                            </span>
-                          ) : null}
-                        </span>
-                        <GraphiteIcon
-                          name="chevron-right"
-                          size={13}
-                          className={collapsed ? "" : "rotate-90"}
-                        />
-                      </button>
-
-                      {collapsed
-                        ? null
-                        : shelf.engagements.map((engagement) => (
-                            <EngagementRow
-                              key={engagement.id}
-                              engagement={engagement}
-                              nested
-                              hideCode={shelf.clientId === UNMAPPED_SHELF_ID}
-                              onNavigate={onNavigate}
-                            />
-                          ))}
-                    </div>
-                  );
-                })}
-                {engagements && engagements.length === 0 ? (
-                  <p className="px-2 py-1.5 text-sm text-muted-foreground">No engagements yet</p>
+        const visibleItems = group.items
+          .filter((item) => !(isCoach && item.to === "/reflect"))
+          .filter((item) => !(item.to === "/members" && !canManageMembers))
+          .filter((item) => !(item.to === "/firm" && !canSeeFirmView))
+          .map((item) => (
+            <Link
+              key={item.to}
+              to={item.to}
+              onClick={onNavigate}
+              className={linkClass}
+              activeProps={activeProps}
+            >
+              <GraphiteIcon name={item.icon} size={16} />
+              <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
+                <span className="truncate">
+                  {item.to === "/members" ? membersLabel : item.label}
+                </span>
+                {item.to === "/decisions" && decisionCount > 0 ? (
+                  <span className="count-pill">{decisionCount}</span>
                 ) : null}
-                <NewEngagementDialog
-                  onDone={onNavigate}
-                  trigger={
-                    <button type="button" className="nb-nav-item w-full text-left">
-                      <GraphiteIcon name="plus" size={16} />
-                      <span>New engagement</span>
-                    </button>
-                  }
-                />
-              </>
-            ) : null}
+              </span>
+            </Link>
+          ));
 
-            {group.emptyState && group.label !== "Engagements" ? (
-              <p className="px-2 py-1.5 text-sm text-muted-foreground">{group.emptyState}</p>
-            ) : null}
+        // Groups with no visible items are silent, except Engagements which
+        // always carries its shelf list and the new-engagement action.
+        if (!isEngagementGroup && visibleItems.length === 0) {
+          return null;
+        }
+
+        return (
+          <div key={group.label}>
+            <div className="nb-group-header px-2">{group.label}</div>
+            <div className="mt-2 flex flex-col gap-0.5">
+              {visibleItems}
+
+              {isEngagementGroup ? (
+                <>
+                  {flat.map((engagement) => (
+                    <EngagementRow
+                      key={engagement.id}
+                      engagement={engagement}
+                      onNavigate={onNavigate}
+                    />
+                  ))}
+                  {groups.map((shelf) => {
+                    const collapsed = collapsedClients.includes(shelf.clientId);
+                    return (
+                      <div key={shelf.clientId}>
+                        <button
+                          type="button"
+                          aria-expanded={!collapsed}
+                          onClick={() => toggleClient(shelf.clientId)}
+                          className={`${linkClass} nb-nav-shelf w-full text-left`}
+                        >
+                          <GraphiteIcon name="engagement" size={16} />
+                          <span className="flex min-w-0 flex-1 items-center gap-1.5">
+                            <span className="truncate">{shelf.name}</span>
+                            {isSyntheticShelf(shelf.clientId) ? (
+                              <span className="font-mono text-[10px] text-muted-foreground">
+                                · {shelf.engagements.length}
+                              </span>
+                            ) : null}
+                          </span>
+                          <GraphiteIcon
+                            name="chevron-right"
+                            size={13}
+                            className={collapsed ? "" : "rotate-90"}
+                          />
+                        </button>
+
+                        {collapsed
+                          ? null
+                          : shelf.engagements.map((engagement) => (
+                              <EngagementRow
+                                key={engagement.id}
+                                engagement={engagement}
+                                nested
+                                hideCode={shelf.clientId === UNMAPPED_SHELF_ID}
+                                onNavigate={onNavigate}
+                              />
+                            ))}
+                      </div>
+                    );
+                  })}
+                  {engagements && engagements.length === 0 ? (
+                    <p className="px-2 py-1.5 text-sm text-muted-foreground">No engagements yet</p>
+                  ) : null}
+                  <NewEngagementDialog
+                    onDone={onNavigate}
+                    trigger={
+                      <button type="button" className="nb-nav-item w-full text-left">
+                        <GraphiteIcon name="plus" size={16} />
+                        <span>New engagement</span>
+                      </button>
+                    }
+                  />
+                </>
+              ) : null}
+
+              {group.emptyState && !isEngagementGroup ? (
+                <p className="px-2 py-1.5 text-sm text-muted-foreground">{group.emptyState}</p>
+              ) : null}
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </nav>
   );
 }
