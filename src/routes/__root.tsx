@@ -160,6 +160,7 @@ function RootComponent() {
   useEffect(() => {
     initPageLoadTiming();
     initErrorSignal();
+    initPostHog();
   }, []);
 
   useEffect(() => {
