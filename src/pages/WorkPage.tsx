@@ -46,7 +46,7 @@ import { suggestMappings } from "@/lib/mapping.functions";
 import { removeWorkItems } from "@/lib/work-bulk.functions";
 import { detachEpisodeItems, syncEpisodeForMapping } from "@/lib/episodes.functions";
 import { logEvent } from "@/lib/telemetry";
-import { captureChannelOf, logV2 } from "@/lib/telemetry-v2";
+import { logV2 } from "@/lib/telemetry-v2";
 import { engagementHue } from "@/lib/work-identity";
 import { engagementLabel } from "@/lib/clients";
 import {
@@ -304,11 +304,6 @@ export function WorkPage() {
         source: item.source,
         suggested: true,
       });
-      logV2(
-        "work_item.mapped",
-        { item_type: item.type, channel: captureChannelOf(item.source), bulk: 1 },
-        { profileId: profile.id, workItemId: item.id },
-      );
       setDismissed((prev) => [...prev, item.id]);
       await queryClient.invalidateQueries({ queryKey: ["work-items"] });
       await queryClient.invalidateQueries({ queryKey: ["engagement"] });

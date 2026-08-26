@@ -71,16 +71,6 @@ const SCHEMAS = {
       reopened: z.boolean().optional(),
     })
     .strict(),
-  "work_item.captured": z
-    .object({
-      item_type: z.enum(WORK_ITEM_TYPES),
-      channel: z.enum(CAPTURE_CHANNELS),
-      item_count: count,
-    })
-    .strict(),
-  "work_item.mapped": z
-    .object({ item_type: z.enum(WORK_ITEM_TYPES), channel: z.enum(CAPTURE_CHANNELS), bulk: count })
-    .strict(),
   "work_item.unmapped": z.object({ item_type: z.enum(WORK_ITEM_TYPES) }).strict(),
   "work_item.marked_private": z.object({ item_type: z.enum(WORK_ITEM_TYPES) }).strict(),
   "conversation.pushed": z
@@ -223,7 +213,6 @@ export type PropsV2 = Record<string, string | number | boolean>;
  * renamed: the dashboards keep the v1 names they were built on.
  *
  *   v2 name                     v1 name (already mirrored)
- *   work_item.captured          workitem.captured
  *   analysis.started            analysis.started
  *   analysis.completed          analysis.completed
  *   analysis.failed             analysis.failed
@@ -238,7 +227,6 @@ export type PropsV2 = Record<string, string | number | boolean>;
  *   conversation.turn_revised   mcp.push
  */
 const V1_MIRRORED = new Set<string>([
-  "work_item.captured",
   "analysis.started",
   "analysis.completed",
   "analysis.failed",

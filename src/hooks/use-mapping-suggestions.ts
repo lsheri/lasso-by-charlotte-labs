@@ -8,7 +8,6 @@ import { supabase } from "@/integrations/supabase/client";
 import type { MappingSuggestion } from "@/lib/mapping-shared";
 import { suggestMappings } from "@/lib/mapping.functions";
 import { logEvent } from "@/lib/telemetry";
-import { captureChannelOf, logV2 } from "@/lib/telemetry-v2";
 
 export function useMappingSuggestions() {
   const { data: profile } = useProfile();
@@ -94,15 +93,6 @@ export function useMappingSuggestions() {
         source: meta?.source ?? "import",
         suggested: true,
       });
-      logV2(
-        "work_item.mapped",
-        {
-          item_type: (meta?.type ?? "ai_thread") as never,
-          channel: captureChannelOf(meta?.source ?? "import"),
-          bulk: 1,
-        },
-        { profileId: profile.id, workItemId: suggestion.work_item_id },
-      );
       setDismissed((prev) => [...prev, suggestion.work_item_id]);
       await queryClient.invalidateQueries({ queryKey: ["work-items"] });
       await queryClient.invalidateQueries({ queryKey: ["engagement"] });

@@ -8,7 +8,6 @@
  */
 import { supabase as defaultClient } from "@/integrations/supabase/client";
 import { logEvent } from "@/lib/telemetry";
-import { captureChannelOf, logV2 } from "@/lib/telemetry-v2";
 
 /** Just enough of the client to write these three sequences. */
 export type OrderClient = typeof defaultClient;
@@ -97,15 +96,6 @@ export async function remapItems(input: {
 
   for (const target of targets) {
     logEvent("workitem.mapped", profile.org_id, { type: target.type, source: target.source });
-    logV2(
-      "work_item.mapped",
-      {
-        item_type: target.type,
-        channel: captureChannelOf(target.source),
-        bulk: targets.length,
-      },
-      { profileId: profile.id, workItemId: target.id },
-    );
   }
   await input.invalidate(["work-items"]);
   await input.invalidate(["engagement"]);

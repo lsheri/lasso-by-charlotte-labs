@@ -85,11 +85,6 @@ export function UploadFilesButton({
         type,
         source: "upload",
       });
-      logV2(
-        "work_item.captured",
-        { item_type: type, channel: "upload", item_count: 1 },
-        { profileId: profile.id, workItemId: created?.id },
-      );
       if (type === "document" || type === "deck" || type === "sheet") {
         logV2(
           "artifact.captured",
