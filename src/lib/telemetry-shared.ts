@@ -57,7 +57,11 @@ export type TelemetryEvent =
   | "brief.cleared"
   | "extract.generated"
   /** Client-side interaction timing. Emitted only by src/lib/perf-timing.ts. */
-  | "perf.interaction";
+  | "perf.interaction"
+  /** Hard document load timing. Emitted only by src/lib/pageload-timing.ts. */
+  | "perf.pageload"
+  /** Content-free client error signal. Emitted only by src/lib/error-signal.ts. */
+  | "client.error";
 
 export type TelemetryDims = Record<
   string,
