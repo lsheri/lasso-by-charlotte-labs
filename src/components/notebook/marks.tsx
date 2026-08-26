@@ -227,6 +227,54 @@ export function StitchLoop({
 }
 
 /**
+ * Pass 124: the finished check. Two strokes in the same hand as the chalice,
+ * wobbled from a seed so a card's tick is always drawn the same way and never
+ * from Math.random. It sits on locked work and says only "this is done".
+ */
+export function GraphiteCheck({
+  seed = "locked",
+  className = "",
+}: {
+  seed?: string;
+  className?: string;
+}) {
+  const d = useMemo(() => {
+    const rand = mulberry32(fnv1a(seed));
+    const jitter = (amount: number) => Math.round((rand() - 0.5) * amount * 10) / 10;
+    const x1 = 1.6 + jitter(0.8);
+    const y1 = 7.6 + jitter(0.8);
+    const xm = 5.6 + jitter(0.6);
+    const ym = 11.6 + jitter(0.6);
+    const x2 = 14.2 + jitter(0.8);
+    const y2 = 2.2 + jitter(0.8);
+    return {
+      down: `M${x1} ${y1}C${x1 + 1.3} ${y1 + 1.2} ${xm - 1} ${ym - 1.2} ${xm} ${ym}`,
+      up: `M${xm} ${ym}C${xm + 2.6} ${ym - 2.6} ${x2 - 2.4} ${y2 + 2.4} ${x2} ${y2}`,
+    };
+  }, [seed]);
+
+  return (
+    <svg
+      className={`pointer-events-none shrink-0 ${className}`}
+      width={16}
+      height={14}
+      viewBox="0 0 16 14"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.6}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      data-testid="graphite-check"
+      aria-hidden
+    >
+      <path d={d.down} />
+      <path d={d.up} />
+    </svg>
+  );
+}
+
+
+/**
  * The chalice. A grail drawn in the same hand as everything else: wide shallow
  * cup, sturdy stem, broad base, two small handles. It leads the Work Artifact,
  * the one card that teaches how a piece of work was actually made.

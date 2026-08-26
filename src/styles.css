@@ -2176,6 +2176,14 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .nb-rule-draw,
+  .nb-rise {
+    animation: none !important;
+    opacity: 1;
+    transform: none;
+    clip-path: none;
+  }
+
   .nb-artifact-section {
     animation: none !important;
     transform: none !important;
@@ -2287,4 +2295,132 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 }
 .nb-ship-settle {
   animation: nb-ship-settle 120ms ease-out;
+}
+
+/* ------------------------------------------------------------------ *
+ * Pass 124: open vs locked work, and the learning archive.
+ * ------------------------------------------------------------------ */
+
+/* A section rule draws itself once, left to right. */
+@keyframes nb-rule-sweep {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+.nb-rule-draw {
+  animation: nb-rule-sweep 400ms var(--nb-ease) both;
+}
+
+/* Cards arrive rather than appear. */
+@keyframes nb-rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.nb-rise {
+  animation: nb-rise-in 320ms var(--nb-ease) backwards;
+}
+
+.is-skipped .nb-rule-draw,
+.is-skipped .nb-rise {
+  animation: none !important;
+  opacity: 1;
+  transform: none;
+  clip-path: none;
+}
+
+/* Locked work: quieter body, full title, a folded corner, and no green. */
+.nb-card--locked {
+  transition: transform 200ms var(--nb-ease);
+}
+.nb-card--locked .nb-locked-body {
+  opacity: 0.72;
+}
+.nb-card--locked .nb-locked-title {
+  opacity: 1;
+  text-decoration: none;
+}
+.nb-card--locked:hover {
+  transform: translateY(-1px);
+  box-shadow: none;
+}
+.nb-fold-corner {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 18px;
+  height: 18px;
+  background: var(--nb-graphite);
+  opacity: 0.12;
+  clip-path: polygon(100% 0, 100% 100%, 0 100%);
+  pointer-events: none;
+}
+
+/* The archive chat dock. White, quiet, hatched at the left edge. */
+.nb-archive-dock {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1.5px solid var(--nb-graphite);
+  border-radius: var(--radius);
+  background: var(--card);
+  padding: 0 8px 0 0;
+  overflow: hidden;
+}
+.nb-archive-hatch {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 24px;
+  pointer-events: none;
+}
+.nb-archive-input {
+  flex: 1;
+  min-width: 0;
+  margin-left: 32px;
+  height: 48px;
+  border: 0;
+  background: transparent;
+  outline: none;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: var(--foreground);
+}
+.nb-archive-send {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  height: 32px;
+  width: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid var(--nb-graphite);
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  color: var(--accent-deep);
+}
+.nb-archive-send > *:not(.nb-hatch) {
+  position: relative;
+  z-index: 1;
+}
+.nb-pile-hidden {
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 200ms var(--nb-ease);
+}
+.nb-pile-shown {
+  opacity: 1;
+  transition: opacity 200ms var(--nb-ease);
 }
