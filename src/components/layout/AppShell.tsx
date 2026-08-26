@@ -1,5 +1,8 @@
 import { Outlet, useNavigate } from "@tanstack/react-router";
 import { MessageSquare } from "lucide-react";
+import { useEffect } from "react";
+
+import { setClientTelemetryOrg } from "@/lib/client-telemetry";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useProfile } from "@/hooks/use-profile";
@@ -17,6 +20,11 @@ import { StepPopover } from "@/components/onboarding/checklist/StepPopover";
 export function AppShell() {
   const { data: profile, profiles } = useProfile();
   const navigate = useNavigate();
+  // Signed-in client signals (perf.pageload, client.error) carry the org like
+  // every other event; before this resolves they take the anonymous path.
+  useEffect(() => {
+    setClientTelemetryOrg(profile?.org_id ?? null);
+  }, [profile?.org_id]);
   const userName = profile?.display_name ?? "Signed in";
 
   async function handleSignOut() {
