@@ -215,7 +215,10 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
             queryKey: ["engagement-tasks", engagementId],
           });
         }}
-        onOpen={(item) => setPeekItem(item)}
+        onOpen={(item) => {
+          markOpenStart("peek.open");
+          setPeekItem(item);
+        }}
         headerAction={
           profile ? (
             <div className="flex flex-wrap items-center gap-2">
