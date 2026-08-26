@@ -139,6 +139,12 @@ function TrustPage() {
                 ranges rather than exact values. The full published event list is available on
                 request.
               </p>
+              <p>
+                To improve the product we measure how the interface is used: clicks, load times,
+                and masked interaction replays. Everything readable is masked in your browser
+                before anything is sent. Your documents, conversations, and prompts never leave
+                your device through analytics.
+              </p>
             </Section>
 
             <Section label="05" title="Deletion">
