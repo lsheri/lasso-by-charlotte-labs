@@ -91,13 +91,13 @@ describe("Pass 123: the sidebar grows an Admin section", () => {
   it("admin on a business org sees Admin with Firm view + Members", () => {
     setup("admin", "company");
 
-    expect(screen.getByText("Admin")).toBeInTheDocument();
-    expect(screen.getByText("Firm view")).toBeInTheDocument();
-    expect(screen.getByText("Members")).toBeInTheDocument();
+    expect(screen.queryByText("Admin")).not.toBeNull();
+    expect(screen.queryByText("Firm view")).not.toBeNull();
+    expect(screen.queryByText("Members")).not.toBeNull();
 
-    expect(screen.getByText("Your work")).toBeInTheDocument();
-    expect(screen.getByText("Settings")).toBeInTheDocument();
-    expect(screen.getByText("Overview")).toBeInTheDocument();
+    expect(screen.queryByText("Your work")).not.toBeNull();
+    expect(screen.queryByText("Settings")).not.toBeNull();
+    expect(screen.queryByText("Overview")).not.toBeNull();
 
     // Firm view and Members should not also appear under Your work.
     const yourWorkSection = screen.getByText("Your work").parentElement!;
@@ -113,20 +113,20 @@ describe("Pass 123: the sidebar grows an Admin section", () => {
     expect(screen.queryByText("Members")).toBeNull();
     expect(screen.queryByText("Your coaches")).toBeNull();
 
-    expect(screen.getByText("Your work")).toBeInTheDocument();
-    expect(screen.getByText("Settings")).toBeInTheDocument();
+    expect(screen.queryByText("Your work")).not.toBeNull();
+    expect(screen.queryByText("Settings")).not.toBeNull();
   });
 
   it("admin on a solo org sees Admin with 'Your coaches' only", () => {
     setup("admin", "personal");
 
-    expect(screen.getByText("Admin")).toBeInTheDocument();
-    expect(screen.getByText("Your coaches")).toBeInTheDocument();
+    expect(screen.queryByText("Admin")).not.toBeNull();
+    expect(screen.queryByText("Your coaches")).not.toBeNull();
     expect(screen.queryByText("Firm view")).toBeNull();
     expect(screen.queryByText("Members")).toBeNull();
 
-    expect(screen.getByText("Your work")).toBeInTheDocument();
-    expect(screen.getByText("Settings")).toBeInTheDocument();
+    expect(screen.queryByText("Your work")).not.toBeNull();
+    expect(screen.queryByText("Settings")).not.toBeNull();
   });
 
   it("coach nav is unchanged and shows Coaching + Your account", () => {
@@ -136,9 +136,9 @@ describe("Pass 123: the sidebar grows an Admin section", () => {
     expect(screen.queryByText("Admin")).toBeNull();
     expect(screen.queryByText("Overview")).toBeNull();
 
-    expect(screen.getByText("Coaching")).toBeInTheDocument();
-    expect(screen.getByText("People you coach")).toBeInTheDocument();
-    expect(screen.getByText("Your account")).toBeInTheDocument();
-    expect(screen.getByText("Settings")).toBeInTheDocument();
+    expect(screen.queryByText("Coaching")).not.toBeNull();
+    expect(screen.queryByText("People you coach")).not.toBeNull();
+    expect(screen.queryByText("Your account")).not.toBeNull();
+    expect(screen.queryByText("Settings")).not.toBeNull();
   });
 });
