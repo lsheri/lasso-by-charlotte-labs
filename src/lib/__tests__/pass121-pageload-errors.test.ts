@@ -176,10 +176,11 @@ function walk(dir: string, out: string[] = []): string[] {
   return out;
 }
 
-describe("no browser analytics SDK", () => {
-  it("keeps posthog confined to the server telemetry files", () => {
+describe("no browser analytics SDK outside its one file", () => {
+  it("keeps posthog confined to the server telemetry files and the SDK wrapper", () => {
     const offenders = walk("src").filter((file) => {
       if (/telemetry.*\.server\.ts$/.test(file)) return false;
+      if (file.endsWith("posthog-client.ts")) return false;
       if (file.includes("__tests__")) return false;
       const text = readFileSync(file, "utf8");
       // Prose about PostHog is fine; an SDK import or a browser capture is not.
