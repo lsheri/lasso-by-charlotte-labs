@@ -3,6 +3,7 @@ import { MessageSquare } from "lucide-react";
 import { useEffect } from "react";
 
 import { setClientTelemetryOrg } from "@/lib/client-telemetry";
+import { identifyPostHog, resetPostHog } from "@/lib/posthog-client";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useProfile } from "@/hooks/use-profile";
@@ -25,9 +26,14 @@ export function AppShell() {
   useEffect(() => {
     setClientTelemetryOrg(profile?.org_id ?? null);
   }, [profile?.org_id]);
+  // Identity only, never person properties.
+  useEffect(() => {
+    identifyPostHog(profile?.id ?? null);
+  }, [profile?.id]);
   const userName = profile?.display_name ?? "Signed in";
 
   async function handleSignOut() {
+    resetPostHog();
     await supabase.auth.signOut();
     navigate({ to: "/auth", replace: true });
   }
