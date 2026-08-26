@@ -34,7 +34,7 @@ vi.mock("@/components/engagements/NewEngagementDialog", () => ({
 }));
 
 vi.mock("@tanstack/react-router", () => ({
-  Link: ({ to, children, ...rest }: { to: string; children: React.ReactNode }) => (
+  Link: ({ to, activeProps: _activeProps, children, ...rest }: { to: string; activeProps?: unknown; children: React.ReactNode }) => (
     <a href={to} {...rest}>
       {children}
     </a>
