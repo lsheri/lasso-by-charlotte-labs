@@ -36,15 +36,15 @@ describe("SDK config is a trust guarantee", () => {
     expect(init).toHaveBeenCalledTimes(1);
     const [token, config] = init.mock.calls[0] as [string, Record<string, unknown>];
     expect(token).toBe(POSTHOG_TOKEN);
-    expect(config.api_host).toBe("https://us.i.posthog.com");
-    expect(config.autocapture).toBe(true);
-    expect(config.capture_pageview).toBe(false);
-    expect(config.capture_pageleave).toBe(false);
-    expect(config.capture_performance).toBe(false);
-    expect(config.capture_exceptions).toBe(true);
-    expect(config.capture_dead_clicks).toBe(false);
-    expect(config.person_profiles).toBe("identified_only");
-    expect(config.session_recording).toEqual({
+    expect(config["api_host"]).toBe("https://us.i.posthog.com");
+    expect(config["autocapture"]).toBe(true);
+    expect(config["capture_pageview"]).toBe(false);
+    expect(config["capture_pageleave"]).toBe(false);
+    expect(config["capture_performance"]).toBe(false);
+    expect(config["capture_exceptions"]).toBe(true);
+    expect(config["capture_dead_clicks"]).toBe(false);
+    expect(config["person_profiles"]).toBe("identified_only");
+    expect(config["session_recording"]).toEqual({
       maskAllInputs: true,
       maskTextSelector: "*",
       blockSelector: "img, svg, canvas, video, embed, object, iframe, picture",
