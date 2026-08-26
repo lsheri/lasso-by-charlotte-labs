@@ -18,6 +18,7 @@ import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as TrustRouteImport } from './routes/trust'
 import { Route as WhyRouteImport } from './routes/why'
 import { Route as AuthenticatedAiRecordRouteImport } from './routes/_authenticated/ai-record'
+import { Route as AuthenticatedArchiveRouteImport } from './routes/_authenticated/archive'
 import { Route as AuthenticatedConnectorsRouteImport } from './routes/_authenticated/connectors'
 import { Route as AuthenticatedDecisionsRouteImport } from './routes/_authenticated/decisions'
 import { Route as AuthenticatedFirmRouteImport } from './routes/_authenticated/firm'
@@ -78,6 +79,11 @@ const WhyRoute = WhyRouteImport.update({
 const AuthenticatedAiRecordRoute = AuthenticatedAiRecordRouteImport.update({
   id: '/ai-record',
   path: '/ai-record',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedArchiveRoute = AuthenticatedArchiveRouteImport.update({
+  id: '/archive',
+  path: '/archive',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedConnectorsRoute = AuthenticatedConnectorsRouteImport.update({
@@ -179,6 +185,7 @@ export interface FileRoutesByFullPath {
   '/trust': typeof TrustRoute
   '/why': typeof WhyRoute
   '/ai-record': typeof AuthenticatedAiRecordRoute
+  '/archive': typeof AuthenticatedArchiveRoute
   '/connectors': typeof AuthenticatedConnectorsRoute
   '/decisions': typeof AuthenticatedDecisionsRoute
   '/firm': typeof AuthenticatedFirmRoute
@@ -206,6 +213,7 @@ export interface FileRoutesByTo {
   '/trust': typeof TrustRoute
   '/why': typeof WhyRoute
   '/ai-record': typeof AuthenticatedAiRecordRoute
+  '/archive': typeof AuthenticatedArchiveRoute
   '/connectors': typeof AuthenticatedConnectorsRoute
   '/decisions': typeof AuthenticatedDecisionsRoute
   '/firm': typeof AuthenticatedFirmRoute
@@ -235,6 +243,7 @@ export interface FileRoutesById {
   '/trust': typeof TrustRoute
   '/why': typeof WhyRoute
   '/_authenticated/ai-record': typeof AuthenticatedAiRecordRoute
+  '/_authenticated/archive': typeof AuthenticatedArchiveRoute
   '/_authenticated/connectors': typeof AuthenticatedConnectorsRoute
   '/_authenticated/decisions': typeof AuthenticatedDecisionsRoute
   '/_authenticated/firm': typeof AuthenticatedFirmRoute
@@ -264,6 +273,7 @@ export interface FileRouteTypes {
     | '/trust'
     | '/why'
     | '/ai-record'
+    | '/archive'
     | '/connectors'
     | '/decisions'
     | '/firm'
@@ -291,6 +301,7 @@ export interface FileRouteTypes {
     | '/trust'
     | '/why'
     | '/ai-record'
+    | '/archive'
     | '/connectors'
     | '/decisions'
     | '/firm'
@@ -319,6 +330,7 @@ export interface FileRouteTypes {
     | '/trust'
     | '/why'
     | '/_authenticated/ai-record'
+    | '/_authenticated/archive'
     | '/_authenticated/connectors'
     | '/_authenticated/decisions'
     | '/_authenticated/firm'
@@ -416,6 +428,13 @@ declare module '@tanstack/react-router' {
       path: '/ai-record'
       fullPath: '/ai-record'
       preLoaderRoute: typeof AuthenticatedAiRecordRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/archive': {
+      id: '/_authenticated/archive'
+      path: '/archive'
+      fullPath: '/archive'
+      preLoaderRoute: typeof AuthenticatedArchiveRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/connectors': {
@@ -542,6 +561,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAiRecordRoute: typeof AuthenticatedAiRecordRoute
+  AuthenticatedArchiveRoute: typeof AuthenticatedArchiveRoute
   AuthenticatedConnectorsRoute: typeof AuthenticatedConnectorsRoute
   AuthenticatedDecisionsRoute: typeof AuthenticatedDecisionsRoute
   AuthenticatedFirmRoute: typeof AuthenticatedFirmRoute
@@ -559,6 +579,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAiRecordRoute: AuthenticatedAiRecordRoute,
+  AuthenticatedArchiveRoute: AuthenticatedArchiveRoute,
   AuthenticatedConnectorsRoute: AuthenticatedConnectorsRoute,
   AuthenticatedDecisionsRoute: AuthenticatedDecisionsRoute,
   AuthenticatedFirmRoute: AuthenticatedFirmRoute,

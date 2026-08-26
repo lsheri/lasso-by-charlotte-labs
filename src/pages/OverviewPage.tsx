@@ -1,7 +1,8 @@
 import { useState } from "react";
 
+import { ArchiveTeaser } from "@/components/archive/ArchiveTeaser";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { ShippedShowcase } from "@/components/firm/ShippedShowcase";
+import { OverviewWork } from "@/components/overview/OverviewWork";
 import { OneOnOneBrief } from "@/components/oneonone/OneOnOneBrief";
 import { Button } from "@/components/ui/button";
 import { useProfile } from "@/hooks/use-profile";
@@ -26,8 +27,10 @@ export function OverviewPage() {
           />
         </>
       ) : null}
-      <ShippedShowcase />
+      <OverviewWork />
+      <ArchiveTeaser />
     </div>
   );
 }
+
 
