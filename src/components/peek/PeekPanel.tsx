@@ -167,8 +167,7 @@ export function PeekPanel({
   const link = active.meta?.web_view_link ?? null;
   // Ownership truth: removing and deleting belong to the person whose work it
   // is, never to a coach or another member reading it.
-  const owned =
-    canEdit && Boolean(viewerProfileId) && active.owner_id === viewerProfileId;
+  const owned = canEdit && Boolean(viewerProfileId) && active.owner_id === viewerProfileId;
 
   return (
     <SlideOver
@@ -299,7 +298,9 @@ export function PeekPanel({
         {canEdit && ["ai_thread", "document", "deck", "sheet"].includes(active.type) ? (
           <DraftDecisionsButton workItemId={active.id} />
         ) : null}
-        {canEdit && ["ai_thread", "document", "deck", "sheet"].includes(active.type) && onFluency ? (
+        {canEdit &&
+        ["ai_thread", "document", "deck", "sheet"].includes(active.type) &&
+        onFluency ? (
           <FooterAction onClick={() => onFluency(active)}>
             {active.type === "ai_thread" ? "Analyse this conversation" : "Analyse this work"}
           </FooterAction>

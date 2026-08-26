@@ -240,14 +240,11 @@ export function AiRecordPage() {
                           checkId,
                         )
                       }
-
                     />
                     {analyses.running ? (
                       <>
                         <ThinkingIndicator />
-                        {analyses.streamed ? (
-                          <MarkdownMessage content={analyses.streamed} />
-                        ) : null}
+                        {analyses.streamed ? <MarkdownMessage content={analyses.streamed} /> : null}
                       </>
                     ) : null}
                     {analyses.error ? (

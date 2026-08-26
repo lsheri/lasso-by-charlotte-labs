@@ -61,7 +61,10 @@ export function firstFrame(stack: unknown): string {
   for (const line of stack.split("\n")) {
     const match = /(?:https?:\/\/[^\s)]+|\/[^\s):]+)(?::(\d+))(?::(\d+))?/.exec(line);
     if (!match) continue;
-    const located = match[0].slice(0, match[0].length - `:${match[1]}`.length - (match[2] ? `:${match[2]}`.length : 0));
+    const located = match[0].slice(
+      0,
+      match[0].length - `:${match[1]}`.length - (match[2] ? `:${match[2]}`.length : 0),
+    );
     let file = located;
     try {
       if (/^https?:\/\//.test(located)) file = new URL(located).pathname;
@@ -91,7 +94,11 @@ export type ErrorDims = {
  * The only shape a client.error row can take. Built here from four keys, so a
  * caller physically cannot smuggle a message, a stack or a component name in.
  */
-export function buildErrorDims(error: unknown, source: ErrorSource, pathname?: string): ErrorDims | null {
+export function buildErrorDims(
+  error: unknown,
+  source: ErrorSource,
+  pathname?: string,
+): ErrorDims | null {
   if (!SOURCE_SET.has(source as string)) return null;
   const name = errorName(error);
   const stack = (error as { stack?: unknown } | null)?.stack;

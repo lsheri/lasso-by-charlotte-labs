@@ -219,7 +219,6 @@ export function WorkPage() {
     );
   }
 
-
   function rowActions(
     item: WorkItemRow,
     variant: "mapped" | "unmapped" | "private",
@@ -685,7 +684,6 @@ export function WorkPage() {
               ))
             )}
           </WorkSection>
-
         </div>
       )}
 

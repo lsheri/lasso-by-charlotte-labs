@@ -134,8 +134,7 @@ export function initPageLoadTiming(): void {
       /* observer teardown is best effort */
     }
     const nav = performance.getEntriesByType?.("navigation")?.[0] as
-      | PerformanceNavigationTiming
-      | undefined;
+      PerformanceNavigationTiming | undefined;
     const paints = performance.getEntriesByType?.("paint") ?? [];
     const fcp = paints.find((p) => p.name === "first-contentful-paint")?.startTime ?? null;
 
