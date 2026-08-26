@@ -3,14 +3,15 @@ import { join } from "node:path";
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const init = vi.fn();
-const identify = vi.fn();
-const reset = vi.fn();
-const capture = vi.fn();
-
 vi.mock("posthog-js", () => ({
-  default: { init, identify, reset, capture },
+  default: { init: vi.fn(), identify: vi.fn(), reset: vi.fn(), capture: vi.fn() },
 }));
+
+import posthog from "posthog-js";
+
+const init = posthog.init as unknown as ReturnType<typeof vi.fn>;
+const identify = posthog.identify as unknown as ReturnType<typeof vi.fn>;
+const reset = posthog.reset as unknown as ReturnType<typeof vi.fn>;
 
 import {
   POSTHOG_CONFIG,
