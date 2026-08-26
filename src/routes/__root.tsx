@@ -12,6 +12,8 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { markNavStart } from "@/lib/perf-timing";
+import { initPageLoadTiming } from "@/lib/pageload-timing";
+import { initErrorSignal, reportClientError } from "@/lib/error-signal";
 import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
