@@ -1088,12 +1088,6 @@ async function pushConversation(owner: Owner, args: Obj, id: unknown): Promise<R
         });
       }
     }
-    await recordEventV2(supabaseAdmin, owner.userId, {
-      eventName: "work_item.captured",
-      props: { item_type: "ai_thread", channel: "mcp", item_count: 1 + saved },
-      profileId: owner.profileId,
-      workItemId: threadId,
-    });
   }
 
   const verb = existingThread ? "Updated" : "Saved";

@@ -18,7 +18,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { parseThread, sha256 } from "@/lib/parse-thread";
 import { ensureExtractsFn } from "@/lib/extract.functions";
 import { logEvent } from "@/lib/telemetry";
-import { logV2 } from "@/lib/telemetry-v2";
 
 const SOURCES = ["chatgpt", "claude", "gemini", "other"] as const;
 type Source = (typeof SOURCES)[number];
@@ -100,11 +99,6 @@ export function PasteThreadDialog({
       type: "ai_thread",
       source: source === "other" ? "paste" : source,
     });
-    logV2(
-      "work_item.captured",
-      { item_type: "ai_thread", channel: "paste", item_count: 1 },
-      { profileId: profile.id, workItemId: item.id },
-    );
 
     await queryClient.invalidateQueries({ queryKey: ["work-items"] });
     if (onCaptured) await onCaptured([item.id]);
