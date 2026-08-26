@@ -14,6 +14,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { markNavStart } from "@/lib/perf-timing";
 import { initPageLoadTiming } from "@/lib/pageload-timing";
 import { initErrorSignal, reportClientError } from "@/lib/error-signal";
+import { initPostHog } from "@/lib/posthog-client";
 import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
