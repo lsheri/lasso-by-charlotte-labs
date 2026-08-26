@@ -49,8 +49,8 @@ import { logEvent } from "@/lib/telemetry";
 import { logV2 } from "@/lib/telemetry-v2";
 import { engagementHue } from "@/lib/work-identity";
 import { engagementLabel } from "@/lib/clients";
-import {
 import { markOpenStart } from "@/lib/perf-timing";
+import {
   groupConversations,
   isConversationGroup,
   type ConversationGroup,
