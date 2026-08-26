@@ -57,6 +57,7 @@ export function classifyRoute(pathname: string | null | undefined): RouteClass {
 const MAX_MS = 120_000;
 
 function metric(value: unknown): number | null {
+  if (value === null || value === undefined || value === "") return null;
   const raw = Number(value);
   if (!Number.isFinite(raw)) return null;
   return Math.min(MAX_MS, Math.max(0, Math.round(raw)));

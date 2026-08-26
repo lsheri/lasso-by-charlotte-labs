@@ -181,7 +181,9 @@ describe("no browser analytics SDK", () => {
     const offenders = walk("src").filter((file) => {
       if (/telemetry.*\.server\.ts$/.test(file)) return false;
       if (file.includes("__tests__")) return false;
-      return /posthog/i.test(readFileSync(file, "utf8"));
+      const text = readFileSync(file, "utf8");
+      // Prose about PostHog is fine; an SDK import or a browser capture is not.
+      return /posthog-js|window\.posthog|posthog\.(capture|init)/i.test(text);
     });
     expect(offenders).toEqual([]);
   });
