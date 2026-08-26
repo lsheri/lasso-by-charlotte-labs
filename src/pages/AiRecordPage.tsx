@@ -17,6 +17,7 @@ import { useProfile } from "@/hooks/use-profile";
 import { useWorkItems } from "@/hooks/use-work-items";
 import { supabase } from "@/integrations/supabase/client";
 import { effectiveWorkDate, type WorkItemRow } from "@/lib/work-types";
+import { markOpenStart } from "@/lib/perf-timing";
 
 type Group = {
   key: string;
@@ -239,14 +240,11 @@ export function AiRecordPage() {
                           checkId,
                         )
                       }
-
                     />
                     {analyses.running ? (
                       <>
                         <ThinkingIndicator />
-                        {analyses.streamed ? (
-                          <MarkdownMessage content={analyses.streamed} />
-                        ) : null}
+                        {analyses.streamed ? <MarkdownMessage content={analyses.streamed} /> : null}
                       </>
                     ) : null}
                     {analyses.error ? (
@@ -261,7 +259,10 @@ export function AiRecordPage() {
                     <WorkRow
                       key={`${group.key}:${item.id}`}
                       item={item}
-                      onOpen={() => setPeek({ entry: item })}
+                      onOpen={() => {
+                        markOpenStart("peek.open");
+                        setPeek({ entry: item });
+                      }}
                       actions={
                         <button
                           type="button"

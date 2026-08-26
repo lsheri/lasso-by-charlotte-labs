@@ -49,6 +49,7 @@ import { logEvent } from "@/lib/telemetry";
 import { logV2 } from "@/lib/telemetry-v2";
 import { engagementHue } from "@/lib/work-identity";
 import { engagementLabel } from "@/lib/clients";
+import { markOpenStart } from "@/lib/perf-timing";
 import {
   groupConversations,
   isConversationGroup,
@@ -187,7 +188,10 @@ export function WorkPage() {
   }
 
   function openItem(item: WorkItemRow, entry?: PeekEntry): () => void {
-    return () => setPeek({ entry: entry ?? item, focusId: item.id });
+    return () => {
+      markOpenStart("peek.open");
+      setPeek({ entry: entry ?? item, focusId: item.id });
+    };
   }
 
   function openMap(item: WorkItemRow, group?: WorkItemRow[]) {
@@ -203,7 +207,10 @@ export function WorkPage() {
         key={group.key}
         group={group}
         variant={variant}
-        onOpen={(item: WorkItemRow) => setPeek({ entry: group, focusId: item.id })}
+        onOpen={(item: WorkItemRow) => {
+          markOpenStart("peek.open");
+          setPeek({ entry: group, focusId: item.id });
+        }}
         actions={rowActions(head, variant, group.items)}
         footerFor={(piece: WorkItemRow) =>
           isFlaggedRestatement(piece) ? <FlaggedMarker item={piece} /> : undefined
@@ -211,7 +218,6 @@ export function WorkPage() {
       />
     );
   }
-
 
   function rowActions(
     item: WorkItemRow,
@@ -678,7 +684,6 @@ export function WorkPage() {
               ))
             )}
           </WorkSection>
-
         </div>
       )}
 

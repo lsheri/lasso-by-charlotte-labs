@@ -13,6 +13,7 @@ import { contentsUnread } from "@/lib/text-status";
 import { logEvent } from "@/lib/telemetry";
 import { engagementLabel } from "@/lib/clients";
 import type { WorkItemRow } from "@/lib/work-types";
+import { markOpenStart } from "@/lib/perf-timing";
 
 const SEEN_PREFIX = "lasso.packet_seen.";
 
@@ -168,7 +169,10 @@ export function PacketPage({
                   canEdit={false}
                   orgId={profile?.org_id}
                   onChanged={() => undefined}
-                  onOpen={(item) => setPeekItem(item)}
+                  onOpen={(item) => {
+                    markOpenStart("peek.open");
+                    setPeekItem(item);
+                  }}
                 />
               </div>
             </div>

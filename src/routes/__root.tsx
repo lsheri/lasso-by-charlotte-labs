@@ -12,6 +12,8 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { markNavStart } from "@/lib/perf-timing";
+import { initPageLoadTiming } from "@/lib/pageload-timing";
+import { initErrorSignal, reportClientError } from "@/lib/error-signal";
 import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
@@ -41,6 +43,9 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   const router = useRouter();
   useEffect(() => {
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
+    // Content-free counterpart: Lovable keeps the detailed record, this makes
+    // the failure countable in the first-party pipeline.
+    reportClientError(error, "boundary");
   }, [error]);
 
   return (
@@ -150,6 +155,12 @@ function RootComponent() {
 
   // In-app navigations only: a hard document load records no start, so no
   // engagement.load row is written for it. That is deliberate for this pass.
+  // Hard document loads only. In-app transitions are covered by engagement.load.
+  useEffect(() => {
+    initPageLoadTiming();
+    initErrorSignal();
+  }, []);
+
   useEffect(() => {
     return router.subscribe("onBeforeNavigate", () => {
       markNavStart();

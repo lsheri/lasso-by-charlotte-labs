@@ -13,6 +13,7 @@ import { useWorkItems } from "@/hooks/use-work-items";
 import { supabase } from "@/integrations/supabase/client";
 import { logEvent } from "@/lib/telemetry";
 import type { WorkItemRow } from "@/lib/work-types";
+import { markOpenStart } from "@/lib/perf-timing";
 
 const DISMISS_PREFIX = "lasso.brief_share_nudge.";
 
@@ -168,7 +169,10 @@ export function EngagementBriefSection({
           <div className="flex shrink-0 items-center gap-3">
             <button
               type="button"
-              onClick={() => setPeekOpen(true)}
+              onClick={() => {
+                markOpenStart("peek.open");
+                setPeekOpen(true);
+              }}
               className="text-xs font-medium text-accent-deep transition-opacity hover:opacity-70"
             >
               Open

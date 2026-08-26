@@ -30,7 +30,6 @@ import { INVITE_ADMIN_ONLY_LINE } from "@/lib/invites-shared";
 import { markOpenStart } from "@/lib/perf-timing";
 import type { WorkItemRow } from "@/lib/work-types";
 
-
 type TaskWithWork = CanvasTask;
 
 export function EngagementPage({ engagementId }: { engagementId: string }) {
@@ -65,9 +64,6 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
     ["engagement-tasks", engagementId],
     (payload) => payload.tasks as unknown as TaskWithWork[],
   );
-
-
-
 
   // In-app route transitions only. A hard document load plus hydration is a
   // different measurement and is deliberately not covered in this pass.
@@ -203,7 +199,6 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
             </EngagementNote>
           </div>
         ) : null}
-
       </header>
 
       <EngagementCanvas
@@ -215,7 +210,10 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
             queryKey: ["engagement-tasks", engagementId],
           });
         }}
-        onOpen={(item) => setPeekItem(item)}
+        onOpen={(item) => {
+          markOpenStart("peek.open");
+          setPeekItem(item);
+        }}
         headerAction={
           profile ? (
             <div className="flex flex-wrap items-center gap-2">
@@ -232,16 +230,19 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
                 profile={profile}
               />
               {profile.role !== "coach" && membership.data?.isMember ? (
-            <ConnectToWorkSheet
-              engagementId={engagementId}
-              streams={(tasksQuery.data ?? []).map((task) => ({ id: task.id, name: task.name }))}
-              profile={{ id: profile.id, org_id: profile.org_id }}
-              onChanged={async () => {
-                await queryClient.invalidateQueries({
-                  queryKey: ["engagement-tasks", engagementId],
-                });
-              }}
-            />
+                <ConnectToWorkSheet
+                  engagementId={engagementId}
+                  streams={(tasksQuery.data ?? []).map((task) => ({
+                    id: task.id,
+                    name: task.name,
+                  }))}
+                  profile={{ id: profile.id, org_id: profile.org_id }}
+                  onChanged={async () => {
+                    await queryClient.invalidateQueries({
+                      queryKey: ["engagement-tasks", engagementId],
+                    });
+                  }}
+                />
               ) : null}
             </div>
           ) : null
@@ -258,15 +259,13 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
         // on their own items here, and a coach or another member stays read only.
         canEdit={Boolean(
           profile &&
-            profile.role !== "coach" &&
-            peekItem?.owner_id &&
-            peekItem.owner_id === profile.id,
+          profile.role !== "coach" &&
+          peekItem?.owner_id &&
+          peekItem.owner_id === profile.id,
         )}
         engagementId={engagementId}
         viewerProfileId={profile?.id ?? null}
       />
-
-
 
       <SubjectCoachingSection profileId={profile?.id} engagementId={engagementId} />
 

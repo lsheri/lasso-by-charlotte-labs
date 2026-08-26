@@ -22,7 +22,7 @@ import { ChatUrlLink } from "@/components/work/ChatUrlLink";
 import { ArtifactNote, SourceMark } from "@/components/work/SourceMark";
 import { TypeChip, TypeIcon } from "@/components/work/TypeIcon";
 import { setDeliverableKind, useInvalidateWorkItems } from "@/hooks/use-deliverable-kind";
-import { usePerfMountTimer } from "@/hooks/use-perf-timer";
+import { usePerfOpenFinish } from "@/hooks/use-perf-timer";
 import { isBriefItem } from "@/lib/brief-shared";
 import { vendorLabel } from "@/lib/conversation-shared";
 import { deliverableKindOf, type DeliverableKind } from "@/lib/deliverable-kinds";
@@ -127,8 +127,10 @@ export function PeekPanel({
   const [shipOpen, setShipOpen] = useState(false);
   const invalidateWork = useInvalidateWorkItems();
   const [kindDraft, setKindDraft] = useState<DeliverableKind | null>(null);
-  // Mount to the frame the panel is readable with its entry in hand.
-  usePerfMountTimer("peek.open", open && Boolean(entry));
+  // Gesture anchored: the panel mounts closed, so its own mount is not the
+  // start of anything. The click that opens the peek records the start; a
+  // finish with no recorded start emits nothing, which is the honest answer.
+  usePerfOpenFinish("peek.open", open && Boolean(entry));
 
   useEffect(() => {
     setKindDraft(null);
@@ -165,8 +167,7 @@ export function PeekPanel({
   const link = active.meta?.web_view_link ?? null;
   // Ownership truth: removing and deleting belong to the person whose work it
   // is, never to a coach or another member reading it.
-  const owned =
-    canEdit && Boolean(viewerProfileId) && active.owner_id === viewerProfileId;
+  const owned = canEdit && Boolean(viewerProfileId) && active.owner_id === viewerProfileId;
 
   return (
     <SlideOver
@@ -297,7 +298,9 @@ export function PeekPanel({
         {canEdit && ["ai_thread", "document", "deck", "sheet"].includes(active.type) ? (
           <DraftDecisionsButton workItemId={active.id} />
         ) : null}
-        {canEdit && ["ai_thread", "document", "deck", "sheet"].includes(active.type) && onFluency ? (
+        {canEdit &&
+        ["ai_thread", "document", "deck", "sheet"].includes(active.type) &&
+        onFluency ? (
           <FooterAction onClick={() => onFluency(active)}>
             {active.type === "ai_thread" ? "Analyse this conversation" : "Analyse this work"}
           </FooterAction>
