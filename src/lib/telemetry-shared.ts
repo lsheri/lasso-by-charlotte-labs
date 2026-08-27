@@ -56,6 +56,8 @@ export type TelemetryEvent =
   | "brief.marked"
   | "brief.cleared"
   | "extract.generated"
+  /** Pass 125: one archive search, metered. Counts only, never the question. */
+  | "archive.searched"
   /** Client-side interaction timing. Emitted only by src/lib/perf-timing.ts. */
   | "perf.interaction"
   /** Hard document load timing. Emitted only by src/lib/pageload-timing.ts. */

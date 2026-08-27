@@ -73,15 +73,19 @@ export async function buildArchiveCorpus(caller: Db): Promise<ArchiveCorpusEntry
 /** One question, one model call, ids validated against the corpus. */
 export async function runArchiveSearch(
   caller: Db,
-  input: { question: string; orgId: string; userId: string },
+  input: { question: string; orgId: string; userId: string; profileId: string },
 ): Promise<ArchiveSearchResult> {
   const corpus = await buildArchiveCorpus(caller);
   if (corpus.length < ARCHIVE_MIN_ITEMS) {
+    // A short circuit spends nothing, so it records nothing.
     return { matches: [], best_match_id: null, too_small: true };
   }
 
-  const { chatComplete, resolveAiMeta } = await import("./ai.server");
+  const { chatComplete, resolveAiMeta, AiError } = await import("./ai.server");
   const { parseJsonObject } = await import("./span-provenance.server");
+  const { createRun, completeRun, failRun } = await import("./analysis-runs.server");
+  const { recordEvent } = await import("./telemetry.server");
+  const { bucket } = await import("./telemetry-shared");
 
   const aiMeta = await resolveAiMeta(caller as never, {
     surface: "archive_search",
@@ -89,16 +93,57 @@ export async function runArchiveSearch(
     userId: input.userId,
   });
 
+  const run = await createRun({
+    preset: "archive_search",
+    scope_type: "org",
+    scope_id: null,
+    idempotency_key: null,
+    org_id: input.orgId,
+    owner_id: input.profileId,
+    run_by_profile_id: input.profileId,
+    session_id: null,
+  });
+
   const { system, user } = buildArchiveMessages(input.question, corpus);
-  const result = await chatComplete(
-    [
-      { role: "system", content: `${system}\n\n${OUTPUT_DISCIPLINE}` },
-      { role: "user", content: user },
-    ],
-    { tier: "smart", meta: aiMeta, responseFormat: { type: "json_object" } },
-  );
+  let result;
+  try {
+    result = await chatComplete(
+      [
+        { role: "system", content: `${system}\n\n${OUTPUT_DISCIPLINE}` },
+        { role: "user", content: user },
+      ],
+      { tier: "smart", meta: aiMeta, responseFormat: { type: "json_object" } },
+    );
+  } catch (e) {
+    const errorClass = e instanceof AiError ? e.errorClass : "model_error";
+    // A failed bookkeeping write must never hide the real failure.
+    await failRun(run.id, errorClass).catch(() => {});
+    throw e;
+  }
 
   const parsed = parseJsonObject(result.text);
+  const offered = Array.isArray(parsed["matches"]) ? (parsed["matches"] as unknown[]).length : 0;
   const validated = validateArchiveMatches(parsed, corpus);
+
+  await completeRun(run.id, {
+    items_read: corpus.length,
+    tokens_in: result.tokensIn,
+    tokens_out: result.tokensOut,
+    cost_usd: result.costUsd,
+    claims_rendered: validated.matches.length,
+    suppressed_claims: Math.max(offered - validated.matches.length, 0),
+    handoffs: null,
+    context_manifest: null,
+  });
+
+  // Counts only: the question never travels.
+  await recordEvent(caller, {
+    eventType: "archive.searched",
+    orgId: input.orgId,
+    userId: input.userId,
+    dims: { results: bucket(validated.matches.length), matched: validated.matches.length > 0 },
+  });
+
   return { ...validated, too_small: false };
 }
+
