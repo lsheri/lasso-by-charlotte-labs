@@ -611,12 +611,15 @@ export function VerifyInk({
   seed,
   active = false,
   reducedMotion = false,
+  bold = false,
   children,
 }: {
   verdict: string;
   seed: string;
   active?: boolean;
   reducedMotion?: boolean;
+  /** A draft finding draws bold. A settled one keeps the ink, quietly. */
+  bold?: boolean;
   children: React.ReactNode;
 }) {
   const ink = verdictInk(verdict);
@@ -627,10 +630,15 @@ export function VerifyInk({
       data-verdict={verdict}
       data-stroke={ink.stroke}
       data-dashed={ink.dashed ? "true" : "false"}
-      className={`relative inline rounded-[3px] px-0.5 ${
+      data-bold={bold ? "true" : "false"}
+      className={`relative inline rounded-[3px] px-0.5 ${bold ? "nb-ink-bold" : ""} ${
         active && !reducedMotion ? "nb-ink-settle nb-span-pulse" : ""
       }`}
-      style={{ backgroundColor: ink.wash }}
+      style={{
+        backgroundColor: ink.wash,
+        ...(bold ? { ["--nb-verify-stroke" as string]: ink.stroke } : {}),
+        ...(bold ? {} : { opacity: 0.55 }),
+      }}
     >
       {children}
       <svg
@@ -643,11 +651,57 @@ export function VerifyInk({
           d={d}
           fill="none"
           stroke={ink.stroke}
-          strokeWidth={1.4}
+          strokeWidth={bold ? 2.2 : 1.4}
           strokeLinecap="round"
           {...(ink.dashed ? { strokeDasharray: "5 4" } : {})}
         />
       </svg>
     </span>
+  );
+}
+
+/**
+ * PASS 128: the margin flag. One small drawn loop in the transcript's left
+ * gutter beside a flagged turn, in that finding's verdict ink. Tapping it is
+ * the same gesture as tapping the finding on the rail.
+ */
+export function MarginFlag({
+  seed,
+  verdict,
+  onActivate,
+  label,
+}: {
+  seed: string;
+  verdict: string;
+  onActivate?: () => void;
+  label: string;
+}) {
+  const ink = verdictInk(verdict);
+  const d = useMemo(() => marginFlagD(seed), [seed]);
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      data-testid={`margin-flag-${seed}`}
+      data-verdict={verdict}
+      onClick={onActivate}
+      className="grid h-[14px] w-[14px] shrink-0 place-items-center"
+    >
+      <svg
+        viewBox={`0 0 ${MARGIN_FLAG_BOX.width} ${MARGIN_FLAG_BOX.height}`}
+        width={MARGIN_FLAG_BOX.width}
+        height={MARGIN_FLAG_BOX.height}
+        fill="none"
+        aria-hidden
+      >
+        <path
+          d={d}
+          stroke={ink.stroke}
+          strokeWidth={1.3}
+          strokeLinecap="round"
+          {...(ink.dashed ? { strokeDasharray: "3 3" } : {})}
+        />
+      </svg>
+    </button>
   );
 }
