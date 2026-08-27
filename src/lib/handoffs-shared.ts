@@ -27,10 +27,13 @@ export type HandoffKind = (typeof HANDOFF_KINDS)[number];
  */
 export const HANDOFF_PRESETS: Record<string, HandoffKind> = {
   verification: "open_checks",
+  /** The thread scoped sibling. Same schema, anchored to a turn. */
+  verification_thread: "open_checks",
   decision_origin: "decision_candidates",
   still_on_brief: "departures",
   firm_checks: "check_results",
 };
+
 
 /** Presets that must never carry a handoff block, enforced server side. */
 export const PERSON_SHAPED_PRESETS = ["ai_fluency_4d", "working_the_model"] as const;
@@ -46,9 +49,16 @@ export type HandoffState = "draft" | "confirmed" | "discarded";
 export type OpenCheckItem = {
   claim_quote: string;
   location: string;
-  verdict: "nothing_visible" | "contradicted";
+  verdict: "nothing_visible" | "contradicted" | "checked";
   suggested_check: string;
+  /**
+   * The turn the model produced the claim in. Optional for the deliverable
+   * scoped run, required for the thread scoped one: ink has nowhere to land
+   * without it.
+   */
+  evidence_turn_id?: string;
 };
+
 
 export type DecisionCandidateItem = {
   call: string;
