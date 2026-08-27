@@ -41,6 +41,8 @@ export type TelemetryEvent =
   | "analysis.completed"
   | "analysis.failed"
   | "analysis.handoff_acted"
+  /** Pass 128: how the reader's intro story resolved. Outcome only. */
+  | "analysis.reader_story"
   | "member.deactivated"
   | "member.reactivated"
   | "member.role_changed"
