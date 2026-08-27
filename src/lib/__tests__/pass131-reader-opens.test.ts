@@ -124,9 +124,9 @@ describe("pass 131 rail", () => {
 });
 
 describe("pass 131 ember ink", () => {
-  it("draws the two open verdicts in ember, never amber", () => {
-    expect(verdictInk("contradicted").stroke).toBe("var(--ember-deep)");
-    expect(verdictInk("nothing_visible").stroke).toBe("var(--ember-deep)");
+  it("draws the two open verdicts in the founder-chosen rust pair, never amber", () => {
+    expect(verdictInk("contradicted").stroke).toBe("var(--nb-ink-ember)");
+    expect(verdictInk("nothing_visible").stroke).toBe("var(--nb-ink-ember)");
     expect(verdictInk("nothing_visible").dashed).toBe(true);
     expect(verdictInk("checked").stroke).toBe("var(--status-exact)");
     const shared = readFileSync("src/lib/verify-thread-shared.ts", "utf8");

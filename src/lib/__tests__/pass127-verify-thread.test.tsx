@@ -101,14 +101,14 @@ describe("pass 127 anchoring", () => {
 });
 
 describe("pass 127 ink and rail", () => {
-  it("maps verdicts to existing tokens and never to red", () => {
-    // Pass 131: the two open verdicts draw in ember, not amber.
+  it("maps verdicts to the verify-ember tokens and never to red", () => {
+    // Pass 131.1: the two open verdicts draw in the founder-chosen rust pair.
     expect(verdictInk("contradicted")).toEqual({
-      stroke: "var(--ember-deep)",
-      wash: "var(--ember-wash)",
+      stroke: "var(--nb-ink-ember)",
+      wash: "var(--nb-ink-ember-wash)",
       dashed: false,
     });
-    expect(verdictInk("nothing_visible").stroke).toBe("var(--ember-deep)");
+    expect(verdictInk("nothing_visible").stroke).toBe("var(--nb-ink-ember)");
     expect(verdictInk("nothing_visible").dashed).toBe(true);
     expect(verdictInk("checked").stroke).toBe("var(--status-exact)");
     for (const verdict of ["contradicted", "nothing_visible", "checked"]) {

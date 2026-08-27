@@ -116,6 +116,10 @@
   --nb-rule: #e3e5e1;
   /* Pass 105: the pencil the lasso is drawn with. Warm, and the page shows through. */
   --nb-ink-yellow: #e3b341;
+  /* Pass 131.1: the verify verdict ink, founder-chosen rust. Distinct from
+     --destructive (#b3261e), which stays reserved for destructive actions. */
+  --nb-ink-ember: #a8452a;
+  --nb-ink-ember-wash: #f4e4dd;
   /* Pass 107: the quiet blue the "What fed this" web breathes in. */
   --nb-ink: #111413;
   --nb-graphite: #2f3331;
@@ -2480,8 +2484,8 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   text-transform: uppercase;
   padding: 4px 8px;
   border-radius: 999px;
-  background: var(--ember-wash);
-  border: 1px solid var(--ember-deep);
+  background: var(--nb-ink-ember-wash);
+  border: 1px solid var(--nb-ink-ember);
   color: var(--foreground);
 }
 /* The reading trail: pencil texture down the transcript's left gutter. */
