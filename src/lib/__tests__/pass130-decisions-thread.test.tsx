@@ -135,8 +135,12 @@ describe("pass 130 · the rail language", () => {
 describe("pass 130 · the guards", () => {
   it("uses one reader shell, with no second overlay component", () => {
     expect(READER_SRC).toContain("isDecisions");
-    expect(READER_SRC.match(/nb-reader-rail/g)?.length).toBe(1);
+    // Both kinds share the same file: the settled shell and, since pass 131,
+    // the pending one. Neither is a decisions-only overlay.
+    expect(READER_SRC.match(/nb-reader-rail/g)?.length).toBe(2);
+    expect(READER_SRC.match(/data-testid="verify-thread-reader"/g)?.length).toBe(2);
   });
+
 
   it("says nothing that reads as a score", () => {
     for (const banned of ["fluency", "Fluency", "4D", "percent", "%", "balance of"]) {
