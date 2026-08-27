@@ -2424,3 +2424,63 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   opacity: 1;
   transition: opacity 200ms var(--nb-ease);
 }
+
+/* ---- Pass 128: the full screen fact check reader ---- */
+.nb-reader-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  min-height: 0;
+}
+.nb-reader-transcript {
+  min-width: 0;
+  overflow-y: auto;
+}
+.nb-reader-rail {
+  border-left: 1px solid var(--border);
+  overflow-y: auto;
+  min-width: 0;
+}
+@media (max-width: 900px) {
+  .nb-reader-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .nb-reader-rail {
+    border-left: 0;
+    border-top: 1px solid var(--border);
+  }
+}
+/* Bold ink: the stroke thickens and the span picks up its own underline. */
+.nb-ink-bold {
+  box-shadow: inset 0 -2px 0 var(--nb-verify-stroke);
+}
+/* The count of what is still to check. Amber wash, never red. */
+.nb-check-badge {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 10px;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: var(--status-paraphrase-wash);
+  border: 1px solid var(--status-paraphrase);
+  color: var(--foreground);
+}
+/* The reading trail: pencil texture down the transcript's left gutter. */
+.nb-reader-trail {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 18px;
+  pointer-events: none;
+}
+.nb-reader-trail path {
+  stroke: var(--nb-graphite);
+  stroke-width: 1.2;
+  fill: none;
+  stroke-linecap: round;
+  opacity: 0.35;
+}
