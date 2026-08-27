@@ -25,7 +25,6 @@ import {
 import { useProfile } from "@/hooks/use-profile";
 import { supabase } from "@/integrations/supabase/client";
 import { loadHandoffs } from "@/lib/handoffs.functions";
-import { recordEventFn } from "@/lib/telemetry.functions";
 import { logV2 } from "@/lib/telemetry-v2";
 import {
   VERIFY_LEGEND,
