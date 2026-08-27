@@ -263,6 +263,33 @@ const RAW_ANALYSIS_PRESETS: AnalysisPreset[] = [
     coachMayRun: true,
   },
   {
+    id: "verification_thread",
+    handoffSchema: "open_checks",
+    dbPreset: "verification_thread",
+    label: "What to verify here",
+    description:
+      "Reads this conversation on its own and names the claims the model produced that show no follow up in the record, with a way to check each one. The findings are drawn on the transcript itself.",
+    scope: "thread",
+    systemPrompt: VERIFICATION_THREAD_PROMPT,
+    openingMessage:
+      "For this conversation, set out which claims the model produced and whether verification appears in the record.",
+    infoPanel: {
+      reads: (detail) => detail,
+      looksFor: [
+        "Claims the model produced in this conversation",
+        "The turn each claim was produced in",
+        "Whether the record shows it being challenged, recalculated or sourced",
+        "One concrete way to check each claim with nothing visible",
+      ],
+      never:
+        "Never a judgment of you, never a score, never a claim about what you did outside the captured record. Marks land on the model's words, never on yours.",
+      sources: ANALYSIS_SOURCES,
+    },
+    attribution: null,
+    coachMayRun: false,
+  },
+
+  {
     id: "still_on_brief",
     handoffSchema: "departures",
     dbPreset: "still_on_brief",
