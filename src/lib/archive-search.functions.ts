@@ -28,5 +28,6 @@ export const searchArchive = createServerFn({ method: "POST" })
       question: data.question,
       orgId: profile.org_id,
       userId: context.userId,
+      profileId: profile.id,
     });
   });
