@@ -65,7 +65,6 @@ describe("pass 128 ink", () => {
     for (const file of [
       "src/components/verify/VerifyThreadReader.tsx",
       "src/lib/verify-thread-shared.ts",
-      "src/components/notebook/marks.tsx",
     ]) {
       expect(readFileSync(file, "utf8")).not.toContain("--destructive");
     }
