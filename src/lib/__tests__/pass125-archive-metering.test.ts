@@ -32,12 +32,14 @@ vi.mock("@/lib/analysis-runs.server", () => ({
   failRun: mocks.failRun,
 }));
 vi.mock("@/lib/telemetry.server", () => ({ recordEvent: mocks.recordEvent }));
-vi.mock("@/lib/shipped-work.server", () => ({ listShippedCards: vi.fn(async () => []) }));
-
-vi.mock("@/lib/archive-search.server", async (importOriginal) => {
-  const mod = await importOriginal<typeof import("@/lib/archive-search.server")>();
-  return { ...mod, buildArchiveCorpus: vi.fn() };
-});
+vi.mock("@/lib/shipped-work.server", () => ({
+  listShippedCards: vi.fn(async () => mocks.corpus.map((e) => ({
+    work_item_id: e.work_item_id,
+    title: e.title,
+    engagement_title: e.engagement_title,
+    engagement_brief: e.brief,
+  }))),
+}));
 
 function entry(id: string): ArchiveCorpusEntry {
   return {
@@ -63,9 +65,8 @@ function fakeCaller() {
 }
 
 async function runWith(corpus: ArchiveCorpusEntry[]) {
-  const mod = await import("@/lib/archive-search.server");
-  vi.spyOn(mod, "buildArchiveCorpus").mockResolvedValue(corpus);
-  return mod.runArchiveSearch(fakeCaller(), {
+  mocks.corpus = corpus;
+  return runArchiveSearch(fakeCaller(), {
     question: "how do people build pricing decks here?",
     orgId: "org1",
     userId: "u1",
@@ -74,7 +75,6 @@ async function runWith(corpus: ArchiveCorpusEntry[]) {
 }
 
 beforeEach(() => {
-  vi.restoreAllMocks();
   mocks.chat.mockReset();
   mocks.createRun.mockReset().mockResolvedValue({ id: "run1" });
   mocks.completeRun.mockReset().mockResolvedValue(undefined);
