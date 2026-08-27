@@ -480,20 +480,25 @@ function PendingBody({ request }: { request: VerifyThreadRequest }) {
     },
   });
 
-  const { data: turnCount } = useQuery({
-    queryKey: ["thread-turn-count", request.itemId],
+  // PASS 132: the same turns the transcript loads, under the same key, so the
+  // card story costs no second query.
+  const { data: turns } = useQuery({
+    queryKey: ["turns", request.itemId],
     enabled: Boolean(profile) && !isCoach,
-    queryFn: async (): Promise<number> => {
-      const { count } = await supabase
+    queryFn: async (): Promise<TurnStoryTurn[]> => {
+      const { data, error } = await supabase
         .from("turns")
-        .select("id", { count: "exact", head: true })
-        .eq("work_item_id", request.itemId);
-      return count ?? 0;
+        .select("id, turn_no, role, content, ts, model, meta")
+        .eq("work_item_id", request.itemId)
+        .order("turn_no", { ascending: true });
+      if (error) throw new Error(error.message);
+      return (data ?? []) as TurnStoryTurn[];
     },
   });
+  const turnCount = turns?.length ?? 0;
 
   const lines = useMemo(
-    () => (isDecisions ? decisionsPhaseLines(turnCount ?? 0) : verifyPhaseLines(turnCount ?? 0)),
+    () => (isDecisions ? decisionsPhaseLines(turnCount) : verifyPhaseLines(turnCount)),
     [isDecisions, turnCount],
   );
   const phase = usePhaseLine(lines, !skipped && !failed);
