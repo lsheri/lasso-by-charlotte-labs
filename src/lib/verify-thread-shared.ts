@@ -78,3 +78,34 @@ export function verifyFindings(items: readonly HandoffItem[]): (HandoffItem & {
     ),
   );
 }
+
+/**
+ * Where a claim sits inside a turn. Verbatim only: if the exact span is not in
+ * the turn, nothing is marked. The quote promise governs here too.
+ */
+export function splitByQuote(
+  content: string,
+  quote: string,
+): { before: string; match: string; after: string } | null {
+  if (!quote) return null;
+  const at = content.indexOf(quote);
+  if (at === -1) return null;
+  return {
+    before: content.slice(0, at),
+    match: content.slice(at, at + quote.length),
+    after: content.slice(at + quote.length),
+  };
+}
+
+/** The mark a transcript renders: one span, one verdict, one turn. */
+export type ThreadMark = {
+  id: string;
+  turnNo: number;
+  quote: string;
+  verdict: string;
+};
+
+/** The dom id of a turn, so the rail can scroll to it. */
+export function turnAnchorId(turnNo: number): string {
+  return `verify-turn-${turnNo}`;
+}
