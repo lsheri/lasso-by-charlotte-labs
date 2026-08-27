@@ -150,7 +150,7 @@ const TOOLS = [
         orig_conversation_id: {
           type: "string",
           description:
-            "Stable ID for the source thread; all pushes for the same conversation MUST reuse it.",
+            "Stable ID for the source thread; all pushes for the same conversation MUST reuse it. Use the source app's REAL conversation UUID when it is visible to you (it appears in the chat's URL). If you cannot see it, use any stable id — but then also pass chat_url if the user can supply the conversation's URL.",
         },
         source_url: {
           type: "string",

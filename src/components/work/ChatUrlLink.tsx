@@ -1,6 +1,6 @@
 import { ExternalLink } from "lucide-react";
 
-import { chatUrlLabel, safeChatUrl } from "@/lib/chat-url";
+import { chatUrlLabel, effectiveChatUrl } from "@/lib/chat-url";
 import type { WorkItemRow } from "@/lib/work-types";
 
 /**
@@ -8,7 +8,11 @@ import type { WorkItemRow } from "@/lib/work-types";
  * the primary destination; when no URL was pushed, this renders nothing at all.
  */
 export function ChatUrlLink({ item }: { item: WorkItemRow | null | undefined }) {
-  const url = safeChatUrl(item?.source_meta?.url);
+  const url = effectiveChatUrl(
+    item?.source_meta?.url,
+    item?.source_vendor ?? null,
+    item?.orig_conversation_id ?? null,
+  );
   if (!url) return null;
   return (
     <a
