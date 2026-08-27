@@ -236,7 +236,11 @@ export type StripResult = {
  * is part of the answer itself (quoted code, for instance) has no sentinel and
  * is left exactly where it is.
  */
-export function stripHandoffTail(text: string, kind: HandoffKind | null): StripResult {
+export function stripHandoffTail(
+  text: string,
+  kind: HandoffKind | null,
+  opts: HandoffAnchorOptions = {},
+): StripResult {
   const start = sentinelFenceStart(text);
   if (start === -1) return { prose: text, block: null, parse: "none" };
 
@@ -259,8 +263,9 @@ export function stripHandoffTail(text: string, kind: HandoffKind | null): StripR
 
   const items = rawItems
     .slice(0, MAX_HANDOFF_ITEMS)
-    .map((item) => validateItem(kind, item))
+    .map((item) => validateItem(kind, item, opts))
     .filter((item): item is HandoffFields => item !== null);
+
   if (items.length === 0) return { prose, block: null, parse: "malformed" };
   return { prose, block: { v: 1, kind, items }, parse: "ok" };
 }
