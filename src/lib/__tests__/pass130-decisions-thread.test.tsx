@@ -47,7 +47,7 @@ describe("pass 130 · the registry", () => {
 
   it("carries the anchor paragraph the thread presets share", () => {
     const thread = ANALYSIS_PRESETS.find((p) => p.id === "decision_origin_thread")!;
-    expect(thread.prompt).toContain("evidence_turn_id");
+    expect(thread.systemPrompt).toContain("evidence_turn_id");
   });
 });
 
