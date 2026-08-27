@@ -79,6 +79,10 @@ export function WorkPage() {
   const [dateItem, setDateItem] = useState<WorkItemRow | null>(null);
   const [lensItem, setLensItem] = useState<WorkItemRow | null>(null);
   const [lensPreset, setLensPreset] = useState<PeekAnalysisPreset | undefined>(undefined);
+  // A thread analysis launched from the peek: confirm, then the reader itself.
+  const [launch, setLaunch] = useState<{ item: WorkItemRow; preset: ThreadReaderPreset } | null>(
+    null,
+  );
   const [actionError, setActionError] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<MappingSuggestion[] | null>(null);
   const [dismissed, setDismissed] = useState<string[]>([]);

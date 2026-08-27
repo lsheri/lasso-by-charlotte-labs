@@ -55,6 +55,10 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
   const [dateItem, setDateItem] = useState<WorkItemRow | null>(null);
   const [lensItem, setLensItem] = useState<WorkItemRow | null>(null);
   const [lensPreset, setLensPreset] = useState<PeekAnalysisPreset | undefined>(undefined);
+  // A thread analysis launched from the peek: confirm, then the reader itself.
+  const [launch, setLaunch] = useState<{ item: WorkItemRow; preset: ThreadReaderPreset } | null>(
+    null,
+  );
   const makePrivate = useMakePrivate();
   // The coaching note opens on its own; the brief is always legible above it.
   const [coachingOpen, setCoachingOpen] = useState(false);
