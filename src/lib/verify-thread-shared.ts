@@ -166,3 +166,22 @@ export function sourcePrompt(claims: readonly string[]): string {
   return numbered ? `${SOURCE_PROMPT_PROSE}\n${numbered}` : SOURCE_PROMPT_PROSE;
 }
 
+
+/**
+ * PASS 131 — the working read-through, verification kind. One line at a time
+ * while the model runs. Each line names something the preset actually does.
+ */
+export function verifyPhaseLines(turnCount: number): readonly string[] {
+  return [
+    `Reading ${turnCount} turns`,
+    "Looking over the facts each turn claims",
+    "Checking whether facts got confirmed later in the conversation",
+    "Marking what deserves a check at the source",
+  ];
+}
+
+/** Said while the motion is stopped and the run is still going. */
+export const VERIFY_WORKING_LINE = "Working…";
+
+/** The label above the suggested check, so it is never unnamed text. */
+export const VERIFY_CHECK_LABEL = "THE CHECK TO RUN";
