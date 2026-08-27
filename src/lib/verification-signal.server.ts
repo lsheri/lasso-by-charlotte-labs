@@ -3,7 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 
 /**
- * The "What to verify" prompt mandates exactly three section labels, so the
+ * The "What to fact check" prompt mandates exactly three section labels, so the
  * rendered output can be counted without parsing anything else out of it. No
  * output text is ever stored: only the kind of each occurrence travels.
  */
