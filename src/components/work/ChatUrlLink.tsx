@@ -1,6 +1,6 @@
 import { ExternalLink } from "lucide-react";
 
-import { chatUrlLabel, safeChatUrl } from "@/lib/chat-url";
+import { chatUrlLabel, effectiveChatUrl } from "@/lib/chat-url";
 import type { WorkItemRow } from "@/lib/work-types";
 
 /**
