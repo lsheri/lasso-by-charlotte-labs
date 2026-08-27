@@ -28,18 +28,17 @@ export type VerifyInkTokens = {
 };
 
 /**
- * Verdict to ink. Existing tokens only, and never the destructive token.
- * PASS 131: the two open verdicts draw in the ember family, the same accent
- * family as the conversation starbursts, because amber was too quiet to see.
+ * Verdict to ink. Never the destructive token; the two open verdicts use the
+ * founder-chosen rust pair dedicated to verify ink (Pass 131.1).
  */
 export function verdictInk(verdict: string): VerifyInkTokens {
   if (verdict === "contradicted") {
-    return { stroke: "var(--ember-deep)", wash: "var(--ember-wash)", dashed: false };
+    return { stroke: "var(--nb-ink-ember)", wash: "var(--nb-ink-ember-wash)", dashed: false };
   }
   if (verdict === "checked") {
     return { stroke: "var(--status-exact)", wash: "var(--status-exact-wash)", dashed: false };
   }
-  return { stroke: "var(--ember-deep)", wash: "var(--ember-wash)", dashed: true };
+  return { stroke: "var(--nb-ink-ember)", wash: "var(--nb-ink-ember-wash)", dashed: true };
 }
 
 
