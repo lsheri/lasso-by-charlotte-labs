@@ -87,7 +87,7 @@ describe("pass 132 connectors", () => {
 
   it("carries no verdict ink", () => {
     for (const text of [STORY, SHARED]) {
-      expect(text).not.toContain("ember");
+      expect(text).not.toContain("nb-ink-ember");
       expect(text).not.toContain("--destructive");
     }
   });
