@@ -12,6 +12,7 @@ import { AppSidebar } from "./AppSidebar";
 import { MobileTabBar } from "./MobileTabBar";
 import { FeedbackDialog, FeedbackWidget } from "@/components/feedback/FeedbackWidget";
 import { ProvenanceAudit } from "@/components/provenance/ProvenanceAudit";
+import { VerifyThreadReader } from "@/components/verify/VerifyThreadReader";
 import { JourneyView } from "@/components/journey/JourneyView";
 import { AskLassoProvider } from "@/components/reflect/ask-lasso-context";
 import { AskDockStateProvider } from "@/components/reflect/ask-dock-state";
@@ -87,6 +88,7 @@ export function AppShell() {
             </main>
           </div>
           <ProvenanceAudit />
+          <VerifyThreadReader />
           <JourneyView />
           <FeedbackWidget />
           <MobileTabBar />
