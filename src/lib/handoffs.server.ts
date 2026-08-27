@@ -197,7 +197,9 @@ export async function stampItem(
   block: HandoffBlock,
   itemId: string,
   state: "confirmed" | "discarded",
+  note?: string,
 ): Promise<void> {
+  const clean = (note ?? "").trim().slice(0, 200);
   const stamped: HandoffBlock = {
     ...block,
     items: block.items.map((item) =>
@@ -205,9 +207,11 @@ export async function stampItem(
         ? {
             ...item,
             state,
+            ...(clean ? { fields: { ...item.fields, self_check_note: clean } } : {}),
             ...(state === "confirmed"
               ? { confirmed_at: new Date().toISOString() }
               : { discarded_at: new Date().toISOString() }),
+
           }
         : item,
     ),
