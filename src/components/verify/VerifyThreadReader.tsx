@@ -11,7 +11,7 @@
  */
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { X } from "lucide-react";
+import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { ChatUrlLink } from "@/components/work/ChatUrlLink";
@@ -45,6 +45,7 @@ import {
   DECISIONS_UNTRACEABLE_LINE,
   ORIGIN_CHIP,
   decisionFindings,
+  decisionsPhaseLines,
   originClass,
 } from "@/lib/decisions-thread-shared";
 import { logEvent } from "@/lib/telemetry";
@@ -52,6 +53,7 @@ import { logV2 } from "@/lib/telemetry-v2";
 import {
   VERIFY_ALL_SETTLED_LINE,
   VERIFY_CARRY_LINE,
+  VERIFY_CHECK_LABEL,
   VERIFY_LEGEND,
   VERIFY_SOURCE_NO_LINK,
   VERIFY_SOURCE_STEPS,
@@ -59,7 +61,9 @@ import {
   VERIFY_SOURCE_WHY,
   VERIFY_THREAD_EMPTY_LINE,
   VERIFY_THREAD_LABEL,
+  VERIFY_WORKING_LINE,
   checkBadgeText,
+  verifyPhaseLines,
   reviewBadgeText,
   sourcePrompt,
   turnAnchorId,
@@ -71,6 +75,7 @@ import {
 import type { WorkItemRow } from "@/lib/work-types";
 
 const SKIP_KEY = "lasso.reader.skip_story";
+const RAIL_WIDE_KEY = "lasso.reader.rail_wide";
 
 function prefersReducedMotion(): boolean {
   if (typeof window === "undefined") return false;
@@ -93,7 +98,53 @@ function writeSkipPreference(): void {
   }
 }
 
+/**
+ * PASS 131 — how wide the rail sits. Narrow by default, and remembered, because
+ * a checklist you widened once you want widened next time too.
+ */
+function useRailWide(): [boolean, () => void] {
+  const [wide, setWide] = useState(false);
+  useEffect(() => {
+    try {
+      setWide(window.localStorage.getItem(RAIL_WIDE_KEY) === "1");
+    } catch {
+      /* no preference is simply the default */
+    }
+  }, []);
+  const toggle = useCallback(() => {
+    setWide((prev) => {
+      const next = !prev;
+      try {
+        window.localStorage.setItem(RAIL_WIDE_KEY, next ? "1" : "0");
+      } catch {
+        /* a preference that cannot be stored is simply not stored */
+      }
+      return next;
+    });
+  }, []);
+  return [wide, toggle];
+}
+
+function RailWidenButton({ wide, onToggle }: { wide: boolean; onToggle: () => void }) {
+  return (
+    <button
+      type="button"
+      data-testid="reader-rail-widen"
+      aria-label={wide ? "Narrow the checklist" : "Widen the checklist"}
+      onClick={onToggle}
+      className="nb-rail-widen grid h-6 w-6 shrink-0 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+    >
+      {wide ? (
+        <ChevronRight className="h-3.5 w-3.5" aria-hidden />
+      ) : (
+        <ChevronLeft className="h-3.5 w-3.5" aria-hidden />
+      )}
+    </button>
+  );
+}
+
 type Outcome = "completed" | "skipped" | "suppressed";
+
 
 /**
  * The intro story. One downward pass, at most five seconds, every timer and
@@ -330,9 +381,243 @@ function DecisionRow({
   );
 }
 
+/**
+ * PASS 131 — the working read-through. The transcript needs no model, so it is
+ * on screen at once and the pencil rides slowly down it and loops gently back
+ * up while the run happens underneath. The loop never pretends to be progress.
+ */
+function useWorkingLoop({
+  enabled,
+  reduced,
+  scroller,
+}: {
+  enabled: boolean;
+  reduced: boolean;
+  scroller: React.RefObject<HTMLDivElement | null>;
+}) {
+  const [running, setRunning] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [tipY, setTipY] = useState(0);
+  const frame = useRef<number | null>(null);
+  const stopped = useRef(false);
+
+  const stop = useCallback(() => {
+    stopped.current = true;
+    if (frame.current !== null) window.cancelAnimationFrame(frame.current);
+    frame.current = null;
+    setRunning(false);
+  }, []);
+
+  useEffect(() => {
+    if (!enabled || reduced) return;
+    const node = scroller.current;
+    if (!node) return;
+    stopped.current = false;
+    setRunning(true);
+    const cycle = 9000;
+    const start = performance.now();
+    const step = (now: number) => {
+      if (stopped.current) return;
+      const t = ((now - start) % cycle) / cycle;
+      // Down, then gently back up: an indeterminate wait, honestly drawn.
+      const eased = t < 0.75 ? t / 0.75 : 1 - (t - 0.75) / 0.25;
+      const maxScroll = Math.max(node.scrollHeight - node.clientHeight, 0);
+      node.scrollTop = maxScroll * eased;
+      setProgress(Math.max(eased, 0.02));
+      setTipY(node.clientHeight * Math.min(eased + 0.05, 1));
+      frame.current = window.requestAnimationFrame(step);
+    };
+    frame.current = window.requestAnimationFrame(step);
+    return () => {
+      stopped.current = true;
+      if (frame.current !== null) window.cancelAnimationFrame(frame.current);
+      frame.current = null;
+    };
+  }, [enabled, reduced, scroller]);
+
+  return { running, progress, tipY, stop };
+}
+
+/** One phase line at a time, advancing on a timer, the last one holding. */
+function usePhaseLine(lines: readonly string[], enabled: boolean): string {
+  const [index, setIndex] = useState(0);
+  useEffect(() => {
+    if (!enabled) return;
+    setIndex(0);
+    const timer = window.setInterval(() => {
+      setIndex((prev) => (prev + 1 < lines.length ? prev + 1 : prev));
+    }, 4000);
+    return () => window.clearInterval(timer);
+  }, [enabled, lines.length]);
+  return lines[Math.min(index, lines.length - 1)] ?? "";
+}
+
+/**
+ * The reader while the run is still going: the same shell, the transcript on
+ * the left, and one honest line at a time on the right.
+ */
+function PendingBody({ request }: { request: VerifyThreadRequest }) {
+  const { data: profile } = useProfile();
+  const scroller = useRef<HTMLDivElement | null>(null);
+  const reduced = prefersReducedMotion();
+  const [skipped, setSkipped] = useState(false);
+  const [wide, toggleWide] = useRailWide();
+  const isCoach = profile?.role === "coach";
+  const isDecisions = (request.kind ?? "verification") === "decisions";
+  const failed = typeof request.error === "string" && request.error.length > 0;
+
+  const itemQuery = useQuery({
+    queryKey: ["verify-thread-item", request.itemId],
+    enabled: Boolean(profile) && !isCoach,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("work_items")
+        .select("*")
+        .eq("id", request.itemId)
+        .maybeSingle();
+      if (error) throw new Error(error.message);
+      return (data ?? null) as WorkItemRow | null;
+    },
+  });
+
+  const { data: turnCount } = useQuery({
+    queryKey: ["thread-turn-count", request.itemId],
+    enabled: Boolean(profile) && !isCoach,
+    queryFn: async (): Promise<number> => {
+      const { count } = await supabase
+        .from("turns")
+        .select("id", { count: "exact", head: true })
+        .eq("work_item_id", request.itemId);
+      return count ?? 0;
+    },
+  });
+
+  const lines = useMemo(
+    () => (isDecisions ? decisionsPhaseLines(turnCount ?? 0) : verifyPhaseLines(turnCount ?? 0)),
+    [isDecisions, turnCount],
+  );
+  const phase = usePhaseLine(lines, !skipped && !failed);
+
+  const loop = useWorkingLoop({
+    enabled: Boolean(itemQuery.data) && !skipped && !failed,
+    reduced,
+    scroller,
+  });
+
+  useEffect(() => {
+    if (skipped || failed) loop.stop();
+  }, [failed, loop, skipped]);
+
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") closeVerifyThread();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  if (!profile || isCoach) return null;
+  const item = itemQuery.data ?? null;
+  const stoppedLine = failed ? request.error : VERIFY_WORKING_LINE;
+
+  return (
+    <div
+      className="fixed inset-0 z-[70] flex flex-col bg-background"
+      data-testid="verify-thread-reader"
+      data-pending="true"
+    >
+      <header className="flex shrink-0 items-start justify-between gap-4 border-b border-border px-5 py-3 pt-[calc(0.75rem+env(safe-area-inset-top))]">
+        <div className="min-w-0">
+          <p className="micro-label text-muted-foreground">
+            {isDecisions ? DECIDED_LABEL : VERIFY_THREAD_LABEL}
+          </p>
+          <h1 className="page-title mt-1 break-words text-[20px] leading-snug">
+            {request.itemTitle}
+          </h1>
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          {loop.running && !skipped ? (
+            <button
+              type="button"
+              data-testid="verify-skip"
+              onClick={() => setSkipped(true)}
+              className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Skip the story
+            </button>
+          ) : null}
+          <button
+            type="button"
+            aria-label="Close the reader"
+            onClick={closeVerifyThread}
+            className="grid h-9 w-9 place-items-center rounded-md text-foreground/70 transition-colors hover:bg-secondary"
+          >
+            <X className="h-4 w-4" aria-hidden />
+          </button>
+        </div>
+      </header>
+
+      <div className="nb-reader-grid min-h-0 flex-1" data-rail-wide={wide ? "true" : "false"}>
+        <div
+          ref={scroller}
+          data-testid="verify-thread-transcript"
+          className="nb-reader-transcript relative px-5 py-5"
+        >
+          <p
+            className="micro-label mb-3 text-muted-foreground"
+            data-testid="reader-phase-line"
+            aria-live="polite"
+          >
+            {skipped || failed ? stoppedLine : phase}
+          </p>
+          {loop.progress > 0 && !skipped && !failed ? (
+            <svg
+              className="nb-reader-trail"
+              aria-hidden
+              data-testid="verify-reader-trail"
+              preserveAspectRatio="none"
+              viewBox="0 0 18 100"
+            >
+              <path d={readingTrailD(loop.progress)} />
+            </svg>
+          ) : null}
+          {loop.running && !reduced && !skipped && !failed ? (
+            <span
+              className="nb-dots pointer-events-none absolute left-1 top-0"
+              style={{ transform: `translateY(${loop.tipY}px)` }}
+              aria-hidden
+            >
+              <span className="nb-dot" />
+              <span className="nb-dot" />
+              <span className="nb-dot" />
+            </span>
+          ) : null}
+          {item ? <ThreadBody item={item} reducedMotion={reduced} /> : null}
+        </div>
+
+        <aside data-testid="verify-thread-rail" className="nb-reader-rail flex flex-col gap-3 p-4">
+          <div className="flex items-center justify-between gap-2">
+            <p className="micro-label text-muted-foreground">
+              {isDecisions ? DECISIONS_RAIL_HEADING : VERIFY_THREAD_LABEL}
+            </p>
+            <RailWidenButton wide={wide} onToggle={toggleWide} />
+          </div>
+          <p className="text-xs text-muted-foreground" data-testid="reader-rail-phase">
+            {skipped || failed ? stoppedLine : phase}
+          </p>
+          {failed ? (
+            <Button size="sm" variant="outline" onClick={closeVerifyThread}>
+              Close the reader
+            </Button>
+          ) : null}
+        </aside>
+      </div>
+    </div>
+  );
+}
 
 
-function ReaderBody({ request }: { request: VerifyThreadRequest }) {
+function ReaderBody({ request }: { request: VerifyThreadRequest & { runId: string } }) {
   const { data: profile } = useProfile();
   const load = useServerFn(loadHandoffs);
   const confirmItem = useServerFn(confirmHandoffItem);
@@ -347,6 +632,7 @@ function ReaderBody({ request }: { request: VerifyThreadRequest }) {
   const check = useMark();
   const strike = useMark();
   const reduced = prefersReducedMotion();
+  const [wide, toggleWide] = useRailWide();
   const alreadyPlayed = useMemo(() => storyPlayed(request.runId), [request.runId]);
   const [sourceOpen, setSourceOpen] = useState(!alreadyPlayed);
 
@@ -620,7 +906,7 @@ function ReaderBody({ request }: { request: VerifyThreadRequest }) {
         </div>
       </header>
 
-      <div className="nb-reader-grid min-h-0 flex-1">
+      <div className="nb-reader-grid min-h-0 flex-1" data-rail-wide={wide ? "true" : "false"}>
         <div
           ref={scroller}
           data-testid="verify-thread-transcript"
@@ -670,11 +956,14 @@ function ReaderBody({ request }: { request: VerifyThreadRequest }) {
             <p className="micro-label text-muted-foreground">
               {isDecisions ? DECISIONS_RAIL_HEADING : VERIFY_THREAD_LABEL}
             </p>
-            {openCount > 0 ? (
-              <span className="nb-check-badge" data-testid="verify-badge-rail">
-                {isDecisions ? reviewBadgeText(openCount) : checkBadgeText(openCount)}
-              </span>
-            ) : null}
+            <div className="flex items-center gap-2">
+              {openCount > 0 ? (
+                <span className="nb-check-badge" data-testid="verify-badge-rail">
+                  {isDecisions ? reviewBadgeText(openCount) : checkBadgeText(openCount)}
+                </span>
+              ) : null}
+              <RailWidenButton wide={wide} onToggle={toggleWide} />
+            </div>
           </div>
 
           {isDecisions ? (
@@ -784,7 +1073,10 @@ function ReaderBody({ request }: { request: VerifyThreadRequest }) {
                         <span className="mt-1 block text-xs leading-snug text-foreground">
                           {finding.fields.claim_quote}
                         </span>
-                        <span className="mt-1 block text-[11px] leading-snug text-muted-foreground">
+                        <span className="mt-2 block font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+                          {VERIFY_CHECK_LABEL}
+                        </span>
+                        <span className="mt-0.5 block text-[11px] leading-snug text-muted-foreground">
                           {finding.fields.suggested_check}
                         </span>
                       </button>
@@ -930,5 +1222,12 @@ function ReaderBody({ request }: { request: VerifyThreadRequest }) {
 export function VerifyThreadReader() {
   const request = useVerifyThread();
   if (!request) return null;
-  return <ReaderBody key={request.runId} request={request} />;
+  // While the run is still going the reader is already open, over the same
+  // transcript. When the run lands the settled reader takes its place.
+  if (request.runId === null) {
+    return <PendingBody key={`pending:${request.itemId}`} request={request} />;
+  }
+  return (
+    <ReaderBody key={request.runId} request={request as VerifyThreadRequest & { runId: string }} />
+  );
 }

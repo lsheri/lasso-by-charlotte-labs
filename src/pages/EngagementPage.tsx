@@ -8,6 +8,11 @@ import type { PeekAnalysisPreset } from "@/components/peek/PeekActionBar";
 import { MapDialog } from "@/components/work/MapDialog";
 import { WorkDateDialog } from "@/components/work/WorkDateDialog";
 import { AnalysisLens } from "@/components/reflect/AnalysisLens";
+import {
+  ThreadAnalysisLauncher,
+  isThreadReaderPreset,
+  type ThreadReaderPreset,
+} from "@/components/verify/ThreadAnalysisLauncher";
 import { isDeliverableType } from "@/lib/lineage-shared";
 import { useMakePrivate } from "@/hooks/use-make-private";
 import { OneOnOneBrief } from "@/components/oneonone/OneOnOneBrief";
@@ -50,6 +55,10 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
   const [dateItem, setDateItem] = useState<WorkItemRow | null>(null);
   const [lensItem, setLensItem] = useState<WorkItemRow | null>(null);
   const [lensPreset, setLensPreset] = useState<PeekAnalysisPreset | undefined>(undefined);
+  // A thread analysis launched from the peek: confirm, then the reader itself.
+  const [launch, setLaunch] = useState<{ item: WorkItemRow; preset: ThreadReaderPreset } | null>(
+    null,
+  );
   const makePrivate = useMakePrivate();
   // The coaching note opens on its own; the brief is always legible above it.
   const [coachingOpen, setCoachingOpen] = useState(false);
@@ -298,6 +307,11 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
         }}
         onAnalyse={(item, preset) => {
           setPeekItem(null);
+          // A thread analysis opens its own reader: no lens in between.
+          if (isThreadReaderPreset(preset)) {
+            setLaunch({ item, preset });
+            return;
+          }
           setLensPreset(preset);
           setLensItem(item);
         }}
@@ -318,6 +332,18 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
           if (!next) setDateItem(null);
         }}
       />
+
+      {profile && launch ? (
+        <ThreadAnalysisLauncher
+          key={`${launch.item.id}:${launch.preset}`}
+          itemId={launch.item.id}
+          itemTitle={launch.item.title}
+          preset={launch.preset}
+          profileId={profile.id}
+          orgId={profile.org_id}
+          onDone={() => setLaunch(null)}
+        />
+      ) : null}
 
       {profile && lensItem ? (
         <AnalysisLens

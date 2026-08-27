@@ -2445,20 +2445,31 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   overflow-y: auto;
   min-width: 0;
 }
+/* Pass 131: the rail widens, and remembers. */
+.nb-reader-grid[data-rail-wide="true"] {
+  grid-template-columns: minmax(0, 1fr) 520px;
+}
+.nb-reader-grid {
+  transition: grid-template-columns 200ms var(--nb-ease);
+}
 @media (max-width: 900px) {
-  .nb-reader-grid {
+  .nb-reader-grid,
+  .nb-reader-grid[data-rail-wide="true"] {
     grid-template-columns: minmax(0, 1fr);
   }
   .nb-reader-rail {
     border-left: 0;
     border-top: 1px solid var(--border);
   }
+  .nb-rail-widen {
+    display: none;
+  }
 }
 /* Bold ink: the stroke thickens and the span picks up its own underline. */
 .nb-ink-bold {
   box-shadow: inset 0 -2px 0 var(--nb-verify-stroke);
 }
-/* The count of what is still to check. Amber wash, never red. */
+/* The count of what is still to check. Ember wash, never red. */
 .nb-check-badge {
   display: inline-flex;
   align-items: center;
@@ -2469,8 +2480,8 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   text-transform: uppercase;
   padding: 4px 8px;
   border-radius: 999px;
-  background: var(--status-paraphrase-wash);
-  border: 1px solid var(--status-paraphrase);
+  background: var(--ember-wash);
+  border: 1px solid var(--ember-deep);
   color: var(--foreground);
 }
 /* The reading trail: pencil texture down the transcript's left gutter. */

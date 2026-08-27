@@ -77,3 +77,16 @@ export const DECISIONS_ALL_SETTLED_LINE = "Every call here is settled.";
 
 export const DECISIONS_CONFIRM_LABEL = "Confirm";
 export const DECISIONS_DISCARD_LABEL = "Not needed";
+
+/**
+ * PASS 131 — the working read-through, decisions kind. Nothing here implies a
+ * verdict: the preset traces where each call came from, and says so.
+ */
+export function decisionsPhaseLines(turnCount: number): readonly string[] {
+  return [
+    `Reading ${turnCount} turns`,
+    "Tracing every call that shaped the work",
+    "Sorting what you brought from what the model introduced",
+    "Marking the calls to confirm",
+  ];
+}

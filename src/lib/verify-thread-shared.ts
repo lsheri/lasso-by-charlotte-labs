@@ -27,16 +27,21 @@ export type VerifyInkTokens = {
   dashed: boolean;
 };
 
-/** Verdict to ink. Existing tokens only, and never the destructive token. */
+/**
+ * Verdict to ink. Existing tokens only, and never the destructive token.
+ * PASS 131: the two open verdicts draw in the ember family, the same accent
+ * family as the conversation starbursts, because amber was too quiet to see.
+ */
 export function verdictInk(verdict: string): VerifyInkTokens {
   if (verdict === "contradicted") {
-    return { stroke: "var(--status-paraphrase)", wash: "var(--status-paraphrase-wash)", dashed: false };
+    return { stroke: "var(--ember-deep)", wash: "var(--ember-wash)", dashed: false };
   }
   if (verdict === "checked") {
     return { stroke: "var(--status-exact)", wash: "var(--status-exact-wash)", dashed: false };
   }
-  return { stroke: "var(--nb-ink-yellow)", wash: "var(--status-unsourced-wash)", dashed: true };
+  return { stroke: "var(--ember-deep)", wash: "var(--ember-wash)", dashed: true };
 }
+
 
 /** The verdict spelled out, so the mark never depends on its colour. */
 export function verdictPhrase(verdict: string): string {
@@ -161,3 +166,22 @@ export function sourcePrompt(claims: readonly string[]): string {
   return numbered ? `${SOURCE_PROMPT_PROSE}\n${numbered}` : SOURCE_PROMPT_PROSE;
 }
 
+
+/**
+ * PASS 131 — the working read-through, verification kind. One line at a time
+ * while the model runs. Each line names something the preset actually does.
+ */
+export function verifyPhaseLines(turnCount: number): readonly string[] {
+  return [
+    `Reading ${turnCount} turns`,
+    "Looking over the facts each turn claims",
+    "Checking whether facts got confirmed later in the conversation",
+    "Marking what deserves a check at the source",
+  ];
+}
+
+/** Said while the motion is stopped and the run is still going. */
+export const VERIFY_WORKING_LINE = "Working…";
+
+/** The label above the suggested check, so it is never unnamed text. */
+export const VERIFY_CHECK_LABEL = "THE CHECK TO RUN";
