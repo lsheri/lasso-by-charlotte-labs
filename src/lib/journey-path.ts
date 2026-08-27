@@ -500,3 +500,37 @@ export function readingTrailD(progress: number): string {
   const round = (n: number) => Math.round(n * 100) / 100;
   return `M 9 0 Q 12 ${round(50 * p)} 9 ${round(100 * p)}`;
 }
+
+/**
+ * PASS 132 — the working card story's connector. One hand-drawn graphite curve
+ * from the card that just left to the card that just landed, with the same
+ * little arrowhead the artifact story's spine draws. Seeded and pure: this is
+ * the only home for drawn paths, so no surface carries an inline path string.
+ */
+export type TurnConnector = { stroke: PathStroke; arrow: PathStroke[] };
+
+export function turnConnectorD(seed: string, from: Point, to: Point): TurnConnector {
+  const rand = mulberry32(fnv1a(`turn-connector:${seed}`));
+  const draw = () => rand();
+  const jitter = (scale: number) => (draw() - 0.5) * scale;
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  const c1 = { x: from.x + dx * 0.15 + jitter(12), y: from.y + dy * 0.45 + jitter(8) };
+  const c2 = { x: from.x + dx * 0.85 + jitter(12), y: from.y + dy * 0.6 + jitter(8) };
+
+  const steps = 18;
+  const points: Point[] = [];
+  for (let i = 0; i <= steps; i += 1) {
+    const t = i / steps;
+    const u = 1 - t;
+    points.push({
+      x: round(u * u * u * from.x + 3 * u * u * t * c1.x + 3 * u * t * t * c2.x + t * t * t * to.x),
+      y: round(u * u * u * from.y + 3 * u * u * t * c1.y + 3 * u * t * t * c2.y + t * t * t * to.y),
+    });
+  }
+
+  const tip = points[points.length - 1] as Point;
+  const before = points[points.length - 2] ?? tip;
+  const tangent = { x: tip.x - before.x, y: tip.y - before.y || 1 };
+  return { stroke: strokeFrom(points), arrow: arrowAt(tip, tangent, draw, 0) };
+}
