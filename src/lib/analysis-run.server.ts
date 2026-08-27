@@ -102,6 +102,12 @@ export async function runAnalysis(
   });
   const isOwner = target.ownerId === profile.id;
   if (!isOwner && !preset.coachMayRun) throw new Response("Forbidden", { status: 403 });
+  // Thread scoped verification is the owner's own reading of their own
+  // conversation. A coach never runs it, even on work shared with them.
+  if (preset.scope === "thread" && profile.role === "coach") {
+    throw new Response("Forbidden", { status: 403 });
+  }
+
   // Each engagement scoped preset carries its own minimum: three for a
   // recurrence, two for a sequence.
   if (preset.scope === "engagement" && target.itemsInScope < minItemsFor(preset)) {
