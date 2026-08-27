@@ -213,12 +213,60 @@ function validateItem(
   return { check_id, status, evidence_quote: evidence_quote ?? "" };
 }
 
-/** Where the sentinel fence begins in a piece of text, or -1. */
+/**
+ * Where the sentinel fence begins in a piece of text, or -1. A bare sentinel
+ * token with no fence before it names nothing and is skipped.
+ */
 export function sentinelFenceStart(text: string): number {
-  const marker = text.indexOf(HANDOFF_SENTINEL);
-  if (marker === -1) return -1;
-  const fence = text.lastIndexOf("```", marker);
-  return fence === -1 ? -1 : fence;
+  let from = 0;
+  for (;;) {
+    const marker = text.indexOf(HANDOFF_SENTINEL, from);
+    if (marker === -1) return -1;
+    const fence = text.lastIndexOf("```", marker);
+    if (fence !== -1) return fence;
+    from = marker + HANDOFF_SENTINEL.length;
+  }
+}
+
+/** Where the LAST sentinel fence begins, or -1. The tail candidate. */
+function lastSentinelFenceStart(text: string): number {
+  let from = text.length;
+  for (;;) {
+    const marker = text.lastIndexOf(HANDOFF_SENTINEL, from);
+    if (marker === -1) return -1;
+    const fence = text.lastIndexOf("```", marker);
+    if (fence !== -1) return fence;
+    from = marker - 1;
+  }
+}
+
+/**
+ * Remove every sentinel-carrying fence from prose, and any bare sentinel
+ * token. A sentinel fence is NEVER legitimate reader-facing content: an
+ * answer's own quoted code has no sentinel, so a sentinel fence left in
+ * prose is the model misplacing plumbing. Extras are never parsed as
+ * handoffs; the tail block stays the single source of items.
+ */
+function scrubSentinelFences(text: string): string {
+  let out = text;
+  let removed = false;
+  for (let guard = 0; guard < 50; guard += 1) {
+    const marker = out.indexOf(HANDOFF_SENTINEL);
+    if (marker === -1) break;
+    removed = true;
+    const open = out.lastIndexOf("```", marker);
+    if (open === -1) {
+      // A bare sentinel token with no fence around it: drop the token itself.
+      out = out.slice(0, marker) + out.slice(marker + HANDOFF_SENTINEL.length);
+      continue;
+    }
+    const close = out.indexOf("```", marker + HANDOFF_SENTINEL.length);
+    const end = close === -1 ? out.length : close + 3;
+    out = out.slice(0, open) + out.slice(end);
+  }
+  // Collapse the whitespace the removed blocks leave behind.
+  const collapsed = removed ? out.replace(/\n{3,}/g, "\n\n") : out;
+  return collapsed.trimEnd();
 }
 
 export type StripResult = {
@@ -235,6 +283,11 @@ export type StripResult = {
  * the sentinel AND parses AND at least one item validates. A fenced block that
  * is part of the answer itself (quoted code, for instance) has no sentinel and
  * is left exactly where it is.
+ *
+ * The model sometimes repeats the sentinel fence mid-answer. The LAST sentinel
+ * fence is the tail candidate and the single source of items; every other
+ * sentinel fence (or bare sentinel token) is scrubbed from the prose, so the
+ * sentinel never reaches a reader whatever the model did.
  */
 export function stripHandoffTail(
   text: string,
@@ -242,32 +295,40 @@ export function stripHandoffTail(
   opts: HandoffAnchorOptions = {},
 ): StripResult {
   const start = sentinelFenceStart(text);
-  if (start === -1) return { prose: text, block: null, parse: "none" };
+  if (start === -1) {
+    if (!text.includes(HANDOFF_SENTINEL)) return { prose: text, block: null, parse: "none" };
+    // Bare sentinel token(s) and no fenced sentinel at all: still never reader content.
+    return { prose: scrubSentinelFences(text), block: null, parse: "malformed" };
+  }
 
-  const prose = text.slice(0, start).trimEnd();
-  const fenced = text.slice(start);
+  const tailStart = lastSentinelFenceStart(text);
+  const fenced = text.slice(tailStart);
   const body = fenced.replace(/^```[a-zA-Z]*\s*/, "").replace(/```\s*$/, "");
   const jsonStart = body.indexOf("{");
-  if (!kind || jsonStart === -1) return { prose, block: null, parse: "malformed" };
+  if (!kind || jsonStart === -1) return { prose: scrubSentinelFences(text), block: null, parse: "malformed" };
 
   let parsed: unknown;
   try {
     parsed = JSON.parse(body.slice(jsonStart));
   } catch {
-    return { prose, block: null, parse: "malformed" };
+    return { prose: scrubSentinelFences(text), block: null, parse: "malformed" };
   }
   const root = parsed as Record<string, unknown> | null;
-  if (!root || typeof root !== "object") return { prose, block: null, parse: "malformed" };
+  if (!root || typeof root !== "object") return { prose: scrubSentinelFences(text), block: null, parse: "malformed" };
   const rawItems = root[kind] ?? root["items"];
-  if (!Array.isArray(rawItems)) return { prose, block: null, parse: "malformed" };
+  if (!Array.isArray(rawItems)) return { prose: scrubSentinelFences(text), block: null, parse: "malformed" };
 
   const items = rawItems
     .slice(0, MAX_HANDOFF_ITEMS)
     .map((item) => validateItem(kind, item, opts))
     .filter((item): item is HandoffFields => item !== null);
 
-  if (items.length === 0) return { prose, block: null, parse: "malformed" };
-  return { prose, block: { v: 1, kind, items }, parse: "ok" };
+  if (items.length === 0) return { prose: scrubSentinelFences(text), block: null, parse: "malformed" };
+  return {
+    prose: scrubSentinelFences(text.slice(0, tailStart)),
+    block: { v: 1, kind, items },
+    parse: "ok",
+  };
 }
 
 /**
