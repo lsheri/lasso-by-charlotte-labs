@@ -577,7 +577,9 @@ export async function runAnalysis(
     const stripped = stripHandoffTail(
       completion.text || "Nothing came back for that. Try again.",
       handoffKind,
+      anchorOptions,
     );
+
     holdback?.end(stripped.block !== null);
     let handoffCount = 0;
     if (stripped.block) {
