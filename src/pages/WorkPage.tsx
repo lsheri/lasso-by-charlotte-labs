@@ -8,6 +8,11 @@ import { GettingStartedCard } from "@/components/onboarding/checklist/GettingSta
 import { MapDialog } from "@/components/work/MapDialog";
 import { RowMenu } from "@/components/work/RowMenu";
 import { AnalysisLens } from "@/components/reflect/AnalysisLens";
+import {
+  ThreadAnalysisLauncher,
+  isThreadReaderPreset,
+  type ThreadReaderPreset,
+} from "@/components/verify/ThreadAnalysisLauncher";
 import { isDeliverableType } from "@/lib/lineage-shared";
 import { ImportFlowDialog } from "@/components/work/import/ImportFlowDialog";
 import { PasteThreadDialog } from "@/components/work/PasteThreadDialog";
@@ -736,6 +741,11 @@ export function WorkPage() {
         }}
         onAnalyse={(item, preset) => {
           setPeek(null);
+          // A thread analysis opens its own reader: no lens in between.
+          if (isThreadReaderPreset(preset)) {
+            setLaunch({ item, preset });
+            return;
+          }
           setLensPreset(preset);
           setLensItem(item);
         }}
@@ -776,6 +786,18 @@ export function WorkPage() {
           if (!next) setDateItem(null);
         }}
       />
+
+      {profile && launch ? (
+        <ThreadAnalysisLauncher
+          key={`${launch.item.id}:${launch.preset}`}
+          itemId={launch.item.id}
+          itemTitle={launch.item.title}
+          preset={launch.preset}
+          profileId={profile.id}
+          orgId={profile.org_id}
+          onDone={() => setLaunch(null)}
+        />
+      ) : null}
 
       {profile && lensItem ? (
         <AnalysisLens

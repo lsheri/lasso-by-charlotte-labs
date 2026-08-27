@@ -70,7 +70,7 @@ export function ThreadAnalysisLauncher({
         confirm_step: "shown" as const,
         work_item_id: workItemId,
         profile_id: profileId,
-      });
+      }, () => undefined);
       logEvent("reflect.session_created", orgId, { preset });
       await queryClient.invalidateQueries({ queryKey: ["reflect-sessions"] });
       if (result.run_id) resolveVerifyThread(result.run_id);
