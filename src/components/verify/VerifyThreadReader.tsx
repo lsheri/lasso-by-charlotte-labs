@@ -18,6 +18,7 @@ import { ChatUrlLink } from "@/components/work/ChatUrlLink";
 import { readingTrailD } from "@/lib/journey-path";
 import { DrawnCheck, DrawnStrike, PencilFirework, useMark } from "@/components/notebook/marks";
 import { ThreadBody } from "@/components/peek/ThreadBody";
+import { TurnCardStory } from "@/components/verify/TurnCardStory";
 import { SpanLegend } from "@/components/provenance/SpanLegend";
 import { AddDecisionDialog } from "@/components/decisions/AddDecisionDialog";
 import { Button } from "@/components/ui/button";
@@ -49,6 +50,7 @@ import {
   originClass,
 } from "@/lib/decisions-thread-shared";
 import { logEvent } from "@/lib/telemetry";
+import type { TurnStoryTurn } from "@/lib/turn-story-shared";
 import { logV2 } from "@/lib/telemetry-v2";
 import {
   VERIFY_ALL_SETTLED_LINE,
@@ -610,6 +612,15 @@ function PendingBody({ request }: { request: VerifyThreadRequest }) {
           <p className="text-xs text-muted-foreground" data-testid="reader-rail-phase">
             {skipped || failed ? stoppedLine : phase}
           </p>
+          {!skipped && !failed ? (
+            <TurnCardStory
+              itemId={request.itemId}
+              item={item}
+              turns={turns ?? []}
+              running={loop.running && !skipped && !failed}
+              reduced={reduced}
+            />
+          ) : null}
           {failed ? (
             <Button size="sm" variant="outline" onClick={closeVerifyThread}>
               Close the reader
