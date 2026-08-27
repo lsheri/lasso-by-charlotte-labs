@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 
-import { VerifyInk } from "@/components/notebook/marks";
+import { MarginFlag, VerifyInk } from "@/components/notebook/marks";
 import { supabase } from "@/integrations/supabase/client";
 import { splitByQuote, turnAnchorId, type ThreadMark } from "@/lib/verify-thread-shared";
 import { vendorLabel } from "@/lib/conversation-shared";
@@ -15,6 +15,8 @@ type Turn = {
   model?: string | null;
   meta?: unknown;
 };
+
+const EMPTY_SETTLED: ReadonlySet<string> = new Set<string>();
 
 function turnTime(ts: string | null): string | null {
   if (!ts) return null;
@@ -42,11 +44,13 @@ function TurnContent({
   turn,
   marks,
   activeMarkId,
+  settledIds,
   reducedMotion,
 }: {
   turn: Turn;
   marks: readonly ThreadMark[];
   activeMarkId: string | null;
+  settledIds: ReadonlySet<string>;
   reducedMotion: boolean;
 }) {
   const isHuman = turn.role === "user";
@@ -59,7 +63,8 @@ function TurnContent({
       <VerifyInk
         verdict={mark.verdict}
         seed={mark.id}
-        active={activeMarkId === mark.id}
+        active={activeMarkId === mark.id || settledIds.has(mark.id)}
+        bold={mark.bold !== false}
         reducedMotion={reducedMotion}
       >
         {split.match}
@@ -75,6 +80,8 @@ export function ThreadBody({
   enabled = true,
   marks = [],
   activeMarkId = null,
+  settledIds = EMPTY_SETTLED,
+  onMarkActivate,
   reducedMotion = false,
 }: {
   item: WorkItemRow;
@@ -82,6 +89,10 @@ export function ThreadBody({
   /** Verification ink to settle on model turns. Empty everywhere else. */
   marks?: readonly ThreadMark[];
   activeMarkId?: string | null;
+  /** Marks whose ink has settled during the reader's intro pass. */
+  settledIds?: ReadonlySet<string>;
+  /** Tapping a margin flag activates that finding on the rail. */
+  onMarkActivate?: ((markId: string) => void) | undefined;
   reducedMotion?: boolean;
 }) {
   const { data: turns, error } = useQuery({
@@ -160,16 +171,32 @@ export function ThreadBody({
             </div>
           ) : (
             <div key={turn.id} id={turnAnchorId(turn.turn_no)}>
-              <div className="micro-label mb-1">
-                Turn {turn.turn_no} · {turn.role}
-                {turn.model ? ` · ${turn.model}` : model ? ` · ${model}` : ""}
-                {turnTime(turn.ts) ? ` · ${turnTime(turn.ts)}` : ""}
+              <div className="mb-1 flex items-center gap-1.5">
+                <span className="grid w-[16px] shrink-0 place-items-center">
+                  {(() => {
+                    const flag = marks.find((m) => m.turnNo === turn.turn_no);
+                    return flag ? (
+                      <MarginFlag
+                        seed={flag.id}
+                        verdict={flag.verdict}
+                        label={`Go to the finding on turn ${turn.turn_no}`}
+                        {...(onMarkActivate ? { onActivate: () => onMarkActivate(flag.id) } : {})}
+                      />
+                    ) : null;
+                  })()}
+                </span>
+                <span className="micro-label">
+                  Turn {turn.turn_no} · {turn.role}
+                  {turn.model ? ` · ${turn.model}` : model ? ` · ${model}` : ""}
+                  {turnTime(turn.ts) ? ` · ${turnTime(turn.ts)}` : ""}
+                </span>
               </div>
               <div className="max-w-[90%] whitespace-pre-wrap rounded-[var(--radius)] border border-border bg-card px-4 py-3 font-mono text-xs leading-relaxed text-foreground shadow-card">
                 <TurnContent
                   turn={turn}
                   marks={marks}
                   activeMarkId={activeMarkId}
+                  settledIds={settledIds}
                   reducedMotion={reducedMotion}
                 />
               </div>
