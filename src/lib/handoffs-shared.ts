@@ -122,20 +122,60 @@ function oneOf<T extends string>(value: unknown, allowed: readonly T[]): T | nul
 }
 
 /**
+ * A turn reference, reduced to the turn number it names. "TURN 4", "4",
+ * "turn-4" all name turn 4; anything with no number names nothing.
+ */
+export function normalizeTurnRef(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const match = value.match(/\d{1,6}/);
+  return match ? match[0].replace(/^0+(?=\d)/, "") : null;
+}
+
+/**
+ * The anchoring rules for one parse. The thread scoped run requires a turn
+ * reference that names a real model turn; the deliverable scoped run passes
+ * nothing here and is unchanged.
+ */
+export type HandoffAnchorOptions = {
+  requireEvidenceTurn?: boolean;
+  /** Normalised references the run will accept. Model turns only. */
+  allowedTurnRefs?: readonly string[];
+};
+
+/**
  * Per item validation. An item that does not validate is dropped; the rest are
  * kept. Nothing half parsed is ever stored.
  */
-function validateItem(kind: HandoffKind, raw: unknown): HandoffFields | null {
+function validateItem(
+  kind: HandoffKind,
+  raw: unknown,
+  opts: HandoffAnchorOptions = {},
+): HandoffFields | null {
   if (!raw || typeof raw !== "object") return null;
   const row = raw as Record<string, unknown>;
   if (kind === "open_checks") {
     const claim_quote = str(row["claim_quote"]);
     const location = str(row["location"], 200);
-    const verdict = oneOf(row["verdict"], ["nothing_visible", "contradicted"] as const);
+    const verdict = oneOf(row["verdict"], ["nothing_visible", "contradicted", "checked"] as const);
     const suggested_check = str(row["suggested_check"], 400);
     if (!claim_quote || !location || !verdict || !suggested_check) return null;
-    return { claim_quote, location, verdict, suggested_check };
+    const turnRef = normalizeTurnRef(str(row["evidence_turn_id"], 120));
+    const allowed = opts.allowedTurnRefs;
+    // A finding with no anchor, or an anchor that names no model turn in this
+    // conversation, has nowhere to put its ink. It is dropped, never repaired.
+    if (opts.requireEvidenceTurn) {
+      if (!turnRef) return null;
+      if (allowed && !allowed.includes(turnRef)) return null;
+    }
+    return {
+      claim_quote,
+      location,
+      verdict,
+      suggested_check,
+      ...(turnRef ? { evidence_turn_id: turnRef } : {}),
+    };
   }
+
   if (kind === "decision_candidates") {
     const call = str(row["call"], 400);
     const origin = str(row["origin"], 400);
