@@ -490,3 +490,13 @@ export function marginFlagD(seed: string): string {
   }
   return d;
 }
+
+/**
+ * PASS 129 — the reader's hand drawn reading trail. Kept here with the rest of
+ * the drawn paths so no surface carries an inline path string.
+ */
+export function readingTrailD(progress: number): string {
+  const p = Math.max(0, Math.min(1, progress));
+  const round = (n: number) => Math.round(n * 100) / 100;
+  return `M 9 0 Q 12 ${round(50 * p)} 9 ${round(100 * p)}`;
+}

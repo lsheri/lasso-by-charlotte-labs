@@ -17,6 +17,9 @@ import { invalidateAfterWorkChange } from "@/lib/work-invalidation";
 import { removeItemFromEngagement } from "@/lib/work-remove.functions";
 
 export const REMOVE_LABEL = "Remove from this engagement";
+/** PASS 129 — the consequence, said in one plain line before anything else. */
+export const REMOVE_CONSEQUENCE_LINE =
+  "This takes the work out of this engagement. The work itself stays.";
 export const REMOVE_HELP = "Goes back to your Work pile. Nothing is deleted.";
 
 /**
@@ -49,7 +52,7 @@ export function RemoveFromEngagementDialog({
         <AlertDialogHeader>
           <AlertDialogTitle>{REMOVE_LABEL}</AlertDialogTitle>
           <AlertDialogDescription>
-            {REMOVE_HELP} “{title}” stays in your record exactly as it is.
+            {REMOVE_CONSEQUENCE_LINE} {REMOVE_HELP} “{title}” stays in your record exactly as it is.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

@@ -1834,6 +1834,11 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   text-transform: uppercase;
   transition: transform 200ms var(--nb-ease);
 }
+.nb-pencil-cta--sm {
+  height: 36px;
+  padding: 0 14px;
+  font-size: 11px;
+}
 .nb-pencil-cta:hover:not(:disabled) {
   transform: translateY(-1px);
 }

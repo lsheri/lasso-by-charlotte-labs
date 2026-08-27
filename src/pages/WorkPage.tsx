@@ -17,6 +17,7 @@ import { WatchSuggestionBanner } from "@/components/connectors/WatchSuggestionBa
 import { SuggestDot, SuggestLegend, Suggested } from "@/components/common/Suggested";
 import { SuggestionChip } from "@/components/work/SuggestionChip";
 import { PeekPanel, type PeekEntry } from "@/components/peek/PeekPanel";
+import type { PeekAnalysisPreset } from "@/components/peek/PeekActionBar";
 import { UploadFilesButton } from "@/components/work/UploadFilesButton";
 import { TranscriptsAction } from "@/components/work/TranscriptsAction";
 import { WorkDateDialog } from "@/components/work/WorkDateDialog";
@@ -38,6 +39,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useMakePrivate } from "@/hooks/use-make-private";
 import { useProfile } from "@/hooks/use-profile";
 import { useWorkItems } from "@/hooks/use-work-items";
 import { supabase } from "@/integrations/supabase/client";
@@ -71,6 +73,7 @@ export function WorkPage() {
   const [peek, setPeek] = useState<{ entry: PeekEntry; focusId: string } | null>(null);
   const [dateItem, setDateItem] = useState<WorkItemRow | null>(null);
   const [lensItem, setLensItem] = useState<WorkItemRow | null>(null);
+  const [lensPreset, setLensPreset] = useState<PeekAnalysisPreset | undefined>(undefined);
   const [actionError, setActionError] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<MappingSuggestion[] | null>(null);
   const [dismissed, setDismissed] = useState<string[]>([]);
@@ -143,28 +146,12 @@ export function WorkPage() {
     },
   });
 
+  const runMakePrivate = useMakePrivate();
+
   async function makePrivate(item: WorkItemRow) {
     setActionError(null);
-    const del = await supabase.from("work_item_tasks").delete().eq("work_item_id", item.id);
-    if (del.error) return setActionError(del.error.message);
-    await detachEpisode({ data: { work_item_ids: [item.id] } });
-    const upd = await supabase
-      .from("work_items")
-      .update({ visibility: "private" })
-      .eq("id", item.id);
-    if (upd.error) return setActionError(upd.error.message);
-    if (profile) {
-      logEvent("workitem.marked_private", profile.org_id, { type: item.type, source: item.source });
-      logV2(
-        "work_item.marked_private",
-        { item_type: item.type },
-        {
-          profileId: profile.id,
-          workItemId: item.id,
-        },
-      );
-    }
-    await queryClient.invalidateQueries({ queryKey: ["work-items"] });
+    const message = await runMakePrivate(item);
+    if (message) setActionError(message);
   }
 
   async function unmark(item: WorkItemRow) {
@@ -232,7 +219,13 @@ export function WorkPage() {
           {item.content_ref ? <OpenFileAction workItemId={item.id} /> : null}
           <RowAction onClick={() => setDateItem(item)}>Work date</RowAction>
           <RowAction onClick={() => void unmark(item)}>Unmark</RowAction>
-          <RowMenu item={item} onFluency={setLensItem} />
+          <RowMenu
+            item={item}
+            onFluency={(next) => {
+              setLensPreset(undefined);
+              setLensItem(next);
+            }}
+          />
         </>
       );
     }
@@ -254,7 +247,13 @@ export function WorkPage() {
         ) : null}
         <RowAction onClick={() => setDateItem(item)}>Work date</RowAction>
         <RowAction onClick={() => void makePrivate(item)}>Make private</RowAction>
-        <RowMenu item={item} onFluency={setLensItem} />
+        <RowMenu
+          item={item}
+          onFluency={(next) => {
+            setLensPreset(undefined);
+            setLensItem(next);
+          }}
+        />
       </>
     );
   }
@@ -735,8 +734,9 @@ export function WorkPage() {
           setPeek(null);
           void makePrivate(item);
         }}
-        onFluency={(item) => {
+        onAnalyse={(item, preset) => {
           setPeek(null);
+          setLensPreset(preset);
           setLensItem(item);
         }}
         onOpenChange={(next) => {
@@ -782,8 +782,12 @@ export function WorkPage() {
           key={lensItem.id}
           open
           onOpenChange={(next) => {
-            if (!next) setLensItem(null);
+            if (!next) {
+              setLensItem(null);
+              setLensPreset(undefined);
+            }
           }}
+          {...(lensPreset ? { initialPreset: lensPreset } : {})}
           target={{
             kind: "item",
             id: lensItem.id,

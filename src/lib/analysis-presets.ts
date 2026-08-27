@@ -319,7 +319,7 @@ const RAW_ANALYSIS_PRESETS: AnalysisPreset[] = [
     id: "decision_origin",
     handoffSchema: "decision_candidates",
     dbPreset: "decision_origin",
-    label: "Who decided what",
+    label: "What got decided",
     description:
       "Reads this deliverable and its conversations and sets out every significant call, and whether it came from the brief, from you, from the model, or from a source.",
     scope: "deliverable",

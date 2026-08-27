@@ -161,7 +161,8 @@ describe("pass 113 · the preset is never a chip, the rename is complete", () =>
     const canvas = readFileSync("src/components/engagements/CanvasDeliverableActions.tsx", "utf8");
     expect(canvas).toContain("WORK_ARTIFACT_TITLE");
     expect(canvas).toContain("ChaliceMark");
-    const peek = readFileSync("src/components/peek/PeekPanel.tsx", "utf8");
+    // Pass 129 moved the peek's actions into the action bar at the top.
+    const peek = readFileSync("src/components/peek/PeekActionBar.tsx", "utf8");
     expect(peek).toContain("Work Artifact");
     expect(peek).not.toMatch(/>\s*Journey\s*</);
     const view = readFileSync("src/components/journey/JourneyView.tsx", "utf8");
