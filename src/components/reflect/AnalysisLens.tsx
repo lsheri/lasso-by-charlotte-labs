@@ -176,8 +176,19 @@ export function AnalysisLens({
       setReused(result.reused);
       setLiveManifest(result.manifest ?? null);
       logEvent("reflect.session_created", orgId, { preset: preset.id });
+      // The mirror of the lineage handover: the model has run, and the answer
+      // is read as ink on the conversation it came from.
+      if (preset.id === "verification_thread" && result.run_id) {
+        const { openVerifyThread } = await import("@/components/verify/verify-thread-state");
+        openVerifyThread({
+          runId: result.run_id,
+          itemId: anchorItemId ?? target.id,
+          itemTitle: target.title,
+        });
+      }
       await queryClient.invalidateQueries({ queryKey: ["reflect-sessions"] });
       await queryClient.invalidateQueries({ queryKey: ["reflect-messages", result.session_id] });
+
     } catch (e) {
       setError((e as Error).message);
     } finally {
