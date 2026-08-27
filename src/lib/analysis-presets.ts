@@ -121,6 +121,17 @@ ABSOLUTE RULES:
 - No judgement of the person, no advice about their competence.
 - Never use an em dash.`;
 
+/**
+ * The thread scoped sibling. The prompt above is reused word for word, so the
+ * contract a reader meets is identical; one line is added, and only because
+ * ink has to know which turn produced the claim.
+ */
+const VERIFICATION_THREAD_PROMPT = `${VERIFICATION_PROMPT}
+
+THE ANCHOR. This run reads one conversation. For every claim you list, give the turn identifier the claim was produced in, as the anchor.`;
+
+
+
 const DECISION_ORIGIN_PROMPT = `You are establishing, for ONE finished piece of work, where each significant call came from. You are given the deliverable, the conversations that fed it, and the brief when one exists. Turns are numbered as "TURN n ROLE:".
 
 A significant call is a choice that shaped the deliverable and could have gone another way: a scope boundary, a method, a number or assumption that drives an output, a recommendation, a framing, an exclusion.
