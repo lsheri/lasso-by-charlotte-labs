@@ -261,7 +261,7 @@ export function PacketPage({
           if (!next) setPeekItem(null);
         }}
         canEdit={false}
-        onFluency={(item) => {
+        onAnalyse={(item) => {
           setPeekItem(null);
           setLensItem(item);
         }}

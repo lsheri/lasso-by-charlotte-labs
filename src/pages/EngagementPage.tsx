@@ -4,6 +4,12 @@ import { useState } from "react";
 import { GraphiteRule } from "@/components/notebook/marks";
 import { SpiderMark } from "@/components/notebook/SpiderMark";
 import { PeekPanel } from "@/components/peek/PeekPanel";
+import type { PeekAnalysisPreset } from "@/components/peek/PeekActionBar";
+import { MapDialog } from "@/components/work/MapDialog";
+import { WorkDateDialog } from "@/components/work/WorkDateDialog";
+import { AnalysisLens } from "@/components/reflect/AnalysisLens";
+import { isDeliverableType } from "@/lib/lineage-shared";
+import { useMakePrivate } from "@/hooks/use-make-private";
 import { OneOnOneBrief } from "@/components/oneonone/OneOnOneBrief";
 import { CaptureCoverage } from "@/components/common/CaptureCoverage";
 import { EngagementCanvas, type CanvasTask } from "@/components/engagements/EngagementCanvas";
@@ -38,6 +44,13 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
   const [askOpen, setAskOpen] = useState(false);
   const [prepOpen, setPrepOpen] = useState(false);
   const [peekItem, setPeekItem] = useState<WorkItemRow | null>(null);
+  // PASS 129 — the peek's action bar reads the same on both surfaces, so the
+  // same dialogs are mounted here as on the Work pile.
+  const [mapItem, setMapItem] = useState<WorkItemRow | null>(null);
+  const [dateItem, setDateItem] = useState<WorkItemRow | null>(null);
+  const [lensItem, setLensItem] = useState<WorkItemRow | null>(null);
+  const [lensPreset, setLensPreset] = useState<PeekAnalysisPreset | undefined>(undefined);
+  const makePrivate = useMakePrivate();
   // The coaching note opens on its own; the brief is always legible above it.
   const [coachingOpen, setCoachingOpen] = useState(false);
 
@@ -265,7 +278,68 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
         )}
         engagementId={engagementId}
         viewerProfileId={profile?.id ?? null}
+        onMap={(item) => {
+          setPeekItem(null);
+          setMapItem(item);
+        }}
+        onWorkDate={(item) => {
+          setPeekItem(null);
+          setDateItem(item);
+        }}
+        onMakePrivate={(item) => {
+          setPeekItem(null);
+          void makePrivate(item).then(async (message) => {
+            if (!message) {
+              await queryClient.invalidateQueries({
+                queryKey: ["engagement-tasks", engagementId],
+              });
+            }
+          });
+        }}
+        onAnalyse={(item, preset) => {
+          setPeekItem(null);
+          setLensPreset(preset);
+          setLensItem(item);
+        }}
       />
+
+      <MapDialog
+        item={mapItem}
+        open={mapItem !== null}
+        onOpenChange={(next) => {
+          if (!next) setMapItem(null);
+        }}
+      />
+
+      <WorkDateDialog
+        item={dateItem}
+        open={dateItem !== null}
+        onOpenChange={(next) => {
+          if (!next) setDateItem(null);
+        }}
+      />
+
+      {profile && lensItem ? (
+        <AnalysisLens
+          key={lensItem.id}
+          open
+          onOpenChange={(next) => {
+            if (!next) {
+              setLensItem(null);
+              setLensPreset(undefined);
+            }
+          }}
+          {...(lensPreset ? { initialPreset: lensPreset } : {})}
+          target={{
+            kind: "item",
+            id: lensItem.id,
+            title: lensItem.title,
+            scope: isDeliverableType(lensItem.type) ? "deliverable" : "thread",
+          }}
+          profileId={profile.id}
+          orgId={profile.org_id}
+        />
+      ) : null}
 
       <SubjectCoachingSection profileId={profile?.id} engagementId={engagementId} />
 

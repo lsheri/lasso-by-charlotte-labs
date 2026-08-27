@@ -33,7 +33,9 @@ describe("90.2 analyses move into Ask", () => {
   it("removes the analyse pill and its state from the engagement page", () => {
     expect(page).not.toContain("Analyse this engagement");
     expect(page).not.toContain("analyseOpen");
-    expect(page).not.toContain("AnalysisLens");
+    // Pass 129 mounts the lens here again, driven only by the peek's action
+    // bar. There is still no analyse pill on the page itself.
+    expect(page).not.toContain("Analyse this engagement");
   });
 
   // Pass 94 removed the embedded lens tab: analyses live in the selection

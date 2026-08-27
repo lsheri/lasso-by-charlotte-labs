@@ -4,18 +4,15 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { AiReads } from "@/components/peek/AiReads";
+import { PeekActionBar, type PeekAnalysisPreset } from "@/components/peek/PeekActionBar";
 import { RenderedContent } from "@/components/peek/RenderedContent";
 import { SlideOver } from "@/components/peek/SlideOver";
 import { ThreadBody } from "@/components/peek/ThreadBody";
 import { VersionHistory } from "@/components/peek/VersionHistory";
 import { WhatFedThis } from "@/components/peek/WhatFedThis";
-import { DraftDecisionsButton } from "@/components/decisions/DraftDecisionsButton";
 import { MarkBriefDialog } from "@/components/work/MarkBriefDialog";
-import { DeleteWorkItemDialog, DELETE_LABEL } from "@/components/work/DeleteWorkItemDialog";
-import {
-  RemoveFromEngagementDialog,
-  REMOVE_LABEL,
-} from "@/components/work/RemoveFromEngagementDialog";
+import { DeleteWorkItemDialog } from "@/components/work/DeleteWorkItemDialog";
+import { RemoveFromEngagementDialog } from "@/components/work/RemoveFromEngagementDialog";
 import { DeliverableKindSelect } from "@/components/work/DeliverableKindSelect";
 import { ShipToFirmDialog } from "@/components/work/ShipToFirmDialog";
 import { ChatUrlLink } from "@/components/work/ChatUrlLink";
@@ -29,7 +26,6 @@ import { deliverableKindOf, type DeliverableKind } from "@/lib/deliverable-kinds
 import { isDeliverableType } from "@/lib/lineage-shared";
 import { openJourney } from "@/lib/journey-state";
 import { peekFormat } from "@/lib/peek-format";
-import { SHIP_ACTION_LABEL } from "@/lib/shipped-work-shared";
 import { getWorkFileUrl } from "@/lib/work-files.functions";
 import {
   effectiveWorkDate,
@@ -68,30 +64,6 @@ function Chip({
   );
 }
 
-function FooterAction({
-  onClick,
-  children,
-  primary = false,
-}: {
-  onClick: () => void;
-  children: React.ReactNode;
-  primary?: boolean;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={
-        primary
-          ? "text-xs font-medium text-accent-deep transition-opacity hover:opacity-70"
-          : "text-xs text-muted-foreground transition-colors hover:text-foreground"
-      }
-    >
-      {children}
-    </button>
-  );
-}
-
 export function PeekPanel({
   entry,
   focusId,
@@ -101,7 +73,7 @@ export function PeekPanel({
   onMap,
   onWorkDate,
   onMakePrivate,
-  onFluency,
+  onAnalyse,
   engagementId,
   viewerProfileId,
 }: {
@@ -113,7 +85,7 @@ export function PeekPanel({
   onMap?: ((item: WorkItemRow, group?: WorkItemRow[]) => void) | undefined;
   onWorkDate?: ((item: WorkItemRow) => void) | undefined;
   onMakePrivate?: ((item: WorkItemRow) => void) | undefined;
-  onFluency?: ((item: WorkItemRow) => void) | undefined;
+  onAnalyse?: ((item: WorkItemRow, preset: PeekAnalysisPreset) => void) | undefined;
   /** Set when the peek is read inside one engagement. */
   engagementId?: string | undefined;
   viewerProfileId?: string | null | undefined;
@@ -201,6 +173,51 @@ export function PeekPanel({
         <p className="mt-1">
           <ChatUrlLink item={active} />
         </p>
+        <p className="mt-1">
+          {link ? (
+            <a
+              href={link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-accent-deep transition-opacity hover:opacity-70"
+            >
+              <ExternalLink className="h-3.5 w-3.5" aria-hidden /> Open original
+            </a>
+          ) : active.content_ref ? (
+            <button
+              type="button"
+              onClick={() => void download(active)}
+              className="text-xs font-medium text-accent-deep transition-opacity hover:opacity-70"
+            >
+              Open original
+            </button>
+          ) : null}
+        </p>
+        <PeekActionBar
+          item={active}
+          group={group}
+          canEdit={canEdit}
+          owned={owned}
+          engagementId={engagementId}
+          onMap={onMap}
+          onWorkDate={onWorkDate}
+          onMakePrivate={onMakePrivate}
+          onAnalyse={onAnalyse}
+          onWorkArtifact={
+            engagementId && isDeliverableType(active.type)
+              ? () =>
+                  openJourney({
+                    anchorId: active.id,
+                    anchorTitle: active.title,
+                    engagementId,
+                  })
+              : undefined
+          }
+          onShip={() => setShipOpen(true)}
+          onBrief={() => setBriefOpen(true)}
+          onRemove={() => setRemoveOpen(true)}
+          onDelete={() => setDeleteOpen(true)}
+        />
 
         {canEdit && isDeliverableType(active.type) ? (
           <div className="mt-3">
@@ -262,78 +279,6 @@ export function PeekPanel({
         ) : null}
       </div>
 
-      <footer className="flex shrink-0 flex-wrap items-center gap-x-4 gap-y-1 border-t border-border bg-card px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 sm:px-6 sm:pt-4">
-        {engagementId && isDeliverableType(active.type) ? (
-          <FooterAction
-            onClick={() =>
-              openJourney({
-                anchorId: active.id,
-                anchorTitle: active.title,
-                engagementId,
-              })
-            }
-          >
-            Work Artifact
-          </FooterAction>
-        ) : null}
-        {owned && isDeliverableType(active.type) ? (
-          <FooterAction onClick={() => setShipOpen(true)}>{SHIP_ACTION_LABEL}</FooterAction>
-        ) : null}
-        {canEdit && onMap ? (
-          <FooterAction primary onClick={() => onMap(active, group)}>
-            {active.visibility === "mapped" ? "Remap" : "Map to a workstream"}
-          </FooterAction>
-        ) : null}
-        {canEdit && onWorkDate ? (
-          <FooterAction onClick={() => onWorkDate(active)}>Work date</FooterAction>
-        ) : null}
-        {canEdit && onMakePrivate && active.visibility !== "private" ? (
-          <FooterAction onClick={() => onMakePrivate(active)}>Make private</FooterAction>
-        ) : null}
-        {canEdit ? (
-          <FooterAction onClick={() => setBriefOpen(true)}>
-            {isBriefItem(active) ? "Change what this briefs" : "Mark as the brief"}
-          </FooterAction>
-        ) : null}
-        {canEdit && ["ai_thread", "document", "deck", "sheet"].includes(active.type) ? (
-          <DraftDecisionsButton workItemId={active.id} />
-        ) : null}
-        {canEdit &&
-        ["ai_thread", "document", "deck", "sheet"].includes(active.type) &&
-        onFluency ? (
-          <FooterAction onClick={() => onFluency(active)}>
-            {active.type === "ai_thread" ? "Analyse this conversation" : "Analyse this work"}
-          </FooterAction>
-        ) : null}
-        {owned && engagementId ? (
-          <FooterAction onClick={() => setRemoveOpen(true)}>{REMOVE_LABEL}</FooterAction>
-        ) : null}
-        {owned ? (
-          <button
-            type="button"
-            onClick={() => setDeleteOpen(true)}
-            className="text-xs text-destructive transition-opacity hover:opacity-70"
-          >
-            {DELETE_LABEL}
-          </button>
-        ) : null}
-        <div className="ml-auto">
-          {link ? (
-            <a
-              href={link}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-xs font-medium text-accent-deep transition-opacity hover:opacity-70"
-            >
-              <ExternalLink className="h-3.5 w-3.5" aria-hidden /> Open original
-            </a>
-          ) : active.content_ref ? (
-            <FooterAction primary onClick={() => void download(active)}>
-              Open original
-            </FooterAction>
-          ) : null}
-        </div>
-      </footer>
       <MarkBriefDialog item={active} open={briefOpen} onOpenChange={setBriefOpen} />
       {owned && isDeliverableType(active.type) ? (
         <ShipToFirmDialog

@@ -15,6 +15,7 @@ import { X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { ChatUrlLink } from "@/components/work/ChatUrlLink";
+import { readingTrailD } from "@/lib/journey-path";
 import { DrawnCheck, DrawnStrike, PencilFirework, useMark } from "@/components/notebook/marks";
 import { ThreadBody } from "@/components/peek/ThreadBody";
 import { SpanLegend } from "@/components/provenance/SpanLegend";
@@ -476,7 +477,7 @@ function ReaderBody({ request }: { request: VerifyThreadRequest }) {
               preserveAspectRatio="none"
               viewBox="0 0 18 100"
             >
-              <path d={`M 9 0 Q 12 ${50 * story.progress} 9 ${100 * story.progress}`} />
+              <path d={readingTrailD(story.progress)} />
             </svg>
           ) : null}
           {story.playing && !reduced ? (

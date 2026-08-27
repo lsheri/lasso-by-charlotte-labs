@@ -17,6 +17,8 @@ import { invalidateAfterWorkChange } from "@/lib/work-invalidation";
 import { deleteWorkItem } from "@/lib/work-remove.functions";
 
 export const DELETE_LABEL = "Delete this work";
+/** PASS 129 — the consequence, said in one plain line before anything else. */
+export const DELETE_CONSEQUENCE_LINE = "This deletes the work and its record. There is no undo.";
 export const DELETE_PERMANENCE_LINE =
   "Deletes this work and its captured record: transcript turns, extracted text, analysis links and stitches that point at it. This cannot be undone.";
 
@@ -52,7 +54,7 @@ export function DeleteWorkItemDialog({
         <AlertDialogHeader>
           <AlertDialogTitle>{sure ? "Delete it permanently?" : `Delete “${title}”?`}</AlertDialogTitle>
           <AlertDialogDescription>
-            {DELETE_PERMANENCE_LINE}
+            {DELETE_CONSEQUENCE_LINE} {DELETE_PERMANENCE_LINE}
             {sure ? " Deleting now removes the stored file as well." : ""}
           </AlertDialogDescription>
         </AlertDialogHeader>

@@ -302,7 +302,7 @@ export function AiRecordPage() {
           if (!next) setPeek(null);
         }}
         canEdit={false}
-        onFluency={(item) => setLensItem(item)}
+        onAnalyse={(item) => setLensItem(item)}
       />
 
       {profile && lensItem ? (
