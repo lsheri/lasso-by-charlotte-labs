@@ -25,7 +25,6 @@ import {
 import { useProfile } from "@/hooks/use-profile";
 import { supabase } from "@/integrations/supabase/client";
 import { loadHandoffs } from "@/lib/handoffs.functions";
-import { recordEventFn } from "@/lib/telemetry.functions";
 import { logV2 } from "@/lib/telemetry-v2";
 import {
   VERIFY_LEGEND,
@@ -50,7 +49,6 @@ function prefersReducedMotion(): boolean {
 function ReaderBody({ request }: { request: VerifyThreadRequest }) {
   const { data: profile } = useProfile();
   const load = useServerFn(loadHandoffs);
-  const track = useServerFn(recordEventFn);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [cursor, setCursor] = useState(-1);
   const timer = useRef<number | null>(null);
@@ -126,16 +124,9 @@ function ReaderBody({ request }: { request: VerifyThreadRequest }) {
           { surface: "verify_thread_rail", item_type: "ai_thread" },
           { profileId: profile.id, workItemId: request.itemId },
         );
-        void track({
-          data: {
-            event_type: "evidence.opened",
-            org_id: profile.org_id,
-            dims: { surface: "verify_thread_rail" },
-          },
-        }).catch(() => {});
       }
     },
-    [findings, profile, reduced, request.itemId, track],
+    [findings, profile, reduced, request.itemId],
   );
 
   if (!profile || isCoach) return null;
