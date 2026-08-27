@@ -617,7 +617,7 @@ function PendingBody({ request }: { request: VerifyThreadRequest }) {
 }
 
 
-function ReaderBody({ request }: { request: VerifyThreadRequest }) {
+function ReaderBody({ request }: { request: VerifyThreadRequest & { runId: string } }) {
   const { data: profile } = useProfile();
   const load = useServerFn(loadHandoffs);
   const confirmItem = useServerFn(confirmHandoffItem);
@@ -632,6 +632,7 @@ function ReaderBody({ request }: { request: VerifyThreadRequest }) {
   const check = useMark();
   const strike = useMark();
   const reduced = prefersReducedMotion();
+  const [wide, toggleWide] = useRailWide();
   const alreadyPlayed = useMemo(() => storyPlayed(request.runId), [request.runId]);
   const [sourceOpen, setSourceOpen] = useState(!alreadyPlayed);
 
@@ -905,7 +906,7 @@ function ReaderBody({ request }: { request: VerifyThreadRequest }) {
         </div>
       </header>
 
-      <div className="nb-reader-grid min-h-0 flex-1">
+      <div className="nb-reader-grid min-h-0 flex-1" data-rail-wide={wide ? "true" : "false"}>
         <div
           ref={scroller}
           data-testid="verify-thread-transcript"
@@ -955,11 +956,14 @@ function ReaderBody({ request }: { request: VerifyThreadRequest }) {
             <p className="micro-label text-muted-foreground">
               {isDecisions ? DECISIONS_RAIL_HEADING : VERIFY_THREAD_LABEL}
             </p>
-            {openCount > 0 ? (
-              <span className="nb-check-badge" data-testid="verify-badge-rail">
-                {isDecisions ? reviewBadgeText(openCount) : checkBadgeText(openCount)}
-              </span>
-            ) : null}
+            <div className="flex items-center gap-2">
+              {openCount > 0 ? (
+                <span className="nb-check-badge" data-testid="verify-badge-rail">
+                  {isDecisions ? reviewBadgeText(openCount) : checkBadgeText(openCount)}
+                </span>
+              ) : null}
+              <RailWidenButton wide={wide} onToggle={toggleWide} />
+            </div>
           </div>
 
           {isDecisions ? (
@@ -1069,7 +1073,10 @@ function ReaderBody({ request }: { request: VerifyThreadRequest }) {
                         <span className="mt-1 block text-xs leading-snug text-foreground">
                           {finding.fields.claim_quote}
                         </span>
-                        <span className="mt-1 block text-[11px] leading-snug text-muted-foreground">
+                        <span className="mt-2 block font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+                          {VERIFY_CHECK_LABEL}
+                        </span>
+                        <span className="mt-0.5 block text-[11px] leading-snug text-muted-foreground">
                           {finding.fields.suggested_check}
                         </span>
                       </button>
@@ -1215,5 +1222,12 @@ function ReaderBody({ request }: { request: VerifyThreadRequest }) {
 export function VerifyThreadReader() {
   const request = useVerifyThread();
   if (!request) return null;
-  return <ReaderBody key={request.runId} request={request} />;
+  // While the run is still going the reader is already open, over the same
+  // transcript. When the run lands the settled reader takes its place.
+  if (request.runId === null) {
+    return <PendingBody key={`pending:${request.itemId}`} request={request} />;
+  }
+  return (
+    <ReaderBody key={request.runId} request={request as VerifyThreadRequest & { runId: string }} />
+  );
 }
