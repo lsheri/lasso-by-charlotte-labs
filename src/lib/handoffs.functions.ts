@@ -4,7 +4,15 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { HandoffBlock } from "@/lib/handoffs-shared";
 
 type LoadInput = { run_id: string; profile_id?: string | undefined };
-type ActInput = { run_id: string; item_id: string; profile_id?: string | undefined };
+type ActInput = {
+  run_id: string;
+  item_id: string;
+  profile_id?: string | undefined;
+  /** Pass 128: the person checked it themselves; nothing goes to the 1:1. */
+  self_check?: boolean | undefined;
+  /** Optional single line about how they checked it. */
+  note?: string | undefined;
+};
 type BatchInput = { run_id: string; item_ids: string[]; profile_id?: string | undefined };
 
 export type HandoffLoadResult = { block: HandoffBlock | null };
@@ -40,7 +48,10 @@ export const confirmHandoffItem = createServerFn({ method: "POST" })
   })
   .handler(async ({ data, context }): Promise<HandoffActResult> => {
     const { confirmOne } = await import("./handoffs-act.server");
-    return await confirmOne(context, data.run_id, [data.item_id], data.profile_id ?? null);
+    return await confirmOne(context, data.run_id, [data.item_id], data.profile_id ?? null, {
+      selfCheck: data.self_check === true,
+      ...(data.note ? { note: String(data.note).slice(0, 200) } : {}),
+    });
   });
 
 export const confirmHandoffBatch = createServerFn({ method: "POST" })

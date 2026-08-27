@@ -69,7 +69,13 @@ export async function confirmOne(
   runId: string,
   itemIds: string[],
   profileId: string | null,
+  /**
+   * Pass 128: "Checked it myself" settles the item and nothing else. No 1:1
+   * note is written, and the acted count says the destination was none.
+   */
+  options?: { selfCheck?: boolean; note?: string },
 ): Promise<Result> {
+  const selfCheck = options?.selfCheck === true;
   const { profile, run } = await resolve(ctx, runId, profileId);
   const block = run.block!;
   let duplicate = false;
@@ -79,7 +85,7 @@ export async function confirmOne(
     const item = current.items.find((row) => row.id === itemId);
     if (!item || item.state !== "draft") continue;
 
-    if (current.kind === "open_checks") {
+    if (current.kind === "open_checks" && !selfCheck) {
       const { openCheckNote, sendOpenCheckToOneOnOne } = await import("./handoffs.server");
       const content = openCheckNote(item.fields as OpenCheckItem);
       const sent = await sendOpenCheckToOneOnOne(ctx.supabase, {
@@ -108,7 +114,7 @@ export async function confirmOne(
     // check_results are a per work status; both are stamped, nothing else.
 
     const { stampItem, ownedRun } = await import("./handoffs.server");
-    await stampItem(run.id, current, itemId, "confirmed");
+    await stampItem(run.id, current, itemId, "confirmed", options?.note);
     const refreshed = await ownedRun(run.id, profile.id);
     current = refreshed?.block ?? current;
   }
@@ -119,7 +125,7 @@ export async function confirmOne(
     preset: run.preset,
     kind: current.kind,
     action: itemIds.length > 1 ? "batch_confirmed" : "confirmed",
-    destination: HANDOFF_DESTINATION[current.kind] ?? "none",
+    destination: selfCheck ? "none" : (HANDOFF_DESTINATION[current.kind] ?? "none"),
   });
   return { block: current, duplicate };
 }
