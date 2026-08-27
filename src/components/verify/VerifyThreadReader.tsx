@@ -71,6 +71,7 @@ import {
 import type { WorkItemRow } from "@/lib/work-types";
 
 const SKIP_KEY = "lasso.reader.skip_story";
+const RAIL_WIDE_KEY = "lasso.reader.rail_wide";
 
 function prefersReducedMotion(): boolean {
   if (typeof window === "undefined") return false;
@@ -93,7 +94,53 @@ function writeSkipPreference(): void {
   }
 }
 
+/**
+ * PASS 131 — how wide the rail sits. Narrow by default, and remembered, because
+ * a checklist you widened once you want widened next time too.
+ */
+function useRailWide(): [boolean, () => void] {
+  const [wide, setWide] = useState(false);
+  useEffect(() => {
+    try {
+      setWide(window.localStorage.getItem(RAIL_WIDE_KEY) === "1");
+    } catch {
+      /* no preference is simply the default */
+    }
+  }, []);
+  const toggle = useCallback(() => {
+    setWide((prev) => {
+      const next = !prev;
+      try {
+        window.localStorage.setItem(RAIL_WIDE_KEY, next ? "1" : "0");
+      } catch {
+        /* a preference that cannot be stored is simply not stored */
+      }
+      return next;
+    });
+  }, []);
+  return [wide, toggle];
+}
+
+function RailWidenButton({ wide, onToggle }: { wide: boolean; onToggle: () => void }) {
+  return (
+    <button
+      type="button"
+      data-testid="reader-rail-widen"
+      aria-label={wide ? "Narrow the checklist" : "Widen the checklist"}
+      onClick={onToggle}
+      className="nb-rail-widen grid h-6 w-6 shrink-0 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+    >
+      {wide ? (
+        <ChevronRight className="h-3.5 w-3.5" aria-hidden />
+      ) : (
+        <ChevronLeft className="h-3.5 w-3.5" aria-hidden />
+      )}
+    </button>
+  );
+}
+
 type Outcome = "completed" | "skipped" | "suppressed";
+
 
 /**
  * The intro story. One downward pass, at most five seconds, every timer and
