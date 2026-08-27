@@ -40,3 +40,23 @@ export function useVerifyThread(): VerifyThreadRequest | null {
     () => null,
   );
 }
+
+/**
+ * Which runs have already told their story in this app session. Memory only:
+ * a reload is a new session, and nothing about a person is written down.
+ */
+const played = new Set<string>();
+
+export function storyPlayed(runId: string): boolean {
+  return played.has(runId);
+}
+
+export function markStoryPlayed(runId: string): void {
+  played.add(runId);
+}
+
+/** Test seam only. */
+export function resetPlayedStories(): void {
+  played.clear();
+}
+
