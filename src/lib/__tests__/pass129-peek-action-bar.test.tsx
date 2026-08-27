@@ -81,10 +81,10 @@ describe("pass 129 — the peek action bar", () => {
     expect(screen.getByText("Remap")).toBeTruthy();
   });
 
-  it("gives a thread the fact check button and no decisions button yet", () => {
+  it("gives a thread both the fact check and the decisions button", () => {
     bar();
     expect(screen.getByText(analysisPreset("verification_thread")!.label)).toBeTruthy();
-    expect(screen.queryByText(analysisPreset("decision_origin")!.label)).toBeNull();
+    expect(screen.getByText(analysisPreset("decision_origin")!.label)).toBeTruthy();
   });
 
   it("shows a coach none of the owner only analyses", () => {

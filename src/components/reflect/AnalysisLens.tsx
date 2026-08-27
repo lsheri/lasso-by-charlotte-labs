@@ -178,12 +178,16 @@ export function AnalysisLens({
       logEvent("reflect.session_created", orgId, { preset: preset.id });
       // The mirror of the lineage handover: the model has run, and the answer
       // is read as ink on the conversation it came from.
-      if (preset.id === "verification_thread" && result.run_id) {
+      if (
+        (preset.id === "verification_thread" || preset.id === "decision_origin_thread") &&
+        result.run_id
+      ) {
         const { openVerifyThread } = await import("@/components/verify/verify-thread-state");
         openVerifyThread({
           runId: result.run_id,
           itemId: anchorItemId ?? target.id,
           itemTitle: target.title,
+          kind: preset.id === "decision_origin_thread" ? "decisions" : "verification",
         });
       }
       await queryClient.invalidateQueries({ queryKey: ["reflect-sessions"] });

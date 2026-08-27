@@ -106,6 +106,14 @@ export type ThreadMark = {
   verdict: string;
   /** Drafts draw bold. A settled finding keeps its ink, quietly. */
   bold?: boolean;
+  /**
+   * Pass 130: the whole turn is lit instead of a span. Nothing is being judged,
+   * so the flag draws in the ink named here rather than in a verdict colour.
+   */
+  lit?: boolean;
+  stroke?: string;
+  wash?: string;
+  dashed?: boolean;
 };
 
 /** The dom id of a turn, so the rail can scroll to it. */
@@ -116,6 +124,11 @@ export function turnAnchorId(turnNo: number): string {
 /** The badge in both headers. Drafts only, never rendered at zero. */
 export function checkBadgeText(count: number): string {
   return `${count} TO CHECK`;
+}
+
+/** The same badge, for the decisions reader. One helper beside the other. */
+export function reviewBadgeText(count: number): string {
+  return `${count} TO REVIEW`;
 }
 
 /** Said once, when every item on the run has been settled. */

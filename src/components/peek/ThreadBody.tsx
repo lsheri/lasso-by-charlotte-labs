@@ -170,40 +170,62 @@ export function ThreadBody({
               ) : null}
             </div>
           ) : (
-            <div key={turn.id} id={turnAnchorId(turn.turn_no)}>
-              <div className="mb-1 flex items-center gap-1.5">
-                <span className="grid w-[16px] shrink-0 place-items-center">
-                  {(() => {
-                    const flag = marks.find((m) => m.turnNo === turn.turn_no);
-                    return flag ? (
-                      <MarginFlag
-                        seed={flag.id}
-                        verdict={flag.verdict}
-                        label={`Go to the finding on turn ${turn.turn_no}`}
-                        {...(onMarkActivate ? { onActivate: () => onMarkActivate(flag.id) } : {})}
-                      />
-                    ) : null;
-                  })()}
-                </span>
-                <span className="micro-label">
-                  Turn {turn.turn_no} · {turn.role}
-                  {turn.model ? ` · ${turn.model}` : model ? ` · ${model}` : ""}
-                  {turnTime(turn.ts) ? ` · ${turnTime(turn.ts)}` : ""}
-                </span>
-              </div>
-              <div className="max-w-[90%] whitespace-pre-wrap rounded-[var(--radius)] border border-border bg-card px-4 py-3 font-mono text-xs leading-relaxed text-foreground shadow-card">
-                <TurnContent
-                  turn={turn}
-                  marks={marks}
-                  activeMarkId={activeMarkId}
-                  settledIds={settledIds}
-                  reducedMotion={reducedMotion}
-                />
-              </div>
-              {revisedLabel(turn) ? (
-                <p className="mt-1 text-[11px] text-muted-foreground">{revisedLabel(turn)}</p>
-              ) : null}
-            </div>
+            (() => {
+              const flag = marks.find((m) => m.turnNo === turn.turn_no);
+              const lit = flag?.lit === true;
+              return (
+                <div key={turn.id} id={turnAnchorId(turn.turn_no)}>
+                  <div className="mb-1 flex items-center gap-1.5">
+                    <span className="grid w-[16px] shrink-0 place-items-center">
+                      {flag ? (
+                        <MarginFlag
+                          seed={flag.id}
+                          verdict={flag.verdict}
+                          stroke={flag.stroke}
+                          dashed={flag.dashed}
+                          label={`Go to the finding on turn ${turn.turn_no}`}
+                          {...(onMarkActivate
+                            ? { onActivate: () => onMarkActivate(flag.id) }
+                            : {})}
+                        />
+                      ) : null}
+                    </span>
+                    <span className="micro-label">
+                      Turn {turn.turn_no} · {turn.role}
+                      {turn.model ? ` · ${turn.model}` : model ? ` · ${model}` : ""}
+                      {turnTime(turn.ts) ? ` · ${turnTime(turn.ts)}` : ""}
+                    </span>
+                  </div>
+                  <div
+                    data-lit={lit ? "true" : undefined}
+                    data-testid={lit ? `turn-lit-${turn.turn_no}` : undefined}
+                    className={`max-w-[90%] whitespace-pre-wrap rounded-[var(--radius)] border border-border bg-card px-4 py-3 font-mono text-xs leading-relaxed text-foreground shadow-card${
+                      lit ? " nb-turn-lit border-l-[3px]" : ""
+                    }`}
+                    {...(lit
+                      ? {
+                          style: {
+                            ["--span-color" as string]: flag?.stroke ?? "var(--nb-ink-yellow)",
+                            ["--span-wash" as string]:
+                              flag?.wash ?? "var(--status-unsourced-wash)",
+                          } as React.CSSProperties,
+                        }
+                      : {})}
+                  >
+                    <TurnContent
+                      turn={turn}
+                      marks={marks}
+                      activeMarkId={activeMarkId}
+                      settledIds={settledIds}
+                      reducedMotion={reducedMotion}
+                    />
+                  </div>
+                  {revisedLabel(turn) ? (
+                    <p className="mt-1 text-[11px] text-muted-foreground">{revisedLabel(turn)}</p>
+                  ) : null}
+                </div>
+              );
+            })()
           ),
         )}
         {turns && turns.length === 0 ? (

@@ -37,24 +37,43 @@ type OpenCheckShape = {
   self_check_note?: unknown;
 };
 
-/** Identity of a claim across runs: the words, the turn, and the verdict. */
-function claimKey(fields: OpenCheckShape): string | null {
-  if (typeof fields.claim_quote !== "string") return null;
-  if (typeof fields.evidence_turn_id !== "string") return null;
-  if (typeof fields.verdict !== "string") return null;
-  return `${fields.claim_quote}\u0000${fields.evidence_turn_id}\u0000${fields.verdict}`;
+type DecisionShape = {
+  call?: unknown;
+  evidence_turn_id?: unknown;
+  origin_class?: unknown;
+};
+
+/**
+ * Identity of an item across runs. For a claim: the words, the turn, and the
+ * verdict. For a decision: the call, the turn, and where it came from.
+ */
+function claimKey(kind: HandoffKind, fields: unknown): string | null {
+  if (kind === "decision_candidates") {
+    const f = fields as DecisionShape;
+    if (typeof f.call !== "string") return null;
+    if (typeof f.evidence_turn_id !== "string") return null;
+    return `${f.call}\u0000${f.evidence_turn_id}\u0000${
+      typeof f.origin_class === "string" ? f.origin_class : "untraceable"
+    }`;
+  }
+  const f = fields as OpenCheckShape;
+  if (typeof f.claim_quote !== "string") return null;
+  if (typeof f.evidence_turn_id !== "string") return null;
+  if (typeof f.verdict !== "string") return null;
+  return `${f.claim_quote}\u0000${f.evidence_turn_id}\u0000${f.verdict}`;
 }
 
 /**
  * Pass 128: a claim a person already settled does not come back as work. The
  * comparison is against the MOST RECENT prior run of the same preset in the
- * same scope, and only an exact claim, turn, and verdict match carries. A
- * claim that changed is new work, and it arrives as a draft.
+ * same scope, and only an exact match carries. An item that changed is new
+ * work, and it arrives as a draft.
  */
 async function carryForward(
   items: HandoffItem[],
   runId: string,
   presetId: string,
+  kind: HandoffKind,
   scope: CarryScope,
 ): Promise<HandoffItem[]> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -76,14 +95,14 @@ async function carryForward(
   const settled = new Map<string, HandoffItem>();
   for (const item of prior.items) {
     if (item.state !== "confirmed" && item.state !== "discarded") continue;
-    const key = claimKey(item.fields as OpenCheckShape);
+    const key = claimKey(kind, item.fields);
     if (key && !settled.has(key)) settled.set(key, item);
   }
   if (settled.size === 0) return items;
 
   const carriedKeys = new Set<string>();
   const next = items.map((item) => {
-    const key = claimKey(item.fields as OpenCheckShape);
+    const key = claimKey(kind, item.fields);
     const match = key ? settled.get(key) : undefined;
     if (!key || !match) return item;
     carriedKeys.add(key);
@@ -130,7 +149,7 @@ export async function writeHandoffs(
     // Thread runs only. The deliverable scoped run is untouched.
     if (carryScope) {
       try {
-        items = await carryForward(items, runId, presetId, carryScope);
+        items = await carryForward(items, runId, presetId, kind, carryScope);
       } catch (e) {
         console.error("[handoffs] carry-forward failed:", (e as Error).message);
       }

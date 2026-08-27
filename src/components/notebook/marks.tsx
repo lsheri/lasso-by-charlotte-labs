@@ -672,13 +672,22 @@ export function MarginFlag({
   verdict,
   onActivate,
   label,
+  stroke,
+  dashed,
 }: {
   seed: string;
   verdict: string;
   onActivate?: () => void;
   label: string;
+  /** An explicit ink, for surfaces where no verdict is being expressed. */
+  stroke?: string | undefined;
+  dashed?: boolean | undefined;
 }) {
-  const ink = verdictInk(verdict);
+  const base = verdictInk(verdict);
+  const ink = {
+    stroke: stroke ?? base.stroke,
+    dashed: dashed ?? base.dashed,
+  };
   const d = useMemo(() => marginFlagD(seed), [seed]);
   return (
     <button

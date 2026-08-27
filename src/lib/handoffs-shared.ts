@@ -30,6 +30,8 @@ export const HANDOFF_PRESETS: Record<string, HandoffKind> = {
   /** The thread scoped sibling. Same schema, anchored to a turn. */
   verification_thread: "open_checks",
   decision_origin: "decision_candidates",
+  /** The thread scoped sibling. Same schema, anchored to a turn. */
+  decision_origin_thread: "decision_candidates",
   still_on_brief: "departures",
   firm_checks: "check_results",
 };
@@ -65,12 +67,29 @@ export type OpenCheckItem = {
 
 
 
+/**
+ * Where a call came from. Optional: an item that carries no class is read as
+ * untraceable, and is never dropped for that alone.
+ */
+export const DECISION_ORIGIN_CLASSES = [
+  "brief",
+  "you",
+  "model_accepted",
+  "model_changed",
+  "source",
+  "untraceable",
+] as const;
+export type DecisionOriginClass = (typeof DECISION_ORIGIN_CLASSES)[number];
+
 export type DecisionCandidateItem = {
   call: string;
   origin: string;
   what_it_decided: string;
   evidence_turn_id?: string;
   deliverable_location?: string;
+  origin_class?: DecisionOriginClass;
+  /** This item arrived already settled, from the run named here. */
+  carried_from_run_id?: string;
 };
 
 export type DepartureItem = {
@@ -151,7 +170,7 @@ export type HandoffAnchorOptions = {
  * Per item validation. An item that does not validate is dropped; the rest are
  * kept. Nothing half parsed is ever stored.
  */
-function validateItem(
+export function validateItem(
   kind: HandoffKind,
   raw: unknown,
   opts: HandoffAnchorOptions = {},
@@ -186,15 +205,25 @@ function validateItem(
     const origin = str(row["origin"], 400);
     const what_it_decided = str(row["what_it_decided"], 600);
     if (!call || !origin || !what_it_decided) return null;
-    const evidence_turn_id = str(row["evidence_turn_id"], 120);
+    const turnRef = normalizeTurnRef(str(row["evidence_turn_id"], 120));
     const deliverable_location = str(row["deliverable_location"], 200);
-    if (!evidence_turn_id && !deliverable_location) return null;
+    // Same rule as the open checks branch: on a thread run the anchor must name
+    // a model turn in this conversation, or the item is dropped, never repaired.
+    if (opts.requireEvidenceTurn) {
+      if (!turnRef) return null;
+      if (opts.allowedTurnRefs && !opts.allowedTurnRefs.includes(turnRef)) return null;
+    }
+    if (!turnRef && !deliverable_location) return null;
+    // The one new field this pass. An unknown value is not kept; the item still
+    // stands, and reads as untraceable.
+    const origin_class = oneOf(row["origin_class"], DECISION_ORIGIN_CLASSES);
     return {
       call,
       origin,
       what_it_decided,
-      ...(evidence_turn_id ? { evidence_turn_id } : {}),
+      ...(turnRef ? { evidence_turn_id: turnRef } : {}),
       ...(deliverable_location ? { deliverable_location } : {}),
+      ...(origin_class ? { origin_class } : {}),
     };
   }
   if (kind === "departures") {
@@ -395,7 +424,7 @@ export function createHoldback(emit: (delta: string) => void): {
 export function tailInstruction(kind: HandoffKind): string {
   const shape: Record<HandoffKind, string> = {
     open_checks: `{"open_checks":[{"claim_quote":"<verbatim span from the work>","location":"<where it sits>","verdict":"nothing_visible|contradicted","suggested_check":"<the check a reviewer could run>","evidence_turn_id":"<turn number the claim was produced in, or omit>"}]}`,
-    decision_candidates: `{"decision_candidates":[{"call":"<the call that was made>","origin":"<where it came from>","what_it_decided":"<what it settled>","evidence_turn_id":"<turn number or id, or omit>","deliverable_location":"<where in the work, or omit>"}]}`,
+    decision_candidates: `{"decision_candidates":[{"call":"<the call that was made>","origin":"<where it came from>","what_it_decided":"<what it settled>","origin_class":"<one of brief, you, model_accepted, model_changed, source, untraceable>","evidence_turn_id":"<turn number or id, or omit>","deliverable_location":"<where in the work, or omit>"}]}`,
     departures: `{"departures":[{"class":"ADDED|DROPPED|CHANGED|REFRAMED","brief_quote":"<verbatim span from the brief>","work_quote":"<verbatim span from the work>","entered_at":"<where it entered>","acknowledged":true}]}`,
     check_results: `{"check_results":[{"check_id":"<the check number from the CHECKS block>","status":"addressed|partly|not_visible","evidence_quote":"<verbatim span, or an empty string>"}]}`,
   };
