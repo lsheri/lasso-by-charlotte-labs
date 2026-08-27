@@ -381,6 +381,240 @@ function DecisionRow({
   );
 }
 
+/**
+ * PASS 131 — the working read-through. The transcript needs no model, so it is
+ * on screen at once and the pencil rides slowly down it and loops gently back
+ * up while the run happens underneath. The loop never pretends to be progress.
+ */
+function useWorkingLoop({
+  enabled,
+  reduced,
+  scroller,
+}: {
+  enabled: boolean;
+  reduced: boolean;
+  scroller: React.RefObject<HTMLDivElement | null>;
+}) {
+  const [running, setRunning] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [tipY, setTipY] = useState(0);
+  const frame = useRef<number | null>(null);
+  const stopped = useRef(false);
+
+  const stop = useCallback(() => {
+    stopped.current = true;
+    if (frame.current !== null) window.cancelAnimationFrame(frame.current);
+    frame.current = null;
+    setRunning(false);
+  }, []);
+
+  useEffect(() => {
+    if (!enabled || reduced) return;
+    const node = scroller.current;
+    if (!node) return;
+    stopped.current = false;
+    setRunning(true);
+    const cycle = 9000;
+    const start = performance.now();
+    const step = (now: number) => {
+      if (stopped.current) return;
+      const t = ((now - start) % cycle) / cycle;
+      // Down, then gently back up: an indeterminate wait, honestly drawn.
+      const eased = t < 0.75 ? t / 0.75 : 1 - (t - 0.75) / 0.25;
+      const maxScroll = Math.max(node.scrollHeight - node.clientHeight, 0);
+      node.scrollTop = maxScroll * eased;
+      setProgress(Math.max(eased, 0.02));
+      setTipY(node.clientHeight * Math.min(eased + 0.05, 1));
+      frame.current = window.requestAnimationFrame(step);
+    };
+    frame.current = window.requestAnimationFrame(step);
+    return () => {
+      stopped.current = true;
+      if (frame.current !== null) window.cancelAnimationFrame(frame.current);
+      frame.current = null;
+    };
+  }, [enabled, reduced, scroller]);
+
+  return { running, progress, tipY, stop };
+}
+
+/** One phase line at a time, advancing on a timer, the last one holding. */
+function usePhaseLine(lines: readonly string[], enabled: boolean): string {
+  const [index, setIndex] = useState(0);
+  useEffect(() => {
+    if (!enabled) return;
+    setIndex(0);
+    const timer = window.setInterval(() => {
+      setIndex((prev) => (prev + 1 < lines.length ? prev + 1 : prev));
+    }, 4000);
+    return () => window.clearInterval(timer);
+  }, [enabled, lines.length]);
+  return lines[Math.min(index, lines.length - 1)] ?? "";
+}
+
+/**
+ * The reader while the run is still going: the same shell, the transcript on
+ * the left, and one honest line at a time on the right.
+ */
+function PendingBody({ request }: { request: VerifyThreadRequest }) {
+  const { data: profile } = useProfile();
+  const scroller = useRef<HTMLDivElement | null>(null);
+  const reduced = prefersReducedMotion();
+  const [skipped, setSkipped] = useState(false);
+  const [wide, toggleWide] = useRailWide();
+  const isCoach = profile?.role === "coach";
+  const isDecisions = (request.kind ?? "verification") === "decisions";
+  const failed = typeof request.error === "string" && request.error.length > 0;
+
+  const itemQuery = useQuery({
+    queryKey: ["verify-thread-item", request.itemId],
+    enabled: Boolean(profile) && !isCoach,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("work_items")
+        .select("*")
+        .eq("id", request.itemId)
+        .maybeSingle();
+      if (error) throw new Error(error.message);
+      return (data ?? null) as WorkItemRow | null;
+    },
+  });
+
+  const { data: turnCount } = useQuery({
+    queryKey: ["thread-turn-count", request.itemId],
+    enabled: Boolean(profile) && !isCoach,
+    queryFn: async (): Promise<number> => {
+      const { count } = await supabase
+        .from("turns")
+        .select("id", { count: "exact", head: true })
+        .eq("work_item_id", request.itemId);
+      return count ?? 0;
+    },
+  });
+
+  const lines = useMemo(
+    () => (isDecisions ? decisionsPhaseLines(turnCount ?? 0) : verifyPhaseLines(turnCount ?? 0)),
+    [isDecisions, turnCount],
+  );
+  const phase = usePhaseLine(lines, !skipped && !failed);
+
+  const loop = useWorkingLoop({
+    enabled: Boolean(itemQuery.data) && !skipped && !failed,
+    reduced,
+    scroller,
+  });
+
+  useEffect(() => {
+    if (skipped || failed) loop.stop();
+  }, [failed, loop, skipped]);
+
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") closeVerifyThread();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  if (!profile || isCoach) return null;
+  const item = itemQuery.data ?? null;
+  const stoppedLine = failed ? request.error : VERIFY_WORKING_LINE;
+
+  return (
+    <div
+      className="fixed inset-0 z-[70] flex flex-col bg-background"
+      data-testid="verify-thread-reader"
+      data-pending="true"
+    >
+      <header className="flex shrink-0 items-start justify-between gap-4 border-b border-border px-5 py-3 pt-[calc(0.75rem+env(safe-area-inset-top))]">
+        <div className="min-w-0">
+          <p className="micro-label text-muted-foreground">
+            {isDecisions ? DECIDED_LABEL : VERIFY_THREAD_LABEL}
+          </p>
+          <h1 className="page-title mt-1 break-words text-[20px] leading-snug">
+            {request.itemTitle}
+          </h1>
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          {loop.running && !skipped ? (
+            <button
+              type="button"
+              data-testid="verify-skip"
+              onClick={() => setSkipped(true)}
+              className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Skip the story
+            </button>
+          ) : null}
+          <button
+            type="button"
+            aria-label="Close the reader"
+            onClick={closeVerifyThread}
+            className="grid h-9 w-9 place-items-center rounded-md text-foreground/70 transition-colors hover:bg-secondary"
+          >
+            <X className="h-4 w-4" aria-hidden />
+          </button>
+        </div>
+      </header>
+
+      <div className="nb-reader-grid min-h-0 flex-1" data-rail-wide={wide ? "true" : "false"}>
+        <div
+          ref={scroller}
+          data-testid="verify-thread-transcript"
+          className="nb-reader-transcript relative px-5 py-5"
+        >
+          <p
+            className="micro-label mb-3 text-muted-foreground"
+            data-testid="reader-phase-line"
+            aria-live="polite"
+          >
+            {skipped || failed ? stoppedLine : phase}
+          </p>
+          {loop.progress > 0 && !skipped && !failed ? (
+            <svg
+              className="nb-reader-trail"
+              aria-hidden
+              data-testid="verify-reader-trail"
+              preserveAspectRatio="none"
+              viewBox="0 0 18 100"
+            >
+              <path d={readingTrailD(loop.progress)} />
+            </svg>
+          ) : null}
+          {loop.running && !reduced && !skipped && !failed ? (
+            <span
+              className="nb-dots pointer-events-none absolute left-1 top-0"
+              style={{ transform: `translateY(${loop.tipY}px)` }}
+              aria-hidden
+            >
+              <span className="nb-dot" />
+              <span className="nb-dot" />
+              <span className="nb-dot" />
+            </span>
+          ) : null}
+          {item ? <ThreadBody item={item} reducedMotion={reduced} /> : null}
+        </div>
+
+        <aside data-testid="verify-thread-rail" className="nb-reader-rail flex flex-col gap-3 p-4">
+          <div className="flex items-center justify-between gap-2">
+            <p className="micro-label text-muted-foreground">
+              {isDecisions ? DECISIONS_RAIL_HEADING : VERIFY_THREAD_LABEL}
+            </p>
+            <RailWidenButton wide={wide} onToggle={toggleWide} />
+          </div>
+          <p className="text-xs text-muted-foreground" data-testid="reader-rail-phase">
+            {skipped || failed ? stoppedLine : phase}
+          </p>
+          {failed ? (
+            <Button size="sm" variant="outline" onClick={closeVerifyThread}>
+              Close the reader
+            </Button>
+          ) : null}
+        </aside>
+      </div>
+    </div>
+  );
+}
 
 
 function ReaderBody({ request }: { request: VerifyThreadRequest }) {
