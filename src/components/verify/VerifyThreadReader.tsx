@@ -18,6 +18,7 @@ import { ChatUrlLink } from "@/components/work/ChatUrlLink";
 import { readingTrailD } from "@/lib/journey-path";
 import { DrawnCheck, DrawnStrike, PencilFirework, useMark } from "@/components/notebook/marks";
 import { ThreadBody } from "@/components/peek/ThreadBody";
+import { TurnCardStory } from "@/components/verify/TurnCardStory";
 import { SpanLegend } from "@/components/provenance/SpanLegend";
 import { AddDecisionDialog } from "@/components/decisions/AddDecisionDialog";
 import { Button } from "@/components/ui/button";
@@ -49,6 +50,7 @@ import {
   originClass,
 } from "@/lib/decisions-thread-shared";
 import { logEvent } from "@/lib/telemetry";
+import type { TurnStoryTurn } from "@/lib/turn-story-shared";
 import { logV2 } from "@/lib/telemetry-v2";
 import {
   VERIFY_ALL_SETTLED_LINE,
@@ -480,20 +482,25 @@ function PendingBody({ request }: { request: VerifyThreadRequest }) {
     },
   });
 
-  const { data: turnCount } = useQuery({
-    queryKey: ["thread-turn-count", request.itemId],
+  // PASS 132: the same turns the transcript loads, under the same key, so the
+  // card story costs no second query.
+  const { data: turns } = useQuery({
+    queryKey: ["turns", request.itemId],
     enabled: Boolean(profile) && !isCoach,
-    queryFn: async (): Promise<number> => {
-      const { count } = await supabase
+    queryFn: async (): Promise<TurnStoryTurn[]> => {
+      const { data, error } = await supabase
         .from("turns")
-        .select("id", { count: "exact", head: true })
-        .eq("work_item_id", request.itemId);
-      return count ?? 0;
+        .select("id, turn_no, role, content, ts, model, meta")
+        .eq("work_item_id", request.itemId)
+        .order("turn_no", { ascending: true });
+      if (error) throw new Error(error.message);
+      return (data ?? []) as TurnStoryTurn[];
     },
   });
+  const turnCount = turns?.length ?? 0;
 
   const lines = useMemo(
-    () => (isDecisions ? decisionsPhaseLines(turnCount ?? 0) : verifyPhaseLines(turnCount ?? 0)),
+    () => (isDecisions ? decisionsPhaseLines(turnCount) : verifyPhaseLines(turnCount)),
     [isDecisions, turnCount],
   );
   const phase = usePhaseLine(lines, !skipped && !failed);
@@ -605,6 +612,15 @@ function PendingBody({ request }: { request: VerifyThreadRequest }) {
           <p className="text-xs text-muted-foreground" data-testid="reader-rail-phase">
             {skipped || failed ? stoppedLine : phase}
           </p>
+          {!skipped && !failed ? (
+            <TurnCardStory
+              itemId={request.itemId}
+              item={item}
+              turns={turns ?? []}
+              running={loop.running && !skipped && !failed}
+              reduced={reduced}
+            />
+          ) : null}
           {failed ? (
             <Button size="sm" variant="outline" onClick={closeVerifyThread}>
               Close the reader
