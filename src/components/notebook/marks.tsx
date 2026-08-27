@@ -16,6 +16,8 @@ import {
   SCRIBBLE_INFLATE,
   fnv1a,
   hatchStrokes,
+  marginFlagD,
+  MARGIN_FLAG_BOX,
   mulberry32,
   scribblePath,
   verifyInkD,
