@@ -44,10 +44,16 @@ describe("preset prompts", () => {
     }
   });
 
-  it("gives exactly the four intended presets a schema", () => {
+  it("gives exactly the intended presets a schema", () => {
     const withSchema = ANALYSIS_PRESETS.filter((p) => p.handoffSchema).map((p) => p.id).sort();
     expect(withSchema).toEqual(
-      ["decision_origin", "firm_checks", "still_on_brief", "verification"].sort(),
+      [
+        "decision_origin",
+        "firm_checks",
+        "still_on_brief",
+        "verification",
+        "verification_thread",
+      ].sort(),
     );
   });
 });
