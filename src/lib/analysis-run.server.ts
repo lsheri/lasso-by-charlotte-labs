@@ -102,6 +102,12 @@ export async function runAnalysis(
   });
   const isOwner = target.ownerId === profile.id;
   if (!isOwner && !preset.coachMayRun) throw new Response("Forbidden", { status: 403 });
+  // Thread scoped verification is the owner's own reading of their own
+  // conversation. A coach never runs it, even on work shared with them.
+  if (preset.scope === "thread" && profile.role === "coach") {
+    throw new Response("Forbidden", { status: 403 });
+  }
+
   // Each engagement scoped preset carries its own minimum: three for a
   // recurrence, two for a sequence.
   if (preset.scope === "engagement" && target.itemsInScope < minItemsFor(preset)) {
@@ -526,8 +532,25 @@ export async function runAnalysis(
     const handoffKind = (NO_HANDOFF_PRESETS as readonly string[]).includes(preset.id)
       ? null
       : (HANDOFF_PRESETS[preset.id] ?? null);
+    // A thread scoped finding must name the MODEL turn it came from, and the
+    // turn must exist. Circling a person's turn is "you did not verify" drawn
+    // instead of written, so a human turn is never an acceptable anchor.
+    let anchorOptions: import("./handoffs-shared").HandoffAnchorOptions = {};
+    if (preset.scope === "thread") {
+      const { data: turnRows } = await supabase
+        .from("turns")
+        .select("turn_no, role")
+        .eq("work_item_id", target.scopeId);
+      anchorOptions = {
+        requireEvidenceTurn: true,
+        allowedTurnRefs: (turnRows ?? [])
+          .filter((row) => (row.role ?? "").toLowerCase() !== "user")
+          .map((row) => String(row.turn_no)),
+      };
+    }
     // The firm's checks are their own message, so the preset prefix ahead of
     // them is byte identical between runs and can be cached by the model.
+
     const { buildAnalysisConversation } = await import("./prompt-assembly");
     const conversation = buildAnalysisConversation({
       systemPrompt: REFLECT_SYSTEM_PROMPT,
@@ -560,7 +583,9 @@ export async function runAnalysis(
     const stripped = stripHandoffTail(
       completion.text || "Nothing came back for that. Try again.",
       handoffKind,
+      anchorOptions,
     );
+
     holdback?.end(stripped.block !== null);
     let handoffCount = 0;
     if (stripped.block) {

@@ -27,10 +27,13 @@ export type HandoffKind = (typeof HANDOFF_KINDS)[number];
  */
 export const HANDOFF_PRESETS: Record<string, HandoffKind> = {
   verification: "open_checks",
+  /** The thread scoped sibling. Same schema, anchored to a turn. */
+  verification_thread: "open_checks",
   decision_origin: "decision_candidates",
   still_on_brief: "departures",
   firm_checks: "check_results",
 };
+
 
 /** Presets that must never carry a handoff block, enforced server side. */
 export const PERSON_SHAPED_PRESETS = ["ai_fluency_4d", "working_the_model"] as const;
@@ -46,9 +49,16 @@ export type HandoffState = "draft" | "confirmed" | "discarded";
 export type OpenCheckItem = {
   claim_quote: string;
   location: string;
-  verdict: "nothing_visible" | "contradicted";
+  verdict: "nothing_visible" | "contradicted" | "checked";
   suggested_check: string;
+  /**
+   * The turn the model produced the claim in. Optional for the deliverable
+   * scoped run, required for the thread scoped one: ink has nowhere to land
+   * without it.
+   */
+  evidence_turn_id?: string;
 };
+
 
 export type DecisionCandidateItem = {
   call: string;
@@ -112,20 +122,60 @@ function oneOf<T extends string>(value: unknown, allowed: readonly T[]): T | nul
 }
 
 /**
+ * A turn reference, reduced to the turn number it names. "TURN 4", "4",
+ * "turn-4" all name turn 4; anything with no number names nothing.
+ */
+export function normalizeTurnRef(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const match = value.match(/\d{1,6}/);
+  return match ? match[0].replace(/^0+(?=\d)/, "") : null;
+}
+
+/**
+ * The anchoring rules for one parse. The thread scoped run requires a turn
+ * reference that names a real model turn; the deliverable scoped run passes
+ * nothing here and is unchanged.
+ */
+export type HandoffAnchorOptions = {
+  requireEvidenceTurn?: boolean;
+  /** Normalised references the run will accept. Model turns only. */
+  allowedTurnRefs?: readonly string[];
+};
+
+/**
  * Per item validation. An item that does not validate is dropped; the rest are
  * kept. Nothing half parsed is ever stored.
  */
-function validateItem(kind: HandoffKind, raw: unknown): HandoffFields | null {
+function validateItem(
+  kind: HandoffKind,
+  raw: unknown,
+  opts: HandoffAnchorOptions = {},
+): HandoffFields | null {
   if (!raw || typeof raw !== "object") return null;
   const row = raw as Record<string, unknown>;
   if (kind === "open_checks") {
     const claim_quote = str(row["claim_quote"]);
     const location = str(row["location"], 200);
-    const verdict = oneOf(row["verdict"], ["nothing_visible", "contradicted"] as const);
+    const verdict = oneOf(row["verdict"], ["nothing_visible", "contradicted", "checked"] as const);
     const suggested_check = str(row["suggested_check"], 400);
     if (!claim_quote || !location || !verdict || !suggested_check) return null;
-    return { claim_quote, location, verdict, suggested_check };
+    const turnRef = normalizeTurnRef(str(row["evidence_turn_id"], 120));
+    const allowed = opts.allowedTurnRefs;
+    // A finding with no anchor, or an anchor that names no model turn in this
+    // conversation, has nowhere to put its ink. It is dropped, never repaired.
+    if (opts.requireEvidenceTurn) {
+      if (!turnRef) return null;
+      if (allowed && !allowed.includes(turnRef)) return null;
+    }
+    return {
+      claim_quote,
+      location,
+      verdict,
+      suggested_check,
+      ...(turnRef ? { evidence_turn_id: turnRef } : {}),
+    };
   }
+
   if (kind === "decision_candidates") {
     const call = str(row["call"], 400);
     const origin = str(row["origin"], 400);
@@ -186,7 +236,11 @@ export type StripResult = {
  * is part of the answer itself (quoted code, for instance) has no sentinel and
  * is left exactly where it is.
  */
-export function stripHandoffTail(text: string, kind: HandoffKind | null): StripResult {
+export function stripHandoffTail(
+  text: string,
+  kind: HandoffKind | null,
+  opts: HandoffAnchorOptions = {},
+): StripResult {
   const start = sentinelFenceStart(text);
   if (start === -1) return { prose: text, block: null, parse: "none" };
 
@@ -209,8 +263,9 @@ export function stripHandoffTail(text: string, kind: HandoffKind | null): StripR
 
   const items = rawItems
     .slice(0, MAX_HANDOFF_ITEMS)
-    .map((item) => validateItem(kind, item))
+    .map((item) => validateItem(kind, item, opts))
     .filter((item): item is HandoffFields => item !== null);
+
   if (items.length === 0) return { prose, block: null, parse: "malformed" };
   return { prose, block: { v: 1, kind, items }, parse: "ok" };
 }
@@ -273,7 +328,7 @@ export function createHoldback(emit: (delta: string) => void): {
  */
 export function tailInstruction(kind: HandoffKind): string {
   const shape: Record<HandoffKind, string> = {
-    open_checks: `{"open_checks":[{"claim_quote":"<verbatim span from the work>","location":"<where it sits>","verdict":"nothing_visible|contradicted","suggested_check":"<the check a reviewer could run>"}]}`,
+    open_checks: `{"open_checks":[{"claim_quote":"<verbatim span from the work>","location":"<where it sits>","verdict":"nothing_visible|contradicted","suggested_check":"<the check a reviewer could run>","evidence_turn_id":"<turn number the claim was produced in, or omit>"}]}`,
     decision_candidates: `{"decision_candidates":[{"call":"<the call that was made>","origin":"<where it came from>","what_it_decided":"<what it settled>","evidence_turn_id":"<turn number or id, or omit>","deliverable_location":"<where in the work, or omit>"}]}`,
     departures: `{"departures":[{"class":"ADDED|DROPPED|CHANGED|REFRAMED","brief_quote":"<verbatim span from the brief>","work_quote":"<verbatim span from the work>","entered_at":"<where it entered>","acknowledged":true}]}`,
     check_results: `{"check_results":[{"check_id":"<the check number from the CHECKS block>","status":"addressed|partly|not_visible","evidence_quote":"<verbatim span, or an empty string>"}]}`,

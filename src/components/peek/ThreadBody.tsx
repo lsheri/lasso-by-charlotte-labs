@@ -1,6 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 
+import { VerifyInk } from "@/components/notebook/marks";
 import { supabase } from "@/integrations/supabase/client";
+import { splitByQuote, turnAnchorId, type ThreadMark } from "@/lib/verify-thread-shared";
 import { vendorLabel } from "@/lib/conversation-shared";
 import type { WorkItemRow } from "@/lib/work-types";
 
@@ -32,8 +34,56 @@ function revisedLabel(turn: Turn): string | null {
   return `Revised by a re-push · ${date.toLocaleDateString()}`;
 }
 
+/**
+ * The model's own words, with any verification ink settled on the claim span.
+ * A mark is only ever drawn on a model turn: human turns render untouched.
+ */
+function TurnContent({
+  turn,
+  marks,
+  activeMarkId,
+  reducedMotion,
+}: {
+  turn: Turn;
+  marks: readonly ThreadMark[];
+  activeMarkId: string | null;
+  reducedMotion: boolean;
+}) {
+  const isHuman = turn.role === "user";
+  const mark = isHuman ? undefined : marks.find((m) => m.turnNo === turn.turn_no);
+  const split = mark ? splitByQuote(turn.content, mark.quote) : null;
+  if (!mark || !split) return <>{turn.content}</>;
+  return (
+    <>
+      {split.before}
+      <VerifyInk
+        verdict={mark.verdict}
+        seed={mark.id}
+        active={activeMarkId === mark.id}
+        reducedMotion={reducedMotion}
+      >
+        {split.match}
+      </VerifyInk>
+      {split.after}
+    </>
+  );
+}
+
 /** The conversation itself, shared by the peek panel and the standalone viewer. */
-export function ThreadBody({ item, enabled = true }: { item: WorkItemRow; enabled?: boolean }) {
+export function ThreadBody({
+  item,
+  enabled = true,
+  marks = [],
+  activeMarkId = null,
+  reducedMotion = false,
+}: {
+  item: WorkItemRow;
+  enabled?: boolean;
+  /** Verification ink to settle on model turns. Empty everywhere else. */
+  marks?: readonly ThreadMark[];
+  activeMarkId?: string | null;
+  reducedMotion?: boolean;
+}) {
   const { data: turns, error } = useQuery({
     queryKey: ["turns", item.id],
     enabled,
@@ -109,14 +159,19 @@ export function ThreadBody({ item, enabled = true }: { item: WorkItemRow; enable
               ) : null}
             </div>
           ) : (
-            <div key={turn.id}>
+            <div key={turn.id} id={turnAnchorId(turn.turn_no)}>
               <div className="micro-label mb-1">
                 Turn {turn.turn_no} · {turn.role}
                 {turn.model ? ` · ${turn.model}` : model ? ` · ${model}` : ""}
                 {turnTime(turn.ts) ? ` · ${turnTime(turn.ts)}` : ""}
               </div>
               <div className="max-w-[90%] whitespace-pre-wrap rounded-[var(--radius)] border border-border bg-card px-4 py-3 font-mono text-xs leading-relaxed text-foreground shadow-card">
-                {turn.content}
+                <TurnContent
+                  turn={turn}
+                  marks={marks}
+                  activeMarkId={activeMarkId}
+                  reducedMotion={reducedMotion}
+                />
               </div>
               {revisedLabel(turn) ? (
                 <p className="mt-1 text-[11px] text-muted-foreground">{revisedLabel(turn)}</p>

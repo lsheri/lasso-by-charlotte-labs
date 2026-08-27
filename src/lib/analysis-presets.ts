@@ -85,10 +85,12 @@ export type AnalysisPreset = {
 export const ANALYSIS_PRESET_IDS = [
   "decision_origin",
   "verification",
+  "verification_thread",
   "still_on_brief",
   "what_fed_this",
   "firm_checks",
 ] as const;
+
 
 export type AnalysisPresetId = (typeof ANALYSIS_PRESET_IDS)[number];
 
@@ -118,6 +120,17 @@ ABSOLUTE RULES:
 - No count or proportion characterising the person, no "you rarely verify", no habit statements. This analysis reads one piece of work.
 - No judgement of the person, no advice about their competence.
 - Never use an em dash.`;
+
+/**
+ * The thread scoped sibling. The prompt above is reused word for word, so the
+ * contract a reader meets is identical; one line is added, and only because
+ * ink has to know which turn produced the claim.
+ */
+const VERIFICATION_THREAD_PROMPT = `${VERIFICATION_PROMPT}
+
+THE ANCHOR. This run reads one conversation. For every claim you list, give the turn identifier the claim was produced in, as the anchor.`;
+
+
 
 const DECISION_ORIGIN_PROMPT = `You are establishing, for ONE finished piece of work, where each significant call came from. You are given the deliverable, the conversations that fed it, and the brief when one exists. Turns are numbered as "TURN n ROLE:".
 
@@ -249,6 +262,33 @@ const RAW_ANALYSIS_PRESETS: AnalysisPreset[] = [
     attribution: null,
     coachMayRun: true,
   },
+  {
+    id: "verification_thread",
+    handoffSchema: "open_checks",
+    dbPreset: "verification_thread",
+    label: "What to verify here",
+    description:
+      "Reads this conversation on its own and names the claims the model produced that show no follow up in the record, with a way to check each one. The findings are drawn on the transcript itself.",
+    scope: "thread",
+    systemPrompt: VERIFICATION_THREAD_PROMPT,
+    openingMessage:
+      "For this conversation, set out which claims the model produced and whether verification appears in the record.",
+    infoPanel: {
+      reads: (detail) => detail,
+      looksFor: [
+        "Claims the model produced in this conversation",
+        "The turn each claim was produced in",
+        "Whether the record shows it being challenged, recalculated or sourced",
+        "One concrete way to check each claim with nothing visible",
+      ],
+      never:
+        "Never a judgment of you, never a score, never a claim about what you did outside the captured record. Marks land on the model's words, never on yours.",
+      sources: ANALYSIS_SOURCES,
+    },
+    attribution: null,
+    coachMayRun: false,
+  },
+
   {
     id: "still_on_brief",
     handoffSchema: "departures",
