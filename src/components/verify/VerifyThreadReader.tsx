@@ -11,7 +11,7 @@
  */
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { X } from "lucide-react";
+import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { ChatUrlLink } from "@/components/work/ChatUrlLink";
@@ -45,6 +45,7 @@ import {
   DECISIONS_UNTRACEABLE_LINE,
   ORIGIN_CHIP,
   decisionFindings,
+  decisionsPhaseLines,
   originClass,
 } from "@/lib/decisions-thread-shared";
 import { logEvent } from "@/lib/telemetry";
@@ -52,6 +53,7 @@ import { logV2 } from "@/lib/telemetry-v2";
 import {
   VERIFY_ALL_SETTLED_LINE,
   VERIFY_CARRY_LINE,
+  VERIFY_CHECK_LABEL,
   VERIFY_LEGEND,
   VERIFY_SOURCE_NO_LINK,
   VERIFY_SOURCE_STEPS,
@@ -59,7 +61,9 @@ import {
   VERIFY_SOURCE_WHY,
   VERIFY_THREAD_EMPTY_LINE,
   VERIFY_THREAD_LABEL,
+  VERIFY_WORKING_LINE,
   checkBadgeText,
+  verifyPhaseLines,
   reviewBadgeText,
   sourcePrompt,
   turnAnchorId,
