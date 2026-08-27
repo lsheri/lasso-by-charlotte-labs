@@ -57,6 +57,11 @@ export function failVerifyThread(message: string): void {
   emit();
 }
 
+/** The current request, for tests and for non-React callers. */
+export function currentVerifyThread(): VerifyThreadRequest | null {
+  return current;
+}
+
 export function closeVerifyThread(): void {
   current = null;
   emit();

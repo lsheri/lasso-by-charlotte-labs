@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 
 import {
   closeVerifyThread,
+  currentVerifyThread,
   failVerifyThread,
   openVerifyThread,
   openVerifyThreadPending,
@@ -21,12 +22,6 @@ const LAUNCHER = readFileSync("src/components/verify/ThreadAnalysisLauncher.tsx"
 const WORK = readFileSync("src/pages/WorkPage.tsx", "utf8");
 const ENGAGEMENT = readFileSync("src/pages/EngagementPage.tsx", "utf8");
 const STYLES = readFileSync("src/styles.css", "utf8");
-
-// The store is a module singleton, so each test starts from nothing open.
-function currentRequest() {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  return null;
-}
 
 describe("pass 131 launch path", () => {
   it("launches thread analyses without the lens", () => {
@@ -53,18 +48,34 @@ describe("pass 131 store", () => {
 
   it("opens pending, then resolves once", () => {
     openVerifyThreadPending({ itemId: "i1", itemTitle: "A thread", kind: "verification" });
+    expect(currentVerifyThread()).toEqual({
+      itemId: "i1",
+      itemTitle: "A thread",
+      kind: "verification",
+      runId: null,
+      error: null,
+    });
     resolveVerifyThread("run-1");
+    expect(currentVerifyThread()?.runId).toBe("run-1");
     // A second resolve cannot overwrite a settled run: singleton, one shot.
     resolveVerifyThread("run-2");
-    expect(currentRequest()).toBe(null);
+    expect(currentVerifyThread()?.runId).toBe("run-1");
+  });
+
+  it("says so when the run fails, and keeps the reader open", () => {
+    openVerifyThreadPending({ itemId: "i2", itemTitle: "Another", kind: "decisions" });
+    failVerifyThread("The model timed out.");
+    expect(currentVerifyThread()?.error).toBe("The model timed out.");
+    expect(currentVerifyThread()?.runId).toBe(null);
   });
 
   it("keeps the existing runId opener working", () => {
     openVerifyThread({ runId: "run-9", itemId: "i1", itemTitle: "A thread" });
-    // Resolve is a no-op on a run that already landed.
+    // Resolve and fail are no-ops on a run that already landed.
     resolveVerifyThread("run-x");
     failVerifyThread("nope");
-    expect(true).toBe(true);
+    expect(currentVerifyThread()?.runId).toBe("run-9");
+    expect(currentVerifyThread()?.error ?? null).toBe(null);
   });
 });
 
