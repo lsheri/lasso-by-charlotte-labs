@@ -1,5 +1,5 @@
 /**
- * PASS 127 — "What to verify here", thread scoped.
+ * PASS 127/128 — "What to fact check", thread scoped.
  *
  * The display language of the thread scoped verification reader: the label, the
  * verdict wording, the ink each verdict draws in, and the order the rail reads.
@@ -11,11 +11,12 @@
 
 import type { HandoffItem, OpenCheckItem } from "@/lib/handoffs-shared";
 
-export const VERIFY_THREAD_LABEL = "What to verify here";
+export const VERIFY_THREAD_LABEL = "What to fact check";
 
 /** A run that finds nothing to verify is a true result, said in full. */
 export const VERIFY_THREAD_EMPTY_LINE =
   "NOTHING HERE NEEDS A CHECK THAT ISN'T ALREADY VISIBLE IN THE RECORD.";
+
 
 export type VerifyVerdict = "contradicted" | "nothing_visible" | "checked";
 
