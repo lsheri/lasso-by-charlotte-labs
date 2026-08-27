@@ -18,7 +18,11 @@ import { SHIP_ACTION_LABEL } from "@/lib/shipped-work-shared";
 import type { WorkItemRow } from "@/lib/work-types";
 
 /** The peek's analyses, opened by preset so no button ever dead-ends. */
-export type PeekAnalysisPreset = "verification" | "verification_thread" | "decision_origin";
+export type PeekAnalysisPreset =
+  | "verification"
+  | "verification_thread"
+  | "decision_origin"
+  | "decision_origin_thread";
 
 /** One set of names, in one order, on every surface the peek is mounted on. */
 export const PEEK_WORK_ARTIFACT_LABEL = "Work Artifact";
@@ -92,7 +96,7 @@ export function PeekActionBar({
   const decisionsLabel = analysisPreset("decision_origin")?.label ?? "";
 
   const showFactCheck = canEdit && Boolean(onAnalyse) && (isThread || isDeliverable);
-  const showDecisions = canEdit && Boolean(onAnalyse) && isDeliverable;
+  const showDecisions = canEdit && Boolean(onAnalyse) && (isThread || isDeliverable);
   const readable = isThread || isDeliverable;
 
   return (
@@ -114,7 +118,12 @@ export function PeekActionBar({
         </PencilAction>
       ) : null}
       {showDecisions ? (
-        <PencilAction seed="peek-decisions" onClick={() => onAnalyse?.(item, "decision_origin")}>
+        <PencilAction
+          seed="peek-decisions"
+          onClick={() =>
+            onAnalyse?.(item, isThread ? "decision_origin_thread" : "decision_origin")
+          }
+        >
           {decisionsLabel}
         </PencilAction>
       ) : null}

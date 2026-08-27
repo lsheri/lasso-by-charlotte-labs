@@ -1,14 +1,18 @@
 import { useSyncExternalStore } from "react";
 
 /**
- * The thread verification reader covers the screen, so its open state lives
- * outside any one surface's tree, exactly like the provenance audit. One
- * request at a time, by design.
+ * The thread reader covers the screen, so its open state lives outside any one
+ * surface's tree, exactly like the provenance audit. One request at a time, by
+ * design. Pass 130: the same store, and the same shell, carry a second kind.
  */
+export type VerifyThreadKind = "verification" | "decisions";
+
 export type VerifyThreadRequest = {
   runId: string;
   itemId: string;
   itemTitle: string;
+  /** Defaults to "verification", so every pass 128 caller is unchanged. */
+  kind?: VerifyThreadKind;
 };
 
 let current: VerifyThreadRequest | null = null;

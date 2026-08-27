@@ -49,6 +49,7 @@ describe("preset prompts", () => {
     expect(withSchema).toEqual(
       [
         "decision_origin",
+        "decision_origin_thread",
         "firm_checks",
         "still_on_brief",
         "verification",

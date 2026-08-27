@@ -12,16 +12,20 @@ import { NO_HANDOFF_PRESETS, PERSON_SHAPED_PRESETS } from "@/lib/handoffs-shared
 const RETIRED = ["ai_fluency_4d", "working_the_model"] as const;
 
 describe("pass 109 · the two thread analyses are gone from view", () => {
-  // Pass 127 adds one deliberately thread scoped preset: the person shaped
-  // analyses stay retired, and everything else stays deliverable scoped.
-  it("leaves the five deliverable presets, plus the thread scoped verification", () => {
-    expect(ANALYSIS_PRESETS).toHaveLength(6);
+  // Pass 127 adds one deliberately thread scoped preset, pass 130 its
+  // decisions sibling: the person shaped analyses stay retired, and everything
+  // else stays deliverable scoped.
+  it("leaves the five deliverable presets, plus the two thread scoped ones", () => {
+    expect(ANALYSIS_PRESETS).toHaveLength(7);
     expect(
-      ANALYSIS_PRESETS.filter((p) => p.id !== "verification_thread").map((p) => p.scope),
+      ANALYSIS_PRESETS.filter(
+        (p) => p.id !== "verification_thread" && p.id !== "decision_origin_thread",
+      ).map((p) => p.scope),
     ).toEqual(Array(5).fill("deliverable"));
     expect([...ANALYSIS_PRESET_IDS].sort()).toEqual(
       [
         "decision_origin",
+        "decision_origin_thread",
         "firm_checks",
         "still_on_brief",
         "verification",
@@ -38,7 +42,9 @@ describe("pass 109 · the two thread analyses are gone from view", () => {
         for (const id of RETIRED) expect(ids).not.toContain(id);
       }
     }
-    expect(presetsForScope("thread", false).map((p) => p.id)).toEqual(["verification_thread"]);
+    expect(presetsForScope("thread", false).map((p) => p.id).sort()).toEqual(
+      ["decision_origin_thread", "verification_thread"].sort(),
+    );
     expect(presetsForScope("thread", true)).toHaveLength(0);
     for (const id of RETIRED) expect(analysisPreset(id)).toBeNull();
   });

@@ -609,7 +609,9 @@ export async function runAnalysis(
           preset.scope === "thread"
             ? {
                 ownerId: target.ownerId,
-                scopeType: preset.scope,
+                // The stored scope_type of a thread run, so the lookup of the
+                // previous run of this preset actually finds it.
+                scopeType: target.scopeType,
                 scopeId: target.scopeId ?? null,
               }
             : undefined,

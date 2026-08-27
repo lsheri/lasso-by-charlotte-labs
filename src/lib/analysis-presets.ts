@@ -84,6 +84,7 @@ export type AnalysisPreset = {
 
 export const ANALYSIS_PRESET_IDS = [
   "decision_origin",
+  "decision_origin_thread",
   "verification",
   "verification_thread",
   "still_on_brief",
@@ -91,6 +92,11 @@ export const ANALYSIS_PRESET_IDS = [
   "firm_checks",
 ] as const;
 
+/**
+ * One name for the decisions analysis, read by both the deliverable scoped
+ * preset and its thread scoped sibling. Never written out a second time.
+ */
+export const DECIDED_LABEL = "What got decided";
 
 export type AnalysisPresetId = (typeof ANALYSIS_PRESET_IDS)[number];
 
@@ -151,6 +157,17 @@ ABSOLUTE RULES:
 - If a call cannot be traced to any evidence, say so plainly as its own entry with origin UNTRACEABLE and no quote. Do not infer an origin.
 - No judgement of the person, no advice about their competence, no number attached to them.
 - Never use an em dash.`;
+
+/**
+ * The thread scoped sibling. The prompt above is reused word for word, so the
+ * contract a reader meets is identical; one line is added, and only because
+ * the reader has to know which turn produced the call.
+ */
+const DECISION_ORIGIN_THREAD_PROMPT = `${DECISION_ORIGIN_PROMPT}
+
+THE ANCHOR. This run reads one conversation. For every call you list, give the turn identifier the call was produced in, as the anchor.`;
+
+
 
 const STILL_ON_BRIEF_PROMPT = `You are comparing ONE finished piece of work against the brief it was commissioned under, to establish where the work departed from the brief and whether each departure was acknowledged anywhere in the captured record. You are given the deliverable, the conversations that fed it, and the brief. Turns are numbered as "TURN n ROLE:".
 
@@ -319,7 +336,7 @@ const RAW_ANALYSIS_PRESETS: AnalysisPreset[] = [
     id: "decision_origin",
     handoffSchema: "decision_candidates",
     dbPreset: "decision_origin",
-    label: "What got decided",
+    label: DECIDED_LABEL,
     description:
       "Reads this deliverable and its conversations and sets out every significant call, and whether it came from the brief, from you, from the model, or from a source.",
     scope: "deliverable",
@@ -340,6 +357,32 @@ const RAW_ANALYSIS_PRESETS: AnalysisPreset[] = [
     },
     attribution: null,
     coachMayRun: true,
+  },
+  {
+    id: "decision_origin_thread",
+    handoffSchema: "decision_candidates",
+    dbPreset: "decision_origin_thread",
+    label: DECIDED_LABEL,
+    description:
+      "Reads this conversation and sets out every significant call, and whether it came from the brief, from you, from the model, or from a source.",
+    scope: "thread",
+    systemPrompt: DECISION_ORIGIN_THREAD_PROMPT,
+    openingMessage:
+      "For this conversation, set out every significant call and where each one came from.",
+    infoPanel: {
+      reads: (detail) => detail,
+      looksFor: [
+        "Calls the brief required",
+        "Calls you made yourself",
+        "Calls the model proposed and you accepted",
+        "Calls the model proposed and you changed",
+        "Calls carried in from a source",
+      ],
+      never: `${NEVER_LINE} No ratio of human to AI is produced anywhere, by design.`,
+      sources: ANALYSIS_SOURCES,
+    },
+    attribution: null,
+    coachMayRun: false,
   },
   {
     id: "what_fed_this",

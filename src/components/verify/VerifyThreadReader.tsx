@@ -19,6 +19,7 @@ import { readingTrailD } from "@/lib/journey-path";
 import { DrawnCheck, DrawnStrike, PencilFirework, useMark } from "@/components/notebook/marks";
 import { ThreadBody } from "@/components/peek/ThreadBody";
 import { SpanLegend } from "@/components/provenance/SpanLegend";
+import { AddDecisionDialog } from "@/components/decisions/AddDecisionDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -30,9 +31,22 @@ import {
 } from "@/components/verify/verify-thread-state";
 import { useProfile } from "@/hooks/use-profile";
 import { supabase } from "@/integrations/supabase/client";
+import { DECIDED_LABEL } from "@/lib/analysis-presets";
 import { chatUrlLabel, effectiveChatUrl } from "@/lib/chat-url";
 import { confirmHandoffItem, discardHandoffItem, loadHandoffs } from "@/lib/handoffs.functions";
-import type { HandoffItem, OpenCheckItem } from "@/lib/handoffs-shared";
+import type { DecisionCandidateItem, HandoffItem, OpenCheckItem } from "@/lib/handoffs-shared";
+import {
+  DECISIONS_ALL_SETTLED_LINE,
+  DECISIONS_CHANGED_LINE,
+  DECISIONS_CONFIRM_LABEL,
+  DECISIONS_DISCARD_LABEL,
+  DECISIONS_EMPTY_LINE,
+  DECISIONS_RAIL_HEADING,
+  DECISIONS_UNTRACEABLE_LINE,
+  ORIGIN_CHIP,
+  decisionFindings,
+  originClass,
+} from "@/lib/decisions-thread-shared";
 import { logEvent } from "@/lib/telemetry";
 import { logV2 } from "@/lib/telemetry-v2";
 import {
@@ -46,6 +60,7 @@ import {
   VERIFY_THREAD_EMPTY_LINE,
   VERIFY_THREAD_LABEL,
   checkBadgeText,
+  reviewBadgeText,
   sourcePrompt,
   turnAnchorId,
   verdictInk,
@@ -231,6 +246,92 @@ function SettledRow({ item }: { item: HandoffItem }) {
   );
 }
 
+/**
+ * One call on the decisions rail: the call itself, one origin chip, and the
+ * two controls. No verdict, no score, no count, nothing being weighed.
+ */
+function DecisionRow({
+  item,
+  active,
+  risen,
+  pending,
+  checkId,
+  checkKey,
+  strikeId,
+  strikeKey,
+  onGoTo,
+  onSettle,
+}: {
+  item: HandoffItem & { fields: DecisionCandidateItem };
+  active: boolean;
+  risen: boolean;
+  pending: boolean;
+  checkId: string | null | undefined;
+  checkKey: number | string;
+  strikeId: string | null | undefined;
+  strikeKey: number | string;
+  onGoTo: (id: string) => void;
+  onSettle: (id: string, kind: "confirm" | "discard") => void;
+}) {
+  const cls = originClass(item.fields);
+  return (
+    <li
+      className={`relative rounded-[var(--radius)] border border-border bg-card p-3 shadow-card ${
+        risen ? "nb-rise" : ""
+      }`}
+      data-active={active ? "true" : "false"}
+      data-origin={cls}
+      data-testid={`decision-finding-${item.id}`}
+    >
+      {checkId === item.id ? (
+        <span className="pointer-events-none absolute right-2 top-2">
+          <DrawnCheck key={checkKey} />
+        </span>
+      ) : null}
+      {strikeId === item.id ? <DrawnStrike key={strikeKey} /> : null}
+      <button type="button" onClick={() => onGoTo(item.id)} className="block w-full text-left">
+        <span className="flex items-center gap-1.5">
+          <span
+            aria-hidden
+            className="h-2 w-2 shrink-0 rounded-full"
+            style={{ backgroundColor: "var(--nb-ink-yellow)" }}
+          />
+          <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+            {ORIGIN_CHIP[cls]}
+          </span>
+        </span>
+        <span className="mt-1 block text-xs leading-snug text-foreground">{item.fields.call}</span>
+        {cls === "model_changed" ? (
+          <span className="mt-1 block text-[11px] leading-snug text-muted-foreground">
+            {DECISIONS_CHANGED_LINE}
+          </span>
+        ) : null}
+      </button>
+      <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+        <Button
+          size="sm"
+          className="min-h-11 sm:min-h-9"
+          disabled={pending}
+          onClick={() => onSettle(item.id, "confirm")}
+        >
+          {DECISIONS_CONFIRM_LABEL}
+        </Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          className="min-h-11 sm:min-h-9"
+          disabled={pending}
+          onClick={() => onSettle(item.id, "discard")}
+        >
+          {DECISIONS_DISCARD_LABEL}
+        </Button>
+      </div>
+    </li>
+  );
+}
+
+
+
 function ReaderBody({ request }: { request: VerifyThreadRequest }) {
   const { data: profile } = useProfile();
   const load = useServerFn(loadHandoffs);
@@ -241,6 +342,7 @@ function ReaderBody({ request }: { request: VerifyThreadRequest }) {
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [pending, setPending] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [prefill, setPrefill] = useState<DecisionCandidateItem | null>(null);
   const scroller = useRef<HTMLDivElement | null>(null);
   const check = useMark();
   const strike = useMark();
@@ -274,15 +376,34 @@ function ReaderBody({ request }: { request: VerifyThreadRequest }) {
   });
 
   const allItems = items ?? findingsQuery.data ?? [];
+  const isDecisions = (request.kind ?? "verification") === "decisions";
+
   const findings = useMemo(() => verifyFindings(allItems), [allItems]);
-  const drafts = useMemo(() => findings.filter((f) => f.state === "draft"), [findings]);
+  const calls = useMemo(() => decisionFindings(allItems), [allItems]);
+  const anchored = isDecisions ? calls : findings;
+  const drafts = useMemo(
+    () => findings.filter((f) => f.state === "draft"),
+    [findings],
+  );
+  const callDrafts = useMemo(() => calls.filter((c) => c.state === "draft"), [calls]);
+  const traced = useMemo(
+    () => callDrafts.filter((c) => originClass(c.fields) !== "untraceable"),
+    [callDrafts],
+  );
+  const untraced = useMemo(
+    () => callDrafts.filter((c) => originClass(c.fields) === "untraceable"),
+    [callDrafts],
+  );
+  const openCount = isDecisions ? callDrafts.length : drafts.length;
   const settledItems = useMemo(
     () =>
-      allItems.filter(
-        (item) =>
-          item.state !== "draft" && typeof (item.fields as OpenCheckItem).claim_quote === "string",
+      allItems.filter((item) =>
+        isDecisions
+          ? item.state !== "draft" && typeof (item.fields as DecisionCandidateItem).call === "string"
+          : item.state !== "draft" &&
+            typeof (item.fields as OpenCheckItem).claim_quote === "string",
       ),
-    [allItems],
+    [allItems, isDecisions],
   );
   const carriedCount = settledItems.filter(
     (item) => typeof (item.fields as OpenCheckItem).carried_from_run_id === "string",
@@ -290,20 +411,32 @@ function ReaderBody({ request }: { request: VerifyThreadRequest }) {
 
   const marks: ThreadMark[] = useMemo(
     () =>
-      findings.map((finding) => ({
-        id: finding.id,
-        turnNo: Number(finding.fields.evidence_turn_id),
-        quote: finding.fields.claim_quote,
-        verdict: finding.fields.verdict,
-        bold: finding.state === "draft",
-      })),
-    [findings],
+      isDecisions
+        ? calls.map((call) => ({
+            id: call.id,
+            turnNo: Number(call.fields.evidence_turn_id),
+            // No span ink here: a decision candidate carries no quote, and
+            // nothing in this reader is being judged.
+            quote: "",
+            verdict: "",
+            lit: true,
+            stroke: "var(--nb-ink-yellow)",
+            wash: "var(--status-unsourced-wash)",
+          }))
+        : findings.map((finding) => ({
+            id: finding.id,
+            turnNo: Number(finding.fields.evidence_turn_id),
+            quote: finding.fields.claim_quote,
+            verdict: finding.fields.verdict,
+            bold: finding.state === "draft",
+          })),
+    [calls, findings, isDecisions],
   );
 
-  const orderedIds = useMemo(() => findings.map((f) => f.id), [findings]);
+  const orderedIds = useMemo(() => anchored.map((f) => f.id), [anchored]);
   const orderedTurns = useMemo(
-    () => findings.map((f) => Number(f.fields.evidence_turn_id)),
-    [findings],
+    () => anchored.map((f) => Number(f.fields.evidence_turn_id)),
+    [anchored],
   );
 
   const onResolved = useCallback(
@@ -323,7 +456,7 @@ function ReaderBody({ request }: { request: VerifyThreadRequest }) {
     !findingsQuery.isLoading &&
     Boolean(itemQuery.data);
 
-  const suppressed = reduced || alreadyPlayed || readSkipPreference() || findings.length === 0;
+  const suppressed = reduced || alreadyPlayed || readSkipPreference() || anchored.length === 0;
 
   const story = useReaderStory({
     enabled: storyEnabled,
@@ -336,7 +469,7 @@ function ReaderBody({ request }: { request: VerifyThreadRequest }) {
 
   const goTo = useCallback(
     (id: string) => {
-      const finding = findings.find((f) => f.id === id);
+      const finding = anchored.find((f) => f.id === id);
       if (!finding) return;
       setActiveId(id);
       const node = scroller.current;
@@ -352,12 +485,15 @@ function ReaderBody({ request }: { request: VerifyThreadRequest }) {
       if (profile) {
         logV2(
           "evidence.opened",
-          { surface: "verify_thread_rail", item_type: "ai_thread" },
+          {
+            surface: isDecisions ? "decisions_thread_rail" : "verify_thread_rail",
+            item_type: "ai_thread",
+          },
           { profileId: profile.id, workItemId: request.itemId },
         );
       }
     },
-    [findings, profile, reduced, request.itemId],
+    [anchored, isDecisions, profile, reduced, request.itemId],
   );
 
   const settle = useCallback(
@@ -368,14 +504,22 @@ function ReaderBody({ request }: { request: VerifyThreadRequest }) {
       else strike.fire(id);
       try {
         const base = { run_id: request.runId, profile_id: profile.id };
+        // A confirmed call opens the decision drafter, exactly as the drafts
+        // list does. A confirmed claim is a self check, and goes nowhere else.
+        if (kind === "confirm" && isDecisions) {
+          const found = calls.find((c) => c.id === id);
+          if (found) setPrefill(found.fields);
+        }
         const result =
           kind === "confirm"
             ? await confirmItem({
                 data: {
                   ...base,
                   item_id: id,
-                  self_check: true,
-                  ...(notes[id]?.trim() ? { note: notes[id]!.trim().slice(0, 200) } : {}),
+                  ...(isDecisions ? {} : { self_check: true }),
+                  ...(!isDecisions && notes[id]?.trim()
+                    ? { note: notes[id]!.trim().slice(0, 200) }
+                    : {}),
                 },
               })
             : await discardItem({ data: { ...base, item_id: id } });
@@ -384,7 +528,18 @@ function ReaderBody({ request }: { request: VerifyThreadRequest }) {
         setPending(false);
       }
     },
-    [check, confirmItem, discardItem, notes, pending, profile, request.runId, strike],
+    [
+      calls,
+      check,
+      confirmItem,
+      discardItem,
+      isDecisions,
+      notes,
+      pending,
+      profile,
+      request.runId,
+      strike,
+    ],
   );
 
   const item = itemQuery.data ?? null;
@@ -431,15 +586,17 @@ function ReaderBody({ request }: { request: VerifyThreadRequest }) {
     >
       <header className="flex shrink-0 items-start justify-between gap-4 border-b border-border px-5 py-3 pt-[calc(0.75rem+env(safe-area-inset-top))]">
         <div className="min-w-0">
-          <p className="micro-label text-muted-foreground">{VERIFY_THREAD_LABEL}</p>
+          <p className="micro-label text-muted-foreground">
+            {isDecisions ? DECIDED_LABEL : VERIFY_THREAD_LABEL}
+          </p>
           <h1 className="page-title mt-1 break-words text-[20px] leading-snug">
             {request.itemTitle}
           </h1>
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          {drafts.length > 0 ? (
+          {openCount > 0 ? (
             <span className="nb-check-badge" data-testid="verify-badge-header">
-              {checkBadgeText(drafts.length)}
+              {isDecisions ? reviewBadgeText(openCount) : checkBadgeText(openCount)}
             </span>
           ) : null}
           {story.playing ? (
@@ -491,9 +648,9 @@ function ReaderBody({ request }: { request: VerifyThreadRequest }) {
               <span className="nb-dot" />
             </span>
           ) : null}
-          {story.firework && findings[0] ? (
+          {story.firework && anchored[0] ? (
             <span className="pointer-events-none absolute right-4 top-4">
-              <PencilFirework nodeId={findings[0].id} drawing={!reduced} />
+              <PencilFirework nodeId={anchored[0].id} drawing={!reduced} />
             </span>
           ) : null}
           {item ? (
@@ -510,15 +667,73 @@ function ReaderBody({ request }: { request: VerifyThreadRequest }) {
 
         <aside data-testid="verify-thread-rail" className="nb-reader-rail flex flex-col gap-3 p-4">
           <div className="flex items-center justify-between gap-2">
-            <p className="micro-label text-muted-foreground">{VERIFY_THREAD_LABEL}</p>
-            {drafts.length > 0 ? (
+            <p className="micro-label text-muted-foreground">
+              {isDecisions ? DECISIONS_RAIL_HEADING : VERIFY_THREAD_LABEL}
+            </p>
+            {openCount > 0 ? (
               <span className="nb-check-badge" data-testid="verify-badge-rail">
-                {checkBadgeText(drafts.length)}
+                {isDecisions ? reviewBadgeText(openCount) : checkBadgeText(openCount)}
               </span>
             ) : null}
           </div>
 
-          {loading ? (
+          {isDecisions ? (
+            loading ? (
+              <p className="text-xs text-muted-foreground">Reading the record...</p>
+            ) : calls.length === 0 && settledItems.length === 0 ? (
+              <p
+                data-testid="decisions-thread-empty"
+                className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground"
+              >
+                {DECISIONS_EMPTY_LINE}
+              </p>
+            ) : (
+              <>
+                {carriedCount > 0 && callDrafts.length > 0 ? (
+                  <p className="text-[11px] leading-snug text-muted-foreground">
+                    {VERIFY_CARRY_LINE}
+                  </p>
+                ) : null}
+                <ol className="flex flex-col gap-2" data-testid="decisions-thread-list">
+                  {traced.map((call) => (
+                    <DecisionRow
+                      key={call.id}
+                      item={call}
+                      active={activeId === call.id}
+                      risen={story.settled.has(call.id) && !reduced}
+                      pending={pending}
+                      checkId={check.markId}
+                      checkKey={check.markKey}
+                      strikeId={strike.markId}
+                      strikeKey={strike.markKey}
+                      onGoTo={goTo}
+                      onSettle={settle}
+                    />
+                  ))}
+                </ol>
+                {untraced.length > 0 ? (
+                  <ul data-testid="decisions-untraceable" className="flex flex-col gap-2">
+                    {untraced.map((call) => (
+                      <li
+                        key={call.id}
+                        className="rounded-[var(--radius)] border border-dashed border-border p-2 opacity-80"
+                      >
+                        <span className="block text-xs leading-snug text-foreground">
+                          {call.fields.call}
+                        </span>
+                        <span className="mt-1 block text-[11px] leading-snug text-muted-foreground">
+                          {DECISIONS_UNTRACEABLE_LINE}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+                {callDrafts.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">{DECISIONS_ALL_SETTLED_LINE}</p>
+                ) : null}
+              </>
+            )
+          ) : loading ? (
             <p className="text-xs text-muted-foreground">Reading the record...</p>
           ) : findings.length === 0 && settledItems.length === 0 ? (
             <p
@@ -625,6 +840,8 @@ function ReaderBody({ request }: { request: VerifyThreadRequest }) {
             </>
           )}
 
+          {isDecisions ? null : (
+          <>
           <section
             className="mt-2 rounded-[var(--radius)] border border-border p-3"
             data-testid="verify-source-block"
@@ -687,11 +904,28 @@ function ReaderBody({ request }: { request: VerifyThreadRequest }) {
             ))}
           </ul>
           <SpanLegend />
+          </>
+          )}
         </aside>
       </div>
+
+      {prefill ? (
+        <AddDecisionDialog
+          open
+          onOpenChange={(next) => {
+            if (!next) setPrefill(null);
+          }}
+          prefill={{
+            situation: prefill.origin,
+            call: prefill.call,
+            why: prefill.what_it_decided,
+          }}
+        />
+      ) : null}
     </div>
   );
 }
+
 
 export function VerifyThreadReader() {
   const request = useVerifyThread();
