@@ -26,7 +26,7 @@ export type VerifyInkTokens = {
   dashed: boolean;
 };
 
-/** Verdict to ink. Existing tokens only, and never --destructive. */
+/** Verdict to ink. Existing tokens only, and never the destructive token. */
 export function verdictInk(verdict: string): VerifyInkTokens {
   if (verdict === "contradicted") {
     return { stroke: "var(--status-paraphrase)", wash: "var(--status-paraphrase-wash)", dashed: false };
