@@ -1,5 +1,5 @@
 /**
- * PASS 127 — "What to verify here", thread scoped.
+ * PASS 127/128 — "What to fact check", thread scoped.
  *
  * The display language of the thread scoped verification reader: the label, the
  * verdict wording, the ink each verdict draws in, and the order the rail reads.
@@ -11,11 +11,12 @@
 
 import type { HandoffItem, OpenCheckItem } from "@/lib/handoffs-shared";
 
-export const VERIFY_THREAD_LABEL = "What to verify here";
+export const VERIFY_THREAD_LABEL = "What to fact check";
 
 /** A run that finds nothing to verify is a true result, said in full. */
 export const VERIFY_THREAD_EMPTY_LINE =
   "NOTHING HERE NEEDS A CHECK THAT ISN'T ALREADY VISIBLE IN THE RECORD.";
+
 
 export type VerifyVerdict = "contradicted" | "nothing_visible" | "checked";
 
@@ -103,9 +104,47 @@ export type ThreadMark = {
   turnNo: number;
   quote: string;
   verdict: string;
+  /** Drafts draw bold. A settled finding keeps its ink, quietly. */
+  bold?: boolean;
 };
 
 /** The dom id of a turn, so the rail can scroll to it. */
 export function turnAnchorId(turnNo: number): string {
   return `verify-turn-${turnNo}`;
 }
+
+/** The badge in both headers. Drafts only, never rendered at zero. */
+export function checkBadgeText(count: number): string {
+  return `${count} TO CHECK`;
+}
+
+/** Said once, when every item on the run has been settled. */
+export const VERIFY_ALL_SETTLED_LINE = "Every item here is settled.";
+
+/** Said once, when a previous run's settled item did not carry forward. */
+export const VERIFY_CARRY_LINE = "Claims that changed since the last run come back to check.";
+
+export const VERIFY_SOURCE_TITLE = "Verify it at the source";
+
+export const VERIFY_SOURCE_NO_LINK =
+  "No link came with this push. Open the conversation in the AI app you ran it in.";
+
+export const VERIFY_SOURCE_STEPS: readonly string[] = [
+  "1. Copy the prompt.",
+  "2. Run it in the conversation that produced this work.",
+  "3. Push the conversation to Lasso again and run this analysis again.",
+];
+
+export const VERIFY_SOURCE_WHY =
+  "Checks done at the source land in the record, and the record is what makes the work defensible.";
+
+const SOURCE_PROMPT_PROSE = `Re-verify each flagged claim below, one at a time. For every claim, state whether it holds, name the specific source that supports it, a publication, document, or dataset, with a date where possible, and show any calculation in full. If a claim cannot be verified against a source you can name, say plainly that it cannot be verified and what evidence would settle it. Do not soften the claims and do not restate them in new words. End with one line per claim: the claim, its status, and its source.
+
+Claims to check:`;
+
+/** The prose verbatim, then the remaining draft claims, numbered and verbatim. */
+export function sourcePrompt(claims: readonly string[]): string {
+  const numbered = claims.map((claim, index) => `${index + 1}. ${claim}`).join("\n");
+  return numbered ? `${SOURCE_PROMPT_PROSE}\n${numbered}` : SOURCE_PROMPT_PROSE;
+}
+

@@ -23,12 +23,94 @@ function mintItems(fields: HandoffFields[]): HandoffItem[] {
   return fields.map((f) => ({ id: crypto.randomUUID(), state: "draft" as const, fields: f }));
 }
 
+/** Where a thread run looks for what the person already settled. */
+export type CarryScope = {
+  ownerId: string;
+  scopeType: string;
+  scopeId: string | null;
+};
+
+type OpenCheckShape = {
+  claim_quote?: unknown;
+  evidence_turn_id?: unknown;
+  verdict?: unknown;
+  self_check_note?: unknown;
+};
+
+/** Identity of a claim across runs: the words, the turn, and the verdict. */
+function claimKey(fields: OpenCheckShape): string | null {
+  if (typeof fields.claim_quote !== "string") return null;
+  if (typeof fields.evidence_turn_id !== "string") return null;
+  if (typeof fields.verdict !== "string") return null;
+  return `${fields.claim_quote}\u0000${fields.evidence_turn_id}\u0000${fields.verdict}`;
+}
+
+/**
+ * Pass 128: a claim a person already settled does not come back as work. The
+ * comparison is against the MOST RECENT prior run of the same preset in the
+ * same scope, and only an exact claim, turn, and verdict match carries. A
+ * claim that changed is new work, and it arrives as a draft.
+ */
+async function carryForward(
+  items: HandoffItem[],
+  runId: string,
+  presetId: string,
+  scope: CarryScope,
+): Promise<HandoffItem[]> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  let query = supabaseAdmin
+    .from("analysis_runs")
+    .select("id, handoffs, created_at")
+    .eq("preset", presetId)
+    .eq("owner_id", scope.ownerId)
+    .eq("scope_type", scope.scopeType)
+    .neq("id", runId)
+    .not("handoffs", "is", null)
+    .order("created_at", { ascending: false })
+    .limit(1);
+  query = scope.scopeId ? query.eq("scope_id", scope.scopeId) : query.is("scope_id", null);
+  const { data } = await query.maybeSingle();
+  const prior = parseBlock(data?.handoffs ?? null);
+  if (!prior || !data) return items;
+
+  const settled = new Map<string, HandoffItem>();
+  for (const item of prior.items) {
+    if (item.state !== "confirmed" && item.state !== "discarded") continue;
+    const key = claimKey(item.fields as OpenCheckShape);
+    if (key && !settled.has(key)) settled.set(key, item);
+  }
+  if (settled.size === 0) return items;
+
+  const carriedKeys = new Set<string>();
+  const next = items.map((item) => {
+    const key = claimKey(item.fields as OpenCheckShape);
+    const match = key ? settled.get(key) : undefined;
+    if (!key || !match) return item;
+    carriedKeys.add(key);
+    const note = (match.fields as OpenCheckShape).self_check_note;
+    return {
+      ...item,
+      state: match.state,
+      ...(match.state === "confirmed"
+        ? { confirmed_at: new Date().toISOString() }
+        : { discarded_at: new Date().toISOString() }),
+      fields: {
+        ...item.fields,
+        ...(typeof note === "string" && note ? { self_check_note: note } : {}),
+        carried_from_run_id: data.id,
+      },
+    } as HandoffItem;
+  });
+  return next;
+}
+
 /** Store a freshly parsed block. Never throws: the answer outranks the drafts. */
 export async function writeHandoffs(
   runId: string,
   presetId: string,
   kind: HandoffKind,
   fields: HandoffFields[],
+  carryScope?: CarryScope,
 ): Promise<void> {
   try {
     // Second gate on the person-shaped rule. Even if a future edit gave one of
@@ -44,7 +126,16 @@ export async function writeHandoffs(
       return;
     }
     if (fields.length === 0) return;
-    const block: HandoffBlock = { v: 1, kind, items: mintItems(fields) };
+    let items = mintItems(fields);
+    // Thread runs only. The deliverable scoped run is untouched.
+    if (carryScope) {
+      try {
+        items = await carryForward(items, runId, presetId, carryScope);
+      } catch (e) {
+        console.error("[handoffs] carry-forward failed:", (e as Error).message);
+      }
+    }
+    const block: HandoffBlock = { v: 1, kind, items };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin
       .from("analysis_runs")
@@ -55,6 +146,7 @@ export async function writeHandoffs(
     console.error("[handoffs] write threw:", (e as Error).message);
   }
 }
+
 
 export type OwnedRun = {
   id: string;
@@ -105,7 +197,9 @@ export async function stampItem(
   block: HandoffBlock,
   itemId: string,
   state: "confirmed" | "discarded",
+  note?: string,
 ): Promise<void> {
+  const clean = (note ?? "").trim().slice(0, 200);
   const stamped: HandoffBlock = {
     ...block,
     items: block.items.map((item) =>
@@ -113,9 +207,11 @@ export async function stampItem(
         ? {
             ...item,
             state,
+            ...(clean ? { fields: { ...item.fields, self_check_note: clean } } : {}),
             ...(state === "confirmed"
               ? { confirmed_at: new Date().toISOString() }
               : { discarded_at: new Date().toISOString() }),
+
           }
         : item,
     ),

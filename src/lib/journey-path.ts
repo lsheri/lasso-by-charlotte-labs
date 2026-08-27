@@ -460,3 +460,33 @@ export function verifyInkD(seed: string, width = VERIFY_INK_BOX.width, height = 
   }
   return d;
 }
+
+/**
+ * PASS 128: the margin flag. A small hand-drawn loop in the transcript's left
+ * gutter, one per flagged turn. Seeded, so a finding's flag is the same shape
+ * every time the reader opens.
+ */
+export const MARGIN_FLAG_BOX = { width: 14, height: 14 } as const;
+
+export function marginFlagD(seed: string): string {
+  const rand = mulberry32(fnv1a(`margin-flag:${seed}`));
+  const cx = MARGIN_FLAG_BOX.width / 2;
+  const cy = MARGIN_FLAG_BOX.height / 2;
+  const radius = 5;
+  const round = (n: number) => Math.round(n * 100) / 100;
+  const jitter = () => (rand() - 0.5) * 1.4;
+  const at = (deg: number): [number, number] => {
+    const a = (deg * Math.PI) / 180;
+    return [cx + Math.cos(a) * radius + jitter(), cy + Math.sin(a) * radius + jitter()];
+  };
+  const points: [number, number][] = [at(200), at(280), at(0), at(70), at(150), at(205)];
+  let d = `M ${round(points[0]![0])} ${round(points[0]![1])}`;
+  for (let i = 1; i < points.length; i += 1) {
+    const prev = points[i - 1]!;
+    const point = points[i]!;
+    const mx = (prev[0] + point[0]) / 2 + jitter();
+    const my = (prev[1] + point[1]) / 2 + jitter();
+    d += ` Q ${round(mx)} ${round(my)} ${round(point[0])} ${round(point[1])}`;
+  }
+  return d;
+}

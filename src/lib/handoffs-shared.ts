@@ -57,7 +57,12 @@ export type OpenCheckItem = {
    * without it.
    */
   evidence_turn_id?: string;
+  /** Pass 128: the one line a person wrote about how they checked it. */
+  self_check_note?: string;
+  /** Pass 128: this item arrived already settled, from the run named here. */
+  carried_from_run_id?: string;
 };
+
 
 
 export type DecisionCandidateItem = {

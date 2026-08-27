@@ -240,7 +240,7 @@ const RAW_ANALYSIS_PRESETS: AnalysisPreset[] = [
     id: "verification",
     handoffSchema: "open_checks",
     dbPreset: "verification",
-    label: "What to verify",
+    label: "What to fact check",
     description:
       "Reads this deliverable and the conversation behind it, and names the claims that rest on the model's word with a way to check each one.",
     scope: "deliverable",
@@ -266,7 +266,7 @@ const RAW_ANALYSIS_PRESETS: AnalysisPreset[] = [
     id: "verification_thread",
     handoffSchema: "open_checks",
     dbPreset: "verification_thread",
-    label: "What to verify here",
+    label: "What to fact check",
     description:
       "Reads this conversation on its own and names the claims the model produced that show no follow up in the record, with a way to check each one. The findings are drawn on the transcript itself.",
     scope: "thread",

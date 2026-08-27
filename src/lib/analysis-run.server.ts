@@ -599,7 +599,21 @@ export async function runAnalysis(
       handoffCount = verified.length;
       if (verified.length > 0) {
         const { writeHandoffs } = await import("./handoffs.server");
-        await writeHandoffs(runId, preset.id, stripped.block.kind, verified);
+        // Thread runs carry forward what the person already settled. The
+        // deliverable scoped run keeps today's behaviour exactly.
+        await writeHandoffs(
+          runId,
+          preset.id,
+          stripped.block.kind,
+          verified,
+          preset.scope === "thread"
+            ? {
+                ownerId: target.ownerId,
+                scopeType: preset.scope,
+                scopeId: target.scopeId ?? null,
+              }
+            : undefined,
+        );
       }
     } else if (stripped.parse === "malformed") {
       const { logHealth } = await import("./health.server");
