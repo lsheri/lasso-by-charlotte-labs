@@ -8,11 +8,17 @@ import { useSyncExternalStore } from "react";
 export type VerifyThreadKind = "verification" | "decisions";
 
 export type VerifyThreadRequest = {
-  runId: string;
+  /**
+   * PASS 131: null means the run is still going. The reader opens anyway and
+   * plays a working read-through over the transcript until this lands.
+   */
+  runId: string | null;
   itemId: string;
   itemTitle: string;
   /** Defaults to "verification", so every pass 128 caller is unchanged. */
   kind?: VerifyThreadKind;
+  /** Set when the run failed. The reader says so and offers a way out. */
+  error?: string | null;
 };
 
 let current: VerifyThreadRequest | null = null;
@@ -27,10 +33,35 @@ export function openVerifyThread(request: VerifyThreadRequest): void {
   emit();
 }
 
+/** Open the reader before the run exists. One request at a time, as always. */
+export function openVerifyThreadPending(request: {
+  itemId: string;
+  itemTitle: string;
+  kind?: VerifyThreadKind;
+}): void {
+  current = { ...request, runId: null, error: null };
+  emit();
+}
+
+/** The run landed: the same reader, now with findings to settle. */
+export function resolveVerifyThread(runId: string): void {
+  if (!current || current.runId !== null) return;
+  current = { ...current, runId, error: null };
+  emit();
+}
+
+/** The run failed: the reader stays open and says what happened. */
+export function failVerifyThread(message: string): void {
+  if (!current || current.runId !== null) return;
+  current = { ...current, error: message };
+  emit();
+}
+
 export function closeVerifyThread(): void {
   current = null;
   emit();
 }
+
 
 function subscribe(listener: () => void): () => void {
   listeners.add(listener);
