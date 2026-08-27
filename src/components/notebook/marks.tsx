@@ -18,8 +18,11 @@ import {
   hatchStrokes,
   mulberry32,
   scribblePath,
+  verifyInkD,
+  VERIFY_INK_BOX,
   wavingSwatchD,
 } from "@/lib/journey-path";
+import { verdictInk } from "@/lib/verify-thread-shared";
 
 const MARK_WINDOW_MS = 400;
 
@@ -591,5 +594,60 @@ export function PencilScribble({
         />
       ))}
     </svg>
+  );
+}
+
+/**
+ * PASS 127: verification ink around one claim span in a transcript.
+ *
+ * The stroke and the wash are verdict tokens, never a colour at point of use,
+ * and never --destructive. Absence draws dashed, so the mark is legible with
+ * no colour at all. The span is always the model's own words: the caller is
+ * responsible for never wrapping a human turn, and the server drops any
+ * finding that tried to.
+ */
+export function VerifyInk({
+  verdict,
+  seed,
+  active = false,
+  reducedMotion = false,
+  children,
+}: {
+  verdict: string;
+  seed: string;
+  active?: boolean;
+  reducedMotion?: boolean;
+  children: React.ReactNode;
+}) {
+  const ink = verdictInk(verdict);
+  const d = useMemo(() => verifyInkD(seed), [seed]);
+  return (
+    <span
+      data-testid={`verify-ink-${seed}`}
+      data-verdict={verdict}
+      data-stroke={ink.stroke}
+      data-dashed={ink.dashed ? "true" : "false"}
+      className={`relative inline rounded-[3px] px-0.5 ${
+        active && !reducedMotion ? "nb-ink-settle nb-span-pulse" : ""
+      }`}
+      style={{ backgroundColor: ink.wash }}
+    >
+      {children}
+      <svg
+        aria-hidden
+        viewBox={`0 0 ${VERIFY_INK_BOX.width} ${VERIFY_INK_BOX.height}`}
+        preserveAspectRatio="none"
+        className="pointer-events-none absolute inset-0 h-full w-full"
+      >
+        <path
+          d={d}
+          fill="none"
+          stroke={ink.stroke}
+          strokeWidth={1.4}
+          strokeLinecap="round"
+          {...(ink.dashed ? { strokeDasharray: "5 4" } : {})}
+        />
+      </svg>
+    </span>
   );
 }

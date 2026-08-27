@@ -426,3 +426,37 @@ export function scribblePath(w: number, h: number, seed: string): { d: string; l
 
   return { d, len: round(len) };
 }
+
+/**
+ * PASS 127: the verification ink. A hand-drawn lasso that shrink-wraps one
+ * claim span in the transcript. Deterministic per seed, so the same finding
+ * draws the same stroke every time it settles.
+ */
+export const VERIFY_INK_BOX = { width: 100, height: 24 } as const;
+
+export function verifyInkD(seed: string, width = VERIFY_INK_BOX.width, height = VERIFY_INK_BOX.height): string {
+  const rand = mulberry32(fnv1a(`verify:${seed}`));
+  const w = width;
+  const h = height;
+  const inset = 1.5;
+  const jitter = () => (rand() - 0.5) * 1.8;
+  const points: [number, number][] = [
+    [inset + jitter(), h * 0.5 + jitter()],
+    [w * 0.16 + jitter(), inset + jitter()],
+    [w * 0.55 + jitter(), inset + jitter() * 0.6],
+    [w - inset + jitter(), h * 0.45 + jitter()],
+    [w * 0.72 + jitter(), h - inset + jitter()],
+    [w * 0.28 + jitter(), h - inset + jitter() * 0.6],
+    [inset + 2 + jitter(), h * 0.62 + jitter()],
+  ];
+  const round = (n: number) => Math.round(n * 100) / 100;
+  let d = `M ${round(points[0]![0])} ${round(points[0]![1])}`;
+  for (let i = 1; i < points.length; i += 1) {
+    const prev = points[i - 1]!;
+    const point = points[i]!;
+    const cx = round((prev[0] + point[0]) / 2 + jitter());
+    const cy = round((prev[1] + point[1]) / 2 + jitter());
+    d += ` Q ${cx} ${cy} ${round(point[0])} ${round(point[1])}`;
+  }
+  return d;
+}
