@@ -134,11 +134,14 @@ export function TurnCardStory({
 }) {
   const wide = useWideLayout();
   const cards = turnCards(itemId, turns);
-  const story = useTurnCardStory({ count: cards.length, enabled: running && !reduced && wide });
+  const { head, stop } = useTurnCardStory({
+    count: cards.length,
+    enabled: running && !reduced && wide,
+  });
 
   useEffect(() => {
-    if (!running) story.stop();
-  }, [running, story]);
+    if (!running) stop();
+  }, [running, stop]);
 
   if (!wide || cards.length === 0) return null;
 
@@ -152,7 +155,7 @@ export function TurnCardStory({
     );
   }
 
-  const shown = turnStoryWindow(cards, story.head);
+  const shown = turnStoryWindow(cards, head);
   const height = Math.max(1, shown.length) * (TURN_CARD_H + TURN_CARD_GAP);
   const centre = TURN_STORY_W / 2;
 
