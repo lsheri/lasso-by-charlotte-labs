@@ -161,7 +161,7 @@ function inside(p: Rect, stage: TurnStage): boolean {
 }
 
 /** Down-ish directions only, mirrored by side so the walk actually snakes. */
-const WALK_ANGLES = [90, 62, 38, 118] as const;
+const WALK_ANGLES = [62, 38, 90, 118] as const;
 
 /**
  * Where every card of this conversation sits. Pure and seeded: the same item
