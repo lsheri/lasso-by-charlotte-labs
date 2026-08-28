@@ -16,7 +16,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { ChatUrlLink } from "@/components/work/ChatUrlLink";
 import { readingTrailD } from "@/lib/journey-path";
-import { DrawnCheck, DrawnStrike, PencilFirework, useMark } from "@/components/notebook/marks";
+import { DrawnCheck, DrawnStrike, PencilFirework, ReadingEyes, useMark } from "@/components/notebook/marks";
 import { ThreadBody } from "@/components/peek/ThreadBody";
 import { TurnCardStory } from "@/components/verify/TurnCardStory";
 import { SpanLegend } from "@/components/provenance/SpanLegend";
@@ -587,17 +587,7 @@ function PendingBody({
               <path d={readingTrailD(loop.progress)} />
             </svg>
           ) : null}
-          {loop.running && !reduced && !skipped && !failed ? (
-            <span
-              className="nb-dots pointer-events-none absolute left-1 top-0"
-              style={{ transform: `translateY(${loop.tipY}px)` }}
-              aria-hidden
-            >
-              <span className="nb-dot" />
-              <span className="nb-dot" />
-              <span className="nb-dot" />
-            </span>
-          ) : null}
+          {loop.running && !skipped && !failed ? <ReadingEyes animate={!reduced} /> : null}
           {item ? <ThreadBody item={item} reducedMotion={reduced} /> : null}
         </div>
 

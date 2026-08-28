@@ -2199,6 +2199,10 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .nb-reading-pupil {
+    animation: none !important;
+    transform: none !important;
+  }
   .nb-rule-draw,
   .nb-rise {
     animation: none !important;
@@ -2517,4 +2521,47 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   fill: none;
   stroke-linecap: round;
   opacity: 0.35;
+}
+
+/* ---------------------------------------------------------------------------
+   Pass 135: the reading eyes. Centred in the transcript's scroll viewport
+   while the model reads, with a soft paper halo so the text stays legible
+   underneath. The pupils track a line, snap back, and start the next one.
+--------------------------------------------------------------------------- */
+
+.nb-reading-eyes {
+  position: sticky;
+  top: 50%;
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  width: 0;
+  height: 0;
+  margin: 0 auto;
+  transform: translateY(-50%);
+}
+.nb-reading-eyes > * {
+  grid-area: 1 / 1;
+}
+.nb-reading-eyes-halo {
+  width: 120px;
+  height: 84px;
+  border-radius: 999px;
+  background: var(--background);
+  opacity: 0.85;
+  filter: blur(10px);
+}
+@keyframes nb-reading-scan {
+  0% { transform: translateX(-3.2px); }
+  12% { transform: translateX(-3.2px); }
+  80% { transform: translateX(3.2px); }
+  90% { transform: translateX(-3.2px); }
+  100% { transform: translateX(-3.2px); }
+}
+.nb-reading-pupil {
+  animation: nb-reading-scan 1600ms var(--nb-ease) infinite;
+}
+.nb-reading-pupil-static {
+  animation: none;
+  transform: none;
 }

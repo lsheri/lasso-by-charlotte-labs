@@ -592,3 +592,59 @@ export function turnConnectorD(seed: string, from: Point, to: Point): TurnConnec
 }
 
 
+
+/**
+ * PASS 135 — the reading eyes. A pair of round spectacles in the pencil voice:
+ * two lenses joined by a bridge, with short temple stubs. Seeded waver, like
+ * every other drawn mark, so no surface carries an inline path string.
+ */
+export const READING_EYES_BOX = { width: 72, height: 34 } as const;
+
+export type ReadingEyes = {
+  /** The drawn spectacles, one stroke per part. */
+  frame: string[];
+  /** Where a pupil sits, and how big, inside each lens. */
+  pupils: { cx: number; cy: number; r: number }[];
+};
+
+export function readingEyesD(seed = "reading-eyes"): ReadingEyes {
+  const rand = mulberry32(fnv1a(`reading-eyes:${seed}`));
+  const round = (n: number) => Math.round(n * 100) / 100;
+  const jitter = (scale = 1.2) => (rand() - 0.5) * scale;
+  const cy = READING_EYES_BOX.height / 2;
+  const r = 12.5;
+  const centers = [20, 52];
+
+  const lens = (cx: number): string => {
+    const at = (deg: number): [number, number] => {
+      const a = (deg * Math.PI) / 180;
+      return [cx + Math.cos(a) * r + jitter(), cy + Math.sin(a) * r + jitter()];
+    };
+    const points = [at(180), at(250), at(320), at(30), at(100), at(178)];
+    let d = `M ${round(points[0]![0])} ${round(points[0]![1])}`;
+    for (let i = 1; i < points.length; i += 1) {
+      const prev = points[i - 1]!;
+      const point = points[i]!;
+      const mx = (prev[0] + point[0]) / 2 + jitter();
+      const my = (prev[1] + point[1]) / 2 + jitter();
+      d += ` Q ${round(mx)} ${round(my)} ${round(point[0])} ${round(point[1])}`;
+    }
+    return d;
+  };
+
+  const bridge = `M ${round(centers[0]! + r)} ${round(cy - 1 + jitter())} Q ${round(
+    (centers[0]! + centers[1]!) / 2,
+  )} ${round(cy - 5 + jitter())} ${round(centers[1]! - r)} ${round(cy - 1 + jitter())}`;
+
+  const templeLeft = `M ${round(centers[0]! - r)} ${round(cy - 2 + jitter())} Q ${round(
+    centers[0]! - r - 4,
+  )} ${round(cy - 4 + jitter())} ${round(centers[0]! - r - 8)} ${round(cy - 6 + jitter())}`;
+  const templeRight = `M ${round(centers[1]! + r)} ${round(cy - 2 + jitter())} Q ${round(
+    centers[1]! + r + 4,
+  )} ${round(cy - 4 + jitter())} ${round(centers[1]! + r + 8)} ${round(cy - 6 + jitter())}`;
+
+  return {
+    frame: [lens(centers[0]!), lens(centers[1]!), bridge, templeLeft, templeRight],
+    pupils: centers.map((cx) => ({ cx, cy: round(cy + 1), r: 3.4 })),
+  };
+}
