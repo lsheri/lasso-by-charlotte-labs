@@ -25,8 +25,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   closeVerifyThread,
-  markStoryPlayed,
-  storyPlayed,
   useVerifyThread,
   type VerifyThreadRequest,
 } from "@/components/verify/verify-thread-state";
@@ -78,7 +76,6 @@ import {
 import { advanceScroll, type ScrollState } from "@/lib/working-scroll";
 import type { WorkItemRow } from "@/lib/work-types";
 
-const SKIP_KEY = "lasso.reader.skip_story";
 const RAIL_WIDE_KEY = "lasso.reader.rail_wide";
 
 function prefersReducedMotion(): boolean {
@@ -86,21 +83,9 @@ function prefersReducedMotion(): boolean {
   return window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ?? false;
 }
 
-function readSkipPreference(): boolean {
-  try {
-    return window.localStorage.getItem(SKIP_KEY) === "1";
-  } catch {
-    return false;
-  }
-}
+// PASS 134: the settle story plays on every open. Skipping stops THIS showing
+// and nothing else: no preference is written, nothing is remembered.
 
-function writeSkipPreference(): void {
-  try {
-    window.localStorage.setItem(SKIP_KEY, "1");
-  } catch {
-    /* a preference that cannot be stored is simply not stored */
-  }
-}
 
 /**
  * PASS 131 — how wide the rail sits. Narrow by default, and remembered, because
@@ -206,7 +191,6 @@ function useReaderStory({
     if (!playing) return;
     clearAll();
     finalState();
-    writeSkipPreference();
     const node = scroller.current;
     const first = turnNos[0];
     if (node && first !== undefined) {
@@ -664,8 +648,7 @@ function ReaderBody({ request }: { request: VerifyThreadRequest & { runId: strin
   const strike = useMark();
   const reduced = prefersReducedMotion();
   const [wide, toggleWide] = useRailWide();
-  const alreadyPlayed = useMemo(() => storyPlayed(request.runId), [request.runId]);
-  const [sourceOpen, setSourceOpen] = useState(!alreadyPlayed);
+  const [sourceOpen, setSourceOpen] = useState(true);
 
   const isCoach = profile?.role === "coach";
 
@@ -758,12 +741,11 @@ function ReaderBody({ request }: { request: VerifyThreadRequest & { runId: strin
 
   const onResolved = useCallback(
     (outcome: Outcome) => {
-      markStoryPlayed(request.runId);
       if (profile?.org_id) {
         logEvent("analysis.reader_story", profile.org_id, { outcome });
       }
     },
-    [profile?.org_id, request.runId],
+    [profile?.org_id],
   );
 
   const storyEnabled =
@@ -773,7 +755,7 @@ function ReaderBody({ request }: { request: VerifyThreadRequest & { runId: strin
     !findingsQuery.isLoading &&
     Boolean(itemQuery.data);
 
-  const suppressed = reduced || alreadyPlayed || readSkipPreference() || anchored.length === 0;
+  const suppressed = reduced || anchored.length === 0;
 
   const story = useReaderStory({
     enabled: storyEnabled,

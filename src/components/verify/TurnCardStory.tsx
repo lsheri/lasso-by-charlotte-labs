@@ -26,7 +26,9 @@ import {
   TURN_STORY_HOLD_MS,
   TURN_STORY_W,
   TURN_STORY_WINDOW,
+  edgeAnchor,
   layoutTurnWalk,
+
   turnCards,
   type TurnCard,
   type TurnPlacement,
@@ -134,15 +136,23 @@ function TurnCardBox({
     <div
       data-testid="turn-story-card"
       data-turn={card.turnNo}
-      className={`nb-journey-node ${className}`}
-      style={style}
+      className={`nb-journey-node overflow-hidden ${className}`}
+      style={{ width: TURN_CARD_W, height: TURN_CARD_H, ...style }}
     >
       <div className="flex items-center gap-1.5">
         <TurnMark card={card} item={item} />
-        <span className="micro-label text-muted-foreground">{card.label}</span>
+        <span
+          className="micro-label truncate text-[10px] text-muted-foreground"
+          style={{ whiteSpace: "nowrap" }}
+        >
+          {card.label}
+        </span>
       </div>
-      <p className="mt-1 truncate text-xs text-foreground/80">{card.snippet}</p>
+      <p className="mt-1 truncate text-xs text-foreground/80" style={{ whiteSpace: "nowrap" }}>
+        {card.snippet}
+      </p>
     </div>
+
   );
 }
 
@@ -260,12 +270,13 @@ export function TurnCardStory({
         {shown.map((entry, index) => {
           if (index === 0) return null;
           const prev = shown[index - 1]!.place;
-          const from = { x: prev.x + TURN_CARD_W / 2, y: prev.y + TURN_CARD_H };
-          const to = {
-            x: entry.place.x + TURN_CARD_W / 2,
-            y: entry.place.y - 2,
-          };
+          // PASS 134: the line leaves and arrives on the edges facing the
+          // direction of travel, so no two pairs are joined the same way.
+          const direction = { x: entry.place.x - prev.x, y: entry.place.y - prev.y };
+          const from = edgeAnchor(prev, direction);
+          const to = edgeAnchor(entry.place, { x: -direction.x, y: -direction.y });
           const connector = turnConnectorD(`${itemId}:${entry.card.turnNo}`, from, to);
+
           return (
             <g key={`c-${entry.card.id}`}>
               <path
