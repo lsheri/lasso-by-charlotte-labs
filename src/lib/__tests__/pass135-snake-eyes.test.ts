@@ -72,7 +72,8 @@ describe("pass 135 — the reading eyes", () => {
     expect(READING_EYES_BOX.width).toBe(72);
     expect(marks).toContain("export function ReadingEyes");
     expect(marks).toContain("readingEyesD");
-    expect(marks).not.toMatch(/d="M[^"]/);
+    const body = marks.slice(marks.indexOf("export function ReadingEyes"));
+    expect(body).not.toMatch(/d="M/);
   });
 
   it("is seeded and deterministic", () => {

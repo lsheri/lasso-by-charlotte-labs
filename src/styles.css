@@ -2199,6 +2199,10 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .nb-reading-pupil {
+    animation: none !important;
+    transform: none !important;
+  }
   .nb-rule-draw,
   .nb-rise {
     animation: none !important;
@@ -2560,10 +2564,4 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 .nb-reading-pupil-static {
   animation: none;
   transform: none;
-}
-@media (prefers-reduced-motion: reduce) {
-  .nb-reading-pupil {
-    animation: none !important;
-    transform: none !important;
-  }
 }
