@@ -144,6 +144,46 @@ function TurnCardBox({
   );
 }
 
+type ShownEntry = { place: TurnPlacement; card: TurnCard };
+
+/**
+ * PASS 133.1 — the page turn fades instead of cutting. When the walk turns
+ * the paper, the outgoing page's cards linger one fade (PAGE_FADE_MS) at
+ * opacity 0 before leaving the DOM. One timer, owned here, cleaned on
+ * unmount and stop; reduced motion never reaches this path.
+ */
+function usePageTurnFade(page: number, shown: readonly ShownEntry[]): ShownEntry[] {
+  const [fading, setFading] = useState<ShownEntry[]>([]);
+  const lastShown = useRef<readonly ShownEntry[]>([]);
+  const lastPage = useRef(page);
+  const timer = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (lastPage.current === page) {
+      lastShown.current = shown;
+      return;
+    }
+    lastPage.current = page;
+    setFading([...lastShown.current]);
+    lastShown.current = shown;
+    if (timer.current !== null) window.clearTimeout(timer.current);
+    timer.current = window.setTimeout(() => {
+      timer.current = null;
+      setFading([]);
+    }, PAGE_FADE_MS);
+  }, [page, shown]);
+
+  useEffect(
+    () => () => {
+      if (timer.current !== null) window.clearTimeout(timer.current);
+      timer.current = null;
+    },
+    [],
+  );
+
+  return fading;
+}
+
 export function TurnCardStory({
   itemId,
   item,
