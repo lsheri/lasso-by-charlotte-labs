@@ -319,11 +319,18 @@ export function ChaliceMark({ size = 24, className = "" }: { size?: number; clas
  * Static art: no claim on the one-per-viewport gate, no motion. It stretches
  * to whatever width the title occupies.
  */
-export function GraphiteRule({ className = "" }: { className?: string }) {
+export function GraphiteRule({
+  className = "",
+  animated = false,
+}: {
+  className?: string;
+  /** Draws the stroke in on mount, as if pencilled just now. */
+  animated?: boolean;
+}) {
 
   return (
     <svg
-      className={`nb-title-rule pointer-events-none ${className}`}
+      className={`nb-title-rule ${animated ? "nb-title-rule-animated" : ""} pointer-events-none ${className}`}
       viewBox="0 0 300 6"
       preserveAspectRatio="none"
       fill="none"
@@ -333,10 +340,12 @@ export function GraphiteRule({ className = "" }: { className?: string }) {
       aria-hidden
     >
       <path
+        pathLength={1}
         d="M1 3.4C38 2.2 74 4.2 111 3.1c36-1 72 1.4 108 .5 27-.7 54 1.1 80 .6"
         strokeWidth={1.5}
       />
       <path
+        pathLength={1}
         d="M1 4.2C44 3.4 88 4.8 132 4.1c40-.6 80 .9 120 .3"
         strokeWidth={0.7}
         opacity={0.55}
