@@ -74,11 +74,7 @@ import {
   verifyFindings,
   type ThreadMark,
 } from "@/lib/verify-thread-shared";
-import {
-  READ_SPEED_PX_S,
-  advanceScroll,
-  type ScrollState,
-} from "@/lib/working-scroll";
+import { advanceScroll, type ScrollState } from "@/lib/working-scroll";
 import type { WorkItemRow } from "@/lib/work-types";
 
 const SKIP_KEY = "lasso.reader.skip_story";
@@ -467,7 +463,13 @@ function usePhaseLine(lines: readonly string[], enabled: boolean): string {
  * The reader while the run is still going: the same shell, the transcript on
  * the left, and one honest line at a time on the right.
  */
-function PendingBody({ request }: { request: VerifyThreadRequest }) {
+function PendingBody({
+  request,
+  onSkip,
+}: {
+  request: VerifyThreadRequest;
+  onSkip?: () => void;
+}) {
   const { data: profile } = useProfile();
   const scroller = useRef<HTMLDivElement | null>(null);
   const reduced = prefersReducedMotion();
@@ -556,7 +558,10 @@ function PendingBody({ request }: { request: VerifyThreadRequest }) {
             <button
               type="button"
               data-testid="verify-skip"
-              onClick={() => setSkipped(true)}
+              onClick={() => {
+                setSkipped(true);
+                onSkip?.();
+              }}
               className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
             >
               Skip the story
@@ -1244,13 +1249,74 @@ function ReaderBody({ request }: { request: VerifyThreadRequest & { runId: strin
 }
 
 
+/**
+ * PASS 133 — the grace beat. When the run lands, the working scene keeps
+ * playing for a moment so it never feels yanked away mid-thought. A failure
+ * gets no grace, reduced motion has nothing to finish, and anyone who says
+ * "enough" cuts it short at once.
+ */
+function useResolveGrace(request: VerifyThreadRequest | null): {
+  holding: boolean;
+  cut: () => void;
+} {
+  const [holdingRun, setHoldingRun] = useState<string | null>(null);
+  const timer = useRef<number | null>(null);
+  const seen = useRef<string | null>(null);
+
+  const clear = useCallback(() => {
+    if (timer.current !== null) window.clearTimeout(timer.current);
+    timer.current = null;
+  }, []);
+
+  const cut = useCallback(() => {
+    clear();
+    setHoldingRun(null);
+  }, [clear]);
+
+  const runId = request?.runId ?? null;
+  const failed = typeof request?.error === "string" && request.error.length > 0;
+
+  useEffect(() => {
+    if (!request) {
+      seen.current = null;
+      clear();
+      setHoldingRun(null);
+      return;
+    }
+    if (runId === null) {
+      seen.current = null;
+      return;
+    }
+    if (seen.current === runId) return;
+    seen.current = runId;
+    if (failed || prefersReducedMotion()) return;
+    setHoldingRun(runId);
+    clear();
+    timer.current = window.setTimeout(() => {
+      timer.current = null;
+      setHoldingRun(null);
+    }, RESOLVE_GRACE_MS);
+  }, [clear, failed, request, runId]);
+
+  useEffect(() => clear, [clear]);
+
+  return { holding: holdingRun !== null && holdingRun === runId, cut };
+}
+
 export function VerifyThreadReader() {
   const request = useVerifyThread();
+  const grace = useResolveGrace(request);
   if (!request) return null;
   // While the run is still going the reader is already open, over the same
   // transcript. When the run lands the settled reader takes its place.
-  if (request.runId === null) {
-    return <PendingBody key={`pending:${request.itemId}`} request={request} />;
+  if (request.runId === null || grace.holding) {
+    return (
+      <PendingBody
+        key={`pending:${request.itemId}`}
+        request={request}
+        onSkip={grace.cut}
+      />
+    );
   }
   return (
     <ReaderBody key={request.runId} request={request as VerifyThreadRequest & { runId: string }} />
