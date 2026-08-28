@@ -20,6 +20,7 @@ import { SourceMark, sourceVendorKey } from "@/components/work/SourceMark";
 import { turnConnectorD } from "@/lib/journey-path";
 import {
   CARD_STEP_MS,
+  PAGE_FADE_MS,
   TURN_CARD_H,
   TURN_CARD_W,
   TURN_STORY_HOLD_MS,
@@ -28,6 +29,7 @@ import {
   layoutTurnWalk,
   turnCards,
   type TurnCard,
+  type TurnPlacement,
   type TurnStage,
   type TurnStoryTurn,
 } from "@/lib/turn-story-shared";
@@ -230,7 +232,7 @@ export function TurnCardStory({
   // of it: as one lands, the oldest leaves.
   const last = Math.max(0, Math.min(head, cards.length)) - 1;
   const page = last >= 0 ? (places[last]?.page ?? 0) : -1;
-  const shown =
+  const shown: ShownEntry[] =
     last < 0
       ? []
       : places
@@ -238,6 +240,8 @@ export function TurnCardStory({
           .map((place, index) => ({ place, card: cards[index] as TurnCard }))
           .filter((entry) => entry.place.page === page)
           .slice(-TURN_STORY_WINDOW);
+  // The page just turned: the outgoing page's cards fade out over PAGE_FADE_MS.
+  const fading = usePageTurnFade(page, shown);
 
   return (
     <div
