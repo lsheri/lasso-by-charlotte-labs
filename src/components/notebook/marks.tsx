@@ -18,6 +18,8 @@ import {
   hatchStrokes,
   marginFlagD,
   MARGIN_FLAG_BOX,
+  readingEyesD,
+  READING_EYES_BOX,
   mulberry32,
   scribblePath,
   verifyInkD,
@@ -714,5 +716,59 @@ export function MarginFlag({
         />
       </svg>
     </button>
+  );
+}
+
+/**
+ * PASS 135 — the reading eyes. While the model reads the chat, a friendly pair
+ * of drawn spectacles sits centred in the transcript and tracks its eyes along
+ * the line, the way a person reads. Graphite only, aria-hidden, no telemetry.
+ * The motion is one CSS keyframe loop, so there is nothing to clean up: it
+ * stops when the element unmounts. Reduced motion holds the pupils centred.
+ */
+export function ReadingEyes({
+  animate = true,
+  seed = "reading-eyes",
+  className = "",
+}: {
+  animate?: boolean;
+  seed?: string;
+  className?: string;
+}) {
+  const eyes = useMemo(() => readingEyesD(seed), [seed]);
+  return (
+    <span
+      data-testid="reading-eyes"
+      className={`nb-reading-eyes pointer-events-none ${className}`}
+      aria-hidden
+    >
+      <span className="nb-reading-eyes-halo" />
+      <svg
+        viewBox={`0 0 ${READING_EYES_BOX.width} ${READING_EYES_BOX.height}`}
+        width={READING_EYES_BOX.width}
+        height={READING_EYES_BOX.height}
+        fill="none"
+        stroke="var(--nb-graphite)"
+        strokeWidth={1.5}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden
+      >
+        {eyes.frame.map((d, index) => (
+          <path key={index} d={d} />
+        ))}
+        {eyes.pupils.map((pupil, index) => (
+          <circle
+            key={`p-${index}`}
+            className={animate ? "nb-reading-pupil" : "nb-reading-pupil nb-reading-pupil-static"}
+            cx={pupil.cx}
+            cy={pupil.cy}
+            r={pupil.r}
+            fill="var(--nb-graphite)"
+            stroke="none"
+          />
+        ))}
+      </svg>
+    </span>
   );
 }
