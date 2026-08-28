@@ -285,6 +285,19 @@ export function TurnCardStory({
           );
         })}
       </svg>
+      {fading.map((entry) => (
+        <TurnCardBox
+          key={`fade-${entry.card.id}`}
+          card={entry.card}
+          item={item}
+          className="nb-page-fade absolute"
+          style={{
+            left: entry.place.x,
+            top: entry.place.y,
+            width: TURN_CARD_W,
+          }}
+        />
+      ))}
       {shown.map((entry) => (
         <TurnCardBox
           key={entry.card.id}
