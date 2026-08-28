@@ -79,8 +79,10 @@ describe("pass 133.1 page-turn fade", () => {
     expect(STORY).toContain("PAGE_FADE_MS");
     expect(STORY).toContain("usePageTurnFade");
     expect(STORY).toContain("nb-page-fade");
-    expect(CSS).toMatch(/\.nb-journey-node\.nb-page-fade\s*\{[^}]*opacity:\s*0/);
-    expect(CSS).toContain("transition: opacity 400ms ease");
+    expect(CSS).toMatch(/\.nb-journey-node\.nb-page-fade\s*\{[^}]*animation:\s*nb-page-fade-out 400ms ease forwards/);
+    expect(CSS).toContain("@keyframes nb-page-fade-out");
+    expect(CSS).toMatch(/@keyframes nb-page-fade-out\s*\{[^}]*from\s*\{\s*opacity:\s*1/s);
+
   });
 
   it("owns and cleans the fade timer", () => {

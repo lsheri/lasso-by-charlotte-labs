@@ -2029,11 +2029,18 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 }
 /* The outgoing page of the turn-card walk fades out instead of cutting. */
 .nb-journey-node.nb-page-fade {
-  animation: none;
-  opacity: 0;
-  transition: opacity 400ms ease;
+  animation: nb-page-fade-out 400ms ease forwards;
   pointer-events: none;
 }
+@keyframes nb-page-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
 @keyframes nb-journey-announce {
   0% {
     opacity: 0;
