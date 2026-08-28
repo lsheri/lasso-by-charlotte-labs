@@ -25,8 +25,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   closeVerifyThread,
-  markStoryPlayed,
-  storyPlayed,
   useVerifyThread,
   type VerifyThreadRequest,
 } from "@/components/verify/verify-thread-state";
@@ -193,7 +191,6 @@ function useReaderStory({
     if (!playing) return;
     clearAll();
     finalState();
-    writeSkipPreference();
     const node = scroller.current;
     const first = turnNos[0];
     if (node && first !== undefined) {
@@ -651,8 +648,7 @@ function ReaderBody({ request }: { request: VerifyThreadRequest & { runId: strin
   const strike = useMark();
   const reduced = prefersReducedMotion();
   const [wide, toggleWide] = useRailWide();
-  const alreadyPlayed = useMemo(() => storyPlayed(request.runId), [request.runId]);
-  const [sourceOpen, setSourceOpen] = useState(!alreadyPlayed);
+  const [sourceOpen, setSourceOpen] = useState(true);
 
   const isCoach = profile?.role === "coach";
 
@@ -745,7 +741,6 @@ function ReaderBody({ request }: { request: VerifyThreadRequest & { runId: strin
 
   const onResolved = useCallback(
     (outcome: Outcome) => {
-      markStoryPlayed(request.runId);
       if (profile?.org_id) {
         logEvent("analysis.reader_story", profile.org_id, { outcome });
       }
@@ -760,7 +755,7 @@ function ReaderBody({ request }: { request: VerifyThreadRequest & { runId: strin
     !findingsQuery.isLoading &&
     Boolean(itemQuery.data);
 
-  const suppressed = reduced || alreadyPlayed || readSkipPreference() || anchored.length === 0;
+  const suppressed = reduced || anchored.length === 0;
 
   const story = useReaderStory({
     enabled: storyEnabled,
