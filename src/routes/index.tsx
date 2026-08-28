@@ -126,7 +126,7 @@ function LandingPage() {
           Sample data from a test engagement. Not client work.
         </p>
 
-        <section className="mt-20 border-t border-rule pt-10">
+<section className="mt-20 border-t border-rule pt-10 md:-translate-x-10 lg:-translate-x-16">
           <p className="micro-label">WHAT ACCUMULATES</p>
           <p className="mt-5 text-base leading-relaxed text-foreground">
             Every finished piece of work leaves a trace of how it was made. Over an engagement, then
@@ -140,7 +140,7 @@ function LandingPage() {
           </p>
         </section>
 
-        <section className="mt-20 border-t border-rule pt-10">
+        <section className="mt-20 border-t border-rule pt-10 md:translate-x-10 lg:translate-x-16">
           <p className="micro-label">PRIVACY, DEMONSTRATED</p>
           <h2 className="mt-4 text-2xl font-semibold tracking-tight text-foreground md:text-3xl">
             What a coach sees.
@@ -150,7 +150,7 @@ function LandingPage() {
           </div>
         </section>
 
-        <section className="mt-16 border-t border-rule pt-10">
+        <section className="mt-16 border-t border-rule pt-10 md:-translate-x-10 lg:-translate-x-16">
           <p className="micro-label">HOW IT WORKS</p>
           <div className="mt-5 space-y-3">
             {TRUST_LINES.map((line) => (
