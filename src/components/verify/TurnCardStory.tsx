@@ -216,18 +216,6 @@ export function TurnCardStory({
     if (!running) stop();
   }, [running, stop]);
 
-  if (!wide || cards.length === 0) return null;
-
-  if (reduced) {
-    return (
-      <div className="flex flex-col gap-2" data-testid="turn-story" data-reduced="true">
-        {cards.slice(0, 3).map((card) => (
-          <TurnCardBox key={card.id} card={card} item={item} />
-        ))}
-      </div>
-    );
-  }
-
   // Only the current page of paper is on screen, and only the last few cards
   // of it: as one lands, the oldest leaves.
   const last = Math.max(0, Math.min(head, cards.length)) - 1;
@@ -242,6 +230,18 @@ export function TurnCardStory({
           .slice(-TURN_STORY_WINDOW);
   // The page just turned: the outgoing page's cards fade out over PAGE_FADE_MS.
   const fading = usePageTurnFade(page, shown);
+
+  if (!wide || cards.length === 0) return null;
+
+  if (reduced) {
+    return (
+      <div className="flex flex-col gap-2" data-testid="turn-story" data-reduced="true">
+        {cards.slice(0, 3).map((card) => (
+          <TurnCardBox key={card.id} card={card} item={item} />
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div
