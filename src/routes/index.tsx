@@ -1,8 +1,11 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useEffect } from "react";
 
+import { PublicHeader } from "@/components/layout/PublicHeader";
 import { ClipPlayer } from "@/components/marketing/ClipPlayer";
+import { PrivacyToggleDemo } from "@/components/marketing/PrivacyToggleDemo";
 import { GraphiteRule } from "@/components/notebook/marks";
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { startSessionReplay, stopSessionReplay } from "@/lib/posthog-client";
 import { recordAnonymousEventFn } from "@/lib/telemetry.functions";
