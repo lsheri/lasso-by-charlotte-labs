@@ -54,7 +54,7 @@ describe("pass 138 landing page", () => {
 
   it("uses none of the banned words", () => {
     for (const word of BANNED) {
-      expect(source.toLowerCase()).not.toContain(word);
+      expect(copySource.toLowerCase()).not.toContain(word);
     }
   });
 
