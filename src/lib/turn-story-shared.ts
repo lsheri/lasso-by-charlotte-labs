@@ -27,14 +27,23 @@ export const TURN_STORY_HOLD_MS = 1600;
 /** A page of the walk fades out together over this long before the next one. */
 export const PAGE_FADE_MS = 400;
 
-/** The card box, in the story's own pixel space. */
+/**
+ * The card box, in the story's own pixel space. PASS 134: these numbers are
+ * also the rendered footprint — the DOM box is fixed to exactly this, so the
+ * spacing law below is a law about what you actually see.
+ */
 export const TURN_CARD_W = 200;
-export const TURN_CARD_H = 62;
+export const TURN_CARD_H = 64;
 export const TURN_CARD_GAP = 22;
 export const TURN_STORY_W = 280;
 
 /** Cards never touch: this much clear paper between any two card rectangles. */
-export const CARD_GAP_MIN = 18;
+export const CARD_GAP_MIN = 36;
+
+/** How far one step of the walk carries, in pixels. */
+export const WALK_STEP_MIN = 150;
+export const WALK_STEP_MAX = 260;
+
 
 
 export type TurnStoryTurn = {
