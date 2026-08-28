@@ -43,7 +43,7 @@ export function appOrigin(): string | null {
  * flips this to true in a later pass, once DNS for the canonical host is
  * verified.
  */
-export const REDIRECT_TO_CANONICAL = false;
+export const REDIRECT_TO_CANONICAL = true;
 
 /**
  * The transition redirect. Same path, same query, same hash, canonical host.
