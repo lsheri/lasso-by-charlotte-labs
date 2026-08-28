@@ -15,17 +15,27 @@ import { fnv1a, mulberry32 } from "@/lib/journey-path";
 /** At most this many cards on screen at once; the oldest leaves as one lands. */
 export const TURN_STORY_WINDOW = 6;
 
-/** One card lands roughly this often. */
-export const TURN_STORY_STEP_MS = 700;
+/** One card lands roughly this often: the same register as the reading scroll. */
+export const CARD_STEP_MS = 1400;
+
+/** Kept as the story's step name; pass 133 slowed it to the reading register. */
+export const TURN_STORY_STEP_MS = CARD_STEP_MS;
 
 /** After the last turn, the set holds a beat before the loop starts again. */
 export const TURN_STORY_HOLD_MS = 1600;
+
+/** A page of the walk fades out together over this long before the next one. */
+export const PAGE_FADE_MS = 400;
 
 /** The card box, in the story's own pixel space. */
 export const TURN_CARD_W = 200;
 export const TURN_CARD_H = 62;
 export const TURN_CARD_GAP = 22;
 export const TURN_STORY_W = 280;
+
+/** Cards never touch: this much clear paper between any two card rectangles. */
+export const CARD_GAP_MIN = 18;
+
 
 export type TurnStoryTurn = {
   id: string;
