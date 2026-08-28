@@ -1,11 +1,10 @@
-import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useEffect } from "react";
 
-import { PublicHeader } from "@/components/layout/PublicHeader";
-import { LassoLogo } from "@/components/layout/LassoLogo";
-import { PrivacyToggleDemo } from "@/components/marketing/PrivacyToggleDemo";
-import { Button } from "@/components/ui/button";
+import { ClipPlayer } from "@/components/marketing/ClipPlayer";
+import { GraphiteRule } from "@/components/notebook/marks";
 import { supabase } from "@/integrations/supabase/client";
+import { startSessionReplay, stopSessionReplay } from "@/lib/posthog-client";
 import { recordAnonymousEventFn } from "@/lib/telemetry.functions";
 
 export const Route = createFileRoute("/")({
@@ -16,17 +15,20 @@ export const Route = createFileRoute("/")({
   },
   head: () => ({
     meta: [
-      { title: "Lasso: Turn AI usage into AI ability" },
+      { title: "Lasso: see where every fact in a deliverable came from" },
       {
         name: "description",
         content:
-          "Lasso is the record of your AI work that you own, and the coaching that makes it compound. Individuals build it. Teams get better because of it.",
+          "Circle any fact in a deliverable and see exactly where it came from, across every tool your team used.",
       },
-      { property: "og:title", content: "Lasso: Turn AI usage into AI ability" },
+      {
+        property: "og:title",
+        content: "Lasso: see where every fact in a deliverable came from",
+      },
       {
         property: "og:description",
         content:
-          "Lasso is the record of your AI work that you own, and the coaching that makes it compound. Individuals build it. Teams get better because of it.",
+          "Circle any fact in a deliverable and see exactly where it came from, across every tool your team used.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -35,22 +37,14 @@ export const Route = createFileRoute("/")({
   component: LandingPage,
 });
 
-const ORG_POINTS: string[] = [
-  "Coaching lands on actual work from this week, not exercises.",
-  "Each person owns their record and chooses what to share. That is why they adopt it, and adoption is where development budgets usually die.",
-  "You see coaching activity and aggregate patterns, never individual files.",
-];
-
-const TRUST_ITEMS: string[] = [
-  "Private by default",
-  "No admin access to anyone's content",
-  "Your record leaves with you",
-  "Telemetry is counts, never content",
+const TRUST_LINES: string[] = [
+  "Private by default. Work you do not place stays private.",
+  "Nobody is scored. There is no rating, ranking, or percentage about any person.",
+  "You own your record. It travels with you.",
 ];
 
 function LandingPage() {
-  // Every real marketing visitor is anonymous, so this fires once per page
-  // view with no session and no org. Content-free, as always.
+  // Content-free, and unchanged from the existing landing signal.
   useEffect(() => {
     void recordAnonymousEventFn({
       data: { event_type: "landing.viewed", view_id: crypto.randomUUID(), dims: {} },
@@ -59,167 +53,94 @@ function LandingPage() {
     });
   }, []);
 
+  // Anonymous visitors to this public page are not recorded.
+  useEffect(() => {
+    stopSessionReplay();
+    return () => startSessionReplay();
+  }, []);
+
   return (
     <div className="min-h-screen bg-background">
-      <PublicHeader current="/" />
-
-      <main className="mx-auto max-w-5xl px-6 pb-20 md:px-10">
-        <section className="grid items-center gap-8 pt-14 md:grid-cols-[minmax(0,1fr)_auto] md:pt-20">
-          <div>
-            <p className="micro-label">Your team already works with AI.</p>
-            <h1 className="mt-4 max-w-3xl text-3xl font-semibold tracking-tight text-foreground md:text-5xl">
-              Turn AI usage into AI ability.
-            </h1>
-            <p className="mt-5 max-w-2xl text-base leading-relaxed text-muted-foreground md:text-lg">
-              Lasso is the record of your AI work that you own, and the coaching that makes it
-              compound. Individuals build it. Teams get better because of it.
-            </p>
-            <div className="mt-8 flex flex-wrap items-center gap-3">
-              <Button asChild>
-                <Link to="/auth" search={{ intent: "personal" }}>
-                  Start your record
-                </Link>
-              </Button>
-              <Button asChild variant="outline">
-                <a href="#for-organizations">Bring Lasso to your team</a>
-              </Button>
-            </div>
-          </div>
-          <LassoLogo size="xl" className="justify-self-center" />
+      <main className="mx-auto max-w-3xl px-6 pb-24 pt-16 md:px-10 md:pt-24">
+        <section>
+          <p className="micro-label">LASSO · BY CHARLOTTE LABS</p>
+          <h1 className="mt-5 text-2xl font-bold leading-snug tracking-tight text-foreground md:text-4xl">
+            Circle any fact in a deliverable and see exactly where it came from, across every tool
+            your team used.
+          </h1>
+          <GraphiteRule className="mt-3 h-[6px] w-full max-w-xl text-graphite" />
         </section>
 
-        <section className="mt-20 border-t border-border pt-10">
-          <p className="micro-label">The problem</p>
-          <h2 className="mt-4 max-w-2xl text-2xl font-semibold tracking-tight text-foreground md:text-3xl">
-            Invisible AI is already doing visible work.
-          </h2>
-          <p className="mt-4 max-w-2xl text-base leading-relaxed text-muted-foreground">
-            It happens in chat windows, ships inside deliverables, and vanishes. Not because people
-            hide it. Because nothing keeps it. The skill building up in your team has no record, no
-            coach, and no owner.
+        <section className="mt-14">
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            Every deliverable carries the record of how it was made. Email, chats, drive, in the
+            order the work actually happened.
           </p>
-          <p
-            className="mt-6 max-w-2xl border-l-[3px] pl-5 text-lg leading-relaxed text-foreground md:text-xl"
-            style={{ borderColor: "var(--ember)" }}
-          >
-            Lasso gives AI work a home its owner controls. Visible to a coach when shared. Invisible
-            to everyone when not.
-          </p>
-        </section>
-
-        <section className="mt-20 border-t border-border pt-10">
-          <p className="micro-label">Privacy, demonstrated</p>
-          <h2 className="mt-4 text-2xl font-semibold tracking-tight text-foreground md:text-3xl">
-            What a coach sees.
-          </h2>
-          <div className="mt-8">
-            <PrivacyToggleDemo />
+          <div className="mt-4">
+            <ClipPlayer
+              src="/videos/lasso-work-artifact.mp4"
+              poster="/videos/poster-work-artifact.jpg"
+              width={1280}
+              height={776}
+              label="A deliverable with the record of how it was made"
+            />
           </div>
         </section>
 
-        <section
-          id="for-organizations"
-          className="mt-20 scroll-mt-8 border-t border-border pt-10"
-        >
-          <p className="micro-label">For organizations</p>
-          <h2 className="mt-4 max-w-2xl text-2xl font-semibold tracking-tight text-foreground md:text-3xl">
-            The coaching layer for AI work.
-          </h2>
-          <p className="mt-4 max-w-2xl text-base leading-relaxed text-muted-foreground">
-            Your people already use AI every day. What they&apos;re missing is the loop that turns
-            use into judgment: a coach who sees the real work and makes the next decision better.
+        <section className="mt-14">
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            The record also shows what was never checked, and what to run to check it.
           </p>
-          <ul className="mt-6 max-w-2xl space-y-3">
-            {ORG_POINTS.map((point) => (
-              <li key={point} className="flex gap-3 text-sm leading-relaxed text-foreground">
-                <span aria-hidden style={{ color: "var(--state-teal)" }}>
-                  ◆
-                </span>
-                <span>{point}</span>
-              </li>
+          <div className="mt-4">
+            <ClipPlayer
+              src="/videos/lasso-fact-check.mp4"
+              poster="/videos/poster-fact-check.jpg"
+              width={1280}
+              height={832}
+              label="A deliverable showing which claims were never checked"
+            />
+          </div>
+        </section>
+
+        <p className="mt-5 font-mono text-[11px] text-soft">
+          Sample data from a test engagement. Not client work.
+        </p>
+
+        <section className="mt-20 border-t border-rule pt-10">
+          <p className="micro-label">WHAT ACCUMULATES</p>
+          <p className="mt-5 text-base leading-relaxed text-foreground">
+            Every finished piece of work leaves a trace of how it was made. Over an engagement, then
+            a practice, then a firm, those traces become something a firm can actually learn from:
+            how this kind of analysis gets built here, what the good version looked like, which
+            claims held up.
+          </p>
+          <p className="mt-4 text-base leading-relaxed text-foreground">
+            The work belongs to the people who did it. What the firm sees is the work they chose to
+            place there, never a feed of what anyone is doing.
+          </p>
+        </section>
+
+        <section className="mt-16 border-t border-rule pt-10">
+          <p className="micro-label">HOW IT WORKS</p>
+          <div className="mt-5 space-y-3">
+            {TRUST_LINES.map((line) => (
+              <p key={line} className="text-base leading-relaxed text-foreground">
+                {line}
+              </p>
             ))}
-          </ul>
-          <p className="mt-6 max-w-2xl rounded-[var(--radius)] border border-border bg-card p-5 text-sm leading-relaxed text-muted-foreground shadow-card">
-            Coaches see which AI produced the work by default, so feedback can fit the tool. Want
-            tool-blind review instead? Vendor-neutral mode is an org setting, chosen with us at
-            implementation, and every member is told before it ever changes.
-          </p>
-          <div className="mt-6">
-            <Button asChild>
-              <Link to="/auth" search={{ intent: "company" }}>
-                Set up for a company
-              </Link>
-            </Button>
           </div>
-        </section>
-
-        <section className="mt-20 border-t border-border pt-10">
-          <p className="micro-label">For individuals</p>
-          <h2 className="mt-4 text-xl font-semibold tracking-tight text-foreground md:text-2xl">
-            Your judgment, on the record.
-          </h2>
-          <p className="mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground">
-            Capture from any AI you use. Map what matters. Get coached on the decisions you actually
-            made. Keep the record when you change jobs.
-          </p>
-          <Link
-            to="/auth"
-            search={{ intent: "personal" }}
-            className="mt-5 inline-block font-mono text-[11px] uppercase tracking-[0.08em] text-ember-deep transition-colors hover:text-foreground"
-          >
-            Start my own record →
-          </Link>
-        </section>
-
-        <section
-          className="mt-20 rounded-[var(--radius)] px-6 py-8"
-          style={{ background: "var(--ember-wash)" }}
-        >
-          <p className="mx-auto max-w-3xl text-center text-base leading-relaxed text-foreground">
-            The cost of AI training is not the license. It is the gap between a course and changed
-            behavior. Coaching on real work closes it.
-          </p>
         </section>
       </main>
 
-      <footer className="border-t border-border">
-        <div className="mx-auto max-w-5xl px-6 py-8 md:px-10">
-          <ul className="flex flex-wrap items-center gap-x-3 gap-y-2">
-            {TRUST_ITEMS.map((item, i) => (
-              <li
-                key={item}
-                className="flex items-center gap-3 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground"
-              >
-                {i > 0 ? <span aria-hidden>·</span> : null}
-                <span>{item}</span>
-              </li>
-            ))}
-          </ul>
-          <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
-            <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
-              Lasso by Charlotte Labs
-            </p>
-            <div className="flex flex-wrap items-center gap-5">
-              <Link
-                to="/why"
-                className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
-              >
-                Why Lasso
-              </Link>
-              <Link
-                to="/trust"
-                className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
-              >
-                Trust &amp; data
-              </Link>
-              <Link
-                to="/auth"
-                className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
-              >
-                Feedback
-              </Link>
-            </div>
-          </div>
+      <footer className="border-t border-rule">
+        <div className="mx-auto flex max-w-3xl flex-wrap items-center gap-x-3 gap-y-2 px-6 py-8 font-mono text-[11px] text-muted-foreground md:px-10">
+          <span>Charlotte Labs · hello@charlotte-labs.com</span>
+          <a
+            href="https://charlotte-labs.com"
+            className="underline underline-offset-4 transition-colors hover:text-foreground"
+          >
+            charlotte-labs.com
+          </a>
         </div>
       </footer>
     </div>
