@@ -125,7 +125,16 @@ describe("pass139 restored navigation and CTAs", () => {
     expect(route.indexOf("<PrivacyToggleDemo />")).toBeLessThan(route.indexOf("HOW IT WORKS"));
   });
 
-  it("keeps the quiet bottom link to a personal record", () => {
+it("keeps the quiet bottom link to a personal record", () => {
     expect(route).toContain("Start my own record");
+  });
+
+  it("shows no micro-label above the hero title", () => {
+    expect(route).not.toContain("LASSO · BY CHARLOTTE LABS");
+  });
+
+  it("brands the header with LASSO and a smaller by Charlotte Labs line", () => {
+    expect(header).toContain("LASSO");
+    expect(header).toContain("by Charlotte Labs");
   });
 });
