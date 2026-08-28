@@ -2528,14 +2528,13 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 .nb-reading-eyes {
   position: sticky;
   top: 50%;
-  left: 50%;
   z-index: 5;
   display: grid;
   place-items: center;
   width: 0;
   height: 0;
   margin: 0 auto;
-  transform: translate(-50%, -50%);
+  transform: translateY(-50%);
 }
 .nb-reading-eyes > * {
   grid-area: 1 / 1;
