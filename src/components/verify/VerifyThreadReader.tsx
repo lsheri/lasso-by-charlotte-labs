@@ -74,6 +74,11 @@ import {
   verifyFindings,
   type ThreadMark,
 } from "@/lib/verify-thread-shared";
+import {
+  READ_SPEED_PX_S,
+  advanceScroll,
+  type ScrollState,
+} from "@/lib/working-scroll";
 import type { WorkItemRow } from "@/lib/work-types";
 
 const SKIP_KEY = "lasso.reader.skip_story";
