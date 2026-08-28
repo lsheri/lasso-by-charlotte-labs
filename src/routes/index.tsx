@@ -1,8 +1,11 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useEffect } from "react";
 
+import { PublicHeader } from "@/components/layout/PublicHeader";
 import { ClipPlayer } from "@/components/marketing/ClipPlayer";
+import { PrivacyToggleDemo } from "@/components/marketing/PrivacyToggleDemo";
 import { GraphiteRule } from "@/components/notebook/marks";
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { startSessionReplay, stopSessionReplay } from "@/lib/posthog-client";
 import { recordAnonymousEventFn } from "@/lib/telemetry.functions";
@@ -61,7 +64,9 @@ function LandingPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <main className="mx-auto max-w-3xl px-6 pb-24 pt-16 md:px-10 md:pt-24">
+      <PublicHeader current="/" />
+
+      <main className="mx-auto max-w-3xl px-6 pb-24 pt-16 md:px-10 md:pt-20">
         <section>
           <p className="micro-label">LASSO · BY CHARLOTTE LABS</p>
           <h1 className="mt-5 text-2xl font-bold leading-snug tracking-tight text-foreground md:text-4xl">
@@ -69,6 +74,22 @@ function LandingPage() {
             your team used.
           </h1>
           <GraphiteRule className="mt-3 h-[6px] w-full max-w-xl text-graphite" />
+          <p className="mt-6 max-w-2xl text-base leading-relaxed text-muted-foreground">
+            AI work happens in chat windows, ships inside deliverables, and vanishes. Not because
+            anyone hides it, because nothing keeps it.
+          </p>
+          <div className="mt-8 flex flex-wrap items-center gap-3">
+            <Button asChild>
+              <Link to="/auth" search={{ intent: "personal" }}>
+                Start your record
+              </Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link to="/auth" search={{ intent: "company" }}>
+                Set up for a company
+              </Link>
+            </Button>
+          </div>
         </section>
 
         <section className="mt-14">
@@ -120,6 +141,16 @@ function LandingPage() {
           </p>
         </section>
 
+        <section className="mt-20 border-t border-rule pt-10">
+          <p className="micro-label">PRIVACY, DEMONSTRATED</p>
+          <h2 className="mt-4 text-2xl font-semibold tracking-tight text-foreground md:text-3xl">
+            What a coach sees.
+          </h2>
+          <div className="mt-8">
+            <PrivacyToggleDemo />
+          </div>
+        </section>
+
         <section className="mt-16 border-t border-rule pt-10">
           <p className="micro-label">HOW IT WORKS</p>
           <div className="mt-5 space-y-3">
@@ -130,6 +161,16 @@ function LandingPage() {
             ))}
           </div>
         </section>
+
+        <div className="mt-16">
+          <Link
+            to="/auth"
+            search={{ intent: "personal" }}
+            className="inline-block font-mono text-[11px] uppercase tracking-[0.08em] text-ember-deep transition-colors hover:text-foreground"
+          >
+            Start my own record →
+          </Link>
+        </div>
       </main>
 
       <footer className="border-t border-rule">
@@ -142,6 +183,17 @@ function LandingPage() {
             charlotte-labs.com
           </a>
         </div>
+        <nav className="mx-auto flex max-w-3xl flex-wrap items-center gap-x-5 gap-y-2 px-6 pb-8 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground md:px-10">
+          <Link to="/why" className="transition-colors hover:text-foreground">
+            Why Lasso
+          </Link>
+          <Link to="/trust" className="transition-colors hover:text-foreground">
+            Trust & data
+          </Link>
+          <Link to="/auth" className="transition-colors hover:text-foreground">
+            Sign in
+          </Link>
+        </nav>
       </footer>
     </div>
   );
