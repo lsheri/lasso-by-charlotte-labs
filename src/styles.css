@@ -1286,6 +1286,29 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   color: var(--nb-rule);
 }
 
+/* The rule drawn in by hand: the stroke lands once, then rests. */
+.nb-title-rule-animated {
+  position: static;
+}
+.nb-title-rule-animated path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+  animation: nb-rule-draw 800ms var(--nb-ease, ease-out) both;
+}
+.nb-title-rule-animated path + path {
+  animation-delay: 220ms;
+}
+@keyframes nb-rule-draw {
+  from { stroke-dashoffset: 1; }
+  to { stroke-dashoffset: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nb-title-rule-animated path {
+    animation: none !important;
+    stroke-dashoffset: 0 !important;
+  }
+}
+
 /* Thinking: three grey dots. No spinners, no shimmer, anywhere in the dock. */
 .nb-dots {
   display: inline-flex;
