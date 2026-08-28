@@ -195,7 +195,7 @@ export function layoutTurnWalk(
         const angle = WALK_ANGLES[attempt % WALK_ANGLES.length] as number;
         const radians = (angle * Math.PI) / 180;
         const step = 92 + rand() * 74;
-        const candidate = {
+        const candidate: Rect = {
           x: Math.round(prev.x + Math.cos(radians) * step * side),
           y: Math.round(prev.y + Math.sin(radians) * step),
         };
