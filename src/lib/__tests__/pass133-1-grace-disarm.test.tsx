@@ -28,7 +28,7 @@ describe("pass 133.1 grace disarm after skip", () => {
   it("cut-before-resolve: the resolve gets NO grace, holding stays false", () => {
     const { result, rerender } = renderHook(
       ({ req }: Props) => useResolveGrace(req),
-      { initialProps: { req: request({}) } },
+      { initialProps: { req: request({}) } as Props },
     );
     // Skip during the pending phase.
     act(() => result.current.cut());
@@ -43,7 +43,7 @@ describe("pass 133.1 grace disarm after skip", () => {
   it("a fresh pending request re-arms the grace", () => {
     const { result, rerender } = renderHook(
       ({ req }: Props) => useResolveGrace(req),
-      { initialProps: { req: request({}) } },
+      { initialProps: { req: request({}) } as Props },
     );
     act(() => result.current.cut());
     rerender({ req: request({ runId: "run-1" }) });
@@ -63,7 +63,7 @@ describe("pass 133.1 grace disarm after skip", () => {
   it("cut during an active hold ends it immediately", () => {
     const { result, rerender } = renderHook(
       ({ req }: Props) => useResolveGrace(req),
-      { initialProps: { req: request({}) } },
+      { initialProps: { req: request({}) } as Props },
     );
     rerender({ req: request({ runId: "run-1" }) });
     expect(result.current.holding).toBe(true);
