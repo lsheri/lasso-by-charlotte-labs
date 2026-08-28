@@ -169,8 +169,32 @@ function inside(p: Rect, stage: TurnStage): boolean {
   );
 }
 
-/** Down-ish directions only, mirrored by side so the walk actually snakes. */
-const WALK_ANGLES = [62, 38, 90, 118] as const;
+/**
+ * PASS 134 — a wider vocabulary of directions: never upward, but anything
+ * from near-horizontal one way to near-horizontal the other, mirrored by side
+ * so the walk still snakes.
+ */
+export const WALK_ANGLES = [25, 40, 58, 75, 90, 110, 132, 155] as const;
+
+/** Which way the walk travelled between two spots. */
+export type WalkDirection = { x: number; y: number };
+
+/**
+ * Where a connector should leave or meet a card: the middle of the edge that
+ * faces the direction of travel. Pure, so the anchor law is testable.
+ */
+export function edgeAnchor(
+  rect: Rect,
+  direction: WalkDirection,
+): { x: number; y: number } {
+  const cx = rect.x + TURN_CARD_W / 2;
+  const cy = rect.y + TURN_CARD_H / 2;
+  const horizontal = Math.abs(direction.x) > Math.abs(direction.y) * 1.2;
+  if (horizontal) {
+    return { x: direction.x >= 0 ? rect.x + TURN_CARD_W : rect.x, y: cy };
+  }
+  return { x: cx, y: direction.y >= 0 ? rect.y + TURN_CARD_H : rect.y };
+}
 
 /**
  * Where every card of this conversation sits. Pure and seeded: the same item
@@ -200,10 +224,11 @@ export function layoutTurnWalk(
 
     if (prev) {
       const side = out.length % 2 === 0 ? 1 : -1;
-      for (let attempt = 0; attempt < 8 && !spot; attempt += 1) {
-        const angle = WALK_ANGLES[attempt % WALK_ANGLES.length] as number;
+      const offset = Math.floor(rand() * WALK_ANGLES.length);
+      for (let attempt = 0; attempt < WALK_ANGLES.length && !spot; attempt += 1) {
+        const angle = WALK_ANGLES[(offset + attempt) % WALK_ANGLES.length] as number;
         const radians = (angle * Math.PI) / 180;
-        const step = 92 + rand() * 74;
+        const step = WALK_STEP_MIN + rand() * (WALK_STEP_MAX - WALK_STEP_MIN);
         const candidate: Rect = {
           x: Math.round(prev.x + Math.cos(radians) * step * side),
           y: Math.round(prev.y + Math.sin(radians) * step),
@@ -213,6 +238,7 @@ export function layoutTurnWalk(
         spot = candidate;
       }
     }
+
 
     if (!spot) {
       // The paper ran out. Turn the page and carry on with the same stream.
