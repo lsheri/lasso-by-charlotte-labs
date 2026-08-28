@@ -1,30 +1,34 @@
 /**
- * PASS 132 — the working card story.
+ * PASS 132/133 — the working card story.
  *
  * While the run happens, the rail plays the conversation back: turn cards
- * snaking in one at a time with hand-drawn graphite connectors between them,
- * in the Work Artifact story's motion family. It depicts reading the chat,
- * which is exactly what both thread presets do, so both readers get it.
+ * landing one at a time on blank paper with hand-drawn graphite connectors
+ * between them, in the Work Artifact story's motion family. It depicts reading
+ * the chat, which is exactly what both thread presets do, so both readers
+ * get it.
  *
- * The loop never fakes progress: it walks the whole chat, holds a beat, and
- * starts again. Every timer is owned here and cleaned up on skip, resolve and
+ * PASS 133 turns the column into a canvas: the walk drifts down and sideways
+ * across the whole rail, and when the paper runs out the page turns. The loop
+ * never fakes progress: it walks the whole chat, holds a beat, and starts
+ * again. Every timer is owned here and cleaned up on skip, resolve and
  * unmount.
  */
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { GraphiteIcon } from "@/components/notebook/icons";
 import { SourceMark, sourceVendorKey } from "@/components/work/SourceMark";
 import { turnConnectorD } from "@/lib/journey-path";
 import {
-  TURN_CARD_GAP,
+  CARD_STEP_MS,
   TURN_CARD_H,
   TURN_CARD_W,
   TURN_STORY_HOLD_MS,
-  TURN_STORY_STEP_MS,
   TURN_STORY_W,
+  TURN_STORY_WINDOW,
+  layoutTurnWalk,
   turnCards,
-  turnStoryWindow,
   type TurnCard,
+  type TurnStage,
   type TurnStoryTurn,
 } from "@/lib/turn-story-shared";
 import type { WorkItemRow } from "@/lib/work-types";
@@ -41,6 +45,27 @@ export function useWideLayout(): boolean {
     return () => mql.removeEventListener("change", apply);
   }, []);
   return wide;
+}
+
+/** The blank paper: whatever the rail actually gives us, never smaller. */
+function useStage(node: HTMLDivElement | null): TurnStage {
+  const [stage, setStage] = useState<TurnStage>({ width: TURN_STORY_W, height: 420 });
+
+  useEffect(() => {
+    if (!node) return;
+    const apply = () => {
+      setStage({
+        width: Math.max(node.clientWidth, TURN_STORY_W),
+        height: Math.max(node.clientHeight, 420),
+      });
+    };
+    apply();
+    const observer = new ResizeObserver(apply);
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [node]);
+
+  return stage;
 }
 
 /**
@@ -70,10 +95,10 @@ export function useTurnCardStory({ count, enabled }: { count: number; enabled: b
       setHead(next);
       timer.current = window.setTimeout(
         tick,
-        next >= count ? TURN_STORY_HOLD_MS : TURN_STORY_STEP_MS,
+        next >= count ? TURN_STORY_HOLD_MS : CARD_STEP_MS,
       );
     };
-    timer.current = window.setTimeout(tick, TURN_STORY_STEP_MS);
+    timer.current = window.setTimeout(tick, CARD_STEP_MS);
     return () => {
       stopped.current = true;
       if (timer.current !== null) window.clearTimeout(timer.current);
@@ -133,7 +158,13 @@ export function TurnCardStory({
   reduced: boolean;
 }) {
   const wide = useWideLayout();
-  const cards = turnCards(itemId, turns);
+  const [host, setHost] = useState<HTMLDivElement | null>(null);
+  const stage = useStage(host);
+  const cards = useMemo(() => turnCards(itemId, turns), [itemId, turns]);
+  const places = useMemo(
+    () => layoutTurnWalk(itemId, cards, stage),
+    [cards, itemId, stage],
+  );
   const { head, stop } = useTurnCardStory({
     count: cards.length,
     enabled: running && !reduced && wide,
@@ -155,34 +186,44 @@ export function TurnCardStory({
     );
   }
 
-  const shown = turnStoryWindow(cards, head);
-  const height = Math.max(1, shown.length) * (TURN_CARD_H + TURN_CARD_GAP);
-  const centre = TURN_STORY_W / 2;
+  // Only the current page of paper is on screen, and only the last few cards
+  // of it: as one lands, the oldest leaves.
+  const last = Math.max(0, Math.min(head, cards.length)) - 1;
+  const page = last >= 0 ? (places[last]?.page ?? 0) : -1;
+  const shown =
+    last < 0
+      ? []
+      : places
+          .slice(0, last + 1)
+          .map((place, index) => ({ place, card: cards[index] as TurnCard }))
+          .filter((entry) => entry.place.page === page)
+          .slice(-TURN_STORY_WINDOW);
 
   return (
     <div
-      className="nb-journey relative mx-auto"
+      ref={setHost}
+      className="nb-journey relative min-h-[420px] w-full flex-1"
       data-testid="turn-story"
+      data-page={page}
       aria-hidden
-      style={{ width: TURN_STORY_W, height }}
     >
       <svg
         className="nb-journey-svg"
-        viewBox={`0 0 ${TURN_STORY_W} ${height}`}
-        width={TURN_STORY_W}
-        height={height}
+        viewBox={`0 0 ${stage.width} ${stage.height}`}
+        width={stage.width}
+        height={stage.height}
       >
-        {shown.map((card, index) => {
+        {shown.map((entry, index) => {
           if (index === 0) return null;
-          const prev = shown[index - 1] as TurnCard;
-          const from = {
-            x: centre + prev.dx,
-            y: (index - 1) * (TURN_CARD_H + TURN_CARD_GAP) + TURN_CARD_H,
+          const prev = shown[index - 1]!.place;
+          const from = { x: prev.x + TURN_CARD_W / 2, y: prev.y + TURN_CARD_H };
+          const to = {
+            x: entry.place.x + TURN_CARD_W / 2,
+            y: entry.place.y - 2,
           };
-          const to = { x: centre + card.dx, y: index * (TURN_CARD_H + TURN_CARD_GAP) - 2 };
-          const connector = turnConnectorD(`${itemId}:${card.turnNo}`, from, to);
+          const connector = turnConnectorD(`${itemId}:${entry.card.turnNo}`, from, to);
           return (
-            <g key={`c-${card.id}`}>
+            <g key={`c-${entry.card.id}`}>
               <path
                 className="nb-journey-seg"
                 d={connector.stroke.d}
@@ -200,15 +241,15 @@ export function TurnCardStory({
           );
         })}
       </svg>
-      {shown.map((card, index) => (
+      {shown.map((entry) => (
         <TurnCardBox
-          key={card.id}
-          card={card}
+          key={entry.card.id}
+          card={entry.card}
           item={item}
           className="absolute"
           style={{
-            left: centre + card.dx - TURN_CARD_W / 2,
-            top: index * (TURN_CARD_H + TURN_CARD_GAP),
+            left: entry.place.x,
+            top: entry.place.y,
             width: TURN_CARD_W,
           }}
         />
