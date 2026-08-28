@@ -8,18 +8,38 @@ import { useEffect, useRef, useState } from "react";
  * never run at once. Under prefers-reduced-motion the poster stands still and
  * the visitor gets an explicit control.
  */
+/**
+ * Only one clip on the page ever runs. Whichever clip is most in view claims
+ * playback and every other clip is paused, so scrolling hands the loop along.
+ */
+const players = new Set<{ el: HTMLVideoElement; ratio: number }>();
+
+function arbitrate() {
+  let best: { el: HTMLVideoElement; ratio: number } | null = null;
+  for (const p of players) {
+    if (p.ratio < 0.35) continue;
+    if (!best || p.ratio > best.ratio) best = p;
+  }
+  for (const p of players) {
+    if (best && p.el === best.el) void p.el.play().catch(() => {});
+    else p.el.pause();
+  }
+}
+
 export function ClipPlayer({
   src,
   poster,
   width,
   height,
   label,
+  className,
 }: {
   src: string;
   poster: string;
   width: number;
   height: number;
   label: string;
+  className?: string;
 }) {
   const ref = useRef<HTMLVideoElement | null>(null);
   const [reduced, setReduced] = useState(false);
