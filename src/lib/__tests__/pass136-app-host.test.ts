@@ -1,7 +1,7 @@
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
   CANONICAL_HOST,
@@ -9,6 +9,7 @@ import {
   PRODUCTION_HOSTS,
   REDIRECT_TO_CANONICAL,
   isProductionHost,
+  maybeRedirectToCanonical,
 } from "../app-host";
 
 describe("the host module", () => {
@@ -44,8 +45,65 @@ describe("the host module", () => {
     }
   });
 
-  it("ships the transition redirect disabled", () => {
-    expect(REDIRECT_TO_CANONICAL).toBe(false);
+it("ships the transition redirect enabled", () => {
+    expect(REDIRECT_TO_CANONICAL).toBe(true);
+  });
+
+  it("redirects the transitional host to the canonical host, same path and search and hash", () => {
+    const replace = vi.fn();
+    vi.stubGlobal("window", {
+      location: {
+        hostname: "pilot-platform.charlotte-labs.dev",
+        origin: "https://pilot-platform.charlotte-labs.dev",
+        pathname: "/work/abc",
+        search: "?tab=notes",
+        hash: "#top",
+        replace,
+      },
+    });
+    expect(maybeRedirectToCanonical()).toBe(
+      "https://lasso.charlotte-labs.com/work/abc?tab=notes#top",
+    );
+    expect(replace).toHaveBeenCalledWith(
+      "https://lasso.charlotte-labs.com/work/abc?tab=notes#top",
+    );
+    vi.unstubAllGlobals();
+  });
+
+  it("does nothing on the canonical host itself", () => {
+    const replace = vi.fn();
+    vi.stubGlobal("window", {
+      location: {
+        hostname: "lasso.charlotte-labs.com",
+        origin: "https://lasso.charlotte-labs.com",
+        pathname: "/",
+        search: "",
+        hash: "",
+        replace,
+      },
+    });
+    expect(maybeRedirectToCanonical()).toBeNull();
+    expect(replace).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
+  });
+
+  it("does nothing on non-production hostnames such as localhost and previews", () => {
+    for (const hostname of ["localhost", "id-preview--example.lovable.app"]) {
+      const replace = vi.fn();
+      vi.stubGlobal("window", {
+        location: {
+          hostname,
+          origin: `https://${hostname}`,
+          pathname: "/",
+          search: "",
+          hash: "",
+          replace,
+        },
+      });
+      expect(maybeRedirectToCanonical()).toBeNull();
+      expect(replace).not.toHaveBeenCalled();
+      vi.unstubAllGlobals();
+    }
   });
 });
 
