@@ -90,3 +90,42 @@ describe("pass 138 landing page", () => {
     expect(route).toContain("startSessionReplay");
   });
 });
+
+describe("pass139 restored navigation and CTAs", () => {
+  it("renders the shared PublicHeader on /", () => {
+    expect(route).toContain('import { PublicHeader } from "@/components/layout/PublicHeader"');
+    expect(route).toContain('<PublicHeader current="/" />');
+  });
+
+  it("links the route to /auth, /why and /trust", () => {
+    expect(route).toContain('to="/auth"');
+    expect(route).toContain('to="/why"');
+    expect(route).toContain('to="/trust"');
+  });
+
+  it("restores both primary CTAs with their intents", () => {
+    expect(route).toContain("Start your record");
+    expect(route).toContain('search={{ intent: "personal" }}');
+    expect(route).toContain("Set up for a company");
+    expect(route).toContain('search={{ intent: "company" }}');
+    expect(route).toContain('variant="outline"');
+  });
+
+  it("pins the problem paragraph verbatim", () => {
+    expect(flat).toContain(
+      "AI work happens in chat windows, ships inside deliverables, and vanishes. Not because anyone hides it, because nothing keeps it.",
+    );
+  });
+
+  it("renders PrivacyToggleDemo between WHAT ACCUMULATES and HOW IT WORKS", () => {
+    expect(route).toContain("<PrivacyToggleDemo />");
+    expect(route).toContain("PRIVACY, DEMONSTRATED");
+    expect(route).toContain("What a coach sees.");
+    expect(route.indexOf("WHAT ACCUMULATES")).toBeLessThan(route.indexOf("<PrivacyToggleDemo />"));
+    expect(route.indexOf("<PrivacyToggleDemo />")).toBeLessThan(route.indexOf("HOW IT WORKS"));
+  });
+
+  it("keeps the quiet bottom link to a personal record", () => {
+    expect(route).toContain("Start my own record");
+  });
+});
