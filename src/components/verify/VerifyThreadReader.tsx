@@ -78,7 +78,6 @@ import {
 import { advanceScroll, type ScrollState } from "@/lib/working-scroll";
 import type { WorkItemRow } from "@/lib/work-types";
 
-const SKIP_KEY = "lasso.reader.skip_story";
 const RAIL_WIDE_KEY = "lasso.reader.rail_wide";
 
 function prefersReducedMotion(): boolean {
@@ -86,21 +85,9 @@ function prefersReducedMotion(): boolean {
   return window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ?? false;
 }
 
-function readSkipPreference(): boolean {
-  try {
-    return window.localStorage.getItem(SKIP_KEY) === "1";
-  } catch {
-    return false;
-  }
-}
+// PASS 134: the settle story plays on every open. Skipping stops THIS showing
+// and nothing else: no preference is written, nothing is remembered.
 
-function writeSkipPreference(): void {
-  try {
-    window.localStorage.setItem(SKIP_KEY, "1");
-  } catch {
-    /* a preference that cannot be stored is simply not stored */
-  }
-}
 
 /**
  * PASS 131 — how wide the rail sits. Narrow by default, and remembered, because
