@@ -268,12 +268,13 @@ export function TurnCardStory({
         {shown.map((entry, index) => {
           if (index === 0) return null;
           const prev = shown[index - 1]!.place;
-          const from = { x: prev.x + TURN_CARD_W / 2, y: prev.y + TURN_CARD_H };
-          const to = {
-            x: entry.place.x + TURN_CARD_W / 2,
-            y: entry.place.y - 2,
-          };
+          // PASS 134: the line leaves and arrives on the edges facing the
+          // direction of travel, so no two pairs are joined the same way.
+          const direction = { x: entry.place.x - prev.x, y: entry.place.y - prev.y };
+          const from = edgeAnchor(prev, direction);
+          const to = edgeAnchor(entry.place, { x: -direction.x, y: -direction.y });
           const connector = turnConnectorD(`${itemId}:${entry.card.turnNo}`, from, to);
+
           return (
             <g key={`c-${entry.card.id}`}>
               <path
