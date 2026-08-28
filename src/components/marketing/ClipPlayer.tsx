@@ -62,17 +62,22 @@ export function ClipPlayer({
       return;
     }
     if (typeof IntersectionObserver === "undefined") return;
+    const entry = { el, ratio: 0 };
+    players.add(entry);
     const io = new IntersectionObserver(
       (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) void el.play().catch(() => {});
-          else el.pause();
-        }
+        for (const e of entries) entry.ratio = e.isIntersecting ? e.intersectionRatio : 0;
+        arbitrate();
       },
-      { threshold: 0.35 },
+      { threshold: [0, 0.35, 0.6, 0.9, 1] },
     );
     io.observe(el);
-    return () => io.disconnect();
+    return () => {
+      io.disconnect();
+      players.delete(entry);
+      el.pause();
+      arbitrate();
+    };
   }, [reduced, manual]);
 
   return (
@@ -86,7 +91,7 @@ export function ClipPlayer({
         playsInline
         preload="none"
         aria-label={label}
-        className="w-full rounded-[var(--radius)] border border-rule bg-nb-white shadow-card"
+        className={`w-full rounded-[var(--radius)] border border-rule bg-nb-white shadow-card${className ? ` ${className}` : ""}`}
         style={{ aspectRatio: `${width} / ${height}` }}
       />
       {reduced && !manual ? (
