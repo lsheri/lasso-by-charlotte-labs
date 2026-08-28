@@ -4,6 +4,8 @@ import { describe, expect, it } from "vitest";
 const route = readFileSync("src/routes/index.tsx", "utf8");
 const clip = readFileSync("src/components/marketing/ClipPlayer.tsx", "utf8");
 const source = `${route}\n${clip}`;
+/** Copy only: Tailwind class strings are not user-facing language. */
+const copySource = source.replace(/className="[^"]*"/g, "");
 const flat = route.replace(/\s+/g, " ");
 
 const COPY: string[] = [
