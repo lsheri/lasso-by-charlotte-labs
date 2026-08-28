@@ -1,5 +1,7 @@
 import posthog from "posthog-js";
 
+import { isProductionHost } from "@/lib/app-host";
+
 /**
  * The ONLY file in src that may touch posthog-js.
  *
@@ -40,7 +42,12 @@ export function initPostHog(): void {
   if (typeof window === "undefined") return;
   started = true;
   try {
-    posthog.init(POSTHOG_TOKEN, { ...POSTHOG_CONFIG } as Parameters<typeof posthog.init>[1]);
+    posthog.init(POSTHOG_TOKEN, {
+      ...POSTHOG_CONFIG,
+      // Session replay is a production-only surface. The allowed hosts live in
+      // src/lib/app-host.ts, so both hosts work through the transition.
+      disable_session_recording: !isProductionHost(window.location.hostname),
+    } as Parameters<typeof posthog.init>[1]);
   } catch {
     /* telemetry must never break the app */
   }

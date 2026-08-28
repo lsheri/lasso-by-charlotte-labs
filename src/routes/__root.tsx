@@ -16,6 +16,7 @@ import { initPageLoadTiming } from "@/lib/pageload-timing";
 import { initErrorSignal, reportClientError } from "@/lib/error-signal";
 import { initPostHog } from "@/lib/posthog-client";
 import { Toaster } from "@/components/ui/sonner";
+import { CANONICAL_ORIGIN, maybeRedirectToCanonical } from "@/lib/app-host";
 
 function NotFoundComponent() {
   return (
@@ -105,13 +106,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "theme-color", content: "#FAFAFA" },
       {
         property: "og:image",
-        content: "https://pilot-platform.charlotte-labs.dev/og-image.png",
+        content: `${CANONICAL_ORIGIN}/og-image.png`,
       },
       { property: "og:image:width", content: "1200" },
       { property: "og:image:height", content: "630" },
       {
         name: "twitter:image",
-        content: "https://pilot-platform.charlotte-labs.dev/og-image.png",
+        content: `${CANONICAL_ORIGIN}/og-image.png`,
       },
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "mobile-web-app-capable", content: "yes" },
@@ -158,6 +159,7 @@ function RootComponent() {
   // engagement.load row is written for it. That is deliberate for this pass.
   // Hard document loads only. In-app transitions are covered by engagement.load.
   useEffect(() => {
+    maybeRedirectToCanonical();
     initPageLoadTiming();
     initErrorSignal();
     initPostHog();

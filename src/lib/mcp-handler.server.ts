@@ -18,6 +18,7 @@ import {
   type SourceMeta,
 } from "@/lib/conversation-shared";
 import { safeChatUrl } from "@/lib/chat-url";
+import { CANONICAL_ORIGIN } from "@/lib/app-host";
 
 const PROTOCOL_VERSION = "2025-11-25";
 const ACCEPTED_PROTOCOLS = new Set([
@@ -38,7 +39,8 @@ function looksCondensed(incomingChars: number, storedChars: number): boolean {
   return storedChars > SHRINK_FLOOR && incomingChars < storedChars * SHRINK_RATIO;
 }
 
-const SITE_URL = "https://pilot-platform.charlotte-labs.dev";
+// Contract surface: external MCP clients read this. Canonical host only.
+const SITE_URL = CANONICAL_ORIGIN;
 const ICONS = [
   { src: `${SITE_URL}/mcp-icon-256.png`, mimeType: "image/png", sizes: ["256x256"] },
   { src: `${SITE_URL}/mcp-icon-48.png`, mimeType: "image/png", sizes: ["48x48"] },
