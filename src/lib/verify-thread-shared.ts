@@ -184,3 +184,9 @@ export const VERIFY_WORKING_LINE = "Working…";
 
 /** The label above the suggested check, so it is never unnamed text. */
 export const VERIFY_CHECK_LABEL = "THE CHECK TO RUN";
+
+/**
+ * PASS 133 — the grace beat. The working scene outlives the run by about six
+ * seconds so the animation finishes its thought instead of being cut off.
+ */
+export const RESOLVE_GRACE_MS = 6000;
