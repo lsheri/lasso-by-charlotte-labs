@@ -416,17 +416,20 @@ function useWorkingLoop({
     if (!node) return;
     stopped.current = false;
     setRunning(true);
-    const cycle = 9000;
-    const start = performance.now();
+    // PASS 133: constant reading speed, both ways. The pace belongs to the
+    // reader; the length of the conversation only changes how long a lap takes.
+    let state: ScrollState = { pos: node.scrollTop, dir: 1 };
+    let last = performance.now();
     const step = (now: number) => {
       if (stopped.current) return;
-      const t = ((now - start) % cycle) / cycle;
-      // Down, then gently back up: an indeterminate wait, honestly drawn.
-      const eased = t < 0.75 ? t / 0.75 : 1 - (t - 0.75) / 0.25;
+      const dtMs = Math.min(now - last, 64);
+      last = now;
       const maxScroll = Math.max(node.scrollHeight - node.clientHeight, 0);
-      node.scrollTop = maxScroll * eased;
-      setProgress(Math.max(eased, 0.02));
-      setTipY(node.clientHeight * Math.min(eased + 0.05, 1));
+      state = advanceScroll(state, maxScroll, dtMs);
+      node.scrollTop = state.pos;
+      const ratio = maxScroll > 0 ? state.pos / maxScroll : 0;
+      setProgress(Math.max(ratio, 0.02));
+      setTipY(node.clientHeight * Math.min(ratio + 0.05, 1));
       frame.current = window.requestAnimationFrame(step);
     };
     frame.current = window.requestAnimationFrame(step);
@@ -436,6 +439,7 @@ function useWorkingLoop({
       frame.current = null;
     };
   }, [enabled, reduced, scroller]);
+
 
   return { running, progress, tipY, stop };
 }
