@@ -502,22 +502,31 @@ export function readingTrailD(progress: number): string {
 }
 
 /**
- * PASS 132 — the working card story's connector. One hand-drawn graphite curve
+ * PASS 132 — the working card story's connector. One hand-drawn graphite path
  * from the card that just left to the card that just landed, with the same
  * little arrowhead the artifact story's spine draws. Seeded and pure: this is
  * the only home for drawn paths, so no surface carries an inline path string.
+ *
+ * PASS 134 — three path styles, chosen from the same seeded stream, so no two
+ * connectors read the same: a single curve, an S-curve that leans both ways,
+ * and an elbow that actually turns a corner.
  */
 export type TurnConnector = { stroke: PathStroke; arrow: PathStroke[] };
 
-export function turnConnectorD(seed: string, from: Point, to: Point): TurnConnector {
-  const rand = mulberry32(fnv1a(`turn-connector:${seed}`));
-  const draw = () => rand();
-  const jitter = (scale: number) => (draw() - 0.5) * scale;
-  const dx = to.x - from.x;
-  const dy = to.y - from.y;
-  const c1 = { x: from.x + dx * 0.15 + jitter(12), y: from.y + dy * 0.45 + jitter(8) };
-  const c2 = { x: from.x + dx * 0.85 + jitter(12), y: from.y + dy * 0.6 + jitter(8) };
+export type TurnConnectorStyle = "curve" | "s" | "elbow";
 
+function styleFromDraw(pick: number): TurnConnectorStyle {
+  if (pick < 1 / 3) return "curve";
+  if (pick < 2 / 3) return "s";
+  return "elbow";
+}
+
+/** Which path style this connector draws. Deterministic, exported for pins. */
+export function turnConnectorStyle(seed: string): TurnConnectorStyle {
+  return styleFromDraw(mulberry32(fnv1a(`turn-connector:${seed}`))());
+}
+
+function bezier(from: Point, c1: Point, c2: Point, to: Point): Point[] {
   const steps = 18;
   const points: Point[] = [];
   for (let i = 0; i <= steps; i += 1) {
@@ -527,6 +536,48 @@ export function turnConnectorD(seed: string, from: Point, to: Point): TurnConnec
       x: round(u * u * u * from.x + 3 * u * u * t * c1.x + 3 * u * t * t * c2.x + t * t * t * to.x),
       y: round(u * u * u * from.y + 3 * u * u * t * c1.y + 3 * u * t * t * c2.y + t * t * t * to.y),
     });
+  }
+  return points;
+}
+
+export function turnConnectorD(seed: string, from: Point, to: Point): TurnConnector {
+  const rand = mulberry32(fnv1a(`turn-connector:${seed}`));
+  const draw = () => rand();
+  const style = styleFromDraw(draw());
+  const jitter = (scale: number) => (draw() - 0.5) * scale;
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  const length = Math.hypot(dx, dy) || 1;
+  // Unit normal to the run: every lean and every corner is measured off it.
+  const nx = -dy / length;
+  const ny = dx / length;
+
+  let points: Point[];
+  if (style === "s") {
+    const lean = 14 + draw() * 22;
+    const c1 = {
+      x: from.x + dx * 0.3 + nx * lean + jitter(8),
+      y: from.y + dy * 0.3 + ny * lean + jitter(8),
+    };
+    const c2 = {
+      x: from.x + dx * 0.7 - nx * lean + jitter(8),
+      y: from.y + dy * 0.7 - ny * lean + jitter(8),
+    };
+    points = bezier(from, c1, c2, to);
+  } else if (style === "elbow") {
+    const at = 0.4 + draw() * 0.25;
+    const out = (draw() < 0.5 ? -1 : 1) * (26 + draw() * 30);
+    const corner = {
+      x: round(from.x + dx * at + nx * out),
+      y: round(from.y + dy * at + ny * out),
+    };
+    const first = waverRun(from, corner, draw, 11);
+    const second = waverRun(corner, to, draw, 41);
+    points = [{ x: round(from.x), y: round(from.y) }, ...first, ...second];
+  } else {
+    const c1 = { x: from.x + dx * 0.15 + jitter(12), y: from.y + dy * 0.45 + jitter(8) };
+    const c2 = { x: from.x + dx * 0.85 + jitter(12), y: from.y + dy * 0.6 + jitter(8) };
+    points = bezier(from, c1, c2, to);
   }
 
   const tip = points[points.length - 1] as Point;
@@ -539,4 +590,5 @@ export function turnConnectorD(seed: string, from: Point, to: Point): TurnConnec
   const tangent = flat ? { x: to.x - from.x, y: to.y - from.y || 1 } : { x: rawX, y: rawY };
   return { stroke: strokeFrom(points), arrow: arrowAt(tip, tangent, draw, 0) };
 }
+
 
