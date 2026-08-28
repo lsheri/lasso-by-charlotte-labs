@@ -91,7 +91,7 @@ function LandingPage() {
           </div>
         </section>
 
-        <section className="mt-14">
+        <section className="mt-14 md:-translate-x-16 lg:-translate-x-24">
           <p className="text-sm leading-relaxed text-muted-foreground">
             Every deliverable carries the record of how it was made. Email, chats, drive, in the
             order the work actually happened.
@@ -107,7 +107,7 @@ function LandingPage() {
           </div>
         </section>
 
-        <section className="mt-14">
+        <section className="mt-14 md:translate-x-16 lg:translate-x-24">
           <p className="text-sm leading-relaxed text-muted-foreground">
             The record also shows what was never checked, and what to run to check it.
           </p>
