@@ -745,7 +745,7 @@ function ReaderBody({ request }: { request: VerifyThreadRequest & { runId: strin
         logEvent("analysis.reader_story", profile.org_id, { outcome });
       }
     },
-    [profile?.org_id, request.runId],
+    [profile?.org_id],
   );
 
   const storyEnabled =
