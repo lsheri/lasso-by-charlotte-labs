@@ -3,14 +3,14 @@ import { describe, expect, it } from "vitest";
 
 const route = readFileSync("src/routes/index.tsx", "utf8");
 const clip = readFileSync("src/components/marketing/ClipPlayer.tsx", "utf8");
+const header = readFileSync("src/components/layout/PublicHeader.tsx", "utf8");
 const source = `${route}\n${clip}`;
 /** Copy only: Tailwind class strings are not user-facing language. */
 const copySource = source.replace(/className="[^"]*"/g, "");
 const flat = route.replace(/\s+/g, " ");
 
 const COPY: string[] = [
-  "LASSO · BY CHARLOTTE LABS",
-  "Circle any fact in a deliverable and see exactly where it came from, across every tool your team used.",
+"Circle any fact in a deliverable and see exactly where it came from, across every tool your team used.",
   "Every deliverable carries the record of how it was made. Email, chats, drive, in the order the work actually happened.",
   "The record also shows what was never checked, and what to run to check it.",
   "Sample data from a test engagement. Not client work.",
@@ -125,7 +125,16 @@ describe("pass139 restored navigation and CTAs", () => {
     expect(route.indexOf("<PrivacyToggleDemo />")).toBeLessThan(route.indexOf("HOW IT WORKS"));
   });
 
-  it("keeps the quiet bottom link to a personal record", () => {
+it("keeps the quiet bottom link to a personal record", () => {
     expect(route).toContain("Start my own record");
+  });
+
+  it("shows no micro-label above the hero title", () => {
+    expect(route).not.toContain("LASSO · BY CHARLOTTE LABS");
+  });
+
+  it("brands the header with LASSO and a smaller by Charlotte Labs line", () => {
+    expect(header).toContain("LASSO");
+    expect(header).toContain("by Charlotte Labs");
   });
 });

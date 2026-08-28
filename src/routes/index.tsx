@@ -68,7 +68,7 @@ function LandingPage() {
 
       <main className="mx-auto max-w-3xl px-6 pb-24 pt-16 md:px-10 md:pt-20">
         <section>
-          <p className="micro-label">LASSO · BY CHARLOTTE LABS</p>
+          
           <h1 className="mt-5 text-2xl font-bold leading-snug tracking-tight text-foreground md:text-4xl">
             AI made knowledge work invisible. We make it audit ready and coachable.
           </h1>

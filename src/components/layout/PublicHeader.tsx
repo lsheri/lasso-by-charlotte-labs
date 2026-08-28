@@ -12,13 +12,18 @@ export function PublicHeader({ current }: { current?: "/" | "/why" | "/trust" })
   return (
     <header className="border-b border-border">
       <div className="mx-auto grid max-w-5xl grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 pb-4 pt-[calc(1rem+env(safe-area-inset-top))] sm:px-6 md:px-10">
-        <Link
+<Link
           to="/"
           className="flex min-w-0 items-center gap-2 font-mono text-sm tracking-[0.24em] text-foreground"
           aria-current={current === "/" ? "page" : undefined}
         >
           <LassoLogo size="sm" />
-          <span className="truncate">LASSO</span>
+          <span className="flex min-w-0 flex-col leading-none">
+            <span className="truncate">LASSO</span>
+            <span className="mt-1 font-mono text-[9px] uppercase tracking-[0.14em] text-muted-foreground">
+              by Charlotte Labs
+            </span>
+          </span>
         </Link>
         <nav className="flex shrink-0 items-center gap-3 sm:gap-5">
           {LINKS.filter((link) => link.to !== current).map((link) => (
