@@ -16,7 +16,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { ChatUrlLink } from "@/components/work/ChatUrlLink";
 import { readingTrailD } from "@/lib/journey-path";
-import { DrawnCheck, DrawnStrike, PencilFirework, useMark } from "@/components/notebook/marks";
+import { DrawnCheck, DrawnStrike, PencilFirework, ReadingEyes, useMark } from "@/components/notebook/marks";
 import { ThreadBody } from "@/components/peek/ThreadBody";
 import { TurnCardStory } from "@/components/verify/TurnCardStory";
 import { SpanLegend } from "@/components/provenance/SpanLegend";
