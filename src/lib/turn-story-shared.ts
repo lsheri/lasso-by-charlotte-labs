@@ -213,6 +213,9 @@ export function layoutTurnWalk(
   let page = 0;
   let placed: Rect[] = [];
   let prev: Rect | null = null;
+  // PASS 135 — the snake rule: a step never repeats the angle of the step
+  // before it, so the walk visibly turns at every card.
+  let lastAngle: number | null = null;
 
   const freshStart = (): Rect => ({
     x: Math.round(rand() * maxX),
@@ -221,21 +224,29 @@ export function layoutTurnWalk(
 
   for (const card of cards) {
     let spot: Rect | null = null;
+    let spotAngle: number | null = null;
 
     if (prev) {
       const side = out.length % 2 === 0 ? 1 : -1;
       const offset = Math.floor(rand() * WALK_ANGLES.length);
-      for (let attempt = 0; attempt < WALK_ANGLES.length && !spot; attempt += 1) {
-        const angle = WALK_ANGLES[(offset + attempt) % WALK_ANGLES.length] as number;
-        const radians = (angle * Math.PI) / 180;
-        const step = WALK_STEP_MIN + rand() * (WALK_STEP_MAX - WALK_STEP_MIN);
-        const candidate: Rect = {
-          x: Math.round(prev.x + Math.cos(radians) * step * side),
-          y: Math.round(prev.y + Math.sin(radians) * step),
-        };
-        if (!inside(candidate, stage)) continue;
-        if (placed.some((other) => !clears(candidate, other))) continue;
-        spot = candidate;
+      // Two sweeps: the first refuses the previous angle outright, the second
+      // allows it only when nothing else on the list fit.
+      for (let pass = 0; pass < 2 && !spot; pass += 1) {
+        for (let attempt = 0; attempt < WALK_ANGLES.length && !spot; attempt += 1) {
+          const angle = WALK_ANGLES[(offset + attempt) % WALK_ANGLES.length] as number;
+          if (pass === 0 && lastAngle !== null && angle === lastAngle) continue;
+          if (pass === 1 && !(lastAngle !== null && angle === lastAngle)) continue;
+          const radians = (angle * Math.PI) / 180;
+          const step = WALK_STEP_MIN + rand() * (WALK_STEP_MAX - WALK_STEP_MIN);
+          const candidate: Rect = {
+            x: Math.round(prev.x + Math.cos(radians) * step * side),
+            y: Math.round(prev.y + Math.sin(radians) * step),
+          };
+          if (!inside(candidate, stage)) continue;
+          if (placed.some((other) => !clears(candidate, other))) continue;
+          spot = candidate;
+          spotAngle = angle;
+        }
       }
     }
 
@@ -248,10 +259,12 @@ export function layoutTurnWalk(
       }
       spot = freshStart();
       if (!inside(spot, stage)) spot = { x: 0, y: 0 };
+      spotAngle = null;
     }
 
     placed.push(spot);
     prev = spot;
+    lastAngle = spotAngle;
     out.push({ id: card.id, turnNo: card.turnNo, page, x: spot.x, y: spot.y });
   }
 
