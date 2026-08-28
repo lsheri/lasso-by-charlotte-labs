@@ -70,10 +70,18 @@ function LandingPage() {
         <section>
           <p className="micro-label">LASSO · BY CHARLOTTE LABS</p>
           <h1 className="mt-5 text-2xl font-bold leading-snug tracking-tight text-foreground md:text-4xl">
-            Circle any fact in a deliverable and see exactly where it came from, across every tool
-            your team used.
+            AI made knowledge work invisible. We make it audit ready and coachable.
           </h1>
           <GraphiteRule className="mt-3 h-[6px] w-full max-w-xl text-graphite" />
+          <div className="mt-6">
+            <ClipPlayer
+              src="/videos/lasso-hero.mp4"
+              poster="/videos/poster-hero.jpg"
+              width={1204}
+              height={376}
+              label="Lasso turning invisible AI work into a record you can audit"
+            />
+          </div>
           <p className="mt-6 max-w-2xl text-base leading-relaxed text-muted-foreground">
             AI work happens in chat windows, ships inside deliverables, and vanishes. Not because
             anyone hides it, because nothing keeps it.

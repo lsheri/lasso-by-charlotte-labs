@@ -8,18 +8,38 @@ import { useEffect, useRef, useState } from "react";
  * never run at once. Under prefers-reduced-motion the poster stands still and
  * the visitor gets an explicit control.
  */
+/**
+ * Only one clip on the page ever runs. Whichever clip is most in view claims
+ * playback and every other clip is paused, so scrolling hands the loop along.
+ */
+const players = new Set<{ el: HTMLVideoElement; ratio: number }>();
+
+function arbitrate() {
+  let best: { el: HTMLVideoElement; ratio: number } | null = null;
+  for (const p of players) {
+    if (p.ratio < 0.35) continue;
+    if (!best || p.ratio > best.ratio) best = p;
+  }
+  for (const p of players) {
+    if (best && p.el === best.el) void p.el.play().catch(() => {});
+    else p.el.pause();
+  }
+}
+
 export function ClipPlayer({
   src,
   poster,
   width,
   height,
   label,
+  className,
 }: {
   src: string;
   poster: string;
   width: number;
   height: number;
   label: string;
+  className?: string;
 }) {
   const ref = useRef<HTMLVideoElement | null>(null);
   const [reduced, setReduced] = useState(false);
@@ -42,17 +62,22 @@ export function ClipPlayer({
       return;
     }
     if (typeof IntersectionObserver === "undefined") return;
+    const entry = { el, ratio: 0 };
+    players.add(entry);
     const io = new IntersectionObserver(
       (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) void el.play().catch(() => {});
-          else el.pause();
-        }
+        for (const e of entries) entry.ratio = e.isIntersecting ? e.intersectionRatio : 0;
+        arbitrate();
       },
-      { threshold: 0.35 },
+      { threshold: [0, 0.35, 0.6, 0.9, 1] },
     );
     io.observe(el);
-    return () => io.disconnect();
+    return () => {
+      io.disconnect();
+      players.delete(entry);
+      el.pause();
+      arbitrate();
+    };
   }, [reduced, manual]);
 
   return (
@@ -66,7 +91,7 @@ export function ClipPlayer({
         playsInline
         preload="none"
         aria-label={label}
-        className="w-full rounded-[var(--radius)] border border-rule bg-nb-white shadow-card"
+        className={`w-full rounded-[var(--radius)] border border-rule bg-nb-white shadow-card${className ? ` ${className}` : ""}`}
         style={{ aspectRatio: `${width} / ${height}` }}
       />
       {reduced && !manual ? (
