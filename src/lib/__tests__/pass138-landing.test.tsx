@@ -9,7 +9,7 @@ const copySource = source.replace(/className="[^"]*"/g, "");
 const flat = route.replace(/\s+/g, " ");
 
 const COPY: string[] = [
-  "LASSO · BY CHARLOTTE LABS",
+  "LASSO",
   "Circle any fact in a deliverable and see exactly where it came from, across every tool your team used.",
   "Every deliverable carries the record of how it was made. Email, chats, drive, in the order the work actually happened.",
   "The record also shows what was never checked, and what to run to check it.",
