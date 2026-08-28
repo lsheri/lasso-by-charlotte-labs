@@ -9,6 +9,7 @@ import {
   PRODUCTION_HOSTS,
   REDIRECT_TO_CANONICAL,
   isProductionHost,
+  maybeRedirectToCanonical,
 } from "../app-host";
 
 describe("the host module", () => {
