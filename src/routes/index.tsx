@@ -64,7 +64,9 @@ function LandingPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <main className="mx-auto max-w-3xl px-6 pb-24 pt-16 md:px-10 md:pt-24">
+      <PublicHeader current="/" />
+
+      <main className="mx-auto max-w-3xl px-6 pb-24 pt-16 md:px-10 md:pt-20">
         <section>
           <p className="micro-label">LASSO · BY CHARLOTTE LABS</p>
           <h1 className="mt-5 text-2xl font-bold leading-snug tracking-tight text-foreground md:text-4xl">
@@ -72,6 +74,22 @@ function LandingPage() {
             your team used.
           </h1>
           <GraphiteRule className="mt-3 h-[6px] w-full max-w-xl text-graphite" />
+          <p className="mt-6 max-w-2xl text-base leading-relaxed text-muted-foreground">
+            AI work happens in chat windows, ships inside deliverables, and vanishes. Not because
+            anyone hides it, because nothing keeps it.
+          </p>
+          <div className="mt-8 flex flex-wrap items-center gap-3">
+            <Button asChild>
+              <Link to="/auth" search={{ intent: "personal" }}>
+                Start your record
+              </Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link to="/auth" search={{ intent: "company" }}>
+                Set up for a company
+              </Link>
+            </Button>
+          </div>
         </section>
 
         <section className="mt-14">
