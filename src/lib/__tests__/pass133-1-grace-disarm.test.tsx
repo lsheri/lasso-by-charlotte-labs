@@ -5,6 +5,8 @@ import { readFileSync } from "node:fs";
 
 import { useResolveGrace } from "@/components/verify/VerifyThreadReader";
 import type { VerifyThreadRequest } from "@/components/verify/verify-thread-state";
+
+type Props = { req: VerifyThreadRequest | null };
 import { RESOLVE_GRACE_MS } from "@/lib/verify-thread-shared";
 
 const READER = readFileSync("src/components/verify/VerifyThreadReader.tsx", "utf8");
@@ -25,7 +27,7 @@ describe("pass 133.1 grace disarm after skip", () => {
 
   it("cut-before-resolve: the resolve gets NO grace, holding stays false", () => {
     const { result, rerender } = renderHook(
-      ({ req }: { req: VerifyThreadRequest | null }) => useResolveGrace(req),
+      ({ req }: Props) => useResolveGrace(req),
       { initialProps: { req: request({}) } },
     );
     // Skip during the pending phase.
@@ -40,7 +42,7 @@ describe("pass 133.1 grace disarm after skip", () => {
 
   it("a fresh pending request re-arms the grace", () => {
     const { result, rerender } = renderHook(
-      ({ req }: { req: VerifyThreadRequest | null }) => useResolveGrace(req),
+      ({ req }: Props) => useResolveGrace(req),
       { initialProps: { req: request({}) } },
     );
     act(() => result.current.cut());
@@ -60,7 +62,7 @@ describe("pass 133.1 grace disarm after skip", () => {
 
   it("cut during an active hold ends it immediately", () => {
     const { result, rerender } = renderHook(
-      ({ req }: { req: VerifyThreadRequest | null }) => useResolveGrace(req),
+      ({ req }: Props) => useResolveGrace(req),
       { initialProps: { req: request({}) } },
     );
     rerender({ req: request({ runId: "run-1" }) });
