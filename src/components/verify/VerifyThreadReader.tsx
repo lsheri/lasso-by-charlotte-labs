@@ -587,17 +587,7 @@ function PendingBody({
               <path d={readingTrailD(loop.progress)} />
             </svg>
           ) : null}
-          {loop.running && !reduced && !skipped && !failed ? (
-            <span
-              className="nb-dots pointer-events-none absolute left-1 top-0"
-              style={{ transform: `translateY(${loop.tipY}px)` }}
-              aria-hidden
-            >
-              <span className="nb-dot" />
-              <span className="nb-dot" />
-              <span className="nb-dot" />
-            </span>
-          ) : null}
+          {loop.running && !skipped && !failed ? <ReadingEyes animate={!reduced} /> : null}
           {item ? <ThreadBody item={item} reducedMotion={reduced} /> : null}
         </div>
 
