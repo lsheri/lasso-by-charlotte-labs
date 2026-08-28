@@ -70,6 +70,30 @@ export function identifyPostHog(profileId: string | null): void {
   }
 }
 
+/**
+ * The logged-out marketing page is not recorded. Anonymous visitors to a
+ * public page get no replay; every authenticated surface is untouched.
+ */
+export function stopSessionReplay(): void {
+  if (typeof window === "undefined") return;
+  try {
+    posthog.stopSessionRecording();
+  } catch {
+    /* telemetry must never break the app */
+  }
+}
+
+/** Restore replay when leaving the public page. */
+export function startSessionReplay(): void {
+  if (typeof window === "undefined") return;
+  try {
+    if (!isProductionHost(window.location.hostname)) return;
+    posthog.startSessionRecording();
+  } catch {
+    /* telemetry must never break the app */
+  }
+}
+
 /** Sign-out: drop the identity and start a fresh anonymous session. */
 export function resetPostHog(): void {
   if (typeof window === "undefined") return;
