@@ -531,6 +531,12 @@ export function turnConnectorD(seed: string, from: Point, to: Point): TurnConnec
 
   const tip = points[points.length - 1] as Point;
   const before = points[points.length - 2] ?? tip;
-  const tangent = { x: tip.x - before.x, y: tip.y - before.y || 1 };
+  // PASS 133: the walk goes left, right and near-horizontal now, so the head
+  // has to sit on the real tangent, not on an assumed downward one.
+  const rawX = tip.x - before.x;
+  const rawY = tip.y - before.y;
+  const flat = Math.abs(rawX) < 0.001 && Math.abs(rawY) < 0.001;
+  const tangent = flat ? { x: to.x - from.x, y: to.y - from.y || 1 } : { x: rawX, y: rawY };
   return { stroke: strokeFrom(points), arrow: arrowAt(tip, tangent, draw, 0) };
 }
+
