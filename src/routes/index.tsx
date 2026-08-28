@@ -141,6 +141,16 @@ function LandingPage() {
           </p>
         </section>
 
+        <section className="mt-20 border-t border-rule pt-10">
+          <p className="micro-label">PRIVACY, DEMONSTRATED</p>
+          <h2 className="mt-4 text-2xl font-semibold tracking-tight text-foreground md:text-3xl">
+            What a coach sees.
+          </h2>
+          <div className="mt-8">
+            <PrivacyToggleDemo />
+          </div>
+        </section>
+
         <section className="mt-16 border-t border-rule pt-10">
           <p className="micro-label">HOW IT WORKS</p>
           <div className="mt-5 space-y-3">
@@ -151,6 +161,16 @@ function LandingPage() {
             ))}
           </div>
         </section>
+
+        <div className="mt-16">
+          <Link
+            to="/auth"
+            search={{ intent: "personal" }}
+            className="inline-block font-mono text-[11px] uppercase tracking-[0.08em] text-ember-deep transition-colors hover:text-foreground"
+          >
+            Start my own record →
+          </Link>
+        </div>
       </main>
 
       <footer className="border-t border-rule">
@@ -163,6 +183,17 @@ function LandingPage() {
             charlotte-labs.com
           </a>
         </div>
+        <nav className="mx-auto flex max-w-3xl flex-wrap items-center gap-x-5 gap-y-2 px-6 pb-8 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground md:px-10">
+          <Link to="/why" className="transition-colors hover:text-foreground">
+            Why Lasso
+          </Link>
+          <Link to="/trust" className="transition-colors hover:text-foreground">
+            Trust & data
+          </Link>
+          <Link to="/auth" className="transition-colors hover:text-foreground">
+            Sign in
+          </Link>
+        </nav>
       </footer>
     </div>
   );
