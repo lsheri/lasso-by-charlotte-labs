@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 /**
  * A silent product clip for the logged-out landing page.
  *
- * The file has no audio track, so there is no audio UI. Playback starts only
+ * The clips are silent, so there is no audio UI. Playback starts only
  * while the element is on screen and pauses the moment it leaves, so two loops
  * never run at once. Under prefers-reduced-motion the poster stands still and
  * the visitor gets an explicit control.
