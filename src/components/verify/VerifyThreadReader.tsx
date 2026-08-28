@@ -1256,13 +1256,20 @@ function ReaderBody({ request }: { request: VerifyThreadRequest & { runId: strin
  * gets no grace, reduced motion has nothing to finish, and anyone who says
  * "enough" cuts it short at once.
  */
-function useResolveGrace(request: VerifyThreadRequest | null): {
+export function useResolveGrace(request: VerifyThreadRequest | null): {
   holding: boolean;
   cut: () => void;
 } {
   const [holdingRun, setHoldingRun] = useState<string | null>(null);
   const timer = useRef<number | null>(null);
   const seen = useRef<string | null>(null);
+  /**
+   * PASS 133.1 — skip disarms the grace for THIS pending request. A person
+   * who pressed Skip said "enough": a resolve landing afterwards swaps
+   * straight to the settled reader, no six-second freeze. The disarm is
+   * per-request; a fresh open (request back to null) re-arms.
+   */
+  const disarmedFor = useRef<string | null>(null);
 
   const clear = useCallback(() => {
     if (timer.current !== null) window.clearTimeout(timer.current);
@@ -1272,7 +1279,8 @@ function useResolveGrace(request: VerifyThreadRequest | null): {
   const cut = useCallback(() => {
     clear();
     setHoldingRun(null);
-  }, [clear]);
+    disarmedFor.current = request?.itemId ?? null;
+  }, [clear, request]);
 
   const runId = request?.runId ?? null;
   const failed = typeof request?.error === "string" && request.error.length > 0;
@@ -1280,6 +1288,7 @@ function useResolveGrace(request: VerifyThreadRequest | null): {
   useEffect(() => {
     if (!request) {
       seen.current = null;
+      disarmedFor.current = null;
       clear();
       setHoldingRun(null);
       return;
@@ -1291,6 +1300,7 @@ function useResolveGrace(request: VerifyThreadRequest | null): {
     if (seen.current === runId) return;
     seen.current = runId;
     if (failed || prefersReducedMotion()) return;
+    if (disarmedFor.current === request.itemId) return;
     setHoldingRun(runId);
     clear();
     timer.current = window.setTimeout(() => {

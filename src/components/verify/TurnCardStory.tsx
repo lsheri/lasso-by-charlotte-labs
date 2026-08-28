@@ -20,6 +20,7 @@ import { SourceMark, sourceVendorKey } from "@/components/work/SourceMark";
 import { turnConnectorD } from "@/lib/journey-path";
 import {
   CARD_STEP_MS,
+  PAGE_FADE_MS,
   TURN_CARD_H,
   TURN_CARD_W,
   TURN_STORY_HOLD_MS,
@@ -28,6 +29,7 @@ import {
   layoutTurnWalk,
   turnCards,
   type TurnCard,
+  type TurnPlacement,
   type TurnStage,
   type TurnStoryTurn,
 } from "@/lib/turn-story-shared";
@@ -144,6 +146,46 @@ function TurnCardBox({
   );
 }
 
+type ShownEntry = { place: TurnPlacement; card: TurnCard };
+
+/**
+ * PASS 133.1 — the page turn fades instead of cutting. When the walk turns
+ * the paper, the outgoing page's cards linger one fade (PAGE_FADE_MS) at
+ * opacity 0 before leaving the DOM. One timer, owned here, cleaned on
+ * unmount and stop; reduced motion never reaches this path.
+ */
+function usePageTurnFade(page: number, shown: readonly ShownEntry[]): ShownEntry[] {
+  const [fading, setFading] = useState<ShownEntry[]>([]);
+  const lastShown = useRef<readonly ShownEntry[]>([]);
+  const lastPage = useRef(page);
+  const timer = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (lastPage.current === page) {
+      lastShown.current = shown;
+      return;
+    }
+    lastPage.current = page;
+    setFading([...lastShown.current]);
+    lastShown.current = shown;
+    if (timer.current !== null) window.clearTimeout(timer.current);
+    timer.current = window.setTimeout(() => {
+      timer.current = null;
+      setFading([]);
+    }, PAGE_FADE_MS);
+  }, [page, shown]);
+
+  useEffect(
+    () => () => {
+      if (timer.current !== null) window.clearTimeout(timer.current);
+      timer.current = null;
+    },
+    [],
+  );
+
+  return fading;
+}
+
 export function TurnCardStory({
   itemId,
   item,
@@ -174,6 +216,21 @@ export function TurnCardStory({
     if (!running) stop();
   }, [running, stop]);
 
+  // Only the current page of paper is on screen, and only the last few cards
+  // of it: as one lands, the oldest leaves.
+  const last = Math.max(0, Math.min(head, cards.length)) - 1;
+  const page = last >= 0 ? (places[last]?.page ?? 0) : -1;
+  const shown: ShownEntry[] =
+    last < 0
+      ? []
+      : places
+          .slice(0, last + 1)
+          .map((place, index) => ({ place, card: cards[index] as TurnCard }))
+          .filter((entry) => entry.place.page === page)
+          .slice(-TURN_STORY_WINDOW);
+  // The page just turned: the outgoing page's cards fade out over PAGE_FADE_MS.
+  const fading = usePageTurnFade(page, shown);
+
   if (!wide || cards.length === 0) return null;
 
   if (reduced) {
@@ -185,19 +242,6 @@ export function TurnCardStory({
       </div>
     );
   }
-
-  // Only the current page of paper is on screen, and only the last few cards
-  // of it: as one lands, the oldest leaves.
-  const last = Math.max(0, Math.min(head, cards.length)) - 1;
-  const page = last >= 0 ? (places[last]?.page ?? 0) : -1;
-  const shown =
-    last < 0
-      ? []
-      : places
-          .slice(0, last + 1)
-          .map((place, index) => ({ place, card: cards[index] as TurnCard }))
-          .filter((entry) => entry.place.page === page)
-          .slice(-TURN_STORY_WINDOW);
 
   return (
     <div
@@ -241,6 +285,19 @@ export function TurnCardStory({
           );
         })}
       </svg>
+      {fading.map((entry) => (
+        <TurnCardBox
+          key={`fade-${entry.card.id}`}
+          card={entry.card}
+          item={item}
+          className="nb-page-fade absolute"
+          style={{
+            left: entry.place.x,
+            top: entry.place.y,
+            width: TURN_CARD_W,
+          }}
+        />
+      ))}
       {shown.map((entry) => (
         <TurnCardBox
           key={entry.card.id}

@@ -2027,6 +2027,13 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 .nb-journey:not(.is-skipped) .nb-journey-node {
   animation: nb-journey-announce 600ms cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
 }
+/* The outgoing page of the turn-card walk fades out instead of cutting. */
+.nb-journey-node.nb-page-fade {
+  animation: none;
+  opacity: 0;
+  transition: opacity 400ms ease;
+  pointer-events: none;
+}
 @keyframes nb-journey-announce {
   0% {
     opacity: 0;
