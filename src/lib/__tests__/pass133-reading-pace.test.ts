@@ -154,7 +154,7 @@ describe("pass 133 connectors", () => {
 describe("pass 133 cadence, grace and hygiene", () => {
   it("pins the unhurried cadence and the grace beat", () => {
     expect(CARD_STEP_MS).toBe(1400);
-    expect(CARD_GAP_MIN).toBe(18);
+    expect(CARD_GAP_MIN).toBe(36);
     expect(RESOLVE_GRACE_MS).toBe(6000);
     expect(STORY).toContain("CARD_STEP_MS");
   });
