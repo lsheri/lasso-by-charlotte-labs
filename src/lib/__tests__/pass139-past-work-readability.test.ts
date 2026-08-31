@@ -130,7 +130,7 @@ describe("pass 139: metadata line hierarchy", () => {
   it("no new colors and never red", () => {
     for (const source of [card, search, read("components/work/KindIcon.tsx")]) {
       expect(source).not.toMatch(/#[0-9a-fA-F]{3,8}/);
-      expect(source.toLowerCase()).not.toContain("red");
+      expect(source).not.toMatch(/\bred\b/i);
     }
   });
 });
