@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 
 /**
  * Pass 139: one small kind glyph per shipped card, drawn in graphite with a
- * single accent stroke per kind. Existing tokens only, never red.
+ * single accent stroke per kind. Existing tokens only.
  */
 const ACCENT: Record<DeliverableGlyph, string> = {
   document: "var(--nb-graphite)",
