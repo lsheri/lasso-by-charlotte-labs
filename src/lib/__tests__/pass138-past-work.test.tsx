@@ -55,6 +55,10 @@ const candidate = (id: string): PastWorkCandidate => ({
   title: `Piece ${id}`,
   kind: "deck",
   deliverable_kind: null,
+  file_format: null,
+  mime_type: null,
+  filename: null,
+
   engagement_id: "e1",
   engagement_code: "ENG-1",
   engagement_title: "Pricing refresh",
@@ -101,7 +105,7 @@ describe("Pass 138: copy", () => {
       "Describe the work and Lasso finds shipped work like it, with why it matches.",
     );
     expect(PAST_WORK_EMPTY_LINE).toBe(
-      "Nothing shipped yet looks like this. The archive grows as work ships.",
+      "Nothing shipped yet looks like this. Past work grows as work ships.",
     );
     expect(PAST_WORK_FOOTER_LINE).toBe("Reads shipped work only.");
   });

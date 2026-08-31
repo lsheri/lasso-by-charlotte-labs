@@ -15,7 +15,7 @@ export const ARCHIVE_BROWSE_LINK = "BROWSE THE ARCHIVE →";
 export const ARCHIVE_NAV_LABEL = "The archive";
 
 export const ARCHIVE_PLACEHOLDER =
-  'ASK THE ARCHIVE — "HOW DO PEOPLE BUILD PRICING DECKS HERE?"';
+  'Ask past work: "How do people build pricing decks here?"';
 export const ARCHIVE_SKIP_LABEL = "SKIP →";
 export const ARCHIVE_BACK_LABEL = "← BACK TO RESULTS";
 export const ARCHIVE_BROWSE_PILE_LABEL = "BROWSE THE PILE →";
@@ -24,9 +24,9 @@ export const ARCHIVE_WHY_PREFIX = "WHY: ";
 /** Below this the archive cannot honestly answer, and no model is called. */
 export const ARCHIVE_MIN_ITEMS = 3;
 export const ARCHIVE_TOO_SMALL_LINE =
-  "THE ARCHIVE IS STILL SMALL — FEWER THAN THREE PIECES. BROWSE THE PILE BELOW INSTEAD.";
+  "PAST WORK IS STILL SMALL, FEWER THAN THREE PIECES. BROWSE THE PILE BELOW INSTEAD.";
 export const ARCHIVE_NO_MATCH_LINE =
-  "NOTHING IN THE ARCHIVE MATCHES THAT YET. TRY THE PILE — SOMETHING ADJACENT MAY HELP.";
+  "NOTHING IN PAST WORK MATCHES THAT YET. TRY THE PILE, SOMETHING ADJACENT MAY HELP.";
 
 /** Never pad a thin answer with weak matches. */
 export const ARCHIVE_MATCH_CAP = 6;

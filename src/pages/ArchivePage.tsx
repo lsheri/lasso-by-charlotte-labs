@@ -53,7 +53,7 @@ export function ArchivePage() {
 
       <div className="mt-6">
         {isLoading ? (
-          <p className="text-sm text-muted-foreground">Reading the archive.</p>
+          <p className="text-sm text-muted-foreground">Reading shipped work.</p>
         ) : (
           <ArchivePile cards={cards} hidden={searching} />
         )}

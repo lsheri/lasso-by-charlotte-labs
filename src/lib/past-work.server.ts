@@ -36,7 +36,13 @@ type GatewayRow = {
   work_items: {
     title: string | null;
     type: string | null;
-    meta: { deliverable_kind?: string | null } | null;
+    meta: {
+      deliverable_kind?: string | null;
+      file_format?: string | null;
+      mime_type?: string | null;
+      source_mime?: string | null;
+    } | null;
+    source_meta: { mime_type?: string | null; mime?: string | null; filename?: string | null } | null;
   } | null;
   engagements: {
     code: string | null;
@@ -54,7 +60,7 @@ export async function assemblePastWorkCandidates(caller: Db): Promise<PastWorkCa
   const { data, error } = await caller
     .from(PAST_WORK_GATEWAY_TABLE)
     .select(
-      "work_item_id, engagement_id, work_items(title, type, meta), engagements(code, title, client_label, brief)",
+      "work_item_id, engagement_id, work_items(title, type, meta, source_meta), engagements(code, title, client_label, brief)",
     )
     .order("shipped_at", { ascending: false })
     .limit(PAST_WORK_CANDIDATE_CAP);
@@ -81,6 +87,14 @@ export async function assemblePastWorkCandidates(caller: Db): Promise<PastWorkCa
     title: row.work_items?.title ?? "",
     kind: row.work_items?.type ?? "document",
     deliverable_kind: row.work_items?.meta?.deliverable_kind ?? null,
+    file_format: row.work_items?.meta?.file_format ?? null,
+    mime_type:
+      row.work_items?.source_meta?.mime_type ??
+      row.work_items?.source_meta?.mime ??
+      row.work_items?.meta?.source_mime ??
+      row.work_items?.meta?.mime_type ??
+      null,
+    filename: row.work_items?.source_meta?.filename ?? row.work_items?.title ?? null,
     engagement_id: row.engagement_id,
     engagement_code: row.engagements?.code ?? null,
     engagement_title: row.engagements?.title ?? null,

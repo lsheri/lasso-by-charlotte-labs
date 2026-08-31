@@ -37,15 +37,15 @@ function card(over: Partial<ShippedCard> = {}): ShippedCard {
 }
 
 describe("pass 116: the shipped card's true identity", () => {
-  it("wears exactly one kind glyph, the deck glyph when the type says deck", () => {
+  it("wears exactly one glyph, the format of the file the deck really is", () => {
     const { container } = render(<ShippedWorkCard card={card()} canTakeBack={false} />);
     const glyphs = container.querySelectorAll("[data-glyph]");
     expect(glyphs.length).toBe(1);
-    expect(glyphs[0]?.getAttribute("data-glyph")).toBe("deck");
+    expect(glyphs[0]?.getAttribute("data-glyph")).toBe("powerpoint");
     expect(screen.getByTestId("shipped-card-kind-w1").textContent).toBe("Deck");
   });
 
-  it("an app deliverable wears the pen-free kind glyph too, never a second mark", () => {
+  it("an app deliverable wears one glyph too, never a second mark", () => {
     const { container } = render(
       <ShippedWorkCard card={card({ type: "app" })} canTakeBack={false} />,
     );

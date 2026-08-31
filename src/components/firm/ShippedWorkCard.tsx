@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 
 import { GraphiteRule } from "@/components/notebook/marks";
 import { Button } from "@/components/ui/button";
-import { KindIcon } from "@/components/work/KindIcon";
+import { FileFormatIcon } from "@/components/work/FileFormatIcon";
 import { deliverableTag } from "@/lib/deliverable-kinds";
 import { openJourney } from "@/lib/journey-state";
 import {
@@ -61,7 +61,7 @@ export function ShippedWorkCard({
         }
       >
         <span className="flex items-start gap-2">
-          <KindIcon meta={card.meta} type={card.type} size={14} className="mt-[2px]" />
+          <FileFormatIcon item={card} size={14} className="mt-[2px]" />
           <span className="min-w-0 break-words text-sm font-medium text-foreground">
             {headline}
           </span>
@@ -75,18 +75,18 @@ export function ShippedWorkCard({
             {brief}
           </span>
         ) : null}
-        <span className="mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
+        <span className="mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-0 leading-[1.35]">
           <span
             data-testid={`shipped-card-kind-${card.work_item_id}`}
             className="rounded-sm bg-[var(--nb-grey-1)] px-1 py-px font-mono text-[10px] uppercase tracking-[0.08em] text-[var(--nb-graphite)]"
           >
             {kindTag}
           </span>
-          <span className="font-mono text-[11px] font-medium uppercase tracking-[0.08em] text-[var(--nb-ink)]">
+          <span className="font-mono text-[11px] font-normal uppercase tracking-[0.08em] text-[var(--nb-graphite)]">
             {card.title}
           </span>
           {card.client_label || card.engagement_code ? (
-            <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-[var(--nb-mid)]">
+            <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-[var(--nb-soft)]">
               {card.client_label ?? ""}
               {card.client_label && card.engagement_code ? " · " : ""}
               <span className="font-semibold text-[var(--nb-green)]">
@@ -95,7 +95,7 @@ export function ShippedWorkCard({
             </span>
           ) : null}
         </span>
-        <span className="mt-1 block text-xs text-[var(--nb-mid)]">
+        <span className="mt-0.5 block text-xs leading-[1.35] text-[var(--nb-mid)]">
           Shipped by {card.shipped_by_name ?? "a colleague"} · {formatDate(card.shipped_at)}
         </span>
         {facts ? <span className="mt-1 block text-xs text-muted-foreground">{facts}</span> : null}
