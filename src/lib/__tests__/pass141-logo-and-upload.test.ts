@@ -10,10 +10,8 @@ describe("pass 141: file format logos at 2x", () => {
   });
 
   it("both card surfaces render the logo at that size", () => {
-    for (const file of [
-      "src/components/firm/ShippedWorkCard.tsx",
-      "src/components/archive/PastWorkSearch.tsx",
-    ]) {
+    // Pass 142: both card styles render the logo through the shared tile.
+    for (const file of ["src/components/firm/CardMetaTile.tsx"]) {
       const source = readFileSync(file, "utf8");
       expect(source).toContain("CARD_FILE_FORMAT_ICON_SIZE");
       expect(source).not.toContain("size={14}");
