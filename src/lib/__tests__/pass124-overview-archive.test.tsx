@@ -15,7 +15,6 @@ import {
   partitionDeliverables,
   type DeliverableCardRow,
 } from "@/lib/overview-work-shared";
-import { ARCHIVE_NAV_LABEL } from "@/lib/archive-search-shared";
 import type { ShippedCard } from "@/lib/shipped-work-shared";
 
 const mocks = vi.hoisted(() => ({
