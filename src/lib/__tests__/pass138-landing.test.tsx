@@ -137,7 +137,9 @@ it("keeps the quiet bottom link to a personal record", () => {
       "What was never checked",
       "What accumulates",
       "What a coach sees.",
+      "A library your team can learn from",
       "How it works",
+
     ]) {
       expect(route).toContain(t);
     }
