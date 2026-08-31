@@ -8,9 +8,9 @@ const DESCRIPTION =
 export const Route = createFileRoute("/_authenticated/archive")({
   head: () => ({
     meta: [
-      { title: "The archive | Lasso" },
+      { title: "Past work | Lasso" },
       { name: "description", content: DESCRIPTION },
-      { property: "og:title", content: "The archive | Lasso" },
+      { property: "og:title", content: "Past work | Lasso" },
       { property: "og:description", content: DESCRIPTION },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

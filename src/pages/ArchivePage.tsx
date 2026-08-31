@@ -5,10 +5,10 @@ import { useNavigate } from "@tanstack/react-router";
 import { ArchiveChat } from "@/components/archive/ArchiveChat";
 import { PastWorkSearch } from "@/components/archive/PastWorkSearch";
 import { ArchivePile } from "@/components/archive/ArchivePile";
-import { GraphiteRule } from "@/components/notebook/marks";
 import { useProfile } from "@/hooks/use-profile";
 import { useShippedWork } from "@/hooks/use-shipped-work";
-import { ARCHIVE_SUBHEAD, ARCHIVE_TITLE } from "@/lib/archive-search-shared";
+import { ARCHIVE_SUBHEAD } from "@/lib/archive-search-shared";
+import { PAST_WORK_GROUP_LABEL, PAST_WORK_NAV_LABEL } from "@/lib/past-work-shared";
 
 /**
  * The learning archive. Members and admins can read it: shipped work, the
@@ -37,13 +37,11 @@ export function ArchivePage() {
 
   return (
     <div data-testid="archive-page">
-      <h1 className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
-        {ARCHIVE_TITLE}
-      </h1>
-      <div className="nb-rule-draw">
-        <GraphiteRule className="mt-1 h-[6px] w-full text-muted-foreground" />
-      </div>
-      <p className="mt-2 max-w-[60ch] text-sm text-muted-foreground">{ARCHIVE_SUBHEAD}</p>
+      <header className="mb-8">
+        <p className="micro-label">{PAST_WORK_GROUP_LABEL}</p>
+        <h1 className="page-title mt-1">{PAST_WORK_NAV_LABEL}</h1>
+        <p className="mt-1.5 max-w-[60ch] text-sm text-muted-foreground">{ARCHIVE_SUBHEAD}</p>
+      </header>
 
       <div className="mt-5">
         <PastWorkSearch />
