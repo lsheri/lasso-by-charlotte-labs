@@ -216,11 +216,12 @@ function LandingPage() {
         </FocusSection>
 
         <FocusSection className="mt-28 md:translate-x-24 lg:translate-x-32">
-          <p className="micro-label">WHAT WAS NEVER CHECKED</p>
-          <h2 className="pencil-title mt-4">What was never checked</h2>
+          <p className="micro-label">VERIFICATION</p>
+          <h2 className="pencil-title mt-4">What has not been verified</h2>
 
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-            The record also shows what was never checked, and what to run to check it.
+            Every claim in a deliverable is listed with its status, so you can see which numbers
+            were verified, which were not, and the exact check to run for each one.
           </p>
           <div className="mt-4">
             <ClipPlayer
@@ -228,10 +229,31 @@ function LandingPage() {
               poster="/videos/poster-fact-check.jpg"
               width={1280}
               height={832}
-              label="A deliverable showing which claims were never checked"
+              label="A deliverable listing unverified claims and the check to run for each"
             />
           </div>
         </FocusSection>
+
+        <FocusSection className="mt-28 md:-translate-x-24 lg:-translate-x-32">
+          <p className="micro-label">SOURCES</p>
+          <h2 className="pencil-title mt-4">What chats fed this deliverable</h2>
+
+          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+            Open a finished deliverable and see exactly which conversations, transcripts and
+            documents fed it. Each section links back to the source it came from, so any figure or
+            recommendation can be traced to the material behind it and verified line by line.
+          </p>
+          <div className="mt-4">
+            <ClipPlayer
+              src="/videos/lasso-what-fed-this.mp4"
+              poster="/videos/poster-what-fed-this.jpg"
+              width={1280}
+              height={718}
+              label="Tracing a deliverable back to the chats and documents that fed it"
+            />
+          </div>
+        </FocusSection>
+
 
         <FocusSection className="mt-20 border-t border-rule pt-10 md:-translate-x-10 lg:-translate-x-16">
           <p className="micro-label">WHAT ACCUMULATES</p>
