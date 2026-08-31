@@ -8,13 +8,13 @@ import { invalidateAfterWorkChange } from "@/lib/work-invalidation";
 
 export const SHIPPED_WORK_KEY = ["shipped-work"] as const;
 
-/** Pass 138: shipped work is open to every role; RLS decides what comes back. */
+/** Shipped work is open to members and admins; RLS returns nothing for coaches. */
 export function useShippedWork() {
   const { data: profile } = useProfile();
   const list = useServerFn(listShippedWork) as unknown as () => Promise<ShippedCard[]>;
   return useQuery({
     queryKey: [...SHIPPED_WORK_KEY],
-    enabled: Boolean(profile),
+    enabled: Boolean(profile) && profile?.role !== "coach",
     queryFn: () => list(),
   });
 }

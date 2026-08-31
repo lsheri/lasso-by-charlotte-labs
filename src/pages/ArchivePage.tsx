@@ -1,4 +1,6 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+
+import { useNavigate } from "@tanstack/react-router";
 
 import { ArchiveChat } from "@/components/archive/ArchiveChat";
 import { PastWorkSearch } from "@/components/archive/PastWorkSearch";
@@ -9,21 +11,26 @@ import { useShippedWork } from "@/hooks/use-shipped-work";
 import { ARCHIVE_SUBHEAD, ARCHIVE_TITLE } from "@/lib/archive-search-shared";
 
 /**
- * The learning archive. Every member can read it: shipped work, the pile, and
- * one question box over the whole of it. No counts per person, ever.
+ * The learning archive. Members and admins can read it: shipped work, the
+ * pile, and one question box over the whole of it. Coaches are engagement-
+ * scoped guests, so they are redirected to their coaching view. No counts per
+ * person, ever.
  */
 export function ArchivePage() {
+  const navigate = useNavigate();
   const { data: profile } = useProfile();
   const { data, isLoading } = useShippedWork();
   const [searching, setSearching] = useState(false);
 
-  // Pass 138: shipped work is consented by construction, so every role may
-  // read it. The older archive question box stays members only.
+  // Coaches are engagement-scoped guests; the firm archive is firm-internal.
   const isCoach = profile?.role === "coach";
+  useEffect(() => {
+    if (isCoach) navigate({ to: "/coaching" });
+  }, [isCoach, navigate]);
 
   const onResultsChange = useCallback((open: boolean) => setSearching(open), []);
 
-  if (!profile) return null;
+  if (!profile || isCoach) return null;
 
   // Ship date is the only order the archive keeps.
   const cards = [...(data ?? [])].sort((a, b) => b.shipped_at.localeCompare(a.shipped_at));

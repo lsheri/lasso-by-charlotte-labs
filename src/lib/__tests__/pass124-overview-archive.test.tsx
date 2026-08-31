@@ -162,14 +162,15 @@ describe("the Overview sections", () => {
 });
 
 describe("the archive in the nav", () => {
-  // Pass 138: the archive is reached from the Firm group, labelled "Past work",
-  // and every role has it, including a coach.
-  it("is in the Firm group for every role", () => {
+  // Pass 138.1: the archive is reached from the Firm group, labelled "Past work",
+  // for members and admins. Coaches are engagement-scoped guests and do not
+  // see the firm archive in their nav.
+  it("is in the Firm group for members and admins, not coaches", () => {
     const firm = navGroups.find((group) => group.label === "Firm");
     expect(firm?.items.some((item) => item.to === "/archive")).toBe(true);
     expect(
       coachNavGroups.some((group) => group.items.some((item) => item.to === "/archive")),
-    ).toBe(true);
+    ).toBe(false);
 
     render(<SidebarNav />);
     expect(screen.getByText(PAST_WORK_NAV_LABEL)).toBeTruthy();
@@ -182,7 +183,7 @@ describe("the archive in the nav", () => {
 
     mocks.profile = { id: "p3", role: "coach", org_type: "company", display_name: "C" };
     render(<SidebarNav />);
-    expect(screen.getByText(PAST_WORK_NAV_LABEL)).toBeTruthy();
+    expect(screen.queryByText(PAST_WORK_NAV_LABEL)).toBeNull();
   });
 });
 
