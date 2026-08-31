@@ -3,6 +3,7 @@ import { useEffect } from "react";
 
 import { PublicHeader } from "@/components/layout/PublicHeader";
 import { ClipPlayer } from "@/components/marketing/ClipPlayer";
+import { FocusSection } from "@/components/marketing/FocusSection";
 import { PrivacyToggleDemo } from "@/components/marketing/PrivacyToggleDemo";
 import { GraphiteRule } from "@/components/notebook/marks";
 import { Button } from "@/components/ui/button";
@@ -68,7 +69,6 @@ function LandingPage() {
 
       <main className="mx-auto max-w-3xl px-6 pb-24 pt-16 md:px-10 md:pt-20">
         <section>
-          
           <h1 className="mt-5 text-2xl font-bold leading-snug tracking-tight text-foreground md:text-4xl">
             AI made knowledge work invisible. We make it audit ready and coachable.
           </h1>
@@ -91,8 +91,9 @@ function LandingPage() {
           </div>
         </section>
 
-<section className="mt-14 md:-translate-x-24 lg:-translate-x-32">
-          <p className="text-sm leading-relaxed text-muted-foreground">
+        <FocusSection className="mt-14 md:-translate-x-24 lg:-translate-x-32">
+          <h2 className="pencil-title">How the work was made</h2>
+          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
             Every deliverable carries the record of how it was made. Email, chats, drive, in the
             order the work actually happened.
           </p>
@@ -105,10 +106,11 @@ function LandingPage() {
               label="A deliverable with the record of how it was made"
             />
           </div>
-        </section>
+        </FocusSection>
 
-        <section className="mt-14 md:translate-x-24 lg:translate-x-32">
-          <p className="text-sm leading-relaxed text-muted-foreground">
+        <FocusSection className="mt-14 md:translate-x-24 lg:translate-x-32">
+          <h2 className="pencil-title">What was never checked</h2>
+          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
             The record also shows what was never checked, and what to run to check it.
           </p>
           <div className="mt-4">
@@ -120,14 +122,11 @@ function LandingPage() {
               label="A deliverable showing which claims were never checked"
             />
           </div>
-        </section>
+        </FocusSection>
 
-        <p className="mt-5 font-mono text-[11px] text-soft">
-          Sample data from a test engagement. Not client work.
-        </p>
-
-<section className="mt-20 border-t border-rule pt-10 md:-translate-x-10 lg:-translate-x-16">
+        <FocusSection className="mt-20 border-t border-rule pt-10 md:-translate-x-10 lg:-translate-x-16">
           <p className="micro-label">WHAT ACCUMULATES</p>
+          <h2 className="pencil-title mt-4">What accumulates</h2>
           <p className="mt-5 text-base leading-relaxed text-foreground">
             Every finished piece of work leaves a trace of how it was made. Over an engagement, then
             a practice, then a firm, those traces become something a firm can actually learn from:
@@ -138,20 +137,19 @@ function LandingPage() {
             The work belongs to the people who did it. What the firm sees is the work they chose to
             place there, never a feed of what anyone is doing.
           </p>
-        </section>
+        </FocusSection>
 
-        <section className="mt-20 border-t border-rule pt-10 md:translate-x-10 lg:translate-x-16">
+        <FocusSection className="mt-20 border-t border-rule pt-10 md:translate-x-10 lg:translate-x-16">
           <p className="micro-label">PRIVACY, DEMONSTRATED</p>
-          <h2 className="mt-4 text-2xl font-semibold tracking-tight text-foreground md:text-3xl">
-            What a coach sees.
-          </h2>
+          <h2 className="pencil-title mt-4">What a coach sees.</h2>
           <div className="mt-8">
             <PrivacyToggleDemo />
           </div>
-        </section>
+        </FocusSection>
 
-        <section className="mt-16 border-t border-rule pt-10 md:-translate-x-10 lg:-translate-x-16">
+        <FocusSection className="mt-16 border-t border-rule pt-10 md:-translate-x-10 lg:-translate-x-16">
           <p className="micro-label">HOW IT WORKS</p>
+          <h2 className="pencil-title mt-4">How it works</h2>
           <div className="mt-5 space-y-3">
             {TRUST_LINES.map((line) => (
               <p key={line} className="text-base leading-relaxed text-foreground">
@@ -159,7 +157,7 @@ function LandingPage() {
               </p>
             ))}
           </div>
-        </section>
+        </FocusSection>
 
         <div className="mt-16">
           <Link
@@ -173,13 +171,27 @@ function LandingPage() {
       </main>
 
       <footer className="border-t border-rule">
-        <div className="mx-auto flex max-w-3xl flex-wrap items-center gap-x-3 gap-y-2 px-6 py-8 font-mono text-[11px] text-muted-foreground md:px-10">
-          <span>Charlotte Labs · hello@charlotte-labs.com</span>
+        <div className="mx-auto flex max-w-3xl flex-wrap items-center gap-x-4 gap-y-2 px-6 py-8 font-mono text-[11px] text-muted-foreground md:px-10">
+          <span>Charlotte Labs</span>
           <a
             href="https://charlotte-labs.com"
             className="underline underline-offset-4 transition-colors hover:text-foreground"
           >
             charlotte-labs.com
+          </a>
+          <a
+            href="mailto:liam@charlotte-labs.com"
+            className="underline underline-offset-4 transition-colors hover:text-foreground"
+          >
+            liam@charlotte-labs.com
+          </a>
+          <a
+            href="https://www.linkedin.com/company/charlotte-labs"
+            target="_blank"
+            rel="noreferrer"
+            className="underline underline-offset-4 transition-colors hover:text-foreground"
+          >
+            LinkedIn
           </a>
         </div>
         <nav className="mx-auto flex max-w-3xl flex-wrap items-center gap-x-5 gap-y-2 px-6 pb-8 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground md:px-10">
