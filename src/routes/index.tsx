@@ -255,7 +255,7 @@ function LandingPage() {
         </FocusSection>
 
 
-        <FocusSection className="mt-20 border-t border-rule pt-10 md:-translate-x-10 lg:-translate-x-16">
+        <FocusSection className="mt-20 border-t border-rule pt-10 md:translate-x-10 lg:translate-x-16">
           <p className="micro-label">WHAT ACCUMULATES</p>
           <h2 className="pencil-title mt-4">A library your team can learn from</h2>
           <p className="mt-5 text-base leading-relaxed text-foreground">
@@ -287,7 +287,7 @@ function LandingPage() {
           </figure>
         </FocusSection>
 
-        <FocusSection className="mt-20 border-t border-rule pt-10 md:translate-x-10 lg:translate-x-16">
+        <FocusSection className="mt-20 border-t border-rule pt-10 md:-translate-x-10 lg:-translate-x-16">
           <p className="micro-label">PRIVACY, DEMONSTRATED</p>
           <h2 className="pencil-title mt-4">What a coach sees.</h2>
           <p className="mt-5 max-w-2xl text-base leading-relaxed text-foreground">
