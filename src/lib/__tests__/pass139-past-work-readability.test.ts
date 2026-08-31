@@ -26,7 +26,7 @@ describe("pass 139: the page is named Past work", () => {
     expect(page).toContain(`{PAST_WORK_GROUP_LABEL}`);
     expect(page).toContain(`{PAST_WORK_NAV_LABEL}`);
     expect(page).toMatch(/<h1 className="page-title[^"]*">\{PAST_WORK_NAV_LABEL\}<\/h1>/);
-    expect(PAST_WORK_GROUP_LABEL).toBe("Firm");
+    expect(PAST_WORK_GROUP_LABEL).toBe("Your organization");
     expect(PAST_WORK_NAV_LABEL).toBe("Past work");
   });
 
@@ -90,21 +90,26 @@ describe("pass 139: kind to glyph mapping", () => {
 });
 
 describe("pass 139.1: exactly one icon per card", () => {
+  // Pass 142: the one icon now lives inside the metadata sub-card both card
+  // styles share, and the headline sits above that tile.
   it("the shipped card renders only the format icon, never the legacy marks", () => {
     const card = read("components/firm/ShippedWorkCard.tsx");
-    expect(card).toContain('FileFormatIcon } from "@/components/work/FileFormatIcon"');
+    const tile = read("components/firm/CardMetaTile.tsx");
+    expect(tile).toContain('FileFormatIcon } from "@/components/work/FileFormatIcon"');
+    expect(card).toContain("<CardMetaTile");
     expect(card).not.toContain("SourceMark");
     expect(card).not.toContain("RobotMark");
-    const iconAt = card.indexOf("<FileFormatIcon");
+    const tileAt = card.indexOf("<CardMetaTile");
     const headlineAt = card.indexOf("{headline}");
-    expect(iconAt).toBeGreaterThan(-1);
-    expect(headlineAt).toBeGreaterThan(iconAt);
+    expect(headlineAt).toBeGreaterThan(-1);
+    expect(tileAt).toBeGreaterThan(headlineAt);
   });
 
   it("the search result card renders the format icon too", () => {
     const search = read("components/archive/PastWorkSearch.tsx");
-    expect(search).toContain('FileFormatIcon } from "@/components/work/FileFormatIcon"');
-    expect(search).toContain("<FileFormatIcon");
+    const tile = read("components/firm/CardMetaTile.tsx");
+    expect(search).toContain("<CardMetaTile");
+    expect(tile).toContain("<FileFormatIcon");
     expect(search).not.toContain("SourceMark");
   });
 
@@ -119,35 +124,34 @@ describe("pass 139.1: exactly one icon per card", () => {
 describe("pass 139: metadata line hierarchy", () => {
   const card = read("components/firm/ShippedWorkCard.tsx");
   const search = read("components/archive/PastWorkSearch.tsx");
+  // Pass 142: the metadata rows moved into one shared tile.
+  const tile = read("components/firm/CardMetaTile.tsx");
 
-  it("the kind tag uses the grey wash, graphite text, mono 10px uppercase", () => {
+  it("the kind tag sits in the tile, mono 10px uppercase", () => {
+    expect(tile).toContain("bg-[var(--nb-grey-1)]");
+    expect(tile).toContain("text-[10px] uppercase");
+    expect(tile).toContain("text-[var(--nb-graphite)]");
     for (const source of [card, search]) {
-      expect(source).toContain("bg-[var(--nb-grey-1)]");
-      expect(source).toContain("text-[10px] uppercase");
-      expect(source).toContain("text-[var(--nb-graphite)]");
+      expect(source).toContain("<CardMetaTile");
     }
   });
 
-  it("pass 140: the filename calms to graphite at 400 weight on the card", () => {
-    expect(card).toContain("font-mono text-[11px] font-normal uppercase");
-    expect(card).toContain("text-[var(--nb-graphite)]");
+  it("the filename calms to graphite in the tile", () => {
+    expect(tile).toContain("font-mono text-[11px] uppercase");
+    expect(tile).toContain("text-[var(--nb-graphite)]");
   });
 
-  it("pass 140: the client name sits at --nb-soft on both card styles", () => {
-    for (const source of [card, search]) {
-      expect(source).toContain("text-[var(--nb-soft)]");
-    }
+  it("the client name sits at --nb-soft", () => {
+    expect(tile).toContain("text-[var(--nb-soft)]");
   });
 
-  it("the engagement code is green at 600 weight on both card styles", () => {
-    for (const source of [card, search]) {
-      expect(source).toContain("font-semibold text-[var(--nb-green)]");
-    }
+  it("the engagement code is green at 600 weight", () => {
+    expect(tile).toContain("font-semibold text-[var(--nb-green)]");
   });
 
   it("the brief and the shipped-by line sit at --nb-mid", () => {
     expect(card).toContain("line-clamp-2 text-xs text-[var(--nb-mid)]");
-    expect(card).toContain("block text-xs leading-[1.35] text-[var(--nb-mid)]");
+    expect(tile).toContain("text-xs leading-[1.35] text-[var(--nb-mid)]");
   });
 
   it("no new colors and never red", () => {

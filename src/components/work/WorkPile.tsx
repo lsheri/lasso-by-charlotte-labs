@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import { readWorkView, writeWorkView, type WorkView } from "@/lib/work-view";
 
 import { BUCKETS, bucketFor, type BucketKey } from "@/components/work/work-buckets";
 import { SCATTER_CAP, scatterFor } from "@/components/work/pile-scatter";
+import { spiralStartFor } from "@/components/work/pile-spiral";
 import { SourceMark, sourceVendorKey } from "@/components/work/SourceMark";
 import { TypeIcon } from "@/components/work/TypeIcon";
 import {
@@ -28,30 +29,61 @@ function keyOf(entry: WorkEntry): string {
  * lines, and the mark that says where it came from (the LLM's logo for a
  * conversation, the type glyph otherwise).
  */
-function PaperCard({ entry, onClick }: { entry: WorkEntry; onClick: () => void }) {
+function PaperCard({
+  entry,
+  onClick,
+  index,
+  count,
+  diagonal,
+  animate,
+}: {
+  entry: WorkEntry;
+  onClick: () => void;
+  index: number;
+  count: number;
+  diagonal: number;
+  animate: boolean;
+}) {
   const head = headOf(entry);
   const { dx, dy, rot } = scatterFor(keyOf(entry));
   // The brand mark is the truth about where the work came from; the type glyph
   // is the honest fallback when we cannot name a vendor.
   const brand = <SourceMark item={head} size={14} />;
+  const spiral = spiralStartFor(keyOf(entry), index, count, diagonal);
+  // The wrapper carries the spiral travel, the paper keeps its resting scatter.
+  // Two layers means the settle never fights the loose paper look and never
+  // moves layout: both are transforms on top of the same computed position.
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="nb-paper"
+    <span
+      className={animate ? "nb-spiral-in" : undefined}
       style={
         {
-          "--nb-dx": `${dx}px`,
-          "--nb-dy": `${dy}px`,
-          "--nb-rot": `${rot}deg`,
+          "--nb-sx": `${spiral.dx}px`,
+          "--nb-sy": `${spiral.dy}px`,
+          "--nb-srot": `${spiral.rot}deg`,
+          animationDuration: `${spiral.durationMs}ms`,
+          animationDelay: `${spiral.delayMs}ms`,
         } as React.CSSProperties
       }
     >
-      <span className="nb-paper-mark">
-        {sourceVendorKey(head) ? brand : <TypeIcon item={head} size="sm" />}
-      </span>
-      <span className="nb-paper-title">{head.title}</span>
-    </button>
+      <button
+        type="button"
+        onClick={onClick}
+        className="nb-paper"
+        style={
+          {
+            "--nb-dx": `${dx}px`,
+            "--nb-dy": `${dy}px`,
+            "--nb-rot": `${rot}deg`,
+          } as React.CSSProperties
+        }
+      >
+        <span className="nb-paper-mark">
+          {sourceVendorKey(head) ? brand : <TypeIcon item={head} size="sm" />}
+        </span>
+        <span className="nb-paper-title">{head.title}</span>
+      </button>
+    </span>
   );
 }
 
@@ -79,6 +111,19 @@ export function WorkPile({
   // choice is restored. Reading in an effect keeps SSR and hydration identical.
   const [view, setView] = useState<WorkView>("pile");
   const [showAll, setShowAll] = useState(false);
+  // The spiral is measured against the real canvas, so the sweep scales with
+  // the desk instead of a guessed size. Nothing here changes layout.
+  const canvasRef = useRef<HTMLDivElement | null>(null);
+  const [diagonal, setDiagonal] = useState(0);
+  const [spiralOn, setSpiralOn] = useState(false);
+  useLayoutEffect(() => {
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches) return;
+    const node = canvasRef.current;
+    const width = node?.offsetWidth ?? 0;
+    const height = node?.offsetHeight ?? 0;
+    setDiagonal(Math.hypot(width, height));
+    setSpiralOn(true);
+  }, []);
   useEffect(() => {
     setView(readWorkView());
   }, []);
@@ -128,6 +173,7 @@ export function WorkPile({
       {shown === "pile" ? (
         <div className="nb-quad rounded-[var(--radius)] border border-border p-4 sm:p-6">
           <div
+            ref={canvasRef}
             className="nb-scatter"
             data-scatter="1"
             role="group"
@@ -138,10 +184,14 @@ export function WorkPile({
             {papers.length === 0 ? (
               <p className="text-sm text-muted-foreground">Nothing waiting.</p>
             ) : (
-              papers.map((entry) => (
+              papers.map((entry, index) => (
                 <PaperCard
                   key={keyOf(entry)}
                   entry={entry}
+                  index={index}
+                  count={papers.length}
+                  diagonal={diagonal}
+                  animate={spiralOn}
                   onClick={() => onOpenEntry?.(entry)}
                 />
               ))
