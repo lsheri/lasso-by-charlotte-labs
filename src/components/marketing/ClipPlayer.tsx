@@ -102,8 +102,9 @@ export function ClipPlayer({
         playsInline
         preload="none"
         aria-label={label}
-        className={`w-full rounded-[var(--radius)] border border-rule bg-nb-white shadow-card${className ? ` ${className}` : ""}`}
-        style={{ aspectRatio: `${width} / ${height}` }}
+        className={`w-full rounded-[var(--radius)] border border-rule bg-nb-white shadow-card${cover ? " h-full object-cover" : ""}${className ? ` ${className}` : ""}`}
+        style={{ aspectRatio: aspect ?? `${width} / ${height}` }}
+
       />
       {reduced && !manual ? (
         <button
