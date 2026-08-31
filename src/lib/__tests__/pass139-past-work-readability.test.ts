@@ -90,21 +90,21 @@ describe("pass 139: kind to glyph mapping", () => {
 });
 
 describe("pass 139.1: exactly one icon per card", () => {
-  it("the shipped card renders only KindIcon, never the legacy marks", () => {
+  it("the shipped card renders only the format icon, never the legacy marks", () => {
     const card = read("components/firm/ShippedWorkCard.tsx");
-    expect(card).toContain('import { KindIcon } from "@/components/work/KindIcon"');
+    expect(card).toContain('import { FileFormatIcon } from "@/components/work/FileFormatIcon"');
     expect(card).not.toContain("SourceMark");
     expect(card).not.toContain("RobotMark");
-    const iconAt = card.indexOf("<KindIcon");
+    const iconAt = card.indexOf("<FileFormatIcon");
     const headlineAt = card.indexOf("{headline}");
     expect(iconAt).toBeGreaterThan(-1);
     expect(headlineAt).toBeGreaterThan(iconAt);
   });
 
-  it("the search result card renders KindIcon too", () => {
+  it("the search result card renders the format icon too", () => {
     const search = read("components/archive/PastWorkSearch.tsx");
-    expect(search).toContain('import { KindIcon } from "@/components/work/KindIcon"');
-    expect(search).toContain("<KindIcon");
+    expect(search).toContain('import { FileFormatIcon } from "@/components/work/FileFormatIcon"');
+    expect(search).toContain("<FileFormatIcon");
     expect(search).not.toContain("SourceMark");
   });
 
@@ -128,9 +128,15 @@ describe("pass 139: metadata line hierarchy", () => {
     }
   });
 
-  it("the filename is mono ink at 500 weight on the card", () => {
-    expect(card).toContain("font-mono text-[11px] font-medium uppercase");
-    expect(card).toContain("text-[var(--nb-ink)]");
+  it("pass 140: the filename calms to graphite at 400 weight on the card", () => {
+    expect(card).toContain("font-mono text-[11px] font-normal uppercase");
+    expect(card).toContain("text-[var(--nb-graphite)]");
+  });
+
+  it("pass 140: the client name sits at --nb-soft on both card styles", () => {
+    for (const source of [card, search]) {
+      expect(source).toContain("text-[var(--nb-soft)]");
+    }
   });
 
   it("the engagement code is green at 600 weight on both card styles", () => {
@@ -141,7 +147,7 @@ describe("pass 139: metadata line hierarchy", () => {
 
   it("the brief and the shipped-by line sit at --nb-mid", () => {
     expect(card).toContain("line-clamp-2 text-xs text-[var(--nb-mid)]");
-    expect(card).toContain("mt-1 block text-xs text-[var(--nb-mid)]");
+    expect(card).toContain("block text-xs leading-[1.35] text-[var(--nb-mid)]");
   });
 
   it("no new colors and never red", () => {

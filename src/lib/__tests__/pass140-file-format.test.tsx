@@ -108,7 +108,8 @@ describe("pass 140: language laws", () => {
 
   for (const file of CHANGED_FILES) {
     it(`${file} keeps the language laws`, () => {
-      const source = readFileSync(file, "utf8");
+      // Tailwind's letter-spacing utility is not user copy.
+      const source = readFileSync(file, "utf8").replace(/tracking-\[[^\]]*\]/g, "");
       expect(source).not.toMatch(banned);
       expect(source).not.toContain("\u2014");
     });
