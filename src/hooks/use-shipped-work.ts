@@ -8,13 +8,13 @@ import { invalidateAfterWorkChange } from "@/lib/work-invalidation";
 
 export const SHIPPED_WORK_KEY = ["shipped-work"] as const;
 
-/** Coaches are outside the archive by policy; the query never runs for them. */
+/** Pass 138: shipped work is open to every role; RLS decides what comes back. */
 export function useShippedWork() {
   const { data: profile } = useProfile();
   const list = useServerFn(listShippedWork) as unknown as () => Promise<ShippedCard[]>;
   return useQuery({
     queryKey: [...SHIPPED_WORK_KEY],
-    enabled: Boolean(profile) && profile?.role !== "coach",
+    enabled: Boolean(profile),
     queryFn: () => list(),
   });
 }

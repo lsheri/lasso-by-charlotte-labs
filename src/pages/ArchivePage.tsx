@@ -1,7 +1,7 @@
-import { useNavigate } from "@tanstack/react-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 
 import { ArchiveChat } from "@/components/archive/ArchiveChat";
+import { PastWorkSearch } from "@/components/archive/PastWorkSearch";
 import { ArchivePile } from "@/components/archive/ArchivePile";
 import { GraphiteRule } from "@/components/notebook/marks";
 import { useProfile } from "@/hooks/use-profile";
@@ -15,17 +15,15 @@ import { ARCHIVE_SUBHEAD, ARCHIVE_TITLE } from "@/lib/archive-search-shared";
 export function ArchivePage() {
   const { data: profile } = useProfile();
   const { data, isLoading } = useShippedWork();
-  const navigate = useNavigate();
   const [searching, setSearching] = useState(false);
 
+  // Pass 138: shipped work is consented by construction, so every role may
+  // read it. The older archive question box stays members only.
   const isCoach = profile?.role === "coach";
-  useEffect(() => {
-    if (isCoach) void navigate({ to: "/coaching" });
-  }, [isCoach, navigate]);
 
   const onResultsChange = useCallback((open: boolean) => setSearching(open), []);
 
-  if (!profile || isCoach) return null;
+  if (!profile) return null;
 
   // Ship date is the only order the archive keeps.
   const cards = [...(data ?? [])].sort((a, b) => b.shipped_at.localeCompare(a.shipped_at));
@@ -41,7 +39,11 @@ export function ArchivePage() {
       <p className="mt-2 max-w-[60ch] text-sm text-muted-foreground">{ARCHIVE_SUBHEAD}</p>
 
       <div className="mt-5">
-        <ArchiveChat cards={cards} onResultsChange={onResultsChange} />
+        <PastWorkSearch />
+      </div>
+
+      <div className="mt-5">
+        {isCoach ? null : <ArchiveChat cards={cards} onResultsChange={onResultsChange} />}
       </div>
 
       <div className="mt-6">
