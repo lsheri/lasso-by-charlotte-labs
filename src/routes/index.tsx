@@ -303,17 +303,6 @@ function LandingPage() {
         </FocusSection>
 
 
-        <FocusSection className="mt-16 border-t border-rule pt-10 md:-translate-x-10 lg:-translate-x-16">
-          <p className="micro-label">HOW IT WORKS</p>
-          <h2 className="pencil-title mt-4">How it works</h2>
-          <div className="mt-5 space-y-3">
-            {TRUST_LINES.map((line) => (
-              <p key={line} className="text-base leading-relaxed text-foreground">
-                {line}
-              </p>
-            ))}
-          </div>
-        </FocusSection>
 
         <div className="mt-16">
           <Link
