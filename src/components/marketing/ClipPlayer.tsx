@@ -34,6 +34,8 @@ export function ClipPlayer({
   label,
   className,
   group,
+  cover,
+  aspect,
 }: {
   src: string;
   poster: string;
@@ -43,7 +45,12 @@ export function ClipPlayer({
   className?: string;
   /** Clips sharing a group play together; only one group plays at a time. */
   group?: string;
+  /** Crop the clip to fill a fixed tile instead of keeping its own shape. */
+  cover?: boolean;
+  /** Override the tile shape, e.g. "4 / 3" for a collage grid. */
+  aspect?: string;
 }) {
+
 
   const ref = useRef<HTMLVideoElement | null>(null);
   const [reduced, setReduced] = useState(false);
