@@ -23,7 +23,7 @@ import { INVITE_ADMIN_ONLY_LINE } from "@/lib/invites-shared";
 import { coachToShareWithInstead, findMemberByEmail, type MemberRow } from "@/lib/members-shared";
 import { logEvent } from "@/lib/telemetry";
 
-type InviteRole = "coach" | "em";
+type InviteRole = "coach" | "em" | "admin";
 
 const ROLE_OPTIONS: { value: InviteRole; label: string; hint: string }[] = [
   {
@@ -35,6 +35,11 @@ const ROLE_OPTIONS: { value: InviteRole; label: string; hint: string }[] = [
     value: "em",
     label: "Teammate",
     hint: "Builds their own record in this workspace. Sees only their own work.",
+  },
+  {
+    value: "admin",
+    label: "Admin",
+    hint: "Manages people and invites for this organization, alongside their own work.",
   },
 ];
 
@@ -350,7 +355,7 @@ export function InviteDialog({
               </p>
             ) : emailState === "not_configured" || emailState === "failed" ? (
               <p className="text-xs text-muted-foreground">
-                Email sending is not configured yet, so copy this link and send it yourself.
+                Email sending is not set up yet. Share this link directly.
               </p>
             ) : (
               <p className="text-xs text-muted-foreground">
