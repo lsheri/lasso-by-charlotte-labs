@@ -54,6 +54,7 @@ const candidate = (id: string): PastWorkCandidate => ({
   work_item_id: id,
   title: `Piece ${id}`,
   kind: "deck",
+  deliverable_kind: null,
   engagement_id: "e1",
   engagement_code: "ENG-1",
   engagement_title: "Pricing refresh",
