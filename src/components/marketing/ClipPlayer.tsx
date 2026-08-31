@@ -82,7 +82,7 @@ export function ClipPlayer({
       el.pause();
       arbitrate();
     };
-  }, [reduced, manual]);
+  }, [reduced, manual, group, src]);
 
   return (
     <figure className="relative m-0">
