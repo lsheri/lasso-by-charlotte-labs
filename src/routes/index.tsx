@@ -156,8 +156,10 @@ function LandingPage() {
           </div>
         </FocusSection>
 
-        <FocusSection className="mt-14 md:translate-x-24 lg:translate-x-32">
-          <h2 className="pencil-title">What was never checked</h2>
+        <FocusSection className="mt-28 md:translate-x-24 lg:translate-x-32">
+          <p className="micro-label">WHAT WAS NEVER CHECKED</p>
+          <h2 className="pencil-title mt-4">What was never checked</h2>
+
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
             The record also shows what was never checked, and what to run to check it.
           </p>
