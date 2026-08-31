@@ -3,7 +3,9 @@ import { useEffect, useState } from "react";
 
 import { GraphiteRule, RobotMark } from "@/components/notebook/marks";
 import { Button } from "@/components/ui/button";
+import { KindIcon } from "@/components/work/KindIcon";
 import { SourceMark } from "@/components/work/SourceMark";
+import { deliverableKindLabel, deliverableKindOf } from "@/lib/deliverable-kinds";
 import { journeyTypeLabel } from "@/lib/journey";
 import { openJourney } from "@/lib/journey-state";
 import {
@@ -37,13 +39,11 @@ export function ShippedWorkCard({
   }, []);
 
   const facts = recordFactsLine(card);
-  const where = [card.client_label, card.engagement_code].filter(Boolean).join(" · ");
   // The engagement is what the firm recognises; the file name is a detail.
   const headline = card.engagement_title?.trim() || card.title;
   const brief = card.engagement_brief?.trim() ?? "";
-  const metaLine = [journeyTypeLabel(card.type), card.title, where || null]
-    .filter(Boolean)
-    .join(" · ");
+  const kind = deliverableKindOf(card.meta);
+  const kindTag = kind ? deliverableKindLabel(kind) : journeyTypeLabel(card.type);
 
   return (
     <div
