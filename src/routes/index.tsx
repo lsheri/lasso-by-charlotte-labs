@@ -110,9 +110,10 @@ function LandingPage() {
             What ships is the deliverable. What is lost is how it was made, what it was based on,
             and what a colleague could have learned from it.
           </p>
-          {/* A loose collage: four equal tiles, cropped to one shape, nudged slightly. */}
-          <div className="mt-8 grid grid-cols-2 gap-2 sm:gap-3">
-            <div className="sm:-rotate-[0.6deg]">
+          {/* A loose collage: each tile labelled with its product, offset off the grid. */}
+          <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-4">
+            <div className="sm:-rotate-[0.6deg] sm:-translate-y-3">
+              <VendorLabel vendor="chatgpt" name="ChatGPT" />
               <ClipPlayer
                 src="/videos/lasso-chatgpt.mp4"
                 poster="/videos/poster-chatgpt.jpg"
@@ -124,31 +125,34 @@ function LandingPage() {
                 label="Work happening inside ChatGPT"
               />
             </div>
-            <div className="sm:rotate-[0.5deg] sm:translate-y-1">
+            <div className="sm:rotate-[0.5deg] sm:translate-y-6">
+              <VendorLabel vendor="claude" name="Claude" />
               <ClipPlayer
                 src="/videos/lasso-claude.mp4"
                 poster="/videos/poster-claude.jpg"
                 width={720}
                 height={672}
                 cover
-                aspect="4 / 3"
+                aspect="5 / 4"
                 group="llm-products"
                 label="Work happening inside Claude"
               />
             </div>
-            <div className="sm:rotate-[0.4deg] sm:-translate-y-1">
+            <div className="sm:rotate-[0.4deg] sm:translate-y-2">
+              <VendorLabel vendor="gemini" name="Gemini" />
               <ClipPlayer
                 src="/videos/lasso-gemini.mp4"
                 poster="/videos/poster-gemini.jpg"
                 width={720}
                 height={374}
                 cover
-                aspect="4 / 3"
+                aspect="5 / 4"
                 group="llm-products"
                 label="Work happening inside Gemini"
               />
             </div>
-            <div className="sm:-rotate-[0.5deg]">
+            <div className="sm:-rotate-[0.5deg] sm:-translate-y-4">
+              <VendorLabel vendor="lovable" name="Lovable" />
               <ClipPlayer
                 src="/videos/lasso-lovable.mp4"
                 poster="/videos/poster-lovable.jpg"
