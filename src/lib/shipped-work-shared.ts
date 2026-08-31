@@ -40,6 +40,8 @@ export type ShippedCard = {
     mime_type?: string | null;
     source_mime?: string | null;
     web_view_link?: string | null;
+    /** The owner's own word for what this deliverable is. */
+    deliverable_kind?: string | null;
   } | null;
   owner_id: string | null;
   work_date: string | null;
