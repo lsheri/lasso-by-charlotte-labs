@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 
 import { GraphiteRule } from "@/components/notebook/marks";
 import { Button } from "@/components/ui/button";
-import { CARD_FILE_FORMAT_ICON_SIZE, FileFormatIcon } from "@/components/work/FileFormatIcon";
+import { CardMetaTile } from "@/components/firm/CardMetaTile";
 import { deliverableTag } from "@/lib/deliverable-kinds";
 import { openJourney } from "@/lib/journey-state";
 import {
@@ -60,11 +60,8 @@ export function ShippedWorkCard({
           })
         }
       >
-        <span className="flex items-center gap-2.5">
-          <FileFormatIcon item={card} size={CARD_FILE_FORMAT_ICON_SIZE} />
-          <span className="min-w-0 flex-1 break-words text-sm font-medium text-foreground">
-            {headline}
-          </span>
+        <span className="block break-words text-sm font-medium text-foreground">
+          {headline}
         </span>
         <GraphiteRule className="mt-1 h-[6px] w-[140px] text-muted-foreground" />
         {brief ? (
@@ -75,29 +72,19 @@ export function ShippedWorkCard({
             {brief}
           </span>
         ) : null}
-        <span className="mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-0 leading-[1.35]">
-          <span
-            data-testid={`shipped-card-kind-${card.work_item_id}`}
-            className="rounded-sm bg-[var(--nb-grey-1)] px-1 py-px font-mono text-[10px] uppercase tracking-[0.08em] text-[var(--nb-graphite)]"
-          >
-            {kindTag}
-          </span>
-          <span className="font-mono text-[11px] font-normal uppercase tracking-[0.08em] text-[var(--nb-graphite)]">
-            {card.title}
-          </span>
-          {card.client_label || card.engagement_code ? (
-            <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-[var(--nb-soft)]">
-              {card.client_label ?? ""}
-              {card.client_label && card.engagement_code ? " · " : ""}
-              <span className="font-semibold text-[var(--nb-green)]">
-                {card.engagement_code ?? ""}
-              </span>
-            </span>
-          ) : null}
-        </span>
-        <span className="mt-0.5 block text-xs leading-[1.35] text-[var(--nb-mid)]">
-          Shipped by {card.shipped_by_name ?? "a colleague"} · {formatDate(card.shipped_at)}
-        </span>
+        <CardMetaTile
+          testId={`shipped-card-meta-${card.work_item_id}`}
+          fileItem={card}
+          kindTag={kindTag}
+          meta={card.meta}
+          type={card.type}
+          filename={card.title}
+          clientLabel={card.client_label}
+          engagementCode={card.engagement_code}
+          shipperId={card.shipped_by}
+          shipperName={card.shipped_by_name}
+          dateLabel={formatDate(card.shipped_at)}
+        />
         {facts ? <span className="mt-1 block text-xs text-muted-foreground">{facts}</span> : null}
       </button>
 
