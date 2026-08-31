@@ -138,8 +138,9 @@ function LandingPage() {
         </FocusSection>
 
         <FocusSection className="mt-28 md:-translate-x-24 lg:-translate-x-32">
+          <p className="micro-label">THE RECORD</p>
+          <h2 className="pencil-title mt-4">How the work was made</h2>
 
-          <h2 className="pencil-title">How the work was made</h2>
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
             Every deliverable carries the record of how it was made. Email, chats, drive, in the
             order the work actually happened.
