@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useState, type FormEvent } from "react";
 
-import { KindIcon } from "@/components/work/KindIcon";
+import { FileFormatIcon } from "@/components/work/FileFormatIcon";
 import { deliverableTag } from "@/lib/deliverable-kinds";
 import {
   PAST_WORK_EMPTY_LINE,
@@ -112,9 +112,19 @@ export function PastWorkSearch() {
                       className="rounded-sm border border-[var(--nb-rule)] bg-background p-3"
                     >
                       <span className="flex items-start gap-2">
-                        <KindIcon
-                          meta={card ? { deliverable_kind: card.deliverable_kind } : null}
-                          type={card?.kind}
+                        <FileFormatIcon
+                          item={
+                            card
+                              ? {
+                                  meta: { file_format: card.file_format },
+                                  source_meta: {
+                                    mime_type: card.mime_type,
+                                    filename: card.filename,
+                                  },
+                                  title: card.title,
+                                }
+                              : null
+                          }
                           size={14}
                           className="mt-[2px]"
                         />
@@ -132,7 +142,7 @@ export function PastWorkSearch() {
                           {card?.title || "Shipped work"}
                         </button>
                       </span>
-                      <span className="mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
+                      <span className="mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-0 leading-[1.35]">
                         <span
                           data-testid={`past-work-kind-${match.work_item_id}`}
                           className="rounded-sm bg-[var(--nb-grey-1)] px-1 py-px font-mono text-[10px] uppercase tracking-[0.08em] text-[var(--nb-graphite)]"
@@ -140,7 +150,7 @@ export function PastWorkSearch() {
                           {kindTag}
                         </span>
                         {card?.client_label || card?.engagement_code ? (
-                          <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-[var(--nb-mid)]">
+                          <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-[var(--nb-soft)]">
                             {card.client_label ?? ""}
                             {card.client_label && card.engagement_code ? " · " : ""}
                             <span className="font-semibold text-[var(--nb-green)]">
@@ -150,7 +160,7 @@ export function PastWorkSearch() {
                         ) : null}
                       </span>
                       {card?.engagement_id ? (
-                        <div className="mt-0.5">
+                        <div className="mt-0.5 leading-[1.35]">
                           <Link
                             to="/engagements/$id"
                             params={{ id: card.engagement_id }}
