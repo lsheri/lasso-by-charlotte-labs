@@ -1,44 +1,54 @@
-import { readFileSync, readdirSync, statSync } from "node:fs";
-import { join } from "node:path";
+import { execSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 
 import { describe, expect, it } from "vitest";
 
 /**
- * Pass 120: one event, one name, one write path. The underscore duplicates of
- * the canonical mapping and capture events must not exist in source.
+ * Pass 120: one event, one name, one write path.
+ *
+ * The underscore spellings ("work_item.mapped" / "work_item.captured") were a
+ * second, PostHog-only emit for the same action. They are gone; these pins keep
+ * them gone. The canonical mapping emit is logEvent("workitem.mapped").
  */
-const BANNED = ["work_item" + ".mapped", "work_item" + ".captured"];
 
-function walk(dir: string, out: string[] = []): string[] {
-  for (const entry of readdirSync(dir)) {
-    const full = join(dir, entry);
-    if (statSync(full).isDirectory()) {
-      if (entry === "__tests__" || entry === "node_modules") continue;
-      walk(full, out);
-    } else if (/\.(ts|tsx)$/.test(entry)) {
-      out.push(full);
-    }
+function grep(pattern: string): string[] {
+  try {
+    const out = execSync(`grep -rl -- ${JSON.stringify(pattern)} src`, {
+      encoding: "utf8",
+    });
+    return out.split("\n").filter(Boolean);
+  } catch {
+    return [];
   }
-  return out;
 }
 
+const THIS_FILE = "src/lib/__tests__/pass120-taxonomy.test.ts";
+
 describe("pass120 telemetry taxonomy", () => {
-  it("has no underscore duplicate event names anywhere in src", () => {
-    const offenders: string[] = [];
-    for (const file of walk("src")) {
-      const text = readFileSync(file, "utf8");
-      for (const name of BANNED) if (text.includes(name)) offenders.push(`${file}: ${name}`);
+  it("has no work_item.mapped anywhere in src outside this pin", () => {
+    expect(grep("work_item.mapped").filter((f) => f !== THIS_FILE)).toEqual([]);
+  });
+
+  it("has no work_item.captured anywhere in src outside this pin", () => {
+    expect(grep("work_item.captured").filter((f) => f !== THIS_FILE)).toEqual([]);
+  });
+
+  it("keeps the dead names out of the v2 registry", () => {
+    const registry = readFileSync("src/lib/telemetry-v2-shared.ts", "utf8");
+    expect(registry).not.toContain("work_item.mapped");
+    expect(registry).not.toContain("work_item.captured");
+  });
+
+  it("routes every mapping emit through logEvent with the canonical name", () => {
+    const sites = [
+      "src/pages/WorkPage.tsx",
+      "src/hooks/use-mapping-suggestions.ts",
+      "src/lib/workflow-order.ts",
+      "src/components/engagements/EngagementBriefSection.tsx",
+    ];
+    for (const site of sites) {
+      const source = readFileSync(site, "utf8");
+      expect(source).toContain('logEvent("workitem.mapped"');
     }
-    expect(offenders).toEqual([]);
-  });
-
-  it("routes the mapping action through logEvent with the canonical name", () => {
-    const text = readFileSync("src/lib/workflow-order.ts", "utf8");
-    expect(text).toContain('logEvent("workitem.mapped"');
-  });
-
-  it("routes the capture action through logEvent with the canonical name", () => {
-    const text = readFileSync("src/components/work/PasteThreadDialog.tsx", "utf8");
-    expect(text).toContain('logEvent("workitem.captured"');
   });
 });
