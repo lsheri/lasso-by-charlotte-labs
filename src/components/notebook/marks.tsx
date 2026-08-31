@@ -355,6 +355,62 @@ export function GraphiteRule({
 }
 
 /**
+ * The front-door rule: a single loose pencil stroke, wavier than the ruled
+ * line, drawn in left to right on mount. Used on the public landing page
+ * where the pitch closes and the story opens.
+ */
+export function FrontDoorRule({ className = "" }: { className?: string }) {
+  return (
+    <svg
+      className={`nb-frontdoor-rule pointer-events-none ${className}`}
+      viewBox="0 0 300 10"
+      preserveAspectRatio="none"
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path
+        pathLength={1}
+        d="M1 5.6C13 3.2 21 8 35 5.2c13.5-2.7 21.5 3.2 35 .4 13-2.6 20.5 3.4 34.5 1 13-2.2 21 3 34.5.6 13.5-2.4 21.5 2.8 35 .4 13-2.3 21 2.9 34 .8 13-2 20.5 2.6 33.5.5 11.5-1.8 18.5 1.9 27 .2"
+        strokeWidth={1.4}
+      />
+    </svg>
+  );
+}
+
+/**
+ * The scroll cue on the landing page: a handwritten note and a hand-drawn
+ * arrow pointing down into the story. It bobs gently; the bob is dropped
+ * under prefers-reduced-motion in CSS.
+ */
+export function ScrollCue({ label = "Scroll to learn more" }: { label?: string }) {
+  return (
+    <div className="nb-scroll-cue pointer-events-none flex flex-col items-center gap-1">
+      <span className="nb-scroll-cue-label">{label}</span>
+      <svg
+        className="nb-scroll-cue-arrow"
+        width={26}
+        height={44}
+        viewBox="0 0 26 44"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={1.5}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden
+      >
+        {/* the wobbly stem */}
+        <path d="M13.2 2.4C11.8 12 14.2 20 12.6 29c-.5 3 .2 5.4-.1 8.4" />
+        {/* the arrowhead */}
+        <path d="M5.4 30.8c2.4 2.6 4.8 5.6 7.4 8.4 2.8-2.6 5.2-5.8 7.6-8.8" />
+      </svg>
+    </div>
+  );
+}
+
+/**
  * Pass 114: the pencil firework. A small burst beside a tool's logo when its
  * work arrives on the path: a storyteller's beat, never a notification. It is
  * transient by design, so its resting state is invisible.

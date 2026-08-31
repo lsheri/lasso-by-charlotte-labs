@@ -1305,10 +1305,43 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   from { stroke-dashoffset: 1; }
   to { stroke-dashoffset: 0; }
 }
+
+/* The front-door rule: the loose pencil stroke drawn in once, then resting. */
+.nb-frontdoor-rule {
+  display: block;
+  color: var(--nb-graphite);
+}
+.nb-frontdoor-rule path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+  animation: nb-rule-draw 1100ms var(--nb-ease, ease-out) both;
+}
+
+/* The scroll cue: handwritten note and hand-drawn arrow, bobbing gently. */
+.nb-scroll-cue {
+  color: var(--nb-graphite);
+}
+.nb-scroll-cue-label {
+  font-family: "Caveat", var(--font-sans);
+  font-size: 1.375rem;
+  line-height: 1.2;
+}
+.nb-scroll-cue-arrow {
+  animation: nb-scroll-cue-bob 2200ms ease-in-out infinite;
+}
+@keyframes nb-scroll-cue-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(6px); }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .nb-title-rule-animated path {
+  .nb-title-rule-animated path,
+  .nb-frontdoor-rule path {
     animation: none !important;
     stroke-dashoffset: 0 !important;
+  }
+  .nb-scroll-cue-arrow {
+    animation: none !important;
   }
 }
 
@@ -2620,8 +2653,15 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   filter: blur(2.5px);
 }
 
+/* Landing gate: the story stays blurred until the visitor actually scrolls. */
+@utility landing-locked {
+  opacity: 0.22;
+  filter: blur(6px);
+}
+
 @media (max-width: 767px), (prefers-reduced-motion: reduce) {
-  .focus-section-dim {
+  .focus-section-dim,
+  .landing-locked {
     opacity: 1;
     filter: none;
   }
