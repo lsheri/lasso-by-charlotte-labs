@@ -74,6 +74,7 @@ export function ShippedWorkCard({
         ) : null}
         <CardMetaTile
           testId={`shipped-card-meta-${card.work_item_id}`}
+          kindTestId={`shipped-card-kind-${card.work_item_id}`}
           fileItem={card}
           kindTag={kindTag}
           meta={card.meta}

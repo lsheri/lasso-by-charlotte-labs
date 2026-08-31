@@ -8,6 +8,7 @@ import { avatarColorFor, initialsOf, kindChipTint } from "@/lib/card-meta";
  */
 export function CardMetaTile({
   testId,
+  kindTestId,
   fileItem,
   kindTag,
   meta,
@@ -20,6 +21,8 @@ export function CardMetaTile({
   dateLabel,
 }: {
   testId: string;
+  /** Kept stable for cards whose kind chip is pinned by tests. */
+  kindTestId?: string;
   /** Whatever the file format icon needs to name the end product. */
   fileItem: unknown;
   kindTag: string;
@@ -47,7 +50,7 @@ export function CardMetaTile({
         <span className="min-w-0 flex-1">
           <span className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
             <span
-              data-testid={`${testId}-kind`}
+              data-testid={kindTestId ?? `${testId}-kind`}
               className="rounded-sm px-1.5 py-px font-mono text-[10px] uppercase tracking-[0.08em]"
               style={{ backgroundColor: tint.background, color: tint.color }}
             >
