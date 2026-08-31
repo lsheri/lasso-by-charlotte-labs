@@ -64,6 +64,7 @@ export function ShippedWorkCard({
         }
       >
         <span className="flex items-start gap-2">
+          <KindIcon meta={card.meta} type={card.type} size={14} className="mt-[2px]" />
           {card.type === "app" ? (
             <RobotMark size={16} className="text-muted-foreground" />
           ) : (
@@ -86,15 +87,32 @@ export function ShippedWorkCard({
         {brief ? (
           <span
             data-testid={`shipped-card-brief-${card.work_item_id}`}
-            className="mt-1 block line-clamp-2 text-xs text-muted-foreground"
+            className="mt-1 block line-clamp-2 text-xs text-[var(--nb-mid)]"
           >
             {brief}
           </span>
         ) : null}
-        <span className="mt-1.5 block font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
-          {metaLine}
+        <span className="mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
+          <span
+            data-testid={`shipped-card-kind-${card.work_item_id}`}
+            className="rounded-sm bg-[var(--nb-grey-1)] px-1 py-px font-mono text-[10px] uppercase tracking-[0.08em] text-[var(--nb-graphite)]"
+          >
+            {kindTag}
+          </span>
+          <span className="font-mono text-[11px] font-medium uppercase tracking-[0.08em] text-[var(--nb-ink)]">
+            {card.title}
+          </span>
+          {card.client_label || card.engagement_code ? (
+            <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-[var(--nb-mid)]">
+              {card.client_label ?? ""}
+              {card.client_label && card.engagement_code ? " · " : ""}
+              <span className="font-semibold text-[var(--nb-green)]">
+                {card.engagement_code ?? ""}
+              </span>
+            </span>
+          ) : null}
         </span>
-        <span className="mt-1 block text-xs text-muted-foreground">
+        <span className="mt-1 block text-xs text-[var(--nb-mid)]">
           Shipped by {card.shipped_by_name ?? "a colleague"} · {formatDate(card.shipped_at)}
         </span>
         {facts ? <span className="mt-1 block text-xs text-muted-foreground">{facts}</span> : null}
