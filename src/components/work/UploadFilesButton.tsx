@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ensureExtractsFn } from "@/lib/extract.functions";
 import { logEvent } from "@/lib/telemetry";
 import { logV2 } from "@/lib/telemetry-v2";
+import { buildUploadSourceMeta } from "@/lib/upload-payload";
 import { workTypeForFile } from "@/lib/work-types";
 
 export function UploadFilesButton({
@@ -69,7 +70,7 @@ export function UploadFilesButton({
           // file named "export" with no suffix is unreadable unless the
           // browser's own mime type is kept here at capture time.
           meta: { mime_type: file.type || null },
-          source_meta: { filename: file.name },
+          source_meta: buildUploadSourceMeta(file),
         })
         .select("id")
         .maybeSingle();

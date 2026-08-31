@@ -11,6 +11,9 @@ import { cn } from "@/lib/utils";
  * Pass 140: the card wears the logo of the format it really is. These
  * conventional file type colors live here and nowhere else in the interface.
  */
+
+/** Pass 141: the card logo at twice its old 14px mark. */
+export const CARD_FILE_FORMAT_ICON_SIZE = 28;
 const GLYPH_FILL: Record<Exclude<FileFormatGlyph, "document">, string> = {
   word: "#2b579a",
   google_docs: "#1a73e8",

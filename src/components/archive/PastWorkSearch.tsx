@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useState, type FormEvent } from "react";
 
-import { FileFormatIcon } from "@/components/work/FileFormatIcon";
+import { CARD_FILE_FORMAT_ICON_SIZE, FileFormatIcon } from "@/components/work/FileFormatIcon";
 import { deliverableTag } from "@/lib/deliverable-kinds";
 import {
   PAST_WORK_EMPTY_LINE,
@@ -111,7 +111,7 @@ export function PastWorkSearch() {
                       key={match.work_item_id}
                       className="rounded-sm border border-[var(--nb-rule)] bg-background p-3"
                     >
-                      <span className="flex items-start gap-2">
+                      <span className="flex items-center gap-2.5">
                         <FileFormatIcon
                           item={
                             card
@@ -125,8 +125,7 @@ export function PastWorkSearch() {
                                 }
                               : null
                           }
-                          size={14}
-                          className="mt-[2px]"
+                          size={CARD_FILE_FORMAT_ICON_SIZE}
                         />
                         <button
                           type="button"
