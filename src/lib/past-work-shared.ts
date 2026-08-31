@@ -14,7 +14,7 @@ export const PAST_WORK_PLACEHOLDER = "What are you working on?";
 export const PAST_WORK_HINT =
   "Describe the work and Lasso finds shipped work like it, with why it matches.";
 export const PAST_WORK_EMPTY_LINE =
-  "Nothing shipped yet looks like this. The archive grows as work ships.";
+  "Nothing shipped yet looks like this. Past work grows as work ships.";
 export const PAST_WORK_FOOTER_LINE = "Reads shipped work only.";
 export const PAST_WORK_SUBMIT_LABEL = "Find work like it";
 export const PAST_WORK_WHY_LABEL = "WHY THIS IS LIKE YOUR WORK";
@@ -35,6 +35,12 @@ export type PastWorkCandidate = {
   kind: string;
   /** The owner's deliverable kind, when one was chosen. */
   deliverable_kind: string | null;
+  /** The end product format, when the record knows it. */
+  file_format: string | null;
+  /** The provider mime, used to resolve the format when nothing is set. */
+  mime_type: string | null;
+  /** The file name, the last resort for resolving the format. */
+  filename: string | null;
   engagement_id: string | null;
   engagement_code: string | null;
   engagement_title: string | null;

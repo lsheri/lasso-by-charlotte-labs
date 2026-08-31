@@ -25,7 +25,7 @@ const RESULT_STAGGER_MS = 90;
 
 function Thinking() {
   return (
-    <span className="nb-dots" role="status" aria-label="Reading the archive">
+    <span className="nb-dots" role="status" aria-label="Reading past work">
       <span className="nb-dot" />
       <span className="nb-dot" />
       <span className="nb-dot" />
@@ -132,21 +132,12 @@ export function ArchiveChat({
     <div data-testid="archive-chat">
       <div className="nb-archive-dock">
         <PencilHatch seed="archive-chat" className="nb-archive-hatch" />
-        <span className="sr-only" id="archive-chat-assistant">
-          AI
-        </span>
-        <span
-          aria-hidden
-          className="absolute left-8 top-1 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground"
-        >
-          AI
-        </span>
         <input
           ref={inputRef}
           className="nb-archive-input"
           data-testid="archive-chat-input"
           placeholder={ARCHIVE_PLACEHOLDER}
-          aria-label="Ask the archive"
+          aria-label="Ask past work"
           value={question}
           onChange={(event) => setQuestion(event.target.value)}
           onKeyDown={(event) => {
@@ -158,7 +149,7 @@ export function ArchiveChat({
           type="button"
           className="nb-archive-send"
           data-testid="archive-chat-send"
-          aria-label="Ask the archive"
+          aria-label="Ask past work"
           onClick={() => void ask()}
           disabled={busy}
         >
@@ -179,7 +170,7 @@ export function ArchiveChat({
         <div className={`mt-5 ${skipped ? "is-skipped" : ""}`} data-testid="archive-results">
           <div className="flex items-center justify-between gap-3">
             <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
-              {state.line ?? "FROM THE ARCHIVE"}
+              {state.line ?? "FROM PAST WORK"}
             </span>
             <div className="flex items-center gap-3">
               {journey ? (
