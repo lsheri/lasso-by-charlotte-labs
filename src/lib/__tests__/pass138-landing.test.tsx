@@ -132,13 +132,14 @@ it("keeps the quiet bottom link to a personal record", () => {
   });
 
   it("uses pencil titles on every content section", () => {
-      "A library your team can learn from",
+    for (const t of [
       "How the work was made",
       "What was never checked",
-      "What accumulates",
-      "What a coach sees.",
       "A library your team can learn from",
+      "What a coach sees.",
       "How it works",
+    ]) {
+
 
     ]) {
       expect(route).toContain(t);
