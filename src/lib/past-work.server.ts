@@ -54,7 +54,7 @@ export async function assemblePastWorkCandidates(caller: Db): Promise<PastWorkCa
   const { data, error } = await caller
     .from(PAST_WORK_GATEWAY_TABLE)
     .select(
-      "work_item_id, engagement_id, work_items(title, type), engagements(code, title, client_label, brief)",
+      "work_item_id, engagement_id, work_items(title, type, meta), engagements(code, title, client_label, brief)",
     )
     .order("shipped_at", { ascending: false })
     .limit(PAST_WORK_CANDIDATE_CAP);
@@ -80,6 +80,7 @@ export async function assemblePastWorkCandidates(caller: Db): Promise<PastWorkCa
     work_item_id: row.work_item_id,
     title: row.work_items?.title ?? "",
     kind: row.work_items?.type ?? "document",
+    deliverable_kind: row.work_items?.meta?.deliverable_kind ?? null,
     engagement_id: row.engagement_id,
     engagement_code: row.engagements?.code ?? null,
     engagement_title: row.engagements?.title ?? null,
