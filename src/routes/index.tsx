@@ -243,8 +243,8 @@ function LandingPage() {
             <ClipPlayer
               src="/videos/lasso-what-fed-this.mp4"
               poster="/videos/poster-what-fed-this.jpg"
-              width={1280}
-              height={718}
+              width={2692}
+              height={1520}
               label="Tracing a deliverable back to the chats and documents that fed it"
             />
           </div>
