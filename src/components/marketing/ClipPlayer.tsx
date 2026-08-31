@@ -66,7 +66,7 @@ export function ClipPlayer({
       return;
     }
     if (typeof IntersectionObserver === "undefined") return;
-    const entry = { el, ratio: 0 };
+    const entry = { el, ratio: 0, group: group ?? src };
     players.add(entry);
     const io = new IntersectionObserver(
       (entries) => {
