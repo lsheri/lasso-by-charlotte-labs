@@ -1,5 +1,7 @@
+import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,15 +9,23 @@ import { Label } from "@/components/ui/label";
 import { Wordmark } from "@/components/layout/Wordmark";
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
+import { checkSignupInvite } from "@/lib/invites.functions";
+import { SIGNUP_NO_INVITE_LINE, type SignupInviteCheck } from "@/lib/signup-invite";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
   validateSearch: (
     search: Record<string, unknown>,
-  ): { next?: string | undefined; intent?: "company" | "personal" | "invite" | undefined } => {
+  ): {
+    next?: string | undefined;
+    invite?: string | undefined;
+    intent?: "company" | "personal" | "invite" | undefined;
+  } => {
     const next = search["next"];
     const intent = search["intent"];
+    const invite = search["invite"];
     return {
+      ...(typeof invite === "string" && invite ? { invite } : {}),
       ...(typeof next === "string" && next.startsWith("/") ? { next } : {}),
       ...(intent === "company" || intent === "personal" || intent === "invite" ? { intent } : {}),
     };
@@ -58,24 +68,43 @@ function joinTarget(next: string | undefined) {
 
 function AuthPage() {
   const navigate = useNavigate();
-  const { next, intent } = Route.useSearch();
+  const { next, intent, invite } = Route.useSearch();
+  const checkInvite = useServerFn(checkSignupInvite);
+  // An invite can arrive as its own param or inside the join destination.
+  const inviteCode = invite ?? joinTarget(next)?.code;
   // Arriving from an invite: the page should read as the next step of that
   // invitation, not as a generic sign in wall.
   const invited = Boolean(joinTarget(next));
 
   function goOn() {
-    const target = joinTarget(next);
+    const target = joinTarget(next) ?? (inviteCode ? { code: inviteCode } : null);
     if (target) navigate({ to: "/join", search: target, replace: true });
     else if (intent) navigate({ to: "/onboarding", search: { intent }, replace: true });
     else navigate({ to: "/overview", replace: true });
   }
 
-  const [mode, setMode] = useState<"signin" | "signup">(invited ? "signup" : "signin");
+  const [mode, setMode] = useState<"signin" | "signup">(
+    invited || inviteCode ? "signup" : "signin",
+  );
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const { data: inviteCheck } = useQuery({
+    queryKey: ["signup-invite", inviteCode],
+    enabled: Boolean(inviteCode),
+    queryFn: (): Promise<SignupInviteCheck> =>
+      checkInvite({ data: { code: inviteCode as string } }),
+  });
+
+  // An invite bound to one address fills it in and holds it, so the account
+  // that gets created is the one the admin asked for.
+  const lockedEmail = inviteCheck?.ok ? (inviteCheck.email ?? null) : null;
+  useEffect(() => {
+    if (lockedEmail) setEmail(lockedEmail);
+  }, [lockedEmail]);
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -88,6 +117,19 @@ function AuthPage() {
       if (signInError) setError(signInError.message);
       else goOn();
     } else {
+      if (!inviteCode) {
+        setError(SIGNUP_NO_INVITE_LINE);
+        setPending(false);
+        return;
+      }
+      // Checked again on the server at submit time, with the typed address, so
+      // the gate does not depend on anything the browser was told earlier.
+      const verdict = await checkInvite({ data: { code: inviteCode, email } });
+      if (!verdict.ok) {
+        setError(verdict.message);
+        setPending(false);
+        return;
+      }
       const { data, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
@@ -96,7 +138,9 @@ function AuthPage() {
         options: {
           emailRedirectTo: next
             ? `${window.location.origin}${next}`
-            : window.location.origin,
+            : inviteCode
+              ? `${window.location.origin}/join?code=${encodeURIComponent(inviteCode)}`
+              : window.location.origin,
         },
       });
       if (signUpError) setError(signUpError.message);
@@ -148,6 +192,7 @@ function AuthPage() {
                 required
                 autoComplete="email"
                 value={email}
+                readOnly={mode === "signup" && Boolean(lockedEmail)}
                 onChange={(e) => setEmail(e.target.value)}
               />
             </div>
@@ -166,10 +211,20 @@ function AuthPage() {
               />
             </div>
 
+            {mode === "signup" && !inviteCode ? (
+              <p className="text-sm text-muted-foreground">{SIGNUP_NO_INVITE_LINE}</p>
+            ) : null}
+            {mode === "signup" && inviteCheck && !inviteCheck.ok ? (
+              <p className="text-sm text-destructive">{inviteCheck.message}</p>
+            ) : null}
             {error ? <p className="text-sm text-destructive">{error}</p> : null}
             {message ? <p className="text-sm text-accent-deep">{message}</p> : null}
 
-            <Button type="submit" className="w-full" disabled={pending}>
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={pending || (mode === "signup" && !inviteCode)}
+            >
               {pending ? "Please wait…" : mode === "signin" ? "Sign in" : "Create account"}
             </Button>
           </form>

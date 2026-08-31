@@ -93,16 +93,16 @@ export async function resendInviteByCode(
   let delivered = false;
   let reason = "no_email";
   if (invite.email) {
-    const { data: me } = await context.supabase
-      .from("profiles")
-      .select("display_name")
-      .eq("id", profile.id)
-      .maybeSingle();
+    const [{ data: me }, { data: org }] = await Promise.all([
+      context.supabase.from("profiles").select("display_name").eq("id", profile.id).maybeSingle(),
+      context.supabase.from("orgs").select("name").eq("id", profile.org_id).maybeSingle(),
+    ]);
     const { sendInviteViaResend } = await import("./invites.server");
     const result = await sendInviteViaResend({
       to: invite.email,
       inviterName: me?.display_name || "Someone at your firm",
       acceptUrl: `${acceptOrigin}/join?code=${encodeURIComponent(minted as string)}`,
+      orgName: org?.name ?? undefined,
     });
     delivered = result.sent;
     reason = result.reason;

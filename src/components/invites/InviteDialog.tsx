@@ -13,7 +13,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { useProfile } from "@/hooks/use-profile";
+import { isBusinessOrg, useProfile } from "@/hooks/use-profile";
 import { useMembers } from "@/hooks/use-members";
 import { useShareInvalidation } from "@/hooks/use-coach-share";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,7 +23,7 @@ import { INVITE_ADMIN_ONLY_LINE } from "@/lib/invites-shared";
 import { coachToShareWithInstead, findMemberByEmail, type MemberRow } from "@/lib/members-shared";
 import { logEvent } from "@/lib/telemetry";
 
-type InviteRole = "coach" | "em";
+type InviteRole = "coach" | "em" | "admin";
 
 const ROLE_OPTIONS: { value: InviteRole; label: string; hint: string }[] = [
   {
@@ -35,6 +35,11 @@ const ROLE_OPTIONS: { value: InviteRole; label: string; hint: string }[] = [
     value: "em",
     label: "Teammate",
     hint: "Builds their own record in this workspace. Sees only their own work.",
+  },
+  {
+    value: "admin",
+    label: "Admin",
+    hint: "Manages people and invites for this organization, alongside their own work.",
   },
 ];
 
@@ -142,6 +147,10 @@ export function InviteDialog({
 
   // Admission is an admin act. Leads keep the console, they cannot mint links.
   const canInvite = profile?.role === "admin";
+  // A personal workspace has no roster to administer, so it offers no admins.
+  const roleOptions = ROLE_OPTIONS.filter(
+    (option) => option.value !== "admin" || isBusinessOrg(profile),
+  );
   // Only ever the list this viewer may already read. It never answers whether
   // an address exists anywhere else.
   const { data: members } = useMembers(canInvite ? profile?.id : undefined);
@@ -242,7 +251,7 @@ export function InviteDialog({
           <div className="space-y-2">
             <p className="micro-label">Their role</p>
             <div className="space-y-1.5">
-              {ROLE_OPTIONS.map((option) => (
+              {roleOptions.map((option) => (
                 <button
                   key={option.value}
                   type="button"
@@ -350,7 +359,7 @@ export function InviteDialog({
               </p>
             ) : emailState === "not_configured" || emailState === "failed" ? (
               <p className="text-xs text-muted-foreground">
-                Email sending is not configured yet, so copy this link and send it yourself.
+                Email sending is not set up yet. Share this link directly.
               </p>
             ) : (
               <p className="text-xs text-muted-foreground">

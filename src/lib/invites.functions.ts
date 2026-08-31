@@ -25,6 +25,18 @@ export const getInviteState = createServerFn({ method: "POST" })
   });
 
 /**
+ * Public on purpose: the sign up form has to know whether the code it arrived
+ * with is usable before anyone has an account. It answers about the invite
+ * only, never about whether an address is already registered.
+ */
+export const checkSignupInvite = createServerFn({ method: "POST" })
+  .inputValidator((input: { code: string; email?: string | undefined }) => input)
+  .handler(async ({ data }): Promise<import("./signup-invite").SignupInviteCheck> => {
+    const { checkSignupInviteByCode } = await import("./invites.server");
+    return checkSignupInviteByCode(data.code ?? "", data.email ?? null);
+  });
+
+/**
  * Content-free record of an accept that could not proceed. No addresses.
  * Public, so the state is whitelisted at runtime rather than trusted from the
  * type. Anything else is a silent no-op: a prober learns nothing either way.
@@ -70,16 +82,16 @@ export const sendInviteEmail = createServerFn({ method: "POST" })
     }
     await assertInviteInOrg(context.supabase, data.code, profile.org_id);
 
-    const { data: me } = await context.supabase
-      .from("profiles")
-      .select("display_name")
-      .eq("id", profile.id)
-      .maybeSingle();
+    const [{ data: me }, { data: org }] = await Promise.all([
+      context.supabase.from("profiles").select("display_name").eq("id", profile.id).maybeSingle(),
+      context.supabase.from("orgs").select("name").eq("id", profile.org_id).maybeSingle(),
+    ]);
 
     const result = await sendInviteViaResend({
       to: data.email.trim(),
       inviterName: me?.display_name || "Someone at your firm",
       acceptUrl: data.accept_url,
+      orgName: org?.name ?? undefined,
     });
 
     // Content-free: never the recipient address, only whether it went out.
@@ -101,7 +113,11 @@ export const sendInviteEmail = createServerFn({ method: "POST" })
 export const createInvite = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
-    (input: { profile_id?: string | undefined; role: "coach" | "em"; email?: string | undefined }) =>
+    (input: {
+      profile_id?: string | undefined;
+      role: "coach" | "em" | "admin";
+      email?: string | undefined;
+    }) =>
       input,
   )
   .handler(async ({ data, context }): Promise<CreateInviteResult> => {
