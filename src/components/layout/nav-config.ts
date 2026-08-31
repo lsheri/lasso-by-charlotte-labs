@@ -10,7 +10,7 @@ export const navGroups: NavGroup[] = [
   },
   { label: "Work", items: [{ label: "All work & mapping", to: "/work", icon: "work" }] },
   // Pass 138: shipped work is a destination of its own, open to every role.
-  { label: "Firm", items: [{ label: "Past work", to: "/archive", icon: "firm" }] },
+  { label: "Your organization", items: [{ label: "Past work", to: "/archive", icon: "firm" }] },
   { label: "Engagements", items: [], emptyState: "No engagements yet" },
   {
     label: "Your work",

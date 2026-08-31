@@ -70,10 +70,10 @@ const candidate = (id: string): PastWorkCandidate => ({
 describe("Pass 138: Past work nav", () => {
   it("Firm group sits directly under Work with one Past work item", () => {
     const labels = navGroups.map((group) => group.label);
-    expect(labels).toEqual(["Connectors", "Work", "Firm", "Engagements", "Your work", "Admin"]);
-    expect(labels.indexOf("Firm")).toBe(labels.indexOf("Work") + 1);
+    expect(labels).toEqual(["Connectors", "Work", "Your organization", "Engagements", "Your work", "Admin"]);
+    expect(labels.indexOf("Your organization")).toBe(labels.indexOf("Work") + 1);
 
-    const firm = navGroups.find((group) => group.label === "Firm")!;
+    const firm = navGroups.find((group) => group.label === "Your organization")!;
     expect(firm.items).toEqual([{ label: PAST_WORK_NAV_LABEL, to: "/archive", icon: "firm" }]);
     expect(PAST_WORK_NAV_LABEL).toBe("Past work");
   });

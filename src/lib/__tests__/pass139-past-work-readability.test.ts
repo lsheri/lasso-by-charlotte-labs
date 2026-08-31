@@ -26,7 +26,7 @@ describe("pass 139: the page is named Past work", () => {
     expect(page).toContain(`{PAST_WORK_GROUP_LABEL}`);
     expect(page).toContain(`{PAST_WORK_NAV_LABEL}`);
     expect(page).toMatch(/<h1 className="page-title[^"]*">\{PAST_WORK_NAV_LABEL\}<\/h1>/);
-    expect(PAST_WORK_GROUP_LABEL).toBe("Firm");
+    expect(PAST_WORK_GROUP_LABEL).toBe("Your organization");
     expect(PAST_WORK_NAV_LABEL).toBe("Past work");
   });
 

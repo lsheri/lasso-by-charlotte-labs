@@ -166,7 +166,7 @@ describe("the archive in the nav", () => {
   // for members and admins. Coaches are engagement-scoped guests and do not
   // see the firm archive in their nav.
   it("is in the Firm group for members and admins, not coaches", () => {
-    const firm = navGroups.find((group) => group.label === "Firm");
+    const firm = navGroups.find((group) => group.label === "Your organization");
     expect(firm?.items.some((item) => item.to === "/archive")).toBe(true);
     expect(
       coachNavGroups.some((group) => group.items.some((item) => item.to === "/archive")),

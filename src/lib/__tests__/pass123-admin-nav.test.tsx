@@ -65,7 +65,7 @@ describe("Pass 123: the sidebar grows an Admin section", () => {
       "Connectors",
       "Work",
       // Pass 138: Past work sits in its own Firm group under Work.
-      "Firm",
+      "Your organization",
       "Engagements",
       "Your work",
       "Admin",
