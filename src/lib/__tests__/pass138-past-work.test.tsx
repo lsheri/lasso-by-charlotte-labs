@@ -55,6 +55,10 @@ const candidate = (id: string): PastWorkCandidate => ({
   title: `Piece ${id}`,
   kind: "deck",
   deliverable_kind: null,
+  file_format: null,
+  mime_type: null,
+  filename: null,
+
   engagement_id: "e1",
   engagement_code: "ENG-1",
   engagement_title: "Pricing refresh",
