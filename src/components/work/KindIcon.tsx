@@ -48,8 +48,8 @@ export function KindGlyph({
   className,
 }: {
   glyph: DeliverableGlyph;
-  size?: number;
-  className?: string;
+  size?: number | undefined;
+  className?: string | undefined;
 }) {
   const def = GLYPH_PATHS[glyph];
   return (
