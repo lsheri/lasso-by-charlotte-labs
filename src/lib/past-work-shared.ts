@@ -31,8 +31,10 @@ export const PAST_WORK_MATCH_CAP = 5;
 export type PastWorkCandidate = {
   work_item_id: string;
   title: string;
-  /** The deliverable kind of the shipped work item. */
+  /** The work item type, shown to the model as its kind. */
   kind: string;
+  /** The owner's deliverable kind, when one was chosen. */
+  deliverable_kind: string | null;
   engagement_id: string | null;
   engagement_code: string | null;
   engagement_title: string | null;

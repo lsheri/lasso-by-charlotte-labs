@@ -33,7 +33,11 @@ export const PAST_WORK_CANDIDATE_CAP = 60;
 type GatewayRow = {
   work_item_id: string;
   engagement_id: string | null;
-  work_items: { title: string | null; type: string | null } | null;
+  work_items: {
+    title: string | null;
+    type: string | null;
+    meta: { deliverable_kind?: string | null } | null;
+  } | null;
   engagements: {
     code: string | null;
     title: string | null;
