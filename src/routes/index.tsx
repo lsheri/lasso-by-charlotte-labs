@@ -43,11 +43,7 @@ export const Route = createFileRoute("/")({
   component: LandingPage,
 });
 
-const TRUST_LINES: string[] = [
-  "Private by default. Work you do not place stays private.",
-  "Nobody is scored. There is no rating, ranking, or percentage about any person.",
-  "You own your record. It travels with you.",
-];
+
 
 function LandingPage() {
   // Content-free, and unchanged from the existing landing signal.
