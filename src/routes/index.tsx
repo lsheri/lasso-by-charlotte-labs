@@ -225,6 +225,17 @@ function LandingPage() {
             The work belongs to the people who did it. What the firm sees is the work they chose to
             place there, never a feed of what anyone is doing.
           </p>
+          <figure className="mt-8">
+            <img
+              src={pastWorkLibrary.url}
+              alt="A firm library of shipped work, searchable by describing what you are working on"
+              width={1962}
+              height={1174}
+              loading="lazy"
+              decoding="async"
+              className="w-full rounded-[var(--radius)] border border-rule shadow-card"
+            />
+          </figure>
         </FocusSection>
 
         <FocusSection className="mt-20 border-t border-rule pt-10 md:translate-x-10 lg:translate-x-16">
