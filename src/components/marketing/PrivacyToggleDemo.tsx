@@ -10,26 +10,28 @@ import { hueStyles } from "@/lib/work-identity";
  */
 export function PrivacyToggleDemo() {
   const [coachView, setCoachView] = useState(false);
+  const [autoplay, setAutoplay] = useState(false);
   const ref = useRef<HTMLDivElement | null>(null);
-  const played = useRef(false);
 
+  // Flips itself every two seconds while it is on screen, so the difference
+  // between the two views reads without anyone touching it.
   useEffect(() => {
     const node = ref.current;
-    if (!node || played.current) return;
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!node) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const observer = new IntersectionObserver(
-      (entries) => {
-        if (!entries.some((e) => e.isIntersecting) || played.current) return;
-        played.current = true;
-        observer.disconnect();
-        const flip = window.setTimeout(() => setCoachView(true), reduced ? 200 : 700);
-        return () => window.clearTimeout(flip);
-      },
+      (entries) => setAutoplay(entries.some((e) => e.isIntersecting)),
       { threshold: 0.4 },
     );
     observer.observe(node);
     return () => observer.disconnect();
   }, []);
+
+  useEffect(() => {
+    if (!autoplay) return;
+    const id = window.setInterval(() => setCoachView((v) => !v), 2000);
+    return () => window.clearInterval(id);
+  }, [autoplay]);
 
   const conv = hueStyles("--hue-slate-blue");
   const teal = { color: "var(--state-teal)", background: "var(--state-teal-wash)" };
