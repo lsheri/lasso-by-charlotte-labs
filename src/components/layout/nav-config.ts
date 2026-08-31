@@ -36,11 +36,11 @@ export const navGroups: NavGroup[] = [
 /**
  * A coach is a guest: they have no work of their own and no engagements of
  * their own, so the worker nav would be mostly dead ends. Worker and admin
- * items above are untouched.
+ * items above are untouched. The firm archive is firm-internal, so coaches
+ * do not see it in the nav and are redirected away if they hit /archive.
  */
 export const coachNavGroups: NavGroup[] = [
   { label: "Coaching", items: [{ label: "People you coach", to: "/coaching", icon: "members" }] },
-  { label: "Firm", items: [{ label: "Past work", to: "/archive", icon: "firm" }] },
   {
     label: "Your account",
     items: [
