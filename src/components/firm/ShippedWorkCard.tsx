@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 
 import { GraphiteRule } from "@/components/notebook/marks";
 import { Button } from "@/components/ui/button";
-import { FileFormatIcon } from "@/components/work/FileFormatIcon";
+import { CARD_FILE_FORMAT_ICON_SIZE, FileFormatIcon } from "@/components/work/FileFormatIcon";
 import { deliverableTag } from "@/lib/deliverable-kinds";
 import { openJourney } from "@/lib/journey-state";
 import {
@@ -60,9 +60,9 @@ export function ShippedWorkCard({
           })
         }
       >
-        <span className="flex items-start gap-2">
-          <FileFormatIcon item={card} size={14} className="mt-[2px]" />
-          <span className="min-w-0 break-words text-sm font-medium text-foreground">
+        <span className="flex items-center gap-2.5">
+          <FileFormatIcon item={card} size={CARD_FILE_FORMAT_ICON_SIZE} />
+          <span className="min-w-0 flex-1 break-words text-sm font-medium text-foreground">
             {headline}
           </span>
         </span>
