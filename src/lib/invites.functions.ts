@@ -25,6 +25,18 @@ export const getInviteState = createServerFn({ method: "POST" })
   });
 
 /**
+ * Public on purpose: the sign up form has to know whether the code it arrived
+ * with is usable before anyone has an account. It answers about the invite
+ * only, never about whether an address is already registered.
+ */
+export const checkSignupInvite = createServerFn({ method: "POST" })
+  .inputValidator((input: { code: string; email?: string | undefined }) => input)
+  .handler(async ({ data }): Promise<import("./signup-invite").SignupInviteCheck> => {
+    const { checkSignupInviteByCode } = await import("./invites.server");
+    return checkSignupInviteByCode(data.code ?? "", data.email ?? null);
+  });
+
+/**
  * Content-free record of an accept that could not proceed. No addresses.
  * Public, so the state is whitelisted at runtime rather than trusted from the
  * type. Anything else is a silent no-op: a prober learns nothing either way.
