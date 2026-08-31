@@ -15,6 +15,7 @@ import {
   type PastWorkMatch,
 } from "@/lib/past-work-shared";
 import { searchPastWork } from "@/lib/past-work.functions";
+import { openJourney } from "@/lib/journey-state";
 
 type Answer = {
   matches: PastWorkMatch[];
@@ -104,13 +105,19 @@ export function PastWorkSearch() {
                       key={match.work_item_id}
                       className="rounded-sm border border-[var(--nb-rule)] bg-background p-3"
                     >
-                      <Link
-                        to="/work/$id"
-                        params={{ id: match.work_item_id }}
-                        className="text-sm font-medium underline-offset-2 hover:underline"
+                      <button
+                        type="button"
+                        onClick={() =>
+                          openJourney({
+                            anchorId: match.work_item_id,
+                            anchorTitle: card?.title ?? "",
+                            engagementId: card?.engagement_id ?? "",
+                          })
+                        }
+                        className="text-left text-sm font-medium underline-offset-2 hover:underline"
                       >
                         {card?.title || "Shipped work"}
-                      </Link>
+                      </button>
                       {card?.engagement_id ? (
                         <div className="mt-0.5">
                           <Link
