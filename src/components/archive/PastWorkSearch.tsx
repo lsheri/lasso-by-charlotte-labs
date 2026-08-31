@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useState, type FormEvent } from "react";
 
-import { CARD_FILE_FORMAT_ICON_SIZE, FileFormatIcon } from "@/components/work/FileFormatIcon";
+import { CardMetaTile } from "@/components/firm/CardMetaTile";
 import { deliverableTag } from "@/lib/deliverable-kinds";
 import {
   PAST_WORK_EMPTY_LINE,
@@ -111,53 +111,41 @@ export function PastWorkSearch() {
                       key={match.work_item_id}
                       className="rounded-sm border border-[var(--nb-rule)] bg-background p-3"
                     >
-                      <span className="flex items-center gap-2.5">
-                        <FileFormatIcon
-                          item={
-                            card
-                              ? {
-                                  meta: { file_format: card.file_format },
-                                  source_meta: {
-                                    mime_type: card.mime_type,
-                                    filename: card.filename,
-                                  },
-                                  title: card.title,
-                                }
-                              : null
-                          }
-                          size={CARD_FILE_FORMAT_ICON_SIZE}
-                        />
-                        <button
-                          type="button"
-                          onClick={() =>
-                            openJourney({
-                              anchorId: match.work_item_id,
-                              anchorTitle: card?.title ?? "",
-                              engagementId: card?.engagement_id ?? "",
-                            })
-                          }
-                          className="min-w-0 text-left text-sm font-medium underline-offset-2 hover:underline"
-                        >
-                          {card?.title || "Shipped work"}
-                        </button>
-                      </span>
-                      <span className="mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-0 leading-[1.35]">
-                        <span
-                          data-testid={`past-work-kind-${match.work_item_id}`}
-                          className="rounded-sm bg-[var(--nb-grey-1)] px-1 py-px font-mono text-[10px] uppercase tracking-[0.08em] text-[var(--nb-graphite)]"
-                        >
-                          {kindTag}
-                        </span>
-                        {card?.client_label || card?.engagement_code ? (
-                          <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-[var(--nb-soft)]">
-                            {card.client_label ?? ""}
-                            {card.client_label && card.engagement_code ? " · " : ""}
-                            <span className="font-semibold text-[var(--nb-green)]">
-                              {card.engagement_code ?? ""}
-                            </span>
-                          </span>
-                        ) : null}
-                      </span>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          openJourney({
+                            anchorId: match.work_item_id,
+                            anchorTitle: card?.title ?? "",
+                            engagementId: card?.engagement_id ?? "",
+                          })
+                        }
+                        className="block min-w-0 text-left text-sm font-medium underline-offset-2 hover:underline"
+                      >
+                        {card?.title || "Shipped work"}
+                      </button>
+                      <CardMetaTile
+                        testId={`past-work-meta-${match.work_item_id}`}
+                        kindTestId={`past-work-kind-${match.work_item_id}`}
+                        fileItem={
+                          card
+                            ? {
+                                meta: { file_format: card.file_format },
+                                source_meta: {
+                                  mime_type: card.mime_type,
+                                  filename: card.filename,
+                                },
+                                title: card.title,
+                              }
+                            : null
+                        }
+                        kindTag={kindTag}
+                        meta={card ? { deliverable_kind: card.deliverable_kind } : null}
+                        type={card?.kind}
+                        filename={card?.filename || card?.title || "Shipped work"}
+                        clientLabel={card?.client_label}
+                        engagementCode={card?.engagement_code}
+                      />
                       {card?.engagement_id ? (
                         <div className="mt-0.5 leading-[1.35]">
                           <Link
