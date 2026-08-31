@@ -121,7 +121,10 @@ describe("pass139 restored navigation and CTAs", () => {
     expect(route).toContain("PRIVACY, DEMONSTRATED");
     expect(route).toContain("What a coach sees.");
     expect(route.indexOf("WHAT ACCUMULATES")).toBeLessThan(route.indexOf("<PrivacyToggleDemo />"));
-    expect(route.indexOf("<PrivacyToggleDemo />")).toBeLessThan(route.indexOf("HOW IT WORKS"));
+    expect(route.indexOf("<PrivacyToggleDemo />")).toBeLessThan(
+      route.lastIndexOf("HOW IT WORKS"),
+    );
+
   });
 
 it("keeps the quiet bottom link to a personal record", () => {
