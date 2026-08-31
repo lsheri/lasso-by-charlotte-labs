@@ -91,14 +91,8 @@ function LandingPage() {
           </div>
         </section>
 
-        {/* One heavy graphite gradient line closes the pitch and opens the story. */}
-        <div
-          className="mt-10 h-[10px] w-full rounded-full"
-          style={{
-            background:
-              "linear-gradient(90deg, transparent, var(--nb-graphite) 12%, var(--nb-ink) 50%, var(--nb-graphite) 88%, transparent)",
-          }}
-        />
+        {/* A pencilled rule closes the pitch and opens the story. */}
+        <GraphiteRule animated className="mt-10 h-[10px] w-full text-graphite" />
 
         <div className="mt-6 flex flex-col items-center gap-3">
           <p className="micro-label">HOW IT WORKS</p>
