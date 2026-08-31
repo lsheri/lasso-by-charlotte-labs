@@ -4,6 +4,7 @@ import { cleanup, render as rtlRender, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { SidebarNav } from "@/components/layout/SidebarNav";
+import { PAST_WORK_NAV_LABEL } from "@/lib/past-work-shared";
 import { navGroups, coachNavGroups } from "@/components/layout/nav-config";
 import { OverviewWork } from "@/components/overview/OverviewWork";
 import { ArchivePile } from "@/components/archive/ArchivePile";
@@ -162,25 +163,27 @@ describe("the Overview sections", () => {
 });
 
 describe("the archive in the nav", () => {
-  it("is in Your work for members and admins, and never for a coach", () => {
-    const yourWork = navGroups.find((group) => group.label === "Your work");
-    expect(yourWork?.items.some((item) => item.to === "/archive")).toBe(true);
+  // Pass 138: the archive is reached from the Firm group, labelled "Past work",
+  // and every role has it, including a coach.
+  it("is in the Firm group for every role", () => {
+    const firm = navGroups.find((group) => group.label === "Firm");
+    expect(firm?.items.some((item) => item.to === "/archive")).toBe(true);
     expect(
       coachNavGroups.some((group) => group.items.some((item) => item.to === "/archive")),
-    ).toBe(false);
+    ).toBe(true);
 
     render(<SidebarNav />);
-    expect(screen.getByText(ARCHIVE_NAV_LABEL)).toBeTruthy();
+    expect(screen.getByText(PAST_WORK_NAV_LABEL)).toBeTruthy();
     cleanup();
 
     mocks.profile = { id: "p2", role: "admin", org_type: "company", display_name: "B" };
     render(<SidebarNav />);
-    expect(screen.getByText(ARCHIVE_NAV_LABEL)).toBeTruthy();
+    expect(screen.getByText(PAST_WORK_NAV_LABEL)).toBeTruthy();
     cleanup();
 
     mocks.profile = { id: "p3", role: "coach", org_type: "company", display_name: "C" };
     render(<SidebarNav />);
-    expect(screen.queryByText(ARCHIVE_NAV_LABEL)).toBeNull();
+    expect(screen.getByText(PAST_WORK_NAV_LABEL)).toBeTruthy();
   });
 });
 

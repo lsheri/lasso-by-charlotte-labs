@@ -64,6 +64,8 @@ describe("Pass 123: the sidebar grows an Admin section", () => {
     expect(navGroups.map((g) => g.label)).toEqual([
       "Connectors",
       "Work",
+      // Pass 138: Past work sits in its own Firm group under Work.
+      "Firm",
       "Engagements",
       "Your work",
       "Admin",
