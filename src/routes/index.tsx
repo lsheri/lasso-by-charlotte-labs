@@ -5,6 +5,8 @@ import { PublicHeader } from "@/components/layout/PublicHeader";
 import { ClipPlayer } from "@/components/marketing/ClipPlayer";
 import { FocusSection } from "@/components/marketing/FocusSection";
 import { PrivacyToggleDemo } from "@/components/marketing/PrivacyToggleDemo";
+import { VendorLabel } from "@/components/marketing/VendorMark";
+import pastWorkLibrary from "@/assets/past-work-library.png.asset.json";
 import { GraphiteRule } from "@/components/notebook/marks";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
