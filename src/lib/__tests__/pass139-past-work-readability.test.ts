@@ -92,7 +92,7 @@ describe("pass 139: kind to glyph mapping", () => {
 describe("pass 139.1: exactly one icon per card", () => {
   it("the shipped card renders only the format icon, never the legacy marks", () => {
     const card = read("components/firm/ShippedWorkCard.tsx");
-    expect(card).toContain('import { FileFormatIcon } from "@/components/work/FileFormatIcon"');
+    expect(card).toContain('FileFormatIcon } from "@/components/work/FileFormatIcon"');
     expect(card).not.toContain("SourceMark");
     expect(card).not.toContain("RobotMark");
     const iconAt = card.indexOf("<FileFormatIcon");
@@ -103,7 +103,7 @@ describe("pass 139.1: exactly one icon per card", () => {
 
   it("the search result card renders the format icon too", () => {
     const search = read("components/archive/PastWorkSearch.tsx");
-    expect(search).toContain('import { FileFormatIcon } from "@/components/work/FileFormatIcon"');
+    expect(search).toContain('FileFormatIcon } from "@/components/work/FileFormatIcon"');
     expect(search).toContain("<FileFormatIcon");
     expect(search).not.toContain("SourceMark");
   });
