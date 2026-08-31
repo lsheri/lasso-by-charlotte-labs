@@ -132,7 +132,7 @@ it("keeps the quiet bottom link to a personal record", () => {
   });
 
   it("uses pencil titles on every content section", () => {
-    for (const t of [
+      "A library your team can learn from",
       "How the work was made",
       "What was never checked",
       "What accumulates",
