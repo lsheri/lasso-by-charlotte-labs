@@ -97,7 +97,6 @@ function LandingPage() {
           <h1 className="pencil-title mt-5 text-foreground">
             AI made knowledge work invisible. We make it audit ready and coachable.
           </h1>
-          <FrontDoorRule className="mt-3 h-[10px] w-full max-w-xl" />
           <p className="mt-6 max-w-2xl text-base leading-relaxed text-muted-foreground">
             AI work happens in chat windows, ships inside deliverables, and vanishes. Not because
             anyone hides it, because nothing keeps it.
@@ -141,8 +140,8 @@ function LandingPage() {
             and what a colleague could have learned from it.
           </p>
           {/* A loose collage: each tile labelled with its product, offset off the grid. */}
-          <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-4">
-            <div className="sm:-rotate-[0.6deg] sm:-translate-y-3">
+          <div className="mt-10 grid grid-cols-2 gap-x-3 gap-y-12 sm:gap-x-5 sm:gap-y-14">
+            <div className="sm:-rotate-[0.6deg]">
               <VendorLabel vendor="chatgpt" name="ChatGPT" />
               <ClipPlayer
                 src="/videos/lasso-chatgpt.mp4"
