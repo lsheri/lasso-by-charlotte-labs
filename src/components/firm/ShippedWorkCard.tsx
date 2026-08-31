@@ -1,12 +1,10 @@
 import { MoreHorizontal } from "lucide-react";
 import { useEffect, useState } from "react";
 
-import { GraphiteRule, RobotMark } from "@/components/notebook/marks";
+import { GraphiteRule } from "@/components/notebook/marks";
 import { Button } from "@/components/ui/button";
 import { KindIcon } from "@/components/work/KindIcon";
-import { SourceMark } from "@/components/work/SourceMark";
-import { deliverableKindLabel, deliverableKindOf } from "@/lib/deliverable-kinds";
-import { journeyTypeLabel } from "@/lib/journey";
+import { deliverableTag } from "@/lib/deliverable-kinds";
 import { openJourney } from "@/lib/journey-state";
 import {
   TAKE_BACK_CONFIRM_LINE,
@@ -42,8 +40,7 @@ export function ShippedWorkCard({
   // The engagement is what the firm recognises; the file name is a detail.
   const headline = card.engagement_title?.trim() || card.title;
   const brief = card.engagement_brief?.trim() ?? "";
-  const kind = deliverableKindOf(card.meta);
-  const kindTag = kind ? deliverableKindLabel(kind) : journeyTypeLabel(card.type);
+  const kindTag = deliverableTag(card.meta, card.type);
 
   return (
     <div
@@ -65,20 +62,6 @@ export function ShippedWorkCard({
       >
         <span className="flex items-start gap-2">
           <KindIcon meta={card.meta} type={card.type} size={14} className="mt-[2px]" />
-          {card.type === "app" ? (
-            <RobotMark size={16} className="text-muted-foreground" />
-          ) : (
-            <SourceMark
-              item={{
-                source: card.source ?? undefined,
-                source_vendor: card.source_vendor,
-                source_meta: card.source_meta,
-                meta: card.meta,
-                type: card.type,
-              }}
-              size={14}
-            />
-          )}
           <span className="min-w-0 break-words text-sm font-medium text-foreground">
             {headline}
           </span>

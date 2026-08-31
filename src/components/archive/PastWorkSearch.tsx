@@ -3,8 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState, type FormEvent } from "react";
 
 import { KindIcon } from "@/components/work/KindIcon";
-import { deliverableKindLabel, deliverableKindOf } from "@/lib/deliverable-kinds";
-import { journeyTypeLabel } from "@/lib/journey";
+import { deliverableTag } from "@/lib/deliverable-kinds";
 import {
   PAST_WORK_EMPTY_LINE,
   PAST_WORK_FOOTER_LINE,
@@ -103,10 +102,10 @@ export function PastWorkSearch() {
               <ul className="mt-2 flex flex-col gap-3">
                 {answer.matches.map((match) => {
                   const card = answer.byId.get(match.work_item_id);
-                  const kind = card ? deliverableKindOf({ deliverable_kind: card.deliverable_kind }) : null;
-                  const kindTag = kind
-                    ? deliverableKindLabel(kind)
-                    : journeyTypeLabel(card?.kind ?? "document");
+                  const kindTag = deliverableTag(
+                    card ? { deliverable_kind: card.deliverable_kind } : null,
+                    card?.kind,
+                  );
                   return (
                     <li
                       key={match.work_item_id}

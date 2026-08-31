@@ -37,15 +37,20 @@ function card(over: Partial<ShippedCard> = {}): ShippedCard {
 }
 
 describe("pass 116: the shipped card's true identity", () => {
-  it("wears the Google Slides mark when the evidence says deck", () => {
-    render(<ShippedWorkCard card={card()} canTakeBack={false} />);
-    expect(screen.getByLabelText("Google Slides")).toBeTruthy();
+  it("wears exactly one kind glyph, the deck glyph when the type says deck", () => {
+    const { container } = render(<ShippedWorkCard card={card()} canTakeBack={false} />);
+    const glyphs = container.querySelectorAll("[data-glyph]");
+    expect(glyphs.length).toBe(1);
+    expect(glyphs[0]?.getAttribute("data-glyph")).toBe("deck");
+    expect(screen.getByTestId("shipped-card-kind-w1").textContent).toBe("Deck");
   });
 
-  it("wears a robot when the deliverable is an app", () => {
-    render(<ShippedWorkCard card={card({ type: "app" })} canTakeBack={false} />);
-    expect(screen.getByLabelText("App")).toBeTruthy();
-    expect(screen.queryByLabelText("Google Slides")).toBeNull();
+  it("an app deliverable wears the pen-free kind glyph too, never a second mark", () => {
+    const { container } = render(
+      <ShippedWorkCard card={card({ type: "app" })} canTakeBack={false} />,
+    );
+    expect(container.querySelectorAll("[data-glyph]").length).toBe(1);
+    expect(screen.getByTestId("shipped-card-kind-w1").textContent).toBe("Document");
   });
 
   it("headlines the engagement, and falls back to the work item title", () => {

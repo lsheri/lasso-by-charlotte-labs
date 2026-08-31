@@ -75,6 +75,27 @@ export function deliverableGlyph(
   return TYPE_GLYPH[(type ?? "").toLowerCase()] ?? "document";
 }
 
+/** The tag word for a glyph, used when no deliverable kind was chosen. */
+const GLYPH_TAG: Record<DeliverableGlyph, string> = {
+  document: "Document",
+  deck: "Deck",
+  sheet: "Sheet",
+  envelope: "Email",
+  code: "Code",
+  pen: "Creative",
+};
+
+/**
+ * The metadata tag on a shipped card. A chosen kind speaks first; without one
+ * the work item type decides (a deck is a Deck, never a memo); anything else
+ * is a Document.
+ */
+export function deliverableTag(meta: unknown, type: string | null | undefined): string {
+  const kind = deliverableKindOf(meta);
+  if (kind) return deliverableKindLabel(kind);
+  return GLYPH_TAG[deliverableGlyph(null, type)];
+}
+
 type SuggestInput = {
   title?: string | null | undefined;
   type?: string | null | undefined;
