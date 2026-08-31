@@ -5,50 +5,12 @@ import type { InviteEmailResult } from "./invites-shared";
 
 type Client = SupabaseClient<Database>;
 
-/**
- * Email clients ignore CSS custom properties, so the app palette is mirrored
- * here as one small token map, the only place literals may appear in email.
- */
-const MAIL = {
-  card: "#ffffff",
-  ink: "#111413",
-  muted: "#5a5d5c",
-  cta: "#12653d",
-} as const;
-
-function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
-
-function body(inviter: string, url: string) {
-  const roleLine =
-    "Lasso is where they keep a record of the work they do with AI, so someone can coach it.";
-  const text = [
-    `${inviter} invited you to Lasso.`,
-    "",
-    roleLine,
-    "You will only ever see the work they choose to share with you.",
-    "Nothing else in their workspace is visible to you.",
-    "",
-    `Accept the invitation: ${url}`,
-    "",
-    "Charlotte Labs",
-  ].join("\n");
-
-  const html = `<!doctype html><html><body style="margin:0;padding:24px;background:${MAIL.card};font-family:Helvetica,Arial,sans-serif;color:${MAIL.ink}">
-<div style="max-width:520px;margin:0 auto">
-<p style="font-size:15px;line-height:1.6">${escapeHtml(inviter)} invited you to Lasso.</p>
-<p style="font-size:15px;line-height:1.6">${escapeHtml(roleLine)} You will only ever see the work they choose to share with you. Nothing else in their workspace is visible to you.</p>
-<p style="margin:28px 0"><a href="${escapeHtml(url)}" style="display:inline-block;background:${MAIL.cta};color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:8px;font-size:14px">Accept the invitation</a></p>
-<p style="font-size:13px;line-height:1.6;color:${MAIL.muted}">Or paste this link into your browser:<br>${escapeHtml(url)}</p>
-<p style="font-size:12px;color:${MAIL.muted};margin-top:32px">Charlotte Labs</p>
-</div></body></html>`;
-
-  return { text, html };
+/** Falls back to the canonical sending address when only the key is set. */
+export function inviteSenderAddress(): string {
+  const configured = process.env["RESEND_FROM"];
+  if (configured) return configured;
+  const domain = process.env["INVITE_EMAIL_DOMAIN"] ?? "lasso.charlotte-labs.com";
+  return `Lasso <invites@${domain}>`;
 }
 
 /** Sends the invitation through Resend. Missing secrets are not an error. */
@@ -56,21 +18,27 @@ export async function sendInviteViaResend(args: {
   to: string;
   inviterName: string;
   acceptUrl: string;
+  orgName?: string | undefined;
 }): Promise<InviteEmailResult> {
   const apiKey = process.env["RESEND_API_KEY"];
-  const from = process.env["RESEND_FROM"];
-  if (!apiKey || !from) {
+  if (!apiKey) {
     return { sent: false, reason: "not_configured", message: null };
   }
 
-  const { text, html } = body(args.inviterName, args.acceptUrl);
+  const { renderInviteEmail } = await import("./invite-email");
+  const { subject, text, html } = renderInviteEmail({
+    inviterName: args.inviterName,
+    orgName: args.orgName || "your organization",
+    acceptUrl: args.acceptUrl,
+  });
+
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
     body: JSON.stringify({
-      from,
+      from: inviteSenderAddress(),
       to: [args.to],
-      subject: `${args.inviterName} invited you to review their work on Lasso`,
+      subject,
       html,
       text,
     }),
@@ -86,6 +54,36 @@ export async function sendInviteViaResend(args: {
   }
   return { sent: true, reason: "sent", message: null };
 }
+
+/**
+ * Reads the invite behind a sign up attempt with the admin client and answers
+ * only whether it may be used. Never says whether an address has an account.
+ */
+export async function checkSignupInviteByCode(
+  code: string,
+  email: string | null,
+): Promise<import("./signup-invite").SignupInviteCheck> {
+  const { evaluateSignupInvite } = await import("./signup-invite");
+  if (!code || !/^[a-zA-Z0-9-]{4,64}$/.test(code)) {
+    return evaluateSignupInvite(null, email);
+  }
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data: invite } = await supabaseAdmin
+    .from("invites")
+    .select("code, org_id, email, expires_at, used_at, revoked_at")
+    .eq("code", code)
+    .maybeSingle();
+  if (!invite) return evaluateSignupInvite(null, email);
+
+  const { data: org } = await supabaseAdmin
+    .from("orgs")
+    .select("name")
+    .eq("id", invite.org_id)
+    .maybeSingle();
+
+  return evaluateSignupInvite(invite, email, new Date(), org?.name ?? null);
+}
+
 
 /** The invite must belong to the caller's org before anything is emailed. */
 export async function assertInviteInOrg(supabase: Client, code: string, orgId: string) {
