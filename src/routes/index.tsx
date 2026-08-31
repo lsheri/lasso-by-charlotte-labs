@@ -154,7 +154,7 @@ function LandingPage() {
                 label="Work happening inside ChatGPT"
               />
             </div>
-            <div className="sm:rotate-[0.5deg] sm:translate-y-6">
+            <div className="sm:rotate-[0.5deg] sm:translate-y-5">
               <VendorLabel vendor="claude" name="Claude" />
               <ClipPlayer
                 src="/videos/lasso-claude.mp4"
@@ -167,7 +167,7 @@ function LandingPage() {
                 label="Work happening inside Claude"
               />
             </div>
-            <div className="sm:rotate-[0.4deg] sm:translate-y-2">
+            <div className="sm:rotate-[0.4deg]">
               <VendorLabel vendor="gemini" name="Gemini" />
               <ClipPlayer
                 src="/videos/lasso-gemini.mp4"
@@ -180,7 +180,7 @@ function LandingPage() {
                 label="Work happening inside Gemini"
               />
             </div>
-            <div className="sm:-rotate-[0.5deg] sm:-translate-y-4">
+            <div className="sm:-rotate-[0.5deg] sm:translate-y-5">
               <VendorLabel vendor="lovable" name="Lovable" />
               <ClipPlayer
                 src="/videos/lasso-lovable.mp4"
