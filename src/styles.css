@@ -7,6 +7,9 @@
 @import "@fontsource/archivo/700.css";
 @import "@fontsource/jetbrains-mono/400.css";
 @import "@fontsource/jetbrains-mono/500.css";
+@import "@fontsource/caveat/500.css";
+@import "@fontsource/caveat/700.css";
+
 
 @custom-variant dark (&:is(.dark *));
 
@@ -2587,4 +2590,39 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 .nb-reading-pupil-static {
   animation: none;
   transform: none;
+}
+
+/* Pass 141: handwritten pencil section titles on the public landing page. */
+@utility pencil-title {
+  font-family: "Caveat", var(--font-sans);
+  font-weight: 700;
+  font-size: 2.25rem;
+  line-height: 1.1;
+  letter-spacing: 0.01em;
+  color: var(--nb-graphite);
+}
+
+@media (min-width: 768px) {
+  .pencil-title {
+    font-size: 3rem;
+  }
+}
+
+/* Scroll focus: sections away from the viewport centre fade and soften. */
+@utility focus-section {
+  transition:
+    opacity 400ms ease,
+    filter 400ms ease;
+}
+
+@utility focus-section-dim {
+  opacity: 0.35;
+  filter: blur(2.5px);
+}
+
+@media (max-width: 767px), (prefers-reduced-motion: reduce) {
+  .focus-section-dim {
+    opacity: 1;
+    filter: none;
+  }
 }

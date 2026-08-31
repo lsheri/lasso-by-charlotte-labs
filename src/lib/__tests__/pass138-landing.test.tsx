@@ -13,7 +13,6 @@ const COPY: string[] = [
 "Circle any fact in a deliverable and see exactly where it came from, across every tool your team used.",
   "Every deliverable carries the record of how it was made. Email, chats, drive, in the order the work actually happened.",
   "The record also shows what was never checked, and what to run to check it.",
-  "Sample data from a test engagement. Not client work.",
   "WHAT ACCUMULATES",
   "Every finished piece of work leaves a trace of how it was made. Over an engagement, then a practice, then a firm, those traces become something a firm can actually learn from: how this kind of analysis gets built here, what the good version looked like, which claims held up.",
   "The work belongs to the people who did it. What the firm sees is the work they chose to place there, never a feed of what anyone is doing.",
@@ -21,7 +20,7 @@ const COPY: string[] = [
   "Private by default. Work you do not place stays private.",
   "Nobody is scored. There is no rating, ranking, or percentage about any person.",
   "You own your record. It travels with you.",
-  "Charlotte Labs · hello@charlotte-labs.com",
+  "liam@charlotte-labs.com",
   "https://charlotte-labs.com",
 ];
 
@@ -127,6 +126,33 @@ describe("pass139 restored navigation and CTAs", () => {
 
 it("keeps the quiet bottom link to a personal record", () => {
     expect(route).toContain("Start my own record");
+  });
+
+  it("uses pencil titles on every content section", () => {
+    for (const t of [
+      "How the work was made",
+      "What was never checked",
+      "What accumulates",
+      "What a coach sees.",
+      "How it works",
+    ]) {
+      expect(route).toContain(t);
+    }
+    expect(route).toContain("pencil-title");
+  });
+
+  it("wraps sections in the scroll focus wrapper", () => {
+    expect(route).toContain("<FocusSection");
+  });
+
+  it("drops the sample data notice", () => {
+    expect(route).not.toContain("Sample data from a test engagement");
+  });
+
+  it("carries site, email and linkedin links in the footer", () => {
+    expect(route).toContain("mailto:liam@charlotte-labs.com");
+    expect(route).toContain("https://charlotte-labs.com");
+    expect(route).toContain("linkedin.com");
   });
 
   it("shows no micro-label above the hero title", () => {
