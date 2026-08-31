@@ -242,9 +242,11 @@ function LandingPage() {
           <p className="micro-label">PRIVACY, DEMONSTRATED</p>
           <h2 className="pencil-title mt-4">What a coach sees.</h2>
           <p className="mt-5 max-w-2xl text-base leading-relaxed text-foreground">
-            Your work is private by default. You choose what to share with a manager, coach or
-            enablement lead, and they see only that, so the conversation is about learning,
-            development and getting better at AI shaped work.
+            Your work is private by default. You choose what to share with a{" "}
+            <strong className="font-semibold text-foreground">manager</strong>,{" "}
+            <strong className="font-semibold text-foreground">coach</strong> or enablement lead, and
+            they see only that, so the conversation is about learning, development and getting
+            better at AI shaped work.
           </p>
           <div className="mt-8">
             <PrivacyToggleDemo />
