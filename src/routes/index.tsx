@@ -69,7 +69,7 @@ function LandingPage() {
 
       <main className="mx-auto max-w-3xl px-6 pb-24 pt-16 md:px-10 md:pt-20">
         <section>
-          <h1 className="mt-5 font-mono text-xl font-bold uppercase leading-snug tracking-[0.06em] text-foreground md:text-3xl">
+          <h1 className="pencil-title mt-5 text-foreground">
             AI made knowledge work invisible. We make it audit ready and coachable.
           </h1>
           <GraphiteRule animated className="mt-3 h-[6px] w-full max-w-xl text-graphite" />
