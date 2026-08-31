@@ -2,6 +2,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 
 import { ArchiveChat } from "@/components/archive/ArchiveChat";
+import { PastWorkSearch } from "@/components/archive/PastWorkSearch";
 import { ArchivePile } from "@/components/archive/ArchivePile";
 import { GraphiteRule } from "@/components/notebook/marks";
 import { useProfile } from "@/hooks/use-profile";
@@ -39,6 +40,10 @@ export function ArchivePage() {
         <GraphiteRule className="mt-1 h-[6px] w-full text-muted-foreground" />
       </div>
       <p className="mt-2 max-w-[60ch] text-sm text-muted-foreground">{ARCHIVE_SUBHEAD}</p>
+
+      <div className="mt-5">
+        <PastWorkSearch />
+      </div>
 
       <div className="mt-5">
         <ArchiveChat cards={cards} onResultsChange={onResultsChange} />

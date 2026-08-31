@@ -60,6 +60,8 @@ export type TelemetryEvent =
   | "extract.generated"
   /** Pass 125: one archive search, metered. Counts only, never the question. */
   | "archive.searched"
+  /** Pass 138: one Past work search. Counts only, never the description. */
+  | "archive.search"
   /** Client-side interaction timing. Emitted only by src/lib/perf-timing.ts. */
   | "perf.interaction"
   /** Hard document load timing. Emitted only by src/lib/pageload-timing.ts. */

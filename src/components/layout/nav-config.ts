@@ -9,12 +9,13 @@ export const navGroups: NavGroup[] = [
     items: [{ label: "Where work lives", to: "/connectors", icon: "connectors" }],
   },
   { label: "Work", items: [{ label: "All work & mapping", to: "/work", icon: "work" }] },
+  // Pass 138: shipped work is a destination of its own, open to every role.
+  { label: "Firm", items: [{ label: "Past work", to: "/archive", icon: "firm" }] },
   { label: "Engagements", items: [], emptyState: "No engagements yet" },
   {
     label: "Your work",
     items: [
       { label: "Overview", to: "/overview", icon: "overview" },
-      { label: "The archive", to: "/archive", icon: "firm" },
       { label: "Reflect", to: "/reflect", icon: "reflect" },
 
       { label: "AI record", to: "/ai-record", icon: "ai-record" },
@@ -39,6 +40,7 @@ export const navGroups: NavGroup[] = [
  */
 export const coachNavGroups: NavGroup[] = [
   { label: "Coaching", items: [{ label: "People you coach", to: "/coaching", icon: "members" }] },
+  { label: "Firm", items: [{ label: "Past work", to: "/archive", icon: "firm" }] },
   {
     label: "Your account",
     items: [
