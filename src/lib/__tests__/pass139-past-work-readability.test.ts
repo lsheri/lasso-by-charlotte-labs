@@ -10,6 +10,7 @@ import { describe, expect, it } from "vitest";
 import {
   DELIVERABLE_KINDS,
   deliverableGlyph,
+  deliverableTag,
   type DeliverableGlyph,
 } from "@/lib/deliverable-kinds";
 import { PAST_WORK_GROUP_LABEL, PAST_WORK_NAV_LABEL } from "@/lib/past-work-shared";
@@ -63,9 +64,22 @@ describe("pass 139: kind to glyph mapping", () => {
     expect(deliverableGlyph({}, "unknown-thing")).toBe("document");
   });
 
+  it("the tag falls back on the work item type, never a default kind", () => {
+    // Pass 139.1: the no-kind deck case and the no-kind document case.
+    expect(deliverableTag(null, "deck")).toBe("Deck");
+    expect(deliverableTag({}, "deck")).toBe("Deck");
+    expect(deliverableTag(null, "document")).toBe("Document");
+    expect(deliverableTag(null, "sheet")).toBe("Sheet");
+    expect(deliverableTag(null, "email")).toBe("Email");
+    expect(deliverableTag(null, "unknown-thing")).toBe("Document");
+    expect(deliverableTag({ deliverable_kind: "memo_or_report" }, "deck")).toBe("Memo or report");
+    expect(deliverableTag({ deliverable_kind: "deck" }, null)).toBe("Deck");
+  });
+
   it("an unknown stored kind falls back safely", () => {
     expect(deliverableGlyph({ deliverable_kind: "hologram" }, "deck")).toBe("deck");
     expect(deliverableGlyph({ deliverable_kind: "hologram" }, null)).toBe("document");
+    expect(deliverableTag({ deliverable_kind: "hologram" }, "deck")).toBe("Deck");
   });
 
   it("every declared kind has a glyph", () => {
@@ -75,10 +89,12 @@ describe("pass 139: kind to glyph mapping", () => {
   });
 });
 
-describe("pass 139: every card carries the kind icon", () => {
-  it("the shipped card renders KindIcon left of the title", () => {
+describe("pass 139.1: exactly one icon per card", () => {
+  it("the shipped card renders only KindIcon, never the legacy marks", () => {
     const card = read("components/firm/ShippedWorkCard.tsx");
     expect(card).toContain('import { KindIcon } from "@/components/work/KindIcon"');
+    expect(card).not.toContain("SourceMark");
+    expect(card).not.toContain("RobotMark");
     const iconAt = card.indexOf("<KindIcon");
     const headlineAt = card.indexOf("{headline}");
     expect(iconAt).toBeGreaterThan(-1);
@@ -89,6 +105,7 @@ describe("pass 139: every card carries the kind icon", () => {
     const search = read("components/archive/PastWorkSearch.tsx");
     expect(search).toContain('import { KindIcon } from "@/components/work/KindIcon"');
     expect(search).toContain("<KindIcon");
+    expect(search).not.toContain("SourceMark");
   });
 
   it("the glyph set covers the required shapes", () => {
