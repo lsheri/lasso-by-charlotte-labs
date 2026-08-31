@@ -1,5 +1,5 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 import { PublicHeader } from "@/components/layout/PublicHeader";
 import { ClipPlayer } from "@/components/marketing/ClipPlayer";
@@ -7,7 +7,7 @@ import { FocusSection } from "@/components/marketing/FocusSection";
 import { PrivacyToggleDemo } from "@/components/marketing/PrivacyToggleDemo";
 import { VendorLabel } from "@/components/marketing/VendorMark";
 import pastWorkLibrary from "@/assets/past-work-library.png.asset.json";
-import { GraphiteRule } from "@/components/notebook/marks";
+import { FrontDoorRule, ScrollCue } from "@/components/notebook/marks";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { startSessionReplay, stopSessionReplay } from "@/lib/posthog-client";
@@ -65,6 +65,29 @@ function LandingPage() {
     return () => startSessionReplay();
   }, []);
 
+  // The story below the fold stays blurred until the visitor actually scrolls.
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setScrolled(true);
+      return;
+    }
+    let frame = 0;
+    const onScroll = () => {
+      if (frame) return;
+      frame = window.requestAnimationFrame(() => {
+        frame = 0;
+        if (window.scrollY > 120) setScrolled(true);
+      });
+    };
+    onScroll();
+    if (!scrolled) window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      if (frame) window.cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", onScroll);
+    };
+  }, [scrolled]);
+
   return (
     <div className="min-h-screen bg-background">
       <PublicHeader current="/" />
@@ -74,7 +97,7 @@ function LandingPage() {
           <h1 className="pencil-title mt-5 text-foreground">
             AI made knowledge work invisible. We make it audit ready and coachable.
           </h1>
-          <GraphiteRule animated className="mt-3 h-[6px] w-full max-w-xl text-graphite" />
+          <FrontDoorRule className="mt-3 h-[10px] w-full max-w-xl" />
           <p className="mt-6 max-w-2xl text-base leading-relaxed text-muted-foreground">
             AI work happens in chat windows, ships inside deliverables, and vanishes. Not because
             anyone hides it, because nothing keeps it.
@@ -91,16 +114,21 @@ function LandingPage() {
               </Link>
             </Button>
           </div>
+          <div className="mt-14 flex justify-center">
+            <ScrollCue />
+          </div>
         </section>
 
-        {/* A pencilled rule closes the pitch and opens the story. */}
-        <GraphiteRule animated className="mt-10 h-[10px] w-full text-graphite" />
+        {/* A pencilled stroke closes the pitch and opens the story. */}
+        <FrontDoorRule className="mt-12 h-[10px] w-full" />
 
         <div className="mt-6 flex flex-col items-center gap-3">
-          <p className="micro-label">HOW IT WORKS</p>
+          <p className="micro-label font-bold">HOW IT WORKS</p>
         </div>
 
-        <FocusSection className="mt-12 md:translate-x-8 lg:translate-x-12">
+        <FocusSection
+          className={`mt-12 md:translate-x-8 lg:translate-x-12 ${scrolled ? "" : "landing-locked"}`}
+        >
           <p className="micro-label">WHERE THE WORK NOW HAPPENS</p>
           <h2 className="pencil-title mt-4">Where the work now happens</h2>
           <p className="mt-5 max-w-2xl text-base leading-relaxed text-foreground">
