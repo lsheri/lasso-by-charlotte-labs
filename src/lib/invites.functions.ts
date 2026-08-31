@@ -82,16 +82,16 @@ export const sendInviteEmail = createServerFn({ method: "POST" })
     }
     await assertInviteInOrg(context.supabase, data.code, profile.org_id);
 
-    const { data: me } = await context.supabase
-      .from("profiles")
-      .select("display_name")
-      .eq("id", profile.id)
-      .maybeSingle();
+    const [{ data: me }, { data: org }] = await Promise.all([
+      context.supabase.from("profiles").select("display_name").eq("id", profile.id).maybeSingle(),
+      context.supabase.from("orgs").select("name").eq("id", profile.org_id).maybeSingle(),
+    ]);
 
     const result = await sendInviteViaResend({
       to: data.email.trim(),
       inviterName: me?.display_name || "Someone at your firm",
       acceptUrl: data.accept_url,
+      orgName: org?.name ?? undefined,
     });
 
     // Content-free: never the recipient address, only whether it went out.
@@ -113,7 +113,11 @@ export const sendInviteEmail = createServerFn({ method: "POST" })
 export const createInvite = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
-    (input: { profile_id?: string | undefined; role: "coach" | "em"; email?: string | undefined }) =>
+    (input: {
+      profile_id?: string | undefined;
+      role: "coach" | "em" | "admin";
+      email?: string | undefined;
+    }) =>
       input,
   )
   .handler(async ({ data, context }): Promise<CreateInviteResult> => {
