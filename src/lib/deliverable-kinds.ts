@@ -39,6 +39,42 @@ export function deliverableKindOf(meta: unknown): DeliverableKind | null {
   return (DELIVERABLE_KINDS as readonly string[]).includes(kind) ? (kind as DeliverableKind) : null;
 }
 
+/**
+ * Pass 139: the small glyph every shipped card wears. Named shapes, not emoji,
+ * so the mapping can be pinned in a test and the icon drawn in one family.
+ */
+export type DeliverableGlyph = "document" | "deck" | "sheet" | "envelope" | "code" | "pen";
+
+const KIND_GLYPH: Record<DeliverableKind, DeliverableGlyph> = {
+  proposal: "document",
+  deck: "deck",
+  model_or_budget: "sheet",
+  memo_or_report: "document",
+  email_or_comms: "envelope",
+  code: "code",
+  creative_or_design: "pen",
+  other: "document",
+};
+
+const TYPE_GLYPH: Record<string, DeliverableGlyph> = {
+  deck: "deck",
+  sheet: "sheet",
+  email: "envelope",
+  document: "document",
+  code: "code",
+  image: "pen",
+};
+
+/** Kind wins; the work item type is the fallback; unknown is a document. */
+export function deliverableGlyph(
+  meta: unknown,
+  type: string | null | undefined,
+): DeliverableGlyph {
+  const kind = deliverableKindOf(meta);
+  if (kind) return KIND_GLYPH[kind];
+  return TYPE_GLYPH[(type ?? "").toLowerCase()] ?? "document";
+}
+
 type SuggestInput = {
   title?: string | null | undefined;
   type?: string | null | undefined;

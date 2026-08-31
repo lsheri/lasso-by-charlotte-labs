@@ -241,7 +241,7 @@ describe("111.4 the card speaks about work, never about a person", () => {
     for (const word of ["prompt", "efficiency", "score", "rating"]) {
       expect(text).not.toContain(word);
     }
-    expect(screen.getByText("Board deck")).toBeTruthy();
+    expect(screen.getAllByText("Board deck").length).toBeGreaterThan(0);
     expect(text).toContain("shipped by ada");
   });
 

@@ -69,8 +69,10 @@ describe("pass 116: the shipped card's true identity", () => {
 
   it("moves the deliverable filename into the meta line", () => {
     const { container } = render(<ShippedWorkCard card={card()} canTakeBack={false} />);
-    const meta = container.querySelector("span.font-mono");
-    expect(meta?.textContent).toContain("Q2 board deck.pptx");
-    expect(meta?.textContent).toContain("Art-001");
+    const meta = [...container.querySelectorAll("span.font-mono")]
+      .map((el) => el.textContent ?? "")
+      .join(" ");
+    expect(meta).toContain("Q2 board deck.pptx");
+    expect(meta).toContain("Art-001");
   });
 });

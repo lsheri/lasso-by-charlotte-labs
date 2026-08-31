@@ -2,6 +2,9 @@ import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useState, type FormEvent } from "react";
 
+import { KindIcon } from "@/components/work/KindIcon";
+import { deliverableKindLabel, deliverableKindOf } from "@/lib/deliverable-kinds";
+import { journeyTypeLabel } from "@/lib/journey";
 import {
   PAST_WORK_EMPTY_LINE,
   PAST_WORK_FOOTER_LINE,
@@ -100,30 +103,59 @@ export function PastWorkSearch() {
               <ul className="mt-2 flex flex-col gap-3">
                 {answer.matches.map((match) => {
                   const card = answer.byId.get(match.work_item_id);
+                  const kind = card ? deliverableKindOf({ deliverable_kind: card.deliverable_kind }) : null;
+                  const kindTag = kind
+                    ? deliverableKindLabel(kind)
+                    : journeyTypeLabel(card?.kind ?? "document");
                   return (
                     <li
                       key={match.work_item_id}
                       className="rounded-sm border border-[var(--nb-rule)] bg-background p-3"
                     >
-                      <button
-                        type="button"
-                        onClick={() =>
-                          openJourney({
-                            anchorId: match.work_item_id,
-                            anchorTitle: card?.title ?? "",
-                            engagementId: card?.engagement_id ?? "",
-                          })
-                        }
-                        className="text-left text-sm font-medium underline-offset-2 hover:underline"
-                      >
-                        {card?.title || "Shipped work"}
-                      </button>
+                      <span className="flex items-start gap-2">
+                        <KindIcon
+                          meta={card ? { deliverable_kind: card.deliverable_kind } : null}
+                          type={card?.kind}
+                          size={14}
+                          className="mt-[2px]"
+                        />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            openJourney({
+                              anchorId: match.work_item_id,
+                              anchorTitle: card?.title ?? "",
+                              engagementId: card?.engagement_id ?? "",
+                            })
+                          }
+                          className="min-w-0 text-left text-sm font-medium underline-offset-2 hover:underline"
+                        >
+                          {card?.title || "Shipped work"}
+                        </button>
+                      </span>
+                      <span className="mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
+                        <span
+                          data-testid={`past-work-kind-${match.work_item_id}`}
+                          className="rounded-sm bg-[var(--nb-grey-1)] px-1 py-px font-mono text-[10px] uppercase tracking-[0.08em] text-[var(--nb-graphite)]"
+                        >
+                          {kindTag}
+                        </span>
+                        {card?.client_label || card?.engagement_code ? (
+                          <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-[var(--nb-mid)]">
+                            {card.client_label ?? ""}
+                            {card.client_label && card.engagement_code ? " · " : ""}
+                            <span className="font-semibold text-[var(--nb-green)]">
+                              {card.engagement_code ?? ""}
+                            </span>
+                          </span>
+                        ) : null}
+                      </span>
                       {card?.engagement_id ? (
                         <div className="mt-0.5">
                           <Link
                             to="/engagements/$id"
                             params={{ id: card.engagement_id }}
-                            className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground underline-offset-2 hover:underline"
+                            className="font-mono text-[11px] uppercase tracking-[0.08em] text-[var(--nb-mid)] underline-offset-2 hover:underline"
                           >
                             {[card.engagement_code, card.engagement_title]
                               .filter(Boolean)
