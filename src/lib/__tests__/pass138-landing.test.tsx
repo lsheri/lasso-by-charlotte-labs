@@ -140,8 +140,6 @@ it("keeps the quiet bottom link to a personal record", () => {
       "How it works",
     ]) {
 
-
-    ]) {
       expect(route).toContain(t);
     }
     expect(route).toContain("pencil-title");
