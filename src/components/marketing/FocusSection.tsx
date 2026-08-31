@@ -23,9 +23,12 @@ export function FocusSection({
     const evaluate = () => {
       const rect = node.getBoundingClientRect();
       const centre = window.innerHeight / 2;
-      const inFocus = rect.top < centre + window.innerHeight * 0.3 && rect.bottom > centre - window.innerHeight * 0.3;
+      // Narrow band: only the section crossing the middle of the screen stays crisp.
+      const band = window.innerHeight * 0.12;
+      const inFocus = rect.top < centre + band && rect.bottom > centre - band;
       setActive(inFocus);
     };
+
 
     let frame = 0;
     const onScroll = () => {

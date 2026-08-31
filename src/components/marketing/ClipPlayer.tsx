@@ -12,16 +12,16 @@ import { useEffect, useRef, useState } from "react";
  * Only one clip on the page ever runs. Whichever clip is most in view claims
  * playback and every other clip is paused, so scrolling hands the loop along.
  */
-const players = new Set<{ el: HTMLVideoElement; ratio: number }>();
+const players = new Set<{ el: HTMLVideoElement; ratio: number; group: string }>();
 
 function arbitrate() {
-  let best: { el: HTMLVideoElement; ratio: number } | null = null;
+  let best: { el: HTMLVideoElement; ratio: number; group: string } | null = null;
   for (const p of players) {
     if (p.ratio < 0.35) continue;
     if (!best || p.ratio > best.ratio) best = p;
   }
   for (const p of players) {
-    if (best && p.el === best.el) void p.el.play().catch(() => {});
+    if (best && p.group === best.group) void p.el.play().catch(() => {});
     else p.el.pause();
   }
 }
@@ -33,6 +33,7 @@ export function ClipPlayer({
   height,
   label,
   className,
+  group,
 }: {
   src: string;
   poster: string;
@@ -40,7 +41,10 @@ export function ClipPlayer({
   height: number;
   label: string;
   className?: string;
+  /** Clips sharing a group play together; only one group plays at a time. */
+  group?: string;
 }) {
+
   const ref = useRef<HTMLVideoElement | null>(null);
   const [reduced, setReduced] = useState(false);
   const [manual, setManual] = useState(false);
@@ -62,7 +66,7 @@ export function ClipPlayer({
       return;
     }
     if (typeof IntersectionObserver === "undefined") return;
-    const entry = { el, ratio: 0 };
+    const entry = { el, ratio: 0, group: group ?? src };
     players.add(entry);
     const io = new IntersectionObserver(
       (entries) => {
@@ -78,7 +82,7 @@ export function ClipPlayer({
       el.pause();
       arbitrate();
     };
-  }, [reduced, manual]);
+  }, [reduced, manual, group, src]);
 
   return (
     <figure className="relative m-0">

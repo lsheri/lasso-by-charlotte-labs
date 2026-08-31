@@ -68,7 +68,7 @@ function LandingPage() {
       <PublicHeader current="/" />
 
       <main className="mx-auto max-w-3xl px-6 pb-24 pt-16 md:px-10 md:pt-20">
-        <section>
+        <section className="min-h-[70vh]">
           <h1 className="mt-5 text-2xl font-bold leading-snug tracking-tight text-foreground md:text-4xl">
             AI made knowledge work invisible. We make it audit ready and coachable.
           </h1>
@@ -91,8 +91,56 @@ function LandingPage() {
           </div>
         </section>
 
-        <FocusSection className="mt-14 md:-translate-x-24 lg:-translate-x-32">
-          <h2 className="pencil-title">How the work was made</h2>
+        {/* Deliberate break: the pitch ends here, the story starts below. */}
+        <div className="mt-24 flex flex-col items-center gap-4 border-t border-rule pt-10">
+          <p className="micro-label">THE STORY</p>
+          <GraphiteRule className="h-[6px] w-32 text-graphite" />
+        </div>
+
+        <FocusSection className="mt-20 md:translate-x-8 lg:translate-x-12">
+          <p className="micro-label">WHERE THE WORK NOW HAPPENS</p>
+          <h2 className="pencil-title mt-4">Where the work now happens</h2>
+          <p className="mt-5 max-w-2xl text-base leading-relaxed text-foreground">
+            The thinking has moved. Analysis, drafting and judgment now happen inside ChatGPT,
+            Claude and Lovable, one prompt at a time, spread across products nobody keeps a copy of.
+            The reasoning that shaped the answer scrolls away the moment the window closes.
+          </p>
+          <p className="mt-4 max-w-2xl text-base leading-relaxed text-muted-foreground">
+            What ships is the deliverable. What is lost is how it was made, what it was based on,
+            and what a colleague could have learned from it.
+          </p>
+          <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <ClipPlayer
+              src="/videos/lasso-chatgpt.mp4"
+              poster="/videos/poster-chatgpt.jpg"
+              width={720}
+              height={672}
+              group="llm-products"
+              label="Work happening inside ChatGPT"
+            />
+            <ClipPlayer
+              src="/videos/lasso-claude.mp4"
+              poster="/videos/poster-claude.jpg"
+              width={720}
+              height={672}
+              group="llm-products"
+              label="Work happening inside Claude"
+            />
+            <ClipPlayer
+              src="/videos/lasso-lovable.mp4"
+              poster="/videos/poster-lovable.jpg"
+              width={720}
+              height={374}
+              group="llm-products"
+              label="Work happening inside Lovable"
+            />
+          </div>
+        </FocusSection>
+
+        <FocusSection className="mt-28 md:-translate-x-24 lg:-translate-x-32">
+          <p className="micro-label">THE RECORD</p>
+          <h2 className="pencil-title mt-4">How the work was made</h2>
+
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
             Every deliverable carries the record of how it was made. Email, chats, drive, in the
             order the work actually happened.
@@ -108,8 +156,10 @@ function LandingPage() {
           </div>
         </FocusSection>
 
-        <FocusSection className="mt-14 md:translate-x-24 lg:translate-x-32">
-          <h2 className="pencil-title">What was never checked</h2>
+        <FocusSection className="mt-28 md:translate-x-24 lg:translate-x-32">
+          <p className="micro-label">WHAT WAS NEVER CHECKED</p>
+          <h2 className="pencil-title mt-4">What was never checked</h2>
+
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
             The record also shows what was never checked, and what to run to check it.
           </p>
