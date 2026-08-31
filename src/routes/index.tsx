@@ -5,6 +5,8 @@ import { PublicHeader } from "@/components/layout/PublicHeader";
 import { ClipPlayer } from "@/components/marketing/ClipPlayer";
 import { FocusSection } from "@/components/marketing/FocusSection";
 import { PrivacyToggleDemo } from "@/components/marketing/PrivacyToggleDemo";
+import { VendorLabel } from "@/components/marketing/VendorMark";
+import pastWorkLibrary from "@/assets/past-work-library.png.asset.json";
 import { GraphiteRule } from "@/components/notebook/marks";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -69,7 +71,7 @@ function LandingPage() {
 
       <main className="mx-auto max-w-3xl px-6 pb-24 pt-16 md:px-10 md:pt-20">
         <section>
-          <h1 className="mt-5 font-mono text-xl font-bold uppercase leading-snug tracking-[0.06em] text-foreground md:text-3xl">
+          <h1 className="pencil-title mt-5 text-foreground">
             AI made knowledge work invisible. We make it audit ready and coachable.
           </h1>
           <GraphiteRule animated className="mt-3 h-[6px] w-full max-w-xl text-graphite" />
@@ -91,14 +93,8 @@ function LandingPage() {
           </div>
         </section>
 
-        {/* One heavy graphite gradient line closes the pitch and opens the story. */}
-        <div
-          className="mt-10 h-[10px] w-full rounded-full"
-          style={{
-            background:
-              "linear-gradient(90deg, transparent, var(--nb-graphite) 12%, var(--nb-ink) 50%, var(--nb-graphite) 88%, transparent)",
-          }}
-        />
+        {/* A pencilled rule closes the pitch and opens the story. */}
+        <GraphiteRule animated className="mt-10 h-[10px] w-full text-graphite" />
 
         <div className="mt-6 flex flex-col items-center gap-3">
           <p className="micro-label">HOW IT WORKS</p>
@@ -116,9 +112,10 @@ function LandingPage() {
             What ships is the deliverable. What is lost is how it was made, what it was based on,
             and what a colleague could have learned from it.
           </p>
-          {/* A loose collage: four equal tiles, cropped to one shape, nudged slightly. */}
-          <div className="mt-8 grid grid-cols-2 gap-2 sm:gap-3">
-            <div className="sm:-rotate-[0.6deg]">
+          {/* A loose collage: each tile labelled with its product, offset off the grid. */}
+          <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-4">
+            <div className="sm:-rotate-[0.6deg] sm:-translate-y-3">
+              <VendorLabel vendor="chatgpt" name="ChatGPT" />
               <ClipPlayer
                 src="/videos/lasso-chatgpt.mp4"
                 poster="/videos/poster-chatgpt.jpg"
@@ -130,31 +127,34 @@ function LandingPage() {
                 label="Work happening inside ChatGPT"
               />
             </div>
-            <div className="sm:rotate-[0.5deg] sm:translate-y-1">
+            <div className="sm:rotate-[0.5deg] sm:translate-y-6">
+              <VendorLabel vendor="claude" name="Claude" />
               <ClipPlayer
                 src="/videos/lasso-claude.mp4"
                 poster="/videos/poster-claude.jpg"
                 width={720}
                 height={672}
                 cover
-                aspect="4 / 3"
+                aspect="5 / 4"
                 group="llm-products"
                 label="Work happening inside Claude"
               />
             </div>
-            <div className="sm:rotate-[0.4deg] sm:-translate-y-1">
+            <div className="sm:rotate-[0.4deg] sm:translate-y-2">
+              <VendorLabel vendor="gemini" name="Gemini" />
               <ClipPlayer
                 src="/videos/lasso-gemini.mp4"
                 poster="/videos/poster-gemini.jpg"
                 width={720}
                 height={374}
                 cover
-                aspect="4 / 3"
+                aspect="5 / 4"
                 group="llm-products"
                 label="Work happening inside Gemini"
               />
             </div>
-            <div className="sm:-rotate-[0.5deg]">
+            <div className="sm:-rotate-[0.5deg] sm:-translate-y-4">
+              <VendorLabel vendor="lovable" name="Lovable" />
               <ClipPlayer
                 src="/videos/lasso-lovable.mp4"
                 poster="/videos/poster-lovable.jpg"
@@ -225,15 +225,28 @@ function LandingPage() {
             The work belongs to the people who did it. What the firm sees is the work they chose to
             place there, never a feed of what anyone is doing.
           </p>
+          <figure className="mt-8">
+            <img
+              src={pastWorkLibrary.url}
+              alt="A firm library of shipped work, searchable by describing what you are working on"
+              width={1962}
+              height={1174}
+              loading="lazy"
+              decoding="async"
+              className="w-full rounded-[var(--radius)] border border-rule shadow-card"
+            />
+          </figure>
         </FocusSection>
 
         <FocusSection className="mt-20 border-t border-rule pt-10 md:translate-x-10 lg:translate-x-16">
           <p className="micro-label">PRIVACY, DEMONSTRATED</p>
           <h2 className="pencil-title mt-4">What a coach sees.</h2>
           <p className="mt-5 max-w-2xl text-base leading-relaxed text-foreground">
-            Your work is private by default. You choose what to share with a manager, coach or
-            enablement lead, and they see only that, so the conversation is about learning,
-            development and getting better at AI shaped work.
+            Your work is private by default. You choose what to share with a{" "}
+            <strong className="font-semibold text-foreground">manager</strong>,{" "}
+            <strong className="font-semibold text-foreground">coach</strong> or enablement lead, and
+            they see only that, so the conversation is about learning, development and getting
+            better at AI shaped work.
           </p>
           <div className="mt-8">
             <PrivacyToggleDemo />
