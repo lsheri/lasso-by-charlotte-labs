@@ -7,16 +7,37 @@ import type { TelemetryDims, TelemetryEvent } from "./telemetry-shared";
 export const recordEventFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
-    (input: { event_type: TelemetryEvent; org_id: string; dims?: TelemetryDims }) => input,
+    (input: {
+      event_type: TelemetryEvent;
+      org_id: string;
+      dims?: TelemetryDims;
+      session_id?: string | undefined;
+      client_seq?: number | undefined;
+      profile_id?: string | undefined;
+    }) => input,
   )
   .handler(async ({ data, context }) => {
-    const { recordEvent } = await import("./telemetry.server");
+    const { resolveProfile } = await import("./profile-resolve");
+    const profile = await resolveProfile(context.supabase, context.userId, data.profile_id).catch(
+      () => null,
+    );
+    const { recordEvent, notePresence } = await import("./telemetry.server");
     await recordEvent(context.supabase, {
       eventType: data.event_type,
       orgId: data.org_id,
       userId: context.userId,
       dims: data.dims ?? {},
+      profileId: profile?.id ?? null,
+      sessionId: data.session_id ?? null,
+      clientSeq: data.client_seq ?? null,
     });
+    if (profile) {
+      await notePresence(context.supabase, {
+        orgId: profile.org_id,
+        profileId: profile.id,
+        userId: context.userId,
+      });
+    }
     return { ok: true };
   });
 
