@@ -15,6 +15,7 @@ import {
   noticeHash,
   renderNoticeText,
   shouldNotePresence,
+  tierCopy,
   tierLabel,
   tierRank,
 } from "../data-consent-shared";
