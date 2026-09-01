@@ -65,6 +65,10 @@ describe("pass146 branded auth emails", () => {
     it(`${name} wears the shared notebook system`, async () => {
       const html = await render(element);
       expect(html).toContain("LASSO");
+      expect(html).toContain(LASSO_MARK_URL);
+      expect(html).toContain("BY CHARLOTTE LABS");
+      expect(html).toContain("letter-spacing:6px");
+      expect(html).not.toContain("background-color:#111413");
       expect(html).toContain("#fafafa");
       expect(html).toContain(TITLE_STACK.replace(/'/g, "&#x27;"));
       expect(html).toContain(FOOTER_LINE.split(" ")[0]!);
@@ -87,6 +91,9 @@ describe("pass146 branded auth emails", () => {
     });
     expect(mail.html).toContain(FOOTER_LINE);
     expect(mail.html).toContain(TITLE_STACK);
+    expect(mail.html).toContain(LASSO_MARK_URL);
+    expect(mail.html).toContain("BY CHARLOTTE LABS");
+    expect(mail.html).not.toContain("background:${MAIL.ink}");
     expect(mail.text).not.toContain("—");
   });
 });
