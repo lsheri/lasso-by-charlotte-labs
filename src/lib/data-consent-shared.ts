@@ -10,7 +10,7 @@ export const TIER_ORDER = ["t0", "a", "b", "c", "d"] as const;
 export type DataTier = (typeof TIER_ORDER)[number];
 
 /** The copy people read. Bump this when any sentence below changes. */
-export const CONSENT_TEXT_VERSION = "dc-v2";
+export const CONSENT_TEXT_VERSION = "dc-v3";
 
 /** Defaults when a state row is missing. */
 export const DEFAULT_ORG_TIER: DataTier = "c";
@@ -34,6 +34,10 @@ export function effectiveTier(
   const user = isDataTier(userTier) ? userTier : DEFAULT_USER_TIER;
   return tierRank(user) <= tierRank(org) ? user : org;
 }
+
+/** What the highest level means, said plainly. Read on both surfaces. */
+export const FULL_OPENNESS_COPY =
+  "Full openness means the work itself is shared with Charlotte Labs: your conversations with AI tools, turn by turn, the questions you asked, and the analyses run on your work. You choose this, and you can step back down at any time. Anything already shared stays governed by the choice it shipped under. Private and unmapped work stays in your workspace.";
 
 export type TierCopy = {
   tier: DataTier;
@@ -69,8 +73,7 @@ export const TIER_COPY: TierCopy[] = [
   {
     tier: "d",
     label: "Full work content",
-    description:
-      "Adds the text of work people have already shared by mapping or shipping it, so it can be read in full. Private and unmapped work stays in your workspace.",
+    description: FULL_OPENNESS_COPY,
   },
 ];
 
@@ -93,6 +96,21 @@ export const RIGHTS_BLOCK =
 export const CEILING_LINE_PREFIX = "Your organization allows up to: ";
 export const ABOVE_CEILING_LINE = "Above your organization's level";
 export const SURFACE_NAME = "Your data";
+
+/** Shown quietly in place when the wording of a full openness choice changed. */
+export const RECONFIRM_LINE = "The wording of this choice was updated. Read it again and confirm.";
+export const RECONFIRM_BUTTON = "Confirm";
+
+/**
+ * True only for a full openness choice whose last ledger entry was written
+ * against older wording.
+ */
+export function needsReconfirm(
+  tier: DataTier,
+  latestTextVersion: string | null | undefined,
+): boolean {
+  return tier === "d" && latestTextVersion !== CONSENT_TEXT_VERSION;
+}
 
 export type ConsentScope = "org" | "user";
 
@@ -158,11 +176,32 @@ export const SAMPLE_INTRO_LINE = "This is exactly what one item looks like when 
 
 export type SampleField = { key: string; value: string };
 
+export type SampleTurn = { role: "you" | "assistant"; text: string };
+
+/** Headings for the made up exchange shown at full openness. */
+export const SAMPLE_THREAD_HEADING = "A made up exchange, turn by turn";
+export const SAMPLE_ANALYSIS_HEADING = "And the analysis run on it";
+
+export const SAMPLE_THREAD: SampleTurn[] = [
+  { role: "you", text: "Here is the Q3 pricing deck. Where is the margin story weakest?" },
+  {
+    role: "assistant",
+    text: "Slide 6 assumes a 12 percent discount floor with no volume tie. That is the soft spot.",
+  },
+  { role: "you", text: "Rewrite slide 6 so the floor is tied to committed volume." },
+];
+
+export const SAMPLE_ANALYSIS_LINE =
+  "analysis: pricing sanity read, 3 turns, one revision loop, one open question left for the client.";
+
 export type SampleEvent = {
   tier: DataTier;
   /** Empty at t0, where nothing leaves at all. */
   fields: SampleField[];
   notes: string[];
+  /** Only at full openness: the shape of the exchange itself. */
+  thread?: SampleTurn[];
+  analysis?: string;
 };
 
 /**
@@ -203,7 +242,7 @@ export function sampleEventForTier(tier: DataTier): SampleEvent {
     value: "Recommend holding list price and moving the discount floor to 12 percent.",
   });
   notes.push(SAMPLE_CONTENT_LINE);
-  return { tier, fields, notes };
+  return { tier, fields, notes, thread: SAMPLE_THREAD, analysis: SAMPLE_ANALYSIS_LINE };
 }
 
 /** The optional research block on the personal surface. */

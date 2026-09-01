@@ -28,6 +28,9 @@ export type DataConsentView = {
   org_tier: DataTier;
   org_tier_d_switch: boolean;
   user_tier: DataTier;
+  /** Wording version of the latest ledger entry for each scope, when there is one. */
+  org_text_version: string | null;
+  user_text_version: string | null;
   changes: ConsentChange[];
 };
 
@@ -49,6 +52,18 @@ export const getDataConsent = createServerFn({ method: "POST" })
     const userRow = (rows ?? []).find(
       (row) => row.scope === "user" && row.profile_id === profile.id,
     );
+
+    const { data: latest } = await context.supabase
+      .from("data_consent_ledger")
+      .select("scope, profile_id, consent_text_version, created_at")
+      .eq("org_id", profile.org_id)
+      .order("created_at", { ascending: false })
+      .limit(200);
+    const orgTextVersion =
+      (latest ?? []).find((row) => row.scope === "org")?.consent_text_version ?? null;
+    const userTextVersion =
+      (latest ?? []).find((row) => row.scope === "user" && row.profile_id === profile.id)
+        ?.consent_text_version ?? null;
 
     const isAdmin = profile.role === "admin";
     let changes: ConsentChange[] = [];
@@ -87,6 +102,8 @@ export const getDataConsent = createServerFn({ method: "POST" })
       org_tier: isDataTier(orgRow?.tier) ? orgRow.tier : DEFAULT_ORG_TIER,
       org_tier_d_switch: orgRow?.tier_d_switch ?? DEFAULT_TIER_D_SWITCH,
       user_tier: isDataTier(userRow?.tier) ? userRow.tier : DEFAULT_USER_TIER,
+      org_text_version: orgTextVersion,
+      user_text_version: userTextVersion,
       changes,
     };
   });

@@ -2637,6 +2637,8 @@ export type Database = {
       work_items: {
         Row: {
           captured_at: string
+          content_egress_skipped_reason: string | null
+          content_egressed_at: string | null
           content_fidelity: string
           content_hash: string | null
           content_ref: string | null
@@ -2658,6 +2660,8 @@ export type Database = {
         }
         Insert: {
           captured_at?: string
+          content_egress_skipped_reason?: string | null
+          content_egressed_at?: string | null
           content_fidelity?: string
           content_hash?: string | null
           content_ref?: string | null
@@ -2679,6 +2683,8 @@ export type Database = {
         }
         Update: {
           captured_at?: string
+          content_egress_skipped_reason?: string | null
+          content_egressed_at?: string | null
           content_fidelity?: string
           content_hash?: string | null
           content_ref?: string | null

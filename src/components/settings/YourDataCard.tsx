@@ -20,6 +20,10 @@ import {
   ABOVE_CEILING_LINE,
   CEILING_LINE_PREFIX,
   CONTENT_SWITCH_LINE,
+  FULL_OPENNESS_COPY,
+  RECONFIRM_BUTTON,
+  RECONFIRM_LINE,
+  needsReconfirm,
   RESEARCH_BODY,
   RESEARCH_HEADING,
   RESEARCH_SAVED_LINE,
@@ -140,6 +144,19 @@ function ConfirmDialog({
   );
 }
 
+/** Quiet, in place. Nothing else in the app changes until this is confirmed. */
+function ReconfirmNotice({ busy, onConfirm }: { busy: boolean; onConfirm: () => void }) {
+  return (
+    <div className="mt-3 rounded-[var(--radius)] border border-border bg-secondary px-4 py-3">
+      <p className="text-sm font-medium text-foreground">{RECONFIRM_LINE}</p>
+      <p className="mt-1.5 text-sm text-muted-foreground">{FULL_OPENNESS_COPY}</p>
+      <Button type="button" size="sm" className="mt-3" disabled={busy} onClick={onConfirm}>
+        {RECONFIRM_BUTTON}
+      </Button>
+    </div>
+  );
+}
+
 function dateLabel(iso: string): string {
   return new Date(iso).toLocaleDateString(undefined, {
     month: "short",
@@ -189,6 +206,13 @@ export function OrgDataCard() {
         <p className="text-sm text-foreground">Current level: {tierLabel(data.org_tier)}</p>
         <SampleEventDialog tier={data.org_tier} />
       </div>
+
+      {needsReconfirm(data.org_tier, data.org_text_version) ? (
+        <ReconfirmNotice
+          busy={mutation.isPending}
+          onConfirm={() => mutation.mutate({ tier: "d" })}
+        />
+      ) : null}
 
       <TierList
         name="org-data-level"
@@ -323,6 +347,10 @@ export function PersonalDataCard() {
         <p className="text-sm text-foreground">Your level: {tierLabel(data.user_tier)}</p>
         <SampleEventDialog tier={effectiveTier(data.org_tier, data.user_tier)} />
       </div>
+
+      {needsReconfirm(data.user_tier, data.user_text_version) ? (
+        <ReconfirmNotice busy={mutation.isPending} onConfirm={() => mutation.mutate("d")} />
+      ) : null}
 
       <TierList
         name="personal-data-level"

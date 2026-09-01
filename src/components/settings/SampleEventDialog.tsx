@@ -10,8 +10,10 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
+  SAMPLE_ANALYSIS_HEADING,
   SAMPLE_BUTTON_LABEL,
   SAMPLE_INTRO_LINE,
+  SAMPLE_THREAD_HEADING,
   sampleEventForTier,
   tierLabel,
   type DataTier,
@@ -47,6 +49,26 @@ export function SampleEventDialog({ tier }: { tier: DataTier }) {
               </div>
             ))}
           </dl>
+        ) : null}
+
+        {sample.thread ? (
+          <div className="space-y-2">
+            <p className="micro-label">{SAMPLE_THREAD_HEADING}</p>
+            <div className="rounded-[var(--radius)] border border-border bg-secondary px-4 py-3 font-mono text-xs">
+              {sample.thread.map((turn) => (
+                <p key={turn.text} className="py-1">
+                  <span className="text-muted-foreground">{turn.role}: </span>
+                  <span className="text-foreground">{turn.text}</span>
+                </p>
+              ))}
+              {sample.analysis ? (
+                <p className="mt-2 border-t border-border pt-2 text-foreground">
+                  <span className="text-muted-foreground">{SAMPLE_ANALYSIS_HEADING}: </span>
+                  {sample.analysis}
+                </p>
+              ) : null}
+            </div>
+          </div>
         ) : null}
 
         <div className="space-y-1.5">
