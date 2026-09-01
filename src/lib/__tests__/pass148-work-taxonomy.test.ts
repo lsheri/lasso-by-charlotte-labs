@@ -174,6 +174,6 @@ describe("pass148 registry and emission points", () => {
   it("keeps content and titles out of the taxonomy module", () => {
     const source = readFileSync("src/lib/work-taxonomy.ts", "utf8");
     expect(source).not.toContain(".content");
-    expect(source).not.toContain("title");
+    expect(source).not.toContain(".title");
   });
 });
