@@ -111,11 +111,18 @@ export const NotebookHead = () => (
   </Head>
 )
 
-/** The wordmark, drawn as styled text so no image has to load. */
+/** Site-style lockup on the light background: mascot mark + stacked live text. */
 export const Wordmark = () => (
   <Section style={wordmarkBlock}>
-    <Text style={wordmarkText}>LASSO</Text>
-    <Text style={wordmarkSub}>by Charlotte Labs</Text>
+    <Row>
+      <Column style={wordmarkImgCell}>
+        <Img src={LASSO_MARK_URL} alt="Lasso" width="44" height="44" />
+      </Column>
+      <Column style={wordmarkTextCell}>
+        <Text style={wordmarkText}>LASSO</Text>
+        <Text style={wordmarkSub}>BY CHARLOTTE LABS</Text>
+      </Column>
+    </Row>
   </Section>
 )
 
