@@ -134,7 +134,7 @@ function LandingPage() {
               The Problem
             </p>
           </div>
-          <h2 className="pencil-title mt-4">Where the work now happens</h2>
+          <h2 className="pencil-title mt-4">Work has shifted into LLMs and AI apps...The process is lost in conversational UIs</h2>
           <p className="mt-5 max-w-2xl text-base leading-relaxed text-foreground">
             The thinking has moved. Analysis, drafting and judgment now happen inside ChatGPT,
             Claude, Gemini and Lovable, one prompt at a time, spread across products nobody keeps a
