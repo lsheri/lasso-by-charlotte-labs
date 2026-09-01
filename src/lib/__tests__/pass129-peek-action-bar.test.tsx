@@ -66,8 +66,8 @@ function bar(props: Partial<React.ComponentProps<typeof PeekActionBar>> = {}) {
 describe("pass 129 — the peek action bar", () => {
   it("renders the primary row in a fixed order", () => {
     bar({ item: item({ type: "document" }) });
-    const labels = Array.from(document.querySelectorAll(".nb-map-cta, .nb-pencil-cta")).map((node) =>
-      node.textContent?.trim(),
+    const labels = Array.from(document.querySelectorAll(".nb-map-cta, .nb-pencil-cta")).map(
+      (node) => node.textContent?.trim(),
     );
     expect(labels).toEqual([
       "Map to a workstream",

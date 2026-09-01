@@ -20,10 +20,7 @@ import type { WorkItemRow } from "@/lib/work-types";
 
 /** The peek's analyses, opened by preset so no button ever dead-ends. */
 export type PeekAnalysisPreset =
-  | "verification"
-  | "verification_thread"
-  | "decision_origin"
-  | "decision_origin_thread";
+  "verification" | "verification_thread" | "decision_origin" | "decision_origin_thread";
 
 /** One set of names, in one order, on every surface the peek is mounted on. */
 export const PEEK_WORK_ARTIFACT_LABEL = "Work Artifact";
@@ -121,9 +118,7 @@ export function PeekActionBar({
       {showDecisions ? (
         <PencilAction
           seed="peek-decisions"
-          onClick={() =>
-            onAnalyse?.(item, isThread ? "decision_origin_thread" : "decision_origin")
-          }
+          onClick={() => onAnalyse?.(item, isThread ? "decision_origin_thread" : "decision_origin")}
         >
           {decisionsLabel}
         </PencilAction>
