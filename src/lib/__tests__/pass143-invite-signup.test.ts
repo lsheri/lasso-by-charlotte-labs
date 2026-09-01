@@ -39,12 +39,19 @@ function invite(over: Partial<SignupInviteRow> = {}): SignupInviteRow {
 }
 
 describe("signup invite validator", () => {
-  it("refuses a signup with no invite at all", () => {
+  it("refuses an org join with no invite at all", () => {
     const result = evaluateSignupInvite(null, "someone@firm.com");
     expect(result.ok).toBe(false);
     expect(result.ok === false && result.reason).toBe("missing");
     expect(result.ok === false && result.message).toBe(SIGNUP_NO_INVITE_LINE);
   });
+
+  it("scopes the no invite line to joining an organization", () => {
+    expect(SIGNUP_NO_INVITE_LINE).toBe(
+      "Joining an organization needs an invite. Ask your organization admin for one.",
+    );
+  });
+
 
   it("refuses an expired invite", () => {
     const past = invite({ expires_at: new Date(Date.now() - 1000).toISOString() });
@@ -127,11 +134,22 @@ describe("server side gates", () => {
     expect(fn).toContain("checkSignupInvite");
   });
 
-  it("revalidates the invite on the server when the signup is submitted", () => {
+  it("revalidates the invite on the server when a coded signup is submitted", () => {
     const page = read("routes/auth.tsx");
     expect(page).toContain("const verdict = await checkInvite({ data: { code: inviteCode, email } })");
-    expect(page).toContain("SIGNUP_NO_INVITE_LINE");
   });
+
+  it("leaves account creation open when no invite code is present", () => {
+    const page = read("routes/auth.tsx");
+    // No blanket wall, no disabled submit, no validator call off the code path.
+    expect(page).not.toContain("SIGNUP_NO_INVITE_LINE");
+    expect(page).not.toContain('mode === "signup" && !inviteCode');
+    expect(page).toContain("disabled={pending}");
+    expect(page).toContain("if (inviteCode) {");
+    expect(page).toContain("Create your account, then set up your workspace or join your team.");
+    expect(page).toContain("${window.location.origin}${onboardingPath}");
+  });
+
 
   it("falls back to a copyable link when the email key is missing", () => {
     const server = read("lib/invites.server.ts");

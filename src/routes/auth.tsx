@@ -10,7 +10,7 @@ import { Wordmark } from "@/components/layout/Wordmark";
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { checkSignupInvite } from "@/lib/invites.functions";
-import { SIGNUP_NO_INVITE_LINE, type SignupInviteCheck } from "@/lib/signup-invite";
+import { type SignupInviteCheck } from "@/lib/signup-invite";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -117,32 +117,32 @@ function AuthPage() {
       if (signInError) setError(signInError.message);
       else goOn();
     } else {
-      if (!inviteCode) {
-        setError(SIGNUP_NO_INVITE_LINE);
-        setPending(false);
-        return;
+      // With an invite code, the gate is checked again on the server at submit
+      // time, with the typed address. Without one, this is an open signup.
+      if (inviteCode) {
+        const verdict = await checkInvite({ data: { code: inviteCode, email } });
+        if (!verdict.ok) {
+          setError(verdict.message);
+          setPending(false);
+          return;
+        }
       }
-      // Checked again on the server at submit time, with the typed address, so
-      // the gate does not depend on anything the browser was told earlier.
-      const verdict = await checkInvite({ data: { code: inviteCode, email } });
-      if (!verdict.ok) {
-        setError(verdict.message);
-        setPending(false);
-        return;
-      }
+      const onboardingPath = intent ? `/onboarding?intent=${intent}` : "/onboarding";
       const { data, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
         // Carry the destination through confirmation, so an invite is never
-        // lost between the email link and the accept page.
+        // lost between the email link and the accept page, and an open signup
+        // lands on workspace setup.
         options: {
           emailRedirectTo: next
             ? `${window.location.origin}${next}`
             : inviteCode
               ? `${window.location.origin}/join?code=${encodeURIComponent(inviteCode)}`
-              : window.location.origin,
+              : `${window.location.origin}${onboardingPath}`,
         },
       });
+
       if (signUpError) setError(signUpError.message);
       else if (data.session) goOn();
       else setMessage("Check your email to confirm your account.");
@@ -178,8 +178,11 @@ function AuthPage() {
           <p className="mt-1.5 text-sm text-muted-foreground">
             {invited
               ? "One step left. You will land straight back on your invite."
-              : "Coaching context for engagement managers."}
+              : mode === "signup"
+                ? "Create your account, then set up your workspace or join your team."
+                : "Coaching context for engagement managers."}
           </p>
+
 
           <form onSubmit={handleSubmit} className="mt-6 space-y-4">
             <div className="space-y-1.5">
@@ -211,22 +214,16 @@ function AuthPage() {
               />
             </div>
 
-            {mode === "signup" && !inviteCode ? (
-              <p className="text-sm text-muted-foreground">{SIGNUP_NO_INVITE_LINE}</p>
-            ) : null}
             {mode === "signup" && inviteCheck && !inviteCheck.ok ? (
               <p className="text-sm text-destructive">{inviteCheck.message}</p>
             ) : null}
             {error ? <p className="text-sm text-destructive">{error}</p> : null}
             {message ? <p className="text-sm text-accent-deep">{message}</p> : null}
 
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={pending || (mode === "signup" && !inviteCode)}
-            >
+            <Button type="submit" className="w-full" disabled={pending}>
               {pending ? "Please wait…" : mode === "signin" ? "Sign in" : "Create account"}
             </Button>
+
           </form>
 
           <button

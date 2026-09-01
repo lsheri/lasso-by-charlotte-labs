@@ -1,11 +1,13 @@
 /**
- * Joining Lasso needs an invite from an org admin. The rules live here as one
- * pure function so the auth page and the server function cannot disagree, and
- * so every refusal is a typed, honest line rather than a database message.
+ * Creating a Lasso account is open. Joining an existing organization needs an
+ * invite from an org admin. The join rules live here as one pure function so
+ * the join page and the server function cannot disagree, and so every refusal
+ * is a typed, honest line rather than a database message.
  */
 
 export const SIGNUP_NO_INVITE_LINE =
-  "Lasso is invite based right now. Ask your organization admin for an invite.";
+  "Joining an organization needs an invite. Ask your organization admin for one.";
+
 
 export const SIGNUP_INVITE_LINES = {
   missing: SIGNUP_NO_INVITE_LINE,
