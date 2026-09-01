@@ -10,7 +10,7 @@ export const TIER_ORDER = ["t0", "a", "b", "c", "d"] as const;
 export type DataTier = (typeof TIER_ORDER)[number];
 
 /** The copy people read. Bump this when any sentence below changes. */
-export const CONSENT_TEXT_VERSION = "dc-v1";
+export const CONSENT_TEXT_VERSION = "dc-v2";
 
 /** Defaults when a state row is missing. */
 export const DEFAULT_ORG_TIER: DataTier = "c";
@@ -64,7 +64,7 @@ export const TIER_COPY: TierCopy[] = [
     tier: "c",
     label: "Work details",
     description:
-      "Adds the shape of the work: kinds of documents, dates, engagement structure and the labels people give things. The words inside the work stay in your workspace.",
+      "Adds the shape of the work: kinds of documents, dates, engagement structure, titles and file names. The words inside the work stay in your workspace.",
   },
   {
     tier: "d",
@@ -147,3 +147,69 @@ export function shouldNotePresence(
 ): boolean {
   return lastNotedWeek !== currentWeek;
 }
+
+/** One name for the element on both surfaces. */
+export const SAMPLE_BUTTON_LABEL = "See a sample";
+export const SAMPLE_EMPTY_LINE = "Nothing leaves your workspace at this level.";
+export const SAMPLE_NO_KEY_LINE = "No person key. One visit cannot be joined to the next.";
+export const SAMPLE_PERSON_KEY_LINE = "person_key: a1b2… (a random key, not your name or email)";
+export const SAMPLE_CONTENT_LINE = "Only work already shared by mapping or shipping.";
+export const SAMPLE_INTRO_LINE = "This is exactly what one item looks like when it leaves.";
+
+export type SampleField = { key: string; value: string };
+
+export type SampleEvent = {
+  tier: DataTier;
+  /** Empty at t0, where nothing leaves at all. */
+  fields: SampleField[];
+  notes: string[];
+};
+
+/**
+ * A hardcoded, realistic picture of one item leaving the workspace at a level.
+ * Nothing here reads real work; every value is made up on purpose.
+ */
+export function sampleEventForTier(tier: DataTier): SampleEvent {
+  if (tier === "t0") return { tier, fields: [], notes: [SAMPLE_EMPTY_LINE] };
+
+  const fields: SampleField[] = [
+    { key: "name", value: "workitem.mapped" },
+    { key: "when", value: "2026-09-01T09:14:00Z" },
+    { key: "workspace_size", value: "11-50" },
+    { key: "items_this_week", value: "3-5" },
+  ];
+  const notes: string[] = [];
+
+  if (tier === "a") {
+    notes.push(SAMPLE_NO_KEY_LINE);
+    return { tier, fields, notes };
+  }
+
+  fields.push({ key: "person_key", value: "a1b2…" });
+  notes.push(SAMPLE_PERSON_KEY_LINE);
+
+  if (tier === "b") return { tier, fields, notes };
+
+  fields.push(
+    { key: "title", value: "Q3 pricing review" },
+    { key: "file_name", value: "pricing-review-v4.pptx" },
+    { key: "kind", value: "deck" },
+  );
+
+  if (tier === "c") return { tier, fields, notes };
+
+  fields.push({
+    key: "excerpt",
+    value: "Recommend holding list price and moving the discount floor to 12 percent.",
+  });
+  notes.push(SAMPLE_CONTENT_LINE);
+  return { tier, fields, notes };
+}
+
+/** The optional research block on the personal surface. */
+export const RESEARCH_HEADING = "Research";
+export const RESEARCH_BODY =
+  "Lasso runs studies on how people work with AI, using material at your chosen level above. Taking part is a separate choice, always yours, and changing it never affects anything else in your workspace.";
+export const RESEARCH_SAVED_LINE = "Saved. Your choice is recorded.";
+export const RESEARCH_EVENT = "consent.research_change" as const;
+export type ResearchChoice = "joined" | "left";

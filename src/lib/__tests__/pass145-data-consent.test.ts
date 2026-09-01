@@ -73,7 +73,7 @@ describe("tier lattice", () => {
 
 describe("notice text and hash", () => {
   it("names the version and stays stable", async () => {
-    expect(CONSENT_TEXT_VERSION).toBe("dc-v1");
+    expect(CONSENT_TEXT_VERSION).toBe("dc-v2");
     const text = renderNoticeText("org", "c");
     expect(text).toContain("Work details");
     expect(await noticeHash("org", "c")).toBe(await noticeHash("org", "c"));

@@ -13,21 +13,33 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { useProfile } from "@/hooks/use-profile";
 import {
   ABOVE_CEILING_LINE,
   CEILING_LINE_PREFIX,
   CONTENT_SWITCH_LINE,
+  RESEARCH_BODY,
+  RESEARCH_HEADING,
+  RESEARCH_SAVED_LINE,
   RIGHTS_BLOCK,
   SURFACE_NAME,
   TIER_COPY,
+  effectiveTier,
   tierCopy,
   tierLabel,
   tierRank,
   type DataTier,
+  type ResearchChoice,
 } from "@/lib/data-consent-shared";
-import { getDataConsent, setDataConsent } from "@/lib/data-consent.functions";
+import {
+  getDataConsent,
+  recordResearchChoice,
+  setDataConsent,
+} from "@/lib/data-consent.functions";
+
+import { SampleEventDialog } from "./SampleEventDialog";
 
 function useConsent() {
   const { data: profile } = useProfile();
@@ -173,7 +185,10 @@ export function OrgDataCard() {
       <p className="mt-1.5 text-sm text-muted-foreground">
         What this organization shares outside the workspace. You can change it at any time.
       </p>
-      <p className="mt-1 text-sm text-foreground">Current level: {tierLabel(data.org_tier)}</p>
+      <div className="mt-1 flex flex-wrap items-center gap-3">
+        <p className="text-sm text-foreground">Current level: {tierLabel(data.org_tier)}</p>
+        <SampleEventDialog tier={data.org_tier} />
+      </div>
 
       <TierList
         name="org-data-level"
@@ -228,6 +243,46 @@ export function OrgDataCard() {
 }
 
 /** The person's own level, bounded by the organization. Coaches see nothing. */
+/** Taking part in studies is separate from the level above. */
+function ResearchBlock({ profileId }: { profileId?: string | undefined }) {
+  const submit = useServerFn(recordResearchChoice);
+  const [saved, setSaved] = useState(false);
+
+  const mutation = useMutation({
+    mutationFn: (choice: ResearchChoice) => submit({ data: { choice, profile_id: profileId } }),
+    onSuccess: () => setSaved(true),
+    onError: (e: unknown) =>
+      toast.error((e as Error)?.message || "That could not be saved. Try again."),
+  });
+
+  return (
+    <section className="mt-6 rounded-[var(--radius)] border border-border bg-card px-4 py-3">
+      <h3 className="micro-label micro-label-section">{RESEARCH_HEADING}</h3>
+      <p className="mt-1.5 text-sm text-muted-foreground">{RESEARCH_BODY}</p>
+      <div className="mt-3 flex items-center gap-2">
+        <Button
+          type="button"
+          size="sm"
+          disabled={mutation.isPending}
+          onClick={() => mutation.mutate("joined")}
+        >
+          Join
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          disabled={mutation.isPending}
+          onClick={() => mutation.mutate("left")}
+        >
+          Leave
+        </Button>
+      </div>
+      {saved ? <p className="mt-2 text-sm text-foreground">{RESEARCH_SAVED_LINE}</p> : null}
+    </section>
+  );
+}
+
 export function PersonalDataCard() {
   const { profile, data } = useConsent();
   const queryClient = useQueryClient();
@@ -264,7 +319,10 @@ export function PersonalDataCard() {
         {CEILING_LINE_PREFIX}
         {tierLabel(data.org_tier)}
       </p>
-      <p className="mt-1 text-sm text-foreground">Your level: {tierLabel(data.user_tier)}</p>
+      <div className="mt-1 flex flex-wrap items-center gap-3">
+        <p className="text-sm text-foreground">Your level: {tierLabel(data.user_tier)}</p>
+        <SampleEventDialog tier={effectiveTier(data.org_tier, data.user_tier)} />
+      </div>
 
       <TierList
         name="personal-data-level"
@@ -274,6 +332,9 @@ export function PersonalDataCard() {
       />
 
       <p className="mt-4 text-sm text-muted-foreground">{RIGHTS_BLOCK}</p>
+
+      {data.org_tier === "t0" ? null : <ResearchBlock profileId={profile?.id} />}
+
 
       <ConfirmDialog
         pending={pending}
