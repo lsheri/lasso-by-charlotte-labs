@@ -43,12 +43,20 @@ export const declareArtifact = createServerFn({ method: "POST" })
     const meta = { ...((item.meta ?? {}) as Record<string, unknown>), declared };
     await supabase.from("work_items").update({ meta: meta as Json }).eq("id", item.id);
 
+    const actor = { orgId: item.org_id, userId, profileId: item.owner_id };
     const { noteArtifactDeclared } = await import("./declared-work.server");
-    await noteArtifactDeclared(
-      supabase as never,
-      { orgId: item.org_id, userId, profileId: item.owner_id },
-      declared,
-    );
+    await noteArtifactDeclared(supabase as never, actor, declared);
+
+    // Pass 153: the banded shape of how the item came to be, same moment.
+    try {
+      const { noteWorkJourney } = await import("./work-journey.server");
+      await noteWorkJourney(supabase as never, actor, {
+        workItemId: item.id,
+        outputKind: declared.output_kind,
+      });
+    } catch {
+      /* the declaration is the person's; a band failing must not block it */
+    }
     return { ok: true };
   });
 

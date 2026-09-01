@@ -82,6 +82,8 @@ export type TelemetryEvent =
   | "artifact.declared"
   /** Pass 150: how the person said they worked, at the mapping moment. */
   | "workflow.declared"
+  /** Pass 153: the banded shape of how one item came to be, at ship time. */
+  | "workitem.journey"
   /** Pass 150: a coach's read on work they reviewed. Closed vocab. */
   | "coach.outcome"
   /** Chat library: someone opened the original chat. Tool name only. */
