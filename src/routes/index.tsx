@@ -126,7 +126,10 @@ function LandingPage() {
           className={`mt-12 md:translate-x-8 lg:translate-x-12 ${scrolled ? "" : "landing-locked"}`}
         >
           <p className="micro-label">WHERE THE WORK NOW HAPPENS</p>
-          <p className="hand-mark hand-mark-ember mt-6" aria-hidden="true">
+          <p
+            className="hand-mark hand-mark-ember -ml-4 mt-6 md:-ml-20 lg:-ml-32"
+            aria-hidden="true"
+          >
             The Problem
           </p>
           <h2 className="pencil-title mt-4">Where the work now happens</h2>
@@ -197,10 +200,13 @@ function LandingPage() {
         </FocusSection>
 
         <FocusSection className="mt-28 md:-translate-x-24 lg:-translate-x-32">
-          <p className="micro-label">THE RECORD</p>
-          <p className="hand-mark hand-mark-blue mt-6" aria-hidden="true">
+          <p
+            className="hand-mark hand-mark-blue -ml-2 md:-ml-10 lg:-ml-16"
+            aria-hidden="true"
+          >
             With Lasso
           </p>
+          <p className="micro-label">THE RECORD</p>
           <h2 className="pencil-title mt-4">How the work was made</h2>
 
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
