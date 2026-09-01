@@ -62,6 +62,16 @@ describe("pass 138 landing page", () => {
     expect(route).toContain("/videos/poster-fact-check.jpg");
   });
 
+  it("adds the gap section between the problem and the record", () => {
+    expect(route).toContain("THE GAP");
+    expect(route).toContain("The output is the only part that survives");
+    expect(route).toContain("/videos/lasso-clean-output.mp4");
+    expect(route).toContain("/videos/poster-clean-output.jpg");
+    expect(route).toContain("<InvisibleWorkStrip />");
+    expect(route.indexOf("THE GAP")).toBeGreaterThan(route.indexOf("WHERE THE WORK NOW HAPPENS"));
+    expect(route.indexOf("THE GAP")).toBeLessThan(route.indexOf("THE RECORD"));
+  });
+
   it("keeps both clips muted, looping, inline and unpreloaded", () => {
     expect(clip).toContain("muted");
     expect(clip).toContain("loop");
