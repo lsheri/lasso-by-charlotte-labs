@@ -178,8 +178,11 @@ function AuthPage() {
           <p className="mt-1.5 text-sm text-muted-foreground">
             {invited
               ? "One step left. You will land straight back on your invite."
-              : "Coaching context for engagement managers."}
+              : mode === "signup"
+                ? "Create your account, then set up your workspace or join your team."
+                : "Coaching context for engagement managers."}
           </p>
+
 
           <form onSubmit={handleSubmit} className="mt-6 space-y-4">
             <div className="space-y-1.5">
