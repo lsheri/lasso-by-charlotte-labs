@@ -63,6 +63,7 @@ export function SampleEventDialog({ tier }: { tier: DataTier }) {
               ))}
               {sample.analysis ? (
                 <p className="mt-2 border-t border-border pt-2 text-foreground">
+                  <span className="text-muted-foreground">{SAMPLE_ANALYSIS_HEADING}: </span>
                   {sample.analysis}
                 </p>
               ) : null}
