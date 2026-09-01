@@ -1,6 +1,6 @@
 import * as React from 'react'
 
-import { Head, Link, Section, Text } from '@react-email/components'
+import { Column, Head, Img, Link, Row, Section, Text } from '@react-email/components'
 
 /**
  * One shared visual system for every email Lasso sends. Email clients ignore
@@ -72,25 +72,26 @@ export const footerLine = {
   margin: '18px 0 0',
 }
 
-const wordmarkBlock = {
-  backgroundColor: NB.ink,
-  borderRadius: '8px',
-  padding: '18px 20px',
-  marginBottom: '16px',
-}
+// Animated mascot mark hosted on the umbrella domain; referenced, not copied.
+export const LASSO_MARK_URL = 'https://charlotte-labs.com/email/lasso-mark.gif'
+
+const wordmarkBlock = { marginBottom: '16px' }
+const wordmarkImgCell = { width: '44px', verticalAlign: 'middle' }
+const wordmarkTextCell = { verticalAlign: 'middle', paddingLeft: '12px' }
 const wordmarkText = {
-  fontFamily: MONO_STACK,
-  fontSize: '20px',
-  letterSpacing: '0.24em',
-  color: '#ffffff',
+  fontFamily: `Archivo, Helvetica, Arial, sans-serif`,
+  fontSize: '19px',
+  fontWeight: 600,
+  letterSpacing: '6px',
+  color: '#1A1A1A',
   margin: '0',
 }
 const wordmarkSub = {
-  fontFamily: MONO_STACK,
-  fontSize: '11px',
-  letterSpacing: '0.16em',
-  color: '#b9bcba',
-  margin: '6px 0 0',
+  fontFamily: `'JetBrains Mono', ${MONO_STACK}`,
+  fontSize: '10px',
+  letterSpacing: '3px',
+  color: '#6B6B6B',
+  margin: '4px 0 0',
 }
 
 // Rendered as a text child, which React may HTML-escape: keep this CSS free of >, &, and quotes.
@@ -110,11 +111,18 @@ export const NotebookHead = () => (
   </Head>
 )
 
-/** The wordmark, drawn as styled text so no image has to load. */
+/** Site-style lockup on the light background: mascot mark + stacked live text. */
 export const Wordmark = () => (
   <Section style={wordmarkBlock}>
-    <Text style={wordmarkText}>LASSO</Text>
-    <Text style={wordmarkSub}>by Charlotte Labs</Text>
+    <Row>
+      <Column style={wordmarkImgCell}>
+        <Img src={LASSO_MARK_URL} alt="Lasso" width="44" height="44" />
+      </Column>
+      <Column style={wordmarkTextCell}>
+        <Text style={wordmarkText}>LASSO</Text>
+        <Text style={wordmarkSub}>BY CHARLOTTE LABS</Text>
+      </Column>
+    </Row>
   </Section>
 )
 
