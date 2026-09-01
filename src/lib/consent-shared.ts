@@ -17,6 +17,10 @@ export type PurposeCopy = {
   unlocks: string;
   declining: string;
   alwaysOn?: boolean;
+  /** Starts on when nobody has answered yet. The person can turn it off. */
+  defaultOn?: boolean;
+  /** A plain line under the card, for anything that starts on. */
+  note?: string;
 };
 
 export const PURPOSE_COPY: PurposeCopy[] = [
@@ -38,6 +42,8 @@ export const PURPOSE_COPY: PurposeCopy[] = [
   {
     purpose: "deidentified_improvement",
     title: "Deidentified product improvement and benchmarking",
+    defaultOn: true,
+    note: "On by default. Turn it off here or any time in Settings.",
     unlocks:
       "Allows de-identified data to inform product improvement and future benchmarking. No names, titles or content are included. Comparison views are on the way; until then this records your firm's choice.",
     declining:
@@ -51,3 +57,11 @@ export const PURPOSE_COPY: PurposeCopy[] = [
     declining: "Declining keeps your organisation out of every study. Nothing else changes.",
   },
 ];
+
+/**
+ * What the Data use section shows. Research is not offered here: that choice
+ * lives on the personal "Your data" card, off unless someone turns it on.
+ */
+export const VISIBLE_PURPOSE_COPY: PurposeCopy[] = PURPOSE_COPY.filter(
+  (purpose) => purpose.purpose !== "research",
+);

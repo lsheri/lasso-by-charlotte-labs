@@ -5,7 +5,7 @@ import { toast } from "sonner";
 
 import { Switch } from "@/components/ui/switch";
 import { useProfile } from "@/hooks/use-profile";
-import { PURPOSE_COPY } from "@/lib/consent-shared";
+import { VISIBLE_PURPOSE_COPY } from "@/lib/consent-shared";
 import { getDataUse, noteConsentPresented, setDataUse } from "@/lib/consent.functions";
 import type { ConsentPurpose } from "@/lib/telemetry-v2-shared";
 
@@ -65,8 +65,12 @@ export function DataUseCard() {
       {saveError ? <p className="mt-2 text-sm text-destructive">{saveError}</p> : null}
 
       <div className="mt-4 space-y-3">
-        {PURPOSE_COPY.map((purpose) => {
-          const on = purpose.alwaysOn || state.grants[purpose.purpose] === true;
+        {VISIBLE_PURPOSE_COPY.map((purpose) => {
+          const answer = state.grants[purpose.purpose];
+          const on =
+            purpose.alwaysOn ||
+            answer === true ||
+            (purpose.defaultOn === true && answer === undefined);
           return (
             <div
               key={purpose.purpose}
@@ -76,6 +80,9 @@ export function DataUseCard() {
                 <p className="text-sm font-medium text-foreground">{purpose.title}</p>
                 <p className="mt-1 text-sm text-muted-foreground">{purpose.unlocks}</p>
                 <p className="mt-1 text-xs text-muted-foreground">{purpose.declining}</p>
+                {purpose.note ? (
+                  <p className="mt-1 text-xs text-muted-foreground">{purpose.note}</p>
+                ) : null}
               </div>
               <Switch
                 checked={on}
