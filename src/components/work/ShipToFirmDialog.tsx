@@ -1,3 +1,4 @@
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -11,7 +12,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { DeclareArtifactStep } from "@/components/work/DeclareArtifactStep";
 import { useShipWork } from "@/hooks/use-shipped-work";
+import { guessArtifactDeclaration, type ArtifactDeclaration } from "@/lib/declared-work";
+import { declareArtifact } from "@/lib/declared-work.functions";
 import { useScribbleComplete } from "@/lib/scribble-complete";
 import {
   SHIP_CONFIRM_BODY,
@@ -32,16 +36,31 @@ export function ShipToFirmDialog({
   workItemId,
   title,
   engagementId,
+  item,
   open,
   onOpenChange,
 }: {
   workItemId: string;
   title: string;
   engagementId: string | null;
+  /** What we already know, used only to pre-fill the person's own answers. */
+  item?:
+    | {
+        type?: string | null | undefined;
+        source?: string | null | undefined;
+        source_vendor?: string | null | undefined;
+        meta?: unknown;
+      }
+    | null
+    | undefined;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
   const ship = useShipWork();
+  const declare = useServerFn(declareArtifact);
+  const [declared, setDeclared] = useState<ArtifactDeclaration>(() =>
+    guessArtifactDeclaration({ ...(item ?? {}), title }),
+  );
   const rowRef = useRef<HTMLDivElement>(null);
   const pendingRef = useRef<Promise<Settled> | null>(null);
   const [shipping, setShipping] = useState(false);
@@ -75,7 +94,11 @@ export function ShipToFirmDialog({
     setShipping(true);
     const pending: Promise<Settled> = ship
       .mutateAsync({ workItemId, engagementId })
-      .then(() => ({ ok: true }) as Settled)
+      .then(async () => {
+        // The record is only complete once the person's own words are on it.
+        await declare({ data: { work_item_id: workItemId, ...declared } }).catch(() => undefined);
+        return { ok: true } as Settled;
+      })
       .catch((err: unknown) => ({ ok: false, message: (err as Error).message }) as Settled);
     pendingRef.current = pending;
     void pending.then((result) => {
@@ -109,6 +132,7 @@ export function ShipToFirmDialog({
           <p className="break-words text-sm font-medium text-foreground">{title}</p>
           {scribble.overlay}
         </div>
+        <DeclareArtifactStep value={declared} onChange={setDeclared} />
         {error ? (
           <p data-testid="ship-error" className="text-xs text-destructive">
             {error}

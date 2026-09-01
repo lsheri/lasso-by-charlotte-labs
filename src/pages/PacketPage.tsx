@@ -7,6 +7,7 @@ import { AnalysisLens } from "@/components/reflect/AnalysisLens";
 import { TaskWorkflow, type WorkflowElement } from "@/components/work/TaskWorkflow";
 import { usePacket, type PacketElement } from "@/hooks/use-coaching";
 import { useProfile } from "@/hooks/use-profile";
+import { CoachOutcomeCard } from "@/components/coaching/CoachOutcomeCard";
 import { FirmChecksCard } from "@/components/coaching/FirmChecksCard";
 import { isBriefItem } from "@/lib/brief-shared";
 import { contentsUnread } from "@/lib/text-status";
@@ -182,6 +183,8 @@ export function PacketPage({
           ) : null}
         </div>
       </section>
+
+      <CoachOutcomeCard engagementId={engagementId} role={profile?.role} />
 
       <FirmChecksCard
         orgId={profile?.org_id}

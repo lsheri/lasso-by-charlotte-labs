@@ -77,7 +77,13 @@ export type TelemetryEvent =
   /** Pass 148: the shape of a captured conversation. Bands and counts only. */
   | "thread.shape"
   /** Pass 148: a link between two pieces of work, tool to tool. */
-  | "handoff.observed";
+  | "handoff.observed"
+  /** Pass 150: what the person said their finished work is. Closed vocab. */
+  | "artifact.declared"
+  /** Pass 150: how the person said they worked, at the mapping moment. */
+  | "workflow.declared"
+  /** Pass 150: a coach's read on work they reviewed. Closed vocab. */
+  | "coach.outcome";
 
 export type TelemetryDims = Record<
   string,

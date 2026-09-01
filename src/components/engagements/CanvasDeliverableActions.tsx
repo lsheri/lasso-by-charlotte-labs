@@ -75,6 +75,7 @@ export function CanvasDeliverableActions({
         <ShipToFirmDialog
           workItemId={anchor.id}
           title={anchor.title}
+          item={anchor}
           engagementId={engagementId}
           open={shipOpen}
           onOpenChange={setShipOpen}
