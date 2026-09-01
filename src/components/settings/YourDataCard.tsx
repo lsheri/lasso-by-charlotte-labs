@@ -279,7 +279,10 @@ export function PersonalDataCard() {
         {CEILING_LINE_PREFIX}
         {tierLabel(data.org_tier)}
       </p>
-      <p className="mt-1 text-sm text-foreground">Your level: {tierLabel(data.user_tier)}</p>
+      <div className="mt-1 flex flex-wrap items-center gap-3">
+        <p className="text-sm text-foreground">Your level: {tierLabel(data.user_tier)}</p>
+        <SampleEventDialog tier={effectiveTier(data.org_tier, data.user_tier)} />
+      </div>
 
       <TierList
         name="personal-data-level"
@@ -289,6 +292,9 @@ export function PersonalDataCard() {
       />
 
       <p className="mt-4 text-sm text-muted-foreground">{RIGHTS_BLOCK}</p>
+
+      {data.org_tier === "t0" ? null : <ResearchBlock profileId={profile?.id} />}
+
 
       <ConfirmDialog
         pending={pending}
