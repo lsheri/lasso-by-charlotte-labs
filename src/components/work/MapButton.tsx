@@ -43,7 +43,7 @@ export function MapButton({
         if (stopPropagation) event.stopPropagation();
         onClick();
       }}
-      className={`relative inline-flex h-9 items-center gap-1 rounded-full px-3.5 text-[11px] font-medium uppercase tracking-[0.08em] ${className}`}
+      className={`nb-map-cta relative inline-flex h-9 items-center gap-1 rounded-full px-3.5 text-[11px] font-medium uppercase tracking-[0.08em] ${className}`}
     >
       <span className="relative z-10 flex flex-col items-center leading-none">
         <span>{children}</span>
