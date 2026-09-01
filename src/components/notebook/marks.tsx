@@ -791,6 +791,9 @@ export function MarginFlag({
  * The motion is one CSS keyframe loop, so there is nothing to clean up: it
  * stops when the element unmounts. Reduced motion holds the pupils centred.
  */
+/** PASS 153 - the reading eyes are drawn 2.5x larger so they read across the pane. */
+export const READING_EYES_SCALE = 2.5;
+
 export function ReadingEyes({
   animate = true,
   seed = "reading-eyes",
@@ -801,6 +804,7 @@ export function ReadingEyes({
   className?: string;
 }) {
   const eyes = useMemo(() => readingEyesD(seed), [seed]);
+
   return (
     <span
       data-testid="reading-eyes"
@@ -809,18 +813,27 @@ export function ReadingEyes({
     >
       <span className="nb-reading-eyes-halo" />
       <svg
+        className="nb-reading-eyes-svg"
         viewBox={`0 0 ${READING_EYES_BOX.width} ${READING_EYES_BOX.height}`}
-        width={READING_EYES_BOX.width}
-        height={READING_EYES_BOX.height}
+        width={READING_EYES_BOX.width * READING_EYES_SCALE}
+        height={READING_EYES_BOX.height * READING_EYES_SCALE}
         fill="none"
         stroke="var(--nb-graphite)"
-        strokeWidth={1.5}
+        strokeWidth={2.2}
         strokeLinecap="round"
         strokeLinejoin="round"
         aria-hidden
       >
         {eyes.frame.map((d, index) => (
-          <path key={index} d={d} />
+          <path
+            key={`lens-${index}`}
+            d={d}
+            fill="color-mix(in oklab, var(--nb-green) 12%, transparent)"
+            stroke="none"
+          />
+        ))}
+        {eyes.frame.map((d, index) => (
+          <path key={index} d={d} stroke="var(--nb-green-deep)" />
         ))}
         {eyes.pupils.map((pupil, index) => (
           <circle
@@ -834,6 +847,7 @@ export function ReadingEyes({
           />
         ))}
       </svg>
+
     </span>
   );
 }

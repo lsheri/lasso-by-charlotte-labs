@@ -1927,9 +1927,9 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   height: 44px;
   padding: 0 20px;
   border-radius: 9999px;
-  border: 1.5px solid var(--nb-graphite);
+  border: 1.5px solid color-mix(in oklab, var(--nb-green) 55%, var(--nb-graphite));
   background: var(--card);
-  color: var(--foreground);
+  color: color-mix(in oklab, var(--nb-green-deep) 70%, var(--foreground));
   font-family: var(--font-mono);
   font-size: 12px;
   letter-spacing: 0.1em;
@@ -1943,9 +1943,28 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 }
 .nb-pencil-cta:hover:not(:disabled) {
   transform: translateY(-1px);
+  border-color: var(--nb-green);
+  background: color-mix(in oklab, var(--nb-green) 8%, var(--card));
 }
 .nb-pencil-cta:active:not(:disabled) {
   transform: translateY(0);
+  border-color: var(--nb-green-deep);
+  background: color-mix(in oklab, var(--nb-green) 16%, var(--card));
+}
+/* PASS 153: the graphite hatching shades in as the hand presses. Hover fills
+   the button two thirds of the way; the click completes the shading, then the
+   action runs. */
+.nb-pencil-cta .nb-hatch {
+  transition: opacity 180ms var(--nb-ease);
+}
+.nb-pencil-cta:hover:not(:disabled) .nb-hatch,
+.nb-pencil-cta:focus-visible:not(:disabled) .nb-hatch {
+  animation: none;
+  opacity: 0.66;
+}
+.nb-pencil-cta:active:not(:disabled) .nb-hatch {
+  animation: none;
+  opacity: 1;
 }
 .nb-pencil-cta:disabled {
   color: var(--muted-foreground);
@@ -2642,19 +2661,22 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   grid-area: 1 / 1;
 }
 .nb-reading-eyes-halo {
-  width: 120px;
-  height: 84px;
+  width: 300px;
+  height: 210px;
   border-radius: 999px;
   background: var(--background);
   opacity: 0.85;
   filter: blur(10px);
 }
+.nb-reading-eyes-svg {
+  filter: drop-shadow(0 1px 0 color-mix(in oklab, var(--nb-green) 22%, transparent));
+}
 @keyframes nb-reading-scan {
-  0% { transform: translateX(-3.2px); }
-  12% { transform: translateX(-3.2px); }
-  80% { transform: translateX(3.2px); }
-  90% { transform: translateX(-3.2px); }
-  100% { transform: translateX(-3.2px); }
+  0% { transform: translateX(-3.6px); }
+  12% { transform: translateX(-3.6px); }
+  80% { transform: translateX(3.6px); }
+  90% { transform: translateX(-3.6px); }
+  100% { transform: translateX(-3.6px); }
 }
 .nb-reading-pupil {
   animation: nb-reading-scan 1600ms var(--nb-ease) infinite;
