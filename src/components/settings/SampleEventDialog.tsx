@@ -10,8 +10,10 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
+  SAMPLE_ANALYSIS_HEADING,
   SAMPLE_BUTTON_LABEL,
   SAMPLE_INTRO_LINE,
+  SAMPLE_THREAD_HEADING,
   sampleEventForTier,
   tierLabel,
   type DataTier,

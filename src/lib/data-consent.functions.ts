@@ -28,6 +28,9 @@ export type DataConsentView = {
   org_tier: DataTier;
   org_tier_d_switch: boolean;
   user_tier: DataTier;
+  /** Wording version of the latest ledger entry for each scope, when there is one. */
+  org_text_version: string | null;
+  user_text_version: string | null;
   changes: ConsentChange[];
 };
 
