@@ -2,7 +2,15 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/integrations/supabase/types";
 
+import {
+  effectiveTier,
+  engagementBand,
+  isoWeekStart,
+  shouldNotePresence,
+  type DataTier,
+} from "./data-consent-shared";
 import type { TelemetryDims, TelemetryEvent } from "./telemetry-shared";
+
 
 /** Publishable project key, safe in source, write-only ingest. */
 const POSTHOG_KEY = "phc_mb9PLASteZ87YA6P34n4Mb9Hp9rW3oXXRQvq6qXiy6mw";
