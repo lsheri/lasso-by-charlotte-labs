@@ -134,11 +134,22 @@ describe("server side gates", () => {
     expect(fn).toContain("checkSignupInvite");
   });
 
-  it("revalidates the invite on the server when the signup is submitted", () => {
+  it("revalidates the invite on the server when a coded signup is submitted", () => {
     const page = read("routes/auth.tsx");
     expect(page).toContain("const verdict = await checkInvite({ data: { code: inviteCode, email } })");
-    expect(page).toContain("SIGNUP_NO_INVITE_LINE");
   });
+
+  it("leaves account creation open when no invite code is present", () => {
+    const page = read("routes/auth.tsx");
+    // No blanket wall, no disabled submit, no validator call off the code path.
+    expect(page).not.toContain("SIGNUP_NO_INVITE_LINE");
+    expect(page).not.toContain('mode === "signup" && !inviteCode');
+    expect(page).toContain("disabled={pending}");
+    expect(page).toContain("if (inviteCode) {");
+    expect(page).toContain("Create your account, then set up your workspace or join your team.");
+    expect(page).toContain("${window.location.origin}${onboardingPath}");
+  });
+
 
   it("falls back to a copyable link when the email key is missing", () => {
     const server = read("lib/invites.server.ts");
