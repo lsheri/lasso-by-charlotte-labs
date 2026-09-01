@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 
+import { DeclareWorkflowChips } from "@/components/work/DeclareWorkflowChips";
 import { TypeIcon } from "@/components/work/TypeIcon";
 import { engagementHue } from "@/lib/work-identity";
 import { Button } from "@/components/ui/button";
@@ -10,6 +11,8 @@ import { Input } from "@/components/ui/input";
 import { useEngagements } from "@/hooks/use-engagements";
 import { useProfile } from "@/hooks/use-profile";
 import { supabase } from "@/integrations/supabase/client";
+import { guessWorkflowDeclaration, type WorkflowDeclaration } from "@/lib/declared-work";
+import { declareWorkflow } from "@/lib/declared-work.functions";
 import { detachEpisodeItems, syncEpisodeForMapping } from "@/lib/episodes.functions";
 import { remapItems } from "@/lib/workflow-order";
 import type { WorkItemRow } from "@/lib/work-types";
@@ -36,11 +39,13 @@ export function MapDialog({
   const { data: engagements } = useEngagements(profile?.id);
   const queryClient = useQueryClient();
   const syncEpisode = useServerFn(syncEpisodeForMapping);
+  const declare = useServerFn(declareWorkflow);
   const detachEpisode = useServerFn(detachEpisodeItems);
   const [engagementId, setEngagementId] = useState<string | null>(null);
   const [newTask, setNewTask] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [worked, setWorked] = useState<WorkflowDeclaration>(() => guessWorkflowDeclaration(item));
 
   const { data: tasks } = useQuery({
     queryKey: ["tasks", engagementId],
@@ -84,6 +89,11 @@ export function MapDialog({
       setPending(false);
       return;
     }
+
+    // How the person worked, said in the same moment the work is mapped.
+    await declare({
+      data: { work_item_ids: targets.map((t) => t.id), ...worked },
+    }).catch(() => undefined);
 
     setPending(false);
     onOpenChange(false);
@@ -184,6 +194,7 @@ export function MapDialog({
                 {task.name}
               </button>
             ))}
+            <DeclareWorkflowChips value={worked} onChange={setWorked} />
             <form
               onSubmit={(e) => {
                 e.preventDefault();

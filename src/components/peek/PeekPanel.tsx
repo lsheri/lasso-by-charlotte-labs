@@ -285,6 +285,7 @@ export function PeekPanel({
           workItemId={active.id}
           title={active.title}
           engagementId={engagementId ?? null}
+          item={active}
           open={shipOpen}
           onOpenChange={setShipOpen}
         />
