@@ -53,6 +53,18 @@ export const getDataConsent = createServerFn({ method: "POST" })
       (row) => row.scope === "user" && row.profile_id === profile.id,
     );
 
+    const { data: latest } = await context.supabase
+      .from("data_consent_ledger")
+      .select("scope, profile_id, consent_text_version, created_at")
+      .eq("org_id", profile.org_id)
+      .order("created_at", { ascending: false })
+      .limit(200);
+    const orgTextVersion =
+      (latest ?? []).find((row) => row.scope === "org")?.consent_text_version ?? null;
+    const userTextVersion =
+      (latest ?? []).find((row) => row.scope === "user" && row.profile_id === profile.id)
+        ?.consent_text_version ?? null;
+
     const isAdmin = profile.role === "admin";
     let changes: ConsentChange[] = [];
     if (isAdmin) {
