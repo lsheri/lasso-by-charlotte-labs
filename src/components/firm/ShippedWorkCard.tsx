@@ -4,6 +4,11 @@ import { useEffect, useState } from "react";
 import { GraphiteRule } from "@/components/notebook/marks";
 import { Button } from "@/components/ui/button";
 import { CardMetaTile } from "@/components/firm/CardMetaTile";
+import {
+  DISPOSITION_LABELS,
+  OUTPUT_KIND_LABELS,
+  declarationOf,
+} from "@/lib/declared-work";
 import { deliverableTag } from "@/lib/deliverable-kinds";
 import { openJourney } from "@/lib/journey-state";
 import {
@@ -41,6 +46,8 @@ export function ShippedWorkCard({
   const headline = card.engagement_title?.trim() || card.title;
   const brief = card.engagement_brief?.trim() ?? "";
   const kindTag = deliverableTag(card.meta, card.type);
+  // What the owner said about this work, worn by the card once they said it.
+  const declared = declarationOf(card.meta);
 
   return (
     <div
@@ -86,6 +93,19 @@ export function ShippedWorkCard({
           shipperName={card.shipped_by_name}
           dateLabel={formatDate(card.shipped_at)}
         />
+        {declared ? (
+          <span
+            data-testid={`shipped-card-declared-${card.work_item_id}`}
+            className="mt-1.5 flex flex-wrap gap-1"
+          >
+            <span className="rounded-full border border-border px-2 py-0.5 text-[10px] text-muted-foreground">
+              {OUTPUT_KIND_LABELS[declared.output_kind]}
+            </span>
+            <span className="rounded-full border border-border px-2 py-0.5 text-[10px] text-muted-foreground">
+              {DISPOSITION_LABELS[declared.disposition]}
+            </span>
+          </span>
+        ) : null}
         {facts ? <span className="mt-1 block text-xs text-muted-foreground">{facts}</span> : null}
       </button>
 

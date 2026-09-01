@@ -66,6 +66,7 @@ export function MapDialog({
     setEngagementId(null);
     setNewTask("");
     setError(null);
+    setWorked(guessWorkflowDeclaration(item));
   }
 
   async function mapToTask(taskId: string) {
