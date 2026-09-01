@@ -10,6 +10,7 @@ import {
 } from "@/lib/attachment-guard";
 import { workTypeForFile } from "@/lib/work-types";
 import { recordEvent } from "@/lib/telemetry.server";
+import { noteModelUsed, noteThreadShape } from "@/lib/work-taxonomy.server";
 import { clientDisplayName, engagementDisplayTitle, isQuickFolder } from "@/lib/clients";
 import {
   ATTACHMENT_KINDS,
@@ -426,6 +427,20 @@ async function pushThread(owner: Owner, args: Obj, id: unknown): Promise<Respons
   await ensureExtracts([item.id]);
 
   await logPush(owner, { tool: "push_thread", source_ai: sourceAi });
+  await noteModelUsed(
+    supabaseAdmin,
+    { orgId: owner.orgId, userId: owner.userId, profileId: owner.profileId },
+    {
+      item: { type: "ai_thread", source: `mcp:${sourceAi}` },
+      via: "mcp_push",
+      turnCount: turns.length,
+    },
+  );
+  await noteThreadShape(
+    supabaseAdmin,
+    { orgId: owner.orgId, userId: owner.userId, profileId: owner.profileId },
+    turns.map((t) => ({ role: t.role, length: t.content.length })),
+  );
   return textResult(
     id,
     `Saved to Lasso: '${title}' (${turns.length} turns). It is private until you map it.`,
@@ -481,6 +496,11 @@ async function pushDocument(owner: Owner, args: Obj, id: unknown): Promise<Respo
   if (doc?.id) await ensureExtracts([doc.id]);
 
   await logPush(owner, { tool: "push_document" });
+  await noteModelUsed(
+    supabaseAdmin,
+    { orgId: owner.orgId, userId: owner.userId, profileId: owner.profileId },
+    { item: { type: workTypeForFile(safe), source: "mcp:push" }, via: "mcp_push" },
+  );
   return textResult(id, `Saved '${title}' to Lasso (private, unmapped).`);
 }
 
