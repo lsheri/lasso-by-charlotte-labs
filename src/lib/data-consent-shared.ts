@@ -35,6 +35,10 @@ export function effectiveTier(
   return tierRank(user) <= tierRank(org) ? user : org;
 }
 
+/** What the highest level means, said plainly. Read on both surfaces. */
+export const FULL_OPENNESS_COPY =
+  "Full openness means the work itself is shared with Charlotte Labs: your conversations with AI tools, turn by turn, the questions you asked, and the analyses run on your work. You choose this, and you can step back down at any time. Anything already shared stays governed by the choice it shipped under. Private and unmapped work stays in your workspace.";
+
 export type TierCopy = {
   tier: DataTier;
   label: string;
