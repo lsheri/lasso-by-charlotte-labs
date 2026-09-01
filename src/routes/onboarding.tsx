@@ -384,7 +384,7 @@ function OnboardingInner() {
                   Someone already set up a workspace for you. Paste the code or link they sent.
                 </p>
                 <div className="mt-4">
-                  <EnterInviteCode label="Invite code or link" />
+                  <EnterInviteCode label="Invite code or link" bare />
                 </div>
                 <Link
                   to="/trust"
