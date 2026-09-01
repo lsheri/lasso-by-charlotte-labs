@@ -144,6 +144,19 @@ function ConfirmDialog({
   );
 }
 
+/** Quiet, in place. Nothing else in the app changes until this is confirmed. */
+function ReconfirmNotice({ busy, onConfirm }: { busy: boolean; onConfirm: () => void }) {
+  return (
+    <div className="mt-3 rounded-[var(--radius)] border border-border bg-secondary px-4 py-3">
+      <p className="text-sm font-medium text-foreground">{RECONFIRM_LINE}</p>
+      <p className="mt-1.5 text-sm text-muted-foreground">{FULL_OPENNESS_COPY}</p>
+      <Button type="button" size="sm" className="mt-3" disabled={busy} onClick={onConfirm}>
+        {RECONFIRM_BUTTON}
+      </Button>
+    </div>
+  );
+}
+
 function dateLabel(iso: string): string {
   return new Date(iso).toLocaleDateString(undefined, {
     month: "short",
