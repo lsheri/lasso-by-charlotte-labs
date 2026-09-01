@@ -201,7 +201,7 @@ function LandingPage() {
 
         <FocusSection className="mt-28 md:-translate-x-24 lg:-translate-x-32">
           <p
-            className="hand-mark hand-mark-blue -ml-2 md:-ml-10 lg:-ml-16"
+            className="hand-mark hand-mark-blue -ml-2 -mt-3 md:-ml-10 lg:-ml-16"
             aria-hidden="true"
           >
             With Lasso
