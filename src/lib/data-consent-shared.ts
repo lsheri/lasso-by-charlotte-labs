@@ -176,11 +176,32 @@ export const SAMPLE_INTRO_LINE = "This is exactly what one item looks like when 
 
 export type SampleField = { key: string; value: string };
 
+export type SampleTurn = { role: "you" | "assistant"; text: string };
+
+/** Headings for the made up exchange shown at full openness. */
+export const SAMPLE_THREAD_HEADING = "A made up exchange, turn by turn";
+export const SAMPLE_ANALYSIS_HEADING = "And the analysis run on it";
+
+export const SAMPLE_THREAD: SampleTurn[] = [
+  { role: "you", text: "Here is the Q3 pricing deck. Where is the margin story weakest?" },
+  {
+    role: "assistant",
+    text: "Slide 6 assumes a 12 percent discount floor with no volume tie. That is the soft spot.",
+  },
+  { role: "you", text: "Rewrite slide 6 so the floor is tied to committed volume." },
+];
+
+export const SAMPLE_ANALYSIS_LINE =
+  "analysis: pricing sanity read, 3 turns, one revision loop, one open question left for the client.";
+
 export type SampleEvent = {
   tier: DataTier;
   /** Empty at t0, where nothing leaves at all. */
   fields: SampleField[];
   notes: string[];
+  /** Only at full openness: the shape of the exchange itself. */
+  thread?: SampleTurn[];
+  analysis?: string;
 };
 
 /**
