@@ -9,7 +9,7 @@ import { EmailChangeEmail } from '@/lib/email-templates/email-change'
 import { ReauthenticationEmail } from '@/lib/email-templates/reauthentication'
 
 // Configuration
-const SITE_NAME = "Lasso Coaching Hub"
+const SITE_NAME = "Lasso"
 const SENDER_DOMAIN = "notify.lasso.charlotte-labs.com"
 const ROOT_DOMAIN = "lasso.charlotte-labs.com"
 const FROM_DOMAIN = "lasso.charlotte-labs.com"
