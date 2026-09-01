@@ -926,6 +926,8 @@ async function pushConversation(owner: Owner, args: Obj, id: unknown): Promise<R
   // ---- attachments (match by source_artifact_id, then title) ---------------
   let saved = 0;
   const capturedIds: string[] = [threadId];
+  /** Pass 148: model.used fires once per NEW row, never on an update. */
+  const createdAttachmentTypes: string[] = [];
   const problems: string[] = [];
   const rejected: RejectedAttachment[] = [];
   const degradedAttachments: { title: string; stored_chars: number; incoming_chars: number }[] = [];
@@ -1036,7 +1038,10 @@ async function pushConversation(owner: Owner, args: Obj, id: unknown): Promise<R
       else {
         saved += 1;
         if (match?.id) capturedIds.push(match.id);
-        else if (result.data?.id) capturedIds.push(result.data.id);
+        else if (result.data?.id) {
+          capturedIds.push(result.data.id);
+          createdAttachmentTypes.push(String(fields.type));
+        }
       }
     }
   }
@@ -1081,6 +1086,38 @@ async function pushConversation(owner: Owner, args: Obj, id: unknown): Promise<R
     userId: owner.userId,
     dims: { channel: "mcp", source: vendor },
   });
+
+  // Pass 148. The tool and the coarse shape of the work, once per new row; a
+  // re-push of an unchanged item adds nothing. The thread's shape is emitted
+  // every push, because the shape is what changed.
+  const taxonomyActor = {
+    orgId: owner.orgId,
+    userId: owner.userId,
+    profileId: owner.profileId,
+  };
+  if (pushMode === "created") {
+    await noteModelUsed(supabaseAdmin, taxonomyActor, {
+      item: { type: "ai_thread", source: `mcp:${vendor}`, source_vendor: vendor },
+      via: "mcp_push",
+      turnCount: messages.length,
+    });
+  }
+  for (const type of createdAttachmentTypes) {
+    await noteModelUsed(supabaseAdmin, taxonomyActor, {
+      item: { type, source: `mcp:${vendor}`, source_vendor: vendor },
+      via: "mcp_push",
+    });
+  }
+  const { data: shapeTurns } = await supabaseAdmin
+    .from("turns")
+    .select("role, content")
+    .eq("work_item_id", threadId)
+    .order("turn_no", { ascending: true });
+  await noteThreadShape(
+    supabaseAdmin,
+    taxonomyActor,
+    (shapeTurns ?? []).map((t) => ({ role: String(t.role), length: (t.content ?? "").length })),
+  );
 
   if (owner.userId) {
     // The canonical record of the push. Exact counts, no content.
