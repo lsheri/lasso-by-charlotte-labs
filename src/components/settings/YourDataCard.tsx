@@ -185,7 +185,10 @@ export function OrgDataCard() {
       <p className="mt-1.5 text-sm text-muted-foreground">
         What this organization shares outside the workspace. You can change it at any time.
       </p>
-      <p className="mt-1 text-sm text-foreground">Current level: {tierLabel(data.org_tier)}</p>
+      <div className="mt-1 flex flex-wrap items-center gap-3">
+        <p className="text-sm text-foreground">Current level: {tierLabel(data.org_tier)}</p>
+        <SampleEventDialog tier={data.org_tier} />
+      </div>
 
       <TierList
         name="org-data-level"
