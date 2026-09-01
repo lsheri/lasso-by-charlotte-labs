@@ -110,8 +110,15 @@ describe("pass139 restored navigation and CTAs", () => {
 
   it("pins the problem paragraph verbatim", () => {
     expect(flat).toContain(
-      "AI work happens in chat windows, ships inside deliverables, and vanishes. Not because anyone hides it, because nothing keeps it.",
+      "Knowledge work is moving into LLM conversations and AI apps. Analysis, drafting and judgment happen one prompt at a time, and the reasoning behind the answer vanishes when the window closes. Not because anyone hides it, because nothing keeps it.",
     );
+  });
+
+  it("labels the problem and solution sections with handwritten marks", () => {
+    expect(route).toContain("The Problem");
+    expect(route).toContain("With Lasso");
+    expect(route).toContain("hand-mark hand-mark-ember");
+    expect(route).toContain("hand-mark hand-mark-blue");
   });
 
   it("renders PrivacyToggleDemo after WHAT ACCUMULATES", () => {

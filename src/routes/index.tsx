@@ -198,6 +198,9 @@ function LandingPage() {
 
         <FocusSection className="mt-28 md:-translate-x-24 lg:-translate-x-32">
           <p className="micro-label">THE RECORD</p>
+          <p className="hand-mark hand-mark-blue mt-6" aria-hidden="true">
+            With Lasso
+          </p>
           <h2 className="pencil-title mt-4">How the work was made</h2>
 
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
