@@ -243,6 +243,46 @@ export function OrgDataCard() {
 }
 
 /** The person's own level, bounded by the organization. Coaches see nothing. */
+/** Taking part in studies is separate from the level above. */
+function ResearchBlock({ profileId }: { profileId?: string | undefined }) {
+  const submit = useServerFn(recordResearchChoice);
+  const [saved, setSaved] = useState(false);
+
+  const mutation = useMutation({
+    mutationFn: (choice: ResearchChoice) => submit({ data: { choice, profile_id: profileId } }),
+    onSuccess: () => setSaved(true),
+    onError: (e: unknown) =>
+      toast.error((e as Error)?.message || "That could not be saved. Try again."),
+  });
+
+  return (
+    <section className="mt-6 rounded-[var(--radius)] border border-border bg-card px-4 py-3">
+      <h3 className="micro-label micro-label-section">{RESEARCH_HEADING}</h3>
+      <p className="mt-1.5 text-sm text-muted-foreground">{RESEARCH_BODY}</p>
+      <div className="mt-3 flex items-center gap-2">
+        <Button
+          type="button"
+          size="sm"
+          disabled={mutation.isPending}
+          onClick={() => mutation.mutate("joined")}
+        >
+          Join
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          disabled={mutation.isPending}
+          onClick={() => mutation.mutate("left")}
+        >
+          Leave
+        </Button>
+      </div>
+      {saved ? <p className="mt-2 text-sm text-foreground">{RESEARCH_SAVED_LINE}</p> : null}
+    </section>
+  );
+}
+
 export function PersonalDataCard() {
   const { profile, data } = useConsent();
   const queryClient = useQueryClient();
