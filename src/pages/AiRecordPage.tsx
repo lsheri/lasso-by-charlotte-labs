@@ -310,8 +310,12 @@ export function AiRecordPage() {
                           {(fed?.[item.id] ?? []).length > 0 ? (
                             <span>Fed: {(fed?.[item.id] ?? []).join(", ")}</span>
                           ) : null}
+                          <span onClick={(event) => event.stopPropagation()}>
+                            <ChatUrlLink item={item} />
+                          </span>
                         </div>
                       }
+
                     />
                   ))}
                 </div>
