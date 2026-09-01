@@ -126,12 +126,14 @@ function LandingPage() {
           className={`mt-12 md:translate-x-8 lg:translate-x-12 ${scrolled ? "" : "landing-locked"}`}
         >
           <p className="micro-label">WHERE THE WORK NOW HAPPENS</p>
-          <p
-            className="hand-mark hand-mark-ember -ml-2 mt-6 md:-ml-10 lg:-ml-16"
-            aria-hidden="true"
-          >
-            The Problem
-          </p>
+          <div className="relative h-8 md:-translate-x-8 lg:-translate-x-12">
+            <p
+              className="hand-mark hand-mark-ember absolute left-[calc((-100vw+100%)/2+1rem)] top-6"
+              aria-hidden="true"
+            >
+              The Problem
+            </p>
+          </div>
           <h2 className="pencil-title mt-4">Where the work now happens</h2>
           <p className="mt-5 max-w-2xl text-base leading-relaxed text-foreground">
             The thinking has moved. Analysis, drafting and judgment now happen inside ChatGPT,
@@ -200,12 +202,14 @@ function LandingPage() {
         </FocusSection>
 
         <FocusSection className="mt-28 md:-translate-x-24 lg:-translate-x-32">
-          <p
-            className="hand-mark hand-mark-blue -ml-2 -mt-3 md:-ml-10 lg:-ml-16"
-            aria-hidden="true"
-          >
-            With Lasso
-          </p>
+          <div className="relative h-0 md:translate-x-24 lg:translate-x-32">
+            <p
+              className="hand-mark hand-mark-blue absolute left-[calc((-100vw+100%)/2+1rem)] -top-12"
+              aria-hidden="true"
+            >
+              With Lasso
+            </p>
+          </div>
           <p className="micro-label">THE RECORD</p>
           <h2 className="pencil-title mt-4">How the work was made</h2>
 
