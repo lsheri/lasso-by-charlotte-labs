@@ -94,8 +94,9 @@ function LandingPage() {
             AI made knowledge work invisible. We make it audit ready and coachable.
           </h1>
           <p className="mt-6 max-w-2xl text-base leading-relaxed text-muted-foreground">
-            AI work happens in chat windows, ships inside deliverables, and vanishes. Not because
-            anyone hides it, because nothing keeps it.
+            Knowledge work is moving into LLM conversations and AI apps. Analysis, drafting and
+            judgment happen one prompt at a time, and the reasoning behind the answer vanishes when
+            the window closes. Not because anyone hides it, because nothing keeps it.
           </p>
           <div className="mt-8 flex flex-wrap items-center gap-3">
             <Button asChild>
