@@ -202,12 +202,14 @@ function LandingPage() {
         </FocusSection>
 
         <FocusSection className="mt-28 md:-translate-x-24 lg:-translate-x-32">
-          <p
-            className="hand-mark hand-mark-blue -ml-2 -mt-3 md:-ml-10 lg:-ml-16"
-            aria-hidden="true"
-          >
-            With Lasso
-          </p>
+          <div className="relative h-0 md:translate-x-24 lg:translate-x-32">
+            <p
+              className="hand-mark hand-mark-blue absolute left-[calc((-100vw+100%)/2+1rem)] -top-12"
+              aria-hidden="true"
+            >
+              With Lasso
+            </p>
+          </div>
           <p className="micro-label">THE RECORD</p>
           <h2 className="pencil-title mt-4">How the work was made</h2>
 
