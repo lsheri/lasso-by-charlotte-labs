@@ -801,6 +801,7 @@ export function ReadingEyes({
   className?: string;
 }) {
   const eyes = useMemo(() => readingEyesD(seed), [seed]);
+
   return (
     <span
       data-testid="reading-eyes"
