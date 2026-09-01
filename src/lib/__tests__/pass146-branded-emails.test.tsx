@@ -93,7 +93,7 @@ describe("pass146 branded auth emails", () => {
     expect(mail.html).toContain(TITLE_STACK);
     expect(mail.html).toContain(LASSO_MARK_URL);
     expect(mail.html).toContain("BY CHARLOTTE LABS");
-    expect(mail.html).not.toContain("background:${MAIL.ink}");
+    expect(mail.html).not.toContain("background:#111413");
     expect(mail.text).not.toContain("—");
   });
 });
