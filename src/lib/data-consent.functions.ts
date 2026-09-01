@@ -102,6 +102,8 @@ export const getDataConsent = createServerFn({ method: "POST" })
       org_tier: isDataTier(orgRow?.tier) ? orgRow.tier : DEFAULT_ORG_TIER,
       org_tier_d_switch: orgRow?.tier_d_switch ?? DEFAULT_TIER_D_SWITCH,
       user_tier: isDataTier(userRow?.tier) ? userRow.tier : DEFAULT_USER_TIER,
+      org_text_version: orgTextVersion,
+      user_text_version: userTextVersion,
       changes,
     };
   });
