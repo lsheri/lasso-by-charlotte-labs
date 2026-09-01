@@ -60,8 +60,10 @@ describe("chat library — the name", () => {
 
   it("keeps the language laws in the page copy", () => {
     const src = readFileSync("src/pages/AiRecordPage.tsx", "utf8");
+    // tracking- is a Tailwind letter-spacing class, so copy is read word by word.
+    const copy = src.toLowerCase().replace(/tracking-\[[^\]]*\]/g, "");
     for (const banned of ["track", "monitor", "surveillance", "data collection"]) {
-      expect(src.toLowerCase()).not.toContain(banned);
+      expect(copy).not.toContain(banned);
     }
   });
 });
