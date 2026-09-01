@@ -126,6 +126,9 @@ function LandingPage() {
           className={`mt-12 md:translate-x-8 lg:translate-x-12 ${scrolled ? "" : "landing-locked"}`}
         >
           <p className="micro-label">WHERE THE WORK NOW HAPPENS</p>
+          <p className="hand-mark hand-mark-ember mt-6" aria-hidden="true">
+            The Problem
+          </p>
           <h2 className="pencil-title mt-4">Where the work now happens</h2>
           <p className="mt-5 max-w-2xl text-base leading-relaxed text-foreground">
             The thinking has moved. Analysis, drafting and judgment now happen inside ChatGPT,
