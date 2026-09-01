@@ -7,17 +7,20 @@
 export const MAIL = {
   paper: "#fafafa",
   card: "#ffffff",
-  rule: "#e4e2dd",
+  rule: "#e3e5e1",
   ink: "#111413",
-  muted: "#5a5d5c",
+  body: "#2f3331",
+  muted: "#8b8f8d",
   cta: "#12653d",
 } as const;
 
 export const MAIL_FOOTER = "Sent by Lasso · lasso.charlotte-labs.com";
 
-const FONT =
-  "Archivo, 'Archivo', 'Helvetica Neue', Helvetica, Arial, sans-serif";
-const MONO = "'SFMono-Regular', Menlo, Consolas, 'Liberation Mono', monospace";
+const FONT = "Arial, Helvetica, sans-serif";
+const MONO = "'Courier New', Courier, monospace";
+const TITLE = "'Caveat', 'Segoe Script', 'Bradley Hand', cursive";
+const CAVEAT_HREF =
+  "https://fonts.googleapis.com/css2?family=Caveat:wght@700&display=swap";
 
 function escapeHtml(value: string): string {
   return value
@@ -29,8 +32,8 @@ function escapeHtml(value: string): string {
 
 export type InviteEmail = { subject: string; html: string; text: string };
 
-export function inviteSubject(inviterName: string, orgName: string): string {
-  return `${inviterName} invited you to join ${orgName} on Lasso`;
+export function inviteSubject(_inviterName: string, orgName: string): string {
+  return orgName ? `You are invited to ${orgName}` : "You are invited";
 }
 
 export function renderInviteEmail(args: {
@@ -47,28 +50,39 @@ export function renderInviteEmail(args: {
     "LASSO",
     "by Charlotte Labs",
     "",
+    "You are invited",
+    "",
     lead,
     "",
     body,
     "",
     `Accept your invite: ${acceptUrl}`,
     "",
+    "If you were not expecting this, you can ignore it and nothing happens.",
+    "",
     MAIL_FOOTER,
   ].join("\n");
 
-  const html = `<!doctype html><html><body style="margin:0;padding:32px 16px;background:${MAIL.paper};font-family:${FONT};color:${MAIL.ink}">
-<div style="max-width:520px;margin:0 auto">
-<div style="background:${MAIL.ink};border-radius:10px;padding:18px 20px">
+  const html = `<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="${CAVEAT_HREF}"><style>
+  @media (prefers-color-scheme: dark) {
+    .dm-btn { background-color: ${MAIL.cta} !important; color: #ffffff !important; }
+  }
+  [data-ogsc] .dm-btn { background-color: ${MAIL.cta} !important; color: #ffffff !important; }
+  [data-ogsb] .dm-btn { background-color: ${MAIL.cta} !important; color: #ffffff !important; }
+</style></head><body style="margin:0;padding:28px 16px;background:${MAIL.paper};font-family:${FONT};color:${MAIL.body}">
+<div style="max-width:540px;margin:0 auto">
+<div style="background:${MAIL.ink};border-radius:8px;padding:18px 20px">
 <div style="font-family:${MONO};font-size:20px;letter-spacing:0.24em;color:#ffffff">LASSO</div>
 <div style="font-family:${MONO};font-size:11px;letter-spacing:0.16em;color:#b9bcba;margin-top:6px">by Charlotte Labs</div>
 </div>
-<div style="background:${MAIL.card};border:1px solid ${MAIL.rule};border-radius:10px;padding:24px;margin-top:16px">
-<p style="font-size:16px;line-height:1.6;margin:0 0 12px">${escapeHtml(lead)}</p>
-<p style="font-size:15px;line-height:1.6;margin:0;color:${MAIL.muted}">${escapeHtml(body)}</p>
-<p style="margin:28px 0 8px"><a href="${escapeHtml(acceptUrl)}" style="display:inline-block;background:${MAIL.cta};color:#ffffff;text-decoration:none;padding:13px 22px;border-radius:8px;font-size:15px;font-weight:600">Accept your invite</a></p>
-<p style="font-size:13px;line-height:1.6;color:${MAIL.muted}">Or paste this link into your browser:<br>${escapeHtml(acceptUrl)}</p>
+<div style="background:${MAIL.card};border:1px solid ${MAIL.rule};border-radius:8px;padding:26px 24px;margin-top:16px">
+<p style="font-family:${TITLE};font-size:30px;font-weight:bold;color:${MAIL.ink};margin:0 0 14px">You are invited</p>
+<p style="font-size:14px;line-height:1.6;margin:0 0 14px">${escapeHtml(lead)}</p>
+<p style="font-size:14px;line-height:1.6;margin:0;color:${MAIL.body}">${escapeHtml(body)}</p>
+<p style="margin:26px 0 8px"><a class="dm-btn" href="${escapeHtml(acceptUrl)}" style="display:inline-block;background:${MAIL.cta};color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:6px;font-size:14px;font-weight:600">Accept your invite</a></p>
+<p style="font-size:12px;line-height:1.6;color:${MAIL.muted}">Or paste this link into your browser:<br>${escapeHtml(acceptUrl)}</p>
 </div>
-<p style="font-family:${MONO};font-size:11px;letter-spacing:0.08em;color:${MAIL.muted};margin-top:20px">${escapeHtml(MAIL_FOOTER)}</p>
+<p style="font-family:${MONO};font-size:11px;letter-spacing:0.08em;color:${MAIL.muted};margin-top:18px">${escapeHtml(MAIL_FOOTER)}</p>
 </div></body></html>`;
 
   return { subject: inviteSubject(inviterName, orgName), html, text };
