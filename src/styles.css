@@ -2751,3 +2751,40 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
     filter: none;
   }
 }
+
+/* Landing "the gap": products drift in, the thinking behind them blurs out. */
+@keyframes nb-gap-drift {
+  0% {
+    opacity: 0;
+    transform: translateX(-14px);
+  }
+  18% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  72% {
+    opacity: 1;
+    transform: translateX(10px);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+}
+
+.nb-gap-feed {
+  animation: nb-gap-drift 12s linear infinite;
+}
+
+.nb-gap-blur {
+  filter: blur(3.4px);
+  opacity: 0.55;
+  user-select: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nb-gap-feed {
+    animation: none;
+    opacity: 1;
+  }
+}
