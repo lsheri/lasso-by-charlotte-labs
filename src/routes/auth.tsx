@@ -117,32 +117,32 @@ function AuthPage() {
       if (signInError) setError(signInError.message);
       else goOn();
     } else {
-      if (!inviteCode) {
-        setError(SIGNUP_NO_INVITE_LINE);
-        setPending(false);
-        return;
+      // With an invite code, the gate is checked again on the server at submit
+      // time, with the typed address. Without one, this is an open signup.
+      if (inviteCode) {
+        const verdict = await checkInvite({ data: { code: inviteCode, email } });
+        if (!verdict.ok) {
+          setError(verdict.message);
+          setPending(false);
+          return;
+        }
       }
-      // Checked again on the server at submit time, with the typed address, so
-      // the gate does not depend on anything the browser was told earlier.
-      const verdict = await checkInvite({ data: { code: inviteCode, email } });
-      if (!verdict.ok) {
-        setError(verdict.message);
-        setPending(false);
-        return;
-      }
+      const onboardingPath = intent ? `/onboarding?intent=${intent}` : "/onboarding";
       const { data, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
         // Carry the destination through confirmation, so an invite is never
-        // lost between the email link and the accept page.
+        // lost between the email link and the accept page, and an open signup
+        // lands on workspace setup.
         options: {
           emailRedirectTo: next
             ? `${window.location.origin}${next}`
             : inviteCode
               ? `${window.location.origin}/join?code=${encodeURIComponent(inviteCode)}`
-              : window.location.origin,
+              : `${window.location.origin}${onboardingPath}`,
         },
       });
+
       if (signUpError) setError(signUpError.message);
       else if (data.session) goOn();
       else setMessage("Check your email to confirm your account.");
