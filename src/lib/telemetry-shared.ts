@@ -71,7 +71,13 @@ export type TelemetryEvent =
   /** Pass 145: one row per person per ISO week. Counts only, banded. */
   | "presence.active"
   /** Pass 147: a person joined or left research. Choice only. */
-  | "consent.research_change";
+  | "consent.research_change"
+  /** Pass 148: one captured item, the tool and coarse shape of the work. */
+  | "model.used"
+  /** Pass 148: the shape of a captured conversation. Bands and counts only. */
+  | "thread.shape"
+  /** Pass 148: a link between two pieces of work, tool to tool. */
+  | "handoff.observed";
 
 export type TelemetryDims = Record<
   string,
