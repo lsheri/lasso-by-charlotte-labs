@@ -1,6 +1,6 @@
 import * as React from 'react'
 
-import { Head, Link, Section, Text } from '@react-email/components'
+import { Column, Head, Img, Link, Row, Section, Text } from '@react-email/components'
 
 /**
  * One shared visual system for every email Lasso sends. Email clients ignore
