@@ -17,10 +17,13 @@ export const MAIL = {
 export const MAIL_FOOTER = "Sent by Lasso · lasso.charlotte-labs.com";
 
 const FONT = "Arial, Helvetica, sans-serif";
-const MONO = "'Courier New', Courier, monospace";
+const MONO = "'JetBrains Mono', 'Courier New', Courier, monospace";
 const TITLE = "'Caveat', 'Segoe Script', 'Bradley Hand', cursive";
+const TITLE_FACE = "Archivo, Helvetica, Arial, sans-serif";
 const CAVEAT_HREF =
   "https://fonts.googleapis.com/css2?family=Caveat:wght@700&display=swap";
+// Animated mascot mark hosted on the umbrella domain; referenced, not copied.
+export const LASSO_MARK_URL = "https://charlotte-labs.com/email/lasso-mark.gif";
 
 function escapeHtml(value: string): string {
   return value
