@@ -242,7 +242,7 @@ export function sampleEventForTier(tier: DataTier): SampleEvent {
     value: "Recommend holding list price and moving the discount floor to 12 percent.",
   });
   notes.push(SAMPLE_CONTENT_LINE);
-  return { tier, fields, notes };
+  return { tier, fields, notes, thread: SAMPLE_THREAD, analysis: SAMPLE_ANALYSIS_LINE };
 }
 
 /** The optional research block on the personal surface. */
