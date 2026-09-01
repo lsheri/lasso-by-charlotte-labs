@@ -105,9 +105,10 @@ describe("invite email", () => {
     acceptUrl: "https://lasso.charlotte-labs.com/join?code=a1b2c3d4e5f6",
   });
 
-  it("names the inviter and the organization in the subject", () => {
-    expect(mail.subject).toBe("Dana Reed invited you to join Acme Partners on Lasso");
+  it("names the organization in the subject", () => {
+    expect(mail.subject).toBe("You are invited to Acme Partners");
     expect(inviteSubject("Dana Reed", "Acme Partners")).toBe(mail.subject);
+    expect(inviteSubject("Dana Reed", "")).toBe("You are invited");
   });
 
   it("carries the accept link in both parts, with the branded button", () => {
@@ -118,6 +119,12 @@ describe("invite email", () => {
     expect(mail.html).toContain("by Charlotte Labs");
     expect(mail.text).toContain("https://lasso.charlotte-labs.com/join?code=a1b2c3d4e5f6");
     expect(mail.html).toContain(MAIL_FOOTER);
+  });
+
+  it("wears the shared notebook chrome", () => {
+    expect(mail.html).toContain("LASSO");
+    expect(mail.html).toContain("'Caveat', 'Segoe Script', 'Bradley Hand', cursive");
+    expect(mail.html).toContain("dm-btn");
   });
 
   it("keeps the copy plain, with no banned words and no em dashes", () => {

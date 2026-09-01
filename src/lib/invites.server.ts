@@ -13,24 +13,58 @@ export function inviteSenderAddress(): string {
   return `Lasso <invites@${domain}>`;
 }
 
-/** Sends the invitation through Resend. Missing secrets are not an error. */
-export async function sendInviteViaResend(args: {
+const SENDER_DOMAIN = "notify.lasso.charlotte-labs.com";
+const PLATFORM_FROM = "Lasso <noreply@lasso.charlotte-labs.com>";
+
+/**
+ * Sends the invitation. The platform path is primary, a directly configured
+ * Resend key is the secondary path, and no transport at all is not an error:
+ * the caller shows the copyable link instead.
+ */
+export async function sendInviteEmail(args: {
   to: string;
   inviterName: string;
   acceptUrl: string;
   orgName?: string | undefined;
 }): Promise<InviteEmailResult> {
-  const apiKey = process.env["RESEND_API_KEY"];
-  if (!apiKey) {
-    return { sent: false, reason: "not_configured", message: null };
-  }
-
   const { renderInviteEmail } = await import("./invite-email");
   const { subject, text, html } = renderInviteEmail({
     inviterName: args.inviterName,
     orgName: args.orgName || "your organization",
     acceptUrl: args.acceptUrl,
   });
+
+  const platformKey = process.env["LOVABLE_API_KEY"];
+  if (platformKey) {
+    try {
+      const { sendLovableEmail } = await import("@lovable.dev/email-js");
+      await sendLovableEmail(
+        {
+          to: args.to,
+          from: PLATFORM_FROM,
+          sender_domain: SENDER_DOMAIN,
+          subject,
+          html,
+          text,
+          purpose: "transactional",
+          label: "org-invite",
+          idempotency_key: `org-invite-${args.acceptUrl}`,
+        },
+        { apiKey: platformKey, sendUrl: process.env["LOVABLE_SEND_URL"] },
+      );
+      return { sent: true, reason: "sent", message: null };
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : String(error);
+      if (!process.env["RESEND_API_KEY"]) {
+        return { sent: false, reason: "failed", message: detail.slice(0, 300) };
+      }
+    }
+  }
+
+  const apiKey = process.env["RESEND_API_KEY"];
+  if (!apiKey) {
+    return { sent: false, reason: "not_configured", message: null };
+  }
 
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",

@@ -73,7 +73,7 @@ export const sendInviteEmail = createServerFn({ method: "POST" })
   .inputValidator(validate)
   .handler(async ({ data, context }): Promise<InviteEmailResult> => {
     const { resolveProfile } = await import("@/lib/profile-resolve");
-    const { assertInviteInOrg, sendInviteViaResend } = await import("@/lib/invites.server");
+    const { assertInviteInOrg, sendInviteEmail: sendInvite } = await import("@/lib/invites.server");
     const { recordEvent } = await import("@/lib/telemetry.server");
 
     const profile = await resolveProfile(context.supabase, context.userId, data.profile_id);
@@ -87,7 +87,7 @@ export const sendInviteEmail = createServerFn({ method: "POST" })
       context.supabase.from("orgs").select("name").eq("id", profile.org_id).maybeSingle(),
     ]);
 
-    const result = await sendInviteViaResend({
+    const result = await sendInvite({
       to: data.email.trim(),
       inviterName: me?.display_name || "Someone at your firm",
       acceptUrl: data.accept_url,

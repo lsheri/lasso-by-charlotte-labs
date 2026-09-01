@@ -97,8 +97,8 @@ export async function resendInviteByCode(
       context.supabase.from("profiles").select("display_name").eq("id", profile.id).maybeSingle(),
       context.supabase.from("orgs").select("name").eq("id", profile.org_id).maybeSingle(),
     ]);
-    const { sendInviteViaResend } = await import("./invites.server");
-    const result = await sendInviteViaResend({
+    const { sendInviteEmail } = await import("./invites.server");
+    const result = await sendInviteEmail({
       to: invite.email,
       inviterName: me?.display_name || "Someone at your firm",
       acceptUrl: `${acceptOrigin}/join?code=${encodeURIComponent(minted as string)}`,
