@@ -449,6 +449,7 @@ export function WorkPage() {
                   Select all
                 </label>
                 <MapButton
+                  disabled={chosen.size === 0}
                   onClick={() => {
                     const picked = all.filter((i) => chosen.has(i.id));
                     const head = picked[0];
