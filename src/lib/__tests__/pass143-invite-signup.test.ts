@@ -116,7 +116,9 @@ describe("invite email", () => {
     expect(mail.html).toContain("Accept your invite");
     expect(mail.html).toContain("#12653d");
     expect(mail.html).toContain("#fafafa");
-    expect(mail.html).toContain("by Charlotte Labs");
+    expect(mail.html).toContain("BY CHARLOTTE LABS");
+    expect(mail.html).toContain("https://charlotte-labs.com/email/lasso-mark.gif");
+    expect(mail.html).not.toContain("background:#111413");
     expect(mail.text).toContain("https://lasso.charlotte-labs.com/join?code=a1b2c3d4e5f6");
     expect(mail.html).toContain(MAIL_FOOTER);
   });
