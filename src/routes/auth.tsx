@@ -10,7 +10,7 @@ import { Wordmark } from "@/components/layout/Wordmark";
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { checkSignupInvite } from "@/lib/invites.functions";
-import { SIGNUP_NO_INVITE_LINE, type SignupInviteCheck } from "@/lib/signup-invite";
+import { type SignupInviteCheck } from "@/lib/signup-invite";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
