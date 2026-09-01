@@ -28,9 +28,9 @@ const BANNED = [
   "tracked",
 ];
 
-describe("dc-v3", () => {
+describe("dc-v4", () => {
   it("bumps the wording version", () => {
-    expect(CONSENT_TEXT_VERSION).toBe("dc-v3");
+    expect(CONSENT_TEXT_VERSION).toBe("dc-v4");
   });
 
   it("says plainly what full openness shares", () => {
@@ -69,7 +69,8 @@ describe("re-confirm", () => {
   it("only asks at full openness with older wording", () => {
     expect(needsReconfirm("d", "dc-v2")).toBe(true);
     expect(needsReconfirm("d", null)).toBe(true);
-    expect(needsReconfirm("d", "dc-v3")).toBe(false);
+    expect(needsReconfirm("d", "dc-v3")).toBe(true);
+    expect(needsReconfirm("d", "dc-v4")).toBe(false);
     expect(needsReconfirm("c", "dc-v2")).toBe(false);
     expect(needsReconfirm("t0", null)).toBe(false);
   });

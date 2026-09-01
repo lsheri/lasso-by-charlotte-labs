@@ -10,7 +10,7 @@ export const TIER_ORDER = ["t0", "a", "b", "c", "d"] as const;
 export type DataTier = (typeof TIER_ORDER)[number];
 
 /** The copy people read. Bump this when any sentence below changes. */
-export const CONSENT_TEXT_VERSION = "dc-v3";
+export const CONSENT_TEXT_VERSION = "dc-v4";
 
 /** Defaults when a state row is missing. */
 export const DEFAULT_ORG_TIER: DataTier = "c";
@@ -50,7 +50,7 @@ export const TIER_COPY: TierCopy[] = [
     tier: "t0",
     label: "Workspace only",
     description:
-      "Nothing leaves your workspace. Lasso keeps your work available to you and sends nothing about it anywhere else.",
+      "At this level, nothing about your work leaves your workspace. No words, no titles, no names, and nothing tied to you or your organization leave with it. One thing is still counted, anonymously: which AI models are in use, so tools can be compared fairly. That count can never be traced back to you or your workspace.",
   },
   {
     tier: "a",

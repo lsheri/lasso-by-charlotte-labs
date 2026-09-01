@@ -62,7 +62,7 @@ describe("research choice", () => {
 
 describe("copy", () => {
   it("bumps the version", () => {
-    expect(CONSENT_TEXT_VERSION).toBe("dc-v3");
+    expect(CONSENT_TEXT_VERSION).toBe("dc-v4");
   });
 
   it("names titles and file names at the work details level", () => {
