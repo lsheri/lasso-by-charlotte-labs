@@ -9,6 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { MapButton } from "@/components/work/MapButton";
 import { analysisPreset } from "@/lib/analysis-presets";
 import { isBriefItem } from "@/lib/brief-shared";
 import { isDeliverableType } from "@/lib/lineage-shared";
@@ -105,9 +106,9 @@ export function PeekActionBar({
       className="mt-3 flex flex-wrap items-center gap-2 border-t border-border pt-3"
     >
       {canEdit && onMap ? (
-        <PencilAction seed="peek-map" onClick={() => onMap(item, group)}>
+        <MapButton onClick={() => onMap(item, group)}>
           {item.visibility === "mapped" ? "Remap" : "Map to a workstream"}
-        </PencilAction>
+        </MapButton>
       ) : null}
       {showFactCheck ? (
         <PencilAction
