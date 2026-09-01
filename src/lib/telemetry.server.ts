@@ -182,6 +182,13 @@ export async function recordEvent(
       console.error(`[telemetry] canonical insert failed for ${input.eventType}:`, error.message);
     // Nothing leaves the workspace at the lowest level.
     if (consent.tier !== "t0") await mirrorToPostHog(input.eventType, actorHash, tenantHash, dims);
+    if (!error) {
+      // Post-storage only: the stored row is the source of truth, and the sweep
+      // decides for itself what each workspace's chosen level allows to leave.
+      const { scheduleEgress } = await import("./egress.server");
+      scheduleEgress();
+    }
+
   } catch (e) {
     console.error("[telemetry] recordEvent failed:", (e as Error).message);
   }
