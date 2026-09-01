@@ -190,6 +190,13 @@ export function OrgDataCard() {
         <SampleEventDialog tier={data.org_tier} />
       </div>
 
+      {needsReconfirm(data.org_tier, data.org_text_version) ? (
+        <ReconfirmNotice
+          busy={mutation.isPending}
+          onConfirm={() => mutation.mutate({ tier: "d" })}
+        />
+      ) : null}
+
       <TierList
         name="org-data-level"
         value={data.org_tier}
@@ -323,6 +330,10 @@ export function PersonalDataCard() {
         <p className="text-sm text-foreground">Your level: {tierLabel(data.user_tier)}</p>
         <SampleEventDialog tier={effectiveTier(data.org_tier, data.user_tier)} />
       </div>
+
+      {needsReconfirm(data.user_tier, data.user_text_version) ? (
+        <ReconfirmNotice busy={mutation.isPending} onConfirm={() => mutation.mutate("d")} />
+      ) : null}
 
       <TierList
         name="personal-data-level"
