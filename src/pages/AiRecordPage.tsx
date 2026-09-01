@@ -111,13 +111,19 @@ export function AiRecordPage() {
   const [peek, setPeek] = useState<{ entry: PeekEntry } | null>(null);
   const [lensItem, setLensItem] = useState<WorkItemRow | null>(null);
   const [openGroup, setOpenGroup] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
 
   const threads = (work?.items ?? []).filter((i) => i.type === "ai_thread");
   // The id list is sorted before it becomes part of a key, so a reordered but
   // identical set of threads does not churn the cache and repaint the page.
   const threadIds = threads.map((i) => i.id);
   const threadKey = [...threadIds].sort().join(",");
-  const groups = groupItems(threads);
+  const needle = query.trim().toLowerCase();
+  const shown = needle
+    ? threads.filter((i) => (i.title ?? "").toLowerCase().includes(needle))
+    : threads;
+  const groups = groupItems(shown);
+
   const analyses = useChatAnalyses(profile?.id, profile?.org_id);
 
   const { data: turnCounts } = useQuery({
