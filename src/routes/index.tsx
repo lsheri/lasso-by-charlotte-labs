@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { PublicHeader } from "@/components/layout/PublicHeader";
 import { ClipPlayer } from "@/components/marketing/ClipPlayer";
 import { FocusSection } from "@/components/marketing/FocusSection";
+import { InvisibleWorkStrip } from "@/components/marketing/InvisibleWorkStrip";
 import { PrivacyToggleDemo } from "@/components/marketing/PrivacyToggleDemo";
 import { VendorLabel } from "@/components/marketing/VendorMark";
 import pastWorkLibrary from "@/assets/past-work-library.png.asset.json";
@@ -201,7 +202,32 @@ function LandingPage() {
           </div>
         </FocusSection>
 
+        {/* The gap: everything feeds in, only the output survives. */}
+        <FocusSection className="mt-24 md:-mx-24 lg:-mx-36">
+          <p className="micro-label">THE GAP</p>
+          <h2 className="pencil-title mt-4">The output is the only part that survives</h2>
+          <p className="mt-5 max-w-2xl text-base leading-relaxed text-foreground">
+            Every tool feeds the work. The deliverable comes out clean and shareable, while the
+            judgment, the decisions, the drafts and the process behind it stay out of reach.
+          </p>
+          <div className="mt-8 grid gap-6 md:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] md:items-center">
+            <InvisibleWorkStrip />
+            <div>
+              <p className="micro-label mb-3">WHAT COMES OUT</p>
+              <ClipPlayer
+                src="/videos/lasso-clean-output.mp4"
+                poster="/videos/poster-clean-output.jpg"
+                width={1280}
+                height={716}
+                group="clean-output"
+                label="A finished deliverable, clean and shareable"
+              />
+            </div>
+          </div>
+        </FocusSection>
+
         <FocusSection className="mt-28 md:-translate-x-24 lg:-translate-x-32">
+
           <div className="relative h-0 md:translate-x-24 lg:translate-x-32">
             <p
               className="hand-mark hand-mark-blue absolute left-[calc((-100vw+100%)/2+1rem)] -top-12"
