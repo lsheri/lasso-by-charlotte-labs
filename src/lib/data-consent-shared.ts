@@ -10,7 +10,7 @@ export const TIER_ORDER = ["t0", "a", "b", "c", "d"] as const;
 export type DataTier = (typeof TIER_ORDER)[number];
 
 /** The copy people read. Bump this when any sentence below changes. */
-export const CONSENT_TEXT_VERSION = "dc-v2";
+export const CONSENT_TEXT_VERSION = "dc-v3";
 
 /** Defaults when a state row is missing. */
 export const DEFAULT_ORG_TIER: DataTier = "c";
@@ -69,8 +69,7 @@ export const TIER_COPY: TierCopy[] = [
   {
     tier: "d",
     label: "Full work content",
-    description:
-      "Adds the text of work people have already shared by mapping or shipping it, so it can be read in full. Private and unmapped work stays in your workspace.",
+    description: FULL_OPENNESS_COPY,
   },
 ];
 
