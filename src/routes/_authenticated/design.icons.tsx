@@ -78,11 +78,11 @@ const FAMILIES: { family: string; entries: Entry[] }[] = [
       },
       {
         name: "ai-record",
-        label: "AI record",
+        label: "Chat library",
         use: "What the assistant did, in plain terms.",
         wit: "The second line of text is short, like a trailing thought.",
         motion: "Pop: one soft scale of the sheet.",
-        usedIn: "Sidebar, AI record header",
+        usedIn: "Sidebar, Chat library header",
       },
       {
         name: "one-on-one",

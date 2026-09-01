@@ -18,7 +18,7 @@ export const navGroups: NavGroup[] = [
       { label: "Overview", to: "/overview", icon: "overview" },
       { label: "Reflect", to: "/reflect", icon: "reflect" },
 
-      { label: "AI record", to: "/ai-record", icon: "ai-record" },
+      { label: "Chat library", to: "/ai-record", icon: "ai-record" },
       { label: "1:1 prep", to: "/one-on-one", icon: "one-on-one" },
       { label: "Decision log", to: "/decisions", icon: "decisions" },
       { label: "Settings", to: "/settings", icon: "settings" },
