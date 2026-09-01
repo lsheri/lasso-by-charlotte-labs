@@ -94,8 +94,9 @@ function LandingPage() {
             AI made knowledge work invisible. We make it audit ready and coachable.
           </h1>
           <p className="mt-6 max-w-2xl text-base leading-relaxed text-muted-foreground">
-            AI work happens in chat windows, ships inside deliverables, and vanishes. Not because
-            anyone hides it, because nothing keeps it.
+            Knowledge work is moving into LLM conversations and AI apps. Analysis, drafting and
+            judgment happen one prompt at a time, and the reasoning behind the answer vanishes when
+            the window closes. Not because anyone hides it, because nothing keeps it.
           </p>
           <div className="mt-8 flex flex-wrap items-center gap-3">
             <Button asChild>
@@ -125,6 +126,9 @@ function LandingPage() {
           className={`mt-12 md:translate-x-8 lg:translate-x-12 ${scrolled ? "" : "landing-locked"}`}
         >
           <p className="micro-label">WHERE THE WORK NOW HAPPENS</p>
+          <p className="hand-mark hand-mark-ember mt-6" aria-hidden="true">
+            The Problem
+          </p>
           <h2 className="pencil-title mt-4">Where the work now happens</h2>
           <p className="mt-5 max-w-2xl text-base leading-relaxed text-foreground">
             The thinking has moved. Analysis, drafting and judgment now happen inside ChatGPT,
@@ -194,6 +198,9 @@ function LandingPage() {
 
         <FocusSection className="mt-28 md:-translate-x-24 lg:-translate-x-32">
           <p className="micro-label">THE RECORD</p>
+          <p className="hand-mark hand-mark-blue mt-6" aria-hidden="true">
+            With Lasso
+          </p>
           <h2 className="pencil-title mt-4">How the work was made</h2>
 
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">

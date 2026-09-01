@@ -2702,6 +2702,30 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   }
 }
 
+/* Landing: bold handwritten diagonal marks labelling problem vs. solution. */
+@utility hand-mark {
+  font-family: "Caveat", var(--font-sans);
+  font-weight: 700;
+  font-size: 1.875rem;
+  line-height: 1;
+  display: inline-block;
+  transform: rotate(-7deg);
+  text-decoration: underline;
+  text-decoration-style: wavy;
+  text-underline-offset: 6px;
+  text-decoration-thickness: 2px;
+}
+
+@utility hand-mark-ember {
+  color: var(--nb-ink-ember);
+  text-decoration-color: var(--nb-ink-ember);
+}
+
+@utility hand-mark-blue {
+  color: var(--nb-blue);
+  text-decoration-color: var(--nb-blue);
+}
+
 /* Scroll focus: sections away from the viewport centre fade and soften. */
 @utility focus-section {
   transition:
