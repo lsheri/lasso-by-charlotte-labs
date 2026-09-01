@@ -13,21 +13,33 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { useProfile } from "@/hooks/use-profile";
 import {
   ABOVE_CEILING_LINE,
   CEILING_LINE_PREFIX,
   CONTENT_SWITCH_LINE,
+  RESEARCH_BODY,
+  RESEARCH_HEADING,
+  RESEARCH_SAVED_LINE,
   RIGHTS_BLOCK,
   SURFACE_NAME,
   TIER_COPY,
+  effectiveTier,
   tierCopy,
   tierLabel,
   tierRank,
   type DataTier,
+  type ResearchChoice,
 } from "@/lib/data-consent-shared";
-import { getDataConsent, setDataConsent } from "@/lib/data-consent.functions";
+import {
+  getDataConsent,
+  recordResearchChoice,
+  setDataConsent,
+} from "@/lib/data-consent.functions";
+
+import { SampleEventDialog } from "./SampleEventDialog";
 
 function useConsent() {
   const { data: profile } = useProfile();
