@@ -1,5 +1,6 @@
 import { consumeEntryDim } from "./onboarding-entry";
 import { recordEventFn } from "./telemetry.functions";
+import { nextClientSeq, sessionId } from "./telemetry-session";
 import type { TelemetryDims, TelemetryEvent } from "./telemetry-shared";
 
 export { bucket } from "./telemetry-shared";
@@ -12,7 +13,15 @@ export type { CaptureChannel, TelemetryDims, TelemetryEvent } from "./telemetry-
 export function logEvent(eventType: TelemetryEvent, orgId: string, dims: TelemetryDims): void {
   const entry = consumeEntryDim(eventType);
   const merged = entry ? { ...dims, ...entry } : dims;
-  void recordEventFn({ data: { event_type: eventType, org_id: orgId, dims: merged } }).catch(() => {
+  void recordEventFn({
+    data: {
+      event_type: eventType,
+      org_id: orgId,
+      dims: merged,
+      session_id: sessionId(),
+      client_seq: nextClientSeq(),
+    },
+  }).catch(() => {
     /* telemetry must never surface to the user */
   });
 }

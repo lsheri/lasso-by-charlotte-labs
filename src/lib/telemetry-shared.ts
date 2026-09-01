@@ -67,7 +67,9 @@ export type TelemetryEvent =
   /** Hard document load timing. Emitted only by src/lib/pageload-timing.ts. */
   | "perf.pageload"
   /** Content-free client error signal. Emitted only by src/lib/error-signal.ts. */
-  | "client.error";
+  | "client.error"
+  /** Pass 145: one row per person per ISO week. Counts only, banded. */
+  | "presence.active";
 
 export type TelemetryDims = Record<
   string,

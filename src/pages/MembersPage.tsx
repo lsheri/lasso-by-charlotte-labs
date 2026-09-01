@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { InviteDialog } from "@/components/invites/InviteDialog";
+import { OrgDataCard } from "@/components/settings/YourDataCard";
 import {
   INVITE_ADMIN_ONLY_LINE,
   INVITE_RESEND_ADMIN_ONLY_LINE,
@@ -189,6 +190,7 @@ function MembersConsole() {
       {data ? (
         <div className="space-y-10">
           <PlanSection entitlement={data.entitlement} business={business} />
+          {isAdmin ? <OrgDataCard /> : null}
           <section>
             <div className="flex items-center justify-between gap-3">
               <h2 className="micro-label micro-label-section">{copy.people}</h2>
