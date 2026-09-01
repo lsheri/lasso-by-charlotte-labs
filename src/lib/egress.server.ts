@@ -176,8 +176,14 @@ export function scheduleEgress(): void {
   lastRunAt = Date.now();
   inFlight = true;
   void runEgress()
+    .then(async () => {
+      // The work itself only ever moves for workspaces that chose full openness.
+      const { runContentEgress } = await import("./content-egress.server");
+      await runContentEgress();
+    })
     .catch((e) => console.error("[egress] scheduled run failed:", (e as Error).message))
     .finally(() => {
       inFlight = false;
     });
 }
+
