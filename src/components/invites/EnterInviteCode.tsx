@@ -20,7 +20,14 @@ export function parseInvite(raw: string): { code: string; eng?: string } | null 
   return /^[a-zA-Z0-9-]{4,}$/.test(value) ? { code: value } : null;
 }
 
-export function EnterInviteCode({ label = "Have an invite?" }: { label?: string }) {
+export function EnterInviteCode({
+  label = "Have an invite?",
+  bare = false,
+}: {
+  label?: string;
+  /** Render without card chrome when already inside a card. */
+  bare?: boolean;
+}) {
   const navigate = useNavigate();
   const [raw, setRaw] = useState("");
   const [error, setError] = useState<string | null>(null);
