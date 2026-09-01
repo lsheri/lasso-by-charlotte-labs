@@ -64,7 +64,7 @@ export const TIER_COPY: TierCopy[] = [
     tier: "c",
     label: "Work details",
     description:
-      "Adds the shape of the work: kinds of documents, dates, engagement structure and the labels people give things. The words inside the work stay in your workspace.",
+      "Adds the shape of the work: kinds of documents, dates, engagement structure, titles and file names. The words inside the work stay in your workspace.",
   },
   {
     tier: "d",
