@@ -123,3 +123,31 @@ export const setDataConsent = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true, version: version ?? 0 };
   });
+
+/**
+ * The person's separate research choice. This writes no table: it leaves one
+ * stamped event as the interim trail while the durable record is built.
+ */
+export const recordResearchChoice = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { choice: "joined" | "left"; profile_id?: string | undefined }) => {
+    if (input.choice !== "joined" && input.choice !== "left") throw new Error("Unknown choice.");
+    return input;
+  })
+  .handler(async ({ data, context }) => {
+    const { resolveProfile } = await import("./profile-resolve");
+    const profile = await resolveProfile(context.supabase, context.userId, data.profile_id);
+    if (!profile) throw new Error("We could not find your profile.");
+
+    const { recordEvent } = await import("./telemetry.server");
+    await recordEvent(context.supabase, {
+      eventType: "consent.research_change",
+      orgId: profile.org_id,
+      userId: context.userId,
+      dims: { choice: data.choice },
+      profileId: profile.id,
+      sessionId: null,
+      clientSeq: null,
+    });
+    return { ok: true };
+  });
