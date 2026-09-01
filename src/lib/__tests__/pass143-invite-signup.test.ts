@@ -39,12 +39,19 @@ function invite(over: Partial<SignupInviteRow> = {}): SignupInviteRow {
 }
 
 describe("signup invite validator", () => {
-  it("refuses a signup with no invite at all", () => {
+  it("refuses an org join with no invite at all", () => {
     const result = evaluateSignupInvite(null, "someone@firm.com");
     expect(result.ok).toBe(false);
     expect(result.ok === false && result.reason).toBe("missing");
     expect(result.ok === false && result.message).toBe(SIGNUP_NO_INVITE_LINE);
   });
+
+  it("scopes the no invite line to joining an organization", () => {
+    expect(SIGNUP_NO_INVITE_LINE).toBe(
+      "Joining an organization needs an invite. Ask your organization admin for one.",
+    );
+  });
+
 
   it("refuses an expired invite", () => {
     const past = invite({ expires_at: new Date(Date.now() - 1000).toISOString() });
