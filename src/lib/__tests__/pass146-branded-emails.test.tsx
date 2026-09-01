@@ -8,7 +8,7 @@ import { MagicLinkEmail } from "@/lib/email-templates/magic-link";
 import { RecoveryEmail } from "@/lib/email-templates/recovery";
 import { EmailChangeEmail } from "@/lib/email-templates/email-change";
 import { ReauthenticationEmail } from "@/lib/email-templates/reauthentication";
-import { FOOTER_LINE, TITLE_STACK } from "@/lib/email-templates/notebook";
+import { FOOTER_LINE, LASSO_MARK_URL, TITLE_STACK } from "@/lib/email-templates/notebook";
 import { renderInviteEmail } from "@/lib/invite-email";
 
 const BANNED = [

@@ -74,10 +74,13 @@ export function renderInviteEmail(args: {
   [data-ogsb] .dm-btn { background-color: ${MAIL.cta} !important; color: #ffffff !important; }
 </style></head><body style="margin:0;padding:28px 16px;background:${MAIL.paper};font-family:${FONT};color:${MAIL.body}">
 <div style="max-width:540px;margin:0 auto">
-<div style="background:${MAIL.ink};border-radius:8px;padding:18px 20px">
-<div style="font-family:${MONO};font-size:20px;letter-spacing:0.24em;color:#ffffff">LASSO</div>
-<div style="font-family:${MONO};font-size:11px;letter-spacing:0.16em;color:#b9bcba;margin-top:6px">by Charlotte Labs</div>
-</div>
+<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+<td style="vertical-align:middle"><img src="${LASSO_MARK_URL}" alt="Lasso" width="44" height="44"></td>
+<td style="vertical-align:middle;padding-left:12px">
+<div style="font-family:${TITLE_FACE};font-size:19px;font-weight:600;letter-spacing:6px;color:#1A1A1A">LASSO</div>
+<div style="font-family:${MONO};font-size:10px;letter-spacing:3px;color:#6B6B6B;margin-top:4px">BY CHARLOTTE LABS</div>
+</td>
+</tr></table>
 <div style="background:${MAIL.card};border:1px solid ${MAIL.rule};border-radius:8px;padding:26px 24px;margin-top:16px">
 <p style="font-family:${TITLE};font-size:30px;font-weight:bold;color:${MAIL.ink};margin:0 0 14px">You are invited</p>
 <p style="font-size:14px;line-height:1.6;margin:0 0 14px">${escapeHtml(lead)}</p>
