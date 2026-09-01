@@ -69,7 +69,9 @@ export type TelemetryEvent =
   /** Content-free client error signal. Emitted only by src/lib/error-signal.ts. */
   | "client.error"
   /** Pass 145: one row per person per ISO week. Counts only, banded. */
-  | "presence.active";
+  | "presence.active"
+  /** Pass 147: a person joined or left research. Choice only. */
+  | "consent.research_change";
 
 export type TelemetryDims = Record<
   string,
