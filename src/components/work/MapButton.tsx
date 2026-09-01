@@ -28,17 +28,20 @@ export function MapButton({
   children,
   onClick,
   stopPropagation = false,
+  disabled = false,
   className = "",
 }: {
   children: React.ReactNode;
   onClick: () => void;
   stopPropagation?: boolean;
+  disabled?: boolean;
   className?: string;
 }) {
   return (
     <Button
       type="button"
       size="sm"
+      disabled={disabled}
       onClick={(event) => {
         if (stopPropagation) event.stopPropagation();
         onClick();
