@@ -10,7 +10,7 @@ export const TIER_ORDER = ["t0", "a", "b", "c", "d"] as const;
 export type DataTier = (typeof TIER_ORDER)[number];
 
 /** The copy people read. Bump this when any sentence below changes. */
-export const CONSENT_TEXT_VERSION = "dc-v1";
+export const CONSENT_TEXT_VERSION = "dc-v2";
 
 /** Defaults when a state row is missing. */
 export const DEFAULT_ORG_TIER: DataTier = "c";
