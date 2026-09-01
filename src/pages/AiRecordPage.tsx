@@ -13,6 +13,8 @@ import {
 import { AnalysisLens } from "@/components/reflect/AnalysisLens";
 import { ThinkingIndicator } from "@/components/common/Working";
 import { ChatUrlLink } from "@/components/work/ChatUrlLink";
+import { VendorBrandMark } from "@/components/work/VendorBrandMark";
+import { BrandLogo } from "@/components/connectors/BrandLogo";
 import { WorkRow } from "@/components/work/WorkRow";
 import { useProfile } from "@/hooks/use-profile";
 import { useWorkItems } from "@/hooks/use-work-items";
@@ -179,6 +181,15 @@ export function AiRecordPage() {
         subtitle="Your most valuable AI conversations, kept in one place. Search them, reuse them as context, and see how your best prompts worked."
       />
 
+      <div className="-mt-2 mb-6 flex items-center gap-2.5">
+        <BrandLogo brand="claude" size={16} />
+        <BrandLogo brand="chatgpt" size={16} />
+        <BrandLogo brand="gemini" size={16} />
+        <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+          All your tools, one place
+        </span>
+      </div>
+
       <CaptureCoverage
         profileId={profile?.id}
         itemCount={threads.length}
@@ -304,6 +315,7 @@ export function AiRecordPage() {
                       }
                       footer={
                         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                          <VendorBrandMark item={item} />
                           <span>
                             {turnCounts?.[item.id] ?? 0} message
                             {(turnCounts?.[item.id] ?? 0) === 1 ? "" : "s"}
