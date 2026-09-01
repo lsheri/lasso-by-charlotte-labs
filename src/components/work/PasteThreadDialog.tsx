@@ -18,6 +18,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { parseThread, sha256 } from "@/lib/parse-thread";
 import { ensureExtractsFn } from "@/lib/extract.functions";
 import { logEvent } from "@/lib/telemetry";
+import { noteCaptureFn } from "@/lib/work-taxonomy.functions";
 
 const SOURCES = ["chatgpt", "claude", "gemini", "other"] as const;
 type Source = (typeof SOURCES)[number];
@@ -30,6 +31,7 @@ export function PasteThreadDialog({
   onCaptured?: ((workItemIds: string[]) => void | Promise<void>) | undefined;
 }) {
   const ensureExtracts = useServerFn(ensureExtractsFn);
+  const noteCapture = useServerFn(noteCaptureFn);
   const { data: profile } = useProfile();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
@@ -93,6 +95,7 @@ export function PasteThreadDialog({
     }
 
     void ensureExtracts({ data: { work_item_ids: [item.id] } }).catch(() => {});
+    void noteCapture({ data: { work_item_ids: [item.id], via: "manual" } }).catch(() => {});
 
     logEvent("workitem.captured", profile.org_id, {
       channel: "paste",

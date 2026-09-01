@@ -9,6 +9,7 @@ import { useProfile } from "@/hooks/use-profile";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureExtractsFn } from "@/lib/extract.functions";
 import { logEvent } from "@/lib/telemetry";
+import { noteCaptureFn } from "@/lib/work-taxonomy.functions";
 import { logV2 } from "@/lib/telemetry-v2";
 import { buildUploadSourceMeta } from "@/lib/upload-payload";
 import { workTypeForFile } from "@/lib/work-types";
@@ -23,6 +24,7 @@ export function UploadFilesButton({
   onCaptured?: ((workItemIds: string[]) => void | Promise<void>) | undefined;
 }) {
   const ensureExtracts = useServerFn(ensureExtractsFn);
+  const noteCapture = useServerFn(noteCaptureFn);
   const { data: profile } = useProfile();
   const queryClient = useQueryClient();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -97,6 +99,7 @@ export function UploadFilesButton({
 
     if (capturedIds.length > 0) {
       void ensureExtracts({ data: { work_item_ids: capturedIds } }).catch(() => {});
+      void noteCapture({ data: { work_item_ids: capturedIds, via: "upload" } }).catch(() => {});
     }
 
     await queryClient.invalidateQueries({ queryKey: ["work-items"] });

@@ -205,6 +205,7 @@ export const draftLineage = createServerFn({ method: "POST" })
         ownerId: profile.id,
         orgId: profile.org_id,
         runnerProfileId: profile.id,
+        runnerUserId: userId,
         coachMayRun: false,
       });
 
@@ -284,6 +285,7 @@ export const draftEngagementLineage = createServerFn({ method: "POST" })
           ownerId: profile.id,
           orgId: profile.org_id,
           runnerProfileId: profile.id,
+          runnerUserId: userId,
           coachMayRun: false,
         });
         drafted += result.drafted;
