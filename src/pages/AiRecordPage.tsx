@@ -12,6 +12,7 @@ import {
 } from "@/components/reflect/ChatAnalyses";
 import { AnalysisLens } from "@/components/reflect/AnalysisLens";
 import { ThinkingIndicator } from "@/components/common/Working";
+import { ChatUrlLink } from "@/components/work/ChatUrlLink";
 import { WorkRow } from "@/components/work/WorkRow";
 import { useProfile } from "@/hooks/use-profile";
 import { useWorkItems } from "@/hooks/use-work-items";
@@ -101,7 +102,7 @@ function groupItems(items: WorkItemRow[]): Group[] {
 }
 
 /**
- * Every AI conversation you have captured, grouped by the engagement it was
+ * Every conversation you have kept, grouped by the engagement it was
  * mapped into. No charts, no counts as measures of a person: the longitudinal
  * reading here is the What recurs analysis and nothing else.
  */

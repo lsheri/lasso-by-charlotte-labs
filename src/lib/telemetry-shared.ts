@@ -83,7 +83,9 @@ export type TelemetryEvent =
   /** Pass 150: how the person said they worked, at the mapping moment. */
   | "workflow.declared"
   /** Pass 150: a coach's read on work they reviewed. Closed vocab. */
-  | "coach.outcome";
+  | "coach.outcome"
+  /** Chat library: someone opened the original chat. Tool name only. */
+  | "chatlib.source_opened";
 
 export type TelemetryDims = Record<
   string,
