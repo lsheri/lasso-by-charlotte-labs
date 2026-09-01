@@ -127,7 +127,7 @@ function LandingPage() {
         >
           <p className="micro-label">WHERE THE WORK NOW HAPPENS</p>
           <p
-            className="hand-mark hand-mark-ember -ml-4 mt-6 md:-ml-20 lg:-ml-32"
+            className="hand-mark hand-mark-ember -ml-2 mt-6 md:-ml-10 lg:-ml-16"
             aria-hidden="true"
           >
             The Problem
