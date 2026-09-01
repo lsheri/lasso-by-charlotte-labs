@@ -127,7 +127,7 @@ function LandingPage() {
           className={`mt-12 md:translate-x-8 lg:translate-x-12 ${scrolled ? "" : "landing-locked"}`}
         >
           <p className="micro-label">WHERE THE WORK NOW HAPPENS</p>
-          <div className="relative h-8 md:-translate-x-8 lg:-translate-x-12">
+          <div className="relative h-16 md:h-8 md:-translate-x-8 lg:-translate-x-12">
             <p
               className="hand-mark hand-mark-ember absolute left-[calc((-100vw+100%)/2+1rem)] top-6"
               aria-hidden="true"
@@ -228,9 +228,9 @@ function LandingPage() {
 
         <FocusSection className="mt-28 md:-translate-x-24 lg:-translate-x-32">
 
-          <div className="relative h-0 md:translate-x-24 lg:translate-x-32">
+          <div className="relative h-12 md:h-0 md:translate-x-24 lg:translate-x-32">
             <p
-              className="hand-mark hand-mark-blue absolute left-[calc((-100vw+100%)/2+1rem)] -top-12"
+              className="hand-mark hand-mark-blue absolute left-[calc((-100vw+100%)/2+1rem)] -top-1 md:-top-12"
               aria-hidden="true"
             >
               With Lasso
