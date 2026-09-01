@@ -210,8 +210,27 @@ function LandingPage() {
             Every tool feeds the work. The deliverable comes out clean and shareable, while the
             judgment, the decisions, the drafts and the process behind it stay out of reach.
           </p>
-          <div className="mt-8 grid gap-6 md:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] md:items-center">
+          <div className="mt-8 grid gap-8 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] md:items-center md:gap-10 lg:gap-14">
             <InvisibleWorkStrip />
+
+            <div className="flex items-center justify-center py-2 md:py-0" aria-hidden="true">
+              {/* Pencil arrow: points down on mobile, right on desktop. */}
+              <svg
+                viewBox="0 0 48 48"
+                className="h-10 w-10 rotate-90 text-graphite md:h-12 md:w-12 md:rotate-0"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M6 24c10.5-.5 22.5-1 34-1M34 15l9 9-9 9"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </div>
+
             <div>
               <p className="micro-label mb-3">WHAT COMES OUT</p>
               <ClipPlayer
