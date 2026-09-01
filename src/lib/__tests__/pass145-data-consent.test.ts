@@ -73,7 +73,7 @@ describe("tier lattice", () => {
 
 describe("notice text and hash", () => {
   it("names the version and stays stable", async () => {
-    expect(CONSENT_TEXT_VERSION).toBe("dc-v3");
+    expect(CONSENT_TEXT_VERSION).toBe("dc-v4");
     const text = renderNoticeText("org", "c");
     expect(text).toContain("Work details");
     expect(await noticeHash("org", "c")).toBe(await noticeHash("org", "c"));
@@ -82,6 +82,22 @@ describe("notice text and hash", () => {
   it("differs by scope and by level", async () => {
     expect(await noticeHash("org", "c")).not.toBe(await noticeHash("user", "c"));
     expect(await noticeHash("user", "b")).not.toBe(await noticeHash("user", "c"));
+  });
+
+  it("says plainly what the most private level keeps and shares", () => {
+    const copy = tierCopy("t0").description;
+    for (const part of [
+      "nothing about your work leaves your workspace",
+      "No words",
+      "no titles",
+      "no names",
+      "nothing tied to you or your organization",
+      "counted, anonymously",
+      "AI models are in use",
+      "never be traced back to you or your workspace",
+    ]) {
+      expect(copy).toContain(part);
+    }
   });
 });
 
