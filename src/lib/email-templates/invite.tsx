@@ -4,85 +4,67 @@ import {
   Body,
   Button,
   Container,
-  Head,
-  Heading,
   Html,
   Link,
   Preview,
+  Section,
   Text,
 } from '@react-email/components'
+
+import {
+  Footer,
+  NotebookHead,
+  Wordmark,
+  button,
+  card,
+  container,
+  h1,
+  link,
+  main,
+  quiet,
+  text,
+} from './notebook'
 
 interface InviteEmailProps {
   siteName: string
   siteUrl: string
   confirmationUrl: string
+  orgName?: string | undefined
 }
 
 export const InviteEmail = ({
   siteName,
   siteUrl,
   confirmationUrl,
+  orgName,
 }: InviteEmailProps) => (
   <Html lang="en" dir="ltr">
-    <Head>
-      <style>{darkModeCss}</style>
-    </Head>
-    <Preview>You've been invited to join {siteName}</Preview>
+    <NotebookHead />
+    <Preview>You are invited to {orgName || siteName}</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Heading style={h1}>You've been invited</Heading>
-        <Text style={text}>
-          You've been invited to join{' '}
-          <Link href={siteUrl} style={link}>
-            <strong>{siteName}</strong>
-          </Link>
-          . Click the button below to accept the invitation and create your
-          account.
-        </Text>
-        <Button className="dm-btn" style={button} href={confirmationUrl}>
-          Accept Invitation
-        </Button>
-        <Text style={footer}>
-          If you weren't expecting this invitation, you can safely ignore this
-          email.
-        </Text>
+        <Wordmark />
+        <Section style={card}>
+          <Text style={h1}>You are invited</Text>
+          <Text style={text}>
+            Someone invited you to join{' '}
+            <Link href={siteUrl} style={link}>
+              <strong>{orgName || siteName}</strong>
+            </Link>
+            . Accept the invite to create your account and get started.
+          </Text>
+          <Button className="dm-btn" style={button} href={confirmationUrl}>
+            Accept your invite
+          </Button>
+          <Text style={quiet}>
+            If you were not expecting this, you can ignore it and nothing
+            happens.
+          </Text>
+        </Section>
+        <Footer />
       </Container>
     </Body>
   </Html>
 )
 
 export default InviteEmail
-
-const main = { backgroundColor: '#ffffff', fontFamily: 'Arial, sans-serif' }
-const container = { padding: '20px 25px' }
-const h1 = {
-  fontSize: '22px',
-  fontWeight: 'bold' as const,
-  color: '#000000',
-  margin: '0 0 20px',
-}
-const text = {
-  fontSize: '14px',
-  color: '#55575d',
-  lineHeight: '1.5',
-  margin: '0 0 25px',
-}
-const link = { color: 'inherit', textDecoration: 'underline' }
-const button = {
-  backgroundColor: '#12653d',
-  color: '#ffffff',
-  fontSize: '14px',
-  border: '1px solid #12653d',
-  borderRadius: '6px',
-  padding: '12px 20px',
-  textDecoration: 'none',
-}
-const footer = { fontSize: '12px', color: '#999999', margin: '30px 0 0' }
-// Rendered as a text child, which React may HTML-escape: keep this CSS free of >, &, and quotes.
-const darkModeCss = `
-  @media (prefers-color-scheme: dark) {
-    .dm-btn { background-color: #12653d !important; color: #ffffff !important; }
-  }
-  [data-ogsc] .dm-btn { background-color: #12653d !important; color: #ffffff !important; }
-  [data-ogsb] .dm-btn { background-color: #12653d !important; color: #ffffff !important; }
-`
