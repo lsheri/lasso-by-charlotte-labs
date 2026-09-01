@@ -7,7 +7,21 @@
 import { deliverableKindOf, type DeliverableKind } from "./deliverable-kinds";
 import { vendorFromSource, type VendorSource } from "./work-taxonomy";
 
-export const OUTPUT_KINDS = ["deck", "model", "memo", "dataset", "analysis", "other"] as const;
+export const OUTPUT_KINDS = [
+  "deck",
+  "model",
+  "memo",
+  "dataset",
+  "analysis",
+  // Pass 153: widened additively. Existing values keep their meaning.
+  "website",
+  "design",
+  "code",
+  "pitch",
+  "brief",
+  "plan",
+  "other",
+] as const;
 export type OutputKind = (typeof OUTPUT_KINDS)[number];
 
 export const DISPOSITIONS = ["shipped", "reworked", "dropped"] as const;
@@ -40,6 +54,12 @@ export const OUTPUT_KIND_LABELS: Record<OutputKind, string> = {
   memo: "Memo",
   dataset: "Dataset",
   analysis: "Analysis",
+  website: "Website",
+  design: "Design",
+  code: "Code",
+  pitch: "Pitch",
+  brief: "Brief",
+  plan: "Plan",
   other: "Other",
 };
 
@@ -175,13 +195,13 @@ type GuessItem = VendorSource & {
 };
 
 const KIND_OUTPUT: Record<DeliverableKind, OutputKind> = {
-  proposal: "memo",
+  proposal: "pitch",
   deck: "deck",
   model_or_budget: "model",
   memo_or_report: "memo",
   email_or_comms: "memo",
-  code: "other",
-  creative_or_design: "other",
+  code: "code",
+  creative_or_design: "design",
   other: "other",
 };
 
@@ -192,15 +212,27 @@ const TYPE_OUTPUT: Record<string, OutputKind> = {
   email: "memo",
   csv: "dataset",
   ai_thread: "analysis",
+  code: "code",
+  image: "design",
 };
+
+/** File endings that name a kind on their own. Read from the name only. */
+const EXTENSION_OUTPUT: [RegExp, OutputKind][] = [
+  [/\.(csv|tsv|json|parquet)$/, "dataset"],
+  [/\.(html?|webflow)$/, "website"],
+  [/\.(tsx?|jsx?|py|rb|go|rs|java|sql|sh|css)$/, "code"],
+  [/\.(fig|sketch|psd|ai|xd|svg)$/, "design"],
+];
 
 /** The likeliest answer from what we already hold: chosen kind, then type. */
 export function guessOutputKind(item: GuessItem | null | undefined): OutputKind {
   if (!item) return "other";
   const kind = deliverableKindOf(item.meta);
   if (kind) return KIND_OUTPUT[kind];
-  const name = (item.title ?? "").toLowerCase();
-  if (/\.(csv|tsv|json|parquet)\s*$/.test(name)) return "dataset";
+  const name = (item.title ?? "").trim().toLowerCase();
+  for (const [pattern, output] of EXTENSION_OUTPUT) {
+    if (pattern.test(name)) return output;
+  }
   return TYPE_OUTPUT[(item.type ?? "").toLowerCase()] ?? "other";
 }
 
@@ -230,6 +262,12 @@ const OUTPUT_TASK: Record<OutputKind, DeclaredTaskClass> = {
   memo: "draft",
   dataset: "extract",
   analysis: "analyse",
+  website: "draft",
+  design: "draft",
+  code: "draft",
+  pitch: "draft",
+  brief: "draft",
+  plan: "draft",
   other: "draft",
 };
 
