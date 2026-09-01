@@ -12,6 +12,7 @@ import {
 } from "@/components/reflect/ChatAnalyses";
 import { AnalysisLens } from "@/components/reflect/AnalysisLens";
 import { ThinkingIndicator } from "@/components/common/Working";
+import { ChatUrlLink } from "@/components/work/ChatUrlLink";
 import { WorkRow } from "@/components/work/WorkRow";
 import { useProfile } from "@/hooks/use-profile";
 import { useWorkItems } from "@/hooks/use-work-items";
@@ -101,7 +102,7 @@ function groupItems(items: WorkItemRow[]): Group[] {
 }
 
 /**
- * Every AI conversation you have captured, grouped by the engagement it was
+ * Every conversation you have kept, grouped by the engagement it was
  * mapped into. No charts, no counts as measures of a person: the longitudinal
  * reading here is the What recurs analysis and nothing else.
  */
@@ -111,13 +112,19 @@ export function AiRecordPage() {
   const [peek, setPeek] = useState<{ entry: PeekEntry } | null>(null);
   const [lensItem, setLensItem] = useState<WorkItemRow | null>(null);
   const [openGroup, setOpenGroup] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
 
   const threads = (work?.items ?? []).filter((i) => i.type === "ai_thread");
   // The id list is sorted before it becomes part of a key, so a reordered but
   // identical set of threads does not churn the cache and repaint the page.
   const threadIds = threads.map((i) => i.id);
   const threadKey = [...threadIds].sort().join(",");
-  const groups = groupItems(threads);
+  const needle = query.trim().toLowerCase();
+  const shown = needle
+    ? threads.filter((i) => (i.title ?? "").toLowerCase().includes(needle))
+    : threads;
+  const groups = groupItems(shown);
+
   const analyses = useChatAnalyses(profile?.id, profile?.org_id);
 
   const { data: turnCounts } = useQuery({
@@ -168,28 +175,48 @@ export function AiRecordPage() {
   return (
     <div>
       <PageHeader
-        title="AI record"
-        subtitle="Every conversation you have captured, in the engagements you mapped them into."
+        title="Chat library"
+        subtitle="Your most valuable AI conversations, kept in one place. Search them, reuse them as context, and see how your best prompts worked."
       />
 
       <CaptureCoverage
         profileId={profile?.id}
         itemCount={threads.length}
-        scopeLabel="your record"
+        scopeLabel="your chat library"
         dates={threads.map((t) => effectiveWorkDate(t))}
       />
+
+      {threads.length > 0 ? (
+        <div className="mb-6">
+          <label htmlFor="chat-library-search" className="sr-only">
+            Search your chats
+          </label>
+          <input
+            id="chat-library-search"
+            type="search"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search your chats"
+            className="w-full rounded-[var(--radius)] border border-border bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/40 sm:max-w-sm"
+          />
+        </div>
+      ) : null}
 
       {threads.length === 0 ? (
         <div className="rounded-[var(--radius)] border border-dashed border-border p-8 text-center">
           <p className="text-sm text-foreground">
-            Your AI conversations will collect here as you capture them.
+            Your chat library is empty. Keep your first conversation here and it stays yours to
+            find and reuse.
           </p>
           <p className="mt-2 text-sm text-muted-foreground">
-            Push them from your assistant, paste one in, or import from a connector on the Work
+            Push one from your assistant, paste one in, or import from a connector on the Work
             page.
           </p>
         </div>
+      ) : groups.length === 0 ? (
+        <p className="text-sm text-muted-foreground">No chats match that search.</p>
       ) : (
+
         <div className="space-y-8">
           {groups.map((group) => {
             const expanded = openGroup === group.key;
@@ -284,8 +311,12 @@ export function AiRecordPage() {
                           {(fed?.[item.id] ?? []).length > 0 ? (
                             <span>Fed: {(fed?.[item.id] ?? []).join(", ")}</span>
                           ) : null}
+                          <span onClick={(event) => event.stopPropagation()}>
+                            <ChatUrlLink item={item} />
+                          </span>
                         </div>
                       }
+
                     />
                   ))}
                 </div>

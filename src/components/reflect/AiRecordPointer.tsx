@@ -36,13 +36,13 @@ export function AiRecordPointer() {
   return (
     <div className="flex items-start justify-between gap-3 rounded-[var(--radius-md)] border border-border bg-muted/40 px-4 py-2">
       <p className="text-xs text-muted-foreground">
-        Your full AI history now lives in{" "}
+        Your captured conversations now live in{" "}
         <Link
           to="/ai-record"
           onClick={markAiRecordSeen}
           className="text-accent-deep underline underline-offset-2"
         >
-          AI record
+          Chat library
         </Link>
         , in the sidebar under Your work.
       </p>
