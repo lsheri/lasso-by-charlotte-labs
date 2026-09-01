@@ -211,22 +211,16 @@ function AuthPage() {
               />
             </div>
 
-            {mode === "signup" && !inviteCode ? (
-              <p className="text-sm text-muted-foreground">{SIGNUP_NO_INVITE_LINE}</p>
-            ) : null}
             {mode === "signup" && inviteCheck && !inviteCheck.ok ? (
               <p className="text-sm text-destructive">{inviteCheck.message}</p>
             ) : null}
             {error ? <p className="text-sm text-destructive">{error}</p> : null}
             {message ? <p className="text-sm text-accent-deep">{message}</p> : null}
 
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={pending || (mode === "signup" && !inviteCode)}
-            >
+            <Button type="submit" className="w-full" disabled={pending}>
               {pending ? "Please wait…" : mode === "signin" ? "Sign in" : "Create account"}
             </Button>
+
           </form>
 
           <button
