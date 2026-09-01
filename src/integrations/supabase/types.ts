@@ -1006,6 +1006,8 @@ export type Database = {
           consent_ledger_version: number | null
           consent_tier: string | null
           dims: Json
+          egress_skipped_reason: string | null
+          egressed_at: string | null
           event_type: string
           event_uuid: string | null
           id: number
@@ -1025,6 +1027,8 @@ export type Database = {
           consent_ledger_version?: number | null
           consent_tier?: string | null
           dims?: Json
+          egress_skipped_reason?: string | null
+          egressed_at?: string | null
           event_type: string
           event_uuid?: string | null
           id?: never
@@ -1044,6 +1048,8 @@ export type Database = {
           consent_ledger_version?: number | null
           consent_tier?: string | null
           dims?: Json
+          egress_skipped_reason?: string | null
+          egressed_at?: string | null
           event_type?: string
           event_uuid?: string | null
           id?: never
