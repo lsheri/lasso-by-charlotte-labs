@@ -97,6 +97,21 @@ export const CEILING_LINE_PREFIX = "Your organization allows up to: ";
 export const ABOVE_CEILING_LINE = "Above your organization's level";
 export const SURFACE_NAME = "Your data";
 
+/** Shown quietly in place when the wording of a full openness choice changed. */
+export const RECONFIRM_LINE = "The wording of this choice was updated. Read it again and confirm.";
+export const RECONFIRM_BUTTON = "Confirm";
+
+/**
+ * True only for a full openness choice whose last ledger entry was written
+ * against older wording.
+ */
+export function needsReconfirm(
+  tier: DataTier,
+  latestTextVersion: string | null | undefined,
+): boolean {
+  return tier === "d" && latestTextVersion !== CONSENT_TEXT_VERSION;
+}
+
 export type ConsentScope = "org" | "user";
 
 /**
