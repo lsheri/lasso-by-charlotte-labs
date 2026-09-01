@@ -2744,7 +2744,7 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   filter: blur(6px);
 }
 
-@media (max-width: 767px), (prefers-reduced-motion: reduce) {
+@media (prefers-reduced-motion: reduce) {
   .focus-section-dim,
   .landing-locked {
     opacity: 1;

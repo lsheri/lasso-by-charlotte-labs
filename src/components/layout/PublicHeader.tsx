@@ -14,13 +14,13 @@ export function PublicHeader({ current }: { current?: "/" | "/why" | "/trust" })
       <div className="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-6 px-6 pb-6 pt-[calc(1.5rem+env(safe-area-inset-top))] sm:px-8 md:px-12">
 <Link
           to="/"
-          className="flex min-w-0 items-center gap-4 font-mono text-2xl tracking-[0.24em] text-foreground"
+          className="flex min-w-0 items-center gap-3 font-mono text-lg tracking-[0.18em] text-foreground sm:gap-4 sm:text-2xl sm:tracking-[0.24em]"
           aria-current={current === "/" ? "page" : undefined}
         >
           <LassoLogo size="lg" />
           <span className="flex min-w-0 flex-col leading-none">
             <span className="truncate">LASSO</span>
-            <span className="mt-2 font-mono text-[15px] uppercase tracking-[0.14em] text-muted-foreground">
+            <span className="mt-2 whitespace-nowrap font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground sm:text-[15px]">
               by Charlotte Labs
             </span>
           </span>
