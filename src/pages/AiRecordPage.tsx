@@ -168,28 +168,48 @@ export function AiRecordPage() {
   return (
     <div>
       <PageHeader
-        title="AI record"
-        subtitle="Every conversation you have captured, in the engagements you mapped them into."
+        title="Chat library"
+        subtitle="Your most valuable AI conversations, kept in one place. Search them, reuse them as context, and see how your best prompts worked."
       />
 
       <CaptureCoverage
         profileId={profile?.id}
         itemCount={threads.length}
-        scopeLabel="your record"
+        scopeLabel="your chat library"
         dates={threads.map((t) => effectiveWorkDate(t))}
       />
+
+      {threads.length > 0 ? (
+        <div className="mb-6">
+          <label htmlFor="chat-library-search" className="sr-only">
+            Search your chats
+          </label>
+          <input
+            id="chat-library-search"
+            type="search"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search your chats"
+            className="w-full rounded-[var(--radius)] border border-border bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/40 sm:max-w-sm"
+          />
+        </div>
+      ) : null}
 
       {threads.length === 0 ? (
         <div className="rounded-[var(--radius)] border border-dashed border-border p-8 text-center">
           <p className="text-sm text-foreground">
-            Your AI conversations will collect here as you capture them.
+            Your chat library is empty. Keep your first conversation here and it stays yours to
+            find and reuse.
           </p>
           <p className="mt-2 text-sm text-muted-foreground">
-            Push them from your assistant, paste one in, or import from a connector on the Work
+            Push one from your assistant, paste one in, or import from a connector on the Work
             page.
           </p>
         </div>
+      ) : groups.length === 0 ? (
+        <p className="text-sm text-muted-foreground">No chats match that search.</p>
       ) : (
+
         <div className="space-y-8">
           {groups.map((group) => {
             const expanded = openGroup === group.key;
