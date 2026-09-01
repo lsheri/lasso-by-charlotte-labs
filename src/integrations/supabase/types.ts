@@ -529,6 +529,134 @@ export type Database = {
           },
         ]
       }
+      data_consent_ledger: {
+        Row: {
+          actor_profile_id: string | null
+          consent_text_version: string
+          created_at: string
+          new_tier: string
+          new_tier_d_switch: boolean | null
+          notice_hash: string
+          old_tier: string | null
+          old_tier_d_switch: boolean | null
+          org_ceiling_in_effect: string
+          org_id: string
+          profile_id: string | null
+          scope: string
+          surface: string
+          version: number
+        }
+        Insert: {
+          actor_profile_id?: string | null
+          consent_text_version: string
+          created_at?: string
+          new_tier: string
+          new_tier_d_switch?: boolean | null
+          notice_hash: string
+          old_tier?: string | null
+          old_tier_d_switch?: boolean | null
+          org_ceiling_in_effect: string
+          org_id: string
+          profile_id?: string | null
+          scope: string
+          surface: string
+          version?: number
+        }
+        Update: {
+          actor_profile_id?: string | null
+          consent_text_version?: string
+          created_at?: string
+          new_tier?: string
+          new_tier_d_switch?: boolean | null
+          notice_hash?: string
+          old_tier?: string | null
+          old_tier_d_switch?: boolean | null
+          org_ceiling_in_effect?: string
+          org_id?: string
+          profile_id?: string | null
+          scope?: string
+          surface?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "data_consent_ledger_actor_profile_id_fkey"
+            columns: ["actor_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "data_consent_ledger_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "data_consent_ledger_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      data_consent_state: {
+        Row: {
+          id: string
+          ledger_version: number
+          org_id: string
+          profile_id: string | null
+          scope: string
+          tier: string
+          tier_d_switch: boolean
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          ledger_version: number
+          org_id: string
+          profile_id?: string | null
+          scope: string
+          tier: string
+          tier_d_switch?: boolean
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          ledger_version?: number
+          org_id?: string
+          profile_id?: string | null
+          scope?: string
+          tier?: string
+          tier_d_switch?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "data_consent_state_ledger_version_fkey"
+            columns: ["ledger_version"]
+            isOneToOne: false
+            referencedRelation: "data_consent_ledger"
+            referencedColumns: ["version"]
+          },
+          {
+            foreignKeyName: "data_consent_state_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "data_consent_state_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       decisions: {
         Row: {
           author: Database["public"]["Enums"]["authored_by"]
@@ -873,31 +1001,58 @@ export type Database = {
       events: {
         Row: {
           actor_hash: string | null
+          classifier_version: string | null
+          client_seq: number | null
+          consent_ledger_version: number | null
+          consent_tier: string | null
           dims: Json
           event_type: string
+          event_uuid: string | null
           id: number
+          org_id: string | null
           payload: Json
+          profile_id: string | null
           schema_version: string
+          server_ts: string | null
+          session_id: string | null
           tenant_hash: string
           ts: string
         }
         Insert: {
           actor_hash?: string | null
+          classifier_version?: string | null
+          client_seq?: number | null
+          consent_ledger_version?: number | null
+          consent_tier?: string | null
           dims?: Json
           event_type: string
+          event_uuid?: string | null
           id?: never
+          org_id?: string | null
           payload?: Json
+          profile_id?: string | null
           schema_version?: string
+          server_ts?: string | null
+          session_id?: string | null
           tenant_hash: string
           ts?: string
         }
         Update: {
           actor_hash?: string | null
+          classifier_version?: string | null
+          client_seq?: number | null
+          consent_ledger_version?: number | null
+          consent_tier?: string | null
           dims?: Json
           event_type?: string
+          event_uuid?: string | null
           id?: never
+          org_id?: string | null
           payload?: Json
+          profile_id?: string | null
           schema_version?: string
+          server_ts?: string | null
+          session_id?: string | null
           tenant_hash?: string
           ts?: string
         }
@@ -2610,6 +2765,17 @@ export type Database = {
       my_profile_ids: { Args: never; Returns: string[] }
       my_role: { Args: never; Returns: Database["public"]["Enums"]["app_role"] }
       reactivate_member: { Args: { p_profile: string }; Returns: undefined }
+      set_data_consent: {
+        Args: {
+          p_consent_text_version?: string
+          p_notice_hash?: string
+          p_scope: string
+          p_surface?: string
+          p_tier: string
+          p_tier_d_switch?: boolean
+        }
+        Returns: number
+      }
       set_firm_check_active: {
         Args: { p_active: boolean; p_check: string }
         Returns: undefined
@@ -2627,6 +2793,7 @@ export type Database = {
       }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
+      tier_rank: { Args: { t: string }; Returns: number }
       unshare_engagement_coach: {
         Args: { p_coach_profile: string; p_engagement: string }
         Returns: undefined
