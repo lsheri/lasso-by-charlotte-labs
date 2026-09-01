@@ -791,6 +791,9 @@ export function MarginFlag({
  * The motion is one CSS keyframe loop, so there is nothing to clean up: it
  * stops when the element unmounts. Reduced motion holds the pupils centred.
  */
+/** PASS 153 - the reading eyes are drawn 2.5x larger so they read across the pane. */
+export const READING_EYES_SCALE = 2.5;
+
 export function ReadingEyes({
   animate = true,
   seed = "reading-eyes",
