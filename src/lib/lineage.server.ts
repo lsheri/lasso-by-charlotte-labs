@@ -87,6 +87,7 @@ export async function draftLineageFor(
     ownerId: string;
     orgId: string;
     runnerProfileId: string;
+    runnerUserId?: string | null | undefined;
     coachMayRun: boolean;
   },
 ): Promise<LineageRunResult> {
@@ -288,8 +289,32 @@ export async function draftLineageFor(
   const { data: inserted, error } = await supabaseAdmin
     .from("work_item_links")
     .upsert(rows, { onConflict: "from_item_id,to_item_id,relation", ignoreDuplicates: true })
-    .select("id");
+    .select("id, from_item_id, to_item_id");
   if (error) throw new Error(error.message);
+
+  // Pass 148. A new chain link is a handoff: which tool fed which, and into
+  // what kind of thing. Tools and kinds only, never titles.
+  if ((inserted ?? []).length > 0) {
+    const involved = Array.from(
+      new Set((inserted ?? []).flatMap((row) => [row.from_item_id, row.to_item_id])),
+    );
+    const { data: ends } = await supabaseAdmin
+      .from("work_items")
+      .select("id, type, source, source_vendor, source_meta, meta")
+      .in("id", involved);
+    const byId = new Map((ends ?? []).map((row) => [row.id, row]));
+    const { noteHandoffObserved } = await import("./work-taxonomy.server");
+    for (const link of inserted ?? []) {
+      await noteHandoffObserved(
+        supabaseAdmin,
+        { orgId: args.orgId, userId: args.runnerUserId ?? null, profileId: args.runnerProfileId },
+        {
+          from: (byId.get(link.from_item_id) ?? null) as never,
+          to: (byId.get(link.to_item_id) ?? null) as never,
+        },
+      );
+    }
+  }
 
   return {
     drafted: (inserted ?? []).length,
