@@ -66,8 +66,8 @@ function bar(props: Partial<React.ComponentProps<typeof PeekActionBar>> = {}) {
 describe("pass 129 — the peek action bar", () => {
   it("renders the primary row in a fixed order", () => {
     bar({ item: item({ type: "document" }) });
-    const labels = Array.from(document.querySelectorAll(".nb-pencil-cta")).map((node) =>
-      node.textContent?.trim(),
+    const labels = Array.from(document.querySelectorAll(".nb-map-cta, .nb-pencil-cta")).map(
+      (node) => node.textContent?.trim(),
     );
     expect(labels).toEqual([
       "Map to a workstream",
@@ -89,15 +89,15 @@ describe("pass 129 — the peek action bar", () => {
 
   it("shows a coach none of the owner only analyses", () => {
     bar({ canEdit: false, owned: false, item: item({ type: "document" }) });
-    expect(document.querySelectorAll(".nb-pencil-cta").length).toBe(0);
+    expect(document.querySelectorAll(".nb-map-cta, .nb-pencil-cta").length).toBe(0);
   });
 
-  it("uses the small pencil CTA variant with its three seeds", () => {
+  it("uses the small pencil CTA variant with its analysis seeds", () => {
     bar({ item: item({ type: "document" }) });
     const seeds = Array.from(document.querySelectorAll(".nb-pencil-cta--sm")).map((node) =>
       node.getAttribute("data-seed"),
     );
-    expect(seeds).toEqual(["peek-map", "peek-verify", "peek-decisions"]);
+    expect(seeds).toEqual(["peek-verify", "peek-decisions"]);
   });
 });
 

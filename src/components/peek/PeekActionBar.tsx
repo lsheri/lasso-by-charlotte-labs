@@ -9,6 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { MapButton } from "@/components/work/MapButton";
 import { analysisPreset } from "@/lib/analysis-presets";
 import { isBriefItem } from "@/lib/brief-shared";
 import { isDeliverableType } from "@/lib/lineage-shared";
@@ -19,10 +20,7 @@ import type { WorkItemRow } from "@/lib/work-types";
 
 /** The peek's analyses, opened by preset so no button ever dead-ends. */
 export type PeekAnalysisPreset =
-  | "verification"
-  | "verification_thread"
-  | "decision_origin"
-  | "decision_origin_thread";
+  "verification" | "verification_thread" | "decision_origin" | "decision_origin_thread";
 
 /** One set of names, in one order, on every surface the peek is mounted on. */
 export const PEEK_WORK_ARTIFACT_LABEL = "Work Artifact";
@@ -105,9 +103,9 @@ export function PeekActionBar({
       className="mt-3 flex flex-wrap items-center gap-2 border-t border-border pt-3"
     >
       {canEdit && onMap ? (
-        <PencilAction seed="peek-map" onClick={() => onMap(item, group)}>
+        <MapButton onClick={() => onMap(item, group)}>
           {item.visibility === "mapped" ? "Remap" : "Map to a workstream"}
-        </PencilAction>
+        </MapButton>
       ) : null}
       {showFactCheck ? (
         <PencilAction
@@ -120,9 +118,7 @@ export function PeekActionBar({
       {showDecisions ? (
         <PencilAction
           seed="peek-decisions"
-          onClick={() =>
-            onAnalyse?.(item, isThread ? "decision_origin_thread" : "decision_origin")
-          }
+          onClick={() => onAnalyse?.(item, isThread ? "decision_origin_thread" : "decision_origin")}
         >
           {decisionsLabel}
         </PencilAction>

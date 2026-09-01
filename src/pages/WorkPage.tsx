@@ -26,6 +26,7 @@ import type { PeekAnalysisPreset } from "@/components/peek/PeekActionBar";
 import { UploadFilesButton } from "@/components/work/UploadFilesButton";
 import { TranscriptsAction } from "@/components/work/TranscriptsAction";
 import { WorkDateDialog } from "@/components/work/WorkDateDialog";
+import { MapButton } from "@/components/work/MapButton";
 import { RowAction, WorkRow } from "@/components/work/WorkRow";
 import { EngagementFold, WorkSection } from "@/components/work/WorkSection";
 import { WorkPile } from "@/components/work/WorkPile";
@@ -242,7 +243,7 @@ export function WorkPage() {
     return (
       <>
         {item.content_ref ? <OpenFileAction workItemId={item.id} /> : null}
-        <RowAction primary={variant === "unmapped"} onClick={() => openMap(item, group)}>
+        <MapButton onClick={() => openMap(item, group)} stopPropagation>
           {variant === "mapped"
             ? groupLabel
               ? "Remap conversation"
@@ -250,7 +251,7 @@ export function WorkPage() {
             : groupLabel
               ? "Map conversation"
               : "Map to a workstream"}
-        </RowAction>
+        </MapButton>
         {group && group.length > 1 ? (
           <RowAction onClick={() => openMap(item)}>Map just this</RowAction>
         ) : null}
@@ -447,8 +448,7 @@ export function WorkPage() {
                   />
                   Select all
                 </label>
-                <button
-                  type="button"
+                <MapButton
                   disabled={chosen.size === 0}
                   onClick={() => {
                     const picked = all.filter((i) => chosen.has(i.id));
@@ -458,10 +458,9 @@ export function WorkPage() {
                     setMapGroup(picked);
                     setMapItem(head);
                   }}
-                  className="text-xs font-medium text-accent-deep transition-opacity hover:opacity-70 disabled:opacity-40"
                 >
                   Map to a workstream{chosen.size ? ` (${chosen.size})` : ""}
-                </button>
+                </MapButton>
                 <button
                   type="button"
                   disabled={chosen.size === 0}
