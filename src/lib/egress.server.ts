@@ -11,6 +11,7 @@ import {
   mapEventForEgress,
   shouldRunEgress,
   signBody,
+  type CensusEvent,
   type EgressEvent,
   type EgressEventRow,
   type PostureEntry,
@@ -103,7 +104,7 @@ export async function runEgress(): Promise<EgressResult> {
     const orgNames = await orgNamesFor(admin, namedOrgIds);
 
     const sendIds: number[] = [];
-    const events: EgressEvent[] = [];
+    const events: (EgressEvent | CensusEvent)[] = [];
     const skips = new Map<string, number[]>();
     for (const row of rows) {
       const mapped = mapEventForEgress(row, orgNames);
