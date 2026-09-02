@@ -68,6 +68,7 @@ describe("pass 149 mapping by chosen level", () => {
         new Map([["org-1", "Charlotte Labs"]]),
       );
       if (mapped.kind !== "send") throw new Error("expected send");
+      if (mapped.event.event_name === "model.census") throw new Error("unexpected census");
       expect(mapped.event.workspace_ref).toBe("org-1");
       expect(mapped.event.workspace_name).toBe("Charlotte Labs");
       expect(mapped.event.person_key).toBe("actor-hash");
