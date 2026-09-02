@@ -28,15 +28,18 @@ export const noteCaptureFn = createServerFn({ method: "POST" })
     if (!items || items.length === 0) return { ok: true };
 
     const { noteModelUsed, noteThreadShape } = await import("./work-taxonomy.server");
+    const { noteCaptureContext } = await import("./capture-census.server");
     for (const item of items) {
       const actor = { orgId: item.org_id, userId, profileId: item.owner_id };
+      const sourceMeta = (item.source_meta ?? {}) as { model?: unknown };
       if (item.type === "ai_thread") {
         const { data: turns } = await supabase
           .from("turns")
-          .select("role, content")
+          .select("role, content, ts, model")
           .eq("work_item_id", item.id)
           .order("turn_no", { ascending: true });
-        const shaped = (turns ?? []).map((t) => ({
+        const rows = turns ?? [];
+        const shaped = rows.map((t) => ({
           role: String(t.role),
           length: (t.content ?? "").length,
         }));
@@ -44,10 +47,27 @@ export const noteCaptureFn = createServerFn({ method: "POST" })
           item: item as never,
           via: data.via,
           turnCount: shaped.length,
+          modelRaws: [sourceMeta.model, ...rows.map((t) => (t as { model?: unknown }).model)],
         });
         await noteThreadShape(supabase, actor, shaped);
+        // Pass 155: the machine context of this capture, once per new item.
+        await noteCaptureContext(supabase, actor, {
+          turns: rows.map((t) => ({
+            role: String(t.role),
+            content: t.content ?? "",
+            ts: (t as { ts?: string | null }).ts ?? null,
+          })),
+          clientName: data.via,
+          clientVersion: "unknown",
+          protocolVersion: "unknown",
+          bytes: rows.reduce((sum, t) => sum + (t.content ?? "").length, 0),
+        });
       } else {
-        await noteModelUsed(supabase, actor, { item: item as never, via: data.via });
+        await noteModelUsed(supabase, actor, {
+          item: item as never,
+          via: data.via,
+          modelRaws: [sourceMeta.model],
+        });
       }
     }
     return { ok: true };
