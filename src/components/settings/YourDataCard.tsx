@@ -26,6 +26,9 @@ import {
   needsReconfirm,
   RESEARCH_BODY,
   RESEARCH_HEADING,
+  RESEARCH_JOINED_LINE,
+  RESEARCH_NOT_JOINED_LINE,
+  RESEARCH_NOTE,
   RESEARCH_SAVED_LINE,
   RIGHTS_BLOCK,
   SURFACE_NAME,
@@ -267,42 +270,60 @@ export function OrgDataCard() {
 }
 
 /** The person's own level, bounded by the organization. Coaches see nothing. */
-/** Taking part in studies is separate from the level above. */
-function ResearchBlock({ profileId }: { profileId?: string | undefined }) {
+/** Taking part in studies is separate from the level above. One card, one
+ * question, and the current answer is said in words before the action. */
+function ResearchBlock({
+  profileId,
+  choice,
+}: {
+  profileId?: string | undefined;
+  choice: ResearchChoice | null;
+}) {
   const submit = useServerFn(recordResearchChoice);
-  const [saved, setSaved] = useState(false);
+  const queryClient = useQueryClient();
 
   const mutation = useMutation({
-    mutationFn: (choice: ResearchChoice) => submit({ data: { choice, profile_id: profileId } }),
-    onSuccess: () => setSaved(true),
+    mutationFn: (next: ResearchChoice) => submit({ data: { choice: next, profile_id: profileId } }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["data-consent", profileId] });
+      toast.success(RESEARCH_SAVED_LINE);
+    },
     onError: (e: unknown) =>
       toast.error((e as Error)?.message || "That could not be saved. Try again."),
   });
+
+  const joined = choice === "joined";
 
   return (
     <section className="mt-6 rounded-[var(--radius)] border border-border bg-card px-4 py-3">
       <h3 className="micro-label micro-label-section">{RESEARCH_HEADING}</h3>
       <p className="mt-1.5 text-sm text-muted-foreground">{RESEARCH_BODY}</p>
-      <div className="mt-3 flex items-center gap-2">
-        <Button
-          type="button"
-          size="sm"
-          disabled={mutation.isPending}
-          onClick={() => mutation.mutate("joined")}
-        >
-          Join
-        </Button>
-        <Button
-          type="button"
-          size="sm"
-          variant="outline"
-          disabled={mutation.isPending}
-          onClick={() => mutation.mutate("left")}
-        >
-          Leave
-        </Button>
+      <p className="mt-3 text-sm font-medium text-foreground">
+        {joined ? RESEARCH_JOINED_LINE : RESEARCH_NOT_JOINED_LINE}
+      </p>
+      <div className="mt-2">
+        {joined ? (
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            disabled={mutation.isPending}
+            onClick={() => mutation.mutate("left")}
+          >
+            Leave
+          </Button>
+        ) : (
+          <Button
+            type="button"
+            size="sm"
+            disabled={mutation.isPending}
+            onClick={() => mutation.mutate("joined")}
+          >
+            Join
+          </Button>
+        )}
       </div>
-      {saved ? <p className="mt-2 text-sm text-foreground">{RESEARCH_SAVED_LINE}</p> : null}
+      <p className="mt-2 text-xs text-muted-foreground">{RESEARCH_NOTE}</p>
     </section>
   );
 }
@@ -361,7 +382,9 @@ export function PersonalDataCard() {
 
       <p className="mt-4 text-sm text-muted-foreground">{RIGHTS_BLOCK}</p>
 
-      {data.org_tier === "t0" ? null : <ResearchBlock profileId={profile?.id} />}
+      {data.org_tier === "t0" ? null : (
+        <ResearchBlock profileId={profile?.id} choice={data.research_choice} />
+      )}
 
 
       <ConfirmDialog

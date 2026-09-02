@@ -31,6 +31,8 @@ export type DataConsentView = {
   /** Wording version of the latest ledger entry for each scope, when there is one. */
   org_text_version: string | null;
   user_text_version: string | null;
+  /** The person's latest research choice, or null when never answered. */
+  research_choice: "joined" | "left" | null;
   changes: ConsentChange[];
 };
 
@@ -66,6 +68,21 @@ export const getDataConsent = createServerFn({ method: "POST" })
         ?.consent_text_version ?? null;
 
     const isAdmin = profile.role === "admin";
+
+    // The research choice lives only as stamped events; the latest one wins.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: researchRows } = await supabaseAdmin
+      .from("events")
+      .select("dims")
+      .eq("org_id", profile.org_id)
+      .eq("profile_id", profile.id)
+      .eq("event_type", "consent.research_change")
+      .order("server_ts", { ascending: false })
+      .limit(1);
+    const researchDim = (researchRows?.[0]?.dims as { choice?: string } | null)?.choice;
+    const researchChoice =
+      researchDim === "joined" ? "joined" : researchDim === "left" ? "left" : null;
+
     let changes: ConsentChange[] = [];
     if (isAdmin) {
       const { data: ledger } = await context.supabase
@@ -104,6 +121,7 @@ export const getDataConsent = createServerFn({ method: "POST" })
       user_tier: isDataTier(userRow?.tier) ? userRow.tier : DEFAULT_USER_TIER,
       org_text_version: orgTextVersion,
       user_text_version: userTextVersion,
+      research_choice: researchChoice,
       changes,
     };
   });

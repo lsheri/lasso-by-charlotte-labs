@@ -61,7 +61,9 @@ describe("pass 89 — research consent", () => {
   it("research passes every purpose list the write path consults", () => {
     expect(CONSENT_PURPOSES).toContain("research");
     expect(PURPOSE_RANK["research"]).toBe(3);
-    expect(PURPOSE_COPY.some((p) => p.purpose === "research")).toBe(true);
+    // Pass 158: the research switch copy is gone; the choice lives once, on
+    // the personal "Your data" card.
+    expect(PURPOSE_COPY.some((p) => p.purpose === "research")).toBe(false);
   });
 
   it("only operate is rejected by the validator", () => {
