@@ -58,7 +58,9 @@ describe("chat library search — no event per keystroke", () => {
     const src = readFileSync("src/lib/chat-library.functions.ts", "utf8");
     expect(src).toContain("chatlib.search");
     expect(src).toContain("payload: { query:");
-    expect(src).not.toMatch(/dims:[\s\S]{0,200}query:/);
+    const dimsBlock = src.slice(src.indexOf("dims: {"), src.indexOf("payload: { query:"));
+    expect(dimsBlock).toContain("query_len_band");
+    expect(dimsBlock).not.toMatch(/\bquery:/);
   });
 });
 
