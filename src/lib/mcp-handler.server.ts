@@ -638,7 +638,12 @@ async function storedAttachmentChars(match: {
  * render them as a single group. Re-pushing the same conversation updates in
  * place rather than duplicating.
  */
-async function pushConversation(owner: Owner, args: Obj, id: unknown): Promise<Response> {
+async function pushConversation(
+  owner: Owner,
+  args: Obj,
+  id: unknown,
+  client: ClientIdentity = { name: "unknown", version: "unknown", protocol: "unknown" },
+): Promise<Response> {
   const title = typeof args["title"] === "string" ? args["title"].trim() : "";
   if (!title) return rpcError(id, -32602, "title is required, verbatim from the source app");
 
