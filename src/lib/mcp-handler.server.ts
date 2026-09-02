@@ -467,20 +467,26 @@ async function pushThread(
   await ensureExtracts([item.id]);
 
   await logPush(owner, { tool: "push_thread", source_ai: sourceAi });
-  await noteModelUsed(
-    supabaseAdmin,
-    { orgId: owner.orgId, userId: owner.userId, profileId: owner.profileId },
-    {
-      item: { type: "ai_thread", source: `mcp:${sourceAi}` },
-      via: "mcp_push",
-      turnCount: turns.length,
-    },
-  );
+  const threadActor = { orgId: owner.orgId, userId: owner.userId, profileId: owner.profileId };
+  await noteModelUsed(supabaseAdmin, threadActor, {
+    item: { type: "ai_thread", source: `mcp:${sourceAi}` },
+    via: "mcp_push",
+    turnCount: turns.length,
+    modelRaws: [args["model"]],
+  });
   await noteThreadShape(
     supabaseAdmin,
-    { orgId: owner.orgId, userId: owner.userId, profileId: owner.profileId },
+    threadActor,
     turns.map((t) => ({ role: t.role, length: t.content.length })),
   );
+  const { noteCaptureContext } = await import("./capture-census.server");
+  await noteCaptureContext(supabaseAdmin, threadActor, {
+    turns: turns.map((t) => ({ role: t.role, content: t.content, ts: t.ts ?? null })),
+    clientName: client.name,
+    clientVersion: client.version,
+    protocolVersion: client.protocol,
+    bytes,
+  });
   return textResult(
     id,
     `Saved to Lasso: '${title}' (${turns.length} turns). It is private until you map it.`,
