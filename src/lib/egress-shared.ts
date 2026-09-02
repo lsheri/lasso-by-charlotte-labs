@@ -44,14 +44,70 @@ export type EgressEvent = {
   dims: Record<string, unknown>;
 };
 
+/**
+ * The anonymous model census. Constructible from the model fields and the week
+ * alone: no workspace, no person, no day-precision time.
+ */
+export type CensusEvent = {
+  event_uuid: string | null;
+  event_name: "model.census";
+  event_ts: string;
+  workspace_ref: "census";
+  person_key: null;
+  consent_tier: "census";
+  schema_version: string;
+  dims: { model_id: string; model_raw: string };
+};
+
 export type EgressMapped =
-  | { kind: "send"; id: number; event: EgressEvent }
+  | { kind: "send"; id: number; event: EgressEvent | CensusEvent }
   | { kind: "skip"; id: number; reason: string };
 
 function asRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : {};
+}
+
+/** Start of the UTC week (Monday) as an ISO timestamp. */
+export function weekStartIso(ts: string): string {
+  const date = new Date(ts);
+  if (Number.isNaN(date.getTime())) return ts;
+  const day = (date.getUTCDay() + 6) % 7;
+  const start = Date.UTC(
+    date.getUTCFullYear(),
+    date.getUTCMonth(),
+    date.getUTCDate() - day,
+    0,
+    0,
+    0,
+    0,
+  );
+  return new Date(start).toISOString();
+}
+
+/** One t0 model.used row becomes an identity-free census record. */
+export function mapCensusEvent(row: EgressEventRow): EgressMapped {
+  const dims = asRecord(row.dims);
+  const rawValue = dims["model_raw"];
+  const idValue = dims["model_id"];
+  return {
+    kind: "send",
+    id: row.id,
+    event: {
+      event_uuid: row.event_uuid,
+      event_name: "model.census",
+      event_ts: weekStartIso(row.ts),
+      workspace_ref: "census",
+      person_key: null,
+      consent_tier: "census",
+      schema_version: row.schema_version,
+      dims: {
+        model_id: typeof idValue === "string" && idValue ? idValue : "unrecognized",
+        model_raw: typeof rawValue === "string" && rawValue ? rawValue : "undisclosed",
+      },
+    },
+  };
 }
 
 /**
@@ -64,10 +120,14 @@ export function mapEventForEgress(
 ): EgressMapped {
   const tier = row.consent_tier;
   if (!tier) return { kind: "skip", id: row.id, reason: "unstamped" };
-  if (tier === "t0") return { kind: "skip", id: row.id, reason: "t0" };
+  if (tier === "t0") {
+    if (row.event_type === "model.used") return mapCensusEvent(row);
+    return { kind: "skip", id: row.id, reason: "t0" };
+  }
   if (tier !== "a" && tier !== "b" && tier !== "c" && tier !== "d") {
     return { kind: "skip", id: row.id, reason: "unstamped" };
   }
+
 
   const base: EgressEvent = {
     event_uuid: row.event_uuid,
