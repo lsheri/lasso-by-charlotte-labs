@@ -339,6 +339,12 @@ export async function handleMcpRequest(request: Request, token: string): Promise
 
   if (method === "initialize") {
     const asked = String((params["protocolVersion"] as string) ?? PROTOCOL_VERSION);
+    const info = (params["clientInfo"] ?? {}) as Obj;
+    rememberClient(owner.tokenId, {
+      name: machineLabel(info["name"]),
+      version: machineLabel(info["version"]),
+      protocol: machineLabel(asked),
+    });
     return rpcResult(id, {
       protocolVersion: ACCEPTED_PROTOCOLS.has(asked) ? asked : PROTOCOL_VERSION,
       capabilities: { tools: {} },
