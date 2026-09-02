@@ -2786,10 +2786,3 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   opacity: 0.55;
   user-select: none;
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .nb-gap-feed {
-    animation: none;
-    opacity: 1;
-  }
-}
