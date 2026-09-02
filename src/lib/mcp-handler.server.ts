@@ -78,6 +78,29 @@ function textResult(id: unknown, text: string): Response {
 
 type Owner = { tokenId: string; profileId: string; orgId: string; userId: string | null };
 
+/**
+ * Pass 155. What the pushing client said about itself during the initialize
+ * handshake: machine-generated name, version and protocol strings only. Kept
+ * in process memory and read back on the following tool call; a cold worker
+ * simply reports "unknown".
+ */
+type ClientIdentity = { name: string; version: string; protocol: string };
+const CLIENT_IDENTITIES = new Map<string, ClientIdentity>();
+
+function rememberClient(tokenId: string, identity: ClientIdentity): void {
+  if (CLIENT_IDENTITIES.size > 500) CLIENT_IDENTITIES.clear();
+  CLIENT_IDENTITIES.set(tokenId, identity);
+}
+
+function clientIdentity(tokenId: string, headerProtocol: string | null): ClientIdentity {
+  const stored = CLIENT_IDENTITIES.get(tokenId);
+  return {
+    name: stored?.name ?? "unknown",
+    version: stored?.version ?? "unknown",
+    protocol: headerProtocol ?? stored?.protocol ?? "unknown",
+  };
+}
+
 async function resolveOwner(token: string): Promise<Owner | null> {
   if (!token) return null;
   const hash = await sha256Hex(token);
