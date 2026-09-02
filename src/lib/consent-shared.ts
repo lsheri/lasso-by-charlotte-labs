@@ -49,18 +49,13 @@ export const PURPOSE_COPY: PurposeCopy[] = [
     declining:
       "Declining means no comparison to other organisations, and your data shapes nothing outside your workspace.",
   },
-  {
-    purpose: "research",
-    title: "Formal research",
-    unlocks:
-      "Allows deidentified records to be used in published research about how people work with AI, under a written protocol.",
-    declining: "Declining keeps your organisation out of every study. Nothing else changes.",
-  },
 ];
 
 /**
  * What the Data use section shows. Research is not offered here: that choice
- * lives on the personal "Your data" card, off unless someone turns it on.
+ * lives once, on the personal "Your data" card, with its own plain wording.
+ * The "research" purpose stays in the enum and ledger; only its switch copy
+ * is gone, so one question is asked in one place.
  */
 export const VISIBLE_PURPOSE_COPY: PurposeCopy[] = PURPOSE_COPY.filter(
   (purpose) => purpose.purpose !== "research",

@@ -248,7 +248,23 @@ export function sampleEventForTier(tier: DataTier): SampleEvent {
 /** The optional research block on the personal surface. */
 export const RESEARCH_HEADING = "Research";
 export const RESEARCH_BODY =
-  "Lasso runs studies on how people work with AI, using material at your chosen level above. Taking part is a separate choice, always yours, and changing it never affects anything else in your workspace.";
+  "Help build the public record of how people and AI actually work together. Workspaces that take part power Lasso's published studies and benchmarks, drawn from material at the level you chose above. Everything published is de-identified: no names, no workspaces, no one traceable back.";
+export const RESEARCH_NOTE =
+  "Taking part is your choice and changes nothing else in your workspace. Join or leave any time.";
+export const RESEARCH_JOINED_LINE = "You are taking part";
+export const RESEARCH_NOT_JOINED_LINE = "You are not taking part";
 export const RESEARCH_SAVED_LINE = "Saved. Your choice is recorded.";
 export const RESEARCH_EVENT = "consent.research_change" as const;
 export type ResearchChoice = "joined" | "left";
+
+/**
+ * The wording the research card shows. Bumped when the copy changes, so the
+ * wording behind a choice can always be recovered. It travels nowhere: the
+ * choice record stays exactly the stamped consent.research_change event.
+ */
+export const RESEARCH_COPY_VERSION = "research-v2";
+
+/** The state line above the single available action. */
+export function researchStateLine(choice: ResearchChoice | null | undefined): string {
+  return choice === "joined" ? RESEARCH_JOINED_LINE : RESEARCH_NOT_JOINED_LINE;
+}
