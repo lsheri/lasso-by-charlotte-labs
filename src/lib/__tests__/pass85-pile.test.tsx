@@ -54,7 +54,9 @@ describe("pass 85 css", () => {
   });
 
   it("swaps instantly under reduced motion", () => {
-    const block = css.slice(css.lastIndexOf("@media (prefers-reduced-motion: reduce)"));
+    const block = css
+      .split("@media (prefers-reduced-motion: reduce)")
+      .find((chunk) => chunk.includes(".nb-paper") && chunk.includes("transition: none !important")) ?? "";
     expect(block).toContain(".nb-paper");
     expect(block).toContain("transition: none !important");
   });

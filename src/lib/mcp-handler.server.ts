@@ -11,6 +11,7 @@ import {
 import { workTypeForFile } from "@/lib/work-types";
 import { recordEvent } from "@/lib/telemetry.server";
 import { noteModelUsed, noteThreadShape } from "@/lib/work-taxonomy.server";
+import { machineLabel } from "@/lib/capture-census";
 import { clientDisplayName, engagementDisplayTitle, isQuickFolder } from "@/lib/clients";
 import {
   ATTACHMENT_KINDS,
@@ -77,6 +78,29 @@ function textResult(id: unknown, text: string): Response {
 }
 
 type Owner = { tokenId: string; profileId: string; orgId: string; userId: string | null };
+
+/**
+ * Pass 155. What the pushing client said about itself during the initialize
+ * handshake: machine-generated name, version and protocol strings only. Kept
+ * in process memory and read back on the following tool call; a cold worker
+ * simply reports "unknown".
+ */
+type ClientIdentity = { name: string; version: string; protocol: string };
+const CLIENT_IDENTITIES = new Map<string, ClientIdentity>();
+
+function rememberClient(tokenId: string, identity: ClientIdentity): void {
+  if (CLIENT_IDENTITIES.size > 500) CLIENT_IDENTITIES.clear();
+  CLIENT_IDENTITIES.set(tokenId, identity);
+}
+
+function clientIdentity(tokenId: string, headerProtocol: string | null): ClientIdentity {
+  const stored = CLIENT_IDENTITIES.get(tokenId);
+  return {
+    name: stored?.name ?? "unknown",
+    version: stored?.version ?? "unknown",
+    protocol: headerProtocol ?? stored?.protocol ?? "unknown",
+  };
+}
 
 async function resolveOwner(token: string): Promise<Owner | null> {
   if (!token) return null;
@@ -316,6 +340,12 @@ export async function handleMcpRequest(request: Request, token: string): Promise
 
   if (method === "initialize") {
     const asked = String((params["protocolVersion"] as string) ?? PROTOCOL_VERSION);
+    const info = (params["clientInfo"] ?? {}) as Obj;
+    rememberClient(owner.tokenId, {
+      name: machineLabel(info["name"]),
+      version: machineLabel(info["version"]),
+      protocol: machineLabel(asked),
+    });
     return rpcResult(id, {
       protocolVersion: ACCEPTED_PROTOCOLS.has(asked) ? asked : PROTOCOL_VERSION,
       capabilities: { tools: {} },
@@ -340,9 +370,15 @@ export async function handleMcpRequest(request: Request, token: string): Promise
   if (method === "tools/call") {
     const name = String(params["name"] ?? "");
     const args = (params["arguments"] ?? {}) as Obj;
+    const client = clientIdentity(
+      owner.tokenId,
+      machineLabel(request.headers.get("mcp-protocol-version")) === "unknown"
+        ? null
+        : machineLabel(request.headers.get("mcp-protocol-version")),
+    );
     try {
-      if (name === "push_conversation") return await pushConversation(owner, args, id);
-      if (name === "push_thread") return await pushThread(owner, args, id);
+      if (name === "push_conversation") return await pushConversation(owner, args, id, client);
+      if (name === "push_thread") return await pushThread(owner, args, id, client);
       if (name === "push_document") return await pushDocument(owner, args, id);
       if (name === "list_engagements") return await listEngagements(owner, id);
       return rpcError(id, -32602, `Unknown tool: ${name}`);
@@ -356,7 +392,12 @@ export async function handleMcpRequest(request: Request, token: string): Promise
 
 type IncomingTurn = { role: string; content: string; ts?: string };
 
-async function pushThread(owner: Owner, args: Obj, id: unknown): Promise<Response> {
+async function pushThread(
+  owner: Owner,
+  args: Obj,
+  id: unknown,
+  client: ClientIdentity = { name: "unknown", version: "unknown", protocol: "unknown" },
+): Promise<Response> {
   const raw = args["turns"];
   if (!Array.isArray(raw) || raw.length === 0) {
     return rpcError(id, -32602, "turns must be a non-empty array");
@@ -427,20 +468,26 @@ async function pushThread(owner: Owner, args: Obj, id: unknown): Promise<Respons
   await ensureExtracts([item.id]);
 
   await logPush(owner, { tool: "push_thread", source_ai: sourceAi });
-  await noteModelUsed(
-    supabaseAdmin,
-    { orgId: owner.orgId, userId: owner.userId, profileId: owner.profileId },
-    {
-      item: { type: "ai_thread", source: `mcp:${sourceAi}` },
-      via: "mcp_push",
-      turnCount: turns.length,
-    },
-  );
+  const threadActor = { orgId: owner.orgId, userId: owner.userId, profileId: owner.profileId };
+  await noteModelUsed(supabaseAdmin, threadActor, {
+    item: { type: "ai_thread", source: `mcp:${sourceAi}` },
+    via: "mcp_push",
+    turnCount: turns.length,
+    modelRaws: [args["model"]],
+  });
   await noteThreadShape(
     supabaseAdmin,
-    { orgId: owner.orgId, userId: owner.userId, profileId: owner.profileId },
+    threadActor,
     turns.map((t) => ({ role: t.role, length: t.content.length })),
   );
+  const { noteCaptureContext } = await import("./capture-census.server");
+  await noteCaptureContext(supabaseAdmin, threadActor, {
+    turns: turns.map((t) => ({ role: t.role, content: t.content, ts: t.ts ?? null })),
+    clientName: client.name,
+    clientVersion: client.version,
+    protocolVersion: client.protocol,
+    bytes,
+  });
   return textResult(
     id,
     `Saved to Lasso: '${title}' (${turns.length} turns). It is private until you map it.`,
@@ -592,7 +639,12 @@ async function storedAttachmentChars(match: {
  * render them as a single group. Re-pushing the same conversation updates in
  * place rather than duplicating.
  */
-async function pushConversation(owner: Owner, args: Obj, id: unknown): Promise<Response> {
+async function pushConversation(
+  owner: Owner,
+  args: Obj,
+  id: unknown,
+  client: ClientIdentity = { name: "unknown", version: "unknown", protocol: "unknown" },
+): Promise<Response> {
   const title = typeof args["title"] === "string" ? args["title"].trim() : "";
   if (!title) return rpcError(id, -32602, "title is required, verbatim from the source app");
 
@@ -1095,29 +1147,48 @@ async function pushConversation(owner: Owner, args: Obj, id: unknown): Promise<R
     userId: owner.userId,
     profileId: owner.profileId,
   };
+  const { data: shapeTurns } = await supabaseAdmin
+    .from("turns")
+    .select("role, content, model")
+    .eq("work_item_id", threadId)
+    .order("turn_no", { ascending: true });
+  // Pass 155: the exact machine identifiers seen anywhere in this conversation.
+  const modelRaws = [model, ...(shapeTurns ?? []).map((t) => (t as { model?: unknown }).model)];
   if (pushMode === "created") {
     await noteModelUsed(supabaseAdmin, taxonomyActor, {
       item: { type: "ai_thread", source: `mcp:${vendor}`, source_vendor: vendor },
       via: "mcp_push",
       turnCount: messages.length,
+      modelRaws,
     });
   }
   for (const type of createdAttachmentTypes) {
     await noteModelUsed(supabaseAdmin, taxonomyActor, {
       item: { type, source: `mcp:${vendor}`, source_vendor: vendor },
       via: "mcp_push",
+      modelRaws,
     });
   }
-  const { data: shapeTurns } = await supabaseAdmin
-    .from("turns")
-    .select("role, content")
-    .eq("work_item_id", threadId)
-    .order("turn_no", { ascending: true });
   await noteThreadShape(
     supabaseAdmin,
     taxonomyActor,
     (shapeTurns ?? []).map((t) => ({ role: String(t.role), length: (t.content ?? "").length })),
   );
+  // Pass 155: one capture.context per NEW conversation, never on a re-push.
+  if (pushMode === "created") {
+    const { noteCaptureContext } = await import("./capture-census.server");
+    await noteCaptureContext(supabaseAdmin, taxonomyActor, {
+      turns: messages.map((m) => ({
+        role: m.role,
+        content: m.content,
+        ts: m.timestamp ?? null,
+      })),
+      clientName: client.name,
+      clientVersion: client.version,
+      protocolVersion: client.protocol,
+      bytes: new TextEncoder().encode(serialized).byteLength,
+    });
+  }
 
   if (owner.userId) {
     // The canonical record of the push. Exact counts, no content.
