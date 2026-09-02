@@ -32,7 +32,8 @@ function item(overrides: Partial<WorkItemRow> = {}): WorkItemRow {
 describe("data use section", () => {
   it("no longer offers the research card", () => {
     expect(VISIBLE_PURPOSE_COPY.some((p) => p.purpose === "research")).toBe(false);
-    expect(PURPOSE_COPY.some((p) => p.purpose === "research")).toBe(true);
+    // Pass 158: the research switch copy is removed entirely; one card asks.
+    expect(PURPOSE_COPY.some((p) => p.purpose === "research")).toBe(false);
   });
 
   it("starts deidentified improvement on, with a plain line", () => {
