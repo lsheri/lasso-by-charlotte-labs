@@ -369,9 +369,15 @@ export async function handleMcpRequest(request: Request, token: string): Promise
   if (method === "tools/call") {
     const name = String(params["name"] ?? "");
     const args = (params["arguments"] ?? {}) as Obj;
+    const client = clientIdentity(
+      owner.tokenId,
+      machineLabel(request.headers.get("mcp-protocol-version")) === "unknown"
+        ? null
+        : machineLabel(request.headers.get("mcp-protocol-version")),
+    );
     try {
-      if (name === "push_conversation") return await pushConversation(owner, args, id);
-      if (name === "push_thread") return await pushThread(owner, args, id);
+      if (name === "push_conversation") return await pushConversation(owner, args, id, client);
+      if (name === "push_thread") return await pushThread(owner, args, id, client);
       if (name === "push_document") return await pushDocument(owner, args, id);
       if (name === "list_engagements") return await listEngagements(owner, id);
       return rpcError(id, -32602, `Unknown tool: ${name}`);
