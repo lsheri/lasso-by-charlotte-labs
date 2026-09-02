@@ -149,7 +149,9 @@ describe("94.3 scatter css", () => {
     expect(base).toBeGreaterThan(0);
     // The responsive override must come after the base rule it overrides.
     expect(css.indexOf("@media (max-width: 767px)", base)).toBeGreaterThan(base);
-    const reduced = css.slice(css.lastIndexOf("@media (prefers-reduced-motion: reduce)"));
+    const reduced = css
+      .split("@media (prefers-reduced-motion: reduce)")
+      .find((chunk) => chunk.includes(".nb-paper")) ?? "";
     expect(reduced).toContain(".nb-paper");
     expect(reduced).toContain("transform: none !important");
   });

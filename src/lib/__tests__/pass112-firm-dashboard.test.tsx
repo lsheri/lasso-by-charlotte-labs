@@ -129,7 +129,9 @@ describe("pile", () => {
   it("goes static under reduced motion", () => {
     const css = readFileSync("src/styles.css", "utf8");
     expect(css).toContain(".nb-pile");
-    const block = css.slice(css.lastIndexOf("@media (prefers-reduced-motion: reduce)"));
+    const block = css
+      .split("@media (prefers-reduced-motion: reduce)")
+      .find((chunk) => chunk.includes(".nb-pile-item")) ?? "";
     expect(block).toContain(".nb-pile-item");
     expect(block).toContain("transform: none !important");
   });
