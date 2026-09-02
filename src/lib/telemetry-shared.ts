@@ -76,6 +76,8 @@ export type TelemetryEvent =
   | "model.used"
   /** Pass 148: the shape of a captured conversation. Bands and counts only. */
   | "thread.shape"
+  /** Pass 155: the machine context of one capture. Bands, counts, codes. */
+  | "capture.context"
   /** Pass 148: a link between two pieces of work, tool to tool. */
   | "handoff.observed"
   /** Pass 150: what the person said their finished work is. Closed vocab. */
