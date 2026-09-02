@@ -391,7 +391,12 @@ export async function handleMcpRequest(request: Request, token: string): Promise
 
 type IncomingTurn = { role: string; content: string; ts?: string };
 
-async function pushThread(owner: Owner, args: Obj, id: unknown): Promise<Response> {
+async function pushThread(
+  owner: Owner,
+  args: Obj,
+  id: unknown,
+  client: ClientIdentity = { name: "unknown", version: "unknown", protocol: "unknown" },
+): Promise<Response> {
   const raw = args["turns"];
   if (!Array.isArray(raw) || raw.length === 0) {
     return rpcError(id, -32602, "turns must be a non-empty array");
