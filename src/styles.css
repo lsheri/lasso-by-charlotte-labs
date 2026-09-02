@@ -2750,6 +2750,11 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
     opacity: 1;
     filter: none;
   }
+
+  .nb-gap-feed {
+    animation: none;
+    opacity: 1;
+  }
 }
 
 /* Landing "the gap": products drift in, the thinking behind them blurs out. */
