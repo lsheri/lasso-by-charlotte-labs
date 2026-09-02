@@ -170,7 +170,7 @@ export async function recordEvent(
       tenant_hash: tenantHash,
       actor_hash: actorHash,
       dims,
-      payload: input.payload ?? {},
+      payload: (input.payload ?? {}) as never,
       org_id: input.orgId,
       profile_id: input.profileId ?? null,
       session_id: input.sessionId ?? null,
