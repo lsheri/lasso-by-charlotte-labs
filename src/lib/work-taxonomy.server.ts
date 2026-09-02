@@ -31,12 +31,23 @@ export type CapturedItem = TaxonomyItem & VendorSource;
 export async function noteModelUsed(
   supabase: SupabaseClient<Database>,
   actor: Actor,
-  input: { item: CapturedItem; via: CaptureVia; turnCount?: number | null | undefined },
+  input: {
+    item: CapturedItem;
+    via: CaptureVia;
+    turnCount?: number | null | undefined;
+    /** Pass 155: exact machine identifiers seen for this conversation. */
+    modelRaws?: readonly unknown[] | undefined;
+  },
 ): Promise<void> {
-  const dims: Record<string, string> = {
+  const raws = input.modelRaws ?? [];
+  const primary = raws.find((r) => modelRawOf(r) !== UNDISCLOSED);
+  const dims: Record<string, string | boolean> = {
     vendor: vendorFromSource(input.item),
     task_class: taskClassForItem(input.item),
     via: input.via,
+    model_raw: modelRawOf(primary),
+    model_id: normalizeModelId(primary),
+    model_switched: modelSwitched(raws),
   };
   if (typeof input.turnCount === "number") dims["turn_band"] = turnBand(input.turnCount);
   await recordEvent(supabase, {
