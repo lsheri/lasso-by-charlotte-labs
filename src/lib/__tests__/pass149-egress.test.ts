@@ -6,6 +6,7 @@ import {
   mapEventForEgress,
   shouldRunEgress,
   signBody,
+  type EgressEvent,
   type EgressEventRow,
 } from "../egress-shared";
 
@@ -68,8 +69,9 @@ describe("pass 149 mapping by chosen level", () => {
         new Map([["org-1", "Charlotte Labs"]]),
       );
       if (mapped.kind !== "send") throw new Error("expected send");
-      expect(mapped.event.workspace_ref).toBe("org-1");
-      expect(mapped.event.workspace_name).toBe("Charlotte Labs");
+      const event = mapped.event as EgressEvent;
+      expect(event.workspace_ref).toBe("org-1");
+      expect(event.workspace_name).toBe("Charlotte Labs");
       expect(mapped.event.person_key).toBe("actor-hash");
       expect(mapped.event.dims).toEqual({ kind: "deck", title: "Q3 pricing review" });
     }
