@@ -1146,29 +1146,48 @@ async function pushConversation(
     userId: owner.userId,
     profileId: owner.profileId,
   };
+  const { data: shapeTurns } = await supabaseAdmin
+    .from("turns")
+    .select("role, content, model")
+    .eq("work_item_id", threadId)
+    .order("turn_no", { ascending: true });
+  // Pass 155: the exact machine identifiers seen anywhere in this conversation.
+  const modelRaws = [model, ...(shapeTurns ?? []).map((t) => (t as { model?: unknown }).model)];
   if (pushMode === "created") {
     await noteModelUsed(supabaseAdmin, taxonomyActor, {
       item: { type: "ai_thread", source: `mcp:${vendor}`, source_vendor: vendor },
       via: "mcp_push",
       turnCount: messages.length,
+      modelRaws,
     });
   }
   for (const type of createdAttachmentTypes) {
     await noteModelUsed(supabaseAdmin, taxonomyActor, {
       item: { type, source: `mcp:${vendor}`, source_vendor: vendor },
       via: "mcp_push",
+      modelRaws,
     });
   }
-  const { data: shapeTurns } = await supabaseAdmin
-    .from("turns")
-    .select("role, content")
-    .eq("work_item_id", threadId)
-    .order("turn_no", { ascending: true });
   await noteThreadShape(
     supabaseAdmin,
     taxonomyActor,
     (shapeTurns ?? []).map((t) => ({ role: String(t.role), length: (t.content ?? "").length })),
   );
+  // Pass 155: one capture.context per NEW conversation, never on a re-push.
+  if (pushMode === "created") {
+    const { noteCaptureContext } = await import("./capture-census.server");
+    await noteCaptureContext(supabaseAdmin, taxonomyActor, {
+      turns: messages.map((m) => ({
+        role: m.role,
+        content: m.content,
+        ts: m.timestamp ?? null,
+      })),
+      clientName: client.name,
+      clientVersion: client.version,
+      protocolVersion: client.protocol,
+      bytes: new TextEncoder().encode(serialized).byteLength,
+    });
+  }
 
   if (owner.userId) {
     // The canonical record of the push. Exact counts, no content.
