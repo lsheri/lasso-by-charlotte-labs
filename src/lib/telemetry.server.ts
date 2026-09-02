@@ -155,6 +155,8 @@ export async function recordEvent(
     profileId?: string | null | undefined;
     sessionId?: string | null | undefined;
     clientSeq?: number | null | undefined;
+    /** Words, never dimensions. Egress releases this at 'c' and 'd' only. */
+    payload?: Record<string, unknown> | null | undefined;
   },
 ): Promise<void> {
   try {
@@ -168,7 +170,7 @@ export async function recordEvent(
       tenant_hash: tenantHash,
       actor_hash: actorHash,
       dims,
-      payload: {},
+      payload: (input.payload ?? {}) as never,
       org_id: input.orgId,
       profile_id: input.profileId ?? null,
       session_id: input.sessionId ?? null,

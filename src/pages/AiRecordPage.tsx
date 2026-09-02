@@ -16,6 +16,7 @@ import { ChatUrlLink } from "@/components/work/ChatUrlLink";
 import { VendorBrandMark } from "@/components/work/VendorBrandMark";
 import { BrandLogo } from "@/components/connectors/BrandLogo";
 import { WorkRow } from "@/components/work/WorkRow";
+import { useChatSearchSignal } from "@/hooks/use-chat-search-signal";
 import { useProfile } from "@/hooks/use-profile";
 import { useWorkItems } from "@/hooks/use-work-items";
 import { supabase } from "@/integrations/supabase/client";
@@ -126,6 +127,7 @@ export function AiRecordPage() {
     ? threads.filter((i) => (i.title ?? "").toLowerCase().includes(needle))
     : threads;
   const groups = groupItems(shown);
+  const searchSignal = useChatSearchSignal(query, shown.length);
 
   const analyses = useChatAnalyses(profile?.id, profile?.org_id);
 
@@ -207,6 +209,9 @@ export function AiRecordPage() {
             type="search"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") searchSignal.onSubmitQuery();
+            }}
             placeholder="Search your chats"
             className="w-full rounded-[var(--radius)] border border-border bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/40 sm:max-w-sm"
           />
@@ -298,6 +303,7 @@ export function AiRecordPage() {
                       key={`${group.key}:${item.id}`}
                       item={item}
                       onOpen={() => {
+                        searchSignal.onResultOpened();
                         markOpenStart("peek.open");
                         setPeek({ entry: item });
                       }}
