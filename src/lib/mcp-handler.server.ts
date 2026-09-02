@@ -11,6 +11,7 @@ import {
 import { workTypeForFile } from "@/lib/work-types";
 import { recordEvent } from "@/lib/telemetry.server";
 import { noteModelUsed, noteThreadShape } from "@/lib/work-taxonomy.server";
+import { machineLabel } from "@/lib/capture-census";
 import { clientDisplayName, engagementDisplayTitle, isQuickFolder } from "@/lib/clients";
 import {
   ATTACHMENT_KINDS,
