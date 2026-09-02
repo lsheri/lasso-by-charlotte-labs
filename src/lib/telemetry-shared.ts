@@ -89,7 +89,9 @@ export type TelemetryEvent =
   /** Pass 150: a coach's read on work they reviewed. Closed vocab. */
   | "coach.outcome"
   /** Chat library: someone opened the original chat. Tool name only. */
-  | "chatlib.source_opened";
+  | "chatlib.source_opened"
+  /** Pass 157b: one settled chat library search. Bands only in dims. */
+  | "chatlib.search";
 
 export type TelemetryDims = Record<
   string,
