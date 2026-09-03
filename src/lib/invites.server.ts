@@ -26,12 +26,19 @@ export async function sendInviteEmail(args: {
   inviterName: string;
   acceptUrl: string;
   orgName?: string | undefined;
+  /** The app_role on the invite row, when the caller knows it. */
+  role?: string | null | undefined;
+  orgType?: "personal" | "business" | null | undefined;
+  subjectNames?: string[] | undefined;
 }): Promise<InviteEmailResult> {
   const { renderInviteEmail } = await import("./invite-email");
   const { subject, text, html } = renderInviteEmail({
     inviterName: args.inviterName,
     orgName: args.orgName || "your organization",
     acceptUrl: args.acceptUrl,
+    role: args.role,
+    orgType: args.orgType,
+    subjectNames: args.subjectNames,
   });
 
   const platformKey = process.env["LOVABLE_API_KEY"];

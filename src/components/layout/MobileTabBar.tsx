@@ -7,7 +7,8 @@ import { FeedbackDialog } from "@/components/feedback/FeedbackWidget";
 import { useAskLassoHandler } from "@/components/reflect/ask-lasso-context";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { useEngagements } from "@/hooks/use-engagements";
-import { isBusinessOrg, useProfile } from "@/hooks/use-profile";
+import { useProfile } from "@/hooks/use-profile";
+import * as roles from "@/lib/role-access";
 import { engagementDisplayCode, engagementDisplayTitle } from "@/lib/clients";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -28,10 +29,10 @@ export function MobileTabBar() {
   const [engOpen, setEngOpen] = useState(false);
   const { data: engagements } = useEngagements(profile?.id);
 
-  const isCoach = profile?.role === "coach";
-  const canManageMembers = profile?.role === "admin" || profile?.role === "lead";
-  const canSeeFirmView = canManageMembers && isBusinessOrg(profile);
-  const membersLabel = isBusinessOrg(profile) ? "Members" : "Your coaches";
+  const isCoach = roles.isCoach(profile);
+  const canManageMembers = roles.canManageMembers(profile);
+  const canSeeFirmView = roles.canSeeFirmView(profile);
+  const membersLabel = roles.membersLabel(profile);
 
   // A coach has no work of their own, and no personal Reflect space, so an Ask
   // tab would be a dead affordance the way the FAB would be. Three tabs.

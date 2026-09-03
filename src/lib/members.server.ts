@@ -92,17 +92,26 @@ export async function resendInviteByCode(
 
   let delivered = false;
   let reason = "no_email";
+  const { inviteEmailVariant } = await import("./invite-email");
+  let variant: ReturnType<typeof inviteEmailVariant> = "standard";
   if (invite.email) {
     const [{ data: me }, { data: org }] = await Promise.all([
       context.supabase.from("profiles").select("display_name").eq("id", profile.id).maybeSingle(),
-      context.supabase.from("orgs").select("name").eq("id", profile.org_id).maybeSingle(),
+      context.supabase.from("orgs").select("name, settings").eq("id", profile.org_id).maybeSingle(),
     ]);
+    const orgType =
+      ((org?.settings ?? {}) as Record<string, unknown>)["type"] === "company"
+        ? ("business" as const)
+        : ("personal" as const);
+    variant = inviteEmailVariant(invite.invited_role, orgType);
     const { sendInviteEmail } = await import("./invites.server");
     const result = await sendInviteEmail({
       to: invite.email,
       inviterName: me?.display_name || "Someone at your firm",
       acceptUrl: `${acceptOrigin}/join?code=${encodeURIComponent(minted as string)}`,
       orgName: org?.name ?? undefined,
+      role: invite.invited_role,
+      orgType,
     });
     delivered = result.sent;
     reason = result.reason;
@@ -113,7 +122,7 @@ export async function resendInviteByCode(
     eventType: "invite.email_sent",
     orgId: profile.org_id,
     userId: context.userId,
-    dims: { delivered, reason, resend: true },
+    dims: { delivered, reason, resend: true, variant },
   });
 
   return { code: minted as string, delivered, reason, old_revoked: oldRevoked };

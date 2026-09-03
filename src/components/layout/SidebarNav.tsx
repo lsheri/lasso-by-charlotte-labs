@@ -5,7 +5,8 @@ import { NewEngagementDialog } from "@/components/engagements/NewEngagementDialo
 import { GraphiteIcon } from "@/components/notebook/icons";
 import { useDecisions } from "@/hooks/use-decisions";
 import { useEngagements } from "@/hooks/use-engagements";
-import { isBusinessOrg, useProfile } from "@/hooks/use-profile";
+import { useProfile } from "@/hooks/use-profile";
+import * as roles from "@/lib/role-access";
 
 import {
   groupEngagementsByClient,
@@ -59,13 +60,10 @@ export function SidebarNav({ onNavigate }: { onNavigate?: (() => void) | undefin
   const { data: decisions } = useDecisions();
   const decisionCount = (decisions ?? []).length;
   // Reflect is the owner's private space, it never appears for a coach profile.
-  const isCoach = profile?.role === "coach";
-  const canManageMembers = profile?.role === "admin" || profile?.role === "lead";
-  // The firm view aggregates a roster. A solo workspace has none, so the link
-  // is absent as well as the route being refused server side.
-  const canSeeFirmView = canManageMembers && isBusinessOrg(profile);
-  // A solo workspace has no roster to administer, only the coaches it invited.
-  const membersLabel = isBusinessOrg(profile) ? "Members" : "Your coaches";
+  const isCoach = roles.isCoach(profile);
+  const canManageMembers = roles.canManageMembers(profile);
+  const canSeeFirmView = roles.canSeeFirmView(profile);
+  const membersLabel = roles.membersLabel(profile);
 
   // Engagements sit under their client, with quick folders and clientless
   // engagements flat at top level. Grouping reads only the joined relation.

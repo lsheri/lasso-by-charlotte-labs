@@ -82,16 +82,25 @@ export const sendInviteEmail = createServerFn({ method: "POST" })
     }
     await assertInviteInOrg(context.supabase, data.code, profile.org_id);
 
-    const [{ data: me }, { data: org }] = await Promise.all([
+    const [{ data: me }, { data: org }, { data: invite }] = await Promise.all([
       context.supabase.from("profiles").select("display_name").eq("id", profile.id).maybeSingle(),
-      context.supabase.from("orgs").select("name").eq("id", profile.org_id).maybeSingle(),
+      context.supabase.from("orgs").select("name, settings").eq("id", profile.org_id).maybeSingle(),
+      context.supabase.from("invites").select("invited_role").eq("code", data.code).maybeSingle(),
     ]);
+    const orgType =
+      ((org?.settings ?? {}) as Record<string, unknown>)["type"] === "company"
+        ? ("business" as const)
+        : ("personal" as const);
+    const { inviteEmailVariant } = await import("@/lib/invite-email");
+    const variant = inviteEmailVariant(invite?.invited_role ?? null, orgType);
 
     const result = await sendInvite({
       to: data.email.trim(),
       inviterName: me?.display_name || "Someone at your firm",
       acceptUrl: data.accept_url,
       orgName: org?.name ?? undefined,
+      role: invite?.invited_role ?? null,
+      orgType,
     });
 
     // Content-free: never the recipient address, only whether it went out.
@@ -99,7 +108,7 @@ export const sendInviteEmail = createServerFn({ method: "POST" })
       eventType: "invite.email_sent",
       orgId: profile.org_id,
       userId: context.userId,
-      dims: { delivered: result.sent, reason: result.reason },
+      dims: { delivered: result.sent, reason: result.reason, variant },
     });
 
     return result;
