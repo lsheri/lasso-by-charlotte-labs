@@ -95,9 +95,9 @@ describe("pass 161 read signal", () => {
     const [name, orgId, dims] = logEvent.mock.calls[0] as [string, string, Record<string, string>];
     expect(name).toBe("coachnote.read");
     expect(orgId).toBe("org-1");
-    expect(["engagement", "all"]).toContain(dims.surface);
-    expect(NOTES_SHOWN_BANDS as readonly string[]).toContain(dims.notes_shown_band);
-    expect(NEWEST_AGE_BANDS as readonly string[]).toContain(dims.newest_age_band);
+    expect(["engagement", "all"]).toContain(dims["surface"]);
+    expect(NOTES_SHOWN_BANDS as readonly string[]).toContain(dims["notes_shown_band"]);
+    expect(NEWEST_AGE_BANDS as readonly string[]).toContain(dims["newest_age_band"]);
     expect(Object.keys(dims).sort()).toEqual([
       "newest_age_band",
       "notes_shown_band",

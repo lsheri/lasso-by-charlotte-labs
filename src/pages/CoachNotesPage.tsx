@@ -15,10 +15,10 @@ export function CoachNotesPage() {
   if (isCoach(profile)) {
     return (
       <div>
-        <PageHeader title="Notes about your work" />
-        <p className="text-sm text-muted-foreground">
-          Notes you write live with the person you wrote them for.
-        </p>
+        <PageHeader
+          title="Notes about your work"
+          subtitle="Notes you write live with the person you wrote them for."
+        />
       </div>
     );
   }
