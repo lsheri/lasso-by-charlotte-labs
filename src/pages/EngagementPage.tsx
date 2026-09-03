@@ -367,7 +367,11 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
         />
       ) : null}
 
-      <SubjectCoachingSection profileId={profile?.id} engagementId={engagementId} />
+      <SubjectCoachingSection
+        profileId={profile?.id}
+        engagementId={engagementId}
+        orgId={profile?.org_id}
+      />
 
       {profile && profile.role !== "coach" ? (
         <OneOnOneBrief

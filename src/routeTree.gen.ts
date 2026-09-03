@@ -19,6 +19,7 @@ import { Route as TrustRouteImport } from './routes/trust'
 import { Route as WhyRouteImport } from './routes/why'
 import { Route as AuthenticatedAiRecordRouteImport } from './routes/_authenticated/ai-record'
 import { Route as AuthenticatedArchiveRouteImport } from './routes/_authenticated/archive'
+import { Route as AuthenticatedCoachNotesRouteImport } from './routes/_authenticated/coach-notes'
 import { Route as AuthenticatedConnectorsRouteImport } from './routes/_authenticated/connectors'
 import { Route as AuthenticatedDecisionsRouteImport } from './routes/_authenticated/decisions'
 import { Route as AuthenticatedFirmRouteImport } from './routes/_authenticated/firm'
@@ -87,6 +88,11 @@ const AuthenticatedAiRecordRoute = AuthenticatedAiRecordRouteImport.update({
 const AuthenticatedArchiveRoute = AuthenticatedArchiveRouteImport.update({
   id: '/archive',
   path: '/archive',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedCoachNotesRoute = AuthenticatedCoachNotesRouteImport.update({
+  id: '/coach-notes',
+  path: '/coach-notes',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedConnectorsRoute = AuthenticatedConnectorsRouteImport.update({
@@ -205,6 +211,7 @@ export interface FileRoutesByFullPath {
   '/why': typeof WhyRoute
   '/ai-record': typeof AuthenticatedAiRecordRoute
   '/archive': typeof AuthenticatedArchiveRoute
+  '/coach-notes': typeof AuthenticatedCoachNotesRoute
   '/connectors': typeof AuthenticatedConnectorsRoute
   '/decisions': typeof AuthenticatedDecisionsRoute
   '/firm': typeof AuthenticatedFirmRoute
@@ -236,6 +243,7 @@ export interface FileRoutesByTo {
   '/why': typeof WhyRoute
   '/ai-record': typeof AuthenticatedAiRecordRoute
   '/archive': typeof AuthenticatedArchiveRoute
+  '/coach-notes': typeof AuthenticatedCoachNotesRoute
   '/connectors': typeof AuthenticatedConnectorsRoute
   '/decisions': typeof AuthenticatedDecisionsRoute
   '/firm': typeof AuthenticatedFirmRoute
@@ -269,6 +277,7 @@ export interface FileRoutesById {
   '/why': typeof WhyRoute
   '/_authenticated/ai-record': typeof AuthenticatedAiRecordRoute
   '/_authenticated/archive': typeof AuthenticatedArchiveRoute
+  '/_authenticated/coach-notes': typeof AuthenticatedCoachNotesRoute
   '/_authenticated/connectors': typeof AuthenticatedConnectorsRoute
   '/_authenticated/decisions': typeof AuthenticatedDecisionsRoute
   '/_authenticated/firm': typeof AuthenticatedFirmRoute
@@ -302,6 +311,7 @@ export interface FileRouteTypes {
     | '/why'
     | '/ai-record'
     | '/archive'
+    | '/coach-notes'
     | '/connectors'
     | '/decisions'
     | '/firm'
@@ -333,6 +343,7 @@ export interface FileRouteTypes {
     | '/why'
     | '/ai-record'
     | '/archive'
+    | '/coach-notes'
     | '/connectors'
     | '/decisions'
     | '/firm'
@@ -365,6 +376,7 @@ export interface FileRouteTypes {
     | '/why'
     | '/_authenticated/ai-record'
     | '/_authenticated/archive'
+    | '/_authenticated/coach-notes'
     | '/_authenticated/connectors'
     | '/_authenticated/decisions'
     | '/_authenticated/firm'
@@ -475,6 +487,13 @@ declare module '@tanstack/react-router' {
       path: '/archive'
       fullPath: '/archive'
       preLoaderRoute: typeof AuthenticatedArchiveRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/coach-notes': {
+      id: '/_authenticated/coach-notes'
+      path: '/coach-notes'
+      fullPath: '/coach-notes'
+      preLoaderRoute: typeof AuthenticatedCoachNotesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/connectors': {
@@ -623,6 +642,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAiRecordRoute: typeof AuthenticatedAiRecordRoute
   AuthenticatedArchiveRoute: typeof AuthenticatedArchiveRoute
+  AuthenticatedCoachNotesRoute: typeof AuthenticatedCoachNotesRoute
   AuthenticatedConnectorsRoute: typeof AuthenticatedConnectorsRoute
   AuthenticatedDecisionsRoute: typeof AuthenticatedDecisionsRoute
   AuthenticatedFirmRoute: typeof AuthenticatedFirmRoute
@@ -641,6 +661,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAiRecordRoute: AuthenticatedAiRecordRoute,
   AuthenticatedArchiveRoute: AuthenticatedArchiveRoute,
+  AuthenticatedCoachNotesRoute: AuthenticatedCoachNotesRoute,
   AuthenticatedConnectorsRoute: AuthenticatedConnectorsRoute,
   AuthenticatedDecisionsRoute: AuthenticatedDecisionsRoute,
   AuthenticatedFirmRoute: AuthenticatedFirmRoute,

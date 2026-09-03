@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useProfile } from "@/hooks/use-profile";
 import { supabase } from "@/integrations/supabase/client";
 import { logEvent } from "@/lib/telemetry";
+import { daysToNoteBand } from "@/lib/coach-notes";
 import { logV2 } from "@/lib/telemetry-v2";
 
 export type CitationOption = { id: string; kind: "decision" | "task"; label: string };
@@ -15,10 +16,13 @@ export function NoteComposer({
   subjectId,
   engagementId,
   citations,
+  latestActivityAt,
 }: {
   subjectId: string;
   engagementId: string;
   citations: CitationOption[];
+  /** The last thing that happened in this work, when it is known. */
+  latestActivityAt?: string | null;
 }) {
   const { data: profile } = useProfile();
   const queryClient = useQueryClient();
@@ -80,7 +84,10 @@ export function NoteComposer({
       return;
     }
 
-    logEvent("note.created", profile.org_id, { cites_count: cited.length });
+    logEvent("note.created", profile.org_id, {
+      cites_count: cited.length,
+      days_to_note_band: daysToNoteBand(latestActivityAt ?? null, new Date()),
+    });
     logV2("coaching.note_created", { cites_count: cited.length }, { profileId: profile.id });
     await queryClient.invalidateQueries({ queryKey: ["packet", engagementId, subjectId] });
     await queryClient.invalidateQueries({ queryKey: ["coach-subjects"] });
