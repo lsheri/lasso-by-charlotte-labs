@@ -248,7 +248,12 @@ export function PacketPage({
         </section>
       ) : null}
 
-      <NoteComposer subjectId={subjectId} engagementId={engagementId} citations={citations} />
+      <NoteComposer
+        subjectId={subjectId}
+        engagementId={engagementId}
+        citations={citations}
+        latestActivityAt={newest}
+      />
 
       <CoachChat
         subjectId={subjectId}
