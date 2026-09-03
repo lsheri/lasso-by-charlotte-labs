@@ -66,3 +66,32 @@ export function useQueriesAboutMe(subjectId: string | undefined, engagementId: s
     enabled: Boolean(subjectId),
   });
 }
+
+/**
+ * Pass 161: every note about this person, across every engagement, newest
+ * first. The subject's own read of their own notes; no author-facing signal.
+ */
+export type AccountNote = SubjectNote & {
+  engagement_id: string;
+  engagements: { title: string | null; code: string | null } | null;
+};
+
+export async function fetchAllNotesAboutMe(subjectId: string): Promise<AccountNote[]> {
+  const { data, error } = await supabase
+    .from("coaching_notes")
+    .select(
+      "id, created_at, did_well, would_try, watch_next, engagement_id, profiles!coaching_notes_author_id_fkey(display_name), engagements(title, code)",
+    )
+    .eq("subject_id", subjectId)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as unknown as AccountNote[];
+}
+
+export function useAllNotesAboutMe(subjectId: string | undefined) {
+  return useQuery({
+    queryKey: ["notes-about-me-all", subjectId],
+    queryFn: () => fetchAllNotesAboutMe(subjectId as string),
+    enabled: Boolean(subjectId),
+  });
+}
