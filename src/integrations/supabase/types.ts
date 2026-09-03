@@ -362,6 +362,194 @@ export type Database = {
         }
         Relationships: []
       }
+      coaching_item_exclusions: {
+        Row: {
+          excluded_at: string
+          link_id: string
+          work_item_id: string
+        }
+        Insert: {
+          excluded_at?: string
+          link_id: string
+          work_item_id: string
+        }
+        Update: {
+          excluded_at?: string
+          link_id?: string
+          work_item_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coaching_item_exclusions_link_id_fkey"
+            columns: ["link_id"]
+            isOneToOne: false
+            referencedRelation: "coaching_links"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coaching_item_exclusions_work_item_id_fkey"
+            columns: ["work_item_id"]
+            isOneToOne: false
+            referencedRelation: "work_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coaching_link_audit: {
+        Row: {
+          action: string
+          actor_profile_id: string | null
+          created_at: string
+          detail: Json
+          id: string
+          link_id: string
+        }
+        Insert: {
+          action: string
+          actor_profile_id?: string | null
+          created_at?: string
+          detail?: Json
+          id?: string
+          link_id: string
+        }
+        Update: {
+          action?: string
+          actor_profile_id?: string | null
+          created_at?: string
+          detail?: Json
+          id?: string
+          link_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coaching_link_audit_actor_profile_id_fkey"
+            columns: ["actor_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coaching_link_audit_link_id_fkey"
+            columns: ["link_id"]
+            isOneToOne: false
+            referencedRelation: "coaching_links"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coaching_link_engagements: {
+        Row: {
+          engagement_id: string
+          link_id: string
+        }
+        Insert: {
+          engagement_id: string
+          link_id: string
+        }
+        Update: {
+          engagement_id?: string
+          link_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coaching_link_engagements_engagement_id_fkey"
+            columns: ["engagement_id"]
+            isOneToOne: false
+            referencedRelation: "engagements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coaching_link_engagements_link_id_fkey"
+            columns: ["link_id"]
+            isOneToOne: false
+            referencedRelation: "coaching_links"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coaching_links: {
+        Row: {
+          access_level: string
+          agreement_ref: string | null
+          basis: string
+          coach_profile_id: string | null
+          consent_withdrawn_at: string | null
+          consented_at: string | null
+          created_at: string
+          created_by: string
+          disclosed_at: string | null
+          ended_at: string | null
+          id: string
+          org_id: string
+          relation: string
+          scope: string
+          subject_profile_id: string
+        }
+        Insert: {
+          access_level?: string
+          agreement_ref?: string | null
+          basis?: string
+          coach_profile_id?: string | null
+          consent_withdrawn_at?: string | null
+          consented_at?: string | null
+          created_at?: string
+          created_by: string
+          disclosed_at?: string | null
+          ended_at?: string | null
+          id?: string
+          org_id: string
+          relation: string
+          scope?: string
+          subject_profile_id: string
+        }
+        Update: {
+          access_level?: string
+          agreement_ref?: string | null
+          basis?: string
+          coach_profile_id?: string | null
+          consent_withdrawn_at?: string | null
+          consented_at?: string | null
+          created_at?: string
+          created_by?: string
+          disclosed_at?: string | null
+          ended_at?: string | null
+          id?: string
+          org_id?: string
+          relation?: string
+          scope?: string
+          subject_profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coaching_links_coach_profile_id_fkey"
+            columns: ["coach_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coaching_links_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coaching_links_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coaching_links_subject_profile_id_fkey"
+            columns: ["subject_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       coaching_notes: {
         Row: {
           author_id: string
@@ -2745,11 +2933,57 @@ export type Database = {
       analytics_upsert_feature: { Args: { p_row: Json }; Returns: undefined }
       coach_can_see_item: { Args: { item: string }; Returns: boolean }
       coaches_subject: { Args: { subject: string }; Returns: boolean }
+      coaching_actor: {
+        Args: { p_profile_id: string }
+        Returns: {
+          created_at: string
+          deactivated_at: string | null
+          display_name: string
+          experience_band: string | null
+          function_area: string | null
+          id: string
+          onboarding: Json | null
+          org_id: string
+          primary_work_types: string[] | null
+          role: Database["public"]["Enums"]["app_role"]
+          role_family: string | null
+          seniority_band: string | null
+          style_label: string | null
+          title_band: string | null
+          user_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "profiles"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      consent_to_coaching_link: {
+        Args: { p_actor_profile_id?: string; p_link_id: string }
+        Returns: undefined
+      }
+      create_coaching_link: {
+        Args: {
+          p_access_level?: string
+          p_actor_profile_id?: string
+          p_agreement_ref?: string
+          p_basis?: string
+          p_relation: string
+          p_scope?: string
+          p_subject_profile_id: string
+        }
+        Returns: string
+      }
       create_org_with_profile: {
         Args: { p_display_name: string; p_org_name: string }
         Returns: string
       }
       deactivate_member: { Args: { p_profile: string }; Returns: undefined }
+      end_coaching_link: {
+        Args: { p_actor_profile_id?: string; p_link_id: string }
+        Returns: undefined
+      }
       has_org_role: {
         Args: {
           p_org: string
@@ -2777,6 +3011,10 @@ export type Database = {
       my_profile_ids: { Args: never; Returns: string[] }
       my_role: { Args: never; Returns: Database["public"]["Enums"]["app_role"] }
       reactivate_member: { Args: { p_profile: string }; Returns: undefined }
+      record_coaching_disclosure: {
+        Args: { p_actor_profile_id?: string; p_link_id: string }
+        Returns: undefined
+      }
       set_data_consent: {
         Args: {
           p_consent_text_version?: string
@@ -2808,6 +3046,10 @@ export type Database = {
       tier_rank: { Args: { t: string }; Returns: number }
       unshare_engagement_coach: {
         Args: { p_coach_profile: string; p_engagement: string }
+        Returns: undefined
+      }
+      withdraw_coaching_consent: {
+        Args: { p_actor_profile_id?: string; p_link_id: string }
         Returns: undefined
       }
     }
