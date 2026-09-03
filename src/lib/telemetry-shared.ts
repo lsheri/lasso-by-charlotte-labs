@@ -16,6 +16,8 @@ export type TelemetryEvent =
   | "connector.watch_enabled"
   | "connector.suggestion_shown"
   | "connector.suggestion_reviewed"
+  /** Pass 160: the AI setup steps were opened. Surface and a boolean only. */
+  | "connector.setup_opened"
   | "import.started"
   | "import.parsed"
   | "import.committed"

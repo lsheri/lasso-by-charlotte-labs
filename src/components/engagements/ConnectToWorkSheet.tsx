@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
@@ -13,6 +14,7 @@ import { useWorkItems } from "@/hooks/use-work-items";
 import { detachEpisodeItems, syncEpisodeForMapping } from "@/lib/episodes.functions";
 import { defaultStream, rememberStream } from "@/lib/connect-to-work";
 import { remapItems } from "@/lib/workflow-order";
+import { logEvent } from "@/lib/telemetry";
 
 export type ConnectStream = { id: string; name: string };
 
@@ -154,6 +156,22 @@ export function ConnectToWorkSheet({
             </div>
           </div>
         ) : null}
+
+        <div className="mt-6">
+          <Link
+            to="/connectors"
+            hash="connect-your-ai"
+            onClick={() => {
+              logEvent("connector.setup_opened", profile.org_id, {
+                surface: "connect_sheet",
+                had_connector: false,
+              });
+            }}
+            className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+          >
+            Set up Claude or ChatGPT to push here
+          </Link>
+        </div>
 
         {landed > 0 && target ? (
           <p className="mt-5 text-sm text-foreground">
