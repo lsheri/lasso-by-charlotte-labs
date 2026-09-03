@@ -35,6 +35,25 @@ function escapeHtml(value: string): string {
 
 export type InviteEmail = { subject: string; html: string; text: string };
 
+/** Which of the three invitation letters a given invite deserves. */
+export type InviteVariant = "coach_personal" | "coach_business" | "standard";
+
+export function inviteEmailVariant(
+  role?: string | null | undefined,
+  orgType?: "personal" | "business" | null | undefined,
+): InviteVariant {
+  if (role !== "coach") return "standard";
+  return orgType === "business" ? "coach_business" : "coach_personal";
+}
+
+/** "a", "a and b", "a, b and c". Empty list gives an empty string. */
+export function joinNames(names: readonly string[]): string {
+  const clean = names.map((name) => name.trim()).filter(Boolean);
+  if (clean.length === 0) return "";
+  if (clean.length === 1) return clean[0] as string;
+  return `${clean.slice(0, -1).join(", ")} and ${clean[clean.length - 1] as string}`;
+}
+
 export function inviteSubject(_inviterName: string, orgName: string): string {
   return orgName ? `You are invited to ${orgName}` : "You are invited";
 }
@@ -43,11 +62,38 @@ export function renderInviteEmail(args: {
   inviterName: string;
   orgName: string;
   acceptUrl: string;
+  role?: string | null | undefined;
+  orgType?: "personal" | "business" | null | undefined;
+  subjectNames?: string[] | undefined;
 }): InviteEmail {
   const { inviterName, orgName, acceptUrl } = args;
-  const lead = `${inviterName} invited you to join ${orgName} on Lasso.`;
-  const body =
+  const variant = inviteEmailVariant(args.role, args.orgType);
+  const names = joinNames(args.subjectNames ?? []);
+
+  let heading = "You are invited";
+  let subject = inviteSubject(inviterName, orgName);
+  let lead = `${inviterName} invited you to join ${orgName} on Lasso.`;
+  let body =
     "Lasso is where a team keeps a clear record of the work it does with AI, so the thinking behind a deliverable can be reviewed and coached.";
+  let cta = "Accept your invite";
+
+  if (variant === "coach_personal") {
+    subject = `${inviterName} asked you to coach their work`;
+    heading = "You are invited to coach";
+    lead = `${inviterName} keeps a record in Lasso of how they work with AI: the conversations and drafts behind a finished piece, not just the file. They would like you to look at that record and coach them on it.`;
+    body =
+      "You will see only the work they choose to share with you. Nothing else in their workspace is visible to you.";
+    cta = "Accept and take a look";
+  } else if (variant === "coach_business") {
+    subject = `You are invited to coach at ${orgName}`;
+    heading = "You are invited to coach";
+    lead = `${inviterName} invited you to coach at ${orgName}. Lasso keeps a record of how people work with AI, so the thinking behind a piece of work can be reviewed and coached, not just the finished file.`;
+    body = names
+      ? `You will see the work of the people you were added to: ${names}. Nothing else in the workspace is visible to you.`
+      : "You will see the work of the people you were added to, and nothing else in the workspace.";
+    cta = "Accept and start coaching";
+  }
+
 
   const text = [
     "LASSO",
