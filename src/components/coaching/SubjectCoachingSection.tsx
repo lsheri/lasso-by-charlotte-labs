@@ -1,20 +1,14 @@
-import { CoachingNoteCard } from "@/pages/PacketPage";
+import { CoachNoteList, noteWhen } from "@/components/coaching/CoachNoteList";
 import { useNotesAboutMe, useQueriesAboutMe } from "@/hooks/use-subject-coaching";
-
-function when(iso: string): string {
-  return new Date(iso).toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
 
 export function SubjectCoachingSection({
   profileId,
   engagementId,
+  orgId,
 }: {
   profileId: string | undefined;
   engagementId: string;
+  orgId?: string | undefined;
 }) {
   const { data: notes } = useNotesAboutMe(profileId, engagementId);
   const { data: queries } = useQueriesAboutMe(profileId, engagementId);
@@ -28,14 +22,13 @@ export function SubjectCoachingSection({
       {hasNotes ? (
         <section>
           <h2 className="micro-label micro-label-section">Notes from your coach</h2>
-          <div className="mt-3 space-y-2">
-            {(notes ?? []).map((note) => (
-              <CoachingNoteCard
-                key={note.id}
-                note={note}
-                heading={`${note.profiles?.display_name ?? "Your coach"} · ${when(note.created_at)}`}
-              />
-            ))}
+          <div className="mt-3">
+            <CoachNoteList
+              notes={notes ?? []}
+              surface="engagement"
+              seenKey={`engagement.${engagementId}`}
+              orgId={orgId}
+            />
           </div>
         </section>
       ) : null}
@@ -51,7 +44,7 @@ export function SubjectCoachingSection({
               >
                 <p className="text-sm text-foreground">{entry.question}</p>
                 <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
-                  {entry.profiles?.display_name ?? "A coach"} · {when(entry.created_at)}
+                  {entry.profiles?.display_name ?? "A coach"} · {noteWhen(entry.created_at)}
                 </p>
               </div>
             ))}
