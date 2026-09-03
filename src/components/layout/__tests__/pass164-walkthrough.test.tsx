@@ -55,8 +55,8 @@ describe("pass 164 walkthrough page", () => {
   });
 
   it("records one open, whatever the onboarding state says", () => {
-    render(<HowLassoWorksPage />);
-    expect(screen.getAllByText("How Lasso works").length).toBeGreaterThan(0);
+    const { container } = render(<HowLassoWorksPage />);
+    expect(container.textContent).toContain("How Lasso works");
     const opens = logEvent.mock.calls.filter((c) => c[0] === "walkthrough.opened");
     expect(opens).toHaveLength(1);
     expect(opens[0]?.[2]).toEqual({
@@ -85,9 +85,9 @@ describe("pass 164 walkthrough page", () => {
 
   it("gives a coach the coaching walkthrough", () => {
     profileRef.current = { ...profileRef.current, role: "coach" } as Profile;
-    render(<HowLassoWorksPage />);
-    expect(screen.getByText("What you can and cannot see")).toBeTruthy();
-    expect(screen.queryByText("Connect the AI you already use")).toBeNull();
+    const { container } = render(<HowLassoWorksPage />);
+    expect(container.textContent).toContain("What you can and cannot see");
+    expect(container.textContent).not.toContain("Connect the AI you already use");
     profileRef.current = { ...profileRef.current, role: "em" } as Profile;
   });
 });
