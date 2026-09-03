@@ -9,22 +9,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useProfile } from "@/hooks/use-profile";
 import { createMcpToken, getMcpToken } from "@/lib/mcp-tokens.functions";
 import { TOOLS } from "@/lib/onboarding-tools";
+import {
+  MCP_REGENERATE_WARNING,
+  MCP_SERVER_NAME,
+  MCP_SETUP_STEPS,
+  type McpVendor,
+} from "@/lib/mcp-setup-steps";
+import { logEvent } from "@/lib/telemetry";
 import { ToolBadge } from "./ToolBadge";
-
-type McpVendor = "claude" | "chatgpt";
-
-const STEPS: Record<McpVendor, string[]> = {
-  claude: [
-    "Open Claude → Settings → Connectors.",
-    "Add custom connector.",
-    "Paste your Lasso URL, save, and allow it when Claude asks.",
-  ],
-  chatgpt: [
-    "Open ChatGPT → Settings → Connectors (turn on Developer mode if you don't see it).",
-    "Add → custom MCP server.",
-    "Paste your Lasso URL, save, and allow it when ChatGPT asks.",
-  ],
-};
 
 /** Counts everything this person has ever received over MCP. */
 async function countMcpItems(profileId: string): Promise<number> {
@@ -48,6 +40,20 @@ export function McpSetupCard({ vendor }: { vendor: McpVendor }) {
   });
   const [url, setUrl] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const opened = useRef(false);
+
+  // The steps are the whole card, so opening it is the open.
+  useEffect(() => {
+    if (opened.current || !profile) return;
+    opened.current = true;
+    logEvent("connector.setup_opened", profile.org_id, {
+      surface: "onboarding",
+      had_connector: Boolean(token),
+    });
+    // Fires once for the life of the card, on the first render that knows both.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile?.id]);
 
   const [baseline, setBaseline] = useState<number | null>(null);
   const [arrived, setArrived] = useState(false);
@@ -110,15 +116,46 @@ export function McpSetupCard({ vendor }: { vendor: McpVendor }) {
       </div>
 
       {!url ? (
-        <div className="mt-4 flex flex-wrap items-center gap-4">
-          <Button type="button" disabled={busy} onClick={() => void generate()}>
-            {busy ? "Generating…" : token ? "Generate a new URL" : "Generate my connector URL"}
-          </Button>
-          {token ? (
-            <span className="text-xs text-muted-foreground">
-              You already have one, generating replaces it.
-            </span>
+        <div className="mt-4 space-y-3">
+          {token && !confirming ? (
+            <Button type="button" variant="outline" onClick={() => setConfirming(true)}>
+              Generate a new URL
+            </Button>
           ) : null}
+          {token && confirming ? (
+            <div className="rounded-[var(--radius)] border border-border bg-secondary/60 px-4 py-3">
+              <p className="text-sm text-muted-foreground">{MCP_REGENERATE_WARNING}</p>
+              <div className="mt-3 flex flex-wrap items-center gap-3">
+                <Button type="button" disabled={busy} onClick={() => void generate()}>
+                  {busy ? "Generating…" : "Yes, generate a new URL"}
+                </Button>
+                <button
+                  type="button"
+                  onClick={() => setConfirming(false)}
+                  className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  Keep the one I have
+                </button>
+              </div>
+            </div>
+          ) : null}
+          {!token ? (
+            <Button type="button" disabled={busy} onClick={() => void generate()}>
+              {busy ? "Generating…" : "Generate my connector URL"}
+            </Button>
+          ) : null}
+          <ol className="space-y-1.5">
+            {MCP_SETUP_STEPS[vendor].map((step, index) => (
+              <li key={step} className="flex gap-2 text-sm text-muted-foreground">
+                <span className="font-mono text-[11px] text-accent-deep">{index + 1}</span>
+                <span>{step}</span>
+              </li>
+            ))}
+          </ol>
+          <p className="text-sm text-muted-foreground">
+            The server shows up in your AI as{" "}
+            <span className="text-foreground">{MCP_SERVER_NAME}</span>.
+          </p>
         </div>
       ) : (
         <div className="mt-4 space-y-4">
@@ -138,7 +175,7 @@ export function McpSetupCard({ vendor }: { vendor: McpVendor }) {
           </div>
 
           <ol className="space-y-1.5">
-            {STEPS[vendor].map((step, index) => (
+            {MCP_SETUP_STEPS[vendor].map((step, index) => (
               <li key={step} className="flex gap-2 text-sm text-muted-foreground">
                 <span className="font-mono text-[11px] text-accent-deep">{index + 1}</span>
                 <span>{step}</span>

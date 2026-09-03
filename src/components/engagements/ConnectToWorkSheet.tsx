@@ -13,6 +13,7 @@ import { useWorkItems } from "@/hooks/use-work-items";
 import { detachEpisodeItems, syncEpisodeForMapping } from "@/lib/episodes.functions";
 import { defaultStream, rememberStream } from "@/lib/connect-to-work";
 import { remapItems } from "@/lib/workflow-order";
+import { logEvent } from "@/lib/telemetry";
 
 export type ConnectStream = { id: string; name: string };
 
@@ -154,6 +155,23 @@ export function ConnectToWorkSheet({
             </div>
           </div>
         ) : null}
+
+        <div className="mt-6">
+          {/* A plain anchor: the browser resolves the hash on arrival, which a
+              client transition to a different route would not do reliably. */}
+          <a
+            href="/connectors#connect-your-ai"
+            onClick={() => {
+              logEvent("connector.setup_opened", profile.org_id, {
+                surface: "connect_sheet",
+                had_connector: false,
+              });
+            }}
+            className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+          >
+            Set up Claude or ChatGPT to push here
+          </a>
+        </div>
 
         {landed > 0 && target ? (
           <p className="mt-5 text-sm text-foreground">

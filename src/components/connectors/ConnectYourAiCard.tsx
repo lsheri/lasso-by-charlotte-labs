@@ -7,10 +7,21 @@ import { BrandPair } from "@/components/connectors/BrandLogo";
 import { Button } from "@/components/ui/button";
 import { useProfile } from "@/hooks/use-profile";
 import { createMcpToken, getMcpToken, revokeMcpToken } from "@/lib/mcp-tokens.functions";
+import {
+  MCP_PUSH_PHRASE,
+  MCP_REGENERATE_WARNING,
+  MCP_SERVER_NAME,
+  MCP_SETUP_STEPS,
+  MCP_VENDORS,
+  VENDOR_LABELS,
+} from "@/lib/mcp-setup-steps";
+import { logEvent } from "@/lib/telemetry";
 
-const SETUP_INSTRUCTIONS = `In Claude: Settings → Connectors → Add custom connector → paste your Lasso URL.
-In ChatGPT: Settings → Connectors (or Developer mode) → Add → paste the URL.
-Then, in any conversation: "Push this conversation to Lasso" or "Save these files to Lasso."`;
+const SETUP_INSTRUCTIONS = MCP_VENDORS.map(
+  (vendor) => `${VENDOR_LABELS[vendor]}:\n${MCP_SETUP_STEPS[vendor].join("\n")}`,
+)
+  .concat(`Then, in any conversation: "${MCP_PUSH_PHRASE}"`)
+  .join("\n\n");
 
 function formatDate(iso: string | null): string {
   if (!iso) return "never";
@@ -19,6 +30,41 @@ function formatDate(iso: string | null): string {
     month: "short",
     day: "numeric",
   });
+}
+
+/** Plain words for what is true right now, never a masked stand in for a URL. */
+export function connectorStatusLine(
+  token: { created_at: string; last_used_at: string | null } | null | undefined,
+): string {
+  if (!token) return "No connector yet";
+  return token.last_used_at ? "Your connector is live" : "Set up, no work pushed yet";
+}
+
+export function SetupSteps() {
+  return (
+    <div className="space-y-4 rounded-[var(--radius)] border border-border bg-secondary/60 px-4 py-4">
+      {MCP_VENDORS.map((vendor) => (
+        <div key={vendor}>
+          <p className="micro-label">{VENDOR_LABELS[vendor]}</p>
+          <ol className="mt-1.5 space-y-1.5">
+            {MCP_SETUP_STEPS[vendor].map((step, index) => (
+              <li key={step} className="flex gap-2 text-sm text-muted-foreground">
+                <span className="font-mono text-[11px] text-accent-deep">{index + 1}</span>
+                <span>{step}</span>
+              </li>
+            ))}
+          </ol>
+        </div>
+      ))}
+      <p className="text-sm text-muted-foreground">
+        The server shows up in your AI as <span className="text-foreground">{MCP_SERVER_NAME}</span>
+        .
+      </p>
+      <p className="text-sm text-muted-foreground">
+        Then, at the end of any session, say “{MCP_PUSH_PHRASE}”
+      </p>
+    </div>
+  );
 }
 
 export function ConnectYourAiCard() {
@@ -33,11 +79,26 @@ export function ConnectYourAiCard() {
   });
   const [freshUrl, setFreshUrl] = useState<string | null>(null);
   const [showSetup, setShowSetup] = useState(false);
+  const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
+
+  // With no live connector the steps are the point of the card, so they are
+  // open. Once one exists they sit behind the toggle, still one click away.
+  const stepsOpen = !token || showSetup;
 
   async function copy(value: string, label: string) {
     await navigator.clipboard.writeText(value);
     toast.success(`${label} copied`);
+  }
+
+  function openSteps() {
+    setShowSetup(true);
+    if (profile) {
+      logEvent("connector.setup_opened", profile.org_id, {
+        surface: "connectors",
+        had_connector: Boolean(token),
+      });
+    }
   }
 
   async function handleGenerate() {
@@ -47,6 +108,7 @@ export function ConnectYourAiCard() {
       setFreshUrl(`${window.location.origin}/api/mcp/${raw}`);
       await queryClient.invalidateQueries({ queryKey: ["mcp-token"] });
       setShowSetup(true);
+      setConfirming(false);
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
@@ -68,12 +130,9 @@ export function ConnectYourAiCard() {
     }
   }
 
-  const masked = freshUrl ? `…${freshUrl.slice(-6)}` : "…••••••";
-
   return (
     <section id="connect-your-ai" className="scroll-mt-8">
-      <h2 className="micro-label">Connect your AI · MCP</h2>
-      <div className="mt-3 rounded-[var(--radius)] border border-border bg-card px-5 py-5 shadow-card">
+      <div className="rounded-[var(--radius)] border border-border bg-card px-5 py-5 shadow-card">
         <div className="flex items-center gap-3">
           <BrandPair brands={["claude", "chatgpt"]} size={26} />
           <p className="text-sm font-medium text-foreground">
@@ -86,73 +145,101 @@ export function ConnectYourAiCard() {
           you can see it.
         </p>
 
-        {!token ? (
-          <div className="mt-5">
-            <Button type="button" disabled={busy} onClick={() => void handleGenerate()}>
-              {busy ? "Generating…" : "Generate my connector URL"}
-            </Button>
-          </div>
-        ) : (
-          <div className="mt-5 space-y-4">
-            {freshUrl ? (
-              <div className="rounded-[var(--radius)] border border-accent bg-accent-soft px-4 py-3">
-                <p className="micro-label text-accent-deep">Your connector URL, shown once</p>
-                <div className="mt-2 flex flex-wrap items-center gap-3">
-                  <code className="min-w-0 flex-1 break-all font-mono text-xs text-foreground">
-                    {freshUrl}
-                  </code>
-                  <Button type="button" size="sm" onClick={() => void copy(freshUrl, "URL")}>
-                    Copy
-                  </Button>
-                </div>
-                <p className="mt-2 text-xs text-muted-foreground">
-                  This URL is a key to your workspace. Treat it like a password. You can revoke it
-                  anytime.
-                </p>
-              </div>
-            ) : null}
-
-            <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-              <span className="font-mono text-xs text-muted-foreground">{masked}</span>
+        <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2">
+          <span className="text-sm text-foreground">{connectorStatusLine(token)}</span>
+          {token ? (
+            <>
               <span className="text-xs text-muted-foreground">
                 Created {formatDate(token.created_at)}
               </span>
               <span className="text-xs text-muted-foreground">
                 Last used {formatDate(token.last_used_at)}
               </span>
-              <button
-                type="button"
-                onClick={() => void copy(SETUP_INSTRUCTIONS, "Setup instructions")}
-                className="text-xs font-medium text-accent-deep transition-opacity hover:opacity-70"
-              >
-                Copy setup instructions
-              </button>
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => void handleRevoke()}
-                className="text-xs text-muted-foreground transition-colors hover:text-destructive"
-              >
-                Revoke
-              </button>
-            </div>
-
+            </>
+          ) : null}
+          <button
+            type="button"
+            onClick={() => void copy(SETUP_INSTRUCTIONS, "Setup instructions")}
+            className="text-xs font-medium text-accent-deep transition-opacity hover:opacity-70"
+          >
+            Copy setup instructions
+          </button>
+          {token ? (
             <button
               type="button"
-              onClick={() => setShowSetup((v) => !v)}
+              disabled={busy}
+              onClick={() => void handleRevoke()}
+              className="text-xs text-muted-foreground transition-colors hover:text-destructive"
+            >
+              Revoke
+            </button>
+          ) : null}
+        </div>
+
+        {freshUrl ? (
+          <div className="mt-4 rounded-[var(--radius)] border border-accent bg-accent-soft px-4 py-3">
+            <p className="micro-label text-accent-deep">Your connector URL, shown once</p>
+            <div className="mt-2 flex flex-wrap items-center gap-3">
+              <code className="min-w-0 flex-1 break-all font-mono text-xs text-foreground">
+                {freshUrl}
+              </code>
+              <Button type="button" size="sm" onClick={() => void copy(freshUrl, "URL")}>
+                Copy
+              </Button>
+            </div>
+            <p className="mt-2 text-xs text-muted-foreground">
+              This URL is a key to your workspace. Treat it like a password. You can revoke it
+              anytime.
+            </p>
+          </div>
+        ) : null}
+
+        <div className="mt-4 space-y-2">
+          <p className="text-xs text-muted-foreground">
+            We keep your URL as a one way hash, so it can never be shown to you a second time. If
+            you no longer have it, issue a new one.
+          </p>
+          {token && !confirming ? (
+            <Button type="button" variant="outline" onClick={() => setConfirming(true)}>
+              Generate a new URL
+            </Button>
+          ) : null}
+          {token && confirming ? (
+            <div className="rounded-[var(--radius)] border border-border bg-secondary/60 px-4 py-3">
+              <p className="text-sm text-muted-foreground">{MCP_REGENERATE_WARNING}</p>
+              <div className="mt-3 flex flex-wrap items-center gap-3">
+                <Button type="button" disabled={busy} onClick={() => void handleGenerate()}>
+                  {busy ? "Generating…" : "Yes, generate a new URL"}
+                </Button>
+                <button
+                  type="button"
+                  onClick={() => setConfirming(false)}
+                  className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  Keep the one I have
+                </button>
+              </div>
+            </div>
+          ) : null}
+          {!token ? (
+            <Button type="button" disabled={busy} onClick={() => void handleGenerate()}>
+              {busy ? "Generating…" : "Generate my connector URL"}
+            </Button>
+          ) : null}
+        </div>
+
+        <div className="mt-5 space-y-3">
+          {token ? (
+            <button
+              type="button"
+              onClick={() => (showSetup ? setShowSetup(false) : openSteps())}
               className="text-xs text-muted-foreground transition-colors hover:text-foreground"
             >
               {showSetup ? "Hide setup instructions" : "Setup instructions"}
             </button>
-            {showSetup ? (
-              <div className="rounded-[var(--radius)] border border-border bg-secondary/60 px-4 py-3">
-                <p className="whitespace-pre-line text-sm text-muted-foreground">
-                  {SETUP_INSTRUCTIONS}
-                </p>
-              </div>
-            ) : null}
-          </div>
-        )}
+          ) : null}
+          {stepsOpen ? <SetupSteps /> : null}
+        </div>
       </div>
     </section>
   );
