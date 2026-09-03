@@ -1,4 +1,3 @@
-import { Link } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
@@ -158,9 +157,10 @@ export function ConnectToWorkSheet({
         ) : null}
 
         <div className="mt-6">
-          <Link
-            to="/connectors"
-            hash="connect-your-ai"
+          {/* A plain anchor: the browser resolves the hash on arrival, which a
+              client transition to a different route would not do reliably. */}
+          <a
+            href="/connectors#connect-your-ai"
             onClick={() => {
               logEvent("connector.setup_opened", profile.org_id, {
                 surface: "connect_sheet",
@@ -170,7 +170,7 @@ export function ConnectToWorkSheet({
             className="text-xs text-muted-foreground transition-colors hover:text-foreground"
           >
             Set up Claude or ChatGPT to push here
-          </Link>
+          </a>
         </div>
 
         {landed > 0 && target ? (
