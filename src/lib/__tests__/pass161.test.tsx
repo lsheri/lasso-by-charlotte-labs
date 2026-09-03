@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi, beforeEach } from "vitest";
 
 import {
   DAYS_TO_NOTE_BANDS,
@@ -86,6 +86,8 @@ describe("pass 161 read signal", () => {
     logEvent.mockClear();
     window.localStorage.clear();
   });
+
+  afterEach(() => cleanup());
 
   it("records one event per view, not one per note, with closed vocab dims", () => {
     render(<CoachNoteList notes={notes} surface="all" seenKey="all" orgId="org-1" />);
