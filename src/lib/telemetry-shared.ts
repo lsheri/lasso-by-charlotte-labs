@@ -97,7 +97,11 @@ export type TelemetryEvent =
   /** Pass 159: a person changed the profile they are acting as. Roles only. */
   | "profile.switched"
   /** Pass 161: the subject opened notes about their work. One per view. */
-  | "coachnote.read";
+  | "coachnote.read"
+  /** Pass 164: the walkthrough was opened. Variant, entry, banded age only. */
+  | "walkthrough.opened"
+  /** Pass 164: one walkthrough section was reached. Closed vocab section id. */
+  | "walkthrough.section_viewed";
 
 export type TelemetryDims = Record<
   string,

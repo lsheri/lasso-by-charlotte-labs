@@ -14,7 +14,10 @@ export type Profile = {
   /** "company" when the workspace is a firm, "personal" for a solo workspace. */
   org_type: "company" | "personal";
   onboarding: unknown;
+  /** When this profile was created. Used for banded age only, never shown. */
+  created_at?: string | null;
 };
+
 
 /** Business orgs get the members console; personal ones get "Your coaches". */
 export function isBusinessOrg(profile: { org_type: string } | null | undefined): boolean {
@@ -66,7 +69,7 @@ export async function fetchProfileState(): Promise<ProfileState> {
   const { data, error } = await supabase
     .from("profiles")
     .select(
-      "id, user_id, org_id, role, display_name, title_band, onboarding, deactivated_at, orgs(name, settings)",
+      "id, user_id, org_id, role, display_name, title_band, onboarding, created_at, deactivated_at, orgs(name, settings)",
     )
     .eq("user_id", user.id)
     .order("created_at", { ascending: true });

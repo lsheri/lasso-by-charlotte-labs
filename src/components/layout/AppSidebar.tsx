@@ -3,6 +3,8 @@ import { Link } from "@tanstack/react-router";
 import type { Profile } from "@/hooks/use-profile";
 import { FeedbackDialog } from "@/components/feedback/FeedbackWidget";
 import { ChecklistLauncher } from "@/components/onboarding/checklist/ChecklistLauncher";
+import { markWalkthroughEntry } from "@/lib/walkthrough-entry";
+
 
 import { OrgSwitcher } from "./OrgSwitcher";
 import { LassoLogo } from "./LassoLogo";
@@ -36,12 +38,23 @@ export function AppSidebar({
       <OrgSwitcher profiles={profiles} active={activeProfile} />
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-1">
         <Link
+          to="/how-lasso-works"
+          onClick={() => {
+            markWalkthroughEntry("sidebar");
+            onNavigate?.();
+          }}
+          className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+        >
+          How Lasso works
+        </Link>
+        <Link
           to="/trust"
           onClick={onNavigate}
           className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
         >
           Trust &amp; data
         </Link>
+
         <Link
           to="/why"
           onClick={onNavigate}
