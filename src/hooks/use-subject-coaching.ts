@@ -72,8 +72,8 @@ export function useQueriesAboutMe(subjectId: string | undefined, engagementId: s
  * first. The subject's own read of their own notes; no author-facing signal.
  */
 export type AccountNote = SubjectNote & {
-  engagement_id: string;
-  engagements: { title: string | null; code: string | null } | null;
+  engagement_id: string | null;
+  engagements: { title: string; code: string } | null;
 };
 
 export async function fetchAllNotesAboutMe(subjectId: string): Promise<AccountNote[]> {

@@ -20,6 +20,8 @@ export const navGroups: NavGroup[] = [
 
       { label: "Chat library", to: "/ai-record", icon: "ai-record" },
       { label: "1:1 prep", to: "/one-on-one", icon: "one-on-one" },
+      // Pass 161: notes written about your work, across every engagement.
+      { label: "Notes about your work", to: "/coach-notes", icon: "messages" },
       { label: "Decision log", to: "/decisions", icon: "decisions" },
       { label: "Settings", to: "/settings", icon: "settings" },
     ],

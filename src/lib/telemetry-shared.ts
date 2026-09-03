@@ -95,7 +95,9 @@ export type TelemetryEvent =
   /** Pass 157b: one settled chat library search. Bands only in dims. */
   | "chatlib.search"
   /** Pass 159: a person changed the profile they are acting as. Roles only. */
-  | "profile.switched";
+  | "profile.switched"
+  /** Pass 161: the subject opened notes about their work. One per view. */
+  | "coachnote.read";
 
 export type TelemetryDims = Record<
   string,
