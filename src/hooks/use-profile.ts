@@ -69,7 +69,7 @@ export async function fetchProfileState(): Promise<ProfileState> {
   const { data, error } = await supabase
     .from("profiles")
     .select(
-      "id, user_id, org_id, role, display_name, title_band, onboarding, deactivated_at, orgs(name, settings)",
+      "id, user_id, org_id, role, display_name, title_band, onboarding, created_at, deactivated_at, orgs(name, settings)",
     )
     .eq("user_id", user.id)
     .order("created_at", { ascending: true });
