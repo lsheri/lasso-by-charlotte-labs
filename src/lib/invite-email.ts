@@ -99,13 +99,13 @@ export function renderInviteEmail(args: {
     "LASSO",
     "by Charlotte Labs",
     "",
-    "You are invited",
+    heading,
     "",
     lead,
     "",
     body,
     "",
-    `Accept your invite: ${acceptUrl}`,
+    `${cta}: ${acceptUrl}`,
     "",
     "If you were not expecting this, you can ignore it and nothing happens.",
     "",
@@ -128,14 +128,14 @@ export function renderInviteEmail(args: {
 </td>
 </tr></table>
 <div style="background:${MAIL.card};border:1px solid ${MAIL.rule};border-radius:8px;padding:26px 24px;margin-top:16px">
-<p style="font-family:${TITLE};font-size:30px;font-weight:bold;color:${MAIL.ink};margin:0 0 14px">You are invited</p>
+<p style="font-family:${TITLE};font-size:30px;font-weight:bold;color:${MAIL.ink};margin:0 0 14px">${escapeHtml(heading)}</p>
 <p style="font-size:14px;line-height:1.6;margin:0 0 14px">${escapeHtml(lead)}</p>
 <p style="font-size:14px;line-height:1.6;margin:0;color:${MAIL.body}">${escapeHtml(body)}</p>
-<p style="margin:26px 0 8px"><a class="dm-btn" href="${escapeHtml(acceptUrl)}" style="display:inline-block;background:${MAIL.cta};color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:6px;font-size:14px;font-weight:600">Accept your invite</a></p>
+<p style="margin:26px 0 8px"><a class="dm-btn" href="${escapeHtml(acceptUrl)}" style="display:inline-block;background:${MAIL.cta};color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:6px;font-size:14px;font-weight:600">${escapeHtml(cta)}</a></p>
 <p style="font-size:12px;line-height:1.6;color:${MAIL.muted}">Or paste this link into your browser:<br>${escapeHtml(acceptUrl)}</p>
 </div>
 <p style="font-family:${MONO};font-size:11px;letter-spacing:0.08em;color:${MAIL.muted};margin-top:18px">${escapeHtml(MAIL_FOOTER)}</p>
 </div></body></html>`;
 
-  return { subject: inviteSubject(inviterName, orgName), html, text };
+  return { subject, html, text };
 }
