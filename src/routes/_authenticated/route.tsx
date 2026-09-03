@@ -10,9 +10,10 @@ export const Route = createFileRoute("/_authenticated")({
     const { data, error } = await supabase.auth.getUser();
     if (error || !data.user) throw redirect({ to: "/auth" });
     const { profiles, hasDeactivated } = await fetchProfileState();
-    const profile = profiles[0];
-    if (!profile) throw redirect({ to: hasDeactivated ? "/no-access" : "/onboarding" });
-    return { user: data.user, profile };
+    if (profiles.length === 0) throw redirect({ to: hasDeactivated ? "/no-access" : "/onboarding" });
+    // The acting profile lives in useProfile, never here: a person can hold
+    // several, and the gate must not pick one the page disagrees with.
+    return { user: data.user, profiles, gate: "allowed" as const };
   },
   component: AppShell,
 });
