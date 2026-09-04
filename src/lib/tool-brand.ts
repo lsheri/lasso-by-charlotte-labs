@@ -27,6 +27,7 @@ const VENDOR_BRAND: Partial<Record<ToolVendor, BrandKey>> = {
   chatgpt: "chatgpt",
   gemini: "gemini",
   copilot: "copilot",
+  wispr: "wispr",
 };
 
 export function brandForVendor(vendor: ToolVendor): BrandKey | null {

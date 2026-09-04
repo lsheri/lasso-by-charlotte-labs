@@ -27,6 +27,8 @@ const AUTH_CONFIG_NAMES: Record<ConnectorToolkit, string> = {
   slack: "Slack Auth Config",
   notion: "Notion Auth Config",
   granola_mcp: "Granola Auth Config",
+  // Wispr Flow signs in directly through its own MCP server, not Composio.
+  wispr: "",
 };
 
 /** Granola has no Composio-managed credentials; it authenticates through

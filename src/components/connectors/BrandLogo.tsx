@@ -28,6 +28,7 @@ export type BrandKey =
   | "sharepoint"
   | "notion"
   | "granola"
+  | "wispr"
   | "claude"
   | "chatgpt"
   | "copilot"
@@ -59,6 +60,7 @@ const LABELS: Record<BrandKey, string> = {
   sharepoint: "SharePoint",
   notion: "Notion",
   granola: "Granola",
+  wispr: "Wispr Flow",
   claude: "Claude",
   chatgpt: "ChatGPT",
   copilot: "Microsoft Copilot",
@@ -127,6 +129,22 @@ function CustomMark({ brand }: { brand: BrandKey }) {
           fill="#FFF3E8"
           d="M8 9h8v1.7H8V9Zm0 3.4h8v1.7H8v-1.7Zm0 3.4h5v1.6H8v-1.6Z"
         />
+      </g>
+    );
+  }
+  if (brand === "wispr") {
+    // Geometry read off Wispr Flow's own favicon: five white bars, outer two
+    // tallest, on their near-black rounded square.
+    return (
+      <g>
+        <rect x="1.5" y="1.5" width="21" height="21" rx="5" fill="#111111" />
+        <g fill="#FFFFFF">
+          <rect x="5.1" y="5.3" width="1.6" height="13.4" rx="0.8" />
+          <rect x="8.1" y="12" width="1.6" height="5.4" rx="0.8" />
+          <rect x="11.1" y="7.5" width="1.6" height="9" rx="0.8" />
+          <rect x="14.1" y="12" width="1.6" height="5.4" rx="0.8" />
+          <rect x="17.1" y="5.3" width="1.6" height="13.4" rx="0.8" />
+        </g>
       </g>
     );
   }

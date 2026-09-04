@@ -60,6 +60,10 @@ export function importedGranolaIds(supabase: Client, profileId: string): Promise
   return importedIds(supabase, profileId, "connector:granola", "granola_id");
 }
 
+export function importedWisprIds(supabase: Client, profileId: string): Promise<Set<string>> {
+  return importedIds(supabase, profileId, "connector:wispr", "wispr_id");
+}
+
 export function importedGmailThreadIds(supabase: Client, profileId: string): Promise<Set<string>> {
   return importedIds(supabase, profileId, "connector:gmail", "gmail_thread_id");
 }

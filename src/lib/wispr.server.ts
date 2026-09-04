@@ -1,0 +1,381 @@
+/**
+ * Wispr Flow, read through its remote MCP server.
+ *
+ * What we verified from Wispr's own published setup documents, before writing
+ * a line of this: the server is read only, it exposes meetings with summaries,
+ * notes, transcripts and attendees, and it will not accept a pasted key. Its
+ * resource metadata points at an authorization service that speaks
+ * authorization code with PKCE and accepts new apps automatically, so that is
+ * the flow here. Wispr's own limits stand: Notetaker access is required, it is
+ * not available on Wispr Enterprise accounts, and it is Mac only.
+ *
+ * The connection record lives in connector_accounts with toolkit "wispr". The
+ * signed-in credentials live in connector_secrets as JSON, service role only,
+ * the same table Granola's key uses. Nothing from that row reaches a browser.
+ */
+
+import {
+  mcpCallTool,
+  mcpInitialize,
+  mcpListTools,
+  mcpSession,
+  resultJson,
+  type McpTool,
+} from "@/lib/mcp-client.server";
+import {
+  discoverAuthServer,
+  discoverProtectedResource,
+  refreshTokens,
+  type AuthServerMeta,
+  type OAuthTokens,
+} from "@/lib/mcp-oauth.server";
+
+/** Wispr publishes one address for every account. */
+export const WISPR_MCP_URL = "https://api.wisprflow.ai/connect/mcp";
+
+export const WISPR_LIMITS =
+  "Wispr's own limits apply: you need Notetaker access, it is not available on Wispr Enterprise accounts, and setup is Mac only.";
+
+export type WisprCredentials = {
+  mcpUrl: string;
+  clientId: string;
+  resource: string;
+  issuer: string;
+  tokens: OAuthTokens;
+  /** The Wispr account the sign-in belongs to, when the server tells us. */
+  identity: string | null;
+};
+
+export type WisprPending = {
+  mcpUrl: string;
+  clientId: string;
+  resource: string;
+  issuer: string;
+  verifier: string;
+  state: string;
+  redirectUri: string;
+  scopes: string[];
+};
+
+export function maskIdentity(value: string | null): string | null {
+  if (!value) return null;
+  const at = value.indexOf("@");
+  if (at <= 1) return `${value.slice(0, 1)}••••`;
+  return `${value.slice(0, 2)}••••${value.slice(at)}`;
+}
+
+async function admin() {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  return supabaseAdmin;
+}
+
+export async function wisprAccountId(profileId: string): Promise<string | null> {
+  const db = await admin();
+  const { data } = await db
+    .from("connector_accounts")
+    .select("id")
+    .eq("profile_id", profileId)
+    .eq("toolkit", "wispr")
+    .maybeSingle();
+  return data?.id ?? null;
+}
+
+export async function upsertWisprAccount(
+  profileId: string,
+  status: "pending" | "connected",
+  watchConfig: Record<string, unknown> | null,
+): Promise<string> {
+  const db = await admin();
+  const existing = await wisprAccountId(profileId);
+  const row = {
+    profile_id: profileId,
+    toolkit: "wispr",
+    composio_account_id: null,
+    status,
+    connected_at: status === "connected" ? new Date().toISOString() : null,
+    ...(watchConfig ? { watch_config: watchConfig as never } : {}),
+  };
+  const write = existing
+    ? await db.from("connector_accounts").update(row).eq("id", existing).select("id").single()
+    : await db.from("connector_accounts").insert(row).select("id").single();
+  if (write.error) throw new Error(write.error.message);
+  return write.data.id;
+}
+
+export async function savePending(profileId: string, pending: WisprPending): Promise<void> {
+  await upsertWisprAccount(profileId, "pending", { wispr_pending: pending });
+}
+
+export async function readPending(profileId: string): Promise<WisprPending | null> {
+  const db = await admin();
+  const { data } = await db
+    .from("connector_accounts")
+    .select("watch_config")
+    .eq("profile_id", profileId)
+    .eq("toolkit", "wispr")
+    .maybeSingle();
+  const value = (data?.watch_config as Record<string, unknown> | null)?.["wispr_pending"];
+  return value ? (value as WisprPending) : null;
+}
+
+export async function saveCredentials(
+  profileId: string,
+  credentials: WisprCredentials,
+): Promise<void> {
+  const accountId = await upsertWisprAccount(profileId, "connected", { wispr_pending: null });
+  const db = await admin();
+  const write = await db
+    .from("connector_secrets")
+    .upsert(
+      { account_id: accountId, api_key: JSON.stringify(credentials) },
+      { onConflict: "account_id" },
+    );
+  if (write.error) throw new Error(write.error.message);
+}
+
+export async function readCredentials(profileId: string): Promise<WisprCredentials | null> {
+  const db = await admin();
+  const { data: account } = await db
+    .from("connector_accounts")
+    .select("id, status")
+    .eq("profile_id", profileId)
+    .eq("toolkit", "wispr")
+    .maybeSingle();
+  if (!account || account.status !== "connected") return null;
+  const { data: secret } = await db
+    .from("connector_secrets")
+    .select("api_key")
+    .eq("account_id", account.id)
+    .maybeSingle();
+  if (!secret?.api_key) return null;
+  try {
+    return JSON.parse(secret.api_key) as WisprCredentials;
+  } catch {
+    return null;
+  }
+}
+
+export async function forgetWispr(profileId: string): Promise<void> {
+  const db = await admin();
+  const accountId = await wisprAccountId(profileId);
+  if (!accountId) return;
+  await db.from("connector_secrets").delete().eq("account_id", accountId);
+  await db
+    .from("connector_accounts")
+    .update({ status: "disconnected", connected_at: null, watch_config: {} })
+    .eq("id", accountId);
+}
+
+/** A live access token, refreshed quietly when the old one is close to done. */
+async function freshToken(profileId: string, creds: WisprCredentials): Promise<string> {
+  const expires = creds.tokens.expiresAt;
+  if (!expires || expires - Date.now() > 60_000 || !creds.tokens.refreshToken) {
+    return creds.tokens.accessToken;
+  }
+  const meta: AuthServerMeta = await discoverAuthServer(creds.issuer);
+  const tokens = await refreshTokens({
+    meta,
+    clientId: creds.clientId,
+    refreshToken: creds.tokens.refreshToken,
+    resource: creds.resource,
+  });
+  await saveCredentials(profileId, {
+    ...creds,
+    tokens: { ...tokens, refreshToken: tokens.refreshToken ?? creds.tokens.refreshToken },
+  });
+  return tokens.accessToken;
+}
+
+async function openSession(profileId: string) {
+  const creds = await readCredentials(profileId);
+  if (!creds) {
+    throw new Error("Wispr Flow is not connected. Connect it on Where work lives.");
+  }
+  const token = await freshToken(profileId, creds);
+  const session = mcpSession(creds.mcpUrl || WISPR_MCP_URL, token);
+  await mcpInitialize(session);
+  return session;
+}
+
+export async function wisprTools(profileId: string): Promise<McpTool[]> {
+  return mcpListTools(await openSession(profileId));
+}
+
+/**
+ * Wispr names its tools itself, and we have not been able to sign in to a live
+ * account to read the exact names, so the one that reads meetings is chosen by
+ * shape rather than assumed.
+ */
+function chooseTool(tools: McpTool[], words: string[], avoid: string[] = []): string | null {
+  const match = tools.find((tool) => {
+    const name = tool.name.toLowerCase();
+    if (avoid.some((word) => name.includes(word))) return false;
+    return words.every((word) => name.includes(word));
+  });
+  return match?.name ?? null;
+}
+
+export type WisprMeeting = {
+  id: string;
+  title: string;
+  date: string | null;
+  attendeeCount: number | null;
+};
+
+function str(row: Record<string, unknown>, keys: string[]): string | null {
+  for (const key of keys) {
+    const value = row[key];
+    if (typeof value === "string" && value.trim()) return value;
+  }
+  return null;
+}
+
+function rowsOf(payload: unknown): Record<string, unknown>[] {
+  if (Array.isArray(payload)) return payload as Record<string, unknown>[];
+  const row = payload as Record<string, unknown> | null;
+  for (const key of ["meetings", "items", "results", "data"]) {
+    const value = row?.[key];
+    if (Array.isArray(value)) return value as Record<string, unknown>[];
+  }
+  return [];
+}
+
+function attendeesOf(row: Record<string, unknown>): number | null {
+  for (const key of ["attendees", "participants", "attendee_list"]) {
+    const value = row[key];
+    if (Array.isArray(value)) return value.length;
+  }
+  for (const key of ["attendee_count", "participant_count"]) {
+    const value = row[key];
+    if (typeof value === "number") return value;
+  }
+  return null;
+}
+
+export function mapMeetings(payload: unknown): WisprMeeting[] {
+  return rowsOf(payload)
+    .map((row) => {
+      const id = str(row, ["id", "meeting_id", "uuid", "slug"]);
+      if (!id) return null;
+      return {
+        id,
+        title: str(row, ["title", "name", "subject"]) ?? "Untitled meeting",
+        date: str(row, ["start_time", "started_at", "date", "created_at", "createdAt"]),
+        attendeeCount: attendeesOf(row),
+      };
+    })
+    .filter((m): m is WisprMeeting => Boolean(m));
+}
+
+export function nextCursor(payload: unknown): string | null {
+  const row = payload as Record<string, unknown> | null;
+  if (!row) return null;
+  for (const key of ["next_cursor", "nextCursor", "cursor", "next_page_token"]) {
+    const value = row[key];
+    if (typeof value === "string" && value.trim()) return value;
+  }
+  return null;
+}
+
+export async function listWisprMeetings(
+  profileId: string,
+  opts: { limit?: number; cursor?: string | null } = {},
+): Promise<{ meetings: WisprMeeting[]; cursor: string | null; unsupported: string | null }> {
+  const session = await openSession(profileId);
+  const tools = await mcpListTools(session);
+  const name =
+    chooseTool(tools, ["list", "meeting"]) ??
+    chooseTool(tools, ["meeting"], ["get", "detail", "transcript"]) ??
+    chooseTool(tools, ["search", "meeting"]);
+  if (!name) {
+    return {
+      meetings: [],
+      cursor: null,
+      unsupported: "Wispr Flow did not offer a way to list meetings on this account.",
+    };
+  }
+  const args: Record<string, unknown> = { limit: opts.limit ?? 30 };
+  if (opts.cursor) args["cursor"] = opts.cursor;
+  const result = await mcpCallTool(session, name, args);
+  const payload = resultJson(result);
+  return { meetings: mapMeetings(payload), cursor: nextCursor(payload), unsupported: null };
+}
+
+/**
+ * One meeting as markdown, shaped exactly like the Granola import: what was
+ * said kept apart from what a model wrote about it.
+ */
+export function meetingMarkdown(input: {
+  title: string;
+  transcript: string | null;
+  summary: string | null;
+  notes: string | null;
+}): string {
+  const parts = [`# ${input.title}`];
+  if (input.transcript) parts.push("## Transcript", input.transcript);
+  const written = [input.summary, input.notes].filter(Boolean).join("\n\n");
+  if (written) parts.push("---", "## AI notes (generated by Wispr Flow)", written);
+  return parts.join("\n\n");
+}
+
+function transcriptText(value: unknown): string | null {
+  if (typeof value === "string" && value.trim()) return value;
+  if (!Array.isArray(value)) return null;
+  const lines = (value as Record<string, unknown>[])
+    .map((line) => {
+      const text = str(line, ["text", "content", "value"]);
+      if (!text) return null;
+      const speaker = str(line, ["speaker", "name", "role"]);
+      return speaker ? `**${speaker}:** ${text}` : text;
+    })
+    .filter((l): l is string => Boolean(l));
+  return lines.length > 0 ? lines.join("\n\n") : null;
+}
+
+export function mapMeetingDetail(
+  payload: unknown,
+): { title: string; date: string | null; markdown: string } | null {
+  const row = ((payload as Record<string, unknown> | null)?.["meeting"] ??
+    (payload as Record<string, unknown> | null)?.["data"] ??
+    payload) as Record<string, unknown> | null;
+  if (!row || typeof row !== "object") return null;
+  const title = str(row, ["title", "name", "subject"]) ?? "Untitled meeting";
+  const date = str(row, ["start_time", "started_at", "date", "created_at", "createdAt"]);
+  const transcript = transcriptText(row["transcript"] ?? row["transcript_segments"]);
+  const summary = str(row, ["summary", "ai_summary", "overview"]);
+  const notes = str(row, ["notes", "note", "markdown", "content"]);
+  if (!transcript && !summary && !notes) return null;
+  return { title, date, markdown: meetingMarkdown({ title, transcript, summary, notes }) };
+}
+
+export async function fetchWisprMeeting(
+  profileId: string,
+  id: string,
+): Promise<{ title: string; date: string | null; markdown: string } | null> {
+  const session = await openSession(profileId);
+  const tools = await mcpListTools(session);
+  const name =
+    chooseTool(tools, ["get", "meeting"]) ??
+    chooseTool(tools, ["meeting", "transcript"]) ??
+    chooseTool(tools, ["meeting", "detail"]);
+  if (!name) return null;
+  const result = await mcpCallTool(session, name, { meeting_id: id, id });
+  return mapMeetingDetail(resultJson(result));
+}
+
+/** Discovery for the connect flow, kept here so the server fn stays thin. */
+export async function wisprAuthMeta(): Promise<{
+  resource: string;
+  issuer: string;
+  scopes: string[];
+  meta: AuthServerMeta;
+}> {
+  const prm = await discoverProtectedResource(WISPR_MCP_URL);
+  const meta = await discoverAuthServer(prm.authorizationServer);
+  return {
+    resource: prm.resource,
+    issuer: prm.authorizationServer,
+    scopes: prm.scopes.length > 0 ? prm.scopes : ["openid", "offline_access"],
+    meta,
+  };
+}
