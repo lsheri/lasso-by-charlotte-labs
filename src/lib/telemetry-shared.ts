@@ -18,6 +18,8 @@ export type TelemetryEvent =
   | "connector.suggestion_reviewed"
   /** Pass 160: the AI setup steps were opened. Surface and a boolean only. */
   | "connector.setup_opened"
+  /** Pass 165: someone loaded a further page of a connector listing. */
+  | "connector.browse_paged"
   | "import.started"
   | "import.parsed"
   | "import.committed"
