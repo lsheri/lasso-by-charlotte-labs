@@ -203,6 +203,13 @@ export async function importConnectorFiles(
     ids: string[];
     mimes?: Record<string, string> | null;
     folderName: string | null;
+    /** Pass 165: how the person had narrowed the listing they picked from. */
+    browse?: {
+      scope?: string;
+      type_filter?: string;
+      age_filter?: string;
+      page_index?: number;
+    } | null;
   },
 ): Promise<{ imported: number; skipped: number; updated: number; unchanged: number }> {
   const { storeFile, captureEvents, existingByProviderId, sha256Bytes, recordNewVersion } =
@@ -345,6 +352,7 @@ export async function importConnectorFiles(
     toolkit: args.toolkit,
     source: TOOLKIT_VENDOR[args.toolkit],
     imported,
+    browse: args.browse ?? null,
   });
   return { imported, skipped, updated, unchanged };
 }

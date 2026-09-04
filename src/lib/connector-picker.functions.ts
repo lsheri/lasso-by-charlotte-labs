@@ -26,6 +26,10 @@ type ImportInput = {
   /** Source mime per id, so Google-native docs can be exported as text. */
   mimes?: Record<string, string> | undefined;
   folder_name?: string | undefined;
+  scope?: string | undefined;
+  type_filter?: string | undefined;
+  age_filter?: string | undefined;
+  page_index?: number | undefined;
 };
 
 type ToolkitBrowseInput = BrowseInput & { toolkit: BrowsableToolkit };
@@ -44,6 +48,10 @@ function validateImport(input: ImportInput): ImportInput {
     ids: input.ids.slice(0, 100),
     mimes: input.mimes,
     folder_name: input.folder_name,
+    scope: input.scope,
+    type_filter: input.type_filter,
+    age_filter: input.age_filter,
+    page_index: input.page_index,
   };
 }
 
@@ -170,6 +178,12 @@ export const importConnectorItems = createServerFn({ method: "POST" })
           ids: data.ids,
           mimes: data.mimes ?? null,
           folderName: data.folder_name ?? null,
+          browse: {
+            scope: isDriveScope(data.scope) ? data.scope : "my_drive",
+            type_filter: isDriveTypeFilter(data.type_filter) ? data.type_filter : "everything",
+            age_filter: isDriveAgeFilter(data.age_filter) ? data.age_filter : "any",
+            page_index: Number.isFinite(data.page_index) ? Number(data.page_index) : 0,
+          },
         });
       },
     );
