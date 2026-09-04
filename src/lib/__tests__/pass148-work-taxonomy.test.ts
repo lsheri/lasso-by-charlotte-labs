@@ -166,10 +166,16 @@ describe("pass148 registry and emission points", () => {
     expect(handler).toContain("await noteThreadShape(");
   });
 
-  it("emits a handoff when a link row is created", () => {
+  it("emits a handoff only where a person vouched for the pair", () => {
+    // Pass 167: a drafted link is a proposal, so the drafter counts nothing.
     const lineage = readFileSync("src/lib/lineage.server.ts", "utf8");
-    expect(lineage).toContain("noteHandoffObserved");
+    expect(lineage).not.toContain("noteHandoffObserved(");
+    const review = readFileSync("src/lib/lineage.functions.ts", "utf8");
+    expect(review).toContain("noteHandoffObserved(");
+    const subjects = readFileSync("src/lib/subjects.functions.ts", "utf8");
+    expect(subjects).toContain("noteHandoffObserved(");
   });
+
 
   it("keeps content and titles out of the taxonomy module", () => {
     const source = readFileSync("src/lib/work-taxonomy.ts", "utf8");

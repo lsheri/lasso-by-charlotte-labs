@@ -15,6 +15,7 @@ import { ThinkingIndicator } from "@/components/common/Working";
 import { ChatUrlLink } from "@/components/work/ChatUrlLink";
 import { VendorBrandMark } from "@/components/work/VendorBrandMark";
 import { BrandLogo } from "@/components/connectors/BrandLogo";
+import { SubjectsPanel } from "@/components/work/SubjectsPanel";
 import { WorkRow } from "@/components/work/WorkRow";
 import { useChatSearchSignal } from "@/hooks/use-chat-search-signal";
 import { useProfile } from "@/hooks/use-profile";
@@ -116,6 +117,7 @@ export function AiRecordPage() {
   const [lensItem, setLensItem] = useState<WorkItemRow | null>(null);
   const [openGroup, setOpenGroup] = useState<string | null>(null);
   const [query, setQuery] = useState("");
+  const [showSubjects, setShowSubjects] = useState(false);
 
   const threads = (work?.items ?? []).filter((i) => i.type === "ai_thread");
   // The id list is sorted before it becomes part of a key, so a reordered but
@@ -215,6 +217,19 @@ export function AiRecordPage() {
             placeholder="Search your chats"
             className="w-full rounded-[var(--radius)] border border-border bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/40 sm:max-w-sm"
           />
+        </div>
+      ) : null}
+
+      {threads.length > 0 ? (
+        <div className="mb-6 space-y-3">
+          <button
+            type="button"
+            onClick={() => setShowSubjects((prev) => !prev)}
+            className="text-xs font-medium text-accent-deep underline-offset-4 transition-opacity hover:opacity-70"
+          >
+            {showSubjects ? "Hide subjects" : "Subjects and links"}
+          </button>
+          {showSubjects ? <SubjectsPanel profileId={profile?.id} items={threads} /> : null}
         </div>
       ) : null}
 

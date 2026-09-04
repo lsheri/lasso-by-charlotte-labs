@@ -2653,6 +2653,67 @@ export type Database = {
           },
         ]
       }
+      work_item_entities: {
+        Row: {
+          created_at: string
+          entity_key: string
+          entity_raw: string
+          id: string
+          merged_into: string | null
+          org_id: string
+          owner_id: string
+          source: string
+          updated_at: string
+          work_item_id: string
+        }
+        Insert: {
+          created_at?: string
+          entity_key: string
+          entity_raw: string
+          id?: string
+          merged_into?: string | null
+          org_id: string
+          owner_id: string
+          source?: string
+          updated_at?: string
+          work_item_id: string
+        }
+        Update: {
+          created_at?: string
+          entity_key?: string
+          entity_raw?: string
+          id?: string
+          merged_into?: string | null
+          org_id?: string
+          owner_id?: string
+          source?: string
+          updated_at?: string
+          work_item_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_item_entities_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_item_entities_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_item_entities_work_item_id_fkey"
+            columns: ["work_item_id"]
+            isOneToOne: false
+            referencedRelation: "work_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       work_item_extracts: {
         Row: {
           content_hash: string | null

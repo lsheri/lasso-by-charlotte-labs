@@ -464,6 +464,11 @@ async function pushThread(
   const { error: turnsError } = await supabaseAdmin.from("turns").insert(rows);
   if (turnsError) return rpcError(id, -32603, turnsError.message);
 
+  // Pass 167. Turns of one pushed conversation are a known ordering, so the
+  // chain is recorded as fact. Nothing else here writes a chain link.
+  const { recordSameConversationChain } = await import("./chain-links.server");
+  await recordSameConversationChain(item.id);
+
   const { ensureExtracts } = await import("./extract.server");
   await ensureExtracts([item.id]);
 
@@ -970,6 +975,8 @@ async function pushConversation(
   if (newRows.length > 0) {
     const { error: turnsError } = await supabaseAdmin.from("turns").insert(newRows as never);
     if (turnsError) return rpcError(id, -32603, turnsError.message);
+    const { recordSameConversationChain } = await import("./chain-links.server");
+    await recordSameConversationChain(threadId);
   }
 
   const storedCount = storedBefore + newRows.length;
