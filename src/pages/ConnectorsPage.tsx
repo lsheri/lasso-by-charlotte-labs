@@ -9,6 +9,7 @@ import { BrandLogo, brandForToolkit, type BrandKey } from "@/components/connecto
 import { ConnectYourAiCard } from "@/components/connectors/ConnectYourAiCard";
 import { ConnectorPicker, type PickerKind } from "@/components/connectors/ConnectorPicker";
 import { GranolaKeyCard } from "@/components/connectors/GranolaKeyCard";
+import { WisprCard } from "@/components/connectors/WisprCard";
 import {
   statusLabel,
   useConnectorAccounts,
@@ -33,6 +34,7 @@ const DESCRIPTIONS: Record<ConnectorToolkit, string> = {
   notion: "Working pages and notes from your workspace.",
   slack: "Channel conversations where the work gets negotiated.",
   granola_mcp: "Meeting notes and transcripts from your calls.",
+  wispr: "Meetings, notes and transcripts from your calls. Read only.",
 };
 
 /** Which connectors open a picker, and which picker. */
@@ -41,6 +43,7 @@ const PICKER_KIND: Partial<Record<ConnectorToolkit, PickerKind>> = {
   one_drive: "onedrive",
   sharepoint_graph: "sharepoint",
   granola_mcp: "granola",
+  wispr: "wispr",
   gmail: "gmail",
 };
 
@@ -213,6 +216,7 @@ export function ConnectorsPage() {
 
         <Category title="Meetings" hue="--hue-clay">
           <GranolaKeyCard />
+          <WisprCard />
           <TranscriptsCard
             connected={accounts?.["googledrive"]?.status === "connected"}
             busy={busy === "googledrive"}

@@ -46,4 +46,5 @@ export const TOOLKIT_LABELS: Record<ConnectorToolkit, string> = {
   slack: "Slack",
   notion: "Notion",
   granola_mcp: "Granola",
+  wispr: "Wispr Flow",
 };

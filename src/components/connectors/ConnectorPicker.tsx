@@ -29,6 +29,7 @@ import {
   importGranolaMeetings,
 } from "@/lib/connector-picker.functions";
 import { setFolderWatch } from "@/lib/connector-watch.functions";
+import { browseWisprMeetings, importWisprMeetings } from "@/lib/wispr.functions";
 import {
   AGE_LABEL,
   DRIVE_AGE_FILTERS,
@@ -48,7 +49,7 @@ import {
 type Crumb = { id: string | null; name: string };
 
 export type PickerKind =
-  "googledrive" | "onedrive" | "sharepoint" | "granola" | "gmail" | "transcripts";
+  "googledrive" | "onedrive" | "sharepoint" | "granola" | "wispr" | "gmail" | "transcripts";
 
 type FileKind = "googledrive" | "onedrive" | "sharepoint";
 
@@ -85,6 +86,13 @@ const COPY: Record<
   },
   granola: {
     title: "Browse Granola meetings",
+    searchLabel: "Search meetings",
+    root: "Meetings",
+    empty: "Nothing here yet.",
+    action: "Bring into Lasso",
+  },
+  wispr: {
+    title: "Browse Wispr Flow meetings",
     searchLabel: "Search meetings",
     root: "Meetings",
     empty: "Nothing here yet.",
@@ -134,18 +142,22 @@ export function ConnectorPicker({
   highlightIds?: string[];
 }) {
   const isTranscripts = kind === "transcripts";
-  const isFolderBrowser = kind !== "granola" && kind !== "gmail" && !isTranscripts;
+  const isWispr = kind === "wispr";
+  const isFolderBrowser =
+    kind !== "granola" && !isWispr && kind !== "gmail" && !isTranscripts;
   const isGmail = kind === "gmail";
   const copy = COPY[kind];
   const { data: profile } = useProfile();
   const queryClient = useQueryClient();
   const browseFiles = useServerFn(browseConnectorItems);
   const browseMeetings = useServerFn(browseGranolaMeetings);
+  const browseWispr = useServerFn(browseWisprMeetings);
   const browseThreads = useServerFn(browseGmailThreads);
   const browseTranscripts = useServerFn(browseTranscriptCandidates);
   const importFiles = useServerFn(importConnectorItems);
   const perfTimer = usePerfTimerFactory();
   const importMeetings = useServerFn(importGranolaMeetings);
+  const importWispr = useServerFn(importWisprMeetings);
   const importThreads = useServerFn(importGmailThreads);
   const toggleWatch = useServerFn(setFolderWatch);
   const highlight = new Set(highlightIds ?? []);
@@ -225,6 +237,7 @@ export function ConnectorPicker({
       return browseTranscripts({
         data: { profile_id: profile?.id, ...(term ? { search: term } : {}) },
       });
+    if (isWispr) return browseWispr({ data });
     return isGmail ? browseThreads({ data }) : browseMeetings({ data });
   },
   [
@@ -235,6 +248,8 @@ export function ConnectorPicker({
     typeFilter,
     browseFiles,
     browseMeetings,
+    browseWispr,
+    isWispr,
     browseThreads,
     browseTranscripts,
     crumbFolder.name,
@@ -372,7 +387,9 @@ export function ConnectorPicker({
             })
           : isGmail
             ? await importThreads({ data: { profile_id: profile?.id, ids } })
-            : await importMeetings({ data: { profile_id: profile?.id, ids } });
+            : isWispr
+              ? await importWispr({ data: { profile_id: profile?.id, ids } })
+              : await importMeetings({ data: { profile_id: profile?.id, ids } });
       timer.mark("write");
       const parts: string[] = [];
       if (result.imported > 0) {

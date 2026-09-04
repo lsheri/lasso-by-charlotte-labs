@@ -6,6 +6,7 @@ export const CONNECTOR_TOOLKITS = [
   "slack",
   "notion",
   "granola_mcp",
+  "wispr",
 ] as const;
 export type ConnectorToolkit = (typeof CONNECTOR_TOOLKITS)[number];
 

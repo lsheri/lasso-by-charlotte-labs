@@ -16,6 +16,7 @@ export const TOOL_VENDORS = [
   "gemini",
   "copilot",
   "perplexity",
+  "wispr",
   "other_ai",
   "unknown",
 ] as const;
@@ -61,6 +62,7 @@ const WORD_VENDOR: [string, ToolVendor][] = [
   ["bard", "gemini"],
   ["copilot", "copilot"],
   ["perplexity", "perplexity"],
+  ["wispr", "wispr"],
 ];
 
 export type VendorSource = {
