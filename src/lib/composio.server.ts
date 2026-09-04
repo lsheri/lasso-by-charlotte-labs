@@ -1,6 +1,12 @@
 import { Composio } from "@composio/core";
 
 import type { ConnectorToolkit } from "@/lib/connector-toolkits";
+import {
+  buildDriveQuery,
+  type DriveAgeFilter,
+  type DriveScope,
+  type DriveTypeFilter,
+} from "@/lib/drive-scope";
 
 let client: Composio | undefined;
 
