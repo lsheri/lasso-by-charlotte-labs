@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/integrations/supabase/types";
 import type { PickerPage } from "@/lib/connector-picker-shared";
+import type { DriveAgeFilter, DriveScope, DriveTypeFilter } from "@/lib/drive-scope";
 import { defaultWorkDate, driveSourceMeta } from "@/lib/source-dates";
 import { looksLikeTranscript, transcriptHint } from "@/lib/transcript-detect";
 import {
@@ -38,16 +39,47 @@ export async function browseConnector(
     folderName: string | null;
     search: string | null;
     pageToken: string | null;
+    scope?: DriveScope | undefined;
+    driveId?: string | null | undefined;
+    typeFilter?: DriveTypeFilter | undefined;
+    ageFilter?: DriveAgeFilter | undefined;
     seen: Set<string>;
     watched: Set<string>;
   },
 ): Promise<PickerPage> {
   if (args.toolkit === "googledrive") {
-    const { browseDrive, DRIVE_FOLDER_MIME } = await import("@/lib/composio.server");
+    const { browseDrive, listSharedDrives, DRIVE_FOLDER_MIME } = await import(
+      "@/lib/composio.server"
+    );
+
+    // The top of "Shared drives" is the list of drives themselves. You open one
+    // and then browse inside it exactly like any other folder.
+    if (args.scope === "shared_drive" && !args.driveId) {
+      const listed = await listSharedDrives(args.profileId, { pageToken: args.pageToken });
+      return {
+        items: listed.drives.map((drive) => ({
+          id: drive.id,
+          title: drive.name,
+          subtitle: null,
+          date: null,
+          isFolder: true,
+          alreadyInLasso: false,
+          hint: null,
+          isWatched: args.watched.has(drive.id),
+        })),
+        nextPageToken: listed.nextPageToken,
+        unsupported: null,
+      };
+    }
+
     const page = await browseDrive(args.profileId, {
       folderId: args.folderId,
       search: args.search,
       pageToken: args.pageToken,
+      scope: args.scope,
+      driveId: args.driveId ?? null,
+      typeFilter: args.typeFilter,
+      ageFilter: args.ageFilter,
     });
     return {
       items: page.files.map((file) => {
@@ -171,6 +203,13 @@ export async function importConnectorFiles(
     ids: string[];
     mimes?: Record<string, string> | null;
     folderName: string | null;
+    /** Pass 165: how the person had narrowed the listing they picked from. */
+    browse?: {
+      scope?: string;
+      type_filter?: string;
+      age_filter?: string;
+      page_index?: number;
+    } | null;
   },
 ): Promise<{ imported: number; skipped: number; updated: number; unchanged: number }> {
   const { storeFile, captureEvents, existingByProviderId, sha256Bytes, recordNewVersion } =
@@ -313,6 +352,7 @@ export async function importConnectorFiles(
     toolkit: args.toolkit,
     source: TOOLKIT_VENDOR[args.toolkit],
     imported,
+    browse: args.browse ?? null,
   });
   return { imported, skipped, updated, unchanged };
 }

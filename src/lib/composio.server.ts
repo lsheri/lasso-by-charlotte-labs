@@ -1,6 +1,12 @@
 import { Composio } from "@composio/core";
 
 import type { ConnectorToolkit } from "@/lib/connector-toolkits";
+import {
+  buildDriveQuery,
+  type DriveAgeFilter,
+  type DriveScope,
+  type DriveTypeFilter,
+} from "@/lib/drive-scope";
 
 let client: Composio | undefined;
 
@@ -113,18 +119,34 @@ export async function driveAccountIdentity(entityId: string): Promise<string | n
 /** One page of a folder's contents, or of a name search across the Drive. */
 export async function browseDrive(
   entityId: string,
-  opts: { folderId?: string | null; search?: string | null; pageToken?: string | null },
+  opts: {
+    folderId?: string | null | undefined;
+    search?: string | null | undefined;
+    pageToken?: string | null | undefined;
+    scope?: DriveScope | undefined;
+    driveId?: string | null | undefined;
+    typeFilter?: DriveTypeFilter | undefined;
+    ageFilter?: DriveAgeFilter | undefined;
+  },
 ): Promise<{ files: DriveFile[]; nextPageToken: string | null }> {
-  const clauses = ["trashed = false"];
-  const term = opts.search?.trim();
-  if (term) clauses.push(`name contains '${term.replace(/'/g, "\\'")}'`);
-  else clauses.push(`'${opts.folderId || "root"}' in parents`);
+  const query = buildDriveQuery({
+    scope: opts.scope,
+    driveId: opts.driveId ?? null,
+    folderId: opts.folderId ?? null,
+    search: opts.search ?? null,
+    typeFilter: opts.typeFilter,
+    ageFilter: opts.ageFilter,
+  });
 
   const data = await run("GOOGLEDRIVE_LIST_FILES", entityId, {
-    q: clauses.join(" and "),
+    q: query.q,
     fields: "nextPageToken, files(id,name,mimeType,modifiedTime,webViewLink,size)",
-    orderBy: term ? "modifiedTime desc" : "folder,modifiedTime desc",
+    orderBy: opts.search?.trim() ? "modifiedTime desc" : "folder,modifiedTime desc",
     pageSize: 50,
+    corpora: query.corpora,
+    supportsAllDrives: true,
+    includeItemsFromAllDrives: true,
+    ...(query.driveId ? { driveId: query.driveId } : {}),
     ...(opts.pageToken ? { pageToken: opts.pageToken } : {}),
   });
   const files = (data["files"] as DriveFile[] | undefined) ?? [];
@@ -133,6 +155,29 @@ export async function browseDrive(
     nextPageToken: (data["nextPageToken"] as string | undefined) ?? null,
   };
 }
+
+/** The shared drives this person can reach, listed as navigable places. */
+export async function listSharedDrives(
+  entityId: string,
+  opts: { pageToken?: string | null } = {},
+): Promise<{ drives: { id: string; name: string }[]; nextPageToken: string | null }> {
+  const data = await run("GOOGLEDRIVE_LIST_SHARED_DRIVES", entityId, {
+    pageSize: 100,
+    ...(opts.pageToken ? { pageToken: opts.pageToken } : {}),
+  });
+  const nested = (data["data"] as Record<string, unknown> | undefined) ?? data;
+  const raw = (nested["drives"] ?? data["drives"]) as { id?: string; name?: string }[] | undefined;
+  return {
+    drives: (Array.isArray(raw) ? raw : [])
+      .filter((drive) => typeof drive.id === "string" && drive.id)
+      .map((drive) => ({ id: drive.id as string, name: drive.name ?? "Shared drive" })),
+    nextPageToken:
+      (nested["nextPageToken"] as string | undefined) ??
+      (data["nextPageToken"] as string | undefined) ??
+      null,
+  };
+}
+
 
 /**
  * Best-effort human identity for a connected account, so users can verify they

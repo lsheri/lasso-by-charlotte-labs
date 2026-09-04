@@ -187,7 +187,20 @@ export async function storeFile(
 /** One capture event per imported item, plus a single sync event per run. */
 export async function captureEvents(
   supabase: Client,
-  args: { orgId: string; userId: string; toolkit: string; source: string; imported: number },
+  args: {
+    orgId: string;
+    userId: string;
+    toolkit: string;
+    source: string;
+    imported: number;
+    /** Pass 165: which part of Drive, and how the list was narrowed. */
+    browse?: {
+      scope?: string;
+      type_filter?: string;
+      age_filter?: string;
+      page_index?: number;
+    } | null;
+  },
 ): Promise<void> {
   const { recordEvent } = await import("./telemetry.server");
   for (let i = 0; i < args.imported; i += 1) {
@@ -202,6 +215,6 @@ export async function captureEvents(
     eventType: "connector.synced",
     orgId: args.orgId,
     userId: args.userId,
-    dims: { toolkit: args.toolkit, imported: args.imported },
+    dims: { toolkit: args.toolkit, imported: args.imported, ...(args.browse ?? {}) },
   });
 }

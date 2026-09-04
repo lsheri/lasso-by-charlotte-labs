@@ -29,6 +29,21 @@ import {
   importGranolaMeetings,
 } from "@/lib/connector-picker.functions";
 import { setFolderWatch } from "@/lib/connector-watch.functions";
+import {
+  AGE_LABEL,
+  DRIVE_AGE_FILTERS,
+  DRIVE_SCOPES,
+  DRIVE_TYPE_FILTERS,
+  ALL_DRIVES_REACHABLE,
+  SCOPE_LABEL,
+  SCOPE_UNAVAILABLE_NOTE,
+  scopeAvailable,
+  TYPE_LABEL,
+  truncationLine,
+  type DriveAgeFilter,
+  type DriveScope,
+  type DriveTypeFilter,
+} from "@/lib/drive-scope";
 
 type Crumb = { id: string | null; name: string };
 
@@ -159,27 +174,65 @@ export function ConnectorPicker({
   const [watchBusy, setWatchBusy] = useState<string | null>(null);
   /** Gmail label chips act as this picker's "folders". */
   const [labelQuery, setLabelQuery] = useState<string>("in:inbox");
+  /** Google Drive only: which part of Drive, and how the list is narrowed. */
+  const isDrive = kind === "googledrive";
+  const [scope, setScope] = useState<DriveScope>("my_drive");
+  const [typeFilter, setTypeFilter] = useState<DriveTypeFilter>("everything");
+  const [ageFilter, setAgeFilter] = useState<DriveAgeFilter>("any");
+  /** Everything loaded so far for this listing, in the order it arrived. */
+  const [rows, setRows] = useState<PickerItem[]>([]);
+  const [pageIndex, setPageIndex] = useState(0);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   const crumbFolder = crumbs[crumbs.length - 1] ?? { id: null, name: copy.root };
-  const folderId = isGmail ? labelQuery : (crumbFolder.id ?? null);
+  // Inside "Shared drives" the first crumb below the root is the drive itself.
+  const sharedDriveId = isDrive && scope === "shared_drive" ? (crumbs[1]?.id ?? null) : null;
+  const inDriveRoot = sharedDriveId !== null && crumbs.length === 2;
+  const folderId = isGmail
+    ? labelQuery
+    : inDriveRoot
+      ? null
+      : (crumbFolder.id ?? null);
   const canGoBack = crumbs.length > 1;
 
-  const load = useCallback((): Promise<PickerPage> => {
+  const load = useCallback(
+    (opts?: { pageToken?: string | null; pageIndex?: number }): Promise<PickerPage> => {
     const data = {
       profile_id: profile?.id,
       ...(folderId ? { folder_id: folderId } : {}),
       ...(crumbFolder.name ? { folder_name: crumbFolder.name } : {}),
       ...(term ? { search: term } : {}),
+      ...(opts?.pageToken ? { page_token: opts.pageToken } : {}),
+      page_index: opts?.pageIndex ?? 0,
     };
     if (isFolderBrowser) {
-      return browseFiles({ data: { ...data, toolkit: TOOLKIT[kind as FileKind] } });
+      return browseFiles({
+        data: {
+          ...data,
+          toolkit: TOOLKIT[kind as FileKind],
+          ...(isDrive
+            ? {
+                scope,
+                type_filter: typeFilter,
+                age_filter: ageFilter,
+                ...(sharedDriveId ? { drive_id: sharedDriveId } : {}),
+              }
+            : {}),
+        },
+      });
     }
     if (isTranscripts)
       return browseTranscripts({
         data: { profile_id: profile?.id, ...(term ? { search: term } : {}) },
       });
     return isGmail ? browseThreads({ data }) : browseMeetings({ data });
-  }, [
+  },
+  [
+    ageFilter,
+    isDrive,
+    scope,
+    sharedDriveId,
+    typeFilter,
     browseFiles,
     browseMeetings,
     browseThreads,
@@ -192,16 +245,21 @@ export function ConnectorPicker({
     kind,
     profile?.id,
     term,
-  ]);
+  ],
+  );
 
   useEffect(() => {
     if (!open) return;
     let cancelled = false;
     setLoading(true);
     setError(null);
+    setPageIndex(0);
     void load()
       .then((result) => {
-        if (!cancelled) setPage(result);
+        if (!cancelled) {
+          setPage(result);
+          setRows(result.items);
+        }
       })
       .catch((e: Error) => {
         if (!cancelled) setError(e.message);
@@ -259,7 +317,10 @@ export function ConnectorPicker({
           ? `Watching “${item.title}” | Lasso will suggest new files, never import them.`
           : `Stopped watching “${item.title}”`,
       );
-      setPage(await load());
+      const refreshed = await load();
+      setPage(refreshed);
+      setRows(refreshed.items);
+      setPageIndex(0);
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -276,7 +337,7 @@ export function ConnectorPicker({
       const ids = Array.from(selected);
       // Google-native files must be exported as text, which needs their real mime.
       const mimes = Object.fromEntries(
-        (page?.items ?? [])
+        rows
           .filter((i) => ids.includes(i.id) && i.subtitle)
           .map((i) => [i.id, i.subtitle as string]),
       );
@@ -288,6 +349,14 @@ export function ConnectorPicker({
               mimes,
               folder_name: crumbFolder.name,
               toolkit: TOOLKIT[kind as FileKind],
+              ...(isDrive
+                ? {
+                    scope,
+                    type_filter: typeFilter,
+                    age_filter: ageFilter,
+                    page_index: pageIndex,
+                  }
+                : {}),
             },
           })
         : isTranscripts
@@ -318,7 +387,10 @@ export function ConnectorPicker({
       toast.success(parts.length > 0 ? parts.join(", ") : "Nothing new to bring in");
       setSelected(new Set());
       await queryClient.invalidateQueries({ queryKey: ["work-items"] });
-      setPage(await load());
+      const refreshed = await load();
+      setPage(refreshed);
+      setRows(refreshed.items);
+      setPageIndex(0);
       timer.mark("refetch");
     } catch (e) {
       setError((e as Error).message);
@@ -328,7 +400,28 @@ export function ConnectorPicker({
     }
   }
 
-  const items = page?.items ?? [];
+  async function showMore() {
+    const token = page?.nextPageToken;
+    if (!token || loadingMore) return;
+    setLoadingMore(true);
+    setError(null);
+    try {
+      const next = pageIndex + 1;
+      const result = await load({ pageToken: token, pageIndex: next });
+      setPage(result);
+      setPageIndex(next);
+      setRows((prev) => {
+        const known = new Set(prev.map((row) => row.id));
+        return [...prev, ...result.items.filter((row) => !known.has(row.id))];
+      });
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setLoadingMore(false);
+    }
+  }
+
+  const items = rows;
   // Folder-first: navigate into folders, then pick files inside them.
   const folders = items.filter((i) => i.isFolder);
   const files = items.filter((i) => !i.isFolder);
@@ -351,6 +444,11 @@ export function ConnectorPicker({
           );
           setSearch("");
           setTerm("");
+          setRows([]);
+          setPageIndex(0);
+          setScope("my_drive");
+          setTypeFilter("everything");
+          setAgeFilter("any");
         }
       }}
     >
@@ -373,6 +471,90 @@ export function ConnectorPicker({
         </DialogHeader>
 
         <p className="text-sm text-muted-foreground">Nothing is imported unless you select it.</p>
+
+        {isDrive ? (
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="micro-label mr-1">Where to look</span>
+              {DRIVE_SCOPES.map((option) => {
+                const active = scope === option;
+                const available = scopeAvailable(option);
+                return (
+                  <button
+                    key={option}
+                    type="button"
+                    aria-pressed={active}
+                    disabled={!available}
+                    title={available ? undefined : SCOPE_UNAVAILABLE_NOTE}
+                    onClick={() => {
+                      setScope(option);
+                      setSelected(new Set());
+                      setSearch("");
+                      setTerm("");
+                      setCrumbs([{ id: null, name: SCOPE_LABEL[option] }]);
+                    }}
+                    className={
+                      active
+                        ? "rounded-full border border-accent bg-accent-soft px-3 py-1 text-xs font-medium text-accent-deep"
+                        : "rounded-full border border-border px-3 py-1 text-xs text-muted-foreground transition-colors hover:border-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                    }
+                  >
+                    {SCOPE_LABEL[option]}
+                  </button>
+                );
+              })}
+            </div>
+            {ALL_DRIVES_REACHABLE ? null : (
+              <p className="text-xs text-muted-foreground">{SCOPE_UNAVAILABLE_NOTE}</p>
+            )}
+
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="micro-label mr-1">Kind of file</span>
+              {DRIVE_TYPE_FILTERS.map((option) => {
+                const active = typeFilter === option;
+                return (
+                  <button
+                    key={option}
+                    type="button"
+                    aria-pressed={active}
+                    onClick={() => {
+                      setTypeFilter(option);
+                      setSelected(new Set());
+                    }}
+                    className={
+                      active
+                        ? "rounded-full border border-accent bg-accent-soft px-3 py-1 text-xs font-medium text-accent-deep"
+                        : "rounded-full border border-border px-3 py-1 text-xs text-muted-foreground transition-colors hover:border-accent hover:text-foreground"
+                    }
+                  >
+                    {TYPE_LABEL[option]}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <label htmlFor="drive-age" className="micro-label">
+                Modified in the last
+              </label>
+              <select
+                id="drive-age"
+                value={ageFilter}
+                onChange={(e) => {
+                  setAgeFilter(e.target.value as DriveAgeFilter);
+                  setSelected(new Set());
+                }}
+                className="rounded-[var(--radius)] border border-border bg-card px-2 py-1 text-xs text-foreground"
+              >
+                {DRIVE_AGE_FILTERS.map((option) => (
+                  <option key={option} value={option}>
+                    {AGE_LABEL[option]}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        ) : null}
 
         {isGmail && page?.labels?.length ? (
           <nav aria-label="Gmail labels" className="flex flex-wrap gap-1.5">
@@ -581,6 +763,25 @@ export function ConnectorPicker({
             </div>
           </div>
         )}
+
+        {items.length > 0 ? (
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-xs text-muted-foreground">
+              {truncationLine(items.length, Boolean(page?.nextPageToken))}
+            </p>
+            {page?.nextPageToken ? (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                disabled={loadingMore}
+                onClick={() => void showMore()}
+              >
+                {loadingMore ? <WorkingLabel>Loading more</WorkingLabel> : "Show more"}
+              </Button>
+            ) : null}
+          </div>
+        ) : null}
 
         <div className="flex justify-end">
           <Button
