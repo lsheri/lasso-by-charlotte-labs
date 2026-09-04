@@ -34,7 +34,10 @@ import {
   DRIVE_AGE_FILTERS,
   DRIVE_SCOPES,
   DRIVE_TYPE_FILTERS,
+  ALL_DRIVES_REACHABLE,
   SCOPE_LABEL,
+  SCOPE_UNAVAILABLE_NOTE,
+  scopeAvailable,
   TYPE_LABEL,
   truncationLine,
   type DriveAgeFilter,
@@ -475,11 +478,14 @@ export function ConnectorPicker({
               <span className="micro-label mr-1">Where to look</span>
               {DRIVE_SCOPES.map((option) => {
                 const active = scope === option;
+                const available = scopeAvailable(option);
                 return (
                   <button
                     key={option}
                     type="button"
                     aria-pressed={active}
+                    disabled={!available}
+                    title={available ? undefined : SCOPE_UNAVAILABLE_NOTE}
                     onClick={() => {
                       setScope(option);
                       setSelected(new Set());
@@ -490,7 +496,7 @@ export function ConnectorPicker({
                     className={
                       active
                         ? "rounded-full border border-accent bg-accent-soft px-3 py-1 text-xs font-medium text-accent-deep"
-                        : "rounded-full border border-border px-3 py-1 text-xs text-muted-foreground transition-colors hover:border-accent hover:text-foreground"
+                        : "rounded-full border border-border px-3 py-1 text-xs text-muted-foreground transition-colors hover:border-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
                     }
                   >
                     {SCOPE_LABEL[option]}
@@ -498,6 +504,9 @@ export function ConnectorPicker({
                 );
               })}
             </div>
+            {ALL_DRIVES_REACHABLE ? null : (
+              <p className="text-xs text-muted-foreground">{SCOPE_UNAVAILABLE_NOTE}</p>
+            )}
 
             <div className="flex flex-wrap items-center gap-1.5">
               <span className="micro-label mr-1">Kind of file</span>

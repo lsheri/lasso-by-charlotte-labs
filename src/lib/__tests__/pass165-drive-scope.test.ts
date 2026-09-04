@@ -5,6 +5,8 @@ import {
   DRIVE_AGE_FILTERS,
   DRIVE_SCOPES,
   DRIVE_TYPE_FILTERS,
+  SCOPE_UNAVAILABLE_NOTE,
+  scopeAvailable,
   truncationLine,
 } from "@/lib/drive-scope";
 
@@ -116,5 +118,19 @@ describe("pass 165: paging dims carry no names", () => {
       expect(serialised).not.toContain(name);
     }
     expect(Object.keys(dims).sort()).toEqual(["page_index", "scope"]);
+  });
+});
+
+describe("pass 165: scope availability", () => {
+  it("offers all three scopes while shared drives are reachable", () => {
+    for (const scope of DRIVE_SCOPES) expect(scopeAvailable(scope, true)).toBe(true);
+  });
+
+  it("disables the extra scopes, and keeps My Drive, if they ever stop working", () => {
+    expect(scopeAvailable("my_drive", false)).toBe(true);
+    expect(scopeAvailable("shared_with_me", false)).toBe(false);
+    expect(scopeAvailable("shared_drive", false)).toBe(false);
+    expect(SCOPE_UNAVAILABLE_NOTE).toMatch(/^Shared drives are not reachable/);
+    expect(SCOPE_UNAVAILABLE_NOTE).not.toMatch(/monitor|track|score|oversight|surveillance|—/i);
   });
 });

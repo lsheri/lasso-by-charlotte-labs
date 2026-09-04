@@ -52,6 +52,23 @@ export const AGE_LABEL: Record<DriveAgeFilter, string> = {
   any: "Any time",
 };
 
+/**
+ * The Composio listing action accepts supportsAllDrives,
+ * includeItemsFromAllDrives, corpora and driveId, and a sibling action lists
+ * the shared drives themselves, so all three scopes are genuinely reachable.
+ * If that ever stops being true, flip this and the picker shows the extra
+ * scopes as disabled with a plain reason rather than hiding them.
+ */
+export const ALL_DRIVES_REACHABLE = true;
+
+export const SCOPE_UNAVAILABLE_NOTE =
+  "Shared drives are not reachable from your Google connection yet, so only My Drive is listed.";
+
+/** Whether a scope can be chosen right now, given what the connection allows. */
+export function scopeAvailable(scope: DriveScope, reachable = ALL_DRIVES_REACHABLE): boolean {
+  return scope === "my_drive" || reachable;
+}
+
 export function isDriveScope(value: unknown): value is DriveScope {
   return typeof value === "string" && (DRIVE_SCOPES as readonly string[]).includes(value);
 }
