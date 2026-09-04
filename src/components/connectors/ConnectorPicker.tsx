@@ -334,7 +334,7 @@ export function ConnectorPicker({
       const ids = Array.from(selected);
       // Google-native files must be exported as text, which needs their real mime.
       const mimes = Object.fromEntries(
-        (page?.items ?? [])
+        rows
           .filter((i) => ids.includes(i.id) && i.subtitle)
           .map((i) => [i.id, i.subtitle as string]),
       );
@@ -468,6 +468,84 @@ export function ConnectorPicker({
         </DialogHeader>
 
         <p className="text-sm text-muted-foreground">Nothing is imported unless you select it.</p>
+
+        {isDrive ? (
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="micro-label mr-1">Where to look</span>
+              {DRIVE_SCOPES.map((option) => {
+                const active = scope === option;
+                return (
+                  <button
+                    key={option}
+                    type="button"
+                    aria-pressed={active}
+                    onClick={() => {
+                      setScope(option);
+                      setSelected(new Set());
+                      setSearch("");
+                      setTerm("");
+                      setCrumbs([{ id: null, name: SCOPE_LABEL[option] }]);
+                    }}
+                    className={
+                      active
+                        ? "rounded-full border border-accent bg-accent-soft px-3 py-1 text-xs font-medium text-accent-deep"
+                        : "rounded-full border border-border px-3 py-1 text-xs text-muted-foreground transition-colors hover:border-accent hover:text-foreground"
+                    }
+                  >
+                    {SCOPE_LABEL[option]}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="micro-label mr-1">Kind of file</span>
+              {DRIVE_TYPE_FILTERS.map((option) => {
+                const active = typeFilter === option;
+                return (
+                  <button
+                    key={option}
+                    type="button"
+                    aria-pressed={active}
+                    onClick={() => {
+                      setTypeFilter(option);
+                      setSelected(new Set());
+                    }}
+                    className={
+                      active
+                        ? "rounded-full border border-accent bg-accent-soft px-3 py-1 text-xs font-medium text-accent-deep"
+                        : "rounded-full border border-border px-3 py-1 text-xs text-muted-foreground transition-colors hover:border-accent hover:text-foreground"
+                    }
+                  >
+                    {TYPE_LABEL[option]}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <label htmlFor="drive-age" className="micro-label">
+                Modified in the last
+              </label>
+              <select
+                id="drive-age"
+                value={ageFilter}
+                onChange={(e) => {
+                  setAgeFilter(e.target.value as DriveAgeFilter);
+                  setSelected(new Set());
+                }}
+                className="rounded-[var(--radius)] border border-border bg-card px-2 py-1 text-xs text-foreground"
+              >
+                {DRIVE_AGE_FILTERS.map((option) => (
+                  <option key={option} value={option}>
+                    {AGE_LABEL[option]}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        ) : null}
 
         {isGmail && page?.labels?.length ? (
           <nav aria-label="Gmail labels" className="flex flex-wrap gap-1.5">
@@ -676,6 +754,25 @@ export function ConnectorPicker({
             </div>
           </div>
         )}
+
+        {items.length > 0 ? (
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-xs text-muted-foreground">
+              {truncationLine(items.length, Boolean(page?.nextPageToken))}
+            </p>
+            {page?.nextPageToken ? (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                disabled={loadingMore}
+                onClick={() => void showMore()}
+              >
+                {loadingMore ? <WorkingLabel>Loading more</WorkingLabel> : "Show more"}
+              </Button>
+            ) : null}
+          </div>
+        ) : null}
 
         <div className="flex justify-end">
           <Button
