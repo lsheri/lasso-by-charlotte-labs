@@ -103,7 +103,10 @@ export type TelemetryEvent =
   /** Pass 164: the walkthrough was opened. Variant, entry, banded age only. */
   | "walkthrough.opened"
   /** Pass 164: one walkthrough section was reached. Closed vocab section id. */
-  | "walkthrough.section_viewed";
+  | "walkthrough.section_viewed"
+  /** Pass 167: a person settled one subject. Action and a boolean only. */
+  | "entity.curated";
+
 
 export type TelemetryDims = Record<
   string,
