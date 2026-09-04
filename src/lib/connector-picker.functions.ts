@@ -3,6 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { ImportResult, PickerPage } from "@/lib/connector-picker-shared";
 import { isBrowsableToolkit, type BrowsableToolkit } from "@/lib/connector-toolkits";
+import { isDriveAgeFilter, isDriveScope, isDriveTypeFilter } from "@/lib/drive-scope";
 
 type BrowseInput = {
   profile_id?: string | undefined;
@@ -10,6 +11,13 @@ type BrowseInput = {
   folder_name?: string | undefined;
   search?: string | undefined;
   page_token?: string | undefined;
+  /** Google Drive only: which part of Drive to look at, and how to narrow it. */
+  scope?: string | undefined;
+  drive_id?: string | undefined;
+  type_filter?: string | undefined;
+  age_filter?: string | undefined;
+  /** 0 for the first page. Used for the paging signal only. */
+  page_index?: number | undefined;
 };
 
 type ImportInput = {
@@ -41,7 +49,15 @@ function validateImport(input: ImportInput): ImportInput {
 
 function validateToolkitBrowse(input: ToolkitBrowseInput | undefined): ToolkitBrowseInput {
   if (!input || !isBrowsableToolkit(input.toolkit)) throw new Error("Unsupported connector");
-  return { ...validateBrowse(input), toolkit: input.toolkit };
+  return {
+    ...validateBrowse(input),
+    toolkit: input.toolkit,
+    scope: input.scope,
+    drive_id: input.drive_id,
+    type_filter: input.type_filter,
+    age_filter: input.age_filter,
+    page_index: input.page_index,
+  };
 }
 
 function validateToolkitImport(input: ToolkitImportInput): ToolkitImportInput {
@@ -70,6 +86,19 @@ export const browseConnectorItems = createServerFn({ method: "POST" })
         const seen = await importedToolkitIds(supabase, profile.id, data.toolkit);
         const { watchedFolderIds } = await import("@/lib/connector-watch.server");
         const watched = await watchedFolderIds(supabase, profile.id, data.toolkit);
+        const scope = isDriveScope(data.scope) ? data.scope : "my_drive";
+        const pageIndex = Number.isFinite(data.page_index) ? Number(data.page_index) : 0;
+        if (data.page_token && pageIndex > 0) {
+          // Someone reached past the first page, which is the signal that real
+          // drives are bigger than our defaults assume. Counts only.
+          const { recordEvent } = await import("@/lib/telemetry.server");
+          await recordEvent(supabase, {
+            eventType: "connector.browse_paged",
+            orgId: profile.org_id,
+            userId,
+            dims: { scope, page_index: pageIndex },
+          });
+        }
         return browseConnector(supabase, {
           toolkit: data.toolkit,
           profileId: profile.id,
@@ -77,6 +106,10 @@ export const browseConnectorItems = createServerFn({ method: "POST" })
           folderName: data.folder_name ?? null,
           search: data.search ?? null,
           pageToken: data.page_token ?? null,
+          scope,
+          driveId: data.drive_id ?? null,
+          typeFilter: isDriveTypeFilter(data.type_filter) ? data.type_filter : "everything",
+          ageFilter: isDriveAgeFilter(data.age_filter) ? data.age_filter : "any",
           seen,
           watched,
         });
