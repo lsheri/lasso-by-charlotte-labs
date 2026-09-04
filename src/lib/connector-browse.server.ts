@@ -39,10 +39,10 @@ export async function browseConnector(
     folderName: string | null;
     search: string | null;
     pageToken: string | null;
-    scope?: DriveScope;
-    driveId?: string | null;
-    typeFilter?: DriveTypeFilter;
-    ageFilter?: DriveAgeFilter;
+    scope?: DriveScope | undefined;
+    driveId?: string | null | undefined;
+    typeFilter?: DriveTypeFilter | undefined;
+    ageFilter?: DriveAgeFilter | undefined;
     seen: Set<string>;
     watched: Set<string>;
   },

@@ -120,13 +120,13 @@ export async function driveAccountIdentity(entityId: string): Promise<string | n
 export async function browseDrive(
   entityId: string,
   opts: {
-    folderId?: string | null;
-    search?: string | null;
-    pageToken?: string | null;
-    scope?: DriveScope;
-    driveId?: string | null;
-    typeFilter?: DriveTypeFilter;
-    ageFilter?: DriveAgeFilter;
+    folderId?: string | null | undefined;
+    search?: string | null | undefined;
+    pageToken?: string | null | undefined;
+    scope?: DriveScope | undefined;
+    driveId?: string | null | undefined;
+    typeFilter?: DriveTypeFilter | undefined;
+    ageFilter?: DriveAgeFilter | undefined;
   },
 ): Promise<{ files: DriveFile[]; nextPageToken: string | null }> {
   const query = buildDriveQuery({

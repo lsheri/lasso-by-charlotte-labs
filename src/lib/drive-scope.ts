@@ -95,15 +95,15 @@ function escape(value: string): string {
 }
 
 export type DriveQueryInput = {
-  scope?: DriveScope;
+  scope?: DriveScope | undefined;
   /** The shared drive being browsed, when the scope is shared_drive. */
-  driveId?: string | null;
-  folderId?: string | null;
-  search?: string | null;
-  typeFilter?: DriveTypeFilter;
-  ageFilter?: DriveAgeFilter;
+  driveId?: string | null | undefined;
+  folderId?: string | null | undefined;
+  search?: string | null | undefined;
+  typeFilter?: DriveTypeFilter | undefined;
+  ageFilter?: DriveAgeFilter | undefined;
   /** Injected in tests so the age clause is deterministic. */
-  now?: Date;
+  now?: Date | undefined;
 };
 
 export type DriveQuery = {
