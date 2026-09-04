@@ -78,6 +78,7 @@ describe("Pass 123: the sidebar grows an Admin section", () => {
       "/reflect",
       "/ai-record",
       "/one-on-one",
+      "/coach-notes",
       "/decisions",
       "/settings",
     ]);
