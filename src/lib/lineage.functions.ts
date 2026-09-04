@@ -388,6 +388,16 @@ export const reviewLink = createServerFn({ method: "POST" })
           profileId: profile.id,
         });
         if (data.action === "confirmed") {
+          // Pass 167. A person vouched for this pair, so the handoff is
+          // observed rather than guessed. Tools and kinds only.
+          const { noteHandoffObserved } = await import("./work-taxonomy.server");
+          const fromRow = (pair ?? []).find((r) => r.id === link.from_item_id) ?? null;
+          const toRow = (pair ?? []).find((r) => r.id === link.to_item_id) ?? null;
+          await noteHandoffObserved(
+            supabase,
+            { orgId: profile.org_id, userId, profileId: profile.id },
+            { from: fromRow as never, to: toRow as never },
+          );
           const { writeHandoffFact } = await import("./facts.server");
           await writeHandoffFact(
             { supabase, orgId: profile.org_id, profileId: profile.id },
