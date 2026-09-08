@@ -189,6 +189,8 @@ export async function runFullSweep(): Promise<{
  * does not cancel it half way through. Never blocks a person.
  */
 export function scheduleEgress(): void {
+  // Internal ops: our own spend, at most once a calendar day, its own guard.
+  void import("./openai-costs.server").then((m) => m.scheduleCostsSync());
   if (!tryStartSweep(sweepState, Date.now())) return;
   runAfterResponse(async () => {
     try {
