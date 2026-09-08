@@ -480,6 +480,7 @@ export type Database = {
           disclosed_at: string | null
           ended_at: string | null
           id: string
+          invite_code: string | null
           org_id: string
           relation: string
           scope: string
@@ -497,6 +498,7 @@ export type Database = {
           disclosed_at?: string | null
           ended_at?: string | null
           id?: string
+          invite_code?: string | null
           org_id: string
           relation: string
           scope?: string
@@ -514,6 +516,7 @@ export type Database = {
           disclosed_at?: string | null
           ended_at?: string | null
           id?: string
+          invite_code?: string | null
           org_id?: string
           relation?: string
           scope?: string
@@ -2992,6 +2995,10 @@ export type Database = {
       }
       analytics_upsert_episode: { Args: { p_row: Json }; Returns: undefined }
       analytics_upsert_feature: { Args: { p_row: Json }; Returns: undefined }
+      claim_coaching_links: {
+        Args: { p_actor_profile_id?: string; p_code: string }
+        Returns: number
+      }
       coach_can_see_item: { Args: { item: string }; Returns: boolean }
       coaches_subject: { Args: { subject: string }; Returns: boolean }
       coaching_actor: {
@@ -3030,6 +3037,7 @@ export type Database = {
           p_actor_profile_id?: string
           p_agreement_ref?: string
           p_basis?: string
+          p_invite_code?: string
           p_relation: string
           p_scope?: string
           p_subject_profile_id: string

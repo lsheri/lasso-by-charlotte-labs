@@ -17,6 +17,7 @@ import { isBusinessOrg, useProfile } from "@/hooks/use-profile";
 import { useMembers } from "@/hooks/use-members";
 import { useShareInvalidation } from "@/hooks/use-coach-share";
 import { supabase } from "@/integrations/supabase/client";
+import { COACH_SETUP_COPY } from "@/lib/coaching-access";
 import { sharedSuccessLine } from "@/lib/coach-share-shared";
 import { createInvite as createInviteFn, sendInviteEmail } from "@/lib/invites.functions";
 import { INVITE_ADMIN_ONLY_LINE } from "@/lib/invites-shared";
@@ -120,7 +121,10 @@ export function InviteDialog({
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sharing, setSharing] = useState(false);
+  /** People an admin lines up behind a coach invite. Each is asked first. */
+  const [askToShare, setAskToShare] = useState<string[]>([]);
   const invalidateShares = useShareInvalidation();
+
 
   /**
    * In engagement context the dialog can finish the job itself: one tap calls
@@ -160,6 +164,10 @@ export function InviteDialog({
   // address, so a link cannot be passed on to someone else.
   const emailRequired = role === "coach" || lockEmail;
   const existing = findMemberByEmail(members?.members ?? [], email);
+  // Only people who build their own record can be asked to share it.
+  const subjectChoices = (members?.members ?? []).filter(
+    (member) => member.id !== profile.id && !member.deactivated_at && member.role !== "coach",
+  );
   const shareInstead = coachToShareWithInstead(members?.members ?? [], email);
 
   async function createInvite(event: React.FormEvent) {
@@ -200,10 +208,39 @@ export function InviteDialog({
     }
     const code = result.code;
 
+    // An outside coach can be set up with the people who will be asked to
+    // share. The invite code travels with each link, so accepting the invite
+    // picks them up. Each person still says yes or no for themselves.
+    if (role === "coach" && askToShare.length > 0) {
+      for (const subjectId of askToShare) {
+        const { error: linkError } = await supabase.rpc("create_coaching_link", {
+          p_subject_profile_id: subjectId,
+          p_relation: "outside_coach",
+          p_basis: "subject_consent",
+          p_scope: "all_work",
+          p_access_level: "structural",
+          p_invite_code: code,
+          p_actor_profile_id: profile.id,
+        });
+        if (linkError) {
+          setError(linkError.message);
+          break;
+        }
+        logEvent("coachlink.created", profile.org_id, {
+          basis: "subject_consent",
+          relation: "outside_coach",
+          access_level: "structural",
+          scope: "all_work",
+        });
+      }
+      setAskToShare([]);
+    }
+
     const params = new URLSearchParams({ code });
     if (engagementId) params.set("eng", engagementId);
     const url = `${window.location.origin}/join?${params.toString()}`;
     setLink(url);
+
 
     const recipient = email.trim();
     if (recipient) {
@@ -336,6 +373,38 @@ export function InviteDialog({
               </div>
             ) : null}
           </div>
+
+          {role === "coach" && subjectChoices.length > 0 ? (
+            <div className="space-y-2">
+              <p className="micro-label">{COACH_SETUP_COPY.chooseTitle}</p>
+              <p className="text-xs text-muted-foreground">{COACH_SETUP_COPY.chooseHelp}</p>
+              <div className="space-y-1">
+                {subjectChoices.map((member) => (
+                  <label
+                    key={member.id}
+                    className="flex items-center gap-2 rounded-[var(--radius)] border border-border bg-card px-3 py-2 text-sm text-foreground"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={askToShare.includes(member.id)}
+                      onChange={(e) =>
+                        setAskToShare((current) =>
+                          e.target.checked
+                            ? [...current, member.id]
+                            : current.filter((id) => id !== member.id),
+                        )
+                      }
+                      className="h-4 w-4 accent-[var(--accent-deep)]"
+                    />
+                    {member.display_name}
+                  </label>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground">{COACH_SETUP_COPY.none}</p>
+            </div>
+          ) : null}
+
+
 
           <p className="rounded-[var(--radius)] border border-border bg-secondary px-4 py-3 text-xs text-muted-foreground">
             Coaches see only the work you&apos;ve mapped to this engagement. Private and unmapped

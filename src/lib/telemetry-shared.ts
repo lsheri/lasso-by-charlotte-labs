@@ -44,6 +44,8 @@ export type TelemetryEvent =
    * shown back to anyone in the product.
    */
   | "coachlink.created"
+  /** Pass 171: a coach accepted an invite and picked up the links waiting for them. */
+  | "coachlink.claimed"
   | "coachlink.consented"
   | "coachlink.disclosed"
   | "coachlink.withdrawn"
