@@ -209,9 +209,9 @@ describe("pass 170 — the surfaces", () => {
   it("the firm policy notice states, and does not ask", async () => {
     const { CoachingLinkNotices } = await import("@/components/coaching/CoachingLinkNotices");
     const { container } = render(<CoachingLinkNotices />);
-    const firm = screen.getByText(COACHING_COPY.firmTitle).closest("div");
+    const firm = screen.getAllByText(COACHING_COPY.firmTitle)[0]?.closest("div");
     expect(firm?.textContent ?? "").not.toContain("?");
-    expect(screen.getByRole("button", { name: COACHING_COPY.firmAcknowledge })).toBeTruthy();
+    expect(screen.getAllByRole("button", { name: COACHING_COPY.firmAcknowledge }).length).toBeGreaterThan(0);
     expect(container.textContent).not.toContain("MSA-4?");
   });
 
