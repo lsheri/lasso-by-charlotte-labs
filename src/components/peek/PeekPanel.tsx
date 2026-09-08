@@ -219,6 +219,8 @@ export function PeekPanel({
           onDelete={() => setDeleteOpen(true)}
         />
 
+        <ShareWithCoaches item={active} owned={owned} />
+
         {canEdit && isDeliverableType(active.type) ? (
           <div className="mt-3">
             <DeliverableKindSelect
