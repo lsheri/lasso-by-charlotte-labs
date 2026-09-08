@@ -122,7 +122,14 @@ export type TelemetryEvent =
   /** Pass 164: one walkthrough section was reached. Closed vocab section id. */
   | "walkthrough.section_viewed"
   /** Pass 167: a person settled one subject. Action and a boolean only. */
-  | "entity.curated";
+  | "entity.curated"
+  /** Pass 172: the school entry page was opened. No names, no free text. */
+  | "edu.join_opened"
+  /** Pass 172: a person promoted one piece of work. Closed source section. */
+  | "portfolio.item_added"
+  /** Pass 172: a person took one piece of work back off the Portfolio. */
+  | "portfolio.item_removed";
+
 
 
 export type TelemetryDims = Record<

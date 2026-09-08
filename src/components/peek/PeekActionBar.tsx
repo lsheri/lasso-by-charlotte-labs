@@ -17,6 +17,7 @@ import { DELETE_LABEL } from "@/components/work/DeleteWorkItemDialog";
 import { REMOVE_LABEL } from "@/components/work/RemoveFromEngagementDialog";
 import { SHIP_ACTION_LABEL } from "@/lib/shipped-work-shared";
 import type { WorkItemRow } from "@/lib/work-types";
+import { PortfolioMenuItem } from "./PortfolioMenuItem";
 
 /** The peek's analyses, opened by preset so no button ever dead-ends. */
 export type PeekAnalysisPreset =
@@ -141,6 +142,7 @@ export function PeekActionBar({
             {owned && isDeliverable ? (
               <DropdownMenuItem onSelect={() => onShip()}>{SHIP_ACTION_LABEL}</DropdownMenuItem>
             ) : null}
+            {owned ? <PortfolioMenuItem item={item} /> : null}
             {canEdit && onWorkDate ? (
               <DropdownMenuItem onSelect={() => onWorkDate(item)}>
                 {PEEK_WORK_DATE_LABEL}

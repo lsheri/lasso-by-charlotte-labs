@@ -47,6 +47,8 @@ export type WorkItemRow = {
         role?: string | null;
         expected_total?: number | null;
         brief_scope?: BriefScope | null;
+        /** Pass 172: the person promoted this piece to their Portfolio. */
+        portfolio?: boolean;
       }
     | null
     | undefined;

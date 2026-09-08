@@ -11,8 +11,9 @@ export type Profile = {
   display_name: string;
   title_band: string | null;
   org_name: string;
-  /** "company" when the workspace is a firm, "personal" for a solo workspace. */
-  org_type: "company" | "personal";
+  /** "company" for a firm, "edu" for a school workspace, "personal" otherwise. */
+  org_type: "company" | "personal" | "edu";
+
   onboarding: unknown;
   /** When this profile was created. Used for banded age only, never shown. */
   created_at?: string | null;
@@ -85,9 +86,12 @@ export async function fetchProfileState(): Promise<ProfileState> {
     .map(({ orgs, deactivated_at: _deactivated, ...rest }) => ({
       ...rest,
       org_name: orgs?.name ?? "Workspace",
-      org_type: (orgs?.settings?.["type"] === "company" ? "company" : "personal") as
-        | "company"
-        | "personal",
+      org_type: (orgs?.settings?.["type"] === "company"
+        ? "company"
+        : orgs?.settings?.["type"] === "edu"
+          ? "edu"
+          : "personal") as "company" | "personal" | "edu",
+
     }));
   return { profiles, hasDeactivated: rows.some((row) => row.deactivated_at) };
 }

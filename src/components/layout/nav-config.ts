@@ -1,7 +1,8 @@
 import type { GraphiteIconName } from "@/components/notebook/icons";
+import { EDU_VOCAB } from "@/lib/edu-vocab";
 
 export type NavItem = { label: string; to: string; icon: GraphiteIconName };
-export type NavGroup = { label: string; items: NavItem[]; emptyState?: string };
+export type NavGroup = { id?: string; label: string; items: NavItem[]; emptyState?: string };
 
 export const navGroups: NavGroup[] = [
   {
@@ -11,7 +12,8 @@ export const navGroups: NavGroup[] = [
   { label: "Work", items: [{ label: "All work & mapping", to: "/work", icon: "work" }] },
   // Pass 138: shipped work is a destination of its own, open to every role.
   { label: "Your organization", items: [{ label: "Past work", to: "/archive", icon: "firm" }] },
-  { label: "Engagements", items: [], emptyState: "No engagements yet" },
+  { id: "engagements", label: "Engagements", items: [], emptyState: "No engagements yet" },
+
   {
     label: "Your work",
     items: [
@@ -51,3 +53,27 @@ export const coachNavGroups: NavGroup[] = [
     ],
   },
 ];
+
+/**
+ * A school workspace reads the same places under school words, plus its own
+ * section. Every other workspace is untouched: navGroups above is unchanged.
+ */
+export const eduNavGroups: NavGroup[] = navGroups.flatMap((group) => {
+  if (group.label === "Your organization") {
+    return [
+      { ...group, label: EDU_VOCAB.orgGroup },
+      {
+        id: "school",
+        label: "Your classes",
+        items: [
+          { label: EDU_VOCAB.classes, to: "/classes", icon: "engagement" as const },
+          { label: EDU_VOCAB.assignments, to: "/assignments", icon: "work" as const },
+          { label: EDU_VOCAB.projects, to: "/projects", icon: "overview" as const },
+          { label: EDU_VOCAB.portfolio, to: "/portfolio", icon: "firm" as const },
+        ],
+      },
+    ];
+  }
+  if (group.id === "engagements") return [{ ...group, label: EDU_VOCAB.engagements }];
+  return [group];
+});

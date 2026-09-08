@@ -207,10 +207,15 @@ function buildBody(
  * A pasted key often carries a trailing newline, which turns into a confusing
  * 401 that reads like a bad key. Trim at read time. A missing key is logged
  * before throwing, because otherwise it is invisible to the owner.
+ *
+ * A school workspace uses its own key when one is configured, and the default
+ * key when it is not. openAiKeyFor holds that single decision.
  */
 async function apiKey(surface: string, orgId: string | null | undefined): Promise<string> {
-  const key = process.env["OPENAI_API_KEY"]?.trim();
-  if (!key) {
+  const { openAiKeyFor } = await import("./ai-key");
+  const { orgTypeOf } = await import("./org-type.server");
+  const selected = openAiKeyFor(await orgTypeOf(orgId), process.env);
+  if (!selected) {
     await safeLogHealth({
       kind: "error",
       surface: "config",
@@ -220,8 +225,9 @@ async function apiKey(surface: string, orgId: string | null | undefined): Promis
     });
     throw new AiError("The AI account is not configured yet.", "bad_request");
   }
-  return key;
+  return selected.key;
 }
+
 
 /**
  * An awaited health write for error paths. The person is already receiving a
