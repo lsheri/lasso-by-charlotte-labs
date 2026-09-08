@@ -31,7 +31,7 @@ export async function saveEngagementKind(
 ): Promise<void> {
   const { data } = await supabase.from("orgs").select("settings").eq("id", orgId).maybeSingle();
   const next = withKind((data?.settings ?? {}) as Record<string, unknown>, engagementId, kind);
-  const { error } = await supabase.from("orgs").update({ settings: next }).eq("id", orgId);
+  const { error } = await supabase.from("orgs").update({ settings: next as never }).eq("id", orgId);
   if (error) throw error;
 }
 

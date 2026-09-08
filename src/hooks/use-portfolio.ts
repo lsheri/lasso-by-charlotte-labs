@@ -21,7 +21,7 @@ export function usePortfolioToggle() {
   }): Promise<void> {
     const { error } = await supabase
       .from("work_items")
-      .update({ meta: withPortfolio(input.meta, input.on) })
+      .update({ meta: withPortfolio(input.meta, input.on) as never })
       .eq("id", input.itemId);
     if (error) throw error;
     if (profile?.org_id) {
