@@ -198,7 +198,7 @@ export function parseToolList(result: unknown): McpTool[] {
       };
 
     })
-    .filter((t): t is McpTool => Boolean(t));
+    .filter((t): t is McpTool => t !== null);
 }
 
 export async function mcpListTools(session: McpSession): Promise<McpTool[]> {
