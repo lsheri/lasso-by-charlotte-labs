@@ -167,9 +167,14 @@ export async function forgetWispr(profileId: string): Promise<void> {
 }
 
 /** A live access token, refreshed quietly when the old one is close to done. */
-async function freshToken(profileId: string, creds: WisprCredentials): Promise<string> {
+async function freshToken(
+  profileId: string,
+  creds: WisprCredentials,
+  force = false,
+): Promise<string> {
   const expires = creds.tokens.expiresAt;
-  if (!expires || expires - Date.now() > 60_000 || !creds.tokens.refreshToken) {
+  const stale = force || (expires ? expires - Date.now() <= 60_000 : false);
+  if (!stale || !creds.tokens.refreshToken) {
     return creds.tokens.accessToken;
   }
   const meta: AuthServerMeta = await discoverAuthServer(creds.issuer);
@@ -186,16 +191,34 @@ async function freshToken(profileId: string, creds: WisprCredentials): Promise<s
   return tokens.accessToken;
 }
 
-async function openSession(profileId: string) {
+async function openSession(profileId: string, force = false) {
   const creds = await readCredentials(profileId);
   if (!creds) {
     throw new Error("Wispr Flow is not connected. Connect it on Where work lives.");
   }
-  const token = await freshToken(profileId, creds);
+  const token = await freshToken(profileId, creds, force);
   const session = mcpSession(creds.mcpUrl || WISPR_MCP_URL, token);
   await mcpInitialize(session);
   return session;
 }
+
+/**
+ * A token can be refused before its recorded expiry. One refused call earns one
+ * forced refresh and one retry, never a loop.
+ */
+async function withRetry<T>(
+  profileId: string,
+  run: (session: McpSession) => Promise<T>,
+): Promise<T> {
+  try {
+    return await run(await openSession(profileId));
+  } catch (error) {
+    if (!(error instanceof McpClientError) || error.kind !== "unauthorized") throw error;
+    console.info("[wispr] retrying after a refused token");
+    return run(await openSession(profileId, true));
+  }
+}
+
 
 export async function wisprTools(profileId: string): Promise<McpTool[]> {
   return mcpListTools(await openSession(profileId));
