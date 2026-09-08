@@ -185,7 +185,7 @@ export function parseToolList(result: unknown): McpTool[] {
     throw new McpClientError("protocol", friendly("protocol", "It listed no tools."));
   }
   return list
-    .map((row) => {
+    .map((row): McpTool | null => {
       const tool = row as { name?: unknown; description?: unknown; inputSchema?: unknown };
       if (typeof tool.name !== "string" || !tool.name.trim()) return null;
       return {
