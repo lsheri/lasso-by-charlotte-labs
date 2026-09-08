@@ -17,8 +17,11 @@ import {
   type BlockedState,
   type InviteState,
 } from "@/lib/invite-state";
+import { claimedLine } from "@/lib/coaching-access";
+import { claimCoachingLinks } from "@/lib/coaching-claim";
 import { getInviteState, recordInviteBlocked } from "@/lib/invites.functions";
 import { clearPendingInvite, rememberPendingInvite } from "@/lib/pending-invite";
+
 import { logEvent } from "@/lib/telemetry";
 
 type JoinSearch = { code?: string | undefined; eng?: string | undefined };
@@ -423,14 +426,35 @@ function AcceptForm({
 
     if (invite?.org_id) logEvent("coach.joined", invite.org_id, { role: memberRole });
 
+    // A coach invite may have people already lined up behind it. The database
+    // routine decides which links this code may pick up; we only report it.
+    if (memberRole === "coach") {
+      try {
+        const outcome = await claimCoachingLinks(supabase, code, profileId as string);
+        if (invite?.org_id) {
+          for (const entry of outcome.byBasis) {
+            logEvent("coachlink.claimed", invite.org_id, {
+              basis: entry.basis,
+              claimed_band: entry.band,
+            });
+          }
+        }
+        toast.success(claimedLine(outcome.count));
+      } catch {
+        /* a link that cannot be picked up must never block joining */
+      }
+    }
+
     // Narrowed on purpose: only the keys this step can have changed.
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ["profiles"] }),
       queryClient.invalidateQueries({ queryKey: ["members"] }),
       queryClient.invalidateQueries({ queryKey: ["engagements"] }),
       queryClient.invalidateQueries({ queryKey: ["coach-subjects"] }),
+      queryClient.invalidateQueries({ queryKey: ["coaching-links"] }),
       queryClient.invalidateQueries({ queryKey: ["onboarding-progress"] }),
     ]);
+
     setPending(false);
     if (eng && memberRole === "coach") {
       const { data: subjects } = await supabase

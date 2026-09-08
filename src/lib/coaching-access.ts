@@ -136,3 +136,34 @@ export function relationSentence(row: CoachingLinkRow): string {
     ? "They are a manager in your workspace."
     : "They are a coach from outside your workspace.";
 }
+
+/**
+ * PASS 171 — a coach accepting an invite claims the links an admin set up for
+ * them. Counts never leave as exact values, and nobody ever sees a count of
+ * people who said no.
+ */
+export type ClaimedBand = "0" | "1" | "2-5" | "6+";
+
+export function claimedBand(n: number): ClaimedBand {
+  if (n <= 0) return "0";
+  if (n === 1) return "1";
+  if (n <= 5) return "2-5";
+  return "6+";
+}
+
+/** What a coach is told after their invite is accepted. Plain, no counts of refusals. */
+export function claimedLine(n: number): string {
+  if (n <= 0) {
+    return "Nobody is sharing work with you yet. You will see people here as soon as they choose to.";
+  }
+  if (n === 1) return "One person has been asked to share their work with you.";
+  return `${n} people have been asked to share their work with you.`;
+}
+
+/** Copy for setting up an outside coach alongside their invite. */
+export const COACH_SETUP_COPY = {
+  chooseTitle: "Who should this coach hear about?",
+  chooseHelp:
+    "Each person is asked first. Nothing is shared until they agree, and they can stop at any time.",
+  none: "You can choose people later instead.",
+} as const;
