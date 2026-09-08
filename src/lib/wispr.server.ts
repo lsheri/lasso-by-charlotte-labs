@@ -257,14 +257,44 @@ function str(row: Record<string, unknown>, keys: string[]): string | null {
   return null;
 }
 
-function rowsOf(payload: unknown): Record<string, unknown>[] {
+/** The names a payload may use for its list of rows, widest first. */
+const ROW_KEYS = [
+  "meetings",
+  "conversations",
+  "notes",
+  "recordings",
+  "sessions",
+  "items",
+  "results",
+  "records",
+  "rows",
+  "entries",
+  "data",
+  "result",
+  "content",
+];
+
+export function rowsOf(payload: unknown): Record<string, unknown>[] {
   if (Array.isArray(payload)) return payload as Record<string, unknown>[];
   const row = payload as Record<string, unknown> | null;
-  for (const key of ["meetings", "items", "results", "data"]) {
-    const value = row?.[key];
+  if (!row || typeof row !== "object") return [];
+  for (const key of ROW_KEYS) {
+    const value = row[key];
     if (Array.isArray(value)) return value as Record<string, unknown>[];
+    // One level of nesting, e.g. { data: { meetings: [...] } }.
+    if (value && typeof value === "object" && !Array.isArray(value)) {
+      for (const inner of ROW_KEYS) {
+        const nested = (value as Record<string, unknown>)[inner];
+        if (Array.isArray(nested)) return nested as Record<string, unknown>[];
+      }
+    }
   }
-  return [];
+  // Last resort: the only array of objects on the payload.
+  const arrays = Object.values(row).filter(
+    (value): value is Record<string, unknown>[] =>
+      Array.isArray(value) && value.every((v) => v && typeof v === "object"),
+  );
+  return arrays.length === 1 ? (arrays[0] as Record<string, unknown>[]) : [];
 }
 
 function attendeesOf(row: Record<string, unknown>): number | null {
@@ -279,20 +309,61 @@ function attendeesOf(row: Record<string, unknown>): number | null {
   return null;
 }
 
+/** Any identifier the row offers, including ones we have not seen named yet. */
+function idOf(row: Record<string, unknown>): string | null {
+  const named = str(row, [
+    "id",
+    "meeting_id",
+    "conversation_id",
+    "note_id",
+    "session_id",
+    "recording_id",
+    "uuid",
+    "slug",
+  ]);
+  if (named) return named;
+  for (const [key, value] of Object.entries(row)) {
+    if (!/(^id$|_id$|Id$|uuid)/.test(key)) continue;
+    if (typeof value === "string" && value.trim()) return value;
+    if (typeof value === "number") return String(value);
+  }
+  return null;
+}
+
 export function mapMeetings(payload: unknown): WisprMeeting[] {
   return rowsOf(payload)
     .map((row) => {
-      const id = str(row, ["id", "meeting_id", "uuid", "slug"]);
+      if (!row || typeof row !== "object") return null;
+      const id = idOf(row);
       if (!id) return null;
       return {
         id,
-        title: str(row, ["title", "name", "subject"]) ?? "Untitled meeting",
-        date: str(row, ["start_time", "started_at", "date", "created_at", "createdAt"]),
+        title:
+          str(row, ["title", "name", "subject", "summary_title", "headline"]) ?? "Untitled meeting",
+        date: str(row, [
+          "start_time",
+          "startTime",
+          "started_at",
+          "startedAt",
+          "date",
+          "created_at",
+          "createdAt",
+          "timestamp",
+        ]),
         attendeeCount: attendeesOf(row),
       };
     })
     .filter((m): m is WisprMeeting => Boolean(m));
 }
+
+/** The closed band a diagnostic event reports instead of a raw count. */
+export function resultBand(count: number): "0" | "1-10" | "11-30" | "31+" {
+  if (count <= 0) return "0";
+  if (count <= 10) return "1-10";
+  if (count <= 30) return "11-30";
+  return "31+";
+}
+
 
 export function nextCursor(payload: unknown): string | null {
   const row = payload as Record<string, unknown> | null;
