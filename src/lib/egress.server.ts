@@ -9,7 +9,6 @@ import {
   EGRESS_BATCH_SIZE,
   buildPosture,
   mapEventForEgress,
-  shouldRunEgress,
   signBody,
   type CensusEvent,
   type EgressEvent,
@@ -18,6 +17,8 @@ import {
   type PostureLedgerRow,
   type PostureStateRow,
 } from "./egress-shared";
+import { runAfterResponse } from "./background";
+import { createSweepState, releaseSweep, tryStartSweep } from "./sweep-guard";
 
 export type EgressResult = { sent: number; skipped: number; failed: number };
 
@@ -162,29 +163,39 @@ export async function runEgress(): Promise<EgressResult> {
   }
 }
 
-let lastRunAt: number | null = null;
-let inFlight = false;
+const sweepState = createSweepState();
 
 /** Test seam. */
 export function resetEgressSchedule(): void {
-  lastRunAt = null;
-  inFlight = false;
+  sweepState.lastStartedAt = null;
+  sweepState.running = false;
 }
 
-/** Fire and forget, at most once a minute per instance. Never blocks a person. */
+/** Both halves, one after the other. Used by the sweep and by the hook route. */
+export async function runFullSweep(): Promise<{
+  events: EgressResult;
+  content: Awaited<ReturnType<typeof import("./content-egress.server").runContentEgress>>;
+}> {
+  const events = await runEgress();
+  // The work itself only ever moves for workspaces that chose full openness.
+  const { runContentEgress } = await import("./content-egress.server");
+  const content = await runContentEgress();
+  return { events, content };
+}
+
+/**
+ * Opportunistic trigger from server activity: at most one run per window per
+ * instance, never two at once, and kept alive past the response so the hosting
+ * does not cancel it half way through. Never blocks a person.
+ */
 export function scheduleEgress(): void {
-  if (inFlight || !shouldRunEgress(lastRunAt, Date.now())) return;
-  lastRunAt = Date.now();
-  inFlight = true;
-  void runEgress()
-    .then(async () => {
-      // The work itself only ever moves for workspaces that chose full openness.
-      const { runContentEgress } = await import("./content-egress.server");
-      await runContentEgress();
-    })
-    .catch((e) => console.error("[egress] scheduled run failed:", (e as Error).message))
-    .finally(() => {
-      inFlight = false;
-    });
+  if (!tryStartSweep(sweepState, Date.now())) return;
+  runAfterResponse(async () => {
+    try {
+      await runFullSweep();
+    } finally {
+      releaseSweep(sweepState);
+    }
+  });
 }
 
