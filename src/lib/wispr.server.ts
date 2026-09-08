@@ -365,39 +365,142 @@ export function resultBand(count: number): "0" | "1-10" | "11-30" | "31+" {
 }
 
 
+const CURSOR_KEYS = ["next_cursor", "nextCursor", "cursor", "next_page_token", "nextPageToken"];
+
 export function nextCursor(payload: unknown): string | null {
   const row = payload as Record<string, unknown> | null;
-  if (!row) return null;
-  for (const key of ["next_cursor", "nextCursor", "cursor", "next_page_token"]) {
-    const value = row[key];
-    if (typeof value === "string" && value.trim()) return value;
+  if (!row || typeof row !== "object") return null;
+  const pick = (obj: Record<string, unknown>): string | null => {
+    for (const key of CURSOR_KEYS) {
+      const value = obj[key];
+      if (typeof value === "string" && value.trim()) return value;
+    }
+    return null;
+  };
+  const direct = pick(row);
+  if (direct) return direct;
+  for (const key of ["pagination", "page_info", "pageInfo", "meta"]) {
+    const nested = row[key];
+    if (nested && typeof nested === "object") {
+      const found = pick(nested as Record<string, unknown>);
+      if (found) return found;
+    }
   }
   return null;
+}
+
+/** Machine facts about one browse call. Names, keys and counts only. */
+export type WisprBrowseDiagnostics = {
+  toolNames: string[];
+  toolChosen: string;
+  payloadKeys: string[];
+  rowCount: number;
+  mappedCount: number;
+  hasCursor: boolean;
+};
+
+/** The listing tool, chosen by shape across every name Wispr might use. */
+function chooseListTool(tools: McpTool[]): McpTool | null {
+  const avoid = ["get", "detail", "transcript", "create", "delete", "update"];
+  const subjects = ["meeting", "conversation", "note", "recording", "session"];
+  for (const subject of subjects) {
+    const name =
+      chooseTool(tools, ["list", subject]) ??
+      chooseTool(tools, [subject, "list"]) ??
+      chooseTool(tools, [subject], avoid) ??
+      chooseTool(tools, ["search", subject]);
+    if (name) return tools.find((t) => t.name === name) ?? null;
+  }
+  const listing = tools.find((tool) => {
+    const name = tool.name.toLowerCase();
+    return (name.includes("list") || name.includes("search")) && !avoid.some((w) => name.includes(w));
+  });
+  return listing ?? null;
+}
+
+/** Only arguments the tool declares; a server may refuse anything else. */
+function listArgs(tool: McpTool, opts: { limit: number; cursor: string | null }) {
+  const declared = toolArgNames(tool);
+  const out: Record<string, unknown> = {};
+  const put = (aliases: string[], value: unknown) => {
+    if (value === null || value === undefined) return;
+    if (declared.length === 0) {
+      out[aliases[0] as string] = value;
+      return;
+    }
+    const key = aliases.find((alias) => declared.includes(alias));
+    if (key) out[key] = value;
+  };
+  put(["limit", "page_size", "pageSize", "max_results", "count", "n"], opts.limit);
+  put(["cursor", "page_token", "pageToken", "next_cursor", "offset"], opts.cursor);
+  return out;
 }
 
 export async function listWisprMeetings(
   profileId: string,
   opts: { limit?: number; cursor?: string | null } = {},
-): Promise<{ meetings: WisprMeeting[]; cursor: string | null; unsupported: string | null }> {
-  const session = await openSession(profileId);
-  const tools = await mcpListTools(session);
-  const name =
-    chooseTool(tools, ["list", "meeting"]) ??
-    chooseTool(tools, ["meeting"], ["get", "detail", "transcript"]) ??
-    chooseTool(tools, ["search", "meeting"]);
-  if (!name) {
+): Promise<{
+  meetings: WisprMeeting[];
+  cursor: string | null;
+  unsupported: string | null;
+  diagnostics: WisprBrowseDiagnostics;
+}> {
+  return withRetry(profileId, async (session: McpSession) => {
+    const tools = await mcpListTools(session);
+    const toolNames = tools.map((tool) => tool.name);
+    const tool = chooseListTool(tools);
+    console.info("[wispr] tools", { tools: toolNames, chosen: tool?.name ?? "none" });
+    if (!tool) {
+      return {
+        meetings: [],
+        cursor: null,
+        unsupported: "Wispr Flow did not offer a way to list meetings on this account.",
+        diagnostics: {
+          toolNames,
+          toolChosen: "none",
+          payloadKeys: [],
+          rowCount: 0,
+          mappedCount: 0,
+          hasCursor: false,
+        },
+      };
+    }
+    const args = listArgs(tool, { limit: opts.limit ?? 30, cursor: opts.cursor ?? null });
+    const result = await mcpCallTool(session, tool.name, args);
+    const payload = resultJson(result);
+    const payloadKeys =
+      payload && typeof payload === "object" && !Array.isArray(payload)
+        ? Object.keys(payload as Record<string, unknown>)
+        : Array.isArray(payload)
+          ? ["<array>"]
+          : [];
+    const rows = rowsOf(payload);
+    const meetings = mapMeetings(payload);
+    const cursor = nextCursor(payload);
+    console.info("[wispr] browse", {
+      tool: tool.name,
+      args: Object.keys(args),
+      payload_keys: payloadKeys,
+      rows: rows.length,
+      mapped: meetings.length,
+      cursor: Boolean(cursor),
+    });
     return {
-      meetings: [],
-      cursor: null,
-      unsupported: "Wispr Flow did not offer a way to list meetings on this account.",
+      meetings,
+      cursor,
+      unsupported: null,
+      diagnostics: {
+        toolNames,
+        toolChosen: tool.name,
+        payloadKeys,
+        rowCount: rows.length,
+        mappedCount: meetings.length,
+        hasCursor: Boolean(cursor),
+      },
     };
-  }
-  const args: Record<string, unknown> = { limit: opts.limit ?? 30 };
-  if (opts.cursor) args["cursor"] = opts.cursor;
-  const result = await mcpCallTool(session, name, args);
-  const payload = resultJson(result);
-  return { meetings: mapMeetings(payload), cursor: nextCursor(payload), unsupported: null };
+  });
 }
+
 
 /**
  * One meeting as markdown, shaped exactly like the Granola import: what was
