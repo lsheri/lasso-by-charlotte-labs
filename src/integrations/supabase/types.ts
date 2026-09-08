@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_costs_daily: {
+        Row: {
+          amount_usd: number
+          currency: string
+          day: string
+          fetched_at: string
+          input_tokens: number | null
+          openai_project_id: string
+          output_tokens: number | null
+          project_label: string | null
+        }
+        Insert: {
+          amount_usd?: number
+          currency?: string
+          day: string
+          fetched_at?: string
+          input_tokens?: number | null
+          openai_project_id: string
+          output_tokens?: number | null
+          project_label?: string | null
+        }
+        Update: {
+          amount_usd?: number
+          currency?: string
+          day?: string
+          fetched_at?: string
+          input_tokens?: number | null
+          openai_project_id?: string
+          output_tokens?: number | null
+          project_label?: string | null
+        }
+        Relationships: []
+      }
       ai_health_events: {
         Row: {
           created_at: string
