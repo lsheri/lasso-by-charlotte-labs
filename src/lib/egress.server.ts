@@ -9,7 +9,6 @@ import {
   EGRESS_BATCH_SIZE,
   buildPosture,
   mapEventForEgress,
-  shouldRunEgress,
   signBody,
   type CensusEvent,
   type EgressEvent,
@@ -18,6 +17,8 @@ import {
   type PostureLedgerRow,
   type PostureStateRow,
 } from "./egress-shared";
+import { runAfterResponse } from "./background";
+import { createSweepState, releaseSweep, tryStartSweep } from "./sweep-guard";
 
 export type EgressResult = { sent: number; skipped: number; failed: number };
 
