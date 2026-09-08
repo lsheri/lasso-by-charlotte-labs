@@ -7,6 +7,7 @@ import { useDecisions } from "@/hooks/use-decisions";
 import { useEngagements } from "@/hooks/use-engagements";
 import { useProfile } from "@/hooks/use-profile";
 import * as roles from "@/lib/role-access";
+import { isEduOrg } from "@/lib/edu-vocab";
 
 import {
   groupEngagementsByClient,
@@ -17,7 +18,7 @@ import {
   type NavEngagement,
 } from "@/lib/nav-groups";
 
-import { coachNavGroups, navGroups } from "./nav-config";
+import { coachNavGroups, eduNavGroups, navGroups } from "./nav-config";
 import { engagementDisplayCode, engagementDisplayTitle } from "@/lib/clients";
 
 const linkClass = "nb-nav-item";
@@ -63,6 +64,7 @@ export function SidebarNav({ onNavigate }: { onNavigate?: (() => void) | undefin
   const isCoach = roles.isCoach(profile);
   const canManageMembers = roles.canManageMembers(profile);
   const canSeeFirmView = roles.canSeeFirmView(profile);
+  const groupsForOrg = isEduOrg(profile) ? eduNavGroups : navGroups;
   const membersLabel = roles.membersLabel(profile);
 
   // Engagements sit under their client, with quick folders and clientless
@@ -110,8 +112,8 @@ export function SidebarNav({ onNavigate }: { onNavigate?: (() => void) | undefin
 
   return (
     <nav className="flex flex-col gap-7">
-      {navGroups.map((group) => {
-        const isEngagementGroup = group.label === "Engagements";
+      {groupsForOrg.map((group) => {
+        const isEngagementGroup = group.id === "engagements";
 
         const visibleItems = group.items
           .filter((item) => !(isCoach && item.to === "/reflect"))

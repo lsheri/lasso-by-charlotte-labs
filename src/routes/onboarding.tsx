@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchProfile } from "@/hooks/use-profile";
+import { readEduIntent, clearEduIntent } from "@/lib/edu-entry";
 import { readPendingInvite } from "@/lib/pending-invite";
 import { logEvent } from "@/lib/telemetry";
 import {
@@ -22,7 +23,7 @@ import {
   type ToolId,
 } from "@/lib/onboarding-tools";
 
-type OrgType = "company" | "personal";
+type OrgType = "company" | "personal" | "edu";
 
 /** The RPC creates the org; the type is workspace settings we write after. */
 async function applyOrgType(profileId: string, type: OrgType): Promise<string | null> {
@@ -50,13 +51,15 @@ export const Route = createFileRoute("/onboarding")({
   validateSearch: (
     search: Record<string, unknown>,
   ): {
-    intent?: "company" | "personal" | "invite" | undefined;
+    intent?: "company" | "personal" | "edu" | "invite" | undefined;
     setup?: boolean | undefined;
   } => {
     const intent = search["intent"];
     const setup = search["setup"] === true || search["setup"] === "1" ? { setup: true } : {};
     return {
-      ...(intent === "company" || intent === "personal" || intent === "invite" ? { intent } : {}),
+      ...(intent === "company" || intent === "personal" || intent === "edu" || intent === "invite"
+        ? { intent }
+        : {}),
       ...setup,
     };
   },
@@ -108,12 +111,14 @@ function OnboardingInner() {
   const queryClient = useQueryClient();
   const { intent, setup } = Route.useSearch();
   const [stage, setStage] = useState<"choose" | "setup" | "why" | "tools" | "capture">(
-    setup ? "tools" : "choose",
+    setup ? "tools" : intent === "edu" || readEduIntent() ? "setup" : "choose",
   );
   const [tools, setTools] = useState<Set<ToolId>>(new Set());
-  const [orgType, setOrgType] = useState<OrgType>(intent === "personal" ? "personal" : "company");
-  const [selected, setSelected] = useState<"company" | "personal" | "invite" | null>(
-    intent ?? null,
+  const [orgType, setOrgType] = useState<OrgType>(
+    intent === "personal" ? "personal" : intent === "edu" || readEduIntent() ? "edu" : "company",
+  );
+  const [selected, setSelected] = useState<"company" | "personal" | "edu" | "invite" | null>(
+    intent ?? (readEduIntent() ? "edu" : null),
   );
   const [displayName, setDisplayName] = useState("");
   const [orgName, setOrgName] = useState("");
@@ -155,9 +160,9 @@ function OnboardingInner() {
     const { error: rpcError } = await supabase.rpc("create_org_with_profile", {
       p_display_name: displayName.trim(),
       p_org_name:
-        orgType === "personal"
-          ? orgName.trim() || `${displayName.trim()}'s workspace`
-          : orgName.trim(),
+        orgType === "company"
+          ? orgName.trim()
+          : orgName.trim() || `${displayName.trim()}'s workspace`,
     });
 
     if (rpcError) {
@@ -170,6 +175,7 @@ function OnboardingInner() {
     if (profile) {
       const orgId = await applyOrgType(profile.id, orgType);
       if (orgId) logEvent("org.created", orgId, { org_type: orgType });
+      clearEduIntent();
     }
 
     // Narrowed on purpose: only the keys this step can have changed.
@@ -180,7 +186,7 @@ function OnboardingInner() {
       queryClient.invalidateQueries({ queryKey: ["engagements"] }),
     ]);
     setPending(false);
-    setStage(orgType === "personal" ? "tools" : "why");
+    setStage(orgType === "company" ? "why" : "tools");
   }
 
   function finish() {
@@ -409,11 +415,15 @@ function OnboardingInner() {
 
           <div className="mt-6 rounded-[var(--radius)] border border-border bg-card p-6 shadow-card">
             <p className="micro-label">
-              {orgType === "personal" ? "Just for me" : "For my company"}
+              {orgType === "company"
+                ? "For my company"
+                : orgType === "edu"
+                  ? "For my school work"
+                  : "Just for me"}
             </p>
             <h1 className="page-title mt-2">Set up your workspace</h1>
             <p className="mt-1.5 text-sm text-muted-foreground">
-              {orgType === "personal"
+              {orgType !== "company"
                 ? "One detail and you're in. You can change it later."
                 : "Two details and you're in. You can change them later."}
             </p>

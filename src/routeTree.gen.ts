@@ -19,6 +19,8 @@ import { Route as TrustRouteImport } from './routes/trust'
 import { Route as WhyRouteImport } from './routes/why'
 import { Route as AuthenticatedAiRecordRouteImport } from './routes/_authenticated/ai-record'
 import { Route as AuthenticatedArchiveRouteImport } from './routes/_authenticated/archive'
+import { Route as AuthenticatedAssignmentsRouteImport } from './routes/_authenticated/assignments'
+import { Route as AuthenticatedClassesRouteImport } from './routes/_authenticated/classes'
 import { Route as AuthenticatedCoachNotesRouteImport } from './routes/_authenticated/coach-notes'
 import { Route as AuthenticatedConnectorsRouteImport } from './routes/_authenticated/connectors'
 import { Route as AuthenticatedDecisionsRouteImport } from './routes/_authenticated/decisions'
@@ -27,9 +29,12 @@ import { Route as AuthenticatedHowLassoWorksRouteImport } from './routes/_authen
 import { Route as AuthenticatedMembersRouteImport } from './routes/_authenticated/members'
 import { Route as AuthenticatedOneOnOneRouteImport } from './routes/_authenticated/one-on-one'
 import { Route as AuthenticatedOverviewRouteImport } from './routes/_authenticated/overview'
+import { Route as AuthenticatedPortfolioRouteImport } from './routes/_authenticated/portfolio'
+import { Route as AuthenticatedProjectsRouteImport } from './routes/_authenticated/projects'
 import { Route as AuthenticatedReflectRouteImport } from './routes/_authenticated/reflect'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedWorkRouteImport } from './routes/_authenticated/work'
+import { Route as JoinEduRouteImport } from './routes/join_.edu'
 import { Route as AuthenticatedCoachingIndexRouteImport } from './routes/_authenticated/coaching.index'
 import { Route as AuthenticatedDesignIconsRouteImport } from './routes/_authenticated/design.icons'
 import { Route as AuthenticatedEngagementsIdRouteImport } from './routes/_authenticated/engagements.$id'
@@ -91,6 +96,17 @@ const AuthenticatedArchiveRoute = AuthenticatedArchiveRouteImport.update({
   path: '/archive',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAssignmentsRoute =
+  AuthenticatedAssignmentsRouteImport.update({
+    id: '/assignments',
+    path: '/assignments',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedClassesRoute = AuthenticatedClassesRouteImport.update({
+  id: '/classes',
+  path: '/classes',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedCoachNotesRoute = AuthenticatedCoachNotesRouteImport.update({
   id: '/coach-notes',
   path: '/coach-notes',
@@ -132,6 +148,16 @@ const AuthenticatedOverviewRoute = AuthenticatedOverviewRouteImport.update({
   path: '/overview',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedPortfolioRoute = AuthenticatedPortfolioRouteImport.update({
+  id: '/portfolio',
+  path: '/portfolio',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedProjectsRoute = AuthenticatedProjectsRouteImport.update({
+  id: '/projects',
+  path: '/projects',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedReflectRoute = AuthenticatedReflectRouteImport.update({
   id: '/reflect',
   path: '/reflect',
@@ -146,6 +172,11 @@ const AuthenticatedWorkRoute = AuthenticatedWorkRouteImport.update({
   id: '/work',
   path: '/work',
   getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const JoinEduRoute = JoinEduRouteImport.update({
+  id: '/join_/edu',
+  path: '/join/edu',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedCoachingIndexRoute =
   AuthenticatedCoachingIndexRouteImport.update({
@@ -218,6 +249,8 @@ export interface FileRoutesByFullPath {
   '/why': typeof WhyRoute
   '/ai-record': typeof AuthenticatedAiRecordRoute
   '/archive': typeof AuthenticatedArchiveRoute
+  '/assignments': typeof AuthenticatedAssignmentsRoute
+  '/classes': typeof AuthenticatedClassesRoute
   '/coach-notes': typeof AuthenticatedCoachNotesRoute
   '/connectors': typeof AuthenticatedConnectorsRoute
   '/decisions': typeof AuthenticatedDecisionsRoute
@@ -226,9 +259,12 @@ export interface FileRoutesByFullPath {
   '/members': typeof AuthenticatedMembersRoute
   '/one-on-one': typeof AuthenticatedOneOnOneRoute
   '/overview': typeof AuthenticatedOverviewRoute
+  '/portfolio': typeof AuthenticatedPortfolioRoute
+  '/projects': typeof AuthenticatedProjectsRoute
   '/reflect': typeof AuthenticatedReflectRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/work': typeof AuthenticatedWorkRoute
+  '/join/edu': typeof JoinEduRoute
   '/design/icons': typeof AuthenticatedDesignIconsRoute
   '/engagements/$id': typeof AuthenticatedEngagementsIdRoute
   '/api/analysis/stream': typeof ApiAnalysisStreamRoute
@@ -251,6 +287,8 @@ export interface FileRoutesByTo {
   '/why': typeof WhyRoute
   '/ai-record': typeof AuthenticatedAiRecordRoute
   '/archive': typeof AuthenticatedArchiveRoute
+  '/assignments': typeof AuthenticatedAssignmentsRoute
+  '/classes': typeof AuthenticatedClassesRoute
   '/coach-notes': typeof AuthenticatedCoachNotesRoute
   '/connectors': typeof AuthenticatedConnectorsRoute
   '/decisions': typeof AuthenticatedDecisionsRoute
@@ -259,9 +297,12 @@ export interface FileRoutesByTo {
   '/members': typeof AuthenticatedMembersRoute
   '/one-on-one': typeof AuthenticatedOneOnOneRoute
   '/overview': typeof AuthenticatedOverviewRoute
+  '/portfolio': typeof AuthenticatedPortfolioRoute
+  '/projects': typeof AuthenticatedProjectsRoute
   '/reflect': typeof AuthenticatedReflectRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/work': typeof AuthenticatedWorkRoute
+  '/join/edu': typeof JoinEduRoute
   '/design/icons': typeof AuthenticatedDesignIconsRoute
   '/engagements/$id': typeof AuthenticatedEngagementsIdRoute
   '/api/analysis/stream': typeof ApiAnalysisStreamRoute
@@ -286,6 +327,8 @@ export interface FileRoutesById {
   '/why': typeof WhyRoute
   '/_authenticated/ai-record': typeof AuthenticatedAiRecordRoute
   '/_authenticated/archive': typeof AuthenticatedArchiveRoute
+  '/_authenticated/assignments': typeof AuthenticatedAssignmentsRoute
+  '/_authenticated/classes': typeof AuthenticatedClassesRoute
   '/_authenticated/coach-notes': typeof AuthenticatedCoachNotesRoute
   '/_authenticated/connectors': typeof AuthenticatedConnectorsRoute
   '/_authenticated/decisions': typeof AuthenticatedDecisionsRoute
@@ -294,9 +337,12 @@ export interface FileRoutesById {
   '/_authenticated/members': typeof AuthenticatedMembersRoute
   '/_authenticated/one-on-one': typeof AuthenticatedOneOnOneRoute
   '/_authenticated/overview': typeof AuthenticatedOverviewRoute
+  '/_authenticated/portfolio': typeof AuthenticatedPortfolioRoute
+  '/_authenticated/projects': typeof AuthenticatedProjectsRoute
   '/_authenticated/reflect': typeof AuthenticatedReflectRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/work': typeof AuthenticatedWorkRoute
+  '/join_/edu': typeof JoinEduRoute
   '/_authenticated/design/icons': typeof AuthenticatedDesignIconsRoute
   '/_authenticated/engagements/$id': typeof AuthenticatedEngagementsIdRoute
   '/api/analysis/stream': typeof ApiAnalysisStreamRoute
@@ -321,6 +367,8 @@ export interface FileRouteTypes {
     | '/why'
     | '/ai-record'
     | '/archive'
+    | '/assignments'
+    | '/classes'
     | '/coach-notes'
     | '/connectors'
     | '/decisions'
@@ -329,9 +377,12 @@ export interface FileRouteTypes {
     | '/members'
     | '/one-on-one'
     | '/overview'
+    | '/portfolio'
+    | '/projects'
     | '/reflect'
     | '/settings'
     | '/work'
+    | '/join/edu'
     | '/design/icons'
     | '/engagements/$id'
     | '/api/analysis/stream'
@@ -354,6 +405,8 @@ export interface FileRouteTypes {
     | '/why'
     | '/ai-record'
     | '/archive'
+    | '/assignments'
+    | '/classes'
     | '/coach-notes'
     | '/connectors'
     | '/decisions'
@@ -362,9 +415,12 @@ export interface FileRouteTypes {
     | '/members'
     | '/one-on-one'
     | '/overview'
+    | '/portfolio'
+    | '/projects'
     | '/reflect'
     | '/settings'
     | '/work'
+    | '/join/edu'
     | '/design/icons'
     | '/engagements/$id'
     | '/api/analysis/stream'
@@ -388,6 +444,8 @@ export interface FileRouteTypes {
     | '/why'
     | '/_authenticated/ai-record'
     | '/_authenticated/archive'
+    | '/_authenticated/assignments'
+    | '/_authenticated/classes'
     | '/_authenticated/coach-notes'
     | '/_authenticated/connectors'
     | '/_authenticated/decisions'
@@ -396,9 +454,12 @@ export interface FileRouteTypes {
     | '/_authenticated/members'
     | '/_authenticated/one-on-one'
     | '/_authenticated/overview'
+    | '/_authenticated/portfolio'
+    | '/_authenticated/projects'
     | '/_authenticated/reflect'
     | '/_authenticated/settings'
     | '/_authenticated/work'
+    | '/join_/edu'
     | '/_authenticated/design/icons'
     | '/_authenticated/engagements/$id'
     | '/api/analysis/stream'
@@ -421,6 +482,7 @@ export interface RootRouteChildren {
   OnboardingRoute: typeof OnboardingRoute
   TrustRoute: typeof TrustRoute
   WhyRoute: typeof WhyRoute
+  JoinEduRoute: typeof JoinEduRoute
   ApiAnalysisStreamRoute: typeof ApiAnalysisStreamRoute
   ApiCoachChatStreamRoute: typeof ApiCoachChatStreamRoute
   ApiMcpTokenRoute: typeof ApiMcpTokenRoute
@@ -502,6 +564,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedArchiveRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/assignments': {
+      id: '/_authenticated/assignments'
+      path: '/assignments'
+      fullPath: '/assignments'
+      preLoaderRoute: typeof AuthenticatedAssignmentsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/classes': {
+      id: '/_authenticated/classes'
+      path: '/classes'
+      fullPath: '/classes'
+      preLoaderRoute: typeof AuthenticatedClassesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/coach-notes': {
       id: '/_authenticated/coach-notes'
       path: '/coach-notes'
@@ -558,6 +634,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedOverviewRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/portfolio': {
+      id: '/_authenticated/portfolio'
+      path: '/portfolio'
+      fullPath: '/portfolio'
+      preLoaderRoute: typeof AuthenticatedPortfolioRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/projects': {
+      id: '/_authenticated/projects'
+      path: '/projects'
+      fullPath: '/projects'
+      preLoaderRoute: typeof AuthenticatedProjectsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/reflect': {
       id: '/_authenticated/reflect'
       path: '/reflect'
@@ -578,6 +668,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/work'
       preLoaderRoute: typeof AuthenticatedWorkRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/join_/edu': {
+      id: '/join_/edu'
+      path: '/join/edu'
+      fullPath: '/join/edu'
+      preLoaderRoute: typeof JoinEduRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/coaching/': {
       id: '/_authenticated/coaching/'
@@ -662,6 +759,8 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAiRecordRoute: typeof AuthenticatedAiRecordRoute
   AuthenticatedArchiveRoute: typeof AuthenticatedArchiveRoute
+  AuthenticatedAssignmentsRoute: typeof AuthenticatedAssignmentsRoute
+  AuthenticatedClassesRoute: typeof AuthenticatedClassesRoute
   AuthenticatedCoachNotesRoute: typeof AuthenticatedCoachNotesRoute
   AuthenticatedConnectorsRoute: typeof AuthenticatedConnectorsRoute
   AuthenticatedDecisionsRoute: typeof AuthenticatedDecisionsRoute
@@ -670,6 +769,8 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedMembersRoute: typeof AuthenticatedMembersRoute
   AuthenticatedOneOnOneRoute: typeof AuthenticatedOneOnOneRoute
   AuthenticatedOverviewRoute: typeof AuthenticatedOverviewRoute
+  AuthenticatedPortfolioRoute: typeof AuthenticatedPortfolioRoute
+  AuthenticatedProjectsRoute: typeof AuthenticatedProjectsRoute
   AuthenticatedReflectRoute: typeof AuthenticatedReflectRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedWorkRoute: typeof AuthenticatedWorkRoute
@@ -682,6 +783,8 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAiRecordRoute: AuthenticatedAiRecordRoute,
   AuthenticatedArchiveRoute: AuthenticatedArchiveRoute,
+  AuthenticatedAssignmentsRoute: AuthenticatedAssignmentsRoute,
+  AuthenticatedClassesRoute: AuthenticatedClassesRoute,
   AuthenticatedCoachNotesRoute: AuthenticatedCoachNotesRoute,
   AuthenticatedConnectorsRoute: AuthenticatedConnectorsRoute,
   AuthenticatedDecisionsRoute: AuthenticatedDecisionsRoute,
@@ -690,6 +793,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedMembersRoute: AuthenticatedMembersRoute,
   AuthenticatedOneOnOneRoute: AuthenticatedOneOnOneRoute,
   AuthenticatedOverviewRoute: AuthenticatedOverviewRoute,
+  AuthenticatedPortfolioRoute: AuthenticatedPortfolioRoute,
+  AuthenticatedProjectsRoute: AuthenticatedProjectsRoute,
   AuthenticatedReflectRoute: AuthenticatedReflectRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedWorkRoute: AuthenticatedWorkRoute,
@@ -712,6 +817,7 @@ const rootRouteChildren: RootRouteChildren = {
   OnboardingRoute: OnboardingRoute,
   TrustRoute: TrustRoute,
   WhyRoute: WhyRoute,
+  JoinEduRoute: JoinEduRoute,
   ApiAnalysisStreamRoute: ApiAnalysisStreamRoute,
   ApiCoachChatStreamRoute: ApiCoachChatStreamRoute,
   ApiMcpTokenRoute: ApiMcpTokenRoute,
