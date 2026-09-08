@@ -15,13 +15,17 @@
  */
 
 import {
+  McpClientError,
   mcpCallTool,
   mcpInitialize,
   mcpListTools,
   mcpSession,
   resultJson,
+  toolArgNames,
+  type McpSession,
   type McpTool,
 } from "@/lib/mcp-client.server";
+
 import {
   discoverAuthServer,
   discoverProtectedResource,
