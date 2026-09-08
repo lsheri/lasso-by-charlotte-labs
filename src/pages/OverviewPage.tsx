@@ -32,6 +32,7 @@ export function OverviewPage() {
   return (
     <div>
       <PageHeader title="Overview" subtitle="A calm view of your recent work." />
+      <CoachingLinkNotices />
       {profile ? (
         <>
           <Button type="button" onClick={() => setPrepOpen(true)}>
