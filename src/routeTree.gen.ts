@@ -43,6 +43,7 @@ import { Route as ApiCoachChatStreamRouteImport } from './routes/api/coach-chat.
 import { Route as ApiMcpTokenRouteImport } from './routes/api/mcp.$token'
 import { Route as ApiReflectStreamRouteImport } from './routes/api/reflect.stream'
 import { Route as AuthenticatedCoachingEngagementIdSubjectIdRouteImport } from './routes/_authenticated/coaching.$engagementId.$subjectId'
+import { Route as ApiPublicHooksEgressSweepRouteImport } from './routes/api/public/hooks/egress-sweep'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
@@ -222,6 +223,12 @@ const AuthenticatedCoachingEngagementIdSubjectIdRoute =
     path: '/coaching/$engagementId/$subjectId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const ApiPublicHooksEgressSweepRoute =
+  ApiPublicHooksEgressSweepRouteImport.update({
+    id: '/api/public/hooks/egress-sweep',
+    path: '/api/public/hooks/egress-sweep',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const LovableEmailAuthPreviewRoute = LovableEmailAuthPreviewRouteImport.update({
   id: '/lovable/email/auth/preview',
   path: '/lovable/email/auth/preview',
@@ -273,6 +280,7 @@ export interface FileRoutesByFullPath {
   '/api/reflect/stream': typeof ApiReflectStreamRoute
   '/coaching/': typeof AuthenticatedCoachingIndexRoute
   '/coaching/$engagementId/$subjectId': typeof AuthenticatedCoachingEngagementIdSubjectIdRoute
+  '/api/public/hooks/egress-sweep': typeof ApiPublicHooksEgressSweepRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
@@ -311,6 +319,7 @@ export interface FileRoutesByTo {
   '/api/reflect/stream': typeof ApiReflectStreamRoute
   '/coaching': typeof AuthenticatedCoachingIndexRoute
   '/coaching/$engagementId/$subjectId': typeof AuthenticatedCoachingEngagementIdSubjectIdRoute
+  '/api/public/hooks/egress-sweep': typeof ApiPublicHooksEgressSweepRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
@@ -351,6 +360,7 @@ export interface FileRoutesById {
   '/api/reflect/stream': typeof ApiReflectStreamRoute
   '/_authenticated/coaching/': typeof AuthenticatedCoachingIndexRoute
   '/_authenticated/coaching/$engagementId/$subjectId': typeof AuthenticatedCoachingEngagementIdSubjectIdRoute
+  '/api/public/hooks/egress-sweep': typeof ApiPublicHooksEgressSweepRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
@@ -391,6 +401,7 @@ export interface FileRouteTypes {
     | '/api/reflect/stream'
     | '/coaching/'
     | '/coaching/$engagementId/$subjectId'
+    | '/api/public/hooks/egress-sweep'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/transactional/preview'
@@ -429,6 +440,7 @@ export interface FileRouteTypes {
     | '/api/reflect/stream'
     | '/coaching'
     | '/coaching/$engagementId/$subjectId'
+    | '/api/public/hooks/egress-sweep'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/transactional/preview'
@@ -468,6 +480,7 @@ export interface FileRouteTypes {
     | '/api/reflect/stream'
     | '/_authenticated/coaching/'
     | '/_authenticated/coaching/$engagementId/$subjectId'
+    | '/api/public/hooks/egress-sweep'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/transactional/preview'
@@ -487,6 +500,7 @@ export interface RootRouteChildren {
   ApiCoachChatStreamRoute: typeof ApiCoachChatStreamRoute
   ApiMcpTokenRoute: typeof ApiMcpTokenRoute
   ApiReflectStreamRoute: typeof ApiReflectStreamRoute
+  ApiPublicHooksEgressSweepRoute: typeof ApiPublicHooksEgressSweepRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
@@ -732,6 +746,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCoachingEngagementIdSubjectIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/hooks/egress-sweep': {
+      id: '/api/public/hooks/egress-sweep'
+      path: '/api/public/hooks/egress-sweep'
+      fullPath: '/api/public/hooks/egress-sweep'
+      preLoaderRoute: typeof ApiPublicHooksEgressSweepRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/lovable/email/auth/preview': {
       id: '/lovable/email/auth/preview'
       path: '/lovable/email/auth/preview'
@@ -822,6 +843,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiCoachChatStreamRoute: ApiCoachChatStreamRoute,
   ApiMcpTokenRoute: ApiMcpTokenRoute,
   ApiReflectStreamRoute: ApiReflectStreamRoute,
+  ApiPublicHooksEgressSweepRoute: ApiPublicHooksEgressSweepRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
