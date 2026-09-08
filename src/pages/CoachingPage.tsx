@@ -3,6 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { toast } from "sonner";
 
+import { CoachLinkPeople } from "@/components/coaching/CoachLinkPeople";
 import { EnterInviteCode } from "@/components/invites/EnterInviteCode";
 import { useAllCoachSubjects } from "@/hooks/use-coaching";
 import { setActiveProfileId, useProfile } from "@/hooks/use-profile";
