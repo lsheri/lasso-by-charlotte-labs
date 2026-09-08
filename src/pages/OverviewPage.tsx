@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 
 import { ArchiveTeaser } from "@/components/archive/ArchiveTeaser";
+import { CoachingLinkNotices } from "@/components/coaching/CoachingLinkNotices";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { OverviewWork } from "@/components/overview/OverviewWork";
 import { OneOnOneBrief } from "@/components/oneonone/OneOnOneBrief";
@@ -32,6 +33,7 @@ export function OverviewPage() {
   return (
     <div>
       <PageHeader title="Overview" subtitle="A calm view of your recent work." />
+      <CoachingLinkNotices />
       {profile ? (
         <>
           <Button type="button" onClick={() => setPrepOpen(true)}>

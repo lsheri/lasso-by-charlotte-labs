@@ -38,6 +38,18 @@ export type TelemetryEvent =
   | "admin.dashboard_viewed"
   | "note.created"
   | "coachchat.asked"
+  /**
+   * Pass 170: coaching links, person to person. Every one of these carries the
+   * basis, relation, access level and scope only. Never a name, never a count
+   * shown back to anyone in the product.
+   */
+  | "coachlink.created"
+  | "coachlink.consented"
+  | "coachlink.disclosed"
+  | "coachlink.withdrawn"
+  | "coachlink.ended"
+  | "coachlink.item_excluded"
+  | "coachlink.item_restored"
   | "engagement.updated"
   | "task.updated"
   | "feedback.submitted"
