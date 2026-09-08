@@ -3,6 +3,7 @@ import { ExternalLink } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
+import { ShareWithCoaches } from "@/components/coaching/ShareWithCoaches";
 import { AiReads } from "@/components/peek/AiReads";
 import { PeekActionBar, type PeekAnalysisPreset } from "@/components/peek/PeekActionBar";
 import { RenderedContent } from "@/components/peek/RenderedContent";
