@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 
 import { ArchiveTeaser } from "@/components/archive/ArchiveTeaser";
+import { CoachingLinkNotices } from "@/components/coaching/CoachingLinkNotices";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { OverviewWork } from "@/components/overview/OverviewWork";
 import { OneOnOneBrief } from "@/components/oneonone/OneOnOneBrief";
