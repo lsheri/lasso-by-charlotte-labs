@@ -60,6 +60,8 @@ export function CoachingPage() {
         </p>
       </header>
 
+      <CoachLinkPeople />
+
       {isLoading ? (
         <div className="space-y-2" aria-busy="true">
           {[0, 1, 2].map((row) => (
