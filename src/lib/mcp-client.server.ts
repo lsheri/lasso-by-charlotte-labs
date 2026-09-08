@@ -29,7 +29,20 @@ export class McpClientError extends Error {
   }
 }
 
-export type McpTool = { name: string; description: string | null };
+export type McpTool = {
+  name: string;
+  description: string | null;
+  /** The tool's declared arguments, when the server publishes them. */
+  inputSchema?: Record<string, unknown> | null;
+};
+
+/** The argument names a tool actually declares, empty when it declares none. */
+export function toolArgNames(tool: McpTool | null | undefined): string[] {
+  const props = (tool?.inputSchema as { properties?: unknown } | null | undefined)?.properties;
+  if (!props || typeof props !== "object") return [];
+  return Object.keys(props as Record<string, unknown>);
+}
+
 
 export type McpContent = { type: string; text?: string; [key: string]: unknown };
 
@@ -172,15 +185,20 @@ export function parseToolList(result: unknown): McpTool[] {
     throw new McpClientError("protocol", friendly("protocol", "It listed no tools."));
   }
   return list
-    .map((row) => {
-      const tool = row as { name?: unknown; description?: unknown };
+    .map((row): McpTool | null => {
+      const tool = row as { name?: unknown; description?: unknown; inputSchema?: unknown };
       if (typeof tool.name !== "string" || !tool.name.trim()) return null;
       return {
         name: tool.name,
         description: typeof tool.description === "string" ? tool.description : null,
+        inputSchema:
+          tool.inputSchema && typeof tool.inputSchema === "object"
+            ? (tool.inputSchema as Record<string, unknown>)
+            : null,
       };
+
     })
-    .filter((t): t is McpTool => Boolean(t));
+    .filter((t): t is McpTool => t !== null);
 }
 
 export async function mcpListTools(session: McpSession): Promise<McpTool[]> {

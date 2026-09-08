@@ -156,15 +156,46 @@ export const browseWisprMeetings = createServerFn({ method: "POST" })
     const { importedWisprIds } = await import("@/lib/connector-import.server");
     const { guardConnector } = await import("@/lib/connector-error.server");
 
+    const pageIndex = Number.isFinite(data.page_index) ? Number(data.page_index) : 0;
+    const firstPage = !data.page_token && pageIndex === 0;
+
+    /** Machine facts only: never a title, an attendee or a search term. */
+    const reportResult = async (dims: {
+      tool_chosen: string;
+      result_band: string;
+      reason: "ok" | "no_tool" | "empty" | "error";
+    }) => {
+      if (!firstPage) return;
+      const { recordEvent } = await import("@/lib/telemetry.server");
+      await recordEvent(supabase, {
+        eventType: "connector.browse_result",
+        orgId: profile.org_id,
+        userId,
+        dims: { toolkit: "wispr", ...dims },
+      });
+    };
+
     return guardConnector(
       supabase,
       { provider: "wispr", orgId: profile.org_id, userId },
       async () => {
-        const { meetings, cursor, unsupported } = await listWisprMeetings(profile.id, {
-          limit: 30,
-          cursor: data.page_token ?? null,
+        const { resultBand } = await import("@/lib/wispr.server");
+        let listed;
+        try {
+          listed = await listWisprMeetings(profile.id, {
+            limit: 30,
+            cursor: data.page_token ?? null,
+          });
+        } catch (error) {
+          await reportResult({ tool_chosen: "none", result_band: "0", reason: "error" });
+          throw error;
+        }
+        const { meetings, cursor, unsupported, diagnostics } = listed;
+        await reportResult({
+          tool_chosen: diagnostics.toolChosen,
+          result_band: resultBand(meetings.length),
+          reason: unsupported ? "no_tool" : meetings.length === 0 ? "empty" : "ok",
         });
-        const pageIndex = Number.isFinite(data.page_index) ? Number(data.page_index) : 0;
         if (data.page_token && pageIndex > 0) {
           const { recordEvent } = await import("@/lib/telemetry.server");
           await recordEvent(supabase, {
@@ -200,6 +231,7 @@ export const browseWisprMeetings = createServerFn({ method: "POST" })
       },
     );
   });
+
 
 export const importWisprMeetings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

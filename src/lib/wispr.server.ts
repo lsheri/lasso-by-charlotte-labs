@@ -15,13 +15,17 @@
  */
 
 import {
+  McpClientError,
   mcpCallTool,
   mcpInitialize,
   mcpListTools,
   mcpSession,
   resultJson,
+  toolArgNames,
+  type McpSession,
   type McpTool,
 } from "@/lib/mcp-client.server";
+
 import {
   discoverAuthServer,
   discoverProtectedResource,
@@ -167,9 +171,14 @@ export async function forgetWispr(profileId: string): Promise<void> {
 }
 
 /** A live access token, refreshed quietly when the old one is close to done. */
-async function freshToken(profileId: string, creds: WisprCredentials): Promise<string> {
+async function freshToken(
+  profileId: string,
+  creds: WisprCredentials,
+  force = false,
+): Promise<string> {
   const expires = creds.tokens.expiresAt;
-  if (!expires || expires - Date.now() > 60_000 || !creds.tokens.refreshToken) {
+  const stale = force || (expires ? expires - Date.now() <= 60_000 : false);
+  if (!stale || !creds.tokens.refreshToken) {
     return creds.tokens.accessToken;
   }
   const meta: AuthServerMeta = await discoverAuthServer(creds.issuer);
@@ -186,16 +195,34 @@ async function freshToken(profileId: string, creds: WisprCredentials): Promise<s
   return tokens.accessToken;
 }
 
-async function openSession(profileId: string) {
+async function openSession(profileId: string, force = false) {
   const creds = await readCredentials(profileId);
   if (!creds) {
     throw new Error("Wispr Flow is not connected. Connect it on Where work lives.");
   }
-  const token = await freshToken(profileId, creds);
+  const token = await freshToken(profileId, creds, force);
   const session = mcpSession(creds.mcpUrl || WISPR_MCP_URL, token);
   await mcpInitialize(session);
   return session;
 }
+
+/**
+ * A token can be refused before its recorded expiry. One refused call earns one
+ * forced refresh and one retry, never a loop.
+ */
+async function withRetry<T>(
+  profileId: string,
+  run: (session: McpSession) => Promise<T>,
+): Promise<T> {
+  try {
+    return await run(await openSession(profileId));
+  } catch (error) {
+    if (!(error instanceof McpClientError) || error.kind !== "unauthorized") throw error;
+    console.info("[wispr] retrying after a refused token");
+    return run(await openSession(profileId, true));
+  }
+}
+
 
 export async function wisprTools(profileId: string): Promise<McpTool[]> {
   return mcpListTools(await openSession(profileId));
@@ -230,14 +257,44 @@ function str(row: Record<string, unknown>, keys: string[]): string | null {
   return null;
 }
 
-function rowsOf(payload: unknown): Record<string, unknown>[] {
+/** The names a payload may use for its list of rows, widest first. */
+const ROW_KEYS = [
+  "meetings",
+  "conversations",
+  "notes",
+  "recordings",
+  "sessions",
+  "items",
+  "results",
+  "records",
+  "rows",
+  "entries",
+  "data",
+  "result",
+  "content",
+];
+
+export function rowsOf(payload: unknown): Record<string, unknown>[] {
   if (Array.isArray(payload)) return payload as Record<string, unknown>[];
   const row = payload as Record<string, unknown> | null;
-  for (const key of ["meetings", "items", "results", "data"]) {
-    const value = row?.[key];
+  if (!row || typeof row !== "object") return [];
+  for (const key of ROW_KEYS) {
+    const value = row[key];
     if (Array.isArray(value)) return value as Record<string, unknown>[];
+    // One level of nesting, e.g. { data: { meetings: [...] } }.
+    if (value && typeof value === "object" && !Array.isArray(value)) {
+      for (const inner of ROW_KEYS) {
+        const nested = (value as Record<string, unknown>)[inner];
+        if (Array.isArray(nested)) return nested as Record<string, unknown>[];
+      }
+    }
   }
-  return [];
+  // Last resort: the only array of objects on the payload.
+  const arrays = Object.values(row).filter(
+    (value): value is Record<string, unknown>[] =>
+      Array.isArray(value) && value.every((v) => v && typeof v === "object"),
+  );
+  return arrays.length === 1 ? (arrays[0] as Record<string, unknown>[]) : [];
 }
 
 function attendeesOf(row: Record<string, unknown>): number | null {
@@ -252,54 +309,198 @@ function attendeesOf(row: Record<string, unknown>): number | null {
   return null;
 }
 
+/** Any identifier the row offers, including ones we have not seen named yet. */
+function idOf(row: Record<string, unknown>): string | null {
+  const named = str(row, [
+    "id",
+    "meeting_id",
+    "conversation_id",
+    "note_id",
+    "session_id",
+    "recording_id",
+    "uuid",
+    "slug",
+  ]);
+  if (named) return named;
+  for (const [key, value] of Object.entries(row)) {
+    if (!/(^id$|_id$|Id$|uuid)/.test(key)) continue;
+    if (typeof value === "string" && value.trim()) return value;
+    if (typeof value === "number") return String(value);
+  }
+  return null;
+}
+
 export function mapMeetings(payload: unknown): WisprMeeting[] {
   return rowsOf(payload)
     .map((row) => {
-      const id = str(row, ["id", "meeting_id", "uuid", "slug"]);
+      if (!row || typeof row !== "object") return null;
+      const id = idOf(row);
       if (!id) return null;
       return {
         id,
-        title: str(row, ["title", "name", "subject"]) ?? "Untitled meeting",
-        date: str(row, ["start_time", "started_at", "date", "created_at", "createdAt"]),
+        title:
+          str(row, ["title", "name", "subject", "summary_title", "headline"]) ?? "Untitled meeting",
+        date: str(row, [
+          "start_time",
+          "startTime",
+          "started_at",
+          "startedAt",
+          "date",
+          "created_at",
+          "createdAt",
+          "timestamp",
+        ]),
         attendeeCount: attendeesOf(row),
       };
     })
     .filter((m): m is WisprMeeting => Boolean(m));
 }
 
+/** The closed band a diagnostic event reports instead of a raw count. */
+export function resultBand(count: number): "0" | "1-10" | "11-30" | "31+" {
+  if (count <= 0) return "0";
+  if (count <= 10) return "1-10";
+  if (count <= 30) return "11-30";
+  return "31+";
+}
+
+
+const CURSOR_KEYS = ["next_cursor", "nextCursor", "cursor", "next_page_token", "nextPageToken"];
+
 export function nextCursor(payload: unknown): string | null {
   const row = payload as Record<string, unknown> | null;
-  if (!row) return null;
-  for (const key of ["next_cursor", "nextCursor", "cursor", "next_page_token"]) {
-    const value = row[key];
-    if (typeof value === "string" && value.trim()) return value;
+  if (!row || typeof row !== "object") return null;
+  const pick = (obj: Record<string, unknown>): string | null => {
+    for (const key of CURSOR_KEYS) {
+      const value = obj[key];
+      if (typeof value === "string" && value.trim()) return value;
+    }
+    return null;
+  };
+  const direct = pick(row);
+  if (direct) return direct;
+  for (const key of ["pagination", "page_info", "pageInfo", "meta"]) {
+    const nested = row[key];
+    if (nested && typeof nested === "object") {
+      const found = pick(nested as Record<string, unknown>);
+      if (found) return found;
+    }
   }
   return null;
+}
+
+/** Machine facts about one browse call. Names, keys and counts only. */
+export type WisprBrowseDiagnostics = {
+  toolNames: string[];
+  toolChosen: string;
+  payloadKeys: string[];
+  rowCount: number;
+  mappedCount: number;
+  hasCursor: boolean;
+};
+
+/** The listing tool, chosen by shape across every name Wispr might use. */
+function chooseListTool(tools: McpTool[]): McpTool | null {
+  const avoid = ["get", "detail", "transcript", "create", "delete", "update"];
+  const subjects = ["meeting", "conversation", "note", "recording", "session"];
+  for (const subject of subjects) {
+    const name =
+      chooseTool(tools, ["list", subject]) ??
+      chooseTool(tools, [subject, "list"]) ??
+      chooseTool(tools, [subject], avoid) ??
+      chooseTool(tools, ["search", subject]);
+    if (name) return tools.find((t) => t.name === name) ?? null;
+  }
+  const listing = tools.find((tool) => {
+    const name = tool.name.toLowerCase();
+    return (name.includes("list") || name.includes("search")) && !avoid.some((w) => name.includes(w));
+  });
+  return listing ?? null;
+}
+
+/** Only arguments the tool declares; a server may refuse anything else. */
+function listArgs(tool: McpTool, opts: { limit: number; cursor: string | null }) {
+  const declared = toolArgNames(tool);
+  const out: Record<string, unknown> = {};
+  const put = (aliases: string[], value: unknown) => {
+    if (value === null || value === undefined) return;
+    if (declared.length === 0) {
+      out[aliases[0] as string] = value;
+      return;
+    }
+    const key = aliases.find((alias) => declared.includes(alias));
+    if (key) out[key] = value;
+  };
+  put(["limit", "page_size", "pageSize", "max_results", "count", "n"], opts.limit);
+  put(["cursor", "page_token", "pageToken", "next_cursor", "offset"], opts.cursor);
+  return out;
 }
 
 export async function listWisprMeetings(
   profileId: string,
   opts: { limit?: number; cursor?: string | null } = {},
-): Promise<{ meetings: WisprMeeting[]; cursor: string | null; unsupported: string | null }> {
-  const session = await openSession(profileId);
-  const tools = await mcpListTools(session);
-  const name =
-    chooseTool(tools, ["list", "meeting"]) ??
-    chooseTool(tools, ["meeting"], ["get", "detail", "transcript"]) ??
-    chooseTool(tools, ["search", "meeting"]);
-  if (!name) {
+): Promise<{
+  meetings: WisprMeeting[];
+  cursor: string | null;
+  unsupported: string | null;
+  diagnostics: WisprBrowseDiagnostics;
+}> {
+  return withRetry(profileId, async (session: McpSession) => {
+    const tools = await mcpListTools(session);
+    const toolNames = tools.map((tool) => tool.name);
+    const tool = chooseListTool(tools);
+    console.info("[wispr] tools", { tools: toolNames, chosen: tool?.name ?? "none" });
+    if (!tool) {
+      return {
+        meetings: [],
+        cursor: null,
+        unsupported: "Wispr Flow did not offer a way to list meetings on this account.",
+        diagnostics: {
+          toolNames,
+          toolChosen: "none",
+          payloadKeys: [],
+          rowCount: 0,
+          mappedCount: 0,
+          hasCursor: false,
+        },
+      };
+    }
+    const args = listArgs(tool, { limit: opts.limit ?? 30, cursor: opts.cursor ?? null });
+    const result = await mcpCallTool(session, tool.name, args);
+    const payload = resultJson(result);
+    const payloadKeys =
+      payload && typeof payload === "object" && !Array.isArray(payload)
+        ? Object.keys(payload as Record<string, unknown>)
+        : Array.isArray(payload)
+          ? ["<array>"]
+          : [];
+    const rows = rowsOf(payload);
+    const meetings = mapMeetings(payload);
+    const cursor = nextCursor(payload);
+    console.info("[wispr] browse", {
+      tool: tool.name,
+      args: Object.keys(args),
+      payload_keys: payloadKeys,
+      rows: rows.length,
+      mapped: meetings.length,
+      cursor: Boolean(cursor),
+    });
     return {
-      meetings: [],
-      cursor: null,
-      unsupported: "Wispr Flow did not offer a way to list meetings on this account.",
+      meetings,
+      cursor,
+      unsupported: null,
+      diagnostics: {
+        toolNames,
+        toolChosen: tool.name,
+        payloadKeys,
+        rowCount: rows.length,
+        mappedCount: meetings.length,
+        hasCursor: Boolean(cursor),
+      },
     };
-  }
-  const args: Record<string, unknown> = { limit: opts.limit ?? 30 };
-  if (opts.cursor) args["cursor"] = opts.cursor;
-  const result = await mcpCallTool(session, name, args);
-  const payload = resultJson(result);
-  return { meetings: mapMeetings(payload), cursor: nextCursor(payload), unsupported: null };
+  });
 }
+
 
 /**
  * One meeting as markdown, shaped exactly like the Granola import: what was

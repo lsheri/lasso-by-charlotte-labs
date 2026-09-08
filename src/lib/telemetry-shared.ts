@@ -20,6 +20,9 @@ export type TelemetryEvent =
   | "connector.setup_opened"
   /** Pass 165: someone loaded a further page of a connector listing. */
   | "connector.browse_paged"
+  /** Pass 169: how the first page of a connector listing resolved. */
+  | "connector.browse_result"
+
   | "import.started"
   | "import.parsed"
   | "import.committed"
