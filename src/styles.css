@@ -134,7 +134,7 @@
   --nb-amber: #8a6d1f;
 
   /* Sticky note washes. Pale paper colours for notes, never button fills:
-     the action green is a control colour and must not back a card. */
+     the action colour is graphite and must not back a card. */
   --nb-sticky-green: #e6f2e5;
   --nb-sticky-green-edge: #bcd9ba;
 
