@@ -224,17 +224,17 @@
   --electric-deep: var(--nb-blue);
   --electric-wash: var(--nb-grey-1);
 
-  --state-amber: var(--nb-ink); /* needs mapping */
-  --state-amber-wash: var(--nb-grey-1);
-  --state-amber-band: var(--nb-grey-1);
+  --state-amber: var(--nb-amber); /* waiting on you */
+  --state-amber-wash: var(--nb-yellow-wash);
+  --state-amber-band: var(--nb-ink-yellow);
 
-  --state-teal: var(--nb-green); /* mapped */
-  --state-teal-wash: var(--nb-grey-1);
-  --state-teal-band: var(--nb-grey-1);
+  --state-teal: var(--nb-green); /* mapped, on the record */
+  --state-teal-wash: var(--nb-green-wash);
+  --state-teal-band: var(--nb-green);
 
   --state-indigo: var(--nb-mid); /* private */
   --state-indigo-wash: var(--nb-grey-1);
-  --state-indigo-band: var(--nb-grey-1);
+  --state-indigo-band: var(--nb-rule);
 
   /* Vendor tones, brand-adjacent but pulled into the notebook palette. */
   --vendor-claude: #a8452a;
