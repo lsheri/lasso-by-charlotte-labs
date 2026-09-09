@@ -9,6 +9,8 @@
 @import "@fontsource/jetbrains-mono/500.css";
 @import "@fontsource/caveat/500.css";
 @import "@fontsource/caveat/700.css";
+@import "@fontsource/instrument-serif/400.css";
+@import "@fontsource/instrument-serif/400-italic.css";
 
 
 @custom-variant dark (&:is(.dark *));
@@ -30,6 +32,7 @@
 @theme inline {
   --font-sans: "Archivo", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --font-serif: "Instrument Serif", "Iowan Old Style", Georgia, serif;
   --color-ember: var(--ember);
   --color-ember-deep: var(--ember-deep);
   --color-ember-foreground: var(--ember-foreground);
@@ -406,10 +409,10 @@
 }
 
 @utility page-title {
-  font-family: var(--font-sans);
+  font-family: var(--font-serif);
   font-size: 26px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
+  font-weight: 400;
+  letter-spacing: -0.01em;
   color: var(--foreground);
 }
 
