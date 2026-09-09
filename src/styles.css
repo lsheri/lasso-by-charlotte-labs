@@ -141,9 +141,9 @@
 
   /* Pass 101.1: one colour per provenance status, borders and washes only. */
   --status-exact: var(--nb-green);
-  --status-exact-wash: #e9f2ed;
+  --status-exact-wash: var(--nb-green-wash);
   --status-paraphrase: var(--nb-amber);
-  --status-paraphrase-wash: #f8efe3;
+  --status-paraphrase-wash: var(--nb-amber-wash);
   --status-unsourced: var(--nb-soft);
   --status-unsourced-wash: var(--nb-grey-1);
 
