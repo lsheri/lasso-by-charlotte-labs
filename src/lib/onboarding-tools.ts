@@ -38,6 +38,12 @@ export type ToolMeta = {
   hue: string;
   /** Which setup surface this tool produces on the next screen. */
   path: "mcp" | "connector" | "export" | "none";
+  /**
+   * What Lasso reads, and what it does not, shown under the label on the
+   * picker. Three are verbatim from the design file. "other" deliberately has
+   * none: a scope promise under an option that connects nothing is noise.
+   */
+  scope?: string;
 };
 
 export const TOOLS: Record<ToolId, ToolMeta> = {
@@ -48,6 +54,7 @@ export const TOOLS: Record<ToolId, ToolMeta> = {
     icon: MessageSquare,
     hue: "--hue-slate-blue",
     path: "mcp",
+    scope: "your conversations, not your account",
   },
   chatgpt: {
     id: "chatgpt",
@@ -56,6 +63,7 @@ export const TOOLS: Record<ToolId, ToolMeta> = {
     icon: Bot,
     hue: "--hue-moss",
     path: "mcp",
+    scope: "the conversations you push, not your history",
   },
   gemini: {
     id: "gemini",
@@ -64,6 +72,7 @@ export const TOOLS: Record<ToolId, ToolMeta> = {
     icon: Sparkles,
     hue: "--hue-indigo",
     path: "export",
+    scope: "the file you export, not your Google account",
   },
   copilot: {
     id: "copilot",
@@ -72,6 +81,7 @@ export const TOOLS: Record<ToolId, ToolMeta> = {
     icon: FileText,
     hue: "--hue-sand",
     path: "export",
+    scope: "the file you export, not your Microsoft account",
   },
   googledrive: {
     id: "googledrive",
@@ -80,6 +90,7 @@ export const TOOLS: Record<ToolId, ToolMeta> = {
     icon: HardDrive,
     hue: "--hue-amber",
     path: "connector",
+    scope: "files you touched, not the whole drive",
   },
   granola: {
     id: "granola",
@@ -88,6 +99,7 @@ export const TOOLS: Record<ToolId, ToolMeta> = {
     icon: Mic,
     hue: "--hue-plum",
     path: "connector",
+    scope: "meeting notes, never the audio",
   },
   gmail: {
     id: "gmail",
@@ -96,14 +108,16 @@ export const TOOLS: Record<ToolId, ToolMeta> = {
     icon: Mail,
     hue: "--hue-cyan",
     path: "connector",
+    scope: "the threads you pick, not your inbox",
   },
   transcripts: {
     id: "transcripts",
-    label: "Call transcripts (Google Drive)",
-    blurb: "Your recordings and transcripts, already in Drive.",
+    label: "Call transcripts and dictation (Google Drive)",
+    blurb: "Transcripts and Wispr Flow notes, already in Drive.",
     icon: Mic,
     hue: "--hue-clay",
     path: "connector",
+    scope: "transcripts, never recordings",
   },
   other: {
     id: "other",

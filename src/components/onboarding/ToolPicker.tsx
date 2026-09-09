@@ -23,7 +23,7 @@ export function ToolPicker({
           >
             {category.title}
           </h3>
-          <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-3 space-y-3">
             {category.tools.map((id) => {
               const meta = TOOLS[id];
               const checked = selected.has(id);
@@ -36,14 +36,18 @@ export function ToolPicker({
                   onClick={() => onToggle(id)}
                   className={
                     checked
-                      ? "flex items-start gap-3 rounded-[var(--radius)] border border-graphite bg-card p-4 text-left shadow-card ring-1 ring-graphite transition-colors"
-                      : "flex items-start gap-3 rounded-[var(--radius)] border border-border bg-card p-4 text-left shadow-card transition-colors hover:border-graphite"
+                      ? "flex min-h-16 w-full items-center gap-4 rounded-[var(--radius)] border border-graphite bg-card px-5 py-3 text-left ring-1 ring-graphite transition-colors"
+                      : "flex min-h-16 w-full items-center gap-4 rounded-[var(--radius)] border border-border bg-card px-5 py-3 text-left transition-colors hover:border-graphite"
                   }
                 >
                   <ToolBadge tool={id} />
                   <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-medium text-foreground">{meta.label}</span>
-                    <span className="mt-1 block text-sm text-muted-foreground">{meta.blurb}</span>
+                    <span className="block text-[13px] font-semibold text-foreground">
+                      {meta.label}
+                    </span>
+                    <span className="mt-1.5 block text-[11.5px] text-muted-foreground">
+                      {meta.scope ?? meta.blurb}
+                    </span>
                   </span>
                   <span
                     aria-hidden
