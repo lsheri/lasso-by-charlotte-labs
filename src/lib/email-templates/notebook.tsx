@@ -52,7 +52,7 @@ export const button = {
   color: '#ffffff',
   fontFamily: BODY_STACK,
   fontSize: '14px',
-  border: `1px solid ${NB.cta`,
+  border: `1px solid ${NB.cta}`,
   borderRadius: '6px',
   padding: '12px 20px',
   textDecoration: 'none',
