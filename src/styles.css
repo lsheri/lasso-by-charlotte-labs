@@ -1936,9 +1936,9 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   height: 44px;
   padding: 0 20px;
   border-radius: 9999px;
-  border: 1.5px solid color-mix(in oklab, var(--nb-green) 55%, var(--nb-graphite));
+  border: 1.5px solid var(--nb-graphite);
   background: var(--card);
-  color: color-mix(in oklab, var(--nb-green-deep) 70%, var(--foreground));
+  color: var(--nb-graphite);
   font-family: var(--font-mono);
   font-size: 12px;
   letter-spacing: 0.1em;
@@ -1952,13 +1952,13 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 }
 .nb-pencil-cta:hover:not(:disabled) {
   transform: translateY(-1px);
-  border-color: var(--nb-green);
-  background: color-mix(in oklab, var(--nb-green) 8%, var(--card));
+  border-color: var(--nb-ink);
+  background: color-mix(in oklab, var(--nb-graphite) 8%, var(--card));
 }
 .nb-pencil-cta:active:not(:disabled) {
   transform: translateY(0);
-  border-color: var(--nb-green-deep);
-  background: color-mix(in oklab, var(--nb-green) 16%, var(--card));
+  border-color: var(--nb-ink);
+  background: color-mix(in oklab, var(--nb-graphite) 16%, var(--card));
 }
 /* PASS 153: the graphite hatching shades in as the hand presses. Hover fills
    the button two thirds of the way; the click completes the shading, then the
