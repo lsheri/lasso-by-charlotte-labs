@@ -57,7 +57,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
           This page didn't load
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Something went wrong on our end. You can try refreshing or head back home.
+          Nothing you were doing was lost, and nothing was sent anywhere. Refreshing usually fixes it.
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
@@ -102,7 +102,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:site", content: "@Lovable" },
+      
       { name: "theme-color", content: "#fafaf8" },
       {
         property: "og:image",
