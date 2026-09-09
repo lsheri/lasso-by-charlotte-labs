@@ -163,6 +163,24 @@
   --nb-move: 200ms;
   --nb-max: 500ms;
 
+  /*
+   * The motion table from the design system, named as the system names it.
+   * These are additive: the four tokens above predate the table and keep every
+   * call site they already have. They map across as --nb-fast = stagger-base,
+   * --nb-base = dur-quick, --nb-max is 50ms short of dur-settle, and --nb-move
+   * (200ms) has no counterpart in the table at all. Migrate a call site only
+   * when you are already editing it for another reason.
+   */
+  --nb-dur-instant: 80ms;
+  --nb-dur-quick: 160ms;
+  --nb-dur-base: 300ms;
+  --nb-dur-settle: 550ms;
+  --nb-dur-draw: 800ms;
+  --nb-dur-story: 2200ms;
+  --nb-stagger-tight: 60ms;
+  --nb-stagger-base: 120ms;
+  --nb-stagger-loose: 300ms;
+
   --background: var(--nb-paper);
   --foreground: var(--nb-ink);
   --card: var(--nb-white);
@@ -761,12 +779,12 @@ button:focus-visible .nb-ico[data-anim="1"] .nb-sig,
     var(--nb-sig) 600ms var(--nb-ease) var(--nb-ico-draw, 700ms) both;
 }
 .nb-ico[data-play="1"] .nb-sig {
-  animation: var(--nb-sig) 900ms var(--nb-ease) 300ms both;
+  animation: var(--nb-sig) 900ms var(--nb-ease) var(--nb-stagger-loose) both;
 }
 a:hover .nb-ico[data-icon="drag-handle"] .nb-sig:nth-of-type(2),
 button:hover .nb-ico[data-icon="drag-handle"] .nb-sig:nth-of-type(2),
 .nb-ico[data-icon="drag-handle"]:hover .nb-sig:nth-of-type(2) {
-  animation-delay: 0ms, calc(var(--nb-ico-draw, 700ms) + 120ms);
+  animation-delay: 0ms, calc(var(--nb-ico-draw, 700ms) + var(--nb-stagger-base));
 }
 a:hover .nb-ico[data-icon="drag-handle"] .nb-sig:nth-of-type(3),
 button:hover .nb-ico[data-icon="drag-handle"] .nb-sig:nth-of-type(3),
@@ -1345,7 +1363,7 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 .nb-title-rule-animated path {
   stroke-dasharray: 1;
   stroke-dashoffset: 0;
-  animation: nb-rule-draw 800ms var(--nb-ease, ease-out) both;
+  animation: nb-rule-draw var(--nb-dur-draw) var(--nb-ease, ease-out) both;
 }
 .nb-title-rule-animated path + path {
   animation-delay: 220ms;
@@ -1376,7 +1394,7 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   line-height: 1.2;
 }
 .nb-scroll-cue-arrow {
-  animation: nb-scroll-cue-bob 2200ms ease-in-out infinite;
+  animation: nb-scroll-cue-bob var(--nb-dur-story) ease-in-out infinite;
 }
 @keyframes nb-scroll-cue-bob {
   0%, 100% { transform: translateY(0); }
@@ -1463,7 +1481,7 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 .nb-ask-backdrop {
   background: color-mix(in oklab, var(--nb-ink) 8%, transparent);
   backdrop-filter: blur(3px);
-  animation: nb-ask-backdrop-in 160ms ease-out;
+  animation: nb-ask-backdrop-in var(--nb-dur-quick) ease-out;
 }
 @keyframes nb-ask-backdrop-in {
   from {
@@ -1748,7 +1766,7 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  transition: background-color 160ms var(--nb-ease);
+  transition: background-color var(--nb-dur-quick) var(--nb-ease);
 }
 .nb-hi:hover {
   background: #fbe775;
@@ -1780,7 +1798,7 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 }
 .nb-thread-draw {
   stroke-dasharray: 1200;
-  animation: nb-thread-in 300ms ease-out forwards;
+  animation: nb-thread-in var(--nb-dur-base) ease-out forwards;
 }
 
 /* Pass 101.1: the provenance status language. A stitch, its span and its
@@ -2005,7 +2023,7 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   100% { opacity: 0.35; }
 }
 .nb-web-mark {
-  transition: transform 300ms var(--nb-ease);
+  transition: transform var(--nb-dur-base) var(--nb-ease);
 }
 .nb-pencil-cta:hover:not(:disabled) .nb-web-mark {
   transform: rotate(-12deg) scale(1.06);
@@ -2131,7 +2149,7 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   animation: nb-journey-draw 200ms ease-out backwards;
 }
 .nb-journey:not(.is-skipped) .nb-journey-tendril {
-  animation: nb-journey-draw 300ms ease-out backwards;
+  animation: nb-journey-draw var(--nb-dur-base) ease-out backwards;
 }
 @keyframes nb-journey-draw {
   from {
