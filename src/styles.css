@@ -160,7 +160,7 @@
   --card-foreground: var(--nb-ink);
   --popover: var(--nb-white);
   --popover-foreground: var(--nb-ink);
-  /* One green action per screen. */
+  /* One graphite action per screen. Green now means on the record. */
   --primary: var(--nb-graphite);
   --primary-foreground: var(--nb-white);
   --secondary: var(--nb-grey-1);
