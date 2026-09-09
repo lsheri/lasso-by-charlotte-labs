@@ -33,6 +33,7 @@
   --font-sans: "Archivo", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
   --font-serif: "Instrument Serif", "Iowan Old Style", Georgia, serif;
+  --font-hand: "Caveat", var(--font-sans);
   --color-ember: var(--ember);
   --color-ember-deep: var(--ember-deep);
   --color-ember-foreground: var(--ember-foreground);
@@ -427,10 +428,10 @@
 }
 
 @utility section-title {
-  font-family: var(--font-sans);
-  font-size: 16px;
+  font-family: var(--font-hand);
+  font-size: 21px;
   line-height: 24px;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--nb-ink);
 }
 
@@ -450,8 +451,8 @@
 }
 
 @utility sidebar-group {
-  font-family: var(--font-sans);
-  font-size: 12px;
+  font-family: var(--font-hand);
+  font-size: 16px;
   font-weight: 700;
   color: var(--nb-ink);
 }
@@ -1369,7 +1370,7 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   color: var(--nb-graphite);
 }
 .nb-scroll-cue-label {
-  font-family: "Caveat", var(--font-sans);
+  font-family: var(--font-hand);
   font-size: 1.375rem;
   line-height: 1.2;
 }
@@ -2696,7 +2697,7 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 
 /* Pass 141: handwritten pencil section titles on the public landing page. */
 @utility pencil-title {
-  font-family: "Caveat", var(--font-sans);
+  font-family: var(--font-hand);
   font-weight: 700;
   font-size: 2.25rem;
   line-height: 1.1;
@@ -2712,7 +2713,7 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 
 /* Landing: bold handwritten diagonal marks labelling problem vs. solution. */
 @utility hand-mark {
-  font-family: "Caveat", var(--font-sans);
+  font-family: var(--font-hand);
   font-weight: 700;
   font-size: 1.875rem;
   line-height: 1;
