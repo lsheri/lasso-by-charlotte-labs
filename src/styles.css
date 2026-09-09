@@ -176,12 +176,14 @@
    * These are additive: the four tokens above predate the table and keep every
    * call site they already have. They map across as --nb-fast = stagger-base,
    * --nb-base = dur-quick, --nb-max is 50ms short of dur-settle, and --nb-move
-   * (200ms) has no counterpart in the table at all. Migrate a call site only
-   * when you are already editing it for another reason.
+   * is now promoted into the table as dur-move rather than deleted. Migrate a
+   * call site only when you are already editing it for another reason.
    */
   --nb-dur-instant: 80ms;
   --nb-dur-quick: 160ms;
+  --nb-dur-move: 200ms;
   --nb-dur-base: 300ms;
+  --nb-dur-enter: 400ms;
   --nb-dur-settle: 550ms;
   --nb-dur-draw: 800ms;
   --nb-dur-story: 2200ms;
@@ -1034,8 +1036,8 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   background: var(--nb-white);
   box-shadow: 0 1px 0 0 var(--nb-grey-2);
   transition:
-    transform 340ms var(--nb-ease),
-    box-shadow 340ms var(--nb-ease);
+    transform var(--nb-dur-enter) var(--nb-ease),
+    box-shadow var(--nb-dur-enter) var(--nb-ease);
 }
 .nb-paper-title {
   display: -webkit-box;
@@ -1641,8 +1643,8 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   -webkit-user-select: none;
   user-select: none;
   transition:
-    transform 200ms var(--nb-ease),
-    border-color 200ms var(--nb-ease);
+    transform var(--nb-dur-move) var(--nb-ease),
+    border-color var(--nb-dur-move) var(--nb-ease);
 }
 .nb-canvas-card-title {
   padding-bottom: 3px;
@@ -1653,7 +1655,7 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 .nb-canvas-card[data-lifted="true"] {
   border-color: var(--nb-graphite);
   box-shadow: 0 8px 24px rgb(17 20 19 / 0.14);
-  transition: transform 420ms var(--nb-spring-base);
+  transition: transform var(--nb-dur-enter) var(--nb-spring-base);
 }
 
 /* The only touch surface that may take the gesture away from the page. */
@@ -1697,7 +1699,7 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   height: 5px;
   border-radius: 999px;
   background: var(--nb-soft);
-  transition: background-color 200ms var(--nb-ease);
+  transition: background-color var(--nb-dur-move) var(--nb-ease);
 }
 .nb-canvas-dot-active {
   background: var(--nb-ink);
@@ -1753,7 +1755,7 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   border-top-color: var(--nb-sticky-green-edge);
 }
 .nb-note-caret {
-  transition: transform 200ms var(--nb-ease);
+  transition: transform var(--nb-dur-move) var(--nb-ease);
 }
 .nb-note[data-open="true"] .nb-note-caret {
   transform: rotate(90deg);
@@ -1925,7 +1927,7 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   to { opacity: 1; }
 }
 .nb-underglow {
-  animation: nb-underglow-in 200ms var(--nb-ease);
+  animation: nb-underglow-in var(--nb-dur-move) var(--nb-ease);
 }
 .nb-underglow-static {
   animation: none;
@@ -1969,7 +1971,7 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   font-size: 12px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  transition: transform 200ms var(--nb-ease);
+  transition: transform var(--nb-dur-move) var(--nb-ease);
 }
 .nb-pencil-cta--sm {
   height: 36px;
@@ -2080,7 +2082,7 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   border-radius: 0 0 var(--radius-md, 0.5rem) var(--radius-md, 0.5rem);
   background: color-mix(in oklab, var(--background) 72%, transparent);
   backdrop-filter: blur(14px) saturate(130%);
-  transition: box-shadow 200ms var(--nb-ease);
+  transition: box-shadow var(--nb-dur-move) var(--nb-ease);
 }
 .nb-sticky-head::after {
   content: "";
@@ -2153,7 +2155,7 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   animation: nb-journey-draw 600ms cubic-bezier(0.4, 0, 0.2, 1) backwards;
 }
 .nb-journey:not(.is-skipped) .nb-journey-arrow {
-  animation: nb-journey-draw 200ms ease-out backwards;
+  animation: nb-journey-draw var(--nb-dur-move) ease-out backwards;
 }
 .nb-journey:not(.is-skipped) .nb-journey-tendril {
   animation: nb-journey-draw var(--nb-dur-base) ease-out backwards;
@@ -2181,7 +2183,7 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 }
 /* The outgoing page of the turn-card walk fades out instead of cutting. */
 .nb-journey-node.nb-page-fade {
-  animation: nb-page-fade-out 400ms var(--nb-ease) forwards;
+  animation: nb-page-fade-out var(--nb-dur-enter) var(--nb-ease) forwards;
   pointer-events: none;
 }
 @keyframes nb-page-fade-out {
@@ -2230,7 +2232,7 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   opacity: 1;
 }
 .nb-journey:not(.is-skipped) .nb-journey-quote {
-  animation: nb-journey-settle 350ms var(--nb-ease) backwards;
+  animation: nb-journey-settle var(--nb-dur-enter) var(--nb-ease) backwards;
 }
 @keyframes nb-journey-settle {
   from {
@@ -2294,7 +2296,7 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   font-variant-caps: all-small-caps;
 }
 .nb-traced-legend.is-arriving {
-  animation: nb-legend-in 400ms ease-out backwards;
+  animation: nb-legend-in var(--nb-dur-enter) ease-out backwards;
 }
 @keyframes nb-legend-in {
   from { opacity: 0; }
@@ -2343,7 +2345,7 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   opacity: 1;
 }
 .nb-artifact-section:not(.nb-artifact-section-static) {
-  animation: nb-artifact-enter 450ms var(--nb-ease) backwards;
+  animation: nb-artifact-enter var(--nb-dur-enter) var(--nb-ease) backwards;
 }
 @keyframes nb-artifact-enter {
   from { opacity: 0; transform: translateY(8px); }
@@ -2411,7 +2413,7 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 }
 .nb-journey-stem:not(.nb-journey-stem-static) path,
 .nb-journey-loop:not(.nb-journey-loop-static) path {
-  animation: nb-journey-grow 460ms var(--nb-ease) both;
+  animation: nb-journey-grow var(--nb-dur-enter) var(--nb-ease) both;
   animation-delay: inherit;
 }
 @keyframes nb-journey-grow {
@@ -2430,7 +2432,7 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   padding: 10px 4px;
 }
 .nb-pile-item {
-  transition: transform 340ms var(--nb-ease);
+  transition: transform var(--nb-dur-enter) var(--nb-ease);
 }
 .nb-pile[data-scatter="1"] .nb-pile-item {
   transform: translate(var(--nb-dx, 0), var(--nb-dy, 0)) rotate(var(--nb-rot, 0deg));
@@ -2490,7 +2492,7 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   }
 }
 .nb-rule-draw {
-  animation: nb-rule-sweep 400ms var(--nb-ease) both;
+  animation: nb-rule-sweep var(--nb-dur-enter) var(--nb-ease) both;
 }
 
 /* Cards arrive rather than appear. */
@@ -2518,7 +2520,7 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 
 /* Locked work: quieter body, full title, a folded corner, and no green. */
 .nb-card--locked {
-  transition: transform 200ms var(--nb-ease);
+  transition: transform var(--nb-dur-move) var(--nb-ease);
 }
 .nb-card--locked .nb-locked-body {
   opacity: 0.72;
@@ -2597,11 +2599,11 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 .nb-pile-hidden {
   opacity: 0;
   visibility: hidden;
-  transition: opacity 200ms var(--nb-ease);
+  transition: opacity var(--nb-dur-move) var(--nb-ease);
 }
 .nb-pile-shown {
   opacity: 1;
-  transition: opacity 200ms var(--nb-ease);
+  transition: opacity var(--nb-dur-move) var(--nb-ease);
 }
 
 /* ---- Pass 128: the full screen fact check reader ---- */
@@ -2624,7 +2626,7 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   grid-template-columns: minmax(0, 1fr) 520px;
 }
 .nb-reader-grid {
-  transition: grid-template-columns 200ms var(--nb-ease);
+  transition: grid-template-columns var(--nb-dur-move) var(--nb-ease);
 }
 @media (max-width: 900px) {
   .nb-reader-grid,
@@ -2764,8 +2766,8 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 /* Scroll focus: sections away from the viewport centre fade and soften. */
 @utility focus-section {
   transition:
-    opacity 400ms ease,
-    filter 400ms ease;
+    opacity var(--nb-dur-enter) var(--nb-ease),
+    filter var(--nb-dur-enter) var(--nb-ease);
 }
 
 @utility focus-section-dim {
