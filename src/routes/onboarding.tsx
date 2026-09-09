@@ -2,7 +2,7 @@ import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-ro
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 
-import { ProgressDots } from "@/components/onboarding/ProgressDots";
+import { StepRail } from "@/components/onboarding/StepRail";
 import { SetupTools } from "@/components/onboarding/SetupTools";
 import { ToolPicker } from "@/components/onboarding/ToolPicker";
 import { Wordmark } from "@/components/layout/Wordmark";
@@ -252,7 +252,9 @@ function OnboardingInner() {
         <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-background px-4 py-16">
           <div className="w-full max-w-3xl">
             <Wordmark size="lg" />
-            <p className="micro-label mt-6">Step one</p>
+            <div className="mt-6">
+              <StepRail current={0} />
+            </div>
             <h1 className="page-title mt-2">Where do you work with AI?</h1>
             <p className="mt-1.5 text-sm text-muted-foreground">
               Pick everything you use. We'll only set up what you choose, and nothing comes in
@@ -275,7 +277,6 @@ function OnboardingInner() {
                 I'll do this later
               </button>
             </div>
-            <ProgressDots total={2} current={0} />
           </div>
         </main>
       </>
@@ -289,7 +290,9 @@ function OnboardingInner() {
         <main className="flex min-h-[calc(100vh-4rem)] justify-center bg-background px-4 py-16">
           <div className="w-full max-w-3xl">
             <Wordmark size="lg" />
-            <p className="micro-label mt-6">Step two</p>
+            <div className="mt-6">
+              <StepRail current={0} />
+            </div>
             <h1 className="page-title mt-2">Set up your first work</h1>
             <p className="mt-1.5 text-sm text-muted-foreground">
               Start with one source. The rest is waiting for you in your workspace, on the
@@ -312,7 +315,6 @@ function OnboardingInner() {
                 I'll do this later
               </button>
             </div>
-            <ProgressDots total={2} current={1} />
           </div>
         </main>
       </>

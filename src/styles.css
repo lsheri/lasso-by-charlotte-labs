@@ -61,6 +61,7 @@
   --color-grey-1: var(--nb-grey-1);
   --color-grey-2: var(--nb-grey-2);
   --color-rule: var(--nb-rule);
+  --color-pencil: var(--nb-pencil);
   --color-ink: var(--nb-ink);
   --color-graphite: var(--nb-graphite);
   --color-mid: var(--nb-mid);
@@ -121,6 +122,9 @@
   --nb-grey-1: #f1f1ee;
   --nb-grey-2: #e8e8e3;
   --nb-rule: #dadad5;
+  /* line/pencil from the design system: a ring you can actually see. Sits
+     between --nb-rule (a divider) and --nb-soft (muted text) on purpose. */
+  --nb-pencil: #b9bbb6;
   /* Pass 105: the pencil the lasso is drawn with. Warm, and the page shows through. */
   --nb-ink-yellow: #e4d27a;
   /* Pass 131.1: the verify verdict ink, founder-chosen rust. Distinct from
