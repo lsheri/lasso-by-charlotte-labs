@@ -239,7 +239,7 @@
 
   --state-teal: var(--nb-green); /* mapped, on the record */
   --state-teal-wash: var(--nb-green-wash);
-  --state-teal-band: var(--nb-green);
+  --state-teal-band: var(--nb-green-wash);
 
   --state-indigo: var(--nb-mid); /* private */
   --state-indigo-wash: var(--nb-grey-1);
@@ -267,6 +267,7 @@
   --electric-deep: #7fcdf8;
   --state-amber: #e0b06b;
   --state-teal: #5cc3b4;
+  --state-teal-band: var(--nb-green);
   --state-indigo: #a3b0e8;
   --vendor-claude: #e39c84;
   --vendor-chatgpt: #6fc4b2;
