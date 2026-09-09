@@ -7,8 +7,9 @@ export function renderErrorPage(): string {
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <style>
       /* Standalone document: it cannot import the app stylesheet, so the
-         same palette is mirrored as local tokens and used only through them. */
-      :root { --background: #fafafa; --foreground: #111413; --muted-foreground: #5a5d5c; --card: #ffffff; --border: #e3e5e1; --ember: #12653d; }
+         same palette is mirrored as local tokens and used only through them.
+         KEEP IN SYNC BY HAND with the --nb-* palette in src/styles.css. */
+      :root { --background: #fafaf8; --foreground: #16181a; --muted-foreground: #6b6e6c; --card: #ffffff; --border: #dadad5; --ember: #2a2d2b; }
       body { font: 15px/1.5 system-ui, -apple-system, sans-serif; background: var(--background); color: var(--foreground); display: grid; place-items: center; min-height: 100vh; margin: 0; padding: 1.5rem; }
       .card { max-width: 28rem; width: 100%; text-align: center; padding: 2rem; }
       h1 { font-size: 1.25rem; margin: 0 0 0.5rem; }
