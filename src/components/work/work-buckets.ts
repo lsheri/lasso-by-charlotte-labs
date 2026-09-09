@@ -24,8 +24,8 @@ export const BUCKETS: Bucket[] = [
     key: "documents",
     label: "Documents",
     letter: "D",
-    color: "#1d6fe0",
-    textColor: "#1d6fe0",
+    color: "#0a628f",
+    textColor: "#0a628f",
   },
   {
     key: "presentations",
@@ -38,15 +38,15 @@ export const BUCKETS: Bucket[] = [
     key: "calls",
     label: "Call transcripts",
     letter: "C",
-    color: "#111413",
-    textColor: "#111413",
+    color: "#16181a",
+    textColor: "#16181a",
   },
   {
     key: "llm",
     label: "LLM transcripts",
     letter: "L",
-    color: "#12653d",
-    textColor: "#12653d",
+    color: "#0f8a4b",
+    textColor: "#0f8a4b",
   },
 ];
 

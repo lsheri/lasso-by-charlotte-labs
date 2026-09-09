@@ -5,13 +5,13 @@
  */
 
 export const MAIL = {
-  paper: "#fafafa",
+  paper: "#fafaf8",
   card: "#ffffff",
-  rule: "#e3e5e1",
-  ink: "#111413",
-  body: "#2f3331",
-  muted: "#8b8f8d",
-  cta: "#12653d",
+  rule: "#dadad5",
+  ink: "#16181a",
+  body: "#2a2d2b",
+  muted: "#9a9c98",
+  cta: "#2a2d2b",
 } as const;
 
 export const MAIL_FOOTER = "Sent by Lasso · lasso.charlotte-labs.com";
