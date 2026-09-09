@@ -404,8 +404,83 @@ function IconsGallery() {
             is the authored exception to the under-500ms product rule: decorative and
             intent-triggered only.
           </li>
-          <li>Nothing loops and nothing animates idle.</li>
+          <li>No icon loops and no icon animates idle.</li>
           <li>Reduced motion: static and fully drawn.</li>
+        </ul>
+      </section>
+
+      <section className="mt-6 rounded-[var(--radius)] border border-border bg-card px-5 py-4">
+        <h2 className="micro-label">Motion exceptions · app-wide</h2>
+        <p className="mt-2 text-sm text-muted-foreground">
+          The product rule is that motion finishes inside 500ms. These are the durations that
+          deliberately exceed it and the reason each one earns it. Anything over 500ms that is not
+          on this list is drift, not a decision.
+        </p>
+
+        <h3 className="mt-4 micro-label">Draws · fire once</h3>
+        <ul className="mt-2 space-y-1.5 text-sm text-foreground">
+          <li>
+            <span className="font-mono text-[11px] text-muted-foreground">550ms</span> ·{" "}
+            <span className="font-mono text-[11px] text-muted-foreground">dur/settle</span> · the
+            longest duration the scale itself sanctions.
+          </li>
+          <li>
+            <span className="font-mono text-[11px] text-muted-foreground">600ms</span> · icon
+            signature move, once the redraw has landed.
+          </li>
+          <li>
+            <span className="font-mono text-[11px] text-muted-foreground">700ms</span> · icon
+            redraw on hover, focus or tap. Decorative and intent-triggered.
+          </li>
+          <li>
+            <span className="font-mono text-[11px] text-muted-foreground">730ms</span> · firework
+            life on a journey node. A one-off celebration at the end of a walk, not an entrance.
+          </li>
+          <li>
+            <span className="font-mono text-[11px] text-muted-foreground">800ms</span> ·{" "}
+            <span className="font-mono text-[11px] text-muted-foreground">dur/draw</span> · a title
+            rule drawing itself.
+          </li>
+          <li>
+            <span className="font-mono text-[11px] text-muted-foreground">1100ms</span> · the
+            landing front-door rule. The first motion a visitor ever sees, paced as a slow reveal
+            on purpose. Snapping it to 800ms would make the first impression 27% faster.
+          </li>
+          <li>
+            <span className="font-mono text-[11px] text-muted-foreground">1440ms</span> · icon mount
+            draw-in, once per session.
+          </li>
+        </ul>
+
+        <h3 className="mt-4 micro-label">Ambient loops · never stop</h3>
+        <p className="mt-1.5 text-xs text-muted-foreground">
+          A loop period is a property of the texture, not of the entrance scale. These are excluded
+          from the duration tokens by design.
+        </p>
+        <ul className="mt-2 space-y-1.5 text-sm text-foreground">
+          <li>
+            <span className="font-mono text-[11px] text-muted-foreground">900ms</span> · dash march,
+            on a resolving lasso and on marching ink.
+          </li>
+          <li>
+            <span className="font-mono text-[11px] text-muted-foreground">1200ms</span> · thinking
+            dots.
+          </li>
+          <li>
+            <span className="font-mono text-[11px] text-muted-foreground">1600ms</span> · reading
+            eyes scanning.
+          </li>
+          <li>
+            <span className="font-mono text-[11px] text-muted-foreground">7s</span> · hatch
+            breathe, with a counterphase pair offset half a cycle.
+          </li>
+          <li>
+            <span className="font-mono text-[11px] text-muted-foreground">8s</span> · spider wobble.
+          </li>
+          <li>
+            <span className="font-mono text-[11px] text-muted-foreground">12s</span> · gap drift on
+            the invisible-work strip.
+          </li>
         </ul>
       </section>
 
