@@ -148,6 +148,10 @@
      paper rather than blacking out. Matches .nb-ask-backdrop's language, which
      already dims with ink rather than with black. */
   --nb-scrim: color-mix(in oklab, var(--nb-ink) 28%, transparent);
+  /* The one lift in the system. Surfaces that sit ON the page are flat with a
+     hairline; a surface that floats ABOVE it gets this. Taken from the design
+     system's Modal component, which specifies a 0 12px 32px ink shadow at 10%. */
+  --shadow-modal: 0 12px 32px color-mix(in oklab, var(--nb-ink) 10%, transparent);
   --nb-amber-wash: #f7e3bf;
   --nb-amber-edge: #d9a24a;
 
