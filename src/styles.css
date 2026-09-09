@@ -134,16 +134,21 @@
   --nb-amber: #8a6d1f;
 
   /* Sticky note washes. Pale paper colours for notes, never button fills:
-     the action green is a control colour and must not back a card. */
+     the action colour is graphite and must not back a card. */
   --nb-sticky-green: #e6f2e5;
   --nb-sticky-green-edge: #bcd9ba;
+  /* State washes, added so the state and status triads stop sharing one grey. */
+  --nb-yellow-wash: #fff6c8;
+  --nb-green-wash: #e9f9f0;
+  --nb-amber-wash: #f7e3bf;
+  --nb-amber-edge: #d9a24a;
 
 
   /* Pass 101.1: one colour per provenance status, borders and washes only. */
   --status-exact: var(--nb-green);
-  --status-exact-wash: #e9f2ed;
+  --status-exact-wash: var(--nb-green-wash);
   --status-paraphrase: var(--nb-amber);
-  --status-paraphrase-wash: #f8efe3;
+  --status-paraphrase-wash: var(--nb-amber-wash);
   --status-unsourced: var(--nb-soft);
   --status-unsourced-wash: var(--nb-grey-1);
 
@@ -160,7 +165,7 @@
   --card-foreground: var(--nb-ink);
   --popover: var(--nb-white);
   --popover-foreground: var(--nb-ink);
-  /* One green action per screen. */
+  /* One graphite action per screen. Green now means on the record. */
   --primary: var(--nb-graphite);
   --primary-foreground: var(--nb-white);
   --secondary: var(--nb-grey-1);
@@ -224,17 +229,17 @@
   --electric-deep: var(--nb-blue);
   --electric-wash: var(--nb-grey-1);
 
-  --state-amber: var(--nb-ink); /* needs mapping */
-  --state-amber-wash: var(--nb-grey-1);
-  --state-amber-band: var(--nb-grey-1);
+  --state-amber: var(--nb-amber); /* waiting on you */
+  --state-amber-wash: var(--nb-yellow-wash);
+  --state-amber-band: var(--nb-ink-yellow);
 
-  --state-teal: var(--nb-green); /* mapped */
-  --state-teal-wash: var(--nb-grey-1);
-  --state-teal-band: var(--nb-grey-1);
+  --state-teal: var(--nb-green); /* mapped, on the record */
+  --state-teal-wash: var(--nb-green-wash);
+  --state-teal-band: var(--nb-green);
 
   --state-indigo: var(--nb-mid); /* private */
   --state-indigo-wash: var(--nb-grey-1);
-  --state-indigo-band: var(--nb-grey-1);
+  --state-indigo-band: var(--nb-rule);
 
   /* Vendor tones, brand-adjacent but pulled into the notebook palette. */
   --vendor-claude: #a8452a;
