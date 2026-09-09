@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as JoinRouteImport } from './routes/join'
+import { Route as NextRouteImport } from './routes/next'
 import { Route as NoAccessRouteImport } from './routes/no-access'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as TrustRouteImport } from './routes/trust'
@@ -65,6 +66,11 @@ const AuthRoute = AuthRouteImport.update({
 const JoinRoute = JoinRouteImport.update({
   id: '/join',
   path: '/join',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NextRoute = NextRouteImport.update({
+  id: '/next',
+  path: '/next',
   getParentRoute: () => rootRouteImport,
 } as any)
 const NoAccessRoute = NoAccessRouteImport.update({
@@ -250,6 +256,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/join': typeof JoinRoute
+  '/next': typeof NextRoute
   '/no-access': typeof NoAccessRoute
   '/onboarding': typeof OnboardingRoute
   '/trust': typeof TrustRoute
@@ -289,6 +296,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/join': typeof JoinRoute
+  '/next': typeof NextRoute
   '/no-access': typeof NoAccessRoute
   '/onboarding': typeof OnboardingRoute
   '/trust': typeof TrustRoute
@@ -330,6 +338,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/join': typeof JoinRoute
+  '/next': typeof NextRoute
   '/no-access': typeof NoAccessRoute
   '/onboarding': typeof OnboardingRoute
   '/trust': typeof TrustRoute
@@ -371,6 +380,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/join'
+    | '/next'
     | '/no-access'
     | '/onboarding'
     | '/trust'
@@ -410,6 +420,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/join'
+    | '/next'
     | '/no-access'
     | '/onboarding'
     | '/trust'
@@ -450,6 +461,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/join'
+    | '/next'
     | '/no-access'
     | '/onboarding'
     | '/trust'
@@ -491,6 +503,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   JoinRoute: typeof JoinRoute
+  NextRoute: typeof NextRoute
   NoAccessRoute: typeof NoAccessRoute
   OnboardingRoute: typeof OnboardingRoute
   TrustRoute: typeof TrustRoute
@@ -534,6 +547,13 @@ declare module '@tanstack/react-router' {
       path: '/join'
       fullPath: '/join'
       preLoaderRoute: typeof JoinRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/next': {
+      id: '/next'
+      path: '/next'
+      fullPath: '/next'
+      preLoaderRoute: typeof NextRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/no-access': {
@@ -834,6 +854,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   JoinRoute: JoinRoute,
+  NextRoute: NextRoute,
   NoAccessRoute: NoAccessRoute,
   OnboardingRoute: OnboardingRoute,
   TrustRoute: TrustRoute,
