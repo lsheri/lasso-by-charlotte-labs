@@ -114,17 +114,17 @@ export function renderInviteEmail(args: {
 
   const html = `<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="${CAVEAT_HREF}"><style>
   @media (prefers-color-scheme: dark) {
-    .dm-btn { background-color: ${MAIL.cta} !important; color: #ffffff !important; }
+    .dm-btn { background-color: ${MAIL.paper} !important; color: ${MAIL.ink} !important; }
   }
-  [data-ogsc] .dm-btn { background-color: ${MAIL.cta} !important; color: #ffffff !important; }
-  [data-ogsb] .dm-btn { background-color: ${MAIL.cta} !important; color: #ffffff !important; }
+  [data-ogsc] .dm-btn { background-color: ${MAIL.paper} !important; color: ${MAIL.ink} !important; }
+  [data-ogsb] .dm-btn { background-color: ${MAIL.paper} !important; color: ${MAIL.ink} !important; }
 </style></head><body style="margin:0;padding:28px 16px;background:${MAIL.paper};font-family:${FONT};color:${MAIL.body}">
 <div style="max-width:540px;margin:0 auto">
 <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
 <td style="vertical-align:middle"><img src="${LASSO_MARK_URL}" alt="Lasso" width="44" height="44"></td>
 <td style="vertical-align:middle;padding-left:12px">
-<div style="font-family:${TITLE_FACE};font-size:19px;font-weight:600;letter-spacing:6px;color:#1A1A1A">LASSO</div>
-<div style="font-family:${MONO};font-size:10px;letter-spacing:3px;color:#6B6B6B;margin-top:4px">BY CHARLOTTE LABS</div>
+<div style="font-family:${TITLE_FACE};font-size:19px;font-weight:600;letter-spacing:6px;color:${MAIL.ink}">LASSO</div>
+<div style="font-family:${MONO};font-size:10px;letter-spacing:3px;color:${MAIL.muted};margin-top:4px">BY CHARLOTTE LABS</div>
 </td>
 </tr></table>
 <div style="background:${MAIL.card};border:1px solid ${MAIL.rule};border-radius:8px;padding:26px 24px;margin-top:16px">

@@ -12,7 +12,7 @@ export const NB = {
   rule: '#dadad5',
   ink: '#16181a',
   body: '#2a2d2b',
-  green: '#2a2d2b',
+  cta: '#2a2d2b',
   muted: '#9a9c98',
 } as const
 
@@ -48,11 +48,11 @@ export const text = {
 }
 export const link = { color: 'inherit', textDecoration: 'underline' }
 export const button = {
-  backgroundColor: NB.green,
+  backgroundColor: NB.cta,
   color: '#ffffff',
   fontFamily: BODY_STACK,
   fontSize: '14px',
-  border: `1px solid ${NB.green}`,
+  border: `1px solid ${NB.cta}`,
   borderRadius: '6px',
   padding: '12px 20px',
   textDecoration: 'none',
@@ -83,24 +83,24 @@ const wordmarkText = {
   fontSize: '19px',
   fontWeight: 600,
   letterSpacing: '6px',
-  color: '#1A1A1A',
+  color: NB.ink,
   margin: '0',
 }
 const wordmarkSub = {
   fontFamily: `'JetBrains Mono', ${MONO_STACK}`,
   fontSize: '10px',
   letterSpacing: '3px',
-  color: '#6B6B6B',
+  color: NB.muted,
   margin: '4px 0 0',
 }
 
 // Rendered as a text child, which React may HTML-escape: keep this CSS free of >, &, and quotes.
 export const darkModeCss = `
   @media (prefers-color-scheme: dark) {
-    .dm-btn { background-color: #12653d !important; color: #ffffff !important; }
+    .dm-btn { background-color: ${NB.paper} !important; color: ${NB.ink} !important; }
   }
-  [data-ogsc] .dm-btn { background-color: #12653d !important; color: #ffffff !important; }
-  [data-ogsb] .dm-btn { background-color: #12653d !important; color: #ffffff !important; }
+  [data-ogsc] .dm-btn { background-color: ${NB.paper} !important; color: ${NB.ink} !important; }
+  [data-ogsb] .dm-btn { background-color: ${NB.paper} !important; color: ${NB.ink} !important; }
 `
 
 /** Head with the handwritten title face and the dark mode rules. */
