@@ -113,25 +113,25 @@
 
   /* Notebook palette, the single source of truth for this identity. */
   --nb-white: #ffffff;
-  --nb-paper: #fafafa;
-  --nb-grey-1: #f4f5f4;
-  --nb-grey-2: #ecedec;
-  --nb-rule: #e3e5e1;
+  --nb-paper: #fafaf8;
+  --nb-grey-1: #f1f1ee;
+  --nb-grey-2: #e8e8e3;
+  --nb-rule: #dadad5;
   /* Pass 105: the pencil the lasso is drawn with. Warm, and the page shows through. */
-  --nb-ink-yellow: #e3b341;
+  --nb-ink-yellow: #e4d27a;
   /* Pass 131.1: the verify verdict ink, founder-chosen rust. Distinct from
      --destructive (#b3261e), which stays reserved for destructive actions. */
-  --nb-ink-ember: #a8452a;
-  --nb-ink-ember-wash: #f4e4dd;
+  --nb-ink-ember: #a34234;
+  --nb-ink-ember-wash: #fbeeea;
   /* Pass 107: the quiet blue the "What fed this" web breathes in. */
-  --nb-ink: #111413;
-  --nb-graphite: #2f3331;
-  --nb-mid: #5a5d5c;
-  --nb-soft: #8b8f8d;
-  --nb-green: #12653d;
-  --nb-green-deep: #0e4f30;
-  --nb-blue: #1d6fe0;
-  --nb-amber: #a8600b;
+  --nb-ink: #16181a;
+  --nb-graphite: #2a2d2b;
+  --nb-mid: #6b6e6c;
+  --nb-soft: #9a9c98;
+  --nb-green: #0f8a4b;
+  --nb-green-deep: #0b6b3a;
+  --nb-blue: #0a628f;
+  --nb-amber: #8a6d1f;
 
   /* Sticky note washes. Pale paper colours for notes, never button fills:
      the action green is a control colour and must not back a card. */
@@ -161,7 +161,7 @@
   --popover: var(--nb-white);
   --popover-foreground: var(--nb-ink);
   /* One green action per screen. */
-  --primary: var(--nb-green);
+  --primary: var(--nb-graphite);
   --primary-foreground: var(--nb-white);
   --secondary: var(--nb-grey-1);
   --secondary-foreground: var(--nb-ink);
@@ -215,8 +215,8 @@
  * state also carries an icon, a label and a border treatment.
  */
 :root {
-  --ember: var(--nb-green); /* the one action colour */
-  --ember-deep: var(--nb-green-deep); /* hover */
+  --ember: var(--nb-graphite); /* the one action colour */
+  --ember-deep: var(--nb-ink); /* hover */
   --ember-foreground: var(--nb-white);
   --ember-deep-foreground: var(--nb-white);
   --ember-wash: var(--nb-grey-1);
