@@ -137,6 +137,11 @@
      the action colour is graphite and must not back a card. */
   --nb-sticky-green: #e6f2e5;
   --nb-sticky-green-edge: #bcd9ba;
+  /* State washes, added so the state and status triads stop sharing one grey. */
+  --nb-yellow-wash: #fff6c8;
+  --nb-green-wash: #e9f9f0;
+  --nb-amber-wash: #f7e3bf;
+  --nb-amber-edge: #d9a24a;
 
 
   /* Pass 101.1: one colour per provenance status, borders and washes only. */
