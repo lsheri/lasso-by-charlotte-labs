@@ -7,7 +7,7 @@ export function ProgressDots({ total, current }: { total: number; current: numbe
           aria-hidden
           className={
             i === current
-              ? "h-1.5 w-6 rounded-full bg-accent-deep"
+              ? "h-1.5 w-6 rounded-full bg-graphite"
               : "h-1.5 w-1.5 rounded-full bg-border"
           }
         />

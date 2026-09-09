@@ -36,8 +36,8 @@ export function ToolPicker({
                   onClick={() => onToggle(id)}
                   className={
                     checked
-                      ? "flex items-start gap-3 rounded-[var(--radius)] border border-accent bg-card p-4 text-left shadow-card ring-1 ring-accent transition-colors"
-                      : "flex items-start gap-3 rounded-[var(--radius)] border border-border bg-card p-4 text-left shadow-card transition-colors hover:border-accent"
+                      ? "flex items-start gap-3 rounded-[var(--radius)] border border-graphite bg-card p-4 text-left shadow-card ring-1 ring-graphite transition-colors"
+                      : "flex items-start gap-3 rounded-[var(--radius)] border border-border bg-card p-4 text-left shadow-card transition-colors hover:border-graphite"
                   }
                 >
                   <ToolBadge tool={id} />
@@ -48,8 +48,8 @@ export function ToolPicker({
                   <span
                     aria-hidden
                     className={
-                      checked
-                        ? "flex h-5 w-5 shrink-0 items-center justify-center rounded-[4px] border border-accent bg-accent-soft text-accent-deep"
+                    checked
+                        ? "flex h-5 w-5 shrink-0 items-center justify-center rounded-[4px] border border-graphite bg-graphite text-nb-white"
                         : "h-5 w-5 shrink-0 rounded-[4px] border border-border"
                     }
                   >
