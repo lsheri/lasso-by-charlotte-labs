@@ -136,7 +136,7 @@ export function PacketPage({
           {data.engagement.term_label ? ` · ${data.engagement.term_label}` : ""}
         </p>
         {sharedBriefs.length > 0 ? (
-          <div className="mt-4 rounded-[var(--radius)] border border-accent bg-card px-5 py-4 shadow-card">
+          <div className="mt-4 rounded-[var(--radius-control)] border border-accent bg-card px-5 py-4 shadow-card">
             <p className="micro-label micro-label-section">What {subjectName} was asked to do</p>
             {sharedBriefs.map((item) => (
               <p key={item.id} className="mt-1.5 text-sm font-medium text-foreground">
@@ -149,7 +149,7 @@ export function PacketPage({
           </div>
         ) : null}
         {data.engagement.brief ? (
-          <div className="mt-4 rounded-[var(--radius)] border border-border bg-card px-5 py-4 shadow-card">
+          <div className="mt-4 rounded-[var(--radius-control)] border border-[var(--nb-pencil)] bg-card px-5 py-4 shadow-card">
             <p className="micro-label">Brief</p>
             <p className="mt-1 whitespace-pre-wrap text-sm text-foreground">
               {data.engagement.brief}
@@ -222,7 +222,7 @@ export function PacketPage({
               <h2 className="micro-label micro-label-section">Confirmed decisions</h2>
               <div className="mt-3 space-y-2">
                 {data.decisions.map((decision) => (
-                  <article key={decision.id} className="border-b border-border px-1 py-4 first:pt-0">
+                  <article key={decision.id} className="border-b border-[var(--nb-pencil)] px-1 py-4 first:pt-0">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <span className="micro-label">The call</span>
                       {decision.date_label ? (
@@ -340,7 +340,7 @@ export function CoachingNoteCard({
   heading: string;
 }) {
   return (
-    <article className="border-b border-border px-1 py-4 first:pt-0">
+    <article className="border-b border-[var(--nb-pencil)] px-1 py-4 first:pt-0">
       <p className="micro-label">{heading}</p>
       <div className="mt-3 space-y-3">
         <NoteField label="What went well" value={note.did_well} />
