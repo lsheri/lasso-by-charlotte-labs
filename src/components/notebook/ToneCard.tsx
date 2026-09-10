@@ -31,6 +31,7 @@ export function ToneCard({
   title,
   meta,
   mark,
+  children,
   className = "",
 }: {
   tone?: CardTone;
@@ -39,6 +40,8 @@ export function ToneCard({
   meta?: string;
   /** Small source mark, rendered at the end of the label row. */
   mark?: ReactNode;
+  /** Optional prose body, rendered between the title and the meta line. */
+  children?: ReactNode;
   className?: string;
 }) {
   return (
