@@ -37,7 +37,9 @@ export function CoachNotesPage() {
       <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-10">
         <div>
           {rows.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Nothing here yet.</p>
+            <p className="rounded-[var(--radius-md)] border border-dashed border-pencil bg-card px-4 py-6 text-center text-sm text-muted-foreground">
+              Nothing here yet.
+            </p>
           ) : (
             <CoachNoteList
               notes={rows}

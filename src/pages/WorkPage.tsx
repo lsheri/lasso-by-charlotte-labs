@@ -676,7 +676,9 @@ export function WorkPage() {
                     />
                     <div className="space-y-2">
                       {entries.length === 0 ? (
-                        <p className="text-[11.5px] text-soft">Nothing here yet.</p>
+                        <p className="rounded-[var(--radius-md)] border border-dashed border-pencil bg-card px-3 py-4 text-center text-[11.5px] text-soft">
+                          Nothing here yet.
+                        </p>
                       ) : (
                         entries.map((entry) =>
                           isConversationGroup(entry)

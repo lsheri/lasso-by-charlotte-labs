@@ -127,7 +127,7 @@ export function WorkArtifactPanel({
       />
 
       {build.isPending ? (
-        <p className="flex items-center gap-2 text-sm text-muted-foreground">
+        <p className="flex items-center gap-2 rounded-[var(--radius-md)] border border-pencil bg-card px-4 py-3.5 text-sm text-muted-foreground">
           <span className="nb-dots" aria-hidden>
             <span className="nb-dot" />
             <span className="nb-dot" />

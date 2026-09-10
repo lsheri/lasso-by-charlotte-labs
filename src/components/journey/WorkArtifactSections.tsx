@@ -71,7 +71,11 @@ function Section({
 }
 
 function Quiet({ children }: { children: ReactNode }) {
-  return <p className="text-sm text-muted-foreground">{children}</p>;
+  return (
+    <p className="border-t border-hairline pt-2.5 font-serif text-[13px] italic text-muted-foreground">
+      {children}
+    </p>
+  );
 }
 
 export function WorkArtifactSections({
