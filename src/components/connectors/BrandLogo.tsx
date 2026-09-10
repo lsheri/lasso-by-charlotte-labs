@@ -123,6 +123,17 @@ function CustomMark({ brand }: { brand: BrandKey }) {
       </g>
     );
   }
+  if (brand === "slack") {
+    // Four rounded bars in Slack's own four colours.
+    return (
+      <g>
+        <rect x="3" y="10.3" width="7.7" height="3.4" rx="1.7" fill="#36C5F0" />
+        <rect x="10.3" y="3" width="3.4" height="7.7" rx="1.7" fill="#2EB67D" />
+        <rect x="13.3" y="10.3" width="7.7" height="3.4" rx="1.7" fill="#ECB22E" />
+        <rect x="10.3" y="13.3" width="3.4" height="7.7" rx="1.7" fill="#E01E5A" />
+      </g>
+    );
+  }
   if (brand === "granola") {
     return (
       <g>
