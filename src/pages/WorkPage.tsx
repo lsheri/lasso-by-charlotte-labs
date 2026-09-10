@@ -814,6 +814,55 @@ export function WorkPage() {
               ))
             )}
           </WorkSection>
+
+          <div className="grid gap-4 lg:grid-cols-2">
+            {unmapped.length > 0 ? (
+              <ToneCard
+                tone="attention"
+                label={`${unmapped.length} UNMAPPED`}
+                title="Unmapped work is private and appears in no receipt."
+              >
+                <p>
+                  Nobody else can see it and it counts towards nothing until you map it to a
+                  workstream. Mapping is the moment you decide it belongs to a piece of work.
+                </p>
+                {unmapped.length > 0 ? (
+                  <div className="mt-3">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={suggesting}
+                      onClick={() => void handleSuggest()}
+                    >
+                      {suggesting ? "Thinking…" : "Suggest where these go"}
+                    </Button>
+                  </div>
+                ) : null}
+              </ToneCard>
+            ) : null}
+
+            <ToneCard tone="paper" label="WHERE THIS CAME FROM" title="Every piece has an origin.">
+              <ul className="mt-1 space-y-2">
+                {sourceCounts.map((row) => (
+                  <li key={row.label}>
+                    <div className="flex items-center justify-between gap-3">
+                      <span>{row.label}</span>
+                      <span className="font-mono text-[10px] text-soft">{row.count}</span>
+                    </div>
+                    <div className="mt-1 h-1.5 rounded-full bg-[var(--nb-pencil)]">
+                      <span
+                        className="block h-1.5 rounded-full bg-foreground"
+                        style={{
+                          width: `${sourceMax > 0 ? Math.round((row.count / sourceMax) * 100) : 0}%`,
+                        }}
+                      />
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </ToneCard>
+          </div>
         </div>
       )}
 
