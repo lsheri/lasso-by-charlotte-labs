@@ -72,7 +72,7 @@ function Section({
 
 function Quiet({ children }: { children: ReactNode }) {
   return (
-    <p className="border-t border-hairline pt-2.5 font-serif text-[13px] italic text-muted-foreground">
+    <p className="border-t border-border pt-2.5 font-serif text-[13px] italic text-muted-foreground">
       {children}
     </p>
   );
