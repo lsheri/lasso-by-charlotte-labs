@@ -470,7 +470,7 @@ export function ReflectPage() {
                   {pending ? (
                     <div className="nb-binder-inset">
                       <ThinkingTrail
-                        items={itemsInScope(scope, all).map((item) => ({
+                        items={scopedItems.map((item) => ({
                           id: item.id,
                           title: item.title,
                         }))}
@@ -483,7 +483,7 @@ export function ReflectPage() {
                     <>
                       <div className="nb-binder-inset">
                         <ThinkingTrail
-                          items={itemsInScope(scope, all).map((item) => ({
+                          items={scopedItems.map((item) => ({
                             id: item.id,
                             title: item.title,
                           }))}
