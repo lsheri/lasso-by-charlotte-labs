@@ -66,6 +66,7 @@ Never promote a row to `VERIFIED` yourself.
 | 09 · Screens · Entry & settings | `1:10` | 11 frames. |
 | 10 · Artifact viewer | — | 4 frames, component-level not route-level. V1 peek panel, V2 what fed this, V3 Work Artifact, V4 circling a region (PROPOSED, refused). |
 | 11 · States | — | Empty, one, many, long-text, error, loading. Frames A/B/C BUILT (skin only); D/E/F not ported, they require new actions, computed counts or new verdict vocabulary. |
+| 13 · Marketing | — | 6 frames. Marketing collateral and one shipped email, not routes. See the Marketing section below. |
 | 14 · Archive | — | Dead ends. Never port from here. |
 
 NOTE: `get_metadata` with no nodeId returns only the read-me page on this file. Always
@@ -326,6 +327,39 @@ Telemetry impact: none. `evidence.opened` keeps both emissions and its three sur
 (`contributor`, `prompt`, `show_all`). `peek.open` stays a gesture-anchored perf finish.
 No event name, payload or dimension changed, and no new user action was added.
 
+## Marketing — page 13
+
+This page is not routes. It is marketing collateral plus one shipped email, and it
+is the first page that follows the code rather than leading it. There is no route
+table because there is nothing to navigate to.
+
+| Frame | What it is | Maps to | Status |
+|---|---|---|---|
+| M1 · The positioning ladder | Copy doctrine board, four lengths of one idea | No code surface | NON-CODE. Doctrine only; never renders in the app. |
+| M2 · The pilot one-pager | US Letter sales PDF | No code surface | NON-CODE. Sales collateral. Rule 9 failures recorded below. |
+| M3 · Social cards | Three 1200x630 OG cards | Only consumer is `/` metadata | **FROZEN under rule 15.** Wiring one in changes what `/` serves. Second freeze surface after the hero; the freeze section below now names it. |
+| M4 · The invite email, earlier draft | Superseded draft | None | SUPERSEDED. M5's own description says so. Never port it (rule 11 archived-component principle). |
+| M5 · Invite email, as shipped | The three real variants | `src/lib/invite-email.ts` | BUILT (skin, 10 Sep 2026) |
+| M6 · Email mark notes + GIF source | Production note for `lasso-mark.gif` | Hosted asset, referenced by `LASSO_MARK_URL` | NON-CODE. The mark lives at `charlotte-labs.com/email/lasso-mark.gif`; referenced, not copied. |
+
+M5 skin notes, 10 Sep 2026. Cosmetic only, no string changes: the card border moved
+from `MAIL.rule` `#dadad5` to a new `MAIL.pencil` `#b9bbb6` (line/pencil), and the
+card width moved from 540 to 544 inside the 600 shell. CTA stays graphite; the
+three dark-mode inversion paths are untouched, because M5 explicitly endorses them.
+Controls, states and telemetry unchanged: one CTA anchor per variant, one plain-text
+URL line, three variants and their degradation states, no telemetry at all (emails
+are sent server-side, no `recordEvent` exists in this path).
+
+Rule 9 failures on this page, not built: M2's "above 80%" coverage figure, "3 or
+more" reuse count and live pricing placeholder; M3's invented receipt counts ("8
+conversations, 61 turns / 11 figures checked at source"); M4's "does not score you
+or rank you" (rule 4 forbids the word even in denial) and "You see every note
+written about your work" (broader than `coaching-access.ts` supports); M6's note
+body carries an em dash that must never travel into shipped copy.
+
+Refused: any M3 wiring, any M4 port, any new marketing route or PDF surface, any
+change to the `/` head.
+
 ## The landing page is frozen
 
 Route `/` is off limits. Not "do it last" — do not do it at all.
@@ -343,7 +377,9 @@ The freeze holds even when:
 - an instruction says "do every screen" or "finish the redesign"
 
 The `hero.words` motion event is marketing-only and is inside this freeze. Do not
-implement it, even during the motion registry pass.
+implement it, even during the motion registry pass. OG and social-card imagery
+(page 13, frame M3) is also inside this freeze: its only consumer is the public
+metadata at `/`, so wiring or regenerating those cards changes what `/` serves.
 
 **If a shared token or component change would alter what renders at `/`, STOP before
 doing anything and say exactly what would change there.** That is the case most likely
