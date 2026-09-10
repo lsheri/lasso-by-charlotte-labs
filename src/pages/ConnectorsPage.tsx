@@ -330,27 +330,11 @@ function TranscriptsCard({
   );
 }
 
-function Category({
-  title,
-  hue,
-  children,
-}: {
-  title: string;
-  hue: string;
-  children: React.ReactNode;
-}) {
+function Category({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section>
-      <h2
-        className="rounded-[var(--radius)] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.08em]"
-        style={{
-          color: `var(${hue})`,
-          background: `color-mix(in oklab, var(${hue}) 10%, transparent)`,
-        }}
-      >
-        {title}
-      </h2>
-      <div className="mt-3 space-y-2">{children}</div>
+      <SectionHeader title={title} />
+      {children}
     </section>
   );
 }
