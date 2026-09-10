@@ -1,4 +1,5 @@
 import { PageHeader } from "@/components/layout/PageHeader";
+import { ToneCard } from "@/components/notebook/ToneCard";
 import { useWorkItems } from "@/hooks/use-work-items";
 import { deliverableTag } from "@/lib/deliverable-kinds";
 import { EDU_VOCAB } from "@/lib/edu-vocab";
