@@ -553,6 +553,53 @@ export function WorkPage() {
           />
       </div>
 
+      {/* The section accessories, lifted into one toolbar above the chips. */}
+      {all.length > 0 ? (
+        <div className="mb-4 flex flex-wrap items-center gap-3">
+          {active.length > 0 ? <SuggestLegend /> : null}
+          {active.length > 0 && highConfidence.length >= 3 ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={acceptPending}
+              onClick={() => {
+                void (async () => {
+                  for (const suggestion of highConfidence) {
+                    await acceptSuggestion(suggestion);
+                  }
+                })();
+              }}
+            >
+              Accept all high-confidence ({highConfidence.length})
+            </Button>
+          ) : null}
+          {!isCoach && flagged.length > 0 ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={removingFlagged}
+              onClick={() => void removeAllFlagged()}
+            >
+              {removingFlagged ? "Removing…" : `Remove all ${flagged.length} flagged`}
+            </Button>
+          ) : null}
+          {priv.length > 0 ? (
+            <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
+              <Checkbox
+                checked={showPrivate}
+                onCheckedChange={(next) => setShowPrivate(next === true)}
+                aria-label="Show private work"
+              />
+              Show private ({priv.length})
+            </label>
+          ) : null}
+        </div>
+      ) : null}
+
+
+
       {all.length > 0 ? (
         <div className="mb-6 flex flex-wrap items-center gap-2">
           <button
