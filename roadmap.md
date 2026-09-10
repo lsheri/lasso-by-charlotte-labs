@@ -17,3 +17,4 @@
 - [x] Port Members to the approved permission-sensitive table design while preserving all thirteen controls and gates
 - [x] Port Coach notes to the approved two-column design without changing note behavior
 - [x] Port 1:1 prep to the approved two-column design without changing saved-note behavior
+- [ ] Port the coaching roster and coaching packet while preserving every control, access gate, and event
