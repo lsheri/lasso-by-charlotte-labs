@@ -1,32 +1,32 @@
-# Coach roster and packet presentation ports
+# Join and no-access notebook restyle
 
 ## Data impact
-- Presentation only. No user action, surface behavior, flow, query, route, or event schema changes.
-- Existing clicks, form submissions, visibility rules, and event calls remain in place.
-- No consent-related code or database work is touched.
+- Presentation only. No user action, flow, query, authentication behavior, event name, payload, consent surface, or database behavior changes.
+- The existing event path and all four named join telemetry/toast calls remain unchanged.
 
-## Coaching roster
-- Keep the existing hand-built three-line heading, adding the italic treatment to “you coach.”
-- Preserve `CoachLinkPeople`, the error toast effect, the empty-state invite, and the full subject-row button with profile switching, all three cache refreshes, and navigation.
-- Restyle subject rows as a responsive table with PERSON, ENGAGEMENT, SHARED WITH YOU, and LAST NOTE columns.
-- Keep both shared-work counts, the multi-workspace organization line, loading state, and the conditional “New since your last note” line.
-- Add a 320px right rail with the two requested visibility cards and handwritten closing line.
+## Verified state and control inventory
+- `/join` has all 11 listed render states: missing code, loading, not found, revoked, used, expired, invite creator, signed out, already a member, account mismatch, and acceptance form.
+- `/join` has the listed controls: Copy link; three Go to workspace buttons; two Sign out and continue buttons; Go to sign in; Set up your account; name label/input; Join submit with its existing disabled and pending states; and the displayed error result. The error card is feedback rather than an interactive control.
+- `/no-access` has one control: Sign out, retaining its existing three-step handler.
+- No listed control is stranded by the proposed layout.
 
-## Coaching packet
-- Keep the complete page hook sequence and all early-return behavior unchanged.
-- Add the handwritten breadcrumb and retain the unsplit subject name as the page title.
-- Preserve the exact section order, task grouping, empty state, shared briefs, engagement brief, newer-material indicator, decision source counts, and title-only honesty line.
-- Restyle shared task groups as notebook cards and add 20px source marks to real shared work items without changing `TaskWorkflow` or its open action.
-- Add the requested right rail explaining that the packet is built only from shared work.
-- Keep `CoachOutcomeCard`, `FirmChecksCard`, `NoteComposer`, and `CoachChat` mounted in their current order with every existing control and access gate.
-- Restyle only the NoteComposer container treatment; retain all three required fields, citation choices, validation, and Share note action.
-- Do not add the withheld-item panel, suggested-question block, archived pills, unsupported metadata, or any withheld-work count or mention.
+## Implementation
+- Restyle only JSX and class names in `src/routes/join.tsx` and `src/routes/no-access.tsx`.
+- Use the existing `BrandLockup` and notebook tokens for centered entry cards. Keep every route option and all code above rendering behavior unchanged.
+- Keep all ten non-form join states separate through `StateCard`, updating only shared card chrome, mono labels, and serif titles.
+- Restyle `AcceptForm` with the real inviter, organization, and engagement values; generated initials; a serif title; hairline; and two compact, marked explanation sections.
+- Wire the single primary “Accept and set up” button to the existing form submission without changing any submission logic.
+- Retain current fallback wording when inviter details are absent. Do not add the unsupported “Not now” action.
+- Restyle `/no-access` with the same visual language while retaining its true workspace-access wording and existing Sign out action. Add only the privacy-safe honest-silence sentence and handwritten line.
 
-## Invariants and validation
-- Preserve `canEdit={false}`, `role !== "coach"`, `canWrite`, and the access-denial branch.
-- Preserve all six requested outcome test IDs and the four named event/performance calls verbatim.
-- Keep `micro-label`, `micro-label-section`, and `micro-label-ai` on their existing semantic headings.
-- Confirm no hooks were added, removed, reordered, or conditionally mounted.
-- Check changed files for raw colors and forbidden bare letter-spacing utilities.
-- Run TypeScript validation and every relevant coaching, packet, note, and access test found in the repository.
-- Provide separate before/after control inventories for the roster and packet. Do not deploy or perform database work.
+## Copy verification
+- Verify subject visibility of coach notes before using “every”; soften the statement if any note can remain unavailable.
+- Verify coach exclusion of drafts and unmapped work before keeping that promise.
+- Search for a real user export/download/takeout capability. If none exists, omit the handwritten export promise entirely.
+
+## Validation
+- Compare the before/after state and control inventories.
+- Confirm route configuration, hook order, queries, backend calls, navigation targets, and the four named telemetry/toast sites are unchanged.
+- Check both files for raw color literals and forbidden bare letter-spacing utilities.
+- Run TypeScript validation and relevant entry/invite/access tests, then inspect the latest build signal.
+- Do not deploy or perform database work.

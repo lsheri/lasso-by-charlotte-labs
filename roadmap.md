@@ -18,3 +18,4 @@
 - [x] Port Coach notes to the approved two-column design without changing note behavior
 - [x] Port 1:1 prep to the approved two-column design without changing saved-note behavior
 - [x] Port the coaching roster and coaching packet while preserving every control, access gate, and event
+- [ ] Restyle the join and no-access entry screens while preserving every state, control, and event
