@@ -74,8 +74,15 @@ export function FirmMetricGrid({
   ];
 
   return (
-    <section className="space-y-3" data-testid="firm-metric-grid">
-      <p className="text-xs text-muted-foreground">Last {data.window_days} days.</p>
+    <section data-testid="firm-metric-grid">
+      <SectionHeader
+        title="What the firm produced"
+        action={
+          <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
+            Last {data.window_days} days
+          </span>
+        }
+      />
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
         {tiles.map((tile) => (
           <StatTile key={tile.key} tile={tile} reduceMotion={reduceMotion} />
