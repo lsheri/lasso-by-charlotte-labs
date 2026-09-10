@@ -211,7 +211,7 @@ function MembersConsole() {
       <PageHeader
         title={copy.title}
         subtitle={metaLine}
-        italicWord={business ? "of the firm" : undefined}
+        {...(business ? { italicWord: "of the firm" } : {})}
       />
 
       {isLoading ? <p className="text-sm text-muted-foreground">Loading…</p> : null}
