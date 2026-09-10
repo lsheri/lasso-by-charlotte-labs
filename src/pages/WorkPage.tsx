@@ -1,4 +1,3 @@
-import { CheckCircle2, CircleDashed } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
@@ -19,7 +18,7 @@ import { PasteThreadDialog } from "@/components/work/PasteThreadDialog";
 import { OpenFileAction } from "@/components/work/OpenFileAction";
 import { ConnectorBrowseActions } from "@/components/connectors/ConnectorBrowseActions";
 import { WatchSuggestionBanner } from "@/components/connectors/WatchSuggestionBanner";
-import { SuggestDot, SuggestLegend, Suggested } from "@/components/common/Suggested";
+import { SuggestLegend } from "@/components/common/Suggested";
 import { SuggestionChip } from "@/components/work/SuggestionChip";
 import { PeekPanel, type PeekEntry } from "@/components/peek/PeekPanel";
 import type { PeekAnalysisPreset } from "@/components/peek/PeekActionBar";
@@ -28,8 +27,6 @@ import { TranscriptsAction } from "@/components/work/TranscriptsAction";
 import { WorkDateDialog } from "@/components/work/WorkDateDialog";
 import { MapButton } from "@/components/work/MapButton";
 import { RowAction, WorkRow } from "@/components/work/WorkRow";
-import { EngagementFold, WorkSection } from "@/components/work/WorkSection";
-import { WorkPile } from "@/components/work/WorkPile";
 import { ConversationChips } from "@/components/work/ConversationChips";
 import { ConversationCard } from "@/components/work/ConversationCard";
 import { FlaggedMarker, isFlaggedRestatement } from "@/components/work/FlaggedMarker";
@@ -55,12 +52,8 @@ import { removeWorkItems } from "@/lib/work-bulk.functions";
 import { detachEpisodeItems, syncEpisodeForMapping } from "@/lib/episodes.functions";
 import { logEvent } from "@/lib/telemetry";
 import { logV2 } from "@/lib/telemetry-v2";
-import { engagementHue } from "@/lib/work-identity";
-import { engagementLabel } from "@/lib/clients";
 import { markOpenStart } from "@/lib/perf-timing";
 import {
-  effectiveWorkDate,
-  formatDate,
   groupConversations,
   isConversationGroup,
   sourceLabel,
@@ -70,7 +63,7 @@ import {
 import { PageHeader } from "@/components/layout/PageHeader";
 import { SectionHeader } from "@/components/notebook/SectionHeader";
 import { ToneCard } from "@/components/notebook/ToneCard";
-import { SourceMark, sourceVendorKey } from "@/components/work/SourceMark";
+import { sourceVendorKey } from "@/components/work/SourceMark";
 import { BUCKETS, bucketFor } from "@/components/work/work-buckets";
 
 export function WorkPage() {
@@ -372,22 +365,6 @@ export function WorkPage() {
     .map((i) => i.id);
   const allChosen = selectable.length > 0 && selectable.every((id) => chosen.has(id));
 
-  /** Mapped work, folded one engagement at a time. */
-  const mappedByEngagement = (() => {
-    const buckets = new Map<string, { id: string | null; label: string; items: WorkItemRow[] }>();
-    for (const item of mapped) {
-      const engagement = item.work_item_tasks[0]?.tasks?.engagements ?? null;
-      const key = engagement?.id ?? "unfiled";
-      const bucket = buckets.get(key) ?? {
-        id: engagement?.id ?? null,
-        label: engagement ? engagementLabel(engagement) : "Mapped elsewhere",
-        items: [],
-      };
-      bucket.items.push(item);
-      buckets.set(key, bucket);
-    }
-    return Array.from(buckets.values()).sort((a, b) => a.label.localeCompare(b.label));
-  })();
 
   function toggleChosen(id: string) {
     setChosen((prev) => {
@@ -437,12 +414,15 @@ export function WorkPage() {
     ),
   ).sort((a, b) => a.localeCompare(b));
 
+  // Private work only appears in the columns while the show-private box is on.
+  const visible = showPrivate ? all : all.filter((item) => item.visibility !== "private");
+
   const filtered =
     columnFilter === "all"
-      ? all
+      ? visible
       : columnFilter === "unmapped"
-        ? all.filter((item) => item.visibility === "unmapped")
-        : all.filter(
+        ? visible.filter((item) => item.visibility === "unmapped")
+        : visible.filter(
             (item) => item.work_item_tasks[0]?.tasks?.engagements?.code === columnFilter,
           );
 
@@ -463,11 +443,30 @@ export function WorkPage() {
   })();
   const sourceMax = sourceCounts.reduce((max, row) => Math.max(max, row.count), 0);
 
-  function cardMeta(item: WorkItemRow): string {
-    const code = item.work_item_tasks[0]?.tasks?.engagements?.code;
-    if (code) return code;
-    return item.visibility === "private" ? "PRIVATE" : "UNMAPPED";
+  /** One item as it renders inside a type column: same props the sections passed. */
+  function renderColumnItem(entry: WorkItemRow) {
+    const variant = entry.visibility === "mapped" ? "mapped" : "unmapped";
+    return (
+      <WorkRow
+        key={entry.id}
+        item={entry}
+        lead={
+          selectMode && !isCoach && entry.visibility === "unmapped" ? (
+            <Checkbox
+              checked={chosen.has(entry.id)}
+              onCheckedChange={() => toggleChosen(entry.id)}
+              aria-label={`Select ${entry.title}`}
+            />
+          ) : undefined
+        }
+        onOpen={openItem(entry)}
+        chips={<ConversationChips item={entry} />}
+        actions={rowActions(entry, variant)}
+        {...(entry.visibility === "mapped" ? {} : { footer: suggestionFor(entry) })}
+      />
+    );
   }
+
 
   return (
     <div>
@@ -554,6 +553,53 @@ export function WorkPage() {
           />
       </div>
 
+      {/* The section accessories, lifted into one toolbar above the chips. */}
+      {all.length > 0 ? (
+        <div className="mb-4 flex flex-wrap items-center gap-3">
+          {active.length > 0 ? <SuggestLegend /> : null}
+          {active.length > 0 && highConfidence.length >= 3 ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={acceptPending}
+              onClick={() => {
+                void (async () => {
+                  for (const suggestion of highConfidence) {
+                    await acceptSuggestion(suggestion);
+                  }
+                })();
+              }}
+            >
+              Accept all high-confidence ({highConfidence.length})
+            </Button>
+          ) : null}
+          {!isCoach && flagged.length > 0 ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={removingFlagged}
+              onClick={() => void removeAllFlagged()}
+            >
+              {removingFlagged ? "Removing…" : `Remove all ${flagged.length} flagged`}
+            </Button>
+          ) : null}
+          {priv.length > 0 ? (
+            <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
+              <Checkbox
+                checked={showPrivate}
+                onCheckedChange={(next) => setShowPrivate(next === true)}
+                aria-label="Show private work"
+              />
+              Show private ({priv.length})
+            </label>
+          ) : null}
+        </div>
+      ) : null}
+
+
+
       {all.length > 0 ? (
         <div className="mb-6 flex flex-wrap items-center gap-2">
           <button
@@ -613,10 +659,11 @@ export function WorkPage() {
         </div>
       ) : (
         <div className="space-y-8">
-          <div>
+          <div className={suggesting ? "animate-pulse" : undefined}>
             <div className="grid gap-6 lg:grid-cols-4">
               {BUCKETS.map((bucket) => {
                 const items = filtered.filter((item) => bucketFor(item.type).key === bucket.key);
+                const entries = groupConversations(items);
                 return (
                   <div key={bucket.key}>
                     <SectionHeader
@@ -628,27 +675,19 @@ export function WorkPage() {
                       }
                     />
                     <div className="space-y-2">
-                      {items.length === 0 ? (
+                      {entries.length === 0 ? (
                         <p className="text-[11.5px] text-soft">Nothing here yet.</p>
                       ) : (
-                        items.map((item) => (
-                          <button
-                            key={item.id}
-                            type="button"
-                            onClick={openItem(item)}
-                            className="block w-full text-left"
-                          >
-                            <ToneCard
-                              tone={item.visibility === "unmapped" ? "attention" : "paper"}
-                              label={[sourceLabel(item.source), formatDate(effectiveWorkDate(item))]
-                                .filter(Boolean)
-                                .join(" · ")}
-                              mark={<SourceMark item={item} size={14} />}
-                              title={item.title}
-                              meta={cardMeta(item)}
-                            />
-                          </button>
-                        ))
+                        entries.map((entry) =>
+                          isConversationGroup(entry)
+                            ? renderGroup(
+                                entry,
+                                (entry.transcript ?? entry.items[0]!).visibility === "mapped"
+                                  ? "mapped"
+                                  : "unmapped",
+                              )
+                            : renderColumnItem(entry),
+                        )
                       )}
                     </div>
                   </div>
@@ -667,153 +706,9 @@ export function WorkPage() {
                 {flagged.length} item{flagged.length === 1 ? "" : "s"} look like part of a
                 conversation rather than separate artifacts. You decide whether they stay.
               </p>
-              <button
-                type="button"
-                disabled={removingFlagged}
-                onClick={() => void removeAllFlagged()}
-                className="text-xs font-medium text-destructive transition-opacity hover:opacity-70 disabled:opacity-40"
-              >
-                {removingFlagged ? "Removing…" : `Remove all ${flagged.length}`}
-              </button>
             </div>
           ) : null}
-          <WorkSection
-            label="Unmapped"
-            hint="Private by default until you map it, nothing is shared with your coach yet."
-            count={unmappedEntries.length}
-            tone="amber"
-            icon={CircleDashed}
-            defaultOpen
-            accessory={
-              priv.length > 0 ? (
-                <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
-                  <Checkbox
-                    checked={showPrivate}
-                    onCheckedChange={(next) => setShowPrivate(next === true)}
-                    aria-label="Show private work"
-                  />
-                  Show private ({priv.length})
-                </label>
-              ) : undefined
-            }
-          >
-            {pileItems.length === 0 ? (
-              <p className="rounded-[var(--radius)] border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
-                Nothing waiting. Every piece of work here has a home.
-              </p>
-            ) : (
-              <div className={suggesting ? "animate-pulse space-y-2" : "space-y-2"}>
-                {active.length === 0 ? (
-                  <Suggested className="flex flex-wrap items-center justify-between gap-3">
-                    <p className="flex min-w-0 items-center gap-2 text-sm text-foreground">
-                      <SuggestDot />
-                      Let Lasso suggest where these go
-                    </p>
-                    <button
-                      type="button"
-                      disabled={suggesting}
-                      onClick={() => void handleSuggest()}
-                      className="text-xs font-medium text-accent-deep transition-opacity hover:opacity-70 disabled:opacity-50"
-                    >
-                      {suggesting ? "Thinking…" : "Suggest mapping"}
-                    </button>
-                  </Suggested>
-                ) : (
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <SuggestLegend />
-                    {highConfidence.length >= 3 ? (
-                      <button
-                        type="button"
-                        disabled={acceptPending}
-                        onClick={() => {
-                          void (async () => {
-                            for (const suggestion of highConfidence) {
-                              await acceptSuggestion(suggestion);
-                            }
-                          })();
-                        }}
-                        className="text-xs font-medium text-accent-deep transition-opacity hover:opacity-70 disabled:opacity-50"
-                      >
-                        Accept all high-confidence ({highConfidence.length})
-                      </button>
-                    ) : null}
-                  </div>
-                )}
 
-                <WorkPile
-                  entries={unmappedEntries}
-                  onOpenEntry={(entry) => {
-                    const head = isConversationGroup(entry)
-                      ? (entry.transcript ?? entry.items[0]!)
-                      : entry;
-                    openItem(head, isConversationGroup(entry) ? entry : head)();
-                  }}
-                  forceMatrix={selectMode || active.length > 0}
-
-                  renderEntry={(entry) =>
-                    isConversationGroup(entry) ? (
-                      renderGroup(entry, "unmapped")
-                    ) : (
-                      <WorkRow
-                        key={entry.id}
-                        item={entry}
-                        lead={
-                          selectMode && !isCoach && entry.visibility === "unmapped" ? (
-                            <Checkbox
-                              checked={chosen.has(entry.id)}
-                              onCheckedChange={() => toggleChosen(entry.id)}
-                              aria-label={`Select ${entry.title}`}
-                            />
-                          ) : undefined
-                        }
-                        onOpen={openItem(entry)}
-                        chips={<ConversationChips item={entry} />}
-                        actions={rowActions(entry, "unmapped")}
-                        footer={suggestionFor(entry)}
-                      />
-                    )
-                  }
-                />
-              </div>
-            )}
-          </WorkSection>
-
-          <WorkSection
-            label="Mapped"
-            hint="Visible to your coach through the workstreams you mapped it to."
-            count={mapped.length}
-            tone="teal"
-            icon={CheckCircle2}
-          >
-            {mapped.length === 0 ? (
-              <p className="rounded-[var(--radius)] border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
-                Nothing mapped yet. Map a piece of work to a workstream and it shows up here.
-              </p>
-            ) : (
-              mappedByEngagement.map((bucket) => (
-                <EngagementFold
-                  key={bucket.id ?? "unfiled"}
-                  label={bucket.label}
-                  hue={engagementHue(bucket.id)}
-                  count={bucket.items.length}
-                >
-                  {groupConversations(bucket.items).map((entry) =>
-                    isConversationGroup(entry) ? (
-                      renderGroup(entry, "mapped")
-                    ) : (
-                      <WorkRow
-                        key={entry.id}
-                        item={entry}
-                        onOpen={openItem(entry)}
-                        chips={<ConversationChips item={entry} />}
-                        actions={rowActions(entry, "mapped")}
-                      />
-                    ),
-                  )}
-                </EngagementFold>
-              ))
-            )}
-          </WorkSection>
 
           <div className="grid gap-4 lg:grid-cols-2">
             {unmapped.length > 0 ? (
