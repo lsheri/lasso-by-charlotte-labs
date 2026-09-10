@@ -21,9 +21,10 @@ function InlineAsk(props: {
   profileId: string;
   orgId: string;
   reveal: boolean;
+  onConversationStart: () => void;
   onOpenChange: (open: boolean) => void;
 }) {
-  const { expanded, engagementId, engagementTitle, profileId, orgId, reveal, onOpenChange } = props;
+  const { expanded, engagementId, engagementTitle, profileId, orgId, reveal, onConversationStart, onOpenChange } = props;
   const { tab, setTab } = useAskDockState();
   const ask = useAskLasso({ open: true, engagementId, engagementTitle, profileId, orgId });
   const [visible, setVisible] = useState(true);
@@ -31,6 +32,10 @@ function InlineAsk(props: {
   useEffect(() => {
     if (reveal) setVisible(true);
   }, [reveal]);
+
+  useEffect(() => {
+    if ((ask.messages?.length ?? 0) > 0) onConversationStart();
+  }, [ask.messages?.length, onConversationStart]);
 
   const suggestions =
     expanded && (ask.messages?.length ?? 0) === 0 ? (
@@ -88,6 +93,7 @@ export function EngagementAsk(props: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   expanded: boolean;
+  onConversationStart: () => void;
   engagementId: string;
   engagementTitle: string;
   profileId: string;

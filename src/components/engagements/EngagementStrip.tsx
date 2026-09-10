@@ -23,7 +23,7 @@ export function EngagementStrip({
   tasks: StripTask[];
   deliverables: WorkItemRow[];
   collapsed?: boolean;
-  children?: (expanded: boolean) => ReactNode;
+  children?: (expanded: boolean, collapse: () => void) => ReactNode;
 }) {
   const [expanded, setExpanded] = useState(true);
 
@@ -107,7 +107,7 @@ export function EngagementStrip({
         </div>
       </section>
 
-      {children?.(expanded)}
+      {children?.(expanded, () => setExpanded(false))}
     </div>
   );
 }
