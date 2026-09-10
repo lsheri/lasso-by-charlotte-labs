@@ -1,21 +1,27 @@
-# Members screen port
+# Coach notes and 1:1 presentation ports
 
-## Data impact
-- Presentation only. No user action, permission, flow, query, event, consent surface, or database behavior changes.
-- The existing thirteen controls retain their current gates, so no new telemetry is required.
+## Scope
+Update the two requested screens independently, using the existing notebook layout components and changing presentation only.
 
-## Build
-1. Update only `src/pages/MembersPage.tsx`, adding the existing `PageHeader`, `SectionHeader`, and `ToneCard` presentation components.
-2. Keep the current hook sequence unchanged and add only pure display helpers for initials and role visibility copy.
-3. Recompose the loaded view into a main column and 320px right rail. Convert the roster cards into a responsive table-shaped grid without merging pending invites into it.
-4. Move the existing invite trigger into the People section header, add the requested metadata header, and preserve the business-dependent plan rendering.
-5. Keep all dialogs, menus, notices, and permission gates unchanged. Add no telemetry, query, route, consent, or database work.
-6. Verify the source constraints, run TypeScript checks and all member/invite permission tests, inspect the rendered page if authentication is available, then commit without deploying.
+## Coach notes
+- Keep `useProfile()` and `useAllNotesAboutMe(...)` in their current order before the coach branch.
+- Give both branches the requested Notes heading and branch-specific subtitle.
+- Place subject notes and their existing empty state in the main column.
+- Keep the existing `CoachNoteList` call unchanged, including all five props and the existing context callback.
+- Add the subject-only right rail with the visibility policy card, three requested counters, and handwritten closing line.
+- Leave `CoachNoteList.tsx` and `PacketPage.tsx` untouched.
 
-## Permission inventory
-- Admin only: invite trigger, member action menu, reactivate/deactivate choices, role-change entry, organization data card, and resend.
-- Coach row condition only: Share work action.
-- Admin or lead: invite menu, copy link, and withdraw.
-- Ungated: invite history disclosure.
-- Business-sensitive: plan presentation and role-change availability.
-- Preserve both non-admin notices and all current dialog titles and accessibility labels.
+## 1:1 prep
+- Update the page heading and add the requested two-column layout.
+- Keep the existing conditional `SavedForOneOnOne` call verbatim in the main column, followed by the handwritten closing line.
+- Add the two static right-rail policy cards, including the requested strike marks and no primary action.
+- In `SavedForOneOnOne` only, replace the section label with `SectionHeader` and restyle each saved note as a hairline row.
+- Preserve both queries, their order and dependency, `sessionIds`, `setDiscussed`, the Discussed checkbox, discussed opacity, and the null-on-empty guard.
+- Leave `SaveForOneOnOneDialog` unchanged.
+
+## Validation
+- Compare controls before and after for each screen.
+- Verify hook order, query guards, event ownership, imports, and exact component calls remain intact.
+- Check for raw colors, forbidden letter-spacing classes, new events, and unintended file changes.
+- Run TypeScript validation and all coach-note, packet, and 1:1 tests found in the project.
+- Do not deploy or make database changes.
