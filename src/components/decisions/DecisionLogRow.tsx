@@ -44,13 +44,15 @@ export function DecisionLogRow({
           </p>
         ) : (
           <p className="mt-1.5 text-[13px] leading-[18px] text-soft">
-            No reasoning attached.{" "}
+            {/* Figma 30:1419 says why the missing reasoning matters, rather than
+                just noting its absence. That sentence is the log's argument. */}
+            No reasoning attached. This one is a fact, not a decision anyone can reuse.{" "}
             <button
               type="button"
               onClick={() => onAddReasoning(decision)}
               className="text-accent-deep hover:underline"
             >
-              Add the reasoning
+              Add the reasoning →
             </button>
           </p>
         )}
