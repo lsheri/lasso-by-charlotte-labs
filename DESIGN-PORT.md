@@ -76,6 +76,102 @@ pass a page node id.
 |---|---|---|
 | Tokens / variables | PARTIAL | Values exist in `src/styles.css` but have never been diffed against Figma in full. |
 | Motion registry | NOT STARTED | Zero of 22 events implemented. This is the single largest gap. |
+
+## Motion — the goal, and the whole registry
+
+Source: Figma page `06 · Motion registry`, node `1:7`, frame `18:2`.
+**22 events, 15 motions, one table.** Zero of the 22 are built in this codebase today.
+
+### Why motion is in scope at all
+
+Motion here is not decoration and it is not polish added at the end. Two reasons it
+is a first-class layer:
+
+1. **Retention.** How an app feels is a large part of why people come back to it.
+   That is a product goal, not an aesthetic preference.
+2. **Evidence.** Five of these events are the only visible proof that Lasso is
+   auditable, which is the thing a firm is actually buying. They say out loud what
+   the software read and where a claim came from.
+
+### The governing rule
+
+> "A screen never picks an animation. It fires an event, and this table decides what
+> plays."
+
+A screen must never choose its own animation. It fires an event; the registry maps
+that event to a motion. Changing the app's entire motion personality is then editing
+one column, and a future skin can swap the mapping the way it swaps colour.
+
+Every event has a reduced-motion answer that carries the same information without
+moving. Reduced motion removes movement, never meaning.
+
+### Auditability — never remove one of these. They are a promise, not decoration.
+
+| Event | Fires when | Motion | Reduced motion | Where |
+|---|---|---|---|---|
+| `record.reading` | AiReads renders under a work item | Reading line | The list of what is read, stated in full | Peek panel, every work item, every chat |
+| `verify.reading` | A fact-check pass runs | Reading line | Progress text naming the turn being read | Verify, long analyses |
+| `verify.flagged` | A claim is marked worth a check | Pencil marks, underline | The underline appears, no draw | Verify, Work Artifact checks |
+| `provenance.tracing` | What fed this is loading | Trace back | Sources appear as a list, newest last | Peek panel, engagement |
+| `provenance.shown` | A receipt or journey is opened | Provenance ribbon | Static ribbon with the same words | Work Receipt, Journey |
+
+> **Why this first table is different.** Those five say out loud what the software
+> read and where a claim came from. Cutting them for performance or taste would
+> remove the only visible evidence that Lasso is auditable, which is the thing a firm
+> is buying. If reduced motion is on, the words stay and only the movement goes.
+
+### The record moves
+
+| Event | Fires when | Motion | Reduced motion | Where |
+|---|---|---|---|---|
+| `work.lands` | New work arrives from a connector or a drop | Work lands | Fade in, no drop | Work, Overview, Connectors |
+| `work.piles` | Work list becomes a matrix | Paper physics, pile | Instant reflow | Work |
+| `claim.lassoed` | You claim your part of a piece of work | The Lasso | A static outline appears | Work detail, claim gate |
+| `record.stamped` | A call goes on the record, a receipt is issued | Stamp | The badge appears with its date | Your calls, receipts |
+| `call.logged` | A decision is saved | Pencil marks, tick | The tick appears | Your calls, Decision log |
+| `share.sending` | A receipt leaves for a coach | Comet line | Fade, then the confirmation toast | Share sheet |
+| `feedback.pinned` | A coach note lands on a turn | Card lifts | Fade in | Work detail, coach loop |
+| `region.circled` | PROPOSED. A region on a page is circled | The Lasso, overlay variant | Static outline on the region | Not built. See Figma page 10 |
+
+### The app is thinking
+
+| Event | Fires when | Motion | Reduced motion | Where |
+|---|---|---|---|---|
+| `ai.thinking` | A short reply is coming | Breathing dots | "Thinking…" | Ask Lasso composer |
+| `ai.working` | A long analysis is running | Spider looks again | "Working…" with what it is doing | Ask Lasso, Reflect, analyses |
+| `spider.reading` | Lasso is ingesting a conversation | Spider looks again | "Reading 3 new conversations" | Sidebar status, Connectors |
+| `spider.guiding` | An onboarding beat changes | Spider processes | The spider holds still | Onboarding |
+| `connector.connecting` | An OAuth handshake is in flight | Breathing dots | "Connecting…" | Connectors, settings |
+
+### Chrome
+
+| Event | Fires when | Motion | Reduced motion | Where |
+|---|---|---|---|---|
+| `page.enter` | A route changes | Card lifts, staggered | Content appears | Every screen |
+| `nav.active` | A sidebar item is selected | Pencil marks | The active card appears | Sidebar, tabs |
+| `arrow.drawn` | A connection between two things is shown | Arrows | Static arrows | Journey, flows, receipts |
+| `hero.words` | A landing hero plays | Words pass by, or the word loop | Static line of words | **Marketing only, never in the app** |
+
+### How to build this
+
+Build the registry ONCE as an event-to-motion map, not per screen. A screen imports
+the firing function and names an event; it never names an animation. Every screen
+already ported inherits its motion the moment the registry exists.
+
+Two things already in the codebase are part of this layer and must not be duplicated:
+- `GraphiteIcon` in `src/components/notebook/icons.tsx` already carries per-icon
+  signature animations with their own transform origins and `pathLength` trims. That
+  is the "Pencil marks" family. Wire the registry to it rather than rebuilding it.
+- The spider mascot exists at `src/assets/lasso-spider-static.png`. The three spider
+  events animate that character, they do not invent a new one.
+
+`spider.reading` is the handwritten green status line above the sidebar footer rule.
+It is currently absent from the sidebar. It is not a missing feature, it is this
+unbuilt event.
+
+Keyframes, easing curves and durations are not in this document. Pull them per motion
+from Figma with `get_motion_context` on node `1:7` at build time, so this file never
+goes stale against the design.
 | Atoms | PARTIAL | `GraphiteIcon` is complete and correct. Button reviewed. |
 | Surfaces | PARTIAL | `ToneCard`, `SectionHeader` exist. |
 | Chrome | BUILT, KNOWN DIVERGENT | See the sidebar note below. |
