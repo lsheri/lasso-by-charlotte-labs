@@ -19,10 +19,21 @@ export function OneOnOnePage() {
         </div>
 
         <aside className="mt-10 space-y-4 lg:mt-0">
+          {/* Figma 32:1323 ticks each promise in green. The tick is the point:
+              this is a list of what leaves, checked off one by one. */}
           <ToneCard tone="record" label="WHAT YOUR COACH WILL SEE WHEN YOU SEND" className="gap-3 p-4">
-            <p>The work each one points at</p>
-            <p>The reasoning you attached</p>
-            <p>Nothing else from this week</p>
+            {[
+              "The work each one points at",
+              "The reasoning you attached",
+              "Nothing else from this week",
+            ].map((line) => (
+              <div key={line} className="flex items-start gap-2">
+                <span aria-hidden className="mt-[1px] shrink-0 text-green">
+                  ✓
+                </span>
+                <p>{line}</p>
+              </div>
+            ))}
           </ToneCard>
           <ToneCard tone="paper" label="WHAT YOUR COACH WILL NEVER SEE" className="gap-3 p-4">
             <div className="flex items-center gap-2">

@@ -205,8 +205,8 @@ never existed in `styles.css`. That test failure predates this port and is untou
 | `29:833` | `/archive` | BUILT (filed two-column layout, 10 Sep 2026) |
 | `30:1012` | `/reflect` | BUILT (partial) | Header, week rail and "Where this goes" card restyled. The frame's three-prompt exercise is NOT built because it replaces the working session list, message history and analysis path and needs a prompt generator and per-turn provenance that do not exist. |
 | `30:1419` | `/decisions` | BUILT | Header action slot now carries an outline "Log a decision" button. Rail copy and headline numbers restyled; omitted: "Reversed" chip and the two rail counts for reversed/reused decisions because the schema has no reversed state and no reuse count. No-reasoning row now explains why the reasoning matters. |
-| `32:1323` | `/one-on-one` | BUILT |
-| `32:1709` | `/coach-notes` | BUILT |
+| `32:1323` | `/one-on-one` | BUILT (partial) | Green-card promises now ticked in green. The frame's assembled Keep/Drop agenda, "Add your own item" link and "Send to coach" action are NOT built because they require a per-person agenda model and a send path that do not exist. |
+| `32:1709` | `/coach-notes` | BUILT | Subtitle now counts notes and states the page's promise in numbers. Promise card and counts separated and restyled per frame; captions stay truthful to all-time rows with engagement_id. |
 | `34:1632` | `/connectors` | BUILT |
 | `34:2043` | `/members` | BUILT |
 | `36:1936` | `/engagements/$id` (arrival, strip expanded) | BUILT |
