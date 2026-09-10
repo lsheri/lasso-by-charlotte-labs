@@ -22,6 +22,10 @@ import { useProfile } from "@/hooks/use-profile";
 import { useWorkItems } from "@/hooks/use-work-items";
 import { supabase } from "@/integrations/supabase/client";
 import { effectiveWorkDate, type WorkItemRow } from "@/lib/work-types";
+import { SectionHeader } from "@/components/notebook/SectionHeader";
+import { ToneCard } from "@/components/notebook/ToneCard";
+import { vendorLabel } from "@/lib/conversation-shared";
+import { vendorFromSource, type ToolVendor } from "@/lib/work-taxonomy";
 import { markOpenStart } from "@/lib/perf-timing";
 
 type Group = {
@@ -118,6 +122,7 @@ export function AiRecordPage() {
   const [openGroup, setOpenGroup] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [showSubjects, setShowSubjects] = useState(false);
+  const [tool, setTool] = useState<ToolVendor | "all">("all");
 
   const threads = (work?.items ?? []).filter((i) => i.type === "ai_thread");
   // The id list is sorted before it becomes part of a key, so a reordered but
@@ -128,8 +133,17 @@ export function AiRecordPage() {
   const shown = needle
     ? threads.filter((i) => (i.title ?? "").toLowerCase().includes(needle))
     : threads;
-  const groups = groupItems(shown);
+  // Chips read the tools already present in the loaded rows, so the row never
+  // offers a filter that would empty the page.
+  const toolsPresent = Array.from(new Set(threads.map((i) => vendorFromSource(i))));
+  const visible = tool === "all" ? shown : shown.filter((i) => vendorFromSource(i) === tool);
+  const groups = groupItems(visible);
+  const mappedCount = threads.filter((i) =>
+    i.work_item_tasks.some((m) => Boolean(m.tasks?.engagements)),
+  ).length;
+  const subtitle = `${threads.length} conversation${threads.length === 1 ? "" : "s"} · ${mappedCount} mapped`;
   const searchSignal = useChatSearchSignal(query, shown.length);
+
 
   const analyses = useChatAnalyses(profile?.id, profile?.org_id);
 
@@ -179,11 +193,9 @@ export function AiRecordPage() {
   });
 
   return (
-    <div>
-      <PageHeader
-        title="Chat library"
-        subtitle="Your most valuable AI conversations, kept in one place. Search them, reuse them as context, and see how your best prompts worked."
-      />
+    <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-8">
+      <div className="min-w-0">
+      <PageHeader title="Chat" italicWord="library" subtitle={subtitle} />
 
       <div className="-mt-2 mb-6 flex items-center gap-2.5">
         <BrandLogo brand="claude" size={16} />
@@ -193,13 +205,6 @@ export function AiRecordPage() {
           All your tools, one place
         </span>
       </div>
-
-      <CaptureCoverage
-        profileId={profile?.id}
-        itemCount={threads.length}
-        scopeLabel="your chat library"
-        dates={threads.map((t) => effectiveWorkDate(t))}
-      />
 
       {threads.length > 0 ? (
         <div className="mb-6">
@@ -217,6 +222,33 @@ export function AiRecordPage() {
             placeholder="Search your chats"
             className="w-full rounded-[var(--radius)] border border-border bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/40 sm:max-w-sm"
           />
+        </div>
+      ) : null}
+
+      {threads.length > 0 ? (
+        <div className="mb-6 flex flex-wrap gap-2">
+          {(["all", ...toolsPresent] as const).map((option) => {
+            const on = tool === option;
+            return (
+              <button
+                key={option}
+                type="button"
+                aria-pressed={on}
+                onClick={() => setTool(option as ToolVendor | "all")}
+                className={
+                  on
+                    ? "rounded-full border border-graphite bg-nb-white px-3 py-1 text-[11.5px] font-medium text-foreground"
+                    : "rounded-full border border-[var(--nb-pencil)] px-3 py-1 text-[11.5px] text-muted-foreground transition-colors hover:border-foreground"
+                }
+              >
+                {option === "all"
+                  ? "Everything"
+                  : option === "unknown"
+                    ? "Other"
+                    : vendorLabel(option)}
+              </button>
+            );
+          })}
         </div>
       ) : null}
 
@@ -253,24 +285,26 @@ export function AiRecordPage() {
             const expanded = openGroup === group.key;
             return (
               <section key={group.key} className="space-y-3">
-                <header className="flex flex-wrap items-baseline gap-x-3 gap-y-1 border-b border-border pb-2">
-                  <h2 className="page-title text-[17px]">
-                    {group.code ? `${group.code} ${group.title}` : group.title}
-                  </h2>
-                  <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
-                    {group.items.length} conversation{group.items.length === 1 ? "" : "s"}
-                    {span(group.items) ? ` · ${span(group.items)}` : ""}
-                  </span>
-                  {group.engagementId ? (
-                    <button
-                      type="button"
-                      onClick={() => setOpenGroup(expanded ? null : group.key)}
-                      className="ml-auto text-xs font-medium text-accent-deep transition-opacity hover:opacity-70"
-                    >
-                      {expanded ? "Hide analysis" : "What recurs"}
-                    </button>
-                  ) : null}
-                </header>
+                <SectionHeader
+                  title={group.code ? `${group.code} ${group.title}` : group.title}
+                  action={
+                    <span className="flex items-baseline gap-3">
+                      <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
+                        {group.items.length} conversation{group.items.length === 1 ? "" : "s"}
+                        {span(group.items) ? ` · ${span(group.items)}` : ""}
+                      </span>
+                      {group.engagementId ? (
+                        <button
+                          type="button"
+                          onClick={() => setOpenGroup(expanded ? null : group.key)}
+                          className="text-xs font-medium text-accent-deep transition-opacity hover:opacity-70"
+                        >
+                          {expanded ? "Hide analysis" : "What recurs"}
+                        </button>
+                      ) : null}
+                    </span>
+                  }
+                />
 
                 {expanded && group.engagementId ? (
                   <div className="space-y-3 rounded-[var(--radius)] border border-border bg-card p-4">
@@ -359,6 +393,12 @@ export function AiRecordPage() {
         </div>
       )}
 
+      {threads.length > 0 ? (
+        <p className="font-hand mt-6 text-[16px] text-green">
+          nothing here was written by Lasso
+        </p>
+      ) : null}
+
       <PeekPanel
         entry={peek?.entry ?? null}
         open={peek !== null}
@@ -381,6 +421,29 @@ export function AiRecordPage() {
           orgId={profile.org_id}
         />
       ) : null}
+      </div>
+
+      <aside className="mt-8 space-y-4 lg:mt-0">
+        <CaptureCoverage
+          profileId={profile?.id}
+          itemCount={threads.length}
+          scopeLabel="your chat library"
+          dates={threads.map((t) => effectiveWorkDate(t))}
+        />
+        <ToneCard
+          tone="record"
+          label="WHY THIS PANEL EXISTS"
+          title="You can see what was read."
+        >
+          <p className="text-sm text-foreground">
+            The record shows which conversations were read and which were not, so you never have
+            to guess what Lasso worked from.
+          </p>
+          <p className="text-sm text-muted-foreground">
+            Nothing enters the record until you send it.
+          </p>
+        </ToneCard>
+      </aside>
     </div>
   );
 }
