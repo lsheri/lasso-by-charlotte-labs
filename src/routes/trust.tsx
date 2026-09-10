@@ -60,9 +60,9 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="border-t border-border pt-8">
-      <p className="micro-label">{label}</p>
-      <h2 className="page-title mt-2">{title}</h2>
+    <section className="border-t border-[var(--nb-pencil)] pt-8">
+      <p className="micro-label text-[9px]">{label}</p>
+      <h2 className="section-title mt-2">{title}</h2>
       <div className="mt-4 space-y-3 text-sm leading-relaxed text-foreground">{children}</div>
     </section>
   );
@@ -75,7 +75,7 @@ function TrustPage() {
       <main className="min-h-screen bg-background px-6 py-16 md:px-12">
         <div className="mx-auto max-w-2xl">
           <Wordmark size="lg" />
-          <p className="micro-label mt-8">Trust &amp; data</p>
+          <p className="micro-label mt-8 text-[9px]">Trust &amp; data</p>
           <h1 className="page-title mt-2">How Lasso handles your work</h1>
           <p className="mt-2 text-sm text-muted-foreground">
             Lasso exists so the work you do belongs to you. This page states plainly who can see
@@ -84,17 +84,17 @@ function TrustPage() {
 
           <div className="mt-12 space-y-10">
             <Section label="01" title="Who sees what">
-              <div className="overflow-hidden rounded-[var(--radius)] border border-border bg-card shadow-card">
+              <div className="overflow-hidden rounded-[var(--radius-control)] border border-[var(--nb-pencil)] bg-card shadow-card">
                 {MATRIX.map(([who, what], index) => (
                   <div
                     key={who}
                     className={
                       index === 0
                         ? "grid gap-1 px-5 py-4 sm:grid-cols-[180px_1fr] sm:gap-6"
-                        : "grid gap-1 border-t border-border px-5 py-4 sm:grid-cols-[180px_1fr] sm:gap-6"
+                        : "grid gap-1 border-t border-[var(--nb-pencil)] px-5 py-4 sm:grid-cols-[180px_1fr] sm:gap-6"
                     }
                   >
-                    <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+                    <p className="font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
                       {who}
                     </p>
                     <p className="text-sm text-foreground">{what}</p>
@@ -187,10 +187,10 @@ function TrustPage() {
             </Section>
           </div>
 
-          <div className="mt-14 border-t border-border pt-6">
+          <div className="mt-14 border-t border-[var(--nb-pencil)] pt-6">
             <Link
               to="/auth"
-              className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+              className="font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
             >
               ← Back to Lasso
             </Link>
