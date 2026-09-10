@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Wordmark } from "@/components/layout/Wordmark";
+import { BrandLockup } from "@/components/layout/BrandLockup";
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { checkSignupInvite } from "@/lib/invites.functions";
