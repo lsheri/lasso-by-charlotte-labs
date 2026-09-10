@@ -9,8 +9,6 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { ToneCard } from "@/components/notebook/ToneCard";
 import { useProfile } from "@/hooks/use-profile";
 import { useShippedWork } from "@/hooks/use-shipped-work";
-import { ARCHIVE_SUBHEAD } from "@/lib/archive-search-shared";
-import { PAST_WORK_GROUP_LABEL } from "@/lib/past-work-shared";
 
 /**
  * The learning archive. Members and admins can read it: shipped work, the
@@ -44,45 +42,92 @@ export function ArchivePage() {
     return all;
   }, []);
 
+  // Figma 29:833 subtitle: "Three closed engagements · 41 pieces of work ·
+  // nothing here is deleted". Every clause here is counted off the cards this
+  // page already holds.
+  const subtitle = [
+    `${groups.length} closed engagement${groups.length === 1 ? "" : "s"}`,
+    `${cards.length} piece${cards.length === 1 ? "" : "s"} of work`,
+    "nothing here is deleted",
+  ].join(" · ");
+
   return (
     <div data-testid="archive-page">
-      <p className="micro-label">{PAST_WORK_GROUP_LABEL}</p>
-      <div className="mt-1">
-        <PageHeader title="Past work" italicWord="work" subtitle={ARCHIVE_SUBHEAD} />
-      </div>
+      {/* Figma 29:833 leads with the title itself. The group stamp that used to
+          sit above it is the sidebar's word for this page, and saying it twice
+          on the same screen is noise. */}
+      <PageHeader title="Past work" italicWord="work" subtitle={subtitle} />
 
-      <div className="mt-5">
-        <PastWorkSearch />
-      </div>
+      {/*
+        The frame runs the spine down the left at about two thirds and stacks
+        the standing notes beside it. Below `lg` they go back to one column, so
+        the notes follow the work rather than crowding it.
+      */}
+      <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+        <div className="min-w-0">
+          <PastWorkSearch />
 
-      <div className="mt-5">
-        {isCoach ? null : <ArchiveChat cards={cards} onResultsChange={onResultsChange} />}
-      </div>
+          <div className="mt-5">
+            {isCoach ? null : <ArchiveChat cards={cards} onResultsChange={onResultsChange} />}
+          </div>
 
-      <div className="mt-6">
-        {isLoading ? (
-          <p className="text-sm text-muted-foreground">Reading shipped work.</p>
-        ) : (
-          <ArchiveSpine groups={groups} hidden={searching} />
-        )}
-      </div>
+          <div className="mt-6">
+            {isLoading ? (
+              <p className="text-sm text-muted-foreground">Reading shipped work.</p>
+            ) : (
+              <ArchiveSpine groups={groups} hidden={searching} />
+            )}
+          </div>
 
-      <div className="mt-10 grid gap-4 md:grid-cols-2">
-        <ToneCard tone="record" label="WHAT STAYS WHEN AN ENGAGEMENT CLOSES">
-          <p>
-            The artifacts, the record of how each was made, every check and who ran it, and the
-            reusable processes.
-          </p>
-        </ToneCard>
-        <ToneCard tone="paper" label="WHAT CHANGES">
-          <p>
-            Read only from here. Coaches keep exactly the access they already had. Closing gives
-            nobody new access.
-          </p>
-        </ToneCard>
-      </div>
+          {/* The frame foots the spine with this, not the page. */}
+          <p className="mt-6 font-hand text-[16px] text-green">closed, not gone</p>
+        </div>
 
-      <p className="mt-5 font-hand text-[16px] text-green">closed, not gone</p>
+        <aside className="space-y-4">
+          <ToneCard tone="record" label="WHAT STAYS WHEN AN ENGAGEMENT CLOSES">
+            {/* The frame ticks these off one by one. It is the same promise the
+                paragraph made, said so you can check it item by item. */}
+            <ul className="mt-1 space-y-1.5">
+              {[
+                "The artifacts, exactly as they were",
+                "The record of how each one was made",
+                "Every check, and who ran it",
+                "The processes other people now reuse",
+              ].map((line) => (
+                <li key={line} className="flex items-start gap-2">
+                  <span aria-hidden className="mt-[2px] shrink-0 text-green">
+                    ✓
+                  </span>
+                  <span className="text-foreground">{line}</span>
+                </li>
+              ))}
+            </ul>
+          </ToneCard>
+
+          <ToneCard tone="paper" label="WHAT CHANGES">
+            <p className="leading-[19px] text-foreground">
+              The engagement becomes read-only. Nobody can add to it, including you.
+            </p>
+            <p className="mt-2 leading-[19px]">
+              Coaches keep exactly the access they already had. Closing gives nobody new access.
+            </p>
+          </ToneCard>
+
+          {/*
+            Figma 29:833's third note is "TAKE IT WITH YOU", offering to export a
+            closed engagement as a folder of artifacts plus one receipt per piece
+            of work. Nothing in the app exports an engagement, so the card says
+            what is true today rather than offering a control that does nothing.
+          */}
+          <ToneCard tone="paper" label="TAKE IT WITH YOU">
+            <p className="leading-[19px]">
+              Every piece here opens to the process behind it, and each one can be taken back by
+              the person who shipped it. Exporting a whole closed engagement as one folder is not
+              built yet.
+            </p>
+          </ToneCard>
+        </aside>
+      </div>
     </div>
   );
 }

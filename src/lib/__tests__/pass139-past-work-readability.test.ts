@@ -22,13 +22,21 @@ describe("pass 139: the page is named Past work", () => {
   const page = read("pages/ArchivePage.tsx");
   const route = read("routes/_authenticated/archive.tsx");
 
-  it('leads with the FIRM micro-label and the shared "Past work" page header', () => {
-    expect(page).toContain(`{PAST_WORK_GROUP_LABEL}`);
-    expect(page).toContain(
-      '<PageHeader title="Past work" italicWord="work" subtitle={ARCHIVE_SUBHEAD} />',
-    );
+  // Updated for Figma 29:833. The frame leads with the title itself: the group
+  // stamp that used to sit above it is the sidebar's own word for this page,
+  // and saying it twice on one screen is noise. The nav labels are unchanged
+  // and still checked here.
+  it('leads with the shared "Past work" page header', () => {
+    expect(page).toContain('<PageHeader title="Past work" italicWord="work"');
+    expect(page).toContain("subtitle={subtitle}");
+    expect(page).not.toContain('className="micro-label"');
     expect(PAST_WORK_GROUP_LABEL).toBe("Your organization");
     expect(PAST_WORK_NAV_LABEL).toBe("Past work");
+  });
+
+  it("says how much is here and that none of it is deleted", () => {
+    expect(page).toContain("closed engagement");
+    expect(page).toContain("nothing here is deleted");
   });
 
   it('the old "The archive" heading is gone from the page', () => {
