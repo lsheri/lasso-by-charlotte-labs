@@ -176,7 +176,7 @@ from Figma with `get_motion_context` on node `1:7` at build time, so this file n
 goes stale against the design.
 | Atoms | BUILT | Avatar, Field and StatusChip skinned 10 Sep 2026; atoms tokens added to `styles.css`. HELD, needing a decision: Button primary fill (code is ember, Figma is graphite `--nb-ink-90`), Chip and Counter (no production mapping yet), the two icon glyphs that differ (`messages`, `decisions`), and the 34-logo attribution board against the smaller `BrandKey` set. `GraphiteIcon` is complete; the Figma icon set is a 13-name subset of its 24, not one-to-one. |
 | Surfaces | BUILT (2 of 8) | Page `1:5` holds two boards, not one: Card, ListRow, SectionHeader, Panel, Modal, Toast, EmptyState, plus a separate SectionBand board. Skinned 10 Sep 2026: `ToneCard` record-tone micro label now `text/hand` green per frame; `SectionHeader` already matched, no change. NOT BUILT, and each is a redesign not a skin: `ListRow` (rows are inline in `WorkPage.renderGroup`, and carry a row menu, map button, group-count and peek target the frame does not draw — rule 8), `Panel`, `EmptyState` (copy inline across `WorkPage`, `CoachNotesPage`, `ConnectorPicker`, `ScopePicker`), `SectionBand` (blocked on the open Counter decision and introduces a collapse control with no covering event — rule 1). HELD: `Toast` — `sonner.tsx` is mounted in `__root.tsx` and therefore renders at `/`, so rule 15 blocks it; its frame `Undo` on all three tones is a rule 9 failure anyway. REFUSED: the `Modal` settings variant redraws route `/settings` as an 880x560 surface, which rule 7 forbids. Figma exports arrive with raw hex and Tailwind default colours (`bg-green-50`, `bg-red-50`, `bg-gray-100`); these fail `pass83-tokens` and must never be pasted in. |
-| Chrome | BUILT (sidebar + phone tabs skinned 10 Sep 2026) | Page `1:6` holds Sidebar (Worker/Coach/Student), PageHeader, Tabs, Composer, MobileTabBar, Icon and nested Button. Skinned: `.nb-group-header` is now Caveat Bold 16px at `text/primary`; `.nb-nav-item-active` now carries a 1.2px `action/secondary-border` edge on the white card; the active phone tab now carries the green dot from frame `12:600`, drawn in CSS so it adds no control. REFUSED, production wins: `.nb-nav-shelf` stays `--nb-blue` because `pass92.test.ts` pins the blue against the frame's `text/muted`. HELD: `LassoLogo`, shared with `PublicHeader` on `/`, so rule 15 blocks the drawn green loop mark; `spider.reading` status line (unbuilt motion event, page `1:7`); Student sidebar role (no runtime role behind it); `PageHeader` action and breadcrumb variants (rule 7 redesign, and `PageHeader` has no action prop by contract). REFUSED: the Composer frame's `/ SKILLS` affordance does not exist in the product (rule 9), and `AskDock.tsx` is pinned literally by `pass95-1-dock.test.ts`. The Tabs frame draws an underlined tab strip; `StitchTabs` is a wrapping pill rail with a per-question menu, so restyling it to the frame is a redesign under rule 7, not done. |
+| Chrome | BUILT (sidebar + phone tabs skinned 10 Sep 2026) | Page `1:6` holds Sidebar (Worker/Coach/Student), PageHeader, Tabs, Composer, MobileTabBar, Icon and nested Button. Skinned: `.nb-group-header` is now Caveat Bold 16px at `text/primary`; `.nb-nav-item-active` now carries a 1.2px `action/secondary-border` edge on the white card; the active phone tab now carries the green dot from frame `12:600`, drawn in CSS so it adds no control; `.nb-nav-shelf` is now `text/muted` (`--nb-soft`), matching Figma 12:332; the sidebar brand mark is now the drawn green loop `LassoLoopMark` while `LassoLogo` remains unchanged for other callers. HELD: `spider.reading` status line (unbuilt motion event, page `1:7`); Student sidebar role (no runtime role behind it); `PageHeader` action and breadcrumb variants (rule 7 redesign, and `PageHeader` has no action prop by contract). REFUSED: the Composer frame's `/ SKILLS` affordance does not exist in the product (rule 9), and `AskDock.tsx` is pinned literally by `pass95-1-dock.test.ts`. The Tabs frame draws an underlined tab strip; `StitchTabs` is a wrapping pill rail with a per-question menu, so restyling it to the frame is a redesign under rule 7, not done. |
 
 ### Sidebar, known divergences as of 10 Sep 2026
 Structure is correct and `SidebarNav` follows `nav-config.ts` as designed. Against
@@ -185,10 +185,11 @@ frame `12:2`:
 2. `.nb-nav-item-active` — CLOSED 10 Sep 2026. It was never blue-bordered in code (the
    note was stale); it is a white card and now carries the 1.2px
    `action/secondary-border` edge.
-3. `.nb-nav-shelf` renders client shelves in blue. STAYS. `pass92.test.ts` asserts
-   `var(--nb-blue)` inside the rule, and production wins over the frame.
-4. `LassoLogo` renders the mascot. Frame `12:2` uses a drawn green loop mark. HELD:
-   `LassoLogo` is also rendered by `PublicHeader` on `/`, which rule 15 freezes.
+3. `.nb-nav-shelf` — CLOSED. Now `text/muted` (`--nb-soft`) per Figma 12:332;
+   `pass92.test.ts` was updated to assert the muted token.
+4. `LassoLogo` renders the mascot. Frame `12:2` uses a drawn green loop mark. CLOSED
+   for the sidebar: `AppSidebar` now renders `LassoLoopMark` in green. `LassoLogo`
+   remains untouched because `PublicHeader` on `/` is frozen under rule 15.
 Also absent: the `spider.reading` status line above the footer rule.
 Separately, `pass84-icons.test.tsx` asserts `.nb-nav-item-active::before`, which has
 never existed in `styles.css`. That test failure predates this port and is untouched.
@@ -197,7 +198,7 @@ never existed in `styles.css`. That test failure predates this port and is untou
 
 | Frame | Route | Status |
 |---|---|---|
-| `21:2` | `/overview` | BUILT |
+| `21:2` | `/overview` | BUILT | Added `ReadingPanel` and `NotCovered` panels (Figma 21:2), both read-only and non-interactive. |
 | `22:220` | `/work` | BUILT |
 | `23:413` | `/firm` | BUILT |
 | `27:635` | `/ai-record` | BUILT |
