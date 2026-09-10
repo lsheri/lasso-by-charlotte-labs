@@ -8,6 +8,7 @@ export const MAIL = {
   paper: "#fafaf8",
   card: "#ffffff",
   rule: "#dadad5",
+  pencil: "#b9bbb6",
   ink: "#16181a",
   body: "#2a2d2b",
   muted: "#9a9c98",
@@ -119,7 +120,7 @@ export function renderInviteEmail(args: {
   [data-ogsc] .dm-btn { background-color: ${MAIL.paper} !important; color: ${MAIL.ink} !important; }
   [data-ogsb] .dm-btn { background-color: ${MAIL.paper} !important; color: ${MAIL.ink} !important; }
 </style></head><body style="margin:0;padding:28px 16px;background:${MAIL.paper};font-family:${FONT};color:${MAIL.body}">
-<div style="max-width:540px;margin:0 auto">
+<div style="max-width:544px;margin:0 auto">
 <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
 <td style="vertical-align:middle"><img src="${LASSO_MARK_URL}" alt="Lasso" width="44" height="44"></td>
 <td style="vertical-align:middle;padding-left:12px">
