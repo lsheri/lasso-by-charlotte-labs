@@ -27,6 +27,7 @@ export type BrandKey =
   | "onedrive"
   | "sharepoint"
   | "notion"
+  | "slack"
   | "granola"
   | "wispr"
   | "claude"
@@ -59,6 +60,7 @@ const LABELS: Record<BrandKey, string> = {
   onedrive: "OneDrive",
   sharepoint: "SharePoint",
   notion: "Notion",
+  slack: "Slack",
   granola: "Granola",
   wispr: "Wispr Flow",
   claude: "Claude",
