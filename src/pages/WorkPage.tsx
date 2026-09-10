@@ -626,6 +626,48 @@ export function WorkPage() {
 
 
 
+      {/*
+        The origins tally and the handwritten line now lead the pile rather than
+        foot it. Both describe the WHOLE pile, so they belong above the filter
+        that narrows it: read where it came from, read what the columns mean,
+        then choose what to look at.
+      */}
+      {all.length > 0 ? (
+        <div className="mb-4 w-[560px] max-w-full">
+          <ToneCard tone="paper" label="WHERE THIS CAME FROM">
+            {/* Name, bar and count on ONE line, so the panel reads as a tally
+                rather than a stack of stacked rows. */}
+            <ul className="mt-1 space-y-2">
+              {sourceCounts.map((row) => (
+                <li key={row.label} className="flex items-center gap-3">
+                  <span className="min-w-0 flex-1 truncate">{row.label}</span>
+                  <span
+                    aria-hidden
+                    className="h-1.5 w-20 shrink-0 rounded-full bg-[var(--nb-pencil)]"
+                  >
+                    <span
+                      className="block h-1.5 rounded-full bg-foreground"
+                      style={{
+                        width: `${sourceMax > 0 ? Math.round((row.count / sourceMax) * 100) : 0}%`,
+                      }}
+                    />
+                  </span>
+                  <span className="w-5 shrink-0 text-right font-mono text-[10px] text-soft">
+                    {row.count}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </ToneCard>
+        </div>
+      ) : null}
+
+      {all.length > 0 ? (
+        <p className="font-hand mb-4 text-[16px] text-green">
+          the pile is how it arrives, the columns are what it means
+        </p>
+      ) : null}
+
       {all.length > 0 ? (
         <div className="mb-6 flex flex-wrap items-center gap-2">
           <button
