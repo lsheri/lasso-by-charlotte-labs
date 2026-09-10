@@ -139,7 +139,16 @@ export function ChecksLibrary({
 
 
   return (
-    <section className="rounded-[var(--radius)] border border-border bg-card px-5 py-4 shadow-card">
+    <section>
+      <SectionHeader
+        title="Reusable processes"
+        action={
+          <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
+            {activeCount} active
+          </span>
+        }
+      />
+      <ToneCard tone="paper">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="micro-label micro-label-section">Checks library</h2>
@@ -160,6 +169,7 @@ export function ChecksLibrary({
           </Button>
         </div>
       </div>
+
 
       {open && canAuthor ? (
         <div className="mt-4 space-y-2 border-t border-border pt-4">
