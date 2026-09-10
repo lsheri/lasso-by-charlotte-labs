@@ -59,11 +59,19 @@ import { engagementHue } from "@/lib/work-identity";
 import { engagementLabel } from "@/lib/clients";
 import { markOpenStart } from "@/lib/perf-timing";
 import {
+  effectiveWorkDate,
+  formatDate,
   groupConversations,
   isConversationGroup,
+  sourceLabel,
   type ConversationGroup,
   type WorkItemRow,
 } from "@/lib/work-types";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { SectionHeader } from "@/components/notebook/SectionHeader";
+import { ToneCard } from "@/components/notebook/ToneCard";
+import { SourceMark, sourceVendorKey } from "@/components/work/SourceMark";
+import { BUCKETS, bucketFor } from "@/components/work/work-buckets";
 
 export function WorkPage() {
   const { data: profile } = useProfile();
@@ -96,6 +104,8 @@ export function WorkPage() {
   const [removingFlagged, setRemovingFlagged] = useState(false);
   // Private stopped being a section: it is a per-row chip and this filter.
   const [showPrivate, setShowPrivate] = useState(true);
+  // Presentation-only filter for the type columns. Local state, no query.
+  const [columnFilter, setColumnFilter] = useState<string>("all");
 
   const all = data?.items ?? [];
   const mappingError = data?.mappingError ?? null;
@@ -415,18 +425,55 @@ export function WorkPage() {
     }
   }
 
+  const subtitle = `${all.length} piece${all.length === 1 ? "" : "s"} of work · ${
+    unmapped.length
+  } unmapped`;
+
+  const engagementCodes = Array.from(
+    new Set(
+      mapped
+        .map((item) => item.work_item_tasks[0]?.tasks?.engagements?.code)
+        .filter((code): code is string => Boolean(code)),
+    ),
+  ).sort((a, b) => a.localeCompare(b));
+
+  const filtered =
+    columnFilter === "all"
+      ? all
+      : columnFilter === "unmapped"
+        ? all.filter((item) => item.visibility === "unmapped")
+        : all.filter(
+            (item) => item.work_item_tasks[0]?.tasks?.engagements?.code === columnFilter,
+          );
+
+  const chipBase = "rounded-full px-3 py-1 text-[11.5px] transition-colors";
+  const chipOn = `${chipBase} border border-graphite bg-nb-white font-medium text-foreground`;
+  const chipOff = `${chipBase} border border-[var(--nb-pencil)] text-muted-foreground hover:border-foreground`;
+
+  /** Where the work came from, counted client-side off the loaded items. */
+  const sourceCounts = (() => {
+    const counts = new Map<string, { label: string; count: number }>();
+    for (const item of all) {
+      const key = sourceVendorKey(item) ?? item.source ?? "other";
+      const row = counts.get(key) ?? { label: sourceLabel(item.source), count: 0 };
+      row.count += 1;
+      counts.set(key, row);
+    }
+    return Array.from(counts.values()).sort((a, b) => b.count - a.count);
+  })();
+  const sourceMax = sourceCounts.reduce((max, row) => Math.max(max, row.count), 0);
+
+  function cardMeta(item: WorkItemRow): string {
+    const code = item.work_item_tasks[0]?.tasks?.engagements?.code;
+    if (code) return code;
+    return item.visibility === "private" ? "PRIVATE" : "UNMAPPED";
+  }
+
   return (
     <div>
       <GettingStartedCard />
-      <header className="mb-8 flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="page-title">Work</h1>
-          <p className="page-subtitle">
-            {all.length} items · {mapped.length} mapped · {unmapped.length} unmapped · {priv.length}{" "}
-            private
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
+      <PageHeader title="All" italicWord="work" subtitle={subtitle} />
+      <div className="mb-6 flex flex-wrap items-center gap-2">
           {unmapped.length > 0 ? (
             <button
               type="button"
@@ -505,8 +552,37 @@ export function WorkPage() {
               </Button>
             }
           />
+      </div>
+
+      {all.length > 0 ? (
+        <div className="mb-6 flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setColumnFilter("all")}
+            className={columnFilter === "all" ? chipOn : chipOff}
+          >
+            Everything
+          </button>
+          <button
+            type="button"
+            onClick={() => setColumnFilter("unmapped")}
+            className={columnFilter === "unmapped" ? chipOn : chipOff}
+          >
+            Unmapped
+          </button>
+          {engagementCodes.map((code) => (
+            <button
+              key={code}
+              type="button"
+              onClick={() => setColumnFilter(code)}
+              className={columnFilter === code ? chipOn : chipOff}
+            >
+              {code}
+            </button>
+          ))}
         </div>
-      </header>
+      ) : null}
+
 
       {error ? <p className="mb-6 text-sm text-destructive">{(error as Error).message}</p> : null}
       {actionError ? <p className="mb-6 text-sm text-destructive">{actionError}</p> : null}
@@ -537,6 +613,53 @@ export function WorkPage() {
         </div>
       ) : (
         <div className="space-y-8">
+          <div>
+            <div className="grid gap-6 lg:grid-cols-4">
+              {BUCKETS.map((bucket) => {
+                const items = filtered.filter((item) => bucketFor(item.type).key === bucket.key);
+                return (
+                  <div key={bucket.key}>
+                    <SectionHeader
+                      title={bucket.label}
+                      action={
+                        <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
+                          {items.length}
+                        </span>
+                      }
+                    />
+                    <div className="space-y-2">
+                      {items.length === 0 ? (
+                        <p className="text-[11.5px] text-soft">Nothing here yet.</p>
+                      ) : (
+                        items.map((item) => (
+                          <button
+                            key={item.id}
+                            type="button"
+                            onClick={openItem(item)}
+                            className="block w-full text-left"
+                          >
+                            <ToneCard
+                              tone={item.visibility === "unmapped" ? "attention" : "paper"}
+                              label={[sourceLabel(item.source), formatDate(effectiveWorkDate(item))]
+                                .filter(Boolean)
+                                .join(" · ")}
+                              mark={<SourceMark item={item} size={14} />}
+                              title={item.title}
+                              meta={cardMeta(item)}
+                            />
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <p className="font-hand mt-4 text-[16px] text-green">
+              the pile is how it arrives, the columns are what it means
+            </p>
+          </div>
+
           <WatchSuggestionBanner />
           {!isCoach && flagged.length > 0 ? (
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius)] border border-dashed border-border bg-secondary/50 px-4 py-3">
@@ -691,6 +814,55 @@ export function WorkPage() {
               ))
             )}
           </WorkSection>
+
+          <div className="grid gap-4 lg:grid-cols-2">
+            {unmapped.length > 0 ? (
+              <ToneCard
+                tone="attention"
+                label={`${unmapped.length} UNMAPPED`}
+                title="Unmapped work is private and appears in no receipt."
+              >
+                <p>
+                  Nobody else can see it and it counts towards nothing until you map it to a
+                  workstream. Mapping is the moment you decide it belongs to a piece of work.
+                </p>
+                {unmapped.length > 0 ? (
+                  <div className="mt-3">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={suggesting}
+                      onClick={() => void handleSuggest()}
+                    >
+                      {suggesting ? "Thinking…" : "Suggest where these go"}
+                    </Button>
+                  </div>
+                ) : null}
+              </ToneCard>
+            ) : null}
+
+            <ToneCard tone="paper" label="WHERE THIS CAME FROM" title="Every piece has an origin.">
+              <ul className="mt-1 space-y-2">
+                {sourceCounts.map((row) => (
+                  <li key={row.label}>
+                    <div className="flex items-center justify-between gap-3">
+                      <span>{row.label}</span>
+                      <span className="font-mono text-[10px] text-soft">{row.count}</span>
+                    </div>
+                    <div className="mt-1 h-1.5 rounded-full bg-[var(--nb-pencil)]">
+                      <span
+                        className="block h-1.5 rounded-full bg-foreground"
+                        style={{
+                          width: `${sourceMax > 0 ? Math.round((row.count / sourceMax) * 100) : 0}%`,
+                        }}
+                      />
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </ToneCard>
+          </div>
         </div>
       )}
 
