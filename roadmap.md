@@ -14,3 +14,4 @@
 
 - [x] Port Reflect to the approved three-column design while preserving every existing control and invariant
 - [x] Port the engagement screen to the approved expanded/collapsed design while preserving every existing control and invariant
+- [x] Port Members to the approved permission-sensitive table design while preserving all thirteen controls and gates
