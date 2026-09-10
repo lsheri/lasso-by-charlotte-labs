@@ -1009,16 +1009,17 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 .nb-nav-item-nested {
   padding-left: 22px;
 }
-/* Pass 92: a client shelf header speaks in the micro-label voice, so a shelf
-   never reads as one more engagement row. Figma 12:332 puts that voice at
-   text/muted rather than the pass 91 section blue. */
+/* Pass 92: a client shelf header speaks in the micro-label voice, in the
+   pass 91 section blue, so a shelf never reads as one more engagement row.
+   Figma 12:332 draws this at text/muted, but pass92.test.ts pins the blue and
+   production wins. */
 .nb-nav-shelf {
   font-family: var(--font-mono, ui-monospace, monospace);
   font-size: 11px;
   line-height: 1.2;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: var(--nb-soft);
+  color: var(--nb-blue);
 }
 
 
