@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Wordmark } from "@/components/layout/Wordmark";
+import { BrandLockup } from "@/components/layout/BrandLockup";
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { checkSignupInvite } from "@/lib/invites.functions";
@@ -153,55 +153,47 @@ function AuthPage() {
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-background px-4 py-16">
-      <div className="w-full max-w-sm">
+      <div className="w-full max-w-[420px]">
         <Link
           to="/"
-          className="mb-4 inline-block font-mono text-[11px] tracking-[0.24em] text-muted-foreground transition-colors hover:text-foreground"
+          className="mb-4 inline-block transition-colors hover:text-foreground"
         >
-          LASSO
+          <BrandLockup />
         </Link>
-        <Wordmark size="lg" />
 
-        <div className="mt-6 rounded-[var(--radius)] border border-border bg-card p-6 shadow-card">
-          <p className="micro-label">
-            {invited ? "Your invite" : mode === "signin" ? "Sign in" : "Create account"}
-          </p>
-          <h1 className="mt-2 page-title">
-            {invited
-              ? mode === "signup"
+        <div className="rounded-[var(--radius)] border border-border bg-card p-8 shadow-card">
+          <h1 className="page-title">
+            {mode === "signin"
+              ? "Sign in"
+              : invited
                 ? "Set up your account"
-                : "Sign in to accept"
-              : mode === "signin"
-                ? "Welcome back"
-                : "Get started"}
+                : "Create account"}{" "}
+            <em className="italic">to Lasso</em>
           </h1>
-          <p className="mt-1.5 text-sm text-muted-foreground">
-            {invited
-              ? "One step left. You will land straight back on your invite."
-              : mode === "signup"
-                ? "Create your account, then set up your workspace or join your team."
-                : "Coaching context for engagement managers."}
+          <p className="mt-3 text-[11.5px] leading-relaxed text-muted-foreground">
+            Signing in reads nothing on its own. You choose which tools Lasso can see, one at a time, on the next screen.
           </p>
 
-
-          <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+          <form onSubmit={handleSubmit} className="mt-8 space-y-4">
             <div className="space-y-1.5">
               <Label htmlFor="email" className="micro-label">
-                Email
+                WORK EMAIL
               </Label>
               <Input
                 id="email"
                 type="email"
                 required
                 autoComplete="email"
+                placeholder="you@yourfirm.com"
                 value={email}
                 readOnly={mode === "signup" && Boolean(lockedEmail)}
                 onChange={(e) => setEmail(e.target.value)}
+                className="rounded-[var(--radius-control)] border-[var(--nb-pencil)]"
               />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="password" className="micro-label">
-                Password
+                PASSWORD
               </Label>
               <Input
                 id="password"
@@ -211,6 +203,7 @@ function AuthPage() {
                 autoComplete={mode === "signin" ? "current-password" : "new-password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                className="rounded-[var(--radius-control)] border-[var(--nb-pencil)]"
               />
             </div>
 
@@ -223,7 +216,6 @@ function AuthPage() {
             <Button type="submit" className="w-full" disabled={pending}>
               {pending ? "Please wait…" : mode === "signin" ? "Sign in" : "Create account"}
             </Button>
-
           </form>
 
           <button
@@ -247,6 +239,9 @@ function AuthPage() {
             Trust &amp; data
           </Link>
         </div>
+        <p className="mt-4 text-center font-hand text-[16px] text-green">
+          no tool is connected by signing in
+        </p>
       </div>
     </main>
   );
