@@ -5,10 +5,14 @@ export function DecisionLogRow({
   decision,
   onOpenSource,
   onAddReasoning,
+  onConfirm,
+  onDiscard,
 }: {
   decision: DecisionRow;
   onOpenSource: (workItemId: string) => void;
   onAddReasoning: (decision: DecisionRow) => void;
+  onConfirm?: (decision: DecisionRow) => void;
+  onDiscard?: (decision: DecisionRow) => void;
 }) {
   const srcs = srcsOf(decision);
   const ids = Array.from(new Set(srcs.map((s) => s.work_item_id).filter(Boolean)));
@@ -29,7 +33,14 @@ export function DecisionLogRow({
         {hasWhy ? (
           <p className="mt-1.5 text-[13px] leading-[18px] text-muted-foreground">
             <span className="text-soft">because </span>
-            {decision.why}
+            {decision.why}{" "}
+            <button
+              type="button"
+              onClick={() => onAddReasoning(decision)}
+              className="font-hand text-[15px] text-soft transition-colors hover:text-foreground"
+            >
+              edit
+            </button>
           </p>
         ) : (
           <p className="mt-1.5 text-[13px] leading-[18px] text-soft">
@@ -60,6 +71,29 @@ export function DecisionLogRow({
                 </button>
               );
             })}
+          </div>
+        ) : null}
+
+        {onConfirm || onDiscard ? (
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            {decision.status === "draft" && onConfirm ? (
+              <button
+                type="button"
+                onClick={() => onConfirm(decision)}
+                className="rounded-[var(--radius-control)] border-[1.2px] border-graphite bg-nb-white px-3 py-1 text-[11.5px] font-medium text-foreground transition-colors hover:bg-secondary"
+              >
+                Confirm this call
+              </button>
+            ) : null}
+            {onDiscard ? (
+              <button
+                type="button"
+                onClick={() => onDiscard(decision)}
+                className="font-hand text-[15px] text-soft transition-colors hover:text-foreground"
+              >
+                discard
+              </button>
+            ) : null}
           </div>
         ) : null}
 
