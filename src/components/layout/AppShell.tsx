@@ -18,8 +18,11 @@ import { AskLassoProvider } from "@/components/reflect/ask-lasso-context";
 import { AskDockStateProvider } from "@/components/reflect/ask-dock-state";
 import { ChecklistLauncher } from "@/components/onboarding/checklist/ChecklistLauncher";
 import { StepPopover } from "@/components/onboarding/checklist/StepPopover";
+import { SettingsDialogProvider, useSettingsDialog } from "@/lib/settings-dialog-context";
+import { SettingsDialog } from "@/components/settings/SettingsDialog";
 
-export function AppShell() {
+function AppShellInner() {
+  const { openSettings } = useSettingsDialog();
   const { data: profile, profiles } = useProfile();
   const navigate = useNavigate();
   // Signed-in client signals (perf.pageload, client.error) carry the org like
@@ -51,6 +54,7 @@ export function AppShell() {
                 profiles={profiles}
                 activeProfile={profile}
                 onSignOut={handleSignOut}
+                onOpenSettings={openSettings}
               />
             </div>
           </aside>
@@ -87,6 +91,7 @@ export function AppShell() {
               </div>
             </main>
           </div>
+          <SettingsDialog />
           <ProvenanceAudit />
           <VerifyThreadReader />
           <JourneyView />
@@ -96,5 +101,13 @@ export function AppShell() {
         </div>
       </AskDockStateProvider>
     </AskLassoProvider>
+  );
+}
+
+export function AppShell() {
+  return (
+    <SettingsDialogProvider>
+      <AppShellInner />
+    </SettingsDialogProvider>
   );
 }
