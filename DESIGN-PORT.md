@@ -223,7 +223,7 @@ back"). It was deliberately NOT built. Do not add it.
 
 | Frame | Route | Status |
 |---|---|---|
-| `40:487` | `/` (landing) | NOT STARTED — build LAST, founder rule |
+| `40:487` | `/` (landing) | **FROZEN — DO NOT TOUCH. See project knowledge rule 15.** |
 | `40:760` | `/auth` | BUILT |
 | `40:813` | `/join` | NOT STARTED |
 | `40:933` | `/join/edu` | NOT STARTED |
@@ -249,6 +249,33 @@ you are not on"). The real `/no-access` is the no-workspace-membership state. Sh
 the frame's copy would tell a user with no workspace that they are viewing someone
 else's engagement, and its "Back to your work" button would loop them into the redirect
 that sent them there. Take the visual treatment, keep the true copy.
+
+## The landing page is frozen
+
+Route `/` is off limits. Not "do it last" — do not do it at all.
+
+Project knowledge **rule 15** is the binding version and it outranks everything else in
+this document. In short: the public marketing landing page, its hero, every section,
+component, video, poster image and line of copy it renders, is not to be restyled,
+re-ported, rewritten or included in any batch.
+
+The freeze holds even when:
+- a Figma page containing frame `40:487` is attached to the message
+- a global token, palette, font or motion change would otherwise reach it
+- a shared component it uses is being changed for a different screen
+- it is the only route left unported
+- an instruction says "do every screen" or "finish the redesign"
+
+The `hero.words` motion event is marketing-only and is inside this freeze. Do not
+implement it, even during the motion registry pass.
+
+**If a shared token or component change would alter what renders at `/`, STOP before
+doing anything and say exactly what would change there.** That is the case most likely
+to break this freeze by accident, because the landing page shares fonts, colours and
+primitives with the app.
+
+The founder is handling this page separately and has not settled its direction. Only
+the founder lifts this, explicitly, naming the landing page.
 
 ## Standing hazards
 
