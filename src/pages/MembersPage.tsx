@@ -133,7 +133,6 @@ function PlanSection({
         action={entitlement.status === "active" ? null : <Badge>{entitlement.status}</Badge>}
       />
       <div className="border-l border-border pl-4">
-        {entitlement.status === "active" ? null : <Badge>{entitlement.status}</Badge>}
         <p className="text-sm font-medium text-foreground">{planLine(entitlement)}</p>
         <p className="mt-1 text-sm text-muted-foreground">{seatsLine(entitlement)}</p>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -228,18 +227,20 @@ function MembersConsole() {
             <section>
               <SectionHeader
                 title="People"
-                action={isAdmin ? (
-                <InviteDialog
-                  showHistory={false}
-                  {...(business ? {} : { defaultRole: "coach" as const })}
-                  onShareInstead={(member) => setShareTarget(member)}
-                  trigger={
-                    <Button type="button" size="sm" variant="outline">
-                      {copy.invite}
-                    </Button>
-                  }
-                />
-                ) : null}
+                action={
+                  isAdmin ? (
+                    <InviteDialog
+                      showHistory={false}
+                      {...(business ? {} : { defaultRole: "coach" as const })}
+                      onShareInstead={(member) => setShareTarget(member)}
+                      trigger={
+                        <Button type="button" size="sm" variant="outline">
+                          {copy.invite}
+                        </Button>
+                      }
+                    />
+                  ) : null
+                }
               />
               <div className="overflow-x-auto">
                 <div className="min-w-[700px]">
@@ -410,15 +411,21 @@ function MembersConsole() {
               </p>
               <dl className="space-y-3 border-t border-border pt-3">
                 <div>
-                  <dt className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">Member</dt>
+                  <dt className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
+                    Member
+                  </dt>
                   <dd>Their own work.</dd>
                 </div>
                 <div>
-                  <dt className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">Coach</dt>
+                  <dt className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
+                    Coach
+                  </dt>
                   <dd>Only work someone has shared with them.</dd>
                 </div>
                 <div>
-                  <dt className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">Admin</dt>
+                  <dt className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
+                    Admin
+                  </dt>
                   <dd>Firm counts, never a person&apos;s work.</dd>
                 </div>
               </dl>
