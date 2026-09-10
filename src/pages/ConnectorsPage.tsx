@@ -356,18 +356,37 @@ function ConnectorCard({
   busy: boolean;
   identity?: React.ReactNode;
 }) {
+  const connected = account?.status === "connected";
+  const needsReconnect = account?.status === "disconnected";
+  const meta = busy ? "Pending" : needsReconnect ? "RECONNECT NEEDED" : statusLabel(account);
   return (
-    <div className="flex flex-wrap items-center gap-4 rounded-[var(--radius)] border border-border bg-card px-4 py-3 shadow-card">
-      <BrandLogo brand={brand} size={30} />
-      <div className="min-w-0 flex-1 basis-48">
-        <p className="text-sm font-medium text-foreground">{name}</p>
-        <p className="mt-0.5 text-sm text-muted-foreground">{description}</p>
-        {identity}
+    <div
+      className={`flex flex-col gap-3 rounded-[var(--radius-lg)] border px-4 py-3.5 ${
+        needsReconnect
+          ? "border-[var(--nb-amber-edge)] bg-[var(--nb-amber-wash)]"
+          : "border-border bg-card"
+      }`}
+    >
+      <div className="flex items-start gap-3">
+        <BrandLogo brand={brand} size={30} />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <p className="text-[13px] font-medium text-foreground">{name}</p>
+            {connected ? (
+              <span
+                aria-hidden="true"
+                className="size-1.5 shrink-0 rounded-full bg-[var(--nb-green)]"
+              />
+            ) : null}
+          </div>
+          <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+            {meta}
+          </p>
+          <p className="mt-1 text-[11.5px] leading-[17px] text-muted-foreground">{description}</p>
+          {identity}
+        </div>
       </div>
-      <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
-        {busy ? "Pending" : statusLabel(account)}
-      </span>
-      {actions}
+      <div className="flex flex-wrap items-center gap-4">{actions}</div>
     </div>
   );
 }
