@@ -776,9 +776,6 @@ export function WorkPage() {
                 );
               })}
             </div>
-            <p className="font-hand mt-4 text-[16px] text-green">
-              the pile is how it arrives, the columns are what it means
-            </p>
           </div>
 
           <WatchSuggestionBanner />
@@ -792,10 +789,12 @@ export function WorkPage() {
           ) : null}
 
 
-          {/* Figma 22:220 foots the page with two panels at roughly 2:1, not
-              two equal halves: the unmapped callout carries a paragraph and a
-              decision, the origins panel is a narrow tally. */}
-          <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+          {/* "Where this came from" used to sit here beside this callout. It has
+              moved above the filter chips, because it always counted the WHOLE
+              pile rather than the filtered view — reading it under a filtered
+              set implied otherwise. What is left here is the one decision the
+              foot of this page is for. */}
+          <div className="max-w-[760px]">
             {unmapped.length > 0 ? (
               <ToneCard tone="attention" label={`${unmapped.length} UNMAPPED`}>
                 <p className="leading-[19px]">
@@ -821,32 +820,6 @@ export function WorkPage() {
                 </div>
               </ToneCard>
             ) : null}
-
-            <ToneCard tone="paper" label="WHERE THIS CAME FROM">
-              {/* The frame runs name, bar and count on ONE line, so the panel
-                  reads as a tally rather than a stack of stacked rows. */}
-              <ul className="mt-1 space-y-2">
-                {sourceCounts.map((row) => (
-                  <li key={row.label} className="flex items-center gap-3">
-                    <span className="min-w-0 flex-1 truncate">{row.label}</span>
-                    <span
-                      aria-hidden
-                      className="h-1.5 w-20 shrink-0 rounded-full bg-[var(--nb-pencil)]"
-                    >
-                      <span
-                        className="block h-1.5 rounded-full bg-foreground"
-                        style={{
-                          width: `${sourceMax > 0 ? Math.round((row.count / sourceMax) * 100) : 0}%`,
-                        }}
-                      />
-                    </span>
-                    <span className="w-5 shrink-0 text-right font-mono text-[10px] text-soft">
-                      {row.count}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </ToneCard>
           </div>
         </div>
       )}
