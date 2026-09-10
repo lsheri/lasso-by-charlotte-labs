@@ -1,27 +1,32 @@
-# Coach notes and 1:1 presentation ports
+# Coach roster and packet presentation ports
 
-## Scope
-Update the two requested screens independently, using the existing notebook layout components and changing presentation only.
+## Data impact
+- Presentation only. No user action, surface behavior, flow, query, route, or event schema changes.
+- Existing clicks, form submissions, visibility rules, and event calls remain in place.
+- No consent-related code or database work is touched.
 
-## Coach notes
-- Keep `useProfile()` and `useAllNotesAboutMe(...)` in their current order before the coach branch.
-- Give both branches the requested Notes heading and branch-specific subtitle.
-- Place subject notes and their existing empty state in the main column.
-- Keep the existing `CoachNoteList` call unchanged, including all five props and the existing context callback.
-- Add the subject-only right rail with the visibility policy card, three requested counters, and handwritten closing line.
-- Leave `CoachNoteList.tsx` and `PacketPage.tsx` untouched.
+## Coaching roster
+- Keep the existing hand-built three-line heading, adding the italic treatment to “you coach.”
+- Preserve `CoachLinkPeople`, the error toast effect, the empty-state invite, and the full subject-row button with profile switching, all three cache refreshes, and navigation.
+- Restyle subject rows as a responsive table with PERSON, ENGAGEMENT, SHARED WITH YOU, and LAST NOTE columns.
+- Keep both shared-work counts, the multi-workspace organization line, loading state, and the conditional “New since your last note” line.
+- Add a 320px right rail with the two requested visibility cards and handwritten closing line.
 
-## 1:1 prep
-- Update the page heading and add the requested two-column layout.
-- Keep the existing conditional `SavedForOneOnOne` call verbatim in the main column, followed by the handwritten closing line.
-- Add the two static right-rail policy cards, including the requested strike marks and no primary action.
-- In `SavedForOneOnOne` only, replace the section label with `SectionHeader` and restyle each saved note as a hairline row.
-- Preserve both queries, their order and dependency, `sessionIds`, `setDiscussed`, the Discussed checkbox, discussed opacity, and the null-on-empty guard.
-- Leave `SaveForOneOnOneDialog` unchanged.
+## Coaching packet
+- Keep the complete page hook sequence and all early-return behavior unchanged.
+- Add the handwritten breadcrumb and retain the unsplit subject name as the page title.
+- Preserve the exact section order, task grouping, empty state, shared briefs, engagement brief, newer-material indicator, decision source counts, and title-only honesty line.
+- Restyle shared task groups as notebook cards and add 20px source marks to real shared work items without changing `TaskWorkflow` or its open action.
+- Add the requested right rail explaining that the packet is built only from shared work.
+- Keep `CoachOutcomeCard`, `FirmChecksCard`, `NoteComposer`, and `CoachChat` mounted in their current order with every existing control and access gate.
+- Restyle only the NoteComposer container treatment; retain all three required fields, citation choices, validation, and Share note action.
+- Do not add the withheld-item panel, suggested-question block, archived pills, unsupported metadata, or any withheld-work count or mention.
 
-## Validation
-- Compare controls before and after for each screen.
-- Verify hook order, query guards, event ownership, imports, and exact component calls remain intact.
-- Check for raw colors, forbidden letter-spacing classes, new events, and unintended file changes.
-- Run TypeScript validation and all coach-note, packet, and 1:1 tests found in the project.
-- Do not deploy or make database changes.
+## Invariants and validation
+- Preserve `canEdit={false}`, `role !== "coach"`, `canWrite`, and the access-denial branch.
+- Preserve all six requested outcome test IDs and the four named event/performance calls verbatim.
+- Keep `micro-label`, `micro-label-section`, and `micro-label-ai` on their existing semantic headings.
+- Confirm no hooks were added, removed, reordered, or conditionally mounted.
+- Check changed files for raw colors and forbidden bare letter-spacing utilities.
+- Run TypeScript validation and every relevant coaching, packet, note, and access test found in the repository.
+- Provide separate before/after control inventories for the roster and packet. Do not deploy or perform database work.
