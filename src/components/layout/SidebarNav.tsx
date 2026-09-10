@@ -140,25 +140,40 @@ export function SidebarNav({
           .filter((item) => !(isCoach && item.to === "/reflect"))
           .filter((item) => !(item.to === "/members" && !canManageMembers))
           .filter((item) => !(item.to === "/firm" && !canSeeFirmView))
-          .map((item) => (
-            <Link
-              key={item.to}
-              to={item.to}
-              onClick={onNavigate}
-              className={linkClass}
-              activeProps={activeProps}
-            >
-              <GraphiteIcon name={item.icon} size={16} />
-              <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
-                <span className="truncate">
-                  {item.to === "/members" ? membersLabel : item.label}
+          .map((item) =>
+            item.to === "/settings" ? (
+              <button
+                key={item.to}
+                type="button"
+                onClick={() => {
+                  onOpenSettings?.();
+                  onNavigate?.();
+                }}
+                className={`${linkClass} w-full text-left`}
+              >
+                <GraphiteIcon name={item.icon} size={16} />
+                <span className="truncate">{item.label}</span>
+              </button>
+            ) : (
+              <Link
+                key={item.to}
+                to={item.to}
+                onClick={onNavigate}
+                className={linkClass}
+                activeProps={activeProps}
+              >
+                <GraphiteIcon name={item.icon} size={16} />
+                <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
+                  <span className="truncate">
+                    {item.to === "/members" ? membersLabel : item.label}
+                  </span>
+                  {item.to === "/decisions" && decisionCount > 0 ? (
+                    <span className="count-pill">{decisionCount}</span>
+                  ) : null}
                 </span>
-                {item.to === "/decisions" && decisionCount > 0 ? (
-                  <span className="count-pill">{decisionCount}</span>
-                ) : null}
-              </span>
-            </Link>
-          ));
+              </Link>
+            ),
+          );
 
         // Groups with no visible items are silent, except Engagements which
         // always carries its shelf list and the new-engagement action.
