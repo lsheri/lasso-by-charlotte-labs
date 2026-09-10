@@ -1,4 +1,5 @@
 import { PageHeader } from "@/components/layout/PageHeader";
+import { ToneCard } from "@/components/notebook/ToneCard";
 import { SavedForOneOnOne } from "@/components/oneonone/SaveForOneOnOne";
 import { useProfile } from "@/hooks/use-profile";
 
@@ -7,10 +8,35 @@ export function OneOnOnePage() {
   return (
     <div>
       <PageHeader
-        title="1:1 prep"
+        title="1:1"
+        italicWord="prep"
         subtitle="Structured context for your next coaching conversation."
       />
-      {profile ? <SavedForOneOnOne profileId={profile.id} /> : null}
+      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-10">
+        <div>
+          {profile ? <SavedForOneOnOne profileId={profile.id} /> : null}
+          <p className="font-hand text-green">cut anything. it is your hour.</p>
+        </div>
+
+        <aside className="mt-10 space-y-4 lg:mt-0">
+          <ToneCard tone="record" label="WHAT YOUR COACH WILL SEE WHEN YOU SEND" className="gap-3 p-4">
+            <p>The work each one points at</p>
+            <p>The reasoning you attached</p>
+            <p>Nothing else from this week</p>
+          </ToneCard>
+          <ToneCard tone="paper" label="WHAT YOUR COACH WILL NEVER SEE" className="gap-3 p-4">
+            <div className="flex items-center gap-2">
+              <span className="w-[18px] border-t border-[var(--nb-pencil)]" aria-hidden="true" />
+              <p>Work you have not mapped to an engagement</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-[18px] border-t border-[var(--nb-pencil)]" aria-hidden="true" />
+              <p>Reflections you did not send</p>
+            </div>
+            <p className="text-soft">Sending is a decision you make, not a default.</p>
+          </ToneCard>
+        </aside>
+      </div>
     </div>
   );
 }
