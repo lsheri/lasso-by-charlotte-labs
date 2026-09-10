@@ -23,6 +23,7 @@ import { WhatFedThisButton } from "@/components/engagements/WhatFedThisButton";
 import { CanvasDeliverableActions } from "@/components/engagements/CanvasDeliverableActions";
 import { EngagementBriefPanel } from "@/components/engagements/EngagementBriefPanel";
 import { EngagementStrip } from "@/components/engagements/EngagementStrip";
+import { EngagementStats } from "@/components/engagements/EngagementStats";
 import { EngagementAsk } from "@/components/engagements/InlineEngagementAsk";
 import { SharedWithSection } from "@/components/engagements/SharedWithSection";
 import { EngagementNote } from "@/components/engagements/EngagementNote";
