@@ -613,6 +613,53 @@ export function WorkPage() {
         </div>
       ) : (
         <div className="space-y-8">
+          <div>
+            <div className="grid gap-6 lg:grid-cols-4">
+              {BUCKETS.map((bucket) => {
+                const items = filtered.filter((item) => bucketFor(item.type).key === bucket.key);
+                return (
+                  <div key={bucket.key}>
+                    <SectionHeader
+                      title={bucket.label}
+                      action={
+                        <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
+                          {items.length}
+                        </span>
+                      }
+                    />
+                    <div className="space-y-2">
+                      {items.length === 0 ? (
+                        <p className="text-[11.5px] text-soft">Nothing here yet.</p>
+                      ) : (
+                        items.map((item) => (
+                          <button
+                            key={item.id}
+                            type="button"
+                            onClick={openItem(item)}
+                            className="block w-full text-left"
+                          >
+                            <ToneCard
+                              tone={item.visibility === "unmapped" ? "attention" : "paper"}
+                              label={[sourceLabel(item.source), formatDate(effectiveWorkDate(item))]
+                                .filter(Boolean)
+                                .join(" · ")}
+                              mark={<SourceMark item={item} size={14} />}
+                              title={item.title}
+                              meta={cardMeta(item)}
+                            />
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <p className="font-hand mt-4 text-[16px] text-green">
+              the pile is how it arrives, the columns are what it means
+            </p>
+          </div>
+
           <WatchSuggestionBanner />
           {!isCoach && flagged.length > 0 ? (
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius)] border border-dashed border-border bg-secondary/50 px-4 py-3">
