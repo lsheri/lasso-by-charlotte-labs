@@ -104,6 +104,8 @@ export function WorkPage() {
   const [removingFlagged, setRemovingFlagged] = useState(false);
   // Private stopped being a section: it is a per-row chip and this filter.
   const [showPrivate, setShowPrivate] = useState(true);
+  // Presentation-only filter for the type columns. Local state, no query.
+  const [columnFilter, setColumnFilter] = useState<string>("all");
 
   const all = data?.items ?? [];
   const mappingError = data?.mappingError ?? null;
