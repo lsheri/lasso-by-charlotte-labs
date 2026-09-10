@@ -301,17 +301,17 @@ function TranscriptsCard({
   onConnect: () => void;
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-4 rounded-[var(--radius)] border border-border bg-card px-4 py-3 shadow-card">
+    <div className="flex flex-wrap items-center gap-4 rounded-[var(--radius-lg)] border border-border bg-card px-4 py-3.5">
       <BrandLogo brand="googledrive" size={30} />
       <div className="min-w-0 flex-1 basis-48">
-        <p className="text-sm font-medium text-foreground">Call transcripts (Google Drive)</p>
-        <p className="mt-0.5 text-sm text-muted-foreground">
+        <p className="text-[13px] font-medium text-foreground">Call transcripts (Google Drive)</p>
+        <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+          {busy ? "Pending" : connected ? "Ready" : "Needs Google Drive"}
+        </p>
+        <p className="mt-1 text-[11.5px] leading-[17px] text-muted-foreground">
           Recordings and transcripts already in your Drive. Uses the same connection.
         </p>
       </div>
-      <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
-        {busy ? "Pending" : connected ? "Ready" : "Needs Google Drive"}
-      </span>
       {connected ? (
         <ConnectorPicker
           kind="transcripts"
