@@ -128,7 +128,7 @@ export function renderInviteEmail(args: {
 <div style="font-family:${MONO};font-size:10px;letter-spacing:3px;color:${MAIL.muted};margin-top:4px">BY CHARLOTTE LABS</div>
 </td>
 </tr></table>
-<div style="background:${MAIL.card};border:1px solid ${MAIL.rule};border-radius:8px;padding:26px 24px;margin-top:16px">
+<div style="background:${MAIL.card};border:1px solid ${MAIL.pencil};border-radius:8px;padding:26px 24px;margin-top:16px">
 <p style="font-family:${TITLE};font-size:30px;font-weight:bold;color:${MAIL.ink};margin:0 0 14px">${escapeHtml(heading)}</p>
 <p style="font-size:14px;line-height:1.6;margin:0 0 14px">${escapeHtml(lead)}</p>
 <p style="font-size:14px;line-height:1.6;margin:0;color:${MAIL.body}">${escapeHtml(body)}</p>
