@@ -27,6 +27,7 @@ export type BrandKey =
   | "onedrive"
   | "sharepoint"
   | "notion"
+  | "slack"
   | "granola"
   | "wispr"
   | "claude"
@@ -59,6 +60,7 @@ const LABELS: Record<BrandKey, string> = {
   onedrive: "OneDrive",
   sharepoint: "SharePoint",
   notion: "Notion",
+  slack: "Slack",
   granola: "Granola",
   wispr: "Wispr Flow",
   claude: "Claude",
@@ -118,6 +120,17 @@ function CustomMark({ brand }: { brand: BrandKey }) {
           fill="url(#nb-copilot-grad)"
           d="M8.6 4.4h6.8a4 4 0 0 1 3.8 2.8l1.5 4.7a3.4 3.4 0 0 1-3.2 4.4H16v.5a3.2 3.2 0 0 1-3.2 3.2H9.3A5.3 5.3 0 0 1 4 14.7v-1.5a1.6 1.6 0 0 1 .6-1.3l.4-.3-.6-1.9A4 4 0 0 1 8.6 4.4Zm0 2a2 2 0 0 0-1.9 2.6l.8 2.6h6.9a1.7 1.7 0 0 1 1.6 2.2l-.6 2h2.2a1.4 1.4 0 0 0 1.3-1.8l-1.5-4.7a2 2 0 0 0-1.9-1.4H8.6Z"
         />
+      </g>
+    );
+  }
+  if (brand === "slack") {
+    // Four rounded bars in Slack's own four colours.
+    return (
+      <g>
+        <rect x="3" y="10.3" width="7.7" height="3.4" rx="1.7" fill="#36C5F0" />
+        <rect x="10.3" y="3" width="3.4" height="7.7" rx="1.7" fill="#2EB67D" />
+        <rect x="13.3" y="10.3" width="7.7" height="3.4" rx="1.7" fill="#ECB22E" />
+        <rect x="10.3" y="13.3" width="3.4" height="7.7" rx="1.7" fill="#E01E5A" />
       </g>
     );
   }
@@ -223,6 +236,7 @@ export function brandForToolkit(toolkit: string): BrandKey {
   if (key.startsWith("onedrive")) return "onedrive";
   if (key.startsWith("sharepoint")) return "sharepoint";
   if (key.startsWith("notion")) return "notion";
+  if (key.startsWith("slack")) return "slack";
   if (key.startsWith("granola")) return "granola";
   if (key.startsWith("googlecalendar")) return "googlecalendar";
   if (key.startsWith("claude") || key === "anthropic") return "claude";
