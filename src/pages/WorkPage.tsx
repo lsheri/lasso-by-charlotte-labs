@@ -1,4 +1,3 @@
-import { CheckCircle2, CircleDashed } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
@@ -19,7 +18,7 @@ import { PasteThreadDialog } from "@/components/work/PasteThreadDialog";
 import { OpenFileAction } from "@/components/work/OpenFileAction";
 import { ConnectorBrowseActions } from "@/components/connectors/ConnectorBrowseActions";
 import { WatchSuggestionBanner } from "@/components/connectors/WatchSuggestionBanner";
-import { SuggestDot, SuggestLegend, Suggested } from "@/components/common/Suggested";
+import { SuggestLegend } from "@/components/common/Suggested";
 import { SuggestionChip } from "@/components/work/SuggestionChip";
 import { PeekPanel, type PeekEntry } from "@/components/peek/PeekPanel";
 import type { PeekAnalysisPreset } from "@/components/peek/PeekActionBar";
@@ -28,8 +27,6 @@ import { TranscriptsAction } from "@/components/work/TranscriptsAction";
 import { WorkDateDialog } from "@/components/work/WorkDateDialog";
 import { MapButton } from "@/components/work/MapButton";
 import { RowAction, WorkRow } from "@/components/work/WorkRow";
-import { EngagementFold, WorkSection } from "@/components/work/WorkSection";
-import { WorkPile } from "@/components/work/WorkPile";
 import { ConversationChips } from "@/components/work/ConversationChips";
 import { ConversationCard } from "@/components/work/ConversationCard";
 import { FlaggedMarker, isFlaggedRestatement } from "@/components/work/FlaggedMarker";
@@ -55,12 +52,8 @@ import { removeWorkItems } from "@/lib/work-bulk.functions";
 import { detachEpisodeItems, syncEpisodeForMapping } from "@/lib/episodes.functions";
 import { logEvent } from "@/lib/telemetry";
 import { logV2 } from "@/lib/telemetry-v2";
-import { engagementHue } from "@/lib/work-identity";
-import { engagementLabel } from "@/lib/clients";
 import { markOpenStart } from "@/lib/perf-timing";
 import {
-  effectiveWorkDate,
-  formatDate,
   groupConversations,
   isConversationGroup,
   sourceLabel,
@@ -70,7 +63,7 @@ import {
 import { PageHeader } from "@/components/layout/PageHeader";
 import { SectionHeader } from "@/components/notebook/SectionHeader";
 import { ToneCard } from "@/components/notebook/ToneCard";
-import { SourceMark, sourceVendorKey } from "@/components/work/SourceMark";
+import { sourceVendorKey } from "@/components/work/SourceMark";
 import { BUCKETS, bucketFor } from "@/components/work/work-buckets";
 
 export function WorkPage() {
