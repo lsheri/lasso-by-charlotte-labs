@@ -277,13 +277,13 @@ back"). It was deliberately NOT built. Do not add it.
 | `40:760` | `/auth` | BUILT |
 | `40:813` | `/join` | NOT STARTED |
 | `40:933` | `/join/edu` | NOT STARTED |
-| `40:1053` | `/no-access` | NOT STARTED |
+| `40:1053` | `/no-access` | BUILT (skin, 10 Sep 2026) — card surface, pencil hairline, 6px radius, 9px mono label, handwritten title. Frame copy and its "Back to your work" / "Ask for access" actions refused (see below); Sign out is the only real control. |
 | `43:511` | `/onboarding` | BLOCKED — see below |
 | `43:1019` | Settings dialog | BUILT |
-| `47:669` | `/trust` | NOT STARTED |
-| `47:1006` | `/why` | NOT STARTED |
-| `47:1125` | `/how-lasso-works` | NOT STARTED |
-| `66:678` | Error state | NOT STARTED |
+| `47:669` | `/trust` | BUILT (skin, 10 Sep 2026) — pencil hairlines, 6px radius, 9px mono micro-labels, handwritten section titles. Frame's stale subprocessor list (Supabase / Anthropic / Resend) refused; production list kept. `PublicHeader` untouched, shared with the frozen `/`. |
+| `47:1006` | `/why` | BUILT (skin, 10 Sep 2026) — handwritten section headings, pencil hairlines between sections and above the footer, 6px radius on the CTA card, 9px mono footer labels. Copy unchanged. `PublicHeader` untouched. |
+| `47:1125` | `/how-lasso-works` | BUILT (skin, 10 Sep 2026) — pencil hairlines, 9px mono micro-labels, handwritten section titles, 6px radius on the video frames. Both walkthrough events unchanged. Note: route is authenticated, the frame draws a signed-out page. |
+| `66:678` | Error state | BUILT (skin, 10 Sep 2026) — `src/lib/error-page.ts` standalone document: card surface with pencil border, 6px radius, 13px body. Palette still mirrored by hand; it cannot import the app stylesheet. |
 
 ### `/onboarding` is blocked
 1. `onboarding.tools_selected` fires ONLY on the tools-stage Continue, which also calls

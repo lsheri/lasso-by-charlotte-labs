@@ -29,9 +29,11 @@ function NoAccessPage() {
     <>
       <SessionHeader />
       <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-background px-6">
-        <div className="max-w-md text-center">
-          <div className="font-mono text-sm tracking-[0.24em] text-muted-foreground">LASSO</div>
-          <h1 className="page-title mt-6">You don&apos;t have access to a workspace right now.</h1>
+        <div className="max-w-md rounded-[var(--radius-control)] border border-[var(--nb-pencil)] bg-card px-8 py-10 text-center shadow-card">
+          <div className="font-mono text-[9px] uppercase tracking-[0.24em] text-muted-foreground">
+            LASSO
+          </div>
+          <h1 className="section-title mt-6">You don&apos;t have access to a workspace right now.</h1>
           <p className="mt-3 text-sm text-muted-foreground">
             Nothing has been deleted. If this is unexpected, ask an admin of your workspace to
             restore your access.

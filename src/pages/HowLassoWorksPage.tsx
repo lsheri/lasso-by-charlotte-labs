@@ -46,11 +46,11 @@ function SectionBlock({
   }, [orgId, section.id, onSeen]);
 
   return (
-    <section ref={ref} className="border-t border-border pt-8">
-      <p className="micro-label">
+    <section ref={ref} className="border-t border-[var(--nb-pencil)] pt-8">
+      <p className="micro-label text-[9px]">
         {String(index + 1).padStart(2, "0")} · {variant === "coach" ? "Coaching" : "Your work"}
       </p>
-      <h2 className="mt-2 text-lg text-foreground">{section.title}</h2>
+      <h2 className="section-title mt-2">{section.title}</h2>
       <div className="mt-4 grid gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] md:items-start">
         <div className="space-y-3">
           {section.body.map((line) => (
@@ -76,7 +76,7 @@ function SectionBlock({
               playsInline
               preload="none"
               aria-label={section.video.label}
-              className="w-full rounded-[var(--radius)] border border-border bg-card shadow-card"
+              className="w-full rounded-[var(--radius-control)] border border-[var(--nb-pencil)] bg-card shadow-card"
             />
             <figcaption className="mt-2 text-xs text-muted-foreground">
               {section.video.label}. Everything it shows is written out beside it.
@@ -133,8 +133,8 @@ export function HowLassoWorksPage() {
           />
         ))}
 
-        <section className="border-t border-border pt-8">
-          <p className="micro-label">Next</p>
+        <section className="border-t border-[var(--nb-pencil)] pt-8">
+          <p className="micro-label text-[9px]">Next</p>
           <p className="mt-2 text-sm text-muted-foreground">{guide.next.note}</p>
           <Link
             to={guide.next.to as never}
