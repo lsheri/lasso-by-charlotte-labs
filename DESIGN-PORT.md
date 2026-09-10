@@ -211,6 +211,17 @@ never existed in `styles.css`. That test failure predates this port and is untou
 | `34:2043` | `/members` | BUILT |
 | `36:1936` | `/engagements/$id` (arrival, strip expanded) | BUILT |
 | `36:2272` | `/engagements/$id` (asking, strip collapsed) | BUILT |
+
+Engagement page notes, 10 Sep 2026 (frame `36:1936`). Added: the engagement code
+/ client / term move to a mono `micro-label` above the title, the subtitle becomes
+a stat line (`EngagementStats`: workstreams, pieces of work, calls on the record,
+waiting on you), per-workstream call counts derived from decisions citing that
+workstream's mapped items, shipped cards stamped `TYPE · 02 SEP`, and the
+handwritten strip caption. OMITTED for lack of data: the "8 sources · checked at
+source" line (`traced_facts` lives on shipped-work cards, not `WorkItemRow`) and
+the "WAITING ON YOU · claim it or say not mine" row (no verified claim-state
+source in this payload). Read-only display only; no control, hook order or
+telemetry changed.
 | `49:2354` | `/classes` (EDU) | BUILT (skin, 10 Sep 2026) |
 | `49:2573` | `/assignments` (EDU) | BUILT (skin, 10 Sep 2026) |
 | `49:3044` | `/projects` (EDU) | BUILT (skin, 10 Sep 2026) |
