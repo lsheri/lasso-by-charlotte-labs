@@ -66,6 +66,7 @@ Never promote a row to `VERIFIED` yourself.
 | 09 · Screens · Entry & settings | `1:10` | 11 frames. |
 | 10 · Artifact viewer | — | 4 frames, component-level not route-level. V1 peek panel, V2 what fed this, V3 Work Artifact, V4 circling a region (PROPOSED, refused). |
 | 11 · States | — | Empty, one, many, long-text, error, loading. Frames A/B/C BUILT (skin only); D/E/F not ported, they require new actions, computed counts or new verdict vocabulary. |
+| 13 · Marketing | — | 6 frames. Marketing collateral and one shipped email, not routes. See the Marketing section below. |
 | 14 · Archive | — | Dead ends. Never port from here. |
 
 NOTE: `get_metadata` with no nodeId returns only the read-me page on this file. Always
