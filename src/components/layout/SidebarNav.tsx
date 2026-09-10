@@ -55,7 +55,13 @@ function EngagementRow({
   );
 }
 
-export function SidebarNav({ onNavigate }: { onNavigate?: (() => void) | undefined }) {
+export function SidebarNav({
+  onNavigate,
+  onOpenSettings,
+}: {
+  onNavigate?: (() => void) | undefined;
+  onOpenSettings?: (() => void) | undefined;
+}) {
   const { data: profile } = useProfile();
   const { data: engagements } = useEngagements(profile?.id);
   const { data: decisions } = useDecisions();
@@ -91,18 +97,33 @@ export function SidebarNav({ onNavigate }: { onNavigate?: (() => void) | undefin
           <div key={group.label}>
             <div className="nb-group-header px-2">{group.label}</div>
             <div className="mt-2 flex flex-col gap-0.5">
-              {group.items.map((item) => (
-                <Link
-                  key={item.to}
-                  to={item.to}
-                  onClick={onNavigate}
-                  className={linkClass}
-                  activeProps={activeProps}
-                >
-                  <GraphiteIcon name={item.icon} size={16} />
-                  <span>{item.label}</span>
-                </Link>
-              ))}
+              {group.items.map((item) =>
+                item.to === "/settings" ? (
+                  <button
+                    key={item.to}
+                    type="button"
+                    onClick={() => {
+                      onOpenSettings?.();
+                      onNavigate?.();
+                    }}
+                    className={`${linkClass} w-full text-left`}
+                  >
+                    <GraphiteIcon name={item.icon} size={16} />
+                    <span>{item.label}</span>
+                  </button>
+                ) : (
+                  <Link
+                    key={item.to}
+                    to={item.to}
+                    onClick={onNavigate}
+                    className={linkClass}
+                    activeProps={activeProps}
+                  >
+                    <GraphiteIcon name={item.icon} size={16} />
+                    <span>{item.label}</span>
+                  </Link>
+                ),
+              )}
             </div>
           </div>
         ))}
