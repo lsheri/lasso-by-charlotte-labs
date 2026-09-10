@@ -1,6 +1,6 @@
 # Roadmap
 
-- [ ] Port the authenticated sidebar to the approved Figma Worker design
+- [x] Port the authenticated sidebar to the approved Figma Worker design
 - [x] Home page: handwritten pencil section titles (Caveat) for every content section
 - [x] Home page: scroll focus, off-centre sections fade + slight blur (off on mobile / reduced motion)
 - [x] Footer: website, email (liam@charlotte-labs.com) and LinkedIn links in the shared style
