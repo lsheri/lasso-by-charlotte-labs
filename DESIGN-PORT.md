@@ -202,7 +202,7 @@ never existed in `styles.css`. That test failure predates this port and is untou
 | `22:220` | `/work` | BUILT (full screen, pass 2 of 2, 10 Sep 2026) |
 | `23:413` | `/firm` | BUILT (production-first layout, 10 Sep 2026) |
 | `27:635` | `/ai-record` | BUILT (hairline list port, 10 Sep 2026) |
-| `29:833` | `/archive` | BUILT |
+| `29:833` | `/archive` | BUILT (filed two-column layout, 10 Sep 2026) |
 | `30:1012` | `/reflect` | BUILT |
 | `30:1419` | `/decisions` | BUILT |
 | `32:1323` | `/one-on-one` | BUILT |
@@ -242,6 +242,15 @@ show their loaded counts, and the rail keeps CaptureCoverage plus the frame's se
 card. The unavailable checked-at-source count and turn-level provenance panel remain
 omitted rather than inferred. No query, event, payload, dimension or consent surface
 changed.
+
+Past work notes, 10 Sep 2026 (frame `29:833`). The archive spine now fills the
+two-thirds left column, with closed-engagement work filed neatly two abreast and
+three standing notes in the right column. The repeated group stamp was removed;
+the subtitle counts existing engagement groups and cards. The whole-engagement
+export shown in the frame remains omitted because no export capability exists;
+the third note states what is available instead. The default ArchivePile layout
+remains the existing deterministic scatter for its other caller. No action, hook,
+query, event, payload, dimension or consent surface changed.
 
 Engagement page notes, 10 Sep 2026 (frame `36:1936`). Added: hand-written breadcrumb
 back to `/work` above the title; the engagement code / client / term trail follows

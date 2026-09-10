@@ -24,9 +24,12 @@ describe("pass 142: your organization", () => {
     expect(navGroups.some((g) => g.label === "Firm")).toBe(false);
   });
 
-  it("reads the group label as the archive micro label", () => {
+  // Updated for Figma 29:833: the frame drops the repeated group stamp from the
+  // page, so the agreement between nav and page is now the page's own title.
+  it("names the page the same thing the nav group names it", () => {
     const page = readFileSync("src/pages/ArchivePage.tsx", "utf8");
-    expect(page).toContain(`<p className="micro-label">{PAST_WORK_GROUP_LABEL}</p>`);
+    expect(page).toContain('<PageHeader title="Past work" italicWord="work"');
+    expect(page).not.toContain('className="micro-label"');
   });
 });
 

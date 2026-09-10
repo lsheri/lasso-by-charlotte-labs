@@ -34,14 +34,20 @@ export function ArchiveSpine({
                 aria-hidden
                 className="absolute -left-7 top-2 h-[11px] w-[11px] rounded-full bg-graphite"
               />
-              <header className="mb-4">
-                <h2 className="section-title">{engagement || "Other work"}</h2>
+              {/* Figma 29:833 sets the engagement's name in plain body text,
+                  not in the handwritten `section-title` used for live sections.
+                  Past work is filed, and filed things are labelled, not
+                  annotated. */}
+              <header className="mb-3">
+                <h2 className="text-[15px] leading-[21px] text-foreground">
+                  {engagement || "Other work"}
+                </h2>
                 <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
-                  {formatDate(newest.shipped_at)} · {group.cards.length}{" "}
-                  {group.cards.length === 1 ? "piece" : "pieces"}
+                  Closed {formatDate(newest.shipped_at)} · {group.cards.length}{" "}
+                  {group.cards.length === 1 ? "piece" : "pieces"} of work
                 </p>
               </header>
-              <ArchivePile cards={group.cards} hidden={hidden} />
+              <ArchivePile cards={group.cards} hidden={hidden} layout="grid" />
             </section>
           );
         })}
