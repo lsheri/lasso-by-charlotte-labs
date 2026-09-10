@@ -117,7 +117,9 @@ export function FirmMetricGrid({
         </ListTile>
       </div>
 
-      <WaitingStrip names={withheld} />
+      <div className="mt-3">
+        <WaitingStrip names={withheld} />
+      </div>
     </section>
   );
 }
