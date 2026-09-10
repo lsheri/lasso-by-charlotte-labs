@@ -100,10 +100,10 @@ export function CoachingPage() {
                     onClick={() =>
                       openPacket(subject.coach_profile_id, subject.engagement_id, subject.subject_id)
                     }
-                    className="grid min-h-[76px] w-full grid-cols-[minmax(180px,1fr)_minmax(190px,1.15fr)_minmax(210px,1.2fr)_130px] items-center gap-4 border-b border-border px-2 py-3 text-left transition-colors hover:bg-accent-soft"
+                    className="grid min-h-[76px] w-full grid-cols-[minmax(180px,1fr)_minmax(190px,1.15fr)_minmax(210px,1.2fr)_130px] items-center gap-4 border-b border-[var(--nb-pencil)] px-2 py-3 text-left transition-colors hover:bg-accent-soft"
                   >
                     <span className="flex min-w-0 items-center gap-3">
-                      <span className="flex size-9 shrink-0 items-center justify-center rounded-full border border-border bg-card font-mono text-[10px] text-foreground">
+                      <span className="flex size-9 shrink-0 items-center justify-center rounded-full border-[1.2px] border-pencil bg-card font-mono text-[10px] tracking-[0.03em] text-foreground">
                         {initials(subject.subject_name)}
                       </span>
                       <span className="min-w-0">
