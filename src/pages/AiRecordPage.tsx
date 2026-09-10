@@ -22,6 +22,10 @@ import { useProfile } from "@/hooks/use-profile";
 import { useWorkItems } from "@/hooks/use-work-items";
 import { supabase } from "@/integrations/supabase/client";
 import { effectiveWorkDate, type WorkItemRow } from "@/lib/work-types";
+import { SectionHeader } from "@/components/notebook/SectionHeader";
+import { ToneCard } from "@/components/notebook/ToneCard";
+import { vendorLabel } from "@/lib/conversation-shared";
+import { vendorFromSource, type ToolVendor } from "@/lib/work-taxonomy";
 import { markOpenStart } from "@/lib/perf-timing";
 
 type Group = {
@@ -118,6 +122,7 @@ export function AiRecordPage() {
   const [openGroup, setOpenGroup] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [showSubjects, setShowSubjects] = useState(false);
+  const [tool, setTool] = useState<ToolVendor | "all">("all");
 
   const threads = (work?.items ?? []).filter((i) => i.type === "ai_thread");
   // The id list is sorted before it becomes part of a key, so a reordered but
@@ -128,8 +133,17 @@ export function AiRecordPage() {
   const shown = needle
     ? threads.filter((i) => (i.title ?? "").toLowerCase().includes(needle))
     : threads;
-  const groups = groupItems(shown);
+  // Chips read the tools already present in the loaded rows, so the row never
+  // offers a filter that would empty the page.
+  const toolsPresent = Array.from(new Set(threads.map((i) => vendorFromSource(i))));
+  const visible = tool === "all" ? shown : shown.filter((i) => vendorFromSource(i) === tool);
+  const groups = groupItems(visible);
+  const mappedCount = threads.filter((i) =>
+    i.work_item_tasks.some((m) => Boolean(m.tasks?.engagements)),
+  ).length;
+  const subtitle = `${threads.length} conversation${threads.length === 1 ? "" : "s"} · ${mappedCount} mapped`;
   const searchSignal = useChatSearchSignal(query, shown.length);
+
 
   const analyses = useChatAnalyses(profile?.id, profile?.org_id);
 
