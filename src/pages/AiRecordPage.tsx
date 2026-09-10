@@ -13,10 +13,11 @@ import {
 import { AnalysisLens } from "@/components/reflect/AnalysisLens";
 import { ThinkingIndicator } from "@/components/common/Working";
 import { ChatUrlLink } from "@/components/work/ChatUrlLink";
-import { VendorBrandMark } from "@/components/work/VendorBrandMark";
+import { PasteThreadDialog } from "@/components/work/PasteThreadDialog";
+import { Button } from "@/components/ui/button";
 import { BrandLogo } from "@/components/connectors/BrandLogo";
 import { SubjectsPanel } from "@/components/work/SubjectsPanel";
-import { WorkRow } from "@/components/work/WorkRow";
+import { ChatRow, chatWhen } from "@/components/work/ChatRow";
 import { useChatSearchSignal } from "@/hooks/use-chat-search-signal";
 import { useProfile } from "@/hooks/use-profile";
 import { useWorkItems } from "@/hooks/use-work-items";
@@ -141,7 +142,22 @@ export function AiRecordPage() {
   const mappedCount = threads.filter((i) =>
     i.work_item_tasks.some((m) => Boolean(m.tasks?.engagements)),
   ).length;
-  const subtitle = `${threads.length} conversation${threads.length === 1 ? "" : "s"} · ${mappedCount} mapped`;
+  // Figma 27:635 subtitle: "142 conversations on the record · 61 checked at
+  // source · 17 new since Friday". "Checked at source" is a provenance count
+  // this page has no read for, so it is left out rather than approximated; the
+  // two clauses that are true are said, plus how many arrived this week.
+  const weekAgo = Date.now() - 7 * 24 * 3_600_000;
+  const newThisWeek = threads.filter((i) => {
+    const at = new Date(i.captured_at ?? "").getTime();
+    return Number.isFinite(at) && at >= weekAgo;
+  }).length;
+  const subtitle = [
+    `${threads.length} conversation${threads.length === 1 ? "" : "s"} on the record`,
+    `${mappedCount} mapped`,
+    newThisWeek > 0 ? `${newThisWeek} new this week` : "",
+  ]
+    .filter(Boolean)
+    .join(" · ");
   const searchSignal = useChatSearchSignal(query, shown.length);
 
 
@@ -195,7 +211,22 @@ export function AiRecordPage() {
   return (
     <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-8">
       <div className="min-w-0">
-      <PageHeader title="Chat" italicWord="library" subtitle={subtitle} />
+      <PageHeader
+        title="Chat"
+        italicWord="library"
+        subtitle={subtitle}
+        action={
+          /* Figma 27:635 hangs one control off the title: the way a
+             conversation gets in here by hand. */
+          <PasteThreadDialog
+            trigger={
+              <Button type="button" variant="outline">
+                Add a chat yourself
+              </Button>
+            }
+          />
+        }
+      />
 
       <div className="-mt-2 mb-6 flex items-center gap-2.5">
         <BrandLogo brand="claude" size={16} />
@@ -246,6 +277,13 @@ export function AiRecordPage() {
                   : option === "unknown"
                     ? "Other"
                     : vendorLabel(option)}
+                {/* Figma 27:635 puts the count inside the chip, so the row of
+                    tools is also the shape of the library. */}
+                <span className="ml-1.5 font-mono text-[10px] text-soft">
+                  {option === "all"
+                    ? shown.length
+                    : shown.filter((i) => vendorFromSource(i) === option).length}
+                </span>
               </button>
             );
           })}
@@ -346,44 +384,37 @@ export function AiRecordPage() {
                   </div>
                 ) : null}
 
-                <div className="space-y-2">
+                {/* Figma 27:635 draws these as a hairline-ruled list, not a
+                    stack of bordered cards. Same handlers, same actions: they
+                    move onto hover, focus and touch instead of sitting open. */}
+                <div className="border-t border-[var(--nb-rule)]">
                   {group.items.map((item) => (
-                    <WorkRow
+                    <ChatRow
                       key={`${group.key}:${item.id}`}
                       item={item}
+                      turns={turnCounts?.[item.id] ?? 0}
+                      fed={fed?.[item.id] ?? []}
+                      when={chatWhen(item.captured_at)}
                       onOpen={() => {
                         searchSignal.onResultOpened();
                         markOpenStart("peek.open");
                         setPeek({ entry: item });
                       }}
                       actions={
-                        <button
-                          type="button"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            setLensItem(item);
-                          }}
-                          className="rounded-full border border-border px-3 py-1 text-xs font-medium text-foreground transition-opacity hover:opacity-80"
-                        >
-                          Analyse
-                        </button>
+                        <>
+                          <button
+                            type="button"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              setLensItem(item);
+                            }}
+                            className="text-xs font-medium text-accent-deep transition-opacity hover:opacity-70"
+                          >
+                            Analyse
+                          </button>
+                          <ChatUrlLink item={item} />
+                        </>
                       }
-                      footer={
-                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                          <VendorBrandMark item={item} />
-                          <span>
-                            {turnCounts?.[item.id] ?? 0} message
-                            {(turnCounts?.[item.id] ?? 0) === 1 ? "" : "s"}
-                          </span>
-                          {(fed?.[item.id] ?? []).length > 0 ? (
-                            <span>Fed: {(fed?.[item.id] ?? []).join(", ")}</span>
-                          ) : null}
-                          <span onClick={(event) => event.stopPropagation()}>
-                            <ChatUrlLink item={item} />
-                          </span>
-                        </div>
-                      }
-
                     />
                   ))}
                 </div>
@@ -394,9 +425,16 @@ export function AiRecordPage() {
       )}
 
       {threads.length > 0 ? (
-        <p className="font-hand mt-6 text-[16px] text-green">
-          nothing here was written by Lasso
-        </p>
+        <>
+          {/* Figma 27:635 closes the list by saying how much of it you are
+              looking at, and that nothing was thrown away to get there. */}
+          <p className="mt-4 border-t border-[var(--nb-rule)] pt-3 text-[12px] text-muted-foreground">
+            Showing {visible.length} of {threads.length}. Nothing is deleted here.
+          </p>
+          <p className="font-hand mt-6 text-[16px] text-green">
+            nothing here was written by Lasso
+          </p>
+        </>
       ) : null}
 
       <PeekPanel
@@ -430,17 +468,15 @@ export function AiRecordPage() {
           scopeLabel="your chat library"
           dates={threads.map((t) => effectiveWorkDate(t))}
         />
-        <ToneCard
-          tone="record"
-          label="WHY THIS PANEL EXISTS"
-          title="You can see what was read."
-        >
-          <p className="text-sm text-foreground">
-            The record shows which conversations were read and which were not, so you never have
-            to guess what Lasso worked from.
+        {/* Figma 27:635's own wording for this panel, with no claim beyond what
+            the product already does. The unavailable turn-level provenance
+            panel is deliberately not invented above this card. */}
+        <ToneCard tone="paper" label="WHY THIS PANEL EXISTS">
+          <p className="text-[13px] leading-[19px] text-foreground">
+            You can always see what the AI actually read before it answered.
           </p>
-          <p className="text-sm text-muted-foreground">
-            Nothing enters the record until you send it.
+          <p className="mt-1 text-[12px] leading-[18px] text-muted-foreground">
+            If a line is not in the record, it is dropped, never repaired.
           </p>
         </ToneCard>
       </aside>
