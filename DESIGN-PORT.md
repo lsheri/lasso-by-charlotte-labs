@@ -1,5 +1,33 @@
 # Design port: Figma to code
 
+## What this is and when it is done
+
+The live app at `lasso.charlotte-labs.com` is being redesigned to match the Figma
+file screen by screen. That is the whole job. Every route in this document ends up
+looking like its frame.
+
+**Done means users see it.** Not committed, not in preview, not merged. A change
+that has not been deployed to production has not happened, because the people the
+redesign is for cannot see it. Report three states every time, and never collapse
+them: `committed` / `in preview` / `published`. Preview rebuilds on commit;
+production requires an explicit deploy and an explicit founder yes.
+
+There are three Figma files with three different jobs. Do not confuse them:
+
+| File | Job |
+|---|---|
+| Lasso · App Design System | **The target.** What ships. Tied to real routes and real data. Written with discipline. This document maps that file. |
+| Lasso Design Explorations | **The mirror.** An automated 13:00 UTC job regenerates it from the live app, so it always shows what users currently have. It is an output, never an input. |
+| Lasso · Sandbox A / B | **The sketchbook.** Dead ends allowed. Never port from it. |
+
+The mirror is the reason production matters more than preview here. If the redesign
+sits in preview, the next mirror sync still shows the old app, because the mirror
+tracks what is live. Shipping to production is what makes the mirror, the design
+file and the real product finally agree.
+
+**What this is not:** a rebuild, a refactor, or a chance to improve the data layer.
+The data layer does not move. See project knowledge rules 6 and 7.
+
 Source of truth for what the app should look like: Figma file `SBM4zsmUiGrLH9rT7sTHa2`,
 "Lasso · App Design System". This file maps that design to this codebase and tracks
 what has actually been built.
