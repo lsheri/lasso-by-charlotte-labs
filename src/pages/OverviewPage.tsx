@@ -6,6 +6,8 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { SectionHeader } from "@/components/notebook/SectionHeader";
 import { ToneCard } from "@/components/notebook/ToneCard";
 import { ArchiveTeaser } from "@/components/archive/ArchiveTeaser";
+import { ReadingPanel } from "@/components/overview/ReadingPanel";
+import { NotCovered } from "@/components/overview/NotCovered";
 import { OneOnOneBrief } from "@/components/oneonone/OneOnOneBrief";
 import { Button } from "@/components/ui/button";
 import { useDecisions, srcsOf } from "@/hooks/use-decisions";
@@ -72,6 +74,10 @@ export function OverviewPage() {
 
   const waiting = drafts.slice(0, 2);
   const thisWeek = items.slice(0, 4);
+  // Figma 21:2 "What Lasso is reading": the most recent arrivals from a
+  // connected tool. Anything without a vendor came in by hand, so it is not
+  // something Lasso went and read.
+  const reading = items.filter((item) => Boolean(item.source_vendor)).slice(0, 3);
 
   const statLine = [
     plural(confirmed.length, "call on the record", "calls on the record"),
@@ -160,6 +166,10 @@ export function OverviewPage() {
           </div>
         </section>
       ) : null}
+
+      <ReadingPanel items={reading} />
+
+      <NotCovered />
 
       {profile ? (
         <div className="mt-10">
