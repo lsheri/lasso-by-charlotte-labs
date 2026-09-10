@@ -1,4 +1,5 @@
 import { ChevronDown, ChevronRight } from "lucide-react";
+import { prefersReducedMotion } from "@/lib/motion-registry";
 import { useEffect, useState } from "react";
 
 import { StitchBadge } from "@/components/provenance/StitchBadge";
@@ -43,7 +44,7 @@ export function UpstreamPane({
       const target = document.getElementById(
         focus.turnId ? `audit-turn-${focus.turnId}` : `audit-item-${focus.itemId}`,
       );
-      const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ?? false;
+      const reduce = prefersReducedMotion();
       target?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "center" });
     }, 40);
     return () => window.clearTimeout(id);
