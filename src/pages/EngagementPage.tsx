@@ -23,6 +23,7 @@ import { WhatFedThisButton } from "@/components/engagements/WhatFedThisButton";
 import { CanvasDeliverableActions } from "@/components/engagements/CanvasDeliverableActions";
 import { EngagementBriefPanel } from "@/components/engagements/EngagementBriefPanel";
 import { EngagementStrip } from "@/components/engagements/EngagementStrip";
+import { EngagementStats } from "@/components/engagements/EngagementStats";
 import { EngagementAsk } from "@/components/engagements/InlineEngagementAsk";
 import { SharedWithSection } from "@/components/engagements/SharedWithSection";
 import { EngagementNote } from "@/components/engagements/EngagementNote";
@@ -135,14 +136,17 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
       <header className="mb-8">
         <div className="nb-sticky-head grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4">
           <div className="min-w-0">
+            <p className="micro-label mb-1.5">
+              {engagementDisplayCode(engagement) ?? "Quick folder"}
+              {clientDisplayName(engagement) ? ` · ${clientDisplayName(engagement)}` : ""}
+              {engagement.term_label ? ` · ${engagement.term_label}` : ""}
+            </p>
             <h1 className="nb-title-strip page-title">
               {engagementDisplayTitle(engagement)}
               <GraphiteRule />
             </h1>
             <p className="page-subtitle">
-              {engagementDisplayCode(engagement) ?? "Quick folder"}
-              {clientDisplayName(engagement) ? ` · ${clientDisplayName(engagement)}` : ""}
-              {engagement.term_label ? ` · ${engagement.term_label}` : ""}
+              <EngagementStats engagementId={engagement.id} tasks={tasksQuery.data ?? []} />
             </p>
           </div>
           {profile && profile.role !== "coach" ? (

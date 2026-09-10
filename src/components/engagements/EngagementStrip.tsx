@@ -2,6 +2,7 @@ import { useEffect, useState, type Dispatch, type ReactNode, type SetStateAction
 
 import { ToneCard } from "@/components/notebook/ToneCard";
 import { Button } from "@/components/ui/button";
+import { useEngagementDecisions, srcsOf } from "@/hooks/use-decisions";
 import { engagementDisplayCode } from "@/lib/clients";
 import type { EngagementRow } from "@/lib/engagement-page-shared";
 import { effectiveWorkDate, formatDate, type WorkItemRow } from "@/lib/work-types";
@@ -11,6 +12,15 @@ type StripTask = {
   name: string;
   work_item_tasks: { work_items: unknown | null }[];
 };
+
+/** "02 SEP" — the mono date Figma 36:1936 puts on a shipped card. */
+function shortDate(value: string | null | undefined): string {
+  if (!value) return "";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "";
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${day} ${d.toLocaleString("en-US", { month: "short" }).toUpperCase()}`;
+}
 
 export function EngagementStrip({
   engagement,
@@ -27,6 +37,10 @@ export function EngagementStrip({
 }) {
   const [expanded, setExpanded] = useState(true);
 
+  // Passthrough onto the engagement payload the page already loaded, so the
+  // call counts below cost no extra request.
+  const { data: decisions } = useEngagementDecisions(engagement.id);
+
   useEffect(() => {
     if (collapsed) setExpanded(false);
   }, [collapsed]);
@@ -36,6 +50,25 @@ export function EngagementStrip({
       total + task.work_item_tasks.filter((link) => Boolean(link.work_items)).length,
     0,
   );
+
+  /**
+   * Figma 36:1936 puts "4 pieces · 2 calls" on each workstream. `decisions`
+   * carries no task_id, so the link is derived: a decision belongs to a
+   * workstream when it cites a piece of work mapped to that workstream.
+   */
+  const callsByTask = new Map<string, number>();
+  for (const task of tasks) {
+    const itemIds = new Set(
+      task.work_item_tasks
+        .map((link) => (link.work_items as { id?: string } | null)?.id)
+        .filter((id): id is string => Boolean(id)),
+    );
+    if (itemIds.size === 0) continue;
+    const count = (decisions ?? []).filter((row) =>
+      srcsOf(row).some((src) => itemIds.has(src.work_item_id)),
+    ).length;
+    if (count > 0) callsByTask.set(task.id, count);
+  }
 
   return (
     <div className="space-y-3">
@@ -74,11 +107,13 @@ export function EngagementStrip({
           <div className="grid gap-2 p-4 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
             {tasks.map((task) => {
               const count = task.work_item_tasks.filter((link) => Boolean(link.work_items)).length;
+              const calls = callsByTask.get(task.id) ?? 0;
               return (
                 <div key={task.id} className="border-l border-border pl-3">
                   <p className="text-sm font-medium text-foreground">{task.name}</p>
                   <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
                     {count} {count === 1 ? "piece" : "pieces"}
+                    {calls > 0 ? ` · ${calls} ${calls === 1 ? "call" : "calls"}` : ""}
                   </p>
                 </div>
               );
@@ -91,18 +126,26 @@ export function EngagementStrip({
             </p>
             <div className="mt-2 space-y-2">
               {deliverables.length > 0 ? (
-                deliverables.map((item) => (
-                  <ToneCard
-                    key={item.id}
-                    tone="paper"
-                    title={item.title}
-                    meta={formatDate(effectiveWorkDate(item))}
-                  />
-                ))
+                deliverables.map((item) => {
+                  const stamp = [item.type?.toUpperCase(), shortDate(effectiveWorkDate(item))]
+                    .filter(Boolean)
+                    .join(" · ");
+                  return (
+                    <ToneCard
+                      key={item.id}
+                      tone="paper"
+                      label={stamp || formatDate(effectiveWorkDate(item))}
+                      title={item.title}
+                    />
+                  );
+                })
               ) : (
                 <p className="text-xs text-muted-foreground">No finished deliverables here yet.</p>
               )}
             </div>
+            <p className="font-hand mt-4 text-[16px] text-green">
+              the strip opens once, then gets out of the way
+            </p>
           </div>
         </div>
       </section>
