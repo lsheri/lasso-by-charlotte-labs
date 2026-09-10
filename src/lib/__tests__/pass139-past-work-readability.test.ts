@@ -27,7 +27,9 @@ describe("pass 139: the page is named Past work", () => {
   // and saying it twice on one screen is noise. The nav labels are unchanged
   // and still checked here.
   it('leads with the shared "Past work" page header', () => {
-    expect(page).toContain('<PageHeader title="Past work" italicWord="work"');
+    // "Past" + an italic "work" reads as "Past work". Passing the whole phrase
+    // as the title printed the word twice.
+    expect(page).toContain('<PageHeader title="Past" italicWord="work"');
     expect(page).toContain("subtitle={subtitle}");
     expect(page).not.toContain('className="micro-label"');
     expect(PAST_WORK_GROUP_LABEL).toBe("Your organization");
