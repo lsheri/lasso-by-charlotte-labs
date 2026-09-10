@@ -64,12 +64,15 @@ export function GranolaKeyCard() {
   }
 
   return (
-    <div className="rounded-[var(--radius)] border border-border bg-card px-4 py-3 shadow-card">
+    <div className="rounded-[var(--radius-lg)] border border-border bg-card px-4 py-3.5">
       <div className="flex flex-wrap items-center gap-4">
         <BrandLogo brand="granola" size={30} />
         <div className="min-w-0 flex-1 basis-48">
-          <p className="text-sm font-medium text-foreground">Granola</p>
-          <p className="mt-0.5 text-sm text-muted-foreground">
+          <p className="text-[13px] font-medium text-foreground">Granola</p>
+          <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+            {busy ? "Pending" : statusLabel(account)}
+          </p>
+          <p className="mt-1 text-[11.5px] leading-[17px] text-muted-foreground">
             Meeting notes and transcripts from your calls.
           </p>
           {connected && masked?.masked ? (
@@ -78,9 +81,6 @@ export function GranolaKeyCard() {
             </p>
           ) : null}
         </div>
-        <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
-          {busy ? "Pending" : statusLabel(account)}
-        </span>
         {connected ? (
           <div className="flex items-center gap-4">
             <ConnectorPicker
