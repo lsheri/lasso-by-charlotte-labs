@@ -320,10 +320,23 @@ export function ReflectPage() {
 
   return (
     <div>
+      {/*
+        Figma 30:1012 italicises the whole phrase after the verb — "Reflect *on
+        your week*" — and its subtitle is a stat line, not a description:
+        "Seven pieces of work, four checks, two decisions. Nothing here is
+        required."
+
+        Deliberate deviation: nothing on this page reads decisions, so that
+        clause is left out rather than approximated. The two clauses that are
+        true are counted off reads the page already has.
+      */}
       <PageHeader
-        title="Reflect on your"
-        italicWord="week"
-        subtitle="A private thinking space over your own recorded work."
+        title="Reflect"
+        italicWord="on your week"
+        subtitle={[
+          `${scopedItems.length} piece${scopedItems.length === 1 ? "" : "s"} of work`,
+          `${firmChecks?.length ?? 0} check${(firmChecks?.length ?? 0) === 1 ? "" : "s"}`,
+        ].join(", ") + ". Nothing here is required."}
       />
 
       <div className="mb-4">
@@ -535,9 +548,16 @@ export function ReflectPage() {
 
         <aside className="space-y-4">
           <WeekRail items={scopedItems} />
-          <ToneCard tone="record" label="WHERE THIS GOES">
-            <p>Your answers become the 1:1 prep, and nothing else.</p>
-            <p>A coach sees a reflection only when you send it.</p>
+          {/* Figma 30:1012 sets this as a plain note, not a green one. Green is
+              the record tone in this system, and this card is a promise about
+              where an answer goes, not something already on the record. */}
+          <ToneCard tone="paper" label="WHERE THIS GOES">
+            <p className="text-[13px] leading-[19px] text-foreground">
+              Your answers become the 1:1 prep, and nothing else.
+            </p>
+            <p className="mt-1 text-[12px] leading-[18px] text-muted-foreground">
+              A coach sees a reflection only when you send it.
+            </p>
           </ToneCard>
         </aside>
       </div>
