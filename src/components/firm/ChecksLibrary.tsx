@@ -2,6 +2,8 @@ import { useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
 
+import { SectionHeader } from "@/components/notebook/SectionHeader";
+import { ToneCard } from "@/components/notebook/ToneCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -54,6 +56,7 @@ export function ChecksLibrary({
   const fileRef = useRef<HTMLInputElement>(null);
 
   const rows = (checks ?? []).filter((row) => showRetired || row.active);
+  const activeCount = (checks ?? []).filter((row) => row.active).length;
 
   async function toggle(id: string, active: boolean) {
     setError(null);
@@ -139,7 +142,16 @@ export function ChecksLibrary({
 
 
   return (
-    <section className="rounded-[var(--radius)] border border-border bg-card px-5 py-4 shadow-card">
+    <section>
+      <SectionHeader
+        title="Reusable processes"
+        action={
+          <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
+            {activeCount} active
+          </span>
+        }
+      />
+      <ToneCard tone="paper">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="micro-label micro-label-section">Checks library</h2>
@@ -160,6 +172,7 @@ export function ChecksLibrary({
           </Button>
         </div>
       </div>
+
 
       {open && canAuthor ? (
         <div className="mt-4 space-y-2 border-t border-border pt-4">
@@ -279,6 +292,7 @@ export function ChecksLibrary({
           </p>
         ) : null}
       </div>
+      </ToneCard>
     </section>
   );
 }

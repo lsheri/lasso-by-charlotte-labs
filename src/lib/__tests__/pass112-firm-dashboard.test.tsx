@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 
+import { PrivacyPanel } from "@/components/firm/PrivacyPanel";
 import { TrustSummary } from "@/components/firm/TrustSummary";
 import { WaitingStrip } from "@/components/firm/FirmMetricGrid";
 import { scatterFor } from "@/components/work/pile-scatter";
@@ -56,8 +57,9 @@ describe("trust summary", () => {
   });
 
   it("keeps every honesty line present when expanded", () => {
-    render(<TrustSummary />);
-    fireEvent.click(screen.getByRole("button", { name: /how this view works/i }));
+    // The disclosure now lives in the privacy panel at the foot of the page.
+    render(<PrivacyPanel />);
+    fireEvent.click(screen.getByRole("button", { name: /read the rules/i }));
     const source = readFileSync("src/components/firm/PrivacyPanel.tsx", "utf8");
     expect(source).toContain("Never a pass rate or a score, here or anywhere else in Lasso.");
     expect(
@@ -138,10 +140,12 @@ describe("pile", () => {
 });
 
 describe("page order", () => {
-  it("puts the archive before the metrics", () => {
+  it("reads what it measures, then the numbers, then the archive", () => {
     const page = readFileSync("src/pages/FirmDashboardPage.tsx", "utf8");
-    expect(page.indexOf("<FirmArchive")).toBeLessThan(page.indexOf("<FirmMetricGrid"));
-    expect(page.indexOf("<TrustSummary")).toBeLessThan(page.indexOf("<FirmArchive"));
+    expect(page.indexOf("<TrustSummary")).toBeLessThan(page.indexOf("<FirmMetricGrid"));
+    expect(page.indexOf("<FirmMetricGrid")).toBeLessThan(page.indexOf("<FirmArchive"));
+    expect(page.indexOf("<FirmArchive")).toBeLessThan(page.indexOf("<WhatLeavesTheFirm"));
+    expect(page.indexOf("<WhatLeavesTheFirm")).toBeLessThan(page.indexOf("<PrivacyPanel"));
     expect(page).toContain('profile?.role === "admin" || profile?.role === "lead"');
   });
 });

@@ -60,9 +60,9 @@ describe("pass91 label colour hierarchy", () => {
 
   it("keeps grey field labels inside firm panels", () => {
     expect(read("src/components/firm/FirmPanels.tsx")).toContain('<p className="micro-label">{label}</p>');
-    // Pass 112 moved the firm numbers into tiles; the grey field label stays.
+    // The firm port moved the tile label into the card's mono label slot.
     expect(read("src/components/firm/FirmMetricGrid.tsx")).toContain(
-      '<p className="micro-label">{tile.name}</p>',
+      '<ToneCard tone="paper" label={tile.name}>',
     );
   });
 });

@@ -1,4 +1,6 @@
 import { CountList, CountRow } from "@/components/firm/FirmPanels";
+import { SectionHeader } from "@/components/notebook/SectionHeader";
+import { ToneCard } from "@/components/notebook/ToneCard";
 import {
   WAITING_LABEL,
   buildFirmMetrics,
@@ -13,16 +15,18 @@ export function StatTile({ tile, reduceMotion }: { tile: MetricTile; reduceMotio
   return (
     <div
       data-testid={`firm-tile-${tile.key}`}
-      className={`rounded-[var(--radius)] border border-border bg-card px-4 py-4 ${
-        reduceMotion ? "nb-chip-enter-static" : "nb-chip-enter"
-      }`}
+      className={reduceMotion ? "nb-chip-enter-static" : "nb-chip-enter"}
     >
-      <p className="micro-label">{tile.name}</p>
-      <p className="mt-1 text-3xl font-semibold tabular-nums text-foreground">{tile.value}</p>
-      <p className="mt-1 text-xs text-muted-foreground">{tile.caveat}</p>
+      <ToneCard tone="paper" label={tile.name}>
+        <p className="text-3xl font-semibold tabular-nums leading-tight text-foreground">
+          {tile.value}
+        </p>
+        <p className="mt-1">{tile.caveat}</p>
+      </ToneCard>
     </div>
   );
 }
+
 
 /** Every withholding, preserved, one line each. */
 export function WaitingStrip({ names }: { names: string[] }) {
@@ -70,8 +74,15 @@ export function FirmMetricGrid({
   ];
 
   return (
-    <section className="space-y-3" data-testid="firm-metric-grid">
-      <p className="text-xs text-muted-foreground">Last {data.window_days} days.</p>
+    <section data-testid="firm-metric-grid">
+      <SectionHeader
+        title="What the firm produced"
+        action={
+          <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
+            Last {data.window_days} days
+          </span>
+        }
+      />
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
         {tiles.map((tile) => (
           <StatTile key={tile.key} tile={tile} reduceMotion={reduceMotion} />
@@ -106,7 +117,9 @@ export function FirmMetricGrid({
         </ListTile>
       </div>
 
-      <WaitingStrip names={withheld} />
+      <div className="mt-3">
+        <WaitingStrip names={withheld} />
+      </div>
     </section>
   );
 }
