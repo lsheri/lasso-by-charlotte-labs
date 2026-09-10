@@ -35,7 +35,8 @@ export type MotionName =
   | "breathing-dots"
   | "spider-looks-again"
   | "spider-processes"
-  | "pencil-marks";
+  | "pencil-marks"
+  | "arrows";
 
 export type MotionEventName =
   // Auditability. Never remove one of these.
@@ -186,7 +187,7 @@ export const MOTION_REGISTRY: Readonly<Record<MotionEventName, MotionEntry>> = {
   },
   "arrow.drawn": {
     group: "chrome",
-    motion: "arrows" as MotionName,
+    motion: "arrows",
     reduced: "Static arrows",
     promise: false,
   },

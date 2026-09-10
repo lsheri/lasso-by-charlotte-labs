@@ -1,3 +1,4 @@
+import { prefersReducedMotion } from "@/lib/motion-registry";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 
@@ -77,10 +78,7 @@ function AuditSurface({
     stitchId: string;
     number?: number;
   } | null>(null);
-  const reduceMotion =
-    typeof window !== "undefined"
-      ? (window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ?? false)
-      : false;
+  const reduceMotion = prefersReducedMotion();
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["span-audit", anchorId],
