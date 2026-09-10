@@ -75,7 +75,7 @@ pass a page node id.
 | Layer | Status | Notes |
 |---|---|---|
 | Tokens / variables | PARTIAL | Values exist in `src/styles.css` but have never been diffed against Figma in full. |
-| Motion registry | NOT STARTED | Zero of 22 events implemented. This is the single largest gap. |
+| Motion registry | BUILT (registry + hook, 10 Sep 2026) | Page `1:7`, frame `18:2`, is documentation, not a route. Built: `src/lib/motion-registry.ts` holds the event to motion table with 20 event names, their reduced-motion answers and a `promise` flag on the five auditability events; `src/hooks/use-motion.ts` exposes `useReducedMotion` / `useMotion`; `prefersReducedMotion()` now backs the inline `matchMedia` reads in `ProvenanceAudit.tsx` and `UpstreamPane.tsx`. No new motion tokens were needed: `--nb-dur-*` and `--nb-ease` already exist in `styles.css`, so that file was not touched. No visual change and no control change on this pass; existing surfaces still draw their own motion until each is migrated event by event. EXCLUDED: the landing hero event is marketing-only and frozen under rule 15, so it is absent from the map and must never be added; `region.circled` is PROPOSED with no surface behind it; `spider.reading` is held because its reduced-motion copy states a count the product cannot produce (rule 9) - use 'Reading new conversations'; `page.enter` must never be wired above the signed-in shell, because that would reach `/`; `AskDock.tsx` is pinned literally by `pass95-1-dock.test.ts`. Figma keyframe values cannot be extracted from the frame, so durations stay on the existing tokens. |
 
 ## Motion — the goal, and the whole registry
 
