@@ -151,7 +151,7 @@ export function ConnectYourAiCard() {
         </p>
 
         <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2">
-          <span className="text-sm text-foreground">{connectorStatusLine(token)}</span>
+          
           {token ? (
             <>
               <span className="text-xs text-muted-foreground">
