@@ -141,6 +141,16 @@
   --nb-blue: #0a628f;
   --nb-amber: #8a6d1f;
 
+  /* 03 · Library · Atoms port. Tokens the atoms board introduces that the
+     design-port token list did not name. Additive: nothing above changes. */
+  --nb-ink-90: #1c1e1d; /* the primary button fill, one step off --nb-ink */
+  --nb-paper-20: #e8e8e2; /* disabled fills and inert rails */
+  --nb-danger-text: #a34234; /* field error text, shares the verify rust */
+  --nb-claim-text: var(--nb-amber); /* "waiting on you" ink */
+  --radius-pill: 999px;
+  --nb-space-10: 10px;
+  --nb-space-12: 12px;
+
   /* Sticky note washes. Pale paper colours for notes, never button fills:
      the action colour is graphite and must not back a card. */
   --nb-sticky-green: #e6f2e5;
