@@ -76,7 +76,7 @@ function SectionBlock({
               playsInline
               preload="none"
               aria-label={section.video.label}
-              className="w-full rounded-[var(--radius)] border border-border bg-card shadow-card"
+              className="w-full rounded-[var(--radius-control)] border border-[var(--nb-pencil)] bg-card shadow-card"
             />
             <figcaption className="mt-2 text-xs text-muted-foreground">
               {section.video.label}. Everything it shows is written out beside it.
@@ -133,8 +133,8 @@ export function HowLassoWorksPage() {
           />
         ))}
 
-        <section className="border-t border-border pt-8">
-          <p className="micro-label">Next</p>
+        <section className="border-t border-[var(--nb-pencil)] pt-8">
+          <p className="micro-label text-[9px]">Next</p>
           <p className="mt-2 text-sm text-muted-foreground">{guide.next.note}</p>
           <Link
             to={guide.next.to as never}
