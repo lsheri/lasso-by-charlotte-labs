@@ -230,8 +230,40 @@ chips. Founder decision, not fixed by a skin.
 
 | Frame | Route | Status |
 |---|---|---|
-| `39:487` | `/coaching` | BUILT |
-| `39:980` | `/coaching/$engagementId/$subjectId` | BUILT |
+| `39:487` | `/coaching` | BUILT (skin, 10 Sep 2026) |
+| `39:980` | `/coaching/$engagementId/$subjectId` | BUILT (skin, 10 Sep 2026) |
+
+Coach skin notes, 10 Sep 2026. Restyled only: `--nb-pencil` hairlines on the
+person table, its column rule, the loading rows, the empty-state band, the
+confirmed-decision and coaching-note separators and the linked-people cards;
+`--radius-control` on the brief, shared-brief and linked-people surfaces;
+9px `type/micro` column headers; the person initials disc now carries the
+frame's 1.2px `action/secondary-border` edge. Files: `src/pages/CoachingPage.tsx`,
+`src/pages/PacketPage.tsx`, `src/components/coaching/CoachLinkPeople.tsx`.
+No control, route, query, prop shape or copy changed.
+
+REFUSED under rule 7 (redesign, not a skin): the `/coaching` filter chips
+(Everyone / MH-042 / AL-017 / RB-009 / Waiting on you) - a new control with no
+covering event under rule 1 - and the per-person status pills, which use the
+archived Pill component (rule 11). On `39:980`, the frame's flat
+"what to ask about, and why" list plus single-line composer would strand five
+existing controls (peek open, analyse, note citations, three-field note save,
+coach chat), so rule 8 blocks it.
+
+REFUSED under rule 9 (frame copy the product cannot deliver): hardcoded
+"Six people across three engagements", "3 new since Friday" / "1 new this week"
+style recency phrasing, the "1:1 THURSDAY" and "NO 1:1 IN 3 WEEKS" pills (no 1:1
+scheduling data feeds this page), "9 pieces shared with you · 1:1 on Thursday",
+and the invented analysis claims ("1 figure with no source", "the only unsourced
+figure across nineteen pieces of work", "reused by three people", "Nine runs
+since August"). The Composer `/ SKILLS` chip does not exist in the product.
+
+OPEN: `/coaching` fires no telemetry at all. Opening a person's packet is a user
+action with no covering event, and the frame's filter chips would add another.
+Same unresolved class as the `/work`, `/decisions`, `/ai-record` and EDU filter
+chips. Founder decision, not fixed by a skin. `/coaching/$engagementId/$subjectId`
+still fires `packet.viewed`, `note.created`, `coaching.note_created`,
+`coachnote.read` and `coach.engagement_shared` unchanged.
 
 Frame `39:980` contains a panel stating the exact number of items a subject withheld.
 That contradicts `src/lib/coaching-access.ts` ("Nobody is told when you keep something

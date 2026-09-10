@@ -79,7 +79,7 @@ export function CoachingPage() {
           {isLoading ? (
             <div className="space-y-2" aria-busy="true">
               {[0, 1, 2].map((row) => (
-                <div key={row} className="h-[76px] animate-pulse border-b border-border bg-card" />
+                <div key={row} className="h-[76px] animate-pulse border-b border-[var(--nb-pencil)] bg-card" />
               ))}
             </div>
           ) : null}
@@ -87,7 +87,7 @@ export function CoachingPage() {
           {subjects.length > 0 ? (
             <div className="overflow-x-auto">
               <div className="min-w-[720px]">
-                <div className="grid grid-cols-[minmax(180px,1fr)_minmax(190px,1.15fr)_minmax(210px,1.2fr)_130px] gap-4 border-b border-border px-2 pb-2 font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
+                <div className="grid grid-cols-[minmax(180px,1fr)_minmax(190px,1.15fr)_minmax(210px,1.2fr)_130px] gap-4 border-b border-[var(--nb-pencil)] px-2 pb-2 font-mono text-[9px] uppercase tracking-[0.08em] text-soft">
                   <span>Person</span>
                   <span>Engagement</span>
                   <span>Shared with you</span>
@@ -100,10 +100,10 @@ export function CoachingPage() {
                     onClick={() =>
                       openPacket(subject.coach_profile_id, subject.engagement_id, subject.subject_id)
                     }
-                    className="grid min-h-[76px] w-full grid-cols-[minmax(180px,1fr)_minmax(190px,1.15fr)_minmax(210px,1.2fr)_130px] items-center gap-4 border-b border-border px-2 py-3 text-left transition-colors hover:bg-accent-soft"
+                    className="grid min-h-[76px] w-full grid-cols-[minmax(180px,1fr)_minmax(190px,1.15fr)_minmax(210px,1.2fr)_130px] items-center gap-4 border-b border-[var(--nb-pencil)] px-2 py-3 text-left transition-colors hover:bg-accent-soft"
                   >
                     <span className="flex min-w-0 items-center gap-3">
-                      <span className="flex size-9 shrink-0 items-center justify-center rounded-full border border-border bg-card font-mono text-[10px] text-foreground">
+                      <span className="flex size-9 shrink-0 items-center justify-center rounded-full border-[1.2px] border-pencil bg-card font-mono text-[10px] tracking-[0.03em] text-foreground">
                         {initials(subject.subject_name)}
                       </span>
                       <span className="min-w-0">
@@ -154,7 +154,7 @@ export function CoachingPage() {
 
           {subjects.length === 0 && !isLoading ? (
             <div className="space-y-4">
-              <div className="border-y border-border py-5">
+              <div className="border-y border-[var(--nb-pencil)] py-5">
                 <p className="micro-label">Nothing shared yet</p>
                 <p className="mt-2 text-sm text-muted-foreground">
                   Nothing has been shared with you so far. That is the normal starting point: work
