@@ -22,23 +22,32 @@ function item(id: string, type: WorkItemRow["type"], title: string): WorkItemRow
 }
 
 describe("pass 85 type matrix", () => {
+  // Updated for Figma 22:220, which names the four columns and files a deck
+  // under Documents while giving spreadsheets a column of their own.
   it("has exactly four buckets, each with a letter", () => {
     expect(BUCKETS.map((b) => b.label)).toEqual([
       "Documents",
-      "Presentations",
+      "Models & sheets",
       "Call transcripts",
-      "LLM transcripts",
+      "AI conversations",
     ]);
     for (const bucket of BUCKETS) expect(bucket.letter).toHaveLength(1);
   });
 
-  it("folds sheet, email, message and image into Documents", () => {
-    for (const type of ["document", "sheet", "email", "message", "image"] as const) {
+  it("folds deck, email, message and image into Documents", () => {
+    for (const type of ["document", "deck", "email", "message", "image"] as const) {
       expect(bucketFor(type).key).toBe("documents");
     }
-    expect(bucketFor("deck").key).toBe("presentations");
+    expect(bucketFor("sheet").key).toBe("sheets");
     expect(bucketFor("call").key).toBe("calls");
     expect(bucketFor("ai_thread").key).toBe("llm");
+  });
+
+  it("carries no raw hex: every badge fill is a token", () => {
+    for (const bucket of BUCKETS) {
+      expect(bucket.color).toMatch(/^var\(--/);
+      expect(bucket.textColor).toMatch(/^var\(--/);
+    }
   });
 });
 

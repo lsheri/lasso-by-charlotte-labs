@@ -61,7 +61,6 @@ import {
   type WorkItemRow,
 } from "@/lib/work-types";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { SectionHeader } from "@/components/notebook/SectionHeader";
 import { ToneCard } from "@/components/notebook/ToneCard";
 import { sourceVendorKey } from "@/components/work/SourceMark";
 import { BUCKETS, bucketFor } from "@/components/work/work-buckets";
@@ -207,6 +206,7 @@ export function WorkPage() {
         key={group.key}
         group={group}
         variant={variant}
+        dense
         onOpen={(item: WorkItemRow) => {
           markOpenStart("peek.open");
           setPeek({ entry: group, focusId: item.id });
@@ -450,6 +450,7 @@ export function WorkPage() {
       <WorkRow
         key={entry.id}
         item={entry}
+        dense
         lead={
           selectMode && !isCoach && entry.visibility === "unmapped" ? (
             <Checkbox
@@ -666,14 +667,16 @@ export function WorkPage() {
                 const entries = groupConversations(items);
                 return (
                   <div key={bucket.key}>
-                    <SectionHeader
-                      title={bucket.label}
-                      action={
-                        <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
-                          {items.length}
-                        </span>
-                      }
-                    />
+                    {/* Figma 22:220 heads each column with a mono stamp and a
+                        hairline that runs the column's full width, not with the
+                        handwritten `SectionHeader` used elsewhere. The count sits
+                        on the same baseline at the far edge. */}
+                    <div className="mb-3 border-b border-[var(--nb-rule)] pb-2">
+                      <h2 className="flex items-baseline justify-between gap-3 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+                        <span className="truncate">{bucket.label}</span>
+                        <span className="shrink-0 text-soft">{items.length}</span>
+                      </h2>
+                    </div>
                     <div className="space-y-2">
                       {entries.length === 0 ? (
                         <p className="rounded-[var(--radius-md)] border border-dashed border-pencil bg-card px-3 py-4 text-center text-[11.5px] text-soft">

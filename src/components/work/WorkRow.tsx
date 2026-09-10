@@ -12,6 +12,7 @@ export function WorkRow({
   onOpen,
   chips,
   nested = false,
+  dense = false,
   lead,
   footer,
 }: {
@@ -20,6 +21,15 @@ export function WorkRow({
   onOpen?: (() => void) | undefined;
   chips?: React.ReactNode;
   nested?: boolean;
+  /**
+   * Figma 22:220 draws a piece of work inside a type column as three lines and
+   * nothing else: where it came from, what it is called, and where it sits.
+   * Every action still exists — it waits for hover, for keyboard focus, or for
+   * a touch screen, where there is no hover to wait for.
+   *
+   * Off by default, so every existing caller renders exactly as before.
+   */
+  dense?: boolean;
   lead?: React.ReactNode;
   footer?: React.ReactNode;
 }) {
@@ -56,6 +66,106 @@ export function WorkRow({
           borderLeftColor: `var(${engagementHue(mapping?.engagement_id)})`,
         }
       : {};
+
+  /**
+   * "MH-042 · CLAIMED" in the frame. `claimed` is what mapping means from the
+   * person's side, so a mapped piece says so under its engagement code. There
+   * is no separate claim flag in the record and none is invented here.
+   */
+  const stateStamp =
+    state === "mapped"
+      ? [mapping?.engagements?.code, "claimed"].filter(Boolean).join(" · ")
+      : state === "private"
+        ? "private"
+        : "unmapped";
+
+  if (dense) {
+    return (
+      <div
+        className={`rounded-[var(--radius)] border ${shell} ${
+          onOpen ? "transition-colors hover:border-accent/40" : ""
+        }`}
+        style={{ ...wash, ...spine }}
+      >
+        <div
+          {...(onOpen
+            ? {
+                role: "button" as const,
+                tabIndex: 0,
+                "aria-label": item.title,
+                onClick: onOpen,
+                onKeyDown: (event: React.KeyboardEvent) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    onOpen();
+                  }
+                },
+              }
+            : {})}
+          className={`group/row px-3 py-2.5 ${onOpen ? "cursor-pointer" : ""}`}
+        >
+          {/* Line one: where it came from, and the type glyph on the far edge. */}
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex min-w-0 items-center gap-1.5">
+              {lead ? (
+                <span className="shrink-0" onClick={(event) => event.stopPropagation()}>
+                  {lead}
+                </span>
+              ) : null}
+              {state === "private" ? (
+                <Lock
+                  className="h-2.5 w-2.5 shrink-0"
+                  style={{ color: "var(--state-indigo)" }}
+                  aria-label="Private"
+                />
+              ) : null}
+              <span className="min-w-0 truncate font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
+                <VendorMark item={item} />
+                {" · "}
+                {formatDate(dateIso)}
+              </span>
+            </div>
+            <span className="shrink-0">
+              <TypeIcon item={item} size="sm" />
+            </span>
+          </div>
+
+          {/* Line two: the name, which is the only thing set in body text. */}
+          <p
+            title={item.title}
+            className="mt-1 line-clamp-2 break-words text-[13px] leading-[18px] text-foreground"
+          >
+            {item.title} <ArtifactNote item={item} />
+          </p>
+
+          {/* Line three: where it sits. */}
+          <p className="mt-1 truncate font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
+            {stateStamp}
+          </p>
+
+          {contentsUnread(item.meta as never) ? (
+            <p className="mt-1 text-[11px] text-muted-foreground">{UNREAD_MARKER_LINE}</p>
+          ) : null}
+
+          {/*
+            Every control the wide row has, kept and reachable. Hidden at rest
+            from `md` up, where a pointer can reveal it; always shown below `md`,
+            where there is no hover. `group-focus-within` keeps it on the keyboard
+            path, so tabbing into an action reveals the set it belongs to.
+          */}
+          <div
+            className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 md:hidden md:group-focus-within/row:flex md:group-hover/row:flex"
+            onClick={(event) => event.stopPropagation()}
+          >
+            {chips}
+            {actions}
+          </div>
+        </div>
+
+        {footer ? <div className="px-3 pb-3">{footer}</div> : null}
+      </div>
+    );
+  }
 
   return (
     <div

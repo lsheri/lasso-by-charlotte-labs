@@ -199,7 +199,7 @@ never existed in `styles.css`. That test failure predates this port and is untou
 | Frame | Route | Status |
 |---|---|---|
 | `21:2` | `/overview` | BUILT | Added `ReadingPanel` and `NotCovered` panels (Figma 21:2), both read-only and non-interactive. |
-| `22:220` | `/work` | BUILT |
+| `22:220` | `/work` | BUILT (dense column cards, pass 1 of 2, 10 Sep 2026) |
 | `23:413` | `/firm` | BUILT |
 | `27:635` | `/ai-record` | BUILT |
 | `29:833` | `/archive` | BUILT |
@@ -211,6 +211,13 @@ never existed in `styles.css`. That test failure predates this port and is untou
 | `34:2043` | `/members` | BUILT |
 | `36:1936` | `/engagements/$id` (arrival, strip expanded) | BUILT |
 | `36:2272` | `/engagements/$id` (asking, strip collapsed) | BUILT |
+
+Work page notes, 10 Sep 2026 (frame `22:220`, pass 1 of 2). The four columns now
+match the frame's Documents, Models & sheets, Call transcripts and AI conversations
+grouping. Column heads use mono stamps, counts and full-width hairlines. Work rows and
+conversation cards use the frame's dense three-line presentation; all existing card
+controls remain available on touch screens and reveal on hover or keyboard focus at
+`md` and above. No action, handler, event, consent surface or route changed.
 
 Engagement page notes, 10 Sep 2026 (frame `36:1936`). Added: hand-written breadcrumb
 back to `/work` above the title; the engagement code / client / term trail follows

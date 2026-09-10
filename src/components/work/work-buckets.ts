@@ -1,12 +1,20 @@
 import type { WorkType } from "@/lib/work-types";
 
 /**
- * The type matrix has four buckets and only four. Types that have no bucket of
- * their own (sheets, mail, messages, images) fold into Documents: the grouping
- * coarsens, the row does not, because every row still shows its own precise
- * label and glyph from workIdentity.
+ * Figma 22:220 gives the pile four columns and only four: DOCUMENTS,
+ * MODELS & SHEETS, CALL TRANSCRIPTS, AI CONVERSATIONS.
+ *
+ * Two things changed from the earlier matrix to match the frame. A spreadsheet
+ * now gets its own column instead of folding into Documents, because a model is
+ * a different kind of artifact from a memo and the frame treats it that way. A
+ * deck folds INTO Documents, because the frame files "Diligence readout v3.pptx"
+ * there rather than giving presentations a column of their own.
+ *
+ * Types with no column of their own (mail, messages, images) still fold into
+ * Documents: the grouping coarsens, the row does not, because every row keeps
+ * its own precise label and glyph from workIdentity.
  */
-export type BucketKey = "documents" | "presentations" | "calls" | "llm";
+export type BucketKey = "documents" | "sheets" | "calls" | "llm";
 
 export type Bucket = {
   key: BucketKey;
@@ -19,43 +27,49 @@ export type Bucket = {
   textColor: string;
 };
 
+/**
+ * The four badges are graded ink rather than four hues. The frame gives these
+ * columns no colour at all, and the app's colour vocabulary is spoken for:
+ * amber means "waiting on you" and green means "on the record". Borrowing
+ * either one for a file type would say something untrue about the work.
+ */
 export const BUCKETS: Bucket[] = [
   {
     key: "documents",
     label: "Documents",
     letter: "D",
-    color: "#0a628f",
-    textColor: "#0a628f",
+    color: "var(--nb-ink)",
+    textColor: "var(--nb-ink)",
   },
   {
-    key: "presentations",
-    label: "Presentations",
-    letter: "P",
-    color: "#e8a11b",
-    textColor: "#a06a03",
+    key: "sheets",
+    label: "Models & sheets",
+    letter: "M",
+    color: "var(--nb-graphite)",
+    textColor: "var(--nb-graphite)",
   },
   {
     key: "calls",
     label: "Call transcripts",
     letter: "C",
-    color: "#16181a",
-    textColor: "#16181a",
+    color: "var(--nb-mid)",
+    textColor: "var(--nb-mid)",
   },
   {
     key: "llm",
-    label: "LLM transcripts",
-    letter: "L",
-    color: "#0f8a4b",
-    textColor: "#0f8a4b",
+    label: "AI conversations",
+    letter: "A",
+    color: "var(--nb-mid)",
+    textColor: "var(--nb-mid)",
   },
 ];
 
 const BY_TYPE: Record<WorkType, BucketKey> = {
   ai_thread: "llm",
-  deck: "presentations",
+  deck: "documents",
   call: "calls",
   document: "documents",
-  sheet: "documents",
+  sheet: "sheets",
   email: "documents",
   message: "documents",
   image: "documents",
