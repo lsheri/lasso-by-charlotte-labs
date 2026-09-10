@@ -5,6 +5,7 @@ import { toast } from "sonner";
 
 import { CoachLinkPeople } from "@/components/coaching/CoachLinkPeople";
 import { EnterInviteCode } from "@/components/invites/EnterInviteCode";
+import { ToneCard } from "@/components/notebook/ToneCard";
 import { useAllCoachSubjects } from "@/hooks/use-coaching";
 import { setActiveProfileId, useProfile } from "@/hooks/use-profile";
 
@@ -15,6 +16,16 @@ function sinceLabel(iso: string | null): string {
     day: "numeric",
     year: "numeric",
   })}`;
+}
+
+function initials(name: string): string {
+  return name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part.charAt(0))
+    .join("")
+    .toUpperCase();
 }
 
 export function CoachingPage() {
@@ -50,11 +61,11 @@ export function CoachingPage() {
   return (
     <div>
       <header className="mb-8">
-        <h1 className="page-title">People you coach</h1>
+        <h1 className="page-title">
+          People <em className="italic">you coach</em>
+        </h1>
         {orgLine ? (
-          <p className="page-subtitle">
-            {orgLine}
-          </p>
+          <p className="page-subtitle">{orgLine}</p>
         ) : null}
         <p className="mt-1.5 text-sm text-muted-foreground">
           The work each colleague has chosen to share with you.
@@ -63,79 +74,123 @@ export function CoachingPage() {
 
       <CoachLinkPeople />
 
-      {isLoading ? (
-        <div className="space-y-2" aria-busy="true">
-          {[0, 1, 2].map((row) => (
-            <div
-              key={row}
-              className="h-[104px] animate-pulse rounded-[var(--radius)] border border-border bg-card shadow-card"
-            />
-          ))}
+      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-10">
+        <div className="min-w-0">
+          {isLoading ? (
+            <div className="space-y-2" aria-busy="true">
+              {[0, 1, 2].map((row) => (
+                <div key={row} className="h-[76px] animate-pulse border-b border-border bg-card" />
+              ))}
+            </div>
+          ) : null}
+
+          {subjects.length > 0 ? (
+            <div className="overflow-x-auto">
+              <div className="min-w-[720px]">
+                <div className="grid grid-cols-[minmax(180px,1fr)_minmax(190px,1.15fr)_minmax(210px,1.2fr)_130px] gap-4 border-b border-border px-2 pb-2 font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
+                  <span>Person</span>
+                  <span>Engagement</span>
+                  <span>Shared with you</span>
+                  <span>Last note</span>
+                </div>
+                {subjects.map((subject) => (
+                  <button
+                    key={`${subject.coach_profile_id}:${subject.engagement_id}:${subject.subject_id}`}
+                    type="button"
+                    onClick={() =>
+                      openPacket(subject.coach_profile_id, subject.engagement_id, subject.subject_id)
+                    }
+                    className="grid min-h-[76px] w-full grid-cols-[minmax(180px,1fr)_minmax(190px,1.15fr)_minmax(210px,1.2fr)_130px] items-center gap-4 border-b border-border px-2 py-3 text-left transition-colors hover:bg-accent-soft"
+                  >
+                    <span className="flex min-w-0 items-center gap-3">
+                      <span className="flex size-9 shrink-0 items-center justify-center rounded-full border border-border bg-card font-mono text-[10px] text-foreground">
+                        {initials(subject.subject_name)}
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block truncate text-[13px] font-semibold text-foreground">
+                          {subject.subject_name}
+                        </span>
+                        {multiOrg ? (
+                          <span className="mt-0.5 block truncate font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+                            {subject.org_name}
+                          </span>
+                        ) : null}
+                      </span>
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block truncate text-[11.5px] font-medium text-foreground">
+                        {subject.engagement_title}
+                      </span>
+                      <span className="mt-0.5 block font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+                        {subject.engagement_code}
+                      </span>
+                    </span>
+                    <span className="min-w-0 text-[11.5px] leading-[17px] text-muted-foreground">
+                      <span className="block">
+                        {subject.total_decisions} confirmed decision
+                        {subject.total_decisions === 1 ? "" : "s"}
+                      </span>
+                      <span className="block">
+                        {subject.total_elements} mapped work element
+                        {subject.total_elements === 1 ? "" : "s"}
+                      </span>
+                      {subject.last_note_at &&
+                      (subject.new_decisions > 0 || subject.new_elements > 0) ? (
+                        <span className="mt-1 block text-foreground">
+                          New since your last note: {subject.new_decisions} decision
+                          {subject.new_decisions === 1 ? "" : "s"}, {subject.new_elements} work
+                          element{subject.new_elements === 1 ? "" : "s"}
+                        </span>
+                      ) : null}
+                    </span>
+                    <span className="text-[11.5px] text-muted-foreground">
+                      {sinceLabel(subject.last_note_at)}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          {subjects.length === 0 && !isLoading ? (
+            <div className="space-y-4">
+              <div className="border-y border-border py-5">
+                <p className="micro-label">Nothing shared yet</p>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Nothing has been shared with you so far. That is the normal starting point: work
+                  stays private to the person who did it until they choose to share an engagement.
+                </p>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  The moment someone shares one, it appears here. Nothing else is needed from you.
+                </p>
+              </div>
+              <div className="max-w-lg">
+                <EnterInviteCode label="Have an invite?" />
+              </div>
+            </div>
+          ) : null}
         </div>
-      ) : null}
 
-      <div className="space-y-2">
-        {subjects.map((subject) => (
-          <button
-            key={`${subject.coach_profile_id}:${subject.engagement_id}:${subject.subject_id}`}
-            type="button"
-            onClick={() =>
-              openPacket(subject.coach_profile_id, subject.engagement_id, subject.subject_id)
-            }
-            className="block w-full rounded-[var(--radius)] border border-border bg-card px-5 py-4 text-left shadow-card transition-colors hover:bg-accent-soft"
+        <aside className="mt-10 space-y-4 lg:mt-0">
+          <ToneCard
+            tone="record"
+            label="WHAT YOU CAN SEE"
+            title="Work, never people."
+            className="gap-3 p-4"
           >
-            <div className="flex flex-wrap items-baseline justify-between gap-2">
-              <p className="text-sm font-medium text-foreground">{subject.subject_name}</p>
-              <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
-                {subject.engagement_code}
-              </span>
-            </div>
-            <p className="mt-0.5 text-sm text-muted-foreground">{subject.engagement_title}</p>
-            {multiOrg ? (
-              <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
-                {subject.org_name}
-              </p>
-            ) : null}
-            <div className="mt-3 flex flex-wrap items-center gap-3">
-              <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
-                {subject.total_decisions} confirmed decision
-                {subject.total_decisions === 1 ? "" : "s"}
-              </span>
-              <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
-                {subject.total_elements} mapped work element
-                {subject.total_elements === 1 ? "" : "s"}
-              </span>
-              <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
-                {sinceLabel(subject.last_note_at)}
-              </span>
-            </div>
-            {subject.last_note_at && (subject.new_decisions > 0 || subject.new_elements > 0) ? (
-              <p className="mt-2 inline-block rounded-full bg-accent-soft px-3 py-1 font-mono text-[11px] tracking-[0.06em] text-foreground">
-                New since your last note: {subject.new_decisions} decision
-                {subject.new_decisions === 1 ? "" : "s"}, {subject.new_elements} work element
-                {subject.new_elements === 1 ? "" : "s"}
-              </p>
-            ) : null}
-          </button>
-        ))}
-
-        {subjects.length === 0 && !isLoading ? (
-          <div className="space-y-4">
-            <div className="rounded-[var(--radius)] border border-border bg-card px-5 py-4 shadow-card">
-              <p className="micro-label">Nothing shared yet</p>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Nothing has been shared with you so far. That is the normal starting point: work
-                stays private to the person who did it until they choose to share an engagement.
-              </p>
-              <p className="mt-2 text-sm text-muted-foreground">
-                The moment someone shares one, it appears here. Nothing else is needed from you.
-              </p>
-            </div>
-            <div className="max-w-lg">
-              <EnterInviteCode label="Have an invite?" />
-            </div>
-          </div>
-        ) : null}
+            <p>
+              There is no ranking and no measure of pace or effort. This view is only for the work
+              each colleague chose to share, and it always will be.
+            </p>
+          </ToneCard>
+          <ToneCard tone="paper" label="WHAT YOU CANNOT SEE" className="gap-3 p-4">
+            <p>Drafts</p>
+            <p>Unmapped work</p>
+            <p>Unsent reflections</p>
+            <p>Other engagements</p>
+          </ToneCard>
+          <p className="font-hand text-green">coach the work, not the person</p>
+        </aside>
       </div>
     </div>
   );

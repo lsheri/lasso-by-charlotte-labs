@@ -9,6 +9,8 @@ import { usePacket, type PacketElement } from "@/hooks/use-coaching";
 import { useProfile } from "@/hooks/use-profile";
 import { CoachOutcomeCard } from "@/components/coaching/CoachOutcomeCard";
 import { FirmChecksCard } from "@/components/coaching/FirmChecksCard";
+import { ToneCard } from "@/components/notebook/ToneCard";
+import { SourceMark } from "@/components/work/SourceMark";
 import { isBriefItem } from "@/lib/brief-shared";
 import { contentsUnread } from "@/lib/text-status";
 import { logEvent } from "@/lib/telemetry";
@@ -117,13 +119,18 @@ export function PacketPage({
   return (
     <div className="space-y-10">
       <header>
-        <p className="micro-label micro-label-section">What {subjectName} has chosen to share</p>
+        <p className="font-hand text-lg text-green">People you coach / {subjectName}</p>
+        <p className="micro-label micro-label-section mt-3">
+          What {subjectName} has chosen to share
+        </p>
         {hasNewer ? (
           <p className="mt-2 inline-block rounded-full bg-accent-soft px-3 py-1 font-mono text-[11px] tracking-[0.06em] text-foreground">
             Newer material since your last visit
           </p>
         ) : null}
-        <h1 className="page-title mt-1.5">{subjectName}</h1>
+        <h1 className="page-title mt-1.5" title={subjectName}>
+          {subjectName}
+        </h1>
         <p className="page-subtitle">
           {engagementLabel(data.engagement)}
           {data.engagement.term_label ? ` · ${data.engagement.term_label}` : ""}
@@ -151,116 +158,144 @@ export function PacketPage({
         ) : null}
       </header>
 
-      <section>
-        <h2 className="micro-label micro-label-section">How the work ran</h2>
-        <div className="mt-3 space-y-2">
-          {data.tasks.map((task) => (
-            <div
-              key={task.id}
-              className="rounded-[var(--radius)] border border-border bg-card px-4 py-3 shadow-card"
-            >
-              <p className="text-sm font-medium text-foreground">{task.name}</p>
-              {task.goal ? (
-                <p className="mt-0.5 text-sm text-muted-foreground">{task.goal}</p>
+      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-10">
+        <div className="min-w-0 space-y-10">
+          <section>
+            <h2 className="micro-label micro-label-section">How the work ran</h2>
+            <div className="mt-3 space-y-3">
+              {data.tasks.map((task) => {
+                const taskItems = (task.work_item_tasks ?? [])
+                  .map((element) => element.work_items)
+                  .filter((item): item is NonNullable<typeof item> => item !== null);
+                return (
+                  <ToneCard
+                    key={task.id}
+                    tone="paper"
+                    title={task.name}
+                    mark={
+                      taskItems.length > 0 ? (
+                        <span className="flex items-center gap-1.5 opacity-65">
+                          {taskItems.map((item) => (
+                            <SourceMark key={item.id} item={item} size={20} />
+                          ))}
+                        </span>
+                      ) : null
+                    }
+                    className="gap-2 p-4"
+                  >
+                    {task.goal ? <p>{task.goal}</p> : null}
+                    <div className="mt-2">
+                      <TaskWorkflow
+                        taskId={task.id}
+                        elements={toWorkflowElements(task.work_item_tasks ?? [])}
+                        canEdit={false}
+                        orgId={profile?.org_id}
+                        onChanged={() => undefined}
+                        onOpen={(item) => {
+                          markOpenStart("peek.open");
+                          setPeekItem(item);
+                        }}
+                      />
+                    </div>
+                  </ToneCard>
+                );
+              })}
+              {data.tasks.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Nothing shared here yet.</p>
               ) : null}
-              <div className="mt-2">
-                <TaskWorkflow
-                  taskId={task.id}
-                  elements={toWorkflowElements(task.work_item_tasks ?? [])}
-                  canEdit={false}
-                  orgId={profile?.org_id}
-                  onChanged={() => undefined}
-                  onOpen={(item) => {
-                    markOpenStart("peek.open");
-                    setPeekItem(item);
-                  }}
-                />
-              </div>
             </div>
-          ))}
-          {data.tasks.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Nothing shared here yet.</p>
+          </section>
+
+          <CoachOutcomeCard engagementId={engagementId} role={profile?.role} />
+
+          <FirmChecksCard
+            orgId={profile?.org_id}
+            authorProfileId={profile?.id}
+            role={profile?.role}
+            engagementId={engagementId}
+            subjectProfileId={subjectId}
+            subjectName={subjectName}
+          />
+
+          {data.decisions.length > 0 ? (
+            <section>
+              <h2 className="micro-label micro-label-section">Confirmed decisions</h2>
+              <div className="mt-3 space-y-2">
+                {data.decisions.map((decision) => (
+                  <article key={decision.id} className="border-b border-border px-1 py-4 first:pt-0">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="micro-label">The call</span>
+                      {decision.date_label ? (
+                        <span className="font-mono text-[11px] text-muted-foreground">
+                          {decision.date_label}
+                        </span>
+                      ) : null}
+                    </div>
+                    <p className="mt-2 text-sm font-medium text-foreground">{decision.call_text}</p>
+                    <p className="mt-2 text-sm text-muted-foreground">{decision.situation}</p>
+                    <p className="mt-2 border-l-2 border-accent pl-4 text-sm text-foreground">
+                      {decision.why}
+                    </p>
+                    {Array.isArray(decision.srcs) && decision.srcs.length > 0 ? (
+                      <p className="mt-3 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+                        {decision.srcs.length} source
+                        {decision.srcs.length === 1 ? "" : "s"} in the shared work
+                      </p>
+                    ) : null}
+                  </article>
+                ))}
+              </div>
+            </section>
           ) : null}
+
+          {data.notes.length > 0 ? (
+            <section>
+              <h2 className="micro-label micro-label-section">Earlier coaching notes</h2>
+              <div className="mt-3 space-y-2">
+                {data.notes.map((note) => (
+                  <CoachingNoteCard
+                    key={note.id}
+                    note={note}
+                    heading={new Date(note.created_at).toLocaleDateString(undefined, {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    })}
+                  />
+                ))}
+              </div>
+            </section>
+          ) : null}
+
+          <NoteComposer
+            subjectId={subjectId}
+            engagementId={engagementId}
+            citations={citations}
+            latestActivityAt={newest}
+          />
+
+          <CoachChat
+            subjectId={subjectId}
+            engagementId={engagementId}
+            subjectName={subjectName.split(" ")[0] ?? subjectName}
+            titleOnlyCount={titleOnlyCount}
+          />
         </div>
-      </section>
 
-      <CoachOutcomeCard engagementId={engagementId} role={profile?.role} />
-
-      <FirmChecksCard
-        orgId={profile?.org_id}
-        authorProfileId={profile?.id}
-        role={profile?.role}
-        engagementId={engagementId}
-        subjectProfileId={subjectId}
-        subjectName={subjectName}
-      />
-
-      {data.decisions.length > 0 ? (
-        <section>
-          <h2 className="micro-label micro-label-section">Confirmed decisions</h2>
-          <div className="mt-3 space-y-2">
-            {data.decisions.map((decision) => (
-              <article
-                key={decision.id}
-                className="rounded-[var(--radius)] border border-border bg-card px-5 py-4 shadow-card"
-              >
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="micro-label">The call</span>
-                  {decision.date_label ? (
-                    <span className="font-mono text-[11px] text-muted-foreground">
-                      {decision.date_label}
-                    </span>
-                  ) : null}
-                </div>
-                <p className="mt-2 text-sm font-medium text-foreground">{decision.call_text}</p>
-                <p className="mt-2 text-sm text-muted-foreground">{decision.situation}</p>
-                <p className="mt-2 border-l-2 border-accent pl-4 text-sm text-foreground">
-                  {decision.why}
-                </p>
-                {Array.isArray(decision.srcs) && decision.srcs.length > 0 ? (
-                  <p className="mt-3 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
-                    {decision.srcs.length} source
-                    {decision.srcs.length === 1 ? "" : "s"} in the shared work
-                  </p>
-                ) : null}
-              </article>
-            ))}
-          </div>
-        </section>
-      ) : null}
-
-      {data.notes.length > 0 ? (
-        <section>
-          <h2 className="micro-label micro-label-section">Earlier coaching notes</h2>
-          <div className="mt-3 space-y-2">
-            {data.notes.map((note) => (
-              <CoachingNoteCard
-                key={note.id}
-                note={note}
-                heading={new Date(note.created_at).toLocaleDateString(undefined, {
-                  month: "short",
-                  day: "numeric",
-                  year: "numeric",
-                })}
-              />
-            ))}
-          </div>
-        </section>
-      ) : null}
-
-      <NoteComposer
-        subjectId={subjectId}
-        engagementId={engagementId}
-        citations={citations}
-        latestActivityAt={newest}
-      />
-
-      <CoachChat
-        subjectId={subjectId}
-        engagementId={engagementId}
-        subjectName={subjectName.split(" ")[0] ?? subjectName}
-        titleOnlyCount={titleOnlyCount}
-      />
+        <aside className="mt-10 space-y-4 lg:mt-0">
+          <ToneCard
+            tone="record"
+            label="WHAT LASSO READ TO BUILD THIS"
+            title={`${data.decisions.length} confirmed decision${data.decisions.length === 1 ? "" : "s"}`}
+            className="gap-3 p-4"
+          >
+            <p>Mapped work in this engagement</p>
+            <p>Confirmed decisions and earlier coaching notes</p>
+            <p>Answers come only from what {subjectName} has shared here.</p>
+          </ToneCard>
+          <p className="font-hand text-green">he chose what you see. that is the point.</p>
+        </aside>
+      </div>
 
       <PeekPanel
         entry={peekItem}
@@ -305,7 +340,7 @@ export function CoachingNoteCard({
   heading: string;
 }) {
   return (
-    <article className="rounded-[var(--radius)] border border-border bg-card px-5 py-4 shadow-card">
+    <article className="border-b border-border px-1 py-4 first:pt-0">
       <p className="micro-label">{heading}</p>
       <div className="mt-3 space-y-3">
         <NoteField label="What went well" value={note.did_well} />
