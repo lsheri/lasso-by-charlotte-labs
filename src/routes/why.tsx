@@ -69,8 +69,8 @@ function WhyPage() {
 
         <div className="mt-16 space-y-14">
           {SECTIONS.map((section) => (
-            <section key={section.heading}>
-              <p className="micro-label">{section.heading}</p>
+            <section key={section.heading} className="border-t border-[var(--nb-pencil)] pt-8">
+              <p className="section-title">{section.heading}</p>
               <div className="mt-3 space-y-4">
                 {section.body.map((paragraph) => (
                   <p key={paragraph} className="text-sm leading-relaxed text-foreground">
@@ -82,7 +82,7 @@ function WhyPage() {
           ))}
         </div>
 
-        <div className="mt-16 rounded-[var(--radius)] border border-border bg-card px-6 py-8 shadow-card">
+        <div className="mt-16 rounded-[var(--radius-control)] border border-[var(--nb-pencil)] bg-card px-6 py-8 shadow-card">
           <p className="text-sm text-foreground">Start your record. It stays yours.</p>
           <Button asChild className="mt-4">
             <Link to="/auth">Get started</Link>
@@ -90,14 +90,14 @@ function WhyPage() {
         </div>
       </main>
 
-      <footer className="border-t border-border">
+      <footer className="border-t border-[var(--nb-pencil)]">
         <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-6 py-8 md:px-10">
-          <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+          <p className="font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
             Lasso by Charlotte Labs
           </p>
           <Link
             to="/trust"
-            className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+            className="font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
           >
             Trust &amp; data
           </Link>
