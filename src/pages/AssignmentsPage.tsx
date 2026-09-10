@@ -47,20 +47,25 @@ export function AssignmentsPage() {
         if (list.length === 0) return null;
         return (
           <section key={engagement.id} className="space-y-2">
-            <Link
-              to="/engagements/$id"
-              params={{ id: engagement.id }}
-              className="micro-label transition-colors hover:text-foreground"
-            >
-              {engagementDisplayTitle(engagement)}
-            </Link>
-            <ul className="divide-y divide-border rounded-[var(--radius)] border border-border bg-card">
+            <SectionHeader
+              title={engagementDisplayTitle(engagement)}
+              action={
+                <Link
+                  to="/engagements/$id"
+                  params={{ id: engagement.id }}
+                  className="micro-label transition-colors hover:text-foreground"
+                >
+                  Open
+                </Link>
+              }
+            />
+            <ul className="divide-y divide-[var(--nb-pencil)] rounded-[var(--radius-control)] border border-[var(--nb-pencil)] bg-card">
               {list.map((row) => (
-                <li key={row.id} className="flex items-center justify-between gap-3 px-4 py-3">
-                  <span className="text-sm text-foreground">{row.name}</span>
-                  <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
-                    {row.status}
+                <li key={row.id} className="flex items-center justify-between gap-3 px-3 py-2.5">
+                  <span className="text-[13px] font-medium leading-[17px] text-foreground">
+                    {row.name}
                   </span>
+                  <span className="font-mono text-[10px] uppercase text-soft">{row.status}</span>
                 </li>
               ))}
             </ul>
@@ -68,7 +73,7 @@ export function AssignmentsPage() {
         );
       })}
       {(rows ?? []).length === 0 ? (
-        <p className="text-sm text-muted-foreground">
+        <p className="text-[11.5px] leading-[17px] text-muted-foreground">
           Nothing open yet. Add one inside a class or a project and it will show up here.
         </p>
       ) : null}
