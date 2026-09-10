@@ -21,7 +21,7 @@ const TONE: Record<CardTone, string> = {
 const LABEL_TONE: Record<CardTone, string> = {
   paper: "text-soft",
   claim: "text-[var(--nb-yellow-ink)]",
-  record: "text-soft",
+  record: "text-[var(--nb-green)]",
   attention: "text-soft",
 };
 
