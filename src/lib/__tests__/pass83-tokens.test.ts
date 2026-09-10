@@ -30,8 +30,10 @@ function sourceFiles(dir: string): string[] {
 
 describe("notebook token swap", () => {
   it("declares the notebook action pair", () => {
-    expect(styles).toContain("--nb-green: #12653d");
-    expect(styles).toContain("--primary: var(--nb-green)");
+    // The palette pass restated the green (#12653d -> #0f8a4b) and moved the
+    // action colour to graphite; green now means "on the record" and nothing else.
+    expect(styles).toContain("--nb-green: #0f8a4b");
+    expect(styles).toContain("--primary: var(--nb-graphite)");
     expect(styles).toContain("--primary-foreground: var(--nb-white)");
     expect(styles).toContain("--nb-white: #ffffff");
   });
