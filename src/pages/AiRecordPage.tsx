@@ -285,24 +285,26 @@ export function AiRecordPage() {
             const expanded = openGroup === group.key;
             return (
               <section key={group.key} className="space-y-3">
-                <header className="flex flex-wrap items-baseline gap-x-3 gap-y-1 border-b border-border pb-2">
-                  <h2 className="page-title text-[17px]">
-                    {group.code ? `${group.code} ${group.title}` : group.title}
-                  </h2>
-                  <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
-                    {group.items.length} conversation{group.items.length === 1 ? "" : "s"}
-                    {span(group.items) ? ` · ${span(group.items)}` : ""}
-                  </span>
-                  {group.engagementId ? (
-                    <button
-                      type="button"
-                      onClick={() => setOpenGroup(expanded ? null : group.key)}
-                      className="ml-auto text-xs font-medium text-accent-deep transition-opacity hover:opacity-70"
-                    >
-                      {expanded ? "Hide analysis" : "What recurs"}
-                    </button>
-                  ) : null}
-                </header>
+                <SectionHeader
+                  title={group.code ? `${group.code} ${group.title}` : group.title}
+                  action={
+                    <span className="flex items-baseline gap-3">
+                      <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
+                        {group.items.length} conversation{group.items.length === 1 ? "" : "s"}
+                        {span(group.items) ? ` · ${span(group.items)}` : ""}
+                      </span>
+                      {group.engagementId ? (
+                        <button
+                          type="button"
+                          onClick={() => setOpenGroup(expanded ? null : group.key)}
+                          className="text-xs font-medium text-accent-deep transition-opacity hover:opacity-70"
+                        >
+                          {expanded ? "Hide analysis" : "What recurs"}
+                        </button>
+                      ) : null}
+                    </span>
+                  }
+                />
 
                 {expanded && group.engagementId ? (
                   <div className="space-y-3 rounded-[var(--radius)] border border-border bg-card p-4">
