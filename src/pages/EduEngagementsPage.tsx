@@ -1,6 +1,8 @@
 import { Link } from "@tanstack/react-router";
 
 import { PageHeader } from "@/components/layout/PageHeader";
+import { SectionHeader } from "@/components/notebook/SectionHeader";
+import { ToneCard } from "@/components/notebook/ToneCard";
 import { Button } from "@/components/ui/button";
 import { useEngagements } from "@/hooks/use-engagements";
 import { useOrgSettings, useSaveEngagementKind } from "@/hooks/use-org-settings";
