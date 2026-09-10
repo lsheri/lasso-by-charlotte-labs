@@ -132,14 +132,19 @@ export function ConnectYourAiCard() {
 
   return (
     <section id="connect-your-ai" className="scroll-mt-8">
-      <div className="rounded-[var(--radius)] border border-border bg-card px-5 py-5 shadow-card">
+      <div className="rounded-[var(--radius-lg)] border border-border bg-card px-4 py-3.5">
         <div className="flex items-center gap-3">
           <BrandPair brands={["claude", "chatgpt"]} size={26} />
-          <p className="text-sm font-medium text-foreground">
-            Let Claude or ChatGPT push work straight into Lasso
-          </p>
+          <div className="min-w-0">
+            <p className="text-[13px] font-medium text-foreground">
+              Let Claude or ChatGPT push work straight into Lasso
+            </p>
+            <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+              {connectorStatusLine(token)}
+            </p>
+          </div>
         </div>
-        <p className="mt-1.5 max-w-2xl text-sm text-muted-foreground">
+        <p className="mt-1.5 max-w-2xl text-[11.5px] leading-[17px] text-muted-foreground">
           Add Lasso as a custom connector in your AI once. Then, at the end of any working session,
           just say “push this conversation to Lasso.” Everything lands private and unmapped, only
           you can see it.
