@@ -28,7 +28,7 @@ describe("pass 142: your organization", () => {
   // page, so the agreement between nav and page is now the page's own title.
   it("names the page the same thing the nav group names it", () => {
     const page = readFileSync("src/pages/ArchivePage.tsx", "utf8");
-    expect(page).toContain('<PageHeader title="Past work" italicWord="work"');
+    expect(page).toContain('<PageHeader title="Past" italicWord="work"');
     expect(page).not.toContain('className="micro-label"');
   });
 });

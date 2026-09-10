@@ -56,7 +56,7 @@ export function ArchivePage() {
       {/* Figma 29:833 leads with the title itself. The group stamp that used to
           sit above it is the sidebar's word for this page, and saying it twice
           on the same screen is noise. */}
-      <PageHeader title="Past work" italicWord="work" subtitle={subtitle} />
+      <PageHeader title="Past" italicWord="work" subtitle={subtitle} />
 
       {/*
         The frame runs the spine down the left at about two thirds and stacks
