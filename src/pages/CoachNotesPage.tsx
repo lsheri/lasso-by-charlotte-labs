@@ -29,10 +29,23 @@ export function CoachNotesPage() {
 
   return (
     <div>
+      {/*
+        Figma 32:1709 subtitle: "Eleven notes from Priya · every one points at a
+        piece of work · you see all eleven". The last clause is the page's whole
+        argument, so it is said in numbers rather than described.
+
+        Deliberate deviation: the frame names the coach. A person can have more
+        than one coach across engagements and this page spans all of them, so it
+        counts the notes instead of naming a single author.
+      */}
       <PageHeader
         title="Notes"
         italicWord="about your work"
-        subtitle="What your coaches wrote, newest first."
+        subtitle={[
+          `${rows.length} note${rows.length === 1 ? "" : "s"} about your work`,
+          "every one points at a piece of work",
+          `you see all ${rows.length}`,
+        ].join(" · ")}
       />
       <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-10">
         <div>
@@ -57,30 +70,39 @@ export function CoachNotesPage() {
         </div>
 
         <aside className="mt-10 space-y-6 lg:mt-0">
+          {/* Figma 32:1709 keeps the promise and the numbers apart: the green
+              card says the one thing that matters, and the counts stand under it
+              on their own, unboxed. */}
           <ToneCard
             tone="record"
             label="YOU SEE EVERY NOTE"
             title="There is no private note about you."
-            className="gap-4 p-4"
+            className="gap-3 p-4"
           >
-            <p>Every note a coach writes about your work is available here for you to read.</p>
-            <div className="mt-4 space-y-4">
-              <div>
-                <p className="text-2xl text-foreground">{rows.length}</p>
-                <p className="text-sm text-muted-foreground">notes about your work</p>
-              </div>
-              <div className="border-t border-border pt-4">
-                <p className="text-2xl text-foreground">
-                  {rows.filter((row) => row.engagement_id).length}
-                </p>
-                <p className="text-sm text-muted-foreground">point at an engagement</p>
-              </div>
-              <div className="border-t border-border pt-4">
-                <p className="text-2xl text-foreground">0</p>
-                <p className="text-sm text-muted-foreground">you are not allowed to see</p>
-              </div>
-            </div>
+            <p className="leading-[19px]">
+              A coach cannot write a note you cannot read. If a note about your work exists, it is
+              on this page, with the work it points at.
+            </p>
           </ToneCard>
+
+          <div>
+            {(
+              [
+                [rows.length, "notes about your work"],
+                [rows.filter((row) => row.engagement_id).length, "point at an engagement"],
+                [0, "you are not allowed to see"],
+              ] as Array<[number, string]>
+            ).map(([value, caption]) => (
+              <div key={caption} className="border-b border-border py-3">
+                {/* Instrument Serif at display size, as the frame sets it:
+                    light and roomy, never bold. */}
+                <p className="font-serif text-[30px] leading-[36px] tabular-nums text-foreground">
+                  {value}
+                </p>
+                <p className="mt-0.5 text-[11.5px] text-muted-foreground">{caption}</p>
+              </div>
+            ))}
+          </div>
           <p className="font-hand text-green">a note you cannot read is a rumour</p>
         </aside>
       </div>
