@@ -2,6 +2,8 @@ import { useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
 
+import { SectionHeader } from "@/components/notebook/SectionHeader";
+import { ToneCard } from "@/components/notebook/ToneCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -54,6 +56,7 @@ export function ChecksLibrary({
   const fileRef = useRef<HTMLInputElement>(null);
 
   const rows = (checks ?? []).filter((row) => showRetired || row.active);
+  const activeCount = (checks ?? []).filter((row) => row.active).length;
 
   async function toggle(id: string, active: boolean) {
     setError(null);
@@ -289,6 +292,7 @@ export function ChecksLibrary({
           </p>
         ) : null}
       </div>
+      </ToneCard>
     </section>
   );
 }
