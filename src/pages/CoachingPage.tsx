@@ -87,7 +87,7 @@ export function CoachingPage() {
           {subjects.length > 0 ? (
             <div className="overflow-x-auto">
               <div className="min-w-[720px]">
-                <div className="grid grid-cols-[minmax(180px,1fr)_minmax(190px,1.15fr)_minmax(210px,1.2fr)_130px] gap-4 border-b border-border px-2 pb-2 font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
+                <div className="grid grid-cols-[minmax(180px,1fr)_minmax(190px,1.15fr)_minmax(210px,1.2fr)_130px] gap-4 border-b border-[var(--nb-pencil)] px-2 pb-2 font-mono text-[9px] uppercase tracking-[0.08em] text-soft">
                   <span>Person</span>
                   <span>Engagement</span>
                   <span>Shared with you</span>
