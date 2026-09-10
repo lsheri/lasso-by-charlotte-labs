@@ -72,6 +72,24 @@ export function DecisionsPage() {
     setReasoningText(decision.why ?? "");
   }
 
+  function confirmDecision(decision: DecisionRow) {
+    void update(
+      decision,
+      { status: "confirmed", resolved_at: new Date().toISOString() },
+      "confirmed",
+      false,
+    );
+  }
+
+  function discardDecision(decision: DecisionRow) {
+    void update(
+      decision,
+      { status: "discarded", resolved_at: new Date().toISOString() },
+      "discarded",
+      false,
+    );
+  }
+
   function saveReasoning() {
     if (!reasoningFor) return;
     const decision = reasoningFor;

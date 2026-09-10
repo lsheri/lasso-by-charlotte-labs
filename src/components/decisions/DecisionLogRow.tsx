@@ -5,10 +5,14 @@ export function DecisionLogRow({
   decision,
   onOpenSource,
   onAddReasoning,
+  onConfirm,
+  onDiscard,
 }: {
   decision: DecisionRow;
   onOpenSource: (workItemId: string) => void;
   onAddReasoning: (decision: DecisionRow) => void;
+  onConfirm?: (decision: DecisionRow) => void;
+  onDiscard?: (decision: DecisionRow) => void;
 }) {
   const srcs = srcsOf(decision);
   const ids = Array.from(new Set(srcs.map((s) => s.work_item_id).filter(Boolean)));
