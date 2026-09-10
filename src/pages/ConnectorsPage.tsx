@@ -286,7 +286,6 @@ export function ConnectorsPage() {
   );
 }
 
-/** Tinted band header, so a category is found before it is read. */
 /**
  * Call transcripts are not a second connection, they are the same Google
  * Drive connection, opened straight into a picker scoped to where recordings
