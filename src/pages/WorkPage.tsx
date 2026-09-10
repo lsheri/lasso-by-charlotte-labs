@@ -365,22 +365,6 @@ export function WorkPage() {
     .map((i) => i.id);
   const allChosen = selectable.length > 0 && selectable.every((id) => chosen.has(id));
 
-  /** Mapped work, folded one engagement at a time. */
-  const mappedByEngagement = (() => {
-    const buckets = new Map<string, { id: string | null; label: string; items: WorkItemRow[] }>();
-    for (const item of mapped) {
-      const engagement = item.work_item_tasks[0]?.tasks?.engagements ?? null;
-      const key = engagement?.id ?? "unfiled";
-      const bucket = buckets.get(key) ?? {
-        id: engagement?.id ?? null,
-        label: engagement ? engagementLabel(engagement) : "Mapped elsewhere",
-        items: [],
-      };
-      bucket.items.push(item);
-      buckets.set(key, bucket);
-    }
-    return Array.from(buckets.values()).sort((a, b) => a.label.localeCompare(b.label));
-  })();
 
   function toggleChosen(id: string) {
     setChosen((prev) => {
@@ -430,12 +414,15 @@ export function WorkPage() {
     ),
   ).sort((a, b) => a.localeCompare(b));
 
+  // Private work only appears in the columns while the show-private box is on.
+  const visible = showPrivate ? all : all.filter((item) => item.visibility !== "private");
+
   const filtered =
     columnFilter === "all"
-      ? all
+      ? visible
       : columnFilter === "unmapped"
-        ? all.filter((item) => item.visibility === "unmapped")
-        : all.filter(
+        ? visible.filter((item) => item.visibility === "unmapped")
+        : visible.filter(
             (item) => item.work_item_tasks[0]?.tasks?.engagements?.code === columnFilter,
           );
 
@@ -456,11 +443,30 @@ export function WorkPage() {
   })();
   const sourceMax = sourceCounts.reduce((max, row) => Math.max(max, row.count), 0);
 
-  function cardMeta(item: WorkItemRow): string {
-    const code = item.work_item_tasks[0]?.tasks?.engagements?.code;
-    if (code) return code;
-    return item.visibility === "private" ? "PRIVATE" : "UNMAPPED";
+  /** One item as it renders inside a type column: same props the sections passed. */
+  function renderColumnItem(entry: WorkItemRow) {
+    const variant = entry.visibility === "mapped" ? "mapped" : "unmapped";
+    return (
+      <WorkRow
+        key={entry.id}
+        item={entry}
+        lead={
+          selectMode && !isCoach && entry.visibility === "unmapped" ? (
+            <Checkbox
+              checked={chosen.has(entry.id)}
+              onCheckedChange={() => toggleChosen(entry.id)}
+              aria-label={`Select ${entry.title}`}
+            />
+          ) : undefined
+        }
+        onOpen={openItem(entry)}
+        chips={<ConversationChips item={entry} />}
+        actions={rowActions(entry, variant)}
+        {...(entry.visibility === "mapped" ? {} : { footer: suggestionFor(entry) })}
+      />
+    );
   }
+
 
   return (
     <div>
