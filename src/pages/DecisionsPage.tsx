@@ -2,8 +2,11 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
 import { AddDecisionDialog } from "@/components/decisions/AddDecisionDialog";
-import { DecisionCard } from "@/components/decisions/DecisionCard";
+import { DecisionLogRow } from "@/components/decisions/DecisionLogRow";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { ToneCard } from "@/components/notebook/ToneCard";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { ThreadViewerById } from "@/components/work/ThreadViewerById";
 import { useDecisions, type DecisionRow } from "@/hooks/use-decisions";
 import type { Database } from "@/integrations/supabase/types";
@@ -12,16 +15,34 @@ import { supabase } from "@/integrations/supabase/client";
 import { logEvent } from "@/lib/telemetry";
 import { logV2 } from "@/lib/telemetry-v2";
 
+const FILTERS = [
+  { id: "all", label: "Everything" },
+  { id: "draft", label: "Awaiting your review" },
+  { id: "no-why", label: "Needs reasoning" },
+] as const;
+
+type FilterId = (typeof FILTERS)[number]["id"];
+
 export function DecisionsPage() {
   const { data: profile } = useProfile();
   const { data: decisions, isLoading, error } = useDecisions();
   const queryClient = useQueryClient();
   const [actionError, setActionError] = useState<string | null>(null);
   const [sourceItem, setSourceItem] = useState<string | null>(null);
+  const [filter, setFilter] = useState<FilterId>("all");
+  const [reasoningFor, setReasoningFor] = useState<DecisionRow | null>(null);
+  const [reasoningText, setReasoningText] = useState("");
 
   const rows = decisions ?? [];
   const drafts = rows.filter((d) => d.status === "draft");
-  const confirmed = rows.filter((d) => d.status === "confirmed");
+  const withReasoning = rows.filter((d) => Boolean(d.why?.trim())).length;
+  const visible = rows.filter((d) => {
+    if (filter === "draft") return d.status === "draft";
+    if (filter === "no-why") return !d.why?.trim();
+    return true;
+  });
+
+  const metaLine = `${rows.length} ${rows.length === 1 ? "decision" : "decisions"} · ${withReasoning} carry the reasoning`;
 
   async function update(
     decision: DecisionRow,
@@ -46,22 +67,52 @@ export function DecisionsPage() {
     await queryClient.invalidateQueries({ queryKey: ["decisions"] });
   }
 
+  function startReasoning(decision: DecisionRow) {
+    setReasoningFor(decision);
+    setReasoningText(decision.why ?? "");
+  }
+
+  function saveReasoning() {
+    if (!reasoningFor) return;
+    const decision = reasoningFor;
+    setReasoningFor(null);
+    void update(
+      decision,
+      { why: reasoningText.trim(), status: "confirmed", author: "human", resolved_at: new Date().toISOString() },
+      "confirmed",
+      true,
+    );
+  }
+
   return (
     <div>
-      <header className="mb-8 flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="page-title">Decision log</h1>
-          <p className="page-subtitle">
-            {confirmed.length} confirmed · {drafts.length} awaiting review
-          </p>
-        </div>
-        <div className="text-right">
-          <AddDecisionDialog trigger={<Button type="button">＋ Add a decision yourself</Button>} />
-          <p className="mt-2 max-w-xs text-xs text-muted-foreground">
-            The calls you made off-platform are often the ones that matter most.
-          </p>
-        </div>
-      </header>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <PageHeader title="Decision" italicWord="log" subtitle={metaLine} />
+        <AddDecisionDialog
+          trigger={
+            <Button type="button" variant="secondary">
+              Log a decision
+            </Button>
+          }
+        />
+      </div>
+
+      <div className="mb-6 flex flex-wrap gap-2">
+        {FILTERS.map((f) => (
+          <button
+            key={f.id}
+            type="button"
+            onClick={() => setFilter(f.id)}
+            className={
+              filter === f.id
+                ? "rounded-full border border-graphite bg-nb-white px-3 py-1 text-[11.5px] font-medium text-foreground"
+                : "rounded-full border border-[var(--nb-pencil)] px-3 py-1 text-[11.5px] text-muted-foreground transition-colors hover:border-foreground"
+            }
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
 
       {error ? <p className="mb-6 text-sm text-destructive">{(error as Error).message}</p> : null}
       {actionError ? <p className="mb-6 text-sm text-destructive">{actionError}</p> : null}
@@ -69,88 +120,98 @@ export function DecisionsPage() {
       {isLoading ? (
         <p className="text-sm text-muted-foreground">Loading your decisions…</p>
       ) : rows.length === 0 ? (
-        <div className="mx-auto max-w-lg rounded-[var(--radius)] border border-border bg-card px-8 py-12 text-center shadow-card">
-          <p className="text-sm text-foreground">
-            Your consequential calls will collect here. Draft them from any AI thread, or add one
-            yourself.
+        <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_340px]">
+          <p className="py-5 text-sm text-muted-foreground">
+            Nothing logged yet. A decision lands here the moment you make a call.
           </p>
+          <DecisionRail rows={rows.length} withReasoning={withReasoning} drafts={drafts.length} />
         </div>
       ) : (
-        <div className="space-y-10">
-          {drafts.length > 0 ? (
-            <section>
-              <h2 className="micro-label micro-label-section">Awaiting your review</h2>
-              <div className="mt-3 space-y-4">
-                {drafts.map((decision) => (
-                  <DecisionCard
-                    key={decision.id}
-                    decision={decision}
-                    onOpenSource={setSourceItem}
-                    onConfirm={() =>
-                      void update(
-                        decision,
-                        { status: "confirmed", resolved_at: new Date().toISOString() },
-                        "confirmed",
-                        false,
-                      )
-                    }
-                    onSaveEdit={(fields) =>
-                      void update(
-                        decision,
-                        {
-                          ...fields,
-                          status: "confirmed",
-                          author: "human",
-                          resolved_at: new Date().toISOString(),
-                        },
-                        "confirmed",
-                        true,
-                      )
-                    }
-                    onDiscard={() =>
-                      void update(
-                        decision,
-                        { status: "discarded", resolved_at: new Date().toISOString() },
-                        "discarded",
-                        false,
-                      )
-                    }
-                  />
-                ))}
+        <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_340px]">
+          <div className="divide-y divide-border">
+            {visible.map((d) => (
+              <div key={d.id}>
+                <DecisionLogRow
+                  decision={d}
+                  onOpenSource={setSourceItem}
+                  onAddReasoning={startReasoning}
+                />
+                {reasoningFor?.id === d.id ? (
+                  <div className="pb-5 pl-0 sm:pl-[100px]">
+                    <Textarea
+                      rows={3}
+                      value={reasoningText}
+                      onChange={(e) => setReasoningText(e.target.value)}
+                      placeholder="Why was this the right call?"
+                    />
+                    <div className="mt-2 flex items-center gap-3">
+                      <Button
+                        type="button"
+                        size="sm"
+                        disabled={!reasoningText.trim()}
+                        onClick={saveReasoning}
+                      >
+                        Save the reasoning
+                      </Button>
+                      <button
+                        type="button"
+                        className="text-xs text-muted-foreground hover:text-foreground"
+                        onClick={() => setReasoningFor(null)}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
               </div>
-            </section>
-          ) : null}
+            ))}
+            {visible.length === 0 ? (
+              <p className="py-5 text-sm text-muted-foreground">Nothing in this view.</p>
+            ) : null}
+          </div>
 
-          {confirmed.length > 0 ? (
-            <section>
-              <h2 className="micro-label micro-label-section">Confirmed</h2>
-              <div className="mt-3 space-y-4">
-                {confirmed.map((decision) => (
-                  <DecisionCard
-                    key={decision.id}
-                    decision={decision}
-                    onOpenSource={setSourceItem}
-                    onConfirm={() => undefined}
-                    onSaveEdit={(fields) =>
-                      void update(decision, { ...fields, author: "human" }, "confirmed", true)
-                    }
-                    onDiscard={() =>
-                      void update(
-                        decision,
-                        { status: "discarded", resolved_at: new Date().toISOString() },
-                        "discarded",
-                        false,
-                      )
-                    }
-                  />
-                ))}
-              </div>
-            </section>
-          ) : null}
+          <DecisionRail rows={rows.length} withReasoning={withReasoning} drafts={drafts.length} />
         </div>
       )}
 
       <ThreadViewerById workItemId={sourceItem} onClose={() => setSourceItem(null)} />
     </div>
+  );
+}
+
+function DecisionRail({
+  rows,
+  withReasoning,
+  drafts,
+}: {
+  rows: number;
+  withReasoning: number;
+  drafts: number;
+}) {
+  const stats: Array<[number, string]> = [
+    [rows, "decisions logged"],
+    [withReasoning, "carry the reasoning"],
+    [drafts, "awaiting your review"],
+  ];
+  return (
+    <aside className="space-y-6">
+      <ToneCard
+        tone="record"
+        label="WHY THE LOG EXISTS"
+        title="A decision without its reasoning is just a fact."
+      >
+        A call you can see is a record. A call you can explain is a lesson. The log keeps both, and
+        it keeps them dated.
+      </ToneCard>
+
+      <div>
+        {stats.map(([value, caption]) => (
+          <div key={caption} className="border-b border-border py-3">
+            <div className="text-[26px] font-semibold leading-[30px] text-foreground">{value}</div>
+            <div className="mt-0.5 text-[11.5px] text-muted-foreground">{caption}</div>
+          </div>
+        ))}
+      </div>
+    </aside>
   );
 }
