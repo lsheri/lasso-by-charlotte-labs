@@ -201,7 +201,7 @@ never existed in `styles.css`. That test failure predates this port and is untou
 | `21:2` | `/overview` | BUILT | Added `ReadingPanel` and `NotCovered` panels (Figma 21:2), both read-only and non-interactive. |
 | `22:220` | `/work` | BUILT (full screen, pass 2 of 2, 10 Sep 2026) |
 | `23:413` | `/firm` | BUILT (production-first layout, 10 Sep 2026) |
-| `27:635` | `/ai-record` | BUILT |
+| `27:635` | `/ai-record` | BUILT (hairline list port, 10 Sep 2026) |
 | `29:833` | `/archive` | BUILT |
 | `30:1012` | `/reflect` | BUILT |
 | `30:1419` | `/decisions` | BUILT |
@@ -233,6 +233,15 @@ below the frame's content under its own heading. The production figures use read
 already present on this page; no action, event, consent surface, route or route
 parameter changed. The unavailable firm-wide decision count remains omitted rather
 than inferred, with Analyses run shown truthfully in that slot.
+
+Chat library notes, 10 Sep 2026 (frame `27:635`). Conversations now render as a
+hairline-ruled list with vendor, turn count, confirmed downstream work and honest
+date stamps; existing row actions reveal on hover or keyboard focus and remain
+visible on touch screens. The header exposes the existing paste flow, filter chips
+show their loaded counts, and the rail keeps CaptureCoverage plus the frame's second
+card. The unavailable checked-at-source count and turn-level provenance panel remain
+omitted rather than inferred. No query, event, payload, dimension or consent surface
+changed.
 
 Engagement page notes, 10 Sep 2026 (frame `36:1936`). Added: hand-written breadcrumb
 back to `/work` above the title; the engagement code / client / term trail follows
