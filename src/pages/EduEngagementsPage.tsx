@@ -43,26 +43,29 @@ export function EduEngagementsPage({ kind }: { kind: EngagementKind }) {
             key={row.id}
             to="/engagements/$id"
             params={{ id: row.id }}
-            className="rounded-[var(--radius)] border border-border bg-card p-5 shadow-card transition-colors hover:border-accent-deep"
+            className="rounded-[var(--radius-control)] transition-colors hover:[&>div]:border-accent-deep"
           >
-            <p className="text-sm font-medium text-foreground">{engagementDisplayTitle(row)}</p>
-            {row.brief ? (
-              <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">{row.brief}</p>
-            ) : null}
+            <ToneCard tone="paper" title={engagementDisplayTitle(row)}>
+              {row.brief ? <span className="line-clamp-2">{row.brief}</span> : null}
+            </ToneCard>
           </Link>
         ))}
       </div>
-      {mine.length === 0 ? <p className="text-sm text-muted-foreground">{copy.empty}</p> : null}
+      {mine.length === 0 ? (
+        <p className="text-[11.5px] leading-[17px] text-muted-foreground">{copy.empty}</p>
+      ) : null}
 
       {unsorted.length > 0 ? (
         <section className="space-y-3">
-          <p className="micro-label">{KIND_QUESTION}</p>
+          <SectionHeader title={KIND_QUESTION} />
           {unsorted.map((row) => (
             <div
               key={row.id}
-              className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius)] border border-border bg-card p-4"
+              className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius-control)] border border-[var(--nb-pencil)] bg-card px-3 py-2.5"
             >
-              <span className="text-sm text-foreground">{engagementDisplayTitle(row)}</span>
+              <span className="text-[13px] font-medium leading-[17px] text-foreground">
+                {engagementDisplayTitle(row)}
+              </span>
               <span className="flex gap-2">
                 {(["class", "project"] as const).map((option) => (
                   <Button
