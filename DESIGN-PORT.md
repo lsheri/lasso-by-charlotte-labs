@@ -337,7 +337,7 @@ table because there is nothing to navigate to.
 |---|---|---|---|
 | M1 · The positioning ladder | Copy doctrine board, four lengths of one idea | No code surface | NON-CODE. Doctrine only; never renders in the app. |
 | M2 · The pilot one-pager | US Letter sales PDF | No code surface | NON-CODE. Sales collateral. Rule 9 failures recorded below. |
-| M3 · Social cards | Three 1200x630 OG cards | Only consumer is `/` metadata | **FROZEN under rule 15.** Wiring one in changes what `/` serves. Second freeze surface after the hero; the freeze section above now names it. |
+| M3 · Social cards | Three 1200x630 OG cards | Only consumer is `/` metadata | **FROZEN under rule 15.** Wiring one in changes what `/` serves. Second freeze surface after the hero; the freeze section below now names it. |
 | M4 · The invite email, earlier draft | Superseded draft | None | SUPERSEDED. M5's own description says so. Never port it (rule 11 archived-component principle). |
 | M5 · Invite email, as shipped | The three real variants | `src/lib/invite-email.ts` | BUILT (skin, 10 Sep 2026) |
 | M6 · Email mark notes + GIF source | Production note for `lasso-mark.gif` | Hosted asset, referenced by `LASSO_MARK_URL` | NON-CODE. The mark lives at `charlotte-labs.com/email/lasso-mark.gif`; referenced, not copied. |
