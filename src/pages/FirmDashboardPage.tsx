@@ -4,7 +4,10 @@ import { Link } from "@tanstack/react-router";
 import { ChecksLibrary } from "@/components/firm/ChecksLibrary";
 import { FirmArchive } from "@/components/firm/FirmArchive";
 import { FirmMetricGrid } from "@/components/firm/FirmMetricGrid";
+import { PrivacyPanel } from "@/components/firm/PrivacyPanel";
 import { TrustSummary } from "@/components/firm/TrustSummary";
+import { WhatLeavesTheFirm } from "@/components/firm/WhatLeavesTheFirm";
+import { ToneCard } from "@/components/notebook/ToneCard";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { useFirmDashboard } from "@/hooks/use-firm-dashboard";
 import { isBusinessOrg, useProfile } from "@/hooks/use-profile";
@@ -34,14 +37,15 @@ export function FirmDashboardPage() {
   return (
     <div className="pb-16">
       <PageHeader
-        title="Firm view"
+        title="Firm"
+        italicWord="view"
         subtitle="How the workspace is being used, in counts and structure only."
       />
 
-      <div className="space-y-5">
-        <TrustSummary />
-
-        <FirmArchive />
+      <div className="space-y-6">
+        <ToneCard tone="record" label="WHAT THIS PAGE MEASURES">
+          <TrustSummary />
+        </ToneCard>
 
         {error ? (
           <p className="text-sm text-destructive">That could not be loaded. Try again.</p>
@@ -54,6 +58,12 @@ export function FirmDashboardPage() {
             <ChecksLibrary profileId={profile?.id} runCount={data.assurance.firm_check_runs} />
           </>
         )}
+
+        <FirmArchive />
+
+        {data ? <WhatLeavesTheFirm engagementsShared={data.coaching.engagements_shared} /> : null}
+
+        <PrivacyPanel />
 
         <p className="text-sm text-muted-foreground">
           Looking for the roster, invites, or the plan?{" "}
