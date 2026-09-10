@@ -64,6 +64,7 @@ Never promote a row to `VERIFIED` yourself.
 | 07 · Screens · Worker | `1:8` | 17 frames. |
 | 08 · Screens · Coach | `1:9` | 2 frames. |
 | 09 · Screens · Entry & settings | `1:10` | 11 frames. |
+| 10 · Artifact viewer | — | 4 frames, component-level not route-level. V1 peek panel, V2 what fed this, V3 Work Artifact, V4 circling a region (PROPOSED, refused). |
 | 11 · States | — | Empty, one, many, long-text, error, loading. |
 | 14 · Archive | — | Dead ends. Never port from here. |
 
@@ -299,6 +300,31 @@ you are not on"). The real `/no-access` is the no-workspace-membership state. Sh
 the frame's copy would tell a user with no workspace that they are viewing someone
 else's engagement, and its "Back to your work" button would loop them into the redirect
 that sent them there. Take the visual treatment, keep the true copy.
+
+## Artifact viewer — page 10, component level
+
+This page maps to components, not routes, so it gets its own table. Everything here is
+a skin: no hook, query, prop, route, control, copy string or event was touched.
+
+| Frame | Component | Status |
+| --- | --- | --- |
+| V1 · Peek panel | `src/components/peek/PeekPanel.tsx`, `AiReads.tsx` | BUILT (skin, 10 Sep 2026) |
+| V2 · What fed this | `src/components/peek/WhatFedThis.tsx` | BUILT (skin, 10 Sep 2026) |
+| V3 · Work Artifact | `src/components/journey/WorkArtifactPanel.tsx`, `WorkArtifactSections.tsx` | BUILT (skin, 10 Sep 2026) |
+| V4 · Circling a region | none | REFUSED. Self-labelled PROPOSED. Needs a per-claim coordinate, which is a schema change and therefore architect-only. |
+
+Refused inside the built frames, all rule 8 or rule 9:
+- The archived Pill component ships twice in this export. Rule 11 forbids it. Production
+  `TypeChip` and `Chip` stand.
+- "4 sources · 19 turns", "turns 3-19", "2 of 24 pages" — counts the UI does not compute.
+- "Slides 12 to 18 have no conversation behind them" — the honest gap line is generated
+  per artifact on the server, not a slide range.
+- The frame's four flat buttons flatten a bar that really carries Map, two analysis
+  presets and an eight-item overflow menu. Flattening it would strand controls.
+
+Telemetry impact: none. `evidence.opened` keeps both emissions and its three surfaces
+(`contributor`, `prompt`, `show_all`). `peek.open` stays a gesture-anchored perf finish.
+No event name, payload or dimension changed, and no new user action was added.
 
 ## The landing page is frozen
 

@@ -56,8 +56,8 @@ function Chip({
     <span
       className={
         tone === "accent"
-          ? "inline-block rounded-full bg-accent-soft px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-foreground"
-          : "inline-block rounded-full border border-border bg-secondary px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground"
+          ? "inline-block rounded-full bg-accent-soft px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.08em] text-foreground"
+          : "inline-block rounded-full border border-pencil bg-secondary px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground"
       }
     >
       {children}
@@ -149,7 +149,7 @@ export function PeekPanel({
       title={active.title}
       description="Work item preview"
     >
-      <header className="shrink-0 border-b border-border px-4 pb-4 pt-[calc(1.5rem+env(safe-area-inset-top))] sm:px-6">
+      <header className="shrink-0 border-b border-pencil px-4 pb-4 pt-[calc(1.5rem+env(safe-area-inset-top))] sm:px-6">
         <div className="flex flex-wrap items-center gap-1.5 pr-12">
           <TypeChip item={active} />
           {vendor ? <Chip tone="accent">{vendorLabel(vendor)}</Chip> : null}
@@ -168,7 +168,7 @@ export function PeekPanel({
             <Chip tone="accent">The brief</Chip>
           </p>
         ) : null}
-        <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+        <p className="mt-1 font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
           {sourceLabel(active.source)} · {formatDate(effectiveWorkDate(active))}
         </p>
         <p className="mt-1">

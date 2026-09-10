@@ -50,7 +50,7 @@ function ContributorRow({
 
   return (
     <li
-      className="rounded-[var(--radius-md)] border border-border bg-card px-3 py-2.5"
+      className="rounded-[var(--radius-md)] border border-pencil bg-card px-3 py-2.5"
       style={
         isDraft
           ? { background: "var(--suggest-wash)", borderLeft: "3px solid var(--suggest-edge)" }
@@ -79,7 +79,7 @@ function ContributorRow({
               }}
             />
           </button>
-          <p className="mt-0.5 flex flex-wrap items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+          <p className="mt-0.5 flex flex-wrap items-center gap-1.5 font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
             {isDraft ? <SuggestDot /> : null}
             <span>{relationLabel(link.relation)}</span>
             <span aria-hidden>·</span>
@@ -206,7 +206,7 @@ export function WhatFedThis({
   ) : null;
 
   return (
-    <section className="mt-8 border-t border-border pt-4">
+    <section className="mt-8 border-t border-pencil pt-4">
       <h3 className="micro-label micro-label-ai relative inline-flex items-center gap-2">
         What fed this
         {strike.shown ? <DrawnStrike key={strike.markKey} /> : null}
@@ -299,12 +299,12 @@ export function WhatFedThis({
                     evidenceOpened("prompt");
                     setOpenThread(prompt.work_item_id);
                   }}
-                  className="block w-full rounded-[var(--radius-md)] border-l-2 border-border bg-secondary/50 px-3 py-2 text-left transition-colors hover:border-accent"
+                  className="block w-full rounded-[var(--radius-md)] border-l-2 border-pencil bg-secondary/50 px-3 py-2 text-left transition-colors hover:border-accent"
                 >
                   <span className="block whitespace-pre-wrap font-mono text-xs leading-relaxed text-foreground">
                     {prompt.content}
                   </span>
-                  <span className="mt-1.5 block font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+                  <span className="mt-1.5 block font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
                     {prompt.ts ? formatDate(prompt.ts) : "date unknown"} · {prompt.thread_title}
                   </span>
                 </button>

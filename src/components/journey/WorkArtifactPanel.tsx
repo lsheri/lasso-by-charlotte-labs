@@ -142,7 +142,7 @@ export function WorkArtifactPanel({
               <button
                 type="button"
                 onClick={askToBuild}
-                className="rounded-md border border-border px-2.5 py-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
+                className="rounded-[var(--radius-md)] border border-pencil px-2.5 py-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
               >
                 {REBUILD_ARTIFACT_LABEL}
               </button>
@@ -151,7 +151,7 @@ export function WorkArtifactPanel({
           <WorkArtifactSections artifact={artifact} drawing={revealing} startMs={startMs} />
         </>
       ) : stored.isLoading ? null : canEdit ? (
-        <div className="flex flex-col items-center gap-2 rounded-[var(--radius-md)] border border-dashed border-border px-4 py-8 text-center">
+        <div className="flex flex-col items-center gap-2 rounded-[var(--radius-md)] border border-dashed border-pencil px-4 py-8 text-center">
           <ChaliceMark size={28} />
           <p className="text-sm font-medium text-foreground">{BUILD_ARTIFACT_LABEL}</p>
           <p className="max-w-[42ch] text-xs text-muted-foreground">{BUILD_ARTIFACT_LINE}</p>

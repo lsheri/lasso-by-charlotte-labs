@@ -34,7 +34,7 @@ function decidedByLabel(decision: ArtifactDecision): string {
 
 function Micro({ children }: { children: ReactNode }) {
   return (
-    <p className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+    <p className="font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
       {children}
     </p>
   );
@@ -59,7 +59,7 @@ function Section({
   const area = ARTIFACT_SECTION_AREAS[index] ?? "usage";
   return (
     <section
-      className={`${classes} nb-a-${area} rounded-[var(--radius-md)] border border-border bg-card px-4 py-3.5`}
+      className={`${classes} nb-a-${area} rounded-[var(--radius-md)] border border-pencil bg-card px-4 py-3.5`}
       style={drawing ? { animationDelay: `${artifactSectionDelayMs(index, startMs)}ms` } : undefined}
       data-section={label}
       data-area={area}
@@ -111,7 +111,7 @@ export function WorkArtifactSections({
           <ul className="list-none space-y-3">
             {artifact.example_prompts.map((prompt, i) => (
               <li key={`${i}-${prompt.quote.slice(0, 20)}`}>
-                <blockquote className="nb-binder nb-binder-body rounded-[var(--radius-md)] border border-border px-3 text-[13px] text-foreground">
+                <blockquote className="nb-binder nb-binder-body rounded-[var(--radius-md)] border border-pencil px-3 text-[13px] text-foreground">
                   {prompt.quote}
                 </blockquote>
                 {prompt.why_it_worked ? (
