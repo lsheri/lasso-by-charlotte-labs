@@ -140,10 +140,12 @@ describe("pile", () => {
 });
 
 describe("page order", () => {
-  it("puts the archive before the metrics", () => {
+  it("reads what it measures, then the numbers, then the archive", () => {
     const page = readFileSync("src/pages/FirmDashboardPage.tsx", "utf8");
-    expect(page.indexOf("<FirmArchive")).toBeLessThan(page.indexOf("<FirmMetricGrid"));
-    expect(page.indexOf("<TrustSummary")).toBeLessThan(page.indexOf("<FirmArchive"));
+    expect(page.indexOf("<TrustSummary")).toBeLessThan(page.indexOf("<FirmMetricGrid"));
+    expect(page.indexOf("<FirmMetricGrid")).toBeLessThan(page.indexOf("<FirmArchive"));
+    expect(page.indexOf("<FirmArchive")).toBeLessThan(page.indexOf("<WhatLeavesTheFirm"));
+    expect(page.indexOf("<WhatLeavesTheFirm")).toBeLessThan(page.indexOf("<PrivacyPanel"));
     expect(page).toContain('profile?.role === "admin" || profile?.role === "lead"');
   });
 });
