@@ -3,6 +3,7 @@ import { CircleDashed, Lock } from "lucide-react";
 
 import { SourceMark, VendorMark } from "@/components/work/SourceMark";
 import { TypeIcon } from "@/components/work/TypeIcon";
+import { stampDate } from "@/components/work/card-stamp";
 import { attachmentKindLabel, vendorLabel } from "@/lib/conversation-shared";
 import { engagementHue, workIdentityLabel } from "@/lib/work-identity";
 import { effectiveWorkDate, formatDate, type ConversationGroup, type WorkItemRow } from "@/lib/work-types";
@@ -106,7 +107,7 @@ export function ConversationCard({
               ) : null}
               {vendor ? vendorLabel(vendor) : "Conversation"}
               {" · "}
-              {formatDate(effectiveWorkDate(head))}
+              {stampDate(effectiveWorkDate(head))}
             </span>
             <span className="shrink-0">
               <SourceMark item={head} />

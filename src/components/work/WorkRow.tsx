@@ -2,6 +2,7 @@ import { CircleDashed, Lock } from "lucide-react";
 
 import { EngagementChip, TypeBadge, TypeIcon } from "@/components/work/TypeIcon";
 import { ArtifactNote, SourceMark, VendorMark } from "@/components/work/SourceMark";
+import { stampDate } from "@/components/work/card-stamp";
 import { UNREAD_MARKER_LINE, contentsUnread, textStatusReason } from "@/lib/text-status";
 import { engagementHue, workIdentityLabel } from "@/lib/work-identity";
 import { effectiveWorkDate, formatDate, type WorkItemRow } from "@/lib/work-types";
@@ -122,7 +123,7 @@ export function WorkRow({
               <span className="min-w-0 truncate font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
                 <VendorMark item={item} />
                 {" · "}
-                {formatDate(dateIso)}
+                {stampDate(dateIso)}
               </span>
             </div>
             <span className="shrink-0">

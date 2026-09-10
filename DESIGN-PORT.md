@@ -199,7 +199,7 @@ never existed in `styles.css`. That test failure predates this port and is untou
 | Frame | Route | Status |
 |---|---|---|
 | `21:2` | `/overview` | BUILT | Added `ReadingPanel` and `NotCovered` panels (Figma 21:2), both read-only and non-interactive. |
-| `22:220` | `/work` | BUILT (dense column cards, pass 1 of 2, 10 Sep 2026) |
+| `22:220` | `/work` | BUILT (full screen, pass 2 of 2, 10 Sep 2026) |
 | `23:413` | `/firm` | BUILT |
 | `27:635` | `/ai-record` | BUILT |
 | `29:833` | `/archive` | BUILT |
@@ -218,6 +218,13 @@ grouping. Column heads use mono stamps, counts and full-width hairlines. Work ro
 conversation cards use the frame's dense three-line presentation; all existing card
 controls remain available on touch screens and reveal on hover or keyboard focus at
 `md` and above. No action, handler, event, consent surface or route changed.
+
+Work page notes, 10 Sep 2026 (frame `22:220`, pass 2 of 2). The header now carries
+the connected-tool count and the optional Add work by hand control; its existing
+control row rests collapsed and reopens for add mode or select mode. Added the local
+Claimed by you filter, short dense-card date stamps, and the frame's 2:1 foot panels.
+Map them enters the existing select mode; every existing control and handler remains.
+No event, payload, dimension, consent surface, route or route parameter changed.
 
 Engagement page notes, 10 Sep 2026 (frame `36:1936`). Added: hand-written breadcrumb
 back to `/work` above the title; the engagement code / client / term trail follows
