@@ -23,6 +23,9 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { InviteDialog } from "@/components/invites/InviteDialog";
 import { OrgDataCard } from "@/components/settings/YourDataCard";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { SectionHeader } from "@/components/notebook/SectionHeader";
+import { ToneCard } from "@/components/notebook/ToneCard";
 import {
   INVITE_ADMIN_ONLY_LINE,
   INVITE_RESEND_ADMIN_ONLY_LINE,
@@ -46,6 +49,23 @@ function dateLabel(iso: string | null): string {
     day: "numeric",
     year: "numeric",
   });
+}
+
+function initials(displayName: string): string {
+  return displayName
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part.charAt(0))
+    .join("")
+    .toUpperCase();
+}
+
+function whatTheyCanSee(role: string, isYou: boolean) {
+  if (isYou) return "Your own work, all of it";
+  if (role === "coach") return "Work you shared, on their engagements";
+  if (role === "admin") return "Firm counts only, never a person's work";
+  return "Their own work";
 }
 
 function Badge({
@@ -84,31 +104,42 @@ function PlanSection({
   business: boolean;
 }) {
   if (!entitlement) {
-    return <p className="text-sm text-muted-foreground">No plan on file.</p>;
+    return (
+      <section>
+        <SectionHeader title="Plan" />
+        <p className="text-sm text-muted-foreground">No plan on file.</p>
+      </section>
+    );
   }
 
   const renewal = entitlement.ends_at ? dateLabel(entitlement.ends_at) : "No end date";
 
   if (!business) {
     return (
-      <p className="text-sm text-muted-foreground">
-        {planLine(entitlement)}.{" "}
-        {renewal === "No end date" ? "No end date." : `Runs to ${renewal}.`}
-      </p>
+      <section>
+        <SectionHeader title="Plan" />
+        <p className="text-sm text-muted-foreground">
+          {planLine(entitlement)}.{" "}
+          {renewal === "No end date" ? "No end date." : `Runs to ${renewal}.`}
+        </p>
+      </section>
     );
   }
 
   return (
-    <section className="rounded-[var(--radius)] border border-border bg-card px-5 py-4 shadow-card">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="micro-label micro-label-section">Plan</h2>
+    <section>
+      <SectionHeader
+        title="Plan"
+        action={entitlement.status === "active" ? null : <Badge>{entitlement.status}</Badge>}
+      />
+      <div className="border-l border-border pl-4">
         {entitlement.status === "active" ? null : <Badge>{entitlement.status}</Badge>}
+        <p className="text-sm font-medium text-foreground">{planLine(entitlement)}</p>
+        <p className="mt-1 text-sm text-muted-foreground">{seatsLine(entitlement)}</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {renewal === "No end date" ? "No end date." : `Runs to ${renewal}.`}
+        </p>
       </div>
-      <p className="mt-2 text-sm font-medium text-foreground">{planLine(entitlement)}</p>
-      <p className="mt-1 text-sm text-muted-foreground">{seatsLine(entitlement)}</p>
-      <p className="mt-1 text-sm text-muted-foreground">
-        {renewal === "No end date" ? "No end date." : `Runs to ${renewal}.`}
-      </p>
     </section>
   );
 }
@@ -172,13 +203,17 @@ function MembersConsole() {
     (i) => !i.used_at && !i.revoked_at && new Date(i.expires_at) > new Date(),
   );
   const history = invites.filter((i) => !pending.includes(i));
+  const metaLine = data
+    ? `${data.members.length} people · ${data.entitlement?.coaches ?? 0} coaches · a role decides what someone can see, never what they can be told`
+    : copy.blurb;
 
   return (
     <div>
-      <header className="mb-8">
-        <h1 className="page-title">{copy.title}</h1>
-        <p className="mt-1.5 text-sm text-muted-foreground">{copy.blurb}</p>
-      </header>
+      <PageHeader
+        title={copy.title}
+        subtitle={metaLine}
+        italicWord={business ? "of the firm" : undefined}
+      />
 
       {isLoading ? <p className="text-sm text-muted-foreground">Loading…</p> : null}
       {error ? (
@@ -188,13 +223,12 @@ function MembersConsole() {
       ) : null}
 
       {data ? (
-        <div className="space-y-10">
-          <PlanSection entitlement={data.entitlement} business={business} />
-          {isAdmin ? <OrgDataCard /> : null}
-          <section>
-            <div className="flex items-center justify-between gap-3">
-              <h2 className="micro-label micro-label-section">{copy.people}</h2>
-              {isAdmin ? (
+        <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-10">
+          <div className="space-y-10">
+            <section>
+              <SectionHeader
+                title="People"
+                action={isAdmin ? (
                 <InviteDialog
                   showHistory={false}
                   {...(business ? {} : { defaultRole: "coach" as const })}
@@ -205,146 +239,192 @@ function MembersConsole() {
                     </Button>
                   }
                 />
-              ) : null}
-            </div>
-            <ul className="mt-3 space-y-1.5">
-              {data.members.map((member) => (
-                <li
-                  key={member.id}
-                  className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-[var(--radius)] border border-border bg-card px-4 py-3 shadow-card"
-                >
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-foreground">
-                      {member.display_name}
-                    </p>
-                    <p className="truncate text-xs text-muted-foreground">
-                      {member.email ?? "No login email"} · joined {dateLabel(member.created_at)}
-                    </p>
+                ) : null}
+              />
+              <div className="overflow-x-auto">
+                <div className="min-w-[700px]">
+                  <div className="grid grid-cols-[minmax(220px,1.15fr)_140px_minmax(230px,1fr)_auto] gap-4 border-b border-border px-2 pb-2 font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
+                    <span>Name</span>
+                    <span>Role</span>
+                    <span>What they can see</span>
+                    <span className="sr-only">Actions</span>
                   </div>
-                  <Badge>{ROLE_LABELS[member.role] ?? member.role}</Badge>
-                  {member.deactivated_at ? (
-                    <Badge>Deactivated {dateLabel(member.deactivated_at)}</Badge>
-                  ) : (
-                    <Badge tone="accent">Active</Badge>
-                  )}
-                  {member.role === "coach" && !member.deactivated_at && profile ? (
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setShareTarget(member)}
+                  {data.members.map((member) => (
+                    <div
+                      key={member.id}
+                      className="grid min-h-16 grid-cols-[minmax(220px,1.15fr)_140px_minmax(230px,1fr)_auto] items-center gap-4 border-b border-border px-2 py-3"
                     >
-                      Share work with {member.display_name.split(" ")[0]}
-                    </Button>
-                  ) : null}
-                  {isAdmin ? (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger
-                        aria-label={`Actions for ${member.display_name}`}
-                        className="rounded-md p-1.5 text-foreground/60 transition-colors hover:bg-secondary"
-                      >
-                        <MoreHorizontal className="h-4 w-4" />
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        {isAdmin && member.deactivated_at ? (
-                          <DropdownMenuItem
-                            onSelect={() =>
-                              run(
-                                { kind: "reactivate", member_id: member.id },
-                                `${member.display_name} can access this workspace again`,
-                              )
-                            }
+                      <div className="flex min-w-0 items-center gap-3">
+                        <span className="flex size-7 shrink-0 items-center justify-center rounded-full border border-border bg-card font-mono text-[10px] text-foreground">
+                          {initials(member.display_name)}
+                        </span>
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium text-foreground">
+                            {member.display_name}
+                          </p>
+                          <p className="truncate text-xs text-muted-foreground">
+                            {member.email ?? "No login email"} · joined {dateLabel(member.created_at)}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <Badge>{ROLE_LABELS[member.role] ?? member.role}</Badge>
+                        {member.deactivated_at ? (
+                          <Badge>Deactivated {dateLabel(member.deactivated_at)}</Badge>
+                        ) : (
+                          <Badge tone="accent">Active</Badge>
+                        )}
+                      </div>
+                      <p className="text-xs leading-5 text-muted-foreground">
+                        {whatTheyCanSee(member.role, member.id === profile?.id)}
+                      </p>
+                      <div className="flex items-center justify-end gap-2">
+                        {member.role === "coach" && !member.deactivated_at && profile ? (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setShareTarget(member)}
                           >
-                            Reactivate
-                          </DropdownMenuItem>
+                            Share work with {member.display_name.split(" ")[0]}
+                          </Button>
                         ) : null}
-                        {isAdmin && !member.deactivated_at ? (
-                          <DropdownMenuItem onSelect={() => setConfirm(member)}>
-                            Deactivate
-                          </DropdownMenuItem>
+                        {isAdmin ? (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger
+                              aria-label={`Actions for ${member.display_name}`}
+                              className="rounded-md p-1.5 text-foreground/60 transition-colors hover:bg-secondary"
+                            >
+                              <MoreHorizontal className="h-4 w-4" />
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              {isAdmin && member.deactivated_at ? (
+                                <DropdownMenuItem
+                                  onSelect={() =>
+                                    run(
+                                      { kind: "reactivate", member_id: member.id },
+                                      `${member.display_name} can access this workspace again`,
+                                    )
+                                  }
+                                >
+                                  Reactivate
+                                </DropdownMenuItem>
+                              ) : null}
+                              {isAdmin && !member.deactivated_at ? (
+                                <DropdownMenuItem onSelect={() => setConfirm(member)}>
+                                  Deactivate
+                                </DropdownMenuItem>
+                              ) : null}
+                              {isAdmin && business && member.role !== "coach" ? (
+                                <DropdownMenuItem
+                                  onSelect={() => {
+                                    setRoleTarget(member);
+                                    setNextRole(member.role === "lead" ? "lead" : "em");
+                                  }}
+                                >
+                                  Change role
+                                </DropdownMenuItem>
+                              ) : null}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         ) : null}
-                        {isAdmin && business && member.role !== "coach" ? (
-                          <DropdownMenuItem
-                            onSelect={() => {
-                              setRoleTarget(member);
-                              setNextRole(member.role === "lead" ? "lead" : "em");
-                            }}
-                          >
-                            Change role
-                          </DropdownMenuItem>
-                        ) : null}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  ) : null}
-                </li>
-              ))}
-            </ul>
-            {!isAdmin ? (
-              <>
-                <p className="mt-2 text-xs text-muted-foreground">
-                  Leads can see the list. Only an admin can change it.
-                </p>
-                <p className="mt-1 text-xs text-muted-foreground">{INVITE_ADMIN_ONLY_LINE}</p>
-              </>
-            ) : null}
-          </section>
-
-          <section>
-            <h2 className="micro-label micro-label-section">Pending invites</h2>
-            {!isAdmin && canManageInvites ? (
-              <p className="mt-2 text-xs text-muted-foreground">
-                {INVITE_RESEND_ADMIN_ONLY_LINE}
-              </p>
-            ) : null}
-            {pending.length === 0 ? (
-              <p className="mt-2 text-sm text-muted-foreground">{copy.empty}</p>
-            ) : (
-              <ul className="mt-3 space-y-1.5">
-                {pending.map((invite) => (
-                  <InviteLine
-                    key={invite.code}
-                    invite={invite}
-                    {...(canManageInvites
-                      ? {
-                          onRevoke: () =>
-                            run({ kind: "revoke", code: invite.code }, "Invite withdrawn"),
-                          busy: action.isPending,
-                          // Minting is admin only now, so a lead's resend would
-                          // be refused server side. Copy link and Withdraw stay.
-                          ...(isAdmin
-                            ? {
-                                onResend: () =>
-                                  run({ kind: "resend", code: invite.code }, (result) =>
-                                    resendMessage(result),
-                                  ),
-                              }
-                            : {}),
-                        }
-                      : {})}
-                  />
-                ))}
-              </ul>
-            )}
-          </section>
-
-          {history.length > 0 ? (
-            <section>
-              <button
-                type="button"
-                onClick={() => setShowHistory((v) => !v)}
-                className="micro-label transition-colors hover:text-foreground"
-              >
-                {showHistory ? "Hide" : "Show"} invite history ({history.length})
-              </button>
-              {showHistory ? (
-                <ul className="mt-3 space-y-1.5 opacity-55">
-                  {history.map((invite) => (
-                    <InviteLine key={invite.code} invite={invite} />
+                      </div>
+                    </div>
                   ))}
-                </ul>
+                </div>
+              </div>
+              {!isAdmin ? (
+                <>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Leads can see the list. Only an admin can change it.
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">{INVITE_ADMIN_ONLY_LINE}</p>
+                </>
               ) : null}
             </section>
-          ) : null}
+
+            <section>
+              <SectionHeader title="Pending invites" />
+              {!isAdmin && canManageInvites ? (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  {INVITE_RESEND_ADMIN_ONLY_LINE}
+                </p>
+              ) : null}
+              {pending.length === 0 ? (
+                <p className="mt-2 text-sm text-muted-foreground">{copy.empty}</p>
+              ) : (
+                <ul className="mt-3 space-y-1.5">
+                  {pending.map((invite) => (
+                    <InviteLine
+                      key={invite.code}
+                      invite={invite}
+                      {...(canManageInvites
+                        ? {
+                            onRevoke: () =>
+                              run({ kind: "revoke", code: invite.code }, "Invite withdrawn"),
+                            busy: action.isPending,
+                            // Minting is admin only now, so a lead's resend would
+                            // be refused server side. Copy link and Withdraw stay.
+                            ...(isAdmin
+                              ? {
+                                  onResend: () =>
+                                    run({ kind: "resend", code: invite.code }, (result) =>
+                                      resendMessage(result),
+                                    ),
+                                }
+                              : {}),
+                          }
+                        : {})}
+                    />
+                  ))}
+                </ul>
+              )}
+            </section>
+
+            {history.length > 0 ? (
+              <section>
+                <button
+                  type="button"
+                  onClick={() => setShowHistory((v) => !v)}
+                  className="micro-label transition-colors hover:text-foreground"
+                >
+                  {showHistory ? "Hide" : "Show"} invite history ({history.length})
+                </button>
+                {showHistory ? (
+                  <ul className="mt-3 space-y-1.5 opacity-55">
+                    {history.map((invite) => (
+                      <InviteLine key={invite.code} invite={invite} />
+                    ))}
+                  </ul>
+                ) : null}
+              </section>
+            ) : null}
+          </div>
+
+          <aside className="mt-10 space-y-8 lg:mt-0">
+            <PlanSection entitlement={data.entitlement} business={business} />
+            {isAdmin ? <OrgDataCard /> : null}
+            <ToneCard tone="record" label="WHAT A ROLE CHANGES" className="gap-3 p-4">
+              <p className="text-sm leading-6 text-foreground">
+                A role changes what someone can see. It never changes what someone can be told.
+              </p>
+              <dl className="space-y-3 border-t border-border pt-3">
+                <div>
+                  <dt className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">Member</dt>
+                  <dd>Their own work.</dd>
+                </div>
+                <div>
+                  <dt className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">Coach</dt>
+                  <dd>Only work someone has shared with them.</dd>
+                </div>
+                <div>
+                  <dt className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">Admin</dt>
+                  <dd>Firm counts, never a person&apos;s work.</dd>
+                </div>
+              </dl>
+              <p className="font-hand text-green">nobody gets promoted into seeing your drafts</p>
+            </ToneCard>
+          </aside>
         </div>
       ) : null}
 
