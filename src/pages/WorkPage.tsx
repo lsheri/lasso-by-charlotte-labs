@@ -62,6 +62,7 @@ import {
 } from "@/lib/work-types";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { ToneCard } from "@/components/notebook/ToneCard";
+import { WorkSubtitle } from "@/components/work/WorkSubtitle";
 import { sourceVendorKey } from "@/components/work/SourceMark";
 import { BUCKETS, bucketFor } from "@/components/work/work-buckets";
 
@@ -98,6 +99,10 @@ export function WorkPage() {
   const [showPrivate, setShowPrivate] = useState(true);
   // Presentation-only filter for the type columns. Local state, no query.
   const [columnFilter, setColumnFilter] = useState<string>("all");
+  // Figma 22:220 rests with one control on the header: "Add work by hand". The
+  // ways work gets in are all still here, they just wait behind it instead of
+  // filling a bar under the title.
+  const [addOpen, setAddOpen] = useState(false);
 
   const all = data?.items ?? [];
   const mappingError = data?.mappingError ?? null;
@@ -402,9 +407,7 @@ export function WorkPage() {
     }
   }
 
-  const subtitle = `${all.length} piece${all.length === 1 ? "" : "s"} of work · ${
-    unmapped.length
-  } unmapped`;
+  const subtitle = <WorkSubtitle pieces={all.length} unmapped={unmapped.length} />;
 
   const engagementCodes = Array.from(
     new Set(
@@ -422,9 +425,11 @@ export function WorkPage() {
       ? visible
       : columnFilter === "unmapped"
         ? visible.filter((item) => item.visibility === "unmapped")
-        : visible.filter(
-            (item) => item.work_item_tasks[0]?.tasks?.engagements?.code === columnFilter,
-          );
+        : columnFilter === "claimed"
+          ? visible.filter((item) => item.visibility === "mapped")
+          : visible.filter(
+              (item) => item.work_item_tasks[0]?.tasks?.engagements?.code === columnFilter,
+            );
 
   const chipBase = "rounded-full px-3 py-1 text-[11.5px] transition-colors";
   const chipOn = `${chipBase} border border-graphite bg-nb-white font-medium text-foreground`;
@@ -472,8 +477,28 @@ export function WorkPage() {
   return (
     <div>
       <GettingStartedCard />
-      <PageHeader title="All" italicWord="work" subtitle={subtitle} />
-      <div className="mb-6 flex flex-wrap items-center gap-2">
+      <PageHeader
+        title="All"
+        italicWord="work"
+        subtitle={subtitle}
+        action={
+          !isCoach ? (
+            <Button
+              type="button"
+              variant="outline"
+              aria-expanded={addOpen}
+              onClick={() => setAddOpen((open) => !open)}
+            >
+              {addOpen ? "Done adding" : "Add work by hand"}
+            </Button>
+          ) : undefined
+        }
+      />
+      {/* Also opens itself whenever select mode is on, so "Map them" in the
+          unmapped panel never turns on a mode whose controls are hidden. */}
+      <div
+        className={`mb-6 flex-wrap items-center gap-2 ${addOpen || selectMode ? "flex" : "hidden"}`}
+      >
           {unmapped.length > 0 ? (
             <button
               type="button"
@@ -617,6 +642,16 @@ export function WorkPage() {
           >
             Unmapped
           </button>
+          {/* Figma 22:220 sits "Claimed by you" third. Claiming IS mapping from
+              the person's side — there is no separate claim flag in the record —
+              so this filters on the mapped state rather than inventing one. */}
+          <button
+            type="button"
+            onClick={() => setColumnFilter("claimed")}
+            className={columnFilter === "claimed" ? chipOn : chipOff}
+          >
+            Claimed by you
+          </button>
           {engagementCodes.map((code) => (
             <button
               key={code}
@@ -715,49 +750,57 @@ export function WorkPage() {
           ) : null}
 
 
-          <div className="grid gap-4 lg:grid-cols-2">
+          {/* Figma 22:220 foots the page with two panels at roughly 2:1, not
+              two equal halves: the unmapped callout carries a paragraph and a
+              decision, the origins panel is a narrow tally. */}
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
             {unmapped.length > 0 ? (
-              <ToneCard
-                tone="attention"
-                label={`${unmapped.length} UNMAPPED`}
-                title="Unmapped work is private and appears in no receipt."
-              >
-                <p>
-                  Nobody else can see it and it counts towards nothing until you map it to a
-                  workstream. Mapping is the moment you decide it belongs to a piece of work.
+              <ToneCard tone="attention" label={`${unmapped.length} UNMAPPED`}>
+                <p className="leading-[19px]">
+                  Unmapped work is private and belongs to no engagement. It is not in any receipt,
+                  no coach can see it, and it will not appear in the firm view until you map it.
                 </p>
-                {unmapped.length > 0 ? (
-                  <div className="mt-3">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      disabled={suggesting}
-                      onClick={() => void handleSuggest()}
-                    >
-                      {suggesting ? "Thinking…" : "Suggest where these go"}
-                    </Button>
-                  </div>
-                ) : null}
+                <div className="mt-3 flex flex-wrap items-center gap-3">
+                  {/* The frame's primary. Mapping starts by choosing which pieces
+                      you mean, which is exactly what select mode is for. */}
+                  <Button type="button" size="sm" onClick={() => setSelectMode(true)}>
+                    Map them
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={suggesting}
+                    onClick={() => void handleSuggest()}
+                  >
+                    {suggesting ? "Thinking…" : "Suggest where these go"}
+                  </Button>
+                  <span className="font-hand text-[16px] text-green">leave them private</span>
+                </div>
               </ToneCard>
             ) : null}
 
-            <ToneCard tone="paper" label="WHERE THIS CAME FROM" title="Every piece has an origin.">
+            <ToneCard tone="paper" label="WHERE THIS CAME FROM">
+              {/* The frame runs name, bar and count on ONE line, so the panel
+                  reads as a tally rather than a stack of stacked rows. */}
               <ul className="mt-1 space-y-2">
                 {sourceCounts.map((row) => (
-                  <li key={row.label}>
-                    <div className="flex items-center justify-between gap-3">
-                      <span>{row.label}</span>
-                      <span className="font-mono text-[10px] text-soft">{row.count}</span>
-                    </div>
-                    <div className="mt-1 h-1.5 rounded-full bg-[var(--nb-pencil)]">
+                  <li key={row.label} className="flex items-center gap-3">
+                    <span className="min-w-0 flex-1 truncate">{row.label}</span>
+                    <span
+                      aria-hidden
+                      className="h-1.5 w-20 shrink-0 rounded-full bg-[var(--nb-pencil)]"
+                    >
                       <span
                         className="block h-1.5 rounded-full bg-foreground"
                         style={{
                           width: `${sourceMax > 0 ? Math.round((row.count / sourceMax) * 100) : 0}%`,
                         }}
                       />
-                    </div>
+                    </span>
+                    <span className="w-5 shrink-0 text-right font-mono text-[10px] text-soft">
+                      {row.count}
+                    </span>
                   </li>
                 ))}
               </ul>
