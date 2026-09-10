@@ -74,6 +74,29 @@ export function DecisionLogRow({
           </div>
         ) : null}
 
+        {onConfirm || onDiscard ? (
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            {decision.status === "draft" && onConfirm ? (
+              <button
+                type="button"
+                onClick={() => onConfirm(decision)}
+                className="rounded-[var(--radius-control)] border-[1.2px] border-graphite bg-nb-white px-3 py-1 text-[11.5px] font-medium text-foreground transition-colors hover:bg-secondary"
+              >
+                Confirm this call
+              </button>
+            ) : null}
+            {onDiscard ? (
+              <button
+                type="button"
+                onClick={() => onDiscard(decision)}
+                className="font-hand text-[15px] text-soft transition-colors hover:text-foreground"
+              >
+                discard
+              </button>
+            ) : null}
+          </div>
+        ) : null}
+
         <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
           {decision.author === "human" ? "You decided" : "Lasso drafted"}
         </p>

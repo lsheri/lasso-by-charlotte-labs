@@ -153,6 +153,8 @@ export function DecisionsPage() {
                   decision={d}
                   onOpenSource={setSourceItem}
                   onAddReasoning={startReasoning}
+                  onConfirm={confirmDecision}
+                  onDiscard={discardDecision}
                 />
                 {reasoningFor?.id === d.id ? (
                   <div className="pb-5 pl-0 sm:pl-[100px]">
