@@ -98,9 +98,9 @@ describe("92.2 shelf typography", () => {
   const styles = read("src/styles.css");
   const nav = read("src/components/layout/SidebarNav.tsx");
 
-  it("gives shelf headers the micro label voice in the section blue", () => {
+  it("gives shelf headers the micro label voice in muted text", () => {
     expect(styles).toContain(".nb-nav-shelf");
-    expect(styles).toMatch(/\.nb-nav-shelf\s*{[^}]*var\(--nb-blue\)/);
+    expect(styles).toMatch(/\.nb-nav-shelf\s*{[^}]*var\(--nb-soft\)/);
     expect(styles).toMatch(/\.nb-nav-shelf\s*{[^}]*uppercase/);
   });
 
