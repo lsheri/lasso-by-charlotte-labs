@@ -425,18 +425,55 @@ export function WorkPage() {
     }
   }
 
+  const subtitle = `${all.length} piece${all.length === 1 ? "" : "s"} of work · ${
+    unmapped.length
+  } unmapped`;
+
+  const engagementCodes = Array.from(
+    new Set(
+      mapped
+        .map((item) => item.work_item_tasks[0]?.tasks?.engagements?.code)
+        .filter((code): code is string => Boolean(code)),
+    ),
+  ).sort((a, b) => a.localeCompare(b));
+
+  const filtered =
+    columnFilter === "all"
+      ? all
+      : columnFilter === "unmapped"
+        ? all.filter((item) => item.visibility === "unmapped")
+        : all.filter(
+            (item) => item.work_item_tasks[0]?.tasks?.engagements?.code === columnFilter,
+          );
+
+  const chipBase = "rounded-full px-3 py-1 text-[11.5px] transition-colors";
+  const chipOn = `${chipBase} border border-graphite bg-nb-white font-medium text-foreground`;
+  const chipOff = `${chipBase} border border-[var(--nb-pencil)] text-muted-foreground hover:border-foreground`;
+
+  /** Where the work came from, counted client-side off the loaded items. */
+  const sourceCounts = (() => {
+    const counts = new Map<string, { label: string; count: number }>();
+    for (const item of all) {
+      const key = sourceVendorKey(item) ?? item.source ?? "other";
+      const row = counts.get(key) ?? { label: sourceLabel(item.source), count: 0 };
+      row.count += 1;
+      counts.set(key, row);
+    }
+    return Array.from(counts.values()).sort((a, b) => b.count - a.count);
+  })();
+  const sourceMax = sourceCounts.reduce((max, row) => Math.max(max, row.count), 0);
+
+  function cardMeta(item: WorkItemRow): string {
+    const code = item.work_item_tasks[0]?.tasks?.engagements?.code;
+    if (code) return code;
+    return item.visibility === "private" ? "PRIVATE" : "UNMAPPED";
+  }
+
   return (
     <div>
       <GettingStartedCard />
-      <header className="mb-8 flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="page-title">Work</h1>
-          <p className="page-subtitle">
-            {all.length} items · {mapped.length} mapped · {unmapped.length} unmapped · {priv.length}{" "}
-            private
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
+      <PageHeader title="All" italicWord="work" subtitle={subtitle} />
+      <div className="mb-6 flex flex-wrap items-center gap-2">
           {unmapped.length > 0 ? (
             <button
               type="button"
