@@ -173,83 +173,115 @@ export function ConnectorsPage() {
     );
   }
 
+  const connectedCount = accounts
+    ? Object.values(accounts).filter((a) => a?.status === "connected").length
+    : 0;
+  const totalCount = Object.keys(DESCRIPTIONS).length;
+  const notConnectedCount = Math.max(totalCount - connectedCount, 0);
+  const subtitle = `${connectedCount} connected · ${notConnectedCount} not · Lasso reads only what you point it at`;
+
   return (
     <div>
-      <header className="mb-8 flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="page-title">Where work lives</h1>
-          <p className="mt-1.5 max-w-xl text-sm text-muted-foreground">
-            Where the record comes from. Connect a tool once, new work lands in Work, unmapped and
-            private by default.
-          </p>
-        </div>
-        <Link
-          to="/onboarding"
-          search={{ setup: true }}
-          className="text-xs text-muted-foreground transition-colors hover:text-foreground"
-        >
-          Set up more tools
-        </Link>
-      </header>
+      <PageHeader title="Where work" italicWord="lives" subtitle={subtitle} />
 
       {error ? <p className="mb-6 text-sm text-destructive">{(error as Error).message}</p> : null}
 
-      <div className="space-y-10">
-        <Category title="Connect your AI · MCP" hue="--hue-slate-blue">
-          <ConnectYourAiCard />
-        </Category>
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="space-y-8">
+          <Category title="Connect your AI · MCP">
+            <ConnectYourAiCard />
+          </Category>
 
-        <Category title="Documents & files" hue="--hue-sand">
-          {card("googledrive")}
-          {card("one_drive")}
-          {card("sharepoint_graph")}
-          {card("notion")}
-        </Category>
+          <Category title="Documents & files">
+            <div className="grid gap-3 sm:grid-cols-2">
+              {card("googledrive")}
+              {card("one_drive")}
+              {card("sharepoint_graph")}
+              {card("notion")}
+            </div>
+          </Category>
 
-        <Category title="Email" hue="--hue-cyan">
-          {card("gmail")}
-        </Category>
+          <Category title="Email & messages">
+            <div className="grid gap-3 sm:grid-cols-2">
+              {card("gmail")}
+              {card("slack")}
+            </div>
+          </Category>
 
-        <Category title="Messages" hue="--hue-plum">
-          {card("slack")}
-        </Category>
+          <Category title="Meetings">
+            <div className="space-y-3">
+              <GranolaKeyCard />
+              <WisprCard />
+              <TranscriptsCard
+                connected={accounts?.["googledrive"]?.status === "connected"}
+                busy={busy === "googledrive"}
+                onConnect={() => void handleConnect("googledrive")}
+              />
+            </div>
+          </Category>
 
-        <Category title="Meetings" hue="--hue-clay">
-          <GranolaKeyCard />
-          <WisprCard />
-          <TranscriptsCard
-            connected={accounts?.["googledrive"]?.status === "connected"}
-            busy={busy === "googledrive"}
-            onConnect={() => void handleConnect("googledrive")}
-          />
-        </Category>
+          <Category title="Coming soon">
+            <div className="grid gap-3 sm:grid-cols-2">
+              {COMING_SOON.map((name) => (
+                <div
+                  key={name}
+                  className="flex items-center justify-between rounded-[var(--radius-lg)] border border-border bg-card/50 px-4 py-3 opacity-60"
+                >
+                  <p className="text-[13px] text-muted-foreground">{name}</p>
+                  <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+                    Coming soon
+                  </span>
+                </div>
+              ))}
+            </div>
+          </Category>
 
-        <Category title="Coming soon" hue="--hue-neutral">
-          <div className="space-y-2">
-            {COMING_SOON.map((name) => (
-              <div
-                key={name}
-                className="flex items-center justify-between rounded-[var(--radius)] border border-border bg-card/50 px-4 py-3 opacity-60"
+          <div className="rounded-[var(--radius-lg)] border border-border bg-card px-4 py-4">
+            <p className="text-[13px] text-foreground">
+              No connector? Paste or upload always works.
+            </p>
+            <div className="mt-1.5 flex flex-wrap items-center gap-4">
+              <Link to="/work" className="text-xs font-medium text-accent-deep hover:opacity-70">
+                Go to Work →
+              </Link>
+              <Link
+                to="/onboarding"
+                search={{ setup: true }}
+                className="text-xs text-muted-foreground transition-colors hover:text-foreground"
               >
-                <p className="text-sm text-muted-foreground">{name}</p>
-                <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
-                  Coming soon
-                </span>
-              </div>
-            ))}
+                Set up more tools
+              </Link>
+            </div>
           </div>
-        </Category>
-
-        <div className="rounded-[var(--radius)] border border-border bg-card px-4 py-4 shadow-card">
-          <p className="text-sm text-foreground">No connector? Paste or upload always works.</p>
-          <Link
-            to="/work"
-            className="mt-1 inline-block text-xs font-medium text-accent-deep hover:opacity-70"
-          >
-            Go to Work →
-          </Link>
         </div>
+
+        <aside className="space-y-3">
+          <ToneCard tone="record" label="WHAT LASSO READS" title="Only what you point it at.">
+            <ul className="space-y-1">
+              <li>The files you open in a connected tool</li>
+              <li>The conversations you send</li>
+              <li>The meetings you record</li>
+              <li>The documents you map to an engagement</li>
+            </ul>
+          </ToneCard>
+
+          <ToneCard tone="paper" label="WHAT LASSO NEVER READS" title="Everything else.">
+            <ul className="space-y-1">
+              <li>Anything in a tool you have not connected</li>
+              <li>Anything you have not sent</li>
+              <li>Your inbox</li>
+              <li>Your drive at large</li>
+            </ul>
+            <p className="mt-2">
+              Disconnecting stops the reading. It does not delete what is already on the record.
+            </p>
+          </ToneCard>
+        </aside>
       </div>
+
+      <p className="font-hand mt-6 text-[16px] text-green">
+        connect one. see what lands. connect the rest later.
+      </p>
     </div>
   );
 }
