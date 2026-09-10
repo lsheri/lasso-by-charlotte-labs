@@ -12,11 +12,16 @@ import { cn } from "@/lib/utils";
 export function PrivacyPanel() {
   const [isExpanded, setIsExpanded] = useState(false);
   return (
-    <ToneCard tone="record" label="PRIVATE BY DEFAULT" title="The work stays with the person who did it.">
-      <div className="mt-1">
+    <ToneCard tone="record" label="PRIVATE BY DEFAULT">
+      {/* Figma 23:413's own wording for this panel. */}
+      <p className="leading-[19px]">
+        Unmapped work never appears here. A person decides what becomes firm work, and can take it
+        back.
+      </p>
+      <div className="mt-3">
         <Button
           type="button"
-          variant="secondary"
+          variant="outline"
           size="sm"
           aria-expanded={isExpanded}
           onClick={() => setIsExpanded((s) => !s)}

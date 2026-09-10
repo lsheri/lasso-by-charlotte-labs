@@ -200,7 +200,7 @@ never existed in `styles.css`. That test failure predates this port and is untou
 |---|---|---|
 | `21:2` | `/overview` | BUILT | Added `ReadingPanel` and `NotCovered` panels (Figma 21:2), both read-only and non-interactive. |
 | `22:220` | `/work` | BUILT (full screen, pass 2 of 2, 10 Sep 2026) |
-| `23:413` | `/firm` | BUILT |
+| `23:413` | `/firm` | BUILT (production-first layout, 10 Sep 2026) |
 | `27:635` | `/ai-record` | BUILT |
 | `29:833` | `/archive` | BUILT |
 | `30:1012` | `/reflect` | BUILT |
@@ -225,6 +225,14 @@ control row rests collapsed and reopens for add mode or select mode. Added the l
 Claimed by you filter, short dense-card date stamps, and the frame's 2:1 foot panels.
 Map them enters the existing select mode; every existing control and handler remains.
 No event, payload, dimension, consent surface, route or route parameter changed.
+
+Firm page notes, 10 Sep 2026 (frame `23:413`). The page now leads with four large
+production figures, pairs the archive with the check library at 2:1, pairs the
+sharing and privacy panels the same way, and keeps every adoption and health tile
+below the frame's content under its own heading. The production figures use reads
+already present on this page; no action, event, consent surface, route or route
+parameter changed. The unavailable firm-wide decision count remains omitted rather
+than inferred, with Analyses run shown truthfully in that slot.
 
 Engagement page notes, 10 Sep 2026 (frame `36:1936`). Added: hand-written breadcrumb
 back to `/work` above the title; the engagement code / client / term trail follows
