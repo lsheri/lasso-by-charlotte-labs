@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { PageHeader } from "@/components/layout/PageHeader";
 import { MarkdownMessage } from "@/components/markdown/MarkdownMessage";
+import { ToneCard } from "@/components/notebook/ToneCard";
 import { AnswerSources } from "@/components/reflect/AnswerSources";
 import { ContextAudit, ThinkingTrail } from "@/components/reflect/ContextTrail";
 import { CoverageNote } from "@/components/reflect/CoverageNote";
@@ -15,6 +16,7 @@ import {
   type ChipTarget,
 } from "@/components/reflect/ChatAnalyses";
 import { AiRecordPointer } from "@/components/reflect/AiRecordPointer";
+import { WeekRail } from "@/components/reflect/WeekRail";
 import { WorkScopePicker, scopeSentence } from "@/components/reflect/WorkScopePicker";
 import {
   AlertDialog,
@@ -145,6 +147,7 @@ export function ReflectPage() {
   }, [messages?.length, pending, analyses.results.length, scopeNotes.length]);
 
   const shape = chipShape(scope, all);
+  const scopedItems = itemsInScope(scope, all);
   const chipTarget: ChipTarget =
     shape.kind === "item"
       ? { kind: "item", id: shape.item.id, title: shape.item.title, scope: shape.scope }
@@ -318,7 +321,8 @@ export function ReflectPage() {
   return (
     <div>
       <PageHeader
-        title="Reflect"
+        title="Reflect on your"
+        italicWord="week"
         subtitle="A private thinking space over your own recorded work."
       />
 
@@ -326,7 +330,7 @@ export function ReflectPage() {
         <AiRecordPointer />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[240px_1fr]">
+      <div className="space-y-6 lg:grid lg:grid-cols-[240px_minmax(0,1fr)_320px] lg:gap-8 lg:space-y-0">
         <aside className="space-y-2">
           <Button className="w-full" onClick={() => void newSession()}>
             New session
@@ -433,7 +437,9 @@ export function ReflectPage() {
                         <>
                           <MarkdownMessage content={message.content} variant="binder" />
                           <div className="nb-binder-inset">
-                            <ContextAudit manifest={parseManifest(message.context_manifest)} />
+                            <ToneCard tone="record" label="WHAT WE PULLED FOR THIS PROMPT">
+                              <ContextAudit manifest={parseManifest(message.context_manifest)} />
+                            </ToneCard>
                             <AnswerSources
                               sources={sourcesByMessage?.[Number(message.id)] ?? []}
                             />
@@ -516,10 +522,24 @@ export function ReflectPage() {
                     Send
                   </Button>
                 </div>
+                 <p className="text-xs text-muted-foreground">
+                   You can answer none of these. Reflections are yours, and no coach sees a draft.
+                 </p>
+                 <p className="font-hand text-[16px] text-green">
+                   answer in a sentence, not a paragraph
+                 </p>
               </div>
             </>
           )}
         </section>
+
+        <aside className="space-y-4">
+          <WeekRail items={scopedItems} />
+          <ToneCard tone="record" label="WHERE THIS GOES">
+            <p>Your answers become the 1:1 prep, and nothing else.</p>
+            <p>A coach sees a reflection only when you send it.</p>
+          </ToneCard>
+        </aside>
       </div>
 
       <WorkScopePicker
