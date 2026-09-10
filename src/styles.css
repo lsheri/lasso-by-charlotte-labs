@@ -968,10 +968,13 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 }
 
 /* Sidebar grammar (pass 84). */
+/* Figma 12:2: a nav group header is handwritten, Caveat Bold 16px at
+   text/primary. It is a section title in the notebook voice, not a sans label. */
 .nb-group-header {
-  font-family: var(--font-sans);
-  font-size: 12px;
+  font-family: var(--font-hand);
+  font-size: 16px;
   font-weight: 700;
+  line-height: 1.2;
   letter-spacing: 0.01em;
   color: var(--nb-ink);
 }
