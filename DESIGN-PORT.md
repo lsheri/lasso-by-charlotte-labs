@@ -57,7 +57,7 @@ Never promote a row to `VERIFIED` yourself.
 | 00 · Read me | — | The re-skin contract. Its BUILD ORDER checklist is STALE, do not treat it as state. |
 | 01 · Screen inventory | — | Frame to route map, real field names, real states. |
 | 02 · Variables | — | Token definitions. See project knowledge rule 10. |
-| 03 · Library · Atoms | `1:4` | Button, Icon, Avatar, Mark. |
+| 03 · Library · Atoms | `1:4` | Button, Icon, Avatar, Mark, Chip, Counter, StatusChip, Field, plus a 34-logo attribution-mark board. |
 | 04 · Library · Surfaces | `1:5` | Cards and surfaces. |
 | 05 · Library · Chrome | `1:6` | Sidebar, PageHeader, Tabs, Composer, MobileTabBar. |
 | 06 · Motion registry | `1:7` | 22 events to 15 motions. Frame `18:2`. |
@@ -172,7 +172,7 @@ unbuilt event.
 Keyframes, easing curves and durations are not in this document. Pull them per motion
 from Figma with `get_motion_context` on node `1:7` at build time, so this file never
 goes stale against the design.
-| Atoms | PARTIAL | `GraphiteIcon` is complete and correct. Button reviewed. |
+| Atoms | BUILT | Avatar, Field and StatusChip skinned 10 Sep 2026; atoms tokens added to `styles.css`. HELD, needing a decision: Button primary fill (code is ember, Figma is graphite `--nb-ink-90`), Chip and Counter (no production mapping yet), the two icon glyphs that differ (`messages`, `decisions`), and the 34-logo attribution board against the smaller `BrandKey` set. `GraphiteIcon` is complete; the Figma icon set is a 13-name subset of its 24, not one-to-one. |
 | Surfaces | PARTIAL | `ToneCard`, `SectionHeader` exist. |
 | Chrome | BUILT, KNOWN DIVERGENT | See the sidebar note below. |
 
