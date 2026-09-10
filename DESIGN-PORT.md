@@ -204,7 +204,7 @@ never existed in `styles.css`. That test failure predates this port and is untou
 | `27:635` | `/ai-record` | BUILT (hairline list port, 10 Sep 2026) |
 | `29:833` | `/archive` | BUILT (filed two-column layout, 10 Sep 2026) |
 | `30:1012` | `/reflect` | BUILT (partial) | Header, week rail and "Where this goes" card restyled. The frame's three-prompt exercise is NOT built because it replaces the working session list, message history and analysis path and needs a prompt generator and per-turn provenance that do not exist. |
-| `30:1419` | `/decisions` | BUILT |
+| `30:1419` | `/decisions` | BUILT | Header action slot now carries an outline "Log a decision" button. Rail copy and headline numbers restyled; omitted: "Reversed" chip and the two rail counts for reversed/reused decisions because the schema has no reversed state and no reuse count. No-reasoning row now explains why the reasoning matters. |
 | `32:1323` | `/one-on-one` | BUILT |
 | `32:1709` | `/coach-notes` | BUILT |
 | `34:1632` | `/connectors` | BUILT |

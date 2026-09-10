@@ -104,16 +104,22 @@ export function DecisionsPage() {
 
   return (
     <div>
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <PageHeader title="Decision" italicWord="log" subtitle={metaLine} />
-        <AddDecisionDialog
-          trigger={
-            <Button type="button" variant="secondary">
-              Log a decision
-            </Button>
-          }
-        />
-      </div>
+      {/* Figma 30:1419 hangs "Log a decision" off the title's baseline as a
+          quiet outline control, not a filled secondary beside the header. */}
+      <PageHeader
+        title="Decision"
+        italicWord="log"
+        subtitle={metaLine}
+        action={
+          <AddDecisionDialog
+            trigger={
+              <Button type="button" variant="outline">
+                Log a decision
+              </Button>
+            }
+          />
+        }
+      />
 
       <div className="mb-6 flex flex-wrap gap-2">
         {FILTERS.map((f) => (
@@ -208,6 +214,14 @@ function DecisionRail({
   withReasoning: number;
   drafts: number;
 }) {
+  /**
+   * Figma 30:1419 stacks three numbers here: "19 carry the reasoning",
+   * "4 later reversed", "7 reused by someone else".
+   *
+   * Deliberate deviation, recorded rather than faked: the `decisions` table has
+   * no reversed state and nothing counts reuse of a decision, so those two are
+   * not invented. The three counts below are the ones the log can stand behind.
+   */
   const stats: Array<[number, string]> = [
     [rows, "decisions logged"],
     [withReasoning, "carry the reasoning"],
@@ -215,19 +229,25 @@ function DecisionRail({
   ];
   return (
     <aside className="space-y-6">
+      {/* The frame's own wording. It says why the reasoning is the part worth
+          keeping, rather than restating what the log is. */}
       <ToneCard
         tone="record"
         label="WHY THE LOG EXISTS"
         title="A decision without its reasoning is just a fact."
       >
-        A call you can see is a record. A call you can explain is a lesson. The log keeps both, and
-        it keeps them dated.
+        Six months from now, the reasoning is the part nobody can reconstruct. The log is not a
+        record of being right, it is a record of what you knew.
       </ToneCard>
 
       <div>
         {stats.map(([value, caption]) => (
           <div key={caption} className="border-b border-border py-3">
-            <div className="text-[26px] font-semibold leading-[30px] text-foreground">{value}</div>
+            {/* Instrument Serif at display size, the way the frame sets a
+                headline number: light and roomy, never bold. */}
+            <div className="font-serif text-[30px] leading-[36px] tabular-nums text-foreground">
+              {value}
+            </div>
             <div className="mt-0.5 text-[11.5px] text-muted-foreground">{caption}</div>
           </div>
         ))}
