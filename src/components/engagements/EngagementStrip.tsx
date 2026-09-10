@@ -3,6 +3,7 @@ import { useEffect, useState, type Dispatch, type ReactNode, type SetStateAction
 import { ToneCard } from "@/components/notebook/ToneCard";
 import { Button } from "@/components/ui/button";
 import { useEngagementDecisions, srcsOf } from "@/hooks/use-decisions";
+import { useShippedWork } from "@/hooks/use-shipped-work";
 import { engagementDisplayCode } from "@/lib/clients";
 import type { EngagementRow } from "@/lib/engagement-page-shared";
 import { effectiveWorkDate, formatDate, type WorkItemRow } from "@/lib/work-types";
@@ -25,16 +26,19 @@ function shortDate(value: string | null | undefined): string {
 /**
  * Figma 36:1936, node 36:2086 "engagement strip · expanded".
  *
- * It is a STRIP: a full-width horizontal band under the page header, 1080 wide
- * in the frame, holding two horizontal rows — the workstreams, then the shipped
- * cards side by side. It is not a sidebar panel. That is what the frame's own
- * caption means by "the strip opens once, then gets out of the way": it spans
- * the page, then collapses to a thin bar and hands the page back.
+ * A full-width horizontal band under the page header holding two horizontal
+ * rows: the workstreams with their fill bars, then the shipped cards abreast.
+ * The frame's own caption is the brief: "the strip opens once, then gets out
+ * of the way".
+ *
+ * Tone carries meaning here, per ToneCard's contract. A deliverable that has
+ * been shipped to the firm wears the record green and says how much of it was
+ * checked at source. One that has not wears the claim yellow and says what is
+ * being asked of you.
  *
  * `expanded` / `onExpandedChange` are OPTIONAL. Passing them makes the strip
  * controlled, so a composer rendered elsewhere on the page can still collapse
- * it. Omitting them keeps the original self-managed behaviour, so existing
- * callers are unaffected.
+ * it. Omitting them keeps the original self-managed behaviour.
  */
 export function EngagementStrip({
   engagement,
@@ -55,9 +59,10 @@ export function EngagementStrip({
 }) {
   const [ownExpanded, setOwnExpanded] = useState(true);
 
-  // Passthrough onto the engagement payload the page already loaded, so the
-  // call counts below cost no extra request.
+  // Both reads are already cached for this page: decisions ride the engagement
+  // payload, shipped work is the same list the archive renders.
   const { data: decisions } = useEngagementDecisions(engagement.id);
+  const { data: shipped } = useShippedWork();
 
   useEffect(() => {
     if (collapsed) setOwnExpanded(false);
@@ -79,9 +84,9 @@ export function EngagementStrip({
   );
 
   /**
-   * Figma 36:1936 puts "4 pieces · 2 calls" on each workstream. `decisions`
-   * carries no task_id, so the link is derived: a decision belongs to a
-   * workstream when it cites a piece of work mapped to that workstream.
+   * Figma puts "4 pieces · 2 calls" on each workstream. `decisions` carries no
+   * task_id, so the link is derived: a decision belongs to a workstream when it
+   * cites a piece of work mapped to that workstream.
    */
   const callsByTask = new Map<string, number>();
   for (const task of tasks) {
@@ -96,6 +101,22 @@ export function EngagementStrip({
     ).length;
     if (count > 0) callsByTask.set(task.id, count);
   }
+
+  // The fill bar under each workstream is relative weight, not progress toward
+  // a target: the busiest workstream fills the bar and the rest read against it.
+  const counts = tasks.map(
+    (task) => task.work_item_tasks.filter((link) => Boolean(link.work_items)).length,
+  );
+  const maxCount = Math.max(1, ...counts);
+
+  // Shipped-ness decides the card's tone, so it has to come from the record
+  // rather than from the deliverable's type.
+  const shippedForEngagement = (shipped ?? []).filter(
+    (card) => card.engagement_id === engagement.id,
+  );
+  const tracedByItem = new Map(
+    shippedForEngagement.map((card) => [card.work_item_id, card.traced_facts]),
+  );
 
   return (
     <div className="space-y-3">
@@ -135,24 +156,31 @@ export function EngagementStrip({
         </div>
 
         <div className={expanded ? "block" : "hidden"} aria-hidden={!expanded}>
-          {/* Row one: the workstreams, across the page. Figma spaces four at 258px. */}
-          <div className="grid gap-x-6 gap-y-3 p-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {/* Row one: the workstreams across the page, each over its fill bar. */}
+          <div className="grid gap-x-6 gap-y-4 p-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {tasks.map((task) => {
               const count = task.work_item_tasks.filter((link) => Boolean(link.work_items)).length;
               const calls = callsByTask.get(task.id) ?? 0;
+              const pct = Math.max(6, Math.round((count / maxCount) * 100));
               return (
-                <div key={task.id} className="border-t border-graphite pt-2">
+                <div key={task.id}>
                   <p className="truncate text-sm font-medium text-foreground">{task.name}</p>
                   <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
                     {count} {count === 1 ? "piece" : "pieces"}
                     {calls > 0 ? ` · ${calls} ${calls === 1 ? "call" : "calls"}` : ""}
                   </p>
+                  <div className="mt-2 h-[3px] w-full rounded-full bg-[var(--nb-rule)]">
+                    <div
+                      className="h-full rounded-full bg-foreground"
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
                 </div>
               );
             })}
           </div>
 
-          {/* Row two: shipped, three cards abreast in the frame. */}
+          {/* Row two: shipped, three cards abreast, toned by whether they shipped. */}
           <div className="border-t border-border px-4 py-4">
             <p className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
               Shipped, and what is waiting
@@ -163,12 +191,21 @@ export function EngagementStrip({
                   const stamp = [item.type?.toUpperCase(), shortDate(effectiveWorkDate(item))]
                     .filter(Boolean)
                     .join(" · ");
+                  const traced = tracedByItem.get(item.id);
+                  const isShipped = traced !== undefined;
                   return (
                     <ToneCard
                       key={item.id}
-                      tone="paper"
+                      tone={isShipped ? "record" : "claim"}
                       label={stamp || formatDate(effectiveWorkDate(item))}
                       title={item.title}
+                      meta={
+                        isShipped
+                          ? traced > 0
+                            ? `${traced} ${traced === 1 ? "source" : "sources"} · checked at source`
+                            : "shipped to the firm"
+                          : "WAITING ON YOU · claim it or say not mine"
+                      }
                     />
                   );
                 })

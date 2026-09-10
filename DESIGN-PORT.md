@@ -212,19 +212,19 @@ never existed in `styles.css`. That test failure predates this port and is untou
 | `36:1936` | `/engagements/$id` (arrival, strip expanded) | BUILT |
 | `36:2272` | `/engagements/$id` (asking, strip collapsed) | BUILT |
 
-Engagement page notes, 10 Sep 2026 (frame `36:1936`). Added: the engagement code
-/ client / term move to a mono `micro-label` above the title, the subtitle becomes
-a stat line (`EngagementStats`: workstreams, pieces of work, calls on the record,
-waiting on you), per-workstream call counts derived from decisions citing that
-workstream's mapped items, shipped cards stamped `TYPE · 02 SEP`, and the
-handwritten strip caption. Layout ported to the frame's banded structure: the
-engagement strip is full-width below the header, workstreams and shipped cards run
-horizontally, the canvas occupies the middle, and the 660px composer sits at the
-foot of the page; the former right rail is removed. OMITTED for lack of data: the "8 sources · checked at
-source" line (`traced_facts` lives on shipped-work cards, not `WorkItemRow`) and
-the "WAITING ON YOU · claim it or say not mine" row (no verified claim-state
-source in this payload). Read-only display only; no control, hook order or
-telemetry changed.
+Engagement page notes, 10 Sep 2026 (frame `36:1936`). Added: hand-written breadcrumb
+back to `/work` above the title; the engagement code / client / term trail follows
+it so nothing is lost. The stat line (`EngagementStats`) now renders as quiet
+body text instead of `page-subtitle`. Per-workstream relative fill bars show each
+workstream's weight against the busiest one. Shipped cards are toned by whether the
+deliverable appears in `shipped_work`: record green when shipped (meta reads source
+count / "shipped to the firm"), claim yellow when not (meta reads "WAITING ON YOU ·
+claim it or say not mine"). Per-workstream call counts are derived from decisions
+citing that workstream's mapped items; shipped cards are stamped `TYPE · 02 SEP`;
+the handwritten strip caption remains. Layout stays the frame's banded structure:
+full-width strip below the header, horizontal workstreams and shipped cards, canvas
+in the middle, 660px composer at the foot of the page. Read-only display only; no
+control, hook order or telemetry changed.
 | `49:2354` | `/classes` (EDU) | BUILT (skin, 10 Sep 2026) |
 | `49:2573` | `/assignments` (EDU) | BUILT (skin, 10 Sep 2026) |
 | `49:3044` | `/projects` (EDU) | BUILT (skin, 10 Sep 2026) |
