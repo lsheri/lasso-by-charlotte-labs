@@ -18,6 +18,7 @@ export function AppSidebar({
   activeProfile,
   onSignOut,
   onNavigate,
+  onOpenSettings,
 }: {
   userName: string;
   userRole: string | undefined;
@@ -25,6 +26,7 @@ export function AppSidebar({
   activeProfile: Profile | null;
   onSignOut: () => void;
   onNavigate?: (() => void) | undefined;
+  onOpenSettings?: (() => void) | undefined;
 }) {
   return (
     <div className="flex h-full w-full flex-col gap-8 bg-sidebar px-4 py-5">
@@ -33,7 +35,7 @@ export function AppSidebar({
           scroll container, which clips overflow-x once overflow-y is auto. */}
       <div className="flex-1 overflow-y-auto pl-[3px]">
 
-        <SidebarNav onNavigate={onNavigate} />
+        <SidebarNav onNavigate={onNavigate} onOpenSettings={onOpenSettings} />
       </div>
       <OrgSwitcher profiles={profiles} active={activeProfile} />
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-1">
