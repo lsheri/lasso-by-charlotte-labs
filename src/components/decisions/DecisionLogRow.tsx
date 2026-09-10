@@ -33,7 +33,14 @@ export function DecisionLogRow({
         {hasWhy ? (
           <p className="mt-1.5 text-[13px] leading-[18px] text-muted-foreground">
             <span className="text-soft">because </span>
-            {decision.why}
+            {decision.why}{" "}
+            <button
+              type="button"
+              onClick={() => onAddReasoning(decision)}
+              className="font-hand text-[15px] text-soft transition-colors hover:text-foreground"
+            >
+              edit
+            </button>
           </p>
         ) : (
           <p className="mt-1.5 text-[13px] leading-[18px] text-soft">
