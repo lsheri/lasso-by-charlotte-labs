@@ -659,10 +659,11 @@ export function WorkPage() {
         </div>
       ) : (
         <div className="space-y-8">
-          <div>
+          <div className={suggesting ? "animate-pulse" : undefined}>
             <div className="grid gap-6 lg:grid-cols-4">
               {BUCKETS.map((bucket) => {
                 const items = filtered.filter((item) => bucketFor(item.type).key === bucket.key);
+                const entries = groupConversations(items);
                 return (
                   <div key={bucket.key}>
                     <SectionHeader
@@ -674,27 +675,19 @@ export function WorkPage() {
                       }
                     />
                     <div className="space-y-2">
-                      {items.length === 0 ? (
+                      {entries.length === 0 ? (
                         <p className="text-[11.5px] text-soft">Nothing here yet.</p>
                       ) : (
-                        items.map((item) => (
-                          <button
-                            key={item.id}
-                            type="button"
-                            onClick={openItem(item)}
-                            className="block w-full text-left"
-                          >
-                            <ToneCard
-                              tone={item.visibility === "unmapped" ? "attention" : "paper"}
-                              label={[sourceLabel(item.source), formatDate(effectiveWorkDate(item))]
-                                .filter(Boolean)
-                                .join(" · ")}
-                              mark={<SourceMark item={item} size={14} />}
-                              title={item.title}
-                              meta={cardMeta(item)}
-                            />
-                          </button>
-                        ))
+                        entries.map((entry) =>
+                          isConversationGroup(entry)
+                            ? renderGroup(
+                                entry,
+                                (entry.transcript ?? entry.items[0]!).visibility === "mapped"
+                                  ? "mapped"
+                                  : "unmapped",
+                              )
+                            : renderColumnItem(entry),
+                        )
                       )}
                     </div>
                   </div>
@@ -713,153 +706,9 @@ export function WorkPage() {
                 {flagged.length} item{flagged.length === 1 ? "" : "s"} look like part of a
                 conversation rather than separate artifacts. You decide whether they stay.
               </p>
-              <button
-                type="button"
-                disabled={removingFlagged}
-                onClick={() => void removeAllFlagged()}
-                className="text-xs font-medium text-destructive transition-opacity hover:opacity-70 disabled:opacity-40"
-              >
-                {removingFlagged ? "Removing…" : `Remove all ${flagged.length}`}
-              </button>
             </div>
           ) : null}
-          <WorkSection
-            label="Unmapped"
-            hint="Private by default until you map it, nothing is shared with your coach yet."
-            count={unmappedEntries.length}
-            tone="amber"
-            icon={CircleDashed}
-            defaultOpen
-            accessory={
-              priv.length > 0 ? (
-                <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
-                  <Checkbox
-                    checked={showPrivate}
-                    onCheckedChange={(next) => setShowPrivate(next === true)}
-                    aria-label="Show private work"
-                  />
-                  Show private ({priv.length})
-                </label>
-              ) : undefined
-            }
-          >
-            {pileItems.length === 0 ? (
-              <p className="rounded-[var(--radius)] border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
-                Nothing waiting. Every piece of work here has a home.
-              </p>
-            ) : (
-              <div className={suggesting ? "animate-pulse space-y-2" : "space-y-2"}>
-                {active.length === 0 ? (
-                  <Suggested className="flex flex-wrap items-center justify-between gap-3">
-                    <p className="flex min-w-0 items-center gap-2 text-sm text-foreground">
-                      <SuggestDot />
-                      Let Lasso suggest where these go
-                    </p>
-                    <button
-                      type="button"
-                      disabled={suggesting}
-                      onClick={() => void handleSuggest()}
-                      className="text-xs font-medium text-accent-deep transition-opacity hover:opacity-70 disabled:opacity-50"
-                    >
-                      {suggesting ? "Thinking…" : "Suggest mapping"}
-                    </button>
-                  </Suggested>
-                ) : (
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <SuggestLegend />
-                    {highConfidence.length >= 3 ? (
-                      <button
-                        type="button"
-                        disabled={acceptPending}
-                        onClick={() => {
-                          void (async () => {
-                            for (const suggestion of highConfidence) {
-                              await acceptSuggestion(suggestion);
-                            }
-                          })();
-                        }}
-                        className="text-xs font-medium text-accent-deep transition-opacity hover:opacity-70 disabled:opacity-50"
-                      >
-                        Accept all high-confidence ({highConfidence.length})
-                      </button>
-                    ) : null}
-                  </div>
-                )}
 
-                <WorkPile
-                  entries={unmappedEntries}
-                  onOpenEntry={(entry) => {
-                    const head = isConversationGroup(entry)
-                      ? (entry.transcript ?? entry.items[0]!)
-                      : entry;
-                    openItem(head, isConversationGroup(entry) ? entry : head)();
-                  }}
-                  forceMatrix={selectMode || active.length > 0}
-
-                  renderEntry={(entry) =>
-                    isConversationGroup(entry) ? (
-                      renderGroup(entry, "unmapped")
-                    ) : (
-                      <WorkRow
-                        key={entry.id}
-                        item={entry}
-                        lead={
-                          selectMode && !isCoach && entry.visibility === "unmapped" ? (
-                            <Checkbox
-                              checked={chosen.has(entry.id)}
-                              onCheckedChange={() => toggleChosen(entry.id)}
-                              aria-label={`Select ${entry.title}`}
-                            />
-                          ) : undefined
-                        }
-                        onOpen={openItem(entry)}
-                        chips={<ConversationChips item={entry} />}
-                        actions={rowActions(entry, "unmapped")}
-                        footer={suggestionFor(entry)}
-                      />
-                    )
-                  }
-                />
-              </div>
-            )}
-          </WorkSection>
-
-          <WorkSection
-            label="Mapped"
-            hint="Visible to your coach through the workstreams you mapped it to."
-            count={mapped.length}
-            tone="teal"
-            icon={CheckCircle2}
-          >
-            {mapped.length === 0 ? (
-              <p className="rounded-[var(--radius)] border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
-                Nothing mapped yet. Map a piece of work to a workstream and it shows up here.
-              </p>
-            ) : (
-              mappedByEngagement.map((bucket) => (
-                <EngagementFold
-                  key={bucket.id ?? "unfiled"}
-                  label={bucket.label}
-                  hue={engagementHue(bucket.id)}
-                  count={bucket.items.length}
-                >
-                  {groupConversations(bucket.items).map((entry) =>
-                    isConversationGroup(entry) ? (
-                      renderGroup(entry, "mapped")
-                    ) : (
-                      <WorkRow
-                        key={entry.id}
-                        item={entry}
-                        onOpen={openItem(entry)}
-                        chips={<ConversationChips item={entry} />}
-                        actions={rowActions(entry, "mapped")}
-                      />
-                    ),
-                  )}
-                </EngagementFold>
-              ))
-            )}
-          </WorkSection>
 
           <div className="grid gap-4 lg:grid-cols-2">
             {unmapped.length > 0 ? (
