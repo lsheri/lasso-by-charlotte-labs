@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { SectionHeader } from "@/components/notebook/SectionHeader";
 import { supabase } from "@/integrations/supabase/client";
 import { logV2 } from "@/lib/telemetry-v2";
 
@@ -189,12 +190,12 @@ export function SavedForOneOnOne({ profileId }: { profileId: string }) {
 
   return (
     <section className="mb-6">
-      <h2 className="micro-label micro-label-section">You wanted to talk about</h2>
-      <div className="mt-3 space-y-3">
+      <SectionHeader title="You wanted to talk about" />
+      <div>
         {notes.map((note) => (
           <div
             key={note.id}
-            className={`rounded-[var(--radius)] border border-border bg-card px-4 py-3 shadow-card ${
+            className={`border-b border-border pb-4 pt-4 first:pt-0 ${
               note.discussed ? "opacity-60" : ""
             }`}
           >

@@ -15,5 +15,5 @@
 - [x] Port Reflect to the approved three-column design while preserving every existing control and invariant
 - [x] Port the engagement screen to the approved expanded/collapsed design while preserving every existing control and invariant
 - [x] Port Members to the approved permission-sensitive table design while preserving all thirteen controls and gates
-- [ ] Port Coach notes to the approved two-column design without changing note behavior
-- [ ] Port 1:1 prep to the approved two-column design without changing saved-note behavior
+- [x] Port Coach notes to the approved two-column design without changing note behavior
+- [x] Port 1:1 prep to the approved two-column design without changing saved-note behavior
