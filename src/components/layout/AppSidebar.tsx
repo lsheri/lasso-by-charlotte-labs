@@ -6,7 +6,7 @@ import { ChecklistLauncher } from "@/components/onboarding/checklist/ChecklistLa
 import { markWalkthroughEntry } from "@/lib/walkthrough-entry";
 
 import { OrgSwitcher } from "./OrgSwitcher";
-import { LassoLogo } from "./LassoLogo";
+import { LassoLoopMark } from "./LassoLoopMark";
 import { SidebarNav } from "./SidebarNav";
 import { UserCard } from "./UserCard";
 
@@ -34,7 +34,7 @@ export function AppSidebar({
     <div className="flex h-full w-full flex-col gap-[22px] bg-sidebar px-4 pb-[18px] pt-[22px]">
       {/* Brand */}
       <div className="flex items-center gap-2.5">
-        <LassoLogo size="sm" />
+        <LassoLoopMark className="h-[17px] w-5 shrink-0 text-green" />
         <div className="min-w-0">
           <div className="font-serif text-lg leading-6 text-foreground">Lasso</div>
           <div className="font-hand text-[11.5px] leading-4 text-green">by Charlotte Labs</div>
