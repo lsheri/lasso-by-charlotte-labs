@@ -22,28 +22,55 @@ function shortDate(value: string | null | undefined): string {
   return `${day} ${d.toLocaleString("en-US", { month: "short" }).toUpperCase()}`;
 }
 
+/**
+ * Figma 36:1936, node 36:2086 "engagement strip · expanded".
+ *
+ * It is a STRIP: a full-width horizontal band under the page header, 1080 wide
+ * in the frame, holding two horizontal rows — the workstreams, then the shipped
+ * cards side by side. It is not a sidebar panel. That is what the frame's own
+ * caption means by "the strip opens once, then gets out of the way": it spans
+ * the page, then collapses to a thin bar and hands the page back.
+ *
+ * `expanded` / `onExpandedChange` are OPTIONAL. Passing them makes the strip
+ * controlled, so a composer rendered elsewhere on the page can still collapse
+ * it. Omitting them keeps the original self-managed behaviour, so existing
+ * callers are unaffected.
+ */
 export function EngagementStrip({
   engagement,
   tasks,
   deliverables,
   collapsed,
+  expanded: expandedProp,
+  onExpandedChange,
   children,
 }: {
   engagement: EngagementRow;
   tasks: StripTask[];
   deliverables: WorkItemRow[];
   collapsed?: boolean;
+  expanded?: boolean;
+  onExpandedChange?: (next: boolean) => void;
   children?: (expanded: boolean, setExpanded: Dispatch<SetStateAction<boolean>>) => ReactNode;
 }) {
-  const [expanded, setExpanded] = useState(true);
+  const [ownExpanded, setOwnExpanded] = useState(true);
 
   // Passthrough onto the engagement payload the page already loaded, so the
   // call counts below cost no extra request.
   const { data: decisions } = useEngagementDecisions(engagement.id);
 
   useEffect(() => {
-    if (collapsed) setExpanded(false);
+    if (collapsed) setOwnExpanded(false);
   }, [collapsed]);
+
+  const isControlled = expandedProp !== undefined;
+  const expanded = isControlled ? expandedProp : ownExpanded;
+
+  const setExpanded: Dispatch<SetStateAction<boolean>> = (value) => {
+    const next = typeof value === "function" ? (value as (p: boolean) => boolean)(expanded) : value;
+    if (isControlled) onExpandedChange?.(next);
+    else setOwnExpanded(next);
+  };
 
   const pieceCount = tasks.reduce(
     (total, task) =>
@@ -74,7 +101,11 @@ export function EngagementStrip({
     <div className="space-y-3">
       <section className="rounded-lg border border-graphite bg-card">
         <div
-          className={expanded ? "flex items-center justify-between gap-3 border-b border-border px-4 py-3" : "flex min-h-12 items-center gap-3 px-4 py-2"}
+          className={
+            expanded
+              ? "flex items-center justify-between gap-3 border-b border-border px-4 py-3"
+              : "flex min-h-12 items-center gap-3 px-4 py-2"
+          }
         >
           {expanded ? (
             <p className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
@@ -104,13 +135,14 @@ export function EngagementStrip({
         </div>
 
         <div className={expanded ? "block" : "hidden"} aria-hidden={!expanded}>
-          <div className="grid gap-2 p-4 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+          {/* Row one: the workstreams, across the page. Figma spaces four at 258px. */}
+          <div className="grid gap-x-6 gap-y-3 p-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {tasks.map((task) => {
               const count = task.work_item_tasks.filter((link) => Boolean(link.work_items)).length;
               const calls = callsByTask.get(task.id) ?? 0;
               return (
-                <div key={task.id} className="border-l border-border pl-3">
-                  <p className="text-sm font-medium text-foreground">{task.name}</p>
+                <div key={task.id} className="border-t border-graphite pt-2">
+                  <p className="truncate text-sm font-medium text-foreground">{task.name}</p>
                   <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
                     {count} {count === 1 ? "piece" : "pieces"}
                     {calls > 0 ? ` · ${calls} ${calls === 1 ? "call" : "calls"}` : ""}
@@ -120,11 +152,12 @@ export function EngagementStrip({
             })}
           </div>
 
+          {/* Row two: shipped, three cards abreast in the frame. */}
           <div className="border-t border-border px-4 py-4">
             <p className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
               Shipped, and what is waiting
             </p>
-            <div className="mt-2 space-y-2">
+            <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {deliverables.length > 0 ? (
                 deliverables.map((item) => {
                   const stamp = [item.type?.toUpperCase(), shortDate(effectiveWorkDate(item))]

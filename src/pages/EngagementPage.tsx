@@ -64,6 +64,10 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
   const makePrivate = useMakePrivate();
   // The coaching note opens on its own; the brief is always legible above it.
   const [coachingOpen, setCoachingOpen] = useState(false);
+  // Figma 36:1936 puts the strip across the top and the composer at the foot of
+  // the page, so the two no longer nest. The page holds the shared open state
+  // that used to pass through the strip's render prop.
+  const [stripExpanded, setStripExpanded] = useState(true);
 
   // A shared "?trace=" link opens the audit on exactly what was circled.
   useTraceParam(engagementId);
@@ -229,7 +233,20 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
         ) : null}
       </header>
 
-      <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_400px]">
+      {/* Figma 36:1936: the strip is a full-width band under the header. */}
+      {profile && profile.role !== "coach" ? (
+        <div className="mb-8">
+          <EngagementStrip
+            engagement={engagement}
+            tasks={tasksQuery.data ?? []}
+            deliverables={deliverables}
+            expanded={stripExpanded}
+            onExpandedChange={setStripExpanded}
+          />
+        </div>
+      ) : null}
+
+      <div className="grid items-start gap-8">
         <EngagementCanvas
           engagementId={engagementId}
           tasks={tasksQuery.data ?? []}
@@ -278,25 +295,21 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
           }
         />
 
+        {/* Figma 36:1936 node 36:2235: the composer sits at the foot of the
+            page, 660 wide in a 1440 frame, not in a rail. */}
         {profile && profile.role !== "coach" ? (
-          <EngagementStrip
-            engagement={engagement}
-            tasks={tasksQuery.data ?? []}
-            deliverables={deliverables}
-          >
-            {(expanded, setExpanded) => (
-              <EngagementAsk
-                open={askOpen}
-                onOpenChange={setAskOpen}
-                expanded={expanded}
-                onConversationStart={() => setExpanded(false)}
-                engagementId={engagementId}
-                engagementTitle={engagement.title}
-                profileId={profile.id}
-                orgId={profile.org_id}
-              />
-            )}
-          </EngagementStrip>
+          <div className="mx-auto w-full max-w-[660px]">
+            <EngagementAsk
+              open={askOpen}
+              onOpenChange={setAskOpen}
+              expanded={stripExpanded}
+              onConversationStart={() => setStripExpanded(false)}
+              engagementId={engagementId}
+              engagementTitle={engagement.title}
+              profileId={profile.id}
+              orgId={profile.org_id}
+            />
+          </div>
         ) : null}
       </div>
 
