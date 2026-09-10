@@ -59,11 +59,19 @@ import { engagementHue } from "@/lib/work-identity";
 import { engagementLabel } from "@/lib/clients";
 import { markOpenStart } from "@/lib/perf-timing";
 import {
+  effectiveWorkDate,
+  formatDate,
   groupConversations,
   isConversationGroup,
+  sourceLabel,
   type ConversationGroup,
   type WorkItemRow,
 } from "@/lib/work-types";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { SectionHeader } from "@/components/notebook/SectionHeader";
+import { ToneCard } from "@/components/notebook/ToneCard";
+import { SourceMark, sourceVendorKey } from "@/components/work/SourceMark";
+import { BUCKETS, bucketFor } from "@/components/work/work-buckets";
 
 export function WorkPage() {
   const { data: profile } = useProfile();
