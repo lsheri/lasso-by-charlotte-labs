@@ -22,10 +22,11 @@ describe("pass 139: the page is named Past work", () => {
   const page = read("pages/ArchivePage.tsx");
   const route = read("routes/_authenticated/archive.tsx");
 
-  it('leads with the FIRM micro-label and a "Past work" page-title h1', () => {
+  it('leads with the FIRM micro-label and the shared "Past work" page header', () => {
     expect(page).toContain(`{PAST_WORK_GROUP_LABEL}`);
-    expect(page).toContain(`{PAST_WORK_NAV_LABEL}`);
-    expect(page).toMatch(/<h1 className="page-title[^"]*">\{PAST_WORK_NAV_LABEL\}<\/h1>/);
+    expect(page).toContain(
+      '<PageHeader title="Past work" italicWord="work" subtitle={ARCHIVE_SUBHEAD} />',
+    );
     expect(PAST_WORK_GROUP_LABEL).toBe("Your organization");
     expect(PAST_WORK_NAV_LABEL).toBe("Past work");
   });
