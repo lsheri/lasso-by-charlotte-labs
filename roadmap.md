@@ -11,3 +11,5 @@
 - [x] "What a coach sees": auto-flipping toggle every 2s, bold manager/coach
 - [x] "Where the work now happens": product name + brand mark label above each clip, offset collage
 - [x] Port Past work to the approved archive spine design while preserving every existing control
+
+- [ ] Port Reflect to the approved three-column design while preserving every existing control and invariant
