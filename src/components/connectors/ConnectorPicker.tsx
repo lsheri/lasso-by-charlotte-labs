@@ -666,7 +666,9 @@ export function ConnectorPicker({
         {loading ? (
           <p className="text-sm text-muted-foreground">Looking…</p>
         ) : items.length === 0 && !page?.unsupported ? (
-          <p className="text-sm text-muted-foreground">{copy.empty}</p>
+          <p className="rounded-[var(--radius-md)] border border-dashed border-pencil bg-card px-4 py-6 text-center text-sm text-muted-foreground">
+            {copy.empty}
+          </p>
         ) : (
           <div className="space-y-4">
             {isFolderBrowser && folders.length > 0 ? (
@@ -727,7 +729,7 @@ export function ConnectorPicker({
             <div>
               {isFolderBrowser ? <p className="micro-label">Files</p> : null}
               {files.length === 0 ? (
-                <p className="mt-2 text-sm text-muted-foreground">
+                <p className="mt-2 rounded-[var(--radius-md)] border border-dashed border-pencil bg-card px-4 py-6 text-center text-sm text-muted-foreground">
                   {isFolderBrowser ? "No files here, open a folder to keep browsing." : copy.empty}
                 </p>
               ) : (

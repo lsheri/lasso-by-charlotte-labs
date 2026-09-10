@@ -106,7 +106,9 @@ export function ScopePicker({
         {mode !== "whole" ? (
           <div className="max-h-72 space-y-1 overflow-y-auto rounded-[var(--radius)] border border-border bg-card p-3">
             {options.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Nothing here yet.</p>
+              <p className="rounded-[var(--radius-md)] border border-dashed border-pencil bg-card px-4 py-6 text-center text-sm text-muted-foreground">
+                Nothing here yet.
+              </p>
             ) : (
               options.map((option) => (
                 <label key={option.id} className="flex items-start gap-3 px-1 py-1.5 text-sm">
