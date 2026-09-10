@@ -1,4 +1,6 @@
 import { CountList, CountRow } from "@/components/firm/FirmPanels";
+import { SectionHeader } from "@/components/notebook/SectionHeader";
+import { ToneCard } from "@/components/notebook/ToneCard";
 import {
   WAITING_LABEL,
   buildFirmMetrics,
@@ -13,16 +15,18 @@ export function StatTile({ tile, reduceMotion }: { tile: MetricTile; reduceMotio
   return (
     <div
       data-testid={`firm-tile-${tile.key}`}
-      className={`rounded-[var(--radius)] border border-border bg-card px-4 py-4 ${
-        reduceMotion ? "nb-chip-enter-static" : "nb-chip-enter"
-      }`}
+      className={reduceMotion ? "nb-chip-enter-static" : "nb-chip-enter"}
     >
-      <p className="micro-label">{tile.name}</p>
-      <p className="mt-1 text-3xl font-semibold tabular-nums text-foreground">{tile.value}</p>
-      <p className="mt-1 text-xs text-muted-foreground">{tile.caveat}</p>
+      <ToneCard tone="paper" label={tile.name}>
+        <p className="text-3xl font-semibold tabular-nums leading-tight text-foreground">
+          {tile.value}
+        </p>
+        <p className="mt-1">{tile.caveat}</p>
+      </ToneCard>
     </div>
   );
 }
+
 
 /** Every withholding, preserved, one line each. */
 export function WaitingStrip({ names }: { names: string[] }) {
