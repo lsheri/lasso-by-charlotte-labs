@@ -20,4 +20,4 @@
 - [x] Port the coaching roster and coaching packet while preserving every control, access gate, and event
 - [ ] Restyle the join and no-access entry screens while preserving every state, control, and event
 - [ ] Correct the four shared sidebar visual tokens without changing navigation logic or controls
-- [ ] Complete `/work` design port pass 2 exactly as specified
+- [x] Complete `/work` design port pass 2 exactly as specified
