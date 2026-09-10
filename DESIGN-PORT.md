@@ -217,7 +217,10 @@ Engagement page notes, 10 Sep 2026 (frame `36:1936`). Added: the engagement code
 a stat line (`EngagementStats`: workstreams, pieces of work, calls on the record,
 waiting on you), per-workstream call counts derived from decisions citing that
 workstream's mapped items, shipped cards stamped `TYPE · 02 SEP`, and the
-handwritten strip caption. OMITTED for lack of data: the "8 sources · checked at
+handwritten strip caption. Layout ported to the frame's banded structure: the
+engagement strip is full-width below the header, workstreams and shipped cards run
+horizontally, the canvas occupies the middle, and the 660px composer sits at the
+foot of the page; the former right rail is removed. OMITTED for lack of data: the "8 sources · checked at
 source" line (`traced_facts` lives on shipped-work cards, not `WorkItemRow`) and
 the "WAITING ON YOU · claim it or say not mine" row (no verified claim-state
 source in this payload). Read-only display only; no control, hook order or
