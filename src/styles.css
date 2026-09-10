@@ -968,10 +968,13 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 }
 
 /* Sidebar grammar (pass 84). */
+/* Figma 12:2: a nav group header is handwritten, Caveat Bold 16px at
+   text/primary. It is a section title in the notebook voice, not a sans label. */
 .nb-group-header {
-  font-family: var(--font-sans);
-  font-size: 12px;
+  font-family: var(--font-hand);
+  font-size: 16px;
   font-weight: 700;
+  line-height: 1.2;
   letter-spacing: 0.01em;
   color: var(--nb-ink);
 }
@@ -1000,13 +1003,16 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   font-weight: 600;
   background: var(--nb-white);
   border-color: var(--nb-graphite);
+  border-width: 1.2px;
 }
 /* Pass 90: an engagement nested under a client shelf. Indent only. */
 .nb-nav-item-nested {
   padding-left: 22px;
 }
 /* Pass 92: a client shelf header speaks in the micro-label voice, in the
-   pass 91 section blue, so a shelf never reads as one more engagement row. */
+   pass 91 section blue, so a shelf never reads as one more engagement row.
+   Figma 12:332 draws this at text/muted, but pass92.test.ts pins the blue and
+   production wins. */
 .nb-nav-shelf {
   font-family: var(--font-mono, ui-monospace, monospace);
   font-size: 11px;
@@ -1198,8 +1204,25 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   color: var(--nb-mid);
 }
 .nb-tab-active {
+  position: relative;
   color: var(--nb-ink);
   font-weight: 600;
+}
+/* Figma 12:600: the active phone tab carries a small green dot under the
+   label. Decoration only, so it is drawn in CSS and adds no control. */
+.nb-tab-active::after {
+  content: "";
+  position: absolute;
+  bottom: 6px;
+  width: 3px;
+  height: 3px;
+  border-radius: 9999px;
+  background: var(--nb-green);
+}
+@media (prefers-reduced-motion: reduce) {
+  .nb-tab-active::after {
+    transition: none;
+  }
 }
 /* Unlayered author CSS beats Tailwind's layered md:hidden, so the desktop
    hide has to live here too. */
