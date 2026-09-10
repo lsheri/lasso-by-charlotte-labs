@@ -3,12 +3,14 @@ import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 
 import { ArchiveChat } from "@/components/archive/ArchiveChat";
+import { ArchiveSpine, type ArchiveSpineGroup } from "@/components/archive/ArchiveSpine";
 import { PastWorkSearch } from "@/components/archive/PastWorkSearch";
-import { ArchivePile } from "@/components/archive/ArchivePile";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { ToneCard } from "@/components/notebook/ToneCard";
 import { useProfile } from "@/hooks/use-profile";
 import { useShippedWork } from "@/hooks/use-shipped-work";
 import { ARCHIVE_SUBHEAD } from "@/lib/archive-search-shared";
-import { PAST_WORK_GROUP_LABEL, PAST_WORK_NAV_LABEL } from "@/lib/past-work-shared";
+import { PAST_WORK_GROUP_LABEL } from "@/lib/past-work-shared";
 
 /**
  * The learning archive. Members and admins can read it: shipped work, the
@@ -34,14 +36,20 @@ export function ArchivePage() {
 
   // Ship date is the only order the archive keeps.
   const cards = [...(data ?? [])].sort((a, b) => b.shipped_at.localeCompare(a.shipped_at));
+  const groups = cards.reduce<ArchiveSpineGroup[]>((all, card) => {
+    const key = card.engagement_id ?? "without-engagement";
+    const existing = all.find((group) => group.key === key);
+    if (existing) existing.cards.push(card);
+    else all.push({ key, cards: [card] });
+    return all;
+  }, []);
 
   return (
     <div data-testid="archive-page">
-      <header className="mb-8">
-        <p className="micro-label">{PAST_WORK_GROUP_LABEL}</p>
-        <h1 className="page-title mt-1">{PAST_WORK_NAV_LABEL}</h1>
-        <p className="mt-1.5 max-w-[60ch] text-sm text-muted-foreground">{ARCHIVE_SUBHEAD}</p>
-      </header>
+      <p className="micro-label">{PAST_WORK_GROUP_LABEL}</p>
+      <div className="mt-1">
+        <PageHeader title="Past work" italicWord="work" subtitle={ARCHIVE_SUBHEAD} />
+      </div>
 
       <div className="mt-5">
         <PastWorkSearch />
@@ -55,9 +63,26 @@ export function ArchivePage() {
         {isLoading ? (
           <p className="text-sm text-muted-foreground">Reading shipped work.</p>
         ) : (
-          <ArchivePile cards={cards} hidden={searching} />
+          <ArchiveSpine groups={groups} hidden={searching} />
         )}
       </div>
+
+      <div className="mt-10 grid gap-4 md:grid-cols-2">
+        <ToneCard tone="record" label="WHAT STAYS WHEN AN ENGAGEMENT CLOSES">
+          <p>
+            The artifacts, the record of how each was made, every check and who ran it, and the
+            reusable processes.
+          </p>
+        </ToneCard>
+        <ToneCard tone="paper" label="WHAT CHANGES">
+          <p>
+            Read only from here. Coaches keep exactly the access they already had. Closing gives
+            nobody new access.
+          </p>
+        </ToneCard>
+      </div>
+
+      <p className="mt-5 font-hand text-[16px] text-green">closed, not gone</p>
     </div>
   );
 }
