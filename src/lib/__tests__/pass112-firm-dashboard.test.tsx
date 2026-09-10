@@ -140,12 +140,23 @@ describe("pile", () => {
 });
 
 describe("page order", () => {
-  it("reads what it measures, then the numbers, then the archive", () => {
+  // Updated for Figma 23:413. The frame leads with what the firm PRODUCED, not
+  // with adoption: what it measures, the four production numbers, the archive
+  // beside the check library, then the honesty panels. The adoption grid is
+  // still on the page and still says everything it said, but it now sits below
+  // the frame's content instead of ahead of it.
+  it("reads what it measures, then what was produced, then the archive", () => {
     const page = readFileSync("src/pages/FirmDashboardPage.tsx", "utf8");
-    expect(page.indexOf("<TrustSummary")).toBeLessThan(page.indexOf("<FirmMetricGrid"));
-    expect(page.indexOf("<FirmMetricGrid")).toBeLessThan(page.indexOf("<FirmArchive"));
+    expect(page.indexOf("<TrustSummary")).toBeLessThan(page.indexOf("<FirmProduced"));
+    expect(page.indexOf("<FirmProduced")).toBeLessThan(page.indexOf("<FirmArchive"));
     expect(page.indexOf("<FirmArchive")).toBeLessThan(page.indexOf("<WhatLeavesTheFirm"));
     expect(page.indexOf("<WhatLeavesTheFirm")).toBeLessThan(page.indexOf("<PrivacyPanel"));
     expect(page).toContain('profile?.role === "admin" || profile?.role === "lead"');
+  });
+
+  it("still renders the adoption grid, below the frame's content", () => {
+    const page = readFileSync("src/pages/FirmDashboardPage.tsx", "utf8");
+    expect(page).toContain("<FirmMetricGrid");
+    expect(page.indexOf("<PrivacyPanel")).toBeLessThan(page.indexOf("<FirmMetricGrid"));
   });
 });

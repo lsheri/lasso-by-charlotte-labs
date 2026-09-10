@@ -75,8 +75,12 @@ export function FirmMetricGrid({
 
   return (
     <section data-testid="firm-metric-grid">
+      {/* Figma 23:413 gives "What the firm produced" to the four production
+          numbers (see FirmProduced). This grid is the adoption and health
+          picture, which the frame does not draw but the firm still needs, so it
+          keeps its own head rather than borrowing that one. */}
       <SectionHeader
-        title="What the firm produced"
+        title="How the workspace is being used"
         action={
           <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
             Last {data.window_days} days
