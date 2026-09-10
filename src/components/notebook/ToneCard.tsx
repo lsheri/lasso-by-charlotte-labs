@@ -61,6 +61,10 @@ export function ToneCard({
 
       <span className="text-[13px] font-medium leading-[17px] text-foreground">{title}</span>
 
+      {children ? (
+        <div className="text-[11.5px] leading-[17px] text-muted-foreground">{children}</div>
+      ) : null}
+
       {meta ? (
         <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">{meta}</span>
       ) : null}
