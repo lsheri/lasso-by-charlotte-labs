@@ -193,11 +193,9 @@ export function AiRecordPage() {
   });
 
   return (
-    <div>
-      <PageHeader
-        title="Chat library"
-        subtitle="Your most valuable AI conversations, kept in one place. Search them, reuse them as context, and see how your best prompts worked."
-      />
+    <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-8">
+      <div className="min-w-0">
+      <PageHeader title="Chat" italicWord="library" subtitle={subtitle} />
 
       <div className="-mt-2 mb-6 flex items-center gap-2.5">
         <BrandLogo brand="claude" size={16} />
@@ -207,13 +205,6 @@ export function AiRecordPage() {
           All your tools, one place
         </span>
       </div>
-
-      <CaptureCoverage
-        profileId={profile?.id}
-        itemCount={threads.length}
-        scopeLabel="your chat library"
-        dates={threads.map((t) => effectiveWorkDate(t))}
-      />
 
       {threads.length > 0 ? (
         <div className="mb-6">
@@ -231,6 +222,33 @@ export function AiRecordPage() {
             placeholder="Search your chats"
             className="w-full rounded-[var(--radius)] border border-border bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/40 sm:max-w-sm"
           />
+        </div>
+      ) : null}
+
+      {threads.length > 0 ? (
+        <div className="mb-6 flex flex-wrap gap-2">
+          {(["all", ...toolsPresent] as const).map((option) => {
+            const on = tool === option;
+            return (
+              <button
+                key={option}
+                type="button"
+                aria-pressed={on}
+                onClick={() => setTool(option as ToolVendor | "all")}
+                className={
+                  on
+                    ? "rounded-full border border-graphite bg-nb-white px-3 py-1 text-[11.5px] font-medium text-foreground"
+                    : "rounded-full border border-[var(--nb-pencil)] px-3 py-1 text-[11.5px] text-muted-foreground transition-colors hover:border-foreground"
+                }
+              >
+                {option === "all"
+                  ? "Everything"
+                  : option === "unknown"
+                    ? "Other"
+                    : vendorLabel(option)}
+              </button>
+            );
+          })}
         </div>
       ) : null}
 
