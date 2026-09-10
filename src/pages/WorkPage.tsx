@@ -552,8 +552,37 @@ export function WorkPage() {
               </Button>
             }
           />
+      </div>
+
+      {all.length > 0 ? (
+        <div className="mb-6 flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setColumnFilter("all")}
+            className={columnFilter === "all" ? chipOn : chipOff}
+          >
+            Everything
+          </button>
+          <button
+            type="button"
+            onClick={() => setColumnFilter("unmapped")}
+            className={columnFilter === "unmapped" ? chipOn : chipOff}
+          >
+            Unmapped
+          </button>
+          {engagementCodes.map((code) => (
+            <button
+              key={code}
+              type="button"
+              onClick={() => setColumnFilter(code)}
+              className={columnFilter === code ? chipOn : chipOff}
+            >
+              {code}
+            </button>
+          ))}
         </div>
-      </header>
+      ) : null}
+
 
       {error ? <p className="mb-6 text-sm text-destructive">{(error as Error).message}</p> : null}
       {actionError ? <p className="mb-6 text-sm text-destructive">{actionError}</p> : null}
