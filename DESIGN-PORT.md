@@ -208,10 +208,23 @@ never existed in `styles.css`. That test failure predates this port and is untou
 | `34:2043` | `/members` | BUILT |
 | `36:1936` | `/engagements/$id` (arrival, strip expanded) | BUILT |
 | `36:2272` | `/engagements/$id` (asking, strip collapsed) | BUILT |
-| `49:2354` | `/classes` (EDU) | NOT STARTED |
-| `49:2573` | `/assignments` (EDU) | NOT STARTED |
-| `49:3044` | `/projects` (EDU) | NOT STARTED |
-| `49:3375` | `/portfolio` (EDU) | NOT STARTED |
+| `49:2354` | `/classes` (EDU) | BUILT (skin, 10 Sep 2026) |
+| `49:2573` | `/assignments` (EDU) | BUILT (skin, 10 Sep 2026) |
+| `49:3044` | `/projects` (EDU) | BUILT (skin, 10 Sep 2026) |
+| `49:3375` | `/portfolio` (EDU) | BUILT (skin, 10 Sep 2026) |
+
+EDU skin notes, 10 Sep 2026. `/classes` and `/projects` share
+`src/pages/EduEngagementsPage.tsx`, so the four frames are three files. Ported:
+`ToneCard` paper surfaces, `SectionHeader` for the unsorted-rows question,
+`section-title` on the assignment group link, `--nb-pencil` hairlines,
+`--radius-control`, and body type at 13px / 11.5px. REFUSED under rule 9: the
+Assignments frame's due-date column and completion count (neither field is read),
+the Assignments per-row checkbox and the Classes term grouping (both redesigns
+under rule 7), and any Portfolio sharing claim - `PORTFOLIO_PRIVACY_LINE` stands.
+OPEN: these three screens fire no telemetry at all. Sorting an engagement into
+class or project, and Portfolio promotion, are user actions with no covering
+event. Same unresolved class as the `/work`, `/decisions`, `/ai-record` filter
+chips. Founder decision, not fixed by a skin.
 
 ## Coach routes — page 08, node `1:9`
 
