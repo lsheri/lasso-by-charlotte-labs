@@ -46,7 +46,7 @@ function EngagementRow({
       className={nested ? `${linkClass} nb-nav-item-nested` : linkClass}
       activeProps={activeProps}
     >
-      <GraphiteIcon name={nested ? "chevron-right" : "engagement"} size={nested ? 14 : 16} />
+      <GraphiteIcon name={nested ? "chevron-right" : "engagement"} size={nested ? 16 : 20} />
       <span className="flex min-w-0 items-center gap-1.5">
         {code ? <span className="font-mono text-xs text-muted-foreground">{code}</span> : null}
         <span className="truncate">{engagementDisplayTitle(engagement)}</span>
@@ -108,7 +108,7 @@ export function SidebarNav({
                     }}
                     className={`${linkClass} w-full text-left`}
                   >
-                    <GraphiteIcon name={item.icon} size={16} />
+                    <GraphiteIcon name={item.icon} size={20} />
                     <span>{item.label}</span>
                   </button>
                 ) : (
@@ -119,7 +119,7 @@ export function SidebarNav({
                     className={linkClass}
                     activeProps={activeProps}
                   >
-                    <GraphiteIcon name={item.icon} size={16} />
+                    <GraphiteIcon name={item.icon} size={20} />
                     <span>{item.label}</span>
                   </Link>
                 ),
@@ -151,7 +151,7 @@ export function SidebarNav({
                 }}
                 className={`${linkClass} w-full text-left`}
               >
-                <GraphiteIcon name={item.icon} size={16} />
+                <GraphiteIcon name={item.icon} size={20} />
                 <span className="truncate">{item.label}</span>
               </button>
             ) : (
@@ -162,7 +162,7 @@ export function SidebarNav({
                 className={linkClass}
                 activeProps={activeProps}
               >
-                <GraphiteIcon name={item.icon} size={16} />
+                <GraphiteIcon name={item.icon} size={20} />
                 <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
                   <span className="truncate">
                     {item.to === "/members" ? membersLabel : item.label}
@@ -206,7 +206,7 @@ export function SidebarNav({
                           onClick={() => toggleClient(shelf.clientId)}
                           className={`${linkClass} nb-nav-shelf w-full text-left`}
                         >
-                          <GraphiteIcon name="engagement" size={16} />
+                          <GraphiteIcon name="engagement" size={20} />
                           <span className="flex min-w-0 flex-1 items-center gap-1.5">
                             <span className="truncate">{shelf.name}</span>
                             {isSyntheticShelf(shelf.clientId) ? (
@@ -243,7 +243,7 @@ export function SidebarNav({
                     onDone={onNavigate}
                     trigger={
                       <button type="button" className="nb-nav-item w-full text-left">
-                        <GraphiteIcon name="plus" size={16} />
+                        <GraphiteIcon name="plus" size={20} />
                         <span>New engagement</span>
                       </button>
                     }
