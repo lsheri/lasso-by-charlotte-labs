@@ -1,4 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 
 import { GraphiteRule } from "@/components/notebook/marks";
@@ -140,7 +141,14 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
       <header className="mb-8">
         <div className="nb-sticky-head grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4">
           <div className="min-w-0">
-            <p className="micro-label mb-1.5">
+            {/* Figma 36:1936 leads with a hand breadcrumb back to the pile, not a
+                mono identifier stamp. The code, client and term move onto the
+                trail so nothing is lost. */}
+            <p className="font-hand mb-1 text-[16px] italic text-muted-foreground">
+              <Link to="/work" className="underline-offset-2 hover:underline">
+                All work
+              </Link>
+              {" → "}
               {engagementDisplayCode(engagement) ?? "Quick folder"}
               {clientDisplayName(engagement) ? ` · ${clientDisplayName(engagement)}` : ""}
               {engagement.term_label ? ` · ${engagement.term_label}` : ""}
@@ -149,7 +157,9 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
               {engagementDisplayTitle(engagement)}
               <GraphiteRule />
             </h1>
-            <p className="page-subtitle">
+            {/* Not `page-subtitle`: that utility is mono/700/uppercase, which turns
+                Figma's quiet sentence into a shouty label. */}
+            <p className="mt-1.5 text-[13px] leading-[19px] text-muted-foreground">
               <EngagementStats engagementId={engagement.id} tasks={tasksQuery.data ?? []} />
             </p>
           </div>
