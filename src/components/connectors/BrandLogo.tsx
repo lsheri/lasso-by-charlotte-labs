@@ -236,6 +236,7 @@ export function brandForToolkit(toolkit: string): BrandKey {
   if (key.startsWith("onedrive")) return "onedrive";
   if (key.startsWith("sharepoint")) return "sharepoint";
   if (key.startsWith("notion")) return "notion";
+  if (key.startsWith("slack")) return "slack";
   if (key.startsWith("granola")) return "granola";
   if (key.startsWith("googlecalendar")) return "googlecalendar";
   if (key.startsWith("claude") || key === "anthropic") return "claude";
