@@ -87,12 +87,15 @@ export function WisprCard() {
   }
 
   return (
-    <div className="rounded-[var(--radius)] border border-border bg-card px-4 py-3 shadow-card">
+    <div className="rounded-[var(--radius-lg)] border border-border bg-card px-4 py-3.5">
       <div className="flex flex-wrap items-center gap-4">
         <BrandLogo brand="wispr" size={30} />
         <div className="min-w-0 flex-1 basis-48">
-          <p className="text-sm font-medium text-foreground">Wispr Flow</p>
-          <p className="mt-0.5 text-sm text-muted-foreground">
+          <p className="text-[13px] font-medium text-foreground">Wispr Flow</p>
+          <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+            {busy ? "Pending" : connected ? "Connected" : "Not connected"}
+          </p>
+          <p className="mt-1 text-[11.5px] leading-[17px] text-muted-foreground">
             Meetings, notes and transcripts from your calls. Read only, so Lasso never writes
             anything back to Wispr.
           </p>
@@ -102,9 +105,6 @@ export function WisprCard() {
             </p>
           ) : null}
         </div>
-        <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
-          {busy ? "Pending" : connected ? "Connected" : "Not connected"}
-        </span>
         {connected ? (
           <div className="flex items-center gap-4">
             <ConnectorPicker
