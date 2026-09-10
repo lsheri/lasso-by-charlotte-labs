@@ -79,7 +79,7 @@ export function CoachingPage() {
           {isLoading ? (
             <div className="space-y-2" aria-busy="true">
               {[0, 1, 2].map((row) => (
-                <div key={row} className="h-[76px] animate-pulse border-b border-border bg-card" />
+                <div key={row} className="h-[76px] animate-pulse border-b border-[var(--nb-pencil)] bg-card" />
               ))}
             </div>
           ) : null}
@@ -154,7 +154,7 @@ export function CoachingPage() {
 
           {subjects.length === 0 && !isLoading ? (
             <div className="space-y-4">
-              <div className="border-y border-border py-5">
+              <div className="border-y border-[var(--nb-pencil)] py-5">
                 <p className="micro-label">Nothing shared yet</p>
                 <p className="mt-2 text-sm text-muted-foreground">
                   Nothing has been shared with you so far. That is the normal starting point: work

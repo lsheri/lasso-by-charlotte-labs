@@ -20,7 +20,7 @@ export function CoachLinkPeople() {
         return (
           <div
             key={person.link_id}
-            className="rounded-[var(--radius)] border border-border bg-card px-5 py-4 shadow-card"
+            className="rounded-[var(--radius-control)] border border-[var(--nb-pencil)] bg-card px-5 py-4 shadow-card"
           >
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <p className="text-sm font-medium text-foreground">{person.subject_name}</p>
