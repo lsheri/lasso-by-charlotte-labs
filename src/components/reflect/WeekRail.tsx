@@ -23,11 +23,22 @@ function stateWord(item: WorkItemRow): string {
   return item.visibility === "mapped" ? "claimed" : "unmapped";
 }
 
+/** The frame shows six. A rail that runs past the page is a list, not a rail. */
+const RAIL_CAP = 8;
+
 export function WeekRail({ items }: { items: WorkItemRow[] }) {
+  // Newest first, so "your week" is actually the week rather than whatever
+  // order the scope happened to load in.
+  const ordered = [...items].sort((a, b) =>
+    (effectiveWorkDate(b) ?? "").localeCompare(effectiveWorkDate(a) ?? ""),
+  );
+  const shown = ordered.slice(0, RAIL_CAP);
+  const rest = ordered.length - shown.length;
+
   return (
     <ToneCard tone="paper" label="YOUR WEEK, PULLED FOR YOU">
       <div className="mt-1 border-t border-border">
-        {items.map((item) => (
+        {shown.map((item) => (
           <div
             key={item.id}
             className="grid grid-cols-[auto_minmax(0,1fr)] gap-2.5 border-b border-border py-3 last:border-b-0"
@@ -47,6 +58,13 @@ export function WeekRail({ items }: { items: WorkItemRow[] }) {
           </div>
         ))}
       </div>
+      {rest > 0 ? (
+        // Said plainly rather than hidden: the rail is a sample, and the whole
+        // scope is one click away on the work page.
+        <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
+          {rest} more in this scope
+        </p>
+      ) : null}
     </ToneCard>
   );
 }
