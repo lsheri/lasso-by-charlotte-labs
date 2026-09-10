@@ -197,13 +197,14 @@ function MembersConsole() {
     });
   }
 
+  const members = data?.members ?? [];
   const invites = data?.invites ?? [];
   const pending = invites.filter(
     (i) => !i.used_at && !i.revoked_at && new Date(i.expires_at) > new Date(),
   );
   const history = invites.filter((i) => !pending.includes(i));
   const metaLine = data
-    ? `${data.members.length} people · ${data.entitlement?.coaches ?? 0} coaches · a role decides what someone can see, never what they can be told`
+    ? `${members.length} people · ${data.entitlement?.coaches ?? 0} coaches · a role decides what someone can see, never what they can be told`
     : copy.blurb;
 
   return (
@@ -250,7 +251,7 @@ function MembersConsole() {
                     <span>What they can see</span>
                     <span className="sr-only">Actions</span>
                   </div>
-                  {data.members.map((member) => (
+                  {members.map((member) => (
                     <div
                       key={member.id}
                       className="grid min-h-16 grid-cols-[minmax(220px,1.15fr)_140px_minmax(230px,1fr)_auto] items-center gap-4 border-b border-border px-2 py-3"
