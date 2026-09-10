@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState, type Dispatch, type ReactNode, type SetStateAction } from "react";
 
 import { ToneCard } from "@/components/notebook/ToneCard";
 import { Button } from "@/components/ui/button";
@@ -23,7 +23,7 @@ export function EngagementStrip({
   tasks: StripTask[];
   deliverables: WorkItemRow[];
   collapsed?: boolean;
-  children?: (expanded: boolean, collapse: () => void) => ReactNode;
+  children?: (expanded: boolean, setExpanded: Dispatch<SetStateAction<boolean>>) => ReactNode;
 }) {
   const [expanded, setExpanded] = useState(true);
 
@@ -107,7 +107,7 @@ export function EngagementStrip({
         </div>
       </section>
 
-      {children?.(expanded, () => setExpanded(false))}
+      {children?.(expanded, setExpanded)}
     </div>
   );
 }

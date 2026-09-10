@@ -280,12 +280,12 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
             tasks={tasksQuery.data ?? []}
             deliverables={deliverables}
           >
-            {(expanded, collapse) => (
+            {(expanded, setExpanded) => (
               <EngagementAsk
                 open={askOpen}
                 onOpenChange={setAskOpen}
                 expanded={expanded}
-                onConversationStart={collapse}
+                onConversationStart={() => setExpanded(false)}
                 engagementId={engagementId}
                 engagementTitle={engagement.title}
                 profileId={profile.id}
