@@ -30,3 +30,12 @@
 - Check both files for raw color literals and forbidden bare letter-spacing utilities.
 - Run TypeScript validation and relevant entry/invite/access tests, then inspect the latest build signal.
 - Do not deploy or perform database work.
+
+## Sidebar token correction
+- Keep the sidebar structure, navigation logic, hooks, gates, links, dialogs, switchers, counts, and controls unchanged.
+- Change `.nb-group-header` to Caveat Bold at 16px/20px in primary ink, without capitals or letter spacing.
+- Change `.nb-nav-item-active` to the raised white surface with a 1.2px graphite border, 6px radius, Archivo Medium, and primary ink.
+- Change `.nb-nav-shelf` from the retired blue treatment to the existing muted graphite treatment without changing shelf behavior.
+- Add a sidebar-only inline open-loop SVG variant to `LassoLogo`; preserve its current image rendering for `SessionHeader`, `Wordmark`, and `PublicHeader`.
+- Skip the handwritten status line unless an existing sidebar-safe source already provides the exact new/unprocessed conversation count without another query.
+- Report old and new values, all other `LassoLogo` consumers, status-source findings, logic preservation, and TypeScript validation.
