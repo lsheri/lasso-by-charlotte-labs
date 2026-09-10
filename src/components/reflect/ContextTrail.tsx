@@ -136,7 +136,13 @@ export function ThinkingTrail({
  * After the answer: one compact line, built only from the persisted manifest.
  * An answer with no manifest recorded shows nothing at all.
  */
-export function ContextAudit({ manifest }: { manifest: ContextManifest | null }) {
+export function ContextAudit({
+  manifest,
+  buttonLabel,
+}: {
+  manifest: ContextManifest | null;
+  buttonLabel?: string;
+}) {
   const [open, setOpen] = useState(false);
   if (!manifest) return null;
   const chips = manifestChips(manifest);
@@ -152,7 +158,7 @@ export function ContextAudit({ manifest }: { manifest: ContextManifest | null })
       >
         <span aria-hidden>{open ? "\u2212" : "+"}</span>
         <span className="min-w-0 break-words">
-          {chips.length > 0 ? `Read: ${chips.join(" \u00b7 ")}` : "What Lasso read"}
+          {buttonLabel ?? (chips.length > 0 ? `Read: ${chips.join(" \u00b7 ")}` : "What Lasso read")}
         </span>
       </button>
       {open ? (

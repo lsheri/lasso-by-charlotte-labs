@@ -13,3 +13,4 @@
 - [x] Port Past work to the approved archive spine design while preserving every existing control
 
 - [x] Port Reflect to the approved three-column design while preserving every existing control and invariant
+- [x] Port the engagement screen to the approved expanded/collapsed design while preserving every existing control and invariant

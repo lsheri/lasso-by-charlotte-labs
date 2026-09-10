@@ -22,11 +22,12 @@ import { ConnectToWorkSheet } from "@/components/engagements/ConnectToWorkSheet"
 import { WhatFedThisButton } from "@/components/engagements/WhatFedThisButton";
 import { CanvasDeliverableActions } from "@/components/engagements/CanvasDeliverableActions";
 import { EngagementBriefPanel } from "@/components/engagements/EngagementBriefPanel";
+import { EngagementStrip } from "@/components/engagements/EngagementStrip";
+import { EngagementAsk } from "@/components/engagements/InlineEngagementAsk";
 import { SharedWithSection } from "@/components/engagements/SharedWithSection";
 import { EngagementNote } from "@/components/engagements/EngagementNote";
 import { InviteDialog } from "@/components/invites/InviteDialog";
 import { SubjectCoachingSection } from "@/components/coaching/SubjectCoachingSection";
-import { ReflectDock } from "@/components/reflect/ReflectDock";
 import { useRegisterAskLasso } from "@/components/reflect/ask-lasso-context";
 import { usePerfNavFinish } from "@/hooks/use-perf-timer";
 import { useProfile } from "@/hooks/use-profile";
@@ -107,6 +108,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
     ).values(),
   );
   const mappedItemCount = canvasItems.length;
+  const deliverables = canvasItems.filter((item) => isDeliverableType(item.type));
 
   if (engagementQuery.isLoading) {
     return <p className="text-sm text-muted-foreground">Loading…</p>;
@@ -223,53 +225,76 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
         ) : null}
       </header>
 
-      <EngagementCanvas
-        engagementId={engagementId}
-        tasks={tasksQuery.data ?? []}
-        profile={profile}
-        onChanged={async () => {
-          await queryClient.invalidateQueries({
-            queryKey: ["engagement-tasks", engagementId],
-          });
-        }}
-        onOpen={(item) => {
-          markOpenStart("peek.open");
-          setPeekItem(item);
-        }}
-        headerAction={
-          profile ? (
-            <div className="flex flex-wrap items-center gap-2">
-              {profile.role !== "coach" ? (
-                <WhatFedThisButton
+      <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_400px]">
+        <EngagementCanvas
+          engagementId={engagementId}
+          tasks={tasksQuery.data ?? []}
+          profile={profile}
+          onChanged={async () => {
+            await queryClient.invalidateQueries({
+              queryKey: ["engagement-tasks", engagementId],
+            });
+          }}
+          onOpen={(item) => {
+            markOpenStart("peek.open");
+            setPeekItem(item);
+          }}
+          headerAction={
+            profile ? (
+              <div className="flex flex-wrap items-center gap-2">
+                {profile.role !== "coach" ? (
+                  <WhatFedThisButton
+                    items={canvasItems}
+                    orgId={profile.org_id}
+                    profileId={profile.id}
+                  />
+                ) : null}
+                <CanvasDeliverableActions
                   items={canvasItems}
-                  orgId={profile.org_id}
-                  profileId={profile.id}
-                />
-              ) : null}
-              <CanvasDeliverableActions
-                items={canvasItems}
-                engagementId={engagementId}
-                profile={profile}
-              />
-              {profile.role !== "coach" && membership.data?.isMember ? (
-                <ConnectToWorkSheet
                   engagementId={engagementId}
-                  streams={(tasksQuery.data ?? []).map((task) => ({
-                    id: task.id,
-                    name: task.name,
-                  }))}
-                  profile={{ id: profile.id, org_id: profile.org_id }}
-                  onChanged={async () => {
-                    await queryClient.invalidateQueries({
-                      queryKey: ["engagement-tasks", engagementId],
-                    });
-                  }}
+                  profile={profile}
                 />
-              ) : null}
-            </div>
-          ) : null
-        }
-      />
+                {profile.role !== "coach" && membership.data?.isMember ? (
+                  <ConnectToWorkSheet
+                    engagementId={engagementId}
+                    streams={(tasksQuery.data ?? []).map((task) => ({
+                      id: task.id,
+                      name: task.name,
+                    }))}
+                    profile={{ id: profile.id, org_id: profile.org_id }}
+                    onChanged={async () => {
+                      await queryClient.invalidateQueries({
+                        queryKey: ["engagement-tasks", engagementId],
+                      });
+                    }}
+                  />
+                ) : null}
+              </div>
+            ) : null
+          }
+        />
+
+        {profile && profile.role !== "coach" ? (
+          <EngagementStrip
+            engagement={engagement}
+            tasks={tasksQuery.data ?? []}
+            deliverables={deliverables}
+          >
+            {(expanded, setExpanded) => (
+              <EngagementAsk
+                open={askOpen}
+                onOpenChange={setAskOpen}
+                expanded={expanded}
+                onConversationStart={() => setExpanded(false)}
+                engagementId={engagementId}
+                engagementTitle={engagement.title}
+                profileId={profile.id}
+                orgId={profile.org_id}
+              />
+            )}
+          </EngagementStrip>
+        ) : null}
+      </div>
 
       <PeekPanel
         entry={peekItem}
@@ -383,16 +408,6 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
         />
       ) : null}
 
-      {profile && profile.role !== "coach" ? (
-        <ReflectDock
-          open={askOpen}
-          onOpenChange={setAskOpen}
-          engagementId={engagementId}
-          engagementTitle={engagement.title}
-          profileId={profile.id}
-          orgId={profile.org_id}
-        />
-      ) : null}
     </div>
   );
 }

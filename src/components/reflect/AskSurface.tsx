@@ -139,7 +139,7 @@ function WorkPicker({ ask, engagementId }: { ask: AskLasso; engagementId: string
 }
 
 /** The transcript, on binder paper. Every line sits on the 28px pitch. */
-function MessagesTab({ ask }: { ask: AskLasso }) {
+function MessagesTab({ ask, emptyActions }: { ask: AskLasso; emptyActions?: React.ReactNode }) {
   const messages = ask.messages ?? [];
   return (
     <div className="nb-binder min-h-0 flex-1 overflow-y-auto">
@@ -157,6 +157,7 @@ function MessagesTab({ ask }: { ask: AskLasso }) {
                 Try: where has this engagement drifted from the brief?
               </p>
             </div>
+             {emptyActions}
           </>
         ) : null}
 
@@ -175,7 +176,10 @@ function MessagesTab({ ask }: { ask: AskLasso }) {
               <>
                 <MarkdownMessage content={message.content} variant="binder" />
                 <div className="nb-binder-inset">
-                  <ContextAudit manifest={parseManifest(message.context_manifest)} />
+                  <ContextAudit
+                    manifest={parseManifest(message.context_manifest)}
+                    buttonLabel="Show where this came from"
+                  />
                   <AnswerSources sources={ask.sourcesByMessage?.[Number(message.id)] ?? []} />
                   <button
                     type="button"
@@ -480,6 +484,8 @@ export function AskSurface({
   orgId,
   onClose,
   mobile,
+  emptyActions,
+  inline,
 }: {
   ask: AskLasso;
   tab: AskTab;
@@ -490,6 +496,8 @@ export function AskSurface({
   orgId: string;
   onClose: () => void;
   mobile?: boolean;
+  emptyActions?: React.ReactNode;
+  inline?: boolean;
 }) {
   return (
     <>
@@ -510,7 +518,7 @@ export function AskSurface({
 
       <WorkPicker ask={ask} engagementId={engagementId} />
 
-      {tab === "messages" ? <MessagesTab ask={ask} /> : null}
+      {tab === "messages" ? <MessagesTab ask={ask} emptyActions={emptyActions} /> : null}
       {tab === "history" ? <HistoryTab ask={ask} /> : null}
       {tab === "analyses" ? (
         <AnalysesTab
@@ -524,7 +532,9 @@ export function AskSurface({
 
       {ask.error ? <p className="px-4 pb-2 text-sm text-destructive">{ask.error}</p> : null}
 
-      {tab === "messages" ? <AskComposer ask={ask} mobile={mobile ?? false} /> : null}
+      <div className={inline ? "sticky bottom-0 z-10" : undefined}>
+        {tab === "messages" ? <AskComposer ask={ask} mobile={mobile ?? false} /> : null}
+      </div>
 
       {!mobile ? (
         <Link
