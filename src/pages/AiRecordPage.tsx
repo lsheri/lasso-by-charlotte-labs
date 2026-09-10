@@ -393,6 +393,12 @@ export function AiRecordPage() {
         </div>
       )}
 
+      {threads.length > 0 ? (
+        <p className="font-hand mt-6 text-[16px] text-green">
+          nothing here was written by Lasso
+        </p>
+      ) : null}
+
       <PeekPanel
         entry={peek?.entry ?? null}
         open={peek !== null}
@@ -415,6 +421,29 @@ export function AiRecordPage() {
           orgId={profile.org_id}
         />
       ) : null}
+      </div>
+
+      <aside className="mt-8 space-y-4 lg:mt-0">
+        <CaptureCoverage
+          profileId={profile?.id}
+          itemCount={threads.length}
+          scopeLabel="your chat library"
+          dates={threads.map((t) => effectiveWorkDate(t))}
+        />
+        <ToneCard
+          tone="record"
+          label="WHY THIS PANEL EXISTS"
+          title="You can see what was read."
+        >
+          <p className="text-sm text-foreground">
+            The record shows which conversations were read and which were not, so you never have
+            to guess what Lasso worked from.
+          </p>
+          <p className="text-sm text-muted-foreground">
+            Nothing enters the record until you send it.
+          </p>
+        </ToneCard>
+      </aside>
     </div>
   );
 }
