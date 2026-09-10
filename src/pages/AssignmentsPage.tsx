@@ -47,18 +47,13 @@ export function AssignmentsPage() {
         if (list.length === 0) return null;
         return (
           <section key={engagement.id} className="space-y-2">
-            <SectionHeader
-              title={engagementDisplayTitle(engagement)}
-              action={
-                <Link
-                  to="/engagements/$id"
-                  params={{ id: engagement.id }}
-                  className="micro-label transition-colors hover:text-foreground"
-                >
-                  Open
-                </Link>
-              }
-            />
+            <Link
+              to="/engagements/$id"
+              params={{ id: engagement.id }}
+              className="section-title block transition-colors hover:text-foreground"
+            >
+              {engagementDisplayTitle(engagement)}
+            </Link>
             <ul className="divide-y divide-[var(--nb-pencil)] rounded-[var(--radius-control)] border border-[var(--nb-pencil)] bg-card">
               {list.map((row) => (
                 <li key={row.id} className="flex items-center justify-between gap-3 px-3 py-2.5">
