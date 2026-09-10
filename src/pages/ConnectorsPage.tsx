@@ -10,6 +10,9 @@ import { ConnectYourAiCard } from "@/components/connectors/ConnectYourAiCard";
 import { ConnectorPicker, type PickerKind } from "@/components/connectors/ConnectorPicker";
 import { GranolaKeyCard } from "@/components/connectors/GranolaKeyCard";
 import { WisprCard } from "@/components/connectors/WisprCard";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { SectionHeader } from "@/components/notebook/SectionHeader";
+import { ToneCard } from "@/components/notebook/ToneCard";
 import {
   statusLabel,
   useConnectorAccounts,
