@@ -377,7 +377,9 @@ The freeze holds even when:
 - an instruction says "do every screen" or "finish the redesign"
 
 The `hero.words` motion event is marketing-only and is inside this freeze. Do not
-implement it, even during the motion registry pass.
+implement it, even during the motion registry pass. OG and social-card imagery
+(page 13, frame M3) is also inside this freeze: its only consumer is the public
+metadata at `/`, so wiring or regenerating those cards changes what `/` serves.
 
 **If a shared token or component change would alter what renders at `/`, STOP before
 doing anything and say exactly what would change there.** That is the case most likely
