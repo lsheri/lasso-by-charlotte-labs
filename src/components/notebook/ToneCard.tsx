@@ -36,7 +36,8 @@ export function ToneCard({
 }: {
   tone?: CardTone;
   label?: string;
-  title: string;
+  /** Optional: a card can carry its whole body in children instead. */
+  title?: string;
   meta?: string;
   /** Small source mark, rendered at the end of the label row. */
   mark?: ReactNode;
@@ -59,7 +60,10 @@ export function ToneCard({
         </div>
       ) : null}
 
-      <span className="text-[13px] font-medium leading-[17px] text-foreground">{title}</span>
+      {title ? (
+        <span className="text-[13px] font-medium leading-[17px] text-foreground">{title}</span>
+      ) : null}
+
 
       {children ? (
         <div className="text-[11.5px] leading-[17px] text-muted-foreground">{children}</div>
