@@ -76,6 +76,18 @@ const DRIVE_BRANDS: Record<string, Brand> = {
   googledrive: siGoogledrive,
 };
 
+/**
+ * Four circles drawn by hand on a 24x24 box: centre near 12, radius wobbling
+ * between roughly 10.2 and 11.6, so the outline is visibly not a machine
+ * `border-radius: 50%`. All four read as a circle; none is a blob.
+ */
+const DISC_PATHS = [
+  "M12 1.4 C17.3 1.5 22.6 6.2 22.5 12.3 C22.4 18 17.6 22.6 11.7 22.5 C6.1 22.4 1.5 17.4 1.6 11.6 C1.7 6.1 6.4 1.3 12 1.4 Z",
+  "M11.8 1.6 C17.8 1.4 22.4 6.6 22.3 12 C22.2 17.4 18.2 22.4 12.2 22.4 C6.5 22.4 1.7 18.2 1.8 12.2 C1.9 6.5 6 1.8 11.8 1.6 Z",
+  "M12.3 1.5 C18.2 2 22.3 6 22.4 11.8 C22.5 17.8 17.9 22.3 12 22.5 C6.2 22.7 1.6 18 1.5 12 C1.4 6.3 6.4 1 12.3 1.5 Z",
+  "M12 1.7 C17.5 1.2 22.5 6.5 22.2 12.4 C21.9 18.1 17.3 22.7 11.6 22.3 C6.2 21.9 1.6 17.7 1.8 11.9 C2 6.4 6.6 2.2 12 1.7 Z",
+] as const;
+
 /** The vendor key behind an item, from the vendor field or the source prefix. */
 export function sourceVendorKey(item: SourceItem): string | null {
   const direct = normalise(item.source_vendor) ?? normalise(item.source_meta?.vendor);
