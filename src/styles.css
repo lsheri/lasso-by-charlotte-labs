@@ -1658,6 +1658,13 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
     animation: none !important;
     transform: none !important;
   }
+  .nb-spider-reading .nb-spider-body,
+  .nb-spider-reading .nb-spider-eyes,
+  .nb-spider-reading .nb-spider-dot:nth-child(1),
+  .nb-spider-reading .nb-spider-dot:nth-child(2),
+  .nb-spider-reading .nb-spider-dot:nth-child(3) {
+    animation: none !important;
+  }
 }
 
 /* ---------------------------------------------------------------------------
