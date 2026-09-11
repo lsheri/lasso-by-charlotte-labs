@@ -391,6 +391,16 @@
   --engagement-6: #a3a3e0;
   --engagement-7: #a5c4b1;
   --engagement-8: #d0a8a8;
+  /* In the dark, a note is dark paper with a colour cast — never a light
+     rectangle burning a hole in the page. */
+  --paper-1: #22303d;
+  --paper-2: #24332a;
+  --paper-3: #3a2a22;
+  --paper-4: #322435;
+  --paper-5: #34301f;
+  --paper-6: #262a44;
+  --paper-7: #1f3330;
+  --paper-8: #3a2728;
 }
 
 .dark {
