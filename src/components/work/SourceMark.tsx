@@ -180,17 +180,25 @@ export function SourceMark({
   if (!letters) return null;
   const hue = vendorHue(key);
   const styles = hue ? hueStyles(hue) : null;
+  // There is no sane hand-drawn circle around a wide pill, so on paper the pill
+  // gets a white base under its tint and separates the same way a logo does.
+  const pillBackground = styles
+    ? disc
+      ? `color-mix(in oklab, var(${hue}) 14%, var(--nb-white))`
+      : styles.background
+    : disc
+      ? "var(--nb-white)"
+      : "var(--secondary)";
   return (
     <span
       role="img"
       aria-label={label}
       title={label}
       className={`inline-flex shrink-0 items-center rounded-full px-1 py-px font-mono text-[9px] font-semibold uppercase leading-none tracking-[0.06em] ${className}`}
-      style={
-        styles
-          ? { color: styles.color, backgroundColor: styles.background }
-          : { color: "var(--muted-foreground)", backgroundColor: "var(--secondary)" }
-      }
+      style={{
+        color: styles ? styles.color : "var(--muted-foreground)",
+        backgroundColor: pillBackground,
+      }}
     >
       {letters.letters}
     </span>
