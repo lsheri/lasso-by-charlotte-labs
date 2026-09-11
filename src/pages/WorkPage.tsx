@@ -652,7 +652,8 @@ export function WorkPage() {
         then choose what to look at.
       */}
       {all.length > 0 ? (
-        <div className="mb-4 w-[560px] max-w-full">
+        <div className="mb-4 flex flex-wrap items-start gap-5">
+        <div className="w-[560px] max-w-full">
           <ToneCard tone="paper" label="WHERE THIS CAME FROM">
             {/* Name, bar and count on ONE line, so the panel reads as a tally
                 rather than a stack of stacked rows. */}
