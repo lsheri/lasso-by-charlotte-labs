@@ -27,9 +27,13 @@ export function NotebookSpider({
       className={`nb-spider ${reading ? "nb-spider-reading" : ""} ${className}`}
       fill="none"
       stroke="var(--nb-graphite)"
-      strokeWidth={1.9}
+      strokeWidth={1.6}
       strokeLinecap="round"
       strokeLinejoin="round"
+      // The spider is drawn at 44px in the work legend and 132px in the
+      // reading state. A pencil line is the same weight in both places, so the
+      // stroke stays a constant screen width instead of scaling with the viewBox.
+      vectorEffect="non-scaling-stroke"
     >
       <g className="nb-spider-body">
         {/* 8 legs — two curling up from the head, two out to the sides, four down */}
@@ -45,7 +49,7 @@ export function NotebookSpider({
         <ellipse cx="64" cy="62" rx="23" ry="19" fill="var(--nb-white)" />
         <ellipse cx="46" cy="36" rx="16.5" ry="15" fill="var(--nb-white)" />
         {/* the smile sits on the head and does not scan with the eyes */}
-        <path d="M40 41 Q45.5 45.5 51 41" strokeWidth={1.6} />
+        <path d="M40 41 Q45.5 45.5 51 41" />
         <g className="nb-spider-eyes">
           <circle cx="40" cy="32" r="2" fill="var(--nb-graphite)" stroke="none" />
           <circle cx="51" cy="32" r="2" fill="var(--nb-graphite)" stroke="none" />
