@@ -1598,6 +1598,30 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   100% { transform: rotate(0deg); }
 }
 
+/* Sandbox A · M10 "Spider processes". One 3s loop: the body breathes, the
+   eyes scan once left to right and back, and three dots pulse in sequence
+   across the first third before resting. Measured off the Figma timeline,
+   not invented. */
+.nb-spider-reading .nb-spider-body {
+  animation: nb-spider-breathe 3s var(--nb-ease) infinite;
+}
+.nb-spider-reading .nb-spider-eyes {
+  animation: nb-spider-scan 3s var(--nb-ease) infinite;
+}
+.nb-spider-reading .nb-spider-dot:nth-child(1) { animation: nb-spider-dot-a 3s var(--nb-ease) infinite; }
+.nb-spider-reading .nb-spider-dot:nth-child(2) { animation: nb-spider-dot-b 3s var(--nb-ease) infinite; }
+.nb-spider-reading .nb-spider-dot:nth-child(3) { animation: nb-spider-dot-c 3s var(--nb-ease) infinite; }
+
+@keyframes nb-spider-breathe { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-2px); } }
+@keyframes nb-spider-scan {
+  0%, 20%   { transform: translateX(-1.6px); }
+  40%, 60%  { transform: translateX(1.6px); }
+  80%, 100% { transform: translateX(-1.6px); }
+}
+@keyframes nb-spider-dot-a { 0% { opacity: 0.25; } 10% { opacity: 1; } 20%, 100% { opacity: 0.25; } }
+@keyframes nb-spider-dot-b { 0%, 10% { opacity: 0.25; } 20% { opacity: 1; } 30%, 100% { opacity: 0.25; } }
+@keyframes nb-spider-dot-c { 0%, 20% { opacity: 0.25; } 30% { opacity: 1; } 40%, 100% { opacity: 0.25; } }
+
 @media (prefers-reduced-motion: reduce) {
   .nb-note-caret,
   .nb-hi {
