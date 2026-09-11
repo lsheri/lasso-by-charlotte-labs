@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 
 import { usePerfOpenFinish, usePerfTimerFactory } from "@/hooks/use-perf-timer";
+import { SpiderReading } from "@/components/notebook/NotebookSpider";
 import { Pencil, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -268,7 +269,9 @@ function AuditSurface({
       ) : null}
 
       {isLoading ? (
-        <p className="px-4 py-6 text-sm text-muted-foreground">Reading the record…</p>
+        <div className="flex flex-1 items-center justify-center px-4 py-10">
+          <SpiderReading caption="Reading the record…" />
+        </div>
       ) : error || !data ? (
         <p className="px-4 py-6 text-sm text-destructive">
           {error instanceof Error ? error.message : "This audit could not be opened."}
