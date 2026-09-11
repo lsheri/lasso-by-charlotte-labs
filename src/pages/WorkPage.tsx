@@ -62,6 +62,7 @@ import {
   type WorkItemRow,
 } from "@/lib/work-types";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { NotebookSpider } from "@/components/notebook/NotebookSpider";
 import { ToneCard } from "@/components/notebook/ToneCard";
 import { WorkSubtitle } from "@/components/work/WorkSubtitle";
 import { sourceVendorKey } from "@/components/work/SourceMark";
