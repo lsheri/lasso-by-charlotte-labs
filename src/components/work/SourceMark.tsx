@@ -111,32 +111,68 @@ export function SourceMark({
   item,
   size = 13,
   className = "",
+  disc = false,
 }: {
   item: SourceItem;
   size?: number;
   className?: string;
+  /**
+   * Draw a white, hand-drawn circle behind the mark. On a pastel note a brand
+   * mark sits straight on the tint and disappears; the disc gives it a page to
+   * stand on. Off by default, so every other caller renders as before.
+   */
+  disc?: boolean;
 }) {
   const visible = useVendorVisible();
   const key = sourceVendorKey(item);
   // Coaches in a vendor-neutral org do not get to read the brand off a logo.
+  // The disc lives INSIDE this guard on purpose: an empty white circle where a
+  // logo was withheld would leak the fact that there was one.
   if (!key || !visible) return null;
   const brand = sourceBrand(item);
   const letters = LETTERMARKS[key];
   const label = brand?.title ?? letters?.label ?? vendorLabel(key);
 
   if (brand) {
-    return (
+    const mark = (
       <svg
         role="img"
         aria-label={label}
         viewBox="0 0 24 24"
         width={size}
         height={size}
-        className={`inline-block shrink-0 align-[-0.12em] ${className}`}
+        className={disc ? "relative block" : `inline-block shrink-0 align-[-0.12em] ${className}`}
       >
         <title>{label}</title>
         <path d={brand.path} fill={`#${brand.hex}`} />
       </svg>
+    );
+    if (!disc) return mark;
+    const box = size + 9;
+    // Four hands, not one stamp: which circle a tool wears is stable per vendor
+    // so the page is not a grid of identical outlines.
+    const path = DISC_PATHS[hashId(key) % DISC_PATHS.length]!;
+    return (
+      <span
+        className={`relative inline-flex shrink-0 items-center justify-center align-[-0.24em] ${className}`}
+        style={{ width: box, height: box }}
+      >
+        <svg
+          aria-hidden
+          viewBox="0 0 24 24"
+          width={box}
+          height={box}
+          className="absolute inset-0"
+        >
+          <path
+            d={path}
+            fill="var(--nb-white)"
+            stroke="color-mix(in oklab, var(--nb-pencil) 30%, transparent)"
+            strokeWidth={0.75}
+          />
+        </svg>
+        {mark}
+      </span>
     );
   }
 
