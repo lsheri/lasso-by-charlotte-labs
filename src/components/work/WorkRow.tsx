@@ -213,10 +213,8 @@ export function WorkRow({
             {chips}
             {actions}
           </div>
-        </div>
-
-        {footer ? <div className="px-3 pb-3">{footer}</div> : null}
-      </div>
+        {footer ? <div className="mt-2">{footer}</div> : null}
+      </NotePaperCard>
     );
   }
 
