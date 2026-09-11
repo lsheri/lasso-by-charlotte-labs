@@ -36,8 +36,14 @@ export function notePaper(id: string, place: "column" | "pile" = "column"): Note
   const hash = hashId(id);
   const unit = ((hash % 2001) - 1000) / 1000; // -1 .. 1
   const tilt = place === "pile" ? PILE_TILT : COLUMN_TILT;
+  // A uniform spread lands most notes near zero, and a note at 0deg is just a
+  // rectangle. Keep the hash's sign, but never let the magnitude fall below
+  // 45% of the maximum, so no note is ever flat.
+  const sign = unit < 0 ? -1 : 1;
+  const magnitude = 0.45 + 0.55 * Math.abs(unit); // 0.45 .. 1
+  const deg = sign * magnitude * tilt;
   return {
-    "--nb-rot": `${(Math.round(unit * tilt * 100) / 100).toFixed(2)}deg`,
+    "--nb-rot": `${(Math.round(deg * 100) / 100).toFixed(2)}deg`,
     "--nb-note-period": PERIODS[hash % PERIODS.length]!,
     // Negative delay starts each note mid-cycle, so nothing waits to begin and
     // no two neighbours reach the same extreme together.
