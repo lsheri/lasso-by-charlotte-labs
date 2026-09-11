@@ -1,3 +1,4 @@
+import { useMotion } from "@/hooks/use-motion";
 import type { CSSProperties } from "react";
 
 interface NotebookSpiderProps {
@@ -63,13 +64,20 @@ export function NotebookSpider({
  * The reading spider with its caption row. Used by motion surfaces that resolve
  * to the `spider-processes` class.
  */
-export function SpiderReading({ className = "" }: { className?: string }) {
+export function SpiderReading({
+  caption = "Reading your work",
+  className = "",
+}: {
+  caption?: string;
+  className?: string;
+}) {
+  const motion = useMotion("spider.guiding");
   return (
     <div className={`flex flex-col items-center ${className}`}>
-      <NotebookSpider size={132} reading />
+      <NotebookSpider size={132} className={motion.className} />
       <div className="mt-[18px] flex items-center gap-2">
         <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-soft">
-          READING YOUR WORK
+          {caption}
         </span>
         <span className="flex items-center gap-[5px]">
           <span
