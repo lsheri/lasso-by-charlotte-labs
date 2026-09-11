@@ -63,10 +63,13 @@ export function notePaper(id: string, place: "column" | "pile" = "column"): Note
  */
 export function noteHue(engagementId: string | null | undefined): CSSProperties {
   if (!engagementId) return {};
-  const hue = `var(${engagementHue(engagementId)})`;
+  const ink = `var(${engagementHue(engagementId)})`;
+  // engagementHue returns "--engagement-N"; the paper twin is "--paper-N".
+  const paper = `var(${engagementHue(engagementId).replace("--engagement-", "--paper-")})`;
   return {
-    // 15% over white keeps the mono stamps at full contrast on every hue.
-    "--nb-note-fill": `color-mix(in oklab, ${hue} 15%, var(--nb-white))`,
-    "--nb-note-edge": `color-mix(in oklab, ${hue} 42%, var(--nb-white))`,
+    "--nb-note-fill": paper,
+    // A real note's edge is a shadowed version of its own colour, so the ink
+    // mixes toward the paper rather than toward white.
+    "--nb-note-edge": `color-mix(in oklab, ${ink} 30%, ${paper})`,
   } as CSSProperties;
 }
