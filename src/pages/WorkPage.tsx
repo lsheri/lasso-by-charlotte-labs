@@ -20,6 +20,7 @@ import { ConnectorBrowseActions } from "@/components/connectors/ConnectorBrowseA
 import { WatchSuggestionBanner } from "@/components/connectors/WatchSuggestionBanner";
 import { SuggestLegend } from "@/components/common/Suggested";
 import { SuggestionChip } from "@/components/work/SuggestionChip";
+import { noteHue, notePaper } from "@/components/work/note-paper";
 import { PeekPanel, type PeekEntry } from "@/components/peek/PeekPanel";
 import type { PeekAnalysisPreset } from "@/components/peek/PeekActionBar";
 import { UploadFilesButton } from "@/components/work/UploadFilesButton";
