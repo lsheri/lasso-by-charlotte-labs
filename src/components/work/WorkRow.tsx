@@ -3,9 +3,70 @@ import { CircleDashed, Lock } from "lucide-react";
 import { EngagementChip, TypeBadge, TypeIcon } from "@/components/work/TypeIcon";
 import { ArtifactNote, SourceMark, VendorMark } from "@/components/work/SourceMark";
 import { stampDate } from "@/components/work/card-stamp";
+import { notePaper, noteHue } from "@/components/work/note-paper";
+import { useNoteLive } from "@/hooks/use-note-live";
 import { UNREAD_MARKER_LINE, contentsUnread, textStatusReason } from "@/lib/text-status";
 import { engagementHue, workIdentityLabel } from "@/lib/work-identity";
 import { effectiveWorkDate, formatDate, type WorkItemRow } from "@/lib/work-types";
+
+/**
+ * The sheet a dense note is drawn on. Sandbox A · M5 "Paper physics".
+ *
+ * Split out because it owns a hook — the on-screen gate — and a hook cannot
+ * live inside the `if (dense)` branch of a component that also returns a wide
+ * layout. Keeping it separate means the wide row's hook list is untouched.
+ */
+function NotePaperCard({
+  item,
+  state,
+  engagementId,
+  onOpen,
+  children,
+}: {
+  item: WorkItemRow;
+  state: WorkItemRow["visibility"];
+  engagementId: string | null;
+  onOpen?: (() => void) | undefined;
+  children: React.ReactNode;
+}) {
+  const live = useNoteLive<HTMLDivElement>();
+  return (
+    <div
+      ref={live}
+      className="nb-note"
+      data-note-state={state}
+      /*
+        No corner fold here. The fold means "shipped to the firm", and a
+        WorkItemRow only knows whether it is MAPPED, which is a different and
+        weaker claim — claimed is not shipped. Line three already says
+        "CHA-01 · CLAIMED" in words. A fold that overstates is worse than no
+        fold on a product whose argument is that it never says more than it can
+        prove, so the fold waits for a surface that reads shipped_work.
+      */
+      style={{ ...notePaper(item.id), ...noteHue(engagementId) }}
+    >
+      <div
+        {...(onOpen
+          ? {
+              role: "button" as const,
+              tabIndex: 0,
+              "aria-label": item.title,
+              onClick: onOpen,
+              onKeyDown: (event: React.KeyboardEvent) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  onOpen();
+                }
+              },
+            }
+          : {})}
+        className={`nb-note-body group/row ${onOpen ? "cursor-pointer" : ""}`}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
 
 export function WorkRow({
   item,
@@ -82,30 +143,17 @@ export function WorkRow({
 
   if (dense) {
     return (
-      <div
-        className={`rounded-[var(--radius)] border ${shell} ${
-          onOpen ? "transition-colors hover:border-accent/40" : ""
-        }`}
-        style={{ ...wash, ...spine }}
+      <NotePaperCard
+        item={item}
+        state={state}
+        engagementId={mapping?.engagement_id ?? null}
+        onOpen={onOpen}
       >
-        <div
-          {...(onOpen
-            ? {
-                role: "button" as const,
-                tabIndex: 0,
-                "aria-label": item.title,
-                onClick: onOpen,
-                onKeyDown: (event: React.KeyboardEvent) => {
-                  if (event.key === "Enter" || event.key === " ") {
-                    event.preventDefault();
-                    onOpen();
-                  }
-                },
-              }
-            : {})}
-          className={`group/row px-3 py-2.5 ${onOpen ? "cursor-pointer" : ""}`}
-        >
-          {/* Line one: where it came from, and the type glyph on the far edge. */}
+          {/* Line one: where it came from, and the tool's own mark on the far
+              edge. The logo is full colour because that is the one thing on
+              this note whose colour is already true in the world — and
+              SourceMark still withholds it from a coach in a vendor-neutral
+              org, which is a rule this does not get to override. */}
           <div className="flex items-start justify-between gap-2">
             <div className="flex min-w-0 items-center gap-1.5">
               {lead ? (
@@ -120,12 +168,16 @@ export function WorkRow({
                   aria-label="Private"
                 />
               ) : null}
+              <SourceMark item={item} size={14} />
               <span className="min-w-0 truncate font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
                 <VendorMark item={item} />
                 {" · "}
                 {stampDate(dateIso)}
               </span>
             </div>
+            {/* The type glyph stays opposite, as frame 22:220 draws it. The two
+                marks say different things: the logo is where this came from,
+                the glyph is what kind of thing it is. */}
             <span className="shrink-0">
               <TypeIcon item={item} size="sm" />
             </span>
@@ -161,10 +213,8 @@ export function WorkRow({
             {chips}
             {actions}
           </div>
-        </div>
-
-        {footer ? <div className="px-3 pb-3">{footer}</div> : null}
-      </div>
+        {footer ? <div className="mt-2">{footer}</div> : null}
+      </NotePaperCard>
     );
   }
 
