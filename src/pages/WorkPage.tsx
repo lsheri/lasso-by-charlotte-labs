@@ -680,6 +680,46 @@ export function WorkPage() {
             </ul>
           </ToneCard>
         </div>
+
+        {/* What the note colours mean, for the engagements actually on this
+            page. Eight swatches when four clients are on screen would be a lie
+            about the data, so this reads the same set the chips below do. */}
+        {legendEngagements.length > 0 ? (
+          <div className="flex max-w-[380px] items-start gap-3">
+            {/* Kept empty on purpose: artwork lands here in a later pass. */}
+            <div className="w-11 shrink-0" aria-hidden />
+            <div>
+              <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-soft">
+                WHAT THE COLOURS MEAN
+              </p>
+              <ul className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2">
+                {legendEngagements.map((entry) => (
+                  <li key={entry.code} className="flex items-center gap-2">
+                    <span
+                      aria-hidden
+                      className="block shrink-0"
+                      style={{
+                        width: 20,
+                        height: 15,
+                        borderRadius: "3px 3px 4px 3px",
+                        background: "var(--nb-note-fill)",
+                        border: "1px solid var(--nb-note-edge)",
+                        boxShadow: "0 1.5px 2px -1px rgb(22 24 26 / 0.18)",
+                        transform: "rotate(var(--nb-rot, 0deg))",
+                        ...notePaper(entry.engagementId),
+                        ...noteHue(entry.engagementId),
+                      }}
+                    />
+                    <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
+                      {entry.code}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        ) : null}
+        </div>
       ) : null}
 
       {all.length > 0 ? (
