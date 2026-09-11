@@ -62,6 +62,7 @@ import {
   type WorkItemRow,
 } from "@/lib/work-types";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { NotebookSpider } from "@/components/notebook/NotebookSpider";
 import { ToneCard } from "@/components/notebook/ToneCard";
 import { WorkSubtitle } from "@/components/work/WorkSubtitle";
 import { sourceVendorKey } from "@/components/work/SourceMark";
@@ -687,8 +688,9 @@ export function WorkPage() {
             about the data, so this reads the same set the chips below do. */}
         {legendEngagements.length > 0 ? (
           <div className="flex max-w-[380px] items-start gap-3">
-            {/* Kept empty on purpose: artwork lands here in a later pass. */}
-            <div className="w-11 shrink-0" aria-hidden />
+            {/* The spider is the legend's keeper: it sits beside the colour
+                chips as if it were holding them. */}
+            <NotebookSpider size={44} className="shrink-0" aria-hidden="true" />
             <div>
               <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-soft">
                 WHAT THE COLOURS MEAN
