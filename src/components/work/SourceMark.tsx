@@ -10,6 +10,7 @@ import {
   siNotion,
 } from "simple-icons";
 
+import { hashId } from "@/components/work/pile-scatter";
 import { useVendorVisible } from "@/hooks/use-vendor-display";
 import { vendorLabel } from "@/lib/conversation-shared";
 import { hueStyles, vendorHue, workIdentity } from "@/lib/work-identity";
