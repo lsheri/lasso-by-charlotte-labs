@@ -417,6 +417,25 @@ export function WorkPage() {
     ),
   ).sort((a, b) => a.localeCompare(b));
 
+  /**
+   * The same engagements the filter chips are built from, paired with the id
+   * their paper colour is derived from. No new read: both values are already on
+   * the mapped rows. The legend must never show a colour for an engagement that
+   * is not on this page.
+   */
+  const legendEngagements = (() => {
+    const byCode = new Map<string, string>();
+    for (const item of mapped) {
+      const task = item.work_item_tasks[0]?.tasks;
+      const code = task?.engagements?.code;
+      const id = task?.engagement_id;
+      if (code && id && !byCode.has(code)) byCode.set(code, id);
+    }
+    return engagementCodes
+      .filter((code) => byCode.has(code))
+      .map((code) => ({ code, engagementId: byCode.get(code)! }));
+  })();
+
   // Private work only appears in the columns while the show-private box is on.
   const visible = showPrivate ? all : all.filter((item) => item.visibility !== "private");
 
