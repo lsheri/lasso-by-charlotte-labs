@@ -26,7 +26,7 @@ export type NotePaper = CSSProperties & {
  * it. 1.4deg is the most the grid absorbs cleanly; the pile, which has air,
  * keeps the full 3.
  */
-const COLUMN_TILT = 1.4;
+const COLUMN_TILT = 1.8;
 const PILE_TILT = 3;
 
 /** Three periods, so a column never breathes in unison. */
