@@ -203,6 +203,7 @@ const MOTION_CLASS: Partial<Record<MotionName, string>> = {
   "breathing-dots": "nb-dots",
   "card-lifts": "nb-fade-in",
   "spider-looks-again": "nb-spider-wobble",
+  "spider-processes": "nb-spider-reading",
 };
 
 /** True when the reader has asked for less movement. Safe during SSR. */
