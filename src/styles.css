@@ -359,6 +359,17 @@
   --engagement-6: #414a94;
   --engagement-7: #276b53;
   --engagement-8: #85474a;
+  /* Paper twins of the eight ink accents. Authored pastels: a dilution of dark
+     ink resolves to a warm grey, so these are written at high lightness with
+     real chroma instead of being derived. */
+  --paper-1: #dbe8f5; /* blue   — pairs --engagement-1 */
+  --paper-2: #dcecd9; /* green  — pairs --engagement-2 */
+  --paper-3: #fadfd0; /* orange — pairs --engagement-3 */
+  --paper-4: #ecdcec; /* purple — pairs --engagement-4 */
+  --paper-5: #f7ecc9; /* yellow — pairs --engagement-5 */
+  --paper-6: #dfe1f7; /* indigo — pairs --engagement-6 */
+  --paper-7: #d6ece2; /* teal   — pairs --engagement-7 */
+  --paper-8: #f7dcdc; /* rose   — pairs --engagement-8 */
 }
 
 .dark {
@@ -380,6 +391,16 @@
   --engagement-6: #a3a3e0;
   --engagement-7: #a5c4b1;
   --engagement-8: #d0a8a8;
+  /* In the dark, a note is dark paper with a colour cast — never a light
+     rectangle burning a hole in the page. */
+  --paper-1: #22303d;
+  --paper-2: #24332a;
+  --paper-3: #3a2a22;
+  --paper-4: #322435;
+  --paper-5: #34301f;
+  --paper-6: #262a44;
+  --paper-7: #1f3330;
+  --paper-8: #3a2728;
 }
 
 .dark {

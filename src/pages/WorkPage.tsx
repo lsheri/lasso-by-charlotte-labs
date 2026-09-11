@@ -20,6 +20,7 @@ import { ConnectorBrowseActions } from "@/components/connectors/ConnectorBrowseA
 import { WatchSuggestionBanner } from "@/components/connectors/WatchSuggestionBanner";
 import { SuggestLegend } from "@/components/common/Suggested";
 import { SuggestionChip } from "@/components/work/SuggestionChip";
+import { noteHue, notePaper } from "@/components/work/note-paper";
 import { PeekPanel, type PeekEntry } from "@/components/peek/PeekPanel";
 import type { PeekAnalysisPreset } from "@/components/peek/PeekActionBar";
 import { UploadFilesButton } from "@/components/work/UploadFilesButton";
@@ -417,6 +418,25 @@ export function WorkPage() {
     ),
   ).sort((a, b) => a.localeCompare(b));
 
+  /**
+   * The same engagements the filter chips are built from, paired with the id
+   * their paper colour is derived from. No new read: both values are already on
+   * the mapped rows. The legend must never show a colour for an engagement that
+   * is not on this page.
+   */
+  const legendEngagements = (() => {
+    const byCode = new Map<string, string>();
+    for (const item of mapped) {
+      const task = item.work_item_tasks[0]?.tasks;
+      const code = task?.engagements?.code;
+      const id = task?.engagement_id;
+      if (code && id && !byCode.has(code)) byCode.set(code, id);
+    }
+    return engagementCodes
+      .filter((code) => byCode.has(code))
+      .map((code) => ({ code, engagementId: byCode.get(code)! }));
+  })();
+
   // Private work only appears in the columns while the show-private box is on.
   const visible = showPrivate ? all : all.filter((item) => item.visibility !== "private");
 
@@ -633,7 +653,8 @@ export function WorkPage() {
         then choose what to look at.
       */}
       {all.length > 0 ? (
-        <div className="mb-4 w-[560px] max-w-full">
+        <div className="mb-4 flex flex-wrap items-start gap-5">
+        <div className="w-[560px] max-w-full">
           <ToneCard tone="paper" label="WHERE THIS CAME FROM">
             {/* Name, bar and count on ONE line, so the panel reads as a tally
                 rather than a stack of stacked rows. */}
@@ -659,6 +680,46 @@ export function WorkPage() {
               ))}
             </ul>
           </ToneCard>
+        </div>
+
+        {/* What the note colours mean, for the engagements actually on this
+            page. Eight swatches when four clients are on screen would be a lie
+            about the data, so this reads the same set the chips below do. */}
+        {legendEngagements.length > 0 ? (
+          <div className="flex max-w-[380px] items-start gap-3">
+            {/* Kept empty on purpose: artwork lands here in a later pass. */}
+            <div className="w-11 shrink-0" aria-hidden />
+            <div>
+              <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-soft">
+                WHAT THE COLOURS MEAN
+              </p>
+              <ul className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2">
+                {legendEngagements.map((entry) => (
+                  <li key={entry.code} className="flex items-center gap-2">
+                    <span
+                      aria-hidden
+                      className="block shrink-0"
+                      style={{
+                        width: 20,
+                        height: 15,
+                        borderRadius: "3px 3px 4px 3px",
+                        background: "var(--nb-note-fill)",
+                        border: "1px solid var(--nb-note-edge)",
+                        boxShadow: "0 1.5px 2px -1px rgb(22 24 26 / 0.18)",
+                        transform: "rotate(var(--nb-rot, 0deg))",
+                        ...notePaper(entry.engagementId),
+                        ...noteHue(entry.engagementId),
+                      }}
+                    />
+                    <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
+                      {entry.code}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        ) : null}
         </div>
       ) : null}
 

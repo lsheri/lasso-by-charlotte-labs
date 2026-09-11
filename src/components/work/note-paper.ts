@@ -26,7 +26,7 @@ export type NotePaper = CSSProperties & {
  * it. 1.4deg is the most the grid absorbs cleanly; the pile, which has air,
  * keeps the full 3.
  */
-const COLUMN_TILT = 1.4;
+const COLUMN_TILT = 1.8;
 const PILE_TILT = 3;
 
 /** Three periods, so a column never breathes in unison. */
@@ -36,8 +36,14 @@ export function notePaper(id: string, place: "column" | "pile" = "column"): Note
   const hash = hashId(id);
   const unit = ((hash % 2001) - 1000) / 1000; // -1 .. 1
   const tilt = place === "pile" ? PILE_TILT : COLUMN_TILT;
+  // A uniform spread lands most notes near zero, and a note at 0deg is just a
+  // rectangle. Keep the hash's sign, but never let the magnitude fall below
+  // 45% of the maximum, so no note is ever flat.
+  const sign = unit < 0 ? -1 : 1;
+  const magnitude = 0.45 + 0.55 * Math.abs(unit); // 0.45 .. 1
+  const deg = sign * magnitude * tilt;
   return {
-    "--nb-rot": `${(Math.round(unit * tilt * 100) / 100).toFixed(2)}deg`,
+    "--nb-rot": `${(Math.round(deg * 100) / 100).toFixed(2)}deg`,
     "--nb-note-period": PERIODS[hash % PERIODS.length]!,
     // Negative delay starts each note mid-cycle, so nothing waits to begin and
     // no two neighbours reach the same extreme together.
@@ -57,10 +63,13 @@ export function notePaper(id: string, place: "column" | "pile" = "column"): Note
  */
 export function noteHue(engagementId: string | null | undefined): CSSProperties {
   if (!engagementId) return {};
-  const hue = `var(${engagementHue(engagementId)})`;
+  const ink = `var(${engagementHue(engagementId)})`;
+  // engagementHue returns "--engagement-N"; the paper twin is "--paper-N".
+  const paper = `var(${engagementHue(engagementId).replace("--engagement-", "--paper-")})`;
   return {
-    // 15% over white keeps the mono stamps at full contrast on every hue.
-    "--nb-note-fill": `color-mix(in oklab, ${hue} 15%, var(--nb-white))`,
-    "--nb-note-edge": `color-mix(in oklab, ${hue} 42%, var(--nb-white))`,
+    "--nb-note-fill": paper,
+    // A real note's edge is a shadowed version of its own colour, so the ink
+    // mixes toward the paper rather than toward white.
+    "--nb-note-edge": `color-mix(in oklab, ${ink} 30%, ${paper})`,
   } as CSSProperties;
 }

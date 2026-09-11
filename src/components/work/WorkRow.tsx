@@ -168,7 +168,7 @@ export function WorkRow({
                   aria-label="Private"
                 />
               ) : null}
-              <SourceMark item={item} size={14} />
+              <SourceMark item={item} size={14} disc />
               <span className="min-w-0 truncate font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
                 <VendorMark item={item} />
                 {" · "}
