@@ -59,85 +59,83 @@ afterEach(() => {
   mocks.decisions = [];
 });
 
-describe("Pass 123: the sidebar grows an Admin section", () => {
-  it("config places Admin after Your work with Firm view + Members", () => {
+describe("Pass 123: the sidebar follows the weekly loop", () => {
+  it("config places What you learned before Run the firm", () => {
+    // Nav is now ordered by the weekly loop rather than by object type.
     expect(navGroups.map((g) => g.label)).toEqual([
-      "Connectors",
-      "Work",
-      // Pass 138: Past work sits in its own Firm group under Work.
-      "Your organization",
-      "Engagements",
-      "Your work",
-      "Admin",
+      "What landed",
+      "Where it goes",
+      "What you learned",
+      "Run the firm",
+      "Your account",
     ]);
 
-    const yourWork = navGroups.find((g) => g.label === "Your work")!;
-    expect(yourWork.items.map((i) => i.to)).toEqual([
-      "/overview",
-      
-      "/reflect",
+    const learned = navGroups.find((g) => g.label === "What you learned")!;
+    expect(learned.items.map((i) => i.to)).toEqual([
+      "/archive",
       "/ai-record",
+      "/reflect",
+      "/decisions",
+      "/overview",
       "/one-on-one",
       "/coach-notes",
-      "/decisions",
-      "/settings",
     ]);
-    expect(yourWork.items.map((i) => i.to)).not.toContain("/firm");
-    expect(yourWork.items.map((i) => i.to)).not.toContain("/members");
+    expect(learned.items.map((i) => i.to)).not.toContain("/firm");
+    expect(learned.items.map((i) => i.to)).not.toContain("/members");
 
-    const admin = navGroups.find((g) => g.label === "Admin")!;
-    expect(admin.items.map((i) => ({ to: i.to, label: i.label }))).toEqual([
+    const runTheFirm = navGroups.find((g) => g.label === "Run the firm")!;
+    expect(runTheFirm.items.map((i) => ({ to: i.to, label: i.label }))).toEqual([
       { to: "/firm", label: "Firm view" },
       { to: "/members", label: "Members" },
     ]);
   });
 
-  it("admin on a business org sees Admin with Firm view + Members", () => {
+  it("admin on a business org sees Run the firm with Firm view + Members", () => {
     setup("admin", "company");
 
-    expect(screen.queryByText("Admin")).not.toBeNull();
+    expect(screen.queryByText("Run the firm")).not.toBeNull();
     expect(screen.queryByText("Firm view")).not.toBeNull();
     expect(screen.queryByText("Members")).not.toBeNull();
 
-    expect(screen.queryByText("Your work")).not.toBeNull();
+    expect(screen.queryByText("What you learned")).not.toBeNull();
     expect(screen.queryByText("Settings")).not.toBeNull();
     expect(screen.queryByText("Overview")).not.toBeNull();
 
-    // Firm view and Members should not also appear under Your work.
-    const yourWorkSection = screen.getByText("Your work").parentElement!;
-    expect(yourWorkSection.textContent).not.toContain("Firm view");
-    expect(yourWorkSection.textContent).not.toContain("Members");
+    // Firm view and Members should not also appear under What you learned.
+    const learnedSection = screen.getByText("What you learned").parentElement!;
+    expect(learnedSection.textContent).not.toContain("Firm view");
+    expect(learnedSection.textContent).not.toContain("Members");
   });
 
-  it("plain member on a business org sees no Admin header at all", () => {
+  it("plain member on a business org sees no Run the firm header at all", () => {
     setup("member", "company");
 
-    expect(screen.queryByText("Admin")).toBeNull();
+    expect(screen.queryByText("Run the firm")).toBeNull();
     expect(screen.queryByText("Firm view")).toBeNull();
     expect(screen.queryByText("Members")).toBeNull();
     expect(screen.queryByText("Your coaches")).toBeNull();
 
-    expect(screen.queryByText("Your work")).not.toBeNull();
+    expect(screen.queryByText("What you learned")).not.toBeNull();
     expect(screen.queryByText("Settings")).not.toBeNull();
   });
 
-  it("admin on a solo org sees Admin with 'Your coaches' only", () => {
+  it("admin on a solo org sees Run the firm with 'Your coaches' only", () => {
     setup("admin", "personal");
 
-    expect(screen.queryByText("Admin")).not.toBeNull();
+    expect(screen.queryByText("Run the firm")).not.toBeNull();
     expect(screen.queryByText("Your coaches")).not.toBeNull();
     expect(screen.queryByText("Firm view")).toBeNull();
     expect(screen.queryByText("Members")).toBeNull();
 
-    expect(screen.queryByText("Your work")).not.toBeNull();
+    expect(screen.queryByText("What you learned")).not.toBeNull();
     expect(screen.queryByText("Settings")).not.toBeNull();
   });
 
   it("coach nav is unchanged and shows Coaching + Your account", () => {
     setup("coach", "company");
 
-    expect(screen.queryByText("Your work")).toBeNull();
-    expect(screen.queryByText("Admin")).toBeNull();
+    expect(screen.queryByText("What you learned")).toBeNull();
+    expect(screen.queryByText("Run the firm")).toBeNull();
     expect(screen.queryByText("Overview")).toBeNull();
 
     expect(screen.queryByText("Coaching")).not.toBeNull();

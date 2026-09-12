@@ -32,7 +32,8 @@ describe("pass 139: the page is named Past work", () => {
     expect(page).toContain('<PageHeader title="Past" italicWord="work"');
     expect(page).toContain("subtitle={subtitle}");
     expect(page).not.toContain('className="micro-label"');
-    expect(PAST_WORK_GROUP_LABEL).toBe("Your organization");
+    // Nav is now ordered by the weekly loop rather than by object type.
+    expect(PAST_WORK_GROUP_LABEL).toBe("What you learned");
     expect(PAST_WORK_NAV_LABEL).toBe("Past work");
   });
 
