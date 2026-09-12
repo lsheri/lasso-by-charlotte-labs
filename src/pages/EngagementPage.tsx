@@ -42,6 +42,7 @@ import { useEngagementCoaches } from "@/hooks/use-coach-share";
 import { clientDisplayName, engagementDisplayCode, engagementDisplayTitle } from "@/lib/clients";
 import { INVITE_ADMIN_ONLY_LINE } from "@/lib/invites-shared";
 import { markOpenStart } from "@/lib/perf-timing";
+import { logEvent } from "@/lib/telemetry";
 import type { WorkItemRow } from "@/lib/work-types";
 
 type TaskWithWork = CanvasTask;
@@ -50,6 +51,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
   const { data: profile } = useProfile();
   const queryClient = useQueryClient();
   const [askOpen, setAskOpen] = useState(false);
+  const [askHadConversation, setAskHadConversation] = useState(false);
   const [prepOpen, setPrepOpen] = useState(false);
   const [peekItem, setPeekItem] = useState<WorkItemRow | null>(null);
   // PASS 129 — the peek's action bar reads the same on both surfaces, so the
@@ -65,10 +67,21 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
   const makePrivate = useMakePrivate();
   // The coaching note opens on its own; the brief is always legible above it.
   const [coachingOpen, setCoachingOpen] = useState(false);
-  // Figma 36:1936 puts the strip across the top and the composer at the foot of
-  // the page, so the two no longer nest. The page holds the shared open state
-  // that used to pass through the strip's render prop.
+  // The right rail was chosen over Figma 36:1936 on 12 Sep 2026; the frame has
+  // not yet been updated. The page holds the shared open state that used to
+  // pass through the strip's render prop.
   const [stripExpanded, setStripExpanded] = useState(true);
+
+  const setAskRailOpen = (open: boolean) => {
+    if (open === askOpen) return;
+    setAskOpen(open);
+    if (profile) {
+      logEvent("engagement.ask_rail_toggled", profile.org_id, {
+        state: open ? "opened" : "collapsed",
+        had_conversation: askHadConversation,
+      });
+    }
+  };
 
   // A shared "?trace=" link opens the audit on exactly what was circled.
   useTraceParam(engagementId);
@@ -81,7 +94,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
   // it opens this engagement's dock rather than navigating to Reflect.
   useRegisterAskLasso(() => {
     markOpenStart("ask_dock.open");
-    setAskOpen(true);
+    setAskRailOpen(true);
   });
 
   // One consolidated read for this engagement: the record, its workstreams,
@@ -168,7 +181,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
               type="button"
               onClick={() => {
                 markOpenStart("ask_dock.open");
-                setAskOpen(true);
+                setAskRailOpen(true);
               }}
               className="hidden shrink-0 items-center gap-2.5 rounded-full border border-border px-[18px] py-2.5 font-mono text-[16px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground md:inline-flex"
             >
@@ -256,7 +269,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
         </div>
       ) : null}
 
-      <div className="grid items-start gap-8">
+      <div className="nb-bench-grid" data-rail={askOpen ? "open" : "closed"}>
         <EngagementCanvas
           engagementId={engagementId}
           tasks={tasksQuery.data ?? []}
@@ -305,15 +318,16 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
           }
         />
 
-        {/* Figma 36:1936 node 36:2235: the composer sits at the foot of the
-            page, 660 wide in a 1440 frame, not in a rail. */}
         {profile && profile.role !== "coach" ? (
-          <div className="mx-auto w-full max-w-[660px]">
+          <div className="nb-bench-rail">
             <EngagementAsk
               open={askOpen}
-              onOpenChange={setAskOpen}
+              onOpenChange={setAskRailOpen}
               expanded={stripExpanded}
-              onConversationStart={() => setStripExpanded(false)}
+              onConversationStart={() => {
+                setAskHadConversation(true);
+                setStripExpanded(false);
+              }}
               engagementId={engagementId}
               engagementTitle={engagement.title}
               profileId={profile.id}
