@@ -110,6 +110,7 @@ export function LassoLayer({
           if (drawing) finish();
         }}
       >
+        {/* The circle is the person's own gesture, drawn in the app's circling green. It deliberately does not use the status colours because a circle says "I picked this", never "this is verified". */}
         {replays.map((replay) => (
           <path
             key={replay.id}
@@ -117,7 +118,7 @@ export function LassoLayer({
             data-stitch-id={replay.id}
             d={inkPathD(denormalizeInk(replay.ink, width, height))}
             fill="none"
-            stroke="var(--nb-ink-yellow)"
+            stroke="var(--nb-green)"
             strokeOpacity={0.85}
             strokeWidth={3}
             strokeLinecap="round"
