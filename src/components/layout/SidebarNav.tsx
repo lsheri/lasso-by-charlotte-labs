@@ -198,29 +198,58 @@ export function SidebarNav({
                   ))}
                   {groups.map((shelf) => {
                     const collapsed = collapsedClients.includes(shelf.clientId);
+                    // A synthetic shelf is a grouping, not a client, so it has
+                    // nowhere to go: it stays a plain toggle.
+                    const synthetic = isSyntheticShelf(shelf.clientId);
                     return (
                       <div key={shelf.clientId}>
-                        <button
-                          type="button"
-                          aria-expanded={!collapsed}
-                          onClick={() => toggleClient(shelf.clientId)}
-                          className={`${linkClass} nb-nav-shelf w-full text-left`}
-                        >
-                          <GraphiteIcon name="engagement" size={20} />
-                          <span className="flex min-w-0 flex-1 items-center gap-1.5">
-                            <span className="truncate">{shelf.name}</span>
-                            {isSyntheticShelf(shelf.clientId) ? (
+                        {synthetic ? (
+                          <button
+                            type="button"
+                            aria-expanded={!collapsed}
+                            onClick={() => toggleClient(shelf.clientId)}
+                            className={`${linkClass} nb-nav-shelf w-full text-left`}
+                          >
+                            <GraphiteIcon name="engagement" size={20} />
+                            <span className="flex min-w-0 flex-1 items-center gap-1.5">
+                              <span className="truncate">{shelf.name}</span>
                               <span className="font-mono text-[10px] text-muted-foreground">
                                 · {shelf.engagements.length}
                               </span>
-                            ) : null}
-                          </span>
-                          <GraphiteIcon
-                            name="chevron-right"
-                            size={13}
-                            className={collapsed ? "" : "rotate-90"}
-                          />
-                        </button>
+                            </span>
+                            <GraphiteIcon
+                              name="chevron-right"
+                              size={13}
+                              className={collapsed ? "" : "rotate-90"}
+                            />
+                          </button>
+                        ) : (
+                          <div className={`${linkClass} nb-nav-shelf w-full text-left`}>
+                            <GraphiteIcon name="engagement" size={20} />
+                            <Link
+                              to="/clients/$id"
+                              params={{ id: shelf.clientId }}
+                              onClick={onNavigate}
+                              className="flex min-w-0 flex-1 items-center gap-1.5"
+                            >
+                              <span className="truncate">{shelf.name}</span>
+                            </Link>
+                            <button
+                              type="button"
+                              aria-expanded={!collapsed}
+                              aria-label={collapsed ? "Expand" : "Collapse"}
+                              onClick={() => toggleClient(shelf.clientId)}
+                              className="shrink-0"
+                            >
+                              <GraphiteIcon
+                                name="chevron-right"
+                                size={13}
+                                className={collapsed ? "" : "rotate-90"}
+                              />
+                            </button>
+                          </div>
+                        )}
+
 
                         {collapsed
                           ? null
