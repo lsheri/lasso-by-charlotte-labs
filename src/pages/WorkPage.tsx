@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { GettingStartedCard } from "@/components/onboarding/checklist/GettingStartedCard";
@@ -105,6 +105,15 @@ export function WorkPage() {
   // ways work gets in are all still here, they just wait behind it instead of
   // filling a bar under the title.
   const [addOpen, setAddOpen] = useState(false);
+  // Rolled once per mount, never per render: a re-roll mid-animation would
+  // restart the gust under the reader.
+  const [gust] = useState(() => Math.random() < 0.3);
+  const [gusting, setGusting] = useState(gust);
+  useEffect(() => {
+    if (!gusting) return;
+    const t = setTimeout(() => setGusting(false), 950);
+    return () => clearTimeout(t);
+  }, [gusting]);
 
   const all = data?.items ?? [];
   const mappingError = data?.mappingError ?? null;
@@ -801,7 +810,7 @@ export function WorkPage() {
       ) : (
         <div className="space-y-8">
           <div className={suggesting ? "animate-pulse" : undefined}>
-            <div className="grid gap-6 lg:grid-cols-4">
+            <div className={`grid gap-6 lg:grid-cols-4${gusting ? " nb-gust" : ""}`}>
               {BUCKETS.map((bucket) => {
                 const items = filtered.filter((item) => bucketFor(item.type).key === bucket.key);
                 const entries = groupConversations(items);

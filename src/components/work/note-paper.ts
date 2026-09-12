@@ -14,6 +14,9 @@ export type NotePaper = CSSProperties & {
   "--nb-rot": string;
   "--nb-paper-period": string;
   "--nb-paper-phase": string;
+  "--nb-gust-delay": string;
+  "--nb-gust-x": string;
+  "--nb-gust-spin": string;
 };
 
 /**
@@ -48,6 +51,12 @@ export function notePaper(id: string, place: "column" | "pile" = "column"): Note
     // Negative delay starts each note mid-cycle, so nothing waits to begin and
     // no two neighbours reach the same extreme together.
     "--nb-paper-phase": `-${(hash >>> 5) % 9000}ms`,
+    // The gust is decorative and rare, but when it fires each note still lands
+    // the same way for the same id. Variety across notes is the gust; per-note
+    // randomness per render would restart the animation and jitter.
+    "--nb-gust-delay": `${Math.abs(hash % 261)}ms`,
+    "--nb-gust-x": `${(((hash >>> 7) % 201) - 100) / 10}px`,
+    "--nb-gust-spin": `${(((hash >>> 13) % 181) - 90) / 10}deg`,
   };
 }
 

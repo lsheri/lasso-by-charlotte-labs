@@ -450,6 +450,11 @@ function IconsGallery() {
             <span className="font-mono text-[11px] text-muted-foreground">1440ms</span> · icon mount
             draw-in, once per session.
           </li>
+          <li>
+            <span className="font-mono text-[11px] text-muted-foreground">620ms</span> · gust · paper
+            notes blow in and settle on arrival at /work, roughly a third of visits.
+            Decorative; answers no event and carries no information.
+          </li>
         </ul>
 
         <h3 className="mt-4 micro-label">Ambient loops · never stop</h3>
