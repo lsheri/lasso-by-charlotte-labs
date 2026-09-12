@@ -92,9 +92,13 @@ export function ClaimToClient({
         <button
           type="button"
           onClick={(event) => event.stopPropagation()}
-          className="inline-flex min-h-11 items-center text-xs text-muted-foreground transition-colors hover:text-foreground md:min-h-0"
+          className={
+            emphasis === "lead"
+              ? "inline-flex min-h-11 items-center text-[11.5px] font-medium text-accent-deep transition-opacity hover:opacity-70 md:min-h-0"
+              : "inline-flex min-h-11 items-center text-xs text-muted-foreground transition-colors hover:text-foreground md:min-h-0"
+          }
         >
-          Client
+          {label}
         </button>
       </PopoverTrigger>
       <PopoverContent
