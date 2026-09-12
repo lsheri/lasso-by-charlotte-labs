@@ -1446,17 +1446,9 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 }
 
 .nb-binder-body {
-  /* Rules scroll with the content, not with the viewport. */
-  background-image: repeating-linear-gradient(
-    to bottom,
-    transparent 0,
-    transparent calc(var(--nb-baseline) - 1px),
-    var(--nb-rule) calc(var(--nb-baseline) - 1px),
-    var(--nb-rule) var(--nb-baseline)
-  );
-  background-attachment: local;
-  background-position: left top;
-  /* Whole multiples of the pitch, so every line lands just above a rule. */
+  /* Baseline ruling removed on 12 Sep 2026. --nb-baseline still sets the
+     rhythm; padding and line-height remain load-bearing for the surfaces
+     that use this class. */
   padding-top: var(--nb-baseline);
   padding-bottom: calc(var(--nb-baseline) * 2);
   font-size: 14px;
