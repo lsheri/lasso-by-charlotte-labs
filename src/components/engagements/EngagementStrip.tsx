@@ -3,15 +3,25 @@ import { useEffect, useState, type Dispatch, type ReactNode, type SetStateAction
 import { ToneCard } from "@/components/notebook/ToneCard";
 import { Button } from "@/components/ui/button";
 import { useEngagementDecisions, srcsOf } from "@/hooks/use-decisions";
+import { useProfile } from "@/hooks/use-profile";
 import { useShippedWork } from "@/hooks/use-shipped-work";
 import { engagementDisplayCode } from "@/lib/clients";
 import type { EngagementRow } from "@/lib/engagement-page-shared";
-import { effectiveWorkDate, formatDate, type WorkItemRow } from "@/lib/work-types";
+import { cn } from "@/lib/utils";
+import { effectiveWorkDate, formatDate, type WorkItemRow, type WorkType } from "@/lib/work-types";
 
 type StripTask = {
   id: string;
   name: string;
-  work_item_tasks: { work_items: unknown | null }[];
+  owner_id: string | null;
+  detail: string | null;
+  work_item_tasks: {
+    work_items: {
+      id?: string;
+      type: WorkType;
+      captured_at: string;
+    } | null;
+  }[];
 };
 
 /** "02 SEP" — the mono date Figma 36:1936 puts on a shipped card. */
@@ -21,6 +31,40 @@ function shortDate(value: string | null | undefined): string {
   if (Number.isNaN(d.getTime())) return "";
   const day = String(d.getDate()).padStart(2, "0");
   return `${day} ${d.toLocaleString("en-US", { month: "short" }).toUpperCase()}`;
+}
+
+function ownershipLabel(ownerId: string | null, profileId: string | undefined): string {
+  if (!ownerId) return "No owner";
+  if (ownerId === profileId) return "Yours";
+  return "Owned";
+}
+
+type KindBucket = { key: string; count: number; label: string };
+
+function kindCounts(items: { type: WorkType }[]): KindBucket[] {
+  let chats = 0;
+  let transcripts = 0;
+  let documents = 0;
+  for (const item of items) {
+    if (item.type === "ai_thread" || item.type === "message") chats += 1;
+    else if (item.type === "call") transcripts += 1;
+    else documents += 1;
+  }
+  const out: KindBucket[] = [];
+  if (chats > 0) out.push({ key: "chat", count: chats, label: chats === 1 ? "chat" : "chats" });
+  if (transcripts > 0)
+    out.push({ key: "transcript", count: transcripts, label: transcripts === 1 ? "transcript" : "transcripts" });
+  if (documents > 0)
+    out.push({ key: "document", count: documents, label: documents === 1 ? "document" : "documents" });
+  return out;
+}
+
+function quietLine(items: { captured_at: string }[]): string | null {
+  if (items.length === 0) return "nothing yet";
+  const latest = Math.max(...items.map((item) => new Date(item.captured_at).getTime()));
+  const days = Math.floor((Date.now() - latest) / (1000 * 60 * 60 * 24));
+  if (days > 10) return `quiet for ${days} days`;
+  return null;
 }
 
 /**
@@ -63,6 +107,7 @@ export function EngagementStrip({
   // payload, shipped work is the same list the archive renders.
   const { data: decisions } = useEngagementDecisions(engagement.id);
   const { data: shipped } = useShippedWork();
+  const { data: profile } = useProfile();
 
   useEffect(() => {
     if (collapsed) setOwnExpanded(false);
@@ -162,9 +207,25 @@ export function EngagementStrip({
               const count = task.work_item_tasks.filter((link) => Boolean(link.work_items)).length;
               const calls = callsByTask.get(task.id) ?? 0;
               const pct = Math.max(6, Math.round((count / maxCount) * 100));
+              const items = task.work_item_tasks
+                .map((link) => link.work_items)
+                .filter((item): item is Exclude<typeof item, null> => Boolean(item));
+              const owner = ownershipLabel(task.owner_id, profile?.id);
+              const kinds = kindCounts(items);
+              const quiet = quietLine(items);
               return (
                 <div key={task.id}>
-                  <p className="truncate text-sm font-medium text-foreground">{task.name}</p>
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="truncate text-sm font-medium text-foreground">{task.name}</p>
+                    <span
+                      className={cn(
+                        "shrink-0 font-mono text-[10px] uppercase tracking-[0.08em]",
+                        owner === "No owner" ? "text-[var(--nb-pencil)]" : "text-muted-foreground",
+                      )}
+                    >
+                      {owner}
+                    </span>
+                  </div>
                   <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
                     {count} {count === 1 ? "piece" : "pieces"}
                     {calls > 0 ? ` · ${calls} ${calls === 1 ? "call" : "calls"}` : ""}
@@ -174,6 +235,21 @@ export function EngagementStrip({
                       className="h-full rounded-full bg-foreground"
                       style={{ width: `${pct}%` }}
                     />
+                  </div>
+                  <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+                    {kinds.map((kind) => (
+                      <span
+                        key={kind.key}
+                        className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground"
+                      >
+                        {kind.count} {kind.label}
+                      </span>
+                    ))}
+                    {quiet && (
+                      <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+                        {quiet}
+                      </span>
+                    )}
                   </div>
                 </div>
               );
