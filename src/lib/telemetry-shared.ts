@@ -22,6 +22,8 @@ export type TelemetryEvent =
   | "connector.browse_paged"
   /** Pass 169: how the first page of a connector listing resolved. */
   | "connector.browse_result"
+  /** Pass 173: the connectors surface was opened. Entry point and counts. */
+  | "connector.surface_opened"
   | "import.started"
   | "import.parsed"
   | "import.committed"
