@@ -122,7 +122,8 @@ function Queue({
  * the explicit suggestion job, triggered by the button on the second section.
  */
 export function ChatsToOrganise({ items }: { items: WorkItemRow[] }) {
-  const { active, taskLabels, suggesting, acceptPending, suggest, accept } = useMappingSuggestions();
+  const { active, taskLabels, suggesting, acceptPending, suggest, accept } =
+    useMappingSuggestions();
 
   const unmapped = items
     .filter((item) => item.visibility === "unmapped")
@@ -143,7 +144,12 @@ export function ChatsToOrganise({ items }: { items: WorkItemRow[] }) {
             items={unclaimed}
             remainderTestId="overview-chats-remainder"
             cardAction={(item) => (
-              <ClaimToClient item={item} surface="overview" emphasis="lead" label="Say whose this is" />
+              <ClaimToClient
+                item={item}
+                surface="overview"
+                emphasis="lead"
+                label="Say whose this is"
+              />
             )}
           />
         </section>
