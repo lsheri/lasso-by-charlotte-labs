@@ -88,5 +88,5 @@ const SECTIONS: SettingsSection[] = [
 ];
 
 export function SettingsPage() {
-  return <SettingsShell sections={SECTIONS} />;
+  return <SettingsShell sections={SECTIONS} defaultSection="account" />;
 }
