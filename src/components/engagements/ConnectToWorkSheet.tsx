@@ -36,6 +36,7 @@ export function ConnectToWorkSheet({
   onChanged: () => Promise<void> | void;
 }) {
   const queryClient = useQueryClient();
+  const { openSettings } = useSettingsDialog();
   const syncEpisode = useServerFn(syncEpisodeForMapping);
   const detachEpisode = useServerFn(detachEpisodeItems);
   const { data } = useWorkItems();
