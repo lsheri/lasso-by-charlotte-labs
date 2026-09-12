@@ -2981,6 +2981,25 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
     border-color 160ms var(--nb-ease);
 }
 
+/* The corner lifts. A sticky note never lies perfectly flat, and the shadow
+   under the curl is what makes the page look like it is underneath it. */
+.nb-paper::before {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 26px;
+  height: 26px;
+  background: linear-gradient(
+    135deg,
+    transparent 0 48%,
+    color-mix(in oklab, var(--nb-ink) 13%, var(--nb-paper-fill, var(--nb-white))) 48% 100%
+  );
+  box-shadow: -3px -3px 6px -2px rgb(22 24 26 / 0.22);
+  border-bottom-right-radius: 5px;
+  pointer-events: none;
+}
+
 /* Unmapped has no engagement yet, so it has no colour yet. The dashed pencil
    edge says "not filed" without spending a hue on it. */
 .nb-paper[data-paper-state="unmapped"] {
