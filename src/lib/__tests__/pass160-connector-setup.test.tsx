@@ -31,9 +31,8 @@ vi.mock("@/hooks/use-profile", () => ({
   useProfile: () => ({ data: { id: "p1", org_id: "o1" } }),
 }));
 
-const { ConnectYourAiCard, connectorStatusLine } = await import(
-  "@/components/connectors/ConnectYourAiCard"
-);
+const { ConnectYourAiCard, connectorStatusLine } =
+  await import("@/components/connectors/ConnectYourAiCard");
 
 function renderCard() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
