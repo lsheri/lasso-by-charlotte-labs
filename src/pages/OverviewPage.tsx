@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { SectionHeader } from "@/components/notebook/SectionHeader";
 import { ToneCard } from "@/components/notebook/ToneCard";
 import { ArchiveTeaser } from "@/components/archive/ArchiveTeaser";
+import { ChatsToOrganise } from "@/components/overview/ChatsToOrganise";
 import { ReadingPanel } from "@/components/overview/ReadingPanel";
 import { NotCovered } from "@/components/overview/NotCovered";
 import { OneOnOneBrief } from "@/components/oneonone/OneOnOneBrief";
