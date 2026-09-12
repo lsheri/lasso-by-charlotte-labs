@@ -8,7 +8,7 @@
  */
 
 export const PAST_WORK_NAV_LABEL = "Past work";
-export const PAST_WORK_GROUP_LABEL = "Your organization";
+export const PAST_WORK_GROUP_LABEL = "What you learned";
 
 export const PAST_WORK_PLACEHOLDER = "What are you working on?";
 export const PAST_WORK_HINT =
