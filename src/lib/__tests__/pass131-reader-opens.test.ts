@@ -118,8 +118,9 @@ describe("pass 131 rail", () => {
   });
 
   it("hides the toggle in the stacked layout", () => {
+    expect(READER).toContain("max-[900px]:hidden");
     const stacked = STYLES.slice(STYLES.indexOf("@media (max-width: 900px)"));
-    expect(stacked).toContain(".nb-rail-widen");
+    expect(stacked).not.toContain(".nb-rail-widen");
   });
 });
 
