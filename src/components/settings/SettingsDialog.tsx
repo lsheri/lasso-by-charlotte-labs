@@ -3,6 +3,7 @@ import { X } from "lucide-react";
 
 import { useSettingsDialog } from "@/lib/settings-dialog-context";
 import { SettingsShell, type SettingsSection } from "./SettingsShell";
+import { ConnectorsSection } from "./ConnectorsSection";
 import { DataUseCard } from "./DataUseCard";
 import { PersonalDataCard } from "./YourDataCard";
 import { NamingConventionsCard } from "./NamingConventionsCard";
@@ -19,21 +20,27 @@ import { Button } from "@/components/ui/button";
  */
 const SECTIONS: SettingsSection[] = [
   {
-    id: "account",
-    label: "Account",
-    hint: "who you are",
-    content: <AccountEmailCard />,
+    id: "connectors",
+    label: "Connectors",
+    hint: "where work comes from",
+    group: "Settings",
+    title: "Connectors",
+    content: <ConnectorsSection />,
   },
   {
     id: "your-work",
     label: "Your work",
     hint: "how you describe it",
+    group: "Settings",
+    title: "Your work",
     content: <YourWorkCard />,
   },
   {
     id: "workspace",
     label: "Workspace",
     hint: "facts and naming",
+    group: "Settings",
+    title: "Workspace",
     content: (
       <div className="space-y-8">
         <OrgDimensionsCard />
@@ -42,27 +49,41 @@ const SECTIONS: SettingsSection[] = [
     ),
   },
   {
-    id: "data-use",
-    label: "Data use",
-    hint: "what it is used for",
-    content: <DataUseCard />,
-  },
-  {
-    id: "your-data",
-    label: "Your data",
-    hint: "what leaves the workspace",
-    content: <PersonalDataCard />,
+    id: "account",
+    label: "Account",
+    hint: "who you are",
+    group: "Account",
+    title: "Account",
+    content: <AccountEmailCard />,
   },
   {
     id: "people",
     label: "People",
     hint: "invites",
+    group: "Account",
+    title: "People",
     content: (
       <div className="space-y-6">
         <InviteDialog trigger={<Button type="button">Invite someone</Button>} />
         <EnterInviteCode label="Joining another workspace?" />
       </div>
     ),
+  },
+  {
+    id: "data-use",
+    label: "Data use",
+    hint: "what it is used for",
+    group: "Account",
+    title: "Data use",
+    content: <DataUseCard />,
+  },
+  {
+    id: "your-data",
+    label: "Your data",
+    hint: "what leaves the workspace",
+    group: "Account",
+    title: "Your data",
+    content: <PersonalDataCard />,
   },
 ];
 
@@ -73,7 +94,7 @@ const SECTIONS: SettingsSection[] = [
  *   so DataUseCard's noteConsentPresented fires exactly once per session.
  */
 export function SettingsDialog() {
-  const { open, closeSettings } = useSettingsDialog();
+  const { open, section, closeSettings } = useSettingsDialog();
   const [hasOpened, setHasOpened] = useState(false);
 
   // Record first open — never resets
@@ -110,9 +131,9 @@ export function SettingsDialog() {
         aria-hidden="true"
       />
 
-      {/* Panel — centered, 880×560 */}
+      {/* Panel — centered */}
       <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-4">
-        <div className="pointer-events-auto relative h-[560px] w-full max-w-[880px] overflow-hidden rounded-[var(--radius)] border border-border bg-card shadow-[0_8px_40px_rgba(42,40,32,0.18)]">
+        <div className="pointer-events-auto relative h-[min(640px,calc(100vh-2rem))] w-full max-w-[1000px] overflow-hidden rounded-[var(--radius)] border border-border bg-card shadow-[0_8px_40px_rgba(42,40,32,0.18)]">
           {/* Close button */}
           <button
             type="button"
@@ -124,7 +145,7 @@ export function SettingsDialog() {
           </button>
 
           {/* Shell fills the dialog — remove the page-level max-width wrapper */}
-          <SettingsShell sections={SECTIONS} variant="dialog" />
+          <SettingsShell sections={SECTIONS} variant="dialog" initialSection={section} />
         </div>
       </div>
     </div>

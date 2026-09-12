@@ -5,7 +5,13 @@ import { useEffect, useRef, useState } from "react";
 import { BrandLogo, BrandPair } from "@/components/connectors/BrandLogo";
 import { ConnectorBrowseActions } from "@/components/connectors/ConnectorBrowseActions";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetDescription, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { PasteThreadDialog } from "@/components/work/PasteThreadDialog";
 import { TranscriptsAction } from "@/components/work/TranscriptsAction";
 import { UploadFilesButton } from "@/components/work/UploadFilesButton";
@@ -13,6 +19,7 @@ import { useWorkItems } from "@/hooks/use-work-items";
 import { detachEpisodeItems, syncEpisodeForMapping } from "@/lib/episodes.functions";
 import { defaultStream, rememberStream } from "@/lib/connect-to-work";
 import { remapItems } from "@/lib/workflow-order";
+import { useSettingsDialogOptional } from "@/lib/settings-dialog-context";
 import { logEvent } from "@/lib/telemetry";
 
 export type ConnectStream = { id: string; name: string };
@@ -35,6 +42,7 @@ export function ConnectToWorkSheet({
   onChanged: () => Promise<void> | void;
 }) {
   const queryClient = useQueryClient();
+  const settings = useSettingsDialogOptional();
   const syncEpisode = useServerFn(syncEpisodeForMapping);
   const detachEpisode = useServerFn(detachEpisodeItems);
   const { data } = useWorkItems();
@@ -53,7 +61,14 @@ export function ConnectToWorkSheet({
       setLanded(0);
       return;
     }
-    setStreamId((current) => current ?? defaultStream(engagementId, streams.map((s) => s.id)));
+    setStreamId(
+      (current) =>
+        current ??
+        defaultStream(
+          engagementId,
+          streams.map((s) => s.id),
+        ),
+    );
     if (seen.current === null) {
       seen.current = new Set((data?.items ?? []).map((item) => item.id));
     }
@@ -157,20 +172,21 @@ export function ConnectToWorkSheet({
         ) : null}
 
         <div className="mt-6">
-          {/* A plain anchor: the browser resolves the hash on arrival, which a
-              client transition to a different route would not do reliably. */}
-          <a
-            href="/connectors#connect-your-ai"
+          {/* The connectors surface is a settings section now, so this opens
+              the dialog on it rather than navigating to a page. */}
+          <button
+            type="button"
             onClick={() => {
               logEvent("connector.setup_opened", profile.org_id, {
                 surface: "connect_sheet",
                 had_connector: false,
               });
+              settings?.openSettings("connectors");
             }}
             className="text-xs text-muted-foreground transition-colors hover:text-foreground"
           >
             Set up Claude or ChatGPT to push here
-          </a>
+          </button>
         </div>
 
         {landed > 0 && target ? (

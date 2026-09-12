@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,6 @@ import { ConnectYourAiCard } from "@/components/connectors/ConnectYourAiCard";
 import { ConnectorPicker, type PickerKind } from "@/components/connectors/ConnectorPicker";
 import { GranolaKeyCard } from "@/components/connectors/GranolaKeyCard";
 import { WisprCard } from "@/components/connectors/WisprCard";
-import { PageHeader } from "@/components/layout/PageHeader";
 import { SectionHeader } from "@/components/notebook/SectionHeader";
 import { ToneCard } from "@/components/notebook/ToneCard";
 import {
@@ -52,7 +51,11 @@ const PICKER_KIND: Partial<Record<ConnectorToolkit, PickerKind>> = {
 
 const COMING_SOON = ["Zoom", "Teams", "ChatGPT Enterprise"];
 
-export function ConnectorsPage() {
+export function ConnectorsSection({
+  from = "settings_rail",
+}: {
+  from?: "settings_rail" | "connect_sheet" | "deep_link";
+}) {
   const { data: profile } = useProfile();
   const { data: accounts, error } = useConnectorAccounts();
   const queryClient = useQueryClient();
@@ -183,82 +186,95 @@ export function ConnectorsPage() {
   const notConnectedCount = Math.max(totalCount - connectedCount, 0);
   const subtitle = `${connectedCount} connected · ${notConnectedCount} not · Lasso reads only what you point it at`;
 
+  // Once per mount, and only once both reads have resolved. Firing on mount
+  // would record a connected count of zero before the accounts query landed.
+  const noted = useRef(false);
+  const ready = Boolean(profile) && Boolean(accounts);
+  useEffect(() => {
+    if (!ready || !profile) return;
+    if (noted.current) return;
+    noted.current = true;
+    logEvent("connector.surface_opened", profile.org_id, {
+      from,
+      connected_count: connectedCount,
+      total_count: totalCount,
+    });
+  }, [ready, profile, from, connectedCount, totalCount]);
+
   return (
     <div>
-      <PageHeader title="Where work" italicWord="lives" subtitle={subtitle} />
+      <p className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+        {subtitle}
+      </p>
 
-      {error ? <p className="mb-6 text-sm text-destructive">{(error as Error).message}</p> : null}
+      {error ? <p className="mt-4 text-sm text-destructive">{(error as Error).message}</p> : null}
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-        <div className="space-y-8">
-          <Category title="Connect your AI · MCP">
-            <ConnectYourAiCard />
-          </Category>
+      <div className="mt-6 space-y-8">
+        <Category title="Connect your AI · MCP">
+          <ConnectYourAiCard />
+        </Category>
 
-          <Category title="Documents & files">
-            <div className="grid gap-3 sm:grid-cols-2">
-              {card("googledrive")}
-              {card("one_drive")}
-              {card("sharepoint_graph")}
-              {card("notion")}
-            </div>
-          </Category>
+        <Category title="Documents & files">
+          <div className="grid gap-3 sm:grid-cols-2">
+            {card("googledrive")}
+            {card("one_drive")}
+            {card("sharepoint_graph")}
+            {card("notion")}
+          </div>
+        </Category>
 
-          <Category title="Email & messages">
-            <div className="grid gap-3 sm:grid-cols-2">
-              {card("gmail")}
-              {card("slack")}
-            </div>
-          </Category>
+        <Category title="Email & messages">
+          <div className="grid gap-3 sm:grid-cols-2">
+            {card("gmail")}
+            {card("slack")}
+          </div>
+        </Category>
 
-          <Category title="Meetings">
-            <div className="space-y-3">
-              <GranolaKeyCard />
-              <WisprCard />
-              <TranscriptsCard
-                connected={accounts?.["googledrive"]?.status === "connected"}
-                busy={busy === "googledrive"}
-                onConnect={() => void handleConnect("googledrive")}
-              />
-            </div>
-          </Category>
+        <Category title="Meetings">
+          <div className="space-y-3">
+            <GranolaKeyCard />
+            <WisprCard />
+            <TranscriptsCard
+              connected={accounts?.["googledrive"]?.status === "connected"}
+              busy={busy === "googledrive"}
+              onConnect={() => void handleConnect("googledrive")}
+            />
+          </div>
+        </Category>
 
-          <Category title="Coming soon">
-            <div className="grid gap-3 sm:grid-cols-2">
-              {COMING_SOON.map((name) => (
-                <div
-                  key={name}
-                  className="flex items-center justify-between rounded-[var(--radius-lg)] border border-border bg-card/50 px-4 py-3 opacity-60"
-                >
-                  <p className="text-[13px] text-muted-foreground">{name}</p>
-                  <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
-                    Coming soon
-                  </span>
-                </div>
-              ))}
-            </div>
-          </Category>
-
-          <div className="rounded-[var(--radius-lg)] border border-border bg-card px-4 py-4">
-            <p className="text-[13px] text-foreground">
-              No connector? Paste or upload always works.
-            </p>
-            <div className="mt-1.5 flex flex-wrap items-center gap-4">
-              <Link to="/work" className="text-xs font-medium text-accent-deep hover:opacity-70">
-                Go to Work →
-              </Link>
-              <Link
-                to="/onboarding"
-                search={{ setup: true }}
-                className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+        <Category title="Coming soon">
+          <div className="grid gap-3 sm:grid-cols-2">
+            {COMING_SOON.map((name) => (
+              <div
+                key={name}
+                className="flex items-center justify-between rounded-[var(--radius-lg)] border border-border bg-card/50 px-4 py-3 opacity-60"
               >
-                Set up more tools
-              </Link>
-            </div>
+                <p className="text-[13px] text-muted-foreground">{name}</p>
+                <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+                  Coming soon
+                </span>
+              </div>
+            ))}
+          </div>
+        </Category>
+
+        <div className="rounded-[var(--radius-lg)] border border-border bg-card px-4 py-4">
+          <p className="text-[13px] text-foreground">No connector? Paste or upload always works.</p>
+          <div className="mt-1.5 flex flex-wrap items-center gap-4">
+            <Link to="/work" className="text-xs font-medium text-accent-deep hover:opacity-70">
+              Go to Work →
+            </Link>
+            <Link
+              to="/onboarding"
+              search={{ setup: true }}
+              className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Set up more tools
+            </Link>
           </div>
         </div>
 
-        <aside className="space-y-3">
+        <div className="grid gap-3 sm:grid-cols-2">
           <ToneCard tone="record" label="WHAT LASSO READS" title="Only what you point it at.">
             <ul className="space-y-1">
               <li>The files you open in a connected tool</li>
@@ -279,7 +295,7 @@ export function ConnectorsPage() {
               Disconnecting stops the reading. It does not delete what is already on the record.
             </p>
           </ToneCard>
-        </aside>
+        </div>
       </div>
 
       <p className="font-hand mt-6 text-[16px] text-green">
