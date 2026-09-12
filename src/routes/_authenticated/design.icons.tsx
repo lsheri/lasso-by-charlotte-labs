@@ -487,6 +487,50 @@ function IconsGallery() {
             the invisible-work strip.
           </li>
         </ul>
+
+        <h3 className="mt-4 micro-label">Not yet drawable</h3>
+        <p className="mt-1.5 text-xs text-muted-foreground">
+          These motions have no class a surface can be handed. The registry returns an empty string
+          for each one so no caller invents a rule on the spot.
+        </p>
+        <ul className="mt-2 space-y-1.5 text-sm text-foreground">
+          <li>
+            <span className="font-mono text-[11px] text-muted-foreground">reading-line</span> ·{" "}
+            <span className="font-mono text-[11px] text-muted-foreground">.nb-reading-pupil</span> is
+            the spider's eye, not a line moving down text. The motion has no counterpart anywhere.
+          </li>
+          <li>
+            <span className="font-mono text-[11px] text-muted-foreground">provenance-ribbon</span>{" "}
+            · <span className="font-mono text-[11px] text-muted-foreground">.nb-traced-legend</span>{" "}
+            is a legend line inside JourneyView, not a ribbon.
+          </li>
+          <li>
+            <span className="font-mono text-[11px] text-muted-foreground">work-lands</span> · the
+            only downward landing in the app is{" "}
+            <span className="font-mono text-[11px] text-muted-foreground">nb-paper-land</span>,
+            which belongs to the gust, a named registry exception fired by chance rather than by this
+            event. <span className="font-mono text-[11px] text-muted-foreground">.nb-rise</span>{" "}
+            moves the wrong way, upward.
+          </li>
+          <li>
+            <span className="font-mono text-[11px] text-muted-foreground">comet-line</span> · nothing
+            in the app draws one.
+          </li>
+          <li>
+            <span className="font-mono text-[11px] text-muted-foreground">pencil-marks</span> ·{" "}
+            <span className="font-mono text-[11px] text-muted-foreground">.nb-mark</span> exists, but{" "}
+            <span className="font-mono text-[11px] text-muted-foreground">nav.active</span> renders
+            no SVG for a mark to be drawn on. Returning a class the surface cannot use is worse than
+            returning nothing.
+          </li>
+          <li>
+            <span className="font-mono text-[11px] text-muted-foreground">arrows</span> ·{" "}
+            <span className="font-mono text-[11px] text-muted-foreground">.nb-journey-arrow</span>{" "}
+            only has effect nested inside{" "}
+            <span className="font-mono text-[11px] text-muted-foreground">.nb-journey</span>, so it
+            is not a class a surface can be handed.
+          </li>
+        </ul>
       </section>
 
       <MarksSection />
