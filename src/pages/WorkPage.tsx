@@ -506,6 +506,7 @@ export function WorkPage() {
         onOpen={openItem(entry)}
         chips={<ConversationChips item={entry} />}
         actions={rowActions(entry, variant)}
+        clientLabel={clientName(entry.client_id)}
         {...(entry.visibility === "mapped" ? {} : { footer: suggestionFor(entry) })}
       />
     );
