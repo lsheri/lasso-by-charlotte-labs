@@ -26,7 +26,6 @@ export function ClaimToClient({ item }: { item: WorkItemRow }) {
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
 
-  const current = clients?.find((c) => c.id === item.client_id) ?? null;
   const options = (clients ?? []).filter((c) => !c.quick_folder);
 
   async function pick(nextId: string | null, created = false) {
@@ -82,7 +81,7 @@ export function ClaimToClient({ item }: { item: WorkItemRow }) {
           onClick={(event) => event.stopPropagation()}
           className="inline-flex min-h-11 items-center text-xs text-muted-foreground transition-colors hover:text-foreground md:min-h-0"
         >
-          {current ? current.name : "Client"}
+          Client
         </button>
       </PopoverTrigger>
       <PopoverContent
