@@ -105,11 +105,15 @@ export function SettingsShell({
           : "overflow-hidden rounded-[var(--radius)] border border-border bg-card"
       }
     >
-      <header className="flex items-baseline justify-between gap-4 border-b border-border px-6 py-5">
-        <h1 className="page-title">
-          Settings <span className="font-hand">for you</span>
-        </h1>
-      </header>
+      {/* The dialog's rail and section title carry the heading, so the page
+          header would only repeat the section name. */}
+      {variant === "page" ? (
+        <header className="flex items-baseline justify-between gap-4 border-b border-border px-6 py-5">
+          <h1 className="page-title">
+            Settings <span className="font-hand">for you</span>
+          </h1>
+        </header>
+      ) : null}
 
       <div className="grid flex-1 overflow-hidden md:grid-cols-[13rem_minmax(0,1fr)]">
         <nav
@@ -133,18 +137,24 @@ export function SettingsShell({
           ))}
         </nav>
 
-        <div className="min-w-0 overflow-y-auto p-6">
+        {/* pr-14 in the dialog keeps the section title clear of the close button. */}
+        <div
+          className={`min-w-0 overflow-y-auto p-6 ${variant === "dialog" ? "pr-14" : ""}`.trim()}
+        >
           {activeSection?.title ? <h2 className="page-title mb-5">{activeSection.title}</h2> : null}
-          {sections.map((section) => (
-            <div
-              key={section.id}
-              hidden={section.id !== active}
-              aria-hidden={section.id !== active}
-            >
-              {section.content}
-            </div>
-          ))}
+          <SettingsSectionContext.Provider value={{ activeSectionId: active }}>
+            {sections.map((section) => (
+              <div
+                key={section.id}
+                hidden={section.id !== active}
+                aria-hidden={section.id !== active}
+              >
+                {section.content}
+              </div>
+            ))}
+          </SettingsSectionContext.Provider>
         </div>
+
       </div>
     </div>
   );
