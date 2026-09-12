@@ -4,36 +4,50 @@ import { EDU_VOCAB } from "@/lib/edu-vocab";
 export type NavItem = { label: string; to: string; icon: GraphiteIconName };
 export type NavGroup = { id?: string; label: string; items: NavItem[]; emptyState?: string };
 
+/**
+ * The weekly loop: what landed, where it goes, what you learned, run the firm,
+ * your account. Match on ids, never labels, when deriving variants below.
+ */
 export const navGroups: NavGroup[] = [
   {
-    label: "Connectors",
-    items: [{ label: "Where work lives", to: "/connectors", icon: "connectors" }],
-  },
-  { label: "Work", items: [{ label: "All work & mapping", to: "/work", icon: "work" }] },
-  // Pass 138: shipped work is a destination of its own, open to every role.
-  { label: "Your organization", items: [{ label: "Past work", to: "/archive", icon: "firm" }] },
-  { id: "engagements", label: "Engagements", items: [], emptyState: "No engagements yet" },
-
-  {
-    label: "Your work",
+    id: "landed",
+    label: "What landed",
     items: [
-      { label: "Overview", to: "/overview", icon: "overview" },
-      { label: "Reflect", to: "/reflect", icon: "reflect" },
-
-      { label: "Chat library", to: "/ai-record", icon: "ai-record" },
-      { label: "1:1 prep", to: "/one-on-one", icon: "one-on-one" },
-      // Pass 161: notes written about your work, across every engagement.
-      { label: "Notes about your work", to: "/coach-notes", icon: "messages" },
-      { label: "Decision log", to: "/decisions", icon: "decisions" },
-      { label: "Settings", to: "/settings", icon: "settings" },
+      { label: "Inbox", to: "/work", icon: "work" },
+      { label: "Where work comes from", to: "/connectors", icon: "connectors" },
     ],
   },
   {
-    label: "Admin",
+    id: "engagements",
+    label: "Where it goes",
+    items: [],
+    emptyState: "No engagements yet",
+  },
+  {
+    id: "learned",
+    label: "What you learned",
+    items: [
+      { label: "Past work", to: "/archive", icon: "firm" },
+      { label: "Chat library", to: "/ai-record", icon: "ai-record" },
+      { label: "Reflect", to: "/reflect", icon: "reflect" },
+      { label: "Decision log", to: "/decisions", icon: "decisions" },
+      { label: "Overview", to: "/overview", icon: "overview" },
+      { label: "1:1 prep", to: "/one-on-one", icon: "one-on-one" },
+      { label: "Notes about your work", to: "/coach-notes", icon: "messages" },
+    ],
+  },
+  {
+    id: "firm",
+    label: "Run the firm",
     items: [
       { label: "Firm view", to: "/firm", icon: "firm" },
       { label: "Members", to: "/members", icon: "members" },
     ],
+  },
+  {
+    id: "account",
+    label: "Your account",
+    items: [{ label: "Settings", to: "/settings", icon: "settings" }],
   },
 ];
 
@@ -59,7 +73,7 @@ export const coachNavGroups: NavGroup[] = [
  * section. Every other workspace is untouched: navGroups above is unchanged.
  */
 export const eduNavGroups: NavGroup[] = navGroups.flatMap((group) => {
-  if (group.label === "Your organization") {
+  if (group.id === "learned") {
     return [
       { ...group, label: EDU_VOCAB.orgGroup },
       {
