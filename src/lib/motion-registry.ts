@@ -224,7 +224,7 @@ interface MotionDraw {
  */
 const MOTION_CLASS: Partial<Record<MotionName, MotionDraw>> = {
   "breathing-dots": { moving: "nb-dots" },
-  "card-lifts": { moving: "nb-fade-in" },
+  "card-lifts": { moving: "nb-card-lift" },
   "spider-looks-again": { moving: "nb-spider-wobble" },
   "spider-processes": { moving: "nb-spider-reading" },
   "pencil-marks-underline": { moving: "nb-ink-settle nb-span-pulse" },

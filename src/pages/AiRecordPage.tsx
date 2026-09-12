@@ -24,11 +24,13 @@ import { BrandLogo } from "@/components/connectors/BrandLogo";
 import { SubjectsPanel } from "@/components/work/SubjectsPanel";
 import { ChatRow, chatWhen } from "@/components/work/ChatRow";
 import { useChatSearchSignal } from "@/hooks/use-chat-search-signal";
+import { useMotion } from "@/hooks/use-motion";
 import { useProfile } from "@/hooks/use-profile";
 import { useWorkItems } from "@/hooks/use-work-items";
 import { supabase } from "@/integrations/supabase/client";
 import { effectiveWorkDate, type WorkItemRow } from "@/lib/work-types";
 import { SectionHeader } from "@/components/notebook/SectionHeader";
+import { NotebookSpider } from "@/components/notebook/NotebookSpider";
 import { ToneCard } from "@/components/notebook/ToneCard";
 import { vendorLabel } from "@/lib/conversation-shared";
 import { vendorFromSource, type ToolVendor } from "@/lib/work-taxonomy";
@@ -135,6 +137,7 @@ export function AiRecordPage() {
   const [query, setQuery] = useState("");
   const [showSubjects, setShowSubjects] = useState(false);
   const [tool, setTool] = useState<ToolVendor | "all">("all");
+  const readingMotion = useMotion("record.reading");
 
   useEffect(() => {
     const query = window.matchMedia("(min-width: 1100px)");
@@ -422,8 +425,8 @@ export function AiRecordPage() {
                       aria-current={selected?.id === item.id ? "true" : undefined}
                       className={
                         selected?.id === item.id
-                          ? "rounded-[var(--radius)] bg-secondary"
-                          : undefined
+                          ? "nb-card-lift rounded-[var(--radius)] bg-secondary"
+                          : "nb-card-lift"
                       }
                     >
                       <ChatRow
@@ -505,7 +508,11 @@ export function AiRecordPage() {
 
       <div className="nb-chatview-pane">
         {selected ? (
-          <article aria-label={`Reading ${selected.title}`}>
+          <article
+            key={selected.id}
+            aria-label={`Reading ${selected.title}`}
+            className={readingMotion.className}
+          >
             <header className="border-b border-pencil pb-4">
               <h2 className="page-title break-words text-[22px] leading-snug">{selected.title}</h2>
               <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
@@ -547,6 +554,32 @@ export function AiRecordPage() {
           </article>
         ) : (
           <div className="space-y-4">
+            <div className="relative mx-auto h-[200px] w-[200px]" aria-hidden="true">
+              <svg viewBox="0 0 200 200" className="h-full w-full">
+                <g className="nb-chat-ribbon">
+                  <path
+                    id="chat-provenance-ring"
+                    d="M 100,18 A 82,82 0 1,1 99.9,18"
+                    fill="none"
+                    stroke="var(--nb-rule)"
+                    strokeWidth="1.4"
+                  />
+                  <text
+                    fontFamily="var(--font-mono)"
+                    fontSize="9"
+                    letterSpacing="0.08em"
+                    fill="var(--nb-soft)"
+                  >
+                    <textPath href="#chat-provenance-ring" startOffset="1%">
+                      CLAUDE · CHATGPT · GEMINI · ON THE RECORD · CLAUDE · CHATGPT · GEMINI · ON THE RECORD ·
+                    </textPath>
+                  </text>
+                </g>
+              </svg>
+              <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                <NotebookSpider size={40} />
+              </div>
+            </div>
             <p className="text-[13px] text-muted-foreground">Pick a conversation to read it here.</p>
             <CaptureCoverage
               profileId={profile?.id}

@@ -201,7 +201,7 @@ never existed in `styles.css`. That test failure predates this port and is untou
 | `21:2` | `/overview` | BUILT | Added `ReadingPanel` and `NotCovered` panels (Figma 21:2), both read-only and non-interactive. |
 | `22:220` | `/work` | BUILT (full screen, pass 2 of 2, 10 Sep 2026) |
 | `23:413` | `/firm` | BUILT (production-first layout, 10 Sep 2026) |
-| `27:635` | `/ai-record` | BUILT (two-pane reader, unit 1 of 2, 12 Sep 2026) |
+| `27:635` | `/ai-record` | BUILT (two-pane reader, units 1 and 2, 12 Sep 2026) |
 | `29:833` | `/archive` | BUILT (filed two-column layout, 10 Sep 2026) |
 | `30:1012` | `/reflect` | BUILT (partial) | Header, week rail and "Where this goes" card restyled. The frame's three-prompt exercise is NOT built because it replaces the working session list, message history and analysis path and needs a prompt generator and per-turn provenance that do not exist. |
 | `30:1419` | `/decisions` | BUILT | Header action slot now carries an outline "Log a decision" button. Rail copy and headline numbers restyled; omitted: "Reversed" chip and the two rail counts for reversed/reused decisions because the schema has no reversed state and no reuse count. No-reasoning row now explains why the reasoning matters. |
@@ -250,6 +250,14 @@ RenderedContent, PeekActionBar and ChatUrlLink without adding a composer. Search
 row analysis, source links, grouped analysis, empty/error/loading states and all
 existing signals remain in place. No event, payload, dimension or consent surface
 changed.
+
+Chat library reader notes, 12 Sep 2026 (unit 2 of 2). The empty reader now carries
+a slow provenance word ring around the notebook spider, conversation rows use the
+registry's repaired card-lift selector, and selected conversations consume the
+existing `record.reading` motion event. Reduced motion leaves the ring static and
+legible. Arrows remain omitted because the workspace has no confirmed downstream
+`fed` data to draw honestly; the page still has no composer. No control, event,
+payload, dimension or consent surface changed.
 
 Past work notes, 10 Sep 2026 (frame `29:833`). The archive spine now fills the
 two-thirds left column, with closed-engagement work filed neatly two abreast and
