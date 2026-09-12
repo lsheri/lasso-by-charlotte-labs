@@ -176,6 +176,10 @@ export function WorkPage() {
     },
   });
 
+  const { data: clients } = useClients(profile?.org_id);
+  const clientName = (id: string | null | undefined) =>
+    id ? (clients?.find((c) => c.id === id)?.name ?? null) : null;
+
   const runMakePrivate = useMakePrivate();
 
   async function makePrivate(item: WorkItemRow) {
