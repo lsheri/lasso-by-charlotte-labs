@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 const STAGES = [
   { label: "You work in your AI tools", body: "Claude, ChatGPT, Drive, meetings." },
   { label: "It flows into Lasso", body: "Only what you choose. Private on arrival." },
-  { label: "You map it", body: "Give it an engagement and a task. It becomes a record." },
+  { label: "You map it", body: "Give it an engagement and a workstream. It becomes a record." },
   { label: "A coach sees what you share", body: "Never your raw files. Only the shared view." },
 ];
 

@@ -213,7 +213,7 @@ export function WorkstreamColumnHeader({
                 ))}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem disabled={!isOwner} onSelect={() => setEditingLine(true)}>
-                  Edit the task line
+                  Edit the goal
                 </DropdownMenuItem>
               </>
             ) : null}

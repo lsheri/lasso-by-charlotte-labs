@@ -163,7 +163,7 @@ export function EngagementBriefSection({
             <p className="mt-1.5 text-sm font-medium text-foreground">{brief.title}</p>
             <p className="mt-0.5 text-sm text-muted-foreground">
               What this work was asked to do.
-              {brief.brief_scope.type === "task" ? " Marked against one task." : ""}
+              {brief.brief_scope.type === "task" ? " Marked against one workstream." : ""}
             </p>
           </div>
           <div className="flex shrink-0 items-center gap-3">
