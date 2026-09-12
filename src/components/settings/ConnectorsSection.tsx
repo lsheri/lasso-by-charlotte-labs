@@ -18,6 +18,7 @@ import {
   TOOLKIT_LABELS,
   type ConnectorAccount,
 } from "@/hooks/use-connector-accounts";
+import { useActiveSettingsSection } from "@/components/settings/SettingsShell";
 import { useProfile } from "@/hooks/use-profile";
 import {
   disconnectConnector,
@@ -26,6 +27,7 @@ import {
   getConnectorDetails,
 } from "@/lib/connectors.functions";
 import type { ConnectorToolkit } from "@/lib/connector-toolkits";
+import { useSettingsDialogOptional, type SettingsOpenFrom } from "@/lib/settings-dialog-context";
 import { logEvent } from "@/lib/telemetry";
 
 const DESCRIPTIONS: Record<ConnectorToolkit, string> = {
@@ -51,11 +53,7 @@ const PICKER_KIND: Partial<Record<ConnectorToolkit, PickerKind>> = {
 
 const COMING_SOON = ["Zoom", "Teams", "ChatGPT Enterprise"];
 
-export function ConnectorsSection({
-  from = "settings_rail",
-}: {
-  from?: "settings_rail" | "connect_sheet" | "deep_link";
-}) {
+export function ConnectorsSection({ from }: { from?: SettingsOpenFrom }) {
   const { data: profile } = useProfile();
   const { data: accounts, error } = useConnectorAccounts();
   const queryClient = useQueryClient();
@@ -186,20 +184,31 @@ export function ConnectorsSection({
   const notConnectedCount = Math.max(totalCount - connectedCount, 0);
   const subtitle = `${connectedCount} connected · ${notConnectedCount} not · Lasso reads only what you point it at`;
 
-  // Once per mount, and only once both reads have resolved. Firing on mount
-  // would record a connected count of zero before the accounts query landed.
+  // Sections stay mounted for the life of the settings shell, so mounting is
+  // not the signal: this must fire when connectors is the section on screen,
+  // and only once both reads have resolved so the counts are real.
+  const { activeSectionId } = useActiveSettingsSection();
+  const settings = useSettingsDialogOptional();
+  const resolvedFrom: SettingsOpenFrom =
+    from ??
+    settings?.openedFrom ??
+    (settings?.openedWithSection && settings.section === "connectors"
+      ? "deep_link"
+      : "settings_rail");
+
   const noted = useRef(false);
   const ready = Boolean(profile) && Boolean(accounts);
   useEffect(() => {
+    if (activeSectionId !== "connectors") return;
     if (!ready || !profile) return;
     if (noted.current) return;
     noted.current = true;
     logEvent("connector.surface_opened", profile.org_id, {
-      from,
+      from: resolvedFrom,
       connected_count: connectedCount,
       total_count: totalCount,
     });
-  }, [ready, profile, from, connectedCount, totalCount]);
+  }, [activeSectionId, ready, profile, resolvedFrom, connectedCount, totalCount]);
 
   return (
     <div>

@@ -61,7 +61,6 @@ export function SettingsShell({
     setActive(initialSection);
   }, [initialSection, sections]);
 
-
   const ungrouped = sections.filter((s) => !s.group);
   const groups: { name: string; items: SettingsSection[] }[] = [];
   for (const section of sections) {
@@ -154,7 +153,6 @@ export function SettingsShell({
             ))}
           </SettingsSectionContext.Provider>
         </div>
-
       </div>
     </div>
   );
