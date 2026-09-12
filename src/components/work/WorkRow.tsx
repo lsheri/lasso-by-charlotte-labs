@@ -60,7 +60,7 @@ function NotePaperCard({
               },
             }
           : {})}
-        className={`nb-note-body group/row ${onOpen ? "cursor-pointer" : ""}`}
+        className={`nb-paper-body group/row ${onOpen ? "cursor-pointer" : ""}`}
       >
         {children}
       </div>
