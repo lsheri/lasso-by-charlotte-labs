@@ -2,11 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 
 import { DrawnCheck, DrawnEllipse, DrawnStrike, useMark } from "@/components/notebook/marks";
-import {
-  GraphiteIcon,
-  getIconSignature,
-  type GraphiteIconName,
-} from "@/components/notebook/icons";
+import { GraphiteIcon, getIconSignature, type GraphiteIconName } from "@/components/notebook/icons";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_authenticated/design/icons")({
@@ -344,12 +340,7 @@ function IconsGallery() {
                           className="flex size-12 items-center justify-center rounded-[var(--radius-md)] border border-border"
                           style={{ background: background.value, color: background.ink }}
                         >
-                          <GraphiteIcon
-                            key={nonce}
-                            name={entry.name}
-                            size={size}
-                            playOnMount
-                          />
+                          <GraphiteIcon key={nonce} name={entry.name} size={size} playOnMount />
                         </span>
                         <div>
                           <p className="text-sm font-medium text-foreground">
@@ -429,8 +420,8 @@ function IconsGallery() {
             signature move, once the redraw has landed.
           </li>
           <li>
-            <span className="font-mono text-[11px] text-muted-foreground">700ms</span> · icon
-            redraw on hover, focus or tap. Decorative and intent-triggered.
+            <span className="font-mono text-[11px] text-muted-foreground">700ms</span> · icon redraw
+            on hover, focus or tap. Decorative and intent-triggered.
           </li>
           <li>
             <span className="font-mono text-[11px] text-muted-foreground">730ms</span> · firework
@@ -443,16 +434,16 @@ function IconsGallery() {
           </li>
           <li>
             <span className="font-mono text-[11px] text-muted-foreground">1100ms</span> · the
-            landing front-door rule. The first motion a visitor ever sees, paced as a slow reveal
-            on purpose. Snapping it to 800ms would make the first impression 27% faster.
+            landing front-door rule. The first motion a visitor ever sees, paced as a slow reveal on
+            purpose. Snapping it to 800ms would make the first impression 27% faster.
           </li>
           <li>
             <span className="font-mono text-[11px] text-muted-foreground">1440ms</span> · icon mount
             draw-in, once per session.
           </li>
           <li>
-            <span className="font-mono text-[11px] text-muted-foreground">620ms</span> · gust · paper
-            notes blow in and settle on arrival at /work, roughly a third of visits.
+            <span className="font-mono text-[11px] text-muted-foreground">620ms</span> · gust ·
+            paper notes blow in and settle on arrival at /work, roughly a third of visits.
             Decorative; answers no event and carries no information.
           </li>
         </ul>
@@ -476,8 +467,8 @@ function IconsGallery() {
             eyes scanning.
           </li>
           <li>
-            <span className="font-mono text-[11px] text-muted-foreground">7s</span> · hatch
-            breathe, with a counterphase pair offset half a cycle.
+            <span className="font-mono text-[11px] text-muted-foreground">7s</span> · hatch breathe,
+            with a counterphase pair offset half a cycle.
           </li>
           <li>
             <span className="font-mono text-[11px] text-muted-foreground">8s</span> · spider wobble.
@@ -496,32 +487,34 @@ function IconsGallery() {
         <ul className="mt-2 space-y-1.5 text-sm text-foreground">
           <li>
             <span className="font-mono text-[11px] text-muted-foreground">reading-line</span> ·{" "}
-            <span className="font-mono text-[11px] text-muted-foreground">.nb-reading-pupil</span> is
-            the spider's eye, not a line moving down text. The motion has no counterpart anywhere.
+            <span className="font-mono text-[11px] text-muted-foreground">.nb-reading-pupil</span>{" "}
+            is the spider's eye, not a line moving down text. The motion has no counterpart
+            anywhere.
           </li>
           <li>
-            <span className="font-mono text-[11px] text-muted-foreground">provenance-ribbon</span>{" "}
-            · <span className="font-mono text-[11px] text-muted-foreground">.nb-traced-legend</span>{" "}
+            <span className="font-mono text-[11px] text-muted-foreground">provenance-ribbon</span> ·{" "}
+            <span className="font-mono text-[11px] text-muted-foreground">.nb-traced-legend</span>{" "}
             is a legend line inside JourneyView, not a ribbon.
           </li>
           <li>
             <span className="font-mono text-[11px] text-muted-foreground">work-lands</span> · the
             only downward landing in the app is{" "}
             <span className="font-mono text-[11px] text-muted-foreground">nb-paper-land</span>,
-            which belongs to the gust, a named registry exception fired by chance rather than by this
-            event. <span className="font-mono text-[11px] text-muted-foreground">.nb-rise</span>{" "}
-            moves the wrong way, upward.
+            which belongs to the gust, a named registry exception fired by chance rather than by
+            this event.{" "}
+            <span className="font-mono text-[11px] text-muted-foreground">.nb-rise</span> moves the
+            wrong way, upward.
           </li>
           <li>
-            <span className="font-mono text-[11px] text-muted-foreground">comet-line</span> · nothing
-            in the app draws one.
+            <span className="font-mono text-[11px] text-muted-foreground">comet-line</span> ·
+            nothing in the app draws one.
           </li>
           <li>
             <span className="font-mono text-[11px] text-muted-foreground">pencil-marks</span> ·{" "}
-            <span className="font-mono text-[11px] text-muted-foreground">.nb-mark</span> exists, but{" "}
-            <span className="font-mono text-[11px] text-muted-foreground">nav.active</span> renders
-            no SVG for a mark to be drawn on. Returning a class the surface cannot use is worse than
-            returning nothing.
+            <span className="font-mono text-[11px] text-muted-foreground">.nb-mark</span> exists,
+            but <span className="font-mono text-[11px] text-muted-foreground">nav.active</span>{" "}
+            renders no SVG for a mark to be drawn on. Returning a class the surface cannot use is
+            worse than returning nothing.
           </li>
           <li>
             <span className="font-mono text-[11px] text-muted-foreground">arrows</span> ·{" "}

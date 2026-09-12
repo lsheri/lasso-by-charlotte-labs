@@ -257,7 +257,10 @@ export interface ResolvedMotion {
  * Resolve an event to what should play. A surface names the event and reads
  * the answer; it never names an animation.
  */
-export function resolveMotion(event: MotionEventName, reduce = prefersReducedMotion()): ResolvedMotion {
+export function resolveMotion(
+  event: MotionEventName,
+  reduce = prefersReducedMotion(),
+): ResolvedMotion {
   const entry = MOTION_REGISTRY[event];
   const draw = MOTION_CLASS[entry.motion];
   return {
