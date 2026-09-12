@@ -44,10 +44,10 @@ export function notePaper(id: string, place: "column" | "pile" = "column"): Note
   const deg = sign * magnitude * tilt;
   return {
     "--nb-rot": `${(Math.round(deg * 100) / 100).toFixed(2)}deg`,
-    "--nb-note-period": PERIODS[hash % PERIODS.length]!,
+    "--nb-paper-period": PERIODS[hash % PERIODS.length]!,
     // Negative delay starts each note mid-cycle, so nothing waits to begin and
     // no two neighbours reach the same extreme together.
-    "--nb-note-phase": `-${(hash >>> 5) % 9000}ms`,
+    "--nb-paper-phase": `-${(hash >>> 5) % 9000}ms`,
   };
 }
 
