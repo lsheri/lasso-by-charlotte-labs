@@ -23,7 +23,7 @@ export type Vocab = {
   newEngagement: string;
   workstream: string;
   workstreams: string;
-  /** The nav group that holds shared, organization wide places. */
+  /** No longer used by the sidebar; retained for tests and legacy surfaces. */
   orgGroup: string;
   /** The firm wide roll up. */
   firmView: string;

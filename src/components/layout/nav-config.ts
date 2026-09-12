@@ -69,13 +69,15 @@ export const coachNavGroups: NavGroup[] = [
 ];
 
 /**
- * A school workspace reads the same places under school words, plus its own
- * section. Every other workspace is untouched: navGroups above is unchanged.
+ * A school workspace keeps the same weekly-loop headings as every other
+ * workspace and just adds its own "Your classes" section after "What you
+ * learned". Only the engagement shelves group gets a true school vocabulary
+ * swap, because there the underlying concept genuinely differs.
  */
 export const eduNavGroups: NavGroup[] = navGroups.flatMap((group) => {
   if (group.id === "learned") {
     return [
-      { ...group, label: EDU_VOCAB.orgGroup },
+      group,
       {
         id: "school",
         label: "Your classes",
