@@ -12,8 +12,8 @@ import { engagementHue } from "@/lib/work-identity";
  */
 export type NotePaper = CSSProperties & {
   "--nb-rot": string;
-  "--nb-note-period": string;
-  "--nb-note-phase": string;
+  "--nb-paper-period": string;
+  "--nb-paper-phase": string;
 };
 
 /**
