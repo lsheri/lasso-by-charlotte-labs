@@ -84,7 +84,10 @@ export function ClientPage({ clientId }: { clientId: string }) {
   const unplacedCount = unplaced.length;
 
   const countsReady =
-    clientQuery.isSuccess && Boolean(clientQuery.data) && engagementsQuery.isSuccess && Boolean(workData);
+    clientQuery.isSuccess &&
+    Boolean(clientQuery.data) &&
+    engagementsQuery.isSuccess &&
+    Boolean(workData);
 
   // Once per client, and only once the numbers it reports are real. Firing on
   // mount recorded zeroes, because none of the three reads had resolved yet.
