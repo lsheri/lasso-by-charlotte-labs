@@ -115,7 +115,7 @@ export function WorkArtifactSections({
           <ul className="list-none space-y-3">
             {artifact.example_prompts.map((prompt, i) => (
               <li key={`${i}-${prompt.quote.slice(0, 20)}`}>
-                <blockquote className="nb-binder nb-binder-body rounded-[var(--radius-md)] border border-pencil px-3 text-[13px] text-foreground">
+                <blockquote className="nb-binder nb-binder-body rounded-[var(--radius-md)] border border-pencil px-3 text-foreground">
                   {prompt.quote}
                 </blockquote>
                 {prompt.why_it_worked ? (

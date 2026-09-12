@@ -1,3 +1,4 @@
+@layer theme, base, components, nb, utilities;
 @import "tailwindcss" source(none);
 @source "../src";
 @import "tw-animate-css";
@@ -14,6 +15,7 @@
 
 @custom-variant dark (&:is(.dark *));
 
+@layer nb {
 /*
  * Design system definition.
  *
@@ -27,6 +29,8 @@
  * 1. Add the variable to :root (light value) and .dark (dark value)
  * 2. Register it in @theme inline as --color-<name>: var(--<name>)
  */
+
+}
 
 @theme inline {
   --font-sans: "Archivo", ui-sans-serif, system-ui, sans-serif;
@@ -111,6 +115,7 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
+@layer nb {
 :root {
   --radius: 8px;
   --radius-control: 6px;
@@ -450,6 +455,8 @@
   --code-meta: #e0a086;
 }
 
+}
+
 @layer base {
   * {
     border-color: var(--color-border);
@@ -472,9 +479,12 @@
   color: var(--nb-mid);
 }
 
+@layer nb {
 /* Pass 91: three-level label hierarchy. Blue names a region of the page,
    green names something Lasso produced, plain micro-label stays grey for
    field labels nested inside a card. Text-level only, no filled surfaces. */
+
+}
 @utility micro-label-section {
   color: var(--nb-soft);
 }
@@ -538,6 +548,7 @@
   color: var(--nb-mid);
 }
 
+@layer nb {
 /* Peek panel: Notion-like reading typography for rendered markdown/HTML. */
 .peek-prose {
   color: var(--foreground);
@@ -676,6 +687,8 @@
 }
 
 /* Interactive affordances: visible weight, never grey-on-grey. */
+
+}
 @layer base {
   :focus-visible {
     outline: 2px solid var(--ring);
@@ -705,6 +718,7 @@
   color: var(--nb-ink);
 }
 
+@layer nb {
 /* Compact variant of the prose styles for AI chat bubbles. */
 .chat-prose {
   font-size: 0.875rem;
@@ -778,6 +792,8 @@
 }
 
 /* Safe areas for anything that touches a screen edge on a notched phone. */
+
+}
 @utility safe-top {
   padding-top: env(safe-area-inset-top);
 }
@@ -789,6 +805,7 @@
   padding-right: env(safe-area-inset-right);
 }
 
+@layer nb {
 /* ==========================================================================
    Notebook icons (pass 84). Ported verbatim from the Design Lab reference,
    unscoped: production is the notebook. The draw-in and signature timings are
@@ -3029,9 +3046,6 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
     border-left: 0;
     border-top: 1px solid var(--border);
   }
-  .nb-rail-widen {
-    display: none;
-  }
 }
 /* Bold ink: the stroke thickens and the span picks up its own underline. */
 .nb-ink-bold {
@@ -3126,6 +3140,8 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 }
 
 /* Pass 141: handwritten pencil section titles on the public landing page. */
+
+}
 @utility pencil-title {
   font-family: var(--font-hand);
   font-weight: 700;
@@ -3135,6 +3151,7 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   color: var(--nb-graphite);
 }
 
+@layer nb {
 @media (min-width: 768px) {
   .pencil-title {
     font-size: 3rem;
@@ -3142,6 +3159,8 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 }
 
 /* Landing: bold handwritten diagonal marks labelling problem vs. solution. */
+
+}
 @utility hand-mark {
   font-family: var(--font-hand);
   font-weight: 700;
@@ -3165,7 +3184,10 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   text-decoration-color: var(--nb-blue);
 }
 
+@layer nb {
 /* Scroll focus: sections away from the viewport centre fade and soften. */
+
+}
 @utility focus-section {
   transition:
     opacity var(--nb-dur-enter) var(--nb-ease),
@@ -3177,12 +3199,16 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   filter: blur(2.5px);
 }
 
+@layer nb {
 /* Landing gate: the story stays blurred until the visitor actually scrolls. */
+
+}
 @utility landing-locked {
   opacity: 0.22;
   filter: blur(6px);
 }
 
+@layer nb {
 @media (prefers-reduced-motion: reduce) {
   .focus-section-dim,
   .landing-locked {
@@ -3438,4 +3464,6 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   .nb-paper:focus-visible {
     transform: rotate(var(--nb-rot, 0deg)) !important;
   }
+}
+
 }
