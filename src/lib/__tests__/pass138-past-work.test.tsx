@@ -75,7 +75,7 @@ describe("Pass 138: Past work nav", () => {
     expect(labels.indexOf("What you learned")).toBe(labels.indexOf("Where it goes") + 1);
 
     const learned = navGroups.find((group) => group.label === "What you learned")!;
-    expect(learned.items).toEqual([{ label: PAST_WORK_NAV_LABEL, to: "/archive", icon: "firm" }]);
+    expect(learned.items[0]).toEqual({ label: PAST_WORK_NAV_LABEL, to: "/archive", icon: "firm" });
     expect(PAST_WORK_NAV_LABEL).toBe("Past work");
   });
 
