@@ -343,7 +343,7 @@ export function AnalysisConfirm({
               )}
               {taskLine ? (
                 <li className="rounded-[var(--radius)] border border-border px-3 py-2">
-                  <p className="micro-label">Task line</p>
+                  <p className="micro-label">Goal</p>
                   <p className="mt-0.5 text-sm text-foreground">{taskLine}</p>
                 </li>
               ) : null}

@@ -189,7 +189,7 @@ export function WorkstreamCard({
               onClick={() => setEditingLine(true)}
               className="w-full truncate rounded-[var(--radius)] px-0 py-1 text-left text-sm text-muted-foreground transition-colors hover:text-foreground disabled:hover:text-muted-foreground"
             >
-              {objective ?? (isOwner ? `Task line: ${TASK_LINE_PLACEHOLDER}` : "No task line yet")}
+              {objective ?? (isOwner ? `Goal: ${TASK_LINE_PLACEHOLDER}` : "No goal yet")}
             </button>
           )}
         </div>

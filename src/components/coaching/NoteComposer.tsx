@@ -44,7 +44,7 @@ export function NoteComposer({
       return;
     }
     if (cited.length === 0) {
-      setError("Point to at least one decision or task so the note is grounded in real work.");
+      setError("Point to at least one decision or workstream so the note is grounded in real work.");
       return;
     }
     setPending(true);
@@ -134,7 +134,7 @@ export function NoteComposer({
                       : "rounded-full border border-border bg-card px-3 py-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
                   }
                 >
-                  {citation.kind === "decision" ? "Decision · " : "Task · "}
+                  {citation.kind === "decision" ? "Decision · " : "Workstream · "}
                   {citation.label}
                 </button>
               ))}
