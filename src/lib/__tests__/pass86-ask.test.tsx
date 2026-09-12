@@ -69,9 +69,8 @@ describe("ask lasso reads stay gated", () => {
 describe("binder baseline law", () => {
   const css = readFileSync("src/styles.css", "utf8");
 
-  it("uses a rem based pitch so the rules scale with the type ramp", () => {
+  it("uses a rem based pitch so the rhythm scales with the type ramp", () => {
     expect(css).toContain("--nb-baseline: 1.75rem");
-    expect(css).toContain("background-attachment: local");
     expect(css).toContain("line-height: var(--nb-baseline)");
   });
 

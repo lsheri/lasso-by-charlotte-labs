@@ -1204,12 +1204,11 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
    mobile tab bar. Presentation only.
 --------------------------------------------------------------------------- */
 
-/* Graph-paper surface: 20px quad ruling under the pile. */
+/* Quad surface for the unmapped pile. The 20px ruling was removed on
+   12 Sep 2026; the paper colour stays, and the cards/columns provide the
+   structure now. */
 .nb-quad {
   background-color: var(--nb-paper);
-  background-image:
-    repeating-linear-gradient(to right, var(--nb-rule) 0 1px, transparent 1px 20px),
-    repeating-linear-gradient(to bottom, var(--nb-rule) 0 1px, transparent 1px 20px);
 }
 
 /* ---------------------------------------------------------------------------
@@ -1447,17 +1446,9 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 }
 
 .nb-binder-body {
-  /* Rules scroll with the content, not with the viewport. */
-  background-image: repeating-linear-gradient(
-    to bottom,
-    transparent 0,
-    transparent calc(var(--nb-baseline) - 1px),
-    var(--nb-rule) calc(var(--nb-baseline) - 1px),
-    var(--nb-rule) var(--nb-baseline)
-  );
-  background-attachment: local;
-  background-position: left top;
-  /* Whole multiples of the pitch, so every line lands just above a rule. */
+  /* Baseline ruling removed on 12 Sep 2026. --nb-baseline still sets the
+     rhythm; padding and line-height remain load-bearing for the surfaces
+     that use this class. */
   padding-top: var(--nb-baseline);
   padding-bottom: calc(var(--nb-baseline) * 2);
   font-size: 14px;
@@ -1900,15 +1891,13 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 }
 
 /* ---------------------------------------------------------------------------
-   Pass 87: the engagement canvas. Quad surface, workstreams as open columns,
-   work as white cards. The only shadow on this surface is the lifted card.
---------------------------------------------------------------------------- */
+   Pass 87: the engagement canvas. Workstreams as open columns, work as white
+   cards. The quad ruling was removed on 12 Sep 2026; the paper colour stays.
+   The only shadow on this surface is the lifted card.
+   --------------------------------------------------------------------------- */
 
 .nb-canvas {
   background-color: var(--nb-paper);
-  background-image:
-    repeating-linear-gradient(to right, var(--nb-rule) 0 1px, transparent 1px 20px),
-    repeating-linear-gradient(to bottom, var(--nb-rule) 0 1px, transparent 1px 20px);
   border: 1px solid var(--nb-rule);
   border-radius: 8px;
   overflow: hidden;
