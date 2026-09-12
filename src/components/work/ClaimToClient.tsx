@@ -21,10 +21,16 @@ import type { WorkItemRow } from "@/lib/work-types";
 export function ClaimToClient({
   item,
   surface,
+  emphasis = "quiet",
+  label = "Client",
 }: {
   item: WorkItemRow;
   /** Which screen the claim was made from, sent with the claim event. */
   surface: "work" | "overview";
+  /** Quiet sits in a row of other actions; lead stands alone as the card's act. */
+  emphasis?: "quiet" | "lead";
+  /** Overrides the trigger label. */
+  label?: string;
 }) {
   const { data: profile } = useProfile();
   const { data: clients } = useClients(profile?.org_id);
