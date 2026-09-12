@@ -98,7 +98,7 @@ export function ClientPage({ clientId }: { clientId: string }) {
 
   if (clientQuery.isLoading) {
     return (
-      <div className="mx-auto max-w-5xl p-6">
+      <div>
         <p className="text-sm text-muted-foreground">Loading.</p>
       </div>
     );
@@ -106,7 +106,7 @@ export function ClientPage({ clientId }: { clientId: string }) {
 
   if (!client) {
     return (
-      <div className="mx-auto max-w-5xl p-6">
+      <div>
         <PageHeader title="Client" subtitle="That client is not in your workspace." />
       </div>
     );
