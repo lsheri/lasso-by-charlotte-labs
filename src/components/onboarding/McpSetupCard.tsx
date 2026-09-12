@@ -34,7 +34,7 @@ export function McpSetupCard({ vendor }: { vendor: McpVendor }) {
   const { data: profile } = useProfile();
   const fetchToken = useServerFn(getMcpToken);
   const create = useServerFn(createMcpToken);
-  const { data: token } = useQuery({
+  const { data: token, isFetched: tokenSettled } = useQuery({
     queryKey: ["mcp-token"],
     queryFn: () => fetchToken({ data: { profile_id: profile?.id } }),
   });
@@ -43,17 +43,15 @@ export function McpSetupCard({ vendor }: { vendor: McpVendor }) {
   const [confirming, setConfirming] = useState(false);
   const opened = useRef(false);
 
-  // The steps are the whole card, so opening it is the open.
+  // The steps are the whole card, so record the open once both reads have settled.
   useEffect(() => {
-    if (opened.current || !profile) return;
+    if (opened.current || !profile || !tokenSettled) return;
     opened.current = true;
     logEvent("connector.setup_opened", profile.org_id, {
       surface: "onboarding",
       had_connector: Boolean(token),
     });
-    // Fires once for the life of the card, on the first render that knows both.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profile?.id]);
+  }, [profile, token, tokenSettled]);
 
   const [baseline, setBaseline] = useState<number | null>(null);
   const [arrived, setArrived] = useState(false);

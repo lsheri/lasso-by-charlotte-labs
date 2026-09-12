@@ -1,3 +1,4 @@
+@layer theme, base, components, nb, utilities;
 @import "tailwindcss" source(none);
 @source "../src";
 @import "tw-animate-css";
@@ -789,6 +790,7 @@
   padding-right: env(safe-area-inset-right);
 }
 
+@layer nb {
 /* ==========================================================================
    Notebook icons (pass 84). Ported verbatim from the Design Lab reference,
    unscoped: production is the notebook. The draw-in and signature timings are
@@ -3029,9 +3031,6 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
     border-left: 0;
     border-top: 1px solid var(--border);
   }
-  .nb-rail-widen {
-    display: none;
-  }
 }
 /* Bold ink: the stroke thickens and the span picks up its own underline. */
 .nb-ink-bold {
@@ -3438,4 +3437,5 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   .nb-paper:focus-visible {
     transform: rotate(var(--nb-rot, 0deg)) !important;
   }
+}
 }

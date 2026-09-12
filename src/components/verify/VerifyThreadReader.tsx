@@ -121,7 +121,7 @@ function RailWidenButton({ wide, onToggle }: { wide: boolean; onToggle: () => vo
       data-testid="reader-rail-widen"
       aria-label={wide ? "Narrow the checklist" : "Widen the checklist"}
       onClick={onToggle}
-      className="nb-rail-widen grid h-6 w-6 shrink-0 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+      className="nb-rail-widen grid h-6 w-6 shrink-0 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground max-[900px]:hidden"
     >
       {wide ? (
         <ChevronRight className="h-3.5 w-3.5" aria-hidden />
