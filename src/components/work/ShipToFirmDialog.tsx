@@ -13,6 +13,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { DeclareArtifactStep } from "@/components/work/DeclareArtifactStep";
+import { useMotion } from "@/hooks/use-motion";
 import { useShipWork } from "@/hooks/use-shipped-work";
 import { guessArtifactDeclaration, type ArtifactDeclaration } from "@/lib/declared-work";
 import { declareArtifact } from "@/lib/declared-work.functions";
@@ -65,6 +66,7 @@ export function ShipToFirmDialog({
   const pendingRef = useRef<Promise<Settled> | null>(null);
   const [shipping, setShipping] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const motion = useMotion("record.stamped");
 
   const scribble = useScribbleComplete({
     targetRef: rowRef,
@@ -126,7 +128,7 @@ export function ShipToFirmDialog({
           ref={rowRef}
           data-testid="ship-name-row"
           className={`relative rounded-[var(--radius)] border border-border bg-muted/40 px-3 py-2 ${
-            shipping ? "nb-ship-settle" : ""
+            shipping ? motion.className : ""
           }`}
         >
           <p className="break-words text-sm font-medium text-foreground">{title}</p>
