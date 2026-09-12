@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 
+import { useMotion } from "@/hooks/use-motion";
 import type { SpanStatus } from "@/lib/span-provenance-shared";
 import { spanStatusStroke } from "@/lib/span-status-style";
 
@@ -29,6 +30,7 @@ export function ThreadLine({
 }) {
   const [to, setTo] = useState<{ x: number; y: number } | null>(null);
   const [fading, setFading] = useState(false);
+  const motion = useMotion("provenance.tracing");
 
   useEffect(() => {
     const id = window.setTimeout(() => {
@@ -74,7 +76,7 @@ export function ThreadLine({
         stroke={stroke}
         strokeWidth={1.5}
         strokeDasharray={sourced ? undefined : "4 4"}
-        className={reduceMotion ? "nb-thread-static" : "nb-thread-draw"}
+        className={motion.className}
       />
       {!sourced ? (
         <circle cx={end.x} cy={end.y} r={4} fill="none" stroke={stroke} strokeWidth={1.5} />
