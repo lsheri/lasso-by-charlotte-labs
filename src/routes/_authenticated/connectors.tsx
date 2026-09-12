@@ -1,6 +1,19 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
 
-import { ConnectorsPage } from "@/pages/ConnectorsPage";
+import { useSettingsDialog } from "@/lib/settings-dialog-context";
+
+function ConnectorsRoute() {
+  const { openSettings } = useSettingsDialog();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    openSettings("connectors");
+    navigate({ to: "/overview", replace: true });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  return null;
+}
 
 export const Route = createFileRoute("/_authenticated/connectors")({
   head: () => ({
@@ -11,5 +24,5 @@ export const Route = createFileRoute("/_authenticated/connectors")({
       { property: "og:description", content: "Connect the places your work already happens." },
     ],
   }),
-  component: ConnectorsPage,
+  component: ConnectorsRoute,
 });
