@@ -395,9 +395,7 @@ function ConnectorCard({
           <p className="shrink-0 text-[13px] font-medium text-foreground">{name}</p>
           {connected ? identity : null}
         </div>
-        <p className="truncate text-[11.5px] leading-[17px] text-muted-foreground">
-          {description}
-        </p>
+        <p className="truncate text-[11.5px] leading-[17px] text-muted-foreground">{description}</p>
         {exceptionalStatus ? (
           <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
             {exceptionalStatus}
