@@ -2922,6 +2922,7 @@ export type Database = {
       work_items: {
         Row: {
           captured_at: string
+          client_id: string | null
           content_egress_skipped_reason: string | null
           content_egressed_at: string | null
           content_fidelity: string
@@ -2945,6 +2946,7 @@ export type Database = {
         }
         Insert: {
           captured_at?: string
+          client_id?: string | null
           content_egress_skipped_reason?: string | null
           content_egressed_at?: string | null
           content_fidelity?: string
@@ -2968,6 +2970,7 @@ export type Database = {
         }
         Update: {
           captured_at?: string
+          client_id?: string | null
           content_egress_skipped_reason?: string | null
           content_egressed_at?: string | null
           content_fidelity?: string
@@ -2990,6 +2993,13 @@ export type Database = {
           work_date?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "work_items_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "work_items_import_session_id_fkey"
             columns: ["import_session_id"]
