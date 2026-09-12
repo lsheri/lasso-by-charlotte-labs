@@ -193,7 +193,7 @@ export function WorkRow({
           {/* Line two: the name, which is the only thing set in body text. */}
           <p
             title={item.title}
-            className="mt-1 line-clamp-2 break-words text-[13px] leading-[18px] text-foreground"
+            className="mt-1 line-clamp-3 break-words text-[13px] leading-[18px] text-foreground"
           >
             {item.title} <ArtifactNote item={item} />
           </p>
@@ -214,7 +214,7 @@ export function WorkRow({
             path, so tabbing into an action reveals the set it belongs to.
           */}
           <div
-            className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 md:hidden md:group-focus-within/row:flex md:group-hover/row:flex"
+            className="absolute bottom-0 left-0 right-0 flex flex-wrap items-center gap-x-3 gap-y-1 bg-[color-mix(in_oklab,var(--nb-paper-fill,var(--nb-white))_88%,transparent)] p-2 backdrop-blur-sm md:hidden md:group-focus-within/row:flex md:group-hover/row:flex"
             onClick={(event) => event.stopPropagation()}
           >
             {chips}
