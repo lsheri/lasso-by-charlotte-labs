@@ -63,7 +63,10 @@ export function ClientPage({ clientId }: { clientId: string }) {
   );
 
   const placed = useMemo(() => items.filter((item) => item.work_item_tasks.length > 0), [items]);
-  const unplaced = useMemo(() => items.filter((item) => item.work_item_tasks.length === 0), [items]);
+  const unplaced = useMemo(
+    () => items.filter((item) => item.work_item_tasks.length === 0),
+    [items],
+  );
 
   const byEngagement = useMemo(() => {
     const map = new Map<string, WorkItemRow[]>();

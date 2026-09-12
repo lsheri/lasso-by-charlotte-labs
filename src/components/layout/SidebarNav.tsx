@@ -250,7 +250,6 @@ export function SidebarNav({
                           </div>
                         )}
 
-
                         {collapsed
                           ? null
                           : shelf.engagements.map((engagement) => (

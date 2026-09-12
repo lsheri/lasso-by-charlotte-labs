@@ -22,7 +22,6 @@ export type TelemetryEvent =
   | "connector.browse_paged"
   /** Pass 169: how the first page of a connector listing resolved. */
   | "connector.browse_result"
-
   | "import.started"
   | "import.parsed"
   | "import.committed"
@@ -130,8 +129,6 @@ export type TelemetryEvent =
   | "portfolio.item_added"
   /** Pass 172: a person took one piece of work back off the Portfolio. */
   | "portfolio.item_removed";
-
-
 
 export type TelemetryDims = Record<
   string,
