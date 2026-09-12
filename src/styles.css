@@ -3032,8 +3032,8 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 .nb-paper:hover,
 .nb-paper:focus-visible {
   box-shadow:
-    0 1px 1px -0.5px rgb(22 24 26 / 0.10),
-    0 7px 14px -6px rgb(22 24 26 / 0.17);
+    0 2px 3px -1px rgb(22 24 26 / 0.18),
+    0 14px 24px -10px rgb(22 24 26 / 0.26);
 }
 
 /* The tilt. Perspective only exists inside this rule, so a card at rest is a
