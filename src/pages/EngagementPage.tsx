@@ -1,6 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { GraphiteRule } from "@/components/notebook/marks";
 import { SpiderMark } from "@/components/notebook/SpiderMark";
