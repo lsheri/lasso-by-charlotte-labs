@@ -3054,6 +3054,28 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   .nb-chatview { grid-template-columns: 360px minmax(0, 1fr); }
 }
 .nb-chatview-list { min-width: 0; }
+.nb-card-lift {
+  transition:
+    transform var(--nb-dur-move) var(--nb-ease),
+    box-shadow var(--nb-dur-move) var(--nb-ease);
+}
+.nb-card-lift:hover {
+  transform: translateY(-1.5px);
+  box-shadow: 0 6px 10px -6px rgb(22 24 26 / 0.18);
+}
+@keyframes nb-chat-ribbon-turn {
+  to { transform: rotate(360deg); }
+}
+.nb-chat-ribbon {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: nb-chat-ribbon-turn 40s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .nb-card-lift { transition: none; }
+  .nb-card-lift:hover { transform: none; }
+  .nb-chat-ribbon { animation: none; }
+}
 @media (min-width: 1100px) {
   .nb-chatview-list {
     position: sticky;
