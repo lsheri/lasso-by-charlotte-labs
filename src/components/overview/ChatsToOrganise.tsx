@@ -135,7 +135,7 @@ export function ChatsToOrganise({ items }: { items: WorkItemRow[] }) {
               suggestedLabel={suggestedLabel}
               acceptPending={acceptPending}
               onAccept={() =>
-                void accept(suggestion, {
+                void accept(suggestion!, {
                   type: item.type ?? "ai_thread",
                   source: item.source ?? "import",
                 })
