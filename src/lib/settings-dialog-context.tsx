@@ -38,3 +38,8 @@ export function useSettingsDialog() {
   if (!ctx) throw new Error("useSettingsDialog must be used inside SettingsDialogProvider");
   return ctx;
 }
+
+/** Same context, but tolerant of being rendered outside the provider. */
+export function useSettingsDialogOptional(): SettingsCtx | null {
+  return useContext(SettingsCtx);
+}

@@ -19,7 +19,7 @@ import { useWorkItems } from "@/hooks/use-work-items";
 import { detachEpisodeItems, syncEpisodeForMapping } from "@/lib/episodes.functions";
 import { defaultStream, rememberStream } from "@/lib/connect-to-work";
 import { remapItems } from "@/lib/workflow-order";
-import { useSettingsDialog } from "@/lib/settings-dialog-context";
+import { useSettingsDialogOptional } from "@/lib/settings-dialog-context";
 import { logEvent } from "@/lib/telemetry";
 
 export type ConnectStream = { id: string; name: string };
@@ -42,7 +42,7 @@ export function ConnectToWorkSheet({
   onChanged: () => Promise<void> | void;
 }) {
   const queryClient = useQueryClient();
-  const { openSettings } = useSettingsDialog();
+  const settings = useSettingsDialogOptional();
   const syncEpisode = useServerFn(syncEpisodeForMapping);
   const detachEpisode = useServerFn(detachEpisodeItems);
   const { data } = useWorkItems();
@@ -181,7 +181,7 @@ export function ConnectToWorkSheet({
                 surface: "connect_sheet",
                 had_connector: false,
               });
-              openSettings("connectors");
+              settings?.openSettings("connectors");
             }}
             className="text-xs text-muted-foreground transition-colors hover:text-foreground"
           >
