@@ -33,7 +33,7 @@ function NoteRow({
       data-paper-state="unmapped"
       style={{ ...notePaper(item.id), ...noteHue(null) }}
     >
-      <div className="nb-note-body">
+      <div className="nb-paper-body">
         {/* Line one: where it came from and when it landed. */}
         <div className="flex items-center gap-1.5">
           <SourceMark item={item} size={14} disc />
