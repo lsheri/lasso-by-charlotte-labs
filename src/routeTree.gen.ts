@@ -36,6 +36,7 @@ import { Route as AuthenticatedReflectRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedWorkRouteImport } from './routes/_authenticated/work'
 import { Route as JoinEduRouteImport } from './routes/join_.edu'
+import { Route as AuthenticatedClientsIdRouteImport } from './routes/_authenticated/clients.$id'
 import { Route as AuthenticatedCoachingIndexRouteImport } from './routes/_authenticated/coaching.index'
 import { Route as AuthenticatedDesignIconsRouteImport } from './routes/_authenticated/design.icons'
 import { Route as AuthenticatedEngagementsIdRouteImport } from './routes/_authenticated/engagements.$id'
@@ -185,6 +186,11 @@ const JoinEduRoute = JoinEduRouteImport.update({
   path: '/join/edu',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedClientsIdRoute = AuthenticatedClientsIdRouteImport.update({
+  id: '/clients/$id',
+  path: '/clients/$id',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedCoachingIndexRoute =
   AuthenticatedCoachingIndexRouteImport.update({
     id: '/coaching/',
@@ -279,6 +285,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AuthenticatedSettingsRoute
   '/work': typeof AuthenticatedWorkRoute
   '/join/edu': typeof JoinEduRoute
+  '/clients/$id': typeof AuthenticatedClientsIdRoute
   '/design/icons': typeof AuthenticatedDesignIconsRoute
   '/engagements/$id': typeof AuthenticatedEngagementsIdRoute
   '/api/analysis/stream': typeof ApiAnalysisStreamRoute
@@ -319,6 +326,7 @@ export interface FileRoutesByTo {
   '/settings': typeof AuthenticatedSettingsRoute
   '/work': typeof AuthenticatedWorkRoute
   '/join/edu': typeof JoinEduRoute
+  '/clients/$id': typeof AuthenticatedClientsIdRoute
   '/design/icons': typeof AuthenticatedDesignIconsRoute
   '/engagements/$id': typeof AuthenticatedEngagementsIdRoute
   '/api/analysis/stream': typeof ApiAnalysisStreamRoute
@@ -361,6 +369,7 @@ export interface FileRoutesById {
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/work': typeof AuthenticatedWorkRoute
   '/join_/edu': typeof JoinEduRoute
+  '/_authenticated/clients/$id': typeof AuthenticatedClientsIdRoute
   '/_authenticated/design/icons': typeof AuthenticatedDesignIconsRoute
   '/_authenticated/engagements/$id': typeof AuthenticatedEngagementsIdRoute
   '/api/analysis/stream': typeof ApiAnalysisStreamRoute
@@ -403,6 +412,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/work'
     | '/join/edu'
+    | '/clients/$id'
     | '/design/icons'
     | '/engagements/$id'
     | '/api/analysis/stream'
@@ -443,6 +453,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/work'
     | '/join/edu'
+    | '/clients/$id'
     | '/design/icons'
     | '/engagements/$id'
     | '/api/analysis/stream'
@@ -484,6 +495,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings'
     | '/_authenticated/work'
     | '/join_/edu'
+    | '/_authenticated/clients/$id'
     | '/_authenticated/design/icons'
     | '/_authenticated/engagements/$id'
     | '/api/analysis/stream'
@@ -710,6 +722,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof JoinEduRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/clients/$id': {
+      id: '/_authenticated/clients/$id'
+      path: '/clients/$id'
+      fullPath: '/clients/$id'
+      preLoaderRoute: typeof AuthenticatedClientsIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/coaching/': {
       id: '/_authenticated/coaching/'
       path: '/coaching'
@@ -815,6 +834,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedReflectRoute: typeof AuthenticatedReflectRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedWorkRoute: typeof AuthenticatedWorkRoute
+  AuthenticatedClientsIdRoute: typeof AuthenticatedClientsIdRoute
   AuthenticatedDesignIconsRoute: typeof AuthenticatedDesignIconsRoute
   AuthenticatedEngagementsIdRoute: typeof AuthenticatedEngagementsIdRoute
   AuthenticatedCoachingIndexRoute: typeof AuthenticatedCoachingIndexRoute
@@ -839,6 +859,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedReflectRoute: AuthenticatedReflectRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedWorkRoute: AuthenticatedWorkRoute,
+  AuthenticatedClientsIdRoute: AuthenticatedClientsIdRoute,
   AuthenticatedDesignIconsRoute: AuthenticatedDesignIconsRoute,
   AuthenticatedEngagementsIdRoute: AuthenticatedEngagementsIdRoute,
   AuthenticatedCoachingIndexRoute: AuthenticatedCoachingIndexRoute,
