@@ -835,7 +835,7 @@ export function WorkPage() {
                         <span className="shrink-0 text-soft">{items.length}</span>
                       </h2>
                     </div>
-                    <div className="space-y-2">
+                    <div className="nb-paper-wall">
                       {entries.length === 0 ? (
                         <p className="rounded-[var(--radius-md)] border border-dashed border-pencil bg-card px-3 py-4 text-center text-[11.5px] text-soft">
                           Nothing here yet.
