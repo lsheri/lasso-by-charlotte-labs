@@ -1204,12 +1204,11 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
    mobile tab bar. Presentation only.
 --------------------------------------------------------------------------- */
 
-/* Graph-paper surface: 20px quad ruling under the pile. */
+/* Quad surface for the unmapped pile. The 20px ruling was removed on
+   12 Sep 2026; the paper colour stays, and the cards/columns provide the
+   structure now. */
 .nb-quad {
   background-color: var(--nb-paper);
-  background-image:
-    repeating-linear-gradient(to right, var(--nb-rule) 0 1px, transparent 1px 20px),
-    repeating-linear-gradient(to bottom, var(--nb-rule) 0 1px, transparent 1px 20px);
 }
 
 /* ---------------------------------------------------------------------------
