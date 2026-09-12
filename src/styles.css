@@ -2916,6 +2916,10 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 
 /* ============================================================
    PAPER NOTES · the work card as a sticky note
+
+   The .nb-note namespace is owned by EngagementNote.tsx (engagement sticky notes).
+   This block uses .nb-paper* to avoid a specificity collision: equal-specificity
+   rules later in the file win, so .nb-note declared here overrode the orange notes.
    Sandbox A · M5 "Paper physics" (2026:11) and M0 principles (2026:2).
 
    M5 states the hover exactly: "hover lift (1.5px up, shadow grows, 160ms)".
@@ -2942,15 +2946,15 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   initial-value: 0deg;
 }
 
-.nb-note {
+.nb-paper {
   position: relative;
   display: block;
   width: 100%;
   text-align: left;
   /* One uneven corner: cut paper is never square on all four. */
   border-radius: 3px 3px 4px 3px;
-  border: 1px solid var(--nb-note-edge, var(--nb-rule));
-  background: var(--nb-note-fill, var(--nb-white));
+  border: 1px solid var(--nb-paper-edge, var(--nb-rule));
+  background: var(--nb-paper-fill, var(--nb-white));
   /* Contact, then ambient. Blur stays under twice the y-offset or the lift
      reads as a CSS card floating rather than paper resting. Tinted with ink,
      never black, which goes blue-grey against this paper. */
@@ -2966,20 +2970,20 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 
 /* Unmapped has no engagement yet, so it has no colour yet. The dashed pencil
    edge says "not filed" without spending a hue on it. */
-.nb-note[data-note-state="unmapped"] {
-  --nb-note-fill: var(--nb-white);
-  --nb-note-edge: var(--nb-pencil);
+.nb-paper[data-paper-state="unmapped"] {
+  --nb-paper-fill: var(--nb-white);
+  --nb-paper-edge: var(--nb-pencil);
   border-style: dashed;
 }
 
-.nb-note[data-note-state="private"] {
-  --nb-note-fill: var(--nb-grey-1);
-  --nb-note-edge: var(--nb-rule);
+.nb-paper[data-paper-state="private"] {
+  --nb-paper-fill: var(--nb-grey-1);
+  --nb-paper-edge: var(--nb-rule);
 }
 
 /* The turned corner: shipped to the firm. A fold, not a badge. Nothing sets
    this yet — see the comment in NotePaperCard. */
-.nb-note[data-note-fold="shipped"]::after {
+.nb-paper[data-paper-fold="shipped"]::after {
   content: "";
   position: absolute;
   right: 0;
@@ -2993,8 +2997,8 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 }
 
 /* M5, verbatim: 1.5px up, shadow grows, 160ms. */
-.nb-note:hover,
-.nb-note:focus-visible {
+.nb-paper:hover,
+.nb-paper:focus-visible {
   box-shadow:
     0 1px 1px -0.5px rgb(22 24 26 / 0.10),
     0 7px 14px -6px rgb(22 24 26 / 0.17);
@@ -3003,8 +3007,8 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 /* The tilt. Perspective only exists inside this rule, so a card at rest is a
    flat 2D layer and its type renders like every other glyph on the page. */
 @media (hover: hover) and (pointer: fine) {
-  .nb-note:hover,
-  .nb-note:focus-visible {
+  .nb-paper:hover,
+  .nb-paper:focus-visible {
     transform:
       perspective(620px)
       translateY(-1.5px)
@@ -3014,8 +3018,8 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   }
 }
 @media not all and (hover: hover) {
-  .nb-note:hover,
-  .nb-note:focus-visible {
+  .nb-paper:hover,
+  .nb-paper:focus-visible {
     transform: translateY(-1.5px) rotate(var(--nb-rot, 0deg));
   }
 }
@@ -3025,29 +3029,29 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
    phase are seeded per card so neighbours never beat together. Only cards the
    IntersectionObserver has marked live animate, so an off-screen column costs
    nothing. */
-.nb-note[data-live="1"] {
-  animation: nb-note-sway var(--nb-note-period, 9s) ease-in-out infinite alternate;
-  animation-delay: var(--nb-note-phase, 0ms);
+.nb-paper[data-live="1"] {
+  animation: nb-paper-sway var(--nb-paper-period, 9s) ease-in-out infinite alternate;
+  animation-delay: var(--nb-paper-phase, 0ms);
 }
-.nb-note[data-live="1"]:hover {
+.nb-paper[data-live="1"]:hover {
   animation-play-state: paused;
 }
-@keyframes nb-note-sway {
+@keyframes nb-paper-sway {
   from { --nb-sway: -0.15deg; }
   to   { --nb-sway: 0.15deg; }
 }
 
-.nb-note-body {
+.nb-paper-body {
   padding: 10px 11px 11px;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .nb-note {
+  .nb-paper {
     animation: none !important;
     transition: none !important;
   }
-  .nb-note:hover,
-  .nb-note:focus-visible {
+  .nb-paper:hover,
+  .nb-paper:focus-visible {
     transform: rotate(var(--nb-rot, 0deg)) !important;
   }
 }
