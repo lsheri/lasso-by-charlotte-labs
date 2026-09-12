@@ -94,7 +94,7 @@ function Queue({
         {headerAction}
       </div>
 
-      <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="mt-3 nb-paper-wall">
         {shown.map((item) => (
           <NoteRow key={item.id} item={item} action={cardAction(item)} />
         ))}

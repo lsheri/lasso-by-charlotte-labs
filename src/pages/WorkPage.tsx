@@ -389,7 +389,6 @@ export function WorkPage() {
     .map((i) => i.id);
   const allChosen = selectable.length > 0 && selectable.every((id) => chosen.has(id));
 
-
   function toggleChosen(id: string) {
     setChosen((prev) => {
       const next = new Set(prev);
@@ -512,7 +511,6 @@ export function WorkPage() {
     );
   }
 
-
   return (
     <div>
       <GettingStartedCard />
@@ -538,84 +536,84 @@ export function WorkPage() {
       <div
         className={`mb-6 flex-wrap items-center gap-2 ${addOpen || selectMode ? "flex" : "hidden"}`}
       >
-          {unmapped.length > 0 ? (
-            <button
-              type="button"
-              disabled={suggesting}
-              onClick={() => void handleSuggest()}
-              className="text-xs font-medium text-accent-deep transition-opacity hover:opacity-70 disabled:opacity-50"
-            >
-              {suggesting ? "Thinking…" : "✨ Suggest mapping"}
-            </button>
-          ) : null}
-          {!isCoach && selectable.length > 0 ? (
-            selectMode ? (
-              <div className="flex flex-wrap items-center gap-3">
-                <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
-                  <Checkbox
-                    checked={allChosen}
-                    onCheckedChange={() => setChosen(allChosen ? new Set() : new Set(selectable))}
-                    aria-label="Select all visible unmapped items"
-                  />
-                  Select all
-                </label>
-                <MapButton
-                  disabled={chosen.size === 0}
-                  onClick={() => {
-                    const picked = all.filter((i) => chosen.has(i.id));
-                    const head = picked[0];
-                    if (!head) return;
-                    setMapBulk(true);
-                    setMapGroup(picked);
-                    setMapItem(head);
-                  }}
-                >
-                  Map to a workstream{chosen.size ? ` (${chosen.size})` : ""}
-                </MapButton>
-                <button
-                  type="button"
-                  disabled={chosen.size === 0}
-                  onClick={() => setConfirmRemove(true)}
-                  className="text-xs font-medium text-destructive transition-opacity hover:opacity-70 disabled:opacity-40"
-                >
-                  Remove{chosen.size ? ` (${chosen.size})` : ""}
-                </button>
-                <button
-                  type="button"
-                  onClick={leaveSelectMode}
-                  className="text-xs text-muted-foreground transition-colors hover:text-foreground"
-                >
-                  Done
-                </button>
-              </div>
-            ) : (
+        {unmapped.length > 0 ? (
+          <button
+            type="button"
+            disabled={suggesting}
+            onClick={() => void handleSuggest()}
+            className="text-xs font-medium text-accent-deep transition-opacity hover:opacity-70 disabled:opacity-50"
+          >
+            {suggesting ? "Thinking…" : "✨ Suggest mapping"}
+          </button>
+        ) : null}
+        {!isCoach && selectable.length > 0 ? (
+          selectMode ? (
+            <div className="flex flex-wrap items-center gap-3">
+              <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
+                <Checkbox
+                  checked={allChosen}
+                  onCheckedChange={() => setChosen(allChosen ? new Set() : new Set(selectable))}
+                  aria-label="Select all visible unmapped items"
+                />
+                Select all
+              </label>
+              <MapButton
+                disabled={chosen.size === 0}
+                onClick={() => {
+                  const picked = all.filter((i) => chosen.has(i.id));
+                  const head = picked[0];
+                  if (!head) return;
+                  setMapBulk(true);
+                  setMapGroup(picked);
+                  setMapItem(head);
+                }}
+              >
+                Map to a workstream{chosen.size ? ` (${chosen.size})` : ""}
+              </MapButton>
               <button
                 type="button"
-                onClick={() => setSelectMode(true)}
+                disabled={chosen.size === 0}
+                onClick={() => setConfirmRemove(true)}
+                className="text-xs font-medium text-destructive transition-opacity hover:opacity-70 disabled:opacity-40"
+              >
+                Remove{chosen.size ? ` (${chosen.size})` : ""}
+              </button>
+              <button
+                type="button"
+                onClick={leaveSelectMode}
                 className="text-xs text-muted-foreground transition-colors hover:text-foreground"
               >
-                Select
+                Done
               </button>
-            )
-          ) : null}
-          <ConnectorBrowseActions />
-          {/* On phones the one green primary anchors the bottom of the screen. */}
-          <PasteThreadDialog
-            trigger={
-              <Button type="button" className="hidden md:inline-flex">
-                Paste a thread
-              </Button>
-            }
-          />
-          <UploadFilesButton />
-          <TranscriptsAction />
-          <ImportFlowDialog
-            trigger={
-              <Button type="button" variant="outline">
-                Import AI history
-              </Button>
-            }
-          />
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setSelectMode(true)}
+              className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Select
+            </button>
+          )
+        ) : null}
+        <ConnectorBrowseActions />
+        {/* On phones the one green primary anchors the bottom of the screen. */}
+        <PasteThreadDialog
+          trigger={
+            <Button type="button" className="hidden md:inline-flex">
+              Paste a thread
+            </Button>
+          }
+        />
+        <UploadFilesButton />
+        <TranscriptsAction />
+        <ImportFlowDialog
+          trigger={
+            <Button type="button" variant="outline">
+              Import AI history
+            </Button>
+          }
+        />
       </div>
 
       {/* The section accessories, lifted into one toolbar above the chips. */}
@@ -663,8 +661,6 @@ export function WorkPage() {
         </div>
       ) : null}
 
-
-
       {/*
         The origins tally and the handwritten line now lead the pile rather than
         foot it. Both describe the WHOLE pile, so they belong above the filter
@@ -673,73 +669,73 @@ export function WorkPage() {
       */}
       {all.length > 0 ? (
         <div className="mb-4 flex flex-wrap items-start gap-5">
-        <div className="w-[560px] max-w-full">
-          <ToneCard tone="paper" label="WHERE THIS CAME FROM">
-            {/* Name, bar and count on ONE line, so the panel reads as a tally
+          <div className="w-[560px] max-w-full">
+            <ToneCard tone="paper" label="WHERE THIS CAME FROM">
+              {/* Name, bar and count on ONE line, so the panel reads as a tally
                 rather than a stack of stacked rows. */}
-            <ul className="mt-1 space-y-2">
-              {sourceCounts.map((row) => (
-                <li key={row.label} className="flex items-center gap-3">
-                  <span className="min-w-0 flex-1 truncate">{row.label}</span>
-                  <span
-                    aria-hidden
-                    className="h-1.5 w-20 shrink-0 rounded-full bg-[var(--nb-pencil)]"
-                  >
-                    <span
-                      className="block h-1.5 rounded-full bg-foreground"
-                      style={{
-                        width: `${sourceMax > 0 ? Math.round((row.count / sourceMax) * 100) : 0}%`,
-                      }}
-                    />
-                  </span>
-                  <span className="w-5 shrink-0 text-right font-mono text-[10px] text-soft">
-                    {row.count}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </ToneCard>
-        </div>
-
-        {/* What the note colours mean, for the engagements actually on this
-            page. Eight swatches when four clients are on screen would be a lie
-            about the data, so this reads the same set the chips below do. */}
-        {legendEngagements.length > 0 ? (
-          <div className="flex max-w-[380px] items-start gap-3">
-            {/* The spider is the legend's keeper: it sits beside the colour
-                chips as if it were holding them. */}
-            <NotebookSpider size={44} className="shrink-0" aria-hidden="true" />
-            <div>
-              <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-soft">
-                WHAT THE COLOURS MEAN
-              </p>
-              <ul className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2">
-                {legendEngagements.map((entry) => (
-                  <li key={entry.code} className="flex items-center gap-2">
+              <ul className="mt-1 space-y-2">
+                {sourceCounts.map((row) => (
+                  <li key={row.label} className="flex items-center gap-3">
+                    <span className="min-w-0 flex-1 truncate">{row.label}</span>
                     <span
                       aria-hidden
-                      className="block shrink-0"
-                      style={{
-                        width: 20,
-                        height: 15,
-                        borderRadius: "3px 3px 4px 3px",
-                        background: "var(--nb-paper-fill)",
-                        border: "1px solid var(--nb-paper-edge)",
-                        boxShadow: "0 1.5px 2px -1px rgb(22 24 26 / 0.18)",
-                        transform: "rotate(var(--nb-rot, 0deg))",
-                        ...notePaper(entry.engagementId),
-                        ...noteHue(entry.engagementId),
-                      }}
-                    />
-                    <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
-                      {entry.code}
+                      className="h-1.5 w-20 shrink-0 rounded-full bg-[var(--nb-pencil)]"
+                    >
+                      <span
+                        className="block h-1.5 rounded-full bg-foreground"
+                        style={{
+                          width: `${sourceMax > 0 ? Math.round((row.count / sourceMax) * 100) : 0}%`,
+                        }}
+                      />
+                    </span>
+                    <span className="w-5 shrink-0 text-right font-mono text-[10px] text-soft">
+                      {row.count}
                     </span>
                   </li>
                 ))}
               </ul>
-            </div>
+            </ToneCard>
           </div>
-        ) : null}
+
+          {/* What the note colours mean, for the engagements actually on this
+            page. Eight swatches when four clients are on screen would be a lie
+            about the data, so this reads the same set the chips below do. */}
+          {legendEngagements.length > 0 ? (
+            <div className="flex max-w-[380px] items-start gap-3">
+              {/* The spider is the legend's keeper: it sits beside the colour
+                chips as if it were holding them. */}
+              <NotebookSpider size={44} className="shrink-0" aria-hidden="true" />
+              <div>
+                <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-soft">
+                  WHAT THE COLOURS MEAN
+                </p>
+                <ul className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2">
+                  {legendEngagements.map((entry) => (
+                    <li key={entry.code} className="flex items-center gap-2">
+                      <span
+                        aria-hidden
+                        className="block shrink-0"
+                        style={{
+                          width: 20,
+                          height: 15,
+                          borderRadius: "3px 3px 4px 3px",
+                          background: "var(--nb-paper-fill)",
+                          border: "1px solid var(--nb-paper-edge)",
+                          boxShadow: "0 1.5px 2px -1px rgb(22 24 26 / 0.18)",
+                          transform: "rotate(var(--nb-rot, 0deg))",
+                          ...notePaper(entry.engagementId),
+                          ...noteHue(entry.engagementId),
+                        }}
+                      />
+                      <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
+                        {entry.code}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          ) : null}
         </div>
       ) : null}
 
@@ -788,7 +784,6 @@ export function WorkPage() {
         </div>
       ) : null}
 
-
       {error ? <p className="mb-6 text-sm text-destructive">{(error as Error).message}</p> : null}
       {actionError ? <p className="mb-6 text-sm text-destructive">{actionError}</p> : null}
       {mappingError ? (
@@ -835,7 +830,7 @@ export function WorkPage() {
                         <span className="shrink-0 text-soft">{items.length}</span>
                       </h2>
                     </div>
-                    <div className="space-y-2">
+                    <div className="nb-paper-wall">
                       {entries.length === 0 ? (
                         <p className="rounded-[var(--radius-md)] border border-dashed border-pencil bg-card px-3 py-4 text-center text-[11.5px] text-soft">
                           Nothing here yet.
@@ -868,7 +863,6 @@ export function WorkPage() {
               </p>
             </div>
           ) : null}
-
 
           {/* "Where this came from" used to sit here beside this callout. It has
               moved above the filter chips, because it always counted the WHOLE

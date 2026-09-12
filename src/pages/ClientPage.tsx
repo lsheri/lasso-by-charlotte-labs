@@ -158,7 +158,7 @@ export function ClientPage({ clientId }: { clientId: string }) {
                   {rows.length === 0 ? (
                     <p className="text-sm text-muted-foreground">Nothing here yet.</p>
                   ) : (
-                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    <div className="nb-paper-wall">
                       {rows.map((item) => (
                         <WorkRow
                           key={item.id}
@@ -183,7 +183,7 @@ export function ClientPage({ clientId }: { clientId: string }) {
           <p className="mb-3 text-[11.5px] text-muted-foreground">
             These are yours and you have said whose they are. They still need a place in the work.
           </p>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="nb-paper-wall">
             {unplaced.map((item) => (
               <WorkRow key={item.id} item={item} dense actions={null} clientLabel={client.name} />
             ))}
