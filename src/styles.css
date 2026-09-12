@@ -1891,15 +1891,13 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 }
 
 /* ---------------------------------------------------------------------------
-   Pass 87: the engagement canvas. Quad surface, workstreams as open columns,
-   work as white cards. The only shadow on this surface is the lifted card.
---------------------------------------------------------------------------- */
+   Pass 87: the engagement canvas. Workstreams as open columns, work as white
+   cards. The quad ruling was removed on 12 Sep 2026; the paper colour stays.
+   The only shadow on this surface is the lifted card.
+   --------------------------------------------------------------------------- */
 
 .nb-canvas {
   background-color: var(--nb-paper);
-  background-image:
-    repeating-linear-gradient(to right, var(--nb-rule) 0 1px, transparent 1px 20px),
-    repeating-linear-gradient(to bottom, var(--nb-rule) 0 1px, transparent 1px 20px);
   border: 1px solid var(--nb-rule);
   border-radius: 8px;
   overflow: hidden;
