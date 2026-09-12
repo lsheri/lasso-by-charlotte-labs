@@ -156,70 +156,70 @@ export function WorkRow({
         engagementId={mapping?.engagement_id ?? null}
         onOpen={onOpen}
       >
-          {/* Line one: where it came from, and the tool's own mark on the far
+        {/* Line one: where it came from, and the tool's own mark on the far
               edge. The logo is full colour because that is the one thing on
               this note whose colour is already true in the world — and
               SourceMark still withholds it from a coach in a vendor-neutral
               org, which is a rule this does not get to override. */}
-          <div className="flex items-start justify-between gap-2">
-            <div className="flex min-w-0 items-center gap-1.5">
-              {lead ? (
-                <span className="shrink-0" onClick={(event) => event.stopPropagation()}>
-                  {lead}
-                </span>
-              ) : null}
-              {state === "private" ? (
-                <Lock
-                  className="h-2.5 w-2.5 shrink-0"
-                  style={{ color: "var(--state-indigo)" }}
-                  aria-label="Private"
-                />
-              ) : null}
-              <SourceMark item={item} size={14} disc />
-              <span className="min-w-0 truncate font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
-                <VendorMark item={item} />
-                {" · "}
-                {stampDate(dateIso)}
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex min-w-0 items-center gap-1.5">
+            {lead ? (
+              <span className="shrink-0" onClick={(event) => event.stopPropagation()}>
+                {lead}
               </span>
-            </div>
-            {/* The type glyph stays opposite, as frame 22:220 draws it. The two
-                marks say different things: the logo is where this came from,
-                the glyph is what kind of thing it is. */}
-            <span className="shrink-0">
-              <TypeIcon item={item} size="sm" />
+            ) : null}
+            {state === "private" ? (
+              <Lock
+                className="h-2.5 w-2.5 shrink-0"
+                style={{ color: "var(--state-indigo)" }}
+                aria-label="Private"
+              />
+            ) : null}
+            <SourceMark item={item} size={14} disc />
+            <span className="min-w-0 truncate font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
+              <VendorMark item={item} />
+              {" · "}
+              {stampDate(dateIso)}
             </span>
           </div>
+          {/* The type glyph stays opposite, as frame 22:220 draws it. The two
+                marks say different things: the logo is where this came from,
+                the glyph is what kind of thing it is. */}
+          <span className="shrink-0">
+            <TypeIcon item={item} size="sm" />
+          </span>
+        </div>
 
-          {/* Line two: the name, which is the only thing set in body text. */}
-          <p
-            title={item.title}
-            className="mt-1 line-clamp-3 break-words text-[13px] leading-[18px] text-foreground"
-          >
-            {item.title} <ArtifactNote item={item} />
-          </p>
+        {/* Line two: the name, which is the only thing set in body text. */}
+        <p
+          title={item.title}
+          className="mt-1 line-clamp-3 break-words text-[13px] leading-[18px] text-foreground"
+        >
+          {item.title} <ArtifactNote item={item} />
+        </p>
 
-          {/* Line three: where it sits. */}
-          <p className="mt-1 truncate font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
-            {stateStamp}
-          </p>
+        {/* Line three: where it sits. */}
+        <p className="mt-1 truncate font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
+          {stateStamp}
+        </p>
 
-          {contentsUnread(item.meta as never) ? (
-            <p className="mt-1 text-[11px] text-muted-foreground">{UNREAD_MARKER_LINE}</p>
-          ) : null}
+        {contentsUnread(item.meta as never) ? (
+          <p className="mt-1 text-[11px] text-muted-foreground">{UNREAD_MARKER_LINE}</p>
+        ) : null}
 
-          {/*
+        {/*
             Every control the wide row has, kept and reachable. Hidden at rest
             from `md` up, where a pointer can reveal it; always shown below `md`,
             where there is no hover. `group-focus-within` keeps it on the keyboard
             path, so tabbing into an action reveals the set it belongs to.
           */}
-          <div
-            className="absolute bottom-0 left-0 right-0 flex flex-wrap items-center gap-x-3 gap-y-1 bg-[color-mix(in_oklab,var(--nb-paper-fill,var(--nb-white))_88%,transparent)] p-2 backdrop-blur-sm md:hidden md:group-focus-within/row:flex md:group-hover/row:flex"
-            onClick={(event) => event.stopPropagation()}
-          >
-            {chips}
-            {actions}
-          </div>
+        <div
+          className="absolute bottom-0 left-0 right-0 flex flex-wrap items-center gap-x-3 gap-y-1 bg-[color-mix(in_oklab,var(--nb-paper-fill,var(--nb-white))_88%,transparent)] p-2 backdrop-blur-sm md:hidden md:group-focus-within/row:flex md:group-hover/row:flex"
+          onClick={(event) => event.stopPropagation()}
+        >
+          {chips}
+          {actions}
+        </div>
         {footer ? <div className="mt-2">{footer}</div> : null}
       </NotePaperCard>
     );
