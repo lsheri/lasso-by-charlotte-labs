@@ -814,7 +814,7 @@ export function WorkPage() {
       ) : (
         <div className="space-y-8">
           <div className={suggesting ? "animate-pulse" : undefined}>
-            <div className={`grid gap-6 lg:grid-cols-4${gusting ? " nb-gust" : ""}`}>
+            <div className={`nb-type-columns${gusting ? " nb-gust" : ""}`}>
               {BUCKETS.map((bucket) => {
                 const items = filtered.filter((item) => bucketFor(item.type).key === bucket.key);
                 const entries = groupConversations(items);
@@ -832,7 +832,7 @@ export function WorkPage() {
                     </div>
                     <div className="nb-paper-wall">
                       {entries.length === 0 ? (
-                        <p className="rounded-[var(--radius-md)] border border-dashed border-pencil bg-card px-3 py-4 text-center text-[11.5px] text-soft">
+                        <p className="w-full rounded-[var(--radius-md)] border border-dashed border-pencil bg-card px-3 py-4 text-center text-[11.5px] text-soft">
                           Nothing here yet.
                         </p>
                       ) : (
