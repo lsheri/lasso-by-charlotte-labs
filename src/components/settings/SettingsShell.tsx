@@ -116,11 +116,13 @@ export function SettingsShell({
         </nav>
 
         <div className="min-w-0 overflow-y-auto p-6">
-          {activeSection?.title ? (
-            <h2 className="page-title mb-5">{activeSection.title}</h2>
-          ) : null}
+          {activeSection?.title ? <h2 className="page-title mb-5">{activeSection.title}</h2> : null}
           {sections.map((section) => (
-            <div key={section.id} hidden={section.id !== active} aria-hidden={section.id !== active}>
+            <div
+              key={section.id}
+              hidden={section.id !== active}
+              aria-hidden={section.id !== active}
+            >
               {section.content}
             </div>
           ))}

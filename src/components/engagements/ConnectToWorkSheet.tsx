@@ -5,7 +5,13 @@ import { useEffect, useRef, useState } from "react";
 import { BrandLogo, BrandPair } from "@/components/connectors/BrandLogo";
 import { ConnectorBrowseActions } from "@/components/connectors/ConnectorBrowseActions";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetDescription, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { PasteThreadDialog } from "@/components/work/PasteThreadDialog";
 import { TranscriptsAction } from "@/components/work/TranscriptsAction";
 import { UploadFilesButton } from "@/components/work/UploadFilesButton";
@@ -55,7 +61,14 @@ export function ConnectToWorkSheet({
       setLanded(0);
       return;
     }
-    setStreamId((current) => current ?? defaultStream(engagementId, streams.map((s) => s.id)));
+    setStreamId(
+      (current) =>
+        current ??
+        defaultStream(
+          engagementId,
+          streams.map((s) => s.id),
+        ),
+    );
     if (seen.current === null) {
       seen.current = new Set((data?.items ?? []).map((item) => item.id));
     }
