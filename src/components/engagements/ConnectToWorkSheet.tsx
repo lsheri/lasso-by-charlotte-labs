@@ -13,6 +13,7 @@ import { useWorkItems } from "@/hooks/use-work-items";
 import { detachEpisodeItems, syncEpisodeForMapping } from "@/lib/episodes.functions";
 import { defaultStream, rememberStream } from "@/lib/connect-to-work";
 import { remapItems } from "@/lib/workflow-order";
+import { useSettingsDialog } from "@/lib/settings-dialog-context";
 import { logEvent } from "@/lib/telemetry";
 
 export type ConnectStream = { id: string; name: string };
@@ -157,20 +158,21 @@ export function ConnectToWorkSheet({
         ) : null}
 
         <div className="mt-6">
-          {/* A plain anchor: the browser resolves the hash on arrival, which a
-              client transition to a different route would not do reliably. */}
-          <a
-            href="/connectors#connect-your-ai"
+          {/* The connectors surface is a settings section now, so this opens
+              the dialog on it rather than navigating to a page. */}
+          <button
+            type="button"
             onClick={() => {
               logEvent("connector.setup_opened", profile.org_id, {
                 surface: "connect_sheet",
                 had_connector: false,
               });
+              openSettings("connectors");
             }}
             className="text-xs text-muted-foreground transition-colors hover:text-foreground"
           >
             Set up Claude or ChatGPT to push here
-          </a>
+          </button>
         </div>
 
         {landed > 0 && target ? (
