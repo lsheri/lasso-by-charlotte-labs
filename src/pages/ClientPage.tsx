@@ -98,7 +98,7 @@ export function ClientPage({ clientId }: { clientId: string }) {
 
   if (clientQuery.isLoading) {
     return (
-      <div className="mx-auto max-w-5xl p-6">
+      <div>
         <p className="text-sm text-muted-foreground">Loading.</p>
       </div>
     );
@@ -106,7 +106,7 @@ export function ClientPage({ clientId }: { clientId: string }) {
 
   if (!client) {
     return (
-      <div className="mx-auto max-w-5xl p-6">
+      <div>
         <PageHeader title="Client" subtitle="That client is not in your workspace." />
       </div>
     );
@@ -115,17 +115,24 @@ export function ClientPage({ clientId }: { clientId: string }) {
   const subtitle = [
     plural(engagementCount, "engagement", "engagements"),
     plural(itemCount, "piece of work", "pieces of work"),
-    `${unplacedCount} not in a workstream yet`,
-  ].join(" · ");
+    unplacedCount > 0 ? `${unplacedCount} not in a workstream yet` : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
   return (
-    <div className="mx-auto max-w-5xl p-6">
-      <PageHeader title={client.name} subtitle={subtitle} />
-
-      {/* One person's view. A total presented as the client's would be wrong. */}
-      <p className="-mt-6 mb-8 text-[11.5px] text-muted-foreground">
-        This is the work you can see. Other people at your firm may hold more for this client.
-      </p>
+    <div>
+      <PageHeader
+        title={client.name}
+        subtitle={
+          <>
+            {subtitle}
+            <span className="mt-1 block text-[11.5px]">
+              This is the work you can see. Other people at your firm may hold more for this client.
+            </span>
+          </>
+        }
+      />
 
       <section className="mb-10">
         <SectionHeader title="In a workstream" />
