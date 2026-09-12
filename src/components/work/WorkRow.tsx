@@ -33,8 +33,8 @@ function NotePaperCard({
   return (
     <div
       ref={live}
-      className="nb-note"
-      data-note-state={state}
+      className="nb-paper"
+      data-paper-state={state}
       /*
         No corner fold here. The fold means "shipped to the firm", and a
         WorkItemRow only knows whether it is MAPPED, which is a different and
@@ -60,7 +60,7 @@ function NotePaperCard({
               },
             }
           : {})}
-        className={`nb-note-body group/row ${onOpen ? "cursor-pointer" : ""}`}
+        className={`nb-paper-body group/row ${onOpen ? "cursor-pointer" : ""}`}
       >
         {children}
       </div>

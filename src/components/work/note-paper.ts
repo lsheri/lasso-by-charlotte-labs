@@ -12,8 +12,8 @@ import { engagementHue } from "@/lib/work-identity";
  */
 export type NotePaper = CSSProperties & {
   "--nb-rot": string;
-  "--nb-note-period": string;
-  "--nb-note-phase": string;
+  "--nb-paper-period": string;
+  "--nb-paper-phase": string;
 };
 
 /**
@@ -44,10 +44,10 @@ export function notePaper(id: string, place: "column" | "pile" = "column"): Note
   const deg = sign * magnitude * tilt;
   return {
     "--nb-rot": `${(Math.round(deg * 100) / 100).toFixed(2)}deg`,
-    "--nb-note-period": PERIODS[hash % PERIODS.length]!,
+    "--nb-paper-period": PERIODS[hash % PERIODS.length]!,
     // Negative delay starts each note mid-cycle, so nothing waits to begin and
     // no two neighbours reach the same extreme together.
-    "--nb-note-phase": `-${(hash >>> 5) % 9000}ms`,
+    "--nb-paper-phase": `-${(hash >>> 5) % 9000}ms`,
   };
 }
 
@@ -67,9 +67,9 @@ export function noteHue(engagementId: string | null | undefined): CSSProperties 
   // engagementHue returns "--engagement-N"; the paper twin is "--paper-N".
   const paper = `var(${engagementHue(engagementId).replace("--engagement-", "--paper-")})`;
   return {
-    "--nb-note-fill": paper,
+    "--nb-paper-fill": paper,
     // A real note's edge is a shadowed version of its own colour, so the ink
     // mixes toward the paper rather than toward white.
-    "--nb-note-edge": `color-mix(in oklab, ${ink} 30%, ${paper})`,
+    "--nb-paper-edge": `color-mix(in oklab, ${ink} 30%, ${paper})`,
   } as CSSProperties;
 }
