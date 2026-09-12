@@ -19,7 +19,7 @@
 
 export type MotionGroup = "auditability" | "record" | "thinking" | "chrome";
 
-/** The 15 motions the registry can resolve to. */
+/** The 16 motions the registry can resolve to. */
 export type MotionName =
   | "reading-line"
   | "pencil-marks-underline"
@@ -193,17 +193,46 @@ export const MOTION_REGISTRY: Readonly<Record<MotionEventName, MotionEntry>> = {
   },
 };
 
+interface MotionDraw {
+  /** The class drawn when movement is allowed. */
+  readonly moving: string;
+  /** The class drawn instead when the reader asked for less movement. */
+  readonly still?: string;
+}
+
 /**
- * The class the motion is drawn with. An empty string means the motion has no
- * class of its own yet and the calling surface keeps whatever it draws today.
- * Nothing here invents a new animation: every value already exists in
+ * What each motion is drawn with. A motion absent from this map has no class
+ * of its own yet, and the calling surface keeps whatever it draws today.
+ *
+ * Nothing here invents an animation. Every value already exists in
  * `styles.css` or in `marks.tsx`.
+ *
+ * Deliberately absent, each for a reason, so nobody fills these in by guessing:
+ *   - `reading-line`: `.nb-reading-pupil` is the spider's eye, not a line
+ *     moving down text. The motion has no counterpart anywhere.
+ *   - `provenance-ribbon`: `.nb-traced-legend` is a legend line inside
+ *     JourneyView, not a ribbon.
+ *   - `work-lands`: the only downward landing in the app is `nb-paper-land`,
+ *     which belongs to the gust, a named registry exception fired by chance
+ *     rather than by this event. `.nb-rise` moves the wrong way, upward.
+ *   - `comet-line`: nothing in the app draws one.
+ *   - `pencil-marks`: `.nb-mark` exists, but `nav.active` renders no SVG for a
+ *     mark to be drawn on. Returning a class the surface cannot use is worse
+ *     than returning nothing.
+ *   - `arrows`: `.nb-journey-arrow` only has effect nested inside
+ *     `.nb-journey`, so it is not a class a surface can be handed.
  */
-const MOTION_CLASS: Partial<Record<MotionName, string>> = {
-  "breathing-dots": "nb-dots",
-  "card-lifts": "nb-fade-in",
-  "spider-looks-again": "nb-spider-wobble",
-  "spider-processes": "nb-spider-reading",
+const MOTION_CLASS: Partial<Record<MotionName, MotionDraw>> = {
+  "breathing-dots": { moving: "nb-dots" },
+  "card-lifts": { moving: "nb-fade-in" },
+  "spider-looks-again": { moving: "nb-spider-wobble" },
+  "spider-processes": { moving: "nb-spider-reading" },
+  "pencil-marks-underline": { moving: "nb-ink-settle nb-span-pulse" },
+  "trace-back": { moving: "nb-thread-draw" },
+  "paper-physics-pile": { moving: "nb-paper" },
+  "the-lasso": { moving: "nb-lasso-wrap" },
+  stamp: { moving: "nb-ship-settle" },
+  "pencil-marks-tick": { moving: "nb-mark" },
 };
 
 /** True when the reader has asked for less movement. Safe during SSR. */
@@ -230,10 +259,11 @@ export interface ResolvedMotion {
  */
 export function resolveMotion(event: MotionEventName, reduce = prefersReducedMotion()): ResolvedMotion {
   const entry = MOTION_REGISTRY[event];
+  const draw = MOTION_CLASS[entry.motion];
   return {
     event,
     motion: entry.motion,
-    className: reduce ? "" : (MOTION_CLASS[entry.motion] ?? ""),
+    className: reduce ? (draw?.still ?? "") : (draw?.moving ?? ""),
     still: reduce,
     reduced: entry.reduced,
     promise: entry.promise,
