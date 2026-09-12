@@ -26,6 +26,7 @@ import type { PeekAnalysisPreset } from "@/components/peek/PeekActionBar";
 import { UploadFilesButton } from "@/components/work/UploadFilesButton";
 import { TranscriptsAction } from "@/components/work/TranscriptsAction";
 import { WorkDateDialog } from "@/components/work/WorkDateDialog";
+import { ClaimToClient } from "@/components/work/ClaimToClient";
 import { MapButton } from "@/components/work/MapButton";
 import { RowAction, WorkRow } from "@/components/work/WorkRow";
 import { ConversationChips } from "@/components/work/ConversationChips";
@@ -44,6 +45,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useMakePrivate } from "@/hooks/use-make-private";
+import { useClients } from "@/hooks/use-clients";
 import { useProfile } from "@/hooks/use-profile";
 import { useWorkItems } from "@/hooks/use-work-items";
 import { supabase } from "@/integrations/supabase/client";
@@ -174,6 +176,10 @@ export function WorkPage() {
     },
   });
 
+  const { data: clients } = useClients(profile?.org_id);
+  const clientName = (id: string | null | undefined) =>
+    id ? (clients?.find((c) => c.id === id)?.name ?? null) : null;
+
   const runMakePrivate = useMakePrivate();
 
   async function makePrivate(item: WorkItemRow) {
@@ -247,6 +253,7 @@ export function WorkPage() {
         <>
           {item.content_ref ? <OpenFileAction workItemId={item.id} /> : null}
           <RowAction onClick={() => setDateItem(item)}>Work date</RowAction>
+          <ClaimToClient item={item} />
           <RowAction onClick={() => void unmark(item)}>Unmark</RowAction>
           <RowMenu
             item={item}
@@ -271,6 +278,7 @@ export function WorkPage() {
               ? "Map conversation"
               : "Map to a workstream"}
         </MapButton>
+        <ClaimToClient item={item} />
         {group && group.length > 1 ? (
           <RowAction onClick={() => openMap(item)}>Map just this</RowAction>
         ) : null}
@@ -498,6 +506,7 @@ export function WorkPage() {
         onOpen={openItem(entry)}
         chips={<ConversationChips item={entry} />}
         actions={rowActions(entry, variant)}
+        clientLabel={clientName(entry.client_id)}
         {...(entry.visibility === "mapped" ? {} : { footer: suggestionFor(entry) })}
       />
     );

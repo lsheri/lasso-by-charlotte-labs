@@ -22,7 +22,9 @@ describe("pass 103.1 nits", () => {
   });
 
   it("keeps owner_id in every select that feeds the peek", () => {
-    expect(readFileSync("src/hooks/use-work-items.ts", "utf8")).toContain("id, owner_id, title");
+    // client_id now sits between owner_id and title: the coarse claim rides
+    // along in the same read, so the assertion checks owner_id alone.
+    expect(readFileSync("src/hooks/use-work-items.ts", "utf8")).toContain("id, owner_id, client_id");
     expect(readFileSync("src/lib/engagement-page.server.ts", "utf8")).toContain(
       "work_items(id, owner_id",
     );

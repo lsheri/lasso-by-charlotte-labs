@@ -20,6 +20,9 @@ export type WorkItemRow = {
   id: string;
   /** Present wherever ownership decides an affordance, absent in lean reads. */
   owner_id?: string | null | undefined;
+  /** The coarse claim: whose work this is, with or without a workstream. */
+  client_id?: string | null | undefined;
+
 
   title: string;
   type: WorkType;

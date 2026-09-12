@@ -31,6 +31,7 @@ export const EVENTS_CAPTURE = [
   "episode.closed",
   "work_item.unmapped",
   "work_item.marked_private",
+  "work_item.claimed_to_client",
   "conversation.pushed",
   "conversation.appended",
   "conversation.turn_revised",

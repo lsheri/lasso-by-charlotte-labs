@@ -77,9 +77,11 @@ export function WorkRow({
   dense = false,
   lead,
   footer,
+  clientLabel,
 }: {
   item: WorkItemRow;
   actions: React.ReactNode;
+  clientLabel?: string | null | undefined;
   onOpen?: (() => void) | undefined;
   chips?: React.ReactNode;
   nested?: boolean;
@@ -133,13 +135,18 @@ export function WorkRow({
    * "MH-042 · CLAIMED" in the frame. `claimed` is what mapping means from the
    * person's side, so a mapped piece says so under its engagement code. There
    * is no separate claim flag in the record and none is invented here.
+   *
+   * A claim has two degrees: a client is the coarse one, a workstream
+   * placement the fine one, so line three says which degree this piece has.
    */
   const stateStamp =
     state === "mapped"
       ? [mapping?.engagements?.code, "claimed"].filter(Boolean).join(" · ")
       : state === "private"
         ? "private"
-        : "unmapped";
+        : clientLabel
+          ? `${clientLabel} · claimed`
+          : "not claimed yet";
 
   if (dense) {
     return (
