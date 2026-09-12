@@ -2946,6 +2946,17 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   initial-value: 0deg;
 }
 
+/* Sticky notes are a fixed physical size, so a column holds as many across as
+   it has room for rather than stretching one to fit. This is why the layout
+   stops depending on the viewport width. */
+.nb-paper-wall {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 196px));
+  gap: 14px;
+  align-items: start;
+  justify-content: start;
+}
+
 .nb-paper {
   position: relative;
   display: block;
