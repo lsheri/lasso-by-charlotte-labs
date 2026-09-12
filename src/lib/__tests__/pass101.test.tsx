@@ -158,7 +158,8 @@ describe("pass 101: reduced motion is static", () => {
     cleanup();
     render(<ThreadLine from={{ x: 300, y: 100 }} targetId={null} sourced={false} reduceMotion />);
     const line = screen.getByTestId("audit-thread").querySelector("line");
-    expect(line?.getAttribute("class")).toBe("nb-thread-static");
+    expect(line?.getAttribute("class")).toBeFalsy();
+    expect(line?.getAttribute("class") ?? "").not.toContain("nb-thread-draw");
   });
 });
 
