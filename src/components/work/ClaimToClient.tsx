@@ -21,10 +21,16 @@ import type { WorkItemRow } from "@/lib/work-types";
 export function ClaimToClient({
   item,
   surface,
+  emphasis = "quiet",
+  label = "Client",
 }: {
   item: WorkItemRow;
   /** Which screen the claim was made from, sent with the claim event. */
   surface: "work" | "overview";
+  /** Quiet sits in a row of other actions; lead stands alone as the card's act. */
+  emphasis?: "quiet" | "lead";
+  /** Overrides the trigger label. */
+  label?: string;
 }) {
   const { data: profile } = useProfile();
   const { data: clients } = useClients(profile?.org_id);
@@ -86,9 +92,13 @@ export function ClaimToClient({
         <button
           type="button"
           onClick={(event) => event.stopPropagation()}
-          className="inline-flex min-h-11 items-center text-xs text-muted-foreground transition-colors hover:text-foreground md:min-h-0"
+          className={
+            emphasis === "lead"
+              ? "inline-flex min-h-11 items-center text-[11.5px] font-medium text-accent-deep transition-opacity hover:opacity-70 md:min-h-0"
+              : "inline-flex min-h-11 items-center text-xs text-muted-foreground transition-colors hover:text-foreground md:min-h-0"
+          }
         >
-          Client
+          {label}
         </button>
       </PopoverTrigger>
       <PopoverContent
