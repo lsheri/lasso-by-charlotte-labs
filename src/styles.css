@@ -3258,6 +3258,23 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   initial-value: 0deg;
 }
 
+/* The four work types stand side by side. Written as explicit CSS rather than
+   a utility because the utility was generated, its media query matched, and
+   the element still computed to one track. Sticky notes are a fixed 196px, so
+   four columns need about 850px and the sidebar leaves more than that from a
+   laptop upward. Below that the columns stack and the notes keep their size. */
+.nb-type-columns {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+  align-items: start;
+}
+@media (min-width: 1100px) {
+  .nb-type-columns {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
 /* Sticky notes are a fixed physical size, so a column holds as many across as
    it has room for rather than stretching one to fit. This is why the layout
    stops depending on the viewport width. */
