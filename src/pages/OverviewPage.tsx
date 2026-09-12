@@ -94,6 +94,8 @@ export function OverviewPage() {
 
       <CoachingLinkNotices />
 
+      <ChatsToOrganise items={items} />
+
       {waiting.length > 0 ? (
         <section className="mt-2" data-testid="overview-waiting">
           <SectionHeader
