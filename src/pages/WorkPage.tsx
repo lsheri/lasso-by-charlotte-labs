@@ -26,6 +26,7 @@ import type { PeekAnalysisPreset } from "@/components/peek/PeekActionBar";
 import { UploadFilesButton } from "@/components/work/UploadFilesButton";
 import { TranscriptsAction } from "@/components/work/TranscriptsAction";
 import { WorkDateDialog } from "@/components/work/WorkDateDialog";
+import { ClaimToClient } from "@/components/work/ClaimToClient";
 import { MapButton } from "@/components/work/MapButton";
 import { RowAction, WorkRow } from "@/components/work/WorkRow";
 import { ConversationChips } from "@/components/work/ConversationChips";
@@ -44,6 +45,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useMakePrivate } from "@/hooks/use-make-private";
+import { useClients } from "@/hooks/use-clients";
 import { useProfile } from "@/hooks/use-profile";
 import { useWorkItems } from "@/hooks/use-work-items";
 import { supabase } from "@/integrations/supabase/client";
