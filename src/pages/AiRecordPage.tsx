@@ -1,10 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 import { CaptureCoverage } from "@/components/common/CaptureCoverage";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { MarkdownMessage } from "@/components/markdown/MarkdownMessage";
+import { PeekActionBar } from "@/components/peek/PeekActionBar";
 import { PeekPanel, type PeekEntry } from "@/components/peek/PeekPanel";
+import { RenderedContent } from "@/components/peek/RenderedContent";
+import { ThreadBody } from "@/components/peek/ThreadBody";
 import {
   AnalysisChips,
   InlineAnalysisBlocks,
@@ -28,6 +33,9 @@ import { ToneCard } from "@/components/notebook/ToneCard";
 import { vendorLabel } from "@/lib/conversation-shared";
 import { vendorFromSource, type ToolVendor } from "@/lib/work-taxonomy";
 import { markOpenStart } from "@/lib/perf-timing";
+import { peekFormat } from "@/lib/peek-format";
+import { getWorkFileUrl } from "@/lib/work-files.functions";
+import { formatDate } from "@/lib/work-types";
 
 type Group = {
   key: string;
@@ -118,12 +126,23 @@ function groupItems(items: WorkItemRow[]): Group[] {
 export function AiRecordPage() {
   const { data: profile } = useProfile();
   const { data: work } = useWorkItems();
+  const fetchFileUrl = useServerFn(getWorkFileUrl);
   const [peek, setPeek] = useState<{ entry: PeekEntry } | null>(null);
+  const [selected, setSelected] = useState<WorkItemRow | null>(null);
+  const [desktopReader, setDesktopReader] = useState(false);
   const [lensItem, setLensItem] = useState<WorkItemRow | null>(null);
   const [openGroup, setOpenGroup] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [showSubjects, setShowSubjects] = useState(false);
   const [tool, setTool] = useState<ToolVendor | "all">("all");
+
+  useEffect(() => {
+    const query = window.matchMedia("(min-width: 1100px)");
+    const update = () => setDesktopReader(query.matches);
+    update();
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
 
   const threads = (work?.items ?? []).filter((i) => i.type === "ai_thread");
   // The id list is sorted before it becomes part of a key, so a reordered but
@@ -159,6 +178,15 @@ export function AiRecordPage() {
     .filter(Boolean)
     .join(" · ");
   const searchSignal = useChatSearchSignal(query, shown.length);
+
+  async function download(item: WorkItemRow) {
+    try {
+      const { url } = await fetchFileUrl({ data: { work_item_id: item.id } });
+      window.open(url, "_blank", "noopener,noreferrer");
+    } catch (error) {
+      toast.error((error as Error).message);
+    }
+  }
 
 
   const analyses = useChatAnalyses(profile?.id, profile?.org_id);
@@ -209,8 +237,8 @@ export function AiRecordPage() {
   });
 
   return (
-    <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-8">
-      <div className="min-w-0">
+    <div className="nb-chatview">
+      <div className="nb-chatview-list">
       <PageHeader
         title="Chat"
         italicWord="library"
@@ -389,33 +417,47 @@ export function AiRecordPage() {
                     move onto hover, focus and touch instead of sitting open. */}
                 <div className="border-t border-[var(--nb-rule)]">
                   {group.items.map((item) => (
-                    <ChatRow
+                    <div
                       key={`${group.key}:${item.id}`}
-                      item={item}
-                      turns={turnCounts?.[item.id] ?? 0}
-                      fed={fed?.[item.id] ?? []}
-                      when={chatWhen(item.captured_at)}
-                      onOpen={() => {
-                        searchSignal.onResultOpened();
-                        markOpenStart("peek.open");
-                        setPeek({ entry: item });
-                      }}
-                      actions={
-                        <>
-                          <button
-                            type="button"
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              setLensItem(item);
-                            }}
-                            className="text-xs font-medium text-accent-deep transition-opacity hover:opacity-70"
-                          >
-                            Analyse
-                          </button>
-                          <ChatUrlLink item={item} />
-                        </>
+                      aria-current={selected?.id === item.id ? "true" : undefined}
+                      className={
+                        selected?.id === item.id
+                          ? "rounded-[var(--radius)] bg-secondary"
+                          : undefined
                       }
-                    />
+                    >
+                      <ChatRow
+                        item={item}
+                        turns={turnCounts?.[item.id] ?? 0}
+                        fed={fed?.[item.id] ?? []}
+                        when={chatWhen(item.captured_at)}
+                        onOpen={() => {
+                          searchSignal.onResultOpened();
+                          markOpenStart("peek.open");
+                          if (desktopReader) {
+                            setSelected(item);
+                            setPeek(null);
+                          } else {
+                            setPeek({ entry: item });
+                          }
+                        }}
+                        actions={
+                          <>
+                            <button
+                              type="button"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                setLensItem(item);
+                              }}
+                              className="text-xs font-medium text-accent-deep transition-opacity hover:opacity-70"
+                            >
+                              Analyse
+                            </button>
+                            <ChatUrlLink item={item} />
+                          </>
+                        }
+                      />
+                    </div>
                   ))}
                 </div>
               </section>
@@ -461,25 +503,71 @@ export function AiRecordPage() {
       ) : null}
       </div>
 
-      <aside className="mt-8 space-y-4 lg:mt-0">
-        <CaptureCoverage
-          profileId={profile?.id}
-          itemCount={threads.length}
-          scopeLabel="your chat library"
-          dates={threads.map((t) => effectiveWorkDate(t))}
-        />
-        {/* Figma 27:635's own wording for this panel, with no claim beyond what
-            the product already does. The unavailable turn-level provenance
-            panel is deliberately not invented above this card. */}
-        <ToneCard tone="paper" label="WHY THIS PANEL EXISTS">
-          <p className="text-[13px] leading-[19px] text-foreground">
-            You can always see what the AI actually read before it answered.
-          </p>
-          <p className="mt-1 text-[12px] leading-[18px] text-muted-foreground">
-            If a line is not in the record, it is dropped, never repaired.
-          </p>
-        </ToneCard>
-      </aside>
+      <div className="nb-chatview-pane">
+        {selected ? (
+          <article aria-label={`Reading ${selected.title}`}>
+            <header className="border-b border-pencil pb-4">
+              <h2 className="page-title break-words text-[22px] leading-snug">{selected.title}</h2>
+              <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
+                <span>{vendorLabel(vendorFromSource(selected))}</span>
+                <span>·</span>
+                <span>
+                  {turnCounts?.[selected.id] ?? 0}{" "}
+                  {(turnCounts?.[selected.id] ?? 0) === 1 ? "turn" : "turns"}
+                </span>
+                <span>·</span>
+                <span>{formatDate(effectiveWorkDate(selected))}</span>
+              </div>
+              <p className="mt-2">
+                <ChatUrlLink item={selected} />
+              </p>
+              <PeekActionBar
+                item={selected}
+                canEdit={false}
+                owned={false}
+                onAnalyse={(item) => setLensItem(item)}
+                onShip={() => {}}
+                onBrief={() => {}}
+                onRemove={() => {}}
+                onDelete={() => {}}
+              />
+            </header>
+            <div className="py-5">
+              {peekFormat(selected).kind === "thread" ? (
+                <ThreadBody item={selected} enabled />
+              ) : (
+                <RenderedContent
+                  item={selected}
+                  format={peekFormat(selected)}
+                  canEdit={false}
+                  onDownload={() => void download(selected)}
+                />
+              )}
+            </div>
+          </article>
+        ) : (
+          <div className="space-y-4">
+            <p className="text-[13px] text-muted-foreground">Pick a conversation to read it here.</p>
+            <CaptureCoverage
+              profileId={profile?.id}
+              itemCount={threads.length}
+              scopeLabel="your chat library"
+              dates={threads.map((t) => effectiveWorkDate(t))}
+            />
+            {/* Figma 27:635's own wording for this panel, with no claim beyond what
+                the product already does. The unavailable turn-level provenance
+                panel is deliberately not invented above this card. */}
+            <ToneCard tone="paper" label="WHY THIS PANEL EXISTS">
+              <p className="text-[13px] leading-[19px] text-foreground">
+                You can always see what the AI actually read before it answered.
+              </p>
+              <p className="mt-1 text-[12px] leading-[18px] text-muted-foreground">
+                If a line is not in the record, it is dropped, never repaired.
+              </p>
+            </ToneCard>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
