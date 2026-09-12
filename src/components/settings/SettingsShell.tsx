@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 
 /**
  * Settings as a panel with a section rail, matching the design system's
@@ -21,20 +21,37 @@ export type SettingsSection = {
   title?: string;
 };
 
+/**
+ * Which section the person is actually looking at. Sections stay mounted for
+ * the life of the shell, so a section that wants to know it was *looked at*
+ * cannot use its own mount as the signal. It reads this instead.
+ */
+export const SettingsSectionContext = createContext<{ activeSectionId: string }>({
+  activeSectionId: "",
+});
+
+/** Safe outside a SettingsShell: reports no active section rather than throwing. */
+export function useActiveSettingsSection(): { activeSectionId: string } {
+  return useContext(SettingsSectionContext);
+}
+
 export function SettingsShell({
   sections,
   variant = "page",
   initialSection,
+  defaultSection,
 }: {
   sections: SettingsSection[];
   variant?: "page" | "dialog";
   initialSection?: string | undefined;
+  /** Where settings lands when no caller named a section. */
+  defaultSection?: string | undefined;
 }) {
-  const [active, setActive] = useState(
-    initialSection && sections.some((s) => s.id === initialSection)
-      ? initialSection
-      : (sections[0]?.id ?? ""),
-  );
+  const [active, setActive] = useState(() => {
+    if (initialSection && sections.some((s) => s.id === initialSection)) return initialSection;
+    if (defaultSection && sections.some((s) => s.id === defaultSection)) return defaultSection;
+    return sections[0]?.id ?? "";
+  });
 
   // A caller can open settings straight onto a section. An absent value never
   // resets what the person is already looking at.
@@ -43,6 +60,7 @@ export function SettingsShell({
     if (!sections.some((s) => s.id === initialSection)) return;
     setActive(initialSection);
   }, [initialSection, sections]);
+
 
   const ungrouped = sections.filter((s) => !s.group);
   const groups: { name: string; items: SettingsSection[] }[] = [];
