@@ -74,7 +74,6 @@ export function OverviewPage() {
   }
 
   const waiting = drafts.slice(0, 2);
-  const thisWeek = items.slice(0, 4);
   // Figma 21:2 "What Lasso is reading": the most recent arrivals from a
   // connected tool. Anything without a vendor came in by hand, so it is not
   // something Lasso went and read.
