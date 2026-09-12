@@ -5,6 +5,7 @@ import { stampDate } from "@/components/work/card-stamp";
 import { noteHue, notePaper } from "@/components/work/note-paper";
 import { useMappingSuggestions } from "@/hooks/use-mapping-suggestions";
 import { useNoteLive } from "@/hooks/use-note-live";
+import type { MappingSuggestion } from "@/lib/mapping-shared";
 import type { WorkItemRow } from "@/lib/work-types";
 
 /** The most a person can usefully scan at a glance on the overview. */
@@ -12,14 +13,18 @@ const QUEUE_CAP = 4;
 
 function NoteRow({
   item,
+  suggestion,
+  suggestedLabel,
+  acceptPending,
+  onAccept,
 }: {
   item: WorkItemRow;
+  suggestion?: MappingSuggestion | undefined;
+  suggestedLabel?: string | undefined;
+  acceptPending: boolean;
+  onAccept: () => void;
 }) {
-  const { active, taskLabels, acceptPending, accept } = useMappingSuggestions();
   const live = useNoteLive<HTMLDivElement>();
-
-  const suggestion = active.find((s) => s.work_item_id === item.id);
-  const suggestedLabel = suggestion ? taskLabels?.[suggestion.task_id] : null;
 
   return (
     <div
@@ -59,12 +64,7 @@ function NoteRow({
             <button
               type="button"
               disabled={acceptPending}
-              onClick={() =>
-                void accept(suggestion, {
-                  type: item.type ?? "ai_thread",
-                  source: item.source ?? "import",
-                })
-              }
+              onClick={() => void onAccept()}
               className="inline-flex max-w-full items-center rounded-full border border-border bg-secondary px-2 py-1 text-left font-mono text-[10px] uppercase tracking-[0.06em] text-foreground transition-colors hover:border-foreground disabled:opacity-50"
               title={suggestedLabel}
             >
@@ -91,7 +91,7 @@ function NoteRow({
  * the explicit suggestion job, triggered by the button below.
  */
 export function ChatsToOrganise({ items }: { items: WorkItemRow[] }) {
-  const { suggesting, suggest } = useMappingSuggestions();
+  const { active, taskLabels, suggesting, acceptPending, suggest, accept } = useMappingSuggestions();
 
   const unmapped = items
     .filter((item) => item.visibility === "unmapped")
@@ -124,9 +124,25 @@ export function ChatsToOrganise({ items }: { items: WorkItemRow[] }) {
       </div>
 
       <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {shown.map((item) => (
-          <NoteRow key={item.id} item={item} />
-        ))}
+        {shown.map((item) => {
+          const suggestion = active.find((s) => s.work_item_id === item.id);
+          const suggestedLabel = suggestion ? taskLabels?.[suggestion.task_id] : undefined;
+          return (
+            <NoteRow
+              key={item.id}
+              item={item}
+              suggestion={suggestion}
+              suggestedLabel={suggestedLabel}
+              acceptPending={acceptPending}
+              onAccept={() =>
+                void accept(suggestion, {
+                  type: item.type ?? "ai_thread",
+                  source: item.source ?? "import",
+                })
+              }
+            />
+          );
+        })}
       </div>
 
       {rest > 0 ? (
