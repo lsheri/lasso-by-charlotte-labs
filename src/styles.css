@@ -3041,12 +3041,36 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   to   { --nb-sway: 0.15deg; }
 }
 
+/* The gust. Sandbox A M3's scatter-and-settle, fired on arrival: the notes
+   blow in and find their places. Deliberately decorative and deliberately
+   rare, so it is rationed by a 30% roll in WorkPage rather than played every
+   visit. It sits OUTSIDE the motion registry on purpose — it answers no event
+   and carries no information — and is listed with the other exceptions on
+   /design/icons. */
+.nb-gust .nb-paper {
+  animation: nb-paper-land 620ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: var(--nb-gust-delay, 0ms);
+}
+@keyframes nb-paper-land {
+  from {
+    transform:
+      translate3d(var(--nb-gust-x, 0px), -14px, 0)
+      rotate(calc(var(--nb-rot, 0deg) + var(--nb-gust-spin, -6deg)));
+    opacity: 0.6;
+  }
+  to {
+    transform: translate3d(0, 0, 0) rotate(var(--nb-rot, 0deg));
+    opacity: 1;
+  }
+}
+
 .nb-paper-body {
   padding: 10px 11px 11px;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .nb-paper {
+  .nb-paper,
+  .nb-gust .nb-paper {
     animation: none !important;
     transition: none !important;
   }
