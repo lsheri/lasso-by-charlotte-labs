@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 
 /**
  * Settings as a panel with a section rail, matching the design system's
@@ -59,6 +59,7 @@ export function SettingsShell({
     if (defaultSection && sections.some((s) => s.id === defaultSection)) return defaultSection;
     return sections[0]?.id ?? "";
   });
+  const contentPaneRef = useRef<HTMLDivElement>(null);
 
   // A caller can open settings straight onto a section. An absent value never
   // resets what the person is already looking at.
@@ -67,6 +68,10 @@ export function SettingsShell({
     if (!sections.some((s) => s.id === initialSection)) return;
     setActive(initialSection);
   }, [initialSection, sections]);
+
+  useEffect(() => {
+    if (contentPaneRef.current) contentPaneRef.current.scrollTop = 0;
+  }, [active]);
 
   const ungrouped = sections.filter((s) => !s.group);
   const groups: { name: string; items: SettingsSection[] }[] = [];
@@ -145,6 +150,7 @@ export function SettingsShell({
 
         {/* pr-14 in the dialog keeps the section title clear of the close button. */}
         <div
+          ref={contentPaneRef}
           className={`min-w-0 overflow-y-auto p-6 ${variant === "dialog" ? "pr-14" : ""}`.trim()}
         >
           {activeSection?.title ? <h2 className="page-title mb-5">{activeSection.title}</h2> : null}

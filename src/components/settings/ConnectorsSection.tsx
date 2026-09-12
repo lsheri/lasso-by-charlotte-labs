@@ -1,10 +1,17 @@
 import { Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { Check, MoreHorizontal } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   BrandLogo,
   BrandPair,
@@ -138,45 +145,9 @@ export function ConnectorsSection({ from }: { from?: SettingsOpenFrom }) {
         account={account}
         busy={busy === toolkit}
         identity={connected ? <ConnectorIdentity toolkit={toolkit} /> : null}
-        actions={
-          connected ? (
-            <div className="flex items-center gap-4">
-              {PICKER_KIND[toolkit] ? (
-                <ConnectorPicker
-                  kind={PICKER_KIND[toolkit]!}
-                  trigger={
-                    <button
-                      type="button"
-                      className="text-xs font-medium text-accent-deep transition-opacity hover:opacity-70"
-                    >
-                      {toolkit === "granola_mcp"
-                        ? "Browse meetings"
-                        : toolkit === "gmail"
-                          ? "Browse threads"
-                          : "Browse files"}
-                    </button>
-                  }
-                />
-              ) : null}
-              <button
-                type="button"
-                onClick={() => void handleDisconnect(toolkit)}
-                className="text-xs text-muted-foreground transition-colors hover:text-foreground"
-              >
-                Disconnect
-              </button>
-            </div>
-          ) : (
-            <Button
-              type="button"
-              size="sm"
-              disabled={busy === toolkit}
-              onClick={() => void handleConnect(toolkit)}
-            >
-              {busy === toolkit ? "Waiting…" : "Connect"}
-            </Button>
-          )
-        }
+        toolkit={toolkit}
+        onConnect={() => void handleConnect(toolkit)}
+        onDisconnect={() => void handleDisconnect(toolkit)}
       />
     );
   }
@@ -224,7 +195,7 @@ export function ConnectorsSection({ from }: { from?: SettingsOpenFrom }) {
 
       <div className="mt-6 space-y-8">
         <Category title="Documents & files">
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="space-y-2">
             {card("googledrive")}
             {card("one_drive")}
             {card("sharepoint_graph")}
@@ -233,7 +204,7 @@ export function ConnectorsSection({ from }: { from?: SettingsOpenFrom }) {
         </Category>
 
         <Category title="Email & messages">
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="space-y-2">
             {card("gmail")}
             {card("slack")}
           </div>
@@ -252,7 +223,7 @@ export function ConnectorsSection({ from }: { from?: SettingsOpenFrom }) {
         </Category>
 
         <Category title="Coming soon">
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="space-y-2">
             {COMING_SOON.map((name) => (
               <div
                 key={name}
@@ -339,15 +310,15 @@ function TranscriptsCard({
   onConnect: () => void;
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-4 rounded-[var(--radius-lg)] border border-border bg-card px-4 py-3.5">
-      <BrandLogo brand="googledrive" size={30} />
-      <div className="min-w-0 flex-1 basis-48">
+    <div className="flex items-center gap-3 rounded-[var(--radius-lg)] border border-border bg-card px-4 py-3">
+      <BrandLogo brand="googledrive" size={20} />
+      <div className="min-w-0 flex-1">
         <p className="text-[13px] font-medium text-foreground">Call transcripts (Google Drive)</p>
+        <p className="truncate text-[11.5px] leading-[17px] text-muted-foreground">
+          Recordings and transcripts already in your Drive. Uses the same connection.
+        </p>
         <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
           {busy ? "Pending" : connected ? "Ready" : "Needs Google Drive"}
-        </p>
-        <p className="mt-1 text-[11.5px] leading-[17px] text-muted-foreground">
-          Recordings and transcripts already in your Drive. Uses the same connection.
         </p>
       </div>
       {connected ? (
@@ -382,49 +353,93 @@ function ConnectorCard({
   name,
   description,
   account,
-  actions,
   busy,
   identity,
+  toolkit,
+  onConnect,
+  onDisconnect,
 }: {
   brand: BrandKey;
   name: string;
   description: string;
   account: ConnectorAccount | undefined;
-  actions: React.ReactNode;
   busy: boolean;
   identity?: React.ReactNode;
+  toolkit: ConnectorToolkit;
+  onConnect: () => void;
+  onDisconnect: () => void;
 }) {
+  const [pickerOpen, setPickerOpen] = useState(false);
   const connected = account?.status === "connected";
   const needsReconnect = account?.status === "disconnected";
-  const meta = busy ? "Pending" : needsReconnect ? "RECONNECT NEEDED" : statusLabel(account);
+  const exceptionalStatus = busy ? "Pending" : needsReconnect ? "RECONNECT NEEDED" : null;
+  const pickerKind = PICKER_KIND[toolkit];
+  const browseLabel =
+    toolkit === "granola_mcp"
+      ? "Browse meetings"
+      : toolkit === "gmail"
+        ? "Browse threads"
+        : "Browse files";
+
   return (
     <div
-      className={`flex flex-col gap-3 rounded-[var(--radius-lg)] border px-4 py-3.5 ${
+      className={`flex items-center gap-3 rounded-[var(--radius-lg)] border px-4 py-3 ${
         needsReconnect
           ? "border-[var(--nb-amber-edge)] bg-[var(--nb-amber-wash)]"
           : "border-border bg-card"
       }`}
     >
-      <div className="flex items-start gap-3">
-        <BrandLogo brand={brand} size={30} />
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <p className="text-[13px] font-medium text-foreground">{name}</p>
-            {connected ? (
-              <span
-                aria-hidden="true"
-                className="size-1.5 shrink-0 rounded-full bg-[var(--nb-green)]"
-              />
-            ) : null}
-          </div>
-          <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
-            {meta}
-          </p>
-          <p className="mt-1 text-[11.5px] leading-[17px] text-muted-foreground">{description}</p>
-          {identity}
+      <BrandLogo brand={brand} size={20} />
+      <div className="min-w-0 flex-1">
+        <div className="flex min-w-0 items-center gap-2">
+          <p className="shrink-0 text-[13px] font-medium text-foreground">{name}</p>
+          {connected ? identity : null}
         </div>
+        <p className="truncate text-[11.5px] leading-[17px] text-muted-foreground">
+          {description}
+        </p>
+        {exceptionalStatus ? (
+          <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+            {exceptionalStatus}
+          </p>
+        ) : null}
       </div>
-      <div className="flex flex-wrap items-center gap-4">{actions}</div>
+      <div className="flex shrink-0 items-center gap-2">
+        {connected ? (
+          <>
+            <span
+              role="img"
+              aria-label="Connected"
+              className="grid h-5 w-5 place-items-center rounded-full bg-[var(--nb-green)]/12 text-[var(--nb-green)]"
+            >
+              <Check className="h-3.5 w-3.5" aria-hidden />
+            </span>
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                aria-label="More actions"
+                className="rounded-full border border-border bg-card p-1.5 text-muted-foreground transition-colors hover:text-foreground"
+              >
+                <MoreHorizontal className="h-4 w-4" aria-hidden />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {pickerKind ? (
+                  <DropdownMenuItem onSelect={() => setPickerOpen(true)}>
+                    {browseLabel}
+                  </DropdownMenuItem>
+                ) : null}
+                <DropdownMenuItem onSelect={onDisconnect}>Disconnect</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            {pickerKind ? (
+              <ConnectorPicker kind={pickerKind} open={pickerOpen} onOpenChange={setPickerOpen} />
+            ) : null}
+          </>
+        ) : (
+          <Button type="button" size="sm" disabled={busy} onClick={onConnect}>
+            {busy ? "Waiting…" : "Connect"}
+          </Button>
+        )}
+      </div>
     </div>
   );
 }
@@ -444,8 +459,8 @@ function ConnectorIdentity({ toolkit }: { toolkit: ConnectorToolkit }) {
   });
   if (!data?.identity) return null;
   return (
-    <p className="mt-0.5 truncate font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+    <span className="truncate font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
       Connected as {data.identity}
-    </p>
+    </span>
   );
 }
