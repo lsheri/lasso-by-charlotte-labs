@@ -140,35 +140,6 @@ export function OverviewPage() {
         </section>
       ) : null}
 
-      {thisWeek.length > 0 ? (
-        <section className="mt-10" data-testid="overview-this-week">
-          <SectionHeader title="This week" />
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            {thisWeek.map((item) => {
-              const mapped = item.work_item_tasks?.[0]?.tasks;
-              const code = mapped?.engagements?.code ?? null;
-              const label = [
-                sourceLabel(item.source_vendor, item.source),
-                shortDate(item.captured_at ?? item.work_date),
-              ]
-                .filter(Boolean)
-                .join(" · ");
-              return (
-                <Link key={item.id} to="/work" className="block">
-                  <ToneCard
-                    tone="paper"
-                    label={label}
-                    title={item.title ?? "Untitled"}
-                    meta={code ?? "UNMAPPED"}
-                    className="h-full transition-colors hover:border-foreground"
-                  />
-                </Link>
-              );
-            })}
-          </div>
-        </section>
-      ) : null}
-
       <ReadingPanel items={reading} />
 
       <NotCovered />
