@@ -67,9 +67,9 @@ export function noteHue(engagementId: string | null | undefined): CSSProperties 
   // engagementHue returns "--engagement-N"; the paper twin is "--paper-N".
   const paper = `var(${engagementHue(engagementId).replace("--engagement-", "--paper-")})`;
   return {
-    "--nb-note-fill": paper,
+    "--nb-paper-fill": paper,
     // A real note's edge is a shadowed version of its own colour, so the ink
     // mixes toward the paper rather than toward white.
-    "--nb-note-edge": `color-mix(in oklab, ${ink} 30%, ${paper})`,
+    "--nb-paper-edge": `color-mix(in oklab, ${ink} 30%, ${paper})`,
   } as CSSProperties;
 }
