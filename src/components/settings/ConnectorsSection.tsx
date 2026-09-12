@@ -5,8 +5,12 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import { BrandLogo, brandForToolkit, type BrandKey } from "@/components/connectors/BrandLogo";
-import { ConnectYourAiCard } from "@/components/connectors/ConnectYourAiCard";
+import {
+  BrandLogo,
+  BrandPair,
+  brandForToolkit,
+  type BrandKey,
+} from "@/components/connectors/BrandLogo";
 import { ConnectorPicker, type PickerKind } from "@/components/connectors/ConnectorPicker";
 import { GranolaKeyCard } from "@/components/connectors/GranolaKeyCard";
 import { WisprCard } from "@/components/connectors/WisprCard";
@@ -187,7 +191,7 @@ export function ConnectorsSection({ from }: { from?: SettingsOpenFrom }) {
   // Sections stay mounted for the life of the settings shell, so mounting is
   // not the signal: this must fire when connectors is the section on screen,
   // and only once both reads have resolved so the counts are real.
-  const { activeSectionId } = useActiveSettingsSection();
+  const { activeSectionId, setActiveSection } = useActiveSettingsSection();
   const settings = useSettingsDialogOptional();
   const resolvedFrom: SettingsOpenFrom =
     from ??
@@ -219,10 +223,6 @@ export function ConnectorsSection({ from }: { from?: SettingsOpenFrom }) {
       {error ? <p className="mt-4 text-sm text-destructive">{(error as Error).message}</p> : null}
 
       <div className="mt-6 space-y-8">
-        <Category title="Connect your AI · MCP">
-          <ConnectYourAiCard />
-        </Category>
-
         <Category title="Documents & files">
           <div className="grid gap-3 sm:grid-cols-2">
             {card("googledrive")}
@@ -281,6 +281,16 @@ export function ConnectorsSection({ from }: { from?: SettingsOpenFrom }) {
               Set up more tools
             </Link>
           </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3 rounded-[var(--radius-lg)] border border-border bg-card px-4 py-3.5">
+          <BrandPair brands={["claude", "chatgpt"]} size={22} />
+          <p className="min-w-0 flex-1 text-[13px] text-foreground">
+            Push work here straight from Claude or ChatGPT
+          </p>
+          <Button type="button" variant="outline" size="sm" onClick={() => setActiveSection("mcp")}>
+            Set up MCP
+          </Button>
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2">

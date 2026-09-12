@@ -95,7 +95,7 @@ export function ConnectYourAiCard() {
     setShowSetup(true);
     if (profile) {
       logEvent("connector.setup_opened", profile.org_id, {
-        surface: "connectors",
+        surface: "mcp",
         had_connector: Boolean(token),
       });
     }
@@ -151,7 +151,6 @@ export function ConnectYourAiCard() {
         </p>
 
         <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2">
-          
           {token ? (
             <>
               <span className="text-xs text-muted-foreground">

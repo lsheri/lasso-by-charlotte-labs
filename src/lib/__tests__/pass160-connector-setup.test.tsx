@@ -31,9 +31,8 @@ vi.mock("@/hooks/use-profile", () => ({
   useProfile: () => ({ data: { id: "p1", org_id: "o1" } }),
 }));
 
-const { ConnectYourAiCard, connectorStatusLine } = await import(
-  "@/components/connectors/ConnectYourAiCard"
-);
+const { ConnectYourAiCard, connectorStatusLine } =
+  await import("@/components/connectors/ConnectYourAiCard");
 
 function renderCard() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -108,7 +107,7 @@ describe("ConnectYourAiCard", () => {
     expect(screen.getByText(MCP_SETUP_STEPS.claude[0] as string)).toBeTruthy();
     expect(logEvent).toHaveBeenCalledTimes(1);
     expect(logEvent).toHaveBeenCalledWith("connector.setup_opened", "o1", {
-      surface: "connectors",
+      surface: "mcp",
       had_connector: true,
     });
   });

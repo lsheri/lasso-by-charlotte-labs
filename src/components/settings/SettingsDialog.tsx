@@ -4,6 +4,7 @@ import { X } from "lucide-react";
 import { useSettingsDialog } from "@/lib/settings-dialog-context";
 import { SettingsShell, type SettingsSection } from "./SettingsShell";
 import { ConnectorsSection } from "./ConnectorsSection";
+import { McpSection } from "./McpSection";
 import { DataUseCard } from "./DataUseCard";
 import { PersonalDataCard } from "./YourDataCard";
 import { NamingConventionsCard } from "./NamingConventionsCard";
@@ -26,6 +27,14 @@ const SECTIONS: SettingsSection[] = [
     group: "Settings",
     title: "Connectors",
     content: <ConnectorsSection />,
+  },
+  {
+    id: "mcp",
+    label: "MCP",
+    hint: "push from your AI",
+    group: "Settings",
+    title: "MCP",
+    content: <McpSection />,
   },
   {
     id: "your-work",

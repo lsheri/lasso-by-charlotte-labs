@@ -26,12 +26,19 @@ export type SettingsSection = {
  * the life of the shell, so a section that wants to know it was *looked at*
  * cannot use its own mount as the signal. It reads this instead.
  */
-export const SettingsSectionContext = createContext<{ activeSectionId: string }>({
+export const SettingsSectionContext = createContext<{
+  activeSectionId: string;
+  setActiveSection: (id: string) => void;
+}>({
   activeSectionId: "",
+  setActiveSection: () => undefined,
 });
 
 /** Safe outside a SettingsShell: reports no active section rather than throwing. */
-export function useActiveSettingsSection(): { activeSectionId: string } {
+export function useActiveSettingsSection(): {
+  activeSectionId: string;
+  setActiveSection: (id: string) => void;
+} {
   return useContext(SettingsSectionContext);
 }
 
@@ -141,7 +148,9 @@ export function SettingsShell({
           className={`min-w-0 overflow-y-auto p-6 ${variant === "dialog" ? "pr-14" : ""}`.trim()}
         >
           {activeSection?.title ? <h2 className="page-title mb-5">{activeSection.title}</h2> : null}
-          <SettingsSectionContext.Provider value={{ activeSectionId: active }}>
+          <SettingsSectionContext.Provider
+            value={{ activeSectionId: active, setActiveSection: setActive }}
+          >
             {sections.map((section) => (
               <div
                 key={section.id}

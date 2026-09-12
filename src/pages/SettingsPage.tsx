@@ -1,4 +1,5 @@
 import { ConnectorsSection } from "@/components/settings/ConnectorsSection";
+import { McpSection } from "@/components/settings/McpSection";
 import { DataUseCard } from "@/components/settings/DataUseCard";
 import { PersonalDataCard } from "@/components/settings/YourDataCard";
 import { NamingConventionsCard } from "@/components/settings/NamingConventionsCard";
@@ -26,6 +27,14 @@ const SECTIONS: SettingsSection[] = [
     group: "Settings",
     title: "Connectors",
     content: <ConnectorsSection />,
+  },
+  {
+    id: "mcp",
+    label: "MCP",
+    hint: "push from your AI",
+    group: "Settings",
+    title: "MCP",
+    content: <McpSection />,
   },
   {
     id: "your-work",
