@@ -83,10 +83,15 @@ export function ClientPage({ clientId }: { clientId: string }) {
   const itemCount = items.length;
   const unplacedCount = unplaced.length;
 
-  // Once per client, not on every recount.
+  const countsReady =
+    clientQuery.isSuccess && Boolean(clientQuery.data) && engagementsQuery.isSuccess && Boolean(workData);
+
+  // Once per client, and only once the numbers it reports are real. Firing on
+  // mount recorded zeroes, because none of the three reads had resolved yet.
   const seen = useRef<string | null>(null);
   useEffect(() => {
     if (!profile?.org_id) return;
+    if (!countsReady) return;
     if (seen.current === clientId) return;
     seen.current = clientId;
     logEvent("client.page_viewed", profile.org_id, {
@@ -94,7 +99,7 @@ export function ClientPage({ clientId }: { clientId: string }) {
       items: bucket(itemCount),
       unplaced: bucket(unplacedCount),
     });
-  }, [profile?.org_id, clientId, engagementCount, itemCount, unplacedCount]);
+  }, [profile?.org_id, clientId, countsReady, engagementCount, itemCount, unplacedCount]);
 
   if (clientQuery.isLoading) {
     return (
