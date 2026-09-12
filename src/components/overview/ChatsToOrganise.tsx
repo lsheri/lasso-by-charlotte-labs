@@ -142,7 +142,9 @@ export function ChatsToOrganise({ items }: { items: WorkItemRow[] }) {
             note="These landed on their own. Say whose work it is and the rest gets easier."
             items={unclaimed}
             remainderTestId="overview-chats-remainder"
-            cardAction={(item) => <ClaimToClient item={item} surface="overview" />}
+            cardAction={(item) => (
+              <ClaimToClient item={item} surface="overview" emphasis="lead" label="Say whose this is" />
+            )}
           />
         </section>
       ) : null}
