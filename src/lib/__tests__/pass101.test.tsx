@@ -152,7 +152,6 @@ describe("pass 101: reduced motion is static", () => {
     expect(still).not.toContain("nb-ink-settle");
   });
 
-
   it("draws the thread without animating it", async () => {
     const { ThreadLine } = await import("@/components/provenance/ThreadLine");
     cleanup();
