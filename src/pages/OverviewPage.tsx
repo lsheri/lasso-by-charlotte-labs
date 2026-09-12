@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { SectionHeader } from "@/components/notebook/SectionHeader";
 import { ToneCard } from "@/components/notebook/ToneCard";
 import { ArchiveTeaser } from "@/components/archive/ArchiveTeaser";
+import { ChatsToOrganise } from "@/components/overview/ChatsToOrganise";
 import { ReadingPanel } from "@/components/overview/ReadingPanel";
 import { NotCovered } from "@/components/overview/NotCovered";
 import { OneOnOneBrief } from "@/components/oneonone/OneOnOneBrief";
@@ -73,7 +74,6 @@ export function OverviewPage() {
   }
 
   const waiting = drafts.slice(0, 2);
-  const thisWeek = items.slice(0, 4);
   // Figma 21:2 "What Lasso is reading": the most recent arrivals from a
   // connected tool. Anything without a vendor came in by hand, so it is not
   // something Lasso went and read.
@@ -93,6 +93,8 @@ export function OverviewPage() {
       <PageHeader title="Your" italicWord="work" subtitle={statLine} />
 
       <CoachingLinkNotices />
+
+      <ChatsToOrganise items={items} />
 
       {waiting.length > 0 ? (
         <section className="mt-2" data-testid="overview-waiting">
@@ -134,35 +136,6 @@ export function OverviewPage() {
                 say so.
               </p>
             </div>
-          </div>
-        </section>
-      ) : null}
-
-      {thisWeek.length > 0 ? (
-        <section className="mt-10" data-testid="overview-this-week">
-          <SectionHeader title="This week" />
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            {thisWeek.map((item) => {
-              const mapped = item.work_item_tasks?.[0]?.tasks;
-              const code = mapped?.engagements?.code ?? null;
-              const label = [
-                sourceLabel(item.source_vendor, item.source),
-                shortDate(item.captured_at ?? item.work_date),
-              ]
-                .filter(Boolean)
-                .join(" · ");
-              return (
-                <Link key={item.id} to="/work" className="block">
-                  <ToneCard
-                    tone="paper"
-                    label={label}
-                    title={item.title ?? "Untitled"}
-                    meta={code ?? "UNMAPPED"}
-                    className="h-full transition-colors hover:border-foreground"
-                  />
-                </Link>
-              );
-            })}
           </div>
         </section>
       ) : null}
