@@ -13,9 +13,10 @@ describe("95.1 plain white chat", () => {
     expect(dock).toContain("nb-ask-plain");
     const block = css.slice(css.indexOf(".nb-ask-plain"));
     expect(block.slice(0, 200)).toContain("background-image: none");
-    // The binder rules survive everywhere else.
+    // Ruled backgrounds were removed from all surfaces on 12 Sep 2026;
+    // the binder-body class and its rhythm remain.
     expect(css).toContain(".nb-binder-body {");
-    expect(css).toContain("repeating-linear-gradient");
+    expect(css).not.toContain("repeating-linear-gradient");
   });
 });
 
