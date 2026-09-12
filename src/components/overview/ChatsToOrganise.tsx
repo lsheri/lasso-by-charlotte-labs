@@ -29,8 +29,8 @@ function NoteRow({
   return (
     <div
       ref={live}
-      className="nb-note"
-      data-note-state="unmapped"
+      className="nb-paper"
+      data-paper-state="unmapped"
       style={{ ...notePaper(item.id), ...noteHue(null) }}
     >
       <div className="nb-note-body">
