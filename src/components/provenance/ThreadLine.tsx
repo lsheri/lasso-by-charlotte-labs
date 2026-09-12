@@ -76,7 +76,7 @@ export function ThreadLine({
         stroke={stroke}
         strokeWidth={1.5}
         strokeDasharray={sourced ? undefined : "4 4"}
-        className={motion.className}
+        className={reduceMotion ? "" : motion.className}
       />
       {!sourced ? (
         <circle cx={end.x} cy={end.y} r={4} fill="none" stroke={stroke} strokeWidth={1.5} />
