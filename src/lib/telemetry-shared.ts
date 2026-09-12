@@ -55,6 +55,8 @@ export type TelemetryEvent =
   | "coachlink.item_excluded"
   | "coachlink.item_restored"
   | "engagement.updated"
+  /** A person opened or collapsed the engagement Ask rail. */
+  | "engagement.ask_rail_toggled"
   | "task.updated"
   | "feedback.submitted"
   | "reflect.session_created"

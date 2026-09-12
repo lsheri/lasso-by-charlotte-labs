@@ -56,7 +56,7 @@ function InlineAsk(props: {
     ) : null;
 
   return (
-    <section className={visible ? "relative flex min-h-[620px] flex-col overflow-hidden rounded-lg border border-graphite bg-card" : "hidden"}>
+    <section className={visible ? "relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-graphite bg-card max-[1099px]:min-h-[620px]" : "hidden"}>
       <Button
         type="button"
         variant="ghost"
