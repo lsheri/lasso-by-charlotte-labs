@@ -201,7 +201,7 @@ never existed in `styles.css`. That test failure predates this port and is untou
 | `21:2` | `/overview` | BUILT | Added `ReadingPanel` and `NotCovered` panels (Figma 21:2), both read-only and non-interactive. |
 | `22:220` | `/work` | BUILT (full screen, pass 2 of 2, 10 Sep 2026) |
 | `23:413` | `/firm` | BUILT (production-first layout, 10 Sep 2026) |
-| `27:635` | `/ai-record` | BUILT (hairline list port, 10 Sep 2026) |
+| `27:635` | `/ai-record` | BUILT (two-pane reader, unit 1 of 2, 12 Sep 2026) |
 | `29:833` | `/archive` | BUILT (filed two-column layout, 10 Sep 2026) |
 | `30:1012` | `/reflect` | BUILT (partial) | Header, week rail and "Where this goes" card restyled. The frame's three-prompt exercise is NOT built because it replaces the working session list, message history and analysis path and needs a prompt generator and per-turn provenance that do not exist. |
 | `30:1419` | `/decisions` | BUILT | Header action slot now carries an outline "Log a decision" button. Rail copy and headline numbers restyled; omitted: "Reversed" chip and the two rail counts for reversed/reused decisions because the schema has no reversed state and no reuse count. No-reasoning row now explains why the reasoning matters. |
@@ -241,6 +241,14 @@ visible on touch screens. The header exposes the existing paste flow, filter chi
 show their loaded counts, and the rail keeps CaptureCoverage plus the frame's second
 card. The unavailable checked-at-source count and turn-level provenance panel remain
 omitted rather than inferred. No query, event, payload, dimension or consent surface
+changed.
+
+Chat library reader notes, 12 Sep 2026 (redesign, unit 1 of 2). At 1100px and
+above, the conversation list and selected transcript now sit side by side; below
+that breakpoint the existing PeekPanel path remains. The reader reuses ThreadBody,
+RenderedContent, PeekActionBar and ChatUrlLink without adding a composer. Search,
+row analysis, source links, grouped analysis, empty/error/loading states and all
+existing signals remain in place. No event, payload, dimension or consent surface
 changed.
 
 Past work notes, 10 Sep 2026 (frame `29:833`). The archive spine now fills the
