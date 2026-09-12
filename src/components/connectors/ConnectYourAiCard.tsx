@@ -95,7 +95,7 @@ export function ConnectYourAiCard() {
     setShowSetup(true);
     if (profile) {
       logEvent("connector.setup_opened", profile.org_id, {
-        surface: "connectors",
+        surface: "mcp",
         had_connector: Boolean(token),
       });
     }

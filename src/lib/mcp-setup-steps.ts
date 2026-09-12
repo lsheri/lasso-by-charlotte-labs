@@ -37,4 +37,4 @@ export const VENDOR_LABELS: Record<McpVendor, string> = {
 };
 
 /** Where the setup steps were opened from. Closed vocabulary. */
-export type SetupSurface = "connectors" | "connect_sheet" | "onboarding";
+export type SetupSurface = "connectors" | "connect_sheet" | "mcp" | "onboarding";

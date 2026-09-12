@@ -108,7 +108,7 @@ describe("ConnectYourAiCard", () => {
     expect(screen.getByText(MCP_SETUP_STEPS.claude[0] as string)).toBeTruthy();
     expect(logEvent).toHaveBeenCalledTimes(1);
     expect(logEvent).toHaveBeenCalledWith("connector.setup_opened", "o1", {
-      surface: "connectors",
+      surface: "mcp",
       had_connector: true,
     });
   });
