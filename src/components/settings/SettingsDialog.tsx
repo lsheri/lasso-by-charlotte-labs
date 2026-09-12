@@ -145,7 +145,12 @@ export function SettingsDialog() {
           </button>
 
           {/* Shell fills the dialog — remove the page-level max-width wrapper */}
-          <SettingsShell sections={SECTIONS} variant="dialog" initialSection={section} />
+          <SettingsShell
+            sections={SECTIONS}
+            variant="dialog"
+            initialSection={section}
+            defaultSection="account"
+          />
         </div>
       </div>
     </div>

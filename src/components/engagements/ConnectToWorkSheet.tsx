@@ -181,7 +181,7 @@ export function ConnectToWorkSheet({
                 surface: "connect_sheet",
                 had_connector: false,
               });
-              settings?.openSettings("connectors");
+              settings?.openSettings("connectors", "connect_sheet");
             }}
             className="text-xs text-muted-foreground transition-colors hover:text-foreground"
           >

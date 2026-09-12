@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 
 /**
  * Settings as a panel with a section rail, matching the design system's
@@ -21,20 +21,37 @@ export type SettingsSection = {
   title?: string;
 };
 
+/**
+ * Which section the person is actually looking at. Sections stay mounted for
+ * the life of the shell, so a section that wants to know it was *looked at*
+ * cannot use its own mount as the signal. It reads this instead.
+ */
+export const SettingsSectionContext = createContext<{ activeSectionId: string }>({
+  activeSectionId: "",
+});
+
+/** Safe outside a SettingsShell: reports no active section rather than throwing. */
+export function useActiveSettingsSection(): { activeSectionId: string } {
+  return useContext(SettingsSectionContext);
+}
+
 export function SettingsShell({
   sections,
   variant = "page",
   initialSection,
+  defaultSection,
 }: {
   sections: SettingsSection[];
   variant?: "page" | "dialog";
   initialSection?: string | undefined;
+  /** Where settings lands when no caller named a section. */
+  defaultSection?: string | undefined;
 }) {
-  const [active, setActive] = useState(
-    initialSection && sections.some((s) => s.id === initialSection)
-      ? initialSection
-      : (sections[0]?.id ?? ""),
-  );
+  const [active, setActive] = useState(() => {
+    if (initialSection && sections.some((s) => s.id === initialSection)) return initialSection;
+    if (defaultSection && sections.some((s) => s.id === defaultSection)) return defaultSection;
+    return sections[0]?.id ?? "";
+  });
 
   // A caller can open settings straight onto a section. An absent value never
   // resets what the person is already looking at.
@@ -87,11 +104,15 @@ export function SettingsShell({
           : "overflow-hidden rounded-[var(--radius)] border border-border bg-card"
       }
     >
-      <header className="flex items-baseline justify-between gap-4 border-b border-border px-6 py-5">
-        <h1 className="page-title">
-          Settings <span className="font-hand">for you</span>
-        </h1>
-      </header>
+      {/* The dialog's rail and section title carry the heading, so the page
+          header would only repeat the section name. */}
+      {variant === "page" ? (
+        <header className="flex items-baseline justify-between gap-4 border-b border-border px-6 py-5">
+          <h1 className="page-title">
+            Settings <span className="font-hand">for you</span>
+          </h1>
+        </header>
+      ) : null}
 
       <div className="grid flex-1 overflow-hidden md:grid-cols-[13rem_minmax(0,1fr)]">
         <nav
@@ -115,17 +136,22 @@ export function SettingsShell({
           ))}
         </nav>
 
-        <div className="min-w-0 overflow-y-auto p-6">
+        {/* pr-14 in the dialog keeps the section title clear of the close button. */}
+        <div
+          className={`min-w-0 overflow-y-auto p-6 ${variant === "dialog" ? "pr-14" : ""}`.trim()}
+        >
           {activeSection?.title ? <h2 className="page-title mb-5">{activeSection.title}</h2> : null}
-          {sections.map((section) => (
-            <div
-              key={section.id}
-              hidden={section.id !== active}
-              aria-hidden={section.id !== active}
-            >
-              {section.content}
-            </div>
-          ))}
+          <SettingsSectionContext.Provider value={{ activeSectionId: active }}>
+            {sections.map((section) => (
+              <div
+                key={section.id}
+                hidden={section.id !== active}
+                aria-hidden={section.id !== active}
+              >
+                {section.content}
+              </div>
+            ))}
+          </SettingsSectionContext.Provider>
         </div>
       </div>
     </div>
