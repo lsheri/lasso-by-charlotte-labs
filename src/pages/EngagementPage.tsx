@@ -1,6 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { GraphiteRule } from "@/components/notebook/marks";
 import { SpiderMark } from "@/components/notebook/SpiderMark";
@@ -82,6 +82,15 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
       });
     }
   };
+
+  // Open the Ask rail by default on desktop, but only on the client and only
+  // after hydration. 1100px matches the .nb-bench-grid[data-rail="open"] media
+  // query. Use setAskOpen directly so this default does NOT fire the tracked
+  // engagement.ask_rail_toggled event — that event is reserved for a person's
+  // explicit open/collapse choice.
+  useEffect(() => {
+    if (window.innerWidth >= 1100) setAskOpen(true);
+  }, []);
 
   // A shared "?trace=" link opens the audit on exactly what was circled.
   useTraceParam(engagementId);
