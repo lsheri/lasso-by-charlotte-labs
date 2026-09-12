@@ -253,7 +253,7 @@ export function WorkPage() {
         <>
           {item.content_ref ? <OpenFileAction workItemId={item.id} /> : null}
           <RowAction onClick={() => setDateItem(item)}>Work date</RowAction>
-          <ClaimToClient item={item} />
+          <ClaimToClient item={item} surface="work" />
           <RowAction onClick={() => void unmark(item)}>Unmark</RowAction>
           <RowMenu
             item={item}
@@ -278,7 +278,7 @@ export function WorkPage() {
               ? "Map conversation"
               : "Map to a workstream"}
         </MapButton>
-        <ClaimToClient item={item} />
+        <ClaimToClient item={item} surface="work" />
         {group && group.length > 1 ? (
           <RowAction onClick={() => openMap(item)}>Map just this</RowAction>
         ) : null}

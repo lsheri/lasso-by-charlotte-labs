@@ -18,7 +18,14 @@ import type { WorkItemRow } from "@/lib/work-types";
  * Owns its own reads so no page hook list has to change; the client list is
  * cached per org, so many rows cost one request.
  */
-export function ClaimToClient({ item }: { item: WorkItemRow }) {
+export function ClaimToClient({
+  item,
+  surface,
+}: {
+  item: WorkItemRow;
+  /** Which screen the claim was made from, sent with the claim event. */
+  surface: "work" | "overview";
+}) {
   const { data: profile } = useProfile();
   const { data: clients } = useClients(profile?.org_id);
   const queryClient = useQueryClient();
@@ -44,7 +51,7 @@ export function ClaimToClient({ item }: { item: WorkItemRow }) {
       if (nextId && profile) {
         logV2(
           "work_item.claimed_to_client",
-          { item_type: item.type, was_claimed: wasClaimed },
+          { item_type: item.type, was_claimed: wasClaimed, from_surface: surface },
           { profileId: profile.id, workItemId: item.id },
         );
       }

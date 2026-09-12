@@ -74,7 +74,11 @@ const SCHEMAS = {
   "work_item.unmapped": z.object({ item_type: z.enum(WORK_ITEM_TYPES) }).strict(),
   "work_item.marked_private": z.object({ item_type: z.enum(WORK_ITEM_TYPES) }).strict(),
   "work_item.claimed_to_client": z
-    .object({ item_type: z.enum(WORK_ITEM_TYPES), was_claimed: z.boolean() })
+    .object({
+      item_type: z.enum(WORK_ITEM_TYPES),
+      was_claimed: z.boolean(),
+      from_surface: z.enum(["work", "overview"]),
+    })
     .strict(),
   "conversation.pushed": z
     .object({ tool: term, turn_count: count, attachment_count: count })
