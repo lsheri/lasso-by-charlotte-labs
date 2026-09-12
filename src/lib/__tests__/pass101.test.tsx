@@ -152,13 +152,13 @@ describe("pass 101: reduced motion is static", () => {
     expect(still).not.toContain("nb-ink-settle");
   });
 
-
   it("draws the thread without animating it", async () => {
     const { ThreadLine } = await import("@/components/provenance/ThreadLine");
     cleanup();
     render(<ThreadLine from={{ x: 300, y: 100 }} targetId={null} sourced={false} reduceMotion />);
     const line = screen.getByTestId("audit-thread").querySelector("line");
-    expect(line?.getAttribute("class")).toBe("nb-thread-static");
+    expect(line?.getAttribute("class")).toBe("");
+    expect(line?.getAttribute("class") ?? "").not.toContain("nb-thread-draw");
   });
 });
 
