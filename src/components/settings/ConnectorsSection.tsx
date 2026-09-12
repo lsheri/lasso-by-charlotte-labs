@@ -24,7 +24,6 @@ import { WisprCard } from "@/components/connectors/WisprCard";
 import { SectionHeader } from "@/components/notebook/SectionHeader";
 import { ToneCard } from "@/components/notebook/ToneCard";
 import {
-  statusLabel,
   useConnectorAccounts,
   TOOLKIT_LABELS,
   type ConnectorAccount,
@@ -444,8 +443,7 @@ function ConnectorCard({
 
 /**
  * Which account is actually linked. Composio exposes identity for some
- * toolkits only; when it doesn't, the card falls back to the connection date
- * already shown in the status column.
+ * toolkits only; when it doesn't, the row simply omits the identity.
  */
 function ConnectorIdentity({ toolkit }: { toolkit: ConnectorToolkit }) {
   const { data: profile } = useProfile();
