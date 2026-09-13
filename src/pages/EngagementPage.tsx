@@ -1,6 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { getRouteApi, Link } from "@tanstack/react-router";
+import { useEffect, useRef, useState } from "react";
 
 import { GraphiteRule } from "@/components/notebook/marks";
 import { SpiderMark } from "@/components/notebook/SpiderMark";
@@ -46,8 +46,10 @@ import { logEvent } from "@/lib/telemetry";
 import type { WorkItemRow } from "@/lib/work-types";
 
 type TaskWithWork = CanvasTask;
+const engagementRoute = getRouteApi("/_authenticated/engagements/$id");
 
 export function EngagementPage({ engagementId }: { engagementId: string }) {
+  const { work } = engagementRoute.useSearch();
   const { data: profile } = useProfile();
   const queryClient = useQueryClient();
   const [askOpen, setAskOpen] = useState(false);
@@ -72,6 +74,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
   // pass through the strip's render prop.
   const [stripExpanded, setStripExpanded] = useState(true);
   const [view, setView] = useState<"brief" | "work" | "trace">("work");
+  const previousWorkRef = useRef(work);
 
   const setAskRailOpen = (open: boolean) => {
     if (open === askOpen) return;
@@ -88,9 +91,23 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
     if (next === view) return;
     setView(next);
     if (profile) {
-      logEvent("engagement.view_changed", profile.org_id, { view: next, scope: "engagement" });
+      logEvent("engagement.view_changed", profile.org_id, {
+        view: next,
+        scope: work ? "work_item" : "engagement",
+      });
     }
   };
+
+  useEffect(() => {
+    if (previousWorkRef.current === work) return;
+    previousWorkRef.current = work;
+    if (profile) {
+      logEvent("engagement.scope_changed", profile.org_id, {
+        scope: work ? "work_item" : "engagement",
+        from: "nav",
+      });
+    }
+  }, [profile, work]);
 
   // Open the Ask rail by default on desktop, but only on the client and only
   // after hydration. 1100px matches the .nb-bench-grid[data-rail="open"] media
@@ -130,6 +147,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
   usePerfNavFinish("engagement.load", Boolean(engagementQuery.data?.engagement));
 
   const engagement = engagementQuery.data?.engagement ?? null;
+  const scopedTask = work ? (tasksQuery.data ?? []).find((task) => task.id === work) : undefined;
   const isQuickFolder = engagement?.clients?.quick_folder === true;
   const hasCoaches = (coaches.data ?? []).length > 0;
 
@@ -328,6 +346,9 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
           <span className="text-[11px] italic text-muted-foreground">how does this connect?</span>
         </button>
       </div>
+      <p className="micro-label mb-4">
+        SCOPE · {scopedTask ? scopedTask.name.toUpperCase() : "EVERYTHING IN THIS ENGAGEMENT"}
+      </p>
 
       <div className="nb-bench-grid" data-rail={askOpen ? "open" : "closed"}>
         <div>

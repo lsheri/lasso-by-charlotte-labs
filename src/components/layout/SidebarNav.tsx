@@ -1,5 +1,6 @@
-import { Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { Link, useMatchRoute, useSearch } from "@tanstack/react-router";
+import { useState, useSyncExternalStore } from "react";
 
 import { NewEngagementDialog } from "@/components/engagements/NewEngagementDialog";
 import { GraphiteIcon } from "@/components/notebook/icons";
@@ -24,34 +25,116 @@ import { engagementDisplayCode, engagementDisplayTitle } from "@/lib/clients";
 const linkClass = "nb-nav-item";
 const activeProps = { className: "nb-nav-item-active" };
 
+type CachedNavTask = { id: string; name: string };
+const EMPTY_NAV_TASKS: CachedNavTask[] = [];
+
+/** The indent mark on a nested engagement row. Hand-drawn, not a chevron:
+    it marks depth, it is not a control. Decorative, so it is hidden from
+    assistive tech and the row's link text carries the meaning. */
+function PencilIndent() {
+  return (
+    <svg
+      width="28"
+      height="20"
+      viewBox="0 0 28 20"
+      aria-hidden="true"
+      focusable="false"
+      className="nb-nav-indent shrink-0"
+    >
+      <path
+        d="M5 0 C 5.5 4.2, 4.4 8.1, 5.3 11.6 C 5.9 14.1, 8.6 13.5, 11.2 13.8 C 15.4 14.2, 19.8 13.6, 24 14.1"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.3"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function useCachedEngagementTasks(engagementId: string | undefined) {
+  const queryClient = useQueryClient();
+  return useSyncExternalStore(
+    (onStoreChange) =>
+      queryClient.getQueryCache().subscribe((event) => {
+        if (
+          engagementId &&
+          event.query.queryKey[0] === "engagement-tasks" &&
+          event.query.queryKey[1] === engagementId
+        ) {
+          onStoreChange();
+        }
+      }),
+    () =>
+      engagementId
+        ? (queryClient.getQueryData<CachedNavTask[]>([
+            "engagement-tasks",
+            engagementId,
+          ]) ?? EMPTY_NAV_TASKS)
+        : EMPTY_NAV_TASKS,
+    () => EMPTY_NAV_TASKS,
+  );
+}
+
 /** One engagement row, at top level or nested under a client shelf. */
 function EngagementRow({
   engagement,
   nested,
   hideCode,
   onNavigate,
+  scope,
 }: {
   engagement: NavEngagement;
   nested?: boolean;
   /** Inside the Unmapped shelf the shelf already says it; the code adds nothing. */
   hideCode?: boolean;
   onNavigate?: (() => void) | undefined;
+  scope?: { tasks: CachedNavTask[]; workId: string | undefined } | undefined;
 }) {
   const code = hideCode ? null : (engagementDisplayCode(engagement) ?? "Folder");
   return (
-    <Link
-      to="/engagements/$id"
-      params={{ id: engagement.id }}
-      onClick={onNavigate}
-      className={nested ? `${linkClass} nb-nav-item-nested` : linkClass}
-      activeProps={activeProps}
-    >
-      <GraphiteIcon name={nested ? "chevron-right" : "engagement"} size={nested ? 16 : 20} />
-      <span className="flex min-w-0 items-center gap-1.5">
-        {code ? <span className="font-mono text-xs text-muted-foreground">{code}</span> : null}
-        <span className="truncate">{engagementDisplayTitle(engagement)}</span>
-      </span>
-    </Link>
+    <>
+      <Link
+        to="/engagements/$id"
+        params={{ id: engagement.id }}
+        onClick={onNavigate}
+        className={nested ? `${linkClass} nb-nav-item-nested` : linkClass}
+        activeProps={activeProps}
+      >
+        {nested ? <PencilIndent /> : <GraphiteIcon name="engagement" size={20} />}
+        <span className="flex min-w-0 items-center gap-1.5">
+          {code ? <span className="font-mono text-xs text-muted-foreground">{code}</span> : null}
+          <span className="truncate">{engagementDisplayTitle(engagement)}</span>
+        </span>
+      </Link>
+      {scope ? (
+        <div>
+          <Link
+            to="/engagements/$id"
+            params={{ id: engagement.id }}
+            search={{ work: undefined }}
+            onClick={onNavigate}
+            className={`${linkClass} nb-nav-item-nested-2 ${scope.workId === undefined ? "nb-nav-item-active" : ""}`}
+          >
+            <PencilIndent />
+            <span className="truncate">Everything in this engagement</span>
+          </Link>
+          {scope.tasks.map((task) => (
+            <Link
+              key={task.id}
+              to="/engagements/$id"
+              params={{ id: engagement.id }}
+              search={{ work: task.id }}
+              onClick={onNavigate}
+              className={`${linkClass} nb-nav-item-nested-2 ${scope.workId === task.id ? "nb-nav-item-active" : ""}`}
+            >
+              <PencilIndent />
+              <span className="truncate">{task.name}</span>
+            </Link>
+          ))}
+        </div>
+      ) : null}
+    </>
   );
 }
 
@@ -72,6 +155,17 @@ export function SidebarNav({
   const canSeeFirmView = roles.canSeeFirmView(profile);
   const groupsForOrg = isEduOrg(profile) ? eduNavGroups : navGroups;
   const membersLabel = roles.membersLabel(profile);
+  const matchRoute = useMatchRoute();
+  const engagementMatch = matchRoute({ to: "/engagements/$id", fuzzy: false });
+  const activeEngagementId = engagementMatch ? engagementMatch.id : undefined;
+  const search = useSearch({ strict: false });
+  const activeWorkId =
+    "work" in search && typeof search.work === "string" ? search.work : undefined;
+  const cachedTasks = useCachedEngagementTasks(activeEngagementId);
+  const scopeFor = (engagementId: string) =>
+    engagementId === activeEngagementId && cachedTasks.length > 0
+      ? { tasks: cachedTasks, workId: activeWorkId }
+      : undefined;
 
   // Engagements sit under their client, with quick folders and clientless
   // engagements flat at top level. Grouping reads only the joined relation.
@@ -194,6 +288,7 @@ export function SidebarNav({
                       key={engagement.id}
                       engagement={engagement}
                       onNavigate={onNavigate}
+                      scope={scopeFor(engagement.id)}
                     />
                   ))}
                   {groups.map((shelf) => {
@@ -259,6 +354,7 @@ export function SidebarNav({
                                 nested
                                 hideCode={shelf.clientId === UNMAPPED_SHELF_ID}
                                 onNavigate={onNavigate}
+                                scope={scopeFor(engagement.id)}
                               />
                             ))}
                       </div>
