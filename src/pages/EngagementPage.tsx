@@ -19,6 +19,7 @@ import { useMakePrivate } from "@/hooks/use-make-private";
 import { OneOnOneBrief } from "@/components/oneonone/OneOnOneBrief";
 import { CaptureCoverage } from "@/components/common/CaptureCoverage";
 import { EngagementCanvas, type CanvasTask } from "@/components/engagements/EngagementCanvas";
+import { WorkLedger } from "@/components/engagements/WorkLedger";
 import { ConnectToWorkSheet } from "@/components/engagements/ConnectToWorkSheet";
 import { WhatFedThisButton } from "@/components/engagements/WhatFedThisButton";
 import { CanvasDeliverableActions } from "@/components/engagements/CanvasDeliverableActions";
