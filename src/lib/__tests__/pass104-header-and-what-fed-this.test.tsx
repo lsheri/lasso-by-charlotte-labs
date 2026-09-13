@@ -141,10 +141,11 @@ describe("pass 104 · what fed this on the canvas", () => {
     expect(screen.getByText(WHAT_FED_THIS_INFO)).toBeTruthy();
   });
 
-  it("is hidden from coaches on the engagement page", () => {
-    const page = readFileSync("src/pages/EngagementPage.tsx", "utf8");
-    const marker = page.indexOf("<WhatFedThisButton");
-    const guard = page.lastIndexOf('profile.role !== "coach"', marker);
+  it("is hidden from coaches in the work ledger", () => {
+    const ledger = readFileSync("src/components/engagements/WorkLedger.tsx", "utf8");
+    const marker = ledger.indexOf("<WhatFedThisButton");
+    expect(marker).toBeGreaterThan(-1);
+    const guard = ledger.lastIndexOf("{!isCoach ?", marker);
     expect(guard).toBeGreaterThan(-1);
     expect(marker - guard).toBeLessThan(400);
   });
