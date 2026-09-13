@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { isDeliverableType } from "@/lib/lineage-shared";
-import { getDeliverableEvidence, reviewLink, type EvidenceLink } from "@/lib/lineage.functions";
+import { getDeliverableEvidence, reviewLink } from "@/lib/lineage.functions";
 import { resolveFileFormat, type FileFormat } from "@/lib/file-format";
 import { workIdentityLabel } from "@/lib/work-identity";
 import { useProfile } from "@/hooks/use-profile";
