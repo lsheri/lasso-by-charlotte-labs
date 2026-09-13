@@ -479,6 +479,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
                 headerAction={headerAction}
                 orgId={profile?.org_id}
                 profileId={profile?.id}
+                isCoach={profile?.role === "coach"}
               />
             ) : (
               <>
