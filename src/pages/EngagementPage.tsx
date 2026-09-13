@@ -19,6 +19,7 @@ import { useMakePrivate } from "@/hooks/use-make-private";
 import { OneOnOneBrief } from "@/components/oneonone/OneOnOneBrief";
 import { CaptureCoverage } from "@/components/common/CaptureCoverage";
 import { EngagementCanvas, type CanvasTask } from "@/components/engagements/EngagementCanvas";
+import { WorkLedger } from "@/components/engagements/WorkLedger";
 import { ConnectToWorkSheet } from "@/components/engagements/ConnectToWorkSheet";
 import { WhatFedThisButton } from "@/components/engagements/WhatFedThisButton";
 import { CanvasDeliverableActions } from "@/components/engagements/CanvasDeliverableActions";
@@ -164,6 +165,38 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
   );
   const mappedItemCount = canvasItems.length;
   const deliverables = canvasItems.filter((item) => isDeliverableType(item.type));
+
+  const headerAction = profile ? (
+    <div className="flex flex-wrap items-center gap-2">
+      {profile.role !== "coach" ? (
+        <WhatFedThisButton
+          items={canvasItems}
+          orgId={profile.org_id}
+          profileId={profile.id}
+        />
+      ) : null}
+      <CanvasDeliverableActions
+        items={canvasItems}
+        engagementId={engagementId}
+        profile={profile}
+      />
+      {profile.role !== "coach" && membership.data?.isMember ? (
+        <ConnectToWorkSheet
+          engagementId={engagementId}
+          streams={(tasksQuery.data ?? []).map((task) => ({
+            id: task.id,
+            name: task.name,
+          }))}
+          profile={{ id: profile.id, org_id: profile.org_id }}
+          onChanged={async () => {
+            await queryClient.invalidateQueries({
+              queryKey: ["engagement-tasks", engagementId],
+            });
+          }}
+        />
+      ) : null}
+    </div>
+  ) : null;
 
   if (engagementQuery.isLoading) {
     return <p className="text-sm text-muted-foreground">Loading…</p>;
@@ -353,53 +386,33 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
       <div className="nb-bench-grid" data-rail={askOpen ? "open" : "closed"}>
         <div>
           {view === "work" ? (
-            <EngagementCanvas
-              engagementId={engagementId}
-              tasks={tasksQuery.data ?? []}
-              profile={profile}
-              onChanged={async () => {
-                await queryClient.invalidateQueries({
-                  queryKey: ["engagement-tasks", engagementId],
-                });
-              }}
-              onOpen={(item) => {
-                markOpenStart("peek.open");
-                setPeekItem(item);
-              }}
-              headerAction={
-                profile ? (
-                  <div className="flex flex-wrap items-center gap-2">
-                    {profile.role !== "coach" ? (
-                      <WhatFedThisButton
-                        items={canvasItems}
-                        orgId={profile.org_id}
-                        profileId={profile.id}
-                      />
-                    ) : null}
-                    <CanvasDeliverableActions
-                      items={canvasItems}
-                      engagementId={engagementId}
-                      profile={profile}
-                    />
-                    {profile.role !== "coach" && membership.data?.isMember ? (
-                      <ConnectToWorkSheet
-                        engagementId={engagementId}
-                        streams={(tasksQuery.data ?? []).map((task) => ({
-                          id: task.id,
-                          name: task.name,
-                        }))}
-                        profile={{ id: profile.id, org_id: profile.org_id }}
-                        onChanged={async () => {
-                          await queryClient.invalidateQueries({
-                            queryKey: ["engagement-tasks", engagementId],
-                          });
-                        }}
-                      />
-                    ) : null}
-                  </div>
-                ) : null
-              }
-            />
+            scopedTask ? (
+              <WorkLedger
+                task={scopedTask}
+                profile={profile}
+                onOpen={(item) => {
+                  markOpenStart("peek.open");
+                  setPeekItem(item);
+                }}
+                headerAction={headerAction}
+              />
+            ) : (
+              <EngagementCanvas
+                engagementId={engagementId}
+                tasks={tasksQuery.data ?? []}
+                profile={profile}
+                onChanged={async () => {
+                  await queryClient.invalidateQueries({
+                    queryKey: ["engagement-tasks", engagementId],
+                  });
+                }}
+                onOpen={(item) => {
+                  markOpenStart("peek.open");
+                  setPeekItem(item);
+                }}
+                headerAction={headerAction}
+              />
+            )
           ) : (
             <div className="rounded-lg border border-graphite bg-card p-6">
               <h2 className="micro-label micro-label-section">

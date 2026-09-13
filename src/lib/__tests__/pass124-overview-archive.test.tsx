@@ -62,6 +62,8 @@ vi.mock("@tanstack/react-router", () => ({
     </a>
   ),
   useNavigate: () => vi.fn(),
+  useMatchRoute: () => () => false,
+  useSearch: () => ({}),
 }));
 
 function row(over: Partial<DeliverableCardRow> & { id: string }): DeliverableCardRow {
