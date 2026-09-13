@@ -72,20 +72,22 @@ export function WorkLedger({
             const format = resolveFileFormat(item);
             const formatLabel = FORMAT_LABELS[format];
             return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => onOpen(item)}
-                className="w-full rounded-lg border border-graphite bg-card p-5 text-left transition-colors hover:border-accent/40"
-              >
-                <h3 className="text-base font-medium leading-snug text-foreground">
-                  {item.title}
-                </h3>
-                <p className="micro-label mt-2">
-                  {workIdentityLabel(item)}
-                  {format !== "other" && formatLabel ? ` · ${formatLabel.toUpperCase()}` : ""}
-                </p>
-              </button>
+              <div key={item.id}>
+                <button
+                  type="button"
+                  onClick={() => onOpen(item)}
+                  className="w-full rounded-lg border border-graphite bg-card p-5 text-left transition-colors hover:border-accent/40"
+                >
+                  <h3 className="text-base font-medium leading-snug text-foreground">
+                    {item.title}
+                  </h3>
+                  <p className="micro-label mt-2">
+                    {workIdentityLabel(item)}
+                    {format !== "other" && formatLabel ? ` · ${formatLabel.toUpperCase()}` : ""}
+                  </p>
+                </button>
+                <PendingSuggestions item={item} />
+              </div>
             );
           })
         )}
