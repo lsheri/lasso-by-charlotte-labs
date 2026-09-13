@@ -10,6 +10,7 @@ import {
   siNotion,
 } from "simple-icons";
 
+import { BrandLogo, brandForToolkit } from "@/components/connectors/BrandLogo";
 import { hashId } from "@/components/work/pile-scatter";
 import { useVendorVisible } from "@/hooks/use-vendor-display";
 import { vendorLabel } from "@/lib/conversation-shared";
@@ -43,14 +44,9 @@ const VENDOR_BRANDS: Record<string, Brand> = {
   "google drive": siGoogledrive,
 };
 
-/** Vendors with no simple-icons entry: they wear the lettermark fallback. */
+/** Only vendors neither simple-icons nor BrandLogo can draw. If a mark
+    exists anywhere in this codebase, it wins over letters. */
 const LETTERMARKS: Record<string, { letters: string; label: string }> = {
-  chatgpt: { letters: "GPT", label: "ChatGPT" },
-  openai: { letters: "GPT", label: "OpenAI" },
-  slack: { letters: "SL", label: "Slack" },
-  granola: { letters: "GR", label: "Granola" },
-  onedrive: { letters: "OD", label: "OneDrive" },
-  sharepoint: { letters: "SP", label: "SharePoint" },
   microsoft: { letters: "MS", label: "Microsoft" },
 };
 
