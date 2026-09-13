@@ -421,21 +421,47 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
                 headerAction={headerAction}
               />
             ) : (
-              <EngagementCanvas
-                engagementId={engagementId}
-                tasks={tasksQuery.data ?? []}
-                profile={profile}
-                onChanged={async () => {
-                  await queryClient.invalidateQueries({
-                    queryKey: ["engagement-tasks", engagementId],
-                  });
-                }}
-                onOpen={(item) => {
-                  markOpenStart("peek.open");
-                  setPeekItem(item);
-                }}
-                headerAction={headerAction}
-              />
+              <>
+                <EngagementCanvas
+                  engagementId={engagementId}
+                  tasks={boardTasks}
+                  profile={profile}
+                  onChanged={async () => {
+                    await queryClient.invalidateQueries({
+                      queryKey: ["engagement-tasks", engagementId],
+                    });
+                  }}
+                  onOpen={(item) => {
+                    markOpenStart("peek.open");
+                    setPeekItem(item);
+                  }}
+                  headerAction={headerAction}
+                />
+                {/* PASS 143 — the wrap-up, when there is one. An engagement
+                    without one is not incomplete, so nothing renders here. */}
+                {wrapTask ? (
+                  <Link
+                    to="/engagements/$id"
+                    params={{ id: engagementId }}
+                    search={{ work: wrapTask.id }}
+                    className="mt-6 block rounded-lg border-[1.4px] p-5"
+                    style={{
+                      borderColor: "var(--nb-green)",
+                      background: "var(--nb-white)",
+                    }}
+                  >
+                    <p className="micro-label" style={{ color: "var(--nb-green)" }}>
+                      WRAPS UP THIS ENGAGEMENT
+                    </p>
+                    <p className="mt-1.5 text-base font-medium">{wrapTask.name}</p>
+                    <p className="micro-label mt-1.5">
+                      {wrapItemCount} {wrapItemCount === 1 ? "DELIVERABLE" : "DELIVERABLES"} · DRAWS
+                      ON {boardTasks.length}{" "}
+                      {boardTasks.length === 1 ? "PIECE OF WORK" : "PIECES OF WORK"}
+                    </p>
+                  </Link>
+                ) : null}
+              </>
             )
           ) : view === "brief" ? (
             <div className="space-y-4">
