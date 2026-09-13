@@ -166,6 +166,38 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
   const mappedItemCount = canvasItems.length;
   const deliverables = canvasItems.filter((item) => isDeliverableType(item.type));
 
+  const headerAction = profile ? (
+    <div className="flex flex-wrap items-center gap-2">
+      {profile.role !== "coach" ? (
+        <WhatFedThisButton
+          items={canvasItems}
+          orgId={profile.org_id}
+          profileId={profile.id}
+        />
+      ) : null}
+      <CanvasDeliverableActions
+        items={canvasItems}
+        engagementId={engagementId}
+        profile={profile}
+      />
+      {profile.role !== "coach" && membership.data?.isMember ? (
+        <ConnectToWorkSheet
+          engagementId={engagementId}
+          streams={(tasksQuery.data ?? []).map((task) => ({
+            id: task.id,
+            name: task.name,
+          }))}
+          profile={{ id: profile.id, org_id: profile.org_id }}
+          onChanged={async () => {
+            await queryClient.invalidateQueries({
+              queryKey: ["engagement-tasks", engagementId],
+            });
+          }}
+        />
+      ) : null}
+    </div>
+  ) : null;
+
   if (engagementQuery.isLoading) {
     return <p className="text-sm text-muted-foreground">Loading…</p>;
   }
