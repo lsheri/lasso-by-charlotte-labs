@@ -419,17 +419,27 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
                   defaultExpanded
                 />
               ) : null}
-              <div className="rounded-lg border border-graphite bg-card p-5">
-                <p className="micro-label">WHAT IS NOT HERE YET</p>
-                <p className="mt-2 text-[13px] text-muted-foreground">
-                  No calls or transcripts have been brought into this engagement. When they are,
-                  what was asked for and what is still unanswered can be read from them.
-                </p>
-                <p className="mt-2 text-[13px] text-muted-foreground">
-                  Nothing in this engagement has been marked as the brief. Marking a document or a
-                  thread as the brief puts it here alongside the written one.
-                </p>
-              </div>
+              {(() => {
+                const showCallsLine = !hasCalls;
+                const showBriefLine = true;
+                return showCallsLine || showBriefLine ? (
+                  <div className="rounded-lg border border-graphite bg-card p-5">
+                    <p className="micro-label">WHAT IS NOT HERE YET</p>
+                    {showCallsLine ? (
+                      <p className="mt-2 text-[13px] text-muted-foreground">
+                        No calls or transcripts have been brought into this engagement. When they are,
+                        what was asked for and what is still unanswered can be read from them.
+                      </p>
+                    ) : null}
+                    {showBriefLine ? (
+                      <p className="mt-2 text-[13px] text-muted-foreground">
+                        A document or a thread marked as the brief appears here alongside the written one.
+                      </p>
+                    ) : null}
+                  </div>
+                ) : null;
+              })()}
+
             </div>
           ) : (
             <div className="rounded-lg border border-graphite bg-card p-6">
