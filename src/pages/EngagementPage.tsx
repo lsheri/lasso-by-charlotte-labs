@@ -190,6 +190,8 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
   );
   const mappedItemCount = canvasItems.length;
   const deliverables = canvasItems.filter((item) => isDeliverableType(item.type));
+  const isCoach = profile?.role === "coach";
+  const verifyPresets = presetsForScope("deliverable", isCoach);
   const hasCalls = canvasItems.some((item) => item.type === "call");
 
   // PASS 143 — a wrap-up is an ordinary task carrying is_wrap. It never renders
