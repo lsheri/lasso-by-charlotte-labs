@@ -3,7 +3,7 @@ import { CircleDashed, Lock } from "lucide-react";
 import { EngagementChip, TypeBadge, TypeIcon } from "@/components/work/TypeIcon";
 import { ArtifactNote, SourceMark, VendorMark } from "@/components/work/SourceMark";
 import { stampDate } from "@/components/work/card-stamp";
-import { notePaper, noteHue } from "@/components/work/note-paper";
+import { colourKey, notePaper, noteHue } from "@/components/work/note-paper";
 import { useNoteLive } from "@/hooks/use-note-live";
 import { UNREAD_MARKER_LINE, contentsUnread, textStatusReason } from "@/lib/text-status";
 import { engagementHue, workIdentityLabel } from "@/lib/work-identity";
