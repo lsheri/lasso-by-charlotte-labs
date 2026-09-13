@@ -82,7 +82,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
   // Collapsed on arrival: expanded it pushed the view switcher 700px down the
   // page, below the fold on a 13-inch screen.
   const [stripExpanded, setStripExpanded] = useState(false);
-  const [view, setView] = useState<"brief" | "work" | "trace" | "share">("work");
+  const [view, setView] = useState<"brief" | "work" | "verify" | "share">("work");
   const [creatingWrap, setCreatingWrap] = useState(false);
   const previousWorkRef = useRef(work);
 
