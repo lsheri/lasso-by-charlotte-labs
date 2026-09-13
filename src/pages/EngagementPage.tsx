@@ -5,7 +5,11 @@ import { useEffect, useRef, useState } from "react";
 import { GraphiteRule } from "@/components/notebook/marks";
 import { SpiderMark } from "@/components/notebook/SpiderMark";
 import { PeekPanel } from "@/components/peek/PeekPanel";
-import type { PeekAnalysisPreset } from "@/components/peek/PeekActionBar";
+import {
+  analysisPreset,
+  presetsForScope,
+  type AnalysisPresetId,
+} from "@/lib/analysis-presets";
 import { MapDialog } from "@/components/work/MapDialog";
 import { WorkDateDialog } from "@/components/work/WorkDateDialog";
 import { AnalysisLens } from "@/components/reflect/AnalysisLens";
@@ -41,6 +45,7 @@ import { useMyEngagementMembership } from "@/hooks/use-engagement-membership";
 import { useEngagementPage, useEngagementSlice } from "@/hooks/use-engagement-page";
 import { useEngagementCoaches } from "@/hooks/use-coach-share";
 import { clientDisplayName, engagementDisplayCode, engagementDisplayTitle } from "@/lib/clients";
+import { workIdentityLabel } from "@/lib/work-identity";
 import { cn } from "@/lib/utils";
 import { INVITE_ADMIN_ONLY_LINE } from "@/lib/invites-shared";
 import { markOpenStart } from "@/lib/perf-timing";
@@ -50,6 +55,21 @@ import type { WorkItemRow } from "@/lib/work-types";
 
 type TaskWithWork = CanvasTask;
 const engagementRoute = getRouteApi("/_authenticated/engagements/$id");
+
+const VERIFY_LAUNCHERS: { id: AnalysisPresetId; purpose: string }[] = [
+  {
+    id: "verification",
+    purpose: "Claims that rest on the model's word, and a way to check each one.",
+  },
+  {
+    id: "decision_origin",
+    purpose: "Where a decision entered the record and what it turned on.",
+  },
+  {
+    id: "firm_checks",
+    purpose: "Your firm's own written checks, run against this piece of work.",
+  },
+];
 
 export function EngagementPage({ engagementId }: { engagementId: string }) {
   const { work } = engagementRoute.useSearch();
@@ -64,7 +84,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
   const [mapItem, setMapItem] = useState<WorkItemRow | null>(null);
   const [dateItem, setDateItem] = useState<WorkItemRow | null>(null);
   const [lensItem, setLensItem] = useState<WorkItemRow | null>(null);
-  const [lensPreset, setLensPreset] = useState<PeekAnalysisPreset | undefined>(undefined);
+  const [lensPreset, setLensPreset] = useState<AnalysisPresetId | undefined>(undefined);
   // A thread analysis launched from the peek: confirm, then the reader itself.
   const [launch, setLaunch] = useState<{ item: WorkItemRow; preset: ThreadReaderPreset } | null>(
     null,
@@ -78,7 +98,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
   // Collapsed on arrival: expanded it pushed the view switcher 700px down the
   // page, below the fold on a 13-inch screen.
   const [stripExpanded, setStripExpanded] = useState(false);
-  const [view, setView] = useState<"brief" | "work" | "trace" | "share">("work");
+  const [view, setView] = useState<"brief" | "work" | "verify" | "share">("work");
   const [creatingWrap, setCreatingWrap] = useState(false);
   const previousWorkRef = useRef(work);
 
@@ -93,7 +113,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
     }
   };
 
-  const setEngagementView = (next: "brief" | "work" | "trace" | "share") => {
+  const setEngagementView = (next: "brief" | "work" | "verify" | "share") => {
     if (next === view) return;
     setView(next);
     if (profile) {
@@ -170,6 +190,8 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
   );
   const mappedItemCount = canvasItems.length;
   const deliverables = canvasItems.filter((item) => isDeliverableType(item.type));
+  const isCoach = profile?.role === "coach";
+  const verifyPresets = presetsForScope("deliverable", isCoach);
   const hasCalls = canvasItems.some((item) => item.type === "call");
 
   // PASS 143 — a wrap-up is an ordinary task carrying is_wrap. It never renders
@@ -387,21 +409,21 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
           </button>
           <button
             type="button"
-            aria-pressed={view === "trace"}
-            onClick={() => setEngagementView("trace")}
+            aria-pressed={view === "verify"}
+            onClick={() => setEngagementView("verify")}
             className={cn(
               "group relative flex flex-col items-start gap-0.5 px-4 pb-2 pt-1 transition-colors",
-              view === "trace" ? "text-foreground" : "text-muted-foreground hover:text-foreground",
+              view === "verify" ? "text-foreground" : "text-muted-foreground hover:text-foreground",
             )}
           >
-            <span className="micro-label">TRACE</span>
-            <span className="text-[11px] italic text-muted-foreground">how does this connect?</span>
+            <span className="micro-label">VERIFY</span>
+            <span className="text-[11px] italic text-muted-foreground">can I stand behind this?</span>
             <span
               className={cn(
                 "absolute bottom-[-1px] left-0 h-[2px] w-full transition-transform",
-                view === "trace" ? "scale-x-100" : "scale-x-0 bg-[var(--nb-pencil)] group-hover:scale-x-100",
+                view === "verify" ? "scale-x-100" : "scale-x-0 bg-[var(--nb-pencil)] group-hover:scale-x-100",
               )}
-              style={view === "trace" ? { background: "var(--nb-ink)" } : undefined}
+              style={view === "verify" ? { background: "var(--nb-ink)" } : undefined}
             />
           </button>
           <button
@@ -430,8 +452,8 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
           ? "What this engagement was asked to do, and what has been said about it."
           : view === "work"
             ? "Everything that exists here, and what fed what."
-            : view === "trace"
-              ? "How the pieces connect, and what is not connected yet."
+            : view === "verify"
+              ? "What still rests on the model's word, and what nobody has confirmed."
               : "Who can see this engagement, what they see, and what you have held back."}
       </p>
       <p className="micro-label mb-4">
@@ -545,13 +567,60 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
               })()}
 
             </div>
-          ) : view === "trace" ? (
-            <div className="rounded-lg border border-graphite bg-card p-6">
-              <h2 className="micro-label micro-label-section">How does this connect?</h2>
-              <p className="mt-2 text-[13px] text-muted-foreground">
-                The map of what fed what lands here next.
-              </p>
-            </div>
+          ) : view === "verify" ? (
+            <section className="space-y-3">
+              <h2 className="micro-label micro-label-section">
+                WHAT IS WORTH CHECKING BEFORE THIS GOES OUT
+              </h2>
+              {deliverables.length === 0 ? (
+                <div className="rounded-lg border border-graphite bg-card p-5">
+                  <p className="micro-label">NOTHING TO CHECK YET</p>
+                  <p className="mt-2 text-[13px] text-muted-foreground">
+                    When a deliverable is mapped to this engagement, what is worth checking lands
+                    here.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {deliverables.map((item) => {
+                    const launchers = VERIFY_LAUNCHERS.filter((launcher) =>
+                      verifyPresets.some((preset) => preset.id === launcher.id),
+                    );
+                    return (
+                      <div key={item.id} className="rounded-lg border border-graphite bg-card p-5">
+                        <h3 className="text-base font-medium">{item.title}</h3>
+                        <p className="micro-label mt-2">{workIdentityLabel(item)}</p>
+                        {launchers.length > 0 ? (
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {launchers.map((launcher) => {
+                              const preset = analysisPreset(launcher.id);
+                              return (
+                                <button
+                                  key={launcher.id}
+                                  type="button"
+                                  onClick={() => {
+                                    setLensItem(item);
+                                    setLensPreset(launcher.id);
+                                  }}
+                                  className="rounded-md border border-rule px-4 py-2 text-left transition-colors hover:border-accent/40"
+                                >
+                                  <span className="micro-label block">
+                                    {preset?.label.toUpperCase()}
+                                  </span>
+                                  <span className="mt-0.5 block text-[12px] text-muted-foreground">
+                                    {launcher.purpose}
+                                  </span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        ) : null}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </section>
           ) : profile && profile.role !== "coach" ? (
             <SharedWithSection
               engagementId={engagementId}
