@@ -97,7 +97,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
     }
   };
 
-  const setEngagementView = (next: "brief" | "work" | "trace" | "share") => {
+  const setEngagementView = (next: "brief" | "work" | "verify" | "share") => {
     if (next === view) return;
     setView(next);
     if (profile) {
