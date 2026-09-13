@@ -44,6 +44,7 @@ import { clientDisplayName, engagementDisplayCode, engagementDisplayTitle } from
 import { INVITE_ADMIN_ONLY_LINE } from "@/lib/invites-shared";
 import { markOpenStart } from "@/lib/perf-timing";
 import { logEvent } from "@/lib/telemetry";
+import { supabase } from "@/integrations/supabase/client";
 import type { WorkItemRow } from "@/lib/work-types";
 
 type TaskWithWork = CanvasTask;
@@ -75,6 +76,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
   // pass through the strip's render prop.
   const [stripExpanded, setStripExpanded] = useState(true);
   const [view, setView] = useState<"brief" | "work" | "trace">("work");
+  const [creatingWrap, setCreatingWrap] = useState(false);
   const previousWorkRef = useRef(work);
 
   const setAskRailOpen = (open: boolean) => {
@@ -167,7 +169,35 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
   const deliverables = canvasItems.filter((item) => isDeliverableType(item.type));
   const hasCalls = canvasItems.some((item) => item.type === "call");
 
+  // PASS 143 — a wrap-up is an ordinary task carrying is_wrap. It never renders
+  // as a board column: it reads below the board as the thing the rest fed.
+  const allTasks = tasksQuery.data ?? [];
+  const wrapTask = allTasks.find((task) => task.is_wrap === true);
+  const boardTasks = allTasks.filter((task) => task.is_wrap !== true);
+  const wrapItemCount = wrapTask
+    ? new Set(
+        (wrapTask.work_item_tasks ?? [])
+          .map((link) => link.work_items?.id)
+          .filter((id): id is string => Boolean(id)),
+      ).size
+    : 0;
 
+  async function addWrap() {
+    if (!profile || wrapTask || creatingWrap) return;
+    setCreatingWrap(true);
+    const position = allTasks.length + 1;
+    const { error } = await supabase.from("tasks").insert({
+      engagement_id: engagementId,
+      owner_id: profile.id,
+      name: "Wrap-up",
+      is_wrap: true,
+      position,
+    });
+    setCreatingWrap(false);
+    if (error) return;
+    logEvent("engagement.wrap_created", profile.org_id, { task_count: boardTasks.length });
+    await queryClient.invalidateQueries({ queryKey: ["engagement-tasks", engagementId] });
+  }
 
   const headerAction = profile ? (
     <div className="flex flex-wrap items-center gap-2">
@@ -177,6 +207,11 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
           orgId={profile.org_id}
           profileId={profile.id}
         />
+      ) : null}
+      {profile.role !== "coach" && !wrapTask && membership.data?.isMember ? (
+        <button type="button" className="nb-hi" disabled={creatingWrap} onClick={() => void addWrap()}>
+          Add a wrap-up
+        </button>
       ) : null}
       <CanvasDeliverableActions
         items={canvasItems}
