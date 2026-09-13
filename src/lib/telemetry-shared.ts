@@ -61,6 +61,8 @@ export type TelemetryEvent =
   | "engagement.view_changed"
   /** A person changed what the three views are about. */
   | "engagement.scope_changed"
+  /** A person closed an engagement with a wrap-up deliverable. */
+  | "engagement.wrap_created"
   | "task.updated"
   | "feedback.submitted"
   | "reflect.session_created"
