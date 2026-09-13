@@ -148,7 +148,7 @@ export function SourceMark({
    * which circle a tool wears is stable per vendor so the page is not a grid
    * of identical outlines.
    */
-  const withDisc = (mark: React.ReactNode): React.ReactNode => {
+  const withDisc = (mark: ReactNode): ReactNode => {
     if (!disc) return mark;
     const box = size + 9;
     const path = DISC_PATHS[hashId(key) % DISC_PATHS.length]!;
