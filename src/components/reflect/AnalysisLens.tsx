@@ -21,6 +21,7 @@ import {
   minItemsFor,
   notEnoughWorkLine,
   NO_FIRM_CHECKS_LINE,
+  analysisPreset,
   presetsForScope,
   type AnalysisPreset,
   type AnalysisPresetId,
@@ -43,6 +44,15 @@ export type AnalysisTargetProp =
   | { kind: "item"; id: string; title: string; scope: "thread" | "deliverable" }
   | { kind: "engagement"; id: string; title: string; itemCount: number };
 
+export type AnalysisLensPanelProps = {
+  target: AnalysisTargetProp;
+  profileId: string;
+  orgId: string;
+  initialPreset?: AnalysisPresetId;
+  /** A coach sees only the analyses a coach may run, and never Reflect. */
+  isCoach?: boolean;
+};
+
 /**
  * Analyses over one conversation. The buttons are the product: each one opens
  * a new scoped Ask Lasso session and runs its preset. Owner only, never scored.
@@ -55,16 +65,37 @@ export function AnalysisLens({
   orgId,
   initialPreset,
   isCoach = false,
-}: {
+}: AnalysisLensPanelProps & {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  target: AnalysisTargetProp;
-  profileId: string;
-  orgId: string;
-  initialPreset?: AnalysisPresetId;
-  /** A coach sees only the analyses a coach may run, and never Reflect. */
-  isCoach?: boolean;
 }) {
+  return (
+    <SlideOver
+      open={open}
+      onOpenChange={onOpenChange}
+      title={(initialPreset ? analysisPreset(initialPreset)?.label : undefined) ?? "Analyse this work"}
+      description="Observations over your own work"
+    >
+      {open ? (
+        <AnalysisLensPanel
+          target={target}
+          profileId={profileId}
+          orgId={orgId}
+          {...(initialPreset ? { initialPreset } : {})}
+          isCoach={isCoach}
+        />
+      ) : null}
+    </SlideOver>
+  );
+}
+
+export function AnalysisLensPanel({
+  target,
+  profileId,
+  orgId,
+  initialPreset,
+  isCoach = false,
+}: AnalysisLensPanelProps) {
 
   const queryClient = useQueryClient();
   const send = useServerFn(sendReflectMessage);
@@ -204,14 +235,14 @@ export function AnalysisLens({
   // One confirm step per opening when a preset was chosen from the row it
   // opened from. Nothing runs until the person confirms.
   useEffect(() => {
-    if (!open || started.current || !initialPreset) return;
+    if (started.current || !initialPreset) return;
     const preset = presets.find((p) => p.id === initialPreset);
     if (preset) {
       started.current = preset.id;
       setConfirming({ preset, target });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
+  }, []);
 
   async function submit() {
     const message = draft.trim();
@@ -253,8 +284,8 @@ export function AnalysisLens({
             turnCount === 1 ? "" : "s"
           }, read in full`;
 
-  const body = (
-    <>
+  return (
+    <div className="flex min-h-0 flex-1 flex-col">
 
       <AnalysisConfirm
         request={confirming}
@@ -431,18 +462,6 @@ export function AnalysisLens({
           </Link>
         )}
       </footer>
-    </>
+    </div>
   );
-
-  return (
-    <SlideOver
-      open={open}
-      onOpenChange={onOpenChange}
-      title={active ? active.label : "Analyse this work"}
-      description="Observations over your own work"
-    >
-      {body}
-    </SlideOver>
-  );
-
 }
