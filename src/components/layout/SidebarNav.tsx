@@ -97,6 +97,7 @@ function EngagementRow({
       <Link
         to="/engagements/$id"
         params={{ id: engagement.id }}
+        search={{ work: undefined }}
         onClick={onNavigate}
         className={nested ? `${linkClass} nb-nav-item-nested` : linkClass}
         activeProps={activeProps}
