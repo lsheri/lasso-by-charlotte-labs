@@ -25,7 +25,7 @@ import { CaptureCoverage } from "@/components/common/CaptureCoverage";
 import { EngagementCanvas, type CanvasTask } from "@/components/engagements/EngagementCanvas";
 import { WorkLedger } from "@/components/engagements/WorkLedger";
 import { ConnectToWorkSheet } from "@/components/engagements/ConnectToWorkSheet";
-import { WhatFedThisButton } from "@/components/engagements/WhatFedThisButton";
+
 import { CanvasDeliverableActions } from "@/components/engagements/CanvasDeliverableActions";
 import { EngagementBriefPanel } from "@/components/engagements/EngagementBriefPanel";
 import { EngagementStrip } from "@/components/engagements/EngagementStrip";
@@ -191,7 +191,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
   const mappedItemCount = canvasItems.length;
   const deliverables = canvasItems.filter((item) => isDeliverableType(item.type));
   const isCoach = profile?.role === "coach";
-  const verifyPresets = presetsForScope("deliverable", isCoach);
+  const deliverablePresets = presetsForScope("deliverable", isCoach);
   const hasCalls = canvasItems.some((item) => item.type === "call");
 
   // PASS 143 — a wrap-up is an ordinary task carrying is_wrap. It never renders
@@ -226,13 +226,6 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
 
   const headerAction = profile ? (
     <div className="flex flex-wrap items-center gap-2">
-      {profile.role !== "coach" ? (
-        <WhatFedThisButton
-          items={canvasItems}
-          orgId={profile.org_id}
-          profileId={profile.id}
-        />
-      ) : null}
       {profile.role !== "coach" && !wrapTask && membership.data?.isMember ? (
         <button type="button" className="nb-hi" disabled={creatingWrap} onClick={() => void addWrap()}>
           Add a wrap-up
@@ -484,6 +477,8 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
                   setPeekItem(item);
                 }}
                 headerAction={headerAction}
+                orgId={profile?.org_id}
+                profileId={profile?.id}
               />
             ) : (
               <>
@@ -545,6 +540,36 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
                   defaultExpanded
                 />
               ) : null}
+              {deliverables.length > 0 &&
+              deliverablePresets.some((preset) => preset.id === "still_on_brief") ? (
+                <section>
+                  <h2 className="micro-label micro-label-section">DID THE WORK STAY ON BRIEF</h2>
+                  <p className="mt-1 max-w-4xl text-[13px] text-muted-foreground">
+                    Reads a deliverable against this brief and names what was added, dropped, changed
+                    or reframed.
+                  </p>
+                  <div className="mt-3 space-y-2">
+                    {deliverables.map((item) => (
+                      <div
+                        key={item.id}
+                        className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-rule px-4 py-3"
+                      >
+                        <span className="min-w-0 text-sm text-foreground">{item.title}</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setLensItem(item);
+                            setLensPreset("still_on_brief");
+                          }}
+                          className="micro-label shrink-0 rounded-md border border-rule px-3 py-1.5 transition-colors hover:border-accent/40"
+                        >
+                          READ IT AGAINST THE BRIEF
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              ) : null}
               {(() => {
                 const showCallsLine = !hasCalls;
                 const showBriefLine = true;
@@ -584,7 +609,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
                 <div className="space-y-3">
                   {deliverables.map((item) => {
                     const launchers = VERIFY_LAUNCHERS.filter((launcher) =>
-                      verifyPresets.some((preset) => preset.id === launcher.id),
+                      deliverablePresets.some((preset) => preset.id === launcher.id),
                     );
                     return (
                       <div key={item.id} className="rounded-lg border border-graphite bg-card p-5">
