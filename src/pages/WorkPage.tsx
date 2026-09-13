@@ -701,10 +701,10 @@ export function WorkPage() {
             page. Eight swatches when four clients are on screen would be a lie
             about the data, so this reads the same set the chips below do. */}
           {legendEngagements.length > 0 ? (
-            <div className="flex max-w-[380px] items-start gap-3">
+            <div className="flex max-w-[380px] items-start gap-4">
               {/* The spider is the legend's keeper: it sits beside the colour
                 chips as if it were holding them. */}
-              <NotebookSpider size={44} className="shrink-0" aria-hidden="true" />
+              <NotebookSpider size={72} reading className="shrink-0" aria-hidden="true" />
               <div>
                 <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-soft">
                   WHAT THE COLOURS MEAN
@@ -741,7 +741,7 @@ export function WorkPage() {
 
       {all.length > 0 ? (
         <p className="font-hand mb-4 text-[16px] text-green">
-          the pile is how it arrives, the columns are what it means
+          the columns are what it is. the colours are who it is for.
         </p>
       ) : null}
 

@@ -22,14 +22,14 @@ function item(id: string, type: WorkItemRow["type"], title: string): WorkItemRow
 }
 
 describe("pass 85 type matrix", () => {
-  // Updated for Figma 22:220, which names the four columns and files a deck
-  // under Documents while giving spreadsheets a column of their own.
+  // Reordered 13 Sep 2026: AI conversations leads because that is where the
+  // work starts now; documents, models & sheets, then call transcripts follow.
   it("has exactly four buckets, each with a letter", () => {
     expect(BUCKETS.map((b) => b.label)).toEqual([
+      "AI conversations",
       "Documents",
       "Models & sheets",
       "Call transcripts",
-      "AI conversations",
     ]);
     for (const bucket of BUCKETS) expect(bucket.letter).toHaveLength(1);
   });
