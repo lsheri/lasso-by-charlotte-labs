@@ -73,7 +73,7 @@ export function AnalysisLens({
     <SlideOver
       open={open}
       onOpenChange={onOpenChange}
-      title={analysisPreset(initialPreset)?.label ?? "Analyse this work"}
+      title={(initialPreset ? analysisPreset(initialPreset)?.label : undefined) ?? "Analyse this work"}
       description="Observations over your own work"
     >
       {open ? (

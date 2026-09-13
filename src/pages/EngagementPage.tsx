@@ -682,7 +682,8 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
             <div className="mb-2 flex items-center justify-between border-b border-rule pb-2 max-[1099px]:hidden">
               <p className="micro-label">
                 {lensItem
-                  ? analysisPreset(lensPreset)?.label ?? "Analyse this work"
+                  ? (lensPreset ? analysisPreset(lensPreset)?.label : undefined) ??
+                    "Analyse this work"
                   : "ASK LASSO"}
               </p>
               <div className="flex items-center gap-1">
