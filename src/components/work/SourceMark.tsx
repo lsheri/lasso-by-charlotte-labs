@@ -142,24 +142,14 @@ export function SourceMark({
   const letters = LETTERMARKS[key];
   const label = brand?.title ?? letters?.label ?? vendorLabel(key);
 
-  if (brand) {
-    const mark = (
-      <svg
-        role="img"
-        aria-label={label}
-        viewBox="0 0 24 24"
-        width={size}
-        height={size}
-        className={disc ? "relative block" : `inline-block shrink-0 align-[-0.12em] ${className}`}
-      >
-        <title>{label}</title>
-        <path d={brand.path} fill={`#${brand.hex}`} />
-      </svg>
-    );
+  /**
+   * The disc wrapper, shared by both brand paths. Four hands, not one stamp:
+   * which circle a tool wears is stable per vendor so the page is not a grid
+   * of identical outlines.
+   */
+  const withDisc = (mark: React.ReactNode): React.ReactNode => {
     if (!disc) return mark;
     const box = size + 9;
-    // Four hands, not one stamp: which circle a tool wears is stable per vendor
-    // so the page is not a grid of identical outlines.
     const path = DISC_PATHS[hashId(key) % DISC_PATHS.length]!;
     return (
       <span
@@ -183,6 +173,30 @@ export function SourceMark({
         {mark}
       </span>
     );
+  };
+
+  if (brand) {
+    return withDisc(
+      <svg
+        role="img"
+        aria-label={label}
+        viewBox="0 0 24 24"
+        width={size}
+        height={size}
+        className={disc ? "relative block" : `inline-block shrink-0 align-[-0.12em] ${className}`}
+      >
+        <title>{label}</title>
+        <path d={brand.path} fill={`#${brand.hex}`} />
+      </svg>,
+    );
+  }
+
+  // No simple-icons mark: BrandLogo draws ChatGPT, Slack, Granola, OneDrive,
+  // SharePoint and friends by hand, and a real mark always beats letters. The
+  // mapping lives in BrandLogo alone; "unknown" means letters below.
+  const logoKey = brandForToolkit(key);
+  if (logoKey !== "unknown") {
+    return withDisc(<BrandLogo brand={logoKey} size={size} className={disc ? "" : className} />);
   }
 
   if (!letters) return null;
