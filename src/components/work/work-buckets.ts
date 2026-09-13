@@ -1,14 +1,17 @@
 import type { WorkType } from "@/lib/work-types";
 
 /**
- * Figma 22:220 gives the pile four columns and only four: DOCUMENTS,
- * MODELS & SHEETS, CALL TRANSCRIPTS, AI CONVERSATIONS.
+ * Four columns and only four. AI conversations leads, because that is where
+ * the work starts now and it is the column a person scans first; documents,
+ * models and sheets, then call transcripts follow. This order is a founder
+ * decision of 13 Sep 2026 and deliberately departs from Figma 22:220, which
+ * led with DOCUMENTS.
  *
  * Two things changed from the earlier matrix to match the frame. A spreadsheet
  * now gets its own column instead of folding into Documents, because a model is
  * a different kind of artifact from a memo and the frame treats it that way. A
  * deck folds INTO Documents, because the frame files "Diligence readout v3.pptx"
- * there rather than giving presentations a column of their own.
+ * there rather than giving presentations a column of its own.
  *
  * Types with no column of their own (mail, messages, images) still fold into
  * Documents: the grouping coarsens, the row does not, because every row keeps
@@ -35,6 +38,13 @@ export type Bucket = {
  */
 export const BUCKETS: Bucket[] = [
   {
+    key: "llm",
+    label: "AI conversations",
+    letter: "A",
+    color: "var(--nb-mid)",
+    textColor: "var(--nb-mid)",
+  },
+  {
     key: "documents",
     label: "Documents",
     letter: "D",
@@ -52,13 +62,6 @@ export const BUCKETS: Bucket[] = [
     key: "calls",
     label: "Call transcripts",
     letter: "C",
-    color: "var(--nb-mid)",
-    textColor: "var(--nb-mid)",
-  },
-  {
-    key: "llm",
-    label: "AI conversations",
-    letter: "A",
     color: "var(--nb-mid)",
     textColor: "var(--nb-mid)",
   },
