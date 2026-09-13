@@ -20,7 +20,8 @@ import { ConnectorBrowseActions } from "@/components/connectors/ConnectorBrowseA
 import { WatchSuggestionBanner } from "@/components/connectors/WatchSuggestionBanner";
 import { SuggestLegend } from "@/components/common/Suggested";
 import { SuggestionChip } from "@/components/work/SuggestionChip";
-import { noteHue, notePaper } from "@/components/work/note-paper";
+import { colourKey, noteHue, notePaper } from "@/components/work/note-paper";
+import { vocabFor } from "@/lib/edu-vocab";
 import { PeekPanel, type PeekEntry } from "@/components/peek/PeekPanel";
 import type { PeekAnalysisPreset } from "@/components/peek/PeekActionBar";
 import { UploadFilesButton } from "@/components/work/UploadFilesButton";
@@ -72,6 +73,7 @@ import { BUCKETS, bucketFor } from "@/components/work/work-buckets";
 
 export function WorkPage() {
   const { data: profile } = useProfile();
+  const vocab = vocabFor(profile);
   const { data, isLoading, error } = useWorkItems();
   const queryClient = useQueryClient();
   const runSuggest = useServerFn(suggestMappings);
