@@ -48,11 +48,17 @@ function profile(role: string, orgType: "company" | "personal") {
   return { id: "p1", role, org_type: orgType, display_name: "Test" };
 }
 
+const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+
 function setup(role: string, orgType: "company" | "personal") {
   mocks.profile = profile(role, orgType);
   mocks.engagements = [];
   mocks.decisions = [];
-  return render(<SidebarNav />);
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <SidebarNav />
+    </QueryClientProvider>,
+  );
 }
 
 afterEach(() => {
