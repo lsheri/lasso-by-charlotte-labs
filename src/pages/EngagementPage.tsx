@@ -75,7 +75,9 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
   // The right rail was chosen over Figma 36:1936 on 12 Sep 2026; the frame has
   // not yet been updated. The page holds the shared open state that used to
   // pass through the strip's render prop.
-  const [stripExpanded, setStripExpanded] = useState(true);
+  // Collapsed on arrival: expanded it pushed the view switcher 700px down the
+  // page, below the fold on a 13-inch screen.
+  const [stripExpanded, setStripExpanded] = useState(false);
   const [view, setView] = useState<"brief" | "work" | "trace">("work");
   const [creatingWrap, setCreatingWrap] = useState(false);
   const previousWorkRef = useRef(work);
