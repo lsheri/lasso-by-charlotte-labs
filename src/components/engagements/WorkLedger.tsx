@@ -97,7 +97,9 @@ export function WorkLedger({
                       {format !== "other" && formatLabel ? ` · ${formatLabel.toUpperCase()}` : ""}
                     </p>
                   </button>
-                  <WhatFedThisButton items={[item]} orgId={orgId} profileId={profileId} />
+                  {!isCoach ? (
+                    <WhatFedThisButton items={[item]} orgId={orgId} profileId={profileId} />
+                  ) : null}
                 </div>
                 <PendingSuggestions item={item} />
               </div>
