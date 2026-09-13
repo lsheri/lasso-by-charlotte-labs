@@ -31,9 +31,9 @@ describe("pass 139: the page is named Past work", () => {
     // as the title printed the word twice.
     expect(page).toContain('<PageHeader title="Past" italicWord="work"');
     expect(page).toContain("subtitle={subtitle}");
-    // The ask facility has its own micro-label heading inside the card; the
+    // The ask facility has its own small uppercase heading inside the card; the
     // shared page header is still the only h1 on the route.
-    expect(page).toContain('<h2 className="micro-label">ASK PAST WORK</h2>');
+    expect(page).toContain(">ASK PAST WORK</h2>");
     // Nav is now ordered by the weekly loop rather than by object type.
     expect(PAST_WORK_GROUP_LABEL).toBe("What you learned");
     expect(PAST_WORK_NAV_LABEL).toBe("Past work");

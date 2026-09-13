@@ -66,7 +66,9 @@ export function ArchivePage() {
       <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         <div className="min-w-0">
           <section className="rounded-lg border border-graphite bg-card p-5">
-            <h2 className="micro-label">ASK PAST WORK</h2>
+            <h2 className="font-mono text-[0.894rem] font-medium uppercase tracking-[0.12em] text-[var(--nb-mid)]">
+              ASK PAST WORK
+            </h2>
 
             <p className="mt-2 text-[13px] text-muted-foreground">
               Describe what you are working on and find shipped work like it.
