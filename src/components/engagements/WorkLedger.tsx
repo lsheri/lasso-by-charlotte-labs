@@ -127,3 +127,100 @@ export function WorkLedger({
     </section>
   );
 }
+
+/**
+ * Draft links awaiting a person's decision, surfaced where the deliverable
+ * already is. Confirmed links join the sources list; discarded ones never
+ * reappear. The write path is the same reviewLink the peek panel uses.
+ */
+function PendingSuggestions({ item }: { item: WorkItemRow }) {
+  const { data: profile } = useProfile();
+  const queryClient = useQueryClient();
+  const load = useServerFn(getDeliverableEvidence);
+  const review = useServerFn(reviewLink);
+
+  const evidenceQuery = useQuery({
+    queryKey: ["deliverable-evidence", item.id],
+    enabled: Boolean(profile),
+    queryFn: () => load({ data: { work_item_id: item.id, profile_id: profile?.id } }),
+  });
+
+  const drafts = useMemo(
+    () => (evidenceQuery.data?.links ?? []).filter((link) => link.status === "draft"),
+    [evidenceQuery.data],
+  );
+
+  const [pendingId, setPendingId] = useState<string | null>(null);
+  const mutation = useMutation({
+    mutationFn: ({ linkId, action }: { linkId: string; action: "confirmed" | "discarded" }) =>
+      review({
+        data: {
+          link_id: linkId,
+          action,
+          profile_id: profile?.id,
+          surface: "ledger",
+        },
+      }),
+    onMutate: ({ linkId }) => setPendingId(linkId),
+    onSettled: () => setPendingId(null),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["deliverable-evidence", item.id] });
+    },
+  });
+
+  if (drafts.length === 0) return null;
+
+  return (
+    <div className="mt-3">
+      <p className="micro-label">SUGGESTED, NOT YET CONFIRMED</p>
+      <p className="mt-1 text-[13px] text-muted-foreground">
+        Lasso thinks these fed this piece of work. Nothing is part of the record until you say so.
+      </p>
+      <ul className="mt-2 space-y-2">
+        {drafts.map((link) => (
+          <li
+            key={link.id}
+            className="flex items-center gap-3 rounded-md border border-rule px-4 py-3"
+          >
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-3">
+                <span className="min-w-0 flex-1 truncate text-sm text-foreground">
+                  {link.item.title}
+                </span>
+                <span className="micro-label shrink-0">
+                  {workIdentityLabel({
+                    type: link.item.type,
+                    source_meta: link.item.kind
+                      ? ({ kind: link.item.kind } as WorkItemRow["source_meta"])
+                      : undefined,
+                  })}
+                </span>
+              </div>
+              {link.rationale ? (
+                <p className="mt-1 text-[13px] text-muted-foreground">{link.rationale}</p>
+              ) : null}
+            </div>
+            <div className="flex shrink-0 items-center gap-2">
+              <button
+                type="button"
+                disabled={pendingId === link.id}
+                onClick={() => mutation.mutate({ linkId: link.id, action: "confirmed" })}
+                className="rounded-full border border-graphite px-3 py-1 text-[13px] text-foreground transition-colors hover:bg-card disabled:opacity-50"
+              >
+                This fed it
+              </button>
+              <button
+                type="button"
+                disabled={pendingId === link.id}
+                onClick={() => mutation.mutate({ linkId: link.id, action: "discarded" })}
+                className="rounded-full border border-rule px-3 py-1 text-[13px] text-muted-foreground transition-colors hover:border-graphite disabled:opacity-50"
+              >
+                It didn&apos;t
+              </button>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
