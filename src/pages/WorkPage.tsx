@@ -105,6 +105,21 @@ export function WorkPage() {
   const [showPrivate, setShowPrivate] = useState(true);
   // Presentation-only filter for the type columns. Local state, no query.
   const [columnFilter, setColumnFilter] = useState<string>("all");
+  // Which page each type column is on. Presentation-only local state, exactly
+  // like columnFilter above: no query behind it and nothing to record.
+  const [columnPages, setColumnPages] = useState<Record<BucketKey, number>>({
+    llm: 0,
+    documents: 0,
+    sheets: 0,
+    calls: 0,
+  });
+
+  // A filter or the private toggle changes what every column holds, so every
+  // page index returns to its first page rather than paging a set that no
+  // longer exists. The render below also clamps a stale index, belt and braces.
+  useEffect(() => {
+    setColumnPages({ llm: 0, documents: 0, sheets: 0, calls: 0 });
+  }, [columnFilter, showPrivate]);
   // Figma 22:220 rests with one control on the header: "Add work by hand". The
   // ways work gets in are all still here, they just wait behind it instead of
   // filling a bar under the title.
@@ -709,10 +724,19 @@ export function WorkPage() {
             page. Eight swatches when four clients are on screen would be a lie
             about the data, so this reads the same mapped rows the board does. */}
           {legendClients.length > 0 ? (
-            <div className="flex max-w-[380px] items-start gap-4">
-              {/* The spider is the legend's keeper: it sits beside the colour
-                chips as if it were holding them. */}
-              <NotebookSpider size={72} reading className="shrink-0" aria-hidden="true" />
+            <div className="flex max-w-[520px] flex-col items-start gap-2">
+              {/* The spider is the legend's keeper: it stands over the colour
+                chips as if it were holding them. Two instances rather than a
+                matchMedia listener: 180 is the drawing's natural frame and 120
+                keeps the phone legend on screen, and only one is ever visible,
+                so the animation runs once. */}
+              <NotebookSpider
+                size={180}
+                reading
+                className="hidden sm:block"
+                aria-hidden="true"
+              />
+              <NotebookSpider size={120} reading className="sm:hidden" aria-hidden="true" />
               <div>
                 <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-soft">
                   ONE COLOUR PER {vocab.client.toUpperCase()}
