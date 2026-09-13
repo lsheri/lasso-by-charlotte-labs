@@ -389,7 +389,6 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
             scopedTask ? (
               <WorkLedger
                 task={scopedTask}
-                profile={profile}
                 onOpen={(item) => {
                   markOpenStart("peek.open");
                   setPeekItem(item);

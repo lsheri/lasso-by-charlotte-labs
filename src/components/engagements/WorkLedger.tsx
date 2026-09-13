@@ -4,7 +4,6 @@ import { isDeliverableType } from "@/lib/lineage-shared";
 import { resolveFileFormat, type FileFormat } from "@/lib/file-format";
 import { workIdentityLabel } from "@/lib/work-identity";
 import type { WorkItemRow } from "@/lib/work-types";
-import type { Profile } from "@/hooks/use-profile";
 import type { CanvasTask } from "@/components/engagements/EngagementCanvas";
 
 const FORMAT_LABELS: Record<FileFormat, string> = {
@@ -21,12 +20,10 @@ const FORMAT_LABELS: Record<FileFormat, string> = {
 
 export function WorkLedger({
   task,
-  profile,
   onOpen,
   headerAction,
 }: {
   task: CanvasTask;
-  profile: Profile | null | undefined;
   onOpen: (item: WorkItemRow) => void;
   headerAction?: React.ReactNode;
 }) {
@@ -90,7 +87,7 @@ export function WorkLedger({
         )}
 
         <div>
-          <p className="micro-label">WHAT FED THIS</p>
+          <p className="micro-label">WHAT THIS CAME FROM</p>
           {sources.length === 0 ? (
             <p className="mt-2 text-sm text-muted-foreground">
               Nothing is linked to this piece of work yet.
