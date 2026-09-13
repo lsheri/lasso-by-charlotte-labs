@@ -71,6 +71,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
   // not yet been updated. The page holds the shared open state that used to
   // pass through the strip's render prop.
   const [stripExpanded, setStripExpanded] = useState(true);
+  const [view, setView] = useState<"brief" | "work" | "trace">("work");
 
   const setAskRailOpen = (open: boolean) => {
     if (open === askOpen) return;
@@ -80,6 +81,14 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
         state: open ? "opened" : "collapsed",
         had_conversation: askHadConversation,
       });
+    }
+  };
+
+  const setEngagementView = (next: "brief" | "work" | "trace") => {
+    if (next === view) return;
+    setView(next);
+    if (profile) {
+      logEvent("engagement.view_changed", profile.org_id, { view: next, scope: "engagement" });
     }
   };
 
@@ -278,54 +287,111 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
         </div>
       ) : null}
 
-      <div className="nb-bench-grid" data-rail={askOpen ? "open" : "closed"}>
-        <EngagementCanvas
-          engagementId={engagementId}
-          tasks={tasksQuery.data ?? []}
-          profile={profile}
-          onChanged={async () => {
-            await queryClient.invalidateQueries({
-              queryKey: ["engagement-tasks", engagementId],
-            });
-          }}
-          onOpen={(item) => {
-            markOpenStart("peek.open");
-            setPeekItem(item);
-          }}
-          headerAction={
-            profile ? (
-              <div className="flex flex-wrap items-center gap-2">
-                {profile.role !== "coach" ? (
-                  <WhatFedThisButton
-                    items={canvasItems}
-                    orgId={profile.org_id}
-                    profileId={profile.id}
-                  />
-                ) : null}
-                <CanvasDeliverableActions
-                  items={canvasItems}
-                  engagementId={engagementId}
-                  profile={profile}
-                />
-                {profile.role !== "coach" && membership.data?.isMember ? (
-                  <ConnectToWorkSheet
-                    engagementId={engagementId}
-                    streams={(tasksQuery.data ?? []).map((task) => ({
-                      id: task.id,
-                      name: task.name,
-                    }))}
-                    profile={{ id: profile.id, org_id: profile.org_id }}
-                    onChanged={async () => {
-                      await queryClient.invalidateQueries({
-                        queryKey: ["engagement-tasks", engagementId],
-                      });
-                    }}
-                  />
-                ) : null}
-              </div>
-            ) : null
+      <div className="mb-6 flex flex-wrap gap-2" role="group" aria-label="Engagement views">
+        <button
+          type="button"
+          aria-pressed={view === "brief"}
+          onClick={() => setEngagementView("brief")}
+          className={
+            view === "brief"
+              ? "flex flex-col items-start gap-0.5 rounded-full border border-graphite bg-card px-4 py-2"
+              : "flex flex-col items-start gap-0.5 rounded-full border border-transparent px-4 py-2 text-muted-foreground"
           }
-        />
+        >
+          <span className="micro-label">BRIEF</span>
+          <span className="text-[11px] italic text-muted-foreground">what were we asked for?</span>
+        </button>
+        <button
+          type="button"
+          aria-pressed={view === "work"}
+          onClick={() => setEngagementView("work")}
+          className={
+            view === "work"
+              ? "flex flex-col items-start gap-0.5 rounded-full border border-graphite bg-card px-4 py-2"
+              : "flex flex-col items-start gap-0.5 rounded-full border border-transparent px-4 py-2 text-muted-foreground"
+          }
+        >
+          <span className="micro-label">WORK</span>
+          <span className="text-[11px] italic text-muted-foreground">what is here, and what fed what?</span>
+        </button>
+        <button
+          type="button"
+          aria-pressed={view === "trace"}
+          onClick={() => setEngagementView("trace")}
+          className={
+            view === "trace"
+              ? "flex flex-col items-start gap-0.5 rounded-full border border-graphite bg-card px-4 py-2"
+              : "flex flex-col items-start gap-0.5 rounded-full border border-transparent px-4 py-2 text-muted-foreground"
+          }
+        >
+          <span className="micro-label">TRACE</span>
+          <span className="text-[11px] italic text-muted-foreground">how does this connect?</span>
+        </button>
+      </div>
+
+      <div className="nb-bench-grid" data-rail={askOpen ? "open" : "closed"}>
+        <div>
+          {view === "work" ? (
+            <EngagementCanvas
+              engagementId={engagementId}
+              tasks={tasksQuery.data ?? []}
+              profile={profile}
+              onChanged={async () => {
+                await queryClient.invalidateQueries({
+                  queryKey: ["engagement-tasks", engagementId],
+                });
+              }}
+              onOpen={(item) => {
+                markOpenStart("peek.open");
+                setPeekItem(item);
+              }}
+              headerAction={
+                profile ? (
+                  <div className="flex flex-wrap items-center gap-2">
+                    {profile.role !== "coach" ? (
+                      <WhatFedThisButton
+                        items={canvasItems}
+                        orgId={profile.org_id}
+                        profileId={profile.id}
+                      />
+                    ) : null}
+                    <CanvasDeliverableActions
+                      items={canvasItems}
+                      engagementId={engagementId}
+                      profile={profile}
+                    />
+                    {profile.role !== "coach" && membership.data?.isMember ? (
+                      <ConnectToWorkSheet
+                        engagementId={engagementId}
+                        streams={(tasksQuery.data ?? []).map((task) => ({
+                          id: task.id,
+                          name: task.name,
+                        }))}
+                        profile={{ id: profile.id, org_id: profile.org_id }}
+                        onChanged={async () => {
+                          await queryClient.invalidateQueries({
+                            queryKey: ["engagement-tasks", engagementId],
+                          });
+                        }}
+                      />
+                    ) : null}
+                  </div>
+                ) : null
+              }
+            />
+          ) : (
+            <div className="rounded-lg border border-graphite bg-card p-6">
+              <h2 className="micro-label micro-label-section">
+                {view === "brief" ? "What were we asked for?" : "How does this connect?"}
+              </h2>
+              <p className="mt-2 text-[13px] text-muted-foreground">
+                {view === "brief"
+                  ? "The asks, the calls and the notes behind this engagement land here next."
+                  : "The map of what fed what lands here next."}
+              </p>
+            </div>
+          )}
+        </div>
 
         {profile && profile.role !== "coach" ? (
           <div className="nb-bench-rail">
