@@ -907,12 +907,12 @@ export function WorkPage() {
                       </h2>
                     </div>
                     <div className="nb-paper-wall">
-                      {entries.length === 0 ? (
+                      {pageEntries.length === 0 ? (
                         <p className="w-full rounded-[var(--radius-md)] border border-dashed border-pencil bg-card px-3 py-4 text-center text-[11.5px] text-soft">
                           Nothing here yet.
                         </p>
                       ) : (
-                        entries.map((entry) =>
+                        pageEntries.map((entry) =>
                           isConversationGroup(entry)
                             ? renderGroup(
                                 entry,
@@ -924,6 +924,34 @@ export function WorkPage() {
                         )
                       )}
                     </div>
+                    {entries.length > COLUMN_PAGE_SIZE ? (
+                      <div className="mt-3 flex items-center justify-center gap-3">
+                        {page > 0 ? (
+                          <button
+                            type="button"
+                            aria-label="Earlier work in this column"
+                            className="group inline-flex min-h-11 min-w-11 items-center justify-center md:min-h-0 md:min-w-0"
+                            onClick={() => setPage(page - 1)}
+                          >
+                            <PageMark back />
+                          </button>
+                        ) : null}
+                        <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
+                          {page * COLUMN_PAGE_SIZE + 1}–
+                          {page * COLUMN_PAGE_SIZE + pageEntries.length} OF {entries.length}
+                        </span>
+                        {page < lastPage ? (
+                          <button
+                            type="button"
+                            aria-label="More work in this column"
+                            className="group inline-flex min-h-11 min-w-11 items-center justify-center md:min-h-0 md:min-w-0"
+                            onClick={() => setPage(page + 1)}
+                          >
+                            <PageMark />
+                          </button>
+                        ) : null}
+                      </div>
+                    ) : null}
                   </div>
                 );
               })}
