@@ -391,21 +391,21 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
           </button>
           <button
             type="button"
-            aria-pressed={view === "trace"}
-            onClick={() => setEngagementView("trace")}
+            aria-pressed={view === "verify"}
+            onClick={() => setEngagementView("verify")}
             className={cn(
               "group relative flex flex-col items-start gap-0.5 px-4 pb-2 pt-1 transition-colors",
-              view === "trace" ? "text-foreground" : "text-muted-foreground hover:text-foreground",
+              view === "verify" ? "text-foreground" : "text-muted-foreground hover:text-foreground",
             )}
           >
-            <span className="micro-label">TRACE</span>
-            <span className="text-[11px] italic text-muted-foreground">how does this connect?</span>
+            <span className="micro-label">VERIFY</span>
+            <span className="text-[11px] italic text-muted-foreground">can I stand behind this?</span>
             <span
               className={cn(
                 "absolute bottom-[-1px] left-0 h-[2px] w-full transition-transform",
-                view === "trace" ? "scale-x-100" : "scale-x-0 bg-[var(--nb-pencil)] group-hover:scale-x-100",
+                view === "verify" ? "scale-x-100" : "scale-x-0 bg-[var(--nb-pencil)] group-hover:scale-x-100",
               )}
-              style={view === "trace" ? { background: "var(--nb-ink)" } : undefined}
+              style={view === "verify" ? { background: "var(--nb-ink)" } : undefined}
             />
           </button>
           <button
