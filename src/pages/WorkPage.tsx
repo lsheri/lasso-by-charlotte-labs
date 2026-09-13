@@ -69,7 +69,42 @@ import { NotebookSpider } from "@/components/notebook/NotebookSpider";
 import { ToneCard } from "@/components/notebook/ToneCard";
 import { WorkSubtitle } from "@/components/work/WorkSubtitle";
 import { sourceVendorKey } from "@/components/work/SourceMark";
-import { BUCKETS, bucketFor } from "@/components/work/work-buckets";
+import { BUCKETS, bucketFor, type BucketKey } from "@/components/work/work-buckets";
+
+/** Each type column pages its entries five at a time, replacing not growing. */
+const COLUMN_PAGE_SIZE = 5;
+
+/** The mark for stepping through a column. Hand drawn, in the pencil idiom
+    the nav indent uses: a short stroke that trails off into an arrow head. */
+function PageMark({ back = false }: { back?: boolean }) {
+  return (
+    <svg
+      width="26"
+      height="14"
+      viewBox="0 0 26 14"
+      aria-hidden="true"
+      focusable="false"
+      className="text-pencil transition-colors group-hover:text-ink"
+      style={back ? { transform: "scaleX(-1)" } : undefined}
+    >
+      <path
+        d="M1 7.4 C 6 6.8, 12 7.9, 19 7.1"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.3"
+        strokeLinecap="round"
+      />
+      <path
+        d="M15.2 4.1 C 17 5.3, 18.4 6.4, 19.4 7.1 C 18.2 8.2, 16.6 9.2, 15.4 10.4"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.3"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
 
 export function WorkPage() {
   const { data: profile } = useProfile();
@@ -105,6 +140,21 @@ export function WorkPage() {
   const [showPrivate, setShowPrivate] = useState(true);
   // Presentation-only filter for the type columns. Local state, no query.
   const [columnFilter, setColumnFilter] = useState<string>("all");
+  // Which page each type column is on. Presentation-only local state, exactly
+  // like columnFilter above: no query behind it and nothing to record.
+  const [columnPages, setColumnPages] = useState<Record<BucketKey, number>>({
+    llm: 0,
+    documents: 0,
+    sheets: 0,
+    calls: 0,
+  });
+
+  // A filter or the private toggle changes what every column holds, so every
+  // page index returns to its first page rather than paging a set that no
+  // longer exists. The render below also clamps a stale index, belt and braces.
+  useEffect(() => {
+    setColumnPages({ llm: 0, documents: 0, sheets: 0, calls: 0 });
+  }, [columnFilter, showPrivate]);
   // Figma 22:220 rests with one control on the header: "Add work by hand". The
   // ways work gets in are all still here, they just wait behind it instead of
   // filling a bar under the title.
@@ -709,10 +759,19 @@ export function WorkPage() {
             page. Eight swatches when four clients are on screen would be a lie
             about the data, so this reads the same mapped rows the board does. */}
           {legendClients.length > 0 ? (
-            <div className="flex max-w-[380px] items-start gap-4">
-              {/* The spider is the legend's keeper: it sits beside the colour
-                chips as if it were holding them. */}
-              <NotebookSpider size={72} reading className="shrink-0" aria-hidden="true" />
+            <div className="flex max-w-[520px] flex-col items-start gap-2">
+              {/* The spider is the legend's keeper: it stands over the colour
+                chips as if it were holding them. Two instances rather than a
+                matchMedia listener: 180 is the drawing's natural frame and 120
+                keeps the phone legend on screen, and only one is ever visible,
+                so the animation runs once. */}
+              <NotebookSpider
+                size={180}
+                reading
+                className="hidden sm:block"
+                aria-hidden="true"
+              />
+              <NotebookSpider size={120} reading className="sm:hidden" aria-hidden="true" />
               <div>
                 <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-soft">
                   ONE COLOUR PER {vocab.client.toUpperCase()}
@@ -826,6 +885,18 @@ export function WorkPage() {
               {BUCKETS.map((bucket) => {
                 const items = filtered.filter((item) => bucketFor(item.type).key === bucket.key);
                 const entries = groupConversations(items);
+                // Five entries a page; a page REPLACES the previous one so the
+                // four columns stay aligned. The effect above resets every
+                // column when the set changes; this clamp is the belt to those
+                // braces, so a stale index can never render an empty column.
+                const lastPage = Math.max(0, Math.ceil(entries.length / COLUMN_PAGE_SIZE) - 1);
+                const page = Math.min(columnPages[bucket.key], lastPage);
+                const pageEntries = entries.slice(
+                  page * COLUMN_PAGE_SIZE,
+                  page * COLUMN_PAGE_SIZE + COLUMN_PAGE_SIZE,
+                );
+                const setPage = (next: number) =>
+                  setColumnPages((prev) => ({ ...prev, [bucket.key]: next }));
                 return (
                   <div key={bucket.key}>
                     {/* Figma 22:220 heads each column with a mono stamp and a
@@ -839,12 +910,12 @@ export function WorkPage() {
                       </h2>
                     </div>
                     <div className="nb-paper-wall">
-                      {entries.length === 0 ? (
+                      {pageEntries.length === 0 ? (
                         <p className="w-full rounded-[var(--radius-md)] border border-dashed border-pencil bg-card px-3 py-4 text-center text-[11.5px] text-soft">
                           Nothing here yet.
                         </p>
                       ) : (
-                        entries.map((entry) =>
+                        pageEntries.map((entry) =>
                           isConversationGroup(entry)
                             ? renderGroup(
                                 entry,
@@ -856,6 +927,34 @@ export function WorkPage() {
                         )
                       )}
                     </div>
+                    {entries.length > COLUMN_PAGE_SIZE ? (
+                      <div className="mt-3 flex items-center justify-center gap-3">
+                        {page > 0 ? (
+                          <button
+                            type="button"
+                            aria-label="Earlier work in this column"
+                            className="group inline-flex min-h-11 min-w-11 items-center justify-center md:min-h-0 md:min-w-0"
+                            onClick={() => setPage(page - 1)}
+                          >
+                            <PageMark back />
+                          </button>
+                        ) : null}
+                        <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
+                          {page * COLUMN_PAGE_SIZE + 1}–
+                          {page * COLUMN_PAGE_SIZE + pageEntries.length} OF {entries.length}
+                        </span>
+                        {page < lastPage ? (
+                          <button
+                            type="button"
+                            aria-label="More work in this column"
+                            className="group inline-flex min-h-11 min-w-11 items-center justify-center md:min-h-0 md:min-w-0"
+                            onClick={() => setPage(page + 1)}
+                          >
+                            <PageMark />
+                          </button>
+                        ) : null}
+                      </div>
+                    ) : null}
                   </div>
                 );
               })}
