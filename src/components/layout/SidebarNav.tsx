@@ -25,7 +25,7 @@ import { engagementDisplayCode, engagementDisplayTitle } from "@/lib/clients";
 const linkClass = "nb-nav-item";
 const activeProps = { className: "nb-nav-item-active" };
 
-type CachedNavTask = { id: string; name: string };
+type CachedNavTask = { id: string; name: string; is_wrap?: boolean };
 const EMPTY_NAV_TASKS: CachedNavTask[] = [];
 
 /** The indent mark on a nested engagement row. Hand-drawn, not a chevron:
@@ -121,19 +121,30 @@ function EngagementRow({
             <PencilIndent />
             <span className="truncate">Everything in this engagement</span>
           </Link>
-          {scope.tasks.map((task) => (
-            <Link
-              key={task.id}
-              to="/engagements/$id"
-              params={{ id: engagement.id }}
-              search={{ work: task.id }}
-              onClick={onNavigate}
-              className={`${linkClass} nb-nav-item-nested-2 ${scope.workId === task.id ? "nb-nav-item-active" : ""}`}
-            >
-              <PencilIndent />
-              <span className="truncate">{task.name}</span>
-            </Link>
-          ))}
+          {/* PASS 143 — a wrap-up sits last whatever its position, marked with
+              a green dot rather than any extra label. */}
+          {[...scope.tasks]
+            .sort((a, b) => Number(a.is_wrap === true) - Number(b.is_wrap === true))
+            .map((task) => (
+              <Link
+                key={task.id}
+                to="/engagements/$id"
+                params={{ id: engagement.id }}
+                search={{ work: task.id }}
+                onClick={onNavigate}
+                className={`${linkClass} nb-nav-item-nested-2 ${scope.workId === task.id ? "nb-nav-item-active" : ""}`}
+              >
+                <PencilIndent />
+                {task.is_wrap === true ? (
+                  <span
+                    aria-hidden="true"
+                    className="h-[5px] w-[5px] shrink-0 rounded-full"
+                    style={{ background: "var(--nb-green)" }}
+                  />
+                ) : null}
+                <span className="truncate">{task.name}</span>
+              </Link>
+            ))}
         </div>
       ) : null}
     </>
