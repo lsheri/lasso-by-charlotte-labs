@@ -13,9 +13,9 @@ const supabase = createClient(
 
 (async () => {
   const { data, error } = await supabase
-    .from('work_item_tasks')
-    .select('id, task_id, tasks(id, name), work_items(id, title, type, format)')
-    .eq('task_id', 'b8c86d0a-b99e-4e1f-b430-9578ce448111')
+    .from('tasks')
+    .select('id, name')
+    .eq('engagement_id', 'b8c86d0a-b99e-4e1f-b430-9578ce448111')
     .limit(20);
   if (error) { console.error(error); process.exit(1); }
   console.log(JSON.stringify(data, null, 2));
