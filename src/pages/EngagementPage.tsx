@@ -567,13 +567,60 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
               })()}
 
             </div>
-          ) : view === "trace" ? (
-            <div className="rounded-lg border border-graphite bg-card p-6">
-              <h2 className="micro-label micro-label-section">How does this connect?</h2>
-              <p className="mt-2 text-[13px] text-muted-foreground">
-                The map of what fed what lands here next.
-              </p>
-            </div>
+          ) : view === "verify" ? (
+            <section className="space-y-3">
+              <h2 className="micro-label micro-label-section">
+                WHAT IS WORTH CHECKING BEFORE THIS GOES OUT
+              </h2>
+              {deliverables.length === 0 ? (
+                <div className="rounded-lg border border-graphite bg-card p-5">
+                  <p className="micro-label">NOTHING TO CHECK YET</p>
+                  <p className="mt-2 text-[13px] text-muted-foreground">
+                    When a deliverable is mapped to this engagement, what is worth checking lands
+                    here.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {deliverables.map((item) => {
+                    const launchers = VERIFY_LAUNCHERS.filter((launcher) =>
+                      verifyPresets.some((preset) => preset.id === launcher.id),
+                    );
+                    return (
+                      <div key={item.id} className="rounded-lg border border-graphite bg-card p-5">
+                        <h3 className="text-base font-medium">{item.title}</h3>
+                        <p className="micro-label mt-2">{workIdentityLabel(item)}</p>
+                        {launchers.length > 0 ? (
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {launchers.map((launcher) => {
+                              const preset = analysisPreset(launcher.id);
+                              return (
+                                <button
+                                  key={launcher.id}
+                                  type="button"
+                                  onClick={() => {
+                                    setLensItem(item);
+                                    setLensPreset(launcher.id);
+                                  }}
+                                  className="rounded-md border border-rule px-4 py-2 text-left transition-colors hover:border-accent/40"
+                                >
+                                  <span className="micro-label block">
+                                    {preset?.label.toUpperCase()}
+                                  </span>
+                                  <span className="mt-0.5 block text-[12px] text-muted-foreground">
+                                    {launcher.purpose}
+                                  </span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        ) : null}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </section>
           ) : profile && profile.role !== "coach" ? (
             <SharedWithSection
               engagementId={engagementId}
