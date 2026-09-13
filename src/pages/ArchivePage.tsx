@@ -65,11 +65,24 @@ export function ArchivePage() {
       */}
       <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         <div className="min-w-0">
-          <PastWorkSearch />
+          <section className="rounded-lg border border-graphite bg-card p-5">
+            <h2 className="micro-label">ASK PAST WORK</h2>
 
-          <div className="mt-5">
-            {isCoach ? null : <ArchiveChat cards={cards} onResultsChange={onResultsChange} />}
-          </div>
+            <p className="mt-2 text-[13px] text-muted-foreground">
+              Describe what you are working on and find shipped work like it.
+            </p>
+            <PastWorkSearch />
+
+            {!isCoach && (
+              <>
+                <div className="my-4 border-t border-rule" />
+                <p className="text-[13px] text-muted-foreground">
+                  Or ask how the firm does something, and read the answer out of shipped work.
+                </p>
+                <ArchiveChat cards={cards} onResultsChange={onResultsChange} />
+              </>
+            )}
+          </section>
 
           <div className="mt-6">
             {isLoading ? (
