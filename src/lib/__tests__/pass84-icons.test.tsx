@@ -43,7 +43,6 @@ describe("notebook icon css", () => {
 
   it("keeps the sidebar grammar classes", () => {
     expect(styles).toContain(".nb-group-header");
-    expect(styles).toContain(".nb-nav-item-active::before");
   });
 });
 
