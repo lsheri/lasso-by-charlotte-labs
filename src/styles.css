@@ -1183,13 +1183,6 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   border-color: var(--nb-graphite);
   border-width: 1.2px;
 }
-.nb-nav-item-active::before {
-  content: "";
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 2px;
-  background: var(--nb-green);
-}
 /* Pass 90: an engagement nested under a client shelf. Indent only. */
 .nb-nav-item-nested {
   padding-left: 22px;
