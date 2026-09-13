@@ -64,19 +64,26 @@ afterEach(() => {
   confirmRequests.length = 0;
 });
 
-describe("pass 104 · brief panel above coaching", () => {
+describe("pass 104 · brief panel in the Brief view", () => {
   const page = readFileSync("src/pages/EngagementPage.tsx", "utf8");
   const panel = readFileSync("src/components/engagements/EngagementBriefPanel.tsx", "utf8");
 
-  it("renders the brief as a bordered form panel above the coaching sticky", () => {
+  it("renders the brief as a bordered form panel inside the Brief view", () => {
     const brief = page.indexOf("<EngagementBriefPanel");
+    const briefView = page.indexOf('view === "brief"');
     const coaching = page.indexOf('title="Coaching and sharing"');
     expect(brief).toBeGreaterThan(-1);
-    expect(coaching).toBeGreaterThan(brief);
+    expect(briefView).toBeGreaterThan(-1);
+    expect(brief).toBeGreaterThan(briefView);
+    expect(coaching).toBeGreaterThan(-1);
     expect(panel).toContain("border border-border bg-card");
     expect(panel).not.toContain("EngagementNote");
     expect(panel).toContain("No brief yet");
     expect(panel).toContain("EngagementBriefSection");
+  });
+
+  it("expands the brief by default when entering the Brief view", () => {
+    expect(page).toContain("defaultExpanded");
   });
 
   it("drops the paired open state and the blue sticky plumbing", () => {

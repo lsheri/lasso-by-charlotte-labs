@@ -268,19 +268,6 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
 
         {profile && profile.role !== "coach" ? (
           <div className="mt-5 space-y-3">
-            <EngagementBriefPanel
-              engagement={engagement}
-              engagementId={engagementId}
-              profileId={profile.id}
-              orgId={profile.org_id}
-              taskIds={(tasksQuery.data ?? []).map((task) => task.id)}
-              hasMappedWork={(tasksQuery.data ?? []).some(
-                (task) => (task.work_item_tasks ?? []).length > 0,
-              )}
-              canEdit={Boolean(membership.data?.isMember)}
-              termLabel={engagement.term_label}
-            />
-
             <EngagementNote
               tone="green"
               open={coachingOpen}
@@ -412,15 +399,40 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
                 headerAction={headerAction}
               />
             )
+          ) : view === "brief" ? (
+            <div className="space-y-4">
+              {profile && profile.role !== "coach" ? (
+                <EngagementBriefPanel
+                  engagement={engagement}
+                  engagementId={engagementId}
+                  profileId={profile.id}
+                  orgId={profile.org_id}
+                  taskIds={(tasksQuery.data ?? []).map((task) => task.id)}
+                  hasMappedWork={(tasksQuery.data ?? []).some(
+                    (task) => (task.work_item_tasks ?? []).length > 0,
+                  )}
+                  canEdit={Boolean(membership.data?.isMember)}
+                  termLabel={engagement.term_label}
+                  defaultExpanded
+                />
+              ) : null}
+              <div className="rounded-lg border border-graphite bg-card p-5">
+                <p className="micro-label">WHAT IS NOT HERE YET</p>
+                <p className="mt-2 text-[13px] text-muted-foreground">
+                  No calls or transcripts have been brought into this engagement. When they are,
+                  what was asked for and what is still unanswered can be read from them.
+                </p>
+                <p className="mt-2 text-[13px] text-muted-foreground">
+                  Nothing in this engagement has been marked as the brief. Marking a document or a
+                  thread as the brief puts it here alongside the written one.
+                </p>
+              </div>
+            </div>
           ) : (
             <div className="rounded-lg border border-graphite bg-card p-6">
-              <h2 className="micro-label micro-label-section">
-                {view === "brief" ? "What were we asked for?" : "How does this connect?"}
-              </h2>
+              <h2 className="micro-label micro-label-section">How does this connect?</h2>
               <p className="mt-2 text-[13px] text-muted-foreground">
-                {view === "brief"
-                  ? "The asks, the calls and the notes behind this engagement land here next."
-                  : "The map of what fed what lands here next."}
+                The map of what fed what lands here next.
               </p>
             </div>
           )}
