@@ -101,6 +101,7 @@ function EngagementRow({
         onClick={onNavigate}
         className={nested ? `${linkClass} nb-nav-item-nested` : linkClass}
         activeProps={activeProps}
+        activeOptions={{ includeSearch: false }}
       >
         {nested ? <PencilIndent /> : <GraphiteIcon name="engagement" size={20} />}
         <span className="flex min-w-0 items-center gap-1.5">

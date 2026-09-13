@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { EngagementPage } from "@/pages/EngagementPage";
 
 export const Route = createFileRoute("/_authenticated/engagements/$id")({
-  validateSearch: (search): { work?: string } =>
+  validateSearch: (search): { work?: string | undefined } =>
     typeof search["work"] === "string" ? { work: search["work"] } : {},
   head: () => ({
     meta: [
