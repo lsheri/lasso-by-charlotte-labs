@@ -84,6 +84,14 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
     }
   };
 
+  const setEngagementView = (next: "brief" | "work" | "trace") => {
+    if (next === view) return;
+    setView(next);
+    if (profile) {
+      logEvent("engagement.view_changed", profile.org_id, { view: next, scope: "engagement" });
+    }
+  };
+
   // Open the Ask rail by default on desktop, but only on the client and only
   // after hydration. 1100px matches the .nb-bench-grid[data-rail="open"] media
   // query. Use setAskOpen directly so this default does NOT fire the tracked
