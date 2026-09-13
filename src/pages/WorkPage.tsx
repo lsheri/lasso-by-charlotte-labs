@@ -69,7 +69,39 @@ import { NotebookSpider } from "@/components/notebook/NotebookSpider";
 import { ToneCard } from "@/components/notebook/ToneCard";
 import { WorkSubtitle } from "@/components/work/WorkSubtitle";
 import { sourceVendorKey } from "@/components/work/SourceMark";
-import { BUCKETS, bucketFor } from "@/components/work/work-buckets";
+import { BUCKETS, bucketFor, type BucketKey } from "@/components/work/work-buckets";
+
+/** The mark for stepping through a column. Hand drawn, in the pencil idiom
+    the nav indent uses: a short stroke that trails off into an arrow head. */
+function PageMark({ back = false }: { back?: boolean }) {
+  return (
+    <svg
+      width="26"
+      height="14"
+      viewBox="0 0 26 14"
+      aria-hidden="true"
+      focusable="false"
+      className="text-pencil transition-colors group-hover:text-ink"
+      style={back ? { transform: "scaleX(-1)" } : undefined}
+    >
+      <path
+        d="M1 7.4 C 6 6.8, 12 7.9, 19 7.1"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.3"
+        strokeLinecap="round"
+      />
+      <path
+        d="M15.2 4.1 C 17 5.3, 18.4 6.4, 19.4 7.1 C 18.2 8.2, 16.6 9.2, 15.4 10.4"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.3"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
 
 export function WorkPage() {
   const { data: profile } = useProfile();
