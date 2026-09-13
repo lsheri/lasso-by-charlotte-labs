@@ -189,7 +189,7 @@ function PendingSuggestions({ item }: { item: WorkItemRow }) {
                 </span>
                 <span className="micro-label shrink-0">
                   {workIdentityLabel({
-                    type: link.item.type,
+                    type: link.item.type as WorkItemRow["type"],
                     source_meta: link.item.kind
                       ? ({ kind: link.item.kind } as WorkItemRow["source_meta"])
                       : undefined,
