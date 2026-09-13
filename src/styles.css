@@ -3044,6 +3044,7 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 }
 @media (min-width: 1100px) {
   .nb-bench-grid[data-rail="open"] { grid-template-columns: minmax(0, 1fr) 380px; }
+  .nb-bench-grid[data-rail="wide"] { grid-template-columns: minmax(0, 1fr) minmax(520px, 46%); }
 }
 .nb-bench-rail {
   position: sticky;

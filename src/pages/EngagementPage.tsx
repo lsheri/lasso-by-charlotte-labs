@@ -3,6 +3,7 @@ import { getRouteApi, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 
 import { GraphiteRule } from "@/components/notebook/marks";
+import { GraphiteIcon } from "@/components/notebook/icons";
 import { SpiderMark } from "@/components/notebook/SpiderMark";
 import { PeekPanel } from "@/components/peek/PeekPanel";
 import {
@@ -75,7 +76,8 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
   const { work } = engagementRoute.useSearch();
   const { data: profile } = useProfile();
   const queryClient = useQueryClient();
-  const [askOpen, setAskOpen] = useState(false);
+  const [rail, setRail] = useState<"closed" | "open" | "wide">("closed");
+  const askOpen = rail !== "closed";
   const [askHadConversation, setAskHadConversation] = useState(false);
   const [prepOpen, setPrepOpen] = useState(false);
   const [peekItem, setPeekItem] = useState<WorkItemRow | null>(null);
@@ -104,7 +106,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
 
   const setAskRailOpen = (open: boolean) => {
     if (open === askOpen) return;
-    setAskOpen(open);
+    setRail(open ? "open" : "closed");
     if (profile) {
       logEvent("engagement.ask_rail_toggled", profile.org_id, {
         state: open ? "opened" : "collapsed",
@@ -137,11 +139,11 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
 
   // Open the Ask rail by default on desktop, but only on the client and only
   // after hydration. 1100px matches the .nb-bench-grid[data-rail="open"] media
-  // query. Use setAskOpen directly so this default does NOT fire the tracked
+  // query. Use setRail directly so this default does NOT fire the tracked
   // engagement.ask_rail_toggled event — that event is reserved for a person's
   // explicit open/collapse choice.
   useEffect(() => {
-    if (window.innerWidth >= 1100) setAskOpen(true);
+    if (window.innerWidth >= 1100) setRail("open");
   }, []);
 
   // A shared "?trace=" link opens the audit on exactly what was circled.
@@ -466,7 +468,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
         </div>
       ) : null}
 
-      <div className="nb-bench-grid" data-rail={askOpen ? "open" : "closed"}>
+      <div className="nb-bench-grid relative" data-rail={rail}>
         <div>
           {view === "work" ? (
             scopedTask ? (
@@ -664,8 +666,58 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
           )}
         </div>
 
-        {profile && profile.role !== "coach" ? (
+        {profile && profile.role !== "coach" && askOpen ? (
           <div className="nb-bench-rail">
+            <div className="mb-2 flex items-center justify-between border-b border-rule pb-2 max-[1099px]:hidden">
+              <p className="micro-label">ASK LASSO</p>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  aria-label={rail === "wide" ? "Narrow this column" : "Widen this column"}
+                  onClick={() => {
+                    const next = rail === "wide" ? "open" : "wide";
+                    setRail(next);
+                    logEvent("engagement.ask_rail_toggled", profile.org_id, {
+                      state: next === "wide" ? "widened" : "narrowed",
+                      had_conversation: askHadConversation,
+                    });
+                  }}
+                  className="grid h-8 w-8 place-items-center rounded-md text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 20 20"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.4"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden
+                  >
+                    {rail === "wide" ? (
+                      <>
+                        <path d="M3.5 5.2h5.3v5.3M8.7 5.3 3.4 10.6" />
+                        <path d="M16.5 14.8h-5.3V9.5M11.3 14.7l5.3-5.3" />
+                      </>
+                    ) : (
+                      <>
+                        <path d="M8.8 10.5V5.2H3.5M8.7 5.3l-5.3 5.3" />
+                        <path d="M11.2 9.5v5.3h5.3M11.3 14.7l5.3-5.3" />
+                      </>
+                    )}
+                  </svg>
+                </button>
+                <button
+                  type="button"
+                  aria-label="Close this column"
+                  onClick={() => setAskRailOpen(false)}
+                  className="grid h-8 w-8 place-items-center rounded-md text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  <GraphiteIcon name="close" size={16} />
+                </button>
+              </div>
+            </div>
             <EngagementAsk
               open={askOpen}
               onOpenChange={setAskRailOpen}
@@ -680,6 +732,16 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
               orgId={profile.org_id}
             />
           </div>
+        ) : null}
+        {profile && profile.role !== "coach" && rail === "closed" ? (
+          <button
+            type="button"
+            aria-label="Open Ask Lasso"
+            onClick={() => setAskRailOpen(true)}
+            className="absolute right-0 top-0 hidden min-h-28 w-8 items-center justify-center border border-rule bg-card text-muted-foreground transition-colors hover:text-foreground min-[1100px]:flex"
+          >
+            <span className="micro-label [writing-mode:vertical-rl]">ASK LASSO</span>
+          </button>
         ) : null}
       </div>
 
