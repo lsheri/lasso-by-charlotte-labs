@@ -319,12 +319,19 @@ export const reviewLink = createServerFn({ method: "POST" })
       link_id: string;
       action: "confirmed" | "discarded";
       profile_id?: string | undefined;
+      /** Additive dim: which surface the review happened on. Defaults to "peek". */
+      surface?: string | undefined;
     }) => {
       if (!input?.link_id) throw new Error("link_id is required");
       if (input.action !== "confirmed" && input.action !== "discarded") {
         throw new Error("Unsupported action");
       }
-      return { link_id: input.link_id, action: input.action, profile_id: input.profile_id ?? null };
+      return {
+        link_id: input.link_id,
+        action: input.action,
+        profile_id: input.profile_id ?? null,
+        surface: input.surface ?? null,
+      };
     },
   )
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
@@ -355,7 +362,7 @@ export const reviewLink = createServerFn({ method: "POST" })
       eventType: "link.reviewed",
       orgId: profile.org_id,
       userId,
-      dims: { action: data.action },
+      dims: { action: data.action, surface: data.surface ?? "peek" },
     });
 
     const { recordEventV2 } = await import("./telemetry-v2.server");
