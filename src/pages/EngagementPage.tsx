@@ -434,8 +434,8 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
           ? "What this engagement was asked to do, and what has been said about it."
           : view === "work"
             ? "Everything that exists here, and what fed what."
-            : view === "trace"
-              ? "How the pieces connect, and what is not connected yet."
+            : view === "verify"
+              ? "What still rests on the model's word, and what nobody has confirmed."
               : "Who can see this engagement, what they see, and what you have held back."}
       </p>
       <p className="micro-label mb-4">
