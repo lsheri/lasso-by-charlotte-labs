@@ -165,6 +165,9 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
   );
   const mappedItemCount = canvasItems.length;
   const deliverables = canvasItems.filter((item) => isDeliverableType(item.type));
+  const hasCalls = canvasItems.some((item) => item.type === "call");
+
+
 
   const headerAction = profile ? (
     <div className="flex flex-wrap items-center gap-2">
