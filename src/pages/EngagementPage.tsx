@@ -41,6 +41,7 @@ import { useMyEngagementMembership } from "@/hooks/use-engagement-membership";
 import { useEngagementPage, useEngagementSlice } from "@/hooks/use-engagement-page";
 import { useEngagementCoaches } from "@/hooks/use-coach-share";
 import { clientDisplayName, engagementDisplayCode, engagementDisplayTitle } from "@/lib/clients";
+import { cn } from "@/lib/utils";
 import { INVITE_ADMIN_ONLY_LINE } from "@/lib/invites-shared";
 import { markOpenStart } from "@/lib/perf-timing";
 import { logEvent } from "@/lib/telemetry";
@@ -74,7 +75,9 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
   // The right rail was chosen over Figma 36:1936 on 12 Sep 2026; the frame has
   // not yet been updated. The page holds the shared open state that used to
   // pass through the strip's render prop.
-  const [stripExpanded, setStripExpanded] = useState(true);
+  // Collapsed on arrival: expanded it pushed the view switcher 700px down the
+  // page, below the fold on a 13-inch screen.
+  const [stripExpanded, setStripExpanded] = useState(false);
   const [view, setView] = useState<"brief" | "work" | "trace">("work");
   const [creatingWrap, setCreatingWrap] = useState(false);
   const previousWorkRef = useRef(work);
@@ -350,6 +353,71 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
         ) : null}
       </header>
 
+      <div className="mb-2 border-b border-[var(--nb-rule)]" role="group" aria-label="Engagement views">
+        <div className="flex flex-wrap">
+          <button
+            type="button"
+            aria-pressed={view === "brief"}
+            onClick={() => setEngagementView("brief")}
+            className={cn(
+              "group relative flex flex-col items-start gap-0.5 px-4 pb-2 pt-1 transition-colors",
+              view === "brief" ? "text-foreground" : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            <span className="micro-label">BRIEF</span>
+            <span className="text-[11px] italic text-muted-foreground">what were we asked for?</span>
+            <span
+              className={cn(
+                "absolute bottom-[-1px] left-0 h-[2px] w-full transition-transform",
+                view === "brief" ? "scale-x-100" : "scale-x-0 bg-[var(--nb-pencil)] group-hover:scale-x-100",
+              )}
+              style={view === "brief" ? { background: "var(--nb-ink)" } : undefined}
+            />
+          </button>
+          <button
+            type="button"
+            aria-pressed={view === "work"}
+            onClick={() => setEngagementView("work")}
+            className={cn(
+              "group relative flex flex-col items-start gap-0.5 px-4 pb-2 pt-1 transition-colors",
+              view === "work" ? "text-foreground" : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            <span className="micro-label">WORK</span>
+            <span className="text-[11px] italic text-muted-foreground">what is here, and what fed what?</span>
+            <span
+              className={cn(
+                "absolute bottom-[-1px] left-0 h-[2px] w-full transition-transform",
+                view === "work" ? "scale-x-100" : "scale-x-0 bg-[var(--nb-pencil)] group-hover:scale-x-100",
+              )}
+              style={view === "work" ? { background: "var(--nb-ink)" } : undefined}
+            />
+          </button>
+          <button
+            type="button"
+            aria-pressed={view === "trace"}
+            onClick={() => setEngagementView("trace")}
+            className={cn(
+              "group relative flex flex-col items-start gap-0.5 px-4 pb-2 pt-1 transition-colors",
+              view === "trace" ? "text-foreground" : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            <span className="micro-label">TRACE</span>
+            <span className="text-[11px] italic text-muted-foreground">how does this connect?</span>
+            <span
+              className={cn(
+                "absolute bottom-[-1px] left-0 h-[2px] w-full transition-transform",
+                view === "trace" ? "scale-x-100" : "scale-x-0 bg-[var(--nb-pencil)] group-hover:scale-x-100",
+              )}
+              style={view === "trace" ? { background: "var(--nb-ink)" } : undefined}
+            />
+          </button>
+        </div>
+      </div>
+      <p className="micro-label mb-4">
+        SCOPE · {scopedTask ? scopedTask.name.toUpperCase() : "EVERYTHING IN THIS ENGAGEMENT"}
+      </p>
+
       {/* Figma 36:1936: the strip is a full-width band under the header. */}
       {profile && profile.role !== "coach" ? (
         <div className="mb-8">
@@ -362,51 +430,6 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
           />
         </div>
       ) : null}
-
-      <div className="mb-6 flex flex-wrap gap-2" role="group" aria-label="Engagement views">
-        <button
-          type="button"
-          aria-pressed={view === "brief"}
-          onClick={() => setEngagementView("brief")}
-          className={
-            view === "brief"
-              ? "flex flex-col items-start gap-0.5 rounded-full border border-graphite bg-card px-4 py-2"
-              : "flex flex-col items-start gap-0.5 rounded-full border border-transparent px-4 py-2 text-muted-foreground"
-          }
-        >
-          <span className="micro-label">BRIEF</span>
-          <span className="text-[11px] italic text-muted-foreground">what were we asked for?</span>
-        </button>
-        <button
-          type="button"
-          aria-pressed={view === "work"}
-          onClick={() => setEngagementView("work")}
-          className={
-            view === "work"
-              ? "flex flex-col items-start gap-0.5 rounded-full border border-graphite bg-card px-4 py-2"
-              : "flex flex-col items-start gap-0.5 rounded-full border border-transparent px-4 py-2 text-muted-foreground"
-          }
-        >
-          <span className="micro-label">WORK</span>
-          <span className="text-[11px] italic text-muted-foreground">what is here, and what fed what?</span>
-        </button>
-        <button
-          type="button"
-          aria-pressed={view === "trace"}
-          onClick={() => setEngagementView("trace")}
-          className={
-            view === "trace"
-              ? "flex flex-col items-start gap-0.5 rounded-full border border-graphite bg-card px-4 py-2"
-              : "flex flex-col items-start gap-0.5 rounded-full border border-transparent px-4 py-2 text-muted-foreground"
-          }
-        >
-          <span className="micro-label">TRACE</span>
-          <span className="text-[11px] italic text-muted-foreground">how does this connect?</span>
-        </button>
-      </div>
-      <p className="micro-label mb-4">
-        SCOPE · {scopedTask ? scopedTask.name.toUpperCase() : "EVERYTHING IN THIS ENGAGEMENT"}
-      </p>
 
       <div className="nb-bench-grid" data-rail={askOpen ? "open" : "closed"}>
         <div>
