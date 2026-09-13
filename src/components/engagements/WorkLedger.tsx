@@ -29,12 +29,14 @@ export function WorkLedger({
   headerAction,
   orgId,
   profileId,
+  isCoach,
 }: {
   task: CanvasTask;
   onOpen: (item: WorkItemRow) => void;
   headerAction?: React.ReactNode;
   orgId?: string | undefined;
   profileId?: string | undefined;
+  isCoach?: boolean;
 }) {
   const items = useMemo(() => {
     const map = new Map<string, WorkItemRow>();
