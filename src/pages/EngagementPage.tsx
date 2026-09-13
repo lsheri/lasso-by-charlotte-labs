@@ -78,7 +78,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
   // Collapsed on arrival: expanded it pushed the view switcher 700px down the
   // page, below the fold on a 13-inch screen.
   const [stripExpanded, setStripExpanded] = useState(false);
-  const [view, setView] = useState<"brief" | "work" | "trace">("work");
+  const [view, setView] = useState<"brief" | "work" | "trace" | "share">("work");
   const [creatingWrap, setCreatingWrap] = useState(false);
   const previousWorkRef = useRef(work);
 
@@ -93,7 +93,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
     }
   };
 
-  const setEngagementView = (next: "brief" | "work" | "trace") => {
+  const setEngagementView = (next: "brief" | "work" | "trace" | "share") => {
     if (next === view) return;
     setView(next);
     if (profile) {
@@ -340,14 +340,6 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
               {profile.role !== "admin" && isBusinessOrg(profile) && !isQuickFolder ? (
                 <p className="mt-2 text-xs text-muted-foreground">{INVITE_ADMIN_ONLY_LINE}</p>
               ) : null}
-              <div className="mt-4">
-                <SharedWithSection
-                  engagementId={engagementId}
-                  orgId={profile.org_id}
-                  quickFolder={isQuickFolder}
-                  personalOrg={!isBusinessOrg(profile)}
-                />
-              </div>
             </EngagementNote>
           </div>
         ) : null}
@@ -412,8 +404,36 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
               style={view === "trace" ? { background: "var(--nb-ink)" } : undefined}
             />
           </button>
+          <button
+            type="button"
+            aria-pressed={view === "share"}
+            onClick={() => setEngagementView("share")}
+            className={cn(
+              "group relative flex flex-col items-start gap-0.5 px-4 pb-2 pt-1 transition-colors",
+              view === "share" ? "text-foreground" : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            <span className="micro-label">SHARE</span>
+            <span className="text-[11px] italic text-muted-foreground">who else can see this?</span>
+            <span
+              className={cn(
+                "absolute bottom-[-1px] left-0 h-[2px] w-full transition-transform",
+                view === "share" ? "scale-x-100" : "scale-x-0 bg-[var(--nb-pencil)] group-hover:scale-x-100",
+              )}
+              style={view === "share" ? { background: "var(--nb-ink)" } : undefined}
+            />
+          </button>
         </div>
       </div>
+      <p className="mb-2 max-w-4xl text-[13px] text-muted-foreground">
+        {view === "brief"
+          ? "What this engagement was asked to do, and what has been said about it."
+          : view === "work"
+            ? "Everything that exists here, and what fed what."
+            : view === "trace"
+              ? "How the pieces connect, and what is not connected yet."
+              : "Who can see this engagement, what they see, and what you have held back."}
+      </p>
       <p className="micro-label mb-4">
         SCOPE · {scopedTask ? scopedTask.name.toUpperCase() : "EVERYTHING IN THIS ENGAGEMENT"}
       </p>
@@ -525,11 +545,25 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
               })()}
 
             </div>
-          ) : (
+          ) : view === "trace" ? (
             <div className="rounded-lg border border-graphite bg-card p-6">
               <h2 className="micro-label micro-label-section">How does this connect?</h2>
               <p className="mt-2 text-[13px] text-muted-foreground">
                 The map of what fed what lands here next.
+              </p>
+            </div>
+          ) : profile && profile.role !== "coach" ? (
+            <SharedWithSection
+              engagementId={engagementId}
+              orgId={profile.org_id}
+              quickFolder={isQuickFolder}
+              personalOrg={!isBusinessOrg(profile)}
+            />
+          ) : (
+            <div className="rounded-lg border border-graphite bg-card p-6">
+              <h2 className="micro-label micro-label-section">Sharing</h2>
+              <p className="mt-2 text-[13px] text-muted-foreground">
+                Sharing is managed by the firm.
               </p>
             </div>
           )}
