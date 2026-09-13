@@ -6,6 +6,7 @@ import { isDeliverableType } from "@/lib/lineage-shared";
 import { getDeliverableEvidence, reviewLink } from "@/lib/lineage.functions";
 import { resolveFileFormat, type FileFormat } from "@/lib/file-format";
 import { workIdentityLabel } from "@/lib/work-identity";
+import { WhatFedThisButton } from "@/components/engagements/WhatFedThisButton";
 import { useProfile } from "@/hooks/use-profile";
 import type { WorkItemRow } from "@/lib/work-types";
 import type { CanvasTask } from "@/components/engagements/EngagementCanvas";
@@ -26,10 +27,16 @@ export function WorkLedger({
   task,
   onOpen,
   headerAction,
+  orgId,
+  profileId,
+  isCoach,
 }: {
   task: CanvasTask;
   onOpen: (item: WorkItemRow) => void;
   headerAction?: React.ReactNode;
+  orgId?: string | undefined;
+  profileId?: string | undefined;
+  isCoach?: boolean;
 }) {
   const items = useMemo(() => {
     const map = new Map<string, WorkItemRow>();
@@ -72,20 +79,28 @@ export function WorkLedger({
             const format = resolveFileFormat(item);
             const formatLabel = FORMAT_LABELS[format];
             return (
-              <div key={item.id}>
-                <button
-                  type="button"
-                  onClick={() => onOpen(item)}
-                  className="w-full rounded-lg border border-graphite bg-card p-5 text-left transition-colors hover:border-accent/40"
-                >
-                  <h3 className="text-base font-medium leading-snug text-foreground">
-                    {item.title}
-                  </h3>
-                  <p className="micro-label mt-2">
-                    {workIdentityLabel(item)}
-                    {format !== "other" && formatLabel ? ` · ${formatLabel.toUpperCase()}` : ""}
-                  </p>
-                </button>
+              <div
+                key={item.id}
+                className="rounded-lg border border-graphite bg-card p-5 transition-colors hover:border-accent/40"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <button
+                    type="button"
+                    onClick={() => onOpen(item)}
+                    className="min-w-0 flex-1 text-left"
+                  >
+                    <h3 className="text-base font-medium leading-snug text-foreground">
+                      {item.title}
+                    </h3>
+                    <p className="micro-label mt-2">
+                      {workIdentityLabel(item)}
+                      {format !== "other" && formatLabel ? ` · ${formatLabel.toUpperCase()}` : ""}
+                    </p>
+                  </button>
+                  {!isCoach ? (
+                    <WhatFedThisButton items={[item]} orgId={orgId} profileId={profileId} />
+                  ) : null}
+                </div>
                 <PendingSuggestions item={item} />
               </div>
             );
