@@ -268,19 +268,6 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
 
         {profile && profile.role !== "coach" ? (
           <div className="mt-5 space-y-3">
-            <EngagementBriefPanel
-              engagement={engagement}
-              engagementId={engagementId}
-              profileId={profile.id}
-              orgId={profile.org_id}
-              taskIds={(tasksQuery.data ?? []).map((task) => task.id)}
-              hasMappedWork={(tasksQuery.data ?? []).some(
-                (task) => (task.work_item_tasks ?? []).length > 0,
-              )}
-              canEdit={Boolean(membership.data?.isMember)}
-              termLabel={engagement.term_label}
-            />
-
             <EngagementNote
               tone="green"
               open={coachingOpen}
