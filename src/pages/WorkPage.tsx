@@ -882,6 +882,18 @@ export function WorkPage() {
               {BUCKETS.map((bucket) => {
                 const items = filtered.filter((item) => bucketFor(item.type).key === bucket.key);
                 const entries = groupConversations(items);
+                // Five entries a page; a page REPLACES the previous one so the
+                // four columns stay aligned. The effect above resets every
+                // column when the set changes; this clamp is the belt to those
+                // braces, so a stale index can never render an empty column.
+                const lastPage = Math.max(0, Math.ceil(entries.length / COLUMN_PAGE_SIZE) - 1);
+                const page = Math.min(columnPages[bucket.key], lastPage);
+                const pageEntries = entries.slice(
+                  page * COLUMN_PAGE_SIZE,
+                  page * COLUMN_PAGE_SIZE + COLUMN_PAGE_SIZE,
+                );
+                const setPage = (next: number) =>
+                  setColumnPages((prev) => ({ ...prev, [bucket.key]: next }));
                 return (
                   <div key={bucket.key}>
                     {/* Figma 22:220 heads each column with a mono stamp and a
