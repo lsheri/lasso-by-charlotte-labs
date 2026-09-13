@@ -121,8 +121,6 @@ export function WorkLedger({
           This is what is linked. It is not everything that happened.
         </p>
       </div>
-
-      {profile ? null : null}
     </section>
   );
 }
