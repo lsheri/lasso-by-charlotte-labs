@@ -5,7 +5,11 @@ import { useEffect, useRef, useState } from "react";
 import { GraphiteRule } from "@/components/notebook/marks";
 import { SpiderMark } from "@/components/notebook/SpiderMark";
 import { PeekPanel } from "@/components/peek/PeekPanel";
-import type { PeekAnalysisPreset } from "@/components/peek/PeekActionBar";
+import {
+  analysisPreset,
+  presetsForScope,
+  type AnalysisPresetId,
+} from "@/lib/analysis-presets";
 import { MapDialog } from "@/components/work/MapDialog";
 import { WorkDateDialog } from "@/components/work/WorkDateDialog";
 import { AnalysisLens } from "@/components/reflect/AnalysisLens";
