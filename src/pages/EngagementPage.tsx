@@ -68,7 +68,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
   const [mapItem, setMapItem] = useState<WorkItemRow | null>(null);
   const [dateItem, setDateItem] = useState<WorkItemRow | null>(null);
   const [lensItem, setLensItem] = useState<WorkItemRow | null>(null);
-  const [lensPreset, setLensPreset] = useState<PeekAnalysisPreset | undefined>(undefined);
+  const [lensPreset, setLensPreset] = useState<AnalysisPresetId | undefined>(undefined);
   // A thread analysis launched from the peek: confirm, then the reader itself.
   const [launch, setLaunch] = useState<{ item: WorkItemRow; preset: ThreadReaderPreset } | null>(
     null,
