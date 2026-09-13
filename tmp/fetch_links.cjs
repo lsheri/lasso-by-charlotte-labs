@@ -15,8 +15,8 @@ const supabase = createClient(
   const { data, error } = await supabase
     .from('work_item_tasks')
     .select('task_id, work_items(id, title, type)')
-    .eq('task_id', 'b8c86d0a-b99e-4e1f-b430-9578ce448111')
-    .limit(100);
+    .in('task_id', ['56c0b144-121a-42e0-8843-2891d56862ba','d0384ae3-6287-4b44-b3dd-0fbbda4205d0','508dde3f-db2d-4f5e-adac-f9a9eff5fe39'])
+    .limit(200);
   if (error) { console.error(error); process.exit(1); }
   const byTask = {};
   for (const row of data) {
@@ -24,5 +24,7 @@ const supabase = createClient(
     if (!byTask[tid]) byTask[tid] = [];
     byTask[tid].push(row.work_items);
   }
-  console.log(JSON.stringify(byTask, null, 2));
+  for (const [tid, items] of Object.entries(byTask)) {
+    console.log(tid, items.map(i => `${i.type}: ${i.title}`).join(' | '));
+  }
 })();
