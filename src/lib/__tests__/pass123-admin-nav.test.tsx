@@ -39,6 +39,8 @@ vi.mock("@tanstack/react-router", () => ({
       {children}
     </a>
   ),
+  useMatchRoute: () => () => false,
+  useSearch: () => ({}),
 }));
 
 function profile(role: string, orgType: "company" | "personal") {
