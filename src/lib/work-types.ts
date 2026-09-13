@@ -12,7 +12,13 @@ export type MappedTask = {
     id: string;
     name: string;
     engagement_id: string;
-    engagements: { id: string; code: string; title: string } | null;
+    engagements: {
+      id: string;
+      code: string;
+      title: string;
+      client_label?: string | null;
+      clients?: { id: string; name: string; quick_folder: boolean } | null;
+    } | null;
   } | null;
 };
 

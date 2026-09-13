@@ -19,12 +19,14 @@ import { effectiveWorkDate, formatDate, type WorkItemRow } from "@/lib/work-type
 function NotePaperCard({
   item,
   state,
+  clientId,
   engagementId,
   onOpen,
   children,
 }: {
   item: WorkItemRow;
   state: WorkItemRow["visibility"];
+  clientId: string | null;
   engagementId: string | null;
   onOpen?: (() => void) | undefined;
   children: React.ReactNode;
@@ -43,7 +45,7 @@ function NotePaperCard({
         fold on a product whose argument is that it never says more than it can
         prove, so the fold waits for a surface that reads shipped_work.
       */
-      style={{ ...notePaper(item.id), ...noteHue(engagementId) }}
+      style={{ ...notePaper(item.id), ...noteHue(colourKey({ clientId, engagementId })) }}
     >
       <div
         {...(onOpen
@@ -98,6 +100,9 @@ export function WorkRow({
   footer?: React.ReactNode;
 }) {
   const mapping = item.work_item_tasks[0]?.tasks ?? null;
+  // The client owns the paper colour ("who is this for"); the engagement only
+  // colours paper when there is no client to ask.
+  const clientId = mapping?.engagements?.clients?.id ?? null;
   const link = item.meta?.web_view_link ?? null;
   const dateIso = effectiveWorkDate(item);
   const state = item.visibility;
@@ -122,6 +127,8 @@ export function WorkRow({
         ? { backgroundColor: "var(--state-indigo-wash)" }
         : {};
 
+  // The spine stays per engagement on purpose: inside one client's colour
+  // family, the spine is how you still tell two engagements apart.
   const spine =
     state === "mapped"
       ? {
@@ -153,6 +160,7 @@ export function WorkRow({
       <NotePaperCard
         item={item}
         state={state}
+        clientId={clientId}
         engagementId={mapping?.engagement_id ?? null}
         onOpen={onOpen}
       >
