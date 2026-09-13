@@ -436,22 +436,28 @@ export function WorkPage() {
   ).sort((a, b) => a.localeCompare(b));
 
   /**
-   * The same engagements the filter chips are built from, paired with the id
-   * their paper colour is derived from. No new read: both values are already on
-   * the mapped rows. The legend must never show a colour for an engagement that
-   * is not on this page.
+   * The legend answers "who is this for": one entry per distinct colour key,
+   * which is the client where the engagement has one and the engagement's own
+   * id (shown under its code) where it does not. No new read: every value is
+   * already on the mapped rows. The legend must never show a colour for a
+   * client that is not on this page.
    */
-  const legendEngagements = (() => {
-    const byCode = new Map<string, string>();
+  const legendClients = (() => {
+    const byKey = new Map<string, string>();
     for (const item of mapped) {
       const task = item.work_item_tasks[0]?.tasks;
-      const code = task?.engagements?.code;
-      const id = task?.engagement_id;
-      if (code && id && !byCode.has(code)) byCode.set(code, id);
+      const engagement = task?.engagements;
+      const key = colourKey({
+        clientId: engagement?.clients?.id ?? null,
+        engagementId: task?.engagement_id ?? null,
+      });
+      if (!key || byKey.has(key)) continue;
+      const label = engagement?.clients?.name ?? engagement?.code;
+      if (label) byKey.set(key, label);
     }
-    return engagementCodes
-      .filter((code) => byCode.has(code))
-      .map((code) => ({ code, engagementId: byCode.get(code)! }));
+    return Array.from(byKey, ([key, label]) => ({ key, label })).sort((a, b) =>
+      a.label.localeCompare(b.label),
+    );
   })();
 
   // Private work only appears in the columns while the show-private box is on.
@@ -697,21 +703,21 @@ export function WorkPage() {
             </ToneCard>
           </div>
 
-          {/* What the note colours mean, for the engagements actually on this
+          {/* What the note colours mean, for the clients actually on this
             page. Eight swatches when four clients are on screen would be a lie
-            about the data, so this reads the same set the chips below do. */}
-          {legendEngagements.length > 0 ? (
+            about the data, so this reads the same mapped rows the board does. */}
+          {legendClients.length > 0 ? (
             <div className="flex max-w-[380px] items-start gap-4">
               {/* The spider is the legend's keeper: it sits beside the colour
                 chips as if it were holding them. */}
               <NotebookSpider size={72} reading className="shrink-0" aria-hidden="true" />
               <div>
                 <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-soft">
-                  WHAT THE COLOURS MEAN
+                  ONE COLOUR PER {vocab.client.toUpperCase()}
                 </p>
                 <ul className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2">
-                  {legendEngagements.map((entry) => (
-                    <li key={entry.code} className="flex items-center gap-2">
+                  {legendClients.map((entry) => (
+                    <li key={entry.key} className="flex items-center gap-2">
                       <span
                         aria-hidden
                         className="block shrink-0"
@@ -723,12 +729,12 @@ export function WorkPage() {
                           border: "1px solid var(--nb-paper-edge)",
                           boxShadow: "0 1.5px 2px -1px rgb(22 24 26 / 0.18)",
                           transform: "rotate(var(--nb-rot, 0deg))",
-                          ...notePaper(entry.engagementId),
-                          ...noteHue(entry.engagementId),
+                          ...notePaper(entry.key),
+                          ...noteHue(entry.key),
                         }}
                       />
                       <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
-                        {entry.code}
+                        {entry.label}
                       </span>
                     </li>
                   ))}
