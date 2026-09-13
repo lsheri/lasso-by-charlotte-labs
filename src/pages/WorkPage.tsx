@@ -71,6 +71,9 @@ import { WorkSubtitle } from "@/components/work/WorkSubtitle";
 import { sourceVendorKey } from "@/components/work/SourceMark";
 import { BUCKETS, bucketFor, type BucketKey } from "@/components/work/work-buckets";
 
+/** Each type column pages its entries five at a time, replacing not growing. */
+const COLUMN_PAGE_SIZE = 5;
+
 /** The mark for stepping through a column. Hand drawn, in the pencil idiom
     the nav indent uses: a short stroke that trails off into an arrow head. */
 function PageMark({ back = false }: { back?: boolean }) {
