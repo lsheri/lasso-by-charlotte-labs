@@ -56,6 +56,21 @@ import type { WorkItemRow } from "@/lib/work-types";
 type TaskWithWork = CanvasTask;
 const engagementRoute = getRouteApi("/_authenticated/engagements/$id");
 
+const VERIFY_LAUNCHERS: { id: AnalysisPresetId; purpose: string }[] = [
+  {
+    id: "verification",
+    purpose: "Claims that rest on the model's word, and a way to check each one.",
+  },
+  {
+    id: "decision_origin",
+    purpose: "Where a decision entered the record and what it turned on.",
+  },
+  {
+    id: "firm_checks",
+    purpose: "Your firm's own written checks, run against this piece of work.",
+  },
+];
+
 export function EngagementPage({ engagementId }: { engagementId: string }) {
   const { work } = engagementRoute.useSearch();
   const { data: profile } = useProfile();
