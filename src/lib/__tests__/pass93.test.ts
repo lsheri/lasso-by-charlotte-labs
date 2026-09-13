@@ -69,8 +69,7 @@ describe("93.2 sidebar hierarchy", () => {
   });
 
   it("marks nested engagement rows with a pencil indent", () => {
-    expect(nav).toContain('name={nested ? "" : "engagement"}');
-    expect(nav).toContain("size={nested ? 0 : 20}");
+    expect(nav).toContain("{nested ? <PencilIndent /> : <GraphiteIcon name=\"engagement\" size={20} />}");
     expect(nav).toContain("nb-nav-item-nested");
     expect(nav).toContain("<PencilIndent");
   });
