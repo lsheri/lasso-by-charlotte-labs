@@ -61,6 +61,23 @@ export function notePaper(id: string, place: "column" | "pile" = "column"): Note
 }
 
 /**
+ * The colour key for a piece of work. The client is the answer to "who is
+ * this for", so it owns the colour. An engagement with no client — a quick
+ * folder — falls back to its own id so it still gets a stable colour rather
+ * than none. Never invent a grouping: two engagements share a colour only
+ * when they genuinely share a client row.
+ */
+export function colourKey(input: {
+  clientId?: string | null;
+  engagementId?: string | null;
+}): string | null {
+  if (typeof input.clientId === "string" && input.clientId.length > 0) return input.clientId;
+  if (typeof input.engagementId === "string" && input.engagementId.length > 0)
+    return input.engagementId;
+  return null;
+}
+
+/**
  * The paper's colour is the engagement it belongs to, drawn from the same eight
  * hues `engagementHue()` already assigns for the mapped-row spine. Promoting it
  * from a 3px spine to the sheet is the whole idea: a wall of work for one
