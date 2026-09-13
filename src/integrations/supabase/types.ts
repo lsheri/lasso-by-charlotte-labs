@@ -2480,6 +2480,7 @@ export type Database = {
           engagement_id: string
           goal: string | null
           id: string
+          is_wrap: boolean
           lane_ai: string | null
           lane_edited_by_human: boolean
           lane_you: string | null
@@ -2497,6 +2498,7 @@ export type Database = {
           engagement_id: string
           goal?: string | null
           id?: string
+          is_wrap?: boolean
           lane_ai?: string | null
           lane_edited_by_human?: boolean
           lane_you?: string | null
@@ -2514,6 +2516,7 @@ export type Database = {
           engagement_id?: string
           goal?: string | null
           id?: string
+          is_wrap?: boolean
           lane_ai?: string | null
           lane_edited_by_human?: boolean
           lane_you?: string | null

@@ -28,7 +28,7 @@ export async function fetchWorkItems(): Promise<WorkItemsResult> {
   const mapping = await supabase
     .from("work_item_tasks")
     .select(
-      "work_item_id, task_id, tasks(id, name, engagement_id, engagements(id, code, title, client_label, clients(id, name, quick_folder)))",
+      "work_item_id, task_id, tasks(id, name, engagement_id, is_wrap, engagements(id, code, title, client_label, clients(id, name, quick_folder)))",
     )
     .in(
       "work_item_id",

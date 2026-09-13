@@ -24,6 +24,8 @@ export type EngagementTask = {
   name: string;
   owner_id: string;
   detail: string | null;
+  /** Pass 143: the one task that wraps the engagement up, if there is one. */
+  is_wrap?: boolean;
   work_item_tasks: EngagementTaskLink[];
 };
 
