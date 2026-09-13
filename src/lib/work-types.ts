@@ -12,6 +12,7 @@ export type MappedTask = {
     id: string;
     name: string;
     engagement_id: string;
+    is_wrap?: boolean;
     engagements: {
       id: string;
       code: string;

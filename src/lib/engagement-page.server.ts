@@ -18,7 +18,7 @@ const ENGAGEMENT_SELECT =
   "id, code, title, client_label, client_id, brief, brief_by, term_label, clients(id, name, quick_folder)";
 
 const TASKS_SELECT =
-  "id, name, owner_id, detail, work_item_tasks(step_no, step_confirmed, work_items(id, owner_id, title, type, source, visibility, captured_at, content_ref, created_at_source, work_date, content_fidelity, meta))";
+  "id, name, owner_id, detail, is_wrap, work_item_tasks(step_no, step_confirmed, work_items(id, owner_id, title, type, source, visibility, captured_at, content_ref, created_at_source, work_date, content_fidelity, meta))";
 
 const COACHES_SELECT =
   "profile_id, member_role, added_at, profiles!engagement_members_profile_id_fkey(id, display_name), added_by_profile:profiles!engagement_members_added_by_fkey(display_name)";

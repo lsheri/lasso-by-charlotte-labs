@@ -49,6 +49,8 @@ export type CanvasTask = {
   name: string;
   owner_id: string;
   detail: string | null;
+  /** Pass 143: a wrap-up never renders as a board column. */
+  is_wrap?: boolean;
   work_item_tasks: {
     step_no: number | null;
     step_confirmed: boolean;
