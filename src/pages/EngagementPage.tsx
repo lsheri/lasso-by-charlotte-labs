@@ -71,6 +71,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
   // not yet been updated. The page holds the shared open state that used to
   // pass through the strip's render prop.
   const [stripExpanded, setStripExpanded] = useState(true);
+  const [view, setView] = useState<"brief" | "work" | "trace">("work");
 
   const setAskRailOpen = (open: boolean) => {
     if (open === askOpen) return;
