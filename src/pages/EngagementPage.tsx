@@ -353,7 +353,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
         ) : null}
       </header>
 
-      <div className="mb-2 border-b border-[var(--nb-rule)]]" role="group" aria-label="Engagement views">
+      <div className="mb-2 border-b border-[var(--nb-rule)]" role="group" aria-label="Engagement views">
         <div className="flex flex-wrap">
           <button
             type="button"
