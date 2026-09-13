@@ -22,6 +22,7 @@ export function EngagementBriefPanel({
   hasMappedWork,
   canEdit,
   termLabel,
+  defaultExpanded,
 }: {
   engagement: EngagementRow;
   engagementId: string;
@@ -31,8 +32,9 @@ export function EngagementBriefPanel({
   hasMappedWork: boolean;
   canEdit: boolean;
   termLabel?: string | null;
+  defaultExpanded?: boolean;
 }) {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(defaultExpanded ?? false);
   const brief = engagement.brief?.trim() ? engagement.brief : null;
   return (
     <section className="nb-brief-panel rounded-[var(--radius-md)] border border-border bg-card px-4 py-4">
