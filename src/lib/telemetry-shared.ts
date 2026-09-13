@@ -59,6 +59,8 @@ export type TelemetryEvent =
   | "engagement.ask_rail_toggled"
   /** A person chose one of the three engagement views. */
   | "engagement.view_changed"
+  /** A person changed what the three views are about. */
+  | "engagement.scope_changed"
   | "task.updated"
   | "feedback.submitted"
   | "reflect.session_created"

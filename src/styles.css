@@ -1187,6 +1187,15 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 .nb-nav-item-nested {
   padding-left: 22px;
 }
+.nb-nav-item-nested-2 {
+  padding-left: 37px;
+}
+.nb-nav-indent {
+  color: var(--nb-pencil);
+}
+.nb-nav-item-active .nb-nav-indent {
+  color: var(--nb-green);
+}
 /* Pass 92: a client shelf header speaks in the micro-label voice at
    text/muted, matching Figma 12:332, so a shelf never reads as one more
    engagement row. pass92.test.ts pins the muted token. */
