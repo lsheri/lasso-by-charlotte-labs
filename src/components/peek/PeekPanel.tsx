@@ -230,6 +230,7 @@ export function PeekBody({
           canEdit={canEdit}
           owned={owned}
           engagementId={engagementId}
+          analysesInHeader={analysesInHeader}
           onMap={onMap}
           onWorkDate={onWorkDate}
           onMakePrivate={onMakePrivate}
