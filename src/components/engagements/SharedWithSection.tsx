@@ -96,7 +96,6 @@ export function SharedWithSection({
   const sharedCount = roster.length - unshared.length;
 
   const anchor = useMemo(() => latestDeliverable(items), [items]);
-  const ready = anchor !== null;
   const canShip = Boolean(anchor) && ownsWorkItem(profile, anchor ?? {});
 
   function clearOptimistic(id: string) {
