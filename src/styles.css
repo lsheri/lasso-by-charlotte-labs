@@ -3244,6 +3244,8 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
     overflow-y: auto;
     overflow-x: hidden;
     min-width: 0;
+    display: flex;
+    gap: 14px;
   }
 }
 @media (max-width: 900px) {
