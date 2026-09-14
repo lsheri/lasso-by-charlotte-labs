@@ -21,7 +21,7 @@ describe("pass 154 shared surfaces", () => {
     expect(share).toContain("SEND TO THE FIRM");
     expect(share).toContain("<CanvasDeliverableActions");
     expect(action).toContain("openJourney({ anchorId: anchor.id, anchorTitle: anchor.title, engagementId })");
-    expect(action).toContain("<SpiderDrawing");
+    expect(action).not.toContain("<SpiderDrawing");
   });
 
   it("gives tasks their own sidebar depth", () => {

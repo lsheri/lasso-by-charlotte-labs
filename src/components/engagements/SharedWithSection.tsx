@@ -96,7 +96,6 @@ export function SharedWithSection({
   const sharedCount = roster.length - unshared.length;
 
   const anchor = useMemo(() => latestDeliverable(items), [items]);
-  const ready = anchor !== null;
   const canShip = Boolean(anchor) && ownsWorkItem(profile, anchor ?? {});
 
   function clearOptimistic(id: string) {
@@ -212,22 +211,18 @@ export function SharedWithSection({
         <div className="mt-6 flex flex-col gap-2">
           <h2 className="micro-label micro-label-section">SEND TO THE FIRM</h2>
           <div className="flex flex-wrap items-center gap-2">
-            {(canShip || !ready) ? (
-              <Button
-                type="button"
-                variant="ink"
-                disabled={!canShip}
-                title={canShip ? undefined : SHIP_EMPTY_HINT}
-                onClick={() => setShipOpen(true)}
-              >
-                {SHIP_ACTION_LABEL}
-              </Button>
-            ) : null}
-            <CanvasDeliverableActions
-              items={items}
-              engagementId={engagementId}
-              profile={profile}
-            />
+            {/* One control: it builds the record, shows it, then offers the send. */}
+            <Button
+              type="button"
+              variant="ink"
+              disabled={!canShip}
+              title={canShip ? undefined : SHIP_EMPTY_HINT}
+              onClick={() => setShipOpen(true)}
+              className="h-auto flex-col items-start gap-0 py-2"
+            >
+              <span>{SHIP_ACTION_LABEL}</span>
+              <span className="text-[11px] font-normal opacity-70">Empower your team</span>
+            </Button>
           </div>
           {anchor && canShip ? (
             <ShipToFirmDialog
@@ -235,6 +230,8 @@ export function SharedWithSection({
               title={anchor.title}
               item={anchor}
               engagementId={engagementId}
+              orgId={orgId}
+              coachCount={(shared.data ?? []).length}
               open={shipOpen}
               onOpenChange={setShipOpen}
             />
