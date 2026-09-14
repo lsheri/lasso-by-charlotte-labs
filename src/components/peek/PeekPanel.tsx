@@ -309,7 +309,18 @@ export function PeekBody({
         {canEdit ? <AiReads workItemId={active.id} /> : null}
         {isDeliverableType(active.type) ? (
           <>
-            <VersionHistory workItemId={active.id} />
+            <VersionHistory
+              workItemId={active.id}
+              capturedAt={active.captured_at}
+              lastCheckedAt={
+                (active.meta as Record<string, unknown> | null)?.[RECHECK_AT_KEY] as
+                  | string
+                  | undefined
+              }
+              hasTextBaseline={Boolean(
+                (active.meta as Record<string, unknown> | null)?.[TEXT_CONTENT_HASH_KEY],
+              )}
+            />
             <WhatFedThis workItemId={active.id} itemType={active.type} canEdit={canEdit} />
           </>
         ) : null}
