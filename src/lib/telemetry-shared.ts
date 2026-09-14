@@ -139,7 +139,11 @@ export type TelemetryEvent =
   /** Pass 172: a person promoted one piece of work. Closed source section. */
   | "portfolio.item_added"
   /** Pass 172: a person took one piece of work back off the Portfolio. */
-  | "portfolio.item_removed";
+  | "portfolio.item_removed"
+  /** Pass 148: one recheck pass over connected documents. Counts only. */
+  | "document.recheck_ran"
+  /** Pass 148: one version written by a recheck. Source and reason only. */
+  | "document.version_recorded";
 
 export type TelemetryDims = Record<
   string,
