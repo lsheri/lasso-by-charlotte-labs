@@ -271,10 +271,7 @@ export function RenderedContent({
   if (shape.kind === "unsupported") {
     // Office and OpenDocument files cannot be rendered, but their text can be
     // read, and that text is what analysis sees.
-    if (readStatus === "ok" || readStatus === "not_attempted") {
-      return <TextPane item={item} canEdit={canEdit} />;
-    }
-    return <FallbackCard item={item} label={shape.label} onDownload={onDownload} canEdit={canEdit} />;
+    return <TextOrFallback item={item} label={shape.label} onDownload={onDownload} canEdit={canEdit} />;
   }
   if (urlQuery.isError) {
     return <Notice>{(urlQuery.error as Error).message}</Notice>;
