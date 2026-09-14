@@ -702,7 +702,10 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
         profileId={profile?.id}
         engagementId={engagementId}
         orgId={profile?.org_id}
+        items={canvasItems}
+        shipped={(shippedWork.data ?? []).some((card) => card.engagement_id === engagementId)}
       />
+
 
     </div>
 
