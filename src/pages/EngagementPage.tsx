@@ -469,13 +469,15 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
           >
             <span className="micro-label">VERIFY</span>
             <span className="text-[11px] italic text-muted-foreground">can I stand behind this?</span>
-            <span
-              className={cn(
-                "absolute bottom-[-1px] left-0 h-[2px] w-full transition-transform",
-                view === "verify" ? "scale-x-100" : "scale-x-0 bg-[var(--nb-pencil)] group-hover:scale-x-100",
-              )}
-              style={view === "verify" ? { background: "var(--nb-ink)" } : undefined}
-            />
+            {view === "verify" ? (
+              <GraphiteRule className="absolute bottom-[-2px] left-0 h-[6px] w-full text-[var(--nb-green)]" />
+            ) : (
+              <span
+                className={cn(
+                  "absolute bottom-[-1px] left-0 h-[2px] w-full scale-x-0 bg-[var(--nb-pencil)] transition-transform group-hover:scale-x-100",
+                )}
+              />
+            )}
           </button>
           <button
             type="button"
