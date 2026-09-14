@@ -132,7 +132,7 @@ function EngagementRow({
                 params={{ id: engagement.id }}
                 search={{ work: task.id }}
                 onClick={onNavigate}
-                className={`${linkClass} nb-nav-item-nested-3 ${scope.workId === task.id ? "nb-nav-item-active" : ""}`}
+                className={`${linkClass} nb-nav-item-nested ${scope.workId === task.id ? "nb-nav-item-active" : ""}`}
               >
                 <PencilIndent />
                 {task.is_wrap === true ? (
@@ -266,7 +266,7 @@ export function SidebarNav({
                 key={item.to}
                 to={item.to}
                 onClick={onNavigate}
-                className={item.nested ? `${linkClass} nb-nav-item-nested-3` : linkClass}
+                className={item.nested ? `${linkClass} nb-nav-item-nested` : linkClass}
                 activeProps={activeProps}
               >
                 {item.nested ? <PencilIndent /> : null}

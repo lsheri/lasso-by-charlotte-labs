@@ -1323,6 +1323,35 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   }
 }
 
+/* Pass 159: the chat wall arrives as one wave, left to right, then rests. */
+@keyframes nb-sticky-wave {
+  0% {
+    transform: translateY(7px);
+    opacity: 0;
+  }
+  60% {
+    opacity: 1;
+  }
+  80% {
+    transform: translateY(-1.5px);
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+.nb-sticky-wave {
+  animation: nb-sticky-wave 520ms var(--nb-ease) both;
+  animation-delay: var(--nb-wave-delay, 0ms);
+}
+@media (prefers-reduced-motion: reduce) {
+  .nb-sticky-wave {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+
 /* Segmented toggle: pile / matrix. Not an action, so no green. */
 .nb-seg {
   display: inline-flex;
