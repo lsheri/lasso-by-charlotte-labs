@@ -1,25 +1,28 @@
-let loading: Promise<typeof import("pdfjs-dist")> | null = null;
+let loading: Promise<typeof import("pdfjs-dist/legacy/build/pdf.mjs")> | null = null;
 
 /**
- * One pdf.js for the whole client, with one worker.
+ * One pdf.js for the whole client, rendering on the main thread.
  *
- * The worker is constructed here rather than handed to pdfjs as a URL string.
- * `pdfjs-dist/build/pdf.worker.min.mjs?url` produced a URL that failed to
- * construct a Worker in this deployment: both attempts showed negative
- * durations in resource timing, pdfjs silently fell back to its fake worker,
- * and page rendering then hung after the initial white fill. Constructing the
- * Worker with `new URL(..., import.meta.url)` is the form the bundler
- * understands, and `workerPort` skips pdfjs's own construction path entirely.
+ * Two worker forms were tried and both failed to construct in this
+ * deployment: `pdf.worker.min.mjs?url` and `new Worker(new URL(...,
+ * import.meta.url), { type: "module" })`. Both showed negative resource-timing
+ * durations, pdfjs fell back to its fake worker, and rendering hung after the
+ * initial white page fill with zero content pixels drawn.
+ *
+ * Setting `globalThis.pdfjsWorker` is the documented no-worker path and is
+ * what item-text.server.ts already does. Rendering moves onto the main thread,
+ * which is acceptable here: the preview is capped at 30 pages and page one is
+ * painted before the rest. A preview that renders on the main thread beats a
+ * preview that never renders.
  */
 export function loadPdfjs() {
   if (!loading) {
     loading = (async () => {
-      const pdfjs = await import("pdfjs-dist");
-      pdfjs.GlobalWorkerOptions.workerPort = new Worker(
-        new URL("pdfjs-dist/build/pdf.worker.min.mjs", import.meta.url),
-        { type: "module" },
-      );
-      return pdfjs;
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore the worker build ships no types
+      const workerModule = await import("pdfjs-dist/legacy/build/pdf.worker.mjs");
+      (globalThis as unknown as { pdfjsWorker?: unknown }).pdfjsWorker = workerModule;
+      return await import("pdfjs-dist/legacy/build/pdf.mjs");
     })();
   }
   return loading;
