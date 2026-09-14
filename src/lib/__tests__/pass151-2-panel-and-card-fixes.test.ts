@@ -17,16 +17,21 @@ describe("pass 151 unit 2", () => {
     expect(hook).not.toContain("analyses,");
   });
 
-  it("uses the three fixed rail widths and labels the width control", () => {
+  // Pass 156: the two fixed open widths became one dragged width, and the
+  // WIDEN / NARROW control went away with them.
+  it("keeps the closed card fixed and makes the open edge draggable", () => {
     const styles = read("src/styles.css");
     const card = read("src/components/engagements/ContextCard.tsx");
     expect(styles).toContain('data-rail="closed"] > .nb-bench-aside');
     expect(styles).toContain("width: 236px");
-    expect(styles).toContain('data-rail="open"] { grid-template-columns: minmax(0, 1fr) 380px; }');
-    expect(styles).toContain('data-rail="wide"] { grid-template-columns: minmax(0, 1fr) 570px; }');
-    expect(card).toContain('panelWide ? "← NARROW" : "WIDEN →"');
-    expect(card).toContain('panelWide ? "Narrow this column" : "Widen this column"');
+    expect(styles).not.toContain('data-rail="wide"]');
+    expect(styles).toContain(".nb-panel-grip");
+    expect(styles).toContain('.nb-bench-page[data-dragging="true"] { transition: none; }');
+    expect(card).not.toContain("WIDEN");
+    expect(card).not.toContain("NARROW");
+    expect(card).not.toContain("panelWide");
   });
+
 
   it("layers custom marks above the disc and removes the pencil mark from layout flow", () => {
     const sourceMark = read("src/components/work/SourceMark.tsx");

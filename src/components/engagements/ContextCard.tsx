@@ -15,8 +15,6 @@ export function ContextCard({
   actions,
   onChange,
   panelOpen = false,
-  panelWide = false,
-  onTogglePanelWidth,
   onClosePanel,
 }: {
   eyebrow: string;
@@ -27,10 +25,9 @@ export function ContextCard({
   actions: ContextAction[];
   onChange?: () => void;
   panelOpen?: boolean;
-  panelWide?: boolean;
-  onTogglePanelWidth?: () => void;
   onClosePanel?: () => void;
 }) {
+
   const visibleVendors = vendors
     .map((vendor) => ({ ...vendor, brand: brandForToolkit(vendor.key) }))
     .filter((vendor) => vendor.brand !== "unknown");
@@ -146,16 +143,6 @@ export function ContextCard({
             </div>
             {panelOpen && onClosePanel ? (
               <div className="ml-auto flex items-center gap-1 min-[1100px]:ml-0 min-[1100px]:self-end">
-                {onTogglePanelWidth ? (
-                  <button
-                    type="button"
-                    aria-label={panelWide ? "Narrow this column" : "Widen this column"}
-                    onClick={onTogglePanelWidth}
-                    className="hidden h-7 items-center font-mono text-[11px] uppercase text-[var(--nb-mid)] transition-colors hover:text-[var(--nb-ink)] min-[1100px]:inline-flex"
-                  >
-                    {panelWide ? "← NARROW" : "WIDEN →"}
-                  </button>
-                ) : null}
                 <button
                   type="button"
                   aria-label="Close this column"
@@ -166,6 +153,7 @@ export function ContextCard({
                 </button>
               </div>
             ) : null}
+
           </div>
         ) : null}
       </div>
