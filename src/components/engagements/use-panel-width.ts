@@ -20,12 +20,22 @@ export function panelWidthBucket(width: number): "320-400" | "400-500" | "500-64
   return "500-640";
 }
 
+/**
+ * A wrapper narrower than this cannot be a real bench page, so it is a
+ * measurement taken before layout settled. In that case the page ceiling is
+ * unknown and only the absolute maximum applies, otherwise a restored width
+ * collapses to the minimum on the first paint.
+ */
+const WRAPPER_MEASURED_MIN = 480;
+
 export function clampPanelWidth(width: number, wrapperWidth: number): number {
-  const fromPage = wrapperWidth > 0 ? wrapperWidth * PANEL_MAX_FRACTION : PANEL_MAX_WIDTH;
+  const measured = wrapperWidth >= WRAPPER_MEASURED_MIN;
+  const fromPage = measured ? wrapperWidth * PANEL_MAX_FRACTION : PANEL_MAX_WIDTH;
   const max = Math.max(PANEL_MIN_WIDTH, Math.min(PANEL_MAX_WIDTH, Math.round(fromPage)));
   if (!Number.isFinite(width)) return Math.min(PANEL_DEFAULT_WIDTH, max);
   return Math.min(max, Math.max(PANEL_MIN_WIDTH, Math.round(width)));
 }
+
 
 function readStored(): number | null {
   try {
@@ -52,6 +62,7 @@ export function usePanelWidth(wrapperRef: React.RefObject<HTMLElement | null>, o
 }) {
   const [width, setWidthState] = useState(PANEL_DEFAULT_WIDTH);
   const [dragging, setDragging] = useState(false);
+  const [measured, setMeasured] = useState(0);
   const widthRef = useRef(width);
   const dragRef = useRef<{ startX: number; startWidth: number } | null>(null);
   const onResizeEnd = options?.onResizeEnd;
@@ -61,11 +72,18 @@ export function usePanelWidth(wrapperRef: React.RefObject<HTMLElement | null>, o
     [wrapperRef],
   );
 
-  const maxWidth = clampPanelWidth(PANEL_MAX_WIDTH, wrapperWidth());
+  // The ceiling the handle reports is the ceiling the grid is held to, read
+  // from the same measurement, so the two can never disagree.
+  const maxWidth = clampPanelWidth(PANEL_MAX_WIDTH, measured);
+
 
   const apply = useCallback(
     (next: number) => {
-      const clamped = clampPanelWidth(next, wrapperWidth());
+      const page = wrapperWidth();
+      // The ceiling the handle reports comes from the same read that clamps
+      // the width, so the two cannot drift apart.
+      setMeasured(page);
+      const clamped = clampPanelWidth(next, page);
       widthRef.current = clamped;
       setWidthState(clamped);
       return clamped;
@@ -73,18 +91,46 @@ export function usePanelWidth(wrapperRef: React.RefObject<HTMLElement | null>, o
     [wrapperWidth],
   );
 
-  // Restore on mount, clamped to this screen.
+
+  // Restore on mount. The wrapper often has no real width yet, so this may be
+  // left unclamped on purpose and is re-clamped by the observer below.
   useEffect(() => {
     const stored = readStored();
     if (stored !== null) apply(stored);
   }, [apply]);
 
-  // A panel sized on a wide screen must not exceed the maximum on a narrow one.
+  // The first real measurement, and every later one, decides the ceiling. The
+  // wrapper appears only once the engagement has loaded, so this waits for it
+  // rather than giving up on the first pass.
+  useEffect(() => {
+    let observer: ResizeObserver | null = null;
+    let frame = 0;
+    const attach = () => {
+      const node = wrapperRef.current;
+      if (!node) {
+        frame = requestAnimationFrame(attach);
+        return;
+      }
+      apply(widthRef.current);
+      if (typeof ResizeObserver === "undefined") return;
+      observer = new ResizeObserver(() => apply(widthRef.current));
+      observer.observe(node);
+    };
+    attach();
+    return () => {
+      cancelAnimationFrame(frame);
+      observer?.disconnect();
+    };
+  }, [apply, wrapperRef]);
+
+
+
   useEffect(() => {
     const onResize = () => apply(widthRef.current);
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
   }, [apply]);
+
 
   const endDrag = useCallback(() => {
     if (!dragRef.current) return;
@@ -123,27 +169,43 @@ export function usePanelWidth(wrapperRef: React.RefObject<HTMLElement | null>, o
     [endDrag],
   );
 
-  const onKeyDown = useCallback(
-    (event: React.KeyboardEvent<HTMLElement>) => {
+  const step = useCallback(
+    (key: string): boolean => {
       let next: number | null = null;
-      if (event.key === "ArrowLeft") next = widthRef.current + 16;
-      else if (event.key === "ArrowRight") next = widthRef.current - 16;
-      else if (event.key === "Home") next = PANEL_MIN_WIDTH;
-      else if (event.key === "End") next = PANEL_MAX_WIDTH;
-      if (next === null) return;
-      event.preventDefault();
+      if (key === "ArrowLeft") next = widthRef.current + 16;
+      else if (key === "ArrowRight") next = widthRef.current - 16;
+      else if (key === "Home") next = PANEL_MIN_WIDTH;
+      else if (key === "End") next = PANEL_MAX_WIDTH;
+      if (next === null) return false;
       const applied = apply(next);
       writeStored(applied);
       onResizeEnd?.(applied);
+      return true;
     },
     [apply, onResizeEnd],
   );
+
+  // A native listener on the handle itself, so the keys work whatever else on
+  // the page is listening for them.
+  const gripRef = useCallback(
+    (node: HTMLElement | null) => {
+      if (!node) return;
+      const onKey = (event: KeyboardEvent) => {
+        if (step(event.key)) event.preventDefault();
+      };
+      node.addEventListener("keydown", onKey);
+      return () => node.removeEventListener("keydown", onKey);
+    },
+    [step],
+  );
+
 
   return {
     width,
     dragging,
     maxWidth,
     handleProps: {
+      ref: gripRef,
       role: "separator" as const,
       "aria-orientation": "vertical" as const,
       "aria-label": "Resize the panel",
@@ -151,11 +213,18 @@ export function usePanelWidth(wrapperRef: React.RefObject<HTMLElement | null>, o
       "aria-valuemin": PANEL_MIN_WIDTH,
       "aria-valuemax": maxWidth,
       tabIndex: 0,
+      onKeyDown: (event: React.KeyboardEvent<HTMLElement>) => {
+        // The native listener does the work; this only stops the page scrolling
+        // if React sees the event first.
+        if (["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) {
+          event.preventDefault();
+        }
+      },
       onPointerDown,
       onPointerMove,
       onPointerUp,
       onPointerCancel: onPointerUp,
-      onKeyDown,
+
     },
   };
 }
