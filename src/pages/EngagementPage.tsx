@@ -819,6 +819,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
                 {peekItem ? (
                   <PeekBody
                     entry={peekItem}
+                    analysesInHeader
                     onClose={() => setPeekItem(null)}
                     // Ownership truth, not page truth: a person gets their own affordances
                     // on their own items here, and a coach or another member stays read only.
