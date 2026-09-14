@@ -21,3 +21,5 @@
 - [ ] Restyle the join and no-access entry screens while preserving every state, control, and event
 - [ ] Correct the four shared sidebar visual tokens without changing navigation logic or controls
 - [x] Complete `/work` design port pass 2 exactly as specified
+- [ ] Keep the engagement notecard above the translucent page header in both rail states
+- [ ] Present Ask messages as one borderless conversation while preserving every existing control and state
