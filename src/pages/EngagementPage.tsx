@@ -605,10 +605,15 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
               ) : (
                 <div className="space-y-3">
                   {deliverables.map((item) => (
-                    <div key={item.id} className="rounded-lg border border-graphite bg-card p-5">
-                      <h3 className="text-base font-medium">{item.title}</h3>
-                      <p className="micro-label mt-2">{workIdentityLabel(item)}</p>
-                    </div>
+                    <WorkNote
+                      key={item.id}
+                      item={item}
+                      onOpen={() => {
+                        markOpenStart("peek.open");
+                        setPeekItem(item);
+                        if (rail === "closed") setRail("open");
+                      }}
+                    />
                   ))}
                 </div>
               )}
