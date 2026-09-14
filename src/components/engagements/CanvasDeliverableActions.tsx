@@ -42,7 +42,6 @@ export function CanvasDeliverableActions({
         }}
         className="rounded-full pr-[42px]"
       >
-        <SpiderDrawing size={24} />
         <span className="mr-2.5">{WORK_ARTIFACT_TITLE}</span>
       </Button>
       <CtaInfoTrigger open={infoOpen} onToggle={() => setInfoOpen((prev) => !prev)} />
