@@ -20,6 +20,20 @@ describe("pass180 workspace stamp", () => {
     expect(read("src/lib/org-type.server.ts")).toContain("export async function workspaceStamp");
   });
 
+  it("org-type exports orgTypeOfStrict", () => {
+    expect(read("src/lib/org-type.server.ts")).toContain("export async function orgTypeOfStrict");
+  });
+
+  it("org-type no longer guesses 'personal' inside a catch block", () => {
+    const source = read("src/lib/org-type.server.ts");
+    expect(source).not.toMatch(/catch\s*\{\s*return "personal"/);
+  });
+
+  it("org-type stamps unknown when it cannot read the workspace", () => {
+    const source = read("src/lib/org-type.server.ts");
+    expect(source).toContain('workspace_type: "unknown"');
+  });
+
   it("telemetry.server stamps workspace_type in both of its inserts", () => {
     const source = read("src/lib/telemetry.server.ts");
     const occurrences = source.split("workspace_type").length - 1;
