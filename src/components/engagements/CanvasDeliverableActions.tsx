@@ -2,7 +2,6 @@ import { useMemo, useState } from "react";
 
 import { latestDeliverable } from "@/components/engagements/WhatFedThisButton";
 import { CtaInfoPopover, CtaInfoTrigger } from "@/components/engagements/CtaInfo";
-import { SpiderDrawing } from "@/components/notebook/NotebookSpider";
 import { Button } from "@/components/ui/button";
 import { openJourney } from "@/lib/journey-state";
 import { WORK_ARTIFACT_INFO, WORK_ARTIFACT_TITLE } from "@/lib/work-artifact-shared";
