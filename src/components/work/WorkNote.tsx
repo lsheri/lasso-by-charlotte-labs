@@ -4,7 +4,7 @@ import { ArtifactNote, SourceMark, VendorMark } from "@/components/work/SourceMa
 import { colourKey, noteHue, notePaper } from "@/components/work/note-paper";
 import { useNoteLive } from "@/hooks/use-note-live";
 import { workIdentityLabel } from "@/lib/work-identity";
-import { effectiveWorkDate, formatDate, sourceLabel, type WorkItemRow } from "@/lib/work-types";
+import { effectiveWorkDate, formatDate, type WorkItemRow } from "@/lib/work-types";
 
 /** The shared paper note used anywhere a single piece of work is shown. */
 export function WorkNote({
@@ -88,9 +88,11 @@ export function WorkNote({
           {item.title} <ArtifactNote item={item} />
         </p>
 
-        <p className="mt-1 truncate font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
-          {workIdentityLabel(item)} · {sourceLabel(item.source)} · {date}
-        </p>
+        {workIdentityLabel(item) ? (
+          <p className="mt-1 truncate font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
+            {workIdentityLabel(item)}
+          </p>
+        ) : null}
 
         {chips ? <div className="mt-1 flex flex-wrap items-center gap-1.5">{chips}</div> : null}
       </div>
