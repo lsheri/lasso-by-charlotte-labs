@@ -443,6 +443,113 @@ export function AiRecordPage() {
       ) : null}
 
       {threads.length > 0 ? (
+        <div
+          role="group"
+          aria-label="Filter by engagement"
+          className="mb-6 flex flex-wrap items-center gap-2"
+        >
+          <button
+            type="button"
+            aria-pressed={engagement === "all"}
+            onClick={() => chooseEngagement("all")}
+            className={
+              engagement === "all"
+                ? "rounded-full border border-graphite bg-nb-white px-3 py-1 text-[11.5px] font-medium text-foreground"
+                : "rounded-full border border-[var(--nb-pencil)] px-3 py-1 text-[11.5px] text-muted-foreground transition-colors hover:border-foreground"
+            }
+          >
+            Everything
+            <span className="ml-1.5 font-mono text-[10px] text-soft">{shown.length}</span>
+          </button>
+          {engagementsPresent.map((e) => {
+            const on = engagement === e.id;
+            return (
+              <button
+                key={e.id}
+                type="button"
+                aria-pressed={on}
+                onClick={() => chooseEngagement(e.id)}
+                className={
+                  on
+                    ? "rounded-full border border-graphite bg-nb-white px-3 py-1 text-[11.5px] font-medium text-foreground"
+                    : "rounded-full border border-[var(--nb-pencil)] px-3 py-1 text-[11.5px] text-muted-foreground transition-colors hover:border-foreground"
+                }
+              >
+                <span
+                  className="mr-1.5 inline-block h-2 w-2 rounded-full align-middle"
+                  style={{ background: `var(${engagementHue(e.id)})` }}
+                />
+                {e.code}
+                <span className="ml-1.5 font-mono text-[10px] text-soft">{e.count}</span>
+              </button>
+            );
+          })}
+          {unmappedCount > 0 ? (
+            <button
+              type="button"
+              aria-pressed={engagement === "unmapped"}
+              onClick={() => chooseEngagement("unmapped")}
+              className={
+                engagement === "unmapped"
+                  ? "rounded-full border border-graphite bg-nb-white px-3 py-1 text-[11.5px] font-medium text-foreground"
+                  : "rounded-full border border-[var(--nb-pencil)] px-3 py-1 text-[11.5px] text-muted-foreground transition-colors hover:border-foreground"
+              }
+            >
+              Unmapped
+              <span className="ml-1.5 font-mono text-[10px] text-soft">{unmappedCount}</span>
+            </button>
+          ) : null}
+          {selectedEngagement ? (
+            <button
+              type="button"
+              onClick={() => setRecursOpen((prev) => !prev)}
+              className="text-xs font-medium text-accent-deep transition-opacity hover:opacity-70"
+            >
+              {recursOpen ? "Hide analysis" : "What recurs"}
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+
+      {recursOpen && selectedEngagement ? (
+        <div className="mb-6 space-y-3 rounded-[var(--radius)] border border-border bg-card p-4">
+          <AnalysisChips
+            target={{
+              kind: "engagement",
+              id: selectedEngagement.id,
+              title: selectedEngagement.title,
+              itemCount: visible.length,
+            }}
+            readsDetail="every piece of work mapped into this engagement, oldest first"
+            running={analyses.running}
+            orgId={profile?.org_id}
+            profileId={profile?.id}
+            onRun={(preset, checkId) =>
+              void analyses.runPreset(
+                preset,
+                {
+                  kind: "engagement",
+                  id: selectedEngagement.id,
+                  title: selectedEngagement.title,
+                  itemCount: visible.length,
+                },
+                "every piece of work mapped into this engagement, oldest first",
+                checkId,
+              )
+            }
+          />
+          {analyses.running ? (
+            <>
+              <ThinkingIndicator />
+              {analyses.streamed ? <MarkdownMessage content={analyses.streamed} /> : null}
+            </>
+          ) : null}
+          {analyses.error ? <p className="text-sm text-destructive">{analyses.error}</p> : null}
+          <InlineAnalysisBlocks results={analyses.results} profileId={profile?.id} />
+        </div>
+      ) : null}
+
+      {threads.length > 0 ? (
         <div className="mb-6 space-y-3">
           <button
             type="button"
