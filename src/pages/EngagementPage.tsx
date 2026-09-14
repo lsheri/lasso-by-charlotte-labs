@@ -1,6 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { getRouteApi, Link } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import { GraphiteRule } from "@/components/notebook/marks";
 import { PeekBody } from "@/components/peek/PeekPanel";
@@ -84,6 +84,29 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
   const [view, setView] = useState<EngagementView>("work");
   const [creatingWrap, setCreatingWrap] = useState(false);
   const previousWorkRef = useRef(work);
+  const tabBarRef = useRef<HTMLDivElement>(null);
+  const tabRefs = useRef<Partial<Record<EngagementView, HTMLButtonElement>>>({});
+  const [tabRule, setTabRule] = useState({ left: 0, width: 0 });
+
+  const measureTabRule = useCallback(() => {
+    const selected = tabRefs.current[view];
+    if (!selected) return;
+    setTabRule({ left: selected.offsetLeft, width: selected.offsetWidth });
+  }, [view]);
+
+  useLayoutEffect(() => {
+    measureTabRule();
+    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(measureTabRule);
+    if (tabBarRef.current) observer?.observe(tabBarRef.current);
+    for (const tab of Object.values(tabRefs.current)) {
+      if (tab) observer?.observe(tab);
+    }
+    window.addEventListener("resize", measureTabRule);
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener("resize", measureTabRule);
+    };
+  }, [measureTabRule]);
 
   const setAskRailOpen = (open: boolean) => {
     if (open === askOpen) return;
@@ -173,6 +196,9 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
   // the coaches it is shared with, the caller's own membership, the decisions
   // and the sequence order all arrive together.
   const engagementQuery = useEngagementPage(engagementId);
+  useLayoutEffect(() => {
+    measureTabRule();
+  }, [engagementQuery.data?.engagement?.id, measureTabRule]);
   const tasksQuery = useEngagementSlice<TaskWithWork[]>(
     engagementId,
     ["engagement-tasks", engagementId],
@@ -415,8 +441,12 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
       </header>
 
       <div className="mb-2 border-b border-[var(--nb-rule)]" role="group" aria-label="Engagement views">
-        <div className="flex flex-wrap">
+        <div ref={tabBarRef} className="relative flex flex-wrap">
           <button
+            ref={(node) => {
+              if (node) tabRefs.current.brief = node;
+              else delete tabRefs.current.brief;
+            }}
             type="button"
             aria-pressed={view === "brief"}
             onClick={() => setEngagementView("brief")}
@@ -427,17 +457,19 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
           >
             <span className="micro-label">BRIEF</span>
             <span className="text-[11px] italic text-muted-foreground">what were we asked for?</span>
-            {view === "brief" ? (
-              <GraphiteRule className="absolute bottom-[-2px] left-0 h-[6px] w-full text-[var(--nb-green)]" />
-            ) : (
+            {view !== "brief" ? (
               <span
                 className={cn(
                   "absolute bottom-[-1px] left-0 h-[2px] w-full scale-x-0 bg-[var(--nb-pencil)] transition-transform group-hover:scale-x-100",
                 )}
               />
-            )}
+            ) : null}
           </button>
           <button
+            ref={(node) => {
+              if (node) tabRefs.current.work = node;
+              else delete tabRefs.current.work;
+            }}
             type="button"
             aria-pressed={view === "work"}
             onClick={() => setEngagementView("work")}
@@ -448,17 +480,19 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
           >
             <span className="micro-label">WORK</span>
             <span className="text-[11px] italic text-muted-foreground">what is here, and what fed what?</span>
-            {view === "work" ? (
-              <GraphiteRule className="absolute bottom-[-2px] left-0 h-[6px] w-full text-[var(--nb-green)]" />
-            ) : (
+            {view !== "work" ? (
               <span
                 className={cn(
                   "absolute bottom-[-1px] left-0 h-[2px] w-full scale-x-0 bg-[var(--nb-pencil)] transition-transform group-hover:scale-x-100",
                 )}
               />
-            )}
+            ) : null}
           </button>
           <button
+            ref={(node) => {
+              if (node) tabRefs.current.verify = node;
+              else delete tabRefs.current.verify;
+            }}
             type="button"
             aria-pressed={view === "verify"}
             onClick={() => setEngagementView("verify")}
@@ -469,17 +503,19 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
           >
             <span className="micro-label">VERIFY</span>
             <span className="text-[11px] italic text-muted-foreground">can I stand behind this?</span>
-            {view === "verify" ? (
-              <GraphiteRule className="absolute bottom-[-2px] left-0 h-[6px] w-full text-[var(--nb-green)]" />
-            ) : (
+            {view !== "verify" ? (
               <span
                 className={cn(
                   "absolute bottom-[-1px] left-0 h-[2px] w-full scale-x-0 bg-[var(--nb-pencil)] transition-transform group-hover:scale-x-100",
                 )}
               />
-            )}
+            ) : null}
           </button>
           <button
+            ref={(node) => {
+              if (node) tabRefs.current.share = node;
+              else delete tabRefs.current.share;
+            }}
             type="button"
             aria-pressed={view === "share"}
             onClick={() => setEngagementView("share")}
@@ -490,16 +526,18 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
           >
             <span className="micro-label">SHARE</span>
             <span className="text-[11px] italic text-muted-foreground">who else can see this?</span>
-            {view === "share" ? (
-              <GraphiteRule className="absolute bottom-[-2px] left-0 h-[6px] w-full text-[var(--nb-green)]" />
-            ) : (
+            {view !== "share" ? (
               <span
                 className={cn(
                   "absolute bottom-[-1px] left-0 h-[2px] w-full scale-x-0 bg-[var(--nb-pencil)] transition-transform group-hover:scale-x-100",
                 )}
               />
-            )}
+            ) : null}
           </button>
+          <GraphiteRule
+            className="pointer-events-none absolute bottom-[-2px] h-[6px] text-[var(--nb-green)] [transition-duration:var(--nb-dur-move)] [transition-property:left,width] [transition-timing-function:var(--nb-ease)] motion-reduce:transition-none"
+            style={{ left: tabRule.left, width: tabRule.width }}
+          />
         </div>
       </div>
       <div className="nb-bench-grid relative">
@@ -595,7 +633,6 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
                   </div>
                 ) : null;
               })()}
-
             </div>
           ) : view === "verify" ? (
             <section className="space-y-3">
@@ -630,6 +667,8 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
             <SharedWithSection
               engagementId={engagementId}
               orgId={profile.org_id}
+              items={canvasItems}
+              profile={profile}
               quickFolder={isQuickFolder}
               personalOrg={!isBusinessOrg(profile)}
             />

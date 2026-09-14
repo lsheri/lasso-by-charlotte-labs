@@ -31,3 +31,4 @@
 - [x] Keep custom vendor marks above their paper discs and centre the map action label
 - [x] Use one shared work note across the Inbox, overview, and engagement board
 - [x] Show only the work type on the shared note's third line, removing duplicate source/date
+- [x] Slide one pencil rule across engagement tabs and move Ship to firm to Share

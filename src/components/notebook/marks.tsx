@@ -322,15 +322,18 @@ export function ChaliceMark({ size = 24, className = "" }: { size?: number; clas
 export function GraphiteRule({
   className = "",
   animated = false,
+  style,
 }: {
   className?: string;
   /** Draws the stroke in on mount, as if pencilled just now. */
   animated?: boolean;
+  style?: React.CSSProperties;
 }) {
 
   return (
     <svg
       className={`nb-title-rule ${animated ? "nb-title-rule-animated" : ""} pointer-events-none ${className}`}
+      style={style}
       viewBox="0 0 300 6"
       preserveAspectRatio="none"
       fill="none"
