@@ -94,6 +94,12 @@ export function OverviewPage() {
 
       <CoachingLinkNotices />
 
+      <div className="mb-2">
+        <Link to="/work" className="text-[11.5px] text-accent-deep hover:underline">
+          Bring work in →
+        </Link>
+      </div>
+
       <ChatsToOrganise items={items} />
 
       {waiting.length > 0 ? (
