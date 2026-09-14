@@ -336,9 +336,7 @@ export function SlidesPane({
     let cancelled = false;
     void (async () => {
       try {
-        const pdfjs = await import("pdfjs-dist");
-        const workerUrl = (await import("pdfjs-dist/build/pdf.worker.min.mjs?url")).default;
-        pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
+        const pdfjs = await loadPdfjs();
         const loaded = await pdfjs.getDocument({ url: urlRef.current }).promise;
         if (cancelled) return;
         setDoc(loaded);
