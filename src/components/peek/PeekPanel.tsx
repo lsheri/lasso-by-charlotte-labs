@@ -76,6 +76,8 @@ type PeekBodyProps = {
   /** Set when the peek is read inside one engagement. */
   engagementId?: string | undefined;
   viewerProfileId?: string | null | undefined;
+  /** The card above the panel already offers scope-correct analyses. */
+  analysesInHeader?: boolean | undefined;
   /** Lets the body close itself where it is rendered without a sheet. */
   onClose?: (() => void) | undefined;
 };
