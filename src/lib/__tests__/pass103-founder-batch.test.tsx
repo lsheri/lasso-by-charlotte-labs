@@ -130,11 +130,11 @@ describe("pass 103 · sticky cards and spider", () => {
     expect(styles.slice(reduced)).toContain("animation: none !important");
   });
 
-  it("lifts the canvas card title clear of its rule", () => {
+  it("uses the shared paper note instead of the retired canvas title", () => {
     expect(styles).toContain(".nb-canvas-card-title");
-    expect(readFileSync("src/components/engagements/EngagementCanvas.tsx", "utf8")).toContain(
-      "nb-canvas-card-title",
-    );
+    const canvas = readFileSync("src/components/engagements/EngagementCanvas.tsx", "utf8");
+    expect(canvas).toContain("<WorkNote");
+    expect(canvas).not.toContain('className="nb-canvas-card-title');
   });
 });
 
