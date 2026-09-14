@@ -576,7 +576,7 @@ function PdfPage({
     const guard = makeRenderGuard();
     void (async () => {
       try {
-        const pdfjs = await import("pdfjs-dist");
+        const pdfjs = await loadPdfjs();
         const pdfPage = await (doc as { getPage: (n: number) => Promise<never> }).getPage(
           pageNumber,
         );
