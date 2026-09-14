@@ -39,11 +39,11 @@ export function DocumentRecheckCard() {
       />
       <span className="min-w-0 flex-1">
         <span className="block text-[13px] font-medium text-foreground">
-          Check connected documents for new versions
+          Let Lasso check connected documents for new versions
         </span>
         <span className="mt-0.5 block text-[11.5px] leading-[17px] text-muted-foreground">
-          Lasso re-reads a document only when its source says it changed, and keeps the earlier
-          version so your links still point at what you cited.
+          Off by default. Lasso only reads a connected document when you ask it to. Turn this on and
+          it will also check on its own, re-reading a document only when its source says it changed.
         </span>
       </span>
     </label>

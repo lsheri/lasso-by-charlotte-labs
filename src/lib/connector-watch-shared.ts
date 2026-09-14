@@ -13,7 +13,7 @@ export type WatchFolder = {
 export type WatchConfig = {
   folders: WatchFolder[];
   /** Whether already-imported documents may be re-read when their source
-   *  says they changed. Absent means yes. */
+   *  says they changed. Absent means no. */
   recheck_documents: boolean;
 };
 
@@ -38,7 +38,7 @@ export function suggestionBucket(n: number): string {
 
 export function parseWatchConfig(raw: unknown): WatchConfig {
   const record = raw as { folders?: unknown; recheck_documents?: unknown } | null;
-  const recheck = record?.recheck_documents !== false;
+  const recheck = record?.recheck_documents === true;
   const folders = record?.folders;
   if (!Array.isArray(folders)) return { folders: [], recheck_documents: recheck };
   const out: WatchFolder[] = [];
