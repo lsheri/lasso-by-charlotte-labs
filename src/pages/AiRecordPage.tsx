@@ -35,7 +35,7 @@ import { useProfile } from "@/hooks/use-profile";
 import { useWorkItems } from "@/hooks/use-work-items";
 import { supabase } from "@/integrations/supabase/client";
 import { effectiveWorkDate, type WorkItemRow } from "@/lib/work-types";
-import { SectionHeader } from "@/components/notebook/SectionHeader";
+import { engagementHue } from "@/lib/work-identity";
 import { GraphiteSeam } from "@/components/notebook/marks";
 import { GraphiteIcon } from "@/components/notebook/icons";
 import { ToneCard } from "@/components/notebook/ToneCard";
