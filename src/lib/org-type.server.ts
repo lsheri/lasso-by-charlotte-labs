@@ -1,10 +1,13 @@
 /**
  * The acting workspace's type, read server side from the settings jsonb that
- * already exists. Cached per process because it changes at most once, at
- * workspace creation.
+ * already exists. The type is cached briefly because it is read on every
+ * event, and it can change, so the cache expires rather than persisting for
+ * the life of the process.
  */
 
-const cache = new Map<string, string>();
+const ORG_TYPE_TTL_MS = 10_000;
+
+const cache = new Map<string, { at: number; value: string }>();
 
 /** Test seam. */
 export function resetOrgTypeCache(): void {
@@ -20,7 +23,7 @@ export function orgTypeFromSettings(settings: unknown): string {
 export async function orgTypeOf(orgId: string | null | undefined): Promise<string> {
   if (!orgId) return "personal";
   const hit = cache.get(orgId);
-  if (hit) return hit;
+  if (hit && Date.now() - hit.at < ORG_TYPE_TTL_MS) return hit.value;
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data } = await supabaseAdmin
@@ -29,9 +32,26 @@ export async function orgTypeOf(orgId: string | null | undefined): Promise<strin
       .eq("id", orgId)
       .maybeSingle();
     const type = orgTypeFromSettings(data?.settings ?? null);
-    cache.set(orgId, type);
+    cache.set(orgId, { at: Date.now(), value: type });
     return type;
   } catch {
     return "personal";
   }
+}
+
+/**
+ * The two workspace dimensions stamped onto every event at write time, the
+ * same way the consent tier is. They are stamped, never joined at read time:
+ * a workspace can change type, and a join would silently rewrite history.
+ */
+export type WorkspaceStamp = { workspace_type: string; affiliated: boolean | null };
+
+export async function workspaceStamp(
+  orgId: string | null | undefined,
+): Promise<WorkspaceStamp> {
+  // No workspace at all: an anonymous marketing view. "none" rather than null,
+  // so a missing stamp can never be mistaken for a bug.
+  if (!orgId) return { workspace_type: "none", affiliated: null };
+  // Affiliation does not exist yet; when it ships it is read here and nowhere else.
+  return { workspace_type: await orgTypeOf(orgId), affiliated: false };
 }

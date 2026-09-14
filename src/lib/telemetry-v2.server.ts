@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import type { Database } from "@/integrations/supabase/types";
 
+import { orgTypeFromSettings } from "./org-type.server";
 import { bucket } from "./telemetry-shared";
 import {
   CAPTURE_CHANNELS,
@@ -389,10 +390,19 @@ export async function recordEventV2(
 
     const { data: org } = await supabase
       .from("orgs")
-      .select("name, data_use_tier")
+      .select("name, data_use_tier, settings")
       .eq("id", profile.org_id)
       .maybeSingle();
     const environment = resolveEnvironment(input.email ?? null, org?.name ?? null);
+
+    // Stamped at write time, never joined at read: a workspace can change type.
+    // Affiliation does not exist yet, so it is false here for now.
+    const stamp = profile.org_id
+      ? {
+          workspace_type: orgTypeFromSettings(org?.settings ?? null),
+          affiliated: false,
+        }
+      : { workspace_type: "none", affiliated: null };
 
     const canonicalProps: Record<string, string | number | boolean> = {
       ...props,
@@ -407,6 +417,7 @@ export async function recordEventV2(
     // events_v2 has RLS on and zero policies, by design: service role only.
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.from("events_v2").insert({
+      ...stamp,
       event_name: input.eventName,
       schema_version: TAXONOMY_VERSION,
       occurred_at: new Date().toISOString(),
