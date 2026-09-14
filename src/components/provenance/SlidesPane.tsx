@@ -21,6 +21,7 @@ import {
   type Point,
   type TextRun,
 } from "@/lib/lasso-geometry";
+import { loadPdfjs } from "@/lib/pdfjs-client";
 import { makeRenderGuard } from "@/lib/rendition-query";
 import type { AuditStitch } from "@/lib/span-provenance.functions";
 import {
