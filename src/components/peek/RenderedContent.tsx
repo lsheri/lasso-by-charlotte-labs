@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import { Download, ExternalLink } from "lucide-react";
 import { useEffect, useState } from "react";
 
-import { PdfView } from "@/components/peek/PdfView";
 import { ReextractAction } from "@/components/peek/ReextractAction";
 import { highlight, toSafeHtml } from "@/lib/markdown";
 import { getWorkFileUrl } from "@/lib/work-files.functions";
