@@ -202,9 +202,13 @@ export function RenderedContent({
   const wantsText = needsTextFetch(shape);
   const driveFileId = item.meta?.drive_file_id ?? null;
   // A Drive file is shown by Drive itself, so no signed storage URL is minted.
+  // PDFs are shown as extracted text, so they do not need a signed URL either.
   const urlQuery = useFileUrl(
     item,
-    !driveFileId && shape.kind !== "none" && shape.kind !== "unsupported",
+    !driveFileId &&
+      shape.kind !== "none" &&
+      shape.kind !== "unsupported" &&
+      shape.kind !== "pdf",
   );
   const [rendered, setRendered] = useState<string | null>(null);
   const [failed, setFailed] = useState<string | null>(null);
