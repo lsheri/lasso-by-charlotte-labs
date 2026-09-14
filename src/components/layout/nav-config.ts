@@ -29,7 +29,6 @@ export const navGroups: NavGroup[] = [
     label: "What you learned",
     items: [
       { label: "Past work", to: "/archive", icon: "firm" },
-      { label: "Chat library", to: "/ai-record", icon: "ai-record" },
       { label: "Reflect", to: "/reflect", icon: "reflect" },
       { label: "Decision log", to: "/decisions", icon: "decisions" },
       { label: "Overview", to: "/overview", icon: "overview" },
