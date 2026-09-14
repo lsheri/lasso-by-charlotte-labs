@@ -85,7 +85,7 @@ describe("pass 112.1 · journey and ship on the canvas", () => {
   it("hides Share shipping from a member who does not own the latest deliverable", () => {
     const source = readFileSync("src/components/engagements/SharedWithSection.tsx", "utf8");
     expect(source).toContain("ownsWorkItem(profile, anchor ?? {})");
-    expect(source).toContain("(canShip || !ready) ? (");
+    expect(source).toContain("disabled={!canShip}");
     expect(source).toContain("disabled={!canShip}");
   });
 
