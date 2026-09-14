@@ -579,69 +579,19 @@ export function AiRecordPage() {
 
         <div className="space-y-8">
           {groups.map((group) => {
-            const expanded = openGroup === group.key;
             return (
               <section key={group.key} className="space-y-3">
-                <SectionHeader
-                  title={group.code ? `${group.code} ${group.title}` : group.title}
-                  action={
-                    <span className="flex items-baseline gap-3">
-                      <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
-                        {group.items.length} conversation{group.items.length === 1 ? "" : "s"}
-                        {span(group.items) ? ` · ${span(group.items)}` : ""}
-                      </span>
-                      {group.engagementId ? (
-                        <button
-                          type="button"
-                          onClick={() => setOpenGroup(expanded ? null : group.key)}
-                          className="text-xs font-medium text-accent-deep transition-opacity hover:opacity-70"
-                        >
-                          {expanded ? "Hide analysis" : "What recurs"}
-                        </button>
-                      ) : null}
-                    </span>
-                  }
-                />
+                <div className="flex items-center gap-3 pb-2 pt-1">
+                  <span className="font-hand text-[19px] leading-none text-graphite">
+                    {group.label}
+                  </span>
+                  <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">
+                    {group.items.length}
+                  </span>
+                  <span className="h-px flex-1 bg-[var(--nb-rule)]" />
+                </div>
 
-                {expanded && group.engagementId ? (
-                  <div className="space-y-3 rounded-[var(--radius)] border border-border bg-card p-4">
-                    <AnalysisChips
-                      target={{
-                        kind: "engagement",
-                        id: group.engagementId,
-                        title: group.title,
-                        itemCount: group.items.length,
-                      }}
-                      readsDetail="every piece of work mapped into this engagement, oldest first"
-                      running={analyses.running}
-                      orgId={profile?.org_id}
-                      profileId={profile?.id}
-                      onRun={(preset, checkId) =>
-                        void analyses.runPreset(
-                          preset,
-                          {
-                            kind: "engagement",
-                            id: group.engagementId as string,
-                            title: group.title,
-                            itemCount: group.items.length,
-                          },
-                          "every piece of work mapped into this engagement, oldest first",
-                          checkId,
-                        )
-                      }
-                    />
-                    {analyses.running ? (
-                      <>
-                        <ThinkingIndicator />
-                        {analyses.streamed ? <MarkdownMessage content={analyses.streamed} /> : null}
-                      </>
-                    ) : null}
-                    {analyses.error ? (
-                      <p className="text-sm text-destructive">{analyses.error}</p>
-                    ) : null}
-                    <InlineAnalysisBlocks results={analyses.results} profileId={profile?.id} />
-                  </div>
-                ) : null}
+
 
                 {/* Figma 27:635 draws these as a hairline-ruled list, not a
                     stack of bordered cards. Same handlers, same actions: they
