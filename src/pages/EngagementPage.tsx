@@ -3,7 +3,6 @@ import { getRouteApi, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 
 import { GraphiteRule } from "@/components/notebook/marks";
-import { GraphiteIcon } from "@/components/notebook/icons";
 import { PeekPanel } from "@/components/peek/PeekPanel";
 import {
   analysisPreset,
@@ -284,6 +283,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
               }))
             : []),
         ];
+  const panelShowing = Boolean(lensItem) || Boolean(profile && profile.role !== "coach" && askOpen);
   const wrapItemCount = wrapTask
     ? new Set(
         (wrapTask.work_item_tasks ?? [])
@@ -386,7 +386,16 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
               <EngagementStats engagementId={engagement.id} tasks={tasksQuery.data ?? []} />
             </p>
           </div>
-          <div className="mt-4 min-[1100px]:absolute min-[1100px]:right-0 min-[1100px]:top-0 min-[1100px]:mt-0">
+          <div
+            className={cn(
+              "mt-4 min-[1100px]:absolute min-[1100px]:right-0 min-[1100px]:top-0 min-[1100px]:z-10 min-[1100px]:mt-0",
+              rail === "closed"
+                ? "min-[1100px]:w-[236px]"
+                : rail === "wide"
+                  ? "min-[1100px]:w-[520px]"
+                  : "min-[1100px]:w-[380px]",
+            )}
+          >
             <ContextCard
               eyebrow={view === "share" ? "GOING TO" : contextScope === "engagement" ? "WORKING FROM" : "ASKING ABOUT"}
               title={selectedItem?.title ?? scopedTask?.name ?? engagementDisplayTitle(engagement)}
@@ -400,7 +409,57 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
               facts={contextFacts}
               vendors={contextVendors}
               actions={contextActions}
+              panelOpen={panelShowing}
+              panelWide={rail === "wide"}
+              onTogglePanelWidth={() => {
+                const next = rail === "wide" ? "open" : "wide";
+                setRail(next);
+                if (profile) {
+                  logEvent("engagement.ask_rail_toggled", profile.org_id, {
+                    state: next === "wide" ? "widened" : "narrowed",
+                    had_conversation: askHadConversation,
+                  });
+                }
+              }}
+              onClosePanel={() => (lensItem ? closeAnalysis() : setAskRailOpen(false))}
             />
+            {profile && ((profile.role !== "coach" && askOpen) || lensItem) ? (
+              <div className="nb-bench-rail rounded-b-[3px] rounded-t-none border border-t-0 border-[var(--nb-rule)] bg-[var(--nb-white)] p-[13px_14px] shadow-[0_3px_6px_-3px_rgb(22_24_26_/_0.2)]">
+                {profile.role !== "coach" ? (
+                  // Keep Ask mounted while an analysis is shown so its conversation remains intact.
+                  <div hidden={Boolean(lensItem)} className="min-h-0 flex-1">
+                    <EngagementAsk
+                      open={askOpen}
+                      onOpenChange={setAskRailOpen}
+                      expanded={stripExpanded}
+                      onConversationStart={() => {
+                        setAskHadConversation(true);
+                        setStripExpanded(false);
+                      }}
+                      engagementId={engagementId}
+                      engagementTitle={engagement.title}
+                      profileId={profile.id}
+                      orgId={profile.org_id}
+                    />
+                  </div>
+                ) : null}
+                {lensItem ? (
+                  <AnalysisLensPanel
+                    key={`${lensItem.id}:${lensPreset ?? "analysis"}`}
+                    {...(lensPreset ? { initialPreset: lensPreset } : {})}
+                    target={{
+                      kind: "item",
+                      id: lensItem.id,
+                      title: lensItem.title,
+                      scope: isDeliverableType(lensItem.type) ? "deliverable" : "thread",
+                    }}
+                    profileId={profile.id}
+                    orgId={profile.org_id}
+                    isCoach={profile.role === "coach"}
+                  />
+                ) : null}
+              </div>
+            ) : null}
           </div>
         </div>
 
@@ -738,108 +797,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
           )}
         </div>
 
-        {profile && ((profile.role !== "coach" && askOpen) || lensItem) ? (
-          <div className="nb-bench-rail">
-            <div className="mb-2 flex items-center justify-between border-b border-rule pb-2 max-[1099px]:hidden">
-              <p className="micro-label">
-                {lensItem
-                  ? (lensPreset ? analysisPreset(lensPreset)?.label : undefined) ??
-                    "Analyse this work"
-                  : "ASK LASSO"}
-              </p>
-              <div className="flex items-center gap-1">
-                <button
-                  type="button"
-                  aria-label={rail === "wide" ? "Narrow this column" : "Widen this column"}
-                  onClick={() => {
-                    const next = rail === "wide" ? "open" : "wide";
-                    setRail(next);
-                    logEvent("engagement.ask_rail_toggled", profile.org_id, {
-                      state: next === "wide" ? "widened" : "narrowed",
-                      had_conversation: askHadConversation,
-                    });
-                  }}
-                  className="grid h-8 w-8 place-items-center rounded-md text-muted-foreground transition-colors hover:text-foreground"
-                >
-                  <svg
-                    width="18"
-                    height="18"
-                    viewBox="0 0 20 20"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.4"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    aria-hidden
-                  >
-                    {rail === "wide" ? (
-                      <>
-                        <path d="M3.5 5.2h5.3v5.3M8.7 5.3 3.4 10.6" />
-                        <path d="M16.5 14.8h-5.3V9.5M11.3 14.7l5.3-5.3" />
-                      </>
-                    ) : (
-                      <>
-                        <path d="M8.8 10.5V5.2H3.5M8.7 5.3l-5.3 5.3" />
-                        <path d="M11.2 9.5v5.3h5.3M11.3 14.7l5.3-5.3" />
-                      </>
-                    )}
-                  </svg>
-                </button>
-                <button
-                  type="button"
-                  aria-label="Close this column"
-                  onClick={() => (lensItem ? closeAnalysis() : setAskRailOpen(false))}
-                  className="grid h-8 w-8 place-items-center rounded-md text-muted-foreground transition-colors hover:text-foreground"
-                >
-                  <GraphiteIcon name="close" size={16} />
-                </button>
-              </div>
-            </div>
-            {profile.role !== "coach" ? (
-              // Keep Ask mounted while an analysis is shown so its conversation remains intact.
-              <div hidden={Boolean(lensItem)} className="min-h-0 flex-1">
-                <EngagementAsk
-                  open={askOpen}
-                  onOpenChange={setAskRailOpen}
-                  expanded={stripExpanded}
-                  onConversationStart={() => {
-                    setAskHadConversation(true);
-                    setStripExpanded(false);
-                  }}
-                  engagementId={engagementId}
-                  engagementTitle={engagement.title}
-                  profileId={profile.id}
-                  orgId={profile.org_id}
-                />
-              </div>
-            ) : null}
-            {lensItem ? (
-              <AnalysisLensPanel
-                key={`${lensItem.id}:${lensPreset ?? "analysis"}`}
-                {...(lensPreset ? { initialPreset: lensPreset } : {})}
-                target={{
-                  kind: "item",
-                  id: lensItem.id,
-                  title: lensItem.title,
-                  scope: isDeliverableType(lensItem.type) ? "deliverable" : "thread",
-                }}
-                profileId={profile.id}
-                orgId={profile.org_id}
-                isCoach={profile.role === "coach"}
-              />
-            ) : null}
-          </div>
-        ) : null}
-        {profile && profile.role !== "coach" && rail === "closed" ? (
-          <button
-            type="button"
-            aria-label="Open Ask Lasso"
-            onClick={() => setAskRailOpen(true)}
-            className="absolute right-0 top-0 hidden min-h-28 w-8 items-center justify-center border border-rule bg-card text-muted-foreground transition-colors hover:text-foreground min-[1100px]:flex"
-          >
-            <span className="micro-label [writing-mode:vertical-rl]">ASK LASSO</span>
-          </button>
-        ) : null}
+        {rail !== "closed" ? <div aria-hidden className="hidden min-[1100px]:block" /> : null}
       </div>
 
       <PeekPanel
