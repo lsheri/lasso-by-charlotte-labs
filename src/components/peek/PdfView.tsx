@@ -14,6 +14,10 @@ export function PdfView({ url, title }: { url: string; title: string }) {
 
   useEffect(() => {
     let cancelled = false;
+    // Held in refs so cleanup can cancel an outstanding render and destroy
+    // the document, releasing the worker instead of abandoning it.
+    const renderTaskRef: { current: { cancel: () => void } | null } = { current: null };
+    const docRef: { current: { destroy: () => Promise<void> } | null } = { current: null };
     void (async () => {
       try {
         const pdfjs = await import("pdfjs-dist");
@@ -21,6 +25,7 @@ export function PdfView({ url, title }: { url: string; title: string }) {
         pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
 
         const doc = await pdfjs.getDocument({ url }).promise;
+        docRef.current = doc;
         const host = hostRef.current;
         if (cancelled || !host) return;
         host.replaceChildren();
@@ -33,6 +38,7 @@ export function PdfView({ url, title }: { url: string; title: string }) {
             (host.clientWidth || 720) / page.getViewport({ scale: 1 }).width,
           );
           const viewport = page.getViewport({ scale });
+          if (Math.floor(viewport.width) < 1 || Math.floor(viewport.height) < 1) continue;
           const canvas = document.createElement("canvas");
           canvas.width = Math.floor(viewport.width);
           canvas.height = Math.floor(viewport.height);
@@ -40,7 +46,20 @@ export function PdfView({ url, title }: { url: string; title: string }) {
           const ctx = canvas.getContext("2d");
           if (!ctx) continue;
           host.appendChild(canvas);
-          await page.render({ canvasContext: ctx, viewport }).promise;
+          const task = page.render({ canvasContext: ctx, viewport });
+          renderTaskRef.current = task;
+          try {
+            await task.promise;
+          } catch (e) {
+            // A cancelled render is a normal outcome, not a failure.
+            if ((e as Error).name === "RenderingCancelledException") return;
+            throw e;
+          } finally {
+            if (renderTaskRef.current === task) renderTaskRef.current = null;
+          }
+          if (cancelled) return;
+          // Show the document as soon as the first page is painted.
+          if (n === 1) setReady(true);
         }
         if (!cancelled) setReady(true);
       } catch (e) {
@@ -49,6 +68,16 @@ export function PdfView({ url, title }: { url: string; title: string }) {
     })();
     return () => {
       cancelled = true;
+      const task = renderTaskRef.current;
+      renderTaskRef.current = null;
+      try {
+        task?.cancel();
+      } catch {
+        /* RenderingCancelledException is how a cancelled render reports in */
+      }
+      const doc = docRef.current;
+      docRef.current = null;
+      void doc?.destroy();
     };
   }, [url]);
 
