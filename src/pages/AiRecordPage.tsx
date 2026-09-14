@@ -24,7 +24,7 @@ import { BrandLogo } from "@/components/connectors/BrandLogo";
 import { SubjectsPanel } from "@/components/work/SubjectsPanel";
 import { ChatRow, chatWhen, fedPhrase } from "@/components/work/ChatRow";
 import { WorkNote } from "@/components/work/WorkNote";
-import { noteChatViewChangedFn } from "@/lib/chat-library.functions";
+import { noteChatViewChangedFn, noteReaderClosedFn } from "@/lib/chat-library.functions";
 import { useChatSearchSignal } from "@/hooks/use-chat-search-signal";
 import { useMotion } from "@/hooks/use-motion";
 import { useProfile } from "@/hooks/use-profile";
@@ -32,7 +32,7 @@ import { useWorkItems } from "@/hooks/use-work-items";
 import { supabase } from "@/integrations/supabase/client";
 import { effectiveWorkDate, type WorkItemRow } from "@/lib/work-types";
 import { SectionHeader } from "@/components/notebook/SectionHeader";
-import { NotebookSpider } from "@/components/notebook/NotebookSpider";
+import { GraphiteIcon } from "@/components/notebook/icons";
 import { ToneCard } from "@/components/notebook/ToneCard";
 import { vendorLabel } from "@/lib/conversation-shared";
 import { vendorFromSource, type ToolVendor } from "@/lib/work-taxonomy";
@@ -143,6 +143,7 @@ export function AiRecordPage() {
   const readingMotion = useMotion("record.reading");
   const pileMotion = useMotion("work.piles");
   const noteViewChanged = useServerFn(noteChatViewChangedFn);
+  const noteReaderClosed = useServerFn(noteReaderClosedFn);
 
   // Read after mount so the server and the first client render agree. Blocked
   // site data throws here, and a saved preference is never worth a broken page.
@@ -172,6 +173,15 @@ export function AiRecordPage() {
     query.addEventListener("change", update);
     return () => query.removeEventListener("change", update);
   }, []);
+
+  useEffect(() => {
+    if (!selected) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") closeReader("escape");
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  });
 
   const threads = (work?.items ?? []).filter((i) => i.type === "ai_thread");
   // The id list is sorted before it becomes part of a key, so a reordered but
@@ -208,8 +218,18 @@ export function AiRecordPage() {
     .join(" · ");
   const searchSignal = useChatSearchSignal(query, shown.length);
 
+  /** One close path: the button, Escape and reselecting all come through here. */
+  function closeReader(how: "button" | "escape" | "reselect") {
+    setSelected(null);
+    void noteReaderClosed({ data: { view, how } }).catch(() => {});
+  }
+
   /** One open path, shared by the list and the cards so they cannot drift. */
   function openItem(item: WorkItemRow) {
+    if (desktopReader && selected?.id === item.id) {
+      closeReader("reselect");
+      return;
+    }
     searchSignal.onResultOpened();
     markOpenStart("peek.open");
     if (desktopReader) {
@@ -278,7 +298,7 @@ export function AiRecordPage() {
   });
 
   return (
-    <div className="nb-chatview">
+    <div className="nb-chatview" data-reader={selected ? "open" : "closed"}>
       <div className="nb-chatview-list">
       <PageHeader
         title="Chat"
@@ -573,6 +593,12 @@ export function AiRecordPage() {
           <p className="mt-4 border-t border-[var(--nb-rule)] pt-3 text-[12px] text-muted-foreground">
             Showing {visible.length} of {threads.length}. Nothing is deleted here.
           </p>
+          <CaptureCoverage
+            profileId={profile?.id}
+            itemCount={threads.length}
+            scopeLabel="your chat library"
+            dates={threads.map((t) => effectiveWorkDate(t))}
+          />
           <p className="font-hand mt-6 text-[16px] text-green">
             nothing here was written by Lasso
           </p>
@@ -604,99 +630,77 @@ export function AiRecordPage() {
       </div>
 
       <div className="nb-chatview-pane">
-        {selected ? (
-          <article
-            key={selected.id}
-            aria-label={`Reading ${selected.title}`}
-            className={readingMotion.className}
-          >
-            <header className="border-b border-pencil pb-4">
-              <h2 className="page-title break-words text-[22px] leading-snug">{selected.title}</h2>
-              <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
-                <span>{vendorLabel(vendorFromSource(selected))}</span>
-                <span>·</span>
-                <span>
-                  {turnCounts?.[selected.id] ?? 0}{" "}
-                  {(turnCounts?.[selected.id] ?? 0) === 1 ? "turn" : "turns"}
-                </span>
-                <span>·</span>
-                <span>{formatDate(effectiveWorkDate(selected))}</span>
-              </div>
-              <p className="mt-2">
-                <ChatUrlLink item={selected} />
-              </p>
-              <PeekActionBar
-                item={selected}
-                canEdit={false}
-                owned={false}
-                onAnalyse={(item) => setLensItem(item)}
-                onShip={() => {}}
-                onBrief={() => {}}
-                onRemove={() => {}}
-                onDelete={() => {}}
-              />
-            </header>
-            <div className="py-5">
-              {peekFormat(selected).kind === "thread" ? (
-                <ThreadBody item={selected} enabled />
-              ) : (
-                <RenderedContent
-                  item={selected}
-                  format={peekFormat(selected)}
-                  canEdit={false}
-                  onDownload={() => void download(selected)}
-                />
-              )}
-            </div>
-          </article>
-        ) : (
-          <div className="space-y-4">
-            <div className="relative mx-auto h-[200px] w-[200px]" aria-hidden="true">
-              <svg viewBox="0 0 200 200" className="h-full w-full">
-                <g className="nb-chat-ribbon">
-                  <path
-                    id="chat-provenance-ring"
-                    d="M 100,18 A 82,82 0 1,1 99.9,18"
-                    fill="none"
-                    stroke="var(--nb-rule)"
-                    strokeWidth="1.4"
-                  />
-                  <text
-                    fontFamily="var(--font-mono)"
-                    fontSize="9"
-                    letterSpacing="0.08em"
-                    fill="var(--nb-soft)"
+        <div className="w-[520px] max-w-full">
+          {selected ? (
+            <article
+              key={selected.id}
+              aria-label={`Reading ${selected.title}`}
+              className={readingMotion.className}
+            >
+              <header className="border-b border-pencil pb-4">
+                <div className="flex items-start justify-between gap-3">
+                  <h2 className="page-title break-words text-[22px] leading-snug">
+                    {selected.title}
+                  </h2>
+                  <button
+                    type="button"
+                    aria-label="Close the reader"
+                    onClick={() => closeReader("button")}
+                    className="shrink-0 text-muted-foreground transition-colors hover:text-foreground"
                   >
-                    <textPath href="#chat-provenance-ring" startOffset="1%">
-                      CLAUDE · CHATGPT · GEMINI · ON THE RECORD · CLAUDE · CHATGPT · GEMINI · ON THE RECORD ·
-                    </textPath>
-                  </text>
-                </g>
-              </svg>
-              <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                <NotebookSpider size={40} />
+                    <GraphiteIcon name="close" size={18} />
+                  </button>
+                </div>
+                <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
+                  <span>{vendorLabel(vendorFromSource(selected))}</span>
+                  <span>·</span>
+                  <span>
+                    {turnCounts?.[selected.id] ?? 0}{" "}
+                    {(turnCounts?.[selected.id] ?? 0) === 1 ? "turn" : "turns"}
+                  </span>
+                  <span>·</span>
+                  <span>{formatDate(effectiveWorkDate(selected))}</span>
+                </div>
+                <p className="mt-2">
+                  <ChatUrlLink item={selected} />
+                </p>
+                <PeekActionBar
+                  item={selected}
+                  canEdit={false}
+                  owned={false}
+                  onAnalyse={(item) => setLensItem(item)}
+                  onShip={() => {}}
+                  onBrief={() => {}}
+                  onRemove={() => {}}
+                  onDelete={() => {}}
+                />
+              </header>
+              <div className="py-5">
+                {peekFormat(selected).kind === "thread" ? (
+                  <ThreadBody item={selected} enabled />
+                ) : (
+                  <RenderedContent
+                    item={selected}
+                    format={peekFormat(selected)}
+                    canEdit={false}
+                    onDownload={() => void download(selected)}
+                  />
+                )}
               </div>
-            </div>
-            <p className="text-[13px] text-muted-foreground">Pick a conversation to read it here.</p>
-            <CaptureCoverage
-              profileId={profile?.id}
-              itemCount={threads.length}
-              scopeLabel="your chat library"
-              dates={threads.map((t) => effectiveWorkDate(t))}
-            />
-            {/* Figma 27:635's own wording for this panel, with no claim beyond what
-                the product already does. The unavailable turn-level provenance
-                panel is deliberately not invented above this card. */}
-            <ToneCard tone="paper" label="WHY THIS PANEL EXISTS">
-              <p className="text-[13px] leading-[19px] text-foreground">
-                You can always see what the AI actually read before it answered.
-              </p>
-              <p className="mt-1 text-[12px] leading-[18px] text-muted-foreground">
-                If a line is not in the record, it is dropped, never repaired.
-              </p>
-            </ToneCard>
-          </div>
-        )}
+              {/* Figma 27:635's own wording for this panel, with no claim beyond what
+                  the product already does. The unavailable turn-level provenance
+                  panel is deliberately not invented above this card. */}
+              <ToneCard tone="paper" label="WHY THIS PANEL EXISTS">
+                <p className="text-[13px] leading-[19px] text-foreground">
+                  You can always see what the AI actually read before it answered.
+                </p>
+                <p className="mt-1 text-[12px] leading-[18px] text-muted-foreground">
+                  If a line is not in the record, it is dropped, never repaired.
+                </p>
+              </ToneCard>
+            </article>
+          ) : null}
+        </div>
       </div>
     </div>
   );

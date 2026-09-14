@@ -107,3 +107,38 @@ export const noteChatViewChangedFn = createServerFn({ method: "POST" })
     });
     return { ok: true };
   });
+
+/**
+ * Pass 160: the reading pane was closed, and how. Closed vocabulary in dims,
+ * nothing else travels. Never surfaced on failure.
+ */
+export const noteReaderClosedFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { view: string; how: string }) => ({
+    view: input?.view === "cards" || input?.view === "list" ? input.view : "",
+    how:
+      input?.how === "button" || input?.how === "escape" || input?.how === "reselect"
+        ? input.how
+        : "",
+  }))
+  .handler(async ({ data, context }): Promise<{ ok: true }> => {
+    if (!data.view || !data.how) return { ok: true };
+    const { supabase, userId } = context;
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("id, org_id")
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (!profile) return { ok: true };
+
+    const { recordEvent } = await import("./telemetry.server");
+    await recordEvent(supabase, {
+      eventType: "chatlib.reader_closed",
+      orgId: profile.org_id,
+      userId,
+      profileId: profile.id,
+      dims: { view: data.view, how: data.how },
+    });
+    return { ok: true };
+  });
