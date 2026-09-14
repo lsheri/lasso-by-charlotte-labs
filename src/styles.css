@@ -3596,3 +3596,49 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 }
 
 }
+
+/* M9 · Arrows · what fed what. A card lands, then its arrow draws. Never both. */
+.nb-trail-card {
+  opacity: 0;
+}
+.nb-trail-card.is-on {
+  animation: nb-trail-land 260ms var(--nb-ease) both;
+}
+@keyframes nb-trail-land {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.nb-trail-arrow path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+}
+.nb-trail-arrow.is-on path {
+  animation: nb-rule-draw 420ms var(--nb-ease) both;
+}
+.nb-trail-static .nb-trail-card,
+.nb-trail-static .nb-trail-card.is-on {
+  opacity: 1;
+  animation: none;
+}
+.nb-trail-static .nb-trail-arrow path {
+  stroke-dashoffset: 0;
+  animation: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .nb-trail-card,
+  .nb-trail-card.is-on {
+    opacity: 1 !important;
+    animation: none !important;
+  }
+  .nb-trail-arrow path,
+  .nb-trail-arrow.is-on path {
+    stroke-dashoffset: 0 !important;
+    animation: none !important;
+  }
+}
