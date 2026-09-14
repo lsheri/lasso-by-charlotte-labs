@@ -96,8 +96,10 @@ export function PeekActionBar({
     analysisPreset(isThread ? "verification_thread" : "verification")?.label ?? "";
   const decisionsLabel = analysisPreset("decision_origin")?.label ?? "";
 
-  const showFactCheck = canEdit && Boolean(onAnalyse) && (isThread || isDeliverable);
-  const showDecisions = canEdit && Boolean(onAnalyse) && (isThread || isDeliverable);
+  const showFactCheck =
+    !analysesInHeader && canEdit && Boolean(onAnalyse) && (isThread || isDeliverable);
+  const showDecisions =
+    !analysesInHeader && canEdit && Boolean(onAnalyse) && (isThread || isDeliverable);
   const readable = isThread || isDeliverable;
 
   return (
