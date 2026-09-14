@@ -7,6 +7,7 @@ import { PeekBody } from "@/components/peek/PeekPanel";
 import { presetsForScope, type AnalysisPresetId } from "@/lib/analysis-presets";
 import { MapDialog } from "@/components/work/MapDialog";
 import { WorkDateDialog } from "@/components/work/WorkDateDialog";
+import { WorkNote } from "@/components/work/WorkNote";
 import { AnalysisLensPanel } from "@/components/reflect/AnalysisLens";
 import {
   ThreadAnalysisLauncher,
