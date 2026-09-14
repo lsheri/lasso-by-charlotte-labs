@@ -29,7 +29,9 @@ export function WorkNote({
   className?: string;
 }) {
   const live = useNoteLive<HTMLDivElement>();
-  const mapping = item.work_item_tasks[0]?.tasks ?? null;
+  // Verify's deliverables arrive nested from the engagement read and carry no
+  // work_item_tasks of their own, so the mapping is optional here.
+  const mapping = item.work_item_tasks?.[0]?.tasks ?? null;
   const clientId = mapping?.engagements?.clients?.id ?? item.client_id ?? null;
   const date = formatDate(effectiveWorkDate(item));
 
