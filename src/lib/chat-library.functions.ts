@@ -78,7 +78,7 @@ export const noteChatSearchFn = createServerFn({ method: "POST" })
 
 
 /**
- * Pass 159: how the chat library is shown, cards or list. Closed vocabulary in
+ * Pass 175: how the chat library is shown, cards or list. Closed vocabulary in
  * dims, nothing else travels. Never surfaced on failure.
  */
 export const noteChatViewChangedFn = createServerFn({ method: "POST" })
