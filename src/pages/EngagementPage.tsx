@@ -153,7 +153,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
   }, [profile, work]);
 
   // Open the Ask rail by default on desktop, but only on the client and only
-  // after hydration. 1100px matches the .nb-bench-grid[data-rail="open"] media
+  // after hydration. 1100px matches the .nb-bench-page[data-rail="open"] media
   // query. Use setRail directly so this default does NOT fire the tracked
   // engagement.ask_rail_toggled event — that event is reserved for a person's
   // explicit open/collapse choice.
@@ -361,8 +361,10 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
 
   return (
     <div>
+      <div className="nb-bench-page" data-rail={rail}>
+        <div className="nb-bench-main">
       <header className="mb-8">
-        <div className="nb-sticky-head relative min-[1100px]:pr-[252px]">
+        <div className="nb-sticky-head relative">
           <div className="min-w-0">
             {/* Figma 36:1936 leads with a hand breadcrumb back to the pile, not a
                 mono identifier stamp. The code, client and term move onto the
@@ -386,89 +388,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
               <EngagementStats engagementId={engagement.id} tasks={tasksQuery.data ?? []} />
             </p>
           </div>
-          <div
-            className={cn(
-              "mt-4 min-[1100px]:absolute min-[1100px]:right-0 min-[1100px]:top-0 min-[1100px]:z-10 min-[1100px]:mt-0",
-              rail === "closed"
-                ? "min-[1100px]:w-[236px]"
-                : rail === "wide"
-                  ? "min-[1100px]:w-[520px]"
-                  : "min-[1100px]:w-[380px]",
-            )}
-          >
-            <ContextCard
-              eyebrow={view === "share" ? "GOING TO" : contextScope === "engagement" ? "WORKING FROM" : "ASKING ABOUT"}
-              title={selectedItem?.title ?? scopedTask?.name ?? engagementDisplayTitle(engagement)}
-              scopeLabel={
-                contextScope === "thread"
-                  ? "SCOPE · THREAD"
-                  : contextScope === "deliverable"
-                    ? "SCOPE · DELIVERABLE"
-                    : "SCOPE · ENGAGEMENT"
-              }
-              facts={contextFacts}
-              vendors={contextVendors}
-              actions={contextActions}
-              panelOpen={panelShowing}
-              panelWide={rail === "wide"}
-              onTogglePanelWidth={() => {
-                const next = rail === "wide" ? "open" : "wide";
-                setRail(next);
-                if (profile) {
-                  logEvent("engagement.ask_rail_toggled", profile.org_id, {
-                    state: next === "wide" ? "widened" : "narrowed",
-                    had_conversation: askHadConversation,
-                  });
-                }
-              }}
-              onClosePanel={() => (lensItem ? closeAnalysis() : setAskRailOpen(false))}
-            />
-            {profile && ((profile.role !== "coach" && askOpen) || lensItem) ? (
-              <div className="nb-bench-rail rounded-b-[3px] rounded-t-none border border-t-0 border-[var(--nb-rule)] bg-[var(--nb-white)] p-[13px_14px] shadow-[0_3px_6px_-3px_rgb(22_24_26_/_0.2)]">
-                {profile.role !== "coach" ? (
-                  // Keep Ask mounted while an analysis is shown so its conversation remains intact.
-                  <div hidden={Boolean(lensItem)} className="min-h-0 flex-1">
-                    <EngagementAsk
-                      open={askOpen}
-                      onOpenChange={setAskRailOpen}
-                      expanded={stripExpanded}
-                      onConversationStart={() => {
-                        setAskHadConversation(true);
-                        setStripExpanded(false);
-                      }}
-                      engagementId={engagementId}
-                      engagementTitle={engagement.title}
-                      profileId={profile.id}
-                      orgId={profile.org_id}
-                    />
-                  </div>
-                ) : null}
-                {lensItem ? (
-                  <AnalysisLensPanel
-                    key={`${lensItem.id}:${lensPreset ?? "analysis"}`}
-                    {...(lensPreset ? { initialPreset: lensPreset } : {})}
-                    target={{
-                      kind: "item",
-                      id: lensItem.id,
-                      title: lensItem.title,
-                      scope: isDeliverableType(lensItem.type) ? "deliverable" : "thread",
-                    }}
-                    profileId={profile.id}
-                    orgId={profile.org_id}
-                    isCoach={profile.role === "coach"}
-                  />
-                ) : null}
-              </div>
-            ) : null}
-          </div>
         </div>
-
-        <CaptureCoverage
-          profileId={profile?.id}
-          itemCount={mappedItemCount}
-          scopeLabel="this engagement"
-          isOwner={profile?.role !== "coach"}
-        />
 
         {profile && profile.role !== "coach" ? (
           <div className="mt-5 space-y-3">
@@ -601,7 +521,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
         </div>
       ) : null}
 
-      <div className="nb-bench-grid relative" data-rail={rail}>
+      <div className="nb-bench-grid relative">
         <div>
           {view === "work" ? (
             scopedTask ? (
@@ -797,8 +717,85 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
           )}
         </div>
 
-        {rail !== "closed" ? <div aria-hidden className="hidden min-[1100px]:block" /> : null}
       </div>
+        </div>
+
+        <aside className="nb-bench-aside">
+          <div className="nb-bench-aside-inner">
+            <ContextCard
+              eyebrow={view === "share" ? "GOING TO" : contextScope === "engagement" ? "WORKING FROM" : "ASKING ABOUT"}
+              title={selectedItem?.title ?? scopedTask?.name ?? engagementDisplayTitle(engagement)}
+              scopeLabel={
+                contextScope === "thread"
+                  ? "SCOPE · THREAD"
+                  : contextScope === "deliverable"
+                    ? "SCOPE · DELIVERABLE"
+                    : "SCOPE · ENGAGEMENT"
+              }
+              facts={contextFacts}
+              vendors={contextVendors}
+              actions={contextActions}
+              panelOpen={panelShowing}
+              panelWide={rail === "wide"}
+              onTogglePanelWidth={() => {
+                const next = rail === "wide" ? "open" : "wide";
+                setRail(next);
+                if (profile) {
+                  logEvent("engagement.ask_rail_toggled", profile.org_id, {
+                    state: next === "wide" ? "widened" : "narrowed",
+                    had_conversation: askHadConversation,
+                  });
+                }
+              }}
+              onClosePanel={() => (lensItem ? closeAnalysis() : setAskRailOpen(false))}
+            />
+            {profile && ((profile.role !== "coach" && askOpen) || lensItem) ? (
+              <div className="nb-bench-rail rounded-b-[3px] rounded-t-none border border-t-0 border-[var(--nb-rule)] bg-[var(--nb-white)] p-[13px_14px] shadow-[0_3px_6px_-3px_rgb(22_24_26_/_0.2)]">
+                {profile.role !== "coach" ? (
+                  // Keep Ask mounted while an analysis is shown so its conversation remains intact.
+                  <div hidden={Boolean(lensItem)} className="min-h-0 flex-1">
+                    <EngagementAsk
+                      open={askOpen}
+                      onOpenChange={setAskRailOpen}
+                      expanded={stripExpanded}
+                      onConversationStart={() => {
+                        setAskHadConversation(true);
+                        setStripExpanded(false);
+                      }}
+                      engagementId={engagementId}
+                      engagementTitle={engagement.title}
+                      profileId={profile.id}
+                      orgId={profile.org_id}
+                    />
+                  </div>
+                ) : null}
+                {lensItem ? (
+                  <AnalysisLensPanel
+                    key={`${lensItem.id}:${lensPreset ?? "analysis"}`}
+                    {...(lensPreset ? { initialPreset: lensPreset } : {})}
+                    target={{
+                      kind: "item",
+                      id: lensItem.id,
+                      title: lensItem.title,
+                      scope: isDeliverableType(lensItem.type) ? "deliverable" : "thread",
+                    }}
+                    profileId={profile.id}
+                    orgId={profile.org_id}
+                    isCoach={profile.role === "coach"}
+                  />
+                ) : null}
+              </div>
+            ) : null}
+          </div>
+        </aside>
+      </div>
+
+      <CaptureCoverage
+        profileId={profile?.id}
+        itemCount={mappedItemCount}
+        scopeLabel="this engagement"
+        isOwner={profile?.role !== "coach"}
+      />
 
       <PeekPanel
         entry={peekItem}
