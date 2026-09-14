@@ -143,7 +143,9 @@ export type TelemetryEvent =
   /** Pass 148: one recheck pass over connected documents. Counts only. */
   | "document.recheck_ran"
   /** Pass 148: one version written by a recheck. Source and reason only. */
-  | "document.version_recorded";
+  | "document.version_recorded"
+  /** Pass 148: the earlier-versions list in the peek was expanded. Count only. */
+  | "document.versions_expanded";
 
 export type TelemetryDims = Record<
   string,

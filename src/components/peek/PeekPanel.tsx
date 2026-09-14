@@ -21,12 +21,14 @@ import { ArtifactNote, SourceMark } from "@/components/work/SourceMark";
 import { TypeChip, TypeIcon } from "@/components/work/TypeIcon";
 import { setDeliverableKind, useInvalidateWorkItems } from "@/hooks/use-deliverable-kind";
 import { usePerfOpenFinish } from "@/hooks/use-perf-timer";
+import { RECHECK_AT_KEY } from "@/lib/document-recheck-shared";
 import { isBriefItem } from "@/lib/brief-shared";
 import { vendorLabel } from "@/lib/conversation-shared";
 import { deliverableKindOf, type DeliverableKind } from "@/lib/deliverable-kinds";
 import { isDeliverableType } from "@/lib/lineage-shared";
 import { openJourney } from "@/lib/journey-state";
 import { peekFormat } from "@/lib/peek-format";
+import { TEXT_CONTENT_HASH_KEY } from "@/lib/text-hash-shared";
 import { getWorkFileUrl } from "@/lib/work-files.functions";
 import {
   effectiveWorkDate,
@@ -307,7 +309,18 @@ export function PeekBody({
         {canEdit ? <AiReads workItemId={active.id} /> : null}
         {isDeliverableType(active.type) ? (
           <>
-            <VersionHistory workItemId={active.id} />
+            <VersionHistory
+              workItemId={active.id}
+              capturedAt={active.captured_at}
+              lastCheckedAt={
+                (active.meta as Record<string, unknown> | null)?.[RECHECK_AT_KEY] as
+                  | string
+                  | undefined
+              }
+              hasTextBaseline={Boolean(
+                (active.meta as Record<string, unknown> | null)?.[TEXT_CONTENT_HASH_KEY],
+              )}
+            />
             <WhatFedThis workItemId={active.id} itemType={active.type} canEdit={canEdit} />
           </>
         ) : null}
