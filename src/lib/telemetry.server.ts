@@ -83,8 +83,12 @@ export async function recordAnonymousEvent(
   try {
     const tenantHash = await sha256Hex("anonymous");
     const actorHash = await computeActorHash(`anon:${viewId}`);
+    const { workspaceStamp } = await import("./org-type.server");
+    // This path has no org: an anonymous marketing view.
+    const stamp = await workspaceStamp(null);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.from("events").insert({
+      ...stamp,
       event_type: eventType,
       schema_version: "v1",
       tenant_hash: tenantHash,
@@ -164,7 +168,19 @@ export async function recordEvent(
     const tenantHash = await sha256Hex(input.orgId);
     const actorHash = await computeActorHash(input.userId);
     const consent = await resolveConsentStamp(supabase, input.orgId, input.profileId ?? null);
+    // A stamped "unknown" is better than an event that never records.
+    let stamp: import("./org-type.server").WorkspaceStamp = {
+      workspace_type: "unknown",
+      affiliated: null,
+    };
+    try {
+      const { workspaceStamp } = await import("./org-type.server");
+      stamp = await workspaceStamp(input.orgId);
+    } catch {
+      /* keep the "unknown" fallback */
+    }
     const { error } = await supabase.from("events").insert({
+      ...stamp,
       event_type: input.eventType,
       schema_version: "v2",
       tenant_hash: tenantHash,
