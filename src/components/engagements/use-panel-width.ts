@@ -20,12 +20,22 @@ export function panelWidthBucket(width: number): "320-400" | "400-500" | "500-64
   return "500-640";
 }
 
+/**
+ * A wrapper narrower than this cannot be a real bench page, so it is a
+ * measurement taken before layout settled. In that case the page ceiling is
+ * unknown and only the absolute maximum applies, otherwise a restored width
+ * collapses to the minimum on the first paint.
+ */
+const WRAPPER_MEASURED_MIN = 480;
+
 export function clampPanelWidth(width: number, wrapperWidth: number): number {
-  const fromPage = wrapperWidth > 0 ? wrapperWidth * PANEL_MAX_FRACTION : PANEL_MAX_WIDTH;
+  const measured = wrapperWidth >= WRAPPER_MEASURED_MIN;
+  const fromPage = measured ? wrapperWidth * PANEL_MAX_FRACTION : PANEL_MAX_WIDTH;
   const max = Math.max(PANEL_MIN_WIDTH, Math.min(PANEL_MAX_WIDTH, Math.round(fromPage)));
   if (!Number.isFinite(width)) return Math.min(PANEL_DEFAULT_WIDTH, max);
   return Math.min(max, Math.max(PANEL_MIN_WIDTH, Math.round(width)));
 }
+
 
 function readStored(): number | null {
   try {
