@@ -26,6 +26,7 @@ export type AskMessageRow = {
   role: string;
   content: string;
   context_manifest: unknown;
+  created_at: string;
 };
 
 export type AskLassoArgs = {
@@ -216,7 +217,7 @@ export function useAskLasso({
     queryFn: async (): Promise<AskMessageRow[]> => {
       const { data, error: e } = await supabase
         .from("chat_messages")
-        .select("id, role, content, context_manifest")
+        .select("id, role, content, context_manifest, created_at")
         .eq("session_id", sessionId as string)
         .order("created_at", { ascending: true });
       if (e) throw e;

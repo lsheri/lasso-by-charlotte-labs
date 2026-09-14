@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 
+import { Message, MessageContent } from "@/components/ai-elements/message";
 import { AnswerSources } from "@/components/reflect/AnswerSources";
 import { CoverageNote } from "@/components/reflect/CoverageNote";
 import {
@@ -70,12 +71,7 @@ export function AskTabs({
         </button>
       ))}
       {onNewChat ? (
-        <button
-          type="button"
-          role="button"
-          onClick={onNewChat}
-          className="nb-ask-tab"
-        >
+        <button type="button" role="button" onClick={onNewChat} className="nb-ask-tab">
           <GraphiteIcon name="plus" size={16} />
           <span>New chat</span>
         </button>
@@ -105,9 +101,7 @@ export function AskScopeChip({ ask, block }: { ask: AskLasso; block?: boolean })
       }
     >
       <span className="truncate">{label}</span>
-      <span className="shrink-0 text-muted-foreground">
-        {ask.pickerOpen ? "Hide" : "Change"}
-      </span>
+      <span className="shrink-0 text-muted-foreground">{ask.pickerOpen ? "Hide" : "Change"}</span>
     </button>
   );
 }
@@ -141,6 +135,44 @@ function WorkPicker({ ask, engagementId }: { ask: AskLasso; engagementId: string
 /** The transcript, on binder paper. Every line sits on the 28px pitch. */
 function MessagesTab({ ask, emptyActions }: { ask: AskLasso; emptyActions?: React.ReactNode }) {
   const messages = ask.messages ?? [];
+  const viewerInitial = ask.profile?.display_name.trim().charAt(0).toUpperCase() || "Y";
+
+  function shortTime(value: string | Date): string {
+    return new Date(value).toLocaleTimeString(undefined, {
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  }
+
+  function speakerAvatar(role: "user" | "assistant") {
+    const assistant = role === "assistant";
+    return (
+      <span
+        aria-hidden
+        className={`grid size-7 shrink-0 place-items-center rounded-full text-[11px] font-semibold ${
+          assistant ? "bg-green text-nb-white" : "border border-mid bg-grey-1 text-mid"
+        }`}
+      >
+        {assistant ? "L" : viewerInitial}
+      </span>
+    );
+  }
+
+  function speakerName(role: "user" | "assistant", time: string | Date) {
+    const assistant = role === "assistant";
+    const dateTime = typeof time === "string" ? time : time.toISOString();
+    return (
+      <span className="nb-binder-line flex min-w-0 items-baseline gap-2">
+        <span className="font-sans text-[13px] font-semibold text-ink">
+          {assistant ? "Lasso" : "You"}
+        </span>
+        <time className="text-[11px] text-soft" dateTime={dateTime} suppressHydrationWarning>
+          {shortTime(time)}
+        </time>
+      </span>
+    );
+  }
+
   return (
     <div className="nb-binder min-h-0 flex-1 overflow-y-auto">
       <div className="nb-binder-body px-4 sm:px-5">
@@ -157,54 +189,72 @@ function MessagesTab({ ask, emptyActions }: { ask: AskLasso; emptyActions?: Reac
                 Try: where has this engagement drifted from the brief?
               </p>
             </div>
-             {emptyActions}
+            {emptyActions}
           </>
         ) : null}
 
-        {messages.map((message) => (
-          <div key={message.id}>
-            <p
-              className={`nb-binder-label${message.role === "user" ? "" : " nb-speaker-ai"}`}
+        {messages.map((message, index) => {
+          const role = message.role === "user" ? "user" : "assistant";
+          const previous = messages[index - 1];
+          const followsSameSpeaker =
+            previous !== undefined && (previous.role === "user" ? "user" : "assistant") === role;
+
+          return (
+            <Message
+              key={message.id}
+              from={role}
+              className="nb-conversation-message max-w-none flex-row items-start gap-3"
             >
-              {message.role === "user" ? "You" : "AI"}
-            </p>
-            {message.role === "user" ? (
-              <p className="nb-binder-line whitespace-pre-wrap text-sm text-foreground">
-                {message.content}
-              </p>
-            ) : (
-              <>
-                <MarkdownMessage content={message.content} variant="binder" />
-                <div className="nb-binder-inset">
-                  <ContextAudit
-                    manifest={parseManifest(message.context_manifest)}
-                    buttonLabel="Show where this came from"
-                  />
-                  <AnswerSources sources={ask.sourcesByMessage?.[Number(message.id)] ?? []} />
-                  <button
-                    type="button"
-                    onClick={() =>
-                      ask.setSaveTarget({
-                        text: message.content,
-                        kind: "chat_excerpt",
-                        sessionId: ask.sessionId,
-                      })
-                    }
-                    className="mt-2 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
-                  >
-                    Save for 1:1
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        ))}
+              <div className="grid w-7 shrink-0 grid-rows-[28px]">
+                {followsSameSpeaker ? <span aria-hidden className="size-7" /> : speakerAvatar(role)}
+              </div>
+              <MessageContent className="nb-conversation-body w-full flex-1 gap-0 overflow-visible group-[.is-user]:ml-0 group-[.is-user]:rounded-none group-[.is-user]:bg-transparent group-[.is-user]:px-0 group-[.is-user]:py-0">
+                {!followsSameSpeaker ? speakerName(role, message.created_at) : null}
+                {message.role === "user" ? (
+                  <p className="nb-binder-line whitespace-pre-wrap text-sm text-foreground">
+                    {message.content}
+                  </p>
+                ) : (
+                  <>
+                    <MarkdownMessage content={message.content} variant="binder" />
+                    <div className="nb-binder-inset">
+                      <ContextAudit
+                        manifest={parseManifest(message.context_manifest)}
+                        buttonLabel="Show where this came from"
+                      />
+                      <AnswerSources sources={ask.sourcesByMessage?.[Number(message.id)] ?? []} />
+                      <button
+                        type="button"
+                        onClick={() =>
+                          ask.setSaveTarget({
+                            text: message.content,
+                            kind: "chat_excerpt",
+                            sessionId: ask.sessionId,
+                          })
+                        }
+                        className="mt-2 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+                      >
+                        Save for 1:1
+                      </button>
+                    </div>
+                  </>
+                )}
+              </MessageContent>
+            </Message>
+          );
+        })}
 
         {ask.pending && ask.streamed ? (
-          <div>
-            <p className="nb-binder-label nb-speaker-ai">AI</p>
-            <MarkdownMessage content={ask.streamed} variant="binder" className="nb-stream" />
-          </div>
+          <Message
+            from="assistant"
+            className="nb-conversation-message max-w-none flex-row items-start gap-3"
+          >
+            <div className="grid w-7 shrink-0 grid-rows-[28px]">{speakerAvatar("assistant")}</div>
+            <MessageContent className="nb-conversation-body w-full flex-1 gap-0 overflow-visible">
+              {speakerName("assistant", new Date())}
+              <MarkdownMessage content={ask.streamed} variant="binder" className="nb-stream" />
+            </MessageContent>
+          </Message>
         ) : null}
 
         {ask.pending ? (
@@ -293,9 +343,7 @@ function HistoryTab({ ask }: { ask: AskLasso }) {
                 size={14}
                 className={expanded ? "rotate-[-90deg]" : "rotate-90"}
               />
-              <span>
-                {expanded ? "Show fewer chats" : `Show all ${sessions.length} chats`}
-              </span>
+              <span>{expanded ? "Show fewer chats" : `Show all ${sessions.length} chats`}</span>
             </button>
           ) : null}
         </>
@@ -368,7 +416,6 @@ function AnalysesTab({
               anchorItemId,
             )
           }
-
         />
       ) : (
         <p className="text-sm text-muted-foreground">

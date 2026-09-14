@@ -3061,7 +3061,7 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
     right: 0;
     width: 236px;
     height: 100%;
-    z-index: 10;
+    z-index: 40;
   }
   .nb-bench-page[data-rail="closed"] > .nb-bench-main > * > .nb-sticky-head {
     padding-right: 252px;
@@ -3074,7 +3074,15 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   /* The aside is full height so the sticky inner box has room to travel the
      whole page. This is the fix for the card leaving the screen: sticky can
      only move inside its parent's box, and the old parent was a 130px header. */
-  .nb-bench-aside { height: 100%; min-width: 0; }
+  /* Above .nb-sticky-head, which is z-index 30 and translucent. The header's
+     negative inline margin makes it reach under this column, and at 10 it
+     frosted over the top of the notecard. */
+  .nb-bench-aside {
+    position: relative;
+    z-index: 40;
+    height: 100%;
+    min-width: 0;
+  }
   .nb-bench-aside-inner {
     position: sticky;
     top: 16px;

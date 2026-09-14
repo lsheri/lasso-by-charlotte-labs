@@ -23,7 +23,16 @@ function InlineAsk(props: {
   onConversationStart: () => void;
   onOpenChange: (open: boolean) => void;
 }) {
-  const { expanded, engagementId, engagementTitle, profileId, orgId, reveal, onConversationStart, onOpenChange } = props;
+  const {
+    expanded,
+    engagementId,
+    engagementTitle,
+    profileId,
+    orgId,
+    reveal,
+    onConversationStart,
+    onOpenChange,
+  } = props;
   const { tab, setTab } = useAskDockState();
   const ask = useAskLasso({ open: true, engagementId, engagementTitle, profileId, orgId });
   const [visible, setVisible] = useState(true);
@@ -55,7 +64,13 @@ function InlineAsk(props: {
     ) : null;
 
   return (
-    <section className={visible ? "relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-graphite bg-card max-[1099px]:min-h-[620px]" : "hidden"}>
+    <section
+      className={
+        visible
+          ? "relative flex min-h-0 flex-1 flex-col overflow-hidden max-[1099px]:min-h-[620px]"
+          : "hidden"
+      }
+    >
       <AskSurface
         ask={ask}
         tab={tab}
@@ -88,9 +103,5 @@ export function EngagementAsk(props: {
   const isMobile = useIsMobile();
   usePerfOpenFinish("ask_dock.open", props.open);
 
-  return isMobile ? (
-    <AskSheet {...props} />
-  ) : (
-    <InlineAsk {...props} reveal={props.open} />
-  );
+  return isMobile ? <AskSheet {...props} /> : <InlineAsk {...props} reveal={props.open} />;
 }
