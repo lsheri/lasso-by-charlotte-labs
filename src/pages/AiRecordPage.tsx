@@ -24,14 +24,18 @@ import { BrandLogo } from "@/components/connectors/BrandLogo";
 import { SubjectsPanel } from "@/components/work/SubjectsPanel";
 import { ChatRow, chatWhen, fedPhrase } from "@/components/work/ChatRow";
 import { WorkNote } from "@/components/work/WorkNote";
-import { noteChatViewChangedFn, noteReaderClosedFn } from "@/lib/chat-library.functions";
+import {
+  noteChatViewChangedFn,
+  noteFilterChangedFn,
+  noteReaderClosedFn,
+} from "@/lib/chat-library.functions";
 import { useChatSearchSignal } from "@/hooks/use-chat-search-signal";
 import { useMotion } from "@/hooks/use-motion";
 import { useProfile } from "@/hooks/use-profile";
 import { useWorkItems } from "@/hooks/use-work-items";
 import { supabase } from "@/integrations/supabase/client";
 import { effectiveWorkDate, type WorkItemRow } from "@/lib/work-types";
-import { SectionHeader } from "@/components/notebook/SectionHeader";
+import { engagementHue } from "@/lib/work-identity";
 import { GraphiteSeam } from "@/components/notebook/marks";
 import { GraphiteIcon } from "@/components/notebook/icons";
 import { ToneCard } from "@/components/notebook/ToneCard";
@@ -42,14 +46,7 @@ import { peekFormat } from "@/lib/peek-format";
 import { getWorkFileUrl } from "@/lib/work-files.functions";
 import { formatDate } from "@/lib/work-types";
 
-type Group = {
-  key: string;
-  code: string | null;
-  title: string;
-  engagementId: string | null;
-  items: WorkItemRow[];
-  latest: number;
-};
+type MonthGroup = { key: string; label: string; items: WorkItemRow[] };
 
 const MONTHS = [
   "January",
@@ -66,67 +63,59 @@ const MONTHS = [
   "December",
 ];
 
-/** The span in plain words. Dates are identifiers here, never a trend. */
-function span(items: WorkItemRow[]): string {
-  const dates = items
-    .map((i) => new Date(effectiveWorkDate(i)))
-    .filter((d) => !Number.isNaN(d.getTime()))
-    .sort((a, b) => a.getTime() - b.getTime());
-  const first = dates[0];
-  const last = dates[dates.length - 1];
-  if (!first || !last) return "";
-  const label = (d: Date) =>
-    d.getFullYear() === new Date().getFullYear()
-      ? MONTHS[d.getMonth()]!
-      : `${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
-  return label(first) === label(last) ? label(first) : `${label(first)} to ${label(last)}`;
-}
-
-function groupItems(items: WorkItemRow[]): Group[] {
-  const groups = new Map<string, Group>();
-  const unmapped: WorkItemRow[] = [];
-
+/** Newest month first, newest item first inside it. Dates identify, they never trend. */
+function groupByMonth(items: WorkItemRow[]): MonthGroup[] {
+  const buckets = new Map<string, MonthGroup>();
+  const undated: WorkItemRow[] = [];
   for (const item of items) {
-    const engagements = item.work_item_tasks
-      .map((m) => m.tasks?.engagements)
-      .filter((e): e is { id: string; code: string; title: string } => Boolean(e));
-    if (engagements.length === 0) {
-      unmapped.push(item);
+    const at = new Date(effectiveWorkDate(item));
+    if (Number.isNaN(at.getTime())) {
+      undated.push(item);
       continue;
     }
-    for (const engagement of engagements) {
-      const group = groups.get(engagement.id) ?? {
-        key: engagement.id,
-        code: engagement.code,
-        title: engagement.title,
-        engagementId: engagement.id,
-        items: [],
-        latest: 0,
-      };
-      if (!group.items.some((i) => i.id === item.id)) group.items.push(item);
-      group.latest = Math.max(group.latest, new Date(effectiveWorkDate(item)).getTime() || 0);
-      groups.set(engagement.id, group);
-    }
+    const key = `${at.getFullYear()}-${String(at.getMonth()).padStart(2, "0")}`;
+    const label =
+      at.getFullYear() === new Date().getFullYear()
+        ? MONTHS[at.getMonth()]!
+        : `${MONTHS[at.getMonth()]} ${at.getFullYear()}`;
+    const bucket = buckets.get(key) ?? { key, label, items: [] };
+    bucket.items.push(item);
+    buckets.set(key, bucket);
   }
-
-  const ordered = Array.from(groups.values()).sort((a, b) => b.latest - a.latest);
-  if (unmapped.length > 0) {
-    ordered.push({
-      key: "unmapped",
-      code: null,
-      title: "Unmapped, private to you",
-      engagementId: null,
-      items: unmapped,
-      latest: 0,
-    });
+  const ordered = Array.from(buckets.values()).sort((a, b) => (a.key < b.key ? 1 : -1));
+  for (const bucket of ordered) {
+    bucket.items.sort(
+      (a, b) => new Date(effectiveWorkDate(b)).getTime() - new Date(effectiveWorkDate(a)).getTime(),
+    );
   }
+  if (undated.length > 0)
+    ordered.push({ key: "undated", label: "No date recorded", items: undated });
   return ordered;
 }
 
+/** The first engagement a conversation is mapped into, if any. */
+function firstEngagement(item: WorkItemRow): { id: string; code: string; title: string } | null {
+  return item.work_item_tasks?.[0]?.tasks?.engagements ?? null;
+}
+
+/** Every engagement a conversation is mapped into. */
+function itemEngagements(item: WorkItemRow): { id: string; code: string; title: string }[] {
+  return (item.work_item_tasks ?? [])
+    .map((m) => m.tasks?.engagements)
+    .filter((e): e is { id: string; code: string; title: string } => Boolean(e));
+}
+
+/** The model that answered, when the source kept one. */
+function itemModel(item: WorkItemRow): string | null {
+  const meta = item.source_meta as { model?: unknown } | null;
+  return typeof meta?.model === "string" ? meta.model : null;
+}
+
 /**
- * Every conversation you have kept, grouped by the engagement it was
- * mapped into. No charts, no counts as measures of a person: the longitudinal
- * reading here is the What recurs analysis and nothing else.
+ * Every conversation you have kept, one archive by month. Engagement is a
+ * filter and a colour, not the grouping. No charts, no counts as measures of a
+ * person: the longitudinal reading here is the What recurs analysis and
+ * nothing else.
  */
 export function AiRecordPage() {
   const { data: profile } = useProfile();
@@ -136,15 +125,33 @@ export function AiRecordPage() {
   const [selected, setSelected] = useState<WorkItemRow | null>(null);
   const [desktopReader, setDesktopReader] = useState(false);
   const [lensItem, setLensItem] = useState<WorkItemRow | null>(null);
-  const [openGroup, setOpenGroup] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [showSubjects, setShowSubjects] = useState(false);
   const [tool, setTool] = useState<ToolVendor | "all">("all");
+  const [engagement, setEngagement] = useState<string | "all">("all");
+  const [recursOpen, setRecursOpen] = useState(false);
   const [view, setView] = useState<"cards" | "list">("cards");
   const readingMotion = useMotion("record.reading");
   const pileMotion = useMotion("work.piles");
   const noteViewChanged = useServerFn(noteChatViewChangedFn);
   const noteReaderClosed = useServerFn(noteReaderClosedFn);
+  const noteFilterChanged = useServerFn(noteFilterChangedFn);
+
+  /** One filter path, so the row and the record cannot drift. */
+  function chooseTool(next: ToolVendor | "all") {
+    setTool(next);
+    void noteFilterChanged({
+      data: { filter: "tool", selected: next === "all" ? "all" : "one" },
+    }).catch(() => {});
+  }
+
+  function chooseEngagement(next: string | "all") {
+    setEngagement(next);
+    setRecursOpen(false);
+    void noteFilterChanged({
+      data: { filter: "engagement", selected: next === "all" ? "all" : "one" },
+    }).catch(() => {});
+  }
 
   // Read after mount so the server and the first client render agree. Blocked
   // site data throws here, and a saved preference is never worth a broken page.
@@ -196,8 +203,39 @@ export function AiRecordPage() {
   // Chips read the tools already present in the loaded rows, so the row never
   // offers a filter that would empty the page.
   const toolsPresent = Array.from(new Set(threads.map((i) => vendorFromSource(i))));
-  const visible = tool === "all" ? shown : shown.filter((i) => vendorFromSource(i) === tool);
-  const groups = groupItems(visible);
+  // Engagements are read from the loaded rows for the same reason the tools are.
+  const engagementCounts = new Map<string, { id: string; code: string; title: string; count: number }>();
+  let unmappedCount = 0;
+  for (const item of threads) {
+    const mapped = itemEngagements(item);
+    if (mapped.length === 0) {
+      unmappedCount += 1;
+      continue;
+    }
+    const seen = new Set<string>();
+    for (const e of mapped) {
+      if (seen.has(e.id)) continue;
+      seen.add(e.id);
+      const row = engagementCounts.get(e.id) ?? { id: e.id, code: e.code, title: e.title, count: 0 };
+      row.count += 1;
+      engagementCounts.set(e.id, row);
+    }
+  }
+  const engagementsPresent = Array.from(engagementCounts.values()).sort(
+    (a, b) => b.count - a.count || a.code.localeCompare(b.code),
+  );
+  const byTool = tool === "all" ? shown : shown.filter((i) => vendorFromSource(i) === tool);
+  const visible =
+    engagement === "all"
+      ? byTool
+      : engagement === "unmapped"
+        ? byTool.filter((i) => itemEngagements(i).length === 0)
+        : byTool.filter((i) => itemEngagements(i).some((e) => e.id === engagement));
+  const groups = groupByMonth(visible);
+  const selectedEngagement =
+    engagement === "all" || engagement === "unmapped"
+      ? null
+      : (engagementsPresent.find((e) => e.id === engagement) ?? null);
   const mappedCount = threads.filter((i) =>
     i.work_item_tasks.some((m) => Boolean(m.tasks?.engagements)),
   ).length;
@@ -302,8 +340,8 @@ export function AiRecordPage() {
     <div className="nb-chatview" data-reader={selected ? "open" : "closed"}>
       <div className="nb-chatview-list">
       <PageHeader
-        title="Chat"
-        italicWord="library"
+        title="All AI"
+        italicWord="conversations"
         subtitle={subtitle}
         action={
           /* Figma 27:635 hangs one control off the title: the way a
@@ -347,7 +385,11 @@ export function AiRecordPage() {
       ) : null}
 
       {threads.length > 0 ? (
-        <div className="mb-6 flex flex-wrap items-center gap-2">
+        <div
+          role="group"
+          aria-label="Filter by tool"
+          className="mb-3 flex flex-wrap items-center gap-2"
+        >
           {(["all", ...toolsPresent] as const).map((option) => {
             const on = tool === option;
             return (
@@ -355,7 +397,7 @@ export function AiRecordPage() {
                 key={option}
                 type="button"
                 aria-pressed={on}
-                onClick={() => setTool(option as ToolVendor | "all")}
+                onClick={() => chooseTool(option as ToolVendor | "all")}
                 className={
                   on
                     ? "rounded-full border border-graphite bg-nb-white px-3 py-1 text-[11.5px] font-medium text-foreground"
@@ -402,6 +444,113 @@ export function AiRecordPage() {
       ) : null}
 
       {threads.length > 0 ? (
+        <div
+          role="group"
+          aria-label="Filter by engagement"
+          className="mb-6 flex flex-wrap items-center gap-2"
+        >
+          <button
+            type="button"
+            aria-pressed={engagement === "all"}
+            onClick={() => chooseEngagement("all")}
+            className={
+              engagement === "all"
+                ? "rounded-full border border-graphite bg-nb-white px-3 py-1 text-[11.5px] font-medium text-foreground"
+                : "rounded-full border border-[var(--nb-pencil)] px-3 py-1 text-[11.5px] text-muted-foreground transition-colors hover:border-foreground"
+            }
+          >
+            Everything
+            <span className="ml-1.5 font-mono text-[10px] text-soft">{shown.length}</span>
+          </button>
+          {engagementsPresent.map((e) => {
+            const on = engagement === e.id;
+            return (
+              <button
+                key={e.id}
+                type="button"
+                aria-pressed={on}
+                onClick={() => chooseEngagement(e.id)}
+                className={
+                  on
+                    ? "rounded-full border border-graphite bg-nb-white px-3 py-1 text-[11.5px] font-medium text-foreground"
+                    : "rounded-full border border-[var(--nb-pencil)] px-3 py-1 text-[11.5px] text-muted-foreground transition-colors hover:border-foreground"
+                }
+              >
+                <span
+                  className="mr-1.5 inline-block h-2 w-2 rounded-full align-middle"
+                  style={{ background: `var(${engagementHue(e.id)})` }}
+                />
+                {e.code}
+                <span className="ml-1.5 font-mono text-[10px] text-soft">{e.count}</span>
+              </button>
+            );
+          })}
+          {unmappedCount > 0 ? (
+            <button
+              type="button"
+              aria-pressed={engagement === "unmapped"}
+              onClick={() => chooseEngagement("unmapped")}
+              className={
+                engagement === "unmapped"
+                  ? "rounded-full border border-graphite bg-nb-white px-3 py-1 text-[11.5px] font-medium text-foreground"
+                  : "rounded-full border border-[var(--nb-pencil)] px-3 py-1 text-[11.5px] text-muted-foreground transition-colors hover:border-foreground"
+              }
+            >
+              Unmapped
+              <span className="ml-1.5 font-mono text-[10px] text-soft">{unmappedCount}</span>
+            </button>
+          ) : null}
+          {selectedEngagement ? (
+            <button
+              type="button"
+              onClick={() => setRecursOpen((prev) => !prev)}
+              className="text-xs font-medium text-accent-deep transition-opacity hover:opacity-70"
+            >
+              {recursOpen ? "Hide analysis" : "What recurs"}
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+
+      {recursOpen && selectedEngagement ? (
+        <div className="mb-6 space-y-3 rounded-[var(--radius)] border border-border bg-card p-4">
+          <AnalysisChips
+            target={{
+              kind: "engagement",
+              id: selectedEngagement.id,
+              title: selectedEngagement.title,
+              itemCount: visible.length,
+            }}
+            readsDetail="every piece of work mapped into this engagement, oldest first"
+            running={analyses.running}
+            orgId={profile?.org_id}
+            profileId={profile?.id}
+            onRun={(preset, checkId) =>
+              void analyses.runPreset(
+                preset,
+                {
+                  kind: "engagement",
+                  id: selectedEngagement.id,
+                  title: selectedEngagement.title,
+                  itemCount: visible.length,
+                },
+                "every piece of work mapped into this engagement, oldest first",
+                checkId,
+              )
+            }
+          />
+          {analyses.running ? (
+            <>
+              <ThinkingIndicator />
+              {analyses.streamed ? <MarkdownMessage content={analyses.streamed} /> : null}
+            </>
+          ) : null}
+          {analyses.error ? <p className="text-sm text-destructive">{analyses.error}</p> : null}
+          <InlineAnalysisBlocks results={analyses.results} profileId={profile?.id} />
+        </div>
+      ) : null}
+
+      {threads.length > 0 ? (
         <div className="mb-6 space-y-3">
           <button
             type="button"
@@ -431,69 +580,19 @@ export function AiRecordPage() {
 
         <div className="space-y-8">
           {groups.map((group) => {
-            const expanded = openGroup === group.key;
             return (
               <section key={group.key} className="space-y-3">
-                <SectionHeader
-                  title={group.code ? `${group.code} ${group.title}` : group.title}
-                  action={
-                    <span className="flex items-baseline gap-3">
-                      <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
-                        {group.items.length} conversation{group.items.length === 1 ? "" : "s"}
-                        {span(group.items) ? ` · ${span(group.items)}` : ""}
-                      </span>
-                      {group.engagementId ? (
-                        <button
-                          type="button"
-                          onClick={() => setOpenGroup(expanded ? null : group.key)}
-                          className="text-xs font-medium text-accent-deep transition-opacity hover:opacity-70"
-                        >
-                          {expanded ? "Hide analysis" : "What recurs"}
-                        </button>
-                      ) : null}
-                    </span>
-                  }
-                />
+                <div className="flex items-center gap-3 pb-2 pt-1">
+                  <span className="font-hand text-[19px] leading-none text-graphite">
+                    {group.label}
+                  </span>
+                  <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">
+                    {group.items.length}
+                  </span>
+                  <span className="h-px flex-1 bg-[var(--nb-rule)]" />
+                </div>
 
-                {expanded && group.engagementId ? (
-                  <div className="space-y-3 rounded-[var(--radius)] border border-border bg-card p-4">
-                    <AnalysisChips
-                      target={{
-                        kind: "engagement",
-                        id: group.engagementId,
-                        title: group.title,
-                        itemCount: group.items.length,
-                      }}
-                      readsDetail="every piece of work mapped into this engagement, oldest first"
-                      running={analyses.running}
-                      orgId={profile?.org_id}
-                      profileId={profile?.id}
-                      onRun={(preset, checkId) =>
-                        void analyses.runPreset(
-                          preset,
-                          {
-                            kind: "engagement",
-                            id: group.engagementId as string,
-                            title: group.title,
-                            itemCount: group.items.length,
-                          },
-                          "every piece of work mapped into this engagement, oldest first",
-                          checkId,
-                        )
-                      }
-                    />
-                    {analyses.running ? (
-                      <>
-                        <ThinkingIndicator />
-                        {analyses.streamed ? <MarkdownMessage content={analyses.streamed} /> : null}
-                      </>
-                    ) : null}
-                    {analyses.error ? (
-                      <p className="text-sm text-destructive">{analyses.error}</p>
-                    ) : null}
-                    <InlineAnalysisBlocks results={analyses.results} profileId={profile?.id} />
-                  </div>
-                ) : null}
+
 
                 {/* Figma 27:635 draws these as a hairline-ruled list, not a
                     stack of bordered cards. Same handlers, same actions: they
@@ -519,13 +618,34 @@ export function AiRecordPage() {
                           onOpen={() => openItem(item)}
                           chips={
                             <>
+                              {firstEngagement(item) ? (
+                                <span
+                                  className="font-mono text-[9px] uppercase tracking-[0.08em]"
+                                  style={{
+                                    color: `var(${engagementHue(firstEngagement(item)!.id)})`,
+                                  }}
+                                >
+                                  {firstEngagement(item)!.code}
+                                </span>
+                              ) : (
+                                <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">
+                                  UNMAPPED
+                                </span>
+                              )}
+                              {itemModel(item) ? (
+                                <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">
+                                  {itemModel(item)}
+                                </span>
+                              ) : null}
                               <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">
                                 {turnCounts?.[item.id] ?? 0}{" "}
                                 {(turnCounts?.[item.id] ?? 0) === 1 ? "turn" : "turns"}
                               </span>
-                              <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">
-                                {fedPhrase(fed?.[item.id] ?? [])}
-                              </span>
+                              {(fed?.[item.id] ?? []).length > 0 ? (
+                                <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-green">
+                                  {fedPhrase(fed?.[item.id] ?? [])}
+                                </span>
+                              ) : null}
                               <ChatUrlLink item={item} />
                               <button
                                 type="button"
@@ -560,6 +680,8 @@ export function AiRecordPage() {
                         turns={turnCounts?.[item.id] ?? 0}
                         fed={fed?.[item.id] ?? []}
                         when={chatWhen(item.captured_at)}
+                        engagement={firstEngagement(item)}
+                        model={itemModel(item)}
                         onOpen={() => openItem(item)}
                         actions={
                           <>

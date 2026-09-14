@@ -142,3 +142,36 @@ export const noteReaderClosedFn = createServerFn({ method: "POST" })
     });
     return { ok: true };
   });
+
+/**
+ * Pass 179: a chat library filter was changed. Which filter, and whether it
+ * narrowed to one or opened to everything. No ids, no names, no free text.
+ * Never surfaced on failure.
+ */
+export const noteFilterChangedFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { filter: string; selected: string }) => ({
+    filter: input?.filter === "tool" || input?.filter === "engagement" ? input.filter : "",
+    selected: input?.selected === "all" || input?.selected === "one" ? input.selected : "",
+  }))
+  .handler(async ({ data, context }): Promise<{ ok: true }> => {
+    if (!data.filter || !data.selected) return { ok: true };
+    const { supabase, userId } = context;
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("id, org_id")
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (!profile) return { ok: true };
+
+    const { recordEvent } = await import("./telemetry.server");
+    await recordEvent(supabase, {
+      eventType: "chatlib.filter_changed",
+      orgId: profile.org_id,
+      userId,
+      profileId: profile.id,
+      dims: { filter: data.filter, selected: data.selected },
+    });
+    return { ok: true };
+  });

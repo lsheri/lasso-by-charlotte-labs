@@ -1,4 +1,5 @@
 import { VendorMark } from "@/components/work/SourceMark";
+import { engagementHue } from "@/lib/work-identity";
 import type { WorkItemRow } from "@/lib/work-types";
 
 /**
@@ -20,6 +21,8 @@ export function ChatRow({
   when,
   onOpen,
   actions,
+  engagement,
+  model,
 }: {
   item: WorkItemRow;
   turns: number;
@@ -29,10 +32,38 @@ export function ChatRow({
   when: string;
   onOpen: () => void;
   actions?: React.ReactNode;
+  /** The first engagement this conversation is mapped into, if any. */
+  engagement?: { id: string; code: string } | null;
+  model?: string | null;
 }) {
+  // An archive line: where it belongs, what answered, how long, and what it
+  // fed only when it fed something. Silence is the honest default.
+  const parts: React.ReactNode[] = [
+    engagement ? (
+      <span key="engagement" style={{ color: `var(${engagementHue(engagement.id)})` }}>
+        {engagement.code}
+      </span>
+    ) : (
+      <span key="engagement" className="text-soft">
+        UNMAPPED
+      </span>
+    ),
+  ];
+  if (model) parts.push(<span key="model">{model}</span>);
+  parts.push(
+    <span key="turns">
+      {turns} {turns === 1 ? "turn" : "turns"}
+    </span>,
+  );
+  if (fed.length > 0)
+    parts.push(
+      <span key="fed" className="text-green">
+        {fedPhrase(fed)}
+      </span>,
+    );
   const stamp = [
     <VendorMark key="vendor" item={item} />,
-    ` · ${turns} ${turns === 1 ? "turn" : "turns"} · ${fedPhrase(fed)}`,
+    ...parts.flatMap((part, index) => [<span key={`sep-${index}`}>{" · "}</span>, part]),
   ];
 
   return (
