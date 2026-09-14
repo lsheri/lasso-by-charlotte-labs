@@ -208,7 +208,7 @@ export function WhatFedThis({
   return (
     <section className="mt-8 border-t border-pencil pt-4">
       <h3 className="micro-label micro-label-ai relative inline-flex items-center gap-2">
-        What fed this
+        What this came from
         {strike.shown ? <DrawnStrike key={strike.markKey} /> : null}
         {check.shown ? <DrawnCheck key={check.markKey} size={16} /> : null}
       </h3>
