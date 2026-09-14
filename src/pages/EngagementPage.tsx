@@ -20,7 +20,6 @@ import { CaptureCoverage } from "@/components/common/CaptureCoverage";
 import { EngagementCanvas, type CanvasTask } from "@/components/engagements/EngagementCanvas";
 import { WorkLedger } from "@/components/engagements/WorkLedger";
 
-import { CanvasDeliverableActions } from "@/components/engagements/CanvasDeliverableActions";
 import { EngagementBriefPanel } from "@/components/engagements/EngagementBriefPanel";
 import { EngagementStats } from "@/components/engagements/EngagementStats";
 import { EngagementAsk } from "@/components/engagements/InlineEngagementAsk";
@@ -370,11 +369,6 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
           Add a wrap-up
         </button>
       ) : null}
-      <CanvasDeliverableActions
-        items={canvasItems}
-        engagementId={engagementId}
-        profile={profile}
-      />
       {profile.role !== "coach" && membership.data?.isMember ? (
         <p className="text-xs text-muted-foreground">
           Bring more work in from{" "}
@@ -536,7 +530,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
           </button>
           <span
             aria-hidden
-            className="pointer-events-none absolute bottom-[-2px] block h-[6px] [transition-duration:var(--nb-dur-move)] [transition-property:left,width] [transition-timing-function:var(--nb-ease)] motion-reduce:transition-none"
+            className="pointer-events-none absolute bottom-[-2px] block h-[6px] [transition-duration:420ms] [transition-property:left,width] [transition-timing-function:var(--nb-ease)] motion-reduce:transition-none"
             style={{ left: tabRule.left, width: tabRule.width }}
           >
             <GraphiteRule className="text-[var(--nb-green)]" />

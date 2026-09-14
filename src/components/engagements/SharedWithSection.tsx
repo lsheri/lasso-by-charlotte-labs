@@ -13,6 +13,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { DrawnEllipse, useMark } from "@/components/notebook/marks";
+import { CanvasDeliverableActions } from "@/components/engagements/CanvasDeliverableActions";
 import { latestDeliverable } from "@/components/engagements/WhatFedThisButton";
 import { Button } from "@/components/ui/button";
 import { ShipToFirmDialog } from "@/components/work/ShipToFirmDialog";
@@ -200,19 +201,26 @@ export function SharedWithSection({
       </div>
       <p className="mt-1.5 text-sm text-muted-foreground">{intro}</p>
 
-      {profile && profile.role !== "coach" && (canShip || !ready) ? (
+      {profile && profile.role !== "coach" ? (
         <div className="mt-6 flex flex-col gap-2">
           <h2 className="micro-label micro-label-section">SEND TO THE FIRM</h2>
-          <div>
-            <Button
-              type="button"
-              variant="ink"
-              disabled={!canShip}
-              title={canShip ? undefined : SHIP_EMPTY_HINT}
-              onClick={() => setShipOpen(true)}
-            >
-              {SHIP_ACTION_LABEL}
-            </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            {(canShip || !ready) ? (
+              <Button
+                type="button"
+                variant="ink"
+                disabled={!canShip}
+                title={canShip ? undefined : SHIP_EMPTY_HINT}
+                onClick={() => setShipOpen(true)}
+              >
+                {SHIP_ACTION_LABEL}
+              </Button>
+            ) : null}
+            <CanvasDeliverableActions
+              items={items}
+              engagementId={engagementId}
+              profile={profile}
+            />
           </div>
           {anchor && canShip ? (
             <ShipToFirmDialog

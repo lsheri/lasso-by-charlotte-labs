@@ -132,7 +132,7 @@ function EngagementRow({
                 params={{ id: engagement.id }}
                 search={{ work: task.id }}
                 onClick={onNavigate}
-                className={`${linkClass} nb-nav-item-nested-2 ${scope.workId === task.id ? "nb-nav-item-active" : ""}`}
+                className={`${linkClass} nb-nav-item-nested-3 ${scope.workId === task.id ? "nb-nav-item-active" : ""}`}
               >
                 <PencilIndent />
                 {task.is_wrap === true ? (

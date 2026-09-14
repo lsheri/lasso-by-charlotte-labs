@@ -7,6 +7,7 @@ import { getDeliverableEvidence, reviewLink } from "@/lib/lineage.functions";
 import { resolveFileFormat, type FileFormat } from "@/lib/file-format";
 import { workIdentityLabel } from "@/lib/work-identity";
 import { WhatFedThisButton } from "@/components/engagements/WhatFedThisButton";
+import { WorkNote } from "@/components/work/WorkNote";
 import { useProfile } from "@/hooks/use-profile";
 import type { WorkItemRow } from "@/lib/work-types";
 import type { CanvasTask } from "@/components/engagements/EngagementCanvas";
@@ -114,21 +115,10 @@ export function WorkLedger({
               Nothing is linked to this piece of work yet.
             </p>
           ) : (
-            <ul className="mt-2 space-y-2">
+            <ul className="nb-paper-wall mt-3">
               {sources.map((item) => (
                 <li key={item.id}>
-                  <button
-                    type="button"
-                    onClick={() => onOpen(item)}
-                    className="flex w-full items-center gap-3 rounded-md border border-rule px-4 py-3 text-left transition-colors hover:border-accent/40"
-                  >
-                    <span className="min-w-0 flex-1 truncate text-sm text-foreground">
-                      {item.title}
-                    </span>
-                    <span className="micro-label shrink-0">
-                      {workIdentityLabel(item)}
-                    </span>
-                  </button>
+                  <WorkNote item={item} onOpen={() => onOpen(item)} />
                 </li>
               ))}
             </ul>

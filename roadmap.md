@@ -32,3 +32,4 @@
 - [x] Use one shared work note across the Inbox, overview, and engagement board
 - [x] Show only the work type on the shared note's third line, removing duplicate source/date
 - [x] Slide one pencil rule across engagement tabs and move Ship to firm to Share
+- [x] Slow the engagement tab rule, move Work Artifact to Share, and unify remaining paper surfaces

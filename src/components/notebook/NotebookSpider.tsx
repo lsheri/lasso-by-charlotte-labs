@@ -5,6 +5,7 @@ interface NotebookSpiderProps {
   size?: number;
   reading?: boolean;
   className?: string;
+  ink?: string;
 }
 
 /**
@@ -163,7 +164,7 @@ function insetStyle([t, r, b, l]: [number, number, number, number]): CSSProperti
   };
 }
 
-function PieceLayer({ piece }: { piece: Piece }) {
+function PieceLayer({ piece, ink }: { piece: Piece; ink?: string }) {
   const inner = (
     <svg
       viewBox={piece.viewBox}
@@ -177,7 +178,7 @@ function PieceLayer({ piece }: { piece: Piece }) {
       <path
         d={piece.d}
         fill={piece.fill ?? "none"}
-        stroke={piece.stroke}
+        stroke={piece.stroke === GRAPHITE && ink ? ink : piece.stroke}
         strokeWidth={piece.strokeWidth}
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -205,6 +206,7 @@ export function NotebookSpider({
   size = 120,
   reading = false,
   className = "",
+  ink,
 }: NotebookSpiderProps) {
   return (
     <div
@@ -218,20 +220,55 @@ export function NotebookSpider({
     >
       <div className="nb-spider-body" style={FILL_BOX}>
         {BODY_PIECES.map((piece, i) => (
-          <PieceLayer key={`body-${i}`} piece={piece} />
+          <PieceLayer key={`body-${i}`} piece={piece} ink={ink} />
         ))}
         {/* the eyes travel with the body; the scan is additional motion on top */}
         <div className="nb-spider-eyes" style={FILL_BOX}>
           {EYE_PIECES.map((piece, i) => (
-            <PieceLayer key={`eye-${i}`} piece={piece} />
+            <PieceLayer key={`eye-${i}`} piece={piece} ink={ink} />
           ))}
         </div>
-        <PieceLayer piece={SMILE_PIECE} />
+        <PieceLayer piece={SMILE_PIECE} ink={ink} />
         {LEG_PIECES.map((piece, i) => (
-          <PieceLayer key={`leg-${i}`} piece={piece} />
+          <PieceLayer key={`leg-${i}`} piece={piece} ink={ink} />
         ))}
       </div>
     </div>
+  );
+}
+
+/** The house spider at work, holding a pencil over the line it just drew. */
+export function SpiderDrawing({
+  size = 28,
+  className = "",
+}: {
+  size?: number;
+  className?: string;
+}) {
+  return (
+    <span
+      aria-hidden
+      className={`pointer-events-none relative inline-flex shrink-0 items-end ${className}`}
+      style={{ width: size, height: size }}
+    >
+      <NotebookSpider size={size * 0.78} ink="currentColor" className="absolute bottom-0 left-0" />
+      <svg
+        className="absolute bottom-0 right-0 block"
+        width={size * 0.58}
+        height={size * 0.58}
+        viewBox="0 0 18 18"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={1.4}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden
+      >
+        <path d="M3.2 14.8c3.4-.9 6.8-.6 10.4-1.2" opacity={0.55} />
+        <path d="M5.2 12.8 14.6 3.4l1.8 1.8-9.5 9.3-2.7.8 1-2.5Z" />
+        <path d="m13.6 4.4 1.8 1.8" />
+      </svg>
+    </span>
   );
 }
 
