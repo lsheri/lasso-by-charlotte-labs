@@ -1323,7 +1323,7 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   }
 }
 
-/* Pass 159: the chat wall arrives as one wave, left to right, then rests. */
+/* Pass 175: the chat wall arrives as one wave, left to right, then rests. */
 @keyframes nb-sticky-wave {
   0% {
     transform: translateY(7px);
