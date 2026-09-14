@@ -1,24 +1,9 @@
-import { BrandLogo, brandForToolkit, type BrandKey } from "@/components/connectors/BrandLogo";
+import { BrandLogo, brandForToolkit } from "@/components/connectors/BrandLogo";
 import { cn } from "@/lib/utils";
 
 type ContextFact = { label: string; muted?: boolean };
 type ContextVendor = { key: string; label: string; present: boolean };
 type ContextAction = { id: string; label: string; onSelect: () => void };
-
-const BRAND_LABELS: Partial<Record<BrandKey, string>> = {
-  googledrive: "Google Drive",
-  gmail: "Gmail",
-  onedrive: "OneDrive",
-  sharepoint: "SharePoint",
-  notion: "Notion",
-  slack: "Slack",
-  granola: "Granola",
-  wispr: "Wispr Flow",
-  claude: "Claude",
-  chatgpt: "ChatGPT",
-  copilot: "Microsoft Copilot",
-  gemini: "Gemini",
-};
 
 export function ContextCard({
   eyebrow,
@@ -108,7 +93,7 @@ export function ContextCard({
               >
                 <BrandLogo brand={vendor.brand} size={12} />
                 <span className="micro-label">
-                  {BRAND_LABELS[vendor.brand] ?? vendor.label}
+                  {vendor.label}
                   {vendor.present ? "" : " · NONE YET"}
                 </span>
               </span>
