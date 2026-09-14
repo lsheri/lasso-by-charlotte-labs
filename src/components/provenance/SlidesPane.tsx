@@ -21,6 +21,7 @@ import {
   type Point,
   type TextRun,
 } from "@/lib/lasso-geometry";
+import { loadPdfjs } from "@/lib/pdfjs-client";
 import { makeRenderGuard } from "@/lib/rendition-query";
 import type { AuditStitch } from "@/lib/span-provenance.functions";
 import {
@@ -336,9 +337,7 @@ export function SlidesPane({
     let cancelled = false;
     void (async () => {
       try {
-        const pdfjs = await import("pdfjs-dist");
-        const workerUrl = (await import("pdfjs-dist/build/pdf.worker.min.mjs?url")).default;
-        pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
+        const pdfjs = await loadPdfjs();
         const loaded = await pdfjs.getDocument({ url: urlRef.current }).promise;
         if (cancelled) return;
         setDoc(loaded);
@@ -370,7 +369,7 @@ export function SlidesPane({
     let cancelled = false;
     void (async () => {
       try {
-        const pdfjs = await import("pdfjs-dist");
+        const pdfjs = await loadPdfjs();
         for (let pageNumber = 1; pageNumber <= pages; pageNumber += 1) {
           if (cancelled) return;
           const pdfPage = await (doc as { getPage: (n: number) => Promise<unknown> }).getPage(
@@ -578,7 +577,7 @@ function PdfPage({
     const guard = makeRenderGuard();
     void (async () => {
       try {
-        const pdfjs = await import("pdfjs-dist");
+        const pdfjs = await loadPdfjs();
         const pdfPage = await (doc as { getPage: (n: number) => Promise<never> }).getPage(
           pageNumber,
         );

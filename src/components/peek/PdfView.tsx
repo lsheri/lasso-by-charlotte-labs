@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
+import { loadPdfjs } from "@/lib/pdfjs-client";
+
 const MAX_PAGES = 30;
 
 /**
@@ -20,9 +22,7 @@ export function PdfView({ url, title }: { url: string; title: string }) {
     const docRef: { current: { destroy: () => Promise<void> } | null } = { current: null };
     void (async () => {
       try {
-        const pdfjs = await import("pdfjs-dist");
-        const workerUrl = (await import("pdfjs-dist/build/pdf.worker.min.mjs?url")).default;
-        pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
+        const pdfjs = await loadPdfjs();
 
         const doc = await pdfjs.getDocument({ url }).promise;
         docRef.current = doc;
