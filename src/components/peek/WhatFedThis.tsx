@@ -8,6 +8,7 @@ import { toast } from "sonner";
 
 import { SuggestDot } from "@/components/common/Suggested";
 import { DrawnCheck, DrawnStrike, useMark } from "@/components/notebook/marks";
+import { PaperTrail, type TrailStop } from "@/components/notebook/PaperTrail";
 import { Button } from "@/components/ui/button";
 import { ArtifactNote, SourceMark } from "@/components/work/SourceMark";
 import { ThreadViewerById } from "@/components/work/ThreadViewerById";
@@ -198,6 +199,25 @@ export function WhatFedThis({
   const prompts = data?.prompts ?? [];
   const shown = showAll ? prompts : prompts.slice(0, VISIBLE_PROMPTS);
 
+  // The design system's motion for what fed what, shown while the find runs.
+  // Real candidates when we have them, otherwise three plain placeholders.
+  const busyStops: TrailStop[] = (
+    links.length > 0
+      ? links.slice(0, 3).map((link) => ({
+          id: link.id,
+          eyebrow: `${vendorLabel(link.item.source_vendor) || relationLabel(link.relation)} · ${formatDate(link.item.date)}`,
+          label: link.item.title,
+        }))
+      : [
+          { id: "p1", eyebrow: "EARLIER WORK", label: "Something that came before" },
+          { id: "p2", eyebrow: "EARLIER WORK", label: "Something in between" },
+          { id: "p3", eyebrow: "THIS PIECE", label: "What you are reading" },
+        ]
+  ).map((stop) => ({
+    ...stop,
+    label: stop.label.length > 34 ? `${stop.label.slice(0, 33)}…` : stop.label,
+  }));
+
   const findButton = canEdit ? (
     <Button type="button" disabled={busy} onClick={() => void find()}>
       <Sparkle className="mr-2 h-4 w-4" aria-hidden />
@@ -228,6 +248,14 @@ export function WhatFedThis({
             Nothing linked yet. Lasso can look at this engagement and propose what fed this
             deliverable.
           </p>
+          {busy ? (
+            <PaperTrail
+              stops={busyStops}
+              loop
+              muted={false}
+              className="mt-4 h-[190px]"
+            />
+          ) : null}
           {findButton ? <div className="mt-4">{findButton}</div> : null}
         </div>
       ) : (
