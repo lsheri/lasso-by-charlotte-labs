@@ -3242,6 +3242,7 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
     top: 88px;
     max-height: calc(100vh - 112px);
     overflow-y: auto;
+    overflow-x: hidden;
     min-width: 0;
   }
 }
