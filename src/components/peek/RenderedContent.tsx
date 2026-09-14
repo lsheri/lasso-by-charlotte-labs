@@ -273,6 +273,10 @@ export function RenderedContent({
     // read, and that text is what analysis sees.
     return <TextOrFallback item={item} label={shape.label} onDownload={onDownload} canEdit={canEdit} />;
   }
+  // PDFs are shown as the extracted text Lasso read, not as a rendered page.
+  if (shape.kind === "pdf") {
+    return <TextOrFallback item={item} onDownload={onDownload} canEdit={canEdit} />;
+  }
   if (urlQuery.isError) {
     return <Notice>{(urlQuery.error as Error).message}</Notice>;
   }
@@ -286,11 +290,6 @@ export function RenderedContent({
         className="max-w-full rounded-[var(--radius)] border border-border"
       />
     );
-  }
-
-  // PDFs are shown as the extracted text Lasso read, not as a rendered page.
-  if (shape.kind === "pdf") {
-    return <TextOrFallback item={item} onDownload={onDownload} canEdit={canEdit} />;
   }
 
   if (failed)
