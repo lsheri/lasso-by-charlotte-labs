@@ -1225,6 +1225,7 @@ export type Database = {
       events: {
         Row: {
           actor_hash: string | null
+          affiliated: boolean | null
           classifier_version: string | null
           client_seq: number | null
           consent_ledger_version: number | null
@@ -1243,9 +1244,11 @@ export type Database = {
           session_id: string | null
           tenant_hash: string
           ts: string
+          workspace_type: string | null
         }
         Insert: {
           actor_hash?: string | null
+          affiliated?: boolean | null
           classifier_version?: string | null
           client_seq?: number | null
           consent_ledger_version?: number | null
@@ -1264,9 +1267,11 @@ export type Database = {
           session_id?: string | null
           tenant_hash: string
           ts?: string
+          workspace_type?: string | null
         }
         Update: {
           actor_hash?: string | null
+          affiliated?: boolean | null
           classifier_version?: string | null
           client_seq?: number | null
           consent_ledger_version?: number | null
@@ -1285,6 +1290,7 @@ export type Database = {
           session_id?: string | null
           tenant_hash?: string
           ts?: string
+          workspace_type?: string | null
         }
         Relationships: []
       }
@@ -1292,6 +1298,7 @@ export type Database = {
         Row: {
           actor_pseudo: string | null
           actor_type: string
+          affiliated: boolean | null
           consent_snapshot: string | null
           engagement_id: string | null
           environment: string
@@ -1307,10 +1314,12 @@ export type Database = {
           taxonomy_version: string | null
           tenant_pseudo: string
           work_item_id: string | null
+          workspace_type: string | null
         }
         Insert: {
           actor_pseudo?: string | null
           actor_type?: string
+          affiliated?: boolean | null
           consent_snapshot?: string | null
           engagement_id?: string | null
           environment?: string
@@ -1326,10 +1335,12 @@ export type Database = {
           taxonomy_version?: string | null
           tenant_pseudo: string
           work_item_id?: string | null
+          workspace_type?: string | null
         }
         Update: {
           actor_pseudo?: string | null
           actor_type?: string
+          affiliated?: boolean | null
           consent_snapshot?: string | null
           engagement_id?: string | null
           environment?: string
@@ -1345,6 +1356,7 @@ export type Database = {
           taxonomy_version?: string | null
           tenant_pseudo?: string
           work_item_id?: string | null
+          workspace_type?: string | null
         }
         Relationships: []
       }
@@ -1352,6 +1364,7 @@ export type Database = {
         Row: {
           actor_pseudo: string | null
           actor_type: string
+          affiliated: boolean | null
           consent_snapshot: string | null
           engagement_id: string | null
           environment: string
@@ -1367,10 +1380,12 @@ export type Database = {
           taxonomy_version: string | null
           tenant_pseudo: string
           work_item_id: string | null
+          workspace_type: string | null
         }
         Insert: {
           actor_pseudo?: string | null
           actor_type?: string
+          affiliated?: boolean | null
           consent_snapshot?: string | null
           engagement_id?: string | null
           environment?: string
@@ -1386,10 +1401,12 @@ export type Database = {
           taxonomy_version?: string | null
           tenant_pseudo: string
           work_item_id?: string | null
+          workspace_type?: string | null
         }
         Update: {
           actor_pseudo?: string | null
           actor_type?: string
+          affiliated?: boolean | null
           consent_snapshot?: string | null
           engagement_id?: string | null
           environment?: string
@@ -1405,6 +1422,7 @@ export type Database = {
           taxonomy_version?: string | null
           tenant_pseudo?: string
           work_item_id?: string | null
+          workspace_type?: string | null
         }
         Relationships: []
       }
@@ -1412,6 +1430,7 @@ export type Database = {
         Row: {
           actor_pseudo: string | null
           actor_type: string
+          affiliated: boolean | null
           consent_snapshot: string | null
           engagement_id: string | null
           environment: string
@@ -1427,10 +1446,12 @@ export type Database = {
           taxonomy_version: string | null
           tenant_pseudo: string
           work_item_id: string | null
+          workspace_type: string | null
         }
         Insert: {
           actor_pseudo?: string | null
           actor_type?: string
+          affiliated?: boolean | null
           consent_snapshot?: string | null
           engagement_id?: string | null
           environment?: string
@@ -1446,10 +1467,12 @@ export type Database = {
           taxonomy_version?: string | null
           tenant_pseudo: string
           work_item_id?: string | null
+          workspace_type?: string | null
         }
         Update: {
           actor_pseudo?: string | null
           actor_type?: string
+          affiliated?: boolean | null
           consent_snapshot?: string | null
           engagement_id?: string | null
           environment?: string
@@ -1465,6 +1488,7 @@ export type Database = {
           taxonomy_version?: string | null
           tenant_pseudo?: string
           work_item_id?: string | null
+          workspace_type?: string | null
         }
         Relationships: []
       }
@@ -1472,6 +1496,7 @@ export type Database = {
         Row: {
           actor_pseudo: string | null
           actor_type: string
+          affiliated: boolean | null
           consent_snapshot: string | null
           engagement_id: string | null
           environment: string
@@ -1487,10 +1512,12 @@ export type Database = {
           taxonomy_version: string | null
           tenant_pseudo: string
           work_item_id: string | null
+          workspace_type: string | null
         }
         Insert: {
           actor_pseudo?: string | null
           actor_type?: string
+          affiliated?: boolean | null
           consent_snapshot?: string | null
           engagement_id?: string | null
           environment?: string
@@ -1506,10 +1533,12 @@ export type Database = {
           taxonomy_version?: string | null
           tenant_pseudo: string
           work_item_id?: string | null
+          workspace_type?: string | null
         }
         Update: {
           actor_pseudo?: string | null
           actor_type?: string
+          affiliated?: boolean | null
           consent_snapshot?: string | null
           engagement_id?: string | null
           environment?: string
@@ -1525,6 +1554,7 @@ export type Database = {
           taxonomy_version?: string | null
           tenant_pseudo?: string
           work_item_id?: string | null
+          workspace_type?: string | null
         }
         Relationships: []
       }
@@ -1532,6 +1562,7 @@ export type Database = {
         Row: {
           actor_pseudo: string | null
           actor_type: string
+          affiliated: boolean | null
           consent_snapshot: string | null
           engagement_id: string | null
           environment: string
@@ -1547,10 +1578,12 @@ export type Database = {
           taxonomy_version: string | null
           tenant_pseudo: string
           work_item_id: string | null
+          workspace_type: string | null
         }
         Insert: {
           actor_pseudo?: string | null
           actor_type?: string
+          affiliated?: boolean | null
           consent_snapshot?: string | null
           engagement_id?: string | null
           environment?: string
@@ -1566,10 +1599,12 @@ export type Database = {
           taxonomy_version?: string | null
           tenant_pseudo: string
           work_item_id?: string | null
+          workspace_type?: string | null
         }
         Update: {
           actor_pseudo?: string | null
           actor_type?: string
+          affiliated?: boolean | null
           consent_snapshot?: string | null
           engagement_id?: string | null
           environment?: string
@@ -1585,6 +1620,7 @@ export type Database = {
           taxonomy_version?: string | null
           tenant_pseudo?: string
           work_item_id?: string | null
+          workspace_type?: string | null
         }
         Relationships: []
       }
