@@ -1,7 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 
-import { Message, MessageContent } from "@/components/ai-elements/message";
 import { AnswerSources } from "@/components/reflect/AnswerSources";
 import { CoverageNote } from "@/components/reflect/CoverageNote";
 import {
@@ -200,15 +199,14 @@ function MessagesTab({ ask, emptyActions }: { ask: AskLasso; emptyActions?: Reac
             previous !== undefined && (previous.role === "user" ? "user" : "assistant") === role;
 
           return (
-            <Message
+            <div
               key={message.id}
-              from={role}
               className="nb-conversation-message max-w-none flex-row items-start gap-3"
             >
               <div className="grid w-7 shrink-0 grid-rows-[28px]">
                 {followsSameSpeaker ? <span aria-hidden className="size-7" /> : speakerAvatar(role)}
               </div>
-              <MessageContent className="nb-conversation-body w-full flex-1 gap-0 overflow-visible group-[.is-user]:ml-0 group-[.is-user]:rounded-none group-[.is-user]:bg-transparent group-[.is-user]:px-0 group-[.is-user]:py-0">
+              <div className="nb-conversation-body w-full flex-1 gap-0 overflow-visible">
                 {!followsSameSpeaker ? speakerName(role, message.created_at) : null}
                 {message.role === "user" ? (
                   <p className="nb-binder-line whitespace-pre-wrap text-sm text-foreground">
@@ -239,22 +237,19 @@ function MessagesTab({ ask, emptyActions }: { ask: AskLasso; emptyActions?: Reac
                     </div>
                   </>
                 )}
-              </MessageContent>
-            </Message>
+              </div>
+            </div>
           );
         })}
 
         {ask.pending && ask.streamed ? (
-          <Message
-            from="assistant"
-            className="nb-conversation-message max-w-none flex-row items-start gap-3"
-          >
+          <div className="nb-conversation-message max-w-none flex-row items-start gap-3">
             <div className="grid w-7 shrink-0 grid-rows-[28px]">{speakerAvatar("assistant")}</div>
-            <MessageContent className="nb-conversation-body w-full flex-1 gap-0 overflow-visible">
+            <div className="nb-conversation-body w-full flex-1 gap-0 overflow-visible">
               {speakerName("assistant", new Date())}
               <MarkdownMessage content={ask.streamed} variant="binder" className="nb-stream" />
-            </MessageContent>
-          </Message>
+            </div>
+          </div>
         ) : null}
 
         {ask.pending ? (
