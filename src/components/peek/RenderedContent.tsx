@@ -290,7 +290,7 @@ export function RenderedContent({
 
   // PDFs are shown as the extracted text Lasso read, not as a rendered page.
   if (shape.kind === "pdf") {
-    return <TextOrFallback item={item} label={shape.label} onDownload={onDownload} canEdit={canEdit} />;
+    return <TextOrFallback item={item} onDownload={onDownload} canEdit={canEdit} />;
   }
 
   if (failed)
