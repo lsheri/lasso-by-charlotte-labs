@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import type { Database } from "@/integrations/supabase/types";
 
+import { orgTypeFromSettings } from "./org-type.server";
 import { bucket } from "./telemetry-shared";
 import {
   CAPTURE_CHANNELS,
