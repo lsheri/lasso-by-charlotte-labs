@@ -24,11 +24,12 @@ function item(id: string, type: WorkItemRow["type"], title: string): WorkItemRow
   } as unknown as WorkItemRow;
 }
 
-describe("94.1 work picker in the analyses tab", () => {
+describe("94.1 shared work picker", () => {
   const surface = read("src/components/reflect/AskSurface.tsx");
   const picker = read("src/components/reflect/WorkScopePicker.tsx");
   const hook = read("src/components/reflect/use-ask-lasso.ts");
   const shared = read("src/components/reflect/MappedWorkChecklist.tsx");
+  const state = read("src/components/reflect/ask-dock-state.tsx");
 
   it("selects every mapped item by default when the chat opens", () => {
     expect(hook).toContain("setSelected(new Set(mapped.map((i) => i.id)))");
@@ -42,10 +43,10 @@ describe("94.1 work picker in the analyses tab", () => {
     expect(picker).not.toContain("function groupByTask");
   });
 
-  it("puts a quiet change affordance above the chips", () => {
+  it("keeps selection in the shared scope controls without an analyses tab", () => {
     expect(surface).toContain("All work in this engagement");
-    expect(surface).toContain("· Change");
-    expect(surface).toContain("SelectionAnalysisChips");
+    expect(surface).not.toContain('id: "analyses"');
+    expect(state).not.toContain('"analyses"');
   });
 });
 

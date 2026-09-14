@@ -3,11 +3,6 @@ import { useState } from "react";
 
 import { AnswerSources } from "@/components/reflect/AnswerSources";
 import { CoverageNote } from "@/components/reflect/CoverageNote";
-import {
-  InlineAnalysisBlocks,
-  SelectionAnalysisChips,
-  type ChipTarget,
-} from "@/components/reflect/ChatAnalyses";
 import { GraphiteIcon, type GraphiteIconName } from "@/components/notebook/icons";
 import { MarkdownMessage } from "@/components/markdown/MarkdownMessage";
 import { ContextAudit, ThinkingTrail } from "@/components/reflect/ContextTrail";
@@ -16,8 +11,6 @@ import { Button } from "@/components/ui/button";
 import { MappedWorkChecklist } from "@/components/reflect/MappedWorkChecklist";
 import { Textarea } from "@/components/ui/textarea";
 import { parseManifest } from "@/lib/context-manifest";
-import type { AnalysisPreset } from "@/lib/analysis-presets";
-import type { WorkItemRow } from "@/lib/work-types";
 import { ArtifactNote, SourceMark } from "@/components/work/SourceMark";
 import { TypeBadge } from "@/components/work/TypeIcon";
 import type { AskTab } from "@/components/reflect/ask-dock-state";
@@ -37,11 +30,10 @@ export function NbDots({ label = "Thinking" }: { label?: string }) {
 const TABS: { id: AskTab; label: string; icon: GraphiteIconName }[] = [
   { id: "messages", label: "Messages", icon: "messages" },
   { id: "history", label: "History", icon: "history" },
-  { id: "analyses", label: "Analyses", icon: "analyses" },
 ];
 
 /**
- * Three panels and one action. "New chat" sits in the same row because that is
+ * Two panels and one action. "New chat" sits in the same row because that is
  * where people look for it, but it is a button, not a tab: it never holds
  * selection, it starts a fresh session and lands you on Messages.
  */
@@ -347,97 +339,6 @@ function HistoryTab({ ask }: { ask: AskLasso }) {
   );
 }
 
-function AnalysesTab({
-  ask,
-  engagementId,
-  engagementTitle,
-  profileId,
-  onClose,
-}: {
-  ask: AskLasso;
-  engagementId: string;
-  engagementTitle: string;
-  profileId: string;
-  onClose: () => void;
-}) {
-  const readsDetail =
-    ask.selectedItems.length === 1
-      ? "The piece of work you selected, and the brief when one exists."
-      : "The pieces of work you selected, and the brief when one exists.";
-  const all = ask.selectedItems.length === ask.mapped.length;
-  const scopeLine = all
-    ? "All work in this engagement"
-    : `${ask.selectedItems.length} ${ask.selectedItems.length === 1 ? "piece" : "pieces"} selected`;
-  return (
-    <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4">
-      {ask.mapped.length > 0 ? (
-        <button
-          type="button"
-          onClick={() => ask.setPickerOpen(!ask.pickerOpen)}
-          className="flex w-full items-center gap-2 text-left font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
-        >
-          <span className="truncate">{scopeLine}</span>
-          <span className="shrink-0 text-accent-deep">· Change</span>
-        </button>
-      ) : null}
-      {ask.mapped.length > 0 ? (
-        <SelectionAnalysisChips
-          selected={ask.selectedItems}
-          engagement={{ id: engagementId, title: engagementTitle }}
-          briefCandidates={ask.mapped}
-          engagementHasBrief={ask.engagementBrief ?? false}
-          firmCheckCount={(ask.firmChecks ?? []).length}
-          orgName={ask.profile?.org_name}
-          orgId={ask.profile?.org_id}
-          profileId={ask.profile?.id}
-          onAdjust={() => ask.setPickerOpen(true)}
-          canAuthorChecks={ask.profile?.role === "coach" || ask.profile?.role === "admin"}
-          onAuthorCheck={onClose}
-          readsDetail={readsDetail}
-          running={ask.analyses.running}
-          onRun={(
-            preset: AnalysisPreset,
-            target: ChipTarget,
-            checkId?: string,
-            extraItemIds?: string[],
-            anchorItemId?: string | null,
-          ) =>
-            void ask.analyses.runPreset(
-              preset,
-              target,
-              readsDetail,
-              checkId,
-              extraItemIds,
-              anchorItemId,
-            )
-          }
-        />
-      ) : (
-        <p className="text-sm text-muted-foreground">
-          No work is mapped into this engagement yet, so there is nothing to analyse.
-        </p>
-      )}
-      {ask.analyses.error ? <p className="text-sm text-destructive">{ask.analyses.error}</p> : null}
-      <InlineAnalysisBlocks
-        results={ask.analyses.results}
-        profileId={profileId}
-        onSaveForOneOnOne={(input) => ask.setSaveTarget(input)}
-      />
-      {ask.analyses.running ? (
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <NbDots />
-            <span className="text-sm text-muted-foreground">
-              Applying {ask.analyses.running.label}
-            </span>
-          </div>
-          {ask.analyses.streamed ? <MarkdownMessage content={ask.analyses.streamed} /> : null}
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
 /** The composer, scope chip and send. Send is the one filled green here. */
 export function AskComposer({ ask, mobile }: { ask: AskLasso; mobile?: boolean }) {
   return (
@@ -524,7 +425,6 @@ export function AskSurface({
   engagementTitle,
   profileId,
   orgId,
-  onClose,
   mobile,
   emptyActions,
   inline,
@@ -577,15 +477,6 @@ export function AskSurface({
 
       {tab === "messages" ? <MessagesTab ask={ask} emptyActions={emptyActions} /> : null}
       {tab === "history" ? <HistoryTab ask={ask} /> : null}
-      {tab === "analyses" ? (
-        <AnalysesTab
-          ask={ask}
-          engagementId={engagementId}
-          engagementTitle={engagementTitle}
-          profileId={profileId}
-          onClose={onClose}
-        />
-      ) : null}
 
       {ask.error ? <p className="px-4 pb-2 text-sm text-destructive">{ask.error}</p> : null}
 

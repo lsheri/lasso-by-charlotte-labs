@@ -197,7 +197,10 @@ export function SourceMark({
   // mapping lives in BrandLogo alone; "unknown" means letters below.
   const logoKey = brandForToolkit(key);
   if (logoKey !== "unknown") {
-    return withDisc(<BrandLogo brand={logoKey} size={size} className={disc ? "" : className} />);
+    // Relative positioning keeps the mark painted above the absolute paper disc.
+    return withDisc(
+      <BrandLogo brand={logoKey} size={size} className={disc ? "relative block" : className} />,
+    );
   }
 
   if (!letters) return null;
