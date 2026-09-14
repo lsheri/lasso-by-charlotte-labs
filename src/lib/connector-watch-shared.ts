@@ -37,8 +37,10 @@ export function suggestionBucket(n: number): string {
 }
 
 export function parseWatchConfig(raw: unknown): WatchConfig {
-  const folders = (raw as { folders?: unknown } | null)?.folders;
-  if (!Array.isArray(folders)) return { folders: [] };
+  const record = raw as { folders?: unknown; recheck_documents?: unknown } | null;
+  const recheck = record?.recheck_documents !== false;
+  const folders = record?.folders;
+  if (!Array.isArray(folders)) return { folders: [], recheck_documents: recheck };
   const out: WatchFolder[] = [];
   for (const entry of folders) {
     const f = entry as Partial<WatchFolder>;
@@ -53,5 +55,5 @@ export function parseWatchConfig(raw: unknown): WatchConfig {
         : [],
     });
   }
-  return { folders: out };
+  return { folders: out, recheck_documents: recheck };
 }
