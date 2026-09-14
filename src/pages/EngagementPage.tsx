@@ -534,10 +534,13 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
               />
             ) : null}
           </button>
-          <GraphiteRule
-            className="pointer-events-none absolute bottom-[-2px] h-[6px] text-[var(--nb-green)] [transition-duration:var(--nb-dur-move)] [transition-property:left,width] [transition-timing-function:var(--nb-ease)] motion-reduce:transition-none"
+          <span
+            aria-hidden
+            className="pointer-events-none absolute bottom-[-2px] block h-[6px] [transition-duration:var(--nb-dur-move)] [transition-property:left,width] [transition-timing-function:var(--nb-ease)] motion-reduce:transition-none"
             style={{ left: tabRule.left, width: tabRule.width }}
-          />
+          >
+            <GraphiteRule className="text-[var(--nb-green)]" />
+          </span>
         </div>
       </div>
       <div className="nb-bench-grid relative">
