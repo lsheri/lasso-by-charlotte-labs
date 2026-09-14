@@ -39,9 +39,8 @@ export function SubjectCoachingSection({
 
   const hasNotes = (notes ?? []).length > 0;
   const hasQueries = (queries ?? []).length > 0;
-  if (!hasNotes && !hasQueries) return null;
-
   const stops = trailStops(items);
+  if (!hasNotes && !hasQueries && stops.length === 0) return null;
 
   return (
     <div className="mt-10 space-y-8">
@@ -69,6 +68,7 @@ export function SubjectCoachingSection({
           </p>
         </section>
       ) : null}
+
 
 
       {hasQueries ? (
