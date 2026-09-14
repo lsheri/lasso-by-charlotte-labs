@@ -1,4 +1,5 @@
 import { BrandLogo, brandForToolkit } from "@/components/connectors/BrandLogo";
+import { GraphiteIcon } from "@/components/notebook/icons";
 import { cn } from "@/lib/utils";
 
 type ContextFact = { label: string; muted?: boolean };
@@ -13,6 +14,10 @@ export function ContextCard({
   vendors = [],
   actions,
   onChange,
+  panelOpen = false,
+  panelWide = false,
+  onTogglePanelWidth,
+  onClosePanel,
 }: {
   eyebrow: string;
   title: string;
@@ -21,13 +26,23 @@ export function ContextCard({
   vendors?: ContextVendor[];
   actions: ContextAction[];
   onChange?: () => void;
+  panelOpen?: boolean;
+  panelWide?: boolean;
+  onTogglePanelWidth?: () => void;
+  onClosePanel?: () => void;
 }) {
   const visibleVendors = vendors
     .map((vendor) => ({ ...vendor, brand: brandForToolkit(vendor.key) }))
     .filter((vendor) => vendor.brand !== "unknown");
 
   return (
-    <aside className="relative w-full rounded-[3px] border border-[var(--nb-rule)] bg-[var(--nb-white)] p-[13px_14px] shadow-[0_3px_6px_-3px_rgb(22_24_26_/_0.2)] min-[1100px]:w-[236px]">
+    <aside
+      data-context-card
+      className={cn(
+        "relative w-full rounded-[3px] border border-[var(--nb-rule)] bg-[var(--nb-white)] p-[13px_14px] shadow-[0_3px_6px_-3px_rgb(22_24_26_/_0.2)]",
+        panelOpen && "rounded-b-none border-b-0",
+      )}
+    >
       <svg
         width="18"
         height="33"
@@ -101,18 +116,64 @@ export function ContextCard({
           </div>
         ) : null}
 
-        {actions.length > 0 ? (
+        {actions.length > 0 || (panelOpen && onClosePanel) ? (
           <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1.5 border-t border-[var(--nb-rule)] pt-2.5 min-[1100px]:flex-col min-[1100px]:items-start">
-            {actions.map((action) => (
-              <button
-                key={action.id}
-                type="button"
-                onClick={action.onSelect}
-                className="micro-label text-left text-[var(--nb-pencil)] hover:text-foreground"
-              >
-                {action.label}
-              </button>
-            ))}
+            <div className="flex flex-wrap gap-x-3 gap-y-1.5 min-[1100px]:flex-col min-[1100px]:items-start">
+              {actions.map((action) => (
+                <button
+                  key={action.id}
+                  type="button"
+                  onClick={action.onSelect}
+                  className="micro-label text-left text-[var(--nb-pencil)] hover:text-foreground"
+                >
+                  {action.label}
+                </button>
+              ))}
+            </div>
+            {panelOpen && onClosePanel ? (
+              <div className="ml-auto flex items-center gap-1 min-[1100px]:ml-0 min-[1100px]:self-end">
+                {onTogglePanelWidth ? (
+                  <button
+                    type="button"
+                    aria-label={panelWide ? "Narrow this column" : "Widen this column"}
+                    onClick={onTogglePanelWidth}
+                    className="hidden h-7 w-7 place-items-center rounded-md text-muted-foreground transition-colors hover:text-foreground min-[1100px]:grid"
+                  >
+                    <svg
+                      width="18"
+                      height="18"
+                      viewBox="0 0 20 20"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.4"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden
+                    >
+                      {panelWide ? (
+                        <>
+                          <path d="M3.5 5.2h5.3v5.3M8.7 5.3 3.4 10.6" />
+                          <path d="M16.5 14.8h-5.3V9.5M11.3 14.7l5.3-5.3" />
+                        </>
+                      ) : (
+                        <>
+                          <path d="M8.8 10.5V5.2H3.5M8.7 5.3l-5.3 5.3" />
+                          <path d="M11.2 9.5v5.3h5.3M11.3 14.7l5.3-5.3" />
+                        </>
+                      )}
+                    </svg>
+                  </button>
+                ) : null}
+                <button
+                  type="button"
+                  aria-label="Close this column"
+                  onClick={onClosePanel}
+                  className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  <GraphiteIcon name="close" size={16} />
+                </button>
+              </div>
+            ) : null}
           </div>
         ) : null}
       </div>
