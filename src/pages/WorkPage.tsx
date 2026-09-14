@@ -262,10 +262,6 @@ export function WorkPage() {
   useEffect(() => {
     setColumnPages({ llm: 0, documents: 0, sheets: 0, calls: 0 });
   }, [columnFilter, showPrivate]);
-  // Figma 22:220 rests with one control on the header: "Add work by hand". The
-  // ways work gets in are all still here, they just wait behind it instead of
-  // filling a bar under the title.
-  const [addOpen, setAddOpen] = useState(false);
   // Rolled once per mount, never per render: a re-roll mid-animation would
   // restart the gust under the reader.
   const [gust] = useState(() => Math.random() < 0.3);
