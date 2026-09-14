@@ -1,7 +1,7 @@
 import type { GraphiteIconName } from "@/components/notebook/icons";
 import { EDU_VOCAB } from "@/lib/edu-vocab";
 
-export type NavItem = { label: string; to: string; icon: GraphiteIconName };
+export type NavItem = { label: string; to: string; icon: GraphiteIconName; nested?: boolean };
 export type NavGroup = { id?: string; label: string; items: NavItem[]; emptyState?: string };
 
 /**
