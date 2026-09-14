@@ -573,6 +573,12 @@ export function AiRecordPage() {
           <p className="mt-4 border-t border-[var(--nb-rule)] pt-3 text-[12px] text-muted-foreground">
             Showing {visible.length} of {threads.length}. Nothing is deleted here.
           </p>
+          <CaptureCoverage
+            profileId={profile?.id}
+            itemCount={threads.length}
+            scopeLabel="your chat library"
+            dates={threads.map((t) => effectiveWorkDate(t))}
+          />
           <p className="font-hand mt-6 text-[16px] text-green">
             nothing here was written by Lasso
           </p>
