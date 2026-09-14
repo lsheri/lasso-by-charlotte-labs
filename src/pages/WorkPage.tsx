@@ -106,6 +106,113 @@ function PageMark({ back = false }: { back?: boolean }) {
   );
 }
 
+type BringWorkInRowProps = {
+  unmappedCount: number;
+  suggesting: boolean;
+  onSuggest: () => void;
+  isCoach: boolean;
+  selectableCount: number;
+  selectMode: boolean;
+  allChosen: boolean;
+  chosenCount: number;
+  onToggleSelectAll: () => void;
+  onBulkMap: () => void;
+  onRemove: () => void;
+  onDoneSelect: () => void;
+  onEnterSelect: () => void;
+};
+
+function BringWorkInRow({
+  unmappedCount,
+  suggesting,
+  onSuggest,
+  isCoach,
+  selectableCount,
+  selectMode,
+  allChosen,
+  chosenCount,
+  onToggleSelectAll,
+  onBulkMap,
+  onRemove,
+  onDoneSelect,
+  onEnterSelect,
+}: BringWorkInRowProps) {
+  return (
+    <div className="mb-6">
+      <p className="micro-label">BRING WORK IN</p>
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        {unmappedCount > 0 ? (
+          <button
+            type="button"
+            disabled={suggesting}
+            onClick={onSuggest}
+            className="text-xs font-medium text-accent-deep transition-opacity hover:opacity-70 disabled:opacity-50"
+          >
+            {suggesting ? "Thinking…" : "✨ Suggest mapping"}
+          </button>
+        ) : null}
+        {!isCoach && selectableCount > 0 ? (
+          selectMode ? (
+            <div className="flex flex-wrap items-center gap-3">
+              <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
+                <Checkbox
+                  checked={allChosen}
+                  onCheckedChange={() => onToggleSelectAll()}
+                  aria-label="Select all visible unmapped items"
+                />
+                Select all
+              </label>
+              <MapButton disabled={chosenCount === 0} onClick={onBulkMap}>
+                Map to a workstream{chosenCount ? ` (${chosenCount})` : ""}
+              </MapButton>
+              <button
+                type="button"
+                disabled={chosenCount === 0}
+                onClick={onRemove}
+                className="text-xs font-medium text-destructive transition-opacity hover:opacity-70 disabled:opacity-40"
+              >
+                Remove{chosenCount ? ` (${chosenCount})` : ""}
+              </button>
+              <button
+                type="button"
+                onClick={onDoneSelect}
+                className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+              >
+                Done
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={onEnterSelect}
+              className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Select
+            </button>
+          )
+        ) : null}
+        <ConnectorBrowseActions />
+        <PasteThreadDialog
+          trigger={
+            <Button type="button" className="hidden md:inline-flex">
+              Paste a thread
+            </Button>
+          }
+        />
+        <UploadFilesButton />
+        <TranscriptsAction />
+        <ImportFlowDialog
+          trigger={
+            <Button type="button" variant="outline">
+              Import AI history
+            </Button>
+          }
+        />
+      </div>
+    </div>
+  );
+}
+
 export function WorkPage() {
   const { data: profile } = useProfile();
   const vocab = vocabFor(profile);
