@@ -5,6 +5,7 @@
  */
 
 export const SHIP_ACTION_LABEL = "Ship to firm";
+export const SHIP_EMPTY_HINT = "Add a finished deliverable to ship it.";
 
 export const SHIP_CONFIRM_TITLE = "Ship to the firm archive";
 export const SHIP_CONFIRM_BODY =

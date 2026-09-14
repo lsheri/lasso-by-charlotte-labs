@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import {
@@ -13,6 +13,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { DrawnEllipse, useMark } from "@/components/notebook/marks";
+import { latestDeliverable } from "@/components/engagements/WhatFedThisButton";
+import { Button } from "@/components/ui/button";
+import { ShipToFirmDialog } from "@/components/work/ShipToFirmDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useEngagementCoaches, useShareInvalidation } from "@/hooks/use-coach-share";
 import {
@@ -26,21 +29,30 @@ import {
   type ShareResult,
 } from "@/lib/coach-share-shared";
 import { logEvent } from "@/lib/telemetry";
+import { SHIP_ACTION_LABEL, SHIP_EMPTY_HINT } from "@/lib/shipped-work-shared";
+import { ownsWorkItem } from "@/lib/work-ownership";
+import type { WorkItemRow } from "@/lib/work-types";
 
 /**
  * The roster. Every active coach in the workspace is listed by name with one
  * button: Share when they cannot see this engagement, Shared plus Remove when
  * they can. Sharing is owner driven and the two RPCs stay the only authority,
  * so this surface offers the choice and reports exactly what came back.
+ *
+ * PASS 164 — Includes shipping to the firm, moved here from the work header.
  */
 export function SharedWithSection({
   engagementId,
   orgId,
+  items,
+  profile,
   quickFolder = false,
   personalOrg = false,
 }: {
   engagementId: string;
   orgId: string;
+  items: WorkItemRow[];
+  profile: { id: string; role: string } | null | undefined;
   /** A quick folder holds unfiled work, so it is never shareable. */
   quickFolder?: boolean;
   /** Personal workspaces say "your coaches" rather than "the workspace". */
@@ -52,6 +64,7 @@ export function SharedWithSection({
   const [sharingAll, setSharingAll] = useState(false);
   const [confirmAll, setConfirmAll] = useState(false);
   const [confirmation, setConfirmation] = useState<string | null>(null);
+  const [shipOpen, setShipOpen] = useState(false);
   const ellipse = useMark();
 
   const shared = useEngagementCoaches(engagementId);
@@ -80,6 +93,10 @@ export function SharedWithSection({
   const roster = rosterFor(orgCoaches.data ?? [], shared.data ?? [], optimistic);
   const unshared = roster.filter((row) => !row.shared);
   const sharedCount = roster.length - unshared.length;
+
+  const anchor = useMemo(() => latestDeliverable(items), [items]);
+  const ready = anchor !== null;
+  const canShip = Boolean(anchor) && ownsWorkItem(profile, anchor ?? {});
 
   function clearOptimistic(id: string) {
     setOptimistic((current) => {
@@ -183,7 +200,35 @@ export function SharedWithSection({
       </div>
       <p className="mt-1.5 text-sm text-muted-foreground">{intro}</p>
 
-      <div className="mt-3 space-y-2">
+      {profile && profile.role !== "coach" && (canShip || !ready) ? (
+        <div className="mt-6 flex flex-col gap-2">
+          <h2 className="micro-label micro-label-section">SEND TO THE FIRM</h2>
+          <div>
+            <Button
+              type="button"
+              variant="ink"
+              disabled={!canShip}
+              title={canShip ? undefined : SHIP_EMPTY_HINT}
+              onClick={() => setShipOpen(true)}
+            >
+              {SHIP_ACTION_LABEL}
+            </Button>
+          </div>
+          {anchor && canShip ? (
+            <ShipToFirmDialog
+              workItemId={anchor.id}
+              title={anchor.title}
+              item={anchor}
+              engagementId={engagementId}
+              open={shipOpen}
+              onOpenChange={setShipOpen}
+            />
+          ) : null}
+        </div>
+      ) : null}
+
+      <div className="mt-6 space-y-2">
+        <h2 className="micro-label micro-label-section">Coaches</h2>
         {roster.map((coach) => {
           const line = sharedLine(coach.added_at, coach.added_by_name);
           const busy = busyId === coach.id || sharingAll;

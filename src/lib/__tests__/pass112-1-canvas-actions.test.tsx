@@ -19,11 +19,11 @@ vi.mock("@/components/work/ShipToFirmDialog", () => ({
   },
 }));
 
-const { CanvasDeliverableActions, JOURNEY_EMPTY_HINT, SHIP_EMPTY_HINT } = await import(
+const { CanvasDeliverableActions, JOURNEY_EMPTY_HINT } = await import(
   "@/components/engagements/CanvasDeliverableActions"
 );
 const { latestDeliverable } = await import("@/components/engagements/WhatFedThisButton");
-const { SHIP_ACTION_LABEL } = await import("@/lib/shipped-work-shared");
+const { SHIP_ACTION_LABEL, SHIP_EMPTY_HINT } = await import("@/lib/shipped-work-shared");
 
 function item(id: string, type: string, date: string, owner: string): WorkItemRow {
   return {
@@ -76,33 +76,31 @@ describe("pass 112.1 · journey and ship on the canvas", () => {
     });
   });
 
-  it("shows the journey to a coach but never the ship button", () => {
+  it("keeps only the journey in the Work header", () => {
     renderActions([deliverable], { id: "coach", role: "coach" });
     expect(screen.getByRole("button", { name: "Work Artifact" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: SHIP_ACTION_LABEL })).toBeNull();
   });
 
-  it("hides ship from a member who does not own the latest deliverable", () => {
-    renderActions([deliverable], { id: "other", role: "member" });
-    expect(screen.queryByRole("button", { name: SHIP_ACTION_LABEL })).toBeNull();
+  it("hides Share shipping from a member who does not own the latest deliverable", () => {
+    const source = readFileSync("src/components/engagements/SharedWithSection.tsx", "utf8");
+    expect(source).toContain("ownsWorkItem(profile, anchor ?? {})");
+    expect(source).toContain('profile.role !== "coach" && (canShip || !ready)');
   });
 
-  it("ships through the existing dialog only", () => {
-    renderActions([deliverable], { id: "me", role: "member" });
-    fireEvent.click(screen.getByRole("button", { name: SHIP_ACTION_LABEL }));
-    const last = shipDialogs.at(-1) as { workItemId: string; open: boolean };
-    expect(last.workItemId).toBe("d1");
-    expect(last.open).toBe(true);
+  it("ships from Share through the existing dialog only", () => {
+    const source = readFileSync("src/components/engagements/SharedWithSection.tsx", "utf8");
+    expect(source).toContain("SEND TO THE FIRM");
+    expect(source).toContain("<ShipToFirmDialog");
+    expect(source).toContain("onClick={() => setShipOpen(true)}");
   });
 
   it("states the exact hints with no deliverable", () => {
     renderActions([thread], { id: "me", role: "member" });
     const journey = screen.getByRole("button", { name: "Work Artifact" });
-    const ship = screen.getByRole("button", { name: SHIP_ACTION_LABEL });
     expect((journey as HTMLButtonElement).disabled).toBe(true);
-    expect((ship as HTMLButtonElement).disabled).toBe(true);
     expect(journey.getAttribute("title")).toBe("Add a finished deliverable to see how it grew.");
-    expect(ship.getAttribute("title")).toBe("Add a finished deliverable to ship it.");
+    expect(SHIP_EMPTY_HINT).toBe("Add a finished deliverable to ship it.");
     expect(JOURNEY_EMPTY_HINT + SHIP_EMPTY_HINT).not.toContain("—");
     expect(screen.queryByTestId("ship-dialog")).toBeNull();
   });
