@@ -1,17 +1,38 @@
 import type { CSSProperties } from "react";
 
 import { CoachNoteList, noteWhen } from "@/components/coaching/CoachNoteList";
+import { PaperTrail, type TrailStop } from "@/components/notebook/PaperTrail";
 import { notePaper } from "@/components/work/note-paper";
 import { useNotesAboutMe, useQueriesAboutMe } from "@/hooks/use-subject-coaching";
+import { vendorLabel } from "@/lib/conversation-shared";
+import { formatDate, type WorkItemRow } from "@/lib/work-types";
+
+function trailStops(items: readonly WorkItemRow[]): TrailStop[] {
+  return items.slice(0, 4).map((item) => {
+    const when = item.work_date ?? item.created_at_source ?? item.captured_at;
+    const source = vendorLabel(item.source_vendor) || item.source;
+    return {
+      id: item.id,
+      eyebrow: `${source} · ${when ? formatDate(when) : ""}`.trim(),
+      label: item.title.length > 34 ? `${item.title.slice(0, 33)}…` : item.title,
+    };
+  });
+}
 
 export function SubjectCoachingSection({
   profileId,
   engagementId,
   orgId,
+  items = [],
+  shipped = false,
 }: {
   profileId: string | undefined;
   engagementId: string;
   orgId?: string | undefined;
+  /** The work already on this page; used only for the illustration's cards. */
+  items?: readonly WorkItemRow[] | undefined;
+  /** Something in this engagement has gone to the firm. */
+  shipped?: boolean | undefined;
 }) {
   const { data: notes } = useNotesAboutMe(profileId, engagementId);
   const { data: queries } = useQueriesAboutMe(profileId, engagementId);
@@ -19,6 +40,8 @@ export function SubjectCoachingSection({
   const hasNotes = (notes ?? []).length > 0;
   const hasQueries = (queries ?? []).length > 0;
   if (!hasNotes && !hasQueries) return null;
+
+  const stops = trailStops(items);
 
   return (
     <div className="mt-10 space-y-8">
@@ -35,6 +58,18 @@ export function SubjectCoachingSection({
           </div>
         </section>
       ) : null}
+
+      {stops.length > 0 ? (
+        <section data-testid="coaching-ship-trail">
+          <div className="min-h-[260px]">
+            <PaperTrail stops={stops} end="letter" muted={!shipped} className="h-[260px]" />
+          </div>
+          <p className="mt-2 text-xs text-muted-foreground">
+            {shipped ? "This went to the firm." : "Nothing has gone to the firm yet."}
+          </p>
+        </section>
+      ) : null}
+
 
       {hasQueries ? (
         <section>
