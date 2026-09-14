@@ -353,6 +353,34 @@ export function GraphiteRule({
   );
 }
 
+/** The vertical twin of GraphiteRule: a pencilled seam between two columns. */
+export function GraphiteSeam({ className = "" }: { className?: string }) {
+  return (
+    <svg
+      className={`pointer-events-none ${className}`}
+      viewBox="0 0 6 300"
+      preserveAspectRatio="none"
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path
+        pathLength={1}
+        d="M3.4 1C2.2 38 4.2 74 3.1 111c-1 36 1.4 72 .5 108-.7 27 1.1 54 .6 80"
+        strokeWidth={1.5}
+      />
+      <path
+        pathLength={1}
+        d="M4.2 1C3.4 44 4.8 88 4.1 132c-.6 40 .9 80 .3 120"
+        strokeWidth={0.7}
+        opacity={0.55}
+      />
+    </svg>
+  );
+}
+
 /**
  * The front-door rule: a single loose pencil stroke, wavier than the ruled
  * line, drawn in left to right on mount. Used on the public landing page
