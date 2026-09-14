@@ -24,7 +24,11 @@ import { BrandLogo } from "@/components/connectors/BrandLogo";
 import { SubjectsPanel } from "@/components/work/SubjectsPanel";
 import { ChatRow, chatWhen, fedPhrase } from "@/components/work/ChatRow";
 import { WorkNote } from "@/components/work/WorkNote";
-import { noteChatViewChangedFn, noteReaderClosedFn } from "@/lib/chat-library.functions";
+import {
+  noteChatViewChangedFn,
+  noteFilterChangedFn,
+  noteReaderClosedFn,
+} from "@/lib/chat-library.functions";
 import { useChatSearchSignal } from "@/hooks/use-chat-search-signal";
 import { useMotion } from "@/hooks/use-motion";
 import { useProfile } from "@/hooks/use-profile";
