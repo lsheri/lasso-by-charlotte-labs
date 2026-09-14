@@ -112,9 +112,10 @@ function itemModel(item: WorkItemRow): string | null {
 }
 
 /**
- * Every conversation you have kept, grouped by the engagement it was
- * mapped into. No charts, no counts as measures of a person: the longitudinal
- * reading here is the What recurs analysis and nothing else.
+ * Every conversation you have kept, one archive by month. Engagement is a
+ * filter and a colour, not the grouping. No charts, no counts as measures of a
+ * person: the longitudinal reading here is the What recurs analysis and
+ * nothing else.
  */
 export function AiRecordPage() {
   const { data: profile } = useProfile();
