@@ -3,7 +3,7 @@ import { getRouteApi, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 
 import { GraphiteRule } from "@/components/notebook/marks";
-import { PeekPanel } from "@/components/peek/PeekPanel";
+import { PeekBody } from "@/components/peek/PeekPanel";
 import {
   analysisPreset,
   presetsForScope,
@@ -139,6 +139,15 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
     setLensItem(null);
     setLensPreset(undefined);
     setRail("open");
+  };
+
+  // A document reads beside the work, in the panel, never over it. Opening one
+  // opens the panel when it is closed; this is not a person choosing a width,
+  // so it does not fire engagement.ask_rail_toggled.
+  const openPeek = (item: WorkItemRow) => {
+    markOpenStart("peek.open");
+    setPeekItem(item);
+    if (rail === "closed") setRail("open");
   };
 
   useEffect(() => {
@@ -283,7 +292,10 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
               }))
             : []),
         ];
-  const panelShowing = Boolean(lensItem) || Boolean(profile && profile.role !== "coach" && askOpen);
+  const panelShowing =
+    Boolean(peekItem) ||
+    Boolean(lensItem) ||
+    Boolean(profile && profile.role !== "coach" && askOpen);
   const wrapItemCount = wrapTask
     ? new Set(
         (wrapTask.work_item_tasks ?? [])
@@ -528,8 +540,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
               <WorkLedger
                 task={scopedTask}
                 onOpen={(item) => {
-                  markOpenStart("peek.open");
-                  setPeekItem(item);
+                  openPeek(item);
                 }}
                 headerAction={headerAction}
                 orgId={profile?.org_id}
@@ -548,8 +559,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
                     });
                   }}
                   onOpen={(item) => {
-                    markOpenStart("peek.open");
-                    setPeekItem(item);
+                    openPeek(item);
                   }}
                   headerAction={headerAction}
                 />
@@ -760,13 +770,18 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
                   });
                 }
               }}
-              onClosePanel={() => (lensItem ? closeAnalysis() : setAskRailOpen(false))}
+              onClosePanel={() => {
+                // The close control clears the topmost content, not the column.
+                if (peekItem) setPeekItem(null);
+                else if (lensItem) closeAnalysis();
+                else setAskRailOpen(false);
+              }}
             />
-            {profile && ((profile.role !== "coach" && askOpen) || lensItem) ? (
+            {profile && ((profile.role !== "coach" && askOpen) || lensItem || peekItem) ? (
               <div className="nb-bench-rail rounded-b-[3px] rounded-t-none border border-t-0 border-[var(--nb-rule)] bg-[var(--nb-white)] p-[13px_14px] shadow-[0_3px_6px_-3px_rgb(22_24_26_/_0.2)]">
                 {profile.role !== "coach" ? (
                   // Keep Ask mounted while an analysis is shown so its conversation remains intact.
-                  <div hidden={Boolean(lensItem)} className="min-h-0 flex-1">
+                  <div hidden={Boolean(lensItem) || Boolean(peekItem)} className="min-h-0 flex-1">
                     <EngagementAsk
                       open={askOpen}
                       onOpenChange={setAskRailOpen}
