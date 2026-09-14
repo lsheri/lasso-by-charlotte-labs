@@ -42,7 +42,7 @@ export function SubjectCoachingSection({
           <p className="mt-1 text-xs text-muted-foreground">
             A record of what was asked here, newest first.
           </p>
-          <div className="nb-paper-wall mt-3">
+          <div className="nb-paper-wall mt-3" data-testid="question-history-notes">
             {(queries ?? []).map((entry) => (
               <div
                 key={entry.id}

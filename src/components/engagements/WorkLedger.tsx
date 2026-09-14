@@ -115,7 +115,7 @@ export function WorkLedger({
               Nothing is linked to this piece of work yet.
             </p>
           ) : (
-            <ul className="nb-paper-wall mt-3">
+            <ul className="nb-paper-wall mt-3" data-testid="linked-source-notes">
               {sources.map((item) => (
                 <li key={item.id}>
                   <WorkNote item={item} onOpen={() => onOpen(item)} />

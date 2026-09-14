@@ -248,6 +248,7 @@ export function SpiderDrawing({
   return (
     <span
       aria-hidden
+      data-testid="spider-drawing"
       className={`pointer-events-none relative inline-flex shrink-0 items-end ${className}`}
       style={{ width: size, height: size }}
     >
