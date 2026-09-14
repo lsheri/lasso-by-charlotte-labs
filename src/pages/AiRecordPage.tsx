@@ -42,14 +42,7 @@ import { peekFormat } from "@/lib/peek-format";
 import { getWorkFileUrl } from "@/lib/work-files.functions";
 import { formatDate } from "@/lib/work-types";
 
-type Group = {
-  key: string;
-  code: string | null;
-  title: string;
-  engagementId: string | null;
-  items: WorkItemRow[];
-  latest: number;
-};
+type MonthGroup = { key: string; label: string; items: WorkItemRow[] };
 
 const MONTHS = [
   "January",
