@@ -19,6 +19,7 @@ import {
   type BrandKey,
 } from "@/components/connectors/BrandLogo";
 import { ConnectorPicker, type PickerKind } from "@/components/connectors/ConnectorPicker";
+import { DocumentRecheckCard } from "@/components/connectors/DocumentRecheckCard";
 import { GranolaKeyCard } from "@/components/connectors/GranolaKeyCard";
 import { WisprCard } from "@/components/connectors/WisprCard";
 import { SectionHeader } from "@/components/notebook/SectionHeader";
@@ -199,6 +200,7 @@ export function ConnectorsSection({ from }: { from?: SettingsOpenFrom }) {
             {card("one_drive")}
             {card("sharepoint_graph")}
             {card("notion")}
+            <DocumentRecheckCard />
           </div>
         </Category>
 
