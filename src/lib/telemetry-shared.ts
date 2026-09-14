@@ -57,6 +57,7 @@ export type TelemetryEvent =
   | "engagement.updated"
   /** A person opened or collapsed the engagement Ask rail. */
   | "engagement.ask_rail_toggled"
+  | "engagement.panel_content_changed"
   /** A person chose one of the three engagement views. */
   | "engagement.view_changed"
   /** A person changed what the three views are about. */

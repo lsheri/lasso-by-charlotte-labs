@@ -65,23 +65,9 @@ function Chip({
   );
 }
 
-export function PeekPanel({
-  entry,
-  focusId,
-  open,
-  onOpenChange,
-  canEdit,
-  onMap,
-  onWorkDate,
-  onMakePrivate,
-  onAnalyse,
-  engagementId,
-  viewerProfileId,
-}: {
+type PeekBodyProps = {
   entry: PeekEntry | null;
   focusId?: string | undefined;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
   canEdit: boolean;
   onMap?: ((item: WorkItemRow, group?: WorkItemRow[]) => void) | undefined;
   onWorkDate?: ((item: WorkItemRow) => void) | undefined;
@@ -90,7 +76,55 @@ export function PeekPanel({
   /** Set when the peek is read inside one engagement. */
   engagementId?: string | undefined;
   viewerProfileId?: string | null | undefined;
+  /** Lets the body close itself where it is rendered without a sheet. */
+  onClose?: (() => void) | undefined;
+};
+
+/** Thin wrapper: the sheet-based peek every page but the engagement page uses. */
+export function PeekPanel({
+  open,
+  onOpenChange,
+  ...rest
+}: PeekBodyProps & {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }) {
+  const entry = rest.entry;
+  const focusId = rest.focusId;
+  const items = entry ? entryItems(entry) : [];
+  const active = (focusId ? items.find((i) => i.id === focusId) : undefined) ?? items[0] ?? null;
+  if (!active) {
+    return (
+      <SlideOver open={open} onOpenChange={onOpenChange} title="Preview">
+        {null}
+      </SlideOver>
+    );
+  }
+  return (
+    <SlideOver
+      open={open}
+      onOpenChange={onOpenChange}
+      title={active.title}
+      description="Work item preview"
+    >
+      <PeekBody {...rest} onClose={() => onOpenChange(false)} />
+    </SlideOver>
+
+  );
+}
+
+export function PeekBody({
+  entry,
+  focusId,
+  canEdit,
+  onMap,
+  onWorkDate,
+  onMakePrivate,
+  onAnalyse,
+  engagementId,
+  viewerProfileId,
+  onClose,
+}: PeekBodyProps) {
   const fetchUrl = useServerFn(getWorkFileUrl);
   const items = entry ? entryItems(entry) : [];
   const [tab, setTab] = useState(0);
@@ -103,7 +137,8 @@ export function PeekPanel({
   // Gesture anchored: the panel mounts closed, so its own mount is not the
   // start of anything. The click that opens the peek records the start; a
   // finish with no recorded start emits nothing, which is the honest answer.
-  usePerfOpenFinish("peek.open", open && Boolean(entry));
+  usePerfOpenFinish("peek.open", Boolean(entry));
+
 
   useEffect(() => {
     setKindDraft(null);
@@ -127,13 +162,7 @@ export function PeekPanel({
     }
   }
 
-  if (!active) {
-    return (
-      <SlideOver open={open} onOpenChange={onOpenChange} title="Preview">
-        {null}
-      </SlideOver>
-    );
-  }
+  if (!active) return null;
 
   const format = peekFormat(active);
   const vendor = active.source_vendor ?? active.source_meta?.vendor ?? null;
@@ -143,12 +172,8 @@ export function PeekPanel({
   const owned = canEdit && Boolean(viewerProfileId) && active.owner_id === viewerProfileId;
 
   return (
-    <SlideOver
-      open={open}
-      onOpenChange={onOpenChange}
-      title={active.title}
-      description="Work item preview"
-    >
+    <div className="flex min-h-0 flex-1 flex-col">
+
       <header className="shrink-0 border-b border-pencil px-4 pb-4 pt-[calc(1.5rem+env(safe-area-inset-top))] sm:px-6">
         <div className="flex flex-wrap items-center gap-1.5 pr-12">
           <TypeChip item={active} />
@@ -264,7 +289,7 @@ export function PeekPanel({
 
       <div className="min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6">
         {format.kind === "thread" ? (
-          <ThreadBody item={active} enabled={open} />
+          <ThreadBody item={active} enabled />
         ) : (
           <RenderedContent
             item={active}
@@ -300,7 +325,7 @@ export function PeekPanel({
           engagementId={engagementId}
           open={removeOpen}
           onOpenChange={setRemoveOpen}
-          onDone={() => onOpenChange(false)}
+          onDone={() => onClose?.()}
         />
       ) : null}
       {owned ? (
@@ -309,9 +334,9 @@ export function PeekPanel({
           title={active.title}
           open={deleteOpen}
           onOpenChange={setDeleteOpen}
-          onDone={() => onOpenChange(false)}
+          onDone={() => onClose?.()}
         />
       ) : null}
-    </SlideOver>
+    </div>
   );
 }
