@@ -107,7 +107,7 @@ export function PeekPanel({
       description="Work item preview"
     >
       <PeekBody {...rest} onClose={() => onOpenChange(false)} />
-    </SlideOver>
+    </div>
   );
 }
 
@@ -287,7 +287,7 @@ export function PeekBody({
 
       <div className="min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6">
         {format.kind === "thread" ? (
-          <ThreadBody item={active} enabled={open} />
+          <ThreadBody item={active} enabled />
         ) : (
           <RenderedContent
             item={active}
@@ -323,7 +323,7 @@ export function PeekBody({
           engagementId={engagementId}
           open={removeOpen}
           onOpenChange={setRemoveOpen}
-          onDone={() => onOpenChange(false)}
+          onDone={() => onClose?.()}
         />
       ) : null}
       {owned ? (
@@ -332,9 +332,9 @@ export function PeekBody({
           title={active.title}
           open={deleteOpen}
           onOpenChange={setDeleteOpen}
-          onDone={() => onOpenChange(false)}
+          onDone={() => onClose?.()}
         />
       ) : null}
-    </SlideOver>
+    </div>
   );
 }
