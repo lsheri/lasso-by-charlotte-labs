@@ -36,7 +36,7 @@ import { isBusinessOrg } from "@/hooks/use-profile";
 import { useMyEngagementMembership } from "@/hooks/use-engagement-membership";
 import { useEngagementPage, useEngagementSlice } from "@/hooks/use-engagement-page";
 import { clientDisplayName, engagementDisplayCode, engagementDisplayTitle } from "@/lib/clients";
-import { workIdentityLabel } from "@/lib/work-identity";
+
 import { cn } from "@/lib/utils";
 import { markOpenStart } from "@/lib/perf-timing";
 import { logEvent } from "@/lib/telemetry";
