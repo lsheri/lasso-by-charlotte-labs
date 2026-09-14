@@ -204,12 +204,11 @@ export function usePanelWidth(wrapperRef: React.RefObject<HTMLElement | null>, o
           event.preventDefault();
         }
       },
-
       onPointerDown,
       onPointerMove,
       onPointerUp,
       onPointerCancel: onPointerUp,
-      onKeyDown,
+
     },
   };
 }
