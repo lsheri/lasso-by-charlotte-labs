@@ -130,6 +130,8 @@ export type TelemetryEvent =
   | "chatlib.view_changed"
   /** Pass 176: the chat reader was closed. Closed vocab view and how. */
   | "chatlib.reader_closed"
+  /** Pass 179: a chat library filter was changed. Closed vocab, no ids. */
+  | "chatlib.filter_changed"
   /** Pass 159: a person changed the profile they are acting as. Roles only. */
   | "profile.switched"
   /** Pass 161: the subject opened notes about their work. One per view. */
