@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 
 import { GraphiteRule } from "@/components/notebook/marks";
 import { GraphiteIcon } from "@/components/notebook/icons";
-import { SpiderMark } from "@/components/notebook/SpiderMark";
 import { PeekPanel } from "@/components/peek/PeekPanel";
 import {
   analysisPreset,
