@@ -153,21 +153,36 @@ export function usePanelWidth(wrapperRef: React.RefObject<HTMLElement | null>, o
     [endDrag],
   );
 
-  const onKeyDown = useCallback(
-    (event: React.KeyboardEvent<HTMLElement>) => {
+  const step = useCallback(
+    (key: string): boolean => {
       let next: number | null = null;
-      if (event.key === "ArrowLeft") next = widthRef.current + 16;
-      else if (event.key === "ArrowRight") next = widthRef.current - 16;
-      else if (event.key === "Home") next = PANEL_MIN_WIDTH;
-      else if (event.key === "End") next = PANEL_MAX_WIDTH;
-      if (next === null) return;
-      event.preventDefault();
+      if (key === "ArrowLeft") next = widthRef.current + 16;
+      else if (key === "ArrowRight") next = widthRef.current - 16;
+      else if (key === "Home") next = PANEL_MIN_WIDTH;
+      else if (key === "End") next = PANEL_MAX_WIDTH;
+      if (next === null) return false;
       const applied = apply(next);
       writeStored(applied);
       onResizeEnd?.(applied);
+      return true;
     },
     [apply, onResizeEnd],
   );
+
+  // A native listener on the handle itself, so the keys work whatever else on
+  // the page is listening for them.
+  const gripRef = useCallback(
+    (node: HTMLElement | null) => {
+      if (!node) return;
+      const onKey = (event: KeyboardEvent) => {
+        if (step(event.key)) event.preventDefault();
+      };
+      node.addEventListener("keydown", onKey);
+      return () => node.removeEventListener("keydown", onKey);
+    },
+    [step],
+  );
+
 
   return {
     width,
