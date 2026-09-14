@@ -32,6 +32,7 @@ import { useWorkItems } from "@/hooks/use-work-items";
 import { supabase } from "@/integrations/supabase/client";
 import { effectiveWorkDate, type WorkItemRow } from "@/lib/work-types";
 import { SectionHeader } from "@/components/notebook/SectionHeader";
+import { GraphiteSeam } from "@/components/notebook/marks";
 import { GraphiteIcon } from "@/components/notebook/icons";
 import { ToneCard } from "@/components/notebook/ToneCard";
 import { vendorLabel } from "@/lib/conversation-shared";
@@ -630,6 +631,9 @@ export function AiRecordPage() {
       </div>
 
       <div className="nb-chatview-pane">
+        {selected ? (
+          <GraphiteSeam className="w-[6px] shrink-0 self-stretch text-[var(--nb-pencil)]" />
+        ) : null}
         <div className="w-[520px] max-w-full">
           {selected ? (
             <article

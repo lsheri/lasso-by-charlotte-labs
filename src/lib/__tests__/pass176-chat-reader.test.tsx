@@ -7,7 +7,7 @@ const styles = readFileSync("src/styles.css", "utf8");
 const telemetry = readFileSync("src/lib/telemetry-shared.ts", "utf8");
 const functions = readFileSync("src/lib/chat-library.functions.ts", "utf8");
 
-describe("pass 160 — the reader opens on a click", () => {
+describe("pass 176 — the reader opens on a click", () => {
   it("keeps the pane closed at rest", () => {
     expect(styles).toContain('.nb-chatview[data-reader="open"]');
     expect(styles).toContain("grid-template-columns: minmax(0, 1fr) 0px");

@@ -126,9 +126,9 @@ export type TelemetryEvent =
   | "chatlib.source_opened"
   /** Pass 157b: one settled chat library search. Bands only in dims. */
   | "chatlib.search"
-  /** Pass 159: how the chat library is shown. Closed vocab, cards or list. */
+  /** Pass 175: how the chat library is shown. Closed vocab, cards or list. */
   | "chatlib.view_changed"
-  /** Pass 160: the chat reader was closed. Closed vocab view and how. */
+  /** Pass 176: the chat reader was closed. Closed vocab view and how. */
   | "chatlib.reader_closed"
   /** Pass 159: a person changed the profile they are acting as. Roles only. */
   | "profile.switched"
