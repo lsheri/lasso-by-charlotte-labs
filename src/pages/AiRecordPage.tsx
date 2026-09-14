@@ -202,8 +202,39 @@ export function AiRecordPage() {
   // Chips read the tools already present in the loaded rows, so the row never
   // offers a filter that would empty the page.
   const toolsPresent = Array.from(new Set(threads.map((i) => vendorFromSource(i))));
-  const visible = tool === "all" ? shown : shown.filter((i) => vendorFromSource(i) === tool);
-  const groups = groupItems(visible);
+  // Engagements are read from the loaded rows for the same reason the tools are.
+  const engagementCounts = new Map<string, { id: string; code: string; title: string; count: number }>();
+  let unmappedCount = 0;
+  for (const item of threads) {
+    const mapped = itemEngagements(item);
+    if (mapped.length === 0) {
+      unmappedCount += 1;
+      continue;
+    }
+    const seen = new Set<string>();
+    for (const e of mapped) {
+      if (seen.has(e.id)) continue;
+      seen.add(e.id);
+      const row = engagementCounts.get(e.id) ?? { id: e.id, code: e.code, title: e.title, count: 0 };
+      row.count += 1;
+      engagementCounts.set(e.id, row);
+    }
+  }
+  const engagementsPresent = Array.from(engagementCounts.values()).sort(
+    (a, b) => b.count - a.count || a.code.localeCompare(b.code),
+  );
+  const byTool = tool === "all" ? shown : shown.filter((i) => vendorFromSource(i) === tool);
+  const visible =
+    engagement === "all"
+      ? byTool
+      : engagement === "unmapped"
+        ? byTool.filter((i) => itemEngagements(i).length === 0)
+        : byTool.filter((i) => itemEngagements(i).some((e) => e.id === engagement));
+  const groups = groupByMonth(visible);
+  const selectedEngagement =
+    engagement === "all" || engagement === "unmapped"
+      ? null
+      : (engagementsPresent.find((e) => e.id === engagement) ?? null);
   const mappedCount = threads.filter((i) =>
     i.work_item_tasks.some((m) => Boolean(m.tasks?.engagements)),
   ).length;
