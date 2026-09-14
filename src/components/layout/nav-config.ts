@@ -1,7 +1,7 @@
 import type { GraphiteIconName } from "@/components/notebook/icons";
 import { EDU_VOCAB } from "@/lib/edu-vocab";
 
-export type NavItem = { label: string; to: string; icon: GraphiteIconName };
+export type NavItem = { label: string; to: string; icon: GraphiteIconName; nested?: boolean };
 export type NavGroup = { id?: string; label: string; items: NavItem[]; emptyState?: string };
 
 /**
@@ -14,6 +14,7 @@ export const navGroups: NavGroup[] = [
     label: "What landed",
     items: [
       { label: "Inbox", to: "/work", icon: "work" },
+      { label: "All AI conversations", to: "/ai-record", icon: "ai-record", nested: true },
       { label: "Where work comes from", to: "/connectors", icon: "connectors" },
     ],
   },
@@ -28,7 +29,6 @@ export const navGroups: NavGroup[] = [
     label: "What you learned",
     items: [
       { label: "Past work", to: "/archive", icon: "firm" },
-      { label: "Chat library", to: "/ai-record", icon: "ai-record" },
       { label: "Reflect", to: "/reflect", icon: "reflect" },
       { label: "Decision log", to: "/decisions", icon: "decisions" },
       { label: "Overview", to: "/overview", icon: "overview" },

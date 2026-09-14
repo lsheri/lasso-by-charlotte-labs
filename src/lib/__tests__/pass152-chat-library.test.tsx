@@ -37,13 +37,16 @@ function item(overrides: Partial<WorkItemRow> = {}): WorkItemRow {
 describe("chat library — the name", () => {
   it("names the section in the sidebar", () => {
     const labels = navGroups.flatMap((g) => g.items.map((i) => i.label));
-    expect(labels).toContain("Chat library");
+    expect(labels).toContain("All AI conversations");
     expect(labels).not.toContain("AI record");
   });
 
-  it("leaves the route URL alone", () => {
-    const item = navGroups.flatMap((g) => g.items).find((i) => i.label === "Chat library");
+  it("leaves the route URL alone and sits nested under Inbox", () => {
+    const item = navGroups.flatMap((g) => g.items).find((i) => i.label === "All AI conversations");
     expect(item?.to).toBe("/ai-record");
+    const group = navGroups.find((g) => g.items.some((i) => i.to === "/ai-record"));
+    expect(group?.id).toBe("landed");
+    expect(item?.nested).toBe(true);
   });
 
   it("carries no stale name in the page or its route", () => {

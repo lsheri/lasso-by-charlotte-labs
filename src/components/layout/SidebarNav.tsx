@@ -266,9 +266,10 @@ export function SidebarNav({
                 key={item.to}
                 to={item.to}
                 onClick={onNavigate}
-                className={linkClass}
+                className={item.nested ? `${linkClass} nb-nav-item-nested-3` : linkClass}
                 activeProps={activeProps}
               >
+                {item.nested ? <PencilIndent /> : null}
                 <GraphiteIcon name={item.icon} size={20} />
                 <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
                   <span className="truncate">
