@@ -142,6 +142,8 @@ export type TelemetryEvent =
   | "portfolio.item_added"
   /** Pass 172: a person took one piece of work back off the Portfolio. */
   | "portfolio.item_removed"
+  /** Pass 155: one piece of work sent to the firm. Boolean and count only. */
+  | "firm.work_shipped"
   /** Pass 148: one recheck pass over connected documents. Counts only. */
   | "document.recheck_ran"
   /** Pass 148: one version written by a recheck. Source and reason only. */
