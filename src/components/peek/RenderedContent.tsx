@@ -187,6 +187,24 @@ export function FallbackCard({
   );
 }
 
+function TextOrFallback({
+  item,
+  label,
+  onDownload,
+  canEdit,
+}: {
+  item: WorkItemRow;
+  label: string;
+  onDownload: () => void;
+  canEdit?: boolean | undefined;
+}) {
+  const readStatus = textStatusOf(item.meta as never);
+  if (readStatus === "ok" || readStatus === "not_attempted") {
+    return <TextPane item={item} canEdit={canEdit} onDownload={onDownload} />;
+  }
+  return <FallbackCard item={item} label={label} onDownload={onDownload} canEdit={canEdit} />;
+}
+
 export function RenderedContent({
   item,
   format,
