@@ -30,6 +30,7 @@ import { SubjectCoachingSection } from "@/components/coaching/SubjectCoachingSec
 import { useRegisterAskLasso } from "@/components/reflect/ask-lasso-context";
 import { usePerfNavFinish } from "@/hooks/use-perf-timer";
 import { useProfile } from "@/hooks/use-profile";
+import { useShippedWork } from "@/hooks/use-shipped-work";
 import { useTraceParam } from "@/hooks/use-trace-param";
 import { useJourneyParam } from "@/hooks/use-journey-param";
 import { isBusinessOrg } from "@/hooks/use-profile";
@@ -208,6 +209,9 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
   // In-app route transitions only. A hard document load plus hydration is a
   // different measurement and is deliberately not covered in this pass.
   usePerfNavFinish("engagement.load", Boolean(engagementQuery.data?.engagement));
+
+  // Shared cached list, already loaded elsewhere in the app: no new query.
+  const shippedWork = useShippedWork();
 
   const engagement = engagementQuery.data?.engagement ?? null;
   const scopedTask = work ? (tasksQuery.data ?? []).find((task) => task.id === work) : undefined;
@@ -702,7 +706,10 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
         profileId={profile?.id}
         engagementId={engagementId}
         orgId={profile?.org_id}
+        items={canvasItems}
+        shipped={(shippedWork.data ?? []).some((card) => card.engagement_id === engagementId)}
       />
+
 
     </div>
 
