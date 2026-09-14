@@ -76,7 +76,7 @@ export function VersionHistory({
     });
   }
 
-  let summaryLine: React.ReactNode = null;
+  let summaryLine: ReactNode = null;
   if (versions.length >= 2 && latest) {
     summaryLine = (
       <p className="mt-2 text-sm text-foreground">
