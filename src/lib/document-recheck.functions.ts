@@ -5,7 +5,12 @@ import type { Database } from "@/integrations/supabase/types";
 
 type Input = { profile_id?: string | undefined } | undefined;
 
-export type RecheckResult = { checked: number; changed: number; skipped: number };
+export type RecheckResult = {
+  checked: number;
+  changed: number;
+  refreshed: number;
+  skipped: number;
+};
 
 /**
  * One debounced pass over connected documents. The stored timestamps are the
