@@ -2,11 +2,8 @@ import type { ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 
 import { ClaimToClient } from "@/components/work/ClaimToClient";
-import { SourceMark, VendorMark } from "@/components/work/SourceMark";
-import { stampDate } from "@/components/work/card-stamp";
-import { noteHue, notePaper } from "@/components/work/note-paper";
+import { WorkNote } from "@/components/work/WorkNote";
 import { useMappingSuggestions } from "@/hooks/use-mapping-suggestions";
-import { useNoteLive } from "@/hooks/use-note-live";
 import type { MappingSuggestion } from "@/lib/mapping-shared";
 import type { WorkItemRow } from "@/lib/work-types";
 
@@ -21,45 +18,7 @@ function NoteRow({
   /** Line three: the next act this card offers. */
   action: ReactNode;
 }) {
-  const live = useNoteLive<HTMLDivElement>();
-
-  return (
-    <div
-      ref={live}
-      className="nb-paper"
-      data-paper-state="unmapped"
-      style={{ ...notePaper(item.id), ...noteHue(null) }}
-    >
-      <div className="nb-paper-body">
-        {/* Line one: where it came from and when it landed. */}
-        <div className="flex items-center gap-1.5">
-          <SourceMark item={item} size={14} disc />
-          <span className="min-w-0 truncate font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
-            <VendorMark item={item} />
-            {item.source_vendor ? (
-              <>
-                {" · "}
-                {stampDate(item.captured_at)}
-              </>
-            ) : (
-              <>{stampDate(item.captured_at)}</>
-            )}
-          </span>
-        </div>
-
-        {/* Line two: the title. */}
-        <p
-          title={item.title}
-          className="mt-1 line-clamp-2 break-words text-[13px] leading-[18px] text-foreground"
-        >
-          {item.title}
-        </p>
-
-        {/* Line three: the next act, chosen by the section. */}
-        <div className="mt-2">{action}</div>
-      </div>
-    </div>
-  );
+  return <WorkNote item={item} actions={action} />;
 }
 
 function Queue({

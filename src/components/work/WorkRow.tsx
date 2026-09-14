@@ -2,73 +2,10 @@ import { CircleDashed, Lock } from "lucide-react";
 
 import { EngagementChip, TypeBadge, TypeIcon } from "@/components/work/TypeIcon";
 import { ArtifactNote, SourceMark, VendorMark } from "@/components/work/SourceMark";
-import { stampDate } from "@/components/work/card-stamp";
-import { colourKey, notePaper, noteHue } from "@/components/work/note-paper";
-import { useNoteLive } from "@/hooks/use-note-live";
+import { WorkNote } from "@/components/work/WorkNote";
 import { UNREAD_MARKER_LINE, contentsUnread, textStatusReason } from "@/lib/text-status";
 import { engagementHue, workIdentityLabel } from "@/lib/work-identity";
 import { effectiveWorkDate, formatDate, type WorkItemRow } from "@/lib/work-types";
-
-/**
- * The sheet a dense note is drawn on. Sandbox A · M5 "Paper physics".
- *
- * Split out because it owns a hook — the on-screen gate — and a hook cannot
- * live inside the `if (dense)` branch of a component that also returns a wide
- * layout. Keeping it separate means the wide row's hook list is untouched.
- */
-function NotePaperCard({
-  item,
-  state,
-  clientId,
-  engagementId,
-  onOpen,
-  children,
-}: {
-  item: WorkItemRow;
-  state: WorkItemRow["visibility"];
-  clientId: string | null;
-  engagementId: string | null;
-  onOpen?: (() => void) | undefined;
-  children: React.ReactNode;
-}) {
-  const live = useNoteLive<HTMLDivElement>();
-  return (
-    <div
-      ref={live}
-      className="nb-paper"
-      data-paper-state={state}
-      /*
-        No corner fold here. The fold means "shipped to the firm", and a
-        WorkItemRow only knows whether it is MAPPED, which is a different and
-        weaker claim — claimed is not shipped. Line three already says
-        "CHA-01 · CLAIMED" in words. A fold that overstates is worse than no
-        fold on a product whose argument is that it never says more than it can
-        prove, so the fold waits for a surface that reads shipped_work.
-      */
-      style={{ ...notePaper(item.id), ...noteHue(colourKey({ clientId, engagementId })) }}
-    >
-      <div
-        {...(onOpen
-          ? {
-              role: "button" as const,
-              tabIndex: 0,
-              "aria-label": item.title,
-              onClick: onOpen,
-              onKeyDown: (event: React.KeyboardEvent) => {
-                if (event.key === "Enter" || event.key === " ") {
-                  event.preventDefault();
-                  onOpen();
-                }
-              },
-            }
-          : {})}
-        className={`nb-paper-body group/row ${onOpen ? "cursor-pointer" : ""}`}
-      >
-        {children}
-      </div>
-    </div>
-  );
-}
 
 export function WorkRow({
   item,
@@ -100,9 +37,6 @@ export function WorkRow({
   footer?: React.ReactNode;
 }) {
   const mapping = item.work_item_tasks[0]?.tasks ?? null;
-  // The client owns the paper colour ("who is this for"); the engagement only
-  // colours paper when there is no client to ask.
-  const clientId = mapping?.engagements?.clients?.id ?? null;
   const link = item.meta?.web_view_link ?? null;
   const dateIso = effectiveWorkDate(item);
   const state = item.visibility;
@@ -138,89 +72,11 @@ export function WorkRow({
         }
       : {};
 
-  /**
-   * "MH-042 · CLAIMED" in the frame. `claimed` is what mapping means from the
-   * person's side, so a mapped piece says so under its engagement code. There
-   * is no separate claim flag in the record and none is invented here.
-   *
-   * A claim has two degrees: a client is the coarse one, a workstream
-   * placement the fine one, so line three says which degree this piece has.
-   */
-  const stateStamp =
-    state === "mapped"
-      ? [mapping?.engagements?.code, "claimed"].filter(Boolean).join(" · ")
-      : state === "private"
-        ? "private"
-        : clientLabel
-          ? `${clientLabel} · claimed`
-          : "not claimed yet";
-
   if (dense) {
     return (
-      <NotePaperCard
-        item={item}
-        state={state}
-        clientId={clientId}
-        engagementId={mapping?.engagement_id ?? null}
-        onOpen={onOpen}
-      >
-        {/* Line one: where it came from, and the tool's own mark on the far
-              edge. The logo is full colour because that is the one thing on
-              this note whose colour is already true in the world — and
-              SourceMark still withholds it from a coach in a vendor-neutral
-              org, which is a rule this does not get to override. */}
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex min-w-0 items-center gap-1.5">
-            {lead ? (
-              <span className="shrink-0" onClick={(event) => event.stopPropagation()}>
-                {lead}
-              </span>
-            ) : null}
-            {state === "private" ? (
-              <Lock
-                className="h-2.5 w-2.5 shrink-0"
-                style={{ color: "var(--state-indigo)" }}
-                aria-label="Private"
-              />
-            ) : null}
-            <SourceMark item={item} size={14} disc />
-            <span className="min-w-0 truncate font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
-              <VendorMark item={item} />
-              {" · "}
-              {stampDate(dateIso)}
-            </span>
-          </div>
-          {/* The type glyph stays opposite, as frame 22:220 draws it. The two
-                marks say different things: the logo is where this came from,
-                the glyph is what kind of thing it is. */}
-          <span className="shrink-0">
-            <TypeIcon item={item} size="sm" />
-          </span>
-        </div>
-
-        {/* Line two: the name, which is the only thing set in body text. */}
-        <p
-          title={item.title}
-          className="mt-1 line-clamp-3 break-words text-[13px] leading-[18px] text-foreground"
-        >
-          {item.title} <ArtifactNote item={item} />
-        </p>
-
-        {/* Line three: where it sits. */}
-        <p className="mt-1 truncate font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
-          {stateStamp}
-        </p>
-
-        {contentsUnread(item.meta as never) ? (
-          <p className="mt-1 text-[11px] text-muted-foreground">{UNREAD_MARKER_LINE}</p>
-        ) : null}
-
-        {/*
-            Every control the wide row has, kept and reachable. Hidden at rest
-            from `md` up, where a pointer can reveal it; always shown below `md`,
-            where there is no hover. `group-focus-within` keeps it on the keyboard
-            path, so tabbing into an action reveals the set it belongs to.
-          */}
+      <div className="group/row relative">
+        <WorkNote item={item} onOpen={onOpen} lead={lead} clientLabel={clientLabel} dense />
+        {/* Every control stays reachable on touch, hover, and the keyboard path. */}
         <div
           className="absolute bottom-0 left-0 right-0 flex flex-wrap items-center gap-x-3 gap-y-1 bg-[color-mix(in_oklab,var(--nb-paper-fill,var(--nb-white))_88%,transparent)] p-2 backdrop-blur-sm md:hidden md:group-focus-within/row:flex md:group-hover/row:flex"
           onClick={(event) => event.stopPropagation()}
@@ -228,8 +84,11 @@ export function WorkRow({
           {chips}
           {actions}
         </div>
+        {contentsUnread(item.meta as never) ? (
+          <p className="mt-1 text-[11px] text-muted-foreground">{UNREAD_MARKER_LINE}</p>
+        ) : null}
         {footer ? <div className="mt-2">{footer}</div> : null}
-      </NotePaperCard>
+      </div>
     );
   }
 

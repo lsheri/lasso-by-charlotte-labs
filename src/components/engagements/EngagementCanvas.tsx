@@ -15,8 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
-import { SourceMark } from "@/components/work/SourceMark";
-import { TypeIcon } from "@/components/work/TypeIcon";
+import { WorkNote } from "@/components/work/WorkNote";
 import { DeleteWorkItemDialog, DELETE_LABEL } from "@/components/work/DeleteWorkItemDialog";
 import {
   RemoveFromEngagementDialog,
@@ -39,10 +38,9 @@ import {
   type CanvasPos,
   type MoveColumn,
 } from "@/lib/canvas-move";
-import { workIdentityLabel } from "@/lib/work-identity";
 import { ownsWorkItem } from "@/lib/work-ownership";
 import { persistOrder, remapItems, resetOrder } from "@/lib/workflow-order";
-import { effectiveWorkDate, formatDate, sourceLabel, type WorkItemRow } from "@/lib/work-types";
+import type { WorkItemRow } from "@/lib/work-types";
 
 export type CanvasTask = {
   id: string;
@@ -531,17 +529,6 @@ export function EngagementCanvas({
                     const lifted = drag?.id === cardId || grabbed?.id === cardId;
                     return (
                       <li key={cardId} className="flex items-stretch gap-2">
-                        {canEdit ? (
-                          <button
-                            type="button"
-                            aria-label={`Drag ${item.title}`}
-                            tabIndex={-1}
-                            className="nb-canvas-handle md:hidden"
-                            onPointerDown={(e) => beginPointer(e, pos, cardId, true)}
-                          >
-                            <span aria-hidden>⋮⋮</span>
-                          </button>
-                        ) : null}
                         <div
                           ref={(node) => {
                             if (node) cardRefs.current.set(cardId, node);
@@ -554,29 +541,43 @@ export function EngagementCanvas({
                           data-lifted={lifted ? "true" : "false"}
                           onKeyDown={(e) => onCardKeyDown(e, pos, cardId)}
                           onPointerDown={(e) => beginPointer(e, pos, cardId, false)}
-                          onClick={() => {
+                          onClick={(event) => {
                             // A drag or a long press already consumed this
                             // gesture; only a plain click peeks.
                             if (movedRef.current) {
                               movedRef.current = false;
                               return;
                             }
+                            if (event.target !== event.currentTarget) return;
                             onOpen(item);
                           }}
-                          className="nb-canvas-card flex min-w-0 flex-1 items-start gap-2 px-3 py-2 text-left"
+                          className="nb-canvas-card min-w-0 flex-1 text-left"
                         >
-                          <TypeIcon item={item} size="sm" />
-                          <div className="min-w-0 flex-1">
-                            <p className="nb-canvas-card-title flex min-w-0 items-center gap-1.5 truncate text-sm leading-6 text-foreground">
-                              <SourceMark item={item} />
-                              <span className="truncate">{item.title}</span>
-                            </p>
-                            <p className="truncate font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
-                              {workIdentityLabel(item)} · {sourceLabel(item.source)} ·{" "}
-                              {formatDate(effectiveWorkDate(item))}
-                            </p>
-                          </div>
-                          {canEdit ? (
+                          <WorkNote
+                            item={item}
+                            dense
+                            className="w-full"
+                            onOpen={() => {
+                              if (movedRef.current) {
+                                movedRef.current = false;
+                                return;
+                              }
+                              onOpen(item);
+                            }}
+                            lead={
+                              canEdit ? (
+                                <button
+                                  type="button"
+                                  aria-label={`Drag ${item.title}`}
+                                  tabIndex={-1}
+                                  className="nb-canvas-handle md:hidden"
+                                  onPointerDown={(event) => beginPointer(event, pos, cardId, true)}
+                                >
+                                  <span aria-hidden>⋮⋮</span>
+                                </button>
+                              ) : undefined
+                            }
+                            actions={canEdit ? (
                             <DropdownMenu>
                               <DropdownMenuTrigger
                                 aria-label={`Move ${item.title}`}
@@ -646,7 +647,8 @@ export function EngagementCanvas({
                                 ) : null}
                               </DropdownMenuContent>
                             </DropdownMenu>
-                          ) : null}
+                            ) : undefined}
+                          />
                         </div>
                       </li>
                     );
