@@ -90,6 +90,7 @@ export function PeekPanel({
   onOpenChange: (open: boolean) => void;
 }) {
   const entry = rest.entry;
+  const focusId = rest.focusId;
   const items = entry ? entryItems(entry) : [];
   const active = (focusId ? items.find((i) => i.id === focusId) : undefined) ?? items[0] ?? null;
   if (!active) {
