@@ -13,11 +13,16 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { DeclareArtifactStep } from "@/components/work/DeclareArtifactStep";
+import { WorkArtifactSections } from "@/components/journey/WorkArtifactSections";
 import { useMotion } from "@/hooks/use-motion";
 import { useShipWork } from "@/hooks/use-shipped-work";
 import { guessArtifactDeclaration, type ArtifactDeclaration } from "@/lib/declared-work";
 import { declareArtifact } from "@/lib/declared-work.functions";
+import type { WorkArtifact } from "@/lib/work-artifact-shared";
 import { useScribbleComplete } from "@/lib/scribble-complete";
+import { logEvent } from "@/lib/telemetry";
+import { runWorkArtifactRun } from "@/lib/work-artifact.functions";
+import { RUNNING_ARTIFACT_LINE } from "@/lib/work-artifact-shared";
 import {
   SHIP_CONFIRM_BODY,
   SHIP_CONFIRM_PRIMARY,
@@ -38,12 +43,17 @@ export function ShipToFirmDialog({
   title,
   engagementId,
   item,
+  orgId,
+  coachCount = 0,
   open,
   onOpenChange,
 }: {
   workItemId: string;
   title: string;
   engagementId: string | null;
+  /** Only used to record that a ship happened. Never any names or ids. */
+  orgId?: string | undefined;
+  coachCount?: number | undefined;
   /** What we already know, used only to pre-fill the person's own answers. */
   item?:
     | {
@@ -59,6 +69,7 @@ export function ShipToFirmDialog({
 }) {
   const ship = useShipWork();
   const declare = useServerFn(declareArtifact);
+  const buildArtifact = useServerFn(runWorkArtifactRun);
   const [declared, setDeclared] = useState<ArtifactDeclaration>(() =>
     guessArtifactDeclaration({ ...(item ?? {}), title }),
   );
@@ -66,7 +77,37 @@ export function ShipToFirmDialog({
   const pendingRef = useRef<Promise<Settled> | null>(null);
   const [shipping, setShipping] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [building, setBuilding] = useState(false);
+  const [artifact, setArtifact] = useState<WorkArtifact | null>(null);
+  const [artifactFailed, setArtifactFailed] = useState(false);
   const motion = useMotion("record.stamped");
+
+  /**
+   * The record is built before the ship is offered, so the person reads what
+   * is about to leave. A build that fails never blocks the send.
+   */
+  useEffect(() => {
+    if (!open) return;
+    let live = true;
+    setBuilding(true);
+    setArtifactFailed(false);
+    void buildArtifact({ data: { anchor_id: workItemId } })
+      .then((result) => {
+        if (!live) return;
+        setArtifact(result?.artifact ?? null);
+        setArtifactFailed(!result?.artifact);
+      })
+      .catch(() => {
+        if (!live) return;
+        setArtifactFailed(true);
+      })
+      .finally(() => {
+        if (live) setBuilding(false);
+      });
+    return () => {
+      live = false;
+    };
+  }, [open, workItemId, buildArtifact]);
 
   const scribble = useScribbleComplete({
     targetRef: rowRef,
@@ -87,6 +128,9 @@ export function ShipToFirmDialog({
     pendingRef.current = null;
     setShipping(false);
     setError(null);
+    setArtifact(null);
+    setArtifactFailed(false);
+    setBuilding(false);
     resetScribble();
     // Resetting on close is what keeps a scribble from resting anywhere.
   }, [open, resetScribble]);
@@ -99,6 +143,12 @@ export function ShipToFirmDialog({
       .then(async () => {
         // The record is only complete once the person's own words are on it.
         await declare({ data: { work_item_id: workItemId, ...declared } }).catch(() => undefined);
+        if (orgId) {
+          logEvent("firm.work_shipped", orgId, {
+            has_artifact: artifact !== null,
+            coach_count: coachCount,
+          });
+        }
         return { ok: true } as Settled;
       })
       .catch((err: unknown) => ({ ok: false, message: (err as Error).message }) as Settled);
@@ -134,6 +184,21 @@ export function ShipToFirmDialog({
           <p className="break-words text-sm font-medium text-foreground">{title}</p>
           {scribble.overlay}
         </div>
+        {building ? (
+          <p data-testid="ship-artifact-building" className="text-xs text-muted-foreground">
+            {RUNNING_ARTIFACT_LINE}
+          </p>
+        ) : null}
+        {artifactFailed ? (
+          <p data-testid="ship-artifact-failed" className="text-xs text-muted-foreground">
+            The record could not be built. You can still send the work.
+          </p>
+        ) : null}
+        {artifact ? (
+          <div className="max-h-[42vh] overflow-y-auto">
+            <WorkArtifactSections artifact={artifact} />
+          </div>
+        ) : null}
         <DeclareArtifactStep value={declared} onChange={setDeclared} />
         {error ? (
           <p data-testid="ship-error" className="text-xs text-destructive">
