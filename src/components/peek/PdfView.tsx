@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
+import { loadPdfjs } from "@/lib/pdfjs-client";
+
 const MAX_PAGES = 30;
 
 /**
