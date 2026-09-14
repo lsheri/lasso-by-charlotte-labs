@@ -416,6 +416,7 @@ export async function recordEventV2(
     // events_v2 has RLS on and zero policies, by design: service role only.
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.from("events_v2").insert({
+      ...stamp,
       event_name: input.eventName,
       schema_version: TAXONOMY_VERSION,
       occurred_at: new Date().toISOString(),
