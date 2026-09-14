@@ -368,7 +368,7 @@ export function SlidesPane({
     let cancelled = false;
     void (async () => {
       try {
-        const pdfjs = await import("pdfjs-dist");
+        const pdfjs = await loadPdfjs();
         for (let pageNumber = 1; pageNumber <= pages; pageNumber += 1) {
           if (cancelled) return;
           const pdfPage = await (doc as { getPage: (n: number) => Promise<unknown> }).getPage(
