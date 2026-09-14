@@ -83,12 +83,11 @@ export async function recordAnonymousEvent(
   try {
     const tenantHash = await sha256Hex("anonymous");
     const actorHash = await computeActorHash(`anon:${viewId}`);
-    const { workspaceStamp } = await import("./org-type.server");
-    // This path has no org: an anonymous marketing view.
-    const stamp = await workspaceStamp(null);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.from("events").insert({
-      ...stamp,
+      // This path has no org: an anonymous marketing view.
+      workspace_type: "none",
+      affiliated: null,
       event_type: eventType,
       schema_version: "v1",
       tenant_hash: tenantHash,
