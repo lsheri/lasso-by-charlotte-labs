@@ -384,7 +384,11 @@ export function AiRecordPage() {
       ) : null}
 
       {threads.length > 0 ? (
-        <div className="mb-6 flex flex-wrap items-center gap-2">
+        <div
+          role="group"
+          aria-label="Filter by tool"
+          className="mb-3 flex flex-wrap items-center gap-2"
+        >
           {(["all", ...toolsPresent] as const).map((option) => {
             const on = tool === option;
             return (
@@ -392,7 +396,7 @@ export function AiRecordPage() {
                 key={option}
                 type="button"
                 aria-pressed={on}
-                onClick={() => setTool(option as ToolVendor | "all")}
+                onClick={() => chooseTool(option as ToolVendor | "all")}
                 className={
                   on
                     ? "rounded-full border border-graphite bg-nb-white px-3 py-1 text-[11.5px] font-medium text-foreground"
