@@ -79,13 +79,18 @@ export function usePanelWidth(wrapperRef: React.RefObject<HTMLElement | null>, o
 
   const apply = useCallback(
     (next: number) => {
-      const clamped = clampPanelWidth(next, wrapperWidth());
+      const page = wrapperWidth();
+      // The ceiling the handle reports comes from the same read that clamps
+      // the width, so the two cannot drift apart.
+      setMeasured(page);
+      const clamped = clampPanelWidth(next, page);
       widthRef.current = clamped;
       setWidthState(clamped);
       return clamped;
     },
     [wrapperWidth],
   );
+
 
   // Restore on mount. The wrapper often has no real width yet, so this may be
   // left unclamped on purpose and is re-clamped by the observer below.
