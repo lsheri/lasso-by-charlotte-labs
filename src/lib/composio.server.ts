@@ -286,7 +286,7 @@ export type DriveFetch = {
  * Drive's own timestamps for one file. Best effort on purpose: when Drive does
  * not answer, the dates stay absent rather than being invented.
  */
-async function driveFileTimes(
+export async function driveFileTimes(
   entityId: string,
   fileId: string,
 ): Promise<{ createdTime: string | null; modifiedTime: string | null; mimeType: string | null }> {

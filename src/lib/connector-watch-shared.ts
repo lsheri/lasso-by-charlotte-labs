@@ -10,7 +10,12 @@ export type WatchFolder = {
   last_seen_file_ids: string[];
 };
 
-export type WatchConfig = { folders: WatchFolder[] };
+export type WatchConfig = {
+  folders: WatchFolder[];
+  /** Whether already-imported documents may be re-read when their source
+   *  says they changed. Absent means yes. */
+  recheck_documents: boolean;
+};
 
 export const WATCH_SEEN_CAP = 200;
 export const WATCH_INTERVAL_MS = 30 * 60 * 1000;
