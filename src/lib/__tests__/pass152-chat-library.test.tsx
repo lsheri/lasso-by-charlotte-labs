@@ -41,7 +41,7 @@ describe("chat library — the name", () => {
     expect(labels).not.toContain("AI record");
   });
 
-  it("leaves the route URL alone and sits nested under Inbox", () => {
+  it("leaves the route URL alone and sits nested under Inbox - All Work and Transcripts", () => {
     const item = navGroups.flatMap((g) => g.items).find((i) => i.label === "All AI conversations");
     expect(item?.to).toBe("/ai-record");
     const group = navGroups.find((g) => g.items.some((i) => i.to === "/ai-record"));
