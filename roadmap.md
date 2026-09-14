@@ -23,3 +23,6 @@
 - [x] Complete `/work` design port pass 2 exactly as specified
 - [ ] Keep the engagement notecard above the translucent page header in both rail states
 - [ ] Present Ask messages as one borderless conversation while preserving every existing control and state
+- [ ] Remove duplicate engagement header surfaces and move work import guidance to Inbox
+- [ ] Offer one scope-valid analysis per engagement tab and record notecard opens
+- [ ] Make the notecard analysis primary and add the reduced-motion Ask nudge

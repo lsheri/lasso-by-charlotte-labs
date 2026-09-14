@@ -49,19 +49,15 @@ describe("90.2 analyses move into Ask", () => {
 describe("90.3 header regroup", () => {
   const page = read("src/pages/EngagementPage.tsx");
 
-  // Pass 95: the coaching affordances now live inside an orange sticky note
-  // that is shut by default, so the section heading became the note title.
-  it("has a coaching note holding every coaching affordance", () => {
-    expect(page).toContain('title="Coaching and sharing"');
+  // Pass 151: the duplicate coaching note is gone; sharing stays in its tab.
+  it("keeps sharing in the Share view without a duplicate header note", () => {
+    expect(page).not.toContain('title="Coaching and sharing"');
     expect(page).toContain("SharedWithSection");
-    expect(page).toContain("Prepare a 1:1");
-    expect(page).toContain("Invite a coach");
   });
 
   it("keeps the existing gates", () => {
-    expect(page).toContain("INVITE_ADMIN_ONLY_LINE");
     expect(page).toContain("isQuickFolder");
-    expect(page).toContain('profile.role === "admin"');
+    expect(page).toContain('profile.role !== "coach"');
   });
 
   it("merges About into a brief note with the edit dialog", () => {

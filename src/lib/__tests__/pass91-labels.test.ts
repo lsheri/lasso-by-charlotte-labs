@@ -22,8 +22,8 @@ describe("pass91 label colour hierarchy", () => {
 
   it("paints structural section labels blue", () => {
     const eng = read("src/pages/EngagementPage.tsx");
-    // Pass 95: those two headings became sticky note titles on the same page.
-    expect(eng).toContain('title="Coaching and sharing"');
+    // Pass 151 removed the duplicate coaching header note.
+    expect(eng).not.toContain('title="Coaching and sharing"');
     const panel = read("src/components/engagements/EngagementBriefPanel.tsx");
     // Pass 108 made the header a collapsible button; the label stays blue.
     expect(panel).toContain('<span className="micro-label">Brief and details</span>');

@@ -108,10 +108,10 @@ describe("pass 103 · sticky cards and spider", () => {
   const styles = readFileSync("src/styles.css", "utf8");
   const spider = readFileSync("src/components/notebook/SpiderMark.tsx", "utf8");
 
-  it("keeps the coaching note on its own green paper", () => {
+  it("keeps the note component available without duplicating sharing in the header", () => {
     expect(note).toContain("onToggle");
     expect(note).toContain('data-tone={tone}');
-    expect(page).toContain('tone="green"');
+    expect(page).not.toContain('tone="green"');
     expect(styles).toContain("--nb-sticky-green");
   });
 
