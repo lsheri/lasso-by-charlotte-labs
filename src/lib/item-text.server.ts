@@ -40,6 +40,7 @@ type TextMeta = {
   text_note?: string;
   text_error?: string;
   text_source_hash?: string;
+  text_content_hash?: string;
   text_extracted_at?: string;
 };
 
