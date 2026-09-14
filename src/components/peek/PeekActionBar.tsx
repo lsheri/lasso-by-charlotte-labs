@@ -60,6 +60,7 @@ export function PeekActionBar({
   canEdit,
   owned,
   engagementId,
+  analysesInHeader,
   onMap,
   onWorkDate,
   onMakePrivate,
@@ -75,6 +76,7 @@ export function PeekActionBar({
   canEdit: boolean;
   owned: boolean;
   engagementId?: string | undefined;
+  analysesInHeader?: boolean | undefined;
   onMap?: ((item: WorkItemRow, group?: WorkItemRow[]) => void) | undefined;
   onWorkDate?: ((item: WorkItemRow) => void) | undefined;
   onMakePrivate?: ((item: WorkItemRow) => void) | undefined;
@@ -94,8 +96,10 @@ export function PeekActionBar({
     analysisPreset(isThread ? "verification_thread" : "verification")?.label ?? "";
   const decisionsLabel = analysisPreset("decision_origin")?.label ?? "";
 
-  const showFactCheck = canEdit && Boolean(onAnalyse) && (isThread || isDeliverable);
-  const showDecisions = canEdit && Boolean(onAnalyse) && (isThread || isDeliverable);
+  const showFactCheck =
+    !analysesInHeader && canEdit && Boolean(onAnalyse) && (isThread || isDeliverable);
+  const showDecisions =
+    !analysesInHeader && canEdit && Boolean(onAnalyse) && (isThread || isDeliverable);
   const readable = isThread || isDeliverable;
 
   return (

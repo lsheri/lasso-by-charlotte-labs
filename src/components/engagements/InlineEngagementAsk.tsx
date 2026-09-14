@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { X } from "lucide-react";
 
 import { AskSheet } from "@/components/reflect/AskSheet";
 import { AskSurface } from "@/components/reflect/AskSurface";
@@ -57,19 +56,6 @@ function InlineAsk(props: {
 
   return (
     <section className={visible ? "relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-graphite bg-card max-[1099px]:min-h-[620px]" : "hidden"}>
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        aria-label="Close Ask Lasso"
-        onClick={() => {
-          setVisible(false);
-          onOpenChange(false);
-        }}
-        className="absolute right-2 top-2 z-10"
-      >
-        <X className="h-4 w-4" aria-hidden />
-      </Button>
       <AskSurface
         ask={ask}
         tab={tab}
