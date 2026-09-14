@@ -18,6 +18,8 @@ let loading: Promise<typeof import("pdfjs-dist/legacy/build/pdf.mjs")> | null = 
 export function loadPdfjs() {
   if (!loading) {
     loading = (async () => {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore the worker build ships no types
       const workerModule = await import("pdfjs-dist/legacy/build/pdf.worker.mjs");
       (globalThis as unknown as { pdfjsWorker?: unknown }).pdfjsWorker = workerModule;
       return await import("pdfjs-dist/legacy/build/pdf.mjs");
