@@ -145,9 +145,10 @@ describe("C. the wide sections layout", () => {
 });
 
 describe("D. the pencil button system", () => {
-  it("shares one class and one height across both heroes", () => {
+  it("keeps What fed this primary and makes Work Artifact secondary on Share", () => {
     expect(whatFed).toContain('className="nb-pencil-cta pr-[42px]"');
-    expect(canvasActions).toContain('className="nb-pencil-cta pr-[42px]"');
+    expect(canvasActions).toContain('variant="secondary"');
+    expect(canvasActions).toContain('className="rounded-full pr-[42px]"');
     expect(css).toMatch(/\.nb-pencil-cta \{[\s\S]*?height: 44px;/);
     expect(css).toMatch(/\.nb-pencil-cta \{[\s\S]*?padding: 0 20px;/);
     expect(css).toMatch(/\.nb-pencil-cta \{[\s\S]*?border: 1\.5px solid var\(--nb-graphite\);/);
@@ -203,7 +204,7 @@ describe("D. the pencil button system", () => {
     expect(trigger).not.toContain("<button");
     // the trigger is a sibling, so each hero button keeps its own plain name
     expect(whatFed).toContain("</button>\n      <CtaInfoTrigger");
-    expect(canvasActions).toContain("</button>\n        <CtaInfoTrigger");
+    expect(canvasActions).toContain("</Button>\n      <CtaInfoTrigger");
     expect(whatFed).toContain("CtaInfoTrigger");
     expect(canvasActions).toContain("CtaInfoTrigger");
     expect(WORK_ARTIFACT_INFO).toBe(

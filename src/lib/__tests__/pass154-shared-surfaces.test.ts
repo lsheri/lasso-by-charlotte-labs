@@ -15,7 +15,8 @@ describe("pass 154 shared surfaces", () => {
     const page = read("src/pages/EngagementPage.tsx");
     const share = read("src/components/engagements/SharedWithSection.tsx");
     const action = read("src/components/engagements/CanvasDeliverableActions.tsx");
-    expect(page.indexOf("CanvasDeliverableActions")).toBeGreaterThan(page.indexOf('view === "share"'));
+    expect(page).not.toMatch(/const headerAction[\s\S]*?<CanvasDeliverableActions/);
+    expect(page).toMatch(/view === "share"[\s\S]*?<CanvasDeliverableActions/);
     expect(share).toContain("SEND TO THE FIRM");
     expect(share).toContain("<CanvasDeliverableActions");
     expect(action).toContain("openJourney({ anchorId: anchor.id, anchorTitle: anchor.title, engagementId })");
