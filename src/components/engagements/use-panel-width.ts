@@ -62,6 +62,7 @@ export function usePanelWidth(wrapperRef: React.RefObject<HTMLElement | null>, o
 }) {
   const [width, setWidthState] = useState(PANEL_DEFAULT_WIDTH);
   const [dragging, setDragging] = useState(false);
+  const [measured, setMeasured] = useState(0);
   const widthRef = useRef(width);
   const dragRef = useRef<{ startX: number; startWidth: number } | null>(null);
   const onResizeEnd = options?.onResizeEnd;
@@ -71,7 +72,10 @@ export function usePanelWidth(wrapperRef: React.RefObject<HTMLElement | null>, o
     [wrapperRef],
   );
 
-  const maxWidth = clampPanelWidth(PANEL_MAX_WIDTH, wrapperWidth());
+  // The ceiling the handle reports is the ceiling the grid is held to, read
+  // from the same measurement, so the two can never disagree.
+  const maxWidth = clampPanelWidth(PANEL_MAX_WIDTH, measured);
+
 
   const apply = useCallback(
     (next: number) => {
