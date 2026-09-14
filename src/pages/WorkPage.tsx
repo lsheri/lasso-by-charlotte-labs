@@ -106,6 +106,113 @@ function PageMark({ back = false }: { back?: boolean }) {
   );
 }
 
+type BringWorkInRowProps = {
+  unmappedCount: number;
+  suggesting: boolean;
+  onSuggest: () => void;
+  isCoach: boolean;
+  selectableCount: number;
+  selectMode: boolean;
+  allChosen: boolean;
+  chosenCount: number;
+  onToggleSelectAll: () => void;
+  onBulkMap: () => void;
+  onRemove: () => void;
+  onDoneSelect: () => void;
+  onEnterSelect: () => void;
+};
+
+function BringWorkInRow({
+  unmappedCount,
+  suggesting,
+  onSuggest,
+  isCoach,
+  selectableCount,
+  selectMode,
+  allChosen,
+  chosenCount,
+  onToggleSelectAll,
+  onBulkMap,
+  onRemove,
+  onDoneSelect,
+  onEnterSelect,
+}: BringWorkInRowProps) {
+  return (
+    <div className="mb-6">
+      <p className="micro-label">BRING WORK IN</p>
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        {unmappedCount > 0 ? (
+          <button
+            type="button"
+            disabled={suggesting}
+            onClick={onSuggest}
+            className="text-xs font-medium text-accent-deep transition-opacity hover:opacity-70 disabled:opacity-50"
+          >
+            {suggesting ? "Thinking…" : "✨ Suggest mapping"}
+          </button>
+        ) : null}
+        {!isCoach && selectableCount > 0 ? (
+          selectMode ? (
+            <div className="flex flex-wrap items-center gap-3">
+              <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
+                <Checkbox
+                  checked={allChosen}
+                  onCheckedChange={() => onToggleSelectAll()}
+                  aria-label="Select all visible unmapped items"
+                />
+                Select all
+              </label>
+              <MapButton disabled={chosenCount === 0} onClick={onBulkMap}>
+                Map to a workstream{chosenCount ? ` (${chosenCount})` : ""}
+              </MapButton>
+              <button
+                type="button"
+                disabled={chosenCount === 0}
+                onClick={onRemove}
+                className="text-xs font-medium text-destructive transition-opacity hover:opacity-70 disabled:opacity-40"
+              >
+                Remove{chosenCount ? ` (${chosenCount})` : ""}
+              </button>
+              <button
+                type="button"
+                onClick={onDoneSelect}
+                className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+              >
+                Done
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={onEnterSelect}
+              className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Select
+            </button>
+          )
+        ) : null}
+        <ConnectorBrowseActions />
+        <PasteThreadDialog
+          trigger={
+            <Button type="button" className="hidden md:inline-flex">
+              Paste a thread
+            </Button>
+          }
+        />
+        <UploadFilesButton />
+        <TranscriptsAction />
+        <ImportFlowDialog
+          trigger={
+            <Button type="button" variant="outline">
+              Import AI history
+            </Button>
+          }
+        />
+      </div>
+    </div>
+  );
+}
+
 export function WorkPage() {
   const { data: profile } = useProfile();
   const vocab = vocabFor(profile);
@@ -155,10 +262,6 @@ export function WorkPage() {
   useEffect(() => {
     setColumnPages({ llm: 0, documents: 0, sheets: 0, calls: 0 });
   }, [columnFilter, showPrivate]);
-  // Figma 22:220 rests with one control on the header: "Add work by hand". The
-  // ways work gets in are all still here, they just wait behind it instead of
-  // filling a bar under the title.
-  const [addOpen, setAddOpen] = useState(false);
   // Rolled once per mount, never per render: a re-roll mid-animation would
   // restart the gust under the reader.
   const [gust] = useState(() => Math.random() < 0.3);
@@ -572,107 +675,29 @@ export function WorkPage() {
   return (
     <div>
       <GettingStartedCard />
-      <PageHeader
-        title="All"
-        italicWord="work"
-        subtitle={subtitle}
-        action={
-          !isCoach ? (
-            <Button
-              type="button"
-              variant="outline"
-              aria-expanded={addOpen}
-              onClick={() => setAddOpen((open) => !open)}
-            >
-              {addOpen ? "Done adding" : "Add work by hand"}
-            </Button>
-          ) : undefined
-        }
+      <PageHeader title="All" italicWord="work" subtitle={subtitle} />
+      <BringWorkInRow
+        unmappedCount={unmapped.length}
+        suggesting={suggesting}
+        onSuggest={() => void handleSuggest()}
+        isCoach={isCoach}
+        selectableCount={selectable.length}
+        selectMode={selectMode}
+        allChosen={allChosen}
+        chosenCount={chosen.size}
+        onToggleSelectAll={() => setChosen(allChosen ? new Set() : new Set(selectable))}
+        onBulkMap={() => {
+          const picked = all.filter((i) => chosen.has(i.id));
+          const head = picked[0];
+          if (!head) return;
+          setMapBulk(true);
+          setMapGroup(picked);
+          setMapItem(head);
+        }}
+        onRemove={() => setConfirmRemove(true)}
+        onDoneSelect={leaveSelectMode}
+        onEnterSelect={() => setSelectMode(true)}
       />
-      {/* Also opens itself whenever select mode is on, so "Map them" in the
-          unmapped panel never turns on a mode whose controls are hidden. */}
-      <div
-        className={`mb-6 flex-wrap items-center gap-2 ${addOpen || selectMode ? "flex" : "hidden"}`}
-      >
-        {unmapped.length > 0 ? (
-          <button
-            type="button"
-            disabled={suggesting}
-            onClick={() => void handleSuggest()}
-            className="text-xs font-medium text-accent-deep transition-opacity hover:opacity-70 disabled:opacity-50"
-          >
-            {suggesting ? "Thinking…" : "✨ Suggest mapping"}
-          </button>
-        ) : null}
-        {!isCoach && selectable.length > 0 ? (
-          selectMode ? (
-            <div className="flex flex-wrap items-center gap-3">
-              <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
-                <Checkbox
-                  checked={allChosen}
-                  onCheckedChange={() => setChosen(allChosen ? new Set() : new Set(selectable))}
-                  aria-label="Select all visible unmapped items"
-                />
-                Select all
-              </label>
-              <MapButton
-                disabled={chosen.size === 0}
-                onClick={() => {
-                  const picked = all.filter((i) => chosen.has(i.id));
-                  const head = picked[0];
-                  if (!head) return;
-                  setMapBulk(true);
-                  setMapGroup(picked);
-                  setMapItem(head);
-                }}
-              >
-                Map to a workstream{chosen.size ? ` (${chosen.size})` : ""}
-              </MapButton>
-              <button
-                type="button"
-                disabled={chosen.size === 0}
-                onClick={() => setConfirmRemove(true)}
-                className="text-xs font-medium text-destructive transition-opacity hover:opacity-70 disabled:opacity-40"
-              >
-                Remove{chosen.size ? ` (${chosen.size})` : ""}
-              </button>
-              <button
-                type="button"
-                onClick={leaveSelectMode}
-                className="text-xs text-muted-foreground transition-colors hover:text-foreground"
-              >
-                Done
-              </button>
-            </div>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setSelectMode(true)}
-              className="text-xs text-muted-foreground transition-colors hover:text-foreground"
-            >
-              Select
-            </button>
-          )
-        ) : null}
-        <ConnectorBrowseActions />
-        {/* On phones the one green primary anchors the bottom of the screen. */}
-        <PasteThreadDialog
-          trigger={
-            <Button type="button" className="hidden md:inline-flex">
-              Paste a thread
-            </Button>
-          }
-        />
-        <UploadFilesButton />
-        <TranscriptsAction />
-        <ImportFlowDialog
-          trigger={
-            <Button type="button" variant="outline">
-              Import AI history
-            </Button>
-          }
-        />
-      </div>
 
       {/* The section accessories, lifted into one toolbar above the chips. */}
       {all.length > 0 ? (
@@ -864,17 +889,28 @@ export function WorkPage() {
       ) : all.length === 0 ? (
         <div className="mx-auto max-w-lg rounded-[var(--radius)] border border-border bg-card px-8 py-12 text-center shadow-card">
           <p className="text-sm text-foreground">Your work lands here.</p>
-          <div className="mt-6 flex flex-wrap justify-center gap-2">
-            <ConnectorBrowseActions />
-            <PasteThreadDialog trigger={<Button type="button">Paste a thread</Button>} />
-            <UploadFilesButton />
-            <TranscriptsAction />
-            <ImportFlowDialog
-              trigger={
-                <Button type="button" variant="outline">
-                  Import AI history
-                </Button>
-              }
+          <div className="mt-6 inline-block text-left">
+            <BringWorkInRow
+              unmappedCount={unmapped.length}
+              suggesting={suggesting}
+              onSuggest={() => void handleSuggest()}
+              isCoach={isCoach}
+              selectableCount={selectable.length}
+              selectMode={selectMode}
+              allChosen={allChosen}
+              chosenCount={chosen.size}
+              onToggleSelectAll={() => setChosen(allChosen ? new Set() : new Set(selectable))}
+              onBulkMap={() => {
+                const picked = all.filter((i) => chosen.has(i.id));
+                const head = picked[0];
+                if (!head) return;
+                setMapBulk(true);
+                setMapGroup(picked);
+                setMapItem(head);
+              }}
+              onRemove={() => setConfirmRemove(true)}
+              onDoneSelect={leaveSelectMode}
+              onEnterSelect={() => setSelectMode(true)}
             />
           </div>
         </div>
