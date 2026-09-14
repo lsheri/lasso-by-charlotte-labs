@@ -630,6 +630,9 @@ export function AiRecordPage() {
       </div>
 
       <div className="nb-chatview-pane">
+        {selected ? (
+          <GraphiteSeam className="w-[6px] shrink-0 self-stretch text-[var(--nb-pencil)]" />
+        ) : null}
         <div className="w-[520px] max-w-full">
           {selected ? (
             <article
