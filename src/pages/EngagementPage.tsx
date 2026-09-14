@@ -487,7 +487,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
               view === "brief" ? "text-foreground" : "text-muted-foreground hover:text-foreground",
             )}
           >
-            <span className="micro-label">BRIEF</span>
+            <span className="micro-label">BRIEF & COMMS</span>
             <span className="text-[11px] italic text-muted-foreground">what were we asked for?</span>
             {view !== "brief" ? (
               <span
@@ -648,9 +648,29 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
                   defaultExpanded
                 />
               ) : null}
+              <section className="space-y-3">
+                <h2 className="micro-label micro-label-section">WHAT WAS SAID</h2>
+                {(() => {
+                  const conversations = canvasItems.filter((item) => !isDeliverableType(item.type));
+                  return conversations.length > 0 ? (
+                    <div className="nb-paper-wall">
+                      {conversations.map((item) => (
+                        <WorkNote
+                          key={item.id}
+                          item={item}
+                          onOpen={() => openPeek(item)}
+                        />
+                      ))}
+                    </div>
+                  ) : null;
+                })()}
+                <p className="text-xs text-muted-foreground">
+                  Drift is read against what was said. This is what is here.
+                </p>
+              </section>
               {(() => {
                 const showCallsLine = !hasCalls;
-                const showBriefLine = true;
+                const showBriefLine = !engagement.brief?.trim();
                 return showCallsLine || showBriefLine ? (
                   <div className="rounded-lg border border-graphite bg-card p-5">
                     <p className="micro-label">WHAT IS NOT HERE YET</p>
