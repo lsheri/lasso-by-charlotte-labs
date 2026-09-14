@@ -109,7 +109,7 @@ export const noteChatViewChangedFn = createServerFn({ method: "POST" })
   });
 
 /**
- * Pass 160: the reading pane was closed, and how. Closed vocabulary in dims,
+ * Pass 176: the reading pane was closed, and how. Closed vocabulary in dims,
  * nothing else travels. Never surfaced on failure.
  */
 export const noteReaderClosedFn = createServerFn({ method: "POST" })
