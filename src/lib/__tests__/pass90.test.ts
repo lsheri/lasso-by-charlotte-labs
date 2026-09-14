@@ -26,7 +26,7 @@ describe("90.1 chat history shelf", () => {
   });
 });
 
-describe("90.2 analyses move into Ask", () => {
+describe("90.2 analyses leave Ask for the engagement notecard", () => {
   const page = read("src/pages/EngagementPage.tsx");
   const surface = read("src/components/reflect/AskSurface.tsx");
 
@@ -38,10 +38,8 @@ describe("90.2 analyses move into Ask", () => {
     expect(page).not.toContain("Analyse this engagement");
   });
 
-  // Pass 94 removed the embedded lens tab: analyses live in the selection
-  // driven Analyses tab, and the itemCount thread went with it.
-  it("keeps analyses inside the Ask surface, selection driven", () => {
-    expect(surface).toContain("SelectionAnalysisChips");
+  it("keeps analysis out of the Ask surface", () => {
+    expect(surface).not.toContain("SelectionAnalysisChips");
     expect(surface).not.toContain("AnalysisLens");
   });
 });

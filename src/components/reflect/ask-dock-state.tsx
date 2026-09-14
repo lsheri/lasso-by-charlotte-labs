@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 
-export type AskTab = "messages" | "history" | "analyses";
+export type AskTab = "messages" | "history";
 
 export const DOCK_MIN_WIDTH = 320;
 /** The hard ceiling when no window is available (SSR, tests). */

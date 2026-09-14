@@ -3069,7 +3069,7 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 
   /* Open: the aside becomes a real column and the work squeezes to fit. */
   .nb-bench-page[data-rail="open"] { grid-template-columns: minmax(0, 1fr) 380px; }
-  .nb-bench-page[data-rail="wide"] { grid-template-columns: minmax(0, 1fr) minmax(520px, 46%); }
+  .nb-bench-page[data-rail="wide"] { grid-template-columns: minmax(0, 1fr) 570px; }
 
   /* The aside is full height so the sticky inner box has room to travel the
      whole page. This is the fix for the card leaving the screen: sticky can

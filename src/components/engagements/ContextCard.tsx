@@ -151,31 +151,9 @@ export function ContextCard({
                     type="button"
                     aria-label={panelWide ? "Narrow this column" : "Widen this column"}
                     onClick={onTogglePanelWidth}
-                    className="hidden h-7 w-7 place-items-center rounded-md text-muted-foreground transition-colors hover:text-foreground min-[1100px]:grid"
+                    className="hidden h-7 items-center font-mono text-[11px] uppercase text-[var(--nb-mid)] transition-colors hover:text-[var(--nb-ink)] min-[1100px]:inline-flex"
                   >
-                    <svg
-                      width="18"
-                      height="18"
-                      viewBox="0 0 20 20"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.4"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      aria-hidden
-                    >
-                      {panelWide ? (
-                        <>
-                          <path d="M3.5 5.2h5.3v5.3M8.7 5.3 3.4 10.6" />
-                          <path d="M16.5 14.8h-5.3V9.5M11.3 14.7l5.3-5.3" />
-                        </>
-                      ) : (
-                        <>
-                          <path d="M8.8 10.5V5.2H3.5M8.7 5.3l-5.3 5.3" />
-                          <path d="M11.2 9.5v5.3h5.3M11.3 14.7l5.3-5.3" />
-                        </>
-                      )}
-                    </svg>
+                    {panelWide ? "← NARROW" : "WIDEN →"}
                   </button>
                 ) : null}
                 <button

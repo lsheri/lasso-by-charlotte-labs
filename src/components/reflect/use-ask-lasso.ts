@@ -1,7 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 
-import { useChatAnalyses } from "@/components/reflect/ChatAnalyses";
 import type { SaveForOneOnOneTarget } from "@/components/oneonone/SaveForOneOnOne";
 import { useFirmChecks } from "@/hooks/use-firm-checks";
 import { useProfile } from "@/hooks/use-profile";
@@ -74,7 +73,6 @@ export function useAskLasso({
   const workQuery = useWorkItems();
   const { data: profile } = useProfile();
   const mapped: WorkItemRow[] = mappedItemsForEngagement(workQuery.data?.items ?? [], engagementId);
-  const analyses = useChatAnalyses(profileId, orgId);
   // The firm's checks that apply here: org wide, this engagement, or this person.
   const { data: firmChecks } = useFirmChecks({
     orgId,
@@ -139,20 +137,18 @@ export function useAskLasso({
     },
   });
 
-  /** A fresh chat: no session, no prior analyses, the whole engagement again. */
+  /** A fresh chat: no session, the whole engagement again. */
   function newSession() {
     setSessionId(null);
     setSelected(new Set(mapped.map((i) => i.id)));
     setCoverage(null);
     setError(null);
     setDraft("");
-    analyses.clear();
   }
 
   function openSession(id: string) {
     setSessionId(id);
     setCoverage(null);
-    analyses.clear();
   }
 
   // The @ menu reads the word being typed just before the caret.
@@ -299,7 +295,6 @@ export function useAskLasso({
   }
 
   return {
-    analyses,
     bottomRef,
     chooseMention,
     composerRef,
