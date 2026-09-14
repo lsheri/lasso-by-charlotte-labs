@@ -8,7 +8,7 @@ const functions = readFileSync("src/lib/chat-library.functions.ts", "utf8");
 const styles = readFileSync("src/styles.css", "utf8");
 const chatRow = readFileSync("src/components/work/ChatRow.tsx", "utf8");
 
-describe("pass 159 — cards and list", () => {
+describe("pass 175 — cards and list", () => {
   it("defaults the chat library to cards", () => {
     expect(page).toContain('useState<"cards" | "list">("cards")');
   });
