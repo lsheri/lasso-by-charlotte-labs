@@ -44,7 +44,7 @@ export function MobileTabBar() {
     : [
         { label: "Overview", to: "/overview", icon: "overview" },
         { label: "Reflect", to: "/reflect", icon: "reflect" },
-        { label: "Chat library", to: "/ai-record", icon: "ai-record" },
+        { label: "All AI conversations", to: "/ai-record", icon: "ai-record" },
         { label: "Decision log", to: "/decisions", icon: "decisions" },
         { label: "1:1 prep", to: "/one-on-one", icon: "one-on-one" },
         ...(canSeeFirmView ? [{ label: "Firm view", to: "/firm", icon: "firm" as const }] : []),
