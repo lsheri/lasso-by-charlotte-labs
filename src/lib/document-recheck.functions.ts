@@ -5,7 +5,12 @@ import type { Database } from "@/integrations/supabase/types";
 
 type Input = { profile_id?: string | undefined } | undefined;
 
-export type RecheckResult = { checked: number; changed: number; skipped: number };
+export type RecheckResult = {
+  checked: number;
+  changed: number;
+  refreshed: number;
+  skipped: number;
+};
 
 /**
  * One debounced pass over connected documents. The stored timestamps are the
@@ -18,13 +23,13 @@ export const recheckDocuments = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const { resolveProfile } = await import("@/lib/profile-resolve");
     const profile = await resolveProfile(supabase, userId, data.profile_id);
-    if (!profile) return { checked: 0, changed: 0, skipped: 0 };
+    if (!profile) return { checked: 0, changed: 0, refreshed: 0, skipped: 0 };
 
     const { recheckConnectedDocuments } = await import("@/lib/document-recheck.server");
     const result = await recheckConnectedDocuments(supabase, {
       profileId: profile.id,
       userId,
-    }).catch(() => ({ checked: 0, changed: 0, skipped: 0 }));
+    }).catch(() => ({ checked: 0, changed: 0, refreshed: 0, skipped: 0 }));
 
     if (result.checked > 0) {
       const { recordEvent } = await import("@/lib/telemetry.server");
@@ -32,7 +37,12 @@ export const recheckDocuments = createServerFn({ method: "POST" })
         eventType: "document.recheck_ran",
         orgId: profile.org_id,
         userId,
-        dims: { source: "googledrive", checked: result.checked, changed: result.changed },
+        dims: {
+          source: "googledrive",
+          checked: result.checked,
+          changed: result.changed,
+          refreshed: result.refreshed,
+        },
       });
       for (let i = 0; i < result.changed; i += 1) {
         await recordEvent(supabase, {

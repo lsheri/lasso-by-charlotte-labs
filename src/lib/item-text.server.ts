@@ -40,6 +40,7 @@ type TextMeta = {
   text_note?: string;
   text_error?: string;
   text_source_hash?: string;
+  text_content_hash?: string;
   text_extracted_at?: string;
 };
 
@@ -136,6 +137,10 @@ async function writeCache(item: TextItem, hash: string, result: ItemTextResult):
     };
     if (result.note) patch.text_note = result.note;
     if (result.status !== "ok") patch.text_error = result.reason ?? "unknown";
+    if (result.text) {
+      const { normalizedTextHash } = await import("@/lib/text-hash-shared");
+      patch.text_content_hash = await normalizedTextHash(result.text);
+    }
     if (result.text) {
       const path = derivedPath(item, hash);
       const upload = await supabaseAdmin.storage

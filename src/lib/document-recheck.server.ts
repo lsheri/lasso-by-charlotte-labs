@@ -53,14 +53,14 @@ async function recheckAllowed(supabase: Client, profileId: string): Promise<bool
 export async function recheckConnectedDocuments(
   supabase: Client,
   args: { profileId: string; userId: string },
-): Promise<{ checked: number; changed: number; skipped: number }> {
+): Promise<{ checked: number; changed: number; refreshed: number; skipped: number }> {
   if (!(await recheckAllowed(supabase, args.profileId))) {
-    return { checked: 0, changed: 0, skipped: 0 };
+    return { checked: 0, changed: 0, refreshed: 0, skipped: 0 };
   }
 
   const { data, error } = await supabase
     .from("work_items")
-    .select("id, meta, content_ref, content_hash, captured_at")
+    .select("id, title, type, meta, source_meta, content_ref, content_hash, captured_at")
     .eq("owner_id", args.profileId)
     .eq("source", "connector:googledrive")
     .eq("type", "document")
@@ -72,12 +72,15 @@ export async function recheckConnectedDocuments(
   const cutoff = Date.now() - RECHECK_INTERVAL_MS;
   let checked = 0;
   let changed = 0;
+  let refreshed = 0;
   let skipped = 0;
 
   const { driveFileTimes, fetchDriveFileBytes } = await import("@/lib/composio.server");
   const { sha256Bytes, storeFile, recordNewVersion } = await import(
     "@/lib/connector-import.server"
   );
+  const { binaryShape, decode } = await import("@/lib/item-text.server");
+  const { normalizedTextHash, TEXT_CONTENT_HASH_KEY } = await import("@/lib/text-hash-shared");
 
   for (const row of data ?? []) {
     const meta = metaOf(row.meta);
@@ -116,13 +119,45 @@ export async function recheckConnectedDocuments(
         [RECHECK_MODIFIED_KEY]: times.modifiedTime,
       };
 
-      // Touched but identical: the version chain stays quiet.
+      // Touched but byte-identical: the version chain stays quiet.
       if (hash === row.content_hash) {
         await writeMeta(supabase, row.id, nextMeta);
         continue;
       }
 
+      // The bytes differ. Re-exported documents differ in bytes every time, so
+      // the real question is whether the readable content differs.
+      const shape = binaryShape({
+        id: row.id,
+        title: row.title,
+        type: row.type,
+        content_ref: row.content_ref,
+        source_meta: row.source_meta,
+        meta: row.meta,
+      } as never);
+
+      let textHash: string | null = null;
+      if (shape) {
+        const decoded = await decode(shape, file.bytes).catch(() => null);
+        if (decoded?.text) textHash = await normalizedTextHash(decoded.text);
+      }
+
+      const storedTextHash = str(meta[TEXT_CONTENT_HASH_KEY]);
       const path = await storeFile(args.userId, file.name, file.bytes, file.mimeType);
+
+      // Same readable content, or no baseline to compare against yet: the refs
+      // move forward and a baseline is kept, but nothing is claimed as an edit.
+      if (textHash && (textHash === storedTextHash || !storedTextHash)) {
+        await writeMeta(
+          supabase,
+          row.id,
+          { ...nextMeta, [TEXT_CONTENT_HASH_KEY]: textHash },
+          { content_ref: path, content_hash: hash },
+        );
+        refreshed += 1;
+        continue;
+      }
+
       await recordNewVersion(supabase, {
         workItemId: row.id,
         previousRef: row.content_ref,
@@ -130,9 +165,14 @@ export async function recheckConnectedDocuments(
         previousAt: row.captured_at,
         newRef: path,
         newHash: hash,
-        sourceEvent: "scheduled_recheck",
+        sourceEvent: row.content_hash ? "scheduled_recheck" : "baseline",
       });
-      await writeMeta(supabase, row.id, nextMeta, { content_ref: path, content_hash: hash });
+      await writeMeta(
+        supabase,
+        row.id,
+        textHash ? { ...nextMeta, [TEXT_CONTENT_HASH_KEY]: textHash } : nextMeta,
+        { content_ref: path, content_hash: hash },
+      );
       changed += 1;
     } catch (error) {
       const { reportConnectorError } = await import("@/lib/connector-error.server");
@@ -141,5 +181,6 @@ export async function recheckConnectedDocuments(
     }
   }
 
-  return { checked, changed, skipped };
+  return { checked, changed, refreshed, skipped };
 }
+

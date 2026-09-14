@@ -74,8 +74,10 @@ export const reextractItemText = createServerFn({ method: "POST" })
       unknown
     >;
     const cleared = { ...meta };
+    const { TEXT_CONTENT_HASH_KEY } = await import("@/lib/text-hash-shared");
     delete cleared["text_status"];
     delete cleared["text_source_hash"];
+    delete cleared[TEXT_CONTENT_HASH_KEY];
     delete cleared["text_ref"];
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     await supabaseAdmin

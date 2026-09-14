@@ -10,6 +10,8 @@ import { formatDate } from "@/lib/work-types";
 const SOURCE_EVENT_LABEL: Record<string, string> = {
   connector_reimport: "re-imported from the source",
   initial_capture: "first captured",
+  scheduled_recheck: "the source changed",
+  baseline: "first recorded state",
 };
 
 /** "Version 3 of 3, updated Aug 12", with earlier versions openable. */
