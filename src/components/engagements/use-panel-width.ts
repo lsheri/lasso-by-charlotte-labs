@@ -99,19 +99,30 @@ export function usePanelWidth(wrapperRef: React.RefObject<HTMLElement | null>, o
     if (stored !== null) apply(stored);
   }, [apply]);
 
-  // The first real measurement, and every later one, decides the ceiling. A
-  // panel sized on a wide screen must not exceed the maximum on a narrow one.
+  // The first real measurement, and every later one, decides the ceiling. The
+  // wrapper appears only once the engagement has loaded, so this waits for it
+  // rather than giving up on the first pass.
   useEffect(() => {
-    const node = wrapperRef.current;
-    if (!node || typeof ResizeObserver === "undefined") return;
-    const observer = new ResizeObserver(() => {
-      setMeasured(wrapperWidth());
+    let observer: ResizeObserver | null = null;
+    let frame = 0;
+    const attach = () => {
+      const node = wrapperRef.current;
+      if (!node) {
+        frame = requestAnimationFrame(attach);
+        return;
+      }
       apply(widthRef.current);
-    });
-    observer.observe(node);
-    setMeasured(wrapperWidth());
-    return () => observer.disconnect();
-  }, [apply, wrapperRef, wrapperWidth]);
+      if (typeof ResizeObserver === "undefined") return;
+      observer = new ResizeObserver(() => apply(widthRef.current));
+      observer.observe(node);
+    };
+    attach();
+    return () => {
+      cancelAnimationFrame(frame);
+      observer?.disconnect();
+    };
+  }, [apply, wrapperRef]);
+
 
 
   useEffect(() => {
