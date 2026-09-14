@@ -124,15 +124,33 @@ export function AiRecordPage() {
   const [selected, setSelected] = useState<WorkItemRow | null>(null);
   const [desktopReader, setDesktopReader] = useState(false);
   const [lensItem, setLensItem] = useState<WorkItemRow | null>(null);
-  const [openGroup, setOpenGroup] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [showSubjects, setShowSubjects] = useState(false);
   const [tool, setTool] = useState<ToolVendor | "all">("all");
+  const [engagement, setEngagement] = useState<string | "all">("all");
+  const [recursOpen, setRecursOpen] = useState(false);
   const [view, setView] = useState<"cards" | "list">("cards");
   const readingMotion = useMotion("record.reading");
   const pileMotion = useMotion("work.piles");
   const noteViewChanged = useServerFn(noteChatViewChangedFn);
   const noteReaderClosed = useServerFn(noteReaderClosedFn);
+  const noteFilterChanged = useServerFn(noteFilterChangedFn);
+
+  /** One filter path, so the row and the record cannot drift. */
+  function chooseTool(next: ToolVendor | "all") {
+    setTool(next);
+    void noteFilterChanged({
+      data: { filter: "tool", selected: next === "all" ? "all" : "one" },
+    }).catch(() => {});
+  }
+
+  function chooseEngagement(next: string | "all") {
+    setEngagement(next);
+    setRecursOpen(false);
+    void noteFilterChanged({
+      data: { filter: "engagement", selected: next === "all" ? "all" : "one" },
+    }).catch(() => {});
+  }
 
   // Read after mount so the server and the first client render agree. Blocked
   // site data throws here, and a saved preference is never worth a broken page.
