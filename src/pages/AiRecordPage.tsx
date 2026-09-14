@@ -208,8 +208,18 @@ export function AiRecordPage() {
     .join(" · ");
   const searchSignal = useChatSearchSignal(query, shown.length);
 
+  /** One close path: the button, Escape and reselecting all come through here. */
+  function closeReader(how: "button" | "escape" | "reselect") {
+    setSelected(null);
+    void noteReaderClosed({ data: { view, how } }).catch(() => {});
+  }
+
   /** One open path, shared by the list and the cards so they cannot drift. */
   function openItem(item: WorkItemRow) {
+    if (desktopReader && selected?.id === item.id) {
+      closeReader("reselect");
+      return;
+    }
     searchSignal.onResultOpened();
     markOpenStart("peek.open");
     if (desktopReader) {
