@@ -370,11 +370,6 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
           Add a wrap-up
         </button>
       ) : null}
-      <CanvasDeliverableActions
-        items={canvasItems}
-        engagementId={engagementId}
-        profile={profile}
-      />
       {profile.role !== "coach" && membership.data?.isMember ? (
         <p className="text-xs text-muted-foreground">
           Bring more work in from{" "}
@@ -536,7 +531,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
           </button>
           <span
             aria-hidden
-            className="pointer-events-none absolute bottom-[-2px] block h-[6px] [transition-duration:var(--nb-dur-move)] [transition-property:left,width] [transition-timing-function:var(--nb-ease)] motion-reduce:transition-none"
+            className="pointer-events-none absolute bottom-[-2px] block h-[6px] [transition-duration:420ms] [transition-property:left,width] [transition-timing-function:var(--nb-ease)] motion-reduce:transition-none"
             style={{ left: tabRule.left, width: tabRule.width }}
           >
             <GraphiteRule className="text-[var(--nb-green)]" />
@@ -676,11 +671,21 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
               personalOrg={!isBusinessOrg(profile)}
             />
           ) : (
-            <div className="rounded-lg border border-graphite bg-card p-6">
-              <h2 className="micro-label micro-label-section">Sharing</h2>
-              <p className="mt-2 text-[13px] text-muted-foreground">
-                Sharing is managed by the firm.
-              </p>
+            <div className="space-y-6">
+              <div className="rounded-lg border border-graphite bg-card p-6">
+                <h2 className="micro-label micro-label-section">Sharing</h2>
+                <p className="mt-2 text-[13px] text-muted-foreground">
+                  Sharing is managed by the firm.
+                </p>
+              </div>
+              <section className="flex flex-col gap-2">
+                <h2 className="micro-label micro-label-section">SEND TO THE FIRM</h2>
+                <CanvasDeliverableActions
+                  items={canvasItems}
+                  engagementId={engagementId}
+                  profile={profile}
+                />
+              </section>
             </div>
           )}
         </div>

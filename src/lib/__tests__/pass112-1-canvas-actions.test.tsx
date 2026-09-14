@@ -76,7 +76,7 @@ describe("pass 112.1 · journey and ship on the canvas", () => {
     });
   });
 
-  it("keeps only the journey in the Work header", () => {
+  it("keeps the journey available to a coach after its move to Share", () => {
     renderActions([deliverable], { id: "coach", role: "coach" });
     expect(screen.getByRole("button", { name: "Work Artifact" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: SHIP_ACTION_LABEL })).toBeNull();
@@ -85,7 +85,8 @@ describe("pass 112.1 · journey and ship on the canvas", () => {
   it("hides Share shipping from a member who does not own the latest deliverable", () => {
     const source = readFileSync("src/components/engagements/SharedWithSection.tsx", "utf8");
     expect(source).toContain("ownsWorkItem(profile, anchor ?? {})");
-    expect(source).toContain('profile.role !== "coach" && (canShip || !ready)');
+    expect(source).toContain("(canShip || !ready) ? (");
+    expect(source).toContain("disabled={!canShip}");
   });
 
   it("ships from Share through the existing dialog only", () => {
@@ -105,11 +106,13 @@ describe("pass 112.1 · journey and ship on the canvas", () => {
     expect(screen.queryByTestId("ship-dialog")).toBeNull();
   });
 
-  it("stays a quiet sibling of the what fed this hero", () => {
+  it("moves the quiet journey control from the Work header to Share", () => {
     const source = readFileSync("src/components/engagements/CanvasDeliverableActions.tsx", "utf8");
     expect(source).not.toContain("nb-web-cta");
     const page = readFileSync("src/pages/EngagementPage.tsx", "utf8");
-    expect(page).toContain("<CanvasDeliverableActions");
+    const headerAction = page.slice(page.indexOf("const headerAction"), page.indexOf("if (engagementQuery.isLoading)"));
+    expect(headerAction).not.toContain("<CanvasDeliverableActions");
+    expect(page).toMatch(/view === "share"[\s\S]*?<CanvasDeliverableActions/);
     expect(page).toContain("flex flex-wrap items-center gap-2");
   });
 });
