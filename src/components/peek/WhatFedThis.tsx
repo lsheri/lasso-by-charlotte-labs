@@ -201,7 +201,7 @@ export function WhatFedThis({
   const findButton = canEdit ? (
     <Button type="button" disabled={busy} onClick={() => void find()}>
       <Sparkle className="mr-2 h-4 w-4" aria-hidden />
-      {busy ? <WorkingLabel>Reading this engagement</WorkingLabel> : "Find what fed this"}
+      {busy ? <WorkingLabel>Reading this engagement</WorkingLabel> : "Find what this came from"}
     </Button>
   ) : null;
 
