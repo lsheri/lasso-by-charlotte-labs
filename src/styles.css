@@ -3053,7 +3053,11 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   gap: 32px;
   transition: grid-template-columns var(--nb-dur-move) var(--nb-ease);
 }
+/* While dragging, the grid must not lag the pointer. */
+.nb-bench-page[data-dragging="true"] { transition: none; }
+.nb-panel-grip { display: none; }
 .nb-bench-main { min-width: 0; }
+
 @media (min-width: 1100px) {
   /* Closed: the card hangs in the top right corner and the work below it runs
      the full width. The aside is out of flow, so only the title row makes room
@@ -3070,9 +3074,41 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
     padding-right: 252px;
   }
 
-  /* Open: the aside becomes a real column and the work squeezes to fit. */
-  .nb-bench-page[data-rail="open"] { grid-template-columns: minmax(0, 1fr) 380px; }
-  .nb-bench-page[data-rail="wide"] { grid-template-columns: minmax(0, 1fr) 570px; }
+  /* Open: the aside becomes a real column and the work squeezes to fit. The
+     width itself now lives on the element, set by the drag handle, so there is
+     no per-state width rule here any more. */
+
+  /* The inner edge of the panel, sitting in the gap so it steals no space. */
+  .nb-panel-grip {
+    display: block;
+    position: absolute;
+    left: -21px;
+    top: 0;
+    height: 100%;
+    width: 10px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: col-resize;
+    z-index: 41;
+  }
+  .nb-panel-grip::after {
+    content: "";
+    position: absolute;
+    left: 4px;
+    top: 0;
+    width: 2px;
+    height: 100%;
+    background: var(--nb-rule);
+    opacity: 0.4;
+  }
+  .nb-panel-grip:hover::after,
+  .nb-panel-grip:focus-visible::after,
+  .nb-bench-page[data-dragging="true"] .nb-panel-grip::after {
+    background: var(--nb-green);
+    opacity: 1;
+  }
+
 
   /* The aside is full height so the sticky inner box has room to travel the
      whole page. This is the fix for the card leaving the screen: sticky can

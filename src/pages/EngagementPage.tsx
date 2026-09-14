@@ -25,6 +25,8 @@ import { EngagementBriefPanel } from "@/components/engagements/EngagementBriefPa
 import { EngagementStats } from "@/components/engagements/EngagementStats";
 import { EngagementAsk } from "@/components/engagements/InlineEngagementAsk";
 import { ContextCard } from "@/components/engagements/ContextCard";
+import { usePanelWidth, panelWidthBucket } from "@/components/engagements/use-panel-width";
+
 import { SharedWithSection } from "@/components/engagements/SharedWithSection";
 import { SubjectCoachingSection } from "@/components/coaching/SubjectCoachingSection";
 import { useRegisterAskLasso } from "@/components/reflect/ask-lasso-context";
@@ -67,8 +69,10 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
   const { work } = engagementRoute.useSearch();
   const { data: profile } = useProfile();
   const queryClient = useQueryClient();
-  const [rail, setRail] = useState<"closed" | "open" | "wide">("closed");
+  const [rail, setRail] = useState<"closed" | "open">("closed");
   const askOpen = rail !== "closed";
+  const benchPageRef = useRef<HTMLDivElement>(null);
+
   const [askHadConversation, setAskHadConversation] = useState(false);
   const [peekItem, setPeekItem] = useState<WorkItemRow | null>(null);
   // PASS 129 — the peek's action bar reads the same on both surfaces, so the
@@ -88,6 +92,23 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
   const tabBarRef = useRef<HTMLDivElement>(null);
   const tabRefs = useRef<Partial<Record<EngagementView, HTMLButtonElement>>>({});
   const [tabRule, setTabRule] = useState({ left: 0, width: 0 });
+
+  // The panel's width is a person's own choice, dragged from its inner edge.
+  // One event on release, banded: a pointermove stream is not a signal.
+  const orgId = profile?.org_id;
+  const onPanelResizeEnd = useCallback(
+    (nextWidth: number) => {
+      if (!orgId) return;
+      logEvent("engagement.ask_rail_toggled", orgId, {
+        state: "resized",
+        width_bucket: panelWidthBucket(nextWidth),
+      });
+    },
+    [orgId],
+  );
+  const panel = usePanelWidth(benchPageRef, { onResizeEnd: onPanelResizeEnd });
+
+
 
   const measureTabRule = useCallback(() => {
     const selected = tabRefs.current[view];
@@ -141,8 +162,9 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
     }
     setLensItem(item);
     setLensPreset(preset);
-    // Analyses need reading room, but this is not a person choosing a rail width.
-    setRail("wide");
+    // An analysis needs reading room, so it opens the panel if it is shut. The
+    // width itself is the person's, kept from wherever they last dragged it.
+    setRail("open");
   };
 
   const closeAnalysis = () => {
@@ -150,6 +172,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
     setLensPreset(undefined);
     setRail("open");
   };
+
 
   // A document reads beside the work, in the panel, never over it. Opening one
   // opens the panel when it is closed; this is not a person choosing a width,
@@ -408,7 +431,17 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
 
   return (
     <div>
-      <div className="nb-bench-page" data-rail={rail}>
+      <div
+        ref={benchPageRef}
+        className="nb-bench-page"
+        data-rail={rail}
+        data-dragging={panel.dragging ? "true" : undefined}
+        style={
+          rail === "closed"
+            ? undefined
+            : { gridTemplateColumns: `minmax(0, 1fr) ${panel.width}px` }
+        }
+      >
         <div className="nb-bench-main">
       <header className="mb-8">
         <div className="nb-sticky-head relative">
@@ -714,6 +747,12 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
     </div>
 
         <aside className="nb-bench-aside">
+          {rail === "closed" ? null : (
+            /* The panel's inner edge. It sits in the 32px gap, so it takes no
+               space from either column. */
+            <div className="nb-panel-grip" {...panel.handleProps} />
+          )}
+
           <div className="nb-bench-aside-inner">
             <ContextCard
               eyebrow={view === "share" ? "GOING TO" : contextScope === "engagement" ? "WORKING FROM" : "ASKING ABOUT"}
@@ -729,18 +768,8 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
               vendors={contextVendors}
               actions={contextActions}
               panelOpen={panelShowing}
-              panelWide={rail === "wide"}
-              onTogglePanelWidth={() => {
-                const next = rail === "wide" ? "open" : "wide";
-                setRail(next);
-                if (profile) {
-                  logEvent("engagement.ask_rail_toggled", profile.org_id, {
-                    state: next === "wide" ? "widened" : "narrowed",
-                    had_conversation: askHadConversation,
-                  });
-                }
-              }}
               onClosePanel={() => {
+
                 // The close control clears the topmost content, not the column.
                 if (peekItem) setPeekItem(null);
                 else if (lensItem) closeAnalysis();
