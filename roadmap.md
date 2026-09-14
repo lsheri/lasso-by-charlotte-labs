@@ -26,6 +26,6 @@
 - [x] Remove duplicate engagement header surfaces and move work import guidance to Inbox
 - [x] Offer one scope-valid analysis per engagement tab and record notecard opens
 - [x] Make the notecard analysis primary and add the reduced-motion Ask nudge
-- [ ] Remove the redundant Analyses chat tab without changing the remaining chat controls
-- [ ] Make the engagement panel widths fixed at 236, 380, and 570 with a labelled width control
-- [ ] Keep custom vendor marks above their paper discs and centre the map action label
+- [x] Remove the redundant Analyses chat tab without changing the remaining chat controls
+- [x] Make the engagement panel widths fixed at 236, 380, and 570 with a labelled width control
+- [x] Keep custom vendor marks above their paper discs and centre the map action label

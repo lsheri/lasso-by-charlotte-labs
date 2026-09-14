@@ -142,7 +142,7 @@ describe("94.3 scatter css", () => {
 
   it("organises on hover, well under half a second", () => {
     expect(css).toContain('.nb-scatter[data-scatter="1"]:hover .nb-paper');
-    expect(css).toContain("transform 340ms var(--nb-ease)");
+    expect(css).toContain("transform var(--nb-dur-enter) var(--nb-ease)");
   });
 
   it("renders the organised grid on touch and under reduced motion", () => {
