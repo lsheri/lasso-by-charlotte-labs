@@ -194,7 +194,7 @@ function TextOrFallback({
   canEdit,
 }: {
   item: WorkItemRow;
-  label: string;
+  label?: string | undefined;
   onDownload: () => void;
   canEdit?: boolean | undefined;
 }) {
@@ -202,7 +202,7 @@ function TextOrFallback({
   if (readStatus === "ok" || readStatus === "not_attempted") {
     return <TextPane item={item} canEdit={canEdit} onDownload={onDownload} />;
   }
-  return <FallbackCard item={item} label={label} onDownload={onDownload} canEdit={canEdit} />;
+  return <FallbackCard item={item} label={label ?? ""} onDownload={onDownload} canEdit={canEdit} />;
 }
 
 export function RenderedContent({
