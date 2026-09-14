@@ -7,6 +7,7 @@ import { PeekBody } from "@/components/peek/PeekPanel";
 import { presetsForScope, type AnalysisPresetId } from "@/lib/analysis-presets";
 import { MapDialog } from "@/components/work/MapDialog";
 import { WorkDateDialog } from "@/components/work/WorkDateDialog";
+import { WorkNote } from "@/components/work/WorkNote";
 import { AnalysisLensPanel } from "@/components/reflect/AnalysisLens";
 import {
   ThreadAnalysisLauncher,
@@ -35,7 +36,7 @@ import { isBusinessOrg } from "@/hooks/use-profile";
 import { useMyEngagementMembership } from "@/hooks/use-engagement-membership";
 import { useEngagementPage, useEngagementSlice } from "@/hooks/use-engagement-page";
 import { clientDisplayName, engagementDisplayCode, engagementDisplayTitle } from "@/lib/clients";
-import { workIdentityLabel } from "@/lib/work-identity";
+
 import { cn } from "@/lib/utils";
 import { markOpenStart } from "@/lib/perf-timing";
 import { logEvent } from "@/lib/telemetry";
@@ -426,13 +427,15 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
           >
             <span className="micro-label">BRIEF</span>
             <span className="text-[11px] italic text-muted-foreground">what were we asked for?</span>
-            <span
-              className={cn(
-                "absolute bottom-[-1px] left-0 h-[2px] w-full transition-transform",
-                view === "brief" ? "scale-x-100" : "scale-x-0 bg-[var(--nb-pencil)] group-hover:scale-x-100",
-              )}
-              style={view === "brief" ? { background: "var(--nb-ink)" } : undefined}
-            />
+            {view === "brief" ? (
+              <GraphiteRule className="absolute bottom-[-2px] left-0 h-[6px] w-full text-[var(--nb-green)]" />
+            ) : (
+              <span
+                className={cn(
+                  "absolute bottom-[-1px] left-0 h-[2px] w-full scale-x-0 bg-[var(--nb-pencil)] transition-transform group-hover:scale-x-100",
+                )}
+              />
+            )}
           </button>
           <button
             type="button"
@@ -445,13 +448,15 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
           >
             <span className="micro-label">WORK</span>
             <span className="text-[11px] italic text-muted-foreground">what is here, and what fed what?</span>
-            <span
-              className={cn(
-                "absolute bottom-[-1px] left-0 h-[2px] w-full transition-transform",
-                view === "work" ? "scale-x-100" : "scale-x-0 bg-[var(--nb-pencil)] group-hover:scale-x-100",
-              )}
-              style={view === "work" ? { background: "var(--nb-ink)" } : undefined}
-            />
+            {view === "work" ? (
+              <GraphiteRule className="absolute bottom-[-2px] left-0 h-[6px] w-full text-[var(--nb-green)]" />
+            ) : (
+              <span
+                className={cn(
+                  "absolute bottom-[-1px] left-0 h-[2px] w-full scale-x-0 bg-[var(--nb-pencil)] transition-transform group-hover:scale-x-100",
+                )}
+              />
+            )}
           </button>
           <button
             type="button"
@@ -464,13 +469,15 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
           >
             <span className="micro-label">VERIFY</span>
             <span className="text-[11px] italic text-muted-foreground">can I stand behind this?</span>
-            <span
-              className={cn(
-                "absolute bottom-[-1px] left-0 h-[2px] w-full transition-transform",
-                view === "verify" ? "scale-x-100" : "scale-x-0 bg-[var(--nb-pencil)] group-hover:scale-x-100",
-              )}
-              style={view === "verify" ? { background: "var(--nb-ink)" } : undefined}
-            />
+            {view === "verify" ? (
+              <GraphiteRule className="absolute bottom-[-2px] left-0 h-[6px] w-full text-[var(--nb-green)]" />
+            ) : (
+              <span
+                className={cn(
+                  "absolute bottom-[-1px] left-0 h-[2px] w-full scale-x-0 bg-[var(--nb-pencil)] transition-transform group-hover:scale-x-100",
+                )}
+              />
+            )}
           </button>
           <button
             type="button"
@@ -483,13 +490,15 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
           >
             <span className="micro-label">SHARE</span>
             <span className="text-[11px] italic text-muted-foreground">who else can see this?</span>
-            <span
-              className={cn(
-                "absolute bottom-[-1px] left-0 h-[2px] w-full transition-transform",
-                view === "share" ? "scale-x-100" : "scale-x-0 bg-[var(--nb-pencil)] group-hover:scale-x-100",
-              )}
-              style={view === "share" ? { background: "var(--nb-ink)" } : undefined}
-            />
+            {view === "share" ? (
+              <GraphiteRule className="absolute bottom-[-2px] left-0 h-[6px] w-full text-[var(--nb-green)]" />
+            ) : (
+              <span
+                className={cn(
+                  "absolute bottom-[-1px] left-0 h-[2px] w-full scale-x-0 bg-[var(--nb-pencil)] transition-transform group-hover:scale-x-100",
+                )}
+              />
+            )}
           </button>
         </div>
       </div>
@@ -604,10 +613,15 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
               ) : (
                 <div className="space-y-3">
                   {deliverables.map((item) => (
-                    <div key={item.id} className="rounded-lg border border-graphite bg-card p-5">
-                      <h3 className="text-base font-medium">{item.title}</h3>
-                      <p className="micro-label mt-2">{workIdentityLabel(item)}</p>
-                    </div>
+                    <WorkNote
+                      key={item.id}
+                      item={item}
+                      onOpen={() => {
+                        markOpenStart("peek.open");
+                        setPeekItem(item);
+                        if (rail === "closed") setRail("open");
+                      }}
+                    />
                   ))}
                 </div>
               )}
