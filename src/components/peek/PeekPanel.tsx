@@ -183,14 +183,16 @@ export function PeekBody({
           {vendor ? <Chip tone="accent">{vendorLabel(vendor)}</Chip> : null}
           {active.content_fidelity === "summary" ? <Chip>Summary</Chip> : null}
         </div>
-        <div className="mt-2 flex items-start gap-2.5">
-          <TypeIcon item={active} />
-          <h2 className="page-title flex min-w-0 flex-wrap items-center gap-1.5 break-words text-[19px] leading-snug">
-            <SourceMark item={active} size={15} />
-            <span className="min-w-0 break-words">{active.title}</span>
-            <ArtifactNote item={active} />
-          </h2>
-        </div>
+        {!analysesInHeader ? (
+          <div className="mt-2 flex items-start gap-2.5">
+            <TypeIcon item={active} />
+            <h2 className="page-title flex min-w-0 flex-wrap items-center gap-1.5 break-words text-[19px] leading-snug">
+              <SourceMark item={active} size={15} />
+              <span className="min-w-0 break-words">{active.title}</span>
+              <ArtifactNote item={active} />
+            </h2>
+          </div>
+        ) : null}
         {isBriefItem(active) ? (
           <p className="mt-2">
             <Chip tone="accent">The brief</Chip>
