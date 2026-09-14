@@ -17,7 +17,11 @@ export function WorkNote({
   dense = false,
   className = "",
 }: {
-  item: WorkItemRow;
+  // Callers join different relations: the board and Inbox carry
+  // work_item_tasks, Verify's deliverables do not. The type must say so.
+  item: Omit<WorkItemRow, "work_item_tasks"> & {
+    work_item_tasks?: WorkItemRow["work_item_tasks"];
+  };
   onOpen?: (() => void) | undefined;
   /** Rendered before the body, e.g. a drag handle. */
   lead?: React.ReactNode;
