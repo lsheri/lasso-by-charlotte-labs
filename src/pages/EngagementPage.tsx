@@ -32,6 +32,7 @@ import { EngagementBriefPanel } from "@/components/engagements/EngagementBriefPa
 import { EngagementStrip } from "@/components/engagements/EngagementStrip";
 import { EngagementStats } from "@/components/engagements/EngagementStats";
 import { EngagementAsk } from "@/components/engagements/InlineEngagementAsk";
+import { ContextCard } from "@/components/engagements/ContextCard";
 import { SharedWithSection } from "@/components/engagements/SharedWithSection";
 import { EngagementNote } from "@/components/engagements/EngagementNote";
 import { InviteDialog } from "@/components/invites/InviteDialog";
@@ -53,6 +54,9 @@ import { markOpenStart } from "@/lib/perf-timing";
 import { logEvent } from "@/lib/telemetry";
 import { supabase } from "@/integrations/supabase/client";
 import type { WorkItemRow } from "@/lib/work-types";
+import { sourceVendorKey } from "@/components/work/SourceMark";
+import { useVendorVisible } from "@/hooks/use-vendor-display";
+import { vendorLabel } from "@/lib/conversation-shared";
 
 type TaskWithWork = CanvasTask;
 const engagementRoute = getRouteApi("/_authenticated/engagements/$id");
@@ -206,6 +210,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
   const mappedItemCount = canvasItems.length;
   const deliverables = canvasItems.filter((item) => isDeliverableType(item.type));
   const isCoach = profile?.role === "coach";
+  const vendorVisible = useVendorVisible();
   const deliverablePresets = presetsForScope("deliverable", isCoach);
   const hasCalls = canvasItems.some((item) => item.type === "call");
 
@@ -214,6 +219,72 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
   const allTasks = tasksQuery.data ?? [];
   const wrapTask = allTasks.find((task) => task.is_wrap === true);
   const boardTasks = allTasks.filter((task) => task.is_wrap !== true);
+  const scopedItems = scopedTask
+    ? Array.from(
+        new Map(
+          (scopedTask.work_item_tasks ?? [])
+            .map((link) => link.work_items)
+            .filter((item): item is NonNullable<typeof item> => Boolean(item))
+            .map((item) => [item.id, item as unknown as WorkItemRow] as const),
+        ).values(),
+      )
+    : canvasItems;
+  const selectedItem = lensItem ?? peekItem;
+  const contextItems = selectedItem ? [selectedItem] : scopedItems;
+  const contextScope = selectedItem
+    ? isDeliverableType(selectedItem.type)
+      ? "deliverable"
+      : "thread"
+    : scopedTask
+      ? "deliverable"
+      : "engagement";
+  const contextTarget = selectedItem ?? scopedItems.find((item) => isDeliverableType(item.type));
+  const contextFacts = [
+    {
+      label: `${contextItems.length} ${contextItems.length === 1 ? "PIECE" : "PIECES"}`,
+    },
+    ...(contextScope !== "thread"
+      ? [
+          {
+            label: `${contextItems.filter((item) => isDeliverableType(item.type)).length} DELIVERABLES`,
+            muted: contextItems.every((item) => !isDeliverableType(item.type)),
+          },
+        ]
+      : []),
+  ];
+  const contextVendors = vendorVisible
+    ? Array.from(
+        new Set(
+          contextItems
+            .map((item) => sourceVendorKey(item))
+            .filter((key): key is string => Boolean(key)),
+        ),
+      ).map((key) => ({ key, label: vendorLabel(key), present: true }))
+    : [];
+  const contextActions =
+    view === "share"
+      ? []
+      : [
+          ...(profile?.role !== "coach"
+            ? [
+                {
+                  id: "ask",
+                  label: "ASK ↓",
+                  onSelect: () => {
+                    markOpenStart("ask_dock.open");
+                    setAskRailOpen(true);
+                  },
+                },
+              ]
+            : []),
+          ...(contextTarget
+            ? presetsForScope(contextScope, isCoach).map((preset) => ({
+                id: preset.id,
+                label: preset.label.toUpperCase(),
+                onSelect: () => openAnalysis(contextTarget, preset.id),
+              }))
+            : []),
+        ];
   const wrapItemCount = wrapTask
     ? new Set(
         (wrapTask.work_item_tasks ?? [])
@@ -292,7 +363,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
   return (
     <div>
       <header className="mb-8">
-        <div className="nb-sticky-head grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4">
+        <div className="nb-sticky-head relative">
           <div className="min-w-0">
             {/* Figma 36:1936 leads with a hand breadcrumb back to the pile, not a
                 mono identifier stamp. The code, client and term move onto the
@@ -316,18 +387,22 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
               <EngagementStats engagementId={engagement.id} tasks={tasksQuery.data ?? []} />
             </p>
           </div>
-          {profile && profile.role !== "coach" ? (
-            <button
-              type="button"
-              onClick={() => {
-                markOpenStart("ask_dock.open");
-                setAskRailOpen(true);
-              }}
-              className="hidden shrink-0 items-center gap-2.5 rounded-full border border-border px-[18px] py-2.5 font-mono text-[16px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground md:inline-flex"
-            >
-              <SpiderMark size={27} /> Ask Lasso
-            </button>
-          ) : null}
+          <div className="mt-4 min-[1100px]:absolute min-[1100px]:right-0 min-[1100px]:top-0 min-[1100px]:mt-0">
+            <ContextCard
+              eyebrow={view === "share" ? "GOING TO" : contextScope === "engagement" ? "WORKING FROM" : "ASKING ABOUT"}
+              title={selectedItem?.title ?? scopedTask?.name ?? engagementDisplayTitle(engagement)}
+              scopeLabel={
+                contextScope === "thread"
+                  ? "SCOPE · THREAD"
+                  : contextScope === "deliverable"
+                    ? "SCOPE · DELIVERABLE"
+                    : "SCOPE · ENGAGEMENT"
+              }
+              facts={contextFacts}
+              vendors={contextVendors}
+              actions={contextActions}
+            />
+          </div>
         </div>
 
         <CaptureCoverage
@@ -455,19 +530,6 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
           </button>
         </div>
       </div>
-      <p className="mb-2 max-w-4xl text-[13px] text-muted-foreground">
-        {view === "brief"
-          ? "What this engagement was asked to do, and what has been said about it."
-          : view === "work"
-            ? "Everything that exists here, and what fed what."
-            : view === "verify"
-              ? "What still rests on the model's word, and what nobody has confirmed."
-              : "Who can see this engagement, what they see, and what you have held back."}
-      </p>
-      <p className="micro-label mb-4">
-        SCOPE · {scopedTask ? scopedTask.name.toUpperCase() : "EVERYTHING IN THIS ENGAGEMENT"}
-      </p>
-
       {/* Figma 36:1936: the strip is a full-width band under the header. */}
       {profile && profile.role !== "coach" ? (
         <div className="mb-8">
