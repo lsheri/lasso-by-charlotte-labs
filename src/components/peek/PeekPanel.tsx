@@ -160,13 +160,7 @@ export function PeekBody({
     }
   }
 
-  if (!active) {
-    return (
-      <SlideOver open={open} onOpenChange={onOpenChange} title="Preview">
-        {null}
-      </SlideOver>
-    );
-  }
+  if (!active) return null;
 
   const format = peekFormat(active);
   const vendor = active.source_vendor ?? active.source_meta?.vendor ?? null;
@@ -176,12 +170,8 @@ export function PeekBody({
   const owned = canEdit && Boolean(viewerProfileId) && active.owner_id === viewerProfileId;
 
   return (
-    <SlideOver
-      open={open}
-      onOpenChange={onOpenChange}
-      title={active.title}
-      description="Work item preview"
-    >
+    <div className="flex min-h-0 flex-1 flex-col">
+
       <header className="shrink-0 border-b border-pencil px-4 pb-4 pt-[calc(1.5rem+env(safe-area-inset-top))] sm:px-6">
         <div className="flex flex-wrap items-center gap-1.5 pr-12">
           <TypeChip item={active} />
