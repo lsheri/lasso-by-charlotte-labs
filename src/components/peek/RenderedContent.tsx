@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import { Download, ExternalLink } from "lucide-react";
 import { useEffect, useState } from "react";
 
-import { PdfView } from "@/components/peek/PdfView";
 import { ReextractAction } from "@/components/peek/ReextractAction";
 import { highlight, toSafeHtml } from "@/lib/markdown";
 import { getWorkFileUrl } from "@/lib/work-files.functions";
@@ -78,7 +77,15 @@ function DrivePreview({
 
 
 /** Plain text for formats a browser cannot render. No layout, and it says so. */
-function TextPane({ item, canEdit }: { item: WorkItemRow; canEdit?: boolean | undefined }) {
+function TextPane({
+  item,
+  canEdit,
+  onDownload,
+}: {
+  item: WorkItemRow;
+  canEdit?: boolean | undefined;
+  onDownload?: (() => void) | undefined;
+}) {
   const fetchText = useServerFn(getItemTextPane);
   const query = useQuery({
     queryKey: ["item-text-pane", item.id],
@@ -96,6 +103,15 @@ function TextPane({ item, canEdit }: { item: WorkItemRow; canEdit?: boolean | un
           Lasso could not read this file&apos;s contents
           {pane?.note ? `: ${pane.note}.` : "."} You can still download the original.
         </Notice>
+        {onDownload ? (
+          <button
+            type="button"
+            onClick={onDownload}
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-accent-deep transition-opacity hover:opacity-70"
+          >
+            <Download className="h-3.5 w-3.5" aria-hidden /> Download
+          </button>
+        ) : null}
         {canEdit ? <ReextractAction workItemId={item.id} /> : null}
       </div>
     );
@@ -108,6 +124,17 @@ function TextPane({ item, canEdit }: { item: WorkItemRow; canEdit?: boolean | un
       <pre className="mt-2 max-h-[70vh] overflow-auto whitespace-pre-wrap rounded-[var(--radius)] border border-border bg-secondary px-4 py-3 text-[13px] leading-relaxed">
         {pane.text}
       </pre>
+      {onDownload ? (
+        <div className="mt-3">
+          <button
+            type="button"
+            onClick={onDownload}
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-accent-deep transition-opacity hover:opacity-70"
+          >
+            <Download className="h-3.5 w-3.5" aria-hidden /> Download
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -160,6 +187,24 @@ export function FallbackCard({
   );
 }
 
+function TextOrFallback({
+  item,
+  label,
+  onDownload,
+  canEdit,
+}: {
+  item: WorkItemRow;
+  label?: string | undefined;
+  onDownload: () => void;
+  canEdit?: boolean | undefined;
+}) {
+  const readStatus = textStatusOf(item.meta as never);
+  if (readStatus === "ok" || readStatus === "not_attempted") {
+    return <TextPane item={item} canEdit={canEdit} onDownload={onDownload} />;
+  }
+  return <FallbackCard item={item} label={label ?? ""} onDownload={onDownload} canEdit={canEdit} />;
+}
+
 export function RenderedContent({
   item,
   format,
@@ -175,9 +220,13 @@ export function RenderedContent({
   const wantsText = needsTextFetch(shape);
   const driveFileId = item.meta?.drive_file_id ?? null;
   // A Drive file is shown by Drive itself, so no signed storage URL is minted.
+  // PDFs are shown as extracted text, so they do not need a signed URL either.
   const urlQuery = useFileUrl(
     item,
-    !driveFileId && shape.kind !== "none" && shape.kind !== "unsupported",
+    !driveFileId &&
+      shape.kind !== "none" &&
+      shape.kind !== "unsupported" &&
+      shape.kind !== "pdf",
   );
   const [rendered, setRendered] = useState<string | null>(null);
   const [failed, setFailed] = useState<string | null>(null);
@@ -222,10 +271,11 @@ export function RenderedContent({
   if (shape.kind === "unsupported") {
     // Office and OpenDocument files cannot be rendered, but their text can be
     // read, and that text is what analysis sees.
-    if (readStatus === "ok" || readStatus === "not_attempted") {
-      return <TextPane item={item} canEdit={canEdit} />;
-    }
-    return <FallbackCard item={item} label={shape.label} onDownload={onDownload} canEdit={canEdit} />;
+    return <TextOrFallback item={item} label={shape.label} onDownload={onDownload} canEdit={canEdit} />;
+  }
+  // PDFs are shown as the extracted text Lasso read, not as a rendered page.
+  if (shape.kind === "pdf") {
+    return <TextOrFallback item={item} onDownload={onDownload} canEdit={canEdit} />;
   }
   if (urlQuery.isError) {
     return <Notice>{(urlQuery.error as Error).message}</Notice>;
@@ -241,10 +291,6 @@ export function RenderedContent({
       />
     );
   }
-
-  // A sandboxed frame can refuse the browser's built-in PDF viewer entirely,
-  // which is what left a grey broken-file box here. We render it ourselves.
-  if (shape.kind === "pdf") return <PdfView url={url} title={item.title} />;
 
   if (failed)
     return <FallbackCard item={item} label={failed} onDownload={onDownload} canEdit={canEdit} />;
