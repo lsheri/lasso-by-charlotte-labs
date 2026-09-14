@@ -889,17 +889,28 @@ export function WorkPage() {
       ) : all.length === 0 ? (
         <div className="mx-auto max-w-lg rounded-[var(--radius)] border border-border bg-card px-8 py-12 text-center shadow-card">
           <p className="text-sm text-foreground">Your work lands here.</p>
-          <div className="mt-6 flex flex-wrap justify-center gap-2">
-            <ConnectorBrowseActions />
-            <PasteThreadDialog trigger={<Button type="button">Paste a thread</Button>} />
-            <UploadFilesButton />
-            <TranscriptsAction />
-            <ImportFlowDialog
-              trigger={
-                <Button type="button" variant="outline">
-                  Import AI history
-                </Button>
-              }
+          <div className="mt-6 inline-block text-left">
+            <BringWorkInRow
+              unmappedCount={unmapped.length}
+              suggesting={suggesting}
+              onSuggest={() => void handleSuggest()}
+              isCoach={isCoach}
+              selectableCount={selectable.length}
+              selectMode={selectMode}
+              allChosen={allChosen}
+              chosenCount={chosen.size}
+              onToggleSelectAll={() => setChosen(allChosen ? new Set() : new Set(selectable))}
+              onBulkMap={() => {
+                const picked = all.filter((i) => chosen.has(i.id));
+                const head = picked[0];
+                if (!head) return;
+                setMapBulk(true);
+                setMapGroup(picked);
+                setMapItem(head);
+              }}
+              onRemove={() => setConfirmRemove(true)}
+              onDoneSelect={leaveSelectMode}
+              onEnterSelect={() => setSelectMode(true)}
             />
           </div>
         </div>
