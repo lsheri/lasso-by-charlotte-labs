@@ -173,6 +173,15 @@ export function AiRecordPage() {
     return () => query.removeEventListener("change", update);
   }, []);
 
+  useEffect(() => {
+    if (!selected) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") closeReader("escape");
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  });
+
   const threads = (work?.items ?? []).filter((i) => i.type === "ai_thread");
   // The id list is sorted before it becomes part of a key, so a reordered but
   // identical set of threads does not churn the cache and repaint the page.
