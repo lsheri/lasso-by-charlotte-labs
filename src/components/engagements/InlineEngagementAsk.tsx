@@ -1,11 +1,9 @@
 import { useEffect, useState } from "react";
-import { X } from "lucide-react";
 
 import { AskSheet } from "@/components/reflect/AskSheet";
 import { AskSurface } from "@/components/reflect/AskSurface";
 import { useAskDockState } from "@/components/reflect/ask-dock-state";
 import { useAskLasso } from "@/components/reflect/use-ask-lasso";
-import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { usePerfOpenFinish } from "@/hooks/use-perf-timer";
 
