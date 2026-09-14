@@ -24,7 +24,7 @@ import { BrandLogo } from "@/components/connectors/BrandLogo";
 import { SubjectsPanel } from "@/components/work/SubjectsPanel";
 import { ChatRow, chatWhen, fedPhrase } from "@/components/work/ChatRow";
 import { WorkNote } from "@/components/work/WorkNote";
-import { noteChatViewChangedFn } from "@/lib/chat-library.functions";
+import { noteChatViewChangedFn, noteReaderClosedFn } from "@/lib/chat-library.functions";
 import { useChatSearchSignal } from "@/hooks/use-chat-search-signal";
 import { useMotion } from "@/hooks/use-motion";
 import { useProfile } from "@/hooks/use-profile";
@@ -32,7 +32,7 @@ import { useWorkItems } from "@/hooks/use-work-items";
 import { supabase } from "@/integrations/supabase/client";
 import { effectiveWorkDate, type WorkItemRow } from "@/lib/work-types";
 import { SectionHeader } from "@/components/notebook/SectionHeader";
-import { NotebookSpider } from "@/components/notebook/NotebookSpider";
+import { GraphiteIcon } from "@/components/notebook/icons";
 import { ToneCard } from "@/components/notebook/ToneCard";
 import { vendorLabel } from "@/lib/conversation-shared";
 import { vendorFromSource, type ToolVendor } from "@/lib/work-taxonomy";
@@ -143,6 +143,7 @@ export function AiRecordPage() {
   const readingMotion = useMotion("record.reading");
   const pileMotion = useMotion("work.piles");
   const noteViewChanged = useServerFn(noteChatViewChangedFn);
+  const noteReaderClosed = useServerFn(noteReaderClosedFn);
 
   // Read after mount so the server and the first client render agree. Blocked
   // site data throws here, and a saved preference is never worth a broken page.
@@ -297,7 +298,7 @@ export function AiRecordPage() {
   });
 
   return (
-    <div className="nb-chatview">
+    <div className="nb-chatview" data-reader={selected ? "open" : "closed"}>
       <div className="nb-chatview-list">
       <PageHeader
         title="Chat"
