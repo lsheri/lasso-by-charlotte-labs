@@ -617,13 +617,34 @@ export function AiRecordPage() {
                           onOpen={() => openItem(item)}
                           chips={
                             <>
+                              {firstEngagement(item) ? (
+                                <span
+                                  className="font-mono text-[9px] uppercase tracking-[0.08em]"
+                                  style={{
+                                    color: `var(${engagementHue(firstEngagement(item)!.id)})`,
+                                  }}
+                                >
+                                  {firstEngagement(item)!.code}
+                                </span>
+                              ) : (
+                                <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">
+                                  UNMAPPED
+                                </span>
+                              )}
+                              {itemModel(item) ? (
+                                <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">
+                                  {itemModel(item)}
+                                </span>
+                              ) : null}
                               <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">
                                 {turnCounts?.[item.id] ?? 0}{" "}
                                 {(turnCounts?.[item.id] ?? 0) === 1 ? "turn" : "turns"}
                               </span>
-                              <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">
-                                {fedPhrase(fed?.[item.id] ?? [])}
-                              </span>
+                              {(fed?.[item.id] ?? []).length > 0 ? (
+                                <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-green">
+                                  {fedPhrase(fed?.[item.id] ?? [])}
+                                </span>
+                              ) : null}
                               <ChatUrlLink item={item} />
                               <button
                                 type="button"
