@@ -1,4 +1,5 @@
 import { VendorMark } from "@/components/work/SourceMark";
+import { engagementHue } from "@/lib/work-identity";
 import type { WorkItemRow } from "@/lib/work-types";
 
 /**
