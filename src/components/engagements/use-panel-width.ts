@@ -189,6 +189,7 @@ export function usePanelWidth(wrapperRef: React.RefObject<HTMLElement | null>, o
     dragging,
     maxWidth,
     handleProps: {
+      ref: gripRef,
       role: "separator" as const,
       "aria-orientation": "vertical" as const,
       "aria-label": "Resize the panel",
@@ -196,6 +197,14 @@ export function usePanelWidth(wrapperRef: React.RefObject<HTMLElement | null>, o
       "aria-valuemin": PANEL_MIN_WIDTH,
       "aria-valuemax": maxWidth,
       tabIndex: 0,
+      onKeyDown: (event: React.KeyboardEvent<HTMLElement>) => {
+        // The native listener does the work; this only stops the page scrolling
+        // if React sees the event first.
+        if (["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) {
+          event.preventDefault();
+        }
+      },
+
       onPointerDown,
       onPointerMove,
       onPointerUp,
