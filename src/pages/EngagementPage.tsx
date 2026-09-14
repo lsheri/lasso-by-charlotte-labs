@@ -283,6 +283,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
               }))
             : []),
         ];
+  const panelShowing = Boolean(lensItem) || Boolean(profile && profile.role !== "coach" && askOpen);
   const wrapItemCount = wrapTask
     ? new Set(
         (wrapTask.work_item_tasks ?? [])
@@ -408,7 +409,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
               facts={contextFacts}
               vendors={contextVendors}
               actions={contextActions}
-              panelOpen={askOpen || Boolean(lensItem)}
+              panelOpen={panelShowing}
               panelWide={rail === "wide"}
               onTogglePanelWidth={() => {
                 const next = rail === "wide" ? "open" : "wide";
