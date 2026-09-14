@@ -339,8 +339,8 @@ export function AiRecordPage() {
     <div className="nb-chatview" data-reader={selected ? "open" : "closed"}>
       <div className="nb-chatview-list">
       <PageHeader
-        title="Chat"
-        italicWord="library"
+        title="All AI"
+        italicWord="conversations"
         subtitle={subtitle}
         action={
           /* Figma 27:635 hangs one control off the title: the way a
