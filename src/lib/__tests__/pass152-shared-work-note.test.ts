@@ -10,7 +10,7 @@ describe("pass 152 · one work note", () => {
     expect(note).toContain("notePaper(item.id)");
     expect(note).toContain("noteHue(colourKey(");
     expect(note).toContain("workIdentityLabel(item)");
-    expect(note).toContain("sourceLabel(item.source)");
+    expect(note).not.toContain("sourceLabel(item.source)");
     expect(note).toContain("formatDate(effectiveWorkDate(item))");
   });
 
