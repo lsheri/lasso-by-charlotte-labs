@@ -91,7 +91,7 @@ export async function setWatch(
   const rest = config.folders.filter((f) => f.id !== args.folderId);
 
   if (!args.watch) {
-    await writeConfig(supabase, data.id, { folders: rest });
+    await writeConfig(supabase, data.id, { ...config, folders: rest });
     return { watched: false };
   }
 
@@ -103,7 +103,10 @@ export async function setWatch(
     last_checked_iso: new Date().toISOString(),
     last_seen_file_ids: baseline.slice(0, WATCH_SEEN_CAP),
   };
-  await writeConfig(supabase, data.id, { folders: [...rest, folder].slice(0, 25) });
+  await writeConfig(supabase, data.id, {
+    ...config,
+    folders: [...rest, folder].slice(0, 25),
+  });
   return { watched: true };
 }
 
@@ -176,7 +179,7 @@ export async function checkWatches(
       next.push({ ...folder, last_checked_iso: new Date().toISOString() });
     }
 
-    await writeConfig(supabase, account.id, { folders: next });
+    await writeConfig(supabase, account.id, { ...account.config, folders: next });
   }
 
   return { suggestions };
@@ -210,5 +213,5 @@ export async function dismissWatch(
         }
       : folder,
   );
-  await writeConfig(supabase, data.id, { folders });
+  await writeConfig(supabase, data.id, { ...config, folders });
 }

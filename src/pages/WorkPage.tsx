@@ -18,6 +18,7 @@ import { PasteThreadDialog } from "@/components/work/PasteThreadDialog";
 import { OpenFileAction } from "@/components/work/OpenFileAction";
 import { ConnectorBrowseActions } from "@/components/connectors/ConnectorBrowseActions";
 import { WatchSuggestionBanner } from "@/components/connectors/WatchSuggestionBanner";
+import { DocumentRecheck } from "@/components/connectors/DocumentRecheck";
 import { SuggestLegend } from "@/components/common/Suggested";
 import { SuggestionChip } from "@/components/work/SuggestionChip";
 import { colourKey, noteHue, notePaper } from "@/components/work/note-paper";
@@ -997,6 +998,7 @@ export function WorkPage() {
             </div>
           </div>
 
+          <DocumentRecheck />
           <WatchSuggestionBanner />
           {!isCoach && flagged.length > 0 ? (
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius)] border border-dashed border-border bg-secondary/50 px-4 py-3">
