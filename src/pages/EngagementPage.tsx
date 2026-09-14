@@ -362,7 +362,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
   return (
     <div>
       <header className="mb-8">
-        <div className="nb-sticky-head relative">
+        <div className="nb-sticky-head relative min-[1100px]:pr-[252px]">
           <div className="min-w-0">
             {/* Figma 36:1936 leads with a hand breadcrumb back to the pile, not a
                 mono identifier stamp. The code, client and term move onto the
