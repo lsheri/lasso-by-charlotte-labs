@@ -99,10 +99,15 @@ export function usePanelWidth(wrapperRef: React.RefObject<HTMLElement | null>, o
   useEffect(() => {
     const node = wrapperRef.current;
     if (!node || typeof ResizeObserver === "undefined") return;
-    const observer = new ResizeObserver(() => apply(widthRef.current));
+    const observer = new ResizeObserver(() => {
+      setMeasured(wrapperWidth());
+      apply(widthRef.current);
+    });
     observer.observe(node);
+    setMeasured(wrapperWidth());
     return () => observer.disconnect();
-  }, [apply, wrapperRef]);
+  }, [apply, wrapperRef, wrapperWidth]);
+
 
   useEffect(() => {
     const onResize = () => apply(widthRef.current);
