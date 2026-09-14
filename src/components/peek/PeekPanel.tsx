@@ -91,7 +91,7 @@ export function PeekPanel({
 }) {
   const entry = rest.entry;
   const items = entry ? entryItems(entry) : [];
-  const active = items[0] ?? null;
+  const active = (focusId ? items.find((i) => i.id === focusId) : undefined) ?? items[0] ?? null;
   if (!active) {
     return (
       <SlideOver open={open} onOpenChange={onOpenChange} title="Preview">
@@ -107,7 +107,8 @@ export function PeekPanel({
       description="Work item preview"
     >
       <PeekBody {...rest} onClose={() => onOpenChange(false)} />
-    </div>
+    </SlideOver>
+
   );
 }
 
