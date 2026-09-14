@@ -125,6 +125,7 @@ export function PeekBody({
   onAnalyse,
   engagementId,
   viewerProfileId,
+  analysesInHeader,
   onClose,
 }: PeekBodyProps) {
   const fetchUrl = useServerFn(getWorkFileUrl);
