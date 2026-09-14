@@ -718,7 +718,20 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
         </div>
 
       </div>
-        </div>
+
+      <CaptureCoverage
+        profileId={profile?.id}
+        itemCount={mappedItemCount}
+        scopeLabel="this engagement"
+        isOwner={profile?.role !== "coach"}
+      />
+      <SubjectCoachingSection
+        profileId={profile?.id}
+        engagementId={engagementId}
+        orgId={profile?.org_id}
+      />
+
+    </div>
 
         <aside className="nb-bench-aside">
           <div className="nb-bench-aside-inner">
@@ -790,12 +803,6 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
         </aside>
       </div>
 
-      <CaptureCoverage
-        profileId={profile?.id}
-        itemCount={mappedItemCount}
-        scopeLabel="this engagement"
-        isOwner={profile?.role !== "coach"}
-      />
 
       <PeekPanel
         entry={peekItem}
@@ -870,11 +877,6 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
         />
       ) : null}
 
-      <SubjectCoachingSection
-        profileId={profile?.id}
-        engagementId={engagementId}
-        orgId={profile?.org_id}
-      />
 
       {profile && profile.role !== "coach" ? (
         <OneOnOneBrief
