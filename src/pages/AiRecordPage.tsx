@@ -22,7 +22,9 @@ import { PasteThreadDialog } from "@/components/work/PasteThreadDialog";
 import { Button } from "@/components/ui/button";
 import { BrandLogo } from "@/components/connectors/BrandLogo";
 import { SubjectsPanel } from "@/components/work/SubjectsPanel";
-import { ChatRow, chatWhen } from "@/components/work/ChatRow";
+import { ChatRow, chatWhen, fedPhrase } from "@/components/work/ChatRow";
+import { WorkNote } from "@/components/work/WorkNote";
+import { noteChatViewChangedFn } from "@/lib/chat-library.functions";
 import { useChatSearchSignal } from "@/hooks/use-chat-search-signal";
 import { useMotion } from "@/hooks/use-motion";
 import { useProfile } from "@/hooks/use-profile";
@@ -137,7 +139,31 @@ export function AiRecordPage() {
   const [query, setQuery] = useState("");
   const [showSubjects, setShowSubjects] = useState(false);
   const [tool, setTool] = useState<ToolVendor | "all">("all");
+  const [view, setView] = useState<"cards" | "list">("cards");
   const readingMotion = useMotion("record.reading");
+  const pileMotion = useMotion("work.piles");
+  const noteViewChanged = useServerFn(noteChatViewChangedFn);
+
+  // Read after mount so the server and the first client render agree. Blocked
+  // site data throws here, and a saved preference is never worth a broken page.
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem("lasso.chatlib.view");
+      if (saved === "cards" || saved === "list") setView(saved);
+    } catch {
+      // Stay on cards.
+    }
+  }, []);
+
+  function chooseView(next: "cards" | "list") {
+    setView(next);
+    try {
+      window.localStorage.setItem("lasso.chatlib.view", next);
+    } catch {
+      // The choice still holds for this visit.
+    }
+    void noteViewChanged({ data: { view: next } }).catch(() => {});
+  }
 
   useEffect(() => {
     const query = window.matchMedia("(min-width: 1100px)");
@@ -181,6 +207,18 @@ export function AiRecordPage() {
     .filter(Boolean)
     .join(" · ");
   const searchSignal = useChatSearchSignal(query, shown.length);
+
+  /** One open path, shared by the list and the cards so they cannot drift. */
+  function openItem(item: WorkItemRow) {
+    searchSignal.onResultOpened();
+    markOpenStart("peek.open");
+    if (desktopReader) {
+      setSelected(item);
+      setPeek(null);
+    } else {
+      setPeek({ entry: item });
+    }
+  }
 
   async function download(item: WorkItemRow) {
     try {
@@ -288,7 +326,7 @@ export function AiRecordPage() {
       ) : null}
 
       {threads.length > 0 ? (
-        <div className="mb-6 flex flex-wrap gap-2">
+        <div className="mb-6 flex flex-wrap items-center gap-2">
           {(["all", ...toolsPresent] as const).map((option) => {
             const on = tool === option;
             return (
@@ -318,6 +356,27 @@ export function AiRecordPage() {
               </button>
             );
           })}
+          <span
+            role="group"
+            aria-label="How conversations are shown"
+            className="ml-auto inline-flex items-center rounded-full border border-[var(--nb-rule)] bg-card p-0.5"
+          >
+            {(["cards", "list"] as const).map((option) => (
+              <button
+                key={option}
+                type="button"
+                aria-pressed={view === option}
+                onClick={() => chooseView(option)}
+                className={`rounded-full px-3 py-1 font-mono text-[10px] uppercase tracking-[0.08em] transition-colors ${
+                  view === option
+                    ? "bg-[var(--nb-ink)] text-[var(--nb-white)]"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {option === "cards" ? "Cards" : "List"}
+              </button>
+            ))}
+          </span>
         </div>
       ) : null}
 
@@ -418,6 +477,52 @@ export function AiRecordPage() {
                 {/* Figma 27:635 draws these as a hairline-ruled list, not a
                     stack of bordered cards. Same handlers, same actions: they
                     move onto hover, focus and touch instead of sitting open. */}
+                {view === "cards" ? (
+                  <div
+                    key={`cards:${view}`}
+                    className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6"
+                  >
+                    {group.items.map((item, index) => (
+                      <span
+                        key={`${group.key}:${item.id}`}
+                        className={pileMotion.className ? "block nb-sticky-wave" : "block"}
+                        style={
+                          {
+                            "--nb-wave-delay": `${Math.min(index, 23) * 26}ms`,
+                          } as React.CSSProperties
+                        }
+                      >
+                        <WorkNote
+                          item={item}
+                          dense
+                          onOpen={() => openItem(item)}
+                          chips={
+                            <>
+                              <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">
+                                {turnCounts?.[item.id] ?? 0}{" "}
+                                {(turnCounts?.[item.id] ?? 0) === 1 ? "turn" : "turns"}
+                              </span>
+                              <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">
+                                {fedPhrase(fed?.[item.id] ?? [])}
+                              </span>
+                              <ChatUrlLink item={item} />
+                              <button
+                                type="button"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  setLensItem(item);
+                                }}
+                                className="text-[10px] font-medium text-accent-deep"
+                              >
+                                Analyse
+                              </button>
+                            </>
+                          }
+                        />
+                      </span>
+                    ))}
+                  </div>
+                ) : (
                 <div className="border-t border-[var(--nb-rule)]">
                   {group.items.map((item) => (
                     <div
@@ -434,16 +539,7 @@ export function AiRecordPage() {
                         turns={turnCounts?.[item.id] ?? 0}
                         fed={fed?.[item.id] ?? []}
                         when={chatWhen(item.captured_at)}
-                        onOpen={() => {
-                          searchSignal.onResultOpened();
-                          markOpenStart("peek.open");
-                          if (desktopReader) {
-                            setSelected(item);
-                            setPeek(null);
-                          } else {
-                            setPeek({ entry: item });
-                          }
-                        }}
+                        onOpen={() => openItem(item)}
                         actions={
                           <>
                             <button
@@ -463,6 +559,7 @@ export function AiRecordPage() {
                     </div>
                   ))}
                 </div>
+                )}
               </section>
             );
           })}
