@@ -153,7 +153,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
   }, [profile, work]);
 
   // Open the Ask rail by default on desktop, but only on the client and only
-  // after hydration. 1100px matches the .nb-bench-grid[data-rail="open"] media
+  // after hydration. 1100px matches the .nb-bench-page[data-rail="open"] media
   // query. Use setRail directly so this default does NOT fire the tracked
   // engagement.ask_rail_toggled event — that event is reserved for a person's
   // explicit open/collapse choice.
