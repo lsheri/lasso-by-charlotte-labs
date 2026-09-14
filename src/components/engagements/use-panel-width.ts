@@ -83,18 +83,29 @@ export function usePanelWidth(wrapperRef: React.RefObject<HTMLElement | null>, o
     [wrapperWidth],
   );
 
-  // Restore on mount, clamped to this screen.
+  // Restore on mount. The wrapper often has no real width yet, so this may be
+  // left unclamped on purpose and is re-clamped by the observer below.
   useEffect(() => {
     const stored = readStored();
     if (stored !== null) apply(stored);
   }, [apply]);
 
-  // A panel sized on a wide screen must not exceed the maximum on a narrow one.
+  // The first real measurement, and every later one, decides the ceiling. A
+  // panel sized on a wide screen must not exceed the maximum on a narrow one.
+  useEffect(() => {
+    const node = wrapperRef.current;
+    if (!node || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(() => apply(widthRef.current));
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [apply, wrapperRef]);
+
   useEffect(() => {
     const onResize = () => apply(widthRef.current);
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
   }, [apply]);
+
 
   const endDrag = useCallback(() => {
     if (!dragRef.current) return;
