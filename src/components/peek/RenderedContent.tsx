@@ -77,7 +77,15 @@ function DrivePreview({
 
 
 /** Plain text for formats a browser cannot render. No layout, and it says so. */
-function TextPane({ item, canEdit }: { item: WorkItemRow; canEdit?: boolean | undefined }) {
+function TextPane({
+  item,
+  canEdit,
+  onDownload,
+}: {
+  item: WorkItemRow;
+  canEdit?: boolean | undefined;
+  onDownload?: (() => void) | undefined;
+}) {
   const fetchText = useServerFn(getItemTextPane);
   const query = useQuery({
     queryKey: ["item-text-pane", item.id],
@@ -95,6 +103,15 @@ function TextPane({ item, canEdit }: { item: WorkItemRow; canEdit?: boolean | un
           Lasso could not read this file&apos;s contents
           {pane?.note ? `: ${pane.note}.` : "."} You can still download the original.
         </Notice>
+        {onDownload ? (
+          <button
+            type="button"
+            onClick={onDownload}
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-accent-deep transition-opacity hover:opacity-70"
+          >
+            <Download className="h-3.5 w-3.5" aria-hidden /> Download
+          </button>
+        ) : null}
         {canEdit ? <ReextractAction workItemId={item.id} /> : null}
       </div>
     );
@@ -107,6 +124,17 @@ function TextPane({ item, canEdit }: { item: WorkItemRow; canEdit?: boolean | un
       <pre className="mt-2 max-h-[70vh] overflow-auto whitespace-pre-wrap rounded-[var(--radius)] border border-border bg-secondary px-4 py-3 text-[13px] leading-relaxed">
         {pane.text}
       </pre>
+      {onDownload ? (
+        <div className="mt-3">
+          <button
+            type="button"
+            onClick={onDownload}
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-accent-deep transition-opacity hover:opacity-70"
+          >
+            <Download className="h-3.5 w-3.5" aria-hidden /> Download
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 }
