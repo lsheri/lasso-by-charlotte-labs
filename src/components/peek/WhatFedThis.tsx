@@ -201,14 +201,14 @@ export function WhatFedThis({
   const findButton = canEdit ? (
     <Button type="button" disabled={busy} onClick={() => void find()}>
       <Sparkle className="mr-2 h-4 w-4" aria-hidden />
-      {busy ? <WorkingLabel>Reading this engagement</WorkingLabel> : "Find what fed this"}
+      {busy ? <WorkingLabel>Reading this engagement</WorkingLabel> : "Find what this came from"}
     </Button>
   ) : null;
 
   return (
     <section className="mt-8 border-t border-pencil pt-4">
       <h3 className="micro-label micro-label-ai relative inline-flex items-center gap-2">
-        What fed this
+        What this came from
         {strike.shown ? <DrawnStrike key={strike.markKey} /> : null}
         {check.shown ? <DrawnCheck key={check.markKey} size={16} /> : null}
       </h3>
