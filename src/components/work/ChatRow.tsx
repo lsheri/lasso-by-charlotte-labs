@@ -30,18 +30,9 @@ export function ChatRow({
   onOpen: () => void;
   actions?: React.ReactNode;
 }) {
-  // "fed the model" in the frame. Only said when a link is confirmed; a
-  // conversation that has fed nothing says so rather than staying silent.
-  const fedPhrase =
-    fed.length === 0
-      ? "fed nothing yet"
-      : fed.length === 1
-        ? `fed ${fed[0]}`
-        : `fed ${fed.length} pieces`;
-
   const stamp = [
     <VendorMark key="vendor" item={item} />,
-    ` · ${turns} ${turns === 1 ? "turn" : "turns"} · ${fedPhrase}`,
+    ` · ${turns} ${turns === 1 ? "turn" : "turns"} · ${fedPhrase(fed)}`,
   ];
 
   return (
@@ -95,4 +86,15 @@ export function chatWhen(value: string | null | undefined): string {
   if (hours < 24) return `${hours}h ago`;
   const day = String(d.getDate()).padStart(2, "0");
   return `${day} ${d.toLocaleString("en-US", { month: "short" }).toUpperCase()}`;
+}
+
+/**
+ * "fed the model" in the frame. Only said when a link is confirmed; a
+ * conversation that has fed nothing says so rather than staying silent. One
+ * wording, shared by the row and the card.
+ */
+export function fedPhrase(fed: string[]): string {
+  if (fed.length === 0) return "fed nothing yet";
+  if (fed.length === 1) return `fed ${fed[0]}`;
+  return `fed ${fed.length} pieces`;
 }

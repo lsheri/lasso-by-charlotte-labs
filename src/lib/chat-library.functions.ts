@@ -75,3 +75,35 @@ export const noteChatSearchFn = createServerFn({ method: "POST" })
     });
     return { ok: true };
   });
+
+
+/**
+ * Pass 159: how the chat library is shown, cards or list. Closed vocabulary in
+ * dims, nothing else travels. Never surfaced on failure.
+ */
+export const noteChatViewChangedFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { view: string }) => ({
+    view: input?.view === "cards" || input?.view === "list" ? input.view : "",
+  }))
+  .handler(async ({ data, context }): Promise<{ ok: true }> => {
+    if (!data.view) return { ok: true };
+    const { supabase, userId } = context;
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("id, org_id")
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (!profile) return { ok: true };
+
+    const { recordEvent } = await import("./telemetry.server");
+    await recordEvent(supabase, {
+      eventType: "chatlib.view_changed",
+      orgId: profile.org_id,
+      userId,
+      profileId: profile.id,
+      dims: { view: data.view },
+    });
+    return { ok: true };
+  });
