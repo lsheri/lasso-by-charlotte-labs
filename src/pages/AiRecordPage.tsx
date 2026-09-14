@@ -679,6 +679,8 @@ export function AiRecordPage() {
                         turns={turnCounts?.[item.id] ?? 0}
                         fed={fed?.[item.id] ?? []}
                         when={chatWhen(item.captured_at)}
+                        engagement={firstEngagement(item)}
+                        model={itemModel(item)}
                         onOpen={() => openItem(item)}
                         actions={
                           <>
