@@ -236,7 +236,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
         ).values(),
       )
     : canvasItems;
-  const selectedItem = lensItem ?? peekItem;
+  const selectedItem = peekItem ?? lensItem;
   const contextItems = selectedItem ? [selectedItem] : scopedItems;
   const contextScope = selectedItem
     ? isDeliverableType(selectedItem.type)
@@ -292,6 +292,25 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
               }))
             : []),
         ];
+  // One panel, one content: the document wins, then the analysis, then Ask.
+  const panelContent: "ask" | "analysis" | "document" | "thread" = peekItem
+    ? isDeliverableType(peekItem.type)
+      ? "document"
+      : "thread"
+    : lensItem
+      ? "analysis"
+      : "ask";
+  const previousPanelContentRef = useRef(panelContent);
+  useEffect(() => {
+    if (previousPanelContentRef.current === panelContent) return;
+    previousPanelContentRef.current = panelContent;
+    if (!profile) return;
+    logEvent("engagement.panel_content_changed", profile.org_id, {
+      content: panelContent,
+      scope: contextScope,
+    });
+  }, [contextScope, panelContent, profile]);
+
   const panelShowing =
     Boolean(peekItem) ||
     Boolean(lensItem) ||
