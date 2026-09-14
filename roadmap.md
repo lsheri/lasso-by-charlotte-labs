@@ -30,3 +30,4 @@
 - [x] Make the engagement panel widths fixed at 236, 380, and 570 with a labelled width control
 - [x] Keep custom vendor marks above their paper discs and centre the map action label
 - [x] Use one shared work note across the Inbox, overview, and engagement board
+- [x] Show only the work type on the shared note's third line, removing duplicate source/date
