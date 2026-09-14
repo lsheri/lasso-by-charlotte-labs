@@ -60,6 +60,7 @@ export function PeekActionBar({
   canEdit,
   owned,
   engagementId,
+  analysesInHeader,
   onMap,
   onWorkDate,
   onMakePrivate,
@@ -75,6 +76,7 @@ export function PeekActionBar({
   canEdit: boolean;
   owned: boolean;
   engagementId?: string | undefined;
+  analysesInHeader?: boolean | undefined;
   onMap?: ((item: WorkItemRow, group?: WorkItemRow[]) => void) | undefined;
   onWorkDate?: ((item: WorkItemRow) => void) | undefined;
   onMakePrivate?: ((item: WorkItemRow) => void) | undefined;
