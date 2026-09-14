@@ -288,9 +288,10 @@ export function RenderedContent({
     );
   }
 
-  // A sandboxed frame can refuse the browser's built-in PDF viewer entirely,
-  // which is what left a grey broken-file box here. We render it ourselves.
-  if (shape.kind === "pdf") return <PdfView url={url} title={item.title} />;
+  // PDFs are shown as the extracted text Lasso read, not as a rendered page.
+  if (shape.kind === "pdf") {
+    return <TextOrFallback item={item} label={shape.label} onDownload={onDownload} canEdit={canEdit} />;
+  }
 
   if (failed)
     return <FallbackCard item={item} label={failed} onDownload={onDownload} canEdit={canEdit} />;
