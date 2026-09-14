@@ -59,61 +59,52 @@ const MONTHS = [
   "December",
 ];
 
-/** The span in plain words. Dates are identifiers here, never a trend. */
-function span(items: WorkItemRow[]): string {
-  const dates = items
-    .map((i) => new Date(effectiveWorkDate(i)))
-    .filter((d) => !Number.isNaN(d.getTime()))
-    .sort((a, b) => a.getTime() - b.getTime());
-  const first = dates[0];
-  const last = dates[dates.length - 1];
-  if (!first || !last) return "";
-  const label = (d: Date) =>
-    d.getFullYear() === new Date().getFullYear()
-      ? MONTHS[d.getMonth()]!
-      : `${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
-  return label(first) === label(last) ? label(first) : `${label(first)} to ${label(last)}`;
-}
-
-function groupItems(items: WorkItemRow[]): Group[] {
-  const groups = new Map<string, Group>();
-  const unmapped: WorkItemRow[] = [];
-
+/** Newest month first, newest item first inside it. Dates identify, they never trend. */
+function groupByMonth(items: WorkItemRow[]): MonthGroup[] {
+  const buckets = new Map<string, MonthGroup>();
+  const undated: WorkItemRow[] = [];
   for (const item of items) {
-    const engagements = item.work_item_tasks
-      .map((m) => m.tasks?.engagements)
-      .filter((e): e is { id: string; code: string; title: string } => Boolean(e));
-    if (engagements.length === 0) {
-      unmapped.push(item);
+    const at = new Date(effectiveWorkDate(item));
+    if (Number.isNaN(at.getTime())) {
+      undated.push(item);
       continue;
     }
-    for (const engagement of engagements) {
-      const group = groups.get(engagement.id) ?? {
-        key: engagement.id,
-        code: engagement.code,
-        title: engagement.title,
-        engagementId: engagement.id,
-        items: [],
-        latest: 0,
-      };
-      if (!group.items.some((i) => i.id === item.id)) group.items.push(item);
-      group.latest = Math.max(group.latest, new Date(effectiveWorkDate(item)).getTime() || 0);
-      groups.set(engagement.id, group);
-    }
+    const key = `${at.getFullYear()}-${String(at.getMonth()).padStart(2, "0")}`;
+    const label =
+      at.getFullYear() === new Date().getFullYear()
+        ? MONTHS[at.getMonth()]!
+        : `${MONTHS[at.getMonth()]} ${at.getFullYear()}`;
+    const bucket = buckets.get(key) ?? { key, label, items: [] };
+    bucket.items.push(item);
+    buckets.set(key, bucket);
   }
-
-  const ordered = Array.from(groups.values()).sort((a, b) => b.latest - a.latest);
-  if (unmapped.length > 0) {
-    ordered.push({
-      key: "unmapped",
-      code: null,
-      title: "Unmapped, private to you",
-      engagementId: null,
-      items: unmapped,
-      latest: 0,
-    });
+  const ordered = Array.from(buckets.values()).sort((a, b) => (a.key < b.key ? 1 : -1));
+  for (const bucket of ordered) {
+    bucket.items.sort(
+      (a, b) => new Date(effectiveWorkDate(b)).getTime() - new Date(effectiveWorkDate(a)).getTime(),
+    );
   }
+  if (undated.length > 0)
+    ordered.push({ key: "undated", label: "No date recorded", items: undated });
   return ordered;
+}
+
+/** The first engagement a conversation is mapped into, if any. */
+function firstEngagement(item: WorkItemRow): { id: string; code: string; title: string } | null {
+  return item.work_item_tasks?.[0]?.tasks?.engagements ?? null;
+}
+
+/** Every engagement a conversation is mapped into. */
+function itemEngagements(item: WorkItemRow): { id: string; code: string; title: string }[] {
+  return (item.work_item_tasks ?? [])
+    .map((m) => m.tasks?.engagements)
+    .filter((e): e is { id: string; code: string; title: string } => Boolean(e));
+}
+
+/** The model that answered, when the source kept one. */
+function itemModel(item: WorkItemRow): string | null {
+  const meta = item.source_meta as { model?: unknown } | null;
+  return typeof meta?.model === "string" ? meta.model : null;
 }
 
 /**
