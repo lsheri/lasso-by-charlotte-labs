@@ -3042,15 +3042,57 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   gap: 32px;
   transition: grid-template-columns var(--nb-dur-move) var(--nb-ease);
 }
+.nb-bench-page {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: 32px;
+  transition: grid-template-columns var(--nb-dur-move) var(--nb-ease);
+}
+.nb-bench-main { min-width: 0; }
 @media (min-width: 1100px) {
-  .nb-bench-grid[data-rail="open"] { grid-template-columns: minmax(0, 1fr) 380px; }
-  .nb-bench-grid[data-rail="wide"] { grid-template-columns: minmax(0, 1fr) minmax(520px, 46%); }
+  /* Closed: the card hangs in the top right corner and the work below it runs
+     the full width. The aside is out of flow, so only the title row makes room
+     for it, which is what the corner-card design asks for. */
+  .nb-bench-page[data-rail="closed"] > .nb-bench-aside {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 236px;
+    height: 100%;
+    z-index: 10;
+  }
+  .nb-bench-page[data-rail="closed"] > .nb-bench-main > * > .nb-sticky-head {
+    padding-right: 252px;
+  }
+
+  /* Open: the aside becomes a real column and the work squeezes to fit. */
+  .nb-bench-page[data-rail="open"] { grid-template-columns: minmax(0, 1fr) 380px; }
+  .nb-bench-page[data-rail="wide"] { grid-template-columns: minmax(0, 1fr) minmax(520px, 46%); }
+
+  /* The aside is full height so the sticky inner box has room to travel the
+     whole page. This is the fix for the card leaving the screen: sticky can
+     only move inside its parent's box, and the old parent was a 130px header. */
+  .nb-bench-aside { height: 100%; min-width: 0; }
+  .nb-bench-aside-inner {
+    position: sticky;
+    top: 16px;
+    max-height: calc(100vh - 32px);
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+}
+@media (max-width: 1099px) {
+  .nb-bench-aside-inner { position: static; max-height: none; display: block; }
+  .nb-bench-aside { margin-top: 1rem; }
 }
 .nb-bench-rail {
-  position: sticky;
-  top: 88px;
-  max-height: calc(100vh - 112px);
   min-width: 0;
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
 }
