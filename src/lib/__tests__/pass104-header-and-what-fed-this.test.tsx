@@ -71,11 +71,10 @@ describe("pass 104 · brief panel in the Brief view", () => {
   it("renders the brief as a bordered form panel inside the Brief view", () => {
     const brief = page.indexOf("<EngagementBriefPanel");
     const briefView = page.indexOf('view === "brief"');
-    const coaching = page.indexOf('title="Coaching and sharing"');
     expect(brief).toBeGreaterThan(-1);
     expect(briefView).toBeGreaterThan(-1);
     expect(brief).toBeGreaterThan(briefView);
-    expect(coaching).toBeGreaterThan(-1);
+    expect(page).not.toContain('title="Coaching and sharing"');
     expect(panel).toContain("border border-border bg-card");
     expect(panel).not.toContain("EngagementNote");
     expect(panel).toContain("No brief yet");

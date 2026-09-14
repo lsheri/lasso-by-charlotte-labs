@@ -21,5 +21,8 @@
 - [ ] Restyle the join and no-access entry screens while preserving every state, control, and event
 - [ ] Correct the four shared sidebar visual tokens without changing navigation logic or controls
 - [x] Complete `/work` design port pass 2 exactly as specified
-- [ ] Keep the engagement notecard above the translucent page header in both rail states
-- [ ] Present Ask messages as one borderless conversation while preserving every existing control and state
+- [x] Keep the engagement notecard above the translucent page header in both rail states
+- [x] Present Ask messages as one borderless conversation while preserving every existing control and state
+- [x] Remove duplicate engagement header surfaces and move work import guidance to Inbox
+- [x] Offer one scope-valid analysis per engagement tab and record notecard opens
+- [x] Make the notecard analysis primary and add the reduced-motion Ask nudge

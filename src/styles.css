@@ -3104,6 +3104,18 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   display: flex;
   flex-direction: column;
 }
+@keyframes nb-nudge {
+  0%, 88%, 100% { transform: translateY(0); }
+  92% { transform: translateY(2px); }
+  96% { transform: translateY(0); }
+}
+.nb-ask-arrow {
+  display: inline-block;
+  animation: nb-nudge 4s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .nb-ask-arrow { animation: none; }
+}
 .nb-chatview {
   display: grid;
   grid-template-columns: minmax(0, 1fr);

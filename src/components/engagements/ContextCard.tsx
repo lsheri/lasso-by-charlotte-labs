@@ -120,14 +120,28 @@ export function ContextCard({
           <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1.5 border-t border-[var(--nb-rule)] pt-2.5 min-[1100px]:flex-col min-[1100px]:items-start">
             <div className="flex flex-wrap gap-x-3 gap-y-1.5 min-[1100px]:flex-col min-[1100px]:items-start">
               {actions.map((action) => (
-                <button
-                  key={action.id}
-                  type="button"
-                  onClick={action.onSelect}
-                  className="micro-label text-left text-[var(--nb-pencil)] hover:text-foreground"
-                >
-                  {action.label}
-                </button>
+                action.id === "ask" ? (
+                  <button
+                    key={action.id}
+                    type="button"
+                    onClick={action.onSelect}
+                    className="micro-label inline-flex items-center gap-1 rounded-full border border-[var(--nb-green)] px-3 py-1.5 text-left text-[var(--nb-green)] transition-colors hover:bg-[var(--nb-green-wash)]"
+                  >
+                    <span>ASK</span>
+                    <span className="nb-ask-arrow" aria-hidden="true">
+                      ↓
+                    </span>
+                  </button>
+                ) : (
+                  <button
+                    key={action.id}
+                    type="button"
+                    onClick={action.onSelect}
+                    className="micro-label rounded-full bg-[var(--nb-green)] px-3 py-1.5 text-left text-[var(--nb-white)] transition-opacity hover:opacity-90"
+                  >
+                    {action.label}
+                  </button>
+                )
               ))}
             </div>
             {panelOpen && onClosePanel ? (

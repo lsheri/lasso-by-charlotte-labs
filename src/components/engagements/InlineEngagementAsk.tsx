@@ -14,7 +14,6 @@ const SUGGESTIONS = [
 ];
 
 function InlineAsk(props: {
-  expanded: boolean;
   engagementId: string;
   engagementTitle: string;
   profileId: string;
@@ -24,7 +23,6 @@ function InlineAsk(props: {
   onOpenChange: (open: boolean) => void;
 }) {
   const {
-    expanded,
     engagementId,
     engagementTitle,
     profileId,
@@ -46,7 +44,7 @@ function InlineAsk(props: {
   }, [ask.messages?.length, onConversationStart]);
 
   const suggestions =
-    expanded && (ask.messages?.length ?? 0) === 0 ? (
+    (ask.messages?.length ?? 0) === 0 ? (
       <div className="flex flex-wrap gap-2 px-4 py-3">
         {SUGGESTIONS.map((suggestion) => (
           <Button
@@ -93,7 +91,6 @@ function InlineAsk(props: {
 export function EngagementAsk(props: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  expanded: boolean;
   onConversationStart: () => void;
   engagementId: string;
   engagementTitle: string;

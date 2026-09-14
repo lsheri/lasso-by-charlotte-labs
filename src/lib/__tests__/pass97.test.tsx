@@ -155,14 +155,16 @@ describe("pass 97 — connect to work", () => {
     expect(defaultStream("e1", ["a", "c"])).toBe("a");
   });
 
-  it("maps through workflow-order and is gated to members", () => {
+  it("maps through workflow-order while the engagement points to the Inbox", () => {
     const sheet = readFileSync("src/components/engagements/ConnectToWorkSheet.tsx", "utf8");
     expect(sheet).toContain('from "@/lib/workflow-order"');
     expect(sheet).toContain("remapItems(");
     expect(sheet).not.toContain("work_item_tasks");
 
     const page = readFileSync("src/pages/EngagementPage.tsx", "utf8");
-    expect(page).toContain("ConnectToWorkSheet");
+    expect(page).not.toContain("ConnectToWorkSheet");
+    expect(page).toContain("Bring more work in from");
+    expect(page).toContain("the Inbox");
     expect(page).toContain('profile.role !== "coach"');
     expect(page).toContain("membership.data?.isMember");
   });

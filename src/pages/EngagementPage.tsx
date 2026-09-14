@@ -4,11 +4,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { GraphiteRule } from "@/components/notebook/marks";
 import { PeekBody } from "@/components/peek/PeekPanel";
-import {
-  analysisPreset,
-  presetsForScope,
-  type AnalysisPresetId,
-} from "@/lib/analysis-presets";
+import { presetsForScope, type AnalysisPresetId } from "@/lib/analysis-presets";
 import { MapDialog } from "@/components/work/MapDialog";
 import { WorkDateDialog } from "@/components/work/WorkDateDialog";
 import { AnalysisLensPanel } from "@/components/reflect/AnalysisLens";
@@ -19,21 +15,16 @@ import {
 } from "@/components/verify/ThreadAnalysisLauncher";
 import { isDeliverableType } from "@/lib/lineage-shared";
 import { useMakePrivate } from "@/hooks/use-make-private";
-import { OneOnOneBrief } from "@/components/oneonone/OneOnOneBrief";
 import { CaptureCoverage } from "@/components/common/CaptureCoverage";
 import { EngagementCanvas, type CanvasTask } from "@/components/engagements/EngagementCanvas";
 import { WorkLedger } from "@/components/engagements/WorkLedger";
-import { ConnectToWorkSheet } from "@/components/engagements/ConnectToWorkSheet";
 
 import { CanvasDeliverableActions } from "@/components/engagements/CanvasDeliverableActions";
 import { EngagementBriefPanel } from "@/components/engagements/EngagementBriefPanel";
-import { EngagementStrip } from "@/components/engagements/EngagementStrip";
 import { EngagementStats } from "@/components/engagements/EngagementStats";
 import { EngagementAsk } from "@/components/engagements/InlineEngagementAsk";
 import { ContextCard } from "@/components/engagements/ContextCard";
 import { SharedWithSection } from "@/components/engagements/SharedWithSection";
-import { EngagementNote } from "@/components/engagements/EngagementNote";
-import { InviteDialog } from "@/components/invites/InviteDialog";
 import { SubjectCoachingSection } from "@/components/coaching/SubjectCoachingSection";
 import { useRegisterAskLasso } from "@/components/reflect/ask-lasso-context";
 import { usePerfNavFinish } from "@/hooks/use-perf-timer";
@@ -43,11 +34,9 @@ import { useJourneyParam } from "@/hooks/use-journey-param";
 import { isBusinessOrg } from "@/hooks/use-profile";
 import { useMyEngagementMembership } from "@/hooks/use-engagement-membership";
 import { useEngagementPage, useEngagementSlice } from "@/hooks/use-engagement-page";
-import { useEngagementCoaches } from "@/hooks/use-coach-share";
 import { clientDisplayName, engagementDisplayCode, engagementDisplayTitle } from "@/lib/clients";
 import { workIdentityLabel } from "@/lib/work-identity";
 import { cn } from "@/lib/utils";
-import { INVITE_ADMIN_ONLY_LINE } from "@/lib/invites-shared";
 import { markOpenStart } from "@/lib/perf-timing";
 import { logEvent } from "@/lib/telemetry";
 import { supabase } from "@/integrations/supabase/client";
@@ -57,22 +46,20 @@ import { useVendorVisible } from "@/hooks/use-vendor-display";
 import { vendorLabel } from "@/lib/conversation-shared";
 
 type TaskWithWork = CanvasTask;
+type EngagementView = "brief" | "work" | "verify" | "share";
 const engagementRoute = getRouteApi("/_authenticated/engagements/$id");
 
-const VERIFY_LAUNCHERS: { id: AnalysisPresetId; purpose: string }[] = [
-  {
-    id: "verification",
-    purpose: "Claims that rest on the model's word, and a way to check each one.",
-  },
-  {
-    id: "decision_origin",
-    purpose: "Where a decision entered the record and what it turned on.",
-  },
-  {
-    id: "firm_checks",
-    purpose: "Your firm's own written checks, run against this piece of work.",
-  },
-];
+const TAB_ANALYSIS_PRESETS: Record<EngagementView, AnalysisPresetId> = {
+  brief: "still_on_brief",
+  work: "what_fed_this",
+  verify: "verification",
+  share: "firm_checks",
+};
+
+const THREAD_PRESET_VARIANTS: Partial<Record<AnalysisPresetId, AnalysisPresetId>> = {
+  verification: "verification_thread",
+  decision_origin: "decision_origin_thread",
+};
 
 export function EngagementPage({ engagementId }: { engagementId: string }) {
   const { work } = engagementRoute.useSearch();
@@ -81,7 +68,6 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
   const [rail, setRail] = useState<"closed" | "open" | "wide">("closed");
   const askOpen = rail !== "closed";
   const [askHadConversation, setAskHadConversation] = useState(false);
-  const [prepOpen, setPrepOpen] = useState(false);
   const [peekItem, setPeekItem] = useState<WorkItemRow | null>(null);
   // PASS 129 — the peek's action bar reads the same on both surfaces, so the
   // same dialogs are mounted here as on the Work pile.
@@ -94,15 +80,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
     null,
   );
   const makePrivate = useMakePrivate();
-  // The coaching note opens on its own; the brief is always legible above it.
-  const [coachingOpen, setCoachingOpen] = useState(false);
-  // The right rail was chosen over Figma 36:1936 on 12 Sep 2026; the frame has
-  // not yet been updated. The page holds the shared open state that used to
-  // pass through the strip's render prop.
-  // Collapsed on arrival: expanded it pushed the view switcher 700px down the
-  // page, below the fold on a 13-inch screen.
-  const [stripExpanded, setStripExpanded] = useState(false);
-  const [view, setView] = useState<"brief" | "work" | "verify" | "share">("work");
+  const [view, setView] = useState<EngagementView>("work");
   const [creatingWrap, setCreatingWrap] = useState(false);
   const previousWorkRef = useRef(work);
 
@@ -117,7 +95,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
     }
   };
 
-  const setEngagementView = (next: "brief" | "work" | "verify" | "share") => {
+  const setEngagementView = (next: EngagementView) => {
     if (next === view) return;
     setView(next);
     if (profile) {
@@ -128,7 +106,14 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
     }
   };
 
-  const openAnalysis = (item: WorkItemRow, preset: AnalysisPresetId) => {
+  const openAnalysis = (
+    item: WorkItemRow,
+    preset: AnalysisPresetId,
+    fromNotecard = false,
+  ) => {
+    if (fromNotecard && profile) {
+      logEvent("engagement.tab_analysis_opened", profile.org_id, { view, preset });
+    }
     setLensItem(item);
     setLensPreset(preset);
     // Analyses need reading room, but this is not a person choosing a rail width.
@@ -174,7 +159,6 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
   useTraceParam(engagementId);
   useJourneyParam(engagementId);
 
-  const coaches = useEngagementCoaches(engagementId);
   const membership = useMyEngagementMembership(engagementId, profile?.id);
 
   // On phones the floating button is the only Ask Lasso entry, and on this page
@@ -201,7 +185,6 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
   const engagement = engagementQuery.data?.engagement ?? null;
   const scopedTask = work ? (tasksQuery.data ?? []).find((task) => task.id === work) : undefined;
   const isQuickFolder = engagement?.clients?.quick_folder === true;
-  const hasCoaches = (coaches.data ?? []).length > 0;
 
   // Mapped items in this engagement, the only input to whether "What recurs"
   // has enough work to run. No count is ever shown to the person.
@@ -218,7 +201,6 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
   const deliverables = canvasItems.filter((item) => isDeliverableType(item.type));
   const isCoach = profile?.role === "coach";
   const vendorVisible = useVendorVisible();
-  const deliverablePresets = presetsForScope("deliverable", isCoach);
   const hasCalls = canvasItems.some((item) => item.type === "call");
 
   // PASS 143 — a wrap-up is an ordinary task carrying is_wrap. It never renders
@@ -268,30 +250,44 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
         ),
       ).map((key) => ({ key, label: vendorLabel(key), present: true }))
     : [];
-  const contextActions =
-    view === "share"
-      ? []
-      : [
-          ...(profile?.role !== "coach"
-            ? [
-                {
-                  id: "ask",
-                  label: "ASK ↓",
-                  onSelect: () => {
-                    markOpenStart("ask_dock.open");
-                    setAskRailOpen(true);
-                  },
-                },
-              ]
-            : []),
-          ...(contextTarget
-            ? presetsForScope(contextScope, isCoach).map((preset) => ({
-                id: preset.id,
-                label: preset.label.toUpperCase(),
-                onSelect: () => openAnalysis(contextTarget, preset.id),
-              }))
-            : []),
-        ];
+  const analysisScope = selectedItem
+    ? contextScope
+    : contextTarget
+      ? isDeliverableType(contextTarget.type)
+        ? "deliverable"
+        : "thread"
+      : contextScope;
+  const availableContextPresets = presetsForScope(analysisScope, isCoach);
+  const tabPresetId = TAB_ANALYSIS_PRESETS[view];
+  const scopedTabPresetId =
+    analysisScope === "thread" ? (THREAD_PRESET_VARIANTS[tabPresetId] ?? tabPresetId) : tabPresetId;
+  const contextPreset =
+    availableContextPresets.find((preset) => preset.id === scopedTabPresetId) ??
+    availableContextPresets[0] ??
+    null;
+  const contextActions = [
+    ...(profile?.role !== "coach"
+      ? [
+          {
+            id: "ask",
+            label: "ASK ↓",
+            onSelect: () => {
+              markOpenStart("ask_dock.open");
+              setAskRailOpen(true);
+            },
+          },
+        ]
+      : []),
+    ...(contextTarget && contextPreset
+      ? [
+          {
+            id: contextPreset.id,
+            label: contextPreset.label.toUpperCase(),
+            onSelect: () => openAnalysis(contextTarget, contextPreset.id, true),
+          },
+        ]
+      : []),
+  ];
   // One panel, one content: the document wins, then the analysis, then Ask.
   const panelContent: "ask" | "analysis" | "document" | "thread" = peekItem
     ? isDeliverableType(peekItem.type)
@@ -353,19 +349,13 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
         profile={profile}
       />
       {profile.role !== "coach" && membership.data?.isMember ? (
-        <ConnectToWorkSheet
-          engagementId={engagementId}
-          streams={(tasksQuery.data ?? []).map((task) => ({
-            id: task.id,
-            name: task.name,
-          }))}
-          profile={{ id: profile.id, org_id: profile.org_id }}
-          onChanged={async () => {
-            await queryClient.invalidateQueries({
-              queryKey: ["engagement-tasks", engagementId],
-            });
-          }}
-        />
+        <p className="text-xs text-muted-foreground">
+          Bring more work in from{" "}
+          <Link to="/work" className="underline-offset-2 hover:underline">
+            the Inbox
+          </Link>
+          .
+        </p>
       ) : null}
     </div>
   ) : null;
@@ -421,42 +411,6 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
           </div>
         </div>
 
-        {profile && profile.role !== "coach" ? (
-          <div className="mt-5 space-y-3">
-            <EngagementNote
-              tone="green"
-              open={coachingOpen}
-              onToggle={() => setCoachingOpen((v) => !v)}
-              title="Coaching and sharing"
-              summary={
-                isQuickFolder
-                  ? "Quick folder, not shareable"
-                  : (coaches.data ?? []).length === 0
-                    ? "Not shared with anyone"
-                    : `Shared with ${coaches.data?.length} coach${(coaches.data?.length ?? 0) === 1 ? "" : "es"}`
-              }
-            >
-              <div className="flex flex-wrap items-center gap-2">
-                {profile.role === "admin" && !isQuickFolder ? (
-                  <InviteDialog
-                    engagementId={engagementId}
-                    trigger={
-                      <button type="button" className="nb-hi">
-                        {hasCoaches ? "Invite a new coach" : "Invite a coach"}
-                      </button>
-                    }
-                  />
-                ) : null}
-                <button type="button" onClick={() => setPrepOpen(true)} className="nb-hi">
-                  Prepare a 1:1
-                </button>
-              </div>
-              {profile.role !== "admin" && isBusinessOrg(profile) && !isQuickFolder ? (
-                <p className="mt-2 text-xs text-muted-foreground">{INVITE_ADMIN_ONLY_LINE}</p>
-              ) : null}
-            </EngagementNote>
-          </div>
-        ) : null}
       </header>
 
       <div className="mb-2 border-b border-[var(--nb-rule)]" role="group" aria-label="Engagement views">
@@ -539,19 +493,6 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
           </button>
         </div>
       </div>
-      {/* Figma 36:1936: the strip is a full-width band under the header. */}
-      {profile && profile.role !== "coach" ? (
-        <div className="mb-8">
-          <EngagementStrip
-            engagement={engagement}
-            tasks={tasksQuery.data ?? []}
-            deliverables={deliverables}
-            expanded={stripExpanded}
-            onExpandedChange={setStripExpanded}
-          />
-        </div>
-      ) : null}
-
       <div className="nb-bench-grid relative">
         <div>
           {view === "work" ? (
@@ -625,35 +566,6 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
                   defaultExpanded
                 />
               ) : null}
-              {deliverables.length > 0 &&
-              deliverablePresets.some((preset) => preset.id === "still_on_brief") ? (
-                <section>
-                  <h2 className="micro-label micro-label-section">DID THE WORK STAY ON BRIEF</h2>
-                  <p className="mt-1 max-w-4xl text-[13px] text-muted-foreground">
-                    Reads a deliverable against this brief and names what was added, dropped, changed
-                    or reframed.
-                  </p>
-                  <div className="mt-3 space-y-2">
-                    {deliverables.map((item) => (
-                      <div
-                        key={item.id}
-                        className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-rule px-4 py-3"
-                      >
-                        <span className="min-w-0 text-sm text-foreground">{item.title}</span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                                    openAnalysis(item, "still_on_brief");
-                          }}
-                          className="micro-label shrink-0 rounded-md border border-rule px-3 py-1.5 transition-colors hover:border-accent/40"
-                        >
-                          READ IT AGAINST THE BRIEF
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </section>
-              ) : null}
               {(() => {
                 const showCallsLine = !hasCalls;
                 const showBriefLine = true;
@@ -691,41 +603,12 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {deliverables.map((item) => {
-                    const launchers = VERIFY_LAUNCHERS.filter((launcher) =>
-                      deliverablePresets.some((preset) => preset.id === launcher.id),
-                    );
-                    return (
-                      <div key={item.id} className="rounded-lg border border-graphite bg-card p-5">
-                        <h3 className="text-base font-medium">{item.title}</h3>
-                        <p className="micro-label mt-2">{workIdentityLabel(item)}</p>
-                        {launchers.length > 0 ? (
-                          <div className="mt-3 flex flex-wrap gap-2">
-                            {launchers.map((launcher) => {
-                              const preset = analysisPreset(launcher.id);
-                              return (
-                                <button
-                                  key={launcher.id}
-                                  type="button"
-                                  onClick={() => {
-                                    openAnalysis(item, launcher.id);
-                                  }}
-                                  className="rounded-md border border-rule px-4 py-2 text-left transition-colors hover:border-accent/40"
-                                >
-                                  <span className="micro-label block">
-                                    {preset?.label.toUpperCase()}
-                                  </span>
-                                  <span className="mt-0.5 block text-[12px] text-muted-foreground">
-                                    {launcher.purpose}
-                                  </span>
-                                </button>
-                              );
-                            })}
-                          </div>
-                        ) : null}
-                      </div>
-                    );
-                  })}
+                  {deliverables.map((item) => (
+                    <div key={item.id} className="rounded-lg border border-graphite bg-card p-5">
+                      <h3 className="text-base font-medium">{item.title}</h3>
+                      <p className="micro-label mt-2">{workIdentityLabel(item)}</p>
+                    </div>
+                  ))}
                 </div>
               )}
             </section>
@@ -804,10 +687,8 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
                     <EngagementAsk
                       open={askOpen}
                       onOpenChange={setAskRailOpen}
-                      expanded={stripExpanded}
                       onConversationStart={() => {
                         setAskHadConversation(true);
-                        setStripExpanded(false);
                       }}
                       engagementId={engagementId}
                       engagementTitle={engagement.title}
@@ -907,17 +788,6 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
           profileId={profile.id}
           orgId={profile.org_id}
           onDone={() => setLaunch(null)}
-        />
-      ) : null}
-
-
-      {profile && profile.role !== "coach" ? (
-        <OneOnOneBrief
-          open={prepOpen}
-          onOpenChange={setPrepOpen}
-          profileId={profile.id}
-          engagementId={engagementId}
-          scopeLabel={engagement.title}
         />
       ) : null}
 
