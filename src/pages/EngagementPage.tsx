@@ -20,6 +20,7 @@ import { CaptureCoverage } from "@/components/common/CaptureCoverage";
 import { EngagementCanvas, type CanvasTask } from "@/components/engagements/EngagementCanvas";
 import { WorkLedger } from "@/components/engagements/WorkLedger";
 
+import { CanvasDeliverableActions } from "@/components/engagements/CanvasDeliverableActions";
 import { EngagementBriefPanel } from "@/components/engagements/EngagementBriefPanel";
 import { EngagementStats } from "@/components/engagements/EngagementStats";
 import { EngagementAsk } from "@/components/engagements/InlineEngagementAsk";
@@ -670,11 +671,21 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
               personalOrg={!isBusinessOrg(profile)}
             />
           ) : (
-            <div className="rounded-lg border border-graphite bg-card p-6">
-              <h2 className="micro-label micro-label-section">Sharing</h2>
-              <p className="mt-2 text-[13px] text-muted-foreground">
-                Sharing is managed by the firm.
-              </p>
+            <div className="space-y-6">
+              <div className="rounded-lg border border-graphite bg-card p-6">
+                <h2 className="micro-label micro-label-section">Sharing</h2>
+                <p className="mt-2 text-[13px] text-muted-foreground">
+                  Sharing is managed by the firm.
+                </p>
+              </div>
+              <section className="flex flex-col gap-2">
+                <h2 className="micro-label micro-label-section">SEND TO THE FIRM</h2>
+                <CanvasDeliverableActions
+                  items={canvasItems}
+                  engagementId={engagementId}
+                  profile={profile}
+                />
+              </section>
             </div>
           )}
         </div>

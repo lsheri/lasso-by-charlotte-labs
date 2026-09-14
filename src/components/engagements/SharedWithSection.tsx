@@ -174,7 +174,14 @@ export function SharedWithSection({
     setSharingAll(false);
   }
 
-  if (quickFolder) return null;
+  if (quickFolder) {
+    return profile && profile.role !== "coach" ? (
+      <section className="flex flex-col gap-2">
+        <h2 className="micro-label micro-label-section">SEND TO THE FIRM</h2>
+        <CanvasDeliverableActions items={items} engagementId={engagementId} profile={profile} />
+      </section>
+    ) : null;
+  }
 
   const heading = personalOrg ? "Your coaches" : "Shared with";
   const intro = personalOrg

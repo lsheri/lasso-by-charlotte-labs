@@ -76,7 +76,7 @@ describe("pass 112.1 · journey and ship on the canvas", () => {
     });
   });
 
-  it("keeps only the journey in the Work header", () => {
+  it("keeps the journey available to a coach after its move to Share", () => {
     renderActions([deliverable], { id: "coach", role: "coach" });
     expect(screen.getByRole("button", { name: "Work Artifact" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: SHIP_ACTION_LABEL })).toBeNull();
@@ -105,11 +105,11 @@ describe("pass 112.1 · journey and ship on the canvas", () => {
     expect(screen.queryByTestId("ship-dialog")).toBeNull();
   });
 
-  it("stays a quiet sibling of the what fed this hero", () => {
+  it("moves the quiet journey control from the Work header to Share", () => {
     const source = readFileSync("src/components/engagements/CanvasDeliverableActions.tsx", "utf8");
     expect(source).not.toContain("nb-web-cta");
     const page = readFileSync("src/pages/EngagementPage.tsx", "utf8");
-    expect(page).toContain("<CanvasDeliverableActions");
+    expect(page.indexOf("<CanvasDeliverableActions")).toBeGreaterThan(page.indexOf('view === "share"'));
     expect(page).toContain("flex flex-wrap items-center gap-2");
   });
 });

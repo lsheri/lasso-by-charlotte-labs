@@ -5,7 +5,7 @@ interface NotebookSpiderProps {
   size?: number;
   reading?: boolean;
   className?: string;
-  ink?: string;
+  ink?: string | undefined;
 }
 
 /**
@@ -164,7 +164,7 @@ function insetStyle([t, r, b, l]: [number, number, number, number]): CSSProperti
   };
 }
 
-function PieceLayer({ piece, ink }: { piece: Piece; ink?: string }) {
+function PieceLayer({ piece, ink }: { piece: Piece; ink?: string | undefined }) {
   const inner = (
     <svg
       viewBox={piece.viewBox}
@@ -177,7 +177,7 @@ function PieceLayer({ piece, ink }: { piece: Piece; ink?: string }) {
     >
       <path
         d={piece.d}
-        fill={piece.fill ?? "none"}
+        fill={piece.fill === GRAPHITE && ink ? ink : (piece.fill ?? "none")}
         stroke={piece.stroke === GRAPHITE && ink ? ink : piece.stroke}
         strokeWidth={piece.strokeWidth}
         strokeLinecap="round"
