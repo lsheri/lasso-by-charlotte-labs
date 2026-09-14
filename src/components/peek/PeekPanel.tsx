@@ -65,23 +65,9 @@ function Chip({
   );
 }
 
-export function PeekPanel({
-  entry,
-  focusId,
-  open,
-  onOpenChange,
-  canEdit,
-  onMap,
-  onWorkDate,
-  onMakePrivate,
-  onAnalyse,
-  engagementId,
-  viewerProfileId,
-}: {
+type PeekBodyProps = {
   entry: PeekEntry | null;
   focusId?: string | undefined;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
   canEdit: boolean;
   onMap?: ((item: WorkItemRow, group?: WorkItemRow[]) => void) | undefined;
   onWorkDate?: ((item: WorkItemRow) => void) | undefined;
@@ -90,7 +76,53 @@ export function PeekPanel({
   /** Set when the peek is read inside one engagement. */
   engagementId?: string | undefined;
   viewerProfileId?: string | null | undefined;
+  /** Lets the body close itself where it is rendered without a sheet. */
+  onClose?: (() => void) | undefined;
+};
+
+/** Thin wrapper: the sheet-based peek every page but the engagement page uses. */
+export function PeekPanel({
+  open,
+  onOpenChange,
+  ...rest
+}: PeekBodyProps & {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }) {
+  const entry = rest.entry;
+  const items = entry ? entryItems(entry) : [];
+  const active = items[0] ?? null;
+  if (!active) {
+    return (
+      <SlideOver open={open} onOpenChange={onOpenChange} title="Preview">
+        {null}
+      </SlideOver>
+    );
+  }
+  return (
+    <SlideOver
+      open={open}
+      onOpenChange={onOpenChange}
+      title={active.title}
+      description="Work item preview"
+    >
+      <PeekBody {...rest} onClose={() => onOpenChange(false)} />
+    </SlideOver>
+  );
+}
+
+export function PeekBody({
+  entry,
+  focusId,
+  canEdit,
+  onMap,
+  onWorkDate,
+  onMakePrivate,
+  onAnalyse,
+  engagementId,
+  viewerProfileId,
+  onClose,
+}: PeekBodyProps) {
   const fetchUrl = useServerFn(getWorkFileUrl);
   const items = entry ? entryItems(entry) : [];
   const [tab, setTab] = useState(0);
@@ -103,7 +135,8 @@ export function PeekPanel({
   // Gesture anchored: the panel mounts closed, so its own mount is not the
   // start of anything. The click that opens the peek records the start; a
   // finish with no recorded start emits nothing, which is the honest answer.
-  usePerfOpenFinish("peek.open", open && Boolean(entry));
+  usePerfOpenFinish("peek.open", Boolean(entry));
+
 
   useEffect(() => {
     setKindDraft(null);
