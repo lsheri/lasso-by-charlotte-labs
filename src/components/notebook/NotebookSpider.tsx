@@ -237,41 +237,6 @@ export function NotebookSpider({
   );
 }
 
-/** The house spider at work, holding a pencil over the line it just drew. */
-export function SpiderDrawing({
-  size = 28,
-  className = "",
-}: {
-  size?: number;
-  className?: string;
-}) {
-  return (
-    <span
-      aria-hidden
-      data-testid="spider-drawing"
-      className={`pointer-events-none relative inline-flex shrink-0 items-end ${className}`}
-      style={{ width: size, height: size }}
-    >
-      <NotebookSpider size={size * 0.78} ink="currentColor" className="absolute bottom-0 left-0" />
-      <svg
-        className="absolute bottom-0 right-0 block"
-        width={size * 0.58}
-        height={size * 0.58}
-        viewBox="0 0 18 18"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={1.4}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden
-      >
-        <path d="M3.2 14.8c3.4-.9 6.8-.6 10.4-1.2" opacity={0.55} />
-        <path d="M5.2 12.8 14.6 3.4l1.8 1.8-9.5 9.3-2.7.8 1-2.5Z" />
-        <path d="m13.6 4.4 1.8 1.8" />
-      </svg>
-    </span>
-  );
-}
 
 /**
  * The reading spider with its caption row. Used by motion surfaces that resolve
