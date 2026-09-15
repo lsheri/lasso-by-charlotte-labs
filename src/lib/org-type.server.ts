@@ -47,6 +47,38 @@ export async function orgTypeOfStrict(
   }
 }
 
+const affiliationCache = new Map<string, { at: number; value: boolean }>();
+
+/** Test seam. */
+export function resetAffiliationCache(): void {
+  affiliationCache.clear();
+}
+
+/**
+ * Whether the workspace is affiliated with an institution, as actually read,
+ * or null when the read failed. Same cache window as the type, for the same
+ * reason: it is read on every event.
+ */
+export async function isAffiliatedStrict(orgId: string): Promise<boolean | null> {
+  if (!orgId) return null;
+  const hit = affiliationCache.get(orgId);
+  if (hit && Date.now() - hit.at < ORG_TYPE_TTL_MS) return hit.value;
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin
+      .from("org_affiliations")
+      .select("id")
+      .eq("org_id", orgId)
+      .maybeSingle();
+    if (error) return null;
+    const value = Boolean(data?.id);
+    affiliationCache.set(orgId, { at: Date.now(), value });
+    return value;
+  } catch {
+    return null;
+  }
+}
+
 export async function orgTypeOf(orgId: string | null | undefined): Promise<string> {
   return (await orgTypeOfStrict(orgId)) ?? "personal";
 }
@@ -68,6 +100,8 @@ export async function workspaceStamp(
   // A failed read is "unknown", never a guess. This column is immutable once
   // written, and a wrong value is indistinguishable from a right one forever.
   if (type === null) return { workspace_type: "unknown", affiliated: null };
-  // Affiliation does not exist yet; when it ships it is read here and nowhere else.
-  return { workspace_type: type, affiliated: false };
+  // Affiliation is read here and nowhere else. A failed affiliation read is
+  // null, never false: unaffiliated and unknown are different facts.
+  const affiliated = await isAffiliatedStrict(orgId);
+  return { workspace_type: type, affiliated };
 }

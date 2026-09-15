@@ -11,6 +11,7 @@ import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { checkSignupInvite } from "@/lib/invites.functions";
 import { type SignupInviteCheck } from "@/lib/signup-invite";
+import { markSignupSource, type SignupSource } from "@/lib/edu-entry";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -20,11 +21,14 @@ export const Route = createFileRoute("/auth")({
     next?: string | undefined;
     invite?: string | undefined;
     intent?: "company" | "personal" | "invite" | undefined;
+    from?: SignupSource | undefined;
   } => {
     const next = search["next"];
     const intent = search["intent"];
     const invite = search["invite"];
+    const from = search["from"];
     return {
+      ...(from === "ceiba_uni" || from === "edu" || from === "direct" ? { from } : {}),
       ...(typeof invite === "string" && invite ? { invite } : {}),
       ...(typeof next === "string" && next.startsWith("/") ? { next } : {}),
       ...(intent === "company" || intent === "personal" || intent === "invite" ? { intent } : {}),
@@ -68,7 +72,12 @@ function joinTarget(next: string | undefined) {
 
 function AuthPage() {
   const navigate = useNavigate();
-  const { next, intent, invite } = Route.useSearch();
+  const { next, intent, invite, from } = Route.useSearch();
+  // Pass 185: the front door someone came through, remembered until the
+  // workspace is created. Nothing else about the page changes.
+  useEffect(() => {
+    markSignupSource(from);
+  }, [from]);
   const checkInvite = useServerFn(checkSignupInvite);
   // An invite can arrive as its own param or inside the join destination.
   const inviteCode = invite ?? joinTarget(next)?.code;
