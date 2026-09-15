@@ -1137,6 +1137,42 @@ export function EngagementCanvasView({
           ) : null}
         </div>
       </div>
+        {/* Quiet view controls, floating over the paper, out of the scroll flow. */}
+        <div className="absolute bottom-3 right-3 z-20 flex items-center gap-1 rounded-[6px] border border-[var(--nb-rule)] bg-card px-1 py-1 shadow-[var(--shadow-card)]">
+          <Button
+            size="sm"
+            variant="ghost"
+            aria-label="Zoom out"
+            disabled={zoom <= ZOOM_MIN + 0.001}
+            onClick={() => zoomBy("out", "button")}
+          >
+            −
+          </Button>
+          <span className="font-mono text-[9px] tabular-nums text-muted-foreground">
+            {Math.round(zoom * 100)}%
+          </span>
+          <Button
+            size="sm"
+            variant="ghost"
+            aria-label="Zoom in"
+            disabled={zoom >= ZOOM_MAX - 0.001}
+            onClick={() => zoomBy("in", "button")}
+          >
+            +
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            aria-label="Reset zoom"
+            disabled={zoom === ZOOM_DEFAULT}
+            onClick={() => zoomBy("reset", "button")}
+          >
+            Reset
+          </Button>
+        </div>
+      </div>
+
+
 
 
       <div
