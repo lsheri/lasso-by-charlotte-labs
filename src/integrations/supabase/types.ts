@@ -259,6 +259,68 @@ export type Database = {
           },
         ]
       }
+      canvas_nodes: {
+        Row: {
+          engagement_id: string
+          id: string
+          org_id: string
+          owner_id: string
+          updated_at: string
+          work_item_id: string
+          x: number
+          y: number
+        }
+        Insert: {
+          engagement_id: string
+          id?: string
+          org_id: string
+          owner_id: string
+          updated_at?: string
+          work_item_id: string
+          x: number
+          y: number
+        }
+        Update: {
+          engagement_id?: string
+          id?: string
+          org_id?: string
+          owner_id?: string
+          updated_at?: string
+          work_item_id?: string
+          x?: number
+          y?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "canvas_nodes_engagement_id_fkey"
+            columns: ["engagement_id"]
+            isOneToOne: false
+            referencedRelation: "engagements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "canvas_nodes_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "canvas_nodes_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "canvas_nodes_work_item_id_fkey"
+            columns: ["work_item_id"]
+            isOneToOne: false
+            referencedRelation: "work_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chain_links: {
         Row: {
           from_turn: string
@@ -594,7 +656,9 @@ export type Database = {
           engagement_id: string | null
           id: string
           subject_id: string
+          task_id: string | null
           watch_next: string
+          work_item_id: string | null
           would_try: string
         }
         Insert: {
@@ -604,7 +668,9 @@ export type Database = {
           engagement_id?: string | null
           id?: string
           subject_id: string
+          task_id?: string | null
           watch_next: string
+          work_item_id?: string | null
           would_try: string
         }
         Update: {
@@ -614,7 +680,9 @@ export type Database = {
           engagement_id?: string | null
           id?: string
           subject_id?: string
+          task_id?: string | null
           watch_next?: string
+          work_item_id?: string | null
           would_try?: string
         }
         Relationships: [
@@ -637,6 +705,20 @@ export type Database = {
             columns: ["subject_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coaching_notes_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coaching_notes_work_item_id_fkey"
+            columns: ["work_item_id"]
+            isOneToOne: false
+            referencedRelation: "work_items"
             referencedColumns: ["id"]
           },
         ]

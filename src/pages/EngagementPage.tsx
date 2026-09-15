@@ -3,6 +3,7 @@ import { getRouteApi, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import { GraphiteRule } from "@/components/notebook/marks";
+import { EngagementCanvasView } from "@/components/canvas/EngagementCanvasView";
 import { PeekBody } from "@/components/peek/PeekPanel";
 import { presetsForScope, type AnalysisPresetId } from "@/lib/analysis-presets";
 import { MapDialog } from "@/components/work/MapDialog";
@@ -252,7 +253,6 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
     ).values(),
   );
   const mappedItemCount = canvasItems.length;
-  const deliverables = canvasItems.filter((item) => isDeliverableType(item.type));
   const isCoach = profile?.role === "coach";
   const vendorVisible = useVendorVisible();
   const hasCalls = canvasItems.some((item) => item.type === "call");
@@ -511,7 +511,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
             )}
           >
             <span className="micro-label">WORK</span>
-            <span className="text-[11px] italic text-muted-foreground">what is here, and what fed what?</span>
+            <span className="text-[11px] italic text-muted-foreground">what is here, and in what order?</span>
             {view !== "work" ? (
               <span
                 className={cn(
@@ -533,8 +533,9 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
               view === "verify" ? "text-foreground" : "text-muted-foreground hover:text-foreground",
             )}
           >
-            <span className="micro-label">VERIFY</span>
-            <span className="text-[11px] italic text-muted-foreground">can I stand behind this?</span>
+            {/* The "verify" key is historical; Canvas is the truthful label. */}
+            <span className="micro-label">CANVAS</span>
+            <span className="text-[11px] italic text-muted-foreground">what fed what?</span>
             {view !== "verify" ? (
               <span
                 className={cn(
@@ -690,34 +691,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
               })()}
             </div>
           ) : view === "verify" ? (
-            <section className="space-y-3">
-              <h2 className="micro-label micro-label-section">
-                WHAT IS WORTH CHECKING BEFORE THIS GOES OUT
-              </h2>
-              {deliverables.length === 0 ? (
-                <div className="rounded-lg border border-graphite bg-card p-5">
-                  <p className="micro-label">NOTHING TO CHECK YET</p>
-                  <p className="mt-2 text-[13px] text-muted-foreground">
-                    When a deliverable is mapped to this engagement, what is worth checking lands
-                    here.
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {deliverables.map((item) => (
-                    <WorkNote
-                      key={item.id}
-                      item={item}
-                      onOpen={() => {
-                        markOpenStart("peek.open");
-                        setPeekItem(item);
-                        if (rail === "closed") setRail("open");
-                      }}
-                    />
-                  ))}
-                </div>
-              )}
-            </section>
+            <EngagementCanvasView engagementId={engagementId} items={scopedItems} onOpen={openPeek} />
           ) : profile && profile.role !== "coach" ? (
             <SharedWithSection
               engagementId={engagementId}
