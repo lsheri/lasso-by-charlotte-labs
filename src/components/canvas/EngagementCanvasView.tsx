@@ -163,7 +163,7 @@ export function EngagementCanvasView({
         itemIds.length
           ? supabase
               .from("work_item_links")
-              .select("from_item_id, to_item_id, status")
+              .select("id, from_item_id, to_item_id, relation, status")
               .in("from_item_id", itemIds)
               .in("to_item_id", itemIds)
           : Promise.resolve({ data: [], error: null }),
