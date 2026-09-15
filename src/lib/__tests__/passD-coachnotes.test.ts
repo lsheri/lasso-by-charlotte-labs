@@ -43,7 +43,7 @@ describe("pass D · coaching notes", () => {
 
   it("never draws a count at the person", () => {
     const circle = read("src/components/notebook/CircleMark.tsx");
-    expect(circle).not.toMatch(/count-pill|badge/);
+    expect(circle).not.toMatch(/count-pill|<sup|\{count\}/);
   });
 
   it("scopes a note to the smallest thing it names", () => {
