@@ -579,7 +579,10 @@ export function EngagementCanvasView({
       const candidates = candidatesFor(fromId);
       const toSurface = (clientX: number, clientY: number) => {
         const rect = surface.getBoundingClientRect();
-        return { x: clientX - rect.left, y: clientY - rect.top };
+        // Screen pixels into canvas units, so nearestTarget and LINK_SNAP,
+        // which are canvas units, still mean what they say at any zoom.
+        const zoom = zoomRef.current;
+        return { x: (clientX - rect.left) / zoom, y: (clientY - rect.top) / zoom };
       };
       setLinkDrag({ fromId, from, to: toSurface(event.clientX, event.clientY), targetId: null });
 
