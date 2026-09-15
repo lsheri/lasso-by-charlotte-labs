@@ -81,7 +81,7 @@ async function affiliate(orgId: string, profileId: string): Promise<void> {
         { onConflict: "org_id" },
       );
     if (error) return;
-    void noteAffiliatedFn({ data: { institution: "ceiba_uni" } }).catch(() => {});
+    void noteAffiliatedFn({ data: { institution: "ceiba_uni", profile_id: profileId } }).catch(() => {});
   } catch {
     /* an affiliation is never a gate on finishing sign up */
   }

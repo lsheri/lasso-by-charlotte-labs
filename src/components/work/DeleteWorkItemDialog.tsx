@@ -1,5 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+
+import { useProfile } from "@/hooks/use-profile";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -40,6 +42,7 @@ export function DeleteWorkItemDialog({
   onDone?: (() => void) | undefined;
 }) {
   const queryClient = useQueryClient();
+  const { data: profile } = useProfile();
   const run = useServerFn(deleteWorkItem);
   const [busy, setBusy] = useState(false);
   const [sure, setSure] = useState(false);
@@ -69,7 +72,7 @@ export function DeleteWorkItemDialog({
                 return;
               }
               setBusy(true);
-              void run({ data: { work_item_id: workItemId } })
+              void run({ data: { work_item_id: workItemId, profile_id: profile?.id } })
                 .then(async () => {
                   toast.success("Deleted.");
                   await invalidateAfterWorkChange(queryClient, workItemId);

@@ -54,7 +54,7 @@ export function ArchiveChat({
 }) {
   const { data: profile } = useProfile();
   const run = useServerFn(searchArchive) as unknown as (input: {
-    data: { question: string };
+    data: { question: string; profile_id?: string | undefined };
   }) => Promise<ArchiveSearchResult>;
 
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -108,7 +108,7 @@ export function ArchiveChat({
     }
     setBusy(true);
     try {
-      const result = await run({ data: { question: asked } });
+      const result = await run({ data: { question: asked, profile_id: profile?.id } });
       const matches = result.matches.filter((match) => byId.has(match.work_item_id));
       setState((prev) => ({
         setId: (prev?.setId ?? 0) + 1,

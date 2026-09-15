@@ -1,5 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+
+import { useProfile } from "@/hooks/use-profile";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -12,6 +14,7 @@ import { reextractItemText } from "@/lib/item-text.functions";
  */
 export function ReextractAction({ workItemId }: { workItemId: string }) {
   const queryClient = useQueryClient();
+  const { data: profile } = useProfile();
   const run = useServerFn(reextractItemText);
   const [busy, setBusy] = useState(false);
 
@@ -21,7 +24,7 @@ export function ReextractAction({ workItemId }: { workItemId: string }) {
       disabled={busy}
       onClick={() => {
         setBusy(true);
-        void run({ data: { work_item_id: workItemId } })
+        void run({ data: { work_item_id: workItemId, profile_id: profile?.id } })
           .then(async (result) => {
             if (result.status === "ok") toast.success("Lasso read this file.");
             else toast.message(`Still not readable${result.note ? `: ${result.note}` : "."}`);

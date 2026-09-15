@@ -4,6 +4,7 @@ import { Download, ExternalLink } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { ReextractAction } from "@/components/peek/ReextractAction";
+import { useProfile } from "@/hooks/use-profile";
 import { highlight, toSafeHtml } from "@/lib/markdown";
 import { getWorkFileUrl } from "@/lib/work-files.functions";
 import { getItemTextPane } from "@/lib/item-text.functions";
@@ -86,11 +87,12 @@ function TextPane({
   canEdit?: boolean | undefined;
   onDownload?: (() => void) | undefined;
 }) {
+  const { data: profile } = useProfile();
   const fetchText = useServerFn(getItemTextPane);
   const query = useQuery({
     queryKey: ["item-text-pane", item.id],
     staleTime: 5 * 60 * 1000,
-    queryFn: async () => await fetchText({ data: { work_item_id: item.id } }),
+    queryFn: async () => await fetchText({ data: { work_item_id: item.id, profile_id: profile?.id } }),
   });
 
   if (query.isPending) return <Notice>Reading the file…</Notice>;

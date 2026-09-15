@@ -141,7 +141,7 @@ export function AiRecordPage() {
   function chooseTool(next: ToolVendor | "all") {
     setTool(next);
     void noteFilterChanged({
-      data: { filter: "tool", selected: next === "all" ? "all" : "one" },
+      data: { filter: "tool", selected: next === "all" ? "all" : "one", profile_id: profile?.id },
     }).catch(() => {});
   }
 
@@ -149,7 +149,11 @@ export function AiRecordPage() {
     setEngagement(next);
     setRecursOpen(false);
     void noteFilterChanged({
-      data: { filter: "engagement", selected: next === "all" ? "all" : "one" },
+      data: {
+        filter: "engagement",
+        selected: next === "all" ? "all" : "one",
+        profile_id: profile?.id,
+      },
     }).catch(() => {});
   }
 
@@ -171,7 +175,7 @@ export function AiRecordPage() {
     } catch {
       // The choice still holds for this visit.
     }
-    void noteViewChanged({ data: { view: next } }).catch(() => {});
+    void noteViewChanged({ data: { view: next, profile_id: profile?.id } }).catch(() => {});
   }
 
   useEffect(() => {
@@ -260,7 +264,7 @@ export function AiRecordPage() {
   /** One close path: the button, Escape and reselecting all come through here. */
   function closeReader(how: "button" | "escape" | "reselect") {
     setSelected(null);
-    void noteReaderClosed({ data: { view, how } }).catch(() => {});
+    void noteReaderClosed({ data: { view, how, profile_id: profile?.id } }).catch(() => {});
   }
 
   /** One open path, shared by the list and the cards so they cannot drift. */

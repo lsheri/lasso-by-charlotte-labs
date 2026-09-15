@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { resolveProfile } from "@/lib/profile-resolve";
 import type { TextItem } from "./item-text.server";
 
 export type ItemTextPane = {
@@ -16,9 +17,9 @@ export type ItemTextPane = {
  */
 export const getItemTextPane = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { work_item_id: string }) => {
+  .inputValidator((input: { work_item_id: string; profile_id?: string | undefined }) => {
     if (!input?.work_item_id) throw new Error("work_item_id is required");
-    return { work_item_id: input.work_item_id };
+    return { work_item_id: input.work_item_id, profile_id: input.profile_id ?? null };
   })
   .handler(async ({ data, context }): Promise<ItemTextPane> => {
     const { ITEM_TEXT_COLUMNS, getItemText } = await import("./item-text.server");
@@ -46,9 +47,9 @@ export const getItemTextPane = createServerFn({ method: "POST" })
  */
 export const reextractItemText = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { work_item_id: string }) => {
+  .inputValidator((input: { work_item_id: string; profile_id?: string | undefined }) => {
     if (!input?.work_item_id) throw new Error("work_item_id is required");
-    return { work_item_id: input.work_item_id };
+    return { work_item_id: input.work_item_id, profile_id: input.profile_id ?? null };
   })
   .handler(async ({ data, context }): Promise<{ status: string; note: string | null }> => {
     const { ITEM_TEXT_COLUMNS, getItemText } = await import("./item-text.server");
@@ -60,11 +61,7 @@ export const reextractItemText = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     if (!item) throw new Error("That item is not available to you.");
 
-    const { data: profile } = await context.supabase
-      .from("profiles")
-      .select("id")
-      .eq("user_id", context.userId)
-      .maybeSingle();
+    const profile = await resolveProfile(context.supabase, context.userId, data.profile_id);
     if (!profile || profile.id !== (item as { owner_id: string }).owner_id) {
       throw new Response("Forbidden", { status: 403 });
     }

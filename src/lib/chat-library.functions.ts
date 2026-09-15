@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { resolveProfile } from "@/lib/profile-resolve";
 
 /**
  * Chat library: someone opened the original conversation in the tool it came
@@ -10,8 +11,9 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
  */
 export const noteSourceOpenedFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { work_item_id: string }) => ({
+  .inputValidator((input: { work_item_id: string; profile_id?: string | undefined }) => ({
     work_item_id: typeof input?.work_item_id === "string" ? input.work_item_id : "",
+    profile_id: input?.profile_id ?? null,
   }))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
     if (!data.work_item_id) return { ok: true };
@@ -43,21 +45,18 @@ export const noteSourceOpenedFn = createServerFn({ method: "POST" })
  */
 export const noteChatSearchFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { query: string; results: number; had_click?: boolean }) => ({
+  .inputValidator((input: { query: string; results: number; had_click?: boolean; profile_id?: string | undefined }) => ({
     query: typeof input?.query === "string" ? input.query.slice(0, 500) : "",
     results: Number.isFinite(input?.results) ? Math.max(0, Math.trunc(input.results)) : 0,
     had_click: input?.had_click === true,
+    profile_id: input?.profile_id ?? null,
   }))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
     const { isSettledQuery, queryLenBand, resultBand } = await import("./chat-search-signal");
     if (!isSettledQuery(data.query)) return { ok: true };
     const { supabase, userId } = context;
 
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("id, org_id")
-      .eq("user_id", userId)
-      .maybeSingle();
+    const profile = await resolveProfile(supabase, userId, data.profile_id);
     if (!profile) return { ok: true };
 
     const { recordEvent } = await import("./telemetry.server");
@@ -83,18 +82,15 @@ export const noteChatSearchFn = createServerFn({ method: "POST" })
  */
 export const noteChatViewChangedFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { view: string }) => ({
+  .inputValidator((input: { view: string; profile_id?: string | undefined }) => ({
     view: input?.view === "cards" || input?.view === "list" ? input.view : "",
+    profile_id: input?.profile_id ?? null,
   }))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
     if (!data.view) return { ok: true };
     const { supabase, userId } = context;
 
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("id, org_id")
-      .eq("user_id", userId)
-      .maybeSingle();
+    const profile = await resolveProfile(supabase, userId, data.profile_id);
     if (!profile) return { ok: true };
 
     const { recordEvent } = await import("./telemetry.server");
@@ -114,22 +110,19 @@ export const noteChatViewChangedFn = createServerFn({ method: "POST" })
  */
 export const noteReaderClosedFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { view: string; how: string }) => ({
+  .inputValidator((input: { view: string; how: string; profile_id?: string | undefined }) => ({
     view: input?.view === "cards" || input?.view === "list" ? input.view : "",
     how:
       input?.how === "button" || input?.how === "escape" || input?.how === "reselect"
         ? input.how
         : "",
+    profile_id: input?.profile_id ?? null,
   }))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
     if (!data.view || !data.how) return { ok: true };
     const { supabase, userId } = context;
 
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("id, org_id")
-      .eq("user_id", userId)
-      .maybeSingle();
+    const profile = await resolveProfile(supabase, userId, data.profile_id);
     if (!profile) return { ok: true };
 
     const { recordEvent } = await import("./telemetry.server");
@@ -150,19 +143,16 @@ export const noteReaderClosedFn = createServerFn({ method: "POST" })
  */
 export const noteFilterChangedFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { filter: string; selected: string }) => ({
+  .inputValidator((input: { filter: string; selected: string; profile_id?: string | undefined }) => ({
     filter: input?.filter === "tool" || input?.filter === "engagement" ? input.filter : "",
     selected: input?.selected === "all" || input?.selected === "one" ? input.selected : "",
+    profile_id: input?.profile_id ?? null,
   }))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
     if (!data.filter || !data.selected) return { ok: true };
     const { supabase, userId } = context;
 
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("id, org_id")
-      .eq("user_id", userId)
-      .maybeSingle();
+    const profile = await resolveProfile(supabase, userId, data.profile_id);
     if (!profile) return { ok: true };
 
     const { recordEvent } = await import("./telemetry.server");

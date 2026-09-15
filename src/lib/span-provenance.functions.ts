@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { resolveProfile } from "@/lib/profile-resolve";
 import { MAX_INK_POINTS } from "@/lib/lasso-geometry";
 import {
   MAX_SNIPPET_CHARS,
@@ -119,9 +120,9 @@ export const validLocatorForTest = validLocator;
  */
 export const getSpanAudit = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { work_item_id: string }) => {
+  .inputValidator((input: { work_item_id: string; profile_id?: string | undefined }) => {
     if (!input?.work_item_id) throw new Error("work_item_id is required");
-    return { work_item_id: input.work_item_id };
+    return { work_item_id: input.work_item_id, profile_id: input.profile_id ?? null };
   })
   .handler(async ({ data, context }): Promise<SpanAudit> => {
     const supabase = context.supabase;
@@ -137,11 +138,7 @@ export const getSpanAudit = createServerFn({ method: "POST" })
     const row = anchorRow as unknown as Record<string, unknown>;
     const ownerId = row["owner_id"] as string;
 
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("id")
-      .eq("user_id", context.userId)
-      .maybeSingle();
+    const profile = await resolveProfile(supabase, context.userId, data.profile_id);
 
     const anchor = await loadAuditItem(supabase, row);
     const upstream = await loadUpstreamItems(supabase, data.work_item_id, ownerId);
@@ -254,16 +251,12 @@ export const askSpanProvenance = createServerFn({ method: "POST" })
  */
 export const deleteSpanLink = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { span_link_id: string }) => {
+  .inputValidator((input: { span_link_id: string; profile_id?: string | undefined }) => {
     if (!input?.span_link_id) throw new Error("span_link_id is required");
-    return { span_link_id: input.span_link_id };
+    return { span_link_id: input.span_link_id, profile_id: input.profile_id ?? null };
   })
   .handler(async ({ data, context }) => {
-    const { data: profile } = await context.supabase
-      .from("profiles")
-      .select("id, role")
-      .eq("user_id", context.userId)
-      .maybeSingle();
+    const profile = await resolveProfile(context.supabase, context.userId, data.profile_id);
     if (!profile || profile.role === "coach") throw new Response("Forbidden", { status: 403 });
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");

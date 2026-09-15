@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { resolveProfile } from "@/lib/profile-resolve";
 
 const clamp = (value: number) => Math.max(0, Math.trunc(value));
 
@@ -18,6 +19,7 @@ export const placeCanvasNodeFn = createServerFn({ method: "POST" })
       y: number | null;
       from?: string;
       method?: string;
+      profile_id?: string | undefined;
     }) => ({
       engagement_id: typeof input?.engagement_id === "string" ? input.engagement_id : "",
       work_item_id: typeof input?.work_item_id === "string" ? input.work_item_id : "",
@@ -25,6 +27,7 @@ export const placeCanvasNodeFn = createServerFn({ method: "POST" })
       y: Number.isFinite(input?.y) ? clamp(input.y as number) : null,
       from: input?.from === "shelf" || input?.from === "canvas" ? input.from : "canvas",
       method: input?.method === "keyboard" ? "keyboard" : "pointer",
+      profile_id: input?.profile_id ?? null,
     }),
   )
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
@@ -33,11 +36,7 @@ export const placeCanvasNodeFn = createServerFn({ method: "POST" })
     // what enforces that only the owner of the work item may write this position.
     const { supabase, userId } = context;
 
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("id, org_id")
-      .eq("user_id", userId)
-      .maybeSingle();
+    const profile = await resolveProfile(supabase, userId, data.profile_id);
     if (!profile) return { ok: true };
 
     const placing = data.x !== null && data.y !== null;

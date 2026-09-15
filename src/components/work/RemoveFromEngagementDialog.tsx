@@ -1,5 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+
+import { useProfile } from "@/hooks/use-profile";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -43,6 +45,7 @@ export function RemoveFromEngagementDialog({
   onDone?: (() => void) | undefined;
 }) {
   const queryClient = useQueryClient();
+  const { data: profile } = useProfile();
   const run = useServerFn(removeItemFromEngagement);
   const [busy, setBusy] = useState(false);
 
@@ -62,7 +65,13 @@ export function RemoveFromEngagementDialog({
             onClick={(event) => {
               event.preventDefault();
               setBusy(true);
-              void run({ data: { work_item_id: workItemId, engagement_id: engagementId } })
+              void run({
+                data: {
+                  work_item_id: workItemId,
+                  engagement_id: engagementId,
+                  profile_id: profile?.id,
+                },
+              })
                 .then(async (result) => {
                   toast.success(
                     result.still_mapped_elsewhere

@@ -1,4 +1,6 @@
 import { useServerFn } from "@tanstack/react-start";
+
+import { useProfile } from "@/hooks/use-profile";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -30,6 +32,7 @@ export function CoachOutcomeCard({
   engagementId: string;
   role: string | undefined;
 }) {
+  const { data: profile } = useProfile();
   const send = useServerFn(declareCoachOutcome);
   const [value, setValue] = useState<CoachOutcome>(guessCoachOutcome());
   const [saving, setSaving] = useState(false);
@@ -99,7 +102,7 @@ export function CoachOutcomeCard({
           disabled={saving}
           onClick={() => {
             setSaving(true);
-            void send({ data: { engagement_id: engagementId, ...value } })
+            void send({ data: { engagement_id: engagementId, profile_id: profile?.id, ...value } })
               .then(() => setSaved(true))
               .catch((error: unknown) => toast.error((error as Error).message))
               .finally(() => setSaving(false));

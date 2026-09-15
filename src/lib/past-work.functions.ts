@@ -1,14 +1,15 @@
 import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { resolveProfile } from "@/lib/profile-resolve";
 import type { PastWorkCandidate, PastWorkSearchResult } from "@/lib/past-work-shared";
 
-type SearchInput = { description: string };
+type SearchInput = { description: string; profile_id?: string | null | undefined };
 
 function validate(input: SearchInput): SearchInput {
   const description = typeof input?.description === "string" ? input.description.trim() : "";
   if (!description) throw new Error("Describe the work first.");
-  return { description: description.slice(0, 600) };
+  return { description: description.slice(0, 600), profile_id: input?.profile_id ?? null };
 }
 
 /**
@@ -24,11 +25,7 @@ export const searchPastWork = createServerFn({ method: "POST" })
       data,
       context,
     }): Promise<PastWorkSearchResult & { candidates: PastWorkCandidate[] }> => {
-      const { data: profile } = await context.supabase
-        .from("profiles")
-        .select("id, org_id")
-        .eq("user_id", context.userId)
-        .maybeSingle();
+      const profile = await resolveProfile(context.supabase, context.userId, data.profile_id);
       if (!profile) throw new Response("Forbidden", { status: 403 });
 
       const { runPastWorkSearch } = await import("./past-work.server");

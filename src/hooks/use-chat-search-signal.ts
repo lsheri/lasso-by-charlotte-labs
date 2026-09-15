@@ -1,6 +1,7 @@
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useRef } from "react";
 
+import { useProfile } from "@/hooks/use-profile";
 import { noteChatSearchFn } from "@/lib/chat-library.functions";
 import { CHAT_SEARCH_DEBOUNCE_MS, isSettledQuery } from "@/lib/chat-search-signal";
 
@@ -9,6 +10,7 @@ import { CHAT_SEARCH_DEBOUNCE_MS, isSettledQuery } from "@/lib/chat-search-signa
  * never per keystroke, plus one more when a result from that search is opened.
  */
 export function useChatSearchSignal(query: string, results: number) {
+  const { data: profile } = useProfile();
   const note = useServerFn(noteChatSearchFn);
   const resultsRef = useRef(results);
   resultsRef.current = results;
@@ -18,10 +20,17 @@ export function useChatSearchSignal(query: string, results: number) {
   const send = useCallback(
     (value: string, hadClick: boolean) => {
       void Promise.resolve(
-        note({ data: { query: value, results: resultsRef.current, had_click: hadClick } }),
+        note({
+          data: {
+            query: value,
+            results: resultsRef.current,
+            had_click: hadClick,
+            profile_id: profile?.id,
+          },
+        }),
       ).catch(() => {});
     },
-    [note],
+    [note, profile?.id],
   );
 
   const fire = useCallback(
