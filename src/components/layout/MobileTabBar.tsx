@@ -34,16 +34,15 @@ export function MobileTabBar() {
   const canSeeFirmView = roles.canSeeFirmView(profile);
   const membersLabel = roles.membersLabel(profile);
 
-  // A coach has no work of their own, and no personal Reflect space, so an Ask
-  // tab would be a dead affordance the way the FAB would be. Three tabs.
+  // A coach has no work of their own, so an Ask tab would be a dead
+  // affordance the way the FAB would be. Three tabs.
   const you: Dest[] = isCoach
     ? [
         { label: "1:1 prep", to: "/one-on-one", icon: "one-on-one" },
         { label: "Settings", to: "/settings", icon: "settings" },
       ]
     : [
-        { label: "Overview", to: "/overview", icon: "overview" },
-        { label: "Reflect", to: "/reflect", icon: "reflect" },
+        { label: "Inbox", to: "/work", icon: "work" },
         { label: "All AI conversations", to: "/ai-record", icon: "ai-record" },
         { label: "Decision log", to: "/decisions", icon: "decisions" },
         { label: "1:1 prep", to: "/one-on-one", icon: "one-on-one" },
@@ -72,7 +71,7 @@ export function MobileTabBar() {
 
   function askLasso() {
     if (handler) handler();
-    else void navigate({ to: "/reflect" });
+    else void navigate({ to: "/ai-record" });
   }
 
   async function signOut() {
