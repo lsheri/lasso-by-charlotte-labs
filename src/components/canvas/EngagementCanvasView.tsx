@@ -16,6 +16,15 @@ import {
   seedLayout,
   type Placed,
 } from "@/lib/canvas-layout";
+import {
+  DRAG_HOLD_MS,
+  dragTo,
+  keyTo,
+  passedSlop,
+  snapPoint,
+  type Point,
+} from "@/lib/canvas-drag";
+import { placeCanvasNodeFn } from "@/lib/canvas-node.functions";
 import { noteCanvasOpenedFn } from "@/lib/canvas.functions";
 import { isDeliverableType, type LineageStatus } from "@/lib/lineage-shared";
 import { reviewLink } from "@/lib/lineage.functions";
@@ -72,17 +81,36 @@ function curveFor(source: NodePosition, target: NodePosition, yOffset = 0) {
 /** The relation words a drafted link can carry. */
 const RELATION_WORDS = new Set(["informed", "produced", "revised", "cited"]);
 
+/** Is this client point inside the given element? */
+function isOver(element: HTMLElement | null, x: number, y: number) {
+  if (!element) return false;
+  const rect = element.getBoundingClientRect();
+  return x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
+}
+
 
 function CanvasNode({
   item,
   position,
   summary,
   onOpen,
+  offset,
+  lifted,
+  grabbed,
+  onGrabPointer,
+  onNodeKeyDown,
+  suppressClickRef,
 }: {
   item: WorkItemRow;
   position: NodePosition;
   summary: string | undefined;
   onOpen: (item: WorkItemRow) => void;
+  offset: Point | null;
+  lifted: boolean;
+  grabbed: boolean;
+  onGrabPointer: (id: string, event: React.PointerEvent) => void;
+  onNodeKeyDown: (id: string, event: React.KeyboardEvent) => void;
+  suppressClickRef: React.MutableRefObject<boolean>;
 }) {
   const reduceMotion = useReducedMotion();
   const [expanded, setExpanded] = useState(false);
@@ -100,14 +128,25 @@ function CanvasNode({
   return (
     <div
       className="absolute"
+      tabIndex={0}
+      aria-label={item.title ?? "Untitled"}
       style={{
         left: position.x,
         top: position.y,
         width: size.width,
         minHeight: size.height,
-        zIndex: expanded ? 2 : 1,
+        zIndex: lifted || grabbed ? 10 : expanded ? 2 : 1,
+        transform: offset
+          ? `translate(${offset.x}px, ${offset.y}px)${lifted && !reduceMotion ? " scale(1.03)" : ""}`
+          : undefined,
+        boxShadow: lifted && !reduceMotion ? "var(--shadow-modal)" : undefined,
+        outline: grabbed ? "1.4px solid var(--nb-graphite)" : undefined,
+        touchAction: "none",
+        cursor: lifted ? "grabbing" : "grab",
         transition: reduceMotion ? "none" : "min-height 160ms var(--nb-ease)",
       }}
+      onPointerDown={(event) => onGrabPointer(position.id, event)}
+      onKeyDown={(event) => onNodeKeyDown(position.id, event)}
       onPointerEnter={(event) => {
         if (!summary || event.pointerType === "touch") return;
         cancelTimer();
@@ -125,6 +164,12 @@ function CanvasNode({
         }
       }}
       onClickCapture={(event) => {
+        if (suppressClickRef.current) {
+          suppressClickRef.current = false;
+          event.preventDefault();
+          event.stopPropagation();
+          return;
+        }
         if (!touchToggleRef.current) return;
         touchToggleRef.current = false;
         event.preventDefault();
@@ -141,7 +186,7 @@ function CanvasNode({
   );
 }
 
-/** A read-only picture of which in-scope work fed each deliverable. */
+/** A picture of which in-scope work fed each deliverable, and where it sits. */
 export function EngagementCanvasView({
   engagementId,
   items,
@@ -152,6 +197,7 @@ export function EngagementCanvasView({
   onOpen: (item: WorkItemRow) => void;
 }) {
   const noteOpened = useServerFn(noteCanvasOpenedFn);
+  const placeNode = useServerFn(placeCanvasNodeFn);
   const itemIds = useMemo(() => items.map((item) => item.id), [items]);
   const itemKey = itemIds.join(":");
   const { data } = useQuery({
@@ -212,16 +258,42 @@ export function EngagementCanvasView({
         stored: true,
       });
     }
+    return { links, positions };
+  }, [data, items]);
+
+  /**
+   * Moves made in this session, drawn before the server confirms them. A null
+   * entry means the item went back to the shelf: the shelf is the unplaced
+   * state, not a container.
+   */
+  const [moves, setMoves] = useState<Record<string, Point | null>>({});
+
+  const view = useMemo(() => {
+    const positions = new Map(layout.positions);
+    for (const [id, point] of Object.entries(moves)) {
+      const item = items.find((candidate) => candidate.id === id);
+      if (!item) continue;
+      if (point === null) positions.delete(id);
+      else
+        positions.set(id, {
+          id,
+          x: point.x,
+          y: point.y,
+          kind: isDeliverableType(item.type) ? "deliverable" : "source",
+          stored: true,
+        });
+    }
     const placed = Array.from(positions.values());
     const placedIds = new Set(placed.map((position) => position.id));
     return {
-      links: links.filter(
+      placed,
+      positions,
+      links: layout.links.filter(
         (link) => placedIds.has(link.from_item_id) && placedIds.has(link.to_item_id),
       ),
-      placed,
       shelf: items.filter((item) => !placedIds.has(item.id)),
     };
-  }, [data, items]);
+  }, [layout, moves, items]);
 
   const openedRef = useRef(false);
   useEffect(() => {
@@ -229,21 +301,21 @@ export function EngagementCanvasView({
     openedRef.current = true;
     void noteOpened({
       data: {
-        nodes: layout.placed.length,
-        links: layout.links.length,
-        shelf: layout.shelf.length,
+        nodes: view.placed.length,
+        links: view.links.length,
+        shelf: view.shelf.length,
       },
     }).catch(() => undefined);
-  }, [data, layout.links.length, layout.placed.length, layout.shelf.length, noteOpened]);
+  }, [data, view.links.length, view.placed.length, view.shelf.length, noteOpened]);
 
-  const positions = new Map(layout.placed.map((position) => [position.id, position]));
+  const positions = view.positions;
   const width = Math.max(
     880,
-    ...layout.placed.map((position) => position.x + nodeSize(position.kind).width + 80),
+    ...view.placed.map((position) => position.x + nodeSize(position.kind).width + 80),
   );
   const height = Math.max(
     560,
-    ...layout.placed.map((position) => position.y + nodeSize(position.kind).height + 100),
+    ...view.placed.map((position) => position.y + nodeSize(position.kind).height + 100),
   );
 
   const reduceMotion = useReducedMotion();
@@ -290,7 +362,185 @@ export function EngagementCanvasView({
     [closeAsking, engagementId, queryClient, reduceMotion, review],
   );
 
-  const visibleLinks = layout.links.filter(
+  // ---- moving work ------------------------------------------------------
+  const surfaceRef = useRef<HTMLDivElement | null>(null);
+  const shelfRef = useRef<HTMLDivElement | null>(null);
+  const suppressClickRef = useRef(false);
+  const [drag, setDrag] = useState<{
+    id: string;
+    origin: Point | null;
+    delta: Point;
+    lifted: boolean;
+    overShelf: boolean;
+  } | null>(null);
+  const [grabbed, setGrabbed] = useState<{ id: string; start: Point | null } | null>(null);
+  const [announcement, setAnnouncement] = useState("");
+
+  /** The one commit path. Position only: never membership, never a workstream. */
+  const commit = useCallback(
+    async (
+      id: string,
+      point: Point | null,
+      from: "shelf" | "canvas",
+      method: "pointer" | "keyboard",
+    ) => {
+      const previous = moves[id];
+      setMoves((current) => ({ ...current, [id]: point }));
+      try {
+        await placeNode({
+          data: {
+            engagement_id: engagementId,
+            work_item_id: id,
+            x: point ? point.x : null,
+            y: point ? point.y : null,
+            from,
+            method,
+          },
+        });
+        await queryClient.invalidateQueries({ queryKey: ["engagement-canvas", engagementId] });
+      } catch (error) {
+        setMoves((current) => {
+          const next = { ...current };
+          if (previous === undefined) delete next[id];
+          else next[id] = previous;
+          return next;
+        });
+        toast.error(error instanceof Error ? error.message : "That did not save.");
+      }
+    },
+    [engagementId, moves, placeNode, queryClient],
+  );
+
+  const startPointerDrag = useCallback(
+    (id: string, event: React.PointerEvent) => {
+      if (event.button !== 0 && event.pointerType === "mouse") return;
+      const origin = positions.get(id) ?? null;
+      const startX = event.clientX;
+      const startY = event.clientY;
+      let lifted = false;
+      const lift = () => {
+        if (lifted) return;
+        lifted = true;
+        suppressClickRef.current = true;
+        setDrag((current) => (current && current.id === id ? { ...current, lifted: true } : current));
+      };
+      const hold = window.setTimeout(lift, DRAG_HOLD_MS);
+      setDrag({
+        id,
+        origin: origin ? { x: origin.x, y: origin.y } : null,
+        delta: { x: 0, y: 0 },
+        lifted: false,
+        overShelf: false,
+      });
+
+      const finish = () => {
+        window.clearTimeout(hold);
+        window.removeEventListener("pointermove", onMove);
+        window.removeEventListener("pointerup", onUp);
+        window.removeEventListener("pointercancel", onCancel);
+        setDrag(null);
+      };
+
+      function onMove(moveEvent: PointerEvent) {
+        const delta = { x: moveEvent.clientX - startX, y: moveEvent.clientY - startY };
+        if (passedSlop(delta)) lift();
+        if (!lifted) return;
+        moveEvent.preventDefault();
+        const overShelf = isOver(shelfRef.current, moveEvent.clientX, moveEvent.clientY);
+        setDrag((current) =>
+          current && current.id === id ? { ...current, delta, lifted: true, overShelf } : current,
+        );
+      }
+
+      function onUp(upEvent: PointerEvent) {
+        const wasLifted = lifted;
+        const delta = { x: upEvent.clientX - startX, y: upEvent.clientY - startY };
+        finish();
+        if (!wasLifted) return;
+        const overShelf = isOver(shelfRef.current, upEvent.clientX, upEvent.clientY);
+        if (origin) {
+          if (overShelf) {
+            void commit(id, null, "canvas", "pointer");
+            return;
+          }
+          void commit(id, dragTo({ x: origin.x, y: origin.y }, delta), "canvas", "pointer");
+          return;
+        }
+        const surface = surfaceRef.current;
+        if (!surface || !isOver(surface, upEvent.clientX, upEvent.clientY)) return;
+        const rect = surface.getBoundingClientRect();
+        void commit(
+          id,
+          snapPoint({ x: upEvent.clientX - rect.left, y: upEvent.clientY - rect.top }),
+          "shelf",
+          "pointer",
+        );
+      }
+
+      function onCancel() {
+        finish();
+      }
+
+      window.addEventListener("pointermove", onMove, { passive: false });
+      window.addEventListener("pointerup", onUp);
+      window.addEventListener("pointercancel", onCancel);
+    },
+    [commit, positions],
+  );
+
+  const onNodeKeyDown = useCallback(
+    (id: string, event: React.KeyboardEvent) => {
+      const current = positions.get(id);
+      const item = items.find((candidate) => candidate.id === id);
+      const name = item?.title ?? "this";
+      if (event.key === " ") {
+        event.preventDefault();
+        if (grabbed?.id === id) return;
+        setGrabbed({ id, start: current ? { x: current.x, y: current.y } : null });
+        setAnnouncement(
+          `Grabbed ${name}. Use the arrow keys, then Enter to drop, Escape to cancel.`,
+        );
+        return;
+      }
+      if (grabbed?.id !== id) return;
+      if (
+        event.key === "ArrowUp" ||
+        event.key === "ArrowDown" ||
+        event.key === "ArrowLeft" ||
+        event.key === "ArrowRight"
+      ) {
+        event.preventDefault();
+        if (!current) return;
+        setMoves((all) => ({
+          ...all,
+          [id]: keyTo({ x: current.x, y: current.y }, event.key as "ArrowUp", event.shiftKey),
+        }));
+        return;
+      }
+      if (event.key === "Enter") {
+        event.preventDefault();
+        setGrabbed(null);
+        if (current) void commit(id, { x: current.x, y: current.y }, "canvas", "keyboard");
+        setAnnouncement(`Placed ${name}.`);
+        return;
+      }
+      if (event.key === "Escape") {
+        event.preventDefault();
+        const start = grabbed.start;
+        setMoves((all) => {
+          const next = { ...all };
+          if (start) next[id] = start;
+          else delete next[id];
+          return next;
+        });
+        setGrabbed(null);
+        setAnnouncement(`Left ${name} where it was.`);
+      }
+    },
+    [commit, grabbed, items, positions],
+  );
+
+  const visibleLinks = view.links.filter(
     (link) => (answers[link.id] ?? link.status) !== "discarded" || leaving === link.id,
   );
   const draftCount = visibleLinks.filter(
@@ -299,6 +549,9 @@ export function EngagementCanvasView({
 
   return (
     <section className="space-y-4">
+      <div aria-live="polite" className="sr-only">
+        {announcement}
+      </div>
       {draftCount > 0 ? (
         <p className="font-hand text-[19px] text-graphite">
           {draftCount} question{draftCount === 1 ? "" : "s"} to answer
@@ -306,6 +559,7 @@ export function EngagementCanvasView({
       ) : null}
       <div className="overflow-auto rounded-[6px] border border-[var(--nb-rule)]">
         <div
+          ref={surfaceRef}
           className="relative min-h-[560px]"
           onClick={closeAsking}
           style={{
@@ -404,9 +658,10 @@ export function EngagementCanvasView({
               );
             })}
           </svg>
-          {layout.placed.map((position) => {
+          {view.placed.map((position) => {
             const item = items.find((candidate) => candidate.id === position.id);
             if (!item) return null;
+            const dragging = drag && drag.id === position.id && drag.lifted ? drag : null;
             return (
               <CanvasNode
                 key={position.id}
@@ -414,6 +669,12 @@ export function EngagementCanvasView({
                 position={position}
                 summary={data?.summaries.get(position.id)}
                 onOpen={onOpen}
+                offset={dragging ? dragging.delta : null}
+                lifted={Boolean(dragging)}
+                grabbed={grabbed?.id === position.id}
+                onGrabPointer={startPointerDrag}
+                onNodeKeyDown={onNodeKeyDown}
+                suppressClickRef={suppressClickRef}
               />
             );
           })}
@@ -444,18 +705,53 @@ export function EngagementCanvasView({
       </div>
 
 
-      <div className="border border-[var(--nb-rule)] p-4">
+      <div
+        ref={shelfRef}
+        className="border p-4"
+        style={{
+          borderColor:
+            drag?.lifted && drag.overShelf ? "var(--nb-graphite)" : "var(--nb-rule)",
+          background:
+            drag?.lifted && drag.overShelf
+              ? "color-mix(in oklab, var(--nb-rule) 22%, transparent)"
+              : undefined,
+        }}
+      >
         <div className="mb-3 flex items-baseline gap-2">
           <h2 className="font-hand text-[19px]">Not in the picture yet</h2>
-          <span className="font-mono text-[9px] text-muted-foreground">{layout.shelf.length}</span>
+          <span className="font-mono text-[9px] text-muted-foreground">{view.shelf.length}</span>
         </div>
-        {layout.shelf.length > 0 ? (
+        {view.shelf.length > 0 ? (
           <div className="flex flex-wrap gap-3">
-            {layout.shelf.map((item) => (
-              <div key={item.id} style={{ width: NODE_W_SOURCE, minHeight: NODE_H_SOURCE }}>
-                <WorkNote item={item} onOpen={() => onOpen(item)} />
-              </div>
-            ))}
+            {view.shelf.map((item) => {
+              const dragging = drag && drag.id === item.id && drag.lifted ? drag : null;
+              return (
+                <div
+                  key={item.id}
+                  style={{
+                    width: NODE_W_SOURCE,
+                    minHeight: NODE_H_SOURCE,
+                    touchAction: "none",
+                    cursor: dragging ? "grabbing" : "grab",
+                    transform: dragging
+                      ? `translate(${dragging.delta.x}px, ${dragging.delta.y}px)${reduceMotion ? "" : " scale(1.03)"}`
+                      : undefined,
+                    boxShadow: dragging && !reduceMotion ? "var(--shadow-modal)" : undefined,
+                    zIndex: dragging ? 10 : undefined,
+                    position: dragging ? "relative" : undefined,
+                  }}
+                  onPointerDown={(event) => startPointerDrag(item.id, event)}
+                  onClickCapture={(event) => {
+                    if (!suppressClickRef.current) return;
+                    suppressClickRef.current = false;
+                    event.preventDefault();
+                    event.stopPropagation();
+                  }}
+                >
+                  <WorkNote item={item} onOpen={() => onOpen(item)} />
+                </div>
+              );
+            })}
           </div>
         ) : (
           <p className="text-[13px] text-muted-foreground">Everything here is in the picture.</p>
@@ -464,3 +760,6 @@ export function EngagementCanvasView({
     </section>
   );
 }
+
+// One grid square is CANVAS_GRID, shared with the seed layout.
+void CANVAS_GRID;
