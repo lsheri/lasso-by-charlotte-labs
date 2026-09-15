@@ -4,6 +4,7 @@ import { useState } from "react";
 import { AddDecisionDialog } from "@/components/decisions/AddDecisionDialog";
 import { DecisionLogRow } from "@/components/decisions/DecisionLogRow";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { GraphiteSeam } from "@/components/notebook/marks";
 import { ToneCard } from "@/components/notebook/ToneCard";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -41,8 +42,6 @@ export function DecisionsPage() {
     if (filter === "no-why") return !d.why?.trim();
     return true;
   });
-
-  const metaLine = `${rows.length} ${rows.length === 1 ? "decision" : "decisions"} · ${withReasoning} carry the reasoning`;
 
   async function update(
     decision: DecisionRow,
@@ -228,6 +227,21 @@ export function DecisionsPage() {
       <ThreadViewerById workItemId={sourceItem} onClose={() => setSourceItem(null)} />
     </div>
   );
+}
+
+/**
+ * The handwritten marker between stretches of time. It only appears where the
+ * week turns over, so the timeline reads as "this week", then "earlier".
+ */
+function bandOf(row: DecisionRow): "this week" | "earlier" {
+  const week = 7 * 24 * 60 * 60 * 1000;
+  return Date.now() - new Date(row.created_at).getTime() <= week ? "this week" : "earlier";
+}
+
+function markerFor(row: DecisionRow, previous: DecisionRow | null): string | null {
+  const band = bandOf(row);
+  if (previous && bandOf(previous) === band) return null;
+  return band;
 }
 
 function DecisionRail({
