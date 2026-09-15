@@ -5,6 +5,7 @@ import { ToneCard } from "@/components/notebook/ToneCard";
 import { ConfirmedCalls } from "@/components/oneonone/ConfirmedCalls";
 import { OneOnOneBrief } from "@/components/oneonone/OneOnOneBrief";
 import { SavedForOneOnOne } from "@/components/oneonone/SaveForOneOnOne";
+import { SessionStickies } from "@/components/oneonone/SessionStickies";
 import { Button } from "@/components/ui/button";
 import { useProfile } from "@/hooks/use-profile";
 
@@ -13,15 +14,22 @@ export function OneOnOnePage() {
   // PASS A1 — preparing a brief lived on the retired Overview. This is the
   // page it was always about, so it moves here unchanged.
   const [prepOpen, setPrepOpen] = useState(false);
+  // PASS C — the hour belongs to the person having it. A coach keeps the page
+  // they had; the sticky wall is the subject's own and is never drawn for them.
+  const isCoach = profile?.role === "coach";
   return (
     <div>
       <PageHeader
-        title="1:1"
-        italicWord="prep"
-        subtitle="Structured context for your next coaching conversation."
+        title="Your"
+        italicWord="hour"
+        subtitle="What you want to bring up. Nothing here is sent until you choose to."
       />
       <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-10">
         <div>
+          {profile && !isCoach ? (
+            <SessionStickies profileId={profile.id} orgId={profile.org_id} />
+          ) : null}
+          {isCoach ? <p className="mb-6 text-sm text-muted-foreground">Nothing to prepare yet.</p> : null}
           {profile ? (
             <div className="mb-6">
               <Button type="button" variant="secondary" onClick={() => setPrepOpen(true)}>
@@ -68,6 +76,14 @@ export function OneOnOnePage() {
             </div>
             <p className="text-soft">Sending is a decision you make, not a default.</p>
           </ToneCard>
+          {/* PASS C — the send is drawn so the promise cards have a subject, and
+              it is inert on purpose. There is no send in the product yet. */}
+          <div className="flex flex-wrap items-center gap-3">
+            <Button type="button" variant="ink" disabled aria-disabled="true">
+              Send to your coach
+            </Button>
+            <p className="font-hand text-[16px] text-soft">sending comes after the pilot</p>
+          </div>
         </aside>
       </div>
     </div>
