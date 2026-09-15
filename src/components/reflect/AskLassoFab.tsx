@@ -45,7 +45,7 @@ export function AskLassoFab() {
   useEffect(() => {
     if (import.meta.env.DEV && !handler && !path.startsWith("/reflect")) {
       // Dev-only nudge: a page showing the FAB without its own Ask Lasso
-      // context falls back to /reflect, which is not always the right target.
+      // context falls back to All conversations, which opens the composer.
       console.warn(`[AskLassoFab] no Ask Lasso handler registered for ${path}`);
     }
   }, [handler, path]);
@@ -106,7 +106,13 @@ export function AskLassoFab() {
           {label}
         </button>
       ) : (
-        <Link to="/reflect" aria-label="Ask Lasso" onClick={dismissHint} className={FAB_CLASS}>
+        <Link
+          to="/ai-record"
+          search={{ ask: true }}
+          aria-label="Ask Lasso"
+          onClick={dismissHint}
+          className={FAB_CLASS}
+        >
           {label}
         </Link>
       )}

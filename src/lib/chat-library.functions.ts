@@ -79,11 +79,17 @@ export const noteChatSearchFn = createServerFn({ method: "POST" })
 /**
  * Pass 175: how the chat library is shown, cards or list. Closed vocabulary in
  * dims, nothing else travels. Never surfaced on failure.
+ *
+ * Pass A2 adds three more values to the same closed vocabulary, for which
+ * conversations are shown: captured, asked, everything. Additive only; the
+ * existing two values are unchanged.
  */
+const CHAT_VIEWS = ["cards", "list", "captured", "asked", "everything"] as const;
+
 export const noteChatViewChangedFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { view: string; profile_id?: string | undefined }) => ({
-    view: input?.view === "cards" || input?.view === "list" ? input.view : "",
+    view: (CHAT_VIEWS as readonly string[]).includes(input?.view) ? input.view : "",
     profile_id: input?.profile_id ?? null,
   }))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {

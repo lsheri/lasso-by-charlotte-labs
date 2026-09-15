@@ -1,6 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
+import { useSearch } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
+
+import { AskedSessions, useAskedSessions } from "@/components/reflect/AskedSessions";
+import { SlideOver } from "@/components/peek/SlideOver";
+import { ReflectPage } from "@/pages/ReflectPage";
 import { toast } from "sonner";
 
 import { CaptureCoverage } from "@/components/common/CaptureCoverage";
@@ -131,6 +136,12 @@ export function AiRecordPage() {
   const [engagement, setEngagement] = useState<string | "all">("all");
   const [recursOpen, setRecursOpen] = useState(false);
   const [view, setView] = useState<"cards" | "list">("cards");
+  const [source, setSource] = useState<"captured" | "asked" | "everything">("captured");
+  const [askSession, setAskSession] = useState<string | null>(null);
+  const [askOpen, setAskOpen] = useState(false);
+  const search = useSearch({ strict: false }) as { ask?: boolean };
+  const askedSessions = useAskedSessions();
+  const isCoach = profile?.role === "coach";
   const readingMotion = useMotion("record.reading");
   const pileMotion = useMotion("work.piles");
   const noteViewChanged = useServerFn(noteChatViewChangedFn);
@@ -177,6 +188,25 @@ export function AiRecordPage() {
     }
     void noteViewChanged({ data: { view: next, profile_id: profile?.id } }).catch(() => {});
   }
+
+  /**
+   * PASS A2 — which conversations are shown: the ones your tools sent over, the
+   * ones you started with Lasso, or both. Same settled event as the cards and
+   * list choice, one more closed value in its vocabulary.
+   */
+  function chooseSource(next: "captured" | "asked" | "everything") {
+    setSource(next);
+    void noteViewChanged({ data: { view: next, profile_id: profile?.id } }).catch(() => {});
+  }
+
+
+  // Arrived here asking a question: open the composer, once.
+  useEffect(() => {
+    if (search.ask && !isCoach) {
+      setAskSession(null);
+      setAskOpen(true);
+    }
+  }, [search.ask, isCoach]);
 
   useEffect(() => {
     const query = window.matchMedia("(min-width: 1100px)");
@@ -236,6 +266,8 @@ export function AiRecordPage() {
         ? byTool.filter((i) => itemEngagements(i).length === 0)
         : byTool.filter((i) => itemEngagements(i).some((e) => e.id === engagement));
   const groups = groupByMonth(visible);
+  // Asked Lasso on its own hides the captured list; Everything shows both.
+  const capturedShown = source !== "asked" && threads.length > 0;
   const selectedEngagement =
     engagement === "all" || engagement === "unmapped"
       ? null
@@ -344,21 +376,96 @@ export function AiRecordPage() {
     <div className="nb-chatview" data-reader={selected ? "open" : "closed"}>
       <div className="nb-chatview-list">
       <PageHeader
-        title="All AI"
+        title="All"
         italicWord="conversations"
         subtitle={subtitle}
         action={
           /* Figma 27:635 hangs one control off the title: the way a
              conversation gets in here by hand. */
-          <PasteThreadDialog
-            trigger={
-              <Button type="button" variant="outline">
-                Add a chat yourself
+          <div className="flex flex-wrap items-center gap-2">
+            {isCoach ? null : (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setAskSession(null);
+                  setAskOpen(true);
+                }}
+              >
+                Ask Lasso about your work
               </Button>
-            }
-          />
+            )}
+            <PasteThreadDialog
+              trigger={
+                <Button type="button" variant="outline">
+                  Add a chat yourself
+                </Button>
+              }
+            />
+          </div>
         }
       />
+
+      {isCoach ? null : (
+        <div
+          role="group"
+          aria-label="Which conversations are shown"
+          className="-mt-2 mb-4 flex flex-wrap items-center gap-2"
+        >
+          {(
+            [
+              ["captured", "Captured"],
+              ["asked", "Asked Lasso"],
+              ["everything", "Everything"],
+            ] as const
+          ).map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              aria-pressed={source === value}
+              onClick={() => chooseSource(value)}
+              className={
+                source === value
+                  ? "rounded-full border border-graphite bg-nb-white px-3 py-1 text-[11.5px] font-medium text-foreground"
+                  : "rounded-full border border-[var(--nb-pencil)] px-3 py-1 text-[11.5px] text-muted-foreground transition-colors hover:border-foreground"
+              }
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {!isCoach && source !== "captured" ? (
+        <AskedSessions
+          sessions={askedSessions}
+          onOpen={(id) => {
+            setAskSession(id);
+            setAskOpen(true);
+          }}
+        />
+      ) : null}
+
+      <SlideOver
+        open={askOpen}
+        onOpenChange={(next) => {
+          setAskOpen(next);
+          if (!next) setAskSession(null);
+        }}
+        title="Ask Lasso"
+        description="Private to you. Your coach never sees this."
+        className="sm:w-[720px] sm:max-w-[760px]"
+      >
+        <div className="overflow-y-auto p-4">
+          {askOpen ? (
+            <ReflectPage
+              embedded
+              initialSessionId={askSession}
+              autoStart={askSession === null}
+            />
+          ) : null}
+        </div>
+      </SlideOver>
 
       <div className="-mt-2 mb-6 flex items-center gap-2.5">
         <BrandLogo brand="claude" size={16} />
@@ -369,7 +476,7 @@ export function AiRecordPage() {
         </span>
       </div>
 
-      {threads.length > 0 ? (
+      {capturedShown ? (
         <div className="mb-6">
           <label htmlFor="chat-library-search" className="sr-only">
             Search your chats
@@ -388,7 +495,7 @@ export function AiRecordPage() {
         </div>
       ) : null}
 
-      {threads.length > 0 ? (
+      {capturedShown ? (
         <div
           role="group"
           aria-label="Filter by tool"
@@ -447,7 +554,7 @@ export function AiRecordPage() {
         </div>
       ) : null}
 
-      {threads.length > 0 ? (
+      {capturedShown ? (
         <div
           role="group"
           aria-label="Filter by engagement"
@@ -554,7 +661,7 @@ export function AiRecordPage() {
         </div>
       ) : null}
 
-      {threads.length > 0 ? (
+      {capturedShown ? (
         <div className="mb-6 space-y-3">
           <button
             type="button"
@@ -567,7 +674,7 @@ export function AiRecordPage() {
         </div>
       ) : null}
 
-      {threads.length === 0 ? (
+      {source === "asked" ? null : threads.length === 0 ? (
         <div className="rounded-[var(--radius)] border border-dashed border-border p-8 text-center">
           <p className="text-sm text-foreground">
             Your chat library is empty. Keep your first conversation here and it stays yours to
@@ -713,7 +820,7 @@ export function AiRecordPage() {
         </div>
       )}
 
-      {threads.length > 0 ? (
+      {capturedShown ? (
         <>
           {/* Figma 27:635 closes the list by saying how much of it you are
               looking at, and that nothing was thrown away to get there. */}

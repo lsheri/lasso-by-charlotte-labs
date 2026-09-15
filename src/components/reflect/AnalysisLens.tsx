@@ -455,10 +455,11 @@ export function AnalysisLensPanel({
         </div>
         {isCoach ? null : (
           <Link
-            to="/reflect"
+            to="/ai-record"
+          search={{ ask: true }}
             className="mt-3 inline-block text-xs font-medium text-accent-deep transition-opacity hover:opacity-70"
           >
-            Open in Reflect →
+            Open in All conversations →
           </Link>
         )}
       </footer>
