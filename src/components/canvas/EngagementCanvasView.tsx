@@ -901,7 +901,10 @@ export function EngagementCanvasView({
           {/* Answerable draft lines: a separate layer, because the drawing above never takes a pointer. */}
           <svg className="absolute inset-0" width={width} height={height} style={{ pointerEvents: "none" }}>
             {visibleLinks.map((link) => {
-              if ((answers[link.id] ?? link.status) !== "draft") return null;
+              const status = answers[link.id] ?? link.status;
+              const kind: "draft" | "person" | null =
+                status === "draft" ? "draft" : link.source === "person" ? "person" : null;
+              if (!kind) return null;
               const source = positions.get(link.from_item_id);
               const target = positions.get(link.to_item_id);
               if (!source || !target) return null;
@@ -911,7 +914,7 @@ export function EngagementCanvasView({
               const relation = RELATION_WORDS.has(link.relation) ? link.relation : "informed";
               const open = (event: { stopPropagation: () => void }) => {
                 event.stopPropagation();
-                setAsking({ id: link.id, relation, x: curve.mid.x, y: curve.mid.y });
+                setAsking({ id: link.id, relation, x: curve.mid.x, y: curve.mid.y, kind });
               };
               return (
                 <path
@@ -924,7 +927,11 @@ export function EngagementCanvasView({
                   style={{ cursor: "pointer" }}
                   tabIndex={0}
                   role="button"
-                  aria-label={`Did "${sourceTitle}" feed "${targetTitle}"?`}
+                  aria-label={
+                    kind === "draft"
+                      ? `Did "${sourceTitle}" feed "${targetTitle}"?`
+                      : `You connected "${sourceTitle}" to "${targetTitle}".`
+                  }
                   onClick={open}
                   onKeyDown={(event) => {
                     if (event.key === "Enter" || event.key === " ") {
@@ -936,6 +943,32 @@ export function EngagementCanvasView({
               );
             })}
           </svg>
+          {/* The guide while a connection is being drawn. */}
+          {linkDrag ? (
+            <svg
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0"
+              width={width}
+              height={height}
+            >
+              <path
+                d={bowFor(
+                  linkDrag.from,
+                  (() => {
+                    if (!linkDrag.targetId) return linkDrag.to;
+                    const snapped = positions.get(linkDrag.targetId);
+                    if (!snapped) return linkDrag.to;
+                    const size = nodeSize(snapped.kind);
+                    return { x: snapped.x + size.width / 2, y: snapped.y + size.height / 2 };
+                  })(),
+                )}
+                fill="none"
+                stroke="var(--nb-pencil)"
+                strokeWidth="1.5"
+                strokeDasharray="6 7"
+              />
+            </svg>
+          ) : null}
           {view.placed.map((position) => {
             const item = items.find((candidate) => candidate.id === position.id);
             if (!item) return null;
