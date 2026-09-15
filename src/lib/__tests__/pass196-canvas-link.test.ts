@@ -54,6 +54,19 @@ describe("pass196 write path", () => {
   it("never lands in the model-accuracy metric", () => {
     expect(source).not.toContain("recordEventV2");
   });
+
+  it("does not use upsert", () => {
+    expect(source).not.toContain("upsert");
+  });
+
+  it("does not use onConflict", () => {
+    expect(source).not.toContain("onConflict");
+  });
+
+  it("assigns source: person exactly once, on creation only", () => {
+    const matches = source.match(/source: "person"/g);
+    expect(matches).toHaveLength(1);
+  });
 });
 
 describe("pass196 lineage guards", () => {

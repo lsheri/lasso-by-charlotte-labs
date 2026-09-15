@@ -53,11 +53,19 @@ export const drawCanvasLinkFn = createServerFn({ method: "POST" })
     const relation = "informed";
     const now = new Date().toISOString();
 
-    // Upsert, not insert. A pair that was drawn, removed, then drawn again hits
-    // the unique index on (from_item_id, to_item_id, relation): the row comes
-    // back to confirmed rather than raising a duplicate key error.
-    const { error } = await supabase.from("work_item_links").upsert(
-      {
+    // Source is written once, on creation, and never rewritten afterwards,
+    // because it records who first asserted the edge and that fact does not change.
+    const { data: existing } = await supabase
+      .from("work_item_links")
+      .select("id, status, source")
+      .eq("from_item_id", data.from_item_id)
+      .eq("to_item_id", data.to_item_id)
+      .eq("relation", relation)
+      .maybeSingle();
+
+    if (!existing) {
+      // No row exists: the person is the first to assert this pair.
+      const { error } = await supabase.from("work_item_links").insert({
         from_item_id: data.from_item_id,
         to_item_id: data.to_item_id,
         relation,
@@ -66,10 +74,20 @@ export const drawCanvasLinkFn = createServerFn({ method: "POST" })
         confirmed_at: now,
         owner_id: profile.id,
         org_id: profile.org_id,
-      },
-      { onConflict: "from_item_id,to_item_id,relation" },
-    );
-    if (error) throw new Error("That did not save.");
+      });
+      if (error) throw new Error("That did not save.");
+    } else if (existing.status !== "discarded") {
+      // The pair is already asserted and active; nothing changes.
+      return { ok: true };
+    } else {
+      // The pair was discarded. Reviving it only restores confirmation; it does
+      // NOT rewrite source, owner_id or org_id, because those were decided at creation.
+      const { error } = await supabase
+        .from("work_item_links")
+        .update({ status: "confirmed", confirmed_at: now })
+        .eq("id", existing.id);
+      if (error) throw new Error("That did not save.");
+    }
 
     try {
       const { recordEvent } = await import("./telemetry.server");
