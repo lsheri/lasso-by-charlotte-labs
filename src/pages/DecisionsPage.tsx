@@ -183,7 +183,7 @@ export function DecisionsPage() {
                       rows={3}
                       value={reasoningText}
                       onChange={(e) => setReasoningText(e.target.value)}
-                      placeholder="Why was this the right call?"
+                      placeholder="Why was this the right call? A sentence is enough."
                     />
                     <div className="mt-2 flex items-center gap-3">
                       <Button
@@ -194,6 +194,16 @@ export function DecisionsPage() {
                       >
                         Save the reasoning
                       </Button>
+                      <button
+                        type="button"
+                        className="font-hand text-[16px] text-soft transition-colors hover:text-foreground"
+                        onClick={() => {
+                          setReasoningFor(null);
+                          discardDecision(d);
+                        }}
+                      >
+                        Discard
+                      </button>
                       <button
                         type="button"
                         className="text-xs text-muted-foreground hover:text-foreground"
