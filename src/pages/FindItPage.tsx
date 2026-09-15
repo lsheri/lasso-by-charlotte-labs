@@ -536,10 +536,11 @@ export function FindItPage() {
                   ) : null}
                   {searchHits.turns.length > 0 ? (
                     <ul className="divide-y divide-hairline border-t border-hairline">
-                      {searchHits.turns.map((hit) => (
+                      {searchHits.turns.map((hit, index) => (
                         <li
                           key={`${hit.work_item_id}-${hit.turn_no}`}
-                          className="flex items-start gap-4 py-3"
+                          className={`flex items-start gap-4 py-3 ${rowMotion.className}`}
+                          style={{ ["--nb-i" as string]: index } as React.CSSProperties}
                         >
                           <div className="min-w-0 flex-1">
                             <p className="text-[13px] text-foreground">
