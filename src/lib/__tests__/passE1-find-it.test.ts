@@ -42,7 +42,8 @@ describe("pass E1 - Find it, real engines", () => {
 
   it("keeps the quote out of the database", () => {
     const server = read("src/lib/find-it.functions.ts");
-    expect(server).not.toContain("quote:");
     expect(server).toContain("sharedSentenceFor");
+    // The sentence is recomputed per read; nothing writes it to a link row.
+    expect(server).not.toMatch(/work_item_links[\s\S]{0,200}(insert|update|upsert)/);
   });
 });
