@@ -80,18 +80,21 @@ describe("Pass 123: the sidebar follows the weekly loop", () => {
       "Your account",
     ]);
 
-    const learned = navGroups.find((g) => g.label === "What you learned")!;
-    expect(learned.items.map((i) => i.to)).toEqual([
+    const lookback = navGroups.find((g) => g.label === "Look back")!;
+    expect(lookback.items.map((i) => i.to)).toEqual(["/find-it", "/decisions"]);
+    expect(lookback.items.map((i) => i.to)).not.toContain("/firm");
+    expect(lookback.items.map((i) => i.to)).not.toContain("/members");
+
+    const coachGroup = navGroups.find((g) => g.label === "Your coach")!;
+    expect(coachGroup.items.map((i) => i.to)).toEqual(["/one-on-one", "/coach-notes"]);
+
+    // Overview and Reflect are retired; Past work sits with the shelves.
+    const everyTo = navGroups.flatMap((g) => g.items.map((i) => i.to));
+    expect(everyTo).not.toContain("/overview");
+    expect(everyTo).not.toContain("/reflect");
+    expect(navGroups.find((g) => g.id === "engagements")!.items.map((i) => i.to)).toEqual([
       "/archive",
-      "/ai-record",
-      "/reflect",
-      "/decisions",
-      "/overview",
-      "/one-on-one",
-      "/coach-notes",
     ]);
-    expect(learned.items.map((i) => i.to)).not.toContain("/firm");
-    expect(learned.items.map((i) => i.to)).not.toContain("/members");
 
     const runTheFirm = navGroups.find((g) => g.label === "Run the firm")!;
     expect(runTheFirm.items.map((i) => ({ to: i.to, label: i.label }))).toEqual([
