@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { useSyncExternalStore } from "react";
+import { useEffect, useRef, useSyncExternalStore } from "react";
+import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
 
@@ -40,13 +41,40 @@ function readStored(): string | null {
   }
 }
 
-export function setActiveProfileId(id: string): void {
+/**
+ * The choice of workspace has to reach the database, not just this tab: the
+ * reads are scoped to it there. The local switch happens first and always, so
+ * a failed write never leaves the person stuck.
+ */
+export async function setActiveProfileId(id: string): Promise<void> {
   try {
     window.localStorage.setItem(STORAGE_KEY, id);
   } catch {
     /* storage is a convenience, never a requirement */
   }
   for (const listener of listeners) listener();
+  await writeActiveProfileRow(id);
+}
+
+async function writeActiveProfileRow(id: string): Promise<void> {
+  try {
+    const { data: userData } = await supabase.auth.getUser();
+    const userId = userData.user?.id;
+    if (!userId) return;
+    const { error } = await supabase
+      .from("user_active_profile")
+      .upsert(
+        { user_id: userId, profile_id: id, updated_at: new Date().toISOString() },
+        { onConflict: "user_id" },
+      );
+    if (error) throw error;
+  } catch {
+    // Wrong reads that look right are the dangerous kind, so this is said out
+    // loud rather than swallowed.
+    toast.error(
+      "We could not save which workspace you are in. You may see work from another workspace until you try again.",
+    );
+  }
 }
 
 function subscribe(listener: () => void): () => void {
@@ -112,12 +140,43 @@ export function useProfiles() {
   return useQuery({ queryKey: ["profiles"], queryFn: fetchProfiles, staleTime: 60_000 });
 }
 
+/**
+ * Someone who has never switched has no row, so the database falls back to
+ * showing every workspace they belong to. Safe, but not what they expect, so
+ * the first resolved choice is written once. An existing row is never
+ * overwritten here: only an explicit switch does that.
+ */
+function useSeedActiveProfile(active: Profile | null): void {
+  const seeded = useRef(false);
+  useEffect(() => {
+    if (!active || seeded.current) return;
+    seeded.current = true;
+    void (async () => {
+      const { data: userData } = await supabase.auth.getUser();
+      const userId = userData.user?.id;
+      if (!userId) {
+        seeded.current = false;
+        return;
+      }
+      const { data: existing, error } = await supabase
+        .from("user_active_profile")
+        .select("user_id")
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (error || existing) return;
+      await writeActiveProfileRow(active.id);
+    })();
+  }, [active]);
+}
+
 /** The active profile, the only one, or the most recently used. */
 export function useProfile() {
   const query = useProfiles();
   const activeId = useActiveProfileId();
   const profiles = query.data ?? [];
-  return { ...query, data: pickActive(profiles, activeId), profiles };
+  const active = pickActive(profiles, activeId);
+  useSeedActiveProfile(active);
+  return { ...query, data: active, profiles };
 }
 
 export const ROLE_LABELS: Record<string, string> = {

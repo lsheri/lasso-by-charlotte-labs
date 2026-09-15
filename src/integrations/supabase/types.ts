@@ -2819,6 +2819,32 @@ export type Database = {
           },
         ]
       }
+      user_active_profile: {
+        Row: {
+          profile_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          profile_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          profile_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_active_profile_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       work_episodes: {
         Row: {
           closed_at: string | null
@@ -3222,6 +3248,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      active_org_id: { Args: never; Returns: string }
+      active_profile_id: { Args: never; Returns: string }
       analytics_insert: {
         Args: { p_row: Json; p_table: string }
         Returns: undefined
@@ -3297,8 +3325,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_active_org: { Args: { o: string }; Returns: boolean }
       is_engagement_member: { Args: { eng: string }; Returns: boolean }
       is_member_of: { Args: { p_org: string }; Returns: boolean }
+      is_my_active_profile: { Args: { p: string }; Returns: boolean }
       is_my_profile: { Args: { p: string }; Returns: boolean }
       join_org_with_invite: {
         Args: { p_code: string; p_display_name: string }

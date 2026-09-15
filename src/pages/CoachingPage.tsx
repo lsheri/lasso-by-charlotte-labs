@@ -44,8 +44,9 @@ export function CoachingPage() {
   // even before anything has been shared with them.
   const orgLine = profile?.org_name ? `You coach at ${profile.org_name}` : null;
 
-  function openPacket(coachProfileId: string, engagementId: string, subjectId: string) {
-    setActiveProfileId(coachProfileId);
+  async function openPacket(coachProfileId: string, engagementId: string, subjectId: string) {
+    // The packet is read as the coaching profile, so the switch lands first.
+    await setActiveProfileId(coachProfileId);
     // Switching the active profile changes who the next reads run as. Only the
     // three surfaces that depend on that need refreshing: the profile itself,
     // this queue, and the packet about to open.
@@ -97,9 +98,13 @@ export function CoachingPage() {
                   <button
                     key={`${subject.coach_profile_id}:${subject.engagement_id}:${subject.subject_id}`}
                     type="button"
-                    onClick={() =>
-                      openPacket(subject.coach_profile_id, subject.engagement_id, subject.subject_id)
-                    }
+                    onClick={() => {
+                      void openPacket(
+                        subject.coach_profile_id,
+                        subject.engagement_id,
+                        subject.subject_id,
+                      );
+                    }}
                     className="grid min-h-[76px] w-full grid-cols-[minmax(180px,1fr)_minmax(190px,1.15fr)_minmax(210px,1.2fr)_130px] items-center gap-4 border-b border-[var(--nb-pencil)] px-2 py-3 text-left transition-colors hover:bg-accent-soft"
                   >
                     <span className="flex min-w-0 items-center gap-3">
