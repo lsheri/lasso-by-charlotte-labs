@@ -29,6 +29,7 @@ import { Route as AuthenticatedDecisionsRouteImport } from './routes/_authentica
 import { Route as AuthenticatedFirmRouteImport } from './routes/_authenticated/firm'
 import { Route as AuthenticatedHowLassoWorksRouteImport } from './routes/_authenticated/how-lasso-works'
 import { Route as AuthenticatedMembersRouteImport } from './routes/_authenticated/members'
+import { Route as AuthenticatedMotionRouteImport } from './routes/_authenticated/motion'
 import { Route as AuthenticatedOneOnOneRouteImport } from './routes/_authenticated/one-on-one'
 import { Route as AuthenticatedOverviewRouteImport } from './routes/_authenticated/overview'
 import { Route as AuthenticatedPortfolioRouteImport } from './routes/_authenticated/portfolio'
@@ -151,6 +152,11 @@ const AuthenticatedHowLassoWorksRoute =
 const AuthenticatedMembersRoute = AuthenticatedMembersRouteImport.update({
   id: '/members',
   path: '/members',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedMotionRoute = AuthenticatedMotionRouteImport.update({
+  id: '/motion',
+  path: '/motion',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedOneOnOneRoute = AuthenticatedOneOnOneRouteImport.update({
@@ -285,6 +291,7 @@ export interface FileRoutesByFullPath {
   '/firm': typeof AuthenticatedFirmRoute
   '/how-lasso-works': typeof AuthenticatedHowLassoWorksRoute
   '/members': typeof AuthenticatedMembersRoute
+  '/motion': typeof AuthenticatedMotionRoute
   '/one-on-one': typeof AuthenticatedOneOnOneRoute
   '/overview': typeof AuthenticatedOverviewRoute
   '/portfolio': typeof AuthenticatedPortfolioRoute
@@ -327,6 +334,7 @@ export interface FileRoutesByTo {
   '/firm': typeof AuthenticatedFirmRoute
   '/how-lasso-works': typeof AuthenticatedHowLassoWorksRoute
   '/members': typeof AuthenticatedMembersRoute
+  '/motion': typeof AuthenticatedMotionRoute
   '/one-on-one': typeof AuthenticatedOneOnOneRoute
   '/overview': typeof AuthenticatedOverviewRoute
   '/portfolio': typeof AuthenticatedPortfolioRoute
@@ -371,6 +379,7 @@ export interface FileRoutesById {
   '/_authenticated/firm': typeof AuthenticatedFirmRoute
   '/_authenticated/how-lasso-works': typeof AuthenticatedHowLassoWorksRoute
   '/_authenticated/members': typeof AuthenticatedMembersRoute
+  '/_authenticated/motion': typeof AuthenticatedMotionRoute
   '/_authenticated/one-on-one': typeof AuthenticatedOneOnOneRoute
   '/_authenticated/overview': typeof AuthenticatedOverviewRoute
   '/_authenticated/portfolio': typeof AuthenticatedPortfolioRoute
@@ -415,6 +424,7 @@ export interface FileRouteTypes {
     | '/firm'
     | '/how-lasso-works'
     | '/members'
+    | '/motion'
     | '/one-on-one'
     | '/overview'
     | '/portfolio'
@@ -457,6 +467,7 @@ export interface FileRouteTypes {
     | '/firm'
     | '/how-lasso-works'
     | '/members'
+    | '/motion'
     | '/one-on-one'
     | '/overview'
     | '/portfolio'
@@ -500,6 +511,7 @@ export interface FileRouteTypes {
     | '/_authenticated/firm'
     | '/_authenticated/how-lasso-works'
     | '/_authenticated/members'
+    | '/_authenticated/motion'
     | '/_authenticated/one-on-one'
     | '/_authenticated/overview'
     | '/_authenticated/portfolio'
@@ -686,6 +698,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMembersRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/motion': {
+      id: '/_authenticated/motion'
+      path: '/motion'
+      fullPath: '/motion'
+      preLoaderRoute: typeof AuthenticatedMotionRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/one-on-one': {
       id: '/_authenticated/one-on-one'
       path: '/one-on-one'
@@ -848,6 +867,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedFirmRoute: typeof AuthenticatedFirmRoute
   AuthenticatedHowLassoWorksRoute: typeof AuthenticatedHowLassoWorksRoute
   AuthenticatedMembersRoute: typeof AuthenticatedMembersRoute
+  AuthenticatedMotionRoute: typeof AuthenticatedMotionRoute
   AuthenticatedOneOnOneRoute: typeof AuthenticatedOneOnOneRoute
   AuthenticatedOverviewRoute: typeof AuthenticatedOverviewRoute
   AuthenticatedPortfolioRoute: typeof AuthenticatedPortfolioRoute
@@ -874,6 +894,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedFirmRoute: AuthenticatedFirmRoute,
   AuthenticatedHowLassoWorksRoute: AuthenticatedHowLassoWorksRoute,
   AuthenticatedMembersRoute: AuthenticatedMembersRoute,
+  AuthenticatedMotionRoute: AuthenticatedMotionRoute,
   AuthenticatedOneOnOneRoute: AuthenticatedOneOnOneRoute,
   AuthenticatedOverviewRoute: AuthenticatedOverviewRoute,
   AuthenticatedPortfolioRoute: AuthenticatedPortfolioRoute,
