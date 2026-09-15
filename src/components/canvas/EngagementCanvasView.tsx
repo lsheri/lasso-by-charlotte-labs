@@ -904,7 +904,8 @@ export function EngagementCanvasView({
               const status = answers[link.id] ?? link.status;
               const kind: "draft" | "person" | null =
                 status === "draft" ? "draft" : link.source === "person" ? "person" : null;
-              if (!kind) return null;
+              // An edge still saving has no row to review yet.
+              if (!kind || link.id.startsWith("drawn:")) return null;
               const source = positions.get(link.from_item_id);
               const target = positions.get(link.to_item_id);
               if (!source || !target) return null;
