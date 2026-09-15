@@ -39,6 +39,7 @@ export type MotionName =
   | "spider-processes"
   | "pencil-marks"
   | "note-lands"
+  | "circle-drawn"
   | "arrows";
 
 export type MotionEventName =
@@ -60,6 +61,8 @@ export type MotionEventName =
   | "decision.on_record_shown"
   /** Pass C: a sticky note joins the wall for the next 1:1. */
   | "oneonone.note_landed"
+  /** Pass D: a new note from a coach, circled around the work it points at. */
+  | "coachnote.arrived"
   | "share.sending"
   | "feedback.pinned"
   // The app is thinking.
@@ -160,6 +163,12 @@ const MOTION_EVENT_REGISTRY: Readonly<Record<MotionEventName, MotionEventEntry>>
     group: "record",
     motion: "note-lands",
     reduced: "The note is simply there, at the end of the wall",
+    promise: false,
+  },
+  "coachnote.arrived": {
+    group: "record",
+    motion: "circle-drawn",
+    reduced: "The circle is already drawn, around the same thing",
     promise: false,
   },
   "share.sending": {
@@ -263,6 +272,7 @@ const MOTION_CLASS: Partial<Record<MotionName, MotionDraw>> = {
   "call-settles": { moving: "nb-call-settle" },
   "record-label": { moving: "nb-record-label" },
   "note-lands": { moving: "nb-note-land" },
+  "circle-drawn": { moving: "nb-circle-draw", still: "nb-circle-still" },
 };
 
 /** True when the reader has asked for less movement. Safe during SSR. */

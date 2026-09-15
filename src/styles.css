@@ -3798,6 +3798,44 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 .nb-note-land {
   animation: nb-note-land-kf 180ms var(--nb-ease, ease-out) both;
 }
+/* PASS D — the circle around work that has a new note on it. The loop is an
+   overlay: it never takes a click and never changes the layout under it. */
+.nb-circle-mark {
+  position: absolute;
+  inset: -9px -13px;
+  width: calc(100% + 26px);
+  height: calc(100% + 18px);
+  overflow: visible;
+  pointer-events: none;
+}
+@keyframes nb-circle-draw-kf {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+.nb-circle-draw path {
+  stroke-dasharray: 1;
+  animation: nb-circle-draw-kf 700ms var(--nb-ease, ease-out) both;
+}
+.nb-circle-still path {
+  stroke-dasharray: none;
+}
+@keyframes nb-note-modal-kf {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.nb-note-modal {
+  animation: nb-note-modal-kf 200ms var(--nb-ease, ease-out) both;
+}
 @media (prefers-reduced-motion: reduce) {
   .nb-check-draw path,
   .nb-call-settle,
@@ -3807,4 +3845,15 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
     opacity: 1;
     transform: none;
   }
+  .nb-circle-draw path {
+    animation: none !important;
+    stroke-dasharray: none;
+    stroke-dashoffset: 0;
+  }
+  .nb-note-modal {
+    animation-name: none;
+    opacity: 1;
+    transform: none;
+  }
 }
+

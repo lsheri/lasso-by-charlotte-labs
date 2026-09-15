@@ -161,6 +161,10 @@ export type TelemetryEvent =
   | "profile.switched"
   /** Pass 161: the subject opened notes about their work. One per view. */
   | "coachnote.read"
+  /** Pass D: a coach pinned a note with a scope chosen. The scope only. */
+  | "coachnote.scoped"
+  /** Pass D: someone wrote back on a note. Which side wrote, nothing else. */
+  | "coachnote.replied"
   /** Pass 164: the walkthrough was opened. Variant, entry, banded age only. */
   | "walkthrough.opened"
   /** Pass 164: one walkthrough section was reached. Closed vocab section id. */

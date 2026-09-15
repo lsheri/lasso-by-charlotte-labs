@@ -4,13 +4,16 @@ import { useState, useSyncExternalStore } from "react";
 
 import { NewEngagementDialog } from "@/components/engagements/NewEngagementDialog";
 import { GraphiteIcon } from "@/components/notebook/icons";
+import { CircleMark } from "@/components/notebook/CircleMark";
 import { useAffiliation } from "@/hooks/use-affiliation";
+import { useUnreadNotesAboutMe } from "@/hooks/use-coach-note-thread";
 import { useHasLiveCoachLink } from "@/hooks/use-coaching-links";
 import { useDecisions } from "@/hooks/use-decisions";
 import { useEngagements } from "@/hooks/use-engagements";
 import { useProfile } from "@/hooks/use-profile";
 import * as roles from "@/lib/role-access";
 import { isEduOrg } from "@/lib/edu-vocab";
+
 
 import {
   groupEngagementsByClient,
