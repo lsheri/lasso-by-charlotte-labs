@@ -105,7 +105,13 @@ export function FindItPage() {
 
   const items = useMemo(() => data?.items ?? [], [data]);
   const chats = useMemo(() => items.filter(isConversation), [items]);
-  const traceable = useMemo(() => items.filter(isTraceable), [items]);
+  // Only a person's own work can be traced. The list here can also hold work
+  // that is merely visible through an engagement, and asking about that comes
+  // back refused, so it never becomes a target in the first place.
+  const traceable = useMemo(
+    () => items.filter((item) => isTraceable(item) && item.owner_id === profile?.id),
+    [items, profile?.id],
+  );
 
   // Looking back through your own conversations is the person's own business.
   // A coach never reads someone else's record this way.
@@ -171,6 +177,17 @@ export function FindItPage() {
     () => traceable.find((item) => item.id === targetId) ?? null,
     [traceable, targetId],
   );
+
+  // A link can point at work that belongs to someone else. Say so plainly
+  // instead of sending a question that comes back refused.
+  const saidNotYours = useRef(false);
+  useEffect(() => {
+    if (!targetId || isLoading || target || saidNotYours.current) return;
+    saidNotYours.current = true;
+    setTargetId(null);
+    setAutoRun(false);
+    toast("That piece of work is not yours, so there is nothing here to trace.");
+  }, [targetId, isLoading, target]);
   const targetMapped = (target?.work_item_tasks?.length ?? 0) > 0;
   const effectiveScope: FindScope = scope ?? (targetMapped ? "engagement" : "all_mine");
 
