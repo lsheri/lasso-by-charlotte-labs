@@ -44,6 +44,9 @@ const count = z.number().int().nonnegative();
 /** Short controlled vocabulary: a tool name, a preset id, a class label. */
 const term = z.string().max(48);
 
+/** Pass B: where a call was confirmed, discarded or edited. Closed vocabulary. */
+const DECISION_SURFACE = z.enum(["inbox", "log", "engagement"]);
+
 const SCHEMAS = {
   // 15.1 identity and consent
   "organization.profile_created": z.object({ org_mode: term, has_segments: z.boolean() }).strict(),
