@@ -296,6 +296,19 @@ export function SidebarNav({
                 <GraphiteIcon name={item.icon} size={20} />
                 <span className="truncate">{item.label}</span>
               </button>
+            ) : item.to === "/coach-notes" && hasNewNotes ? (
+              // The circle, not a count: it says look here, and nothing more.
+              <CircleMark key={item.to} className="block" label="New note from your coach">
+                <Link
+                  to={item.to}
+                  onClick={onNavigate}
+                  className={linkClass}
+                  activeProps={activeProps}
+                >
+                  <GraphiteIcon name={item.icon} size={20} />
+                  <span className="truncate">{item.label}</span>
+                </Link>
+              </CircleMark>
             ) : (
               <Link
                 key={item.to}
@@ -316,6 +329,7 @@ export function SidebarNav({
                 </span>
               </Link>
             ),
+
           );
 
         // Groups with no visible items are silent, except Engagements which
