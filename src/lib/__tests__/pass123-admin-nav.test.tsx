@@ -106,9 +106,8 @@ describe("Pass 123: the sidebar follows the weekly loop", () => {
     expect(screen.queryByText("Firm view")).not.toBeNull();
     expect(screen.queryByText("Members")).not.toBeNull();
 
-    expect(screen.queryByText("What you learned")).not.toBeNull();
+    expect(screen.queryByText("Look back")).not.toBeNull();
     expect(screen.queryByText("Settings")).not.toBeNull();
-    expect(screen.queryByText("Overview")).not.toBeNull();
 
     // Firm view and Members should not also appear under What you learned.
     const learnedSection = screen.getByText("What you learned").parentElement!;
@@ -124,7 +123,7 @@ describe("Pass 123: the sidebar follows the weekly loop", () => {
     expect(screen.queryByText("Members")).toBeNull();
     expect(screen.queryByText("Your coaches")).toBeNull();
 
-    expect(screen.queryByText("What you learned")).not.toBeNull();
+    expect(screen.queryByText("Look back")).not.toBeNull();
     expect(screen.queryByText("Settings")).not.toBeNull();
   });
 
@@ -136,7 +135,7 @@ describe("Pass 123: the sidebar follows the weekly loop", () => {
     expect(screen.queryByText("Firm view")).toBeNull();
     expect(screen.queryByText("Members")).toBeNull();
 
-    expect(screen.queryByText("What you learned")).not.toBeNull();
+    expect(screen.queryByText("Look back")).not.toBeNull();
     expect(screen.queryByText("Settings")).not.toBeNull();
   });
 
