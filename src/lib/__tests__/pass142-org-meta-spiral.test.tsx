@@ -18,9 +18,9 @@ import { PAST_WORK_GROUP_LABEL, PAST_WORK_NAV_LABEL } from "@/lib/past-work-shar
 describe("pass 142: your organization", () => {
   it("renames the nav group and keeps Past work", () => {
     // Nav is now ordered by the weekly loop rather than by object type.
-    expect(PAST_WORK_GROUP_LABEL).toBe("What you learned");
+    expect(PAST_WORK_GROUP_LABEL).toBe("Where it goes");
     expect(PAST_WORK_NAV_LABEL).toBe("Past work");
-    const group = navGroups.find((g) => g.label === "What you learned");
+    const group = navGroups.find((g) => g.label === "Where it goes");
     expect(group?.items[0]?.label).toBe("Past work");
     expect(navGroups.some((g) => g.label === "Firm")).toBe(false);
   });

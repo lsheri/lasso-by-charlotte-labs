@@ -68,13 +68,20 @@ const candidate = (id: string): PastWorkCandidate => ({
 });
 
 describe("Pass 138: Past work nav", () => {
-  it("sits in What you learned, directly under Where it goes", () => {
+  it("sits in Where it goes, after the shelves", () => {
     const labels = navGroups.map((group) => group.label);
     // Nav is now ordered by the weekly loop rather than by object type.
-    expect(labels).toEqual(["What landed", "Where it goes", "What you learned", "Run the firm", "Your account"]);
-    expect(labels.indexOf("What you learned")).toBe(labels.indexOf("Where it goes") + 1);
+    expect(labels).toEqual([
+      "What landed",
+      "Where it goes",
+      "Look back",
+      "Your coach",
+      "Run the firm",
+      "Your account",
+    ]);
+    expect(labels.indexOf("Look back")).toBe(labels.indexOf("Where it goes") + 1);
 
-    const learned = navGroups.find((group) => group.label === "What you learned")!;
+    const learned = navGroups.find((group) => group.label === "Where it goes")!;
     expect(learned.items[0]).toEqual({ label: PAST_WORK_NAV_LABEL, to: "/archive", icon: "firm" });
     expect(PAST_WORK_NAV_LABEL).toBe("Past work");
   });

@@ -41,12 +41,13 @@ describe("chat library — the name", () => {
     expect(labels).not.toContain("AI record");
   });
 
-  it("leaves the route URL alone and sits nested under Inbox - All Work and Transcripts", () => {
+  it("leaves the route URL alone and sits in What landed under the Inbox", () => {
     const item = navGroups.flatMap((g) => g.items).find((i) => i.label === "All AI conversations");
     expect(item?.to).toBe("/ai-record");
     const group = navGroups.find((g) => g.items.some((i) => i.to === "/ai-record"));
     expect(group?.id).toBe("landed");
-    expect(item?.nested).toBe(true);
+    // Pass A1: no longer nested, it is a place of its own under What landed.
+    expect(item?.nested).toBeUndefined();
   });
 
   it("carries no stale name in the page or its route", () => {
