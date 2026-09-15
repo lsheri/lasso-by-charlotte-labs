@@ -114,9 +114,9 @@ export function DecisionsPage() {
       {/* Figma 30:1419 hangs "Log a decision" off the title's baseline as a
           quiet outline control, not a filled secondary beside the header. */}
       <PageHeader
-        title="Decision"
-        italicWord="log"
-        subtitle={metaLine}
+        title="Your"
+        italicWord="calls"
+        subtitle="The calls you made along the way, in the order you made them, with the reasoning you kept."
         action={
           <AddDecisionDialog
             trigger={
