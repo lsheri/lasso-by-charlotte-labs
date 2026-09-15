@@ -175,6 +175,14 @@ export function SidebarNav({
   const canSeeFirmView = roles.canSeeFirmView(profile);
   const groupsForOrg = isEduOrg(profile) ? eduNavGroups : navGroups;
   const membersLabel = roles.membersLabel(profile);
+  // "Your coach" is only a real place when someone is actually coaching you.
+  // A firm or school role has that by arrangement; a solo workspace has to
+  // have a live link, so only there does the sidebar ask.
+  const byArrangement = roles.hasCoachByArrangement(profile);
+  const soloHasCoach = useHasLiveCoachLink(
+    !isCoach && profile?.org_type === "personal" && Boolean(profile?.id),
+  );
+  const canBeCoached = byArrangement || soloHasCoach;
   const matchRoute = useMatchRoute();
   const engagementMatch = matchRoute({ to: "/engagements/$id", fuzzy: false });
   const activeEngagementId = engagementMatch ? engagementMatch.id : undefined;
