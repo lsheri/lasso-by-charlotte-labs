@@ -43,6 +43,7 @@ import { Route as AuthenticatedClientsIdRouteImport } from './routes/_authentica
 import { Route as AuthenticatedCoachingIndexRouteImport } from './routes/_authenticated/coaching.index'
 import { Route as AuthenticatedDesignIconsRouteImport } from './routes/_authenticated/design.icons'
 import { Route as AuthenticatedEngagementsIdRouteImport } from './routes/_authenticated/engagements.$id'
+import { Route as AuthenticatedQaSeedRouteImport } from './routes/_authenticated/qa.seed'
 import { Route as ApiAnalysisStreamRouteImport } from './routes/api/analysis.stream'
 import { Route as ApiCoachChatStreamRouteImport } from './routes/api/coach-chat.stream'
 import { Route as ApiMcpTokenRouteImport } from './routes/api/mcp.$token'
@@ -228,6 +229,11 @@ const AuthenticatedEngagementsIdRoute =
     path: '/engagements/$id',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedQaSeedRoute = AuthenticatedQaSeedRouteImport.update({
+  id: '/qa/seed',
+  path: '/qa/seed',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const ApiAnalysisStreamRoute = ApiAnalysisStreamRouteImport.update({
   id: '/api/analysis/stream',
   path: '/api/analysis/stream',
@@ -310,6 +316,7 @@ export interface FileRoutesByFullPath {
   '/clients/$id': typeof AuthenticatedClientsIdRoute
   '/design/icons': typeof AuthenticatedDesignIconsRoute
   '/engagements/$id': typeof AuthenticatedEngagementsIdRoute
+  '/qa/seed': typeof AuthenticatedQaSeedRoute
   '/api/analysis/stream': typeof ApiAnalysisStreamRoute
   '/api/coach-chat/stream': typeof ApiCoachChatStreamRoute
   '/api/mcp/$token': typeof ApiMcpTokenRoute
@@ -354,6 +361,7 @@ export interface FileRoutesByTo {
   '/clients/$id': typeof AuthenticatedClientsIdRoute
   '/design/icons': typeof AuthenticatedDesignIconsRoute
   '/engagements/$id': typeof AuthenticatedEngagementsIdRoute
+  '/qa/seed': typeof AuthenticatedQaSeedRoute
   '/api/analysis/stream': typeof ApiAnalysisStreamRoute
   '/api/coach-chat/stream': typeof ApiCoachChatStreamRoute
   '/api/mcp/$token': typeof ApiMcpTokenRoute
@@ -400,6 +408,7 @@ export interface FileRoutesById {
   '/_authenticated/clients/$id': typeof AuthenticatedClientsIdRoute
   '/_authenticated/design/icons': typeof AuthenticatedDesignIconsRoute
   '/_authenticated/engagements/$id': typeof AuthenticatedEngagementsIdRoute
+  '/_authenticated/qa/seed': typeof AuthenticatedQaSeedRoute
   '/api/analysis/stream': typeof ApiAnalysisStreamRoute
   '/api/coach-chat/stream': typeof ApiCoachChatStreamRoute
   '/api/mcp/$token': typeof ApiMcpTokenRoute
@@ -446,6 +455,7 @@ export interface FileRouteTypes {
     | '/clients/$id'
     | '/design/icons'
     | '/engagements/$id'
+    | '/qa/seed'
     | '/api/analysis/stream'
     | '/api/coach-chat/stream'
     | '/api/mcp/$token'
@@ -490,6 +500,7 @@ export interface FileRouteTypes {
     | '/clients/$id'
     | '/design/icons'
     | '/engagements/$id'
+    | '/qa/seed'
     | '/api/analysis/stream'
     | '/api/coach-chat/stream'
     | '/api/mcp/$token'
@@ -535,6 +546,7 @@ export interface FileRouteTypes {
     | '/_authenticated/clients/$id'
     | '/_authenticated/design/icons'
     | '/_authenticated/engagements/$id'
+    | '/_authenticated/qa/seed'
     | '/api/analysis/stream'
     | '/api/coach-chat/stream'
     | '/api/mcp/$token'
@@ -808,6 +820,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEngagementsIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/qa/seed': {
+      id: '/_authenticated/qa/seed'
+      path: '/qa/seed'
+      fullPath: '/qa/seed'
+      preLoaderRoute: typeof AuthenticatedQaSeedRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/api/analysis/stream': {
       id: '/api/analysis/stream'
       path: '/api/analysis/stream'
@@ -898,6 +917,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedClientsIdRoute: typeof AuthenticatedClientsIdRoute
   AuthenticatedDesignIconsRoute: typeof AuthenticatedDesignIconsRoute
   AuthenticatedEngagementsIdRoute: typeof AuthenticatedEngagementsIdRoute
+  AuthenticatedQaSeedRoute: typeof AuthenticatedQaSeedRoute
   AuthenticatedCoachingIndexRoute: typeof AuthenticatedCoachingIndexRoute
   AuthenticatedCoachingEngagementIdSubjectIdRoute: typeof AuthenticatedCoachingEngagementIdSubjectIdRoute
 }
@@ -926,6 +946,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedClientsIdRoute: AuthenticatedClientsIdRoute,
   AuthenticatedDesignIconsRoute: AuthenticatedDesignIconsRoute,
   AuthenticatedEngagementsIdRoute: AuthenticatedEngagementsIdRoute,
+  AuthenticatedQaSeedRoute: AuthenticatedQaSeedRoute,
   AuthenticatedCoachingIndexRoute: AuthenticatedCoachingIndexRoute,
   AuthenticatedCoachingEngagementIdSubjectIdRoute:
     AuthenticatedCoachingEngagementIdSubjectIdRoute,
