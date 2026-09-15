@@ -92,7 +92,6 @@ function isOver(element: HTMLElement | null, x: number, y: number) {
 function CanvasNode({
   item,
   position,
-  summary,
   onOpen,
   offset,
   lifted,
@@ -103,7 +102,6 @@ function CanvasNode({
 }: {
   item: WorkItemRow;
   position: NodePosition;
-  summary: string | undefined;
   onOpen: (item: WorkItemRow) => void;
   offset: Point | null;
   lifted: boolean;
@@ -113,17 +111,7 @@ function CanvasNode({
   suppressClickRef: React.MutableRefObject<boolean>;
 }) {
   const reduceMotion = useReducedMotion();
-  const [expanded, setExpanded] = useState(false);
-  const timerRef = useRef<number | null>(null);
-  const touchToggleRef = useRef(false);
   const size = nodeSize(position.kind);
-
-  const cancelTimer = () => {
-    if (timerRef.current !== null) window.clearTimeout(timerRef.current);
-    timerRef.current = null;
-  };
-
-  useEffect(() => cancelTimer, []);
 
   return (
     <div
