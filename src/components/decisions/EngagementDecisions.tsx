@@ -9,6 +9,8 @@ import { SuggestDot } from "@/components/common/Suggested";
 import { Button } from "@/components/ui/button";
 import { ThreadViewerById } from "@/components/work/ThreadViewerById";
 import { useDecisionActions } from "@/hooks/use-decision-actions";
+import { isDeliverableType } from "@/lib/lineage-shared";
+import { useDecisionSourceItems } from "@/hooks/use-decisions";
 import { useEngagementSlice } from "@/hooks/use-engagement-page";
 import { srcsOf, useEngagementDecisions, type DecisionRow } from "@/hooks/use-decisions";
 import { draftEngagementDecisions } from "@/lib/decisions.functions";
@@ -28,7 +30,7 @@ export function EngagementDecisions({
   canEdit: boolean;
 }) {
   const { data: decisions, isLoading } = useEngagementDecisions(engagementId);
-  const actions = useDecisionActions();
+  const actions = useDecisionActions("engagement");
   const queryClient = useQueryClient();
   const run = useServerFn(draftEngagementDecisions);
   const [busy, setBusy] = useState(false);
@@ -55,6 +57,22 @@ export function EngagementDecisions({
     return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
   });
   const draftCount = rows.filter((d) => d.status === "draft").length;
+
+  // Every item these calls cite, so a call that points at exactly one
+  // deliverable can draw the arrow to it.
+  const citedIds = Array.from(
+    new Set(rows.flatMap((d) => srcsOf(d).map((s) => s.work_item_id)).filter(Boolean)),
+  );
+  const { data: citedItems } = useDecisionSourceItems(citedIds);
+
+  function loneDeliverableOf(decision: DecisionRow): string | null {
+    const ids = Array.from(new Set(srcsOf(decision).map((s) => s.work_item_id)));
+    const deliverables = ids.filter((id) => {
+      const info = citedItems?.[id];
+      return info ? isDeliverableType(info.type) : false;
+    });
+    return deliverables.length === 1 ? (deliverables[0] ?? null) : null;
+  }
 
   async function findDecisions() {
     setBusy(true);
@@ -85,7 +103,9 @@ export function EngagementDecisions({
   return (
     <section className="mt-10">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="micro-label micro-label-section">Decisions</h2>
+        <h2 className="micro-label micro-label-section">
+          Calls on this engagement · {rows.length}
+        </h2>
         {rows.length > 0 ? (
           <span className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
             {draftCount > 0 ? <SuggestDot /> : null}
@@ -123,6 +143,7 @@ export function EngagementDecisions({
                 onConfirm={() => actions.confirm(decision)}
                 onSaveEdit={(fields) => actions.saveEdit(decision, fields)}
                 onDiscard={() => actions.discard(decision)}
+                arrowToSourceId={loneDeliverableOf(decision)}
               />
             ))}
           </div>

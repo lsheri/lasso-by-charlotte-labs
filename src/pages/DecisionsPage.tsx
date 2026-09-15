@@ -4,6 +4,7 @@ import { useState } from "react";
 import { AddDecisionDialog } from "@/components/decisions/AddDecisionDialog";
 import { DecisionLogRow } from "@/components/decisions/DecisionLogRow";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { GraphiteSeam } from "@/components/notebook/marks";
 import { ToneCard } from "@/components/notebook/ToneCard";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -42,8 +43,6 @@ export function DecisionsPage() {
     return true;
   });
 
-  const metaLine = `${rows.length} ${rows.length === 1 ? "decision" : "decisions"} · ${withReasoning} carry the reasoning`;
-
   async function update(
     decision: DecisionRow,
     patch: Database["public"]["Tables"]["decisions"]["Update"],
@@ -58,11 +57,18 @@ export function DecisionsPage() {
     if (updateError) return setActionError(updateError.message);
     if (profile) {
       logEvent("decision.resolved", profile.org_id, { status, edited });
-      if (status === "confirmed") logEvent("decision.confirmed", profile.org_id, { edited });
+      if (status === "confirmed")
+        logEvent("decision.confirmed", profile.org_id, { edited, surface: "log" });
       logV2("decision.resolved", { status: status as never, edited }, { profileId: profile.id });
       if (status === "confirmed")
-        logV2("decision.confirmed", { edited, evidence_count: 0 }, { profileId: profile.id });
-      if (status === "discarded") logV2("decision.discarded", { edited }, { profileId: profile.id });
+        logV2(
+          "decision.confirmed",
+          { edited, evidence_count: 0, surface: "log" },
+          { profileId: profile.id },
+        );
+      if (status === "discarded")
+        logV2("decision.discarded", { edited, surface: "log" }, { profileId: profile.id });
+      if (edited) logV2("decision.edited", { edited, surface: "log" }, { profileId: profile.id });
     }
     await queryClient.invalidateQueries({ queryKey: ["decisions"] });
   }
@@ -107,9 +113,9 @@ export function DecisionsPage() {
       {/* Figma 30:1419 hangs "Log a decision" off the title's baseline as a
           quiet outline control, not a filled secondary beside the header. */}
       <PageHeader
-        title="Decision"
-        italicWord="log"
-        subtitle={metaLine}
+        title="Your"
+        italicWord="calls"
+        subtitle="The calls you made along the way, in the order you made them, with the reasoning you kept."
         action={
           <AddDecisionDialog
             trigger={
@@ -152,9 +158,17 @@ export function DecisionsPage() {
         </div>
       ) : (
         <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_340px]">
-          <div className="divide-y divide-border">
-            {visible.map((d) => (
+          {/* PASS B · the log reads as a timeline: one pencilled rule down the
+              left, handwritten markers where the week turns over. */}
+          <div className="relative pl-6">
+            <GraphiteSeam className="absolute left-0 top-2 h-[calc(100%-16px)] w-[6px] text-[var(--nb-pencil)]" />
+            {visible.map((d, index) => (
               <div key={d.id}>
+                {markerFor(d, index === 0 ? null : (visible[index - 1] ?? null)) ? (
+                  <p className="mt-2 font-hand text-[16px] text-soft">
+                    {markerFor(d, index === 0 ? null : (visible[index - 1] ?? null))}
+                  </p>
+                ) : null}
                 <DecisionLogRow
                   decision={d}
                   onOpenSource={setSourceItem}
@@ -168,7 +182,7 @@ export function DecisionsPage() {
                       rows={3}
                       value={reasoningText}
                       onChange={(e) => setReasoningText(e.target.value)}
-                      placeholder="Why was this the right call?"
+                      placeholder="Why was this the right call? A sentence is enough."
                     />
                     <div className="mt-2 flex items-center gap-3">
                       <Button
@@ -179,6 +193,16 @@ export function DecisionsPage() {
                       >
                         Save the reasoning
                       </Button>
+                      <button
+                        type="button"
+                        className="font-hand text-[16px] text-soft transition-colors hover:text-foreground"
+                        onClick={() => {
+                          setReasoningFor(null);
+                          discardDecision(d);
+                        }}
+                      >
+                        Discard
+                      </button>
                       <button
                         type="button"
                         className="text-xs text-muted-foreground hover:text-foreground"
@@ -203,6 +227,21 @@ export function DecisionsPage() {
       <ThreadViewerById workItemId={sourceItem} onClose={() => setSourceItem(null)} />
     </div>
   );
+}
+
+/**
+ * The handwritten marker between stretches of time. It only appears where the
+ * week turns over, so the timeline reads as "this week", then "earlier".
+ */
+function bandOf(row: DecisionRow): "this week" | "earlier" {
+  const week = 7 * 24 * 60 * 60 * 1000;
+  return Date.now() - new Date(row.created_at).getTime() <= week ? "this week" : "earlier";
+}
+
+function markerFor(row: DecisionRow, previous: DecisionRow | null): string | null {
+  const band = bandOf(row);
+  if (previous && bandOf(previous) === band) return null;
+  return band;
 }
 
 function DecisionRail({

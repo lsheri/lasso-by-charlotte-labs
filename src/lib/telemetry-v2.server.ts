@@ -44,6 +44,9 @@ const count = z.number().int().nonnegative();
 /** Short controlled vocabulary: a tool name, a preset id, a class label. */
 const term = z.string().max(48);
 
+/** Pass B: where a call was confirmed, discarded or edited. Closed vocabulary. */
+const DECISION_SURFACE = z.enum(["inbox", "log", "engagement"]);
+
 const SCHEMAS = {
   // 15.1 identity and consent
   "organization.profile_created": z.object({ org_mode: term, has_segments: z.boolean() }).strict(),
@@ -108,9 +111,17 @@ const SCHEMAS = {
 
   // 15.4 decisions and verification
   "decision.drafted": z.object({ draft_count: count, scope: term }).strict(),
-  "decision.confirmed": z.object({ edited: z.boolean(), evidence_count: count }).strict(),
-  "decision.edited": z.object({ edited: z.boolean() }).strict(),
-  "decision.discarded": z.object({ edited: z.boolean() }).strict(),
+  // Pass B: `surface` is additive and closed, so the record can say where a
+  // call was settled. Optional, because older callers never sent it.
+  "decision.confirmed": z
+    .object({ edited: z.boolean(), evidence_count: count, surface: DECISION_SURFACE.optional() })
+    .strict(),
+  "decision.edited": z
+    .object({ edited: z.boolean(), surface: DECISION_SURFACE.optional() })
+    .strict(),
+  "decision.discarded": z
+    .object({ edited: z.boolean(), surface: DECISION_SURFACE.optional() })
+    .strict(),
   "decision.resolved": z.object({ status: z.enum(DECISION_STATUSES), edited: z.boolean() }).strict(),
   "decision.applied": z.object({ evidence_count: count }).strict(),
   "verification.detected": z.object({ kind: term }).strict(),

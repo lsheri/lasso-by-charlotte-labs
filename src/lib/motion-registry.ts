@@ -19,8 +19,10 @@
 
 export type MotionGroup = "auditability" | "record" | "thinking" | "chrome";
 
-/** The 16 motions the registry can resolve to. */
+/** The 18 motions the registry can resolve to. */
 export type MotionName =
+  | "call-settles"
+  | "record-label"
   | "reading-line"
   | "pencil-marks-underline"
   | "trace-back"
@@ -51,6 +53,10 @@ export type MotionEventName =
   | "claim.lassoed"
   | "record.stamped"
   | "call.logged"
+  /** Pass B: a drafted call was confirmed. The check draws on, the card settles. */
+  | "decision.confirmed"
+  /** Pass B: the on the record label, which waits for the check to finish. */
+  | "decision.on_record_shown"
   | "share.sending"
   | "feedback.pinned"
   // The app is thinking.
@@ -133,6 +139,18 @@ const MOTION_EVENT_REGISTRY: Readonly<Record<MotionEventName, MotionEventEntry>>
     group: "record",
     motion: "pencil-marks-tick",
     reduced: "The tick appears",
+    promise: false,
+  },
+  "decision.confirmed": {
+    group: "record",
+    motion: "call-settles",
+    reduced: "The check appears, the card does not move",
+    promise: false,
+  },
+  "decision.on_record_shown": {
+    group: "record",
+    motion: "record-label",
+    reduced: "The label is simply there, beside the check",
     promise: false,
   },
   "share.sending": {
@@ -233,6 +251,8 @@ const MOTION_CLASS: Partial<Record<MotionName, MotionDraw>> = {
   "the-lasso": { moving: "nb-lasso-wrap" },
   stamp: { moving: "nb-ship-settle" },
   "pencil-marks-tick": { moving: "nb-mark" },
+  "call-settles": { moving: "nb-call-settle" },
+  "record-label": { moving: "nb-record-label" },
 };
 
 /** True when the reader has asked for less movement. Safe during SSR. */

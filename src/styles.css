@@ -3749,3 +3749,48 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
     animation: none !important;
   }
 }
+
+/* ==========================================================================
+   Pass B · a confirmed call. The check draws on, the card settles, and the
+   on the record label waits until the stroke has landed. Both are chosen by
+   the motion registry (decision.confirmed, decision.on_record_shown), never
+   by a screen.
+   ========================================================================== */
+.nb-check-draw path {
+  stroke-dasharray: 1;
+  animation: nb-mark-draw 500ms var(--nb-ease, ease-out) both;
+}
+@keyframes nb-call-settle-kf {
+  0% {
+    transform: translateY(0);
+  }
+  55% {
+    transform: translateY(10px);
+  }
+  100% {
+    transform: translateY(8px);
+  }
+}
+.nb-call-settle {
+  animation: nb-call-settle-kf 450ms cubic-bezier(0.22, 1.2, 0.36, 1) both;
+}
+@keyframes nb-record-label-kf {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.nb-record-label {
+  animation: nb-record-label-kf 260ms var(--nb-ease, ease-out) 520ms both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .nb-check-draw path,
+  .nb-call-settle,
+  .nb-record-label {
+    animation: none !important;
+    opacity: 1;
+    transform: none;
+  }
+}

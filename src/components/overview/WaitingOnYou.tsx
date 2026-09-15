@@ -1,93 +1,138 @@
-import { useMemo } from "react";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
+import { Link } from "@tanstack/react-router";
 
-import { SectionHeader } from "@/components/notebook/SectionHeader";
-import { ToneCard } from "@/components/notebook/ToneCard";
+import { GraphiteCheck } from "@/components/notebook/marks";
 import { Button } from "@/components/ui/button";
-import { useDecisions, srcsOf } from "@/hooks/use-decisions";
-import { useEngagements } from "@/hooks/use-engagements";
+import { ThreadViewerById } from "@/components/work/ThreadViewerById";
+import { useDecisionActions } from "@/hooks/use-decision-actions";
+import { useDecisions, srcsOf, useDecisionSourceItems } from "@/hooks/use-decisions";
+import { useMotion } from "@/hooks/use-motion";
 import { useProfile } from "@/hooks/use-profile";
 
 /**
- * PASS A1 — the drafted calls waiting on a person, lifted off the retired
- * Overview onto the Inbox unchanged. It owns its own reads so the Inbox keeps
- * the hook list it already had. Styling is deliberately as it was: Pass B
- * restyles it.
+ * PASS B · the calls waiting on a person, as the storyboard draws them: a mono
+ * count line, then up to three yellow cards a person can settle where they
+ * stand. Confirm and discard are the existing shared actions, stamped with
+ * surface "inbox" so the record knows where a call was settled.
+ *
+ * The settle and the check are chosen by the motion registry, never named here.
  */
-
-function plural(n: number, one: string, many: string): string {
-  return `${n} ${n === 1 ? one : many}`;
-}
 
 export function WaitingOnYou() {
   const { data: profile } = useProfile();
   const { data: decisions } = useDecisions();
-  const { data: engagements } = useEngagements(profile?.id);
-  const navigate = useNavigate();
+  const actions = useDecisionActions("inbox");
+  const settle = useMotion("decision.confirmed");
+  const [sourceItem, setSourceItem] = useState<string | null>(null);
+  const [settled, setSettled] = useState<string[]>([]);
 
   const drafts = useMemo(
     () => (decisions ?? []).filter((row) => row.status === "draft"),
     [decisions],
   );
 
-  // engagement_id -> display code, so a card can say where it landed.
-  const codeById = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const e of (engagements ?? []) as { id: string; code?: string | null }[]) {
-      if (e.code) map.set(e.id, e.code);
+  const waiting = drafts.slice(0, 3);
+
+  const sourceIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const row of waiting) {
+      const first = srcsOf(row)[0];
+      if (first?.work_item_id) ids.add(first.work_item_id);
     }
-    return map;
-  }, [engagements]);
+    return Array.from(ids);
+  }, [waiting]);
+  const { data: sourceInfo } = useDecisionSourceItems(sourceIds);
 
   if (profile?.role === "coach") return null;
-
-  const waiting = drafts.slice(0, 2);
   if (waiting.length === 0) return null;
-
-  const reviewLabel =
-    drafts.length === 1 ? "Review it" : drafts.length === 2 ? "Review both" : "Review all";
 
   return (
     <section className="mb-8" data-testid="overview-waiting">
-      <SectionHeader
-        title="Waiting on you"
-        action={
-          <Link to="/decisions" className="text-[11.5px] text-accent-deep hover:underline">
-            Open Your calls
-          </Link>
-        }
-      />
+      <div className="mb-3 flex items-baseline justify-between gap-4">
+        <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
+          Calls waiting on you · {drafts.length}
+        </span>
+        <Link to="/decisions" className="text-[11.5px] text-accent-deep hover:underline">
+          Review all
+        </Link>
+      </div>
+
       <div className="flex flex-wrap items-start gap-4">
         {waiting.map((row) => {
-          const code = row.engagement_id ? codeById.get(row.engagement_id) : undefined;
-          const srcCount = srcsOf(row).length;
-          const meta = [code, srcCount > 0 ? plural(srcCount, "source", "sources") : ""]
-            .filter(Boolean)
-            .join(" · ");
+          const done = settled.includes(row.id);
+          const firstSrc = srcsOf(row)[0]?.work_item_id;
+          const srcLabel = firstSrc ? (sourceInfo?.[firstSrc]?.title ?? "Source") : null;
           return (
-            <ToneCard
+            <article
               key={row.id}
-              tone="claim"
-              label={["YOUR CALL", row.date_label].filter(Boolean).join(" · ")}
-              title={row.call_text ?? row.situation ?? "Untitled call"}
-              meta={meta}
-              className="w-[360px] max-w-full"
-            />
+              className={`flex w-[320px] max-w-full flex-col gap-2 rounded-[var(--radius-control)] border border-[var(--nb-yellow-edge)] bg-[var(--nb-yellow-wash)] px-3 py-3 ${
+                done && !settle.still ? settle.className : ""
+              }`}
+            >
+              <div className="flex items-start justify-between gap-2">
+                <span className="font-hand text-[16px] leading-[18px] text-[var(--nb-yellow-ink)]">
+                  your call
+                  {row.date_label ? ` · ${row.date_label}` : ""}
+                </span>
+                {done ? (
+                  <GraphiteCheck
+                    seed={row.id}
+                    className={`text-green ${settle.still ? "" : "nb-check-draw"}`}
+                  />
+                ) : null}
+              </div>
+
+              <p className="text-[16px] font-medium leading-[21px] text-foreground">
+                {row.call_text ?? row.situation ?? "Untitled call"}
+              </p>
+              {row.situation ? (
+                <p className="text-[13px] leading-[18px] text-muted-foreground">{row.situation}</p>
+              ) : null}
+
+              {firstSrc ? (
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => setSourceItem(firstSrc)}
+                    className="max-w-full truncate rounded-[var(--radius-sm)] border border-border px-2 py-1 font-mono text-[10px] uppercase tracking-[0.08em] text-accent-deep transition-colors hover:border-foreground"
+                  >
+                    {(srcLabel ?? "Source").toUpperCase()}
+                  </button>
+                </div>
+              ) : null}
+
+              <div className="mt-1 flex flex-wrap items-center gap-3">
+                <Button
+                  type="button"
+                  size="sm"
+                  disabled={done}
+                  onClick={() => {
+                    setSettled((prev) => [...prev, row.id]);
+                    actions.confirm(row);
+                  }}
+                >
+                  Confirm this call
+                </Button>
+                <button
+                  type="button"
+                  className="font-hand text-[16px] text-soft transition-colors hover:text-foreground"
+                  onClick={() => actions.discard(row)}
+                >
+                  Not a decision
+                </button>
+              </div>
+            </article>
           );
         })}
-
-        <div className="flex w-[316px] max-w-full flex-col gap-2.5">
-          <div>
-            <Button type="button" onClick={() => void navigate({ to: "/decisions" })}>
-              {reviewLabel}
-            </Button>
-          </div>
-          <p className="text-[11.5px] leading-[17px] text-muted-foreground">
-            Lasso drafted these from your conversations. Nothing goes on the record until you say
-            so.
-          </p>
-        </div>
       </div>
+
+      <p className="mt-3 max-w-[520px] text-[11.5px] leading-[17px] text-muted-foreground">
+        Lasso drafted these from your conversations. Nothing goes on the record until you say so.
+      </p>
+
+      {actions.error ? <p className="mt-2 text-sm text-destructive">{actions.error}</p> : null}
+
+      <ThreadViewerById workItemId={sourceItem} onClose={() => setSourceItem(null)} />
     </section>
   );
 }

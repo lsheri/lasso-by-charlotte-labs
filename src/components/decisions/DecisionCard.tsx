@@ -12,12 +12,19 @@ export function DecisionCard({
   onSaveEdit,
   onDiscard,
   onOpenSource,
+  arrowToSourceId = null,
 }: {
   decision: DecisionRow;
   onConfirm: () => void;
   onSaveEdit: (fields: { situation: string; call_text: string; why: string }) => void;
   onDiscard: () => void;
   onOpenSource: (workItemId: string) => void;
+  /**
+   * PASS B: when a call cites exactly one deliverable, a small hand-drawn
+   * arrow runs from the row to that chip. Optional, so every other caller is
+   * unchanged.
+   */
+  arrowToSourceId?: string | null;
 }) {
   const isDraft = decision.status === "draft";
   const [editing, setEditing] = useState(false);
@@ -100,16 +107,18 @@ export function DecisionCard({
       </div>
 
       {sourceItems.length > 0 ? (
-        <div className="mt-5 flex flex-wrap gap-2">
+        <div className="mt-5 flex flex-wrap items-center gap-2">
           {sourceItems.map((id) => (
+            <span key={`row-${id}`} className="flex items-center gap-1">
+            {arrowToSourceId === id ? <DrawnHandArrow /> : null}
             <button
-              key={id}
               type="button"
               onClick={() => onOpenSource(id)}
               className="max-w-full truncate rounded-full bg-accent-soft px-3 py-1 font-mono text-[11px] tracking-[0.06em] text-accent-deep transition-opacity hover:opacity-80"
             >
               {sourceLabelFor(id)}
             </button>
+            </span>
           ))}
         </div>
       ) : null}
@@ -190,6 +199,27 @@ export function DecisionCard({
         )}
       </div>
     </article>
+  );
+}
+
+/** A 40px pencil arrow: this call landed in that piece of work. */
+function DrawnHandArrow() {
+  return (
+    <svg
+      width={40}
+      height={14}
+      viewBox="0 0 40 14"
+      fill="none"
+      stroke="var(--nb-pencil)"
+      strokeWidth={1.4}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="pointer-events-none shrink-0"
+      aria-hidden
+    >
+      <path d="M1.5 8.2C8 6.4 14 8.4 20.5 6.8c5-1.2 10-.6 16.5-1.4" />
+      <path d="M31.5 1.8c1.8 1.4 3.6 2.6 5.5 3.6-1.9 1.4-3.6 3-5.2 4.6" />
+    </svg>
   );
 }
 
