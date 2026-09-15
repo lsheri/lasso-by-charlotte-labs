@@ -1,6 +1,8 @@
 # Motion scenes
 
-`src/lib/motion-registry.ts` is the source of truth. This table is the readable copy.
+`src/lib/motion-scenes.ts` is the source of truth. This table is the readable copy.
+
+`src/lib/motion-registry.ts` is a separate thing: the event-to-motion map that `useMotion` reads. It is not this table.
 
 | id | name | source | duration | loop | pause | role | where it renders |
 | --- | --- | --- | ---: | --- | ---: | --- | --- |

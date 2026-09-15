@@ -7,7 +7,7 @@ import { render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { SpiderLassoScene } from "@/components/motion/SpiderLassoScene";
-import { MOTION_REGISTRY } from "@/lib/motion-registry";
+import { MOTION_SCENES } from "@/lib/motion-scenes";
 
 const read = (path: string) => readFileSync(path, "utf8");
 
