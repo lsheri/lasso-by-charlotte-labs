@@ -49,4 +49,19 @@ describe("pass 182 canvas", () => {
     expect(page).toContain("what fed what?");
     expect(page).not.toContain("NOTHING TO CHECK YET");
   });
+
+  it("places a deliverable that nothing links to yet", () => {
+    const placed = seedLayout({
+      deliverables: ["d1", "d2"],
+      linksBySource: new Map([["s1", ["d1"]]]),
+    });
+    expect(placed.filter((n) => n.kind === "deliverable").map((n) => n.id)).toEqual(["d1", "d2"]);
+    expect(placed.some((n) => n.id === "s1")).toBe(true);
+  });
+
+  it("places every deliverable when there are no links at all", () => {
+    const placed = seedLayout({ deliverables: ["d1", "d2", "d3"], linksBySource: new Map() });
+    expect(placed).toHaveLength(3);
+    expect(placed.every((n) => n.kind === "deliverable")).toBe(true);
+  });
 });

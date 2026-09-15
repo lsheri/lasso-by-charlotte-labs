@@ -18,7 +18,8 @@ export type Placed = {
 
 const snap = (value: number) => Math.round(value / CANVAS_GRID) * CANVAS_GRID;
 
-/** Deliverables in a column; each one's sources stacked to its left. */
+/** Deliverables in a column; each one's sources stacked to its left.
+ * A deliverable is always placed. Sources are what may be absent. */
 export function seedLayout(input: LayoutInput): Placed[] {
   const placed: Placed[] = [];
   const usedSources = new Set<string>();
@@ -27,7 +28,6 @@ export function seedLayout(input: LayoutInput): Placed[] {
     const sources = Array.from(input.linksBySource.entries())
       .filter(([sourceId, targets]) => !usedSources.has(sourceId) && targets.includes(deliverableId))
       .map(([sourceId]) => sourceId);
-    if (sources.length === 0) return;
 
     const deliverableY = 80 + deliverableIndex * 260;
     placed.push({
