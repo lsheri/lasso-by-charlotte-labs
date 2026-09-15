@@ -40,7 +40,7 @@ export function SpiderLassoScene() {
         </div>
 
         <div
-          className="absolute inset-[61.57%_78.29%_33.79%_calc(1426%/100)] flex items-center justify-center"
+          className="absolute inset-[61.57%_78.29%_33.79%_14.260%] flex items-center justify-center"
           style={{ containerType: "size" }}
         >
           <div className="-rotate-8 h-[hypot(5.00643cqw,72.7391cqh)] w-[hypot(94.9936cqw,-27.2609cqh)] flex-none">
@@ -136,7 +136,7 @@ export function SpiderLassoScene() {
         <div className="absolute inset-[36.36%_0.6%_44.32%_91.43%]">
           <div className="absolute inset-[-1.76%_-3.36%]">{image(v1128)}</div>
         </div>
-        <div className="absolute inset-[29.94%_22.14%_68.18%_calc(6429%/100)]">
+        <div className="absolute inset-[29.94%_22.14%_68.18%_64.290%]">
           <div className="absolute inset-[-18.14%_-1.97%_-18.15%_-1.97%]">{image(v1129)}</div>
         </div>
         <div className="absolute inset-[27.33%_0.71%_70.45%_90.18%]">

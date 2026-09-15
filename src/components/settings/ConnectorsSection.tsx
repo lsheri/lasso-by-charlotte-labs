@@ -165,8 +165,8 @@ export function ConnectorsSection({ from }: { from?: SettingsOpenFrom }) {
   const { activeSectionId, setActiveSection } = useActiveSettingsSection();
   const settings = useSettingsDialogOptional();
   const resolvedFrom: SettingsOpenFrom =
-    from ??
     settings?.openedFrom ??
+    from ??
     (settings?.openedWithSection && settings.section === "connectors"
       ? "deep_link"
       : "settings_rail");
