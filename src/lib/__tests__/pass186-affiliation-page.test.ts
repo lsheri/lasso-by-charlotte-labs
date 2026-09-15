@@ -17,7 +17,7 @@ describe("pass 186: the student's transparency page", () => {
   // Each word asserted on its own so a failure names which one leaked.
   it.each(["monitor", "track", "score", "surveillance", "compliance", "telemetry", "analytics"])(
     "never uses the word %s",
-    (word) => {
+    (word: string) => {
       expect(page.toLowerCase()).not.toContain(word);
     },
   );

@@ -134,6 +134,8 @@ export type TelemetryEvent =
   | "chatlib.filter_changed"
   /** Pass 182: the work canvas was opened. Bands only, never ids. */
   | "canvas.opened"
+  /** Pass 187: a piece of work was moved on the canvas. Closed vocab, no ids. */
+  | "canvas.node_moved"
   /** Pass 185: a workspace was affiliated with an institution at creation. Slug only. */
   | "workspace.affiliated"
   /** Pass 186: the student opened the page describing what their school sees. */
