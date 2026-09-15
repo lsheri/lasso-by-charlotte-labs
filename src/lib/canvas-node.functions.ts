@@ -29,8 +29,8 @@ export const placeCanvasNodeFn = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
     if (!data.engagement_id || !data.work_item_id) return { ok: true };
-    // The request scoped client, never supabaseAdmin: row level security is what
-    // enforces that only the owner of the work item may write this position.
+    // The request scoped client, never a service role one: row level security is
+    // what enforces that only the owner of the work item may write this position.
     const { supabase, userId } = context;
 
     const { data: profile } = await supabase
