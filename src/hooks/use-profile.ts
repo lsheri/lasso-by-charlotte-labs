@@ -41,13 +41,40 @@ function readStored(): string | null {
   }
 }
 
-export function setActiveProfileId(id: string): void {
+/**
+ * The choice of workspace has to reach the database, not just this tab: the
+ * reads are scoped to it there. The local switch happens first and always, so
+ * a failed write never leaves the person stuck.
+ */
+export async function setActiveProfileId(id: string): Promise<void> {
   try {
     window.localStorage.setItem(STORAGE_KEY, id);
   } catch {
     /* storage is a convenience, never a requirement */
   }
   for (const listener of listeners) listener();
+  await writeActiveProfileRow(id);
+}
+
+async function writeActiveProfileRow(id: string): Promise<void> {
+  try {
+    const { data: userData } = await supabase.auth.getUser();
+    const userId = userData.user?.id;
+    if (!userId) return;
+    const { error } = await supabase
+      .from("user_active_profile")
+      .upsert(
+        { user_id: userId, profile_id: id, updated_at: new Date().toISOString() },
+        { onConflict: "user_id" },
+      );
+    if (error) throw error;
+  } catch {
+    // Wrong reads that look right are the dangerous kind, so this is said out
+    // loud rather than swallowed.
+    toast.error(
+      "We could not save which workspace you are in. You may see work from another workspace until you try again.",
+    );
+  }
 }
 
 function subscribe(listener: () => void): () => void {
