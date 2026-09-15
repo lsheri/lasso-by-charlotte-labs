@@ -174,7 +174,16 @@ export function WorkLedger({
           This is what is linked. It is not everything that happened.
         </p>
       </div>
+
+      <CoachNoteModal
+        note={openNote}
+        open={openNote !== null}
+        onOpenChange={(next) => {
+          if (!next) setOpenNote(null);
+        }}
+      />
     </section>
+
   );
 }
 
