@@ -3,6 +3,7 @@ import { getRouteApi, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import { GraphiteRule } from "@/components/notebook/marks";
+import { useReducedMotion } from "@/hooks/use-motion";
 import { EngagementCanvasView } from "@/components/canvas/EngagementCanvasView";
 import { PeekBody } from "@/components/peek/PeekPanel";
 import { presetsForScope, type AnalysisPresetId } from "@/lib/analysis-presets";
@@ -73,9 +74,29 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
   const [rail, setRail] = useState<"closed" | "open">("closed");
   const askOpen = rail !== "closed";
   const benchPageRef = useRef<HTMLDivElement>(null);
+  const benchMainRef = useRef<HTMLDivElement>(null);
+  const reduceMotion = useReducedMotion();
+
 
   const [askHadConversation, setAskHadConversation] = useState(false);
   const [peekItem, setPeekItem] = useState<WorkItemRow | null>(null);
+  /**
+   * A document opens in the main column, and the page keeps whatever scroll
+   * position the canvas had, so it can land below the fold. Bring the top of
+   * the column into view, but only when a document first opens: not on every
+   * render, and not when one document replaces another.
+   */
+  const peekWasOpenRef = useRef(false);
+  useEffect(() => {
+    const open = Boolean(peekItem);
+    if (open && !peekWasOpenRef.current) {
+      benchMainRef.current?.scrollIntoView({
+        block: "start",
+        behavior: reduceMotion ? "auto" : "smooth",
+      });
+    }
+    peekWasOpenRef.current = open;
+  }, [peekItem, reduceMotion]);
   // PASS 129 — the peek's action bar reads the same on both surfaces, so the
   // same dialogs are mounted here as on the Work pile.
   const [mapItem, setMapItem] = useState<WorkItemRow | null>(null);
@@ -434,7 +455,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
             : { gridTemplateColumns: `minmax(0, 1fr) ${panel.width}px` }
         }
       >
-        <div className="nb-bench-main">
+        <div className="nb-bench-main" ref={benchMainRef}>
       <header className="mb-8">
         <div className="nb-sticky-head relative">
           <div className="min-w-0">

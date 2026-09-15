@@ -141,6 +141,12 @@ export type TelemetryEvent =
   | "canvas.opened"
   /** Pass 187: a piece of work was moved on the canvas. Closed vocab, no ids. */
   | "canvas.node_moved"
+  /**
+   * Pass 198: the canvas was zoomed. A view control: bands and vocabulary
+   * only. No zoom values, no ids, no titles. A person's zoom level is about
+   * their own eyes and their own screen and is not a dimension.
+   */
+  | "canvas.zoomed"
   /** Pass 185: a workspace was affiliated with an institution at creation. Slug only. */
   | "workspace.affiliated"
   /** Pass 186: the student opened the page describing what their school sees. */

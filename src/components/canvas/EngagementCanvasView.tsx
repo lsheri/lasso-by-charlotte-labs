@@ -30,6 +30,14 @@ import {
   nearestTarget,
   type LinkCandidate,
 } from "@/lib/canvas-link";
+import {
+  ZOOM_DEFAULT,
+  ZOOM_MAX,
+  ZOOM_MIN,
+  pinchZoom,
+  stepZoom,
+} from "@/lib/canvas-zoom";
+import { logEvent } from "@/lib/telemetry";
 import { drawCanvasLinkFn } from "@/lib/canvas-link.functions";
 import { placeCanvasNodeFn } from "@/lib/canvas-node.functions";
 import { useProfile } from "@/hooks/use-profile";
@@ -415,6 +423,65 @@ export function EngagementCanvasView({
     [closeAsking, engagementId, queryClient, reduceMotion, review],
   );
 
+  // ---- zoom ---------------------------------------------------------------
+  // Positions, deltas and hit testing are canvas units. Pointer events are
+  // screen pixels. At any zoom but 1 those are different units, so every
+  // pointer measure is divided by the zoom before it reaches canvas maths.
+  const [zoom, setZoom] = useState(ZOOM_DEFAULT);
+  const zoomRef = useRef(zoom);
+  zoomRef.current = zoom;
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const orgId = profile?.org_id;
+  const noteZoom = useCallback(
+    (direction: "in" | "out" | "reset", method: "pinch" | "button" | "keyboard") => {
+      if (!orgId) return;
+      logEvent("canvas.zoomed", orgId, { direction, method });
+    },
+    [orgId],
+  );
+  // One continuous pinch is one gesture, so it records once, on the tail.
+  const pinchTimerRef = useRef<number | null>(null);
+  const notePinch = useCallback(
+    (direction: "in" | "out") => {
+      if (pinchTimerRef.current !== null) window.clearTimeout(pinchTimerRef.current);
+      pinchTimerRef.current = window.setTimeout(() => {
+        pinchTimerRef.current = null;
+        noteZoom(direction, "pinch");
+      }, 600);
+    },
+    [noteZoom],
+  );
+  useEffect(
+    () => () => {
+      if (pinchTimerRef.current !== null) window.clearTimeout(pinchTimerRef.current);
+    },
+    [],
+  );
+  const zoomBy = useCallback(
+    (direction: "in" | "out" | "reset", method: "button" | "keyboard") => {
+      setZoom((current) => (direction === "reset" ? ZOOM_DEFAULT : stepZoom(current, direction)));
+      noteZoom(direction, method);
+    },
+    [noteZoom],
+  );
+  // A pinch is a wheel event with ctrl or cmd held. Without preventDefault the
+  // browser zooms the whole page instead, so the listener is non-passive.
+  useEffect(() => {
+    const element = scrollRef.current;
+    if (!element) return;
+    const onWheel = (event: WheelEvent) => {
+      if (!event.ctrlKey && !event.metaKey) return;
+      event.preventDefault();
+      const delta = event.deltaY * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? 100 : 1);
+      if (delta === 0) return;
+      setZoom((current) => pinchZoom(current, delta));
+      notePinch(delta < 0 ? "in" : "out");
+    };
+    element.addEventListener("wheel", onWheel, { passive: false });
+    return () => element.removeEventListener("wheel", onWheel);
+  }, [notePinch]);
+
+
   // ---- moving work ------------------------------------------------------
   const surfaceRef = useRef<HTMLDivElement | null>(null);
   const shelfRef = useRef<HTMLDivElement | null>(null);
@@ -422,7 +489,10 @@ export function EngagementCanvasView({
   const [drag, setDrag] = useState<{
     id: string;
     origin: Point | null;
+    /** Canvas units. */
     delta: Point;
+    /** Screen pixels, for the shelf, which sits outside the scaled surface. */
+    screen: Point;
     lifted: boolean;
     overShelf: boolean;
   } | null>(null);
@@ -509,7 +579,10 @@ export function EngagementCanvasView({
       const candidates = candidatesFor(fromId);
       const toSurface = (clientX: number, clientY: number) => {
         const rect = surface.getBoundingClientRect();
-        return { x: clientX - rect.left, y: clientY - rect.top };
+        // Screen pixels into canvas units, so nearestTarget and LINK_SNAP,
+        // which are canvas units, still mean what they say at any zoom.
+        const zoom = zoomRef.current;
+        return { x: (clientX - rect.left) / zoom, y: (clientY - rect.top) / zoom };
       };
       setLinkDrag({ fromId, from, to: toSurface(event.clientX, event.clientY), targetId: null });
 
@@ -606,9 +679,11 @@ export function EngagementCanvasView({
         id,
         origin: origin ? { x: origin.x, y: origin.y } : null,
         delta: { x: 0, y: 0 },
+        screen: { x: 0, y: 0 },
         lifted: false,
         overShelf: false,
       });
+
 
       const finish = () => {
         window.clearTimeout(hold);
@@ -619,19 +694,29 @@ export function EngagementCanvasView({
       };
 
       function onMove(moveEvent: PointerEvent) {
-        const delta = { x: moveEvent.clientX - startX, y: moveEvent.clientY - startY };
+        const zoom = zoomRef.current;
+        const screen = { x: moveEvent.clientX - startX, y: moveEvent.clientY - startY };
+        // Screen pixels into canvas units. DRAG_SLOP is a canvas unit and is
+        // never scaled.
+        const delta = { x: screen.x / zoom, y: screen.y / zoom };
         if (passedSlop(delta)) lift();
         if (!lifted) return;
         moveEvent.preventDefault();
         const overShelf = isOver(shelfRef.current, moveEvent.clientX, moveEvent.clientY);
         setDrag((current) =>
-          current && current.id === id ? { ...current, delta, lifted: true, overShelf } : current,
+          current && current.id === id
+            ? { ...current, delta, screen, lifted: true, overShelf }
+            : current,
         );
       }
 
       function onUp(upEvent: PointerEvent) {
         const wasLifted = lifted;
-        const delta = { x: upEvent.clientX - startX, y: upEvent.clientY - startY };
+        const zoom = zoomRef.current;
+        const delta = {
+          x: (upEvent.clientX - startX) / zoom,
+          y: (upEvent.clientY - startY) / zoom,
+        };
         finish();
         if (!wasLifted) return;
         const overShelf = isOver(shelfRef.current, upEvent.clientX, upEvent.clientY);
@@ -648,7 +733,10 @@ export function EngagementCanvasView({
         const rect = surface.getBoundingClientRect();
         void commit(
           id,
-          snapPoint({ x: upEvent.clientX - rect.left, y: upEvent.clientY - rect.top }),
+          snapPoint({
+            x: (upEvent.clientX - rect.left) / zoom,
+            y: (upEvent.clientY - rect.top) / zoom,
+          }),
           "shelf",
           "pointer",
         );
@@ -815,14 +903,35 @@ export function EngagementCanvasView({
           {draftCount} question{draftCount === 1 ? "" : "s"} to answer
         </p>
       ) : null}
-      <div className="overflow-auto rounded-[6px] border border-[var(--nb-rule)]">
+      <div className="relative">
+      <div
+        ref={scrollRef}
+        tabIndex={0}
+        className="overflow-auto rounded-[6px] border border-[var(--nb-rule)]"
+        onKeyDown={(event) => {
+          if (event.key === "+" || event.key === "=") {
+            event.preventDefault();
+            zoomBy("in", "keyboard");
+          } else if (event.key === "-" || event.key === "_") {
+            event.preventDefault();
+            zoomBy("out", "keyboard");
+          } else if (event.key === "0") {
+            event.preventDefault();
+            zoomBy("reset", "keyboard");
+          }
+        }}
+      >
         <div
           ref={surfaceRef}
           className="relative min-h-[560px]"
           onClick={closeAsking}
           style={{
-            width,
-            height,
+            // The layout box grows with the zoom so the scroll area still
+            // matches what is drawn and the far corner stays reachable.
+            width: width * zoom,
+            height: height * zoom,
+            transform: `scale(${zoom})`,
+            transformOrigin: "0 0",
             background:
               "radial-gradient(circle at 1px 1px, color-mix(in oklab, var(--nb-rule) 70%, var(--nb-paper)) 1px, transparent 0) 0 0/22px 22px var(--nb-paper)",
           }}
@@ -1028,6 +1137,42 @@ export function EngagementCanvasView({
           ) : null}
         </div>
       </div>
+        {/* Quiet view controls, floating over the paper, out of the scroll flow. */}
+        <div className="absolute bottom-3 right-3 z-20 flex items-center gap-1 rounded-[6px] border border-[var(--nb-rule)] bg-card px-1 py-1 shadow-[var(--shadow-card)]">
+          <Button
+            size="sm"
+            variant="ghost"
+            aria-label="Zoom out"
+            disabled={zoom <= ZOOM_MIN + 0.001}
+            onClick={() => zoomBy("out", "button")}
+          >
+            −
+          </Button>
+          <span className="font-mono text-[9px] tabular-nums text-muted-foreground">
+            {Math.round(zoom * 100)}%
+          </span>
+          <Button
+            size="sm"
+            variant="ghost"
+            aria-label="Zoom in"
+            disabled={zoom >= ZOOM_MAX - 0.001}
+            onClick={() => zoomBy("in", "button")}
+          >
+            +
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            aria-label="Reset zoom"
+            disabled={zoom === ZOOM_DEFAULT}
+            onClick={() => zoomBy("reset", "button")}
+          >
+            Reset
+          </Button>
+        </div>
+      </div>
+
+
 
 
       <div
@@ -1059,7 +1204,9 @@ export function EngagementCanvasView({
                     touchAction: "none",
                     cursor: dragging ? "grabbing" : "grab",
                     transform: dragging
-                      ? `translate(${dragging.delta.x}px, ${dragging.delta.y}px)${reduceMotion ? "" : " scale(1.03)"}`
+                      ? // The shelf sits outside the scaled surface, so it
+                        // follows the pointer in screen pixels, not canvas units.
+                        `translate(${dragging.screen.x}px, ${dragging.screen.y}px)${reduceMotion ? "" : " scale(1.03)"}`
                       : undefined,
                     boxShadow: dragging && !reduceMotion ? "var(--shadow-modal)" : undefined,
                     zIndex: dragging ? 10 : undefined,
