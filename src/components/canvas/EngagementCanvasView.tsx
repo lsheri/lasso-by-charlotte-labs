@@ -1000,16 +1000,28 @@ export function EngagementCanvasView({
                 {asking.relation}
               </p>
               <div className="mt-2 flex items-center gap-2">
-                <Button size="sm" onClick={() => void answer(asking.id, "confirmed")}>
-                  Yes, this fed it
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => void answer(asking.id, "discarded")}
-                >
-                  No it didn&apos;t
-                </Button>
+                {asking.kind === "person" ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => void answer(asking.id, "discarded")}
+                  >
+                    Remove
+                  </Button>
+                ) : (
+                  <>
+                    <Button size="sm" onClick={() => void answer(asking.id, "confirmed")}>
+                      Yes, this fed it
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => void answer(asking.id, "discarded")}
+                    >
+                      No it didn&apos;t
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
           ) : null}
