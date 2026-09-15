@@ -251,6 +251,8 @@ const MOTION_CLASS: Partial<Record<MotionName, MotionDraw>> = {
   "the-lasso": { moving: "nb-lasso-wrap" },
   stamp: { moving: "nb-ship-settle" },
   "pencil-marks-tick": { moving: "nb-mark" },
+  "call-settles": { moving: "nb-call-settle" },
+  "record-label": { moving: "nb-record-label" },
 };
 
 /** True when the reader has asked for less movement. Safe during SSR. */
