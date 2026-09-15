@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, type ReactNode } from "react";
 
 /** Where the person came from when they opened settings. */
-export type SettingsOpenFrom = "settings_rail" | "connect_sheet" | "deep_link";
+export type SettingsOpenFrom = "settings_rail" | "connect_sheet" | "deep_link" | "inbox";
 
 type SettingsCtx = {
   open: boolean;

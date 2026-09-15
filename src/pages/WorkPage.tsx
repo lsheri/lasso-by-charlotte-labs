@@ -67,10 +67,12 @@ import {
 } from "@/lib/work-types";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { NotebookSpider } from "@/components/notebook/NotebookSpider";
+import { SpiderLassoScene } from "@/components/notebook/SpiderLassoScene";
 import { ToneCard } from "@/components/notebook/ToneCard";
 import { WorkSubtitle } from "@/components/work/WorkSubtitle";
 import { sourceVendorKey } from "@/components/work/SourceMark";
 import { BUCKETS, bucketFor, type BucketKey } from "@/components/work/work-buckets";
+import { useSettingsDialog } from "@/lib/settings-dialog-context";
 
 /** Each type column pages its entries five at a time, replacing not growing. */
 const COLUMN_PAGE_SIZE = 5;
@@ -138,10 +140,13 @@ function BringWorkInRow({
   onDoneSelect,
   onEnterSelect,
 }: BringWorkInRowProps) {
+  const { openSettings } = useSettingsDialog();
+
   return (
-    <div className="mb-6">
-      <p className="micro-label">BRING WORK IN</p>
-      <div className="mt-2 flex flex-wrap items-center gap-2">
+    <div className="mb-6 flex items-start justify-between gap-6">
+      <div className="min-w-0 flex-1">
+        <p className="micro-label">BRING WORK IN</p>
+        <div className="mt-2 flex flex-wrap items-center gap-2">
         {unmappedCount > 0 ? (
           <button
             type="button"
@@ -201,6 +206,9 @@ function BringWorkInRow({
           }
         />
         <UploadFilesButton />
+        <Button type="button" variant="outline" onClick={() => openSettings("connectors", "inbox")}>
+          Connected apps
+        </Button>
         <TranscriptsAction />
         <ImportFlowDialog
           trigger={
@@ -209,6 +217,10 @@ function BringWorkInRow({
             </Button>
           }
         />
+        </div>
+      </div>
+      <div className="hidden shrink-0 lg:block" aria-hidden="true">
+        <SpiderLassoScene />
       </div>
     </div>
   );
