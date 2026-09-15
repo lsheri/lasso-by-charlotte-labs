@@ -198,10 +198,10 @@ export function SessionStickies({ profileId, orgId }: { profileId: string; orgId
 
       <div className="mt-5 flex flex-wrap gap-4">
         {(notes ?? []).map((note, index) => (
+          <div key={note.id} className={landed.className}>
           <div
-            key={note.id}
             style={{ backgroundColor: noteTint(index) }}
-            className={`flex h-[180px] w-[220px] max-w-full flex-col justify-between rounded-[var(--radius-sm)] border border-[var(--nb-pencil)] p-3 ${noteTilt(note.id)} ${landed.className} ${note.discussed ? "opacity-60" : ""}`}
+            className={`flex h-[180px] w-[220px] max-w-full flex-col justify-between rounded-[var(--radius-sm)] border border-[var(--nb-pencil)] p-3 ${noteTilt(note.id)} ${note.discussed ? "opacity-60" : ""}`}
           >
             <p className="overflow-hidden whitespace-pre-wrap font-hand text-[18px] leading-[22px] text-foreground">
               {note.content}
@@ -223,6 +223,7 @@ export function SessionStickies({ profileId, orgId }: { profileId: string; orgId
                 remove
               </button>
             </div>
+          </div>
           </div>
         ))}
 
