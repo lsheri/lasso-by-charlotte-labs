@@ -434,7 +434,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
             : { gridTemplateColumns: `minmax(0, 1fr) ${panel.width}px` }
         }
       >
-        <div className="nb-bench-main">
+        <div className="nb-bench-main" ref={benchMainRef}>
       <header className="mb-8">
         <div className="nb-sticky-head relative">
           <div className="min-w-0">
