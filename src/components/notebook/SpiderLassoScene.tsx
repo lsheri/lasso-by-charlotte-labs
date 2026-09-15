@@ -91,7 +91,7 @@ export function SpiderLassoScene() {
                 strokeLinecap="round"
                 initial={reducedMotion ? false : { strokeDasharray: "0 1", strokeDashoffset: 0 }}
                 animate={reducedMotion ? { strokeDasharray: "1 1" } : { strokeDasharray: ["0 1", "0 1", "1 1", "1 1"] }}
-                transition={reducedMotion ? undefined : { duration: LOOP_DURATION, ease: [[0.5, 0, 0.5, 1], "easeInOut", "linear"], times: [0, 0.262, 0.548, 1], repeat: LOOP_REPEAT }}
+                {...(reducedMotion ? {} : { transition: { duration: LOOP_DURATION, ease: [[0.5, 0, 0.5, 1], "easeInOut", "linear"], times: [0, 0.262, 0.548, 1], repeat: LOOP_REPEAT } })}
               />
             </svg>
           </div>
@@ -100,7 +100,7 @@ export function SpiderLassoScene() {
           className="absolute inset-[35.93%_23.21%_56.82%_57.14%]"
           initial={reducedMotion ? false : { opacity: 0 }}
           animate={reducedMotion ? { opacity: 1 } : { opacity: [0, 0, 1, 1] }}
-          transition={reducedMotion ? undefined : { opacity: { duration: LOOP_DURATION, times: [0, 0.5238, 0.5952, 1], ease: ["linear", "easeOut", "linear"], repeat: LOOP_REPEAT } }}
+          {...(reducedMotion ? {} : { transition: { opacity: { duration: LOOP_DURATION, times: [0, 0.5238, 0.5952, 1], ease: ["linear", "easeOut", "linear"], repeat: LOOP_REPEAT } } })}
         >
           <div className="absolute inset-[-5.5%_-1.59%_-5.49%_-1.59%]">{image(v1119)}</div>
         </motion.div>
@@ -123,7 +123,7 @@ export function SpiderLassoScene() {
           className="absolute inset-[37.5%_23.21%_43.18%_66.43%]"
           initial={reducedMotion ? false : { rotate: 0 }}
           animate={reducedMotion ? { rotate: 0 } : { rotate: [0, 0, -6, 0, 0, 5, 0, 0] }}
-          transition={reducedMotion ? undefined : { rotate: { duration: LOOP_DURATION, times: [0, 0.2381, 0.3095, 0.381, 0.5714, 0.6429, 0.7143, 1], ease: ["linear", "easeInOut", "easeInOut", "linear", "easeInOut", "easeInOut", "linear"], repeat: LOOP_REPEAT } }}
+          {...(reducedMotion ? {} : { transition: { rotate: { duration: LOOP_DURATION, times: [0, 0.2381, 0.3095, 0.381, 0.5714, 0.6429, 0.7143, 1], ease: ["linear", "easeInOut", "easeInOut", "linear", "easeInOut", "easeInOut", "linear"], repeat: LOOP_REPEAT } } })}
         >
           <div className="absolute inset-[-1.76%_-2.59%_-1.77%_-2.59%]">{image(v1125)}</div>
         </motion.div>
@@ -155,7 +155,7 @@ export function SpiderLassoScene() {
           className="absolute inset-[37.5%_23.21%_43.18%_66.43%]"
           initial={reducedMotion ? false : { opacity: 0 }}
           animate={reducedMotion ? { opacity: 1 } : { opacity: [0, 0, 1, 1] }}
-          transition={reducedMotion ? undefined : { opacity: { duration: LOOP_DURATION, times: [0, 0.5476, 0.619, 1], ease: ["linear", "easeOut", "linear"], repeat: LOOP_REPEAT } }}
+          {...(reducedMotion ? {} : { transition: { opacity: { duration: LOOP_DURATION, times: [0, 0.5476, 0.619, 1], ease: ["linear", "easeOut", "linear"], repeat: LOOP_REPEAT } } })}
         >
           <div className="absolute inset-[-2.06%_-3.02%]">{image(v1134)}</div>
         </motion.div>
@@ -164,7 +164,7 @@ export function SpiderLassoScene() {
           style={{ containerType: "size" }}
           initial={reducedMotion ? false : { opacity: 0, y: -40 }}
           animate={reducedMotion ? { opacity: 1, y: 0 } : { opacity: [0, 0, 1, 1], y: [-40, -40, 0, 0] }}
-          transition={reducedMotion ? undefined : { opacity: { duration: LOOP_DURATION, times: [0, 0.6667, 0.7143, 1], ease: ["linear", [0.5, 0, 0.5, 1], "linear"], repeat: LOOP_REPEAT }, y: { duration: LOOP_DURATION, times: [0, 0.6667, 0.7619, 1], ease: ["linear", "easeOut", "linear"], repeat: LOOP_REPEAT } }}
+          {...(reducedMotion ? {} : { transition: { opacity: { duration: LOOP_DURATION, times: [0, 0.6667, 0.7143, 1], ease: ["linear", [0.5, 0, 0.5, 1], "linear"], repeat: LOOP_REPEAT }, y: { duration: LOOP_DURATION, times: [0, 0.6667, 0.7619, 1], ease: ["linear", "easeOut", "linear"], repeat: LOOP_REPEAT } } })}
         >
           <div className="h-[hypot(-4.95446cqw,91.424cqh)] w-[hypot(95.0455cqw,8.57596cqh)] flex-none rotate-4">
             <div className="relative size-full">
