@@ -985,6 +985,8 @@ export function EngagementCanvasView({
                 onGrabPointer={startPointerDrag}
                 onNodeKeyDown={onNodeKeyDown}
                 suppressClickRef={suppressClickRef}
+                onLinkPointer={startLinkPointer}
+                outlined={linkDrag?.targetId === position.id}
               />
             );
           })}
