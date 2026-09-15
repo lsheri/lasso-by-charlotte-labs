@@ -40,7 +40,6 @@ type CanvasLink = {
 
 type CanvasRead = {
   positions: { work_item_id: string; x: number; y: number }[];
-  summaries: Map<string, string>;
   links: CanvasLink[];
 };
 
@@ -92,7 +91,6 @@ function isOver(element: HTMLElement | null, x: number, y: number) {
 function CanvasNode({
   item,
   position,
-  summary,
   onOpen,
   offset,
   lifted,
@@ -103,7 +101,6 @@ function CanvasNode({
 }: {
   item: WorkItemRow;
   position: NodePosition;
-  summary: string | undefined;
   onOpen: (item: WorkItemRow) => void;
   offset: Point | null;
   lifted: boolean;
@@ -113,17 +110,7 @@ function CanvasNode({
   suppressClickRef: React.MutableRefObject<boolean>;
 }) {
   const reduceMotion = useReducedMotion();
-  const [expanded, setExpanded] = useState(false);
-  const timerRef = useRef<number | null>(null);
-  const touchToggleRef = useRef(false);
   const size = nodeSize(position.kind);
-
-  const cancelTimer = () => {
-    if (timerRef.current !== null) window.clearTimeout(timerRef.current);
-    timerRef.current = null;
-  };
-
-  useEffect(() => cancelTimer, []);
 
   return (
     <div
@@ -135,7 +122,7 @@ function CanvasNode({
         top: position.y,
         width: size.width,
         minHeight: size.height,
-        zIndex: lifted || grabbed ? 10 : expanded ? 2 : 1,
+        zIndex: lifted || grabbed ? 10 : 1,
         transform: offset
           ? `translate(${offset.x}px, ${offset.y}px)${lifted && !reduceMotion ? " scale(1.03)" : ""}`
           : undefined,
@@ -143,45 +130,18 @@ function CanvasNode({
         outline: grabbed ? "1.4px solid var(--nb-graphite)" : undefined,
         touchAction: "none",
         cursor: lifted ? "grabbing" : "grab",
-        transition: reduceMotion ? "none" : "min-height 160ms var(--nb-ease)",
       }}
       onPointerDown={(event) => onGrabPointer(position.id, event)}
       onKeyDown={(event) => onNodeKeyDown(position.id, event)}
-      onPointerEnter={(event) => {
-        if (!summary || event.pointerType === "touch") return;
-        cancelTimer();
-        timerRef.current = window.setTimeout(() => setExpanded(true), 180);
-      }}
-      onPointerLeave={() => {
-        cancelTimer();
-        setExpanded(false);
-      }}
-      onPointerUp={(event) => {
-        if (event.pointerType === "touch" && summary) {
-          event.stopPropagation();
-          touchToggleRef.current = true;
-          setExpanded((current) => !current);
-        }
-      }}
       onClickCapture={(event) => {
         if (suppressClickRef.current) {
           suppressClickRef.current = false;
           event.preventDefault();
           event.stopPropagation();
-          return;
         }
-        if (!touchToggleRef.current) return;
-        touchToggleRef.current = false;
-        event.preventDefault();
-        event.stopPropagation();
       }}
     >
       <WorkNote item={item} onOpen={() => onOpen(item)} className="h-full" />
-      {expanded && summary ? (
-        <p className="relative -mt-2 px-3 pb-3 text-[11.5px] leading-[17px] text-muted-foreground">
-          {summary}
-        </p>
-      ) : null}
     </div>
   );
 }
@@ -205,14 +165,11 @@ export function EngagementCanvasView({
     queryKey: ["engagement-canvas", engagementId, itemKey],
     enabled: Boolean(engagementId),
     queryFn: async (): Promise<CanvasRead> => {
-      const [positionsResult, extractsResult, linksResult] = await Promise.all([
+      const [positionsResult, linksResult] = await Promise.all([
         supabase
           .from("canvas_nodes")
           .select("work_item_id, x, y")
           .eq("engagement_id", engagementId),
-        itemIds.length
-          ? supabase.from("work_item_extracts").select("work_item_id, summary").in("work_item_id", itemIds)
-          : Promise.resolve({ data: [], error: null }),
         itemIds.length
           ? supabase
               .from("work_item_links")
@@ -222,11 +179,9 @@ export function EngagementCanvasView({
           : Promise.resolve({ data: [], error: null }),
       ]);
       if (positionsResult.error) throw positionsResult.error;
-      if (extractsResult.error) throw extractsResult.error;
       if (linksResult.error) throw linksResult.error;
       return {
         positions: positionsResult.data ?? [],
-        summaries: new Map((extractsResult.data ?? []).map((row) => [row.work_item_id, row.summary])),
         links: (linksResult.data ?? []) as CanvasLink[],
       };
     },
@@ -670,7 +625,6 @@ export function EngagementCanvasView({
                 key={position.id}
                 item={item}
                 position={position}
-                summary={data?.summaries.get(position.id)}
                 onOpen={onOpen}
                 offset={dragging ? dragging.delta : null}
                 lifted={Boolean(dragging)}
