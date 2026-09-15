@@ -30,6 +30,14 @@ import {
   nearestTarget,
   type LinkCandidate,
 } from "@/lib/canvas-link";
+import {
+  ZOOM_DEFAULT,
+  ZOOM_MAX,
+  ZOOM_MIN,
+  pinchZoom,
+  stepZoom,
+} from "@/lib/canvas-zoom";
+import { logEvent } from "@/lib/telemetry";
 import { drawCanvasLinkFn } from "@/lib/canvas-link.functions";
 import { placeCanvasNodeFn } from "@/lib/canvas-node.functions";
 import { useProfile } from "@/hooks/use-profile";
