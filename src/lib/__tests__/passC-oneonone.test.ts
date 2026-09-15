@@ -63,7 +63,7 @@ describe("pass C: a note lands", () => {
 
 describe("pass C: the dated session", () => {
   it("reads a held_on date the way a person writes it", () => {
-    expect(sessionDateLabel("2026-09-18")).toBe("Thu 18 Sep");
+    expect(sessionDateLabel("2026-09-18")).toBe("Fri 18 Sep");
     expect(sessionDateLabel("2026-01-01")).toBe("Thu 1 Jan");
   });
 
