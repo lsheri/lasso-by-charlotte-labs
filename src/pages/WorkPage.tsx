@@ -880,6 +880,11 @@ export function WorkPage() {
         </div>
       ) : null}
 
+      {/* PASS A1 — both lifted off the retired Overview. The calls waiting on
+          you sit above the pile; the chats to put away sit with it. */}
+      <WaitingOnYou />
+      <ChatsToOrganise items={all} />
+
       {error ? <p className="mb-6 text-sm text-destructive">{(error as Error).message}</p> : null}
       {actionError ? <p className="mb-6 text-sm text-destructive">{actionError}</p> : null}
       {mappingError ? (
