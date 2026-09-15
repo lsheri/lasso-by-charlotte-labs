@@ -84,6 +84,9 @@ export type PacketNote = {
   would_try: string;
   watch_next: string;
   author_id: string;
+  /** PASS D: what the note points at, when it points at one thing. */
+  task_id: string | null;
+  work_item_id: string | null;
 };
 
 export type Packet = {
@@ -140,7 +143,7 @@ export async function fetchPacket(engagementId: string, subjectId: string): Prom
       .order("created_at", { ascending: false }),
     supabase
       .from("coaching_notes")
-      .select("id, created_at, did_well, would_try, watch_next, author_id")
+      .select("id, created_at, did_well, would_try, watch_next, author_id, task_id, work_item_id")
       .eq("engagement_id", engagementId)
       .eq("subject_id", subjectId)
       .order("created_at", { ascending: false }),

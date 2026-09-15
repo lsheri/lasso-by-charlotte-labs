@@ -4,13 +4,16 @@ import { useState, useSyncExternalStore } from "react";
 
 import { NewEngagementDialog } from "@/components/engagements/NewEngagementDialog";
 import { GraphiteIcon } from "@/components/notebook/icons";
+import { CircleMark } from "@/components/notebook/CircleMark";
 import { useAffiliation } from "@/hooks/use-affiliation";
+import { useUnreadNotesAboutMe } from "@/hooks/use-coach-note-thread";
 import { useHasLiveCoachLink } from "@/hooks/use-coaching-links";
 import { useDecisions } from "@/hooks/use-decisions";
 import { useEngagements } from "@/hooks/use-engagements";
 import { useProfile } from "@/hooks/use-profile";
 import * as roles from "@/lib/role-access";
 import { isEduOrg } from "@/lib/edu-vocab";
+
 
 import {
   groupEngagementsByClient,
@@ -184,6 +187,11 @@ export function SidebarNav({
     !isCoach && profile?.org_type === "personal" && Boolean(profile?.id),
   );
   const canBeCoached = byArrangement || soloHasCoach;
+  // One query for the circle, shared with every other surface that draws it.
+  // A coach never asks: there are no circles on a coach's screen.
+  const { data: unreadNotes } = useUnreadNotesAboutMe(isCoach ? undefined : profile?.id);
+  const hasNewNotes = (unreadNotes ?? []).length > 0;
+
   const matchRoute = useMatchRoute();
   const engagementMatch = matchRoute({ to: "/engagements/$id", fuzzy: false });
   const activeEngagementId = engagementMatch ? engagementMatch.id : undefined;
@@ -288,6 +296,19 @@ export function SidebarNav({
                 <GraphiteIcon name={item.icon} size={20} />
                 <span className="truncate">{item.label}</span>
               </button>
+            ) : item.to === "/coach-notes" && hasNewNotes ? (
+              // The circle, not a count: it says look here, and nothing more.
+              <CircleMark key={item.to} className="block" label="New note from your coach">
+                <Link
+                  to={item.to}
+                  onClick={onNavigate}
+                  className={linkClass}
+                  activeProps={activeProps}
+                >
+                  <GraphiteIcon name={item.icon} size={20} />
+                  <span className="truncate">{item.label}</span>
+                </Link>
+              </CircleMark>
             ) : (
               <Link
                 key={item.to}
@@ -308,6 +329,7 @@ export function SidebarNav({
                 </span>
               </Link>
             ),
+
           );
 
         // Groups with no visible items are silent, except Engagements which

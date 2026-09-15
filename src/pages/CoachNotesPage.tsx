@@ -1,7 +1,10 @@
+import { useState } from "react";
+
 import { PageHeader } from "@/components/layout/PageHeader";
 import { CoachNoteList } from "@/components/coaching/CoachNoteList";
+import { CoachNoteModal, type ModalNote } from "@/components/coaching/CoachNoteModal";
 import { ToneCard } from "@/components/notebook/ToneCard";
-import { useAllNotesAboutMe } from "@/hooks/use-subject-coaching";
+import { useAllNotesAboutMe, type AccountNote } from "@/hooks/use-subject-coaching";
 import { useProfile } from "@/hooks/use-profile";
 import { isCoach } from "@/lib/role-access";
 
@@ -11,9 +14,11 @@ import { isCoach } from "@/lib/role-access";
  */
 export function CoachNotesPage() {
   const { data: profile } = useProfile();
-  const { data: notes } = useAllNotesAboutMe(isCoach(profile) ? undefined : profile?.id);
+  const coach = isCoach(profile);
+  const { data: notes } = useAllNotesAboutMe(coach ? undefined : profile?.id);
+  const [openId, setOpenId] = useState<string | null>(null);
 
-  if (isCoach(profile)) {
+  if (coach) {
     return (
       <div>
         <PageHeader
@@ -25,7 +30,23 @@ export function CoachNotesPage() {
     );
   }
 
-  const rows = notes ?? [];
+  const rows: AccountNote[] = notes ?? [];
+  // A circle is only ever drawn for the person the note is about.
+  const unreadIds = new Set(rows.filter((row) => row.read_at === null).map((row) => row.id));
+  const open = rows.find((row) => row.id === openId) ?? null;
+  const openNote: ModalNote | null = open
+    ? {
+        id: open.id,
+        created_at: open.created_at,
+        did_well: open.did_well,
+        would_try: open.would_try,
+        watch_next: open.watch_next,
+        engagement_id: open.engagement_id,
+        task_id: open.task_id,
+        work_item_id: open.work_item_id,
+        profiles: open.profiles,
+      }
+    : null;
 
   return (
     <div>
@@ -39,8 +60,8 @@ export function CoachNotesPage() {
         counts the notes instead of naming a single author.
       */}
       <PageHeader
-        title="Notes"
-        italicWord="about your work"
+        title="Notes from your"
+        italicWord="coach"
         subtitle={[
           `${rows.length} note${rows.length === 1 ? "" : "s"} about your work`,
           "every one points at a piece of work",
@@ -59,6 +80,18 @@ export function CoachNotesPage() {
               surface="all"
               seenKey="all"
               orgId={profile?.org_id}
+              layout="rows"
+              unreadIds={unreadIds}
+              onOpenNote={setOpenId}
+              groupOf={(note) => {
+                const row = rows.find((entry) => entry.id === note.id);
+                const engagement = row?.engagements;
+                return engagement?.title || engagement?.code || "";
+              }}
+              pointsAt={(note) => {
+                const row = rows.find((entry) => entry.id === note.id);
+                return row?.work_items?.title ?? row?.tasks?.name ?? null;
+              }}
               context={(note) => {
                 const row = rows.find((entry) => entry.id === note.id);
                 const engagement = row?.engagements;
@@ -67,6 +100,9 @@ export function CoachNotesPage() {
               }}
             />
           )}
+          <p className="mt-6 font-hand text-[16px] text-green">
+            a conversation about the work, not about the person
+          </p>
         </div>
 
         <aside className="mt-10 space-y-6 lg:mt-0">
@@ -106,6 +142,14 @@ export function CoachNotesPage() {
           <p className="font-hand text-green">a note you cannot read is a rumour</p>
         </aside>
       </div>
+
+      <CoachNoteModal
+        note={openNote}
+        open={openNote !== null}
+        onOpenChange={(next) => {
+          if (!next) setOpenId(null);
+        }}
+      />
     </div>
   );
 }

@@ -74,19 +74,26 @@ export function useQueriesAboutMe(subjectId: string | undefined, engagementId: s
 export type AccountNote = SubjectNote & {
   engagement_id: string | null;
   engagements: { title: string; code: string } | null;
+  /** PASS D: what the note points at, and whether it has been opened. */
+  read_at: string | null;
+  task_id: string | null;
+  work_item_id: string | null;
+  tasks: { name: string } | null;
+  work_items: { title: string } | null;
 };
 
 export async function fetchAllNotesAboutMe(subjectId: string): Promise<AccountNote[]> {
   const { data, error } = await supabase
     .from("coaching_notes")
     .select(
-      "id, created_at, did_well, would_try, watch_next, engagement_id, profiles!coaching_notes_author_id_fkey(display_name), engagements(title, code)",
+      "id, created_at, did_well, would_try, watch_next, engagement_id, read_at, task_id, work_item_id, profiles!coaching_notes_author_id_fkey(display_name), engagements(title, code), tasks(name), work_items(title)",
     )
     .eq("subject_id", subjectId)
     .order("created_at", { ascending: false });
   if (error) throw error;
   return (data ?? []) as unknown as AccountNote[];
 }
+
 
 export function useAllNotesAboutMe(subjectId: string | undefined) {
   return useQuery({

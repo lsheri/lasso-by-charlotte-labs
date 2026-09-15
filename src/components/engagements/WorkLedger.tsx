@@ -8,9 +8,14 @@ import { resolveFileFormat, type FileFormat } from "@/lib/file-format";
 import { workIdentityLabel } from "@/lib/work-identity";
 import { WhatFedThisButton } from "@/components/engagements/WhatFedThisButton";
 import { WorkNote } from "@/components/work/WorkNote";
+import { CircleMark } from "@/components/notebook/CircleMark";
+import { CoachNoteModal, type ModalNote } from "@/components/coaching/CoachNoteModal";
+import { useUnreadNotesAboutMe } from "@/hooks/use-coach-note-thread";
+import { newNoteLine, firstName } from "@/lib/coach-note-scope";
 import { useProfile } from "@/hooks/use-profile";
 import type { WorkItemRow } from "@/lib/work-types";
 import type { CanvasTask } from "@/components/engagements/EngagementCanvas";
+
 
 const FORMAT_LABELS: Record<FileFormat, string> = {
   word: "Word",
@@ -51,6 +56,15 @@ export function WorkLedger({
     return Array.from(map.values());
   }, [task]);
 
+  // PASS D — a new note is circled on the thing it points at. Never shown to a
+  // coach, and never a count at the person.
+  const { data: unreadNotes } = useUnreadNotesAboutMe(isCoach ? undefined : profileId);
+  const [openNote, setOpenNote] = useState<ModalNote | null>(null);
+  const notesHere = (unreadNotes ?? []) as ModalNote[];
+  const taskNotes = notesHere.filter((note) => note.task_id === task.id);
+  const notesForItem = (itemId: string) =>
+    notesHere.filter((note) => note.work_item_id === itemId);
+
   const deliverables = useMemo(
     () => items.filter((item) => isDeliverableType(item.type)),
     [items],
@@ -63,13 +77,29 @@ export function WorkLedger({
   return (
     <section>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="micro-label micro-label-section">{task.name}</h2>
+        {taskNotes.length > 0 ? (
+          <CircleMark label={newNoteLine(taskNotes.length, taskNotes[0]?.profiles?.display_name)}>
+            <h2 className="micro-label micro-label-section">{task.name}</h2>
+          </CircleMark>
+        ) : (
+          <h2 className="micro-label micro-label-section">{task.name}</h2>
+        )}
         {headerAction}
       </div>
+      {taskNotes.length > 0 ? (
+        <button
+          type="button"
+          onClick={() => setOpenNote(taskNotes[0] ?? null)}
+          className="mt-1 block font-hand text-[16px] text-green underline underline-offset-2"
+        >
+          {newNoteLine(taskNotes.length, taskNotes[0]?.profiles?.display_name)}
+        </button>
+      ) : null}
 
       <div className="mt-3 space-y-6">
         {deliverables.length === 0 ? (
           <div className="rounded-lg border border-graphite bg-card p-5">
+
             <p className="micro-label">NOTHING SHIPPED FROM THIS YET</p>
             <p className="mt-1 text-[13px] text-muted-foreground">
               When a deliverable is mapped to this piece of work, it lands here.
@@ -79,11 +109,9 @@ export function WorkLedger({
           deliverables.map((item) => {
             const format = resolveFileFormat(item);
             const formatLabel = FORMAT_LABELS[format];
-            return (
-              <div
-                key={item.id}
-                className="rounded-lg border border-graphite bg-card p-5 transition-colors hover:border-accent/40"
-              >
+            const itemNotes = notesForItem(item.id);
+            const card = (
+              <div className="rounded-lg border border-graphite bg-card p-5 transition-colors hover:border-accent/40">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <button
                     type="button"
@@ -105,7 +133,24 @@ export function WorkLedger({
                 <PendingSuggestions item={item} />
               </div>
             );
+            if (itemNotes.length === 0) return <div key={item.id}>{card}</div>;
+            const line = newNoteLine(itemNotes.length, itemNotes[0]?.profiles?.display_name);
+            return (
+              <div key={item.id}>
+                <CircleMark className="block" label={line}>
+                  {card}
+                </CircleMark>
+                <button
+                  type="button"
+                  onClick={() => setOpenNote(itemNotes[0] ?? null)}
+                  className="mt-2 block font-hand text-[16px] text-green underline underline-offset-2"
+                >
+                  {line}
+                </button>
+              </div>
+            );
           })
+
         )}
 
         <div>
@@ -129,7 +174,16 @@ export function WorkLedger({
           This is what is linked. It is not everything that happened.
         </p>
       </div>
+
+      <CoachNoteModal
+        note={openNote}
+        open={openNote !== null}
+        onOpenChange={(next) => {
+          if (!next) setOpenNote(null);
+        }}
+      />
     </section>
+
   );
 }
 

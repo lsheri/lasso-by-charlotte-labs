@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { CoachChat } from "@/components/coaching/CoachChat";
 import { NoteComposer, type CitationOption } from "@/components/coaching/NoteComposer";
+import { CoachNoteModal, type ModalNote } from "@/components/coaching/CoachNoteModal";
 import { PeekPanel } from "@/components/peek/PeekPanel";
 import { AnalysisLens } from "@/components/reflect/AnalysisLens";
 import { TaskWorkflow, type WorkflowElement } from "@/components/work/TaskWorkflow";
@@ -57,8 +58,10 @@ export function PacketPage({
   const { data, isLoading, error } = usePacket(engagementId, subjectId);
   const [peekItem, setPeekItem] = useState<WorkItemRow | null>(null);
   const [lensItem, setLensItem] = useState<WorkItemRow | null>(null);
+  const [openNote, setOpenNote] = useState<ModalNote | null>(null);
 
   const seenKey = `${engagementId}.${subjectId}`;
+
 
   const newest = useMemo(() => {
     if (!data) return null;
@@ -115,6 +118,17 @@ export function PacketPage({
     })),
     ...data.tasks.map((task) => ({ id: task.id, kind: "task" as const, label: task.name })),
   ];
+  // PASS D: the work this person has shared here, offered as note scopes.
+  const scopeWorkItems = Array.from(
+    new Map(
+      data.tasks
+        .flatMap((task) => task.work_item_tasks ?? [])
+        .map((element) => element.work_items)
+        .filter((item): item is NonNullable<typeof item> => item !== null)
+        .map((item) => [item.id, { id: item.id, label: item.title }] as const),
+    ).values(),
+  );
+
 
   return (
     <div className="space-y-10">
@@ -253,15 +267,33 @@ export function PacketPage({
               <h2 className="micro-label micro-label-section">Earlier coaching notes</h2>
               <div className="mt-3 space-y-2">
                 {data.notes.map((note) => (
-                  <CoachingNoteCard
+                  <button
                     key={note.id}
-                    note={note}
-                    heading={new Date(note.created_at).toLocaleDateString(undefined, {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                    })}
-                  />
+                    type="button"
+                    className="block w-full text-left"
+                    onClick={() =>
+                      setOpenNote({
+                        id: note.id,
+                        created_at: note.created_at,
+                        did_well: note.did_well,
+                        would_try: note.would_try,
+                        watch_next: note.watch_next,
+                        engagement_id: engagementId,
+                        task_id: note.task_id,
+                        work_item_id: note.work_item_id,
+                        profiles: { display_name: profile?.display_name ?? "Your coach" },
+                      })
+                    }
+                  >
+                    <CoachingNoteCard
+                      note={note}
+                      heading={new Date(note.created_at).toLocaleDateString(undefined, {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      })}
+                    />
+                  </button>
                 ))}
               </div>
             </section>
@@ -272,7 +304,11 @@ export function PacketPage({
             engagementId={engagementId}
             citations={citations}
             latestActivityAt={newest}
+            tasks={data.tasks.map((task) => ({ id: task.id, label: task.name }))}
+            workItems={scopeWorkItems}
+            orgType={profile?.org_type}
           />
+
 
           <CoachChat
             subjectId={subjectId}
@@ -328,7 +364,16 @@ export function PacketPage({
           isCoach
         />
       ) : null}
+
+      <CoachNoteModal
+        note={openNote}
+        open={openNote !== null}
+        onOpenChange={(next) => {
+          if (!next) setOpenNote(null);
+        }}
+      />
     </div>
+
   );
 }
 
