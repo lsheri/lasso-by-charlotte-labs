@@ -69,12 +69,13 @@ afterEach(() => {
 });
 
 describe("Pass 123: the sidebar follows the weekly loop", () => {
-  it("config places What you learned before Run the firm", () => {
+  it("config places Look back before Run the firm", () => {
     // Nav is now ordered by the weekly loop rather than by object type.
     expect(navGroups.map((g) => g.label)).toEqual([
       "What landed",
       "Where it goes",
-      "What you learned",
+      "Look back",
+      "Your coach",
       "Run the firm",
       "Your account",
     ]);
