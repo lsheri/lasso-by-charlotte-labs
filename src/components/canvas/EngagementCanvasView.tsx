@@ -40,7 +40,6 @@ type CanvasLink = {
 
 type CanvasRead = {
   positions: { work_item_id: string; x: number; y: number }[];
-  summaries: Map<string, string>;
   links: CanvasLink[];
 };
 
