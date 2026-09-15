@@ -2,6 +2,7 @@ import { useState } from "react";
 
 import { PageHeader } from "@/components/layout/PageHeader";
 import { ToneCard } from "@/components/notebook/ToneCard";
+import { ConfirmedCalls } from "@/components/oneonone/ConfirmedCalls";
 import { OneOnOneBrief } from "@/components/oneonone/OneOnOneBrief";
 import { SavedForOneOnOne } from "@/components/oneonone/SaveForOneOnOne";
 import { Button } from "@/components/ui/button";
@@ -36,6 +37,7 @@ export function OneOnOnePage() {
           ) : null}
           {profile ? <SavedForOneOnOne profileId={profile.id} /> : null}
           <p className="font-hand text-green">cut anything. it is your hour.</p>
+          <ConfirmedCalls />
         </div>
 
         <aside className="mt-10 space-y-4 lg:mt-0">
