@@ -3020,6 +3020,7 @@ export type Database = {
           owner_id: string
           rationale: string | null
           relation: string
+          source: string
           status: string
           to_item_id: string
         }
@@ -3032,6 +3033,7 @@ export type Database = {
           owner_id: string
           rationale?: string | null
           relation: string
+          source?: string
           status?: string
           to_item_id: string
         }
@@ -3044,6 +3046,7 @@ export type Database = {
           owner_id?: string
           rationale?: string | null
           relation?: string
+          source?: string
           status?: string
           to_item_id?: string
         }

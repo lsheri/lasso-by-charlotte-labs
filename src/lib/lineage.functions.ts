@@ -79,12 +79,17 @@ export const getDeliverableEvidence = createServerFn({ method: "POST" })
 
     const { data: linkRows } = await supabase
       .from("work_item_links")
-      .select("id, relation, rationale, status, from_item_id, created_at")
+      .select("id, relation, rationale, status, source, from_item_id, created_at")
       .eq("to_item_id", data.work_item_id)
       .order("created_at", { ascending: true });
 
+    // A coach must not see a hand drawn edge presented the same way as a traced
+    // one, so until this surface tells the two apart in words, a coach sees only
+    // what the model traced. The source === "model" line comes out when the
+    // record can show the difference. The owner's own branch is unchanged: they
+    // see everything of theirs except discarded.
     const rows = (linkRows ?? []).filter((row) =>
-      isOwner ? row.status !== "discarded" : row.status === "confirmed",
+      isOwner ? row.status !== "discarded" : row.status === "confirmed" && row.source === "model",
     );
 
     const fromIds = Array.from(new Set(rows.map((row) => row.from_item_id)));
@@ -342,7 +347,7 @@ export const reviewLink = createServerFn({ method: "POST" })
     // Read the pair before the update so the tools on both ends are known.
     const { data: link } = await supabase
       .from("work_item_links")
-      .select("id, relation, from_item_id, to_item_id")
+      .select("id, relation, source, from_item_id, to_item_id")
       .eq("id", data.link_id)
       .eq("owner_id", profile.id)
       .maybeSingle();
@@ -362,17 +367,26 @@ export const reviewLink = createServerFn({ method: "POST" })
       eventType: "link.reviewed",
       orgId: profile.org_id,
       userId,
-      dims: { action: data.action, surface: data.surface ?? "peek" },
+      dims: {
+        action: data.action,
+        surface: data.surface ?? "peek",
+        source: link?.source === "person" ? "person" : "model",
+      },
     });
 
     const { recordEventV2 } = await import("./telemetry-v2.server");
     const relation = link?.relation ?? "informed";
-    await recordEventV2(supabase, userId, {
-      eventName: data.action === "confirmed" ? "lineage.confirmed" : "lineage.rejected",
-      props: { relation },
-      profileId: profile.id,
-      workItemId: link?.to_item_id ?? null,
-    });
+    // Only the model's own proposals count here. Discarding a hand drawn edge
+    // is a person changing their mind, not the model being wrong, and it must
+    // never be recorded as a rejection of the model.
+    if (link?.source === "model") {
+      await recordEventV2(supabase, userId, {
+        eventName: data.action === "confirmed" ? "lineage.confirmed" : "lineage.rejected",
+        props: { relation },
+        profileId: profile.id,
+        workItemId: link?.to_item_id ?? null,
+      });
+    }
 
     // A confirmed link between two different tools is a handoff, which is the
     // only cross tool evidence in the product that a human has vouched for.
