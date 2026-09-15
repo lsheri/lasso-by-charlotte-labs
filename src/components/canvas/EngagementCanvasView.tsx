@@ -903,14 +903,35 @@ export function EngagementCanvasView({
           {draftCount} question{draftCount === 1 ? "" : "s"} to answer
         </p>
       ) : null}
-      <div className="overflow-auto rounded-[6px] border border-[var(--nb-rule)]">
+      <div className="relative">
+      <div
+        ref={scrollRef}
+        tabIndex={0}
+        className="overflow-auto rounded-[6px] border border-[var(--nb-rule)]"
+        onKeyDown={(event) => {
+          if (event.key === "+" || event.key === "=") {
+            event.preventDefault();
+            zoomBy("in", "keyboard");
+          } else if (event.key === "-" || event.key === "_") {
+            event.preventDefault();
+            zoomBy("out", "keyboard");
+          } else if (event.key === "0") {
+            event.preventDefault();
+            zoomBy("reset", "keyboard");
+          }
+        }}
+      >
         <div
           ref={surfaceRef}
           className="relative min-h-[560px]"
           onClick={closeAsking}
           style={{
-            width,
-            height,
+            // The layout box grows with the zoom so the scroll area still
+            // matches what is drawn and the far corner stays reachable.
+            width: width * zoom,
+            height: height * zoom,
+            transform: `scale(${zoom})`,
+            transformOrigin: "0 0",
             background:
               "radial-gradient(circle at 1px 1px, color-mix(in oklab, var(--nb-rule) 70%, var(--nb-paper)) 1px, transparent 0) 0 0/22px 22px var(--nb-paper)",
           }}
