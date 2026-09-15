@@ -44,7 +44,7 @@ describe("pass E2 - Find it, entry points and motion", () => {
 
   it("keeps the peek's original button text", () => {
     const whatFedThis = read("src/components/peek/WhatFedThis.tsx");
-    expect(whatFedThis).toContain("WhatFedThisButton");
+    expect(whatFedThis).toContain("const findButton = canEdit ? (");
     expect(whatFedThis).toContain("FindItLink");
   });
 
