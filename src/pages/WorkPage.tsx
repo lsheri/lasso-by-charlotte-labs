@@ -18,6 +18,11 @@ import { PasteThreadDialog } from "@/components/work/PasteThreadDialog";
 import { OpenFileAction } from "@/components/work/OpenFileAction";
 import { ConnectorBrowseActions } from "@/components/connectors/ConnectorBrowseActions";
 import { WatchSuggestionBanner } from "@/components/connectors/WatchSuggestionBanner";
+import { CoachingLinkNotices } from "@/components/coaching/CoachingLinkNotices";
+import { ChatsToOrganise } from "@/components/overview/ChatsToOrganise";
+import { WaitingOnYou } from "@/components/overview/WaitingOnYou";
+import { ReadingPanel } from "@/components/overview/ReadingPanel";
+import { NotCovered } from "@/components/overview/NotCovered";
 
 import { SuggestLegend } from "@/components/common/Suggested";
 import { SuggestionChip } from "@/components/work/SuggestionChip";
@@ -1050,6 +1055,11 @@ export function WorkPage() {
           </div>
         </div>
       )}
+
+      {/* PASS A1 — what Lasso has read, and the honest counterpart naming what
+          it cannot see. Both follow the pile, as they did on Overview. */}
+      <ReadingPanel items={reading} />
+      <NotCovered />
 
       {!isCoach && all.length > 0 ? <div aria-hidden className="h-16 md:hidden" /> : null}
 
