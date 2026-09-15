@@ -41,23 +41,23 @@ export function ContextCard({
       )}
     >
       <svg
-        width="18"
-        height="33"
+        width="24"
+        height="44"
         viewBox="0 0 26 46"
         aria-hidden="true"
         focusable="false"
-        className="absolute left-[10px] top-[-10px]"
+        className="absolute left-[10px] top-[-13px]"
       >
         <path
           d="M13 40 C 8.4 40, 6.2 36.6, 6.2 32.6 L 6.2 11.5 C 6.2 7.6, 8.9 5.2, 12.6 5.2 C 16.3 5.2, 18.8 7.7, 18.8 11.4 L 18.8 31.5 C 18.8 34, 17.2 35.6, 15 35.6 C 12.8 35.6, 11.2 34.1, 11.2 31.6 L 11.2 13"
           fill="none"
-          stroke="var(--nb-soft)"
-          strokeWidth="1.6"
+          stroke="var(--nb-mid)"
+          strokeWidth="2"
           strokeLinecap="round"
         />
       </svg>
 
-      <div className="pl-[21px]">
+      <div className="pl-[26px]">
         <div className="flex items-start justify-between gap-2">
           <p className="micro-label text-[var(--nb-soft)]">{eyebrow}</p>
           {onChange ? (
