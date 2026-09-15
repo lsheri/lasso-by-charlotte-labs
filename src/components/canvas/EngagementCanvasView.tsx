@@ -123,7 +123,7 @@ function CanvasNode({
         top: position.y,
         width: size.width,
         minHeight: size.height,
-        zIndex: lifted || grabbed ? 10 : expanded ? 2 : 1,
+        zIndex: lifted || grabbed ? 10 : 1,
         transform: offset
           ? `translate(${offset.x}px, ${offset.y}px)${lifted && !reduceMotion ? " scale(1.03)" : ""}`
           : undefined,
@@ -135,41 +135,15 @@ function CanvasNode({
       }}
       onPointerDown={(event) => onGrabPointer(position.id, event)}
       onKeyDown={(event) => onNodeKeyDown(position.id, event)}
-      onPointerEnter={(event) => {
-        if (!summary || event.pointerType === "touch") return;
-        cancelTimer();
-        timerRef.current = window.setTimeout(() => setExpanded(true), 180);
-      }}
-      onPointerLeave={() => {
-        cancelTimer();
-        setExpanded(false);
-      }}
-      onPointerUp={(event) => {
-        if (event.pointerType === "touch" && summary) {
-          event.stopPropagation();
-          touchToggleRef.current = true;
-          setExpanded((current) => !current);
-        }
-      }}
       onClickCapture={(event) => {
         if (suppressClickRef.current) {
           suppressClickRef.current = false;
           event.preventDefault();
           event.stopPropagation();
-          return;
         }
-        if (!touchToggleRef.current) return;
-        touchToggleRef.current = false;
-        event.preventDefault();
-        event.stopPropagation();
       }}
     >
       <WorkNote item={item} onOpen={() => onOpen(item)} className="h-full" />
-      {expanded && summary ? (
-        <p className="relative -mt-2 px-3 pb-3 text-[11.5px] leading-[17px] text-muted-foreground">
-          {summary}
-        </p>
-      ) : null}
     </div>
   );
 }
