@@ -109,11 +109,9 @@ export function WorkLedger({
           deliverables.map((item) => {
             const format = resolveFileFormat(item);
             const formatLabel = FORMAT_LABELS[format];
-            return (
-              <div
-                key={item.id}
-                className="rounded-lg border border-graphite bg-card p-5 transition-colors hover:border-accent/40"
-              >
+            const itemNotes = notesForItem(item.id);
+            const card = (
+              <div className="rounded-lg border border-graphite bg-card p-5 transition-colors hover:border-accent/40">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <button
                     type="button"
@@ -135,7 +133,24 @@ export function WorkLedger({
                 <PendingSuggestions item={item} />
               </div>
             );
+            if (itemNotes.length === 0) return <div key={item.id}>{card}</div>;
+            const line = newNoteLine(itemNotes.length, itemNotes[0]?.profiles?.display_name);
+            return (
+              <div key={item.id}>
+                <CircleMark className="block" label={line}>
+                  {card}
+                </CircleMark>
+                <button
+                  type="button"
+                  onClick={() => setOpenNote(itemNotes[0] ?? null)}
+                  className="mt-2 block font-hand text-[16px] text-green underline underline-offset-2"
+                >
+                  {line}
+                </button>
+              </div>
+            );
           })
+
         )}
 
         <div>
