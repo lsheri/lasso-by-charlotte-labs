@@ -41,7 +41,7 @@ export function scopeChoices(
   const order: NoteScope[] = workFirst
     ? ["work_item", "engagement", "task"]
     : ["engagement", "task", "work_item"];
-  return order.filter((scope) => scope !== "task" || (hasTasks && orgType === "company"));
+  return order.filter((scope) => scope !== "task" || hasTasks);
 }
 
 /** The first clause of a note, for a one line row. Never the whole note. */
