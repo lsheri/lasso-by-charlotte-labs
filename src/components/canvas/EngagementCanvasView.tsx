@@ -8,7 +8,6 @@ import { WorkNote } from "@/components/work/WorkNote";
 import { useReducedMotion } from "@/hooks/use-motion";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  CANVAS_GRID,
   NODE_H_DELIVERABLE,
   NODE_H_SOURCE,
   NODE_W_DELIVERABLE,
@@ -760,6 +759,3 @@ export function EngagementCanvasView({
     </section>
   );
 }
-
-// One grid square is CANVAS_GRID, shared with the seed layout.
-void CANVAS_GRID;
