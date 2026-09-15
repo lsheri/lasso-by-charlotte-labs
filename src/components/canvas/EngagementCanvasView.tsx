@@ -130,7 +130,6 @@ function CanvasNode({
         outline: grabbed ? "1.4px solid var(--nb-graphite)" : undefined,
         touchAction: "none",
         cursor: lifted ? "grabbing" : "grab",
-        transition: reduceMotion ? "none" : "min-height 160ms var(--nb-ease)",
       }}
       onPointerDown={(event) => onGrabPointer(position.id, event)}
       onKeyDown={(event) => onNodeKeyDown(position.id, event)}
@@ -626,7 +625,6 @@ export function EngagementCanvasView({
                 key={position.id}
                 item={item}
                 position={position}
-                summary={data?.summaries.get(position.id)}
                 onOpen={onOpen}
                 offset={dragging ? dragging.delta : null}
                 lifted={Boolean(dragging)}
