@@ -58,11 +58,18 @@ export function DecisionsPage() {
     if (updateError) return setActionError(updateError.message);
     if (profile) {
       logEvent("decision.resolved", profile.org_id, { status, edited });
-      if (status === "confirmed") logEvent("decision.confirmed", profile.org_id, { edited });
+      if (status === "confirmed")
+        logEvent("decision.confirmed", profile.org_id, { edited, surface: "log" });
       logV2("decision.resolved", { status: status as never, edited }, { profileId: profile.id });
       if (status === "confirmed")
-        logV2("decision.confirmed", { edited, evidence_count: 0 }, { profileId: profile.id });
-      if (status === "discarded") logV2("decision.discarded", { edited }, { profileId: profile.id });
+        logV2(
+          "decision.confirmed",
+          { edited, evidence_count: 0, surface: "log" },
+          { profileId: profile.id },
+        );
+      if (status === "discarded")
+        logV2("decision.discarded", { edited, surface: "log" }, { profileId: profile.id });
+      if (edited) logV2("decision.edited", { edited, surface: "log" }, { profileId: profile.id });
     }
     await queryClient.invalidateQueries({ queryKey: ["decisions"] });
   }
