@@ -134,6 +134,8 @@ export type TelemetryEvent =
   | "chatlib.filter_changed"
   /** Pass 182: the work canvas was opened. Bands only, never ids. */
   | "canvas.opened"
+  /** Pass 185: a workspace was affiliated with an institution at creation. Slug only. */
+  | "workspace.affiliated"
   /** Pass 159: a person changed the profile they are acting as. Roles only. */
   | "profile.switched"
   /** Pass 161: the subject opened notes about their work. One per view. */
