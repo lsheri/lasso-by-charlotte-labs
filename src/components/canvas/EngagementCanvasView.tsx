@@ -859,12 +859,32 @@ export function EngagementCanvasView({
                   </g>
                 );
               }
-              return status === "draft" ? (
-                <g key={key} fill="none" stroke="var(--nb-pencil)" strokeWidth="1.5">
-                  <path d={curve.path} strokeDasharray="6 7" />
-                  <path d={curve.arrow} />
-                </g>
-              ) : (
+              if (status === "draft") {
+                return (
+                  <g key={key} fill="none" stroke="var(--nb-pencil)" strokeWidth="1.5">
+                    <path d={curve.path} strokeDasharray="6 7" />
+                    <path d={curve.arrow} />
+                  </g>
+                );
+              }
+              if (link.source === "person") {
+                // A person drew this one. It is drawn, not inked, so it can
+                // never be mistaken for a line the model traced.
+                return (
+                  <g
+                    key={key}
+                    fill="none"
+                    stroke="var(--nb-graphite)"
+                    strokeWidth="1.4"
+                    strokeLinecap="round"
+                    className={reduceMotion ? undefined : "nb-trail-arrow is-on"}
+                  >
+                    <path pathLength={1} d={pencilPath(curve.quad, link.id)} />
+                    <path pathLength={1} d={curve.arrow} />
+                  </g>
+                );
+              }
+              return (
                 <g
                   key={key}
                   fill="none"
