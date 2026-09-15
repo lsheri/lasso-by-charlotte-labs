@@ -79,6 +79,23 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
 
   const [askHadConversation, setAskHadConversation] = useState(false);
   const [peekItem, setPeekItem] = useState<WorkItemRow | null>(null);
+  /**
+   * A document opens in the main column, and the page keeps whatever scroll
+   * position the canvas had, so it can land below the fold. Bring the top of
+   * the column into view, but only when a document first opens: not on every
+   * render, and not when one document replaces another.
+   */
+  const peekWasOpenRef = useRef(false);
+  useEffect(() => {
+    const open = Boolean(peekItem);
+    if (open && !peekWasOpenRef.current) {
+      benchMainRef.current?.scrollIntoView({
+        block: "start",
+        behavior: reduceMotion ? "auto" : "smooth",
+      });
+    }
+    peekWasOpenRef.current = open;
+  }, [peekItem, reduceMotion]);
   // PASS 129 — the peek's action bar reads the same on both surfaces, so the
   // same dialogs are mounted here as on the Work pile.
   const [mapItem, setMapItem] = useState<WorkItemRow | null>(null);
