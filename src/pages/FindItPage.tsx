@@ -411,74 +411,89 @@ export function FindItPage() {
               {found && !running ? (
                 <section className="mb-10">
                   <SectionHeader title="What it found" />
-                  <div className="mt-4 flex flex-wrap items-start gap-6">
-                    {target ? (
-                      <div className="w-[240px]">
-                        <WorkNote item={target} />
-                      </div>
+                  <div className="mt-4">
+                    <FindItSheet
+                      phase="found"
+                      reduce={reduceMotion}
+                      target={target ? <WorkNote item={target} /> : null}
+                      candidates={candidates
+                        .filter(
+                          ({ link }) => (reviewed[link.link_id] ?? link.status) !== "discarded",
+                        )
+                        .map(({ link, item }) => {
+                          const status = reviewed[link.link_id] ?? link.status;
+                          return {
+                            id: link.link_id,
+                            node: (
+                              <div
+                                className={
+                                  justKept === link.link_id ? "nb-findit-settle" : undefined
+                                }
+                              >
+                                {item ? (
+                                  <WorkNote item={item} onOpen={() => setOpenThread(item.id)} />
+                                ) : (
+                                  <p className="text-sm text-muted-foreground">
+                                    A conversation you can no longer read.
+                                  </p>
+                                )}
+                                <p className="micro-label mt-1">{link.relation}</p>
+                                {link.quote ? (
+                                  <ToneCard tone="claim" className="mt-2 gap-1 p-3">
+                                    <p className="font-mono text-[11.5px] leading-5">
+                                      {link.quote.text}
+                                    </p>
+                                    <p className="font-hand text-[16px] text-green">
+                                      why: this sentence is in both
+                                    </p>
+                                  </ToneCard>
+                                ) : (
+                                  <p className="mt-2 font-hand text-[16px] text-soft">
+                                    no exact sentence shared
+                                  </p>
+                                )}
+                                <div className="mt-2 flex items-center gap-2">
+                                  {status === "confirmed" ? (
+                                    <span className="flex items-center gap-1 text-[11.5px] text-green">
+                                      <span
+                                        className={
+                                          justKept === link.link_id ? keptMotion.className : ""
+                                        }
+                                      >
+                                        <GraphiteCheck seed={link.link_id} />
+                                      </span>{" "}
+                                      Kept
+                                    </span>
+                                  ) : (
+                                    <>
+                                      <Button
+                                        type="button"
+                                        size="sm"
+                                        onClick={() => void review(link.link_id, "confirmed")}
+                                      >
+                                        Keep as a source
+                                      </Button>
+                                      <Button
+                                        type="button"
+                                        size="sm"
+                                        variant="ghost"
+                                        onClick={() => void review(link.link_id, "discarded")}
+                                      >
+                                        Not this one
+                                      </Button>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            ),
+                          };
+                        })}
+                    />
+                    {candidates.length === 0 ? (
+                      <p className="mt-4 text-sm text-muted-foreground">
+                        Nothing of yours reads as a source for this one.
+                      </p>
                     ) : null}
-                    <div className="flex flex-1 flex-wrap gap-4">
-                      {candidates.map(({ link, item }) => {
-                        const status = reviewed[link.link_id] ?? link.status;
-                        if (status === "discarded") return null;
-                        return (
-                          <div key={link.link_id} className="w-[260px]">
-                            {item ? (
-                              <WorkNote item={item} onOpen={() => setOpenThread(item.id)} />
-                            ) : (
-                              <p className="text-sm text-muted-foreground">
-                                A conversation you can no longer read.
-                              </p>
-                            )}
-                            <p className="micro-label mt-1">{link.relation}</p>
-                            {link.quote ? (
-                              <ToneCard tone="claim" className="mt-2 gap-1 p-3">
-                                <p className="font-mono text-[11.5px] leading-5">
-                                  {link.quote.text}
-                                </p>
-                                <p className="font-hand text-[16px] text-green">
-                                  why: this sentence is in both
-                                </p>
-                              </ToneCard>
-                            ) : (
-                              <p className="mt-2 font-hand text-[16px] text-soft">
-                                no exact sentence shared
-                              </p>
-                            )}
-                            <div className="mt-2 flex items-center gap-2">
-                              {status === "confirmed" ? (
-                                <span className="flex items-center gap-1 text-[11.5px] text-green">
-                                  <GraphiteCheck seed={link.link_id} /> Kept
-                                </span>
-                              ) : (
-                                <>
-                                  <Button
-                                    type="button"
-                                    size="sm"
-                                    onClick={() => void review(link.link_id, "confirmed")}
-                                  >
-                                    Keep as a source
-                                  </Button>
-                                  <Button
-                                    type="button"
-                                    size="sm"
-                                    variant="ghost"
-                                    onClick={() => void review(link.link_id, "discarded")}
-                                  >
-                                    Not this one
-                                  </Button>
-                                </>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                      {candidates.length === 0 ? (
-                        <p className="text-sm text-muted-foreground">
-                          Nothing of yours reads as a source for this one.
-                        </p>
-                      ) : null}
-                    </div>
                   </div>
 
                   {stillDraft.length > 0 ? (
