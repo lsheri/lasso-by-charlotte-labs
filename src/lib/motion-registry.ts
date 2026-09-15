@@ -19,8 +19,10 @@
 
 export type MotionGroup = "auditability" | "record" | "thinking" | "chrome";
 
-/** The 16 motions the registry can resolve to. */
+/** The 18 motions the registry can resolve to. */
 export type MotionName =
+  | "call-settles"
+  | "record-label"
   | "reading-line"
   | "pencil-marks-underline"
   | "trace-back"
@@ -51,6 +53,10 @@ export type MotionEventName =
   | "claim.lassoed"
   | "record.stamped"
   | "call.logged"
+  /** Pass B: a drafted call was confirmed. The check draws on, the card settles. */
+  | "decision.confirmed"
+  /** Pass B: the on the record label, which waits for the check to finish. */
+  | "decision.on_record_shown"
   | "share.sending"
   | "feedback.pinned"
   // The app is thinking.
