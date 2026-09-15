@@ -63,7 +63,7 @@ export type MotionEventName =
   | "nav.active"
   | "arrow.drawn";
 
-export interface MotionEntry {
+interface MotionEventEntry {
   readonly group: MotionGroup;
   /** The motion that plays when movement is allowed. */
   readonly motion: MotionName;
@@ -73,7 +73,7 @@ export interface MotionEntry {
   readonly promise: boolean;
 }
 
-export const MOTION_REGISTRY: Readonly<Record<MotionEventName, MotionEntry>> = {
+const MOTION_EVENT_REGISTRY: Readonly<Record<MotionEventName, MotionEventEntry>> = {
   "record.reading": {
     group: "auditability",
     motion: "reading-line",
@@ -261,7 +261,7 @@ export function resolveMotion(
   event: MotionEventName,
   reduce = prefersReducedMotion(),
 ): ResolvedMotion {
-  const entry = MOTION_REGISTRY[event];
+  const entry = MOTION_EVENT_REGISTRY[event];
   const draw = MOTION_CLASS[entry.motion];
   return {
     event,
@@ -272,3 +272,55 @@ export function resolveMotion(
     promise: entry.promise,
   };
 }
+
+export type MotionRole = "background" | "inline" | "onboarding";
+export type MotionLoop = "once" | "loop" | "loop-with-pause";
+
+export type MotionEntry = {
+  /** Stable id, kebab case. Never reused. */
+  id: string;
+  /** What the drawing is, in plain words. */
+  name: string;
+  /** Where it came from in the design file, frame and node. */
+  source: string;
+  /** Path to the component that renders it. */
+  path: string;
+  durationMs: number;
+  loop: MotionLoop;
+  /** Milliseconds held between loops, null when it does not pause. */
+  pauseMs: number | null;
+  role: MotionRole;
+  /** Every place this renders today. Update this when you move it. */
+  placement: string[];
+};
+
+/**
+ * A new scene from the design file goes in `src/components/motion/`, gets an
+ * entry here, and names every place it renders.
+ */
+export const MOTION_REGISTRY: MotionEntry[] = [
+  {
+    id: "m6-spider-lasso",
+    name: "Spider, lassoing conversations",
+    source: "Sandbox A · M6 · Spider guide beats · 2026:1103",
+    path: "src/components/motion/SpiderLassoScene.tsx",
+    durationMs: 4200,
+    loop: "loop-with-pause",
+    pauseMs: 10000,
+    role: "background",
+    placement: ["src/pages/WorkPage.tsx — Inbox, behind the page"],
+  },
+  {
+    id: "m10-notebook-spider",
+    name: "Spider, reading your work",
+    source: "Sandbox A · M10 · Spider processes",
+    path: "src/components/notebook/NotebookSpider.tsx",
+    durationMs: 3000,
+    loop: "loop",
+    pauseMs: null,
+    role: "inline",
+    placement: [
+      "src/components/provenance/ProvenanceAudit.tsx — provenance audit loading state",
+    ],
+  },
+];

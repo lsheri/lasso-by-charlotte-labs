@@ -1,37 +1,45 @@
 import { motion } from "motion/react";
 
-import cardsOutline from "@/assets/m6/cards-outline.svg";
-import cardsStack from "@/assets/m6/cards-stack.svg";
-import v1119 from "@/assets/m6/v-1119.svg";
-import v1120 from "@/assets/m6/v-1120.svg";
-import v1121 from "@/assets/m6/v-1121.svg";
-import v1122 from "@/assets/m6/v-1122.svg";
-import v1124 from "@/assets/m6/v-1124.svg";
-import v1125 from "@/assets/m6/v-1125.svg";
-import v1126 from "@/assets/m6/v-1126.svg";
-import v1127 from "@/assets/m6/v-1127.svg";
-import v1128 from "@/assets/m6/v-1128.svg";
-import v1129 from "@/assets/m6/v-1129.svg";
-import v1130 from "@/assets/m6/v-1130.svg";
-import v1131 from "@/assets/m6/v-1131.svg";
-import v1132 from "@/assets/m6/v-1132.svg";
-import v1133 from "@/assets/m6/v-1133.svg";
-import v1134 from "@/assets/m6/v-1134.svg";
-import v1135 from "@/assets/m6/v-1135.svg";
+import cardsOutline from "./assets/m6/cards-outline.svg";
+import cardsStack from "./assets/m6/cards-stack.svg";
+import v1119 from "./assets/m6/v-1119.svg";
+import v1120 from "./assets/m6/v-1120.svg";
+import v1121 from "./assets/m6/v-1121.svg";
+import v1122 from "./assets/m6/v-1122.svg";
+import v1124 from "./assets/m6/v-1124.svg";
+import v1125 from "./assets/m6/v-1125.svg";
+import v1126 from "./assets/m6/v-1126.svg";
+import v1127 from "./assets/m6/v-1127.svg";
+import v1128 from "./assets/m6/v-1128.svg";
+import v1129 from "./assets/m6/v-1129.svg";
+import v1130 from "./assets/m6/v-1130.svg";
+import v1131 from "./assets/m6/v-1131.svg";
+import v1132 from "./assets/m6/v-1132.svg";
+import v1133 from "./assets/m6/v-1133.svg";
+import v1134 from "./assets/m6/v-1134.svg";
+import v1135 from "./assets/m6/v-1135.svg";
 import { useReducedMotion } from "@/hooks/use-motion";
+import { cn } from "@/lib/utils";
 
 const LOOP_DURATION = 4.2;
+const LOOP_PAUSE = 10;
 const LOOP_REPEAT = Infinity;
 
 const image = (src: string, alt = "") => (
   <img src={src} alt={alt} className="block size-full max-w-none" draggable={false} />
 );
 
-export function SpiderLassoScene() {
+export function SpiderLassoScene({
+  caption = true,
+  className,
+}: {
+  caption?: boolean;
+  className?: string;
+}) {
   const reducedMotion = useReducedMotion();
 
   return (
-    <figure className="relative h-[482px] w-[560px]" aria-hidden="true">
+    <figure className={cn("relative h-[482px] w-[560px]", className)} aria-hidden="true">
       <div className="absolute h-[440px] w-[560px] overflow-clip">
         <div className="absolute inset-[33.39%_42.29%_15.21%_9.85%]">
           <div className="absolute inset-[-0.37%_-0.22%_-0.26%_0]">
@@ -91,7 +99,7 @@ export function SpiderLassoScene() {
                 strokeLinecap="round"
                 initial={reducedMotion ? false : { strokeDasharray: "0 1", strokeDashoffset: 0 }}
                 animate={reducedMotion ? { strokeDasharray: "1 1" } : { strokeDasharray: ["0 1", "0 1", "1 1", "1 1"] }}
-                {...(reducedMotion ? {} : { transition: { duration: LOOP_DURATION, ease: [[0.5, 0, 0.5, 1], "easeInOut", "linear"], times: [0, 0.262, 0.548, 1], repeat: LOOP_REPEAT } })}
+                {...(reducedMotion ? {} : { transition: { duration: LOOP_DURATION, ease: [[0.5, 0, 0.5, 1], "easeInOut", "linear"], times: [0, 0.262, 0.548, 1], repeat: LOOP_REPEAT, repeatDelay: LOOP_PAUSE } })}
               />
             </svg>
           </div>
@@ -100,7 +108,7 @@ export function SpiderLassoScene() {
           className="absolute inset-[35.93%_23.21%_56.82%_57.14%]"
           initial={reducedMotion ? false : { opacity: 0 }}
           animate={reducedMotion ? { opacity: 1 } : { opacity: [0, 0, 1, 1] }}
-          {...(reducedMotion ? {} : { transition: { opacity: { duration: LOOP_DURATION, times: [0, 0.5238, 0.5952, 1], ease: ["linear", "easeOut", "linear"], repeat: LOOP_REPEAT } } })}
+          {...(reducedMotion ? {} : { transition: { opacity: { duration: LOOP_DURATION, times: [0, 0.5238, 0.5952, 1], ease: ["linear", "easeOut", "linear"], repeat: LOOP_REPEAT, repeatDelay: LOOP_PAUSE } } })}
         >
           <div className="absolute inset-[-5.5%_-1.59%_-5.49%_-1.59%]">{image(v1119)}</div>
         </motion.div>
@@ -123,7 +131,7 @@ export function SpiderLassoScene() {
           className="absolute inset-[37.5%_23.21%_43.18%_66.43%]"
           initial={reducedMotion ? false : { rotate: 0 }}
           animate={reducedMotion ? { rotate: 0 } : { rotate: [0, 0, -6, 0, 0, 5, 0, 0] }}
-          {...(reducedMotion ? {} : { transition: { rotate: { duration: LOOP_DURATION, times: [0, 0.2381, 0.3095, 0.381, 0.5714, 0.6429, 0.7143, 1], ease: ["linear", "easeInOut", "easeInOut", "linear", "easeInOut", "easeInOut", "linear"], repeat: LOOP_REPEAT } } })}
+          {...(reducedMotion ? {} : { transition: { rotate: { duration: LOOP_DURATION, times: [0, 0.2381, 0.3095, 0.381, 0.5714, 0.6429, 0.7143, 1], ease: ["linear", "easeInOut", "easeInOut", "linear", "easeInOut", "easeInOut", "linear"], repeat: LOOP_REPEAT, repeatDelay: LOOP_PAUSE } } })}
         >
           <div className="absolute inset-[-1.76%_-2.59%_-1.77%_-2.59%]">{image(v1125)}</div>
         </motion.div>
@@ -155,7 +163,7 @@ export function SpiderLassoScene() {
           className="absolute inset-[37.5%_23.21%_43.18%_66.43%]"
           initial={reducedMotion ? false : { opacity: 0 }}
           animate={reducedMotion ? { opacity: 1 } : { opacity: [0, 0, 1, 1] }}
-          {...(reducedMotion ? {} : { transition: { opacity: { duration: LOOP_DURATION, times: [0, 0.5476, 0.619, 1], ease: ["linear", "easeOut", "linear"], repeat: LOOP_REPEAT } } })}
+          {...(reducedMotion ? {} : { transition: { opacity: { duration: LOOP_DURATION, times: [0, 0.5476, 0.619, 1], ease: ["linear", "easeOut", "linear"], repeat: LOOP_REPEAT, repeatDelay: LOOP_PAUSE } } })}
         >
           <div className="absolute inset-[-2.06%_-3.02%]">{image(v1134)}</div>
         </motion.div>
@@ -164,7 +172,7 @@ export function SpiderLassoScene() {
           style={{ containerType: "size" }}
           initial={reducedMotion ? false : { opacity: 0, y: -40 }}
           animate={reducedMotion ? { opacity: 1, y: 0 } : { opacity: [0, 0, 1, 1], y: [-40, -40, 0, 0] }}
-          {...(reducedMotion ? {} : { transition: { opacity: { duration: LOOP_DURATION, times: [0, 0.6667, 0.7143, 1], ease: ["linear", [0.5, 0, 0.5, 1], "linear"], repeat: LOOP_REPEAT }, y: { duration: LOOP_DURATION, times: [0, 0.6667, 0.7619, 1], ease: ["linear", "easeOut", "linear"], repeat: LOOP_REPEAT } } })}
+          {...(reducedMotion ? {} : { transition: { opacity: { duration: LOOP_DURATION, times: [0, 0.6667, 0.7143, 1], ease: ["linear", [0.5, 0, 0.5, 1], "linear"], repeat: LOOP_REPEAT, repeatDelay: LOOP_PAUSE }, y: { duration: LOOP_DURATION, times: [0, 0.6667, 0.7619, 1], ease: ["linear", "easeOut", "linear"], repeat: LOOP_REPEAT, repeatDelay: LOOP_PAUSE } } })}
         >
           <div className="h-[hypot(-4.95446cqw,91.424cqh)] w-[hypot(95.0455cqw,8.57596cqh)] flex-none rotate-4">
             <div className="relative size-full">
@@ -173,9 +181,11 @@ export function SpiderLassoScene() {
           </div>
         </motion.div>
       </div>
-      <figcaption className="absolute inset-x-0 bottom-0 text-center font-hand text-[26px] text-[var(--nb-graphite)]">
-        Pull the conversations that mattered into one record.
-      </figcaption>
+      {caption ? (
+        <figcaption className="absolute inset-x-0 bottom-0 text-center font-hand text-[26px] text-[var(--nb-graphite)]">
+          Pull the conversations that mattered into one record.
+        </figcaption>
+      ) : null}
     </figure>
   );
 }
