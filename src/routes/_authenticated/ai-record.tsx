@@ -3,6 +3,12 @@ import { createFileRoute } from "@tanstack/react-router";
 import { AiRecordPage } from "@/pages/AiRecordPage";
 
 export const Route = createFileRoute("/_authenticated/ai-record")({
+  // ?ask=1 opens the composer straight away, so anything that offers Ask Lasso
+  // without its own panel lands somewhere that can actually answer.
+  validateSearch: (search: Record<string, unknown>): { ask?: boolean | undefined } => {
+    const on = search["ask"] === "1" || search["ask"] === 1 || search["ask"] === true;
+    return on ? { ask: true } : {};
+  },
   head: () => ({
     meta: [
       { title: "Chat library | Lasso" },

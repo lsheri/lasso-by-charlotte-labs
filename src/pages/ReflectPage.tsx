@@ -72,7 +72,22 @@ function relative(iso: string): string {
   return `${Math.round(hours / 24)}d ago`;
 }
 
-export function ReflectPage() {
+/**
+ * PASS A2 — All conversations now hosts this. The props are additive and
+ * optional, so the page behaves exactly as it always did when rendered on its
+ * own: `embedded` drops the page chrome that a slide-over supplies,
+ * `initialSessionId` opens a conversation straight away, and `autoStart`
+ * creates one, which is the same path the New session button takes.
+ */
+export function ReflectPage({
+  embedded = false,
+  initialSessionId = null,
+  autoStart = false,
+}: {
+  embedded?: boolean;
+  initialSessionId?: string | null;
+  autoStart?: boolean;
+} = {}) {
   const { data: profile } = useProfile();
   // Firm checks can be org wide, per engagement or per person. The server
   // filters exactly at run time; this only decides whether the chip is live.
@@ -82,7 +97,7 @@ export function ReflectPage() {
   });
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [activeId, setActiveId] = useState<string | null>(null);
+  const [activeId, setActiveId] = useState<string | null>(initialSessionId);
   const [draft, setDraft] = useState("");
   const [pending, setPending] = useState(false);
   const [streamed, setStreamed] = useState("");
@@ -226,6 +241,16 @@ export function ReflectPage() {
     </div>
   );
 
+  // Asked from somewhere else: the same New session path runs once, so
+  // reflect.session_created fires exactly as it did from the button.
+  const started = useRef(false);
+  useEffect(() => {
+    if (!autoStart || started.current || !profile || activeId) return;
+    started.current = true;
+    void newSession();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoStart, profile, activeId]);
+
   async function newSession(withScope: ContextScope = DEFAULT_SCOPE) {
     if (!profile) return;
     setError(null);
@@ -330,21 +355,34 @@ export function ReflectPage() {
         clause is left out rather than approximated. The two clauses that are
         true are counted off reads the page already has.
       */}
-      <PageHeader
-        title="Reflect"
-        italicWord="on your week"
-        subtitle={[
-          `${scopedItems.length} piece${scopedItems.length === 1 ? "" : "s"} of work`,
-          `${firmChecks?.length ?? 0} check${(firmChecks?.length ?? 0) === 1 ? "" : "s"}`,
-        ].join(", ") + ". Nothing here is required."}
-      />
+      {embedded ? null : (
+        <PageHeader
+          title="Reflect"
+          italicWord="on your week"
+          subtitle={[
+            `${scopedItems.length} piece${scopedItems.length === 1 ? "" : "s"} of work`,
+            `${firmChecks?.length ?? 0} check${(firmChecks?.length ?? 0) === 1 ? "" : "s"}`,
+          ].join(", ") + ". Nothing here is required."}
+        />
+      )}
 
-      <div className="mb-4">
-        <AiRecordPointer />
-      </div>
+      {embedded ? null : (
+        <div className="mb-4">
+          <AiRecordPointer />
+        </div>
+      )}
 
-      <div className="space-y-6 lg:grid lg:grid-cols-[240px_minmax(0,1fr)_320px] lg:gap-8 lg:space-y-0">
-        <aside className="space-y-2">
+      <div
+        className={
+          embedded
+            ? "space-y-6"
+            : "space-y-6 lg:grid lg:grid-cols-[240px_minmax(0,1fr)_320px] lg:gap-8 lg:space-y-0"
+        }
+      >
+        {/* Embedded, the host page already lists the conversations and offers
+            delete on each row, so a second copy would be two of the same
+            control. Every other control stays exactly where it was. */}
+        <aside className={embedded ? "hidden" : "space-y-2"}>
           <Button className="w-full" onClick={() => void newSession()}>
             New session
           </Button>

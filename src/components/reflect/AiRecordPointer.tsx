@@ -39,6 +39,7 @@ export function AiRecordPointer() {
         Your captured conversations now live in{" "}
         <Link
           to="/ai-record"
+          search={{}}
           onClick={markAiRecordSeen}
           className="text-accent-deep underline underline-offset-2"
         >

@@ -9,7 +9,7 @@ import { ReflectPage } from "@/pages/ReflectPage";
  */
 export const Route = createFileRoute("/_authenticated/reflect")({
   beforeLoad: () => {
-    throw redirect({ to: "/ai-record", replace: true });
+    throw redirect({ to: "/ai-record", search: {}, replace: true });
   },
   component: ReflectPage,
 });

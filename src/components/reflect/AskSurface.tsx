@@ -486,10 +486,11 @@ export function AskSurface({
 
       {!mobile ? (
         <Link
-          to="/reflect"
+          to="/ai-record"
+          search={{ ask: true }}
           className="border-t border-border px-4 py-2 text-xs font-medium text-accent-deep transition-opacity hover:opacity-70"
         >
-          Open in Reflect →
+          Open in All conversations →
         </Link>
       ) : null}
 
