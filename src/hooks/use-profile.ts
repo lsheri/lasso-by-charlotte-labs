@@ -140,12 +140,43 @@ export function useProfiles() {
   return useQuery({ queryKey: ["profiles"], queryFn: fetchProfiles, staleTime: 60_000 });
 }
 
+/**
+ * Someone who has never switched has no row, so the database falls back to
+ * showing every workspace they belong to. Safe, but not what they expect, so
+ * the first resolved choice is written once. An existing row is never
+ * overwritten here: only an explicit switch does that.
+ */
+function useSeedActiveProfile(active: Profile | null): void {
+  const seeded = useRef(false);
+  useEffect(() => {
+    if (!active || seeded.current) return;
+    seeded.current = true;
+    void (async () => {
+      const { data: userData } = await supabase.auth.getUser();
+      const userId = userData.user?.id;
+      if (!userId) {
+        seeded.current = false;
+        return;
+      }
+      const { data: existing, error } = await supabase
+        .from("user_active_profile")
+        .select("user_id")
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (error || existing) return;
+      await writeActiveProfileRow(active.id);
+    })();
+  }, [active]);
+}
+
 /** The active profile, the only one, or the most recently used. */
 export function useProfile() {
   const query = useProfiles();
   const activeId = useActiveProfileId();
   const profiles = query.data ?? [];
-  return { ...query, data: pickActive(profiles, activeId), profiles };
+  const active = pickActive(profiles, activeId);
+  useSeedActiveProfile(active);
+  return { ...query, data: active, profiles };
 }
 
 export const ROLE_LABELS: Record<string, string> = {
