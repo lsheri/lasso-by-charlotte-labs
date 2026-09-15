@@ -39,7 +39,7 @@ export const Route = createFileRoute("/auth")({
     if (!data.user) return;
     const target = joinTarget(search.next);
     if (target) throw redirect({ to: "/join", search: target, replace: true });
-    throw redirect({ to: "/overview" });
+    throw redirect({ to: "/work" });
   },
   head: () => ({
     meta: [
@@ -89,7 +89,7 @@ function AuthPage() {
     const target = joinTarget(next) ?? (inviteCode ? { code: inviteCode } : null);
     if (target) navigate({ to: "/join", search: target, replace: true });
     else if (intent) navigate({ to: "/onboarding", search: { intent }, replace: true });
-    else navigate({ to: "/overview", replace: true });
+    else navigate({ to: "/work", replace: true });
   }
 
   const [mode, setMode] = useState<"signin" | "signup">(

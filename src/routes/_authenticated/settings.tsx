@@ -9,7 +9,7 @@ function SettingsRoute() {
 
   useEffect(() => {
     openSettings();
-    navigate({ to: "/overview", replace: true });
+    navigate({ to: "/work", replace: true });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return null;
