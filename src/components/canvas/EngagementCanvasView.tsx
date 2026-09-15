@@ -1,7 +1,9 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 
+import { Button } from "@/components/ui/button";
 import { WorkNote } from "@/components/work/WorkNote";
 import { useReducedMotion } from "@/hooks/use-motion";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,11 +18,14 @@ import {
 } from "@/lib/canvas-layout";
 import { noteCanvasOpenedFn } from "@/lib/canvas.functions";
 import { isDeliverableType, type LineageStatus } from "@/lib/lineage-shared";
+import { reviewLink } from "@/lib/lineage.functions";
 import type { WorkItemRow } from "@/lib/work-types";
 
 type CanvasLink = {
+  id: string;
   from_item_id: string;
   to_item_id: string;
+  relation: string;
   status: LineageStatus;
 };
 
@@ -29,6 +34,7 @@ type CanvasRead = {
   summaries: Map<string, string>;
   links: CanvasLink[];
 };
+
 
 type NodePosition = Placed & { stored: boolean };
 
@@ -58,8 +64,14 @@ function curveFor(source: NodePosition, target: NodePosition, yOffset = 0) {
   return {
     path: `M ${sx} ${sy} Q ${cx} ${cy} ${tx} ${ty}`,
     arrow: `M ${arrowA} L ${tx},${ty} L ${arrowB}`,
+    // The quadratic midpoint, where a question about this line is anchored.
+    mid: { x: 0.25 * sx + 0.5 * cx + 0.25 * tx, y: 0.25 * sy + 0.5 * cy + 0.25 * ty },
   };
 }
+
+/** The relation words a drafted link can carry. */
+const RELATION_WORDS = new Set(["informed", "produced", "revised", "cited"]);
+
 
 function CanvasNode({
   item,
@@ -157,7 +169,7 @@ export function EngagementCanvasView({
         itemIds.length
           ? supabase
               .from("work_item_links")
-              .select("from_item_id, to_item_id, status")
+              .select("id, from_item_id, to_item_id, relation, status")
               .in("from_item_id", itemIds)
               .in("to_item_id", itemIds)
           : Promise.resolve({ data: [], error: null }),
@@ -234,11 +246,68 @@ export function EngagementCanvasView({
     ...layout.placed.map((position) => position.y + nodeSize(position.kind).height + 100),
   );
 
+  const reduceMotion = useReducedMotion();
+  const queryClient = useQueryClient();
+  const review = useServerFn(reviewLink);
+  // An answer already given in this session, drawn before the server confirms it.
+  const [answers, setAnswers] = useState<Record<string, "confirmed" | "discarded">>({});
+  const [leaving, setLeaving] = useState<string | null>(null);
+  const [asking, setAsking] = useState<{ id: string; relation: string; x: number; y: number } | null>(
+    null,
+  );
+
+  const closeAsking = useCallback(() => setAsking(null), []);
+  useEffect(() => {
+    if (!asking) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") closeAsking();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [asking, closeAsking]);
+
+  const answer = useCallback(
+    async (linkId: string, action: "confirmed" | "discarded") => {
+      closeAsking();
+      setAnswers((current) => ({ ...current, [linkId]: action }));
+      if (action === "discarded" && !reduceMotion) {
+        setLeaving(linkId);
+        window.setTimeout(() => setLeaving((id) => (id === linkId ? null : id)), 240);
+      }
+      try {
+        await review({ data: { link_id: linkId, action, surface: "canvas" } });
+        await queryClient.invalidateQueries({ queryKey: ["engagement-canvas", engagementId] });
+      } catch (error) {
+        setAnswers((current) => {
+          const next = { ...current };
+          delete next[linkId];
+          return next;
+        });
+        setLeaving((id) => (id === linkId ? null : id));
+        toast.error(error instanceof Error ? error.message : "That did not save.");
+      }
+    },
+    [closeAsking, engagementId, queryClient, reduceMotion, review],
+  );
+
+  const visibleLinks = layout.links.filter(
+    (link) => (answers[link.id] ?? link.status) !== "discarded" || leaving === link.id,
+  );
+  const draftCount = visibleLinks.filter(
+    (link) => (answers[link.id] ?? link.status) === "draft",
+  ).length;
+
   return (
     <section className="space-y-4">
+      {draftCount > 0 ? (
+        <p className="font-hand text-[19px] text-graphite">
+          {draftCount} question{draftCount === 1 ? "" : "s"} to answer
+        </p>
+      ) : null}
       <div className="overflow-auto rounded-[6px] border border-[var(--nb-rule)]">
         <div
           className="relative min-h-[560px]"
+          onClick={closeAsking}
           style={{
             width,
             height,
@@ -252,24 +321,86 @@ export function EngagementCanvasView({
             width={width}
             height={height}
           >
-            {layout.links.map((link) => {
+            {visibleLinks.map((link) => {
               const source = positions.get(link.from_item_id);
               const target = positions.get(link.to_item_id);
               if (!source || !target) return null;
               const curve = curveFor(source, target);
               const offsetCurve = curveFor(source, target, 5);
-              const key = `${link.from_item_id}:${link.to_item_id}`;
-              return link.status === "draft" ? (
+              const key = link.id;
+              const status = answers[link.id] ?? link.status;
+              const justConfirmed = answers[link.id] === "confirmed";
+              if (status === "discarded" || leaving === link.id) {
+                return (
+                  <g
+                    key={key}
+                    fill="none"
+                    stroke="var(--nb-pencil)"
+                    strokeWidth="1.5"
+                    style={{
+                      opacity: 0,
+                      transition: reduceMotion ? "none" : "opacity 240ms var(--nb-ease)",
+                    }}
+                  >
+                    <path d={curve.path} strokeDasharray="6 7" />
+                    <path d={curve.arrow} />
+                  </g>
+                );
+              }
+              return status === "draft" ? (
                 <g key={key} fill="none" stroke="var(--nb-pencil)" strokeWidth="1.5">
                   <path d={curve.path} strokeDasharray="6 7" />
                   <path d={curve.arrow} />
                 </g>
               ) : (
-                <g key={key} fill="none" stroke="var(--nb-graphite)">
-                  <path d={curve.path} strokeWidth="1.6" />
-                  <path d={offsetCurve.path} strokeWidth="0.7" opacity="0.45" />
-                  <path d={curve.arrow} strokeWidth="1.6" />
+                <g
+                  key={key}
+                  fill="none"
+                  stroke="var(--nb-graphite)"
+                  className={justConfirmed ? "nb-trail-arrow is-on" : undefined}
+                >
+                  <path pathLength={1} d={curve.path} strokeWidth="1.6" />
+                  <path pathLength={1} d={offsetCurve.path} strokeWidth="0.7" opacity="0.45" />
+                  <path pathLength={1} d={curve.arrow} strokeWidth="1.6" />
                 </g>
+              );
+            })}
+          </svg>
+          {/* Answerable draft lines: a separate layer, because the drawing above never takes a pointer. */}
+          <svg className="absolute inset-0" width={width} height={height} style={{ pointerEvents: "none" }}>
+            {visibleLinks.map((link) => {
+              if ((answers[link.id] ?? link.status) !== "draft") return null;
+              const source = positions.get(link.from_item_id);
+              const target = positions.get(link.to_item_id);
+              if (!source || !target) return null;
+              const curve = curveFor(source, target);
+              const sourceTitle = items.find((item) => item.id === link.from_item_id)?.title ?? "this";
+              const targetTitle = items.find((item) => item.id === link.to_item_id)?.title ?? "this";
+              const relation = RELATION_WORDS.has(link.relation) ? link.relation : "informed";
+              const open = (event: { stopPropagation: () => void }) => {
+                event.stopPropagation();
+                setAsking({ id: link.id, relation, x: curve.mid.x, y: curve.mid.y });
+              };
+              return (
+                <path
+                  key={link.id}
+                  d={curve.path}
+                  fill="none"
+                  stroke="transparent"
+                  strokeWidth={18}
+                  pointerEvents="stroke"
+                  style={{ cursor: "pointer" }}
+                  tabIndex={0}
+                  role="button"
+                  aria-label={`Did "${sourceTitle}" feed "${targetTitle}"?`}
+                  onClick={open}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      open(event);
+                    }
+                  }}
+                />
               );
             })}
           </svg>
@@ -286,8 +417,32 @@ export function EngagementCanvasView({
               />
             );
           })}
+          {asking ? (
+            <div
+              className="absolute rounded-[var(--radius)] border border-[var(--nb-rule)] bg-card px-3 py-2 shadow-[var(--shadow-modal)]"
+              style={{ left: asking.x, top: asking.y, zIndex: 20 }}
+              onClick={(event) => event.stopPropagation()}
+            >
+              <p className="font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
+                {asking.relation}
+              </p>
+              <div className="mt-2 flex items-center gap-2">
+                <Button size="sm" onClick={() => void answer(asking.id, "confirmed")}>
+                  Yes, this fed it
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => void answer(asking.id, "discarded")}
+                >
+                  No it didn&apos;t
+                </Button>
+              </div>
+            </div>
+          ) : null}
         </div>
       </div>
+
 
       <div className="border border-[var(--nb-rule)] p-4">
         <div className="mb-3 flex items-baseline gap-2">
