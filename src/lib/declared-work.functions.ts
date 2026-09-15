@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { resolveProfile } from "@/lib/profile-resolve";
 import type { Json } from "@/integrations/supabase/types";
 
 import {
@@ -12,9 +13,12 @@ import {
   type WorkflowDeclaration,
 } from "./declared-work";
 
-type ArtifactInput = { work_item_id: string } & ArtifactDeclaration;
+type ArtifactInput = {
+  work_item_id: string;
+  profile_id?: string | undefined;
+} & ArtifactDeclaration;
 type WorkflowInput = { work_item_ids: string[] } & WorkflowDeclaration;
-type OutcomeInput = { engagement_id: string } & CoachOutcome;
+type OutcomeInput = { engagement_id: string; profile_id?: string | undefined } & CoachOutcome;
 
 /**
  * What the person said about their own finished work. The declaration is kept
@@ -24,7 +28,11 @@ export const declareArtifact = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: ArtifactInput) => {
     if (!input?.work_item_id) throw new Error("work_item_id is required");
-    return { work_item_id: input.work_item_id, ...parseArtifactDeclaration(input) };
+    return {
+      work_item_id: input.work_item_id,
+      profile_id: input.profile_id ?? null,
+      ...parseArtifactDeclaration(input),
+    };
   })
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
     const { supabase, userId } = context;
@@ -91,15 +99,15 @@ export const declareCoachOutcome = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: OutcomeInput) => {
     if (!input?.engagement_id) throw new Error("engagement_id is required");
-    return { engagement_id: input.engagement_id, ...parseCoachOutcome(input) };
+    return {
+      engagement_id: input.engagement_id,
+      profile_id: input.profile_id ?? null,
+      ...parseCoachOutcome(input),
+    };
   })
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
     const { supabase, userId } = context;
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("id, role, org_id")
-      .eq("user_id", userId)
-      .maybeSingle();
+    const profile = await resolveProfile(supabase, userId, data.profile_id);
     if (!profile || profile.role !== "coach") throw new Response("Forbidden", { status: 403 });
 
     const { data: engagement } = await supabase

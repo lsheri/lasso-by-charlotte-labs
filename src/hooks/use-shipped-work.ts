@@ -20,11 +20,18 @@ export function useShippedWork() {
 }
 
 export function useShipWork() {
+  const { data: profile } = useProfile();
   const queryClient = useQueryClient();
   const run = useServerFn(shipWork);
   return useMutation({
     mutationFn: (input: { workItemId: string; engagementId: string | null }) =>
-      run({ data: { work_item_id: input.workItemId, engagement_id: input.engagementId } }),
+      run({
+        data: {
+          work_item_id: input.workItemId,
+          engagement_id: input.engagementId,
+          profile_id: profile?.id ?? null,
+        },
+      }),
     onSuccess: async (_result, input) => {
       await invalidateAfterWorkChange(queryClient, input.workItemId);
     },
@@ -32,11 +39,12 @@ export function useShipWork() {
 }
 
 export function useUnshipWork() {
+  const { data: profile } = useProfile();
   const queryClient = useQueryClient();
   const run = useServerFn(unshipWork);
   return useMutation({
     mutationFn: (input: { workItemId: string }) =>
-      run({ data: { work_item_id: input.workItemId } }),
+      run({ data: { work_item_id: input.workItemId, profile_id: profile?.id ?? null } }),
     onSuccess: async (_result, input) => {
       await invalidateAfterWorkChange(queryClient, input.workItemId);
     },

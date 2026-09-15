@@ -10,10 +10,12 @@ export const MY_DELIVERABLES_KEY = ["my-deliverables"] as const;
 /** A coach has no deliverables of their own, so the query never runs for them. */
 export function useMyDeliverables() {
   const { data: profile } = useProfile();
-  const list = useServerFn(listMyDeliverables) as unknown as () => Promise<DeliverableCardRow[]>;
+  const list = useServerFn(listMyDeliverables) as unknown as (input: {
+    data: { profile_id?: string | undefined };
+  }) => Promise<DeliverableCardRow[]>;
   return useQuery({
     queryKey: [...MY_DELIVERABLES_KEY, profile?.id ?? null],
     enabled: Boolean(profile) && profile?.role !== "coach",
-    queryFn: () => list(),
+    queryFn: () => list({ data: { profile_id: profile?.id } }),
   });
 }

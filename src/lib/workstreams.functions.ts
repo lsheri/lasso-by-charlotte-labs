@@ -1,14 +1,20 @@
 import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { resolveProfile } from "@/lib/profile-resolve";
 
-type DeleteInput = { task_id: string };
-type MoveInput = { task_id: string; engagement_id: string; direction: "left" | "right" };
-type RenameInput = { task_id: string; name: string };
+type DeleteInput = { task_id: string; profile_id?: string | null | undefined };
+type MoveInput = {
+  task_id: string;
+  engagement_id: string;
+  direction: "left" | "right";
+  profile_id?: string | null | undefined;
+};
+type RenameInput = { task_id: string; name: string; profile_id?: string | null | undefined };
 
 function validateDelete(input: DeleteInput): DeleteInput {
   if (!input?.task_id) throw new Error("task_id is required");
-  return { task_id: input.task_id };
+  return { task_id: input.task_id, profile_id: input.profile_id ?? null };
 }
 
 function validateMove(input: MoveInput): MoveInput {
@@ -17,36 +23,27 @@ function validateMove(input: MoveInput): MoveInput {
   if (input.direction !== "left" && input.direction !== "right") {
     throw new Error("direction must be left or right");
   }
-  return { task_id: input.task_id, engagement_id: input.engagement_id, direction: input.direction };
+  return {
+    task_id: input.task_id,
+    engagement_id: input.engagement_id,
+    direction: input.direction,
+    profile_id: input.profile_id ?? null,
+  };
 }
 
 function validateRename(input: RenameInput): RenameInput {
   const name = (input?.name ?? "").trim();
   if (!input?.task_id) throw new Error("task_id is required");
   if (!name) throw new Error("A workstream needs a name");
-  return { task_id: input.task_id, name };
+  return { task_id: input.task_id, name, profile_id: input.profile_id ?? null };
 }
 
 /** Members only. Coaches never manage somebody else's workstreams. */
-async function requireMember(context: {
-  supabase: { from: (table: string) => never };
-  userId: string;
-}) {
-  const supabase = context.supabase as unknown as {
-    from: (table: "profiles") => {
-      select: (cols: string) => {
-        eq: (
-          col: string,
-          value: string,
-        ) => { maybeSingle: () => Promise<{ data: { id: string; role: string } | null }> };
-      };
-    };
-  };
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("id, role")
-    .eq("user_id", context.userId)
-    .maybeSingle();
+async function requireMember(
+  context: { supabase: Parameters<typeof resolveProfile>[0]; userId: string },
+  profileId: string | null | undefined,
+) {
+  const profile = await resolveProfile(context.supabase, context.userId, profileId);
   if (!profile || profile.role === "coach") throw new Response("Forbidden", { status: 403 });
   return profile;
 }
@@ -55,7 +52,7 @@ export const deleteWorkstream = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(validateDelete)
   .handler(async ({ data, context }) => {
-    await requireMember(context as unknown as Parameters<typeof requireMember>[0]);
+    await requireMember(context, data.profile_id);
     const { deleteWorkstreamRow } = await import("./workstreams.server");
     return deleteWorkstreamRow(context.supabase, { taskId: data.task_id });
   });
@@ -64,7 +61,7 @@ export const moveWorkstream = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(validateMove)
   .handler(async ({ data, context }) => {
-    await requireMember(context as unknown as Parameters<typeof requireMember>[0]);
+    await requireMember(context, data.profile_id);
     const { swappedPositions } = await import("./workstreams.server");
 
     const { data: tasks, error } = await context.supabase
@@ -97,7 +94,7 @@ export const renameWorkstream = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(validateRename)
   .handler(async ({ data, context }) => {
-    await requireMember(context as unknown as Parameters<typeof requireMember>[0]);
+    await requireMember(context, data.profile_id);
     const { error } = await context.supabase
       .from("tasks")
       .update({ name: data.name })

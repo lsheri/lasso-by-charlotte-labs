@@ -110,7 +110,9 @@ export function WorkstreamColumnHeader({
   async function onMove(direction: "left" | "right") {
     setPending(true);
     try {
-      await move({ data: { task_id: task.id, engagement_id: engagementId, direction } });
+      await move({
+        data: { task_id: task.id, engagement_id: engagementId, direction, profile_id: profile?.id },
+      });
       await refreshWorkstreams();
     } finally {
       setPending(false);
@@ -125,7 +127,7 @@ export function WorkstreamColumnHeader({
     }
     setPending(true);
     try {
-      await rename({ data: { task_id: task.id, name } });
+      await rename({ data: { task_id: task.id, name, profile_id: profile?.id } });
       await refreshWorkstreams();
       setEditingName(false);
     } finally {
@@ -136,7 +138,7 @@ export function WorkstreamColumnHeader({
   async function onDelete() {
     setPending(true);
     try {
-      await remove({ data: { task_id: task.id } });
+      await remove({ data: { task_id: task.id, profile_id: profile?.id } });
       setConfirmDelete(false);
       await refreshWorkstreams();
     } finally {

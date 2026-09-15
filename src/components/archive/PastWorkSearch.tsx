@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState, type FormEvent } from "react";
 
 import { CardMetaTile } from "@/components/firm/CardMetaTile";
+import { useProfile } from "@/hooks/use-profile";
 import { deliverableTag } from "@/lib/deliverable-kinds";
 import {
   PAST_WORK_EMPTY_LINE,
@@ -40,9 +41,10 @@ function Pending() {
  */
 export function PastWorkSearch() {
   const run = useServerFn(searchPastWork) as unknown as (input: {
-    data: { description: string };
+    data: { description: string; profile_id?: string | undefined };
   }) => Promise<{ matches: PastWorkMatch[]; candidates: PastWorkCandidate[] }>;
 
+  const { data: profile } = useProfile();
   const [description, setDescription] = useState("");
   const [busy, setBusy] = useState(false);
   const [answer, setAnswer] = useState<Answer | null>(null);
@@ -53,7 +55,7 @@ export function PastWorkSearch() {
     if (!text || busy) return;
     setBusy(true);
     try {
-      const result = await run({ data: { description: text } });
+      const result = await run({ data: { description: text, profile_id: profile?.id } });
       setAnswer({
         matches: result.matches,
         byId: new Map(result.candidates.map((c) => [c.work_item_id, c] as const)),

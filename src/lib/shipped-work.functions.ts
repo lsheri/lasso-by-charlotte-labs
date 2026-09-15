@@ -1,19 +1,24 @@
 import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { resolveProfile } from "@/lib/profile-resolve";
 import type { ShippedCard } from "@/lib/shipped-work-shared";
 
-type ShipInput = { work_item_id: string; engagement_id: string | null };
-type UnshipInput = { work_item_id: string };
+type ShipInput = { work_item_id: string; engagement_id: string | null; profile_id?: string | null | undefined };
+type UnshipInput = { work_item_id: string; profile_id?: string | null | undefined };
 
 function validateShip(input: ShipInput): ShipInput {
   if (!input?.work_item_id) throw new Error("work_item_id is required");
-  return { work_item_id: input.work_item_id, engagement_id: input.engagement_id ?? null };
+  return {
+    work_item_id: input.work_item_id,
+    engagement_id: input.engagement_id ?? null,
+    profile_id: input.profile_id ?? null,
+  };
 }
 
 function validateUnship(input: UnshipInput): UnshipInput {
   if (!input?.work_item_id) throw new Error("work_item_id is required");
-  return { work_item_id: input.work_item_id };
+  return { work_item_id: input.work_item_id, profile_id: input.profile_id ?? null };
 }
 
 /** Owner-initiated, deliverables only. A re-ship replaces the card. */
@@ -21,11 +26,7 @@ export const shipWork = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(validateShip)
   .handler(async ({ data, context }) => {
-    const { data: profile } = await context.supabase
-      .from("profiles")
-      .select("id, role")
-      .eq("user_id", context.userId)
-      .maybeSingle();
+    const profile = await resolveProfile(context.supabase, context.userId, data.profile_id);
     if (!profile || profile.role === "coach") throw new Response("Forbidden", { status: 403 });
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -42,11 +43,7 @@ export const unshipWork = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(validateUnship)
   .handler(async ({ data, context }) => {
-    const { data: profile } = await context.supabase
-      .from("profiles")
-      .select("id, role")
-      .eq("user_id", context.userId)
-      .maybeSingle();
+    const profile = await resolveProfile(context.supabase, context.userId, data.profile_id);
     if (!profile || profile.role === "coach") throw new Response("Forbidden", { status: 403 });
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");

@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 
 import { usePerfOpenFinish, usePerfTimerFactory } from "@/hooks/use-perf-timer";
+import { useProfile } from "@/hooks/use-profile";
 import { SpiderReading } from "@/components/notebook/NotebookSpider";
 import { Pencil, X } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -80,10 +81,11 @@ function AuditSurface({
     number?: number;
   } | null>(null);
   const reduceMotion = prefersReducedMotion();
+  const { data: profile } = useProfile();
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["span-audit", anchorId],
-    queryFn: () => load({ data: { work_item_id: anchorId } }),
+    queryFn: () => load({ data: { work_item_id: anchorId, profile_id: profile?.id } }),
   });
 
   const { data: visual, refetch: refetchRendition } = useQuery({
@@ -181,7 +183,7 @@ function AuditSurface({
 
   async function removeOne(stitch: AuditStitch) {
     try {
-      await removeStitch({ data: { span_link_id: stitch.id } });
+      await removeStitch({ data: { span_link_id: stitch.id, profile_id: profile?.id } });
       if (replayId === stitch.id) setReplayId(null);
       await queryClient.invalidateQueries({ queryKey: ["span-audit", anchorId] });
     } catch (e) {

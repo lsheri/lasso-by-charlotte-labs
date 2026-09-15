@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { resolveProfile } from "@/lib/profile-resolve";
 import type { DeliverableCardRow } from "@/lib/overview-work-shared";
 
 type TaskRow = {
@@ -17,15 +18,14 @@ type TaskRow = {
 /** The caller's own deliverables, with the archive flag each one carries. */
 export const listMyDeliverables = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<DeliverableCardRow[]> => {
-    const { data: profile } = await context.supabase
-      .from("profiles")
-      .select("id, role")
-      .eq("user_id", context.userId)
-      .maybeSingle();
+  .inputValidator((input: { profile_id?: string | undefined } | undefined) => ({
+    profile_id: input?.profile_id ?? null,
+  }))
+  .handler(async ({ data, context }): Promise<DeliverableCardRow[]> => {
+    const profile = await resolveProfile(context.supabase, context.userId, data.profile_id);
     if (!profile || profile.role === "coach") throw new Response("Forbidden", { status: 403 });
 
-    const { data, error } = await context.supabase
+    const { data: taskRows, error } = await context.supabase
       .from("tasks")
       .select(
         "id, name, status, delivered_at, accepted_at, engagement_id, engagements(title, code, client_label), work_item_tasks(work_item_id)",
@@ -33,7 +33,7 @@ export const listMyDeliverables = createServerFn({ method: "POST" })
       .eq("owner_id", profile.id)
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
-    const rows = (data ?? []) as unknown as TaskRow[];
+    const rows = (taskRows ?? []) as unknown as TaskRow[];
 
     const itemIds = [
       ...new Set(rows.flatMap((row) => (row.work_item_tasks ?? []).map((l) => l.work_item_id))),

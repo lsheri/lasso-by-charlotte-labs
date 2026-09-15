@@ -63,7 +63,7 @@ export function AffiliationPage() {
   useEffect(() => {
     if (!institution || noted.current) return;
     noted.current = true;
-    void noteRead({ data: { institution: institution.slug } }).catch(() => {});
+    void noteRead({ data: { institution: institution.slug, profile_id: profile?.id } }).catch(() => {});
   }, [institution, noteRead]);
 
   if (!institution) {

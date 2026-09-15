@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { resolveProfile } from "@/lib/profile-resolve";
 
 /**
  * Pass 185: a workspace was affiliated with an institution at creation. Only
@@ -9,18 +10,15 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
  */
 export const noteAffiliatedFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { institution: string }) => ({
+  .inputValidator((input: { institution: string; profile_id?: string | undefined }) => ({
     institution: input?.institution === "ceiba_uni" ? input.institution : "",
+    profile_id: input?.profile_id ?? null,
   }))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
     if (!data.institution) return { ok: true };
     const { supabase, userId } = context;
 
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("id, org_id")
-      .eq("user_id", userId)
-      .maybeSingle();
+    const profile = await resolveProfile(supabase, userId, data.profile_id);
     if (!profile) return { ok: true };
 
     const { recordEvent } = await import("./telemetry.server");
@@ -41,18 +39,15 @@ export const noteAffiliatedFn = createServerFn({ method: "POST" })
  */
 export const noteDisclosureReadFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { institution: string }) => ({
+  .inputValidator((input: { institution: string; profile_id?: string | undefined }) => ({
     institution: input?.institution === "ceiba_uni" ? input.institution : "",
+    profile_id: input?.profile_id ?? null,
   }))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
     if (!data.institution) return { ok: true };
     const { supabase, userId } = context;
 
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("id, org_id")
-      .eq("user_id", userId)
-      .maybeSingle();
+    const profile = await resolveProfile(supabase, userId, data.profile_id);
     if (!profile) return { ok: true };
 
     const { recordEvent } = await import("./telemetry.server");

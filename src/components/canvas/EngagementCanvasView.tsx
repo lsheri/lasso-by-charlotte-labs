@@ -24,6 +24,7 @@ import {
   type Point,
 } from "@/lib/canvas-drag";
 import { placeCanvasNodeFn } from "@/lib/canvas-node.functions";
+import { useProfile } from "@/hooks/use-profile";
 import { noteCanvasOpenedFn } from "@/lib/canvas.functions";
 import { isDeliverableType, type LineageStatus } from "@/lib/lineage-shared";
 import { reviewLink } from "@/lib/lineage.functions";
@@ -195,6 +196,7 @@ export function EngagementCanvasView({
   items: WorkItemRow[];
   onOpen: (item: WorkItemRow) => void;
 }) {
+  const { data: profile } = useProfile();
   const noteOpened = useServerFn(noteCanvasOpenedFn);
   const placeNode = useServerFn(placeCanvasNodeFn);
   const itemIds = useMemo(() => items.map((item) => item.id), [items]);
@@ -303,9 +305,10 @@ export function EngagementCanvasView({
         nodes: view.placed.length,
         links: view.links.length,
         shelf: view.shelf.length,
+        profile_id: profile?.id,
       },
     }).catch(() => undefined);
-  }, [data, view.links.length, view.placed.length, view.shelf.length, noteOpened]);
+  }, [data, view.links.length, view.placed.length, view.shelf.length, noteOpened, profile?.id]);
 
   const positions = view.positions;
   const width = Math.max(
@@ -394,6 +397,7 @@ export function EngagementCanvasView({
             y: point ? point.y : null,
             from,
             method,
+            profile_id: profile?.id,
           },
         });
         await queryClient.invalidateQueries({ queryKey: ["engagement-canvas", engagementId] });
@@ -407,7 +411,7 @@ export function EngagementCanvasView({
         toast.error(error instanceof Error ? error.message : "That did not save.");
       }
     },
-    [engagementId, moves, placeNode, queryClient],
+    [engagementId, moves, placeNode, queryClient, profile?.id],
   );
 
   const startPointerDrag = useCallback(

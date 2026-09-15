@@ -15,6 +15,7 @@ import {
 import { DeclareArtifactStep } from "@/components/work/DeclareArtifactStep";
 import { WorkArtifactSections } from "@/components/journey/WorkArtifactSections";
 import { useMotion } from "@/hooks/use-motion";
+import { useProfile } from "@/hooks/use-profile";
 import { useShipWork } from "@/hooks/use-shipped-work";
 import { guessArtifactDeclaration, type ArtifactDeclaration } from "@/lib/declared-work";
 import { declareArtifact } from "@/lib/declared-work.functions";
@@ -68,6 +69,7 @@ export function ShipToFirmDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const ship = useShipWork();
+  const { data: profile } = useProfile();
   const declare = useServerFn(declareArtifact);
   const buildArtifact = useServerFn(runWorkArtifactRun);
   const [declared, setDeclared] = useState<ArtifactDeclaration>(() =>
@@ -142,7 +144,7 @@ export function ShipToFirmDialog({
       .mutateAsync({ workItemId, engagementId })
       .then(async () => {
         // The record is only complete once the person's own words are on it.
-        await declare({ data: { work_item_id: workItemId, ...declared } }).catch(() => undefined);
+        await declare({ data: { work_item_id: workItemId, profile_id: profile?.id, ...declared } }).catch(() => undefined);
         if (orgId) {
           logEvent("firm.work_shipped", orgId, {
             has_artifact: artifact !== null,

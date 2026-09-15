@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { resolveProfile } from "@/lib/profile-resolve";
 
 function canvasBand(value: number): "0" | "1-4" | "5-19" | "20+" {
   if (value <= 0) return "0";
@@ -12,19 +13,16 @@ function canvasBand(value: number): "0" | "1-4" | "5-19" | "20+" {
 /** Records one canvas opening with banded counts only. Failures stay silent. */
 export const noteCanvasOpenedFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { nodes: number; links: number; shelf: number }) => ({
+  .inputValidator((input: { nodes: number; links: number; shelf: number; profile_id?: string | undefined }) => ({
     nodes: Number.isFinite(input?.nodes) ? Math.max(0, Math.trunc(input.nodes)) : 0,
     links: Number.isFinite(input?.links) ? Math.max(0, Math.trunc(input.links)) : 0,
     shelf: Number.isFinite(input?.shelf) ? Math.max(0, Math.trunc(input.shelf)) : 0,
+    profile_id: input?.profile_id ?? null,
   }))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
     try {
       const { supabase, userId } = context;
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("id, org_id")
-        .eq("user_id", userId)
-        .maybeSingle();
+      const profile = await resolveProfile(supabase, userId, data.profile_id);
       if (!profile) return { ok: true };
 
       const { recordEvent } = await import("./telemetry.server");
