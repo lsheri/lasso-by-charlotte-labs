@@ -387,7 +387,8 @@ export function FindItPage() {
                   ) : null}
                 </div>
                 {running ? (
-                  <p className="mt-2 font-hand text-[16px] text-soft">
+                  <p className="mt-2 flex items-center gap-2 font-hand text-[16px] text-soft">
+                    <NotebookSpider size={22} reading={!reduceMotion} />
                     reading {readingCount} conversations
                   </p>
                 ) : null}
@@ -395,19 +396,15 @@ export function FindItPage() {
 
               {running ? (
                 <section className="mb-10">
-                  <div className="flex flex-wrap gap-3">
-                    {chats.slice(0, 6).map((chat, index) => (
-                      <div
-                        key={chat.id}
-                        className={
-                          reduceMotion ? "w-[220px]" : "nb-chat-shimmer w-[220px] rounded-[6px]"
-                        }
-                        style={reduceMotion ? undefined : shimmerStyle(index)}
-                      >
-                        <WorkNote item={chat} />
-                      </div>
-                    ))}
-                  </div>
+                  <FindItSheet
+                    phase="reading"
+                    reduce={reduceMotion}
+                    target={target ? <WorkNote item={target} /> : null}
+                    candidates={chats.slice(0, 12).map((chat) => ({
+                      id: chat.id,
+                      node: <WorkNote item={chat} />,
+                    }))}
+                  />
                 </section>
               ) : null}
 
