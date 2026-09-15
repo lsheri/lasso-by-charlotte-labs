@@ -2,7 +2,22 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { FindItPage } from "@/pages/FindItPage";
 
+export type FindItEntry = "peek" | "upload";
+
 export const Route = createFileRoute("/_authenticated/find-it")({
+  // Another surface can point at a piece of work and say where it came from.
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { target?: string | undefined; entry?: FindItEntry | undefined } => {
+    const target = typeof search["target"] === "string" ? (search["target"] as string) : undefined;
+    const raw = search["entry"];
+    const entry: FindItEntry | undefined =
+      raw === "peek" || raw === "upload" ? (raw as FindItEntry) : undefined;
+    return {
+      ...(target ? { target } : {}),
+      ...(entry ? { entry } : {}),
+    };
+  },
   head: () => ({
     meta: [
       { title: "Find it | Lasso" },

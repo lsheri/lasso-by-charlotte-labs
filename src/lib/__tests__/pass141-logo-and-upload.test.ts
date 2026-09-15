@@ -36,7 +36,10 @@ describe("pass 141: upload mime stamping", () => {
   });
 
   it("the upload capture path uses the builder", () => {
-    const source = readFileSync("src/components/work/UploadFilesButton.tsx", "utf8");
+    // Pass E2: the button and the Find it drop zone share one capture path.
+    const source = readFileSync("src/components/work/use-capture-files.ts", "utf8");
     expect(source).toContain("buildUploadSourceMeta(file)");
+    const button = readFileSync("src/components/work/UploadFilesButton.tsx", "utf8");
+    expect(button).toContain("useCaptureFiles");
   });
 });

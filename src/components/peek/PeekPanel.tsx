@@ -1,3 +1,4 @@
+import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { ExternalLink } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -131,6 +132,7 @@ export function PeekBody({
   onClose,
 }: PeekBodyProps) {
   const fetchUrl = useServerFn(getWorkFileUrl);
+  const navigate = useNavigate();
   const items = entry ? entryItems(entry) : [];
   const [tab, setTab] = useState(0);
   const [briefOpen, setBriefOpen] = useState(false);
@@ -244,6 +246,15 @@ export function PeekBody({
                     anchorId: active.id,
                     anchorTitle: active.title,
                     engagementId,
+                  })
+              : undefined
+          }
+          onFindIt={
+            isDeliverableType(active.type)
+              ? () =>
+                  void navigate({
+                    to: "/find-it",
+                    search: { target: active.id, entry: "peek" as const },
                   })
               : undefined
           }

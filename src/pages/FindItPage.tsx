@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 
@@ -8,15 +8,16 @@ import { SectionHeader } from "@/components/notebook/SectionHeader";
 import { GraphiteCheck } from "@/components/notebook/marks";
 import { NotebookSpider } from "@/components/notebook/NotebookSpider";
 import { ToneCard } from "@/components/notebook/ToneCard";
-import { shimmerStyle } from "@/components/motion/ChatShimmer";
+import { FindItSheet } from "@/components/find-it/FindItSheet";
 import { WorkNote } from "@/components/work/WorkNote";
 import { ThreadViewerById } from "@/components/work/ThreadViewerById";
+import { useCaptureFiles } from "@/components/work/use-capture-files";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { usePerfTimerFactory } from "@/hooks/use-perf-timer";
 import { useProfile } from "@/hooks/use-profile";
-import { useReducedMotion } from "@/hooks/use-motion";
+import { useMotion, useReducedMotion } from "@/hooks/use-motion";
 import { useWorkItems } from "@/hooks/use-work-items";
 import {
   findSources as findSourcesFn,
@@ -29,6 +30,29 @@ import { reviewLink as reviewLinkFn } from "@/lib/lineage.functions";
 import { isDeliverableType, linkBucket } from "@/lib/lineage-shared";
 import { logEvent } from "@/lib/telemetry";
 import { effectiveWorkDate, formatDate, type WorkItemRow } from "@/lib/work-types";
+
+/** Files Find it can read. Anything else is left alone, and said so. */
+const READABLE_EXTENSIONS = [
+  "pdf",
+  "doc",
+  "docx",
+  "txt",
+  "md",
+  "ppt",
+  "pptx",
+  "key",
+  "xls",
+  "xlsx",
+  "csv",
+];
+
+const UNREADABLE_FILE_MESSAGE =
+  "Lasso reads documents, decks, sheets and transcripts. That one it cannot read.";
+
+function isReadableFile(file: File): boolean {
+  const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
+  return READABLE_EXTENSIONS.includes(ext);
+}
 
 type Mode = "sources" | "number" | "thread";
 
@@ -71,9 +95,13 @@ function Highlighted({ text, needle }: { text: string; needle: string }) {
 export function FindItPage() {
   const { data: profile } = useProfile();
   const navigate = useNavigate();
+  const search = useSearch({ from: "/_authenticated/find-it" });
   const { data, isLoading } = useWorkItems();
   const reduceMotion = useReducedMotion();
   const perfTimer = usePerfTimerFactory();
+  const keptMotion = useMotion("findit.kept");
+  const rowMotion = useMotion("findit.search_landed");
+  const { capture, pending: capturing } = useCaptureFiles();
 
   const items = useMemo(() => data?.items ?? [], [data]);
   const chats = useMemo(() => items.filter(isConversation), [items]);
@@ -86,16 +114,9 @@ export function FindItPage() {
     if (isCoach) navigate({ to: "/coaching", replace: true });
   }, [isCoach, navigate]);
 
-  const opened = useRef(false);
-  useEffect(() => {
-    if (opened.current || !profile?.org_id || isCoach) return;
-    opened.current = true;
-    logEvent("findit.opened", profile.org_id, { entry: "nav" });
-  }, [profile?.org_id, isCoach]);
-
   const [mode, setMode] = useState<Mode>("sources");
   const [query, setQuery] = useState("");
-  const [targetId, setTargetId] = useState<string | null>(null);
+  const [targetId, setTargetId] = useState<string | null>(search.target ?? null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [scope, setScope] = useState<FindScope | null>(null);
   const [running, setRunning] = useState(false);
@@ -104,10 +125,47 @@ export function FindItPage() {
   const [searchedFor, setSearchedFor] = useState("");
   const [reviewed, setReviewed] = useState<Record<string, "confirmed" | "discarded">>({});
   const [openThread, setOpenThread] = useState<string | null>(null);
+  const [justKept, setJustKept] = useState<string | null>(null);
+
+  // Where this page was opened from. Another surface can say so in the link.
+  const entryRef = useRef<"nav" | "peek" | "upload">(search.entry ?? "nav");
+  const opened = useRef(false);
+  useEffect(() => {
+    if (opened.current || !profile?.org_id || isCoach) return;
+    opened.current = true;
+    logEvent("findit.opened", profile.org_id, { entry: entryRef.current });
+  }, [profile?.org_id, isCoach]);
 
   const runFindSources = useServerFn(findSourcesFn);
   const runSearchRecord = useServerFn(searchRecordFn);
   const runReviewLink = useServerFn(reviewLinkFn);
+
+  // A file just dropped here is not mapped anywhere yet, so the first look
+  // goes across everything the person has.
+  const [autoRun, setAutoRun] = useState(false);
+  useEffect(() => {
+    if (!autoRun || !targetId || running) return;
+    if (!traceable.some((item) => item.id === targetId)) return;
+    setAutoRun(false);
+    void runSources();
+  }, [autoRun, targetId, running, traceable]);
+
+  async function onDrop(files: File[]) {
+    const readable = files.filter(isReadableFile);
+    if (readable.length === 0) {
+      toast(UNREADABLE_FILE_MESSAGE);
+      return;
+    }
+    const ids = await capture(readable);
+    const first = ids[0];
+    if (!first) return;
+    setMode("sources");
+    setTargetId(first);
+    setScope("all_mine");
+    setFound(null);
+    if (profile?.org_id) logEvent("findit.opened", profile.org_id, { entry: "upload" });
+    setAutoRun(true);
+  }
 
   const target = useMemo(
     () => traceable.find((item) => item.id === targetId) ?? null,
@@ -197,6 +255,7 @@ export function FindItPage() {
 
   async function review(linkId: string, action: "confirmed" | "discarded") {
     setReviewed((prev) => ({ ...prev, [linkId]: action }));
+    if (action === "confirmed") setJustKept(linkId);
     try {
       await runReviewLink({
         data: { link_id: linkId, action, surface: "find_it", profile_id: profile?.id },
@@ -287,21 +346,21 @@ export function FindItPage() {
                     onDragOver={(event) => event.preventDefault()}
                     onDrop={(event) => {
                       event.preventDefault();
-                      toast(
-                        "Bringing in new files from here is coming. For now, pick something you already have.",
-                      );
+                      void onDrop(Array.from(event.dataTransfer.files));
                     }}
                     className="mt-3 grid min-h-[140px] place-items-center rounded-[8px] border border-dashed border-pencil bg-card px-6 py-8 text-center"
                   >
                     <div>
                       <p className="text-sm text-muted-foreground">
-                        Drop a finished piece of work here, or pick one you already have.
+                        {capturing
+                          ? "Bringing it in…"
+                          : "drop a document, deck or transcript here to find what fed it"}
                       </p>
                       <Button
                         type="button"
                         className="mt-3"
                         onClick={() => setPickerOpen(true)}
-                        disabled={isLoading}
+                        disabled={isLoading || capturing}
                       >
                         Pick a piece of work
                       </Button>
@@ -340,7 +399,8 @@ export function FindItPage() {
                   ) : null}
                 </div>
                 {running ? (
-                  <p className="mt-2 font-hand text-[16px] text-soft">
+                  <p className="mt-2 flex items-center gap-2 font-hand text-[16px] text-soft">
+                    <NotebookSpider size={22} reading={!reduceMotion} />
                     reading {readingCount} conversations
                   </p>
                 ) : null}
@@ -348,93 +408,104 @@ export function FindItPage() {
 
               {running ? (
                 <section className="mb-10">
-                  <div className="flex flex-wrap gap-3">
-                    {chats.slice(0, 6).map((chat, index) => (
-                      <div
-                        key={chat.id}
-                        className={
-                          reduceMotion ? "w-[220px]" : "nb-chat-shimmer w-[220px] rounded-[6px]"
-                        }
-                        style={reduceMotion ? undefined : shimmerStyle(index)}
-                      >
-                        <WorkNote item={chat} />
-                      </div>
-                    ))}
-                  </div>
+                  <FindItSheet
+                    phase="reading"
+                    reduce={reduceMotion}
+                    target={target ? <WorkNote item={target} /> : null}
+                    candidates={chats.slice(0, 12).map((chat) => ({
+                      id: chat.id,
+                      node: <WorkNote item={chat} />,
+                    }))}
+                  />
                 </section>
               ) : null}
 
               {found && !running ? (
                 <section className="mb-10">
                   <SectionHeader title="What it found" />
-                  <div className="mt-4 flex flex-wrap items-start gap-6">
-                    {target ? (
-                      <div className="w-[240px]">
-                        <WorkNote item={target} />
-                      </div>
+                  <div className="mt-4">
+                    <FindItSheet
+                      phase="found"
+                      reduce={reduceMotion}
+                      target={target ? <WorkNote item={target} /> : null}
+                      candidates={candidates
+                        .filter(
+                          ({ link }) => (reviewed[link.link_id] ?? link.status) !== "discarded",
+                        )
+                        .map(({ link, item }) => {
+                          const status = reviewed[link.link_id] ?? link.status;
+                          return {
+                            id: link.link_id,
+                            node: (
+                              <div
+                                className={
+                                  justKept === link.link_id ? "nb-findit-settle" : undefined
+                                }
+                              >
+                                {item ? (
+                                  <WorkNote item={item} onOpen={() => setOpenThread(item.id)} />
+                                ) : (
+                                  <p className="text-sm text-muted-foreground">
+                                    A conversation you can no longer read.
+                                  </p>
+                                )}
+                                <p className="micro-label mt-1">{link.relation}</p>
+                                {link.quote ? (
+                                  <ToneCard tone="claim" className="mt-2 gap-1 p-3">
+                                    <p className="font-mono text-[11.5px] leading-5">
+                                      {link.quote.text}
+                                    </p>
+                                    <p className="font-hand text-[16px] text-green">
+                                      why: this sentence is in both
+                                    </p>
+                                  </ToneCard>
+                                ) : (
+                                  <p className="mt-2 font-hand text-[16px] text-soft">
+                                    no exact sentence shared
+                                  </p>
+                                )}
+                                <div className="mt-2 flex items-center gap-2">
+                                  {status === "confirmed" ? (
+                                    <span className="flex items-center gap-1 text-[11.5px] text-green">
+                                      <span
+                                        className={
+                                          justKept === link.link_id ? keptMotion.className : ""
+                                        }
+                                      >
+                                        <GraphiteCheck seed={link.link_id} />
+                                      </span>{" "}
+                                      Kept
+                                    </span>
+                                  ) : (
+                                    <>
+                                      <Button
+                                        type="button"
+                                        size="sm"
+                                        onClick={() => void review(link.link_id, "confirmed")}
+                                      >
+                                        Keep as a source
+                                      </Button>
+                                      <Button
+                                        type="button"
+                                        size="sm"
+                                        variant="ghost"
+                                        onClick={() => void review(link.link_id, "discarded")}
+                                      >
+                                        Not this one
+                                      </Button>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            ),
+                          };
+                        })}
+                    />
+                    {candidates.length === 0 ? (
+                      <p className="mt-4 text-sm text-muted-foreground">
+                        Nothing of yours reads as a source for this one.
+                      </p>
                     ) : null}
-                    <div className="flex flex-1 flex-wrap gap-4">
-                      {candidates.map(({ link, item }) => {
-                        const status = reviewed[link.link_id] ?? link.status;
-                        if (status === "discarded") return null;
-                        return (
-                          <div key={link.link_id} className="w-[260px]">
-                            {item ? (
-                              <WorkNote item={item} onOpen={() => setOpenThread(item.id)} />
-                            ) : (
-                              <p className="text-sm text-muted-foreground">
-                                A conversation you can no longer read.
-                              </p>
-                            )}
-                            <p className="micro-label mt-1">{link.relation}</p>
-                            {link.quote ? (
-                              <ToneCard tone="claim" className="mt-2 gap-1 p-3">
-                                <p className="font-mono text-[11.5px] leading-5">
-                                  {link.quote.text}
-                                </p>
-                                <p className="font-hand text-[16px] text-green">
-                                  why: this sentence is in both
-                                </p>
-                              </ToneCard>
-                            ) : (
-                              <p className="mt-2 font-hand text-[16px] text-soft">
-                                no exact sentence shared
-                              </p>
-                            )}
-                            <div className="mt-2 flex items-center gap-2">
-                              {status === "confirmed" ? (
-                                <span className="flex items-center gap-1 text-[11.5px] text-green">
-                                  <GraphiteCheck seed={link.link_id} /> Kept
-                                </span>
-                              ) : (
-                                <>
-                                  <Button
-                                    type="button"
-                                    size="sm"
-                                    onClick={() => void review(link.link_id, "confirmed")}
-                                  >
-                                    Keep as a source
-                                  </Button>
-                                  <Button
-                                    type="button"
-                                    size="sm"
-                                    variant="ghost"
-                                    onClick={() => void review(link.link_id, "discarded")}
-                                  >
-                                    Not this one
-                                  </Button>
-                                </>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                      {candidates.length === 0 ? (
-                        <p className="text-sm text-muted-foreground">
-                          Nothing of yours reads as a source for this one.
-                        </p>
-                      ) : null}
-                    </div>
                   </div>
 
                   {stillDraft.length > 0 ? (
@@ -476,10 +547,11 @@ export function FindItPage() {
                   ) : null}
                   {searchHits.turns.length > 0 ? (
                     <ul className="divide-y divide-hairline border-t border-hairline">
-                      {searchHits.turns.map((hit) => (
+                      {searchHits.turns.map((hit, index) => (
                         <li
                           key={`${hit.work_item_id}-${hit.turn_no}`}
-                          className="flex items-start gap-4 py-3"
+                          className={`flex items-start gap-4 py-3 ${rowMotion.className}`}
+                          style={{ ["--nb-i" as string]: index } as React.CSSProperties}
                         >
                           <div className="min-w-0 flex-1">
                             <p className="text-[13px] text-foreground">

@@ -7,6 +7,7 @@ import { logV2 } from "@/lib/telemetry-v2";
 import { toast } from "sonner";
 
 import { SuggestDot } from "@/components/common/Suggested";
+import { FindItLink } from "@/components/find-it/FindItLink";
 import { DrawnCheck, DrawnStrike, useMark } from "@/components/notebook/marks";
 import { PaperTrail, type TrailStop } from "@/components/notebook/PaperTrail";
 import { Button } from "@/components/ui/button";
@@ -219,10 +220,13 @@ export function WhatFedThis({
   }));
 
   const findButton = canEdit ? (
-    <Button type="button" disabled={busy} onClick={() => void find()}>
-      <Sparkle className="mr-2 h-4 w-4" aria-hidden />
-      {busy ? <WorkingLabel>Reading this engagement</WorkingLabel> : "Find what this came from"}
-    </Button>
+    <div className="flex flex-wrap items-center gap-4">
+      <Button type="button" disabled={busy} onClick={() => void find()}>
+        <Sparkle className="mr-2 h-4 w-4" aria-hidden />
+        {busy ? <WorkingLabel>Reading this engagement</WorkingLabel> : "Find what this came from"}
+      </Button>
+      <FindItLink workItemId={workItemId} />
+    </div>
   ) : null;
 
   return (

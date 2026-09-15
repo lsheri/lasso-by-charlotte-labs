@@ -1,18 +1,9 @@
-import { useQueryClient } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
-import { useRef, useState } from "react";
+import { useRef } from "react";
 
 import { BrandLogo } from "@/components/connectors/BrandLogo";
 import { Button } from "@/components/ui/button";
 import { WorkingLabel } from "@/components/common/Working";
-import { useProfile } from "@/hooks/use-profile";
-import { supabase } from "@/integrations/supabase/client";
-import { ensureExtractsFn } from "@/lib/extract.functions";
-import { logEvent } from "@/lib/telemetry";
-import { noteCaptureFn } from "@/lib/work-taxonomy.functions";
-import { logV2 } from "@/lib/telemetry-v2";
-import { buildUploadSourceMeta } from "@/lib/upload-payload";
-import { workTypeForFile } from "@/lib/work-types";
+import { useCaptureFiles } from "@/components/work/use-capture-files";
 
 export function UploadFilesButton({
   variant = "outline",
@@ -23,89 +14,13 @@ export function UploadFilesButton({
   label?: string;
   onCaptured?: ((workItemIds: string[]) => void | Promise<void>) | undefined;
 }) {
-  const ensureExtracts = useServerFn(ensureExtractsFn);
-  const noteCapture = useServerFn(noteCaptureFn);
-  const { data: profile } = useProfile();
-  const queryClient = useQueryClient();
+  const { capture, pending, progress, error } = useCaptureFiles();
   const inputRef = useRef<HTMLInputElement>(null);
-  const [pending, setPending] = useState(false);
-  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
   async function handleFiles(files: FileList | null) {
-    if (!files || files.length === 0 || !profile) return;
-    setPending(true);
-    setError(null);
-    setProgress({ done: 0, total: files.length });
-
-    const { data: userData } = await supabase.auth.getUser();
-    const userId = userData.user?.id;
-    if (!userId) {
-      setError("You're signed out.");
-      setPending(false);
-      return;
-    }
-
-    const capturedIds: string[] = [];
-    const all = Array.from(files);
-    for (const [index, file] of all.entries()) {
-      setProgress({ done: index, total: all.length });
-      const path = `${userId}/${crypto.randomUUID()}-${file.name}`;
-      const { error: uploadError } = await supabase.storage.from("work-files").upload(path, file);
-      if (uploadError) {
-        setError(uploadError.message);
-        continue;
-      }
-
-      const type = workTypeForFile(file.name);
-      const { data: created, error: insertError } = await supabase
-        .from("work_items")
-        .insert({
-          owner_id: profile.id,
-          org_id: profile.org_id,
-          type,
-          source: "upload",
-          title: file.name,
-          content_ref: path,
-          ts_precision: "capture",
-          // The reader guesses formats from the extension when it must, but a
-          // file named "export" with no suffix is unreadable unless the
-          // browser's own mime type is kept here at capture time.
-          meta: { mime_type: file.type || null },
-          source_meta: buildUploadSourceMeta(file),
-        })
-        .select("id")
-        .maybeSingle();
-      if (insertError) {
-        setError(insertError.message);
-        continue;
-      }
-
-      if (created?.id) capturedIds.push(created.id);
-
-      logEvent("workitem.captured", profile.org_id, {
-        channel: "upload",
-        type,
-        source: "upload",
-      });
-      if (type === "document" || type === "deck" || type === "sheet") {
-        logV2(
-          "artifact.captured",
-          { artifact_type: type, channel: "upload" },
-          { profileId: profile.id, workItemId: created?.id },
-        );
-      }
-    }
-
-    if (capturedIds.length > 0) {
-      void ensureExtracts({ data: { work_item_ids: capturedIds } }).catch(() => {});
-      void noteCapture({ data: { work_item_ids: capturedIds, via: "upload" } }).catch(() => {});
-    }
-
-    await queryClient.invalidateQueries({ queryKey: ["work-items"] });
+    if (!files || files.length === 0) return;
+    const capturedIds = await capture(Array.from(files));
     if (capturedIds.length > 0 && onCaptured) await onCaptured(capturedIds);
-    setPending(false);
-    setProgress(null);
     if (inputRef.current) inputRef.current.value = "";
   }
 

@@ -7,6 +7,7 @@ import { getDeliverableEvidence, reviewLink } from "@/lib/lineage.functions";
 import { resolveFileFormat, type FileFormat } from "@/lib/file-format";
 import { workIdentityLabel } from "@/lib/work-identity";
 import { WhatFedThisButton } from "@/components/engagements/WhatFedThisButton";
+import { FindItLink } from "@/components/find-it/FindItLink";
 import { WorkNote } from "@/components/work/WorkNote";
 import { CircleMark } from "@/components/notebook/CircleMark";
 import { CoachNoteModal, type ModalNote } from "@/components/coaching/CoachNoteModal";
@@ -15,7 +16,6 @@ import { newNoteLine, firstName } from "@/lib/coach-note-scope";
 import { useProfile } from "@/hooks/use-profile";
 import type { WorkItemRow } from "@/lib/work-types";
 import type { CanvasTask } from "@/components/engagements/EngagementCanvas";
-
 
 const FORMAT_LABELS: Record<FileFormat, string> = {
   word: "Word",
@@ -62,17 +62,10 @@ export function WorkLedger({
   const [openNote, setOpenNote] = useState<ModalNote | null>(null);
   const notesHere = (unreadNotes ?? []) as ModalNote[];
   const taskNotes = notesHere.filter((note) => note.task_id === task.id);
-  const notesForItem = (itemId: string) =>
-    notesHere.filter((note) => note.work_item_id === itemId);
+  const notesForItem = (itemId: string) => notesHere.filter((note) => note.work_item_id === itemId);
 
-  const deliverables = useMemo(
-    () => items.filter((item) => isDeliverableType(item.type)),
-    [items],
-  );
-  const sources = useMemo(
-    () => items.filter((item) => !isDeliverableType(item.type)),
-    [items],
-  );
+  const deliverables = useMemo(() => items.filter((item) => isDeliverableType(item.type)), [items]);
+  const sources = useMemo(() => items.filter((item) => !isDeliverableType(item.type)), [items]);
 
   return (
     <section>
@@ -99,7 +92,6 @@ export function WorkLedger({
       <div className="mt-3 space-y-6">
         {deliverables.length === 0 ? (
           <div className="rounded-lg border border-graphite bg-card p-5">
-
             <p className="micro-label">NOTHING SHIPPED FROM THIS YET</p>
             <p className="mt-1 text-[13px] text-muted-foreground">
               When a deliverable is mapped to this piece of work, it lands here.
@@ -111,7 +103,7 @@ export function WorkLedger({
             const formatLabel = FORMAT_LABELS[format];
             const itemNotes = notesForItem(item.id);
             const card = (
-              <div className="rounded-lg border border-graphite bg-card p-5 transition-colors hover:border-accent/40">
+              <div className="group rounded-lg border border-graphite bg-card p-5 transition-colors hover:border-accent/40">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <button
                     type="button"
@@ -130,6 +122,11 @@ export function WorkLedger({
                     <WhatFedThisButton items={[item]} orgId={orgId} profileId={profileId} />
                   ) : null}
                 </div>
+                {!isCoach ? (
+                  <div className="mt-2">
+                    <FindItLink workItemId={item.id} revealOnHover />
+                  </div>
+                ) : null}
                 <PendingSuggestions item={item} />
               </div>
             );
@@ -150,7 +147,6 @@ export function WorkLedger({
               </div>
             );
           })
-
         )}
 
         <div>
@@ -183,7 +179,6 @@ export function WorkLedger({
         }}
       />
     </section>
-
   );
 }
 
