@@ -9,6 +9,7 @@ import {
   MAX_SNIPPET_CHARS,
   MIN_SNIPPET_CHARS,
   containsVerbatim,
+  normalizeSnippet,
 } from "./span-provenance-shared";
 import {
   LINEAGE_RELATIONS,
