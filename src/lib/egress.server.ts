@@ -51,29 +51,57 @@ async function orgNamesFor(admin: Admin, orgIds: string[]): Promise<Map<string, 
   return names;
 }
 
+/** Pseudonymous keys for personal-scope rows, derived exactly as events are. */
+async function personKeysFor(
+  admin: Admin,
+  profileIds: string[],
+): Promise<Map<string, string | null>> {
+  const keys = new Map<string, string | null>();
+  if (profileIds.length === 0) return keys;
+  const { computeActorHash } = await import("./telemetry.server");
+  const { data } = await admin.from("profiles").select("id, user_id").in("id", profileIds);
+  for (const row of data ?? []) keys.set(row.id, await computeActorHash(row.user_id));
+  return keys;
+}
+
 async function collectPosture(admin: Admin): Promise<PostureEntry[]> {
   try {
     const { data: states } = await admin
       .from("data_consent_state")
-      .select("org_id, scope, tier, tier_d_switch, ledger_version, updated_at")
-      .eq("scope", "org");
+      .select("org_id, scope, profile_id, tier, tier_d_switch, ledger_version, updated_at");
+    // Newest first under the cap, so a long history never hides a recent change.
     const { data: ledger } = await admin
       .from("data_consent_ledger")
-      .select("org_id, scope, old_tier, new_tier, new_tier_d_switch, version, created_at")
-      .eq("scope", "org")
-      .order("version", { ascending: true })
+      .select("org_id, scope, profile_id, old_tier, new_tier, new_tier_d_switch, version, created_at")
+      .order("version", { ascending: false })
       .limit(1000);
     const rows = (states ?? []) as unknown as PostureStateRow[];
-    const history = (ledger ?? []) as unknown as PostureLedgerRow[];
+    const history = ((ledger ?? []) as unknown as PostureLedgerRow[])
+      .slice()
+      .sort((a, b) => a.version - b.version);
     const ids = Array.from(
       new Set([...rows.map((r) => r.org_id), ...history.map((r) => r.org_id)]),
     );
-    return buildPosture(rows, history, await orgNamesFor(admin, ids));
+    const profileIds = Array.from(
+      new Set(
+        [...rows, ...history]
+          .filter((r) => r.scope === "user")
+          .map((r) => r.profile_id)
+          .filter((id): id is string => Boolean(id)),
+      ),
+    );
+    return buildPosture(
+      rows,
+      history,
+      await orgNamesFor(admin, ids),
+      await personKeysFor(admin, profileIds),
+    );
   } catch (e) {
     console.error("[egress] posture collection failed:", (e as Error).message);
     return [];
   }
 }
+
 
 /**
  * One sweep. Marks nothing unless the console accepted the batch, so a failed

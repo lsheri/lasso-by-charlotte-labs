@@ -165,6 +165,8 @@ export type PostureEntry = {
   workspace_ref: string;
   workspace_name: string | null;
   scope: string;
+  /** The same pseudonymous key events carry. Null on workspace-scope rows. */
+  person_key: string | null;
   old_tier: string | null;
   new_tier: string;
   tier_d_switch: boolean | null;
@@ -175,6 +177,7 @@ export type PostureEntry = {
 export type PostureStateRow = {
   org_id: string;
   scope: string;
+  profile_id?: string | null;
   tier: string;
   tier_d_switch: boolean | null;
   ledger_version: number | null;
@@ -184,6 +187,7 @@ export type PostureStateRow = {
 export type PostureLedgerRow = {
   org_id: string;
   scope: string;
+  profile_id?: string | null;
   old_tier: string | null;
   new_tier: string;
   new_tier_d_switch: boolean | null;
@@ -191,18 +195,29 @@ export type PostureLedgerRow = {
   created_at: string;
 };
 
-/** Current org-scope levels plus their history. The console dedupes. */
+/**
+ * Current levels plus their history, for both workspace scope and personal
+ * scope. Personal rows carry only the pseudonymous person key, never a
+ * profile id, an email or a name. The console dedupes.
+ */
 export function buildPosture(
   states: PostureStateRow[],
   ledger: PostureLedgerRow[],
   orgNames: Map<string, string>,
+  personKeys: Map<string, string | null> = new Map(),
 ): PostureEntry[] {
+  const keyFor = (row: { scope: string; profile_id?: string | null }): string | null =>
+    row.scope === "user" && row.profile_id ? (personKeys.get(row.profile_id) ?? null) : null;
+
+  const wanted = (scope: string) => scope === "org" || scope === "user";
+
   const fromState: PostureEntry[] = states
-    .filter((row) => row.scope === "org")
+    .filter((row) => wanted(row.scope))
     .map((row) => ({
       workspace_ref: row.org_id,
       workspace_name: orgNames.get(row.org_id) ?? null,
-      scope: "org",
+      scope: row.scope,
+      person_key: keyFor(row),
       old_tier: null,
       new_tier: row.tier,
       tier_d_switch: row.tier_d_switch ?? null,
@@ -211,11 +226,12 @@ export function buildPosture(
     }));
 
   const fromLedger: PostureEntry[] = ledger
-    .filter((row) => row.scope === "org")
+    .filter((row) => wanted(row.scope))
     .map((row) => ({
       workspace_ref: row.org_id,
       workspace_name: orgNames.get(row.org_id) ?? null,
-      scope: "org",
+      scope: row.scope,
+      person_key: keyFor(row),
       old_tier: row.old_tier,
       new_tier: row.new_tier,
       tier_d_switch: row.new_tier_d_switch ?? null,
@@ -225,6 +241,7 @@ export function buildPosture(
 
   return [...fromState, ...fromLedger];
 }
+
 
 /** Hex HMAC-SHA256 of the raw body, exactly as the console verifies it. */
 export async function signBody(secret: string, body: string): Promise<string> {

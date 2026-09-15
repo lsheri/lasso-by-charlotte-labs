@@ -126,3 +126,61 @@ describe("pass 149 posture, signing and debounce", () => {
     expect(DEFAULT_INGEST_URL).toBe("https://lasso-data-console.lovable.app/api/public/ingest");
   });
 });
+
+describe("pass G1 personal levels in posture", () => {
+  const PROFILE_ID = "11111111-2222-3333-4444-555555555555";
+
+  it("emits personal rows with a person key and never a profile id", () => {
+    const posture = buildPosture(
+      [
+        {
+          org_id: "org-1",
+          scope: "user",
+          profile_id: PROFILE_ID,
+          tier: "b",
+          tier_d_switch: false,
+          ledger_version: 9,
+          updated_at: "2026-09-08T09:00:00Z",
+        },
+      ],
+      [
+        {
+          org_id: "org-1",
+          scope: "user",
+          profile_id: PROFILE_ID,
+          old_tier: "a",
+          new_tier: "b",
+          new_tier_d_switch: false,
+          version: 9,
+          created_at: "2026-09-08T09:00:00Z",
+        },
+      ],
+      new Map([["org-1", "Charlotte Labs"]]),
+      new Map([[PROFILE_ID, "person-key-abc"]]),
+    );
+
+    expect(posture).toHaveLength(2);
+    expect(posture.every((entry) => entry.scope === "user")).toBe(true);
+    expect(posture.every((entry) => entry.person_key === "person-key-abc")).toBe(true);
+    expect(posture.every((entry) => entry.workspace_ref === "org-1")).toBe(true);
+    expect(JSON.stringify(posture)).not.toContain(PROFILE_ID);
+  });
+
+  it("keeps workspace rows without a person key", () => {
+    const posture = buildPosture(
+      [
+        {
+          org_id: "org-1",
+          scope: "org",
+          tier: "c",
+          tier_d_switch: false,
+          ledger_version: 4,
+          updated_at: "2026-09-01T09:00:00Z",
+        },
+      ],
+      [],
+      new Map(),
+    );
+    expect(posture[0]?.person_key).toBeNull();
+  });
+});
