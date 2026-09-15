@@ -167,8 +167,9 @@ export function SidebarNav({
   const institution = affiliation?.institution ?? null;
   const { data: engagements } = useEngagements(profile?.id);
   const { data: decisions } = useDecisions();
-  const decisionCount = (decisions ?? []).length;
-  // Reflect is the owner's private space, it never appears for a coach profile.
+  // The pill counts what is WAITING on you, which is the drafts. A confirmed
+  // call needs nothing, so counting it would ask for attention that is not due.
+  const decisionCount = (decisions ?? []).filter((row) => row.status === "draft").length;
   const isCoach = roles.isCoach(profile);
   const canManageMembers = roles.canManageMembers(profile);
   const canSeeFirmView = roles.canSeeFirmView(profile);
