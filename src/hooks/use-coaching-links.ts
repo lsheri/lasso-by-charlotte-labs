@@ -35,12 +35,13 @@ export function useMyCoachingLinks() {
  */
 export function useHasLiveCoachLink(enabled: boolean): boolean {
   const { data: profile } = useProfile();
-  const list = useServerFn(listMyCoachingLinks);
+  // Called directly rather than through useServerFn: the sidebar renders
+  // outside a router in several tests, and this read needs no router context.
   const { data } = useQuery({
     queryKey: ["coaching-links", "mine", profile?.id],
     enabled: enabled && Boolean(profile?.id),
     retry: false,
-    queryFn: () => list({ data: { profile_id: profile?.id } }),
+    queryFn: () => listMyCoachingLinks({ data: { profile_id: profile?.id } }),
   });
   return (data ?? []).some(
     (row) =>
