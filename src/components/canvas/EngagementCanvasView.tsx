@@ -166,14 +166,11 @@ export function EngagementCanvasView({
     queryKey: ["engagement-canvas", engagementId, itemKey],
     enabled: Boolean(engagementId),
     queryFn: async (): Promise<CanvasRead> => {
-      const [positionsResult, extractsResult, linksResult] = await Promise.all([
+      const [positionsResult, linksResult] = await Promise.all([
         supabase
           .from("canvas_nodes")
           .select("work_item_id, x, y")
           .eq("engagement_id", engagementId),
-        itemIds.length
-          ? supabase.from("work_item_extracts").select("work_item_id, summary").in("work_item_id", itemIds)
-          : Promise.resolve({ data: [], error: null }),
         itemIds.length
           ? supabase
               .from("work_item_links")
@@ -183,11 +180,9 @@ export function EngagementCanvasView({
           : Promise.resolve({ data: [], error: null }),
       ]);
       if (positionsResult.error) throw positionsResult.error;
-      if (extractsResult.error) throw extractsResult.error;
       if (linksResult.error) throw linksResult.error;
       return {
         positions: positionsResult.data ?? [],
-        summaries: new Map((extractsResult.data ?? []).map((row) => [row.work_item_id, row.summary])),
         links: (linksResult.data ?? []) as CanvasLink[],
       };
     },
