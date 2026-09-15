@@ -1,3 +1,5 @@
+// @vitest-environment jsdom
+
 import { readFileSync } from "node:fs";
 
 import { render } from "@testing-library/react";
