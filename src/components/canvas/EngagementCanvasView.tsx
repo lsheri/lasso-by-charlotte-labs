@@ -23,6 +23,14 @@ import {
   snapPoint,
   type Point,
 } from "@/lib/canvas-drag";
+import {
+  LINK_HANDLE_R,
+  canLink,
+  handlePoints,
+  nearestTarget,
+  type LinkCandidate,
+} from "@/lib/canvas-link";
+import { drawCanvasLinkFn } from "@/lib/canvas-link.functions";
 import { placeCanvasNodeFn } from "@/lib/canvas-node.functions";
 import { useProfile } from "@/hooks/use-profile";
 import { noteCanvasOpenedFn } from "@/lib/canvas.functions";
@@ -36,6 +44,8 @@ type CanvasLink = {
   to_item_id: string;
   relation: string;
   status: LineageStatus;
+  /** "model" traced it, "person" drew it. Never blur the two. */
+  source: string;
 };
 
 type CanvasRead = {
@@ -72,9 +82,46 @@ function curveFor(source: NodePosition, target: NodePosition, yOffset = 0) {
   return {
     path: `M ${sx} ${sy} Q ${cx} ${cy} ${tx} ${ty}`,
     arrow: `M ${arrowA} L ${tx},${ty} L ${arrowB}`,
+    quad: { sx, sy, cx, cy, tx, ty },
     // The quadratic midpoint, where a question about this line is anchored.
     mid: { x: 0.25 * sx + 0.5 * cx + 0.25 * tx, y: 0.25 * sy + 0.5 * cy + 0.25 * ty },
   };
+}
+
+/** The same bow the finished lines use, between two loose points. */
+function bowFor(from: Point, to: Point) {
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  const length = Math.hypot(dx, dy) || 1;
+  const cx = (from.x + to.x) / 2 - (dy / length) * 28;
+  const cy = (from.y + to.y) / 2 + (dx / length) * 28;
+  return `M ${from.x} ${from.y} Q ${cx} ${cy} ${to.x} ${to.y}`;
+}
+
+/**
+ * A quadratic redrawn as a pencil line: sampled, then nudged off the true
+ * curve by a deterministic wobble, so a line a person drew never reads like a
+ * line the model traced.
+ */
+function pencilPath(quad: { sx: number; sy: number; cx: number; cy: number; tx: number; ty: number }, seed: string) {
+  const steps = 14;
+  let hash = 0;
+  for (let index = 0; index < seed.length; index += 1) hash = (hash * 31 + seed.charCodeAt(index)) % 9973;
+  const parts: string[] = [];
+  for (let step = 0; step <= steps; step += 1) {
+    const t = step / steps;
+    const inverse = 1 - t;
+    const x = inverse * inverse * quad.sx + 2 * inverse * t * quad.cx + t * t * quad.tx;
+    const y = inverse * inverse * quad.sy + 2 * inverse * t * quad.cy + t * t * quad.ty;
+    const wobble = Math.sin((step + hash) * 1.7) * 1.15 * Math.sin(Math.PI * t);
+    const dx = quad.tx - quad.sx;
+    const dy = quad.ty - quad.sy;
+    const length = Math.hypot(dx, dy) || 1;
+    const px = x - (dy / length) * wobble;
+    const py = y + (dx / length) * wobble;
+    parts.push(`${step === 0 ? "M" : "L"} ${px.toFixed(2)} ${py.toFixed(2)}`);
+  }
+  return parts.join(" ");
 }
 
 /** The relation words a drafted link can carry. */
@@ -98,6 +145,8 @@ function CanvasNode({
   onGrabPointer,
   onNodeKeyDown,
   suppressClickRef,
+  onLinkPointer,
+  outlined,
 }: {
   item: WorkItemRow;
   position: NodePosition;
@@ -108,15 +157,26 @@ function CanvasNode({
   onGrabPointer: (id: string, event: React.PointerEvent) => void;
   onNodeKeyDown: (id: string, event: React.KeyboardEvent) => void;
   suppressClickRef: React.MutableRefObject<boolean>;
+  onLinkPointer: (id: string, from: Point, event: React.PointerEvent) => void;
+  outlined: boolean;
 }) {
   const reduceMotion = useReducedMotion();
   const size = nodeSize(position.kind);
+  const [hovered, setHovered] = useState(false);
+  const [focused, setFocused] = useState(false);
+  // Handles are decoration until pressed, and never while the note is moving.
+  const showHandles = (hovered || focused) && !lifted && !grabbed;
+  const handles = handlePoints({ x: 0, y: 0, w: size.width, h: size.height });
 
   return (
     <div
       className="absolute"
       tabIndex={0}
       aria-label={item.title ?? "Untitled"}
+      onPointerEnter={() => setHovered(true)}
+      onPointerLeave={() => setHovered(false)}
+      onFocus={() => setFocused(true)}
+      onBlur={() => setFocused(false)}
       style={{
         left: position.x,
         top: position.y,
@@ -127,7 +187,7 @@ function CanvasNode({
           ? `translate(${offset.x}px, ${offset.y}px)${lifted && !reduceMotion ? " scale(1.03)" : ""}`
           : undefined,
         boxShadow: lifted && !reduceMotion ? "var(--shadow-modal)" : undefined,
-        outline: grabbed ? "1.4px solid var(--nb-graphite)" : undefined,
+        outline: grabbed || outlined ? "1.4px solid var(--nb-graphite)" : undefined,
         touchAction: "none",
         cursor: lifted ? "grabbing" : "grab",
       }}
@@ -142,6 +202,38 @@ function CanvasNode({
       }}
     >
       <WorkNote item={item} onOpen={() => onOpen(item)} className="h-full" />
+      {showHandles ? (
+        <svg
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 overflow-visible"
+          width={size.width}
+          height={size.height}
+        >
+          {handles.map((handle, index) => (
+            <circle
+              key={index}
+              cx={handle.x}
+              cy={handle.y}
+              r={LINK_HANDLE_R}
+              fill="none"
+              stroke="var(--nb-pencil)"
+              strokeWidth="1.2"
+              strokeDasharray="2 2"
+              style={{ pointerEvents: "all", cursor: "crosshair" }}
+              onPointerDown={(event) => {
+                // Pressing a handle draws a line. It must never start a move.
+                event.stopPropagation();
+                event.preventDefault();
+                onLinkPointer(
+                  position.id,
+                  { x: position.x + handle.x, y: position.y + handle.y },
+                  event,
+                );
+              }}
+            />
+          ))}
+        </svg>
+      ) : null}
     </div>
   );
 }
@@ -173,7 +265,7 @@ export function EngagementCanvasView({
         itemIds.length
           ? supabase
               .from("work_item_links")
-              .select("id, from_item_id, to_item_id, relation, status")
+              .select("id, from_item_id, to_item_id, relation, status, source")
               .in("from_item_id", itemIds)
               .in("to_item_id", itemIds)
           : Promise.resolve({ data: [], error: null }),
@@ -281,9 +373,13 @@ export function EngagementCanvasView({
   // An answer already given in this session, drawn before the server confirms it.
   const [answers, setAnswers] = useState<Record<string, "confirmed" | "discarded">>({});
   const [leaving, setLeaving] = useState<string | null>(null);
-  const [asking, setAsking] = useState<{ id: string; relation: string; x: number; y: number } | null>(
-    null,
-  );
+  const [asking, setAsking] = useState<{
+    id: string;
+    relation: string;
+    x: number;
+    y: number;
+    kind: "draft" | "person";
+  } | null>(null);
 
   const closeAsking = useCallback(() => setAsking(null), []);
   useEffect(() => {
@@ -332,6 +428,129 @@ export function EngagementCanvasView({
   } | null>(null);
   const [grabbed, setGrabbed] = useState<{ id: string; start: Point | null } | null>(null);
   const [announcement, setAnnouncement] = useState("");
+
+  // ---- drawing a connection ---------------------------------------------
+  const drawLink = useServerFn(drawCanvasLinkFn);
+  /** Edges drawn in this session, shown before the server confirms them. */
+  const [drawn, setDrawn] = useState<CanvasLink[]>([]);
+  const [linkDrag, setLinkDrag] = useState<{
+    fromId: string;
+    from: Point;
+    to: Point;
+    targetId: string | null;
+  } | null>(null);
+  /** The keyboard path: linking from one node, stepping through the others. */
+  const [linkKeys, setLinkKeys] = useState<{ fromId: string; index: number } | null>(null);
+
+  const titleOf = useCallback(
+    (id: string) => items.find((candidate) => candidate.id === id)?.title ?? "this",
+    [items],
+  );
+
+  const existingLinks = useMemo(
+    () =>
+      [...view.links, ...drawn].map((link) => ({
+        from_item_id: link.from_item_id,
+        to_item_id: link.to_item_id,
+        relation: link.relation,
+        status: answers[link.id] ?? link.status,
+      })),
+    [view.links, drawn, answers],
+  );
+
+  const candidatesFor = useCallback(
+    (fromId: string): LinkCandidate[] =>
+      view.placed
+        .filter((position) => position.id !== fromId)
+        .map((position) => {
+          const size = nodeSize(position.kind);
+          return { id: position.id, x: position.x, y: position.y, w: size.width, h: size.height };
+        }),
+    [view.placed],
+  );
+
+  const commitLink = useCallback(
+    async (fromId: string, toId: string) => {
+      const optimisticId = `drawn:${fromId}:${toId}`;
+      setDrawn((current) => [
+        ...current.filter((link) => link.id !== optimisticId),
+        {
+          id: optimisticId,
+          from_item_id: fromId,
+          to_item_id: toId,
+          relation: "informed",
+          status: "confirmed" as LineageStatus,
+          source: "person",
+        },
+      ]);
+      try {
+        await drawLink({
+          data: {
+            engagement_id: engagementId,
+            from_item_id: fromId,
+            to_item_id: toId,
+            profile_id: profile?.id,
+          },
+        });
+        await queryClient.invalidateQueries({ queryKey: ["engagement-canvas", engagementId] });
+        setDrawn((current) => current.filter((link) => link.id !== optimisticId));
+      } catch (error) {
+        setDrawn((current) => current.filter((link) => link.id !== optimisticId));
+        toast.error(error instanceof Error ? error.message : "That did not save.");
+      }
+    },
+    [drawLink, engagementId, profile?.id, queryClient],
+  );
+
+  const startLinkPointer = useCallback(
+    (fromId: string, from: Point, event: React.PointerEvent) => {
+      const surface = surfaceRef.current;
+      if (!surface) return;
+      const candidates = candidatesFor(fromId);
+      const toSurface = (clientX: number, clientY: number) => {
+        const rect = surface.getBoundingClientRect();
+        return { x: clientX - rect.left, y: clientY - rect.top };
+      };
+      setLinkDrag({ fromId, from, to: toSurface(event.clientX, event.clientY), targetId: null });
+
+      const finish = () => {
+        window.removeEventListener("pointermove", onMove);
+        window.removeEventListener("pointerup", onUp);
+        window.removeEventListener("pointercancel", finish);
+        setLinkDrag(null);
+      };
+
+      function onMove(moveEvent: PointerEvent) {
+        moveEvent.preventDefault();
+        const point = toSurface(moveEvent.clientX, moveEvent.clientY);
+        const target = nearestTarget(point, candidates);
+        setLinkDrag((current) =>
+          current ? { ...current, to: point, targetId: target ? target.id : null } : current,
+        );
+      }
+
+      function onUp(upEvent: PointerEvent) {
+        const point = toSurface(upEvent.clientX, upEvent.clientY);
+        const target = nearestTarget(point, candidates);
+        finish();
+        // Released over empty paper: nothing written, nothing recorded.
+        if (!target) return;
+        const reason = canLink(fromId, target.id, existingLinks);
+        // Refusals are quiet during the drag and spoken only on release.
+        if (reason) {
+          toast(reason);
+          return;
+        }
+        void commitLink(fromId, target.id);
+      }
+
+      window.addEventListener("pointermove", onMove, { passive: false });
+      window.addEventListener("pointerup", onUp);
+      window.addEventListener("pointercancel", finish);
+    },
+    [candidatesFor, commitLink, existingLinks],
+  );
+
 
   /** The one commit path. Position only: never membership, never a workstream. */
   const commit = useCallback(
@@ -451,6 +670,62 @@ export function EngagementCanvasView({
       const current = positions.get(id);
       const item = items.find((candidate) => candidate.id === id);
       const name = item?.title ?? "this";
+
+      // The keyboard path for drawing, mirroring grab and move.
+      const linkCandidates = candidatesFor(id);
+      if (linkKeys?.fromId === id) {
+        const target = linkCandidates[linkKeys.index];
+        if (
+          event.key === "ArrowUp" ||
+          event.key === "ArrowDown" ||
+          event.key === "ArrowLeft" ||
+          event.key === "ArrowRight"
+        ) {
+          event.preventDefault();
+          if (linkCandidates.length === 0) return;
+          const step = event.key === "ArrowUp" || event.key === "ArrowLeft" ? -1 : 1;
+          const next =
+            (linkKeys.index + step + linkCandidates.length) % linkCandidates.length;
+          setLinkKeys({ fromId: id, index: next });
+          const candidate = linkCandidates[next];
+          setAnnouncement(candidate ? titleOf(candidate.id) : "");
+          return;
+        }
+        if (event.key === "Enter") {
+          event.preventDefault();
+          setLinkKeys(null);
+          if (!target) return;
+          const reason = canLink(id, target.id, existingLinks);
+          if (reason) {
+            setAnnouncement(reason);
+            toast(reason);
+            return;
+          }
+          setAnnouncement(`Connected ${name} to ${titleOf(target.id)}.`);
+          void commitLink(id, target.id);
+          return;
+        }
+        if (event.key === "Escape") {
+          event.preventDefault();
+          setLinkKeys(null);
+          setAnnouncement("Stopped drawing. Nothing was connected.");
+          return;
+        }
+      }
+      if ((event.key === "l" || event.key === "L") && !grabbed) {
+        event.preventDefault();
+        if (linkCandidates.length === 0) {
+          setAnnouncement("There is nothing else in the picture to connect to.");
+          return;
+        }
+        setLinkKeys({ fromId: id, index: 0 });
+        const first = linkCandidates[0];
+        setAnnouncement(
+          `Drawing from ${name} to ${first ? titleOf(first.id) : "this"}. Arrow keys to choose, Enter to connect, Escape to stop.`,
+        );
+        return;
+      }
+
       if (event.key === " ") {
         event.preventDefault();
         if (grabbed?.id === id) return;
@@ -495,10 +770,35 @@ export function EngagementCanvasView({
         setAnnouncement(`Left ${name} where it was.`);
       }
     },
-    [commit, grabbed, items, positions],
+    [
+      candidatesFor,
+      commit,
+      commitLink,
+      existingLinks,
+      grabbed,
+      items,
+      linkKeys,
+      positions,
+      titleOf,
+    ],
   );
 
-  const visibleLinks = view.links.filter(
+  const placedNow = new Set(view.placed.map((position) => position.id));
+  const allLinks = [
+    ...view.links,
+    ...drawn.filter(
+      (link) =>
+        placedNow.has(link.from_item_id) &&
+        placedNow.has(link.to_item_id) &&
+        !view.links.some(
+          (existing) =>
+            existing.from_item_id === link.from_item_id &&
+            existing.to_item_id === link.to_item_id &&
+            existing.relation === link.relation,
+        ),
+    ),
+  ];
+  const visibleLinks = allLinks.filter(
     (link) => (answers[link.id] ?? link.status) !== "discarded" || leaving === link.id,
   );
   const draftCount = visibleLinks.filter(

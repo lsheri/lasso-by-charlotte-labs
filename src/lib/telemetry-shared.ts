@@ -87,6 +87,11 @@ export type TelemetryEvent =
   | "oneonone.saved_to_drive"
   | "link.drafted"
   | "link.reviewed"
+  /**
+   * Pass 196: a person drew this edge themselves, in contrast to link.drafted,
+   * which is the model proposing one. Never blur the two.
+   */
+  | "link.drawn"
   | "evidence.opened"
   | "version.recorded"
   | "brief.marked"
