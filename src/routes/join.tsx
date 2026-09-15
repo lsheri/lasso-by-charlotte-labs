@@ -401,7 +401,8 @@ function AcceptForm({
       return;
     }
 
-    setActiveProfileId(profileId as string);
+    // The insert below runs as the new workspace, so the choice has to land first.
+    await setActiveProfileId(profileId as string);
     clearPendingInvite();
 
     const { data: invite } = await supabase

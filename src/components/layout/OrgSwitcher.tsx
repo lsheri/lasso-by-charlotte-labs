@@ -39,10 +39,14 @@ export function OrgSwitcher({ profiles, active }: { profiles: Profile[]; active:
                     same_org: active.org_id === profile.org_id,
                   });
                 }
-                setActiveProfileId(profile.id);
-                // Deliberately unfiltered: switching workspace invalidates every
-                // profile scoped key, so no previous workspace data can linger.
-                void queryClient.invalidateQueries();
+                void (async () => {
+                  // The database has to know the new workspace before anything
+                  // refetches, or the refetch caches the old workspace's rows.
+                  await setActiveProfileId(profile.id);
+                  // Deliberately unfiltered: switching workspace invalidates every
+                  // profile scoped key, so no previous workspace data can linger.
+                  void queryClient.invalidateQueries();
+                })();
               }}
               className={
                 isActive
