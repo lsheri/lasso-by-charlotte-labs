@@ -38,6 +38,7 @@ export type MotionName =
   | "spider-looks-again"
   | "spider-processes"
   | "pencil-marks"
+  | "note-lands"
   | "arrows";
 
 export type MotionEventName =
@@ -57,6 +58,8 @@ export type MotionEventName =
   | "decision.confirmed"
   /** Pass B: the on the record label, which waits for the check to finish. */
   | "decision.on_record_shown"
+  /** Pass C: a sticky note joins the wall for the next 1:1. */
+  | "oneonone.note_landed"
   | "share.sending"
   | "feedback.pinned"
   // The app is thinking.
@@ -151,6 +154,12 @@ const MOTION_EVENT_REGISTRY: Readonly<Record<MotionEventName, MotionEventEntry>>
     group: "record",
     motion: "record-label",
     reduced: "The label is simply there, beside the check",
+    promise: false,
+  },
+  "oneonone.note_landed": {
+    group: "record",
+    motion: "note-lands",
+    reduced: "The note is simply there, at the end of the wall",
     promise: false,
   },
   "share.sending": {
@@ -253,6 +262,7 @@ const MOTION_CLASS: Partial<Record<MotionName, MotionDraw>> = {
   "pencil-marks-tick": { moving: "nb-mark" },
   "call-settles": { moving: "nb-call-settle" },
   "record-label": { moving: "nb-record-label" },
+  "note-lands": { moving: "nb-note-land" },
 };
 
 /** True when the reader has asked for less movement. Safe during SSR. */

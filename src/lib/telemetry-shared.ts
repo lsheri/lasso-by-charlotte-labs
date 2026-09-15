@@ -85,6 +85,12 @@ export type TelemetryEvent =
   | "invite.blocked"
   | "oneonone.prepared"
   | "oneonone.saved_to_drive"
+  /** Pass C: a person made a dated 1:1 session of their own. No text, no ids. */
+  | "oneonone.session_created"
+  /** Pass C: a note was pinned to a session. The kind only. */
+  | "oneonone.note_added"
+  /** Pass C: a note was marked as covered in the hour. The kind only. */
+  | "oneonone.note_discussed"
   | "link.drafted"
   | "link.reviewed"
   /**
