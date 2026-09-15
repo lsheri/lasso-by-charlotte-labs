@@ -648,6 +648,45 @@ export type Database = {
           },
         ]
       }
+      coaching_note_replies: {
+        Row: {
+          author_id: string
+          body: string
+          created_at: string
+          id: string
+          note_id: string
+        }
+        Insert: {
+          author_id: string
+          body: string
+          created_at?: string
+          id?: string
+          note_id: string
+        }
+        Update: {
+          author_id?: string
+          body?: string
+          created_at?: string
+          id?: string
+          note_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coaching_note_replies_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coaching_note_replies_note_id_fkey"
+            columns: ["note_id"]
+            isOneToOne: false
+            referencedRelation: "coaching_notes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       coaching_notes: {
         Row: {
           author_id: string
@@ -655,6 +694,7 @@ export type Database = {
           did_well: string
           engagement_id: string | null
           id: string
+          read_at: string | null
           subject_id: string
           task_id: string | null
           watch_next: string
@@ -667,6 +707,7 @@ export type Database = {
           did_well: string
           engagement_id?: string | null
           id?: string
+          read_at?: string | null
           subject_id: string
           task_id?: string | null
           watch_next: string
@@ -679,6 +720,7 @@ export type Database = {
           did_well?: string
           engagement_id?: string | null
           id?: string
+          read_at?: string | null
           subject_id?: string
           task_id?: string | null
           watch_next?: string
@@ -2141,6 +2183,7 @@ export type Database = {
           kind: string
           org_id: string
           owner_id: string
+          session_id: string | null
           source_session_id: string | null
           talking_point: string | null
         }
@@ -2152,6 +2195,7 @@ export type Database = {
           kind?: string
           org_id: string
           owner_id: string
+          session_id?: string | null
           source_session_id?: string | null
           talking_point?: string | null
         }
@@ -2163,6 +2207,7 @@ export type Database = {
           kind?: string
           org_id?: string
           owner_id?: string
+          session_id?: string | null
           source_session_id?: string | null
           talking_point?: string | null
         }
@@ -2182,10 +2227,59 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "one_on_one_notes_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "one_on_one_sessions"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "one_on_one_notes_source_session_id_fkey"
             columns: ["source_session_id"]
             isOneToOne: false
             referencedRelation: "chat_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      one_on_one_sessions: {
+        Row: {
+          created_at: string
+          held_on: string
+          id: string
+          org_id: string
+          owner_id: string
+          title: string | null
+        }
+        Insert: {
+          created_at?: string
+          held_on: string
+          id?: string
+          org_id: string
+          owner_id: string
+          title?: string | null
+        }
+        Update: {
+          created_at?: string
+          held_on?: string
+          id?: string
+          org_id?: string
+          owner_id?: string
+          title?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "one_on_one_sessions_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "one_on_one_sessions_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -3341,6 +3435,10 @@ export type Database = {
           p_role?: Database["public"]["Enums"]["app_role"]
         }
         Returns: string
+      }
+      mark_coaching_note_read: {
+        Args: { p_note_id: string }
+        Returns: undefined
       }
       my_org_id: { Args: never; Returns: string }
       my_profile_id: { Args: never; Returns: string }

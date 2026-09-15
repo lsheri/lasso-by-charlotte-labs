@@ -3785,9 +3785,23 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 .nb-record-label {
   animation: nb-record-label-kf 260ms var(--nb-ease, ease-out) 520ms both;
 }
+@keyframes nb-note-land-kf {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.nb-note-land {
+  animation: nb-note-land-kf 180ms var(--nb-ease, ease-out) both;
+}
 @media (prefers-reduced-motion: reduce) {
   .nb-check-draw path,
   .nb-call-settle,
+  .nb-note-land,
   .nb-record-label {
     animation: none !important;
     opacity: 1;
