@@ -160,8 +160,8 @@ describe("timers", () => {
     expect(takeOpenStart("audit.open")).toBeNull();
   });
 
-  it("holds nine names and no more", () => {
-    expect(PERF_NAMES).toHaveLength(9);
+  it("holds ten names and no more", () => {
+    expect(PERF_NAMES).toHaveLength(10);
     expect(Object.isFrozen(PERF_NAMES)).toBe(true);
   });
 });
