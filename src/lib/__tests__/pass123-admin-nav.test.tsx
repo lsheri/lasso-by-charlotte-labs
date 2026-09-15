@@ -109,10 +109,10 @@ describe("Pass 123: the sidebar follows the weekly loop", () => {
     expect(screen.queryByText("Look back")).not.toBeNull();
     expect(screen.queryByText("Settings")).not.toBeNull();
 
-    // Firm view and Members should not also appear under What you learned.
-    const learnedSection = screen.getByText("What you learned").parentElement!;
-    expect(learnedSection.textContent).not.toContain("Firm view");
-    expect(learnedSection.textContent).not.toContain("Members");
+    // Firm view and Members should not also appear under Look back.
+    const lookbackSection = screen.getByText("Look back").parentElement!;
+    expect(lookbackSection.textContent).not.toContain("Firm view");
+    expect(lookbackSection.textContent).not.toContain("Members");
   });
 
   it("plain member on a business org sees no Run the firm header at all", () => {
