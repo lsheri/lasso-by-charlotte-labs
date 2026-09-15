@@ -18,6 +18,7 @@ import { Route as NoAccessRouteImport } from './routes/no-access'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as TrustRouteImport } from './routes/trust'
 import { Route as WhyRouteImport } from './routes/why'
+import { Route as AuthenticatedAffiliationRouteImport } from './routes/_authenticated/affiliation'
 import { Route as AuthenticatedAiRecordRouteImport } from './routes/_authenticated/ai-record'
 import { Route as AuthenticatedArchiveRouteImport } from './routes/_authenticated/archive'
 import { Route as AuthenticatedAssignmentsRouteImport } from './routes/_authenticated/assignments'
@@ -94,6 +95,12 @@ const WhyRoute = WhyRouteImport.update({
   path: '/why',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedAffiliationRoute =
+  AuthenticatedAffiliationRouteImport.update({
+    id: '/affiliation',
+    path: '/affiliation',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAiRecordRoute = AuthenticatedAiRecordRouteImport.update({
   id: '/ai-record',
   path: '/ai-record',
@@ -267,6 +274,7 @@ export interface FileRoutesByFullPath {
   '/onboarding': typeof OnboardingRoute
   '/trust': typeof TrustRoute
   '/why': typeof WhyRoute
+  '/affiliation': typeof AuthenticatedAffiliationRoute
   '/ai-record': typeof AuthenticatedAiRecordRoute
   '/archive': typeof AuthenticatedArchiveRoute
   '/assignments': typeof AuthenticatedAssignmentsRoute
@@ -308,6 +316,7 @@ export interface FileRoutesByTo {
   '/onboarding': typeof OnboardingRoute
   '/trust': typeof TrustRoute
   '/why': typeof WhyRoute
+  '/affiliation': typeof AuthenticatedAffiliationRoute
   '/ai-record': typeof AuthenticatedAiRecordRoute
   '/archive': typeof AuthenticatedArchiveRoute
   '/assignments': typeof AuthenticatedAssignmentsRoute
@@ -351,6 +360,7 @@ export interface FileRoutesById {
   '/onboarding': typeof OnboardingRoute
   '/trust': typeof TrustRoute
   '/why': typeof WhyRoute
+  '/_authenticated/affiliation': typeof AuthenticatedAffiliationRoute
   '/_authenticated/ai-record': typeof AuthenticatedAiRecordRoute
   '/_authenticated/archive': typeof AuthenticatedArchiveRoute
   '/_authenticated/assignments': typeof AuthenticatedAssignmentsRoute
@@ -394,6 +404,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/trust'
     | '/why'
+    | '/affiliation'
     | '/ai-record'
     | '/archive'
     | '/assignments'
@@ -435,6 +446,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/trust'
     | '/why'
+    | '/affiliation'
     | '/ai-record'
     | '/archive'
     | '/assignments'
@@ -477,6 +489,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/trust'
     | '/why'
+    | '/_authenticated/affiliation'
     | '/_authenticated/ai-record'
     | '/_authenticated/archive'
     | '/_authenticated/assignments'
@@ -595,6 +608,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/why'
       preLoaderRoute: typeof WhyRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/affiliation': {
+      id: '/_authenticated/affiliation'
+      path: '/affiliation'
+      fullPath: '/affiliation'
+      preLoaderRoute: typeof AuthenticatedAffiliationRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/ai-record': {
       id: '/_authenticated/ai-record'
@@ -817,6 +837,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAffiliationRoute: typeof AuthenticatedAffiliationRoute
   AuthenticatedAiRecordRoute: typeof AuthenticatedAiRecordRoute
   AuthenticatedArchiveRoute: typeof AuthenticatedArchiveRoute
   AuthenticatedAssignmentsRoute: typeof AuthenticatedAssignmentsRoute
@@ -842,6 +863,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAffiliationRoute: AuthenticatedAffiliationRoute,
   AuthenticatedAiRecordRoute: AuthenticatedAiRecordRoute,
   AuthenticatedArchiveRoute: AuthenticatedArchiveRoute,
   AuthenticatedAssignmentsRoute: AuthenticatedAssignmentsRoute,

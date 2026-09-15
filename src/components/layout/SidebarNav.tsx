@@ -4,6 +4,7 @@ import { useState, useSyncExternalStore } from "react";
 
 import { NewEngagementDialog } from "@/components/engagements/NewEngagementDialog";
 import { GraphiteIcon } from "@/components/notebook/icons";
+import { useAffiliation } from "@/hooks/use-affiliation";
 import { useDecisions } from "@/hooks/use-decisions";
 import { useEngagements } from "@/hooks/use-engagements";
 import { useProfile } from "@/hooks/use-profile";
@@ -159,6 +160,11 @@ export function SidebarNav({
   onOpenSettings?: (() => void) | undefined;
 }) {
   const { data: profile } = useProfile();
+  // Pass 186: an affiliated workspace gets one extra item at the top of
+  // "Your account", named for the institution. Nothing is inserted when
+  // there is no affiliation.
+  const { data: affiliation } = useAffiliation();
+  const institution = affiliation?.institution ?? null;
   const { data: engagements } = useEngagements(profile?.id);
   const { data: decisions } = useDecisions();
   const decisionCount = (decisions ?? []).length;
@@ -243,7 +249,19 @@ export function SidebarNav({
       {groupsForOrg.map((group) => {
         const isEngagementGroup = group.id === "engagements";
 
-        const visibleItems = group.items
+        const itemsForGroup =
+          group.id === "account" && institution
+            ? [
+                {
+                  label: `What ${institution.name} sees`,
+                  to: "/affiliation",
+                  icon: "messages" as const,
+                },
+                ...group.items,
+              ]
+            : group.items;
+
+        const visibleItems = itemsForGroup
           .filter((item) => !(isCoach && item.to === "/reflect"))
           .filter((item) => !(item.to === "/members" && !canManageMembers))
           .filter((item) => !(item.to === "/firm" && !canSeeFirmView))

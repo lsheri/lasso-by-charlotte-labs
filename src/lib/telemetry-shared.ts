@@ -136,6 +136,8 @@ export type TelemetryEvent =
   | "canvas.opened"
   /** Pass 185: a workspace was affiliated with an institution at creation. Slug only. */
   | "workspace.affiliated"
+  /** Pass 186: the student opened the page describing what their school sees. */
+  | "affiliation.disclosure_read"
   /** Pass 159: a person changed the profile they are acting as. Roles only. */
   | "profile.switched"
   /** Pass 161: the subject opened notes about their work. One per view. */
