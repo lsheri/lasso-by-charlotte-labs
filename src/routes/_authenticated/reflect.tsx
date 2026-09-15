@@ -1,23 +1,15 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
 import { ReflectPage } from "@/pages/ReflectPage";
 
+/**
+ * PASS A1 — Reflect is retired as a place of its own. Its sessions fold into
+ * All AI conversations, so this path forwards there. The page itself is left
+ * in the codebase until that merge lands.
+ */
 export const Route = createFileRoute("/_authenticated/reflect")({
-  head: () => ({
-    meta: [
-      { title: "Reflect | Lasso" },
-      {
-        name: "description",
-        content: "A private thinking space over your own recorded work in Lasso.",
-      },
-      { property: "og:title", content: "Reflect | Lasso" },
-      {
-        property: "og:description",
-        content: "A private thinking space over your own recorded work in Lasso.",
-      },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-    ],
-  }),
+  beforeLoad: () => {
+    throw redirect({ to: "/ai-record", replace: true });
+  },
   component: ReflectPage,
 });

@@ -5,6 +5,7 @@ import { useState, useSyncExternalStore } from "react";
 import { NewEngagementDialog } from "@/components/engagements/NewEngagementDialog";
 import { GraphiteIcon } from "@/components/notebook/icons";
 import { useAffiliation } from "@/hooks/use-affiliation";
+import { useHasLiveCoachLink } from "@/hooks/use-coaching-links";
 import { useDecisions } from "@/hooks/use-decisions";
 import { useEngagements } from "@/hooks/use-engagements";
 import { useProfile } from "@/hooks/use-profile";
@@ -167,13 +168,22 @@ export function SidebarNav({
   const institution = affiliation?.institution ?? null;
   const { data: engagements } = useEngagements(profile?.id);
   const { data: decisions } = useDecisions();
-  const decisionCount = (decisions ?? []).length;
-  // Reflect is the owner's private space, it never appears for a coach profile.
+  // The pill counts what is WAITING on you, which is the drafts. A confirmed
+  // call needs nothing, so counting it would ask for attention that is not due.
+  const decisionCount = (decisions ?? []).filter((row) => row.status === "draft").length;
   const isCoach = roles.isCoach(profile);
   const canManageMembers = roles.canManageMembers(profile);
   const canSeeFirmView = roles.canSeeFirmView(profile);
   const groupsForOrg = isEduOrg(profile) ? eduNavGroups : navGroups;
   const membersLabel = roles.membersLabel(profile);
+  // "Your coach" is only a real place when someone is actually coaching you.
+  // A firm or school role has that by arrangement; a solo workspace has to
+  // have a live link, so only there does the sidebar ask.
+  const byArrangement = roles.hasCoachByArrangement(profile);
+  const soloHasCoach = useHasLiveCoachLink(
+    !isCoach && profile?.org_type === "personal" && Boolean(profile?.id),
+  );
+  const canBeCoached = byArrangement || soloHasCoach;
   const matchRoute = useMatchRoute();
   const engagementMatch = matchRoute({ to: "/engagements/$id", fuzzy: false });
   const activeEngagementId = engagementMatch ? engagementMatch.id : undefined;
@@ -262,7 +272,6 @@ export function SidebarNav({
             : group.items;
 
         const visibleItems = itemsForGroup
-          .filter((item) => !(isCoach && item.to === "/reflect"))
           .filter((item) => !(item.to === "/members" && !canManageMembers))
           .filter((item) => !(item.to === "/firm" && !canSeeFirmView))
           .map((item) =>
@@ -306,12 +315,16 @@ export function SidebarNav({
         if (!isEngagementGroup && visibleItems.length === 0) {
           return null;
         }
+        if (group.id === "coach" && !canBeCoached) return null;
 
         return (
           <div key={group.label}>
             <div className="nb-group-header px-2">{group.label}</div>
             <div className="mt-2 flex flex-col gap-0.5">
-              {visibleItems}
+              {/* Past work belongs under the shelves, after everything that is
+                  still running, so it renders below rather than above them. */}
+              {isEngagementGroup ? null : visibleItems}
+
 
               {isEngagementGroup ? (
                 <>
@@ -404,8 +417,10 @@ export function SidebarNav({
                       </button>
                     }
                   />
+                  {visibleItems}
                 </>
               ) : null}
+
 
               {group.emptyState && !isEngagementGroup ? (
                 <p className="px-2 py-1.5 text-sm text-muted-foreground">{group.emptyState}</p>

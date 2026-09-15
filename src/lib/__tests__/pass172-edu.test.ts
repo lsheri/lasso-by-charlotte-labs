@@ -59,8 +59,8 @@ describe("pass172 navigation", () => {
   it("keeps every existing destination", () => {
     for (const to of flat(navGroups)) expect(flat(eduNavGroups)).toContain(to);
     // Nav is now ordered by the weekly loop rather than by object type.
-    expect(navGroups.some((g) => g.id === "learned")).toBe(true);
-    expect(navGroups.find((g) => g.id === "learned")?.label).toBe("What you learned");
+    expect(navGroups.some((g) => g.id === "lookback")).toBe(true);
+    expect(navGroups.find((g) => g.id === "lookback")?.label).toBe("Look back");
   });
 
   it("adds the school places and keeps the engagement shelves group", () => {

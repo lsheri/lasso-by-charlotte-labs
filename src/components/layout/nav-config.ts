@@ -5,8 +5,13 @@ export type NavItem = { label: string; to: string; icon: GraphiteIconName; neste
 export type NavGroup = { id?: string; label: string; items: NavItem[]; emptyState?: string };
 
 /**
- * The weekly loop: what landed, where it goes, what you learned, run the firm,
- * your account. Match on ids, never labels, when deriving variants below.
+ * The weekly loop: what landed, where it goes, what you look back on, your
+ * coach, run the firm, your account. Match on ids, never labels, when deriving
+ * variants below.
+ *
+ * PASS A1 — Overview and Reflect no longer appear here. Overview's panels now
+ * live on the Inbox and Reflect folds into All AI conversations, so a nav row
+ * for either would be a second door onto the same page.
  */
 export const navGroups: NavGroup[] = [
   {
@@ -14,27 +19,32 @@ export const navGroups: NavGroup[] = [
     label: "What landed",
     items: [
       { label: "Inbox - All Work and Transcripts", to: "/work", icon: "work" },
-      { label: "Find it", to: "/find-it", icon: "work" },
-      { label: "All AI conversations", to: "/ai-record", icon: "ai-record", nested: true },
+      { label: "All AI conversations", to: "/ai-record", icon: "ai-record" },
       { label: "Where work comes from", to: "/connectors", icon: "connectors" },
     ],
   },
   {
+    // The shelves render first, then these items, so Past work reads as the
+    // place everything finished ends up.
     id: "engagements",
     label: "Where it goes",
-    items: [],
+    items: [{ label: "Past work", to: "/archive", icon: "firm" }],
     emptyState: "No engagements yet",
   },
   {
-    id: "learned",
-    label: "What you learned",
+    id: "lookback",
+    label: "Look back",
     items: [
-      { label: "Past work", to: "/archive", icon: "firm" },
-      { label: "Reflect", to: "/reflect", icon: "reflect" },
+      { label: "Find it", to: "/find-it", icon: "work" },
       { label: "Decision log", to: "/decisions", icon: "decisions" },
-      { label: "Overview", to: "/overview", icon: "overview" },
+    ],
+  },
+  {
+    id: "coach",
+    label: "Your coach",
+    items: [
       { label: "1:1 prep", to: "/one-on-one", icon: "one-on-one" },
-      { label: "Notes about your work", to: "/coach-notes", icon: "messages" },
+      { label: "Notes from your coach", to: "/coach-notes", icon: "messages" },
     ],
   },
   {
@@ -71,12 +81,12 @@ export const coachNavGroups: NavGroup[] = [
 
 /**
  * A school workspace keeps the same weekly-loop headings as every other
- * workspace and just adds its own "Your classes" section after "What you
- * learned". Only the engagement shelves group gets a true school vocabulary
- * swap, because there the underlying concept genuinely differs.
+ * workspace and just adds its own "Your classes" section after "Look back".
+ * Only the engagement shelves group gets a true school vocabulary swap,
+ * because there the underlying concept genuinely differs.
  */
 export const eduNavGroups: NavGroup[] = navGroups.flatMap((group) => {
-  if (group.id === "learned") {
+  if (group.id === "lookback") {
     return [
       group,
       {

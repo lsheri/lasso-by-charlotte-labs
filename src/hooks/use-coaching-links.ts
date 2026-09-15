@@ -25,6 +25,31 @@ export function useMyCoachingLinks() {
   });
 }
 
+/**
+ * PASS A1 — does this person have anyone coaching them right now?
+ *
+ * Same read and same query key as useMyCoachingLinks, so no extra request:
+ * the sidebar only asks when the answer can change what it shows, which is a
+ * solo workspace. A live link is one that has not ended and is either firm
+ * policy or agreed to and not withdrawn.
+ */
+export function useHasLiveCoachLink(enabled: boolean): boolean {
+  const { data: profile } = useProfile();
+  // Called directly rather than through useServerFn: the sidebar renders
+  // outside a router in several tests, and this read needs no router context.
+  const { data } = useQuery({
+    queryKey: ["coaching-links", "mine", profile?.id],
+    enabled: enabled && Boolean(profile?.id),
+    retry: false,
+    queryFn: () => listMyCoachingLinks({ data: { profile_id: profile?.id } }),
+  });
+  return (data ?? []).some(
+    (row) =>
+      !row.ended_at &&
+      (row.basis === "firm_policy" || (Boolean(row.consented_at) && !row.consent_withdrawn_at)),
+  );
+}
+
 export function useCoachLinkPeople() {
   const { data: profile } = useProfile();
   const list = useServerFn(listCoachLinkPeople);

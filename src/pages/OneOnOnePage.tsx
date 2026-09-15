@@ -1,10 +1,17 @@
+import { useState } from "react";
+
 import { PageHeader } from "@/components/layout/PageHeader";
 import { ToneCard } from "@/components/notebook/ToneCard";
+import { OneOnOneBrief } from "@/components/oneonone/OneOnOneBrief";
 import { SavedForOneOnOne } from "@/components/oneonone/SaveForOneOnOne";
+import { Button } from "@/components/ui/button";
 import { useProfile } from "@/hooks/use-profile";
 
 export function OneOnOnePage() {
   const { data: profile } = useProfile();
+  // PASS A1 — preparing a brief lived on the retired Overview. This is the
+  // page it was always about, so it moves here unchanged.
+  const [prepOpen, setPrepOpen] = useState(false);
   return (
     <div>
       <PageHeader
@@ -14,6 +21,19 @@ export function OneOnOnePage() {
       />
       <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-10">
         <div>
+          {profile ? (
+            <div className="mb-6">
+              <Button type="button" variant="secondary" onClick={() => setPrepOpen(true)}>
+                Prepare a 1:1
+              </Button>
+              <OneOnOneBrief
+                open={prepOpen}
+                onOpenChange={setPrepOpen}
+                profileId={profile.id}
+                scopeLabel="All of your work"
+              />
+            </div>
+          ) : null}
           {profile ? <SavedForOneOnOne profileId={profile.id} /> : null}
           <p className="font-hand text-green">cut anything. it is your hour.</p>
         </div>

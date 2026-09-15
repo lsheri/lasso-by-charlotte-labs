@@ -164,12 +164,12 @@ describe("the Overview sections", () => {
 });
 
 describe("the archive in the nav", () => {
-  // Pass 138.1: the archive is reached from the What you learned group, labelled
+  // Pass A1: the archive is reached from the Where it goes group, labelled
   // "Past work", for members and admins. Coaches are engagement-scoped guests
   // and do not see the firm archive in their nav.
-  it("is in the What you learned group for members and admins, not coaches", () => {
+  it("is in the Where it goes group for members and admins, not coaches", () => {
     // Nav is now ordered by the weekly loop rather than by object type.
-    const learned = navGroups.find((group) => group.label === "What you learned");
+    const learned = navGroups.find((group) => group.label === "Where it goes");
     expect(learned?.items.some((item) => item.to === "/archive")).toBe(true);
     expect(
       coachNavGroups.some((group) => group.items.some((item) => item.to === "/archive")),

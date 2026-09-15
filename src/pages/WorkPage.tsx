@@ -18,6 +18,11 @@ import { PasteThreadDialog } from "@/components/work/PasteThreadDialog";
 import { OpenFileAction } from "@/components/work/OpenFileAction";
 import { ConnectorBrowseActions } from "@/components/connectors/ConnectorBrowseActions";
 import { WatchSuggestionBanner } from "@/components/connectors/WatchSuggestionBanner";
+import { CoachingLinkNotices } from "@/components/coaching/CoachingLinkNotices";
+import { ChatsToOrganise } from "@/components/overview/ChatsToOrganise";
+import { WaitingOnYou } from "@/components/overview/WaitingOnYou";
+import { ReadingPanel } from "@/components/overview/ReadingPanel";
+import { NotCovered } from "@/components/overview/NotCovered";
 
 import { SuggestLegend } from "@/components/common/Suggested";
 import { SuggestionChip } from "@/components/work/SuggestionChip";
@@ -285,6 +290,9 @@ export function WorkPage() {
   const unmapped = all.filter((i) => i.visibility === "unmapped");
   const priv = all.filter((i) => i.visibility === "private");
   const flagged = all.filter((i) => i.visibility === "unmapped" && isFlaggedRestatement(i));
+  // PASS A1 — the most recent arrivals from a connected tool. Anything without
+  // a vendor came in by hand, so it is not something Lasso went and read.
+  const reading = all.filter((item) => Boolean(item.source_vendor)).slice(0, 3);
 
   async function removeAllFlagged() {
     setRemovingFlagged(true);
@@ -688,6 +696,9 @@ export function WorkPage() {
       />
       <div className="relative z-10">
       <GettingStartedCard />
+      {/* PASS A1 — a coaching question is a decision about your own work and
+          must stay reachable on the page people land on. */}
+      <CoachingLinkNotices />
       <PageHeader title="All" italicWord="work" subtitle={subtitle} />
       <BringWorkInRow
         unmappedCount={unmapped.length}
@@ -877,6 +888,11 @@ export function WorkPage() {
         </div>
       ) : null}
 
+      {/* PASS A1 — both lifted off the retired Overview. The calls waiting on
+          you sit above the pile; the chats to put away sit with it. */}
+      <WaitingOnYou />
+      <ChatsToOrganise items={all} />
+
       {error ? <p className="mb-6 text-sm text-destructive">{(error as Error).message}</p> : null}
       {actionError ? <p className="mb-6 text-sm text-destructive">{actionError}</p> : null}
       {mappingError ? (
@@ -1042,6 +1058,11 @@ export function WorkPage() {
           </div>
         </div>
       )}
+
+      {/* PASS A1 — what Lasso has read, and the honest counterpart naming what
+          it cannot see. Both follow the pile, as they did on Overview. */}
+      <ReadingPanel items={reading} />
+      <NotCovered />
 
       {!isCoach && all.length > 0 ? <div aria-hidden className="h-16 md:hidden" /> : null}
 

@@ -69,28 +69,32 @@ afterEach(() => {
 });
 
 describe("Pass 123: the sidebar follows the weekly loop", () => {
-  it("config places What you learned before Run the firm", () => {
+  it("config places Look back before Run the firm", () => {
     // Nav is now ordered by the weekly loop rather than by object type.
     expect(navGroups.map((g) => g.label)).toEqual([
       "What landed",
       "Where it goes",
-      "What you learned",
+      "Look back",
+      "Your coach",
       "Run the firm",
       "Your account",
     ]);
 
-    const learned = navGroups.find((g) => g.label === "What you learned")!;
-    expect(learned.items.map((i) => i.to)).toEqual([
+    const lookback = navGroups.find((g) => g.label === "Look back")!;
+    expect(lookback.items.map((i) => i.to)).toEqual(["/find-it", "/decisions"]);
+    expect(lookback.items.map((i) => i.to)).not.toContain("/firm");
+    expect(lookback.items.map((i) => i.to)).not.toContain("/members");
+
+    const coachGroup = navGroups.find((g) => g.label === "Your coach")!;
+    expect(coachGroup.items.map((i) => i.to)).toEqual(["/one-on-one", "/coach-notes"]);
+
+    // Overview and Reflect are retired; Past work sits with the shelves.
+    const everyTo = navGroups.flatMap((g) => g.items.map((i) => i.to));
+    expect(everyTo).not.toContain("/overview");
+    expect(everyTo).not.toContain("/reflect");
+    expect(navGroups.find((g) => g.id === "engagements")!.items.map((i) => i.to)).toEqual([
       "/archive",
-      "/ai-record",
-      "/reflect",
-      "/decisions",
-      "/overview",
-      "/one-on-one",
-      "/coach-notes",
     ]);
-    expect(learned.items.map((i) => i.to)).not.toContain("/firm");
-    expect(learned.items.map((i) => i.to)).not.toContain("/members");
 
     const runTheFirm = navGroups.find((g) => g.label === "Run the firm")!;
     expect(runTheFirm.items.map((i) => ({ to: i.to, label: i.label }))).toEqual([
@@ -106,14 +110,13 @@ describe("Pass 123: the sidebar follows the weekly loop", () => {
     expect(screen.queryByText("Firm view")).not.toBeNull();
     expect(screen.queryByText("Members")).not.toBeNull();
 
-    expect(screen.queryByText("What you learned")).not.toBeNull();
+    expect(screen.queryByText("Look back")).not.toBeNull();
     expect(screen.queryByText("Settings")).not.toBeNull();
-    expect(screen.queryByText("Overview")).not.toBeNull();
 
-    // Firm view and Members should not also appear under What you learned.
-    const learnedSection = screen.getByText("What you learned").parentElement!;
-    expect(learnedSection.textContent).not.toContain("Firm view");
-    expect(learnedSection.textContent).not.toContain("Members");
+    // Firm view and Members should not also appear under Look back.
+    const lookbackSection = screen.getByText("Look back").parentElement!;
+    expect(lookbackSection.textContent).not.toContain("Firm view");
+    expect(lookbackSection.textContent).not.toContain("Members");
   });
 
   it("plain member on a business org sees no Run the firm header at all", () => {
@@ -124,7 +127,7 @@ describe("Pass 123: the sidebar follows the weekly loop", () => {
     expect(screen.queryByText("Members")).toBeNull();
     expect(screen.queryByText("Your coaches")).toBeNull();
 
-    expect(screen.queryByText("What you learned")).not.toBeNull();
+    expect(screen.queryByText("Look back")).not.toBeNull();
     expect(screen.queryByText("Settings")).not.toBeNull();
   });
 
@@ -136,7 +139,7 @@ describe("Pass 123: the sidebar follows the weekly loop", () => {
     expect(screen.queryByText("Firm view")).toBeNull();
     expect(screen.queryByText("Members")).toBeNull();
 
-    expect(screen.queryByText("What you learned")).not.toBeNull();
+    expect(screen.queryByText("Look back")).not.toBeNull();
     expect(screen.queryByText("Settings")).not.toBeNull();
   });
 

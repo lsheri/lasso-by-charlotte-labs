@@ -35,7 +35,7 @@ describe("pass 139: the page is named Past work", () => {
     // shared page header is still the only h1 on the route.
     expect(page).toMatch(/ASK PAST WORK\s*<\/h2>/);
     // Nav is now ordered by the weekly loop rather than by object type.
-    expect(PAST_WORK_GROUP_LABEL).toBe("What you learned");
+    expect(PAST_WORK_GROUP_LABEL).toBe("Where it goes");
     expect(PAST_WORK_NAV_LABEL).toBe("Past work");
   });
 
