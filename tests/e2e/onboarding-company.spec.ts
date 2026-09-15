@@ -117,7 +117,15 @@ test("company person walks setup, pastes a thread and sets their data level", as
 
   await run(page, "set personal data level to c", 'radio[name="personal-data-level"]', async () => {
     await page.goto("/settings", { waitUntil: "domcontentloaded" });
-    await expect(page.getByText("Your data").first()).toBeVisible({ timeout: 60_000 });
+    await page
+      .getByRole("button", { name: "Your data", exact: true })
+      .or(page.getByRole("link", { name: "Your data", exact: true }))
+      .first()
+      .click();
+    await expect(page.locator('input[name="personal-data-level"]').first()).toBeVisible({
+      timeout: 60_000,
+    });
+
     const choice = page
       .locator('label:has(input[name="personal-data-level"])')
       .filter({ hasText: "Work details" })
