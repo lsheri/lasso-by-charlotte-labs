@@ -679,9 +679,11 @@ export function EngagementCanvasView({
         id,
         origin: origin ? { x: origin.x, y: origin.y } : null,
         delta: { x: 0, y: 0 },
+        screen: { x: 0, y: 0 },
         lifted: false,
         overShelf: false,
       });
+
 
       const finish = () => {
         window.clearTimeout(hold);
