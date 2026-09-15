@@ -423,6 +423,15 @@ export function EngagementCanvasView({
     [closeAsking, engagementId, queryClient, reduceMotion, review],
   );
 
+  // ---- zoom ---------------------------------------------------------------
+  // Positions, deltas and hit testing are canvas units. Pointer events are
+  // screen pixels. At any zoom but 1 those are different units, so every
+  // pointer measure is divided by the zoom before it reaches canvas maths.
+  const [zoom, setZoom] = useState(ZOOM_DEFAULT);
+  const zoomRef = useRef(zoom);
+  zoomRef.current = zoom;
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+
   // ---- moving work ------------------------------------------------------
   const surfaceRef = useRef<HTMLDivElement | null>(null);
   const shelfRef = useRef<HTMLDivElement | null>(null);
@@ -430,7 +439,10 @@ export function EngagementCanvasView({
   const [drag, setDrag] = useState<{
     id: string;
     origin: Point | null;
+    /** Canvas units. */
     delta: Point;
+    /** Screen pixels, for the shelf, which sits outside the scaled surface. */
+    screen: Point;
     lifted: boolean;
     overShelf: boolean;
   } | null>(null);
