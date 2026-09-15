@@ -66,8 +66,7 @@ import {
   type WorkItemRow,
 } from "@/lib/work-types";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { NotebookSpider } from "@/components/notebook/NotebookSpider";
-import { SpiderLassoScene } from "@/components/notebook/SpiderLassoScene";
+import { SpiderLassoScene } from "@/components/motion/SpiderLassoScene";
 import { ToneCard } from "@/components/notebook/ToneCard";
 import { WorkSubtitle } from "@/components/work/WorkSubtitle";
 import { sourceVendorKey } from "@/components/work/SourceMark";
@@ -143,10 +142,9 @@ function BringWorkInRow({
   const { openSettings } = useSettingsDialog();
 
   return (
-    <div className="mb-6 flex items-start justify-between gap-6">
-      <div className="min-w-0 flex-1">
-        <p className="micro-label">BRING WORK IN</p>
-        <div className="mt-2 flex flex-wrap items-center gap-2">
+    <div className="mb-6">
+      <p className="micro-label">BRING WORK IN</p>
+      <div className="mt-2 flex flex-wrap items-center gap-2">
         {unmappedCount > 0 ? (
           <button
             type="button"
@@ -217,10 +215,6 @@ function BringWorkInRow({
             </Button>
           }
         />
-        </div>
-      </div>
-      <div className="hidden shrink-0 lg:block" aria-hidden="true">
-        <SpiderLassoScene />
       </div>
     </div>
   );
@@ -686,7 +680,13 @@ export function WorkPage() {
   }
 
   return (
-    <div>
+    <div className="relative overflow-hidden">
+      <SpiderLassoScene
+        caption={false}
+        className="pointer-events-none absolute right-0 top-0 z-0 hidden origin-top-right scale-90 opacity-50 lg:block"
+        aria-hidden="true"
+      />
+      <div className="relative z-10">
       <GettingStartedCard />
       <PageHeader title="All" italicWord="work" subtitle={subtitle} />
       <BringWorkInRow
@@ -798,18 +798,6 @@ export function WorkPage() {
             about the data, so this reads the same mapped rows the board does. */}
           {legendClients.length > 0 ? (
             <div className="flex max-w-[520px] flex-col items-start gap-2">
-              {/* The spider is the legend's keeper: it stands over the colour
-                chips as if it were holding them. Two instances rather than a
-                matchMedia listener: 180 is the drawing's natural frame and 120
-                keeps the phone legend on screen, and only one is ever visible,
-                so the animation runs once. */}
-              <NotebookSpider
-                size={180}
-                reading
-                className="hidden sm:block"
-                aria-hidden="true"
-              />
-              <NotebookSpider size={120} reading className="sm:hidden" aria-hidden="true" />
               <div>
                 <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-soft">
                   ONE COLOUR PER {vocab.client.toUpperCase()}
@@ -1184,6 +1172,7 @@ export function WorkPage() {
           orgId={profile.org_id}
         />
       ) : null}
+      </div>
     </div>
   );
 }
