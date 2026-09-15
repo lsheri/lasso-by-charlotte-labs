@@ -3,6 +3,7 @@ import { getRouteApi, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import { GraphiteRule } from "@/components/notebook/marks";
+import { useReducedMotion } from "@/hooks/use-motion";
 import { EngagementCanvasView } from "@/components/canvas/EngagementCanvasView";
 import { PeekBody } from "@/components/peek/PeekPanel";
 import { presetsForScope, type AnalysisPresetId } from "@/lib/analysis-presets";
