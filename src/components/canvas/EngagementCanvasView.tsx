@@ -1204,7 +1204,9 @@ export function EngagementCanvasView({
                     touchAction: "none",
                     cursor: dragging ? "grabbing" : "grab",
                     transform: dragging
-                      ? `translate(${dragging.delta.x}px, ${dragging.delta.y}px)${reduceMotion ? "" : " scale(1.03)"}`
+                      ? // The shelf sits outside the scaled surface, so it
+                        // follows the pointer in screen pixels, not canvas units.
+                        `translate(${dragging.screen.x}px, ${dragging.screen.y}px)${reduceMotion ? "" : " scale(1.03)"}`
                       : undefined,
                     boxShadow: dragging && !reduceMotion ? "var(--shadow-modal)" : undefined,
                     zIndex: dragging ? 10 : undefined,
