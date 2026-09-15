@@ -244,6 +244,7 @@ export function FindItPage() {
 
   async function review(linkId: string, action: "confirmed" | "discarded") {
     setReviewed((prev) => ({ ...prev, [linkId]: action }));
+    if (action === "confirmed") setJustKept(linkId);
     try {
       await runReviewLink({
         data: { link_id: linkId, action, surface: "find_it", profile_id: profile?.id },
