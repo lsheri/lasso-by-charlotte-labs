@@ -142,6 +142,14 @@ type NoteRow = {
 };
 
 /**
+ * PASS C2 — a sticky lives on the sticky wall and nowhere else. This list is
+ * for the talking points that arrive from chats, analyses and decisions.
+ */
+export function talkingPointsOnly(rows: NoteRow[]): NoteRow[] {
+  return rows.filter((row) => row.kind !== "sticky");
+}
+
+/**
  * What the person chose to bring, in their own order of importance: the line
  * they want to say first, then the thing it came from, then where it came from.
  */
@@ -155,9 +163,10 @@ export function SavedForOneOnOne({ profileId }: { profileId: string }) {
         .from("one_on_one_notes")
         .select("id, kind, content, talking_point, discussed, created_at, source_session_id")
         .eq("owner_id", profileId)
+        .neq("kind", "sticky")
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return (data ?? []) as NoteRow[];
+      return talkingPointsOnly((data ?? []) as NoteRow[]);
     },
   });
 
