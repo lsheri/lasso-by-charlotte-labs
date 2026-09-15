@@ -274,8 +274,9 @@ export function GraphiteCheck({
       data-testid="graphite-check"
       aria-hidden
     >
-      <path d={d.down} />
-      <path d={d.up} />
+      {/* pathLength lets a caller draw the stroke on with a dash offset. */}
+      <path pathLength={1} d={d.down} />
+      <path pathLength={1} d={d.up} />
     </svg>
   );
 }
