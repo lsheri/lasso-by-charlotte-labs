@@ -90,7 +90,7 @@ export const findSources = createServerFn({ method: "POST" })
       });
     }
 
-    return { links, considered: Math.max(run.considered, links.length) };
+    return { links: orderByQuote(links), considered: Math.max(run.considered, links.length) };
   });
 
 export type SearchMode = "number" | "thread";
