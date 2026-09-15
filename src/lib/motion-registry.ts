@@ -141,6 +141,18 @@ const MOTION_EVENT_REGISTRY: Readonly<Record<MotionEventName, MotionEventEntry>>
     reduced: "The tick appears",
     promise: false,
   },
+  "decision.confirmed": {
+    group: "record",
+    motion: "call-settles",
+    reduced: "The check appears, the card does not move",
+    promise: false,
+  },
+  "decision.on_record_shown": {
+    group: "record",
+    motion: "record-label",
+    reduced: "The label is simply there, beside the check",
+    promise: false,
+  },
   "share.sending": {
     group: "record",
     motion: "comet-line",
