@@ -8,9 +8,14 @@ import { resolveFileFormat, type FileFormat } from "@/lib/file-format";
 import { workIdentityLabel } from "@/lib/work-identity";
 import { WhatFedThisButton } from "@/components/engagements/WhatFedThisButton";
 import { WorkNote } from "@/components/work/WorkNote";
+import { CircleMark } from "@/components/notebook/CircleMark";
+import { CoachNoteModal, type ModalNote } from "@/components/coaching/CoachNoteModal";
+import { useUnreadNotesAboutMe } from "@/hooks/use-coach-note-thread";
+import { newNoteLine, firstName } from "@/lib/coach-note-scope";
 import { useProfile } from "@/hooks/use-profile";
 import type { WorkItemRow } from "@/lib/work-types";
 import type { CanvasTask } from "@/components/engagements/EngagementCanvas";
+
 
 const FORMAT_LABELS: Record<FileFormat, string> = {
   word: "Word",
