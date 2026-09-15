@@ -144,7 +144,7 @@ function BringWorkInRow({
   return (
     <div className="mb-6">
       <p className="micro-label">BRING WORK IN</p>
-      <div className="mt-2 flex flex-wrap items-center gap-2 lg:max-w-[820px]">
+      <div className="mt-2 flex flex-wrap items-center gap-2 lg:max-w-[720px]">
         {unmappedCount > 0 ? (
           <button
             type="button"
