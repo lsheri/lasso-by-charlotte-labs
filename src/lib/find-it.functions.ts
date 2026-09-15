@@ -20,6 +20,17 @@ export type FoundSource = {
 export type FindSourcesResult = { links: FoundSource[]; considered: number };
 
 /**
+ * Evidence first: a link that carries a shared sentence outranks one that does
+ * not, longest sentence first. Everything else keeps its created order.
+ */
+export function orderByQuote<T extends { quote: { text: string } | null }>(links: T[]): T[] {
+  const withQuote = links
+    .filter((l) => l.quote)
+    .sort((a, b) => (b.quote?.text.length ?? 0) - (a.quote?.text.length ?? 0));
+  return [...withQuote, ...links.filter((l) => !l.quote)];
+}
+
+/**
  * What fed one piece of work, with the evidence attached. The quote never
  * touches the database: work_item_links keeps no quote column, so the sentence
  * is recomputed from the turns on every read and travels in the response only.
@@ -90,7 +101,7 @@ export const findSources = createServerFn({ method: "POST" })
       });
     }
 
-    return { links, considered: Math.max(run.considered, links.length) };
+    return { links: orderByQuote(links), considered: Math.max(run.considered, links.length) };
   });
 
 export type SearchMode = "number" | "thread";
