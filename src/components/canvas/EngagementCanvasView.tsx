@@ -64,8 +64,14 @@ function curveFor(source: NodePosition, target: NodePosition, yOffset = 0) {
   return {
     path: `M ${sx} ${sy} Q ${cx} ${cy} ${tx} ${ty}`,
     arrow: `M ${arrowA} L ${tx},${ty} L ${arrowB}`,
+    // The quadratic midpoint, where a question about this line is anchored.
+    mid: { x: 0.25 * sx + 0.5 * cx + 0.25 * tx, y: 0.25 * sy + 0.5 * cy + 0.25 * ty },
   };
 }
+
+/** The relation words a drafted link can carry. */
+const RELATION_WORDS = new Set(["informed", "produced", "revised", "cited"]);
+
 
 function CanvasNode({
   item,
