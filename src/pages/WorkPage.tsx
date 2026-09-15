@@ -764,7 +764,7 @@ export function WorkPage() {
         then choose what to look at.
       */}
       {all.length > 0 ? (
-        <div className="mb-4 flex flex-wrap items-start gap-5">
+        <div className="mb-4">
           <div className="w-[560px] max-w-full">
             <ToneCard tone="paper" label="WHERE THIS CAME FROM">
               {/* Name, bar and count on ONE line, so the panel reads as a tally
@@ -792,43 +792,43 @@ export function WorkPage() {
               </ul>
             </ToneCard>
           </div>
+        </div>
+      ) : null}
 
-          {/* What the note colours mean, for the clients actually on this
-            page. Eight swatches when four clients are on screen would be a lie
-            about the data, so this reads the same mapped rows the board does. */}
-          {legendClients.length > 0 ? (
-            <div className="flex max-w-[520px] flex-col items-start gap-2">
-              <div>
-                <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-soft">
-                  ONE COLOUR PER {vocab.client.toUpperCase()}
-                </p>
-                <ul className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2">
-                  {legendClients.map((entry) => (
-                    <li key={entry.key} className="flex items-center gap-2">
-                      <span
-                        aria-hidden
-                        className="block shrink-0"
-                        style={{
-                          width: 20,
-                          height: 15,
-                          borderRadius: "3px 3px 4px 3px",
-                          background: "var(--nb-paper-fill)",
-                          border: "1px solid var(--nb-paper-edge)",
-                          boxShadow: "0 1.5px 2px -1px rgb(22 24 26 / 0.18)",
-                          transform: "rotate(var(--nb-rot, 0deg))",
-                          ...notePaper(entry.key),
-                          ...noteHue(entry.key),
-                        }}
-                      />
-                      <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
-                        {entry.label}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          ) : null}
+      {/* What the note colours mean, for the clients actually on this
+        page. Eight swatches when four clients are on screen would be a lie
+        about the data, so this reads the same mapped rows the board does. */}
+      {legendClients.length > 0 ? (
+        <div className="flex max-w-[520px] flex-col items-start gap-2">
+          <div>
+            <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-soft">
+              ONE COLOUR PER {vocab.client.toUpperCase()}
+            </p>
+            <ul className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2">
+              {legendClients.map((entry) => (
+                <li key={entry.key} className="flex items-center gap-2">
+                  <span
+                    aria-hidden
+                    className="block shrink-0"
+                    style={{
+                      width: 20,
+                      height: 15,
+                      borderRadius: "3px 3px 4px 3px",
+                      background: "var(--nb-paper-fill)",
+                      border: "1px solid var(--nb-paper-edge)",
+                      boxShadow: "0 1.5px 2px -1px rgb(22 24 26 / 0.18)",
+                      transform: "rotate(var(--nb-rot, 0deg))",
+                      ...notePaper(entry.key),
+                      ...noteHue(entry.key),
+                    }}
+                  />
+                  <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
+                    {entry.label}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       ) : null}
 
