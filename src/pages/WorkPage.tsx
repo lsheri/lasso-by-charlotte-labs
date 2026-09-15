@@ -688,6 +688,9 @@ export function WorkPage() {
       />
       <div className="relative z-10">
       <GettingStartedCard />
+      {/* PASS A1 — a coaching question is a decision about your own work and
+          must stay reachable on the page people land on. */}
+      <CoachingLinkNotices />
       <PageHeader title="All" italicWord="work" subtitle={subtitle} />
       <BringWorkInRow
         unmappedCount={unmapped.length}
