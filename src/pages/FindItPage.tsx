@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 
@@ -8,15 +8,16 @@ import { SectionHeader } from "@/components/notebook/SectionHeader";
 import { GraphiteCheck } from "@/components/notebook/marks";
 import { NotebookSpider } from "@/components/notebook/NotebookSpider";
 import { ToneCard } from "@/components/notebook/ToneCard";
-import { shimmerStyle } from "@/components/motion/ChatShimmer";
+import { FindItSheet } from "@/components/find-it/FindItSheet";
 import { WorkNote } from "@/components/work/WorkNote";
 import { ThreadViewerById } from "@/components/work/ThreadViewerById";
+import { useCaptureFiles } from "@/components/work/use-capture-files";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { usePerfTimerFactory } from "@/hooks/use-perf-timer";
 import { useProfile } from "@/hooks/use-profile";
-import { useReducedMotion } from "@/hooks/use-motion";
+import { useMotion, useReducedMotion } from "@/hooks/use-motion";
 import { useWorkItems } from "@/hooks/use-work-items";
 import {
   findSources as findSourcesFn,
@@ -29,6 +30,17 @@ import { reviewLink as reviewLinkFn } from "@/lib/lineage.functions";
 import { isDeliverableType, linkBucket } from "@/lib/lineage-shared";
 import { logEvent } from "@/lib/telemetry";
 import { effectiveWorkDate, formatDate, type WorkItemRow } from "@/lib/work-types";
+
+/** Files Find it can read. Anything else is left alone, and said so. */
+const READABLE_EXTENSIONS = ["pdf", "doc", "docx", "txt", "md", "ppt", "pptx", "key", "xls", "xlsx", "csv"];
+
+const UNREADABLE_FILE_MESSAGE =
+  "Lasso reads documents, decks, sheets and transcripts. That one it cannot read.";
+
+function isReadableFile(file: File): boolean {
+  const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
+  return READABLE_EXTENSIONS.includes(ext);
+}
 
 type Mode = "sources" | "number" | "thread";
 
