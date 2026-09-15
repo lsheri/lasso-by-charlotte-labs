@@ -1,10 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 
+import { requireEduWorkspace } from "@/lib/edu-guard";
+
 import { EduEngagementsPage } from "@/pages/EduEngagementsPage";
 
 const DESCRIPTION = "Every class you are keeping work for in Lasso, this term and the ones before.";
 
 export const Route = createFileRoute("/_authenticated/classes")({
+  beforeLoad: requireEduWorkspace,
   head: () => ({
     meta: [
       { title: "Classes | Lasso" },

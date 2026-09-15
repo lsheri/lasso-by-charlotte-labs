@@ -1,10 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 
+import { requireEduWorkspace } from "@/lib/edu-guard";
+
 import { PortfolioPage } from "@/pages/PortfolioPage";
 
 const DESCRIPTION = "The work you are proud of, kept private in your own Lasso workspace.";
 
 export const Route = createFileRoute("/_authenticated/portfolio")({
+  beforeLoad: requireEduWorkspace,
   head: () => ({
     meta: [
       { title: "Portfolio | Lasso" },
