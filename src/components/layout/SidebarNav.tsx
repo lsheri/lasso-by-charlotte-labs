@@ -187,6 +187,11 @@ export function SidebarNav({
     !isCoach && profile?.org_type === "personal" && Boolean(profile?.id),
   );
   const canBeCoached = byArrangement || soloHasCoach;
+  // One query for the circle, shared with every other surface that draws it.
+  // A coach never asks: there are no circles on a coach's screen.
+  const { data: unreadNotes } = useUnreadNotesAboutMe(isCoach ? undefined : profile?.id);
+  const hasNewNotes = (unreadNotes ?? []).length > 0;
+
   const matchRoute = useMatchRoute();
   const engagementMatch = matchRoute({ to: "/engagements/$id", fuzzy: false });
   const activeEngagementId = engagementMatch ? engagementMatch.id : undefined;
