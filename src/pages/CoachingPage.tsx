@@ -44,8 +44,9 @@ export function CoachingPage() {
   // even before anything has been shared with them.
   const orgLine = profile?.org_name ? `You coach at ${profile.org_name}` : null;
 
-  function openPacket(coachProfileId: string, engagementId: string, subjectId: string) {
-    setActiveProfileId(coachProfileId);
+  async function openPacket(coachProfileId: string, engagementId: string, subjectId: string) {
+    // The packet is read as the coaching profile, so the switch lands first.
+    await setActiveProfileId(coachProfileId);
     // Switching the active profile changes who the next reads run as. Only the
     // three surfaces that depend on that need refreshing: the profile itself,
     // this queue, and the packet about to open.
