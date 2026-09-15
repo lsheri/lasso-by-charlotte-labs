@@ -19,7 +19,7 @@
 
 export type MotionGroup = "auditability" | "record" | "thinking" | "chrome";
 
-/** The 18 motions the registry can resolve to. */
+/** The motions the registry can resolve to. */
 export type MotionName =
   | "call-settles"
   | "record-label"
@@ -40,6 +40,14 @@ export type MotionName =
   | "pencil-marks"
   | "note-lands"
   | "circle-drawn"
+  /** Pass E2 · Find it. Candidates arrive from the right while it reads. */
+  | "candidates-drift"
+  /** Pass E2 · Find it. The line from a candidate to the work draws on. */
+  | "lines-draw"
+  /** Pass E2 · Find it. The check on a source a person chose to keep. */
+  | "keep-check"
+  /** Pass E2 · Find it. Rows of what was said, arriving in order. */
+  | "rows-land"
   | "arrows";
 
 export type MotionEventName =
@@ -71,6 +79,14 @@ export type MotionEventName =
   | "spider.guiding"
   | "connector.connecting"
   // Chrome. The landing hero event is not here and must not be added.
+  /** Pass E2: Find it is reading the conversations it can see. */
+  | "findit.reading"
+  /** Pass E2: what fed this piece of work has landed. */
+  | "findit.found"
+  /** Pass E2: a person kept one of those as a source. */
+  | "findit.kept"
+  /** Pass E2: rows of what was said have landed. */
+  | "findit.search_landed"
   | "page.enter"
   | "nav.active"
   | "arrow.drawn";
@@ -209,6 +225,32 @@ const MOTION_EVENT_REGISTRY: Readonly<Record<MotionEventName, MotionEventEntry>>
     promise: false,
   },
 
+  "findit.reading": {
+    group: "thinking",
+    motion: "candidates-drift",
+    reduced: "The cards sit still, and the line says how many conversations are being read",
+    promise: false,
+  },
+  "findit.found": {
+    group: "record",
+    motion: "lines-draw",
+    reduced: "The lines are already there, joining the same work",
+    promise: false,
+  },
+  "findit.kept": {
+    group: "record",
+    motion: "keep-check",
+    reduced: "The check appears, the card does not move",
+    promise: false,
+  },
+  "findit.search_landed": {
+    group: "record",
+    motion: "rows-land",
+    reduced: "The rows are simply there, in the order they were found",
+    promise: false,
+  },
+
+
   "page.enter": {
     group: "chrome",
     motion: "card-lifts",
@@ -273,6 +315,10 @@ const MOTION_CLASS: Partial<Record<MotionName, MotionDraw>> = {
   "record-label": { moving: "nb-record-label" },
   "note-lands": { moving: "nb-note-land" },
   "circle-drawn": { moving: "nb-circle-draw", still: "nb-circle-still" },
+  "candidates-drift": { moving: "nb-findit-drift" },
+  "lines-draw": { moving: "nb-findit-line", still: "nb-findit-line-still" },
+  "keep-check": { moving: "nb-findit-kept" },
+  "rows-land": { moving: "nb-findit-row" },
 };
 
 /** True when the reader has asked for less movement. Safe during SSR. */

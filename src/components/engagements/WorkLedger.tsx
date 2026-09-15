@@ -7,6 +7,7 @@ import { getDeliverableEvidence, reviewLink } from "@/lib/lineage.functions";
 import { resolveFileFormat, type FileFormat } from "@/lib/file-format";
 import { workIdentityLabel } from "@/lib/work-identity";
 import { WhatFedThisButton } from "@/components/engagements/WhatFedThisButton";
+import { FindItLink } from "@/components/find-it/FindItLink";
 import { WorkNote } from "@/components/work/WorkNote";
 import { CircleMark } from "@/components/notebook/CircleMark";
 import { CoachNoteModal, type ModalNote } from "@/components/coaching/CoachNoteModal";
@@ -111,7 +112,7 @@ export function WorkLedger({
             const formatLabel = FORMAT_LABELS[format];
             const itemNotes = notesForItem(item.id);
             const card = (
-              <div className="rounded-lg border border-graphite bg-card p-5 transition-colors hover:border-accent/40">
+              <div className="group rounded-lg border border-graphite bg-card p-5 transition-colors hover:border-accent/40">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <button
                     type="button"
@@ -130,6 +131,11 @@ export function WorkLedger({
                     <WhatFedThisButton items={[item]} orgId={orgId} profileId={profileId} />
                   ) : null}
                 </div>
+                {!isCoach ? (
+                  <div className="mt-2">
+                    <FindItLink workItemId={item.id} revealOnHover />
+                  </div>
+                ) : null}
                 <PendingSuggestions item={item} />
               </div>
             );

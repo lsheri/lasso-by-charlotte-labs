@@ -27,6 +27,7 @@ export type PeekAnalysisPreset =
 export const PEEK_WORK_ARTIFACT_LABEL = "Work Artifact";
 export const PEEK_WORK_DATE_LABEL = "Work date";
 export const PEEK_MAKE_PRIVATE_LABEL = "Make private";
+export const PEEK_FIND_IT_LABEL = "Find what fed this";
 
 export function PencilAction({
   seed,
@@ -66,6 +67,7 @@ export function PeekActionBar({
   onMakePrivate,
   onAnalyse,
   onWorkArtifact,
+  onFindIt,
   onShip,
   onBrief,
   onRemove,
@@ -82,6 +84,7 @@ export function PeekActionBar({
   onMakePrivate?: ((item: WorkItemRow) => void) | undefined;
   onAnalyse?: ((item: WorkItemRow, preset: PeekAnalysisPreset) => void) | undefined;
   onWorkArtifact?: (() => void) | undefined;
+  onFindIt?: (() => void) | undefined;
   onShip: () => void;
   onBrief: () => void;
   onRemove: () => void;
@@ -142,6 +145,9 @@ export function PeekActionBar({
               <DropdownMenuItem onSelect={() => onWorkArtifact()}>
                 {PEEK_WORK_ARTIFACT_LABEL}
               </DropdownMenuItem>
+            ) : null}
+            {onFindIt && isDeliverable ? (
+              <DropdownMenuItem onSelect={() => onFindIt()}>{PEEK_FIND_IT_LABEL}</DropdownMenuItem>
             ) : null}
             {owned && isDeliverable ? (
               <DropdownMenuItem onSelect={() => onShip()}>{SHIP_ACTION_LABEL}</DropdownMenuItem>

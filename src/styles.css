@@ -3857,3 +3857,118 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   }
 }
 
+
+/* ==========================================================================
+   PASS E2 — Find it. Every one of these is chosen by the motion registry
+   (findit.reading, findit.found, findit.kept, findit.search_landed), never by
+   a screen. The stagger index rides in as --nb-i so one class serves a list.
+   ========================================================================== */
+@keyframes nb-findit-drift-kf {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+.nb-findit-drift {
+  animation: nb-findit-drift-kf 420ms var(--nb-ease, ease-out) both;
+  animation-delay: calc(var(--nb-i, 0) * 60ms);
+}
+@keyframes nb-findit-comet-kf {
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: -24;
+  }
+}
+.nb-findit-comet {
+  stroke-dasharray: 6 18;
+  animation: nb-findit-comet-kf 1200ms linear infinite;
+}
+@keyframes nb-findit-line-kf {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+.nb-findit-line {
+  stroke-dasharray: 1;
+  animation: nb-findit-line-kf 600ms var(--nb-ease, ease-out) both;
+  animation-delay: calc(var(--nb-i, 0) * 150ms);
+}
+.nb-findit-line-still {
+  stroke-dasharray: none;
+}
+@keyframes nb-findit-head-kf {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.nb-findit-head {
+  animation: nb-findit-head-kf 220ms var(--nb-ease, ease-out) both;
+  animation-delay: calc(600ms + var(--nb-i, 0) * 150ms);
+}
+@keyframes nb-findit-kept-kf {
+  from {
+    opacity: 0;
+    transform: scale(1.6);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.nb-findit-kept {
+  animation: nb-findit-kept-kf 300ms cubic-bezier(0.22, 1.2, 0.36, 1) both;
+}
+@keyframes nb-findit-settle-kf {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(6px);
+  }
+}
+.nb-findit-settle {
+  animation: nb-findit-settle-kf 300ms cubic-bezier(0.22, 1.2, 0.36, 1) both;
+}
+@keyframes nb-findit-row-kf {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.nb-findit-row {
+  animation: nb-findit-row-kf 260ms var(--nb-ease, ease-out) both;
+  animation-delay: calc(var(--nb-i, 0) * 40ms);
+}
+@media (prefers-reduced-motion: reduce) {
+  .nb-findit-drift,
+  .nb-findit-head,
+  .nb-findit-kept,
+  .nb-findit-settle,
+  .nb-findit-row {
+    animation: none !important;
+    opacity: 1;
+    transform: none;
+  }
+  .nb-findit-comet,
+  .nb-findit-line {
+    animation: none !important;
+    stroke-dasharray: none;
+    stroke-dashoffset: 0;
+  }
+}
