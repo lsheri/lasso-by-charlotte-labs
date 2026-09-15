@@ -683,7 +683,7 @@ export function WorkPage() {
     <div className="relative overflow-hidden">
       <SpiderLassoScene
         caption={false}
-        className="pointer-events-none absolute right-0 top-0 z-0 hidden origin-top-right scale-90 opacity-50 lg:block"
+        className="pointer-events-none absolute right-8 top-0 z-0 hidden origin-top-right scale-90 opacity-50 lg:block"
         aria-hidden="true"
       />
       <div className="relative z-10">
