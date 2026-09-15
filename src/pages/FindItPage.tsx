@@ -334,21 +334,21 @@ export function FindItPage() {
                     onDragOver={(event) => event.preventDefault()}
                     onDrop={(event) => {
                       event.preventDefault();
-                      toast(
-                        "Bringing in new files from here is coming. For now, pick something you already have.",
-                      );
+                      void onDrop(Array.from(event.dataTransfer.files));
                     }}
                     className="mt-3 grid min-h-[140px] place-items-center rounded-[8px] border border-dashed border-pencil bg-card px-6 py-8 text-center"
                   >
                     <div>
                       <p className="text-sm text-muted-foreground">
-                        Drop a finished piece of work here, or pick one you already have.
+                        {capturing
+                          ? "Bringing it in…"
+                          : "drop a document, deck or transcript here to find what fed it"}
                       </p>
                       <Button
                         type="button"
                         className="mt-3"
                         onClick={() => setPickerOpen(true)}
-                        disabled={isLoading}
+                        disabled={isLoading || capturing}
                       >
                         Pick a piece of work
                       </Button>
