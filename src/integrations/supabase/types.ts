@@ -1975,6 +1975,27 @@ export type Database = {
           },
         ]
       }
+      institutions: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          slug: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          slug: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          slug?: string
+        }
+        Relationships: []
+      }
       invites: {
         Row: {
           code: string
@@ -2169,6 +2190,52 @@ export type Database = {
           },
         ]
       }
+      org_affiliations: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          institution_id: string
+          org_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          institution_id: string
+          org_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          institution_id?: string
+          org_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_affiliations_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_affiliations_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_affiliations_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: true
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orgs: {
         Row: {
           ai_maturity: string | null
@@ -2180,6 +2247,7 @@ export type Database = {
           name: string
           org_mode: string | null
           settings: Json
+          signup_source: string | null
           size_band: string | null
           vendor_display: string
         }
@@ -2193,6 +2261,7 @@ export type Database = {
           name: string
           org_mode?: string | null
           settings?: Json
+          signup_source?: string | null
           size_band?: string | null
           vendor_display?: string
         }
@@ -2206,6 +2275,7 @@ export type Database = {
           name?: string
           org_mode?: string | null
           settings?: Json
+          signup_source?: string | null
           size_band?: string | null
           vendor_display?: string
         }
