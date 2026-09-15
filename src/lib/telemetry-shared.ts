@@ -165,6 +165,14 @@ export type TelemetryEvent =
   | "coachnote.scoped"
   /** Pass D: someone wrote back on a note. Which side wrote, nothing else. */
   | "coachnote.replied"
+  /** Pass E1: /find-it was opened. Closed vocab entry point only. */
+  | "findit.opened"
+  /** Pass E1: one trace ran. Scope and bands, never ids or titles. */
+  | "findit.run"
+  /** Pass E1: one look for words that were said. Bands only, never the query. */
+  | "findit.searched"
+  /** Pass E1: a candidate was shown, with or without a shared sentence. */
+  | "findit.quote_shown"
   /** Pass 164: the walkthrough was opened. Variant, entry, banded age only. */
   | "walkthrough.opened"
   /** Pass 164: one walkthrough section was reached. Closed vocab section id. */
