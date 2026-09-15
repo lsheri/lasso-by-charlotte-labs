@@ -28,6 +28,7 @@ export const PERF_NAMES = Object.freeze([
   "ask_dock.open",
   "connector.sync",
   "peek.open",
+  "findit.run",
 ] as const);
 
 export type PerfName = (typeof PERF_NAMES)[number];
