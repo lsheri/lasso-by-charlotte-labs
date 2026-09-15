@@ -73,6 +73,9 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
   const [rail, setRail] = useState<"closed" | "open">("closed");
   const askOpen = rail !== "closed";
   const benchPageRef = useRef<HTMLDivElement>(null);
+  const benchMainRef = useRef<HTMLDivElement>(null);
+  const reduceMotion = useReducedMotion();
+
 
   const [askHadConversation, setAskHadConversation] = useState(false);
   const [peekItem, setPeekItem] = useState<WorkItemRow | null>(null);
