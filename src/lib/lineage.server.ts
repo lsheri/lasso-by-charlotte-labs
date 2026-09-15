@@ -355,17 +355,54 @@ export async function deliverableTextFor(supabase: Db, itemId: string): Promise<
   );
 }
 
-function sentencesOf(text: string): string[] {
-  return text
-    .split(/(?<=[.!?])\s+|\n+/)
-    .map((piece) => piece.trim())
-    .filter((piece) => piece.length >= MIN_SNIPPET_CHARS && piece.length <= MAX_SNIPPET_CHARS);
+/**
+ * A shared sentence has to carry meaning. "Captured." is not evidence, so a
+ * piece only qualifies when it is long enough, has enough words, and reads
+ * like language rather than a stray number.
+ */
+export const MIN_SHARED_SENTENCE_CHARS = 40;
+export const MIN_SHARED_SENTENCE_WORDS = 6;
+
+export function qualifiesAsSharedSentence(piece: string): boolean {
+  const normalised = normalizeSnippet(piece);
+  if (normalised.length < MIN_SHARED_SENTENCE_CHARS) return false;
+  if (normalised.split(/\s+/).filter(Boolean).length < MIN_SHARED_SENTENCE_WORDS) return false;
+  return /[a-z]/i.test(normalised);
 }
 
 /**
- * The first sentence of a candidate conversation that also appears, word for
- * word, in the deliverable. Never a paraphrase and never model written: if
- * nothing is shared the honest answer is null.
+ * Split on sentence enders, on a colon or semicolon that introduces one, and
+ * after a closing quote or bracket that ends a sentence. Each piece is offered
+ * whole first, then again with a "lead-in:" prefix removed, because a person
+ * writing in a chat often glues the two together on one line.
+ */
+export function sentencesOf(text: string): string[] {
+  const pieces = text
+    .split(/(?<=[.!?])["'”’)\]]?\s+|(?<=[:;])\s+|\n+/)
+    .map((piece) => piece.trim())
+    .filter(Boolean);
+  const out: string[] = [];
+  const seen = new Set<string>();
+  const push = (piece: string) => {
+    const trimmed = piece.trim();
+    if (trimmed.length < MIN_SNIPPET_CHARS || trimmed.length > MAX_SNIPPET_CHARS) return;
+    if (seen.has(trimmed)) return;
+    seen.add(trimmed);
+    out.push(trimmed);
+  };
+  for (const piece of pieces) {
+    push(piece);
+    const cut = piece.indexOf(": ");
+    if (cut >= 0) push(piece.slice(cut + 2));
+  }
+  return out;
+}
+
+/**
+ * The strongest sentence of a candidate conversation that also appears, word
+ * for word, in the deliverable: the longest qualifying one, earliest turn on a
+ * tie. Never a paraphrase and never model written: if nothing is shared the
+ * honest answer is null.
  */
 export async function sharedSentenceFor(
   supabase: Db,
@@ -381,12 +418,17 @@ export async function sharedSentenceFor(
   if (!row) return null;
   const { loadAuditItem } = await import("./span-audit.server");
   const item = await loadAuditItem(supabase, row as Record<string, unknown>);
+  let best: SharedSentence | null = null;
   for (const turn of item.turns) {
     for (const sentence of sentencesOf(turn.content)) {
-      if (containsVerbatim(deliverableText, sentence) && containsVerbatim(turn.content, sentence)) {
-        return { text: sentence, turn_no: turn.turn_no, role: turn.role };
+      if (!qualifiesAsSharedSentence(sentence)) continue;
+      if (!containsVerbatim(deliverableText, sentence)) continue;
+      if (!containsVerbatim(turn.content, sentence)) continue;
+      if (!best || normalizeSnippet(sentence).length > normalizeSnippet(best.text).length) {
+        best = { text: sentence, turn_no: turn.turn_no, role: turn.role };
       }
     }
   }
-  return null;
+  return best;
 }
+
