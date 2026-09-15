@@ -84,7 +84,7 @@ export const drawCanvasLinkFn = createServerFn({ method: "POST" })
       // Drawing a connection must never fail because recording it failed.
     }
 
-    // Deliberately no recordEventV2 and no lineage.confirmed here. That metric
+    // Deliberately no v2 record and no lineage.confirmed here. That metric
     // measures whether the model was right about a pair it proposed. An edge
     // the model never proposed must never land in it. Do not "fix" this.
     return { ok: true };
