@@ -56,6 +56,15 @@ export function WorkLedger({
     return Array.from(map.values());
   }, [task]);
 
+  // PASS D — a new note is circled on the thing it points at. Never shown to a
+  // coach, and never a count at the person.
+  const { data: unreadNotes } = useUnreadNotesAboutMe(isCoach ? undefined : profileId);
+  const [openNote, setOpenNote] = useState<ModalNote | null>(null);
+  const notesHere = (unreadNotes ?? []) as ModalNote[];
+  const taskNotes = notesHere.filter((note) => note.task_id === task.id);
+  const notesForItem = (itemId: string) =>
+    notesHere.filter((note) => note.work_item_id === itemId);
+
   const deliverables = useMemo(
     () => items.filter((item) => isDeliverableType(item.type)),
     [items],
@@ -68,13 +77,29 @@ export function WorkLedger({
   return (
     <section>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="micro-label micro-label-section">{task.name}</h2>
+        {taskNotes.length > 0 ? (
+          <CircleMark label={newNoteLine(taskNotes.length, taskNotes[0]?.profiles?.display_name)}>
+            <h2 className="micro-label micro-label-section">{task.name}</h2>
+          </CircleMark>
+        ) : (
+          <h2 className="micro-label micro-label-section">{task.name}</h2>
+        )}
         {headerAction}
       </div>
+      {taskNotes.length > 0 ? (
+        <button
+          type="button"
+          onClick={() => setOpenNote(taskNotes[0] ?? null)}
+          className="mt-1 block font-hand text-[16px] text-green underline underline-offset-2"
+        >
+          {newNoteLine(taskNotes.length, taskNotes[0]?.profiles?.display_name)}
+        </button>
+      ) : null}
 
       <div className="mt-3 space-y-6">
         {deliverables.length === 0 ? (
           <div className="rounded-lg border border-graphite bg-card p-5">
+
             <p className="micro-label">NOTHING SHIPPED FROM THIS YET</p>
             <p className="mt-1 text-[13px] text-muted-foreground">
               When a deliverable is mapped to this piece of work, it lands here.
