@@ -4,6 +4,7 @@ import type { Database } from "@/integrations/supabase/types";
 
 import { ITEM_TEXT_COLUMNS, ensureExtract, pullItemText } from "./extract.server";
 import type { ClassifiableItem } from "./extract.server";
+import { AUDIT_ITEM_COLUMNS } from "./span-audit.server";
 import {
   MAX_SNIPPET_CHARS,
   MIN_SNIPPET_CHARS,
