@@ -32,7 +32,19 @@ import { logEvent } from "@/lib/telemetry";
 import { effectiveWorkDate, formatDate, type WorkItemRow } from "@/lib/work-types";
 
 /** Files Find it can read. Anything else is left alone, and said so. */
-const READABLE_EXTENSIONS = ["pdf", "doc", "docx", "txt", "md", "ppt", "pptx", "key", "xls", "xlsx", "csv"];
+const READABLE_EXTENSIONS = [
+  "pdf",
+  "doc",
+  "docx",
+  "txt",
+  "md",
+  "ppt",
+  "pptx",
+  "key",
+  "xls",
+  "xlsx",
+  "csv",
+];
 
 const UNREADABLE_FILE_MESSAGE =
   "Lasso reads documents, decks, sheets and transcripts. That one it cannot read.";

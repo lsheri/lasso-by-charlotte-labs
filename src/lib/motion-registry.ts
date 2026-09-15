@@ -250,7 +250,6 @@ const MOTION_EVENT_REGISTRY: Readonly<Record<MotionEventName, MotionEventEntry>>
     promise: false,
   },
 
-
   "page.enter": {
     group: "chrome",
     motion: "card-lifts",
@@ -358,4 +357,3 @@ export function resolveMotion(
     promise: entry.promise,
   };
 }
-

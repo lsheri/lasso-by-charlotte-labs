@@ -17,7 +17,6 @@ import { useProfile } from "@/hooks/use-profile";
 import type { WorkItemRow } from "@/lib/work-types";
 import type { CanvasTask } from "@/components/engagements/EngagementCanvas";
 
-
 const FORMAT_LABELS: Record<FileFormat, string> = {
   word: "Word",
   google_docs: "Google Docs",
@@ -63,17 +62,10 @@ export function WorkLedger({
   const [openNote, setOpenNote] = useState<ModalNote | null>(null);
   const notesHere = (unreadNotes ?? []) as ModalNote[];
   const taskNotes = notesHere.filter((note) => note.task_id === task.id);
-  const notesForItem = (itemId: string) =>
-    notesHere.filter((note) => note.work_item_id === itemId);
+  const notesForItem = (itemId: string) => notesHere.filter((note) => note.work_item_id === itemId);
 
-  const deliverables = useMemo(
-    () => items.filter((item) => isDeliverableType(item.type)),
-    [items],
-  );
-  const sources = useMemo(
-    () => items.filter((item) => !isDeliverableType(item.type)),
-    [items],
-  );
+  const deliverables = useMemo(() => items.filter((item) => isDeliverableType(item.type)), [items]);
+  const sources = useMemo(() => items.filter((item) => !isDeliverableType(item.type)), [items]);
 
   return (
     <section>
@@ -100,7 +92,6 @@ export function WorkLedger({
       <div className="mt-3 space-y-6">
         {deliverables.length === 0 ? (
           <div className="rounded-lg border border-graphite bg-card p-5">
-
             <p className="micro-label">NOTHING SHIPPED FROM THIS YET</p>
             <p className="mt-1 text-[13px] text-muted-foreground">
               When a deliverable is mapped to this piece of work, it lands here.
@@ -156,7 +147,6 @@ export function WorkLedger({
               </div>
             );
           })
-
         )}
 
         <div>
@@ -189,7 +179,6 @@ export function WorkLedger({
         }}
       />
     </section>
-
   );
 }
 

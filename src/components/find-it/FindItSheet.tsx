@@ -139,7 +139,9 @@ export function FindItSheet({
                 else nodeRefs.current.delete(candidate.id);
               }}
               className={reduce || index >= 12 ? "" : reading.className}
-              style={index < 12 ? ({ ["--nb-i" as string]: index } as React.CSSProperties) : undefined}
+              style={
+                index < 12 ? ({ ["--nb-i" as string]: index } as React.CSSProperties) : undefined
+              }
             >
               {candidate.node}
             </div>
