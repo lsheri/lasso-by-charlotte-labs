@@ -1,7 +1,9 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 
+import { Button } from "@/components/ui/button";
 import { WorkNote } from "@/components/work/WorkNote";
 import { useReducedMotion } from "@/hooks/use-motion";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,11 +18,14 @@ import {
 } from "@/lib/canvas-layout";
 import { noteCanvasOpenedFn } from "@/lib/canvas.functions";
 import { isDeliverableType, type LineageStatus } from "@/lib/lineage-shared";
+import { reviewLink } from "@/lib/lineage.functions";
 import type { WorkItemRow } from "@/lib/work-types";
 
 type CanvasLink = {
+  id: string;
   from_item_id: string;
   to_item_id: string;
+  relation: string;
   status: LineageStatus;
 };
 
@@ -29,6 +34,7 @@ type CanvasRead = {
   summaries: Map<string, string>;
   links: CanvasLink[];
 };
+
 
 type NodePosition = Placed & { stored: boolean };
 
