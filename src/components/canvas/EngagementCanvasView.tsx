@@ -75,6 +75,7 @@ function CanvasNode({
   const reduceMotion = useReducedMotion();
   const [expanded, setExpanded] = useState(false);
   const timerRef = useRef<number | null>(null);
+  const touchToggleRef = useRef(false);
   const size = nodeSize(position.kind);
 
   const cancelTimer = () => {
@@ -107,8 +108,15 @@ function CanvasNode({
       onPointerUp={(event) => {
         if (event.pointerType === "touch" && summary) {
           event.stopPropagation();
+          touchToggleRef.current = true;
           setExpanded((current) => !current);
         }
+      }}
+      onClickCapture={(event) => {
+        if (!touchToggleRef.current) return;
+        touchToggleRef.current = false;
+        event.preventDefault();
+        event.stopPropagation();
       }}
     >
       <WorkNote item={item} onOpen={() => onOpen(item)} className="h-full" />
