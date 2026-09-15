@@ -290,6 +290,9 @@ export function WorkPage() {
   const unmapped = all.filter((i) => i.visibility === "unmapped");
   const priv = all.filter((i) => i.visibility === "private");
   const flagged = all.filter((i) => i.visibility === "unmapped" && isFlaggedRestatement(i));
+  // PASS A1 — the most recent arrivals from a connected tool. Anything without
+  // a vendor came in by hand, so it is not something Lasso went and read.
+  const reading = all.filter((item) => Boolean(item.source_vendor)).slice(0, 3);
 
   async function removeAllFlagged() {
     setRemovingFlagged(true);
