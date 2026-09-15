@@ -83,9 +83,14 @@ function Highlighted({ text, needle }: { text: string; needle: string }) {
 export function FindItPage() {
   const { data: profile } = useProfile();
   const navigate = useNavigate();
+  const search = useSearch({ from: "/_authenticated/find-it" });
   const { data, isLoading } = useWorkItems();
   const reduceMotion = useReducedMotion();
   const perfTimer = usePerfTimerFactory();
+  const keptMotion = useMotion("findit.kept");
+  const rowMotion = useMotion("findit.search_landed");
+  const spiderMotion = useMotion("ai.working");
+  const { capture, pending: capturing } = useCaptureFiles();
 
   const items = useMemo(() => data?.items ?? [], [data]);
   const chats = useMemo(() => items.filter(isConversation), [items]);
@@ -98,16 +103,9 @@ export function FindItPage() {
     if (isCoach) navigate({ to: "/coaching", replace: true });
   }, [isCoach, navigate]);
 
-  const opened = useRef(false);
-  useEffect(() => {
-    if (opened.current || !profile?.org_id || isCoach) return;
-    opened.current = true;
-    logEvent("findit.opened", profile.org_id, { entry: "nav" });
-  }, [profile?.org_id, isCoach]);
-
   const [mode, setMode] = useState<Mode>("sources");
   const [query, setQuery] = useState("");
-  const [targetId, setTargetId] = useState<string | null>(null);
+  const [targetId, setTargetId] = useState<string | null>(search.target ?? null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [scope, setScope] = useState<FindScope | null>(null);
   const [running, setRunning] = useState(false);
@@ -116,10 +114,47 @@ export function FindItPage() {
   const [searchedFor, setSearchedFor] = useState("");
   const [reviewed, setReviewed] = useState<Record<string, "confirmed" | "discarded">>({});
   const [openThread, setOpenThread] = useState<string | null>(null);
+  const [justKept, setJustKept] = useState<string | null>(null);
+
+  // Where this page was opened from. Another surface can say so in the link.
+  const entryRef = useRef<"nav" | "peek" | "upload">(search.entry ?? "nav");
+  const opened = useRef(false);
+  useEffect(() => {
+    if (opened.current || !profile?.org_id || isCoach) return;
+    opened.current = true;
+    logEvent("findit.opened", profile.org_id, { entry: entryRef.current });
+  }, [profile?.org_id, isCoach]);
 
   const runFindSources = useServerFn(findSourcesFn);
   const runSearchRecord = useServerFn(searchRecordFn);
   const runReviewLink = useServerFn(reviewLinkFn);
+
+  // A file just dropped here is not mapped anywhere yet, so the first look
+  // goes across everything the person has.
+  const [autoRun, setAutoRun] = useState(false);
+  useEffect(() => {
+    if (!autoRun || !targetId || running) return;
+    if (!traceable.some((item) => item.id === targetId)) return;
+    setAutoRun(false);
+    void runSources();
+  }, [autoRun, targetId, running, traceable]);
+
+  async function onDrop(files: File[]) {
+    const readable = files.filter(isReadableFile);
+    if (readable.length === 0) {
+      toast(UNREADABLE_FILE_MESSAGE);
+      return;
+    }
+    const ids = await capture(readable);
+    const first = ids[0];
+    if (!first) return;
+    setMode("sources");
+    setTargetId(first);
+    setScope("all_mine");
+    setFound(null);
+    if (profile?.org_id) logEvent("findit.opened", profile.org_id, { entry: "upload" });
+    setAutoRun(true);
+  }
 
   const target = useMemo(
     () => traceable.find((item) => item.id === targetId) ?? null,
