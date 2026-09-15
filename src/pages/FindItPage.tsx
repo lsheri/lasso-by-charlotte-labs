@@ -101,7 +101,6 @@ export function FindItPage() {
   const perfTimer = usePerfTimerFactory();
   const keptMotion = useMotion("findit.kept");
   const rowMotion = useMotion("findit.search_landed");
-  const spiderMotion = useMotion("ai.working");
   const { capture, pending: capturing } = useCaptureFiles();
 
   const items = useMemo(() => data?.items ?? [], [data]);
