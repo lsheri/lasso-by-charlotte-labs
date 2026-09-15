@@ -10,8 +10,14 @@ import { logV2 } from "@/lib/telemetry-v2";
 
 type Patch = Database["public"]["Tables"]["decisions"]["Update"];
 
+/**
+ * Where a call was settled. Additive, closed vocabulary, so the record can
+ * tell the Inbox strip from the log and from the engagement bench.
+ */
+export type DecisionSurface = "inbox" | "log" | "engagement";
+
 /** Confirm, edit and discard, shared by the decision log and the engagement page. */
-export function useDecisionActions() {
+export function useDecisionActions(surface: DecisionSurface = "log") {
   const { data: profile } = useProfile();
   const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
