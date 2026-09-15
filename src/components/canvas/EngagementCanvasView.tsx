@@ -694,19 +694,29 @@ export function EngagementCanvasView({
       };
 
       function onMove(moveEvent: PointerEvent) {
-        const delta = { x: moveEvent.clientX - startX, y: moveEvent.clientY - startY };
+        const zoom = zoomRef.current;
+        const screen = { x: moveEvent.clientX - startX, y: moveEvent.clientY - startY };
+        // Screen pixels into canvas units. DRAG_SLOP is a canvas unit and is
+        // never scaled.
+        const delta = { x: screen.x / zoom, y: screen.y / zoom };
         if (passedSlop(delta)) lift();
         if (!lifted) return;
         moveEvent.preventDefault();
         const overShelf = isOver(shelfRef.current, moveEvent.clientX, moveEvent.clientY);
         setDrag((current) =>
-          current && current.id === id ? { ...current, delta, lifted: true, overShelf } : current,
+          current && current.id === id
+            ? { ...current, delta, screen, lifted: true, overShelf }
+            : current,
         );
       }
 
       function onUp(upEvent: PointerEvent) {
         const wasLifted = lifted;
-        const delta = { x: upEvent.clientX - startX, y: upEvent.clientY - startY };
+        const zoom = zoomRef.current;
+        const delta = {
+          x: (upEvent.clientX - startX) / zoom,
+          y: (upEvent.clientY - startY) / zoom,
+        };
         finish();
         if (!wasLifted) return;
         const overShelf = isOver(shelfRef.current, upEvent.clientX, upEvent.clientY);
@@ -723,7 +733,10 @@ export function EngagementCanvasView({
         const rect = surface.getBoundingClientRect();
         void commit(
           id,
-          snapPoint({ x: upEvent.clientX - rect.left, y: upEvent.clientY - rect.top }),
+          snapPoint({
+            x: (upEvent.clientX - rect.left) / zoom,
+            y: (upEvent.clientY - rect.top) / zoom,
+          }),
           "shelf",
           "pointer",
         );
