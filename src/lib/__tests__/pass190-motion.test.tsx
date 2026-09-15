@@ -63,4 +63,22 @@ describe("pass 190 motion", () => {
   it("keeps the scene index out of the event motion registry", () => {
     expect(read("src/lib/motion-registry.ts")).not.toContain("MOTION_SCENES");
   });
+
+  it("places the colour legend after the source card and before the explanatory line", () => {
+    const source = read("src/pages/WorkPage.tsx");
+    const where = source.indexOf("WHERE THIS CAME FROM");
+    const legend = source.indexOf("ONE COLOUR PER");
+    const line = source.indexOf("the columns are what it is");
+    expect(where).toBeGreaterThan(-1);
+    expect(legend).toBeGreaterThan(-1);
+    expect(line).toBeGreaterThan(-1);
+    expect(where).toBeLessThan(legend);
+    expect(legend).toBeLessThan(line);
+  });
+
+  it("caps the bring-work-in button row so it clears the background drawing", () => {
+    const source = read("src/pages/WorkPage.tsx");
+    const match = source.match(/BRING WORK IN[\s\S]*?<div className="([^"]+)"/);
+    expect(match?.[1] ?? "").toMatch(/max-w-\[/);
+  });
 });
