@@ -143,6 +143,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
   };
 
   const setEngagementView = (next: EngagementView) => {
+    setPeekItem(null);
     if (next === view) return;
     setView(next);
     if (profile) {
@@ -175,9 +176,9 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
   };
 
 
-  // A document reads beside the work, in the panel, never over it. Opening one
-  // opens the panel when it is closed; this is not a person choosing a width,
-  // so it does not fire engagement.ask_rail_toggled.
+  // A document reads beside Ask in the main view. Opening one opens the rail
+  // when it is closed; this is not a person choosing a width, so it does not
+  // fire engagement.ask_rail_toggled.
   const openPeek = (item: WorkItemRow) => {
     markOpenStart("peek.open");
     setPeekItem(item);
@@ -569,7 +570,49 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
       </div>
       <div className="nb-bench-grid relative">
         <div>
-          {view === "work" ? (
+          {peekItem && profile ? (
+            <PeekBody
+              entry={peekItem}
+              analysesInHeader
+              onClose={() => setPeekItem(null)}
+              // Ownership truth, not page truth: a person gets their own affordances
+              // on their own items here, and a coach or another member stays read only.
+              canEdit={Boolean(
+                profile.role !== "coach" &&
+                peekItem.owner_id &&
+                peekItem.owner_id === profile.id,
+              )}
+              engagementId={engagementId}
+              viewerProfileId={profile.id}
+              onMap={(item) => {
+                setPeekItem(null);
+                setMapItem(item);
+              }}
+              onWorkDate={(item) => {
+                setPeekItem(null);
+                setDateItem(item);
+              }}
+              onMakePrivate={(item) => {
+                setPeekItem(null);
+                void makePrivate(item).then(async (message) => {
+                  if (!message) {
+                    await queryClient.invalidateQueries({
+                      queryKey: ["engagement-tasks", engagementId],
+                    });
+                  }
+                });
+              }}
+              onAnalyse={(item, preset) => {
+                setPeekItem(null);
+                // A thread analysis opens its own reader: no lens in between.
+                if (isThreadReaderPreset(preset)) {
+                  setLaunch({ item, preset });
+                  return;
+                }
+                openAnalysis(item, preset);
+              }}
+            />
+          ) : view === "work" ? (
             scopedTask ? (
               <WorkLedger
                 task={scopedTask}
@@ -761,11 +804,11 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
                 else setAskRailOpen(false);
               }}
             />
-            {profile && ((profile.role !== "coach" && askOpen) || lensItem || peekItem) ? (
+            {profile && ((profile.role !== "coach" && askOpen) || lensItem) ? (
               <div className="nb-bench-rail rounded-b-[3px] rounded-t-none border border-t-0 border-[var(--nb-rule)] bg-[var(--nb-white)] p-[13px_14px] shadow-[0_3px_6px_-3px_rgb(22_24_26_/_0.2)]">
                 {profile.role !== "coach" ? (
                   // Keep Ask mounted while an analysis is shown so its conversation remains intact.
-                  <div hidden={Boolean(lensItem) || Boolean(peekItem)} className="min-h-0 flex-1">
+                  <div hidden={Boolean(lensItem)} className="min-h-0 flex-1">
                     <EngagementAsk
                       open={askOpen}
                       onOpenChange={setAskRailOpen}
@@ -778,49 +821,6 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
                       orgId={profile.org_id}
                     />
                   </div>
-                ) : null}
-                {peekItem ? (
-                  <PeekBody
-                    entry={peekItem}
-                    analysesInHeader
-                    onClose={() => setPeekItem(null)}
-                    // Ownership truth, not page truth: a person gets their own affordances
-                    // on their own items here, and a coach or another member stays read only.
-                    canEdit={Boolean(
-                      profile.role !== "coach" &&
-                      peekItem.owner_id &&
-                      peekItem.owner_id === profile.id,
-                    )}
-                    engagementId={engagementId}
-                    viewerProfileId={profile.id}
-                    onMap={(item) => {
-                      setPeekItem(null);
-                      setMapItem(item);
-                    }}
-                    onWorkDate={(item) => {
-                      setPeekItem(null);
-                      setDateItem(item);
-                    }}
-                    onMakePrivate={(item) => {
-                      setPeekItem(null);
-                      void makePrivate(item).then(async (message) => {
-                        if (!message) {
-                          await queryClient.invalidateQueries({
-                            queryKey: ["engagement-tasks", engagementId],
-                          });
-                        }
-                      });
-                    }}
-                    onAnalyse={(item, preset) => {
-                      setPeekItem(null);
-                      // A thread analysis opens its own reader: no lens in between.
-                      if (isThreadReaderPreset(preset)) {
-                        setLaunch({ item, preset });
-                        return;
-                      }
-                      openAnalysis(item, preset);
-                    }}
-                  />
                 ) : null}
                 {lensItem && !peekItem ? (
                   <AnalysisLensPanel
