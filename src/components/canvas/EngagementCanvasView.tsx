@@ -431,6 +431,56 @@ export function EngagementCanvasView({
   const zoomRef = useRef(zoom);
   zoomRef.current = zoom;
   const scrollRef = useRef<HTMLDivElement | null>(null);
+  const orgId = profile?.org_id;
+  const noteZoom = useCallback(
+    (direction: "in" | "out" | "reset", method: "pinch" | "button" | "keyboard") => {
+      if (!orgId) return;
+      logEvent("canvas.zoomed", orgId, { direction, method });
+    },
+    [orgId],
+  );
+  // One continuous pinch is one gesture, so it records once, on the tail.
+  const pinchTimerRef = useRef<number | null>(null);
+  const notePinch = useCallback(
+    (direction: "in" | "out") => {
+      if (pinchTimerRef.current !== null) window.clearTimeout(pinchTimerRef.current);
+      pinchTimerRef.current = window.setTimeout(() => {
+        pinchTimerRef.current = null;
+        noteZoom(direction, "pinch");
+      }, 600);
+    },
+    [noteZoom],
+  );
+  useEffect(
+    () => () => {
+      if (pinchTimerRef.current !== null) window.clearTimeout(pinchTimerRef.current);
+    },
+    [],
+  );
+  const zoomBy = useCallback(
+    (direction: "in" | "out" | "reset", method: "button" | "keyboard") => {
+      setZoom((current) => (direction === "reset" ? ZOOM_DEFAULT : stepZoom(current, direction)));
+      noteZoom(direction, method);
+    },
+    [noteZoom],
+  );
+  // A pinch is a wheel event with ctrl or cmd held. Without preventDefault the
+  // browser zooms the whole page instead, so the listener is non-passive.
+  useEffect(() => {
+    const element = scrollRef.current;
+    if (!element) return;
+    const onWheel = (event: WheelEvent) => {
+      if (!event.ctrlKey && !event.metaKey) return;
+      event.preventDefault();
+      const delta = event.deltaY * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? 100 : 1);
+      if (delta === 0) return;
+      setZoom((current) => pinchZoom(current, delta));
+      notePinch(delta < 0 ? "in" : "out");
+    };
+    element.addEventListener("wheel", onWheel, { passive: false });
+    return () => element.removeEventListener("wheel", onWheel);
+  }, [notePinch]);
+
 
   // ---- moving work ------------------------------------------------------
   const surfaceRef = useRef<HTMLDivElement | null>(null);
