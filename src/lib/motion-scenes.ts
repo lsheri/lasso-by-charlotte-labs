@@ -48,4 +48,15 @@ export const MOTION_SCENES: MotionScene[] = [
       "src/components/provenance/ProvenanceAudit.tsx — provenance audit loading state",
     ],
   },
+  {
+    id: "find-it-shimmer",
+    name: "Conversations lighting up while the page looks through them",
+    source: "Pass 200 · Find it · first attempt",
+    path: "src/components/motion/ChatShimmer.tsx",
+    durationMs: 2600,
+    loop: "loop",
+    pauseMs: null,
+    role: "inline",
+    placement: ["src/pages/FindItPage.tsx — while a run is going"],
+  },
 ];

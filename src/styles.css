@@ -3724,3 +3724,28 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
     animation: none !important;
   }
 }
+
+/* Pass 200: Find it. Notes light up briefly while the page looks through them. */
+@keyframes nb-chat-shimmer {
+  0%,
+  70%,
+  100% {
+    box-shadow: none;
+    background-color: var(--nb-white);
+  }
+  20%,
+  40% {
+    box-shadow: 0 0 0 1.4px var(--nb-mid);
+    background-color: var(--nb-paper);
+  }
+}
+.nb-chat-shimmer {
+  animation-name: nb-chat-shimmer;
+  animation-iteration-count: infinite;
+  animation-timing-function: ease-in-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .nb-chat-shimmer {
+    animation: none !important;
+  }
+}
