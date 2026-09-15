@@ -54,9 +54,13 @@ describe("pass 190 motion", () => {
   });
 
   it("registers only real scene files and pauses every paused loop", () => {
-    for (const entry of MOTION_REGISTRY) {
+    for (const entry of MOTION_SCENES) {
       expect(existsSync(entry.path)).toBe(true);
       if (entry.loop === "loop-with-pause") expect(entry.pauseMs).not.toBeNull();
     }
+  });
+
+  it("keeps the scene index out of the event motion registry", () => {
+    expect(read("src/lib/motion-registry.ts")).not.toContain("MOTION_SCENES");
   });
 });
