@@ -104,7 +104,7 @@ function CanvasNode({
         cancelTimer();
         setExpanded(false);
       }}
-      onClick={(event) => {
+      onPointerUp={(event) => {
         if (event.pointerType === "touch" && summary) {
           event.stopPropagation();
           setExpanded((current) => !current);
