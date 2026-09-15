@@ -118,10 +118,10 @@ test("company person walks setup, pastes a thread and sets their data level", as
   await run(page, "set personal data level to c", 'radio[name="personal-data-level"]', async () => {
     await page.goto("/settings", { waitUntil: "domcontentloaded" });
     await page
-      .getByRole("button", { name: "Your data", exact: true })
-      .or(page.getByRole("link", { name: "Your data", exact: true }))
+      .getByRole("button", { name: /^Your data/ })
       .first()
       .click();
+
     await expect(page.locator('input[name="personal-data-level"]').first()).toBeVisible({
       timeout: 60_000,
     });
