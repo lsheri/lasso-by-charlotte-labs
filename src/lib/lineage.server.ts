@@ -5,6 +5,11 @@ import type { Database } from "@/integrations/supabase/types";
 import { ITEM_TEXT_COLUMNS, ensureExtract, pullItemText } from "./extract.server";
 import type { ClassifiableItem } from "./extract.server";
 import {
+  MAX_SNIPPET_CHARS,
+  MIN_SNIPPET_CHARS,
+  containsVerbatim,
+} from "./span-provenance-shared";
+import {
   LINEAGE_RELATIONS,
   LINEAGE_SYSTEM_PROMPT,
   LINEAGE_TOOL,
@@ -68,6 +73,25 @@ async function candidateIds(
   return Array.from(new Set((links ?? []).map((l) => l.work_item_id)));
 }
 
+/**
+ * Which pool a run looks through. "engagement" is the original path: the
+ * items mapped into the same engagements. "all_mine" widens it to the owner's
+ * own conversations, wherever they sit. Never anyone else's.
+ */
+export type LineageScope = "engagement" | "all_mine";
+
+/** Every conversation this person owns, newest first, capped like the rest. */
+export async function allMineIds(supabase: Db, ownerId: string): Promise<string[]> {
+  const { data } = await supabase
+    .from("work_items")
+    .select("id")
+    .eq("owner_id", ownerId)
+    .eq("type", "ai_thread")
+    .order("captured_at", { ascending: false })
+    .limit(MAX_CANDIDATES * 4);
+  return Array.from(new Set((data ?? []).map((row) => row.id)));
+}
+
 export type LineageRunResult = {
   drafted: number;
   considered: number;
@@ -89,6 +113,7 @@ export async function draftLineageFor(
     runnerProfileId: string;
     runnerUserId?: string | null | undefined;
     coachMayRun: boolean;
+    scope?: LineageScope | undefined;
   },
 ): Promise<LineageRunResult> {
   const { data: deliverableRow } = await supabase
@@ -100,10 +125,16 @@ export async function draftLineageFor(
   const deliverable = deliverableRow as unknown as Row | null;
   if (!deliverable) return { drafted: 0, considered: 0, skippedExisting: 0 };
 
-  const engagementIds = await engagementIdsFor(supabase, args.deliverableId);
-  const ids = (await candidateIds(supabase, engagementIds, args.ownerId)).filter(
-    (id) => id !== args.deliverableId,
-  );
+  const scope: LineageScope = args.scope ?? "engagement";
+  const pool =
+    scope === "all_mine"
+      ? await allMineIds(supabase, args.ownerId)
+      : await candidateIds(
+          supabase,
+          await engagementIdsFor(supabase, args.deliverableId),
+          args.ownerId,
+        );
+  const ids = pool.filter((id) => id !== args.deliverableId);
   if (ids.length === 0) return { drafted: 0, considered: 0, skippedExisting: 0 };
 
   // Any existing row, in any status, means the owner has already been asked.
@@ -206,7 +237,9 @@ export async function draftLineageFor(
     `Type: ${deliverable.type} · Date: ${itemDate(deliverable).slice(0, 10)}`,
     deliverableText ? `Text:\n${deliverableText}` : "Text: not readable as text.",
     "",
-    "CANDIDATE ITEMS FROM THE SAME ENGAGEMENT:",
+    scope === "all_mine"
+      ? "CANDIDATE ITEMS FROM EVERYTHING YOU HAVE:"
+      : "CANDIDATE ITEMS FROM THE SAME ENGAGEMENT:",
     ...blocks,
   ].join("\n\n---\n\n");
 
@@ -302,4 +335,57 @@ export async function draftLineageFor(
     skippedExisting,
     usage,
   };
+}
+
+/** One sentence that is present, word for word, on both sides of a link. */
+export type SharedSentence = { text: string; turn_no: number; role: string };
+
+/** The deliverable's own text, budgeted the same way the run budgets it. */
+export async function deliverableTextFor(supabase: Db, itemId: string): Promise<string> {
+  const { data } = await supabase
+    .from("work_items")
+    .select(ITEM_TEXT_COLUMNS)
+    .eq("id", itemId)
+    .maybeSingle();
+  if (!data) return "";
+  return (await pullItemText(supabase, data as unknown as ClassifiableItem)).slice(
+    0,
+    DELIVERABLE_TEXT_BUDGET,
+  );
+}
+
+function sentencesOf(text: string): string[] {
+  return text
+    .split(/(?<=[.!?])\s+|\n+/)
+    .map((piece) => piece.trim())
+    .filter((piece) => piece.length >= MIN_SNIPPET_CHARS && piece.length <= MAX_SNIPPET_CHARS);
+}
+
+/**
+ * The first sentence of a candidate conversation that also appears, word for
+ * word, in the deliverable. Never a paraphrase and never model written: if
+ * nothing is shared the honest answer is null.
+ */
+export async function sharedSentenceFor(
+  supabase: Db,
+  deliverableText: string,
+  candidateId: string,
+): Promise<SharedSentence | null> {
+  if (!deliverableText.trim()) return null;
+  const { data: row } = await supabase
+    .from("work_items")
+    .select(AUDIT_ITEM_COLUMNS)
+    .eq("id", candidateId)
+    .maybeSingle();
+  if (!row) return null;
+  const { loadAuditItem } = await import("./span-audit.server");
+  const item = await loadAuditItem(supabase, row as Record<string, unknown>);
+  for (const turn of item.turns) {
+    for (const sentence of sentencesOf(turn.content)) {
+      if (containsVerbatim(deliverableText, sentence) && containsVerbatim(turn.content, sentence)) {
+        return { text: sentence, turn_no: turn.turn_no, role: turn.role };
+      }
+    }
+  }
+  return null;
 }
