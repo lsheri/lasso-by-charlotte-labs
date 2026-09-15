@@ -1,6 +1,5 @@
 import { ExternalLink } from "lucide-react";
 
-import { useProfile } from "@/hooks/use-profile";
 import { chatUrlLabel, effectiveChatUrl } from "@/lib/chat-url";
 import type { WorkItemRow } from "@/lib/work-types";
 
@@ -9,7 +8,6 @@ import type { WorkItemRow } from "@/lib/work-types";
  * the primary destination; when no URL was stored, this renders nothing at all.
  */
 export function ChatUrlLink({ item }: { item: WorkItemRow | null | undefined }) {
-  const { data: profile } = useProfile();
   const url = effectiveChatUrl(
     item?.source_meta?.url,
     item?.source_vendor ?? null,
@@ -23,7 +21,7 @@ export function ChatUrlLink({ item }: { item: WorkItemRow | null | undefined }) 
     void (async () => {
       try {
         const { noteSourceOpenedFn } = await import("@/lib/chat-library.functions");
-        await noteSourceOpenedFn({ data: { work_item_id: id, profile_id: profile?.id } });
+        await noteSourceOpenedFn({ data: { work_item_id: id } });
       } catch {
         /* a link is a link */
       }
