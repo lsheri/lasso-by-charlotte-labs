@@ -159,9 +159,17 @@ export function DecisionsPage() {
         </div>
       ) : (
         <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_340px]">
-          <div className="divide-y divide-border">
-            {visible.map((d) => (
+          {/* PASS B · the log reads as a timeline: one pencilled rule down the
+              left, handwritten markers where the week turns over. */}
+          <div className="relative pl-6">
+            <GraphiteSeam className="absolute left-0 top-2 h-[calc(100%-16px)] w-[6px] text-[var(--nb-pencil)]" />
+            {visible.map((d, index) => (
               <div key={d.id}>
+                {markerFor(d, index === 0 ? null : (visible[index - 1] ?? null)) ? (
+                  <p className="mt-2 font-hand text-[16px] text-soft">
+                    {markerFor(d, index === 0 ? null : (visible[index - 1] ?? null))}
+                  </p>
+                ) : null}
                 <DecisionLogRow
                   decision={d}
                   onOpenSource={setSourceItem}
