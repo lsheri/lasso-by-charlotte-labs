@@ -15,7 +15,7 @@ type SourceDetail = {
   workItemId: string;
   heading: string;
   quote: string | null;
-  focus?: ThreadFocus;
+  focus: ThreadFocus | undefined;
   deliverable: string | null;
 };
 
