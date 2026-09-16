@@ -1,7 +1,11 @@
 import { GraphiteCheck } from "@/components/notebook/marks";
+import { Button } from "@/components/ui/button";
 import { useMotion } from "@/hooks/use-motion";
 import type { DecisionRow } from "@/hooks/use-decisions";
-import { srcsOf, useDecisionSourceItems } from "@/hooks/use-decisions";
+import { srcsOf, useDecisionSourceItems, useDecisionSourceTurns } from "@/hooks/use-decisions";
+import type { ThreadFocus } from "@/components/peek/ThreadBody";
+import { vendorLabel } from "@/lib/conversation-shared";
+import { formatDate } from "@/lib/work-types";
 
 /**
  * PASS B · one entry on the timeline. The source sits above the rule as a
@@ -20,7 +24,7 @@ export function DecisionLogRow({
   onDiscard,
 }: {
   decision: DecisionRow;
-  onOpenSource: (workItemId: string) => void;
+  onOpenSource: (workItemId: string, focus?: ThreadFocus) => void;
   onAddReasoning: (decision: DecisionRow) => void;
   onConfirm?: (decision: DecisionRow) => void;
   onDiscard?: (decision: DecisionRow) => void;
@@ -28,6 +32,7 @@ export function DecisionLogRow({
   const srcs = srcsOf(decision);
   const ids = Array.from(new Set(srcs.map((s) => s.work_item_id).filter(Boolean)));
   const { data: sourceItems } = useDecisionSourceItems(ids);
+  const { data: sourceTurns } = useDecisionSourceTurns(srcs);
   const hasWhy = Boolean(decision.why?.trim());
   const confirmed = decision.status === "confirmed";
   const label = useMotion("decision.on_record_shown");
@@ -44,15 +49,20 @@ export function DecisionLogRow({
           <div className="mt-2 flex flex-wrap gap-1.5">
             {ids.map((id) => {
               const info = sourceItems?.[id];
+              const source = srcs.find((entry) => entry.work_item_id === id);
+              const turn = source?.turn_id ? sourceTurns?.[source.turn_id] : null;
+              const vendor = vendorLabel(info?.source_vendor);
+              const date = info ? formatDate(info.work_date ?? info.created_at_source ?? info.captured_at) : null;
               return (
-                <button
+                <Button
                   key={id}
                   type="button"
-                  onClick={() => onOpenSource(id)}
-                  className="max-w-[220px] truncate rounded-[var(--radius-sm)] border border-border px-2 py-1 font-mono text-[10px] uppercase tracking-[0.08em] text-accent-deep transition-colors hover:border-foreground"
+                  variant="ghost"
+                  onClick={() => onOpenSource(id, turn ? { turnNo: turn.turn_no, text: turn.content } : undefined)}
+                  className="story-link h-auto max-w-[260px] truncate rounded-none p-0 font-mono text-[10px] uppercase tracking-[0.08em] text-accent-deep hover:bg-transparent"
                 >
-                  {(info?.title ?? "Source").toUpperCase()}
-                </button>
+                  {[vendor || info?.title || "Source", date, turn ? `turn ${turn.turn_no}` : null].filter(Boolean).join(" · ")}
+                </Button>
               );
             })}
           </div>
