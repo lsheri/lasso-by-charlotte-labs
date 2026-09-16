@@ -19,15 +19,18 @@ const rows: DecisionRow[] = [
   },
 ];
 
+let activeRows: DecisionRow[] = rows;
+
 vi.mock("@/hooks/use-decisions", async (original) => {
   const actual = await original<typeof import("@/hooks/use-decisions")>();
   return {
     ...actual,
-    useDecisions: () => ({ data: rows, isLoading: false, error: null }),
+    useDecisions: () => ({ data: activeRows, isLoading: false, error: null }),
     useDecisionSourceItems: () => ({ data: {} }),
     useDecisionSourceTurns: () => ({ data: {} }),
   };
 });
+
 vi.mock("@/hooks/use-profile", () => ({ useProfile: () => ({ data: null }) }));
 vi.mock("@/components/decisions/AddDecisionDialog", () => ({ AddDecisionDialog: ({ trigger }: { trigger: React.ReactNode }) => trigger }));
 vi.mock("@/components/work/ThreadViewerById", () => ({ ThreadViewerById: () => null }));
