@@ -34,7 +34,7 @@
 - [x] Slide one pencil rule across engagement tabs and move Ship to firm to Share
 - [x] Slow the engagement tab rule, move Work Artifact to Share, and unify remaining paper surfaces
 ## Pass L1: hidden /landing-next marketing route
-- [ ] Inspect frozen landing structure, telemetry call, tokens, tests, and roadmap
-- [ ] Add hidden route and scroll-driven styles without changing /
-- [ ] Add focused route tests
-- [ ] Verify focused tests, preview, and build logs
+- [x] Inspect frozen landing structure, telemetry call, tokens, tests, and roadmap
+- [x] Add hidden route and scroll-driven styles without changing /
+- [x] Add focused route tests
+- [x] Verify focused tests, preview, and build logs

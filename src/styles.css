@@ -3463,6 +3463,111 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   user-select: none;
 }
 
+/* Hidden landing study: scroll takes place inside the drawn loop. */
+.landing-next {
+  --landing-loop-size: 88vw;
+  --landing-loop-right: -44vw;
+  --landing-loop-top: 7vh;
+  --landing-loop-opacity: 0.3;
+  --landing-small-loop-size: 72px;
+  --landing-small-loop-offset: 24px;
+  --landing-coach-art: 150px;
+  --landing-coach-spider-size: 88px;
+  --landing-beat-blur: 7px;
+  --landing-beat-x: 36px;
+  --landing-beat-y: 40px;
+  --landing-beat-tilt: 1deg;
+}
+
+.landing-next-loop-large {
+  width: var(--landing-loop-size);
+  height: var(--landing-loop-size);
+  right: var(--landing-loop-right);
+  top: var(--landing-loop-top);
+  opacity: var(--landing-loop-opacity);
+}
+
+.landing-next-loop-small {
+  width: var(--landing-small-loop-size);
+  height: var(--landing-small-loop-size);
+  right: var(--landing-small-loop-offset);
+  top: var(--landing-small-loop-offset);
+}
+
+.landing-next-coach-art {
+  width: var(--landing-coach-art);
+  height: var(--landing-coach-art);
+}
+
+.landing-next-coach-spider {
+  width: var(--landing-coach-spider-size);
+  height: var(--landing-coach-spider-size);
+  left: 21%;
+  top: 20%;
+  object-fit: contain;
+}
+
+.landing-next .nb-gap-feed {
+  animation: none;
+  opacity: 1;
+}
+
+@keyframes landing-next-loop-turn {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes landing-next-loop-draw {
+  from { stroke-dashoffset: 1; }
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes landing-next-beat-left {
+  from {
+    filter: blur(var(--landing-beat-blur));
+    transform: translate3d(calc(-1 * var(--landing-beat-x)), var(--landing-beat-y), 0)
+      rotate(calc(-1 * var(--landing-beat-tilt)));
+  }
+  to { filter: blur(0); transform: translate3d(0, 0, 0) rotate(0deg); }
+}
+
+@keyframes landing-next-beat-right {
+  from {
+    filter: blur(var(--landing-beat-blur));
+    transform: translate3d(var(--landing-beat-x), var(--landing-beat-y), 0)
+      rotate(var(--landing-beat-tilt));
+  }
+  to { filter: blur(0); transform: translate3d(0, 0, 0) rotate(0deg); }
+}
+
+@supports (animation-timeline: scroll()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .landing-next-loop-large {
+      animation: landing-next-loop-turn linear both;
+      animation-timeline: scroll(root);
+    }
+
+    .landing-next-loop-small path:first-child {
+      stroke-dasharray: 1;
+      stroke-dashoffset: 1;
+      animation: landing-next-loop-draw linear both;
+      animation-timeline: scroll(root);
+    }
+
+    .landing-next-beat-left {
+      animation: landing-next-beat-left linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 60%;
+    }
+
+    .landing-next-beat-right {
+      animation: landing-next-beat-right linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 60%;
+    }
+  }
+}
+
 /* ============================================================
    PAPER NOTES · the work card as a sticky note
 
