@@ -151,8 +151,8 @@ function ReadingLines({ candidates }: { candidates: FindItCandidate[] }) {
       {candidates.slice(0, 4).map((candidate, index) => {
         const random = mulberry32(fnv1a(`trace-${candidate.link.link_id}`));
         const position = readingPosition(candidate.link.link_id, index);
-        const x = Number.parseFloat(position["--x"]) * 11.66;
-        const y = Number.parseFloat(position["--y"]) * 8.36;
+        const x = Number.parseFloat(position["--x"] ?? "0") * 11.66;
+        const y = Number.parseFloat(position["--y"] ?? "0") * 8.36;
         const wobbleA = (random() - 0.5) * 90;
         const wobbleB = (random() - 0.5) * 100;
         const style = {
@@ -167,8 +167,8 @@ function ReadingLines({ candidates }: { candidates: FindItCandidate[] }) {
 
 function ArcArrow({ candidate, index, total, selected }: { candidate: FindItCandidate; index: number; total: number; selected: boolean }) {
   const position = arcPosition(candidate.link.link_id, index, total, selected);
-  const x = Number.parseFloat(position["--x"]) * 11.66;
-  const y = Number.parseFloat(position["--y"]) * 8.36;
+  const x = Number.parseFloat(position["--x"] ?? "0") * 11.66;
+  const y = Number.parseFloat(position["--y"] ?? "0") * 8.36;
   const random = mulberry32(fnv1a(`arrow-${candidate.link.link_id}`));
   const bendX = 625 + random() * 70;
   const bendY = 418 + (y - 418) * 0.42 + (random() - 0.5) * 16;
