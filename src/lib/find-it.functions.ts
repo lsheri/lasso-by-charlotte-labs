@@ -264,10 +264,11 @@ export const searchRecord = createServerFn({ method: "POST" })
 
     const { data: mine } = await supabase
       .from("work_items")
-      .select("id, title, type, source_vendor")
+      .select("id, title, type, source_vendor, work_date, captured_at")
       .eq("owner_id", profile.id);
     const items = mine ?? [];
-    if (items.length === 0) return { turns: [], deliverables: [] };
+    if (items.length === 0) return { turns: [], conversations: [], deliverables: [] };
+
     const byId = new Map(items.map((item) => [item.id, item]));
     const itemIds = items.map((item) => item.id);
 
