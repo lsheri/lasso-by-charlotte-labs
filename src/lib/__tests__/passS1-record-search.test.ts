@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+
 import { describe, expect, it } from "vitest";
 
 import {
@@ -64,9 +66,38 @@ describe("pass S1 · forgiving thread search", () => {
 
 describe("pass S1 · plain words on the results list", () => {
   it("labels the looser tiers and never shows a figure for closeness", () => {
-    const page = new URL("../../pages/FindItPage.tsx", import.meta.url);
-    const source = require("node:fs").readFileSync(page, "utf8") as string;
+    const source = readFileSync(new URL("../../pages/FindItPage.tsx", import.meta.url), "utf8");
     expect(source).toContain("closest matches");
     expect(source).not.toMatch(/confidence|match %/i);
+  });
+});
+
+describe("pass S2 · found by what a conversation was about", () => {
+  const source = readFileSync(
+    new URL("../find-it.functions.ts", import.meta.url),
+    "utf8",
+  );
+  const page = readFileSync(new URL("../../pages/FindItPage.tsx", import.meta.url), "utf8");
+
+  it("asks the summaries only about conversations the owner holds", () => {
+    expect(source).toContain('.eq("owner_id", profile.id)');
+    expect(source).toContain('item.type === "ai_thread"');
+    expect(source).toContain("alreadyShown.has(item.id)");
+  });
+
+  it("carries no excerpt on a summary result", () => {
+    const block = source.slice(source.indexOf("RecordConversationHit = {"));
+    expect(block.slice(0, 200)).not.toContain("excerpt");
+  });
+
+  it("labels the section in plain words and opens without a circle", () => {
+    expect(page).toContain("matched from the summary");
+    expect(page).toContain("setThreadFocus(undefined)");
+    expect(page).not.toMatch(/confidence|match %/i);
+  });
+
+  it("leaves the deliverable path alone", () => {
+    expect(source).toContain("ALSO");
+    expect(page).toContain("ALSO IN");
   });
 });
