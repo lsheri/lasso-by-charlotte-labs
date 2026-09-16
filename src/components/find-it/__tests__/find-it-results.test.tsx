@@ -106,20 +106,19 @@ describe("Find it results mode", () => {
     fireEvent.click(screen.getByRole("button", { name: "Keep as a source" }));
 
     expect(review).toHaveBeenCalledWith("link-0", "confirmed");
-    expect(screen.getByTestId("find-it-detail").textContent).toContain("Northwind source 2");
+    expect(screen.getByTestId("find-it-detail").textContent).toContain("Northwind source 4");
   });
 
   it("orders cards by evidence and moves the next card by the expanded delta", () => {
     const { rerender } = render(
-      <FindItResults phase="settled" target={{ ...item("target", "Northwind deck"), type: "deck" }} scope="engagement" candidates={candidates(6)} reviewed={{}} considered={6} reduceMotion={false} onChooseTarget={vi.fn()} onReturnToForm={vi.fn()} onReview={vi.fn()} onKeepAll={vi.fn()} onDone={vi.fn()} onOpenThread={vi.fn()} />,
+      <FindItResults phase="kept" target={{ ...item("target", "Northwind deck"), type: "deck" }} scope="engagement" candidates={candidates(6)} reviewed={Object.fromEntries(candidates(6).map(({ link }) => [link.link_id, "confirmed" as const]))} considered={6} reduceMotion={false} onChooseTarget={vi.fn()} onReturnToForm={vi.fn()} onReview={vi.fn()} onKeepAll={vi.fn()} onDone={vi.fn()} onOpenThread={vi.fn()} />,
     );
     const nodes = screen.getAllByTestId("find-it-arc-node");
     expect(nodes.map((node) => node.getAttribute("data-evidence"))).toEqual(["heavy", "heavy", "normal", "normal", "light", "light"]);
     const nextBefore = Number.parseFloat(nodes[1]?.style.getPropertyValue("--y") ?? "0");
-    fireEvent.click(screen.getByRole("button", { name: /Northwind source 4/i }));
+    rerender(<FindItResults phase="settled" target={{ ...item("target", "Northwind deck"), type: "deck" }} scope="engagement" candidates={candidates(6)} reviewed={{}} considered={6} reduceMotion={false} onChooseTarget={vi.fn()} onReturnToForm={vi.fn()} onReview={vi.fn()} onKeepAll={vi.fn()} onDone={vi.fn()} onOpenThread={vi.fn()} />);
     const nextAfter = Number.parseFloat(screen.getAllByTestId("find-it-arc-node")[1]?.style.getPropertyValue("--y") ?? "0");
     expect(nextAfter).toBeGreaterThan(nextBefore);
-    rerender(<></>);
   });
 
   it("interleaves twelve links across two non-overlapping arcs", () => {

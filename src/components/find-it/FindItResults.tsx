@@ -217,9 +217,11 @@ function TargetCard({ target, phase }: { target: WorkItemRow; phase: FindItPhase
 
 function makeTraceLine(lane: number, cycle: number, count: number): TraceLine {
   const random = mulberry32(fnv1a(`trace-lane-${lane}-cycle-${cycle}`));
-  const prior = count > 1 ? Math.floor(mulberry32(fnv1a(`trace-lane-${lane}-cycle-${Math.max(0, cycle - 1)}`))() * count) : 0;
-  let targetIndex = Math.floor(random() * count);
-  if (count > 1 && targetIndex === prior) targetIndex = (targetIndex + 1 + lane) % count;
+  const cycleStart = count > 0 ? Math.floor(mulberry32(fnv1a(`trace-cycle-${cycle}`))() * count) : 0;
+  const priorStart = count > 0 ? Math.floor(mulberry32(fnv1a(`trace-cycle-${Math.max(0, cycle - 1)}`))() * count) : 0;
+  let targetIndex = count > 0 ? (cycleStart + lane) % count : 0;
+  const prior = count > 0 ? (priorStart + lane) % count : 0;
+  if (count > 1 && targetIndex === prior) targetIndex = (targetIndex + 1) % count;
   return {
     cycle,
     targetIndex,
