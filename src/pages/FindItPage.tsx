@@ -9,6 +9,7 @@ import { GraphiteCheck } from "@/components/notebook/marks";
 import { NotebookSpider } from "@/components/notebook/NotebookSpider";
 import { ToneCard } from "@/components/notebook/ToneCard";
 import { FindItSheet } from "@/components/find-it/FindItSheet";
+import { FindItResults } from "@/components/find-it/FindItResults";
 import { WorkNote } from "@/components/work/WorkNote";
 import { ThreadViewerById } from "@/components/work/ThreadViewerById";
 import { useCaptureFiles } from "@/components/work/use-capture-files";
@@ -132,6 +133,7 @@ export function FindItPage() {
   const [reviewed, setReviewed] = useState<Record<string, "confirmed" | "discarded">>({});
   const [openThread, setOpenThread] = useState<string | null>(null);
   const [justKept, setJustKept] = useState<string | null>(null);
+  const [confirmation, setConfirmation] = useState<string | null>(null);
 
   // Where this page was opened from. Another surface can say so in the link.
   const entryRef = useRef<"nav" | "peek" | "upload">(search.entry ?? "nav");
@@ -291,7 +293,38 @@ export function FindItPage() {
     for (const { link } of stillDraft) await review(link.link_id, "confirmed");
   }
 
+  function leaveResults(clearTarget = false) {
+    setFound(null);
+    setReviewed({});
+    setJustKept(null);
+    if (clearTarget) setTargetId(null);
+  }
+
+  async function finishResults() {
+    setConfirmation("Sources kept on this deck's record.");
+    leaveResults(false);
+  }
+
   const readingCount = found?.considered ?? chats.length;
+
+  if (mode === "sources" && found && !running && target) {
+    return (
+      <>
+        <FindItResults
+          target={target}
+          scope={effectiveScope}
+          candidates={candidates}
+          reviewed={reviewed}
+          onChooseAgain={() => leaveResults(true)}
+          onReview={review}
+          onKeepAll={keepAll}
+          onDone={finishResults}
+          onOpenThread={setOpenThread}
+        />
+        <ThreadViewerById workItemId={openThread} onClose={() => setOpenThread(null)} />
+      </>
+    );
+  }
 
   return (
     <div>
@@ -300,6 +333,12 @@ export function FindItPage() {
         italicWord="it"
         subtitle="Look back through your own conversations for the ones behind a piece of work, a number, or a thread you lost."
       />
+
+      {confirmation ? (
+        <p className="mb-5 font-hand text-[16px] text-green" role="status">
+          {confirmation}
+        </p>
+      ) : null}
 
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_240px]">
         <div>
@@ -437,106 +476,6 @@ export function FindItPage() {
                 </section>
               ) : null}
 
-              {found && !running ? (
-                <section className="mb-10">
-                  <SectionHeader title="What it found" />
-                  <div className="mt-4">
-                    <FindItSheet
-                      phase="found"
-                      reduce={reduceMotion}
-                      target={target ? <WorkNote item={target} /> : null}
-                      candidates={candidates
-                        .filter(
-                          ({ link }) => (reviewed[link.link_id] ?? link.status) !== "discarded",
-                        )
-                        .map(({ link, item }) => {
-                          const status = reviewed[link.link_id] ?? link.status;
-                          return {
-                            id: link.link_id,
-                            node: (
-                              <div
-                                className={
-                                  justKept === link.link_id ? "nb-findit-settle" : undefined
-                                }
-                              >
-                                {item ? (
-                                  <WorkNote item={item} onOpen={() => setOpenThread(item.id)} />
-                                ) : (
-                                  <p className="text-sm text-muted-foreground">
-                                    A conversation you can no longer read.
-                                  </p>
-                                )}
-                                <p className="micro-label mt-1">{link.relation}</p>
-                                {link.quote ? (
-                                  <ToneCard tone="claim" className="mt-2 gap-1 p-3">
-                                    <p className="font-mono text-[11.5px] leading-5">
-                                      {link.quote.text}
-                                    </p>
-                                    <p className="font-hand text-[16px] text-green">
-                                      why: this sentence is in both
-                                    </p>
-                                  </ToneCard>
-                                ) : (
-                                  <p className="mt-2 font-hand text-[16px] text-soft">
-                                    no exact sentence shared
-                                  </p>
-                                )}
-                                <div className="mt-2 flex items-center gap-2">
-                                  {status === "confirmed" ? (
-                                    <span className="flex items-center gap-1 text-[11.5px] text-green">
-                                      <span
-                                        className={
-                                          justKept === link.link_id ? keptMotion.className : ""
-                                        }
-                                      >
-                                        <GraphiteCheck seed={link.link_id} />
-                                      </span>{" "}
-                                      Kept
-                                    </span>
-                                  ) : (
-                                    <>
-                                      <Button
-                                        type="button"
-                                        size="sm"
-                                        onClick={() => void review(link.link_id, "confirmed")}
-                                      >
-                                        Keep as a source
-                                      </Button>
-                                      <Button
-                                        type="button"
-                                        size="sm"
-                                        variant="ghost"
-                                        onClick={() => void review(link.link_id, "discarded")}
-                                      >
-                                        Not this one
-                                      </Button>
-                                    </>
-                                  )}
-                                </div>
-                              </div>
-                            ),
-                          };
-                        })}
-                    />
-                    {candidates.length === 0 ? (
-                      <p className="mt-4 text-sm text-muted-foreground">
-                        Nothing of yours reads as a source for this one.
-                      </p>
-                    ) : null}
-                  </div>
-
-                  {stillDraft.length > 0 ? (
-                    <div className="mt-8 flex flex-wrap items-center gap-3">
-                      <Button type="button" onClick={() => void keepAll()}>
-                        Keep all {stillDraft.length}
-                      </Button>
-                      <span className="font-hand text-[16px] text-soft">
-                        goes on the record of this {target?.type ?? "piece of work"}
-                      </span>
-                    </div>
-                  ) : null}
-                </section>
-              ) : null}
             </>
           ) : (
             <section className="mb-10">
