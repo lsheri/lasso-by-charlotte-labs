@@ -519,6 +519,10 @@ export function FindItPage() {
                           style={{ ["--nb-i" as string]: index } as React.CSSProperties}
                         >
                           <div className="min-w-0 flex-1">
+                            {hit.tier !== "exact" &&
+                            (index === 0 || searchHits.turns[index - 1]?.tier === "exact") ? (
+                              <p className="mb-2 font-hand text-[16px] text-soft">closest matches</p>
+                            ) : null}
                             <p className="text-[13px] text-foreground">
                               {hit.title}
                               {hit.vendor ? (
@@ -544,6 +548,7 @@ export function FindItPage() {
                       ))}
                     </ul>
                   ) : null}
+
                   {searchHits.deliverables.length > 0 ? (
                     <div className="mt-5">
                       <p className="micro-label">ALSO IN</p>

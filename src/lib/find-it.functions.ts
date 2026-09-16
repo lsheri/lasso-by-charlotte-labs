@@ -106,6 +106,9 @@ export const findSources = createServerFn({ method: "POST" })
 
 export type SearchMode = "number" | "thread";
 
+/** Internal ranking only. Never shown as a number to anybody. */
+export type HitTier = "exact" | "words" | "similar";
+
 export type RecordTurnHit = {
   work_item_id: string;
   title: string;
@@ -113,6 +116,7 @@ export type RecordTurnHit = {
   turn_no: number;
   role: string;
   excerpt: string;
+  tier: HitTier;
 };
 
 export type RecordSearchResult = {
@@ -120,8 +124,93 @@ export type RecordSearchResult = {
   deliverables: { work_item_id: string; title: string; type: string }[];
 };
 
-const NUMBER_QUERY = /^[\d.,%$£€]+[kKmM]?$/;
+const NUMBER_QUERY = /^[\s$£€]*\d[\d\s.,]*\s*[kKmM]?[\s%]*$/;
 const EXCERPT_CHARS = 160;
+const MAX_TURN_HITS = 50;
+const SIMILAR_FLOOR = 0.3;
+
+/**
+ * One written form for a number, whatever surface it wore. "$4,200", "4200"
+ * and "4.2k" all land on "4200". Nothing fuzzy happens here.
+ */
+export function canonicalizeNumber(raw: string): string | null {
+  const cleaned = raw.trim().replace(/[$£€%\s]/g, "");
+  const match = /^(\d[\d,]*(?:\.\d+)?)([kKmM]?)$/.exec(cleaned);
+  if (!match) return null;
+  const digits = (match[1] ?? "").replace(/,/g, "");
+  if (!digits) return null;
+  const suffix = (match[2] ?? "").toLowerCase();
+  let value = Number(digits);
+  if (!Number.isFinite(value)) return null;
+  if (suffix === "k") value *= 1_000;
+  if (suffix === "m") value *= 1_000_000;
+  const text = value.toString();
+  return text.endsWith(".0") ? text.slice(0, -2) : text;
+}
+
+/** Surface forms worth asking the database for, so the index can be used. */
+export function surfaceFormsFor(canonical: string): string[] {
+  const forms = new Set<string>([canonical]);
+  const value = Number(canonical);
+  if (Number.isFinite(value)) {
+    forms.add(value.toLocaleString("en-US"));
+    if (value >= 1_000 && value % 100 === 0) {
+      const k = value / 1_000;
+      forms.add(`${Number(k.toFixed(2))}k`);
+    }
+    if (value >= 1_000_000) {
+      const m = value / 1_000_000;
+      forms.add(`${Number(m.toFixed(2))}m`);
+    }
+  }
+  return [...forms];
+}
+
+const NUMBER_TOKEN = /[$£€]?\d[\d,.]*\s?[kKmM]?/g;
+
+/** True only when the text really carries that number, in some written form. */
+export function contentHasNumber(content: string, canonical: string): boolean {
+  for (const token of content.match(NUMBER_TOKEN) ?? []) {
+    if (canonicalizeNumber(token) === canonical) return true;
+  }
+  return false;
+}
+
+export function queryWords(query: string): string[] {
+  return query
+    .toLowerCase()
+    .split(/[^\p{L}\p{N}]+/u)
+    .filter((word) => word.length >= 3);
+}
+
+export function allWordsPresent(content: string, words: string[]): boolean {
+  if (words.length === 0) return false;
+  const haystack = content.toLowerCase();
+  return words.every((word) => haystack.includes(word));
+}
+
+function trigramsOf(value: string): Set<string> {
+  const padded = `  ${value.toLowerCase().trim().replace(/\s+/g, " ")} `;
+  const grams = new Set<string>();
+  for (let i = 0; i + 3 <= padded.length; i += 1) grams.add(padded.slice(i, i + 3));
+  return grams;
+}
+
+/** The same shape of comparison the database index uses, for ordering only. */
+export function trigramSimilarity(a: string, b: string): number {
+  const left = trigramsOf(a);
+  const right = trigramsOf(b);
+  if (left.size === 0 || right.size === 0) return 0;
+  let shared = 0;
+  for (const gram of left) if (right.has(gram)) shared += 1;
+  return shared / (left.size + right.size - shared);
+}
+
+const TIER_ORDER: Record<HitTier, number> = { exact: 0, words: 1, similar: 2 };
+
+export function rankThreadHits<T extends { tier: HitTier }>(hits: T[]): T[] {
+  return [...hits].sort((a, b) => TIER_ORDER[a.tier] - TIER_ORDER[b.tier]);
+}
 
 function likeEscape(value: string): string {
   return value.replace(/[\\%_]/g, (character) => `\\${character}`);
@@ -167,29 +256,80 @@ export const searchRecord = createServerFn({ method: "POST" })
     const items = mine ?? [];
     if (items.length === 0) return { turns: [], deliverables: [] };
     const byId = new Map(items.map((item) => [item.id, item]));
+    const itemIds = items.map((item) => item.id);
 
-    const { data: turnRows } = await supabase
-      .from("turns")
-      .select("work_item_id, turn_no, role, content")
-      .in(
-        "work_item_id",
-        items.map((item) => item.id),
-      )
-      .ilike("content", `%${likeEscape(data.query)}%`)
-      .order("turn_no", { ascending: true })
-      .limit(50);
+    const canonical = data.mode === "number" ? canonicalizeNumber(data.query) : null;
+    const words = data.mode === "thread" ? queryWords(data.query) : [];
 
-    const turns: RecordTurnHit[] = (turnRows ?? []).map((row) => {
-      const item = byId.get(row.work_item_id);
-      return {
-        work_item_id: row.work_item_id,
-        title: item?.title ?? "A conversation",
-        vendor: item?.source_vendor ?? null,
-        turn_no: row.turn_no,
-        role: String(row.role),
-        excerpt: excerptAround(row.content, data.query),
-      };
-    });
+    type TurnRow = { work_item_id: string; turn_no: number; role: string; content: string };
+    const seen = new Set<string>();
+    const collected: { row: TurnRow; tier: HitTier; needle: string }[] = [];
+
+    const take = (rows: TurnRow[] | null, tier: HitTier, needle: string) => {
+      for (const row of rows ?? []) {
+        const key = `${row.work_item_id}-${row.turn_no}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        collected.push({ row, tier, needle });
+      }
+    };
+
+    const turnsLike = async (pattern: string, limit: number) => {
+      const { data: rows } = await supabase
+        .from("turns")
+        .select("work_item_id, turn_no, role, content")
+        .in("work_item_id", itemIds)
+        .ilike("content", `%${likeEscape(pattern)}%`)
+        .order("turn_no", { ascending: true })
+        .limit(limit);
+      return (rows ?? []) as TurnRow[];
+    };
+
+    if (data.mode === "number" && canonical) {
+      // Ask for every surface form, then confirm the number is truly there.
+      for (const form of surfaceFormsFor(canonical)) {
+        if (collected.length >= MAX_TURN_HITS) break;
+        const rows = (await turnsLike(form, MAX_TURN_HITS)).filter((row) =>
+          contentHasNumber(row.content, canonical),
+        );
+        take(rows, "exact", form);
+      }
+    } else if (data.mode === "thread") {
+      take(await turnsLike(data.query, MAX_TURN_HITS), "exact", data.query);
+
+      if (collected.length < MAX_TURN_HITS && words.length > 0) {
+        const longest = [...words].sort((a, b) => b.length - a.length)[0] ?? data.query;
+        const wordRows = (await turnsLike(longest, 200)).filter((row) =>
+          allWordsPresent(row.content, words),
+        );
+        take(wordRows, "words", longest);
+
+        if (collected.length < MAX_TURN_HITS) {
+          const stem = longest.slice(0, Math.max(3, Math.ceil(longest.length * 0.6)));
+          const similarRows = (await turnsLike(stem, 200))
+            .map((row) => ({ row, score: trigramSimilarity(row.content.slice(0, 400), data.query) }))
+            .filter((entry) => entry.score >= SIMILAR_FLOOR)
+            .sort((a, b) => b.score - a.score)
+            .map((entry) => entry.row);
+          take(similarRows, "similar", stem);
+        }
+      }
+    }
+
+    const turns: RecordTurnHit[] = rankThreadHits(collected)
+      .slice(0, MAX_TURN_HITS)
+      .map(({ row, tier, needle }) => {
+        const item = byId.get(row.work_item_id);
+        return {
+          work_item_id: row.work_item_id,
+          title: item?.title ?? "A conversation",
+          vendor: item?.source_vendor ?? null,
+          turn_no: row.turn_no,
+          role: String(row.role),
+          excerpt: excerptAround(row.content, needle),
+          tier,
+        };
+      });
 
     const { data: shortlist } = await supabase
       .from("work_item_extracts")
@@ -215,8 +355,9 @@ export const searchRecord = createServerFn({ method: "POST" })
       const text = await pullItemText(supabase, full as never);
       // A short number would fall under the verbatim helper's floor, so it is
       // confirmed by the same normalisation instead. Still exact, never fuzzy.
-      const confirmed =
-        normalised.length >= MIN_SNIPPET_CHARS
+      const confirmed = canonical
+        ? contentHasNumber(text, canonical)
+        : normalised.length >= MIN_SNIPPET_CHARS
           ? containsVerbatim(text, data.query)
           : normalizeSnippet(text).includes(normalised);
       if (confirmed) {
@@ -230,3 +371,4 @@ export const searchRecord = createServerFn({ method: "POST" })
 
     return { turns, deliverables };
   });
+

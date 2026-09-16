@@ -30,3 +30,8 @@
 - [x] Preserve source focus, manual logging, reasoning, discard, loading, empty, and error states
 - [x] Add truthful confirmed, reasoning, and awaiting counts
 - [x] Add focused grouping, state, count, and filter tests
+
+## Pass S1 — record search speed and forgiveness
+- [x] Trigram index on turns.content (additive migration)
+- [x] Number canonicalization with per-hit confirmation
+- [x] Thread search tiers: exact, all words, similar, under "closest matches"
