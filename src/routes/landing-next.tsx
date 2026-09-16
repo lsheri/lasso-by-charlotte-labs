@@ -131,9 +131,6 @@ function LandingNextPage() {
 
   return (
     <div className="landing-next min-h-screen overflow-x-clip bg-background">
-      <div className="landing-next-loop-large fixed pointer-events-none" aria-hidden="true">
-        <LassoLoopMark className="h-full w-full text-rule" />
-      </div>
       <div className="landing-next-loop-small fixed pointer-events-none" aria-hidden="true">
         <LassoLoopMark className="h-full w-full text-green" drawWithScroll />
       </div>
@@ -141,7 +138,8 @@ function LandingNextPage() {
       <div className="relative z-10">
         <PublicHeader current="/" />
 
-        <main className="mx-auto max-w-3xl px-6 pb-24 pt-16 md:px-10 md:pt-20">
+        <main className="pb-24 pt-16 md:pt-20">
+          <div className="mx-auto max-w-3xl px-6 md:px-10">
           <section>
             <h1 className="pencil-title mt-5 text-foreground">
               {variant === "b"
@@ -169,11 +167,6 @@ function LandingNextPage() {
               <ScrollCue />
             </div>
           </section>
-
-          <FrontDoorRule className="mt-12 h-[10px] w-full" />
-          <div className="mt-6 flex flex-col items-center gap-3">
-            <p className="micro-label font-bold">HOW IT WORKS</p>
-          </div>
 
           <FocusSection
             className={`mt-12 md:translate-x-8 lg:translate-x-12 ${scrolled ? "" : "landing-locked"}`}
@@ -240,68 +233,102 @@ function LandingNextPage() {
             </div>
           </FocusSection>
 
-          <FocusSection className="landing-next-beat landing-next-beat-left mt-28">
-            <p className="micro-label">WHAT LANDS</p>
-            <h2 className="pencil-title mt-4">Everything you made this week, in one inbox</h2>
-            <p className="mt-5 max-w-2xl text-base leading-relaxed text-foreground">
-              Chats, files, calls and drafts arrive as they happen. You shape them into work, or
-              leave them. Nothing is lost, nothing is required.
-            </p>
-            <div className="mt-8"><ClipSlot id="inbox" aspect="16 / 10" label="Work arriving in one inbox" /></div>
-          </FocusSection>
+          <FrontDoorRule className="mt-20 h-[10px] w-full" />
+          <div className="mt-6 flex flex-col items-center gap-3">
+            <p className="micro-label font-bold">HOW IT WORKS</p>
+          </div>
+          </div>
 
-          <FocusSection className="landing-next-beat landing-next-beat-right mt-28 md:-mx-24 lg:-mx-36">
-            <p className="micro-label">FIND IT</p>
-            <div className="relative h-16 md:h-8">
-              <p className="hand-mark hand-mark-blue absolute right-[calc((-100vw+100%)/2+1rem)] top-6 max-w-64 text-right" aria-hidden="true">
-                the one thing nobody else can show
-              </p>
-            </div>
-            <h2 className="pencil-title mt-4">Circle any fact. See where it came from.</h2>
-            <p className="mt-5 max-w-2xl text-base leading-relaxed text-foreground">
-              Drop a deck on the canvas. The conversations that fed it come forward with the exact
-              sentence, quoted, and why.
-            </p>
-            <div className="mt-8"><ClipSlot id="find-it" aspect="16 / 9" label="Finding the source behind a fact" /></div>
-          </FocusSection>
+          <section className="landing-next-carousel mt-20" aria-label="How Lasso works">
+            <div className="landing-next-carousel-sticky">
+              <div className="landing-next-carousel-track">
+                <section className="landing-next-carousel-panel">
+                  <div className="landing-next-carousel-content">
+                    <div>
+                      <p className="micro-label">WHAT LANDS</p>
+                      <h2 className="pencil-title mt-4">Everything you made this week, in one inbox</h2>
+                      <p className="mt-5 max-w-2xl text-base leading-relaxed text-foreground">
+                        Chats, files, calls and drafts arrive as they happen. You shape them into work, or
+                        leave them. Nothing is lost, nothing is required.
+                      </p>
+                    </div>
+                    <ClipSlot id="inbox" aspect="16 / 10" label="Work arriving in one inbox" />
+                  </div>
+                </section>
 
-          <FocusSection className="landing-next-beat landing-next-beat-left mt-28">
-            <p className="micro-label">DECISIONS</p>
-            <h2 className="pencil-title mt-4">The decisions you made, written down before you forget them</h2>
-            <p className="mt-5 max-w-2xl text-base leading-relaxed text-foreground">
-              Lasso drafts the decision from the conversation. You confirm it or discard it. A
-              firm's judgment stops living in chat scroll.
-            </p>
-            <div className="mt-8"><ClipSlot id="decisions" aspect="16 / 10" label="A decision drafted from a conversation" /></div>
-          </FocusSection>
+                <section className="landing-next-carousel-panel landing-next-carousel-panel-find">
+                  <div className="landing-next-carousel-content">
+                    <div>
+                      <p className="micro-label">FIND IT</p>
+                      <p className="hand-mark hand-mark-blue mt-5" aria-hidden="true">
+                        the one thing nobody else can show
+                      </p>
+                      <h2 className="pencil-title mt-4">Circle any fact. See where it came from.</h2>
+                      <p className="mt-5 max-w-2xl text-base leading-relaxed text-foreground">
+                        Drop a deck on the canvas. The conversations that fed it come forward with the exact
+                        sentence, quoted, and why.
+                      </p>
+                    </div>
+                    <ClipSlot id="find-it" aspect="16 / 9" label="Finding the source behind a fact" />
+                  </div>
+                </section>
 
-          <FocusSection className="landing-next-beat landing-next-beat-right mt-28">
-            <p className="micro-label">YOUR COACH</p>
-            <h2 className="pencil-title mt-4">A note in the margin, not a report on you</h2>
-            <p className="mt-5 max-w-2xl text-base leading-relaxed text-foreground">
-              A coach picks one piece of work and writes to you about it. It shows up as a circle,
-              opens as a conversation, and you write back.
-            </p>
-            <div className="mt-8 grid items-center gap-8 md:grid-cols-[var(--landing-coach-art)_minmax(0,1fr)]">
-              <div className="landing-next-coach-art relative mx-auto" aria-hidden="true">
-                <LassoLoopMark className="h-full w-full text-green" />
-                <img src={coachSpider.url} alt="" className="landing-next-coach-spider absolute" />
+                <section className="landing-next-carousel-panel">
+                  <div className="landing-next-carousel-content">
+                    <div>
+                      <p className="micro-label">DECISIONS</p>
+                      <h2 className="pencil-title mt-4">The decisions you made, written down before you forget them</h2>
+                      <p className="mt-5 max-w-2xl text-base leading-relaxed text-foreground">
+                        Lasso drafts the decision from the conversation. You confirm it or discard it. A
+                        firm's judgment stops living in chat scroll.
+                      </p>
+                    </div>
+                    <ClipSlot id="decisions" aspect="16 / 10" label="A decision drafted from a conversation" />
+                  </div>
+                </section>
+
+                <section className="landing-next-carousel-panel">
+                  <div className="landing-next-carousel-content">
+                    <div>
+                      <p className="micro-label">YOUR COACH</p>
+                      <h2 className="pencil-title mt-4">A note in the margin, not a report on you</h2>
+                      <p className="mt-5 max-w-2xl text-base leading-relaxed text-foreground">
+                        A coach picks one piece of work and writes to you about it. It shows up as a circle,
+                        opens as a conversation, and you write back.
+                      </p>
+                      <div className="landing-next-coach-art relative mt-6" aria-hidden="true">
+                        <LassoLoopMark className="h-full w-full text-green" />
+                        <img src={coachSpider.url} alt="" className="landing-next-coach-spider absolute" />
+                      </div>
+                    </div>
+                    <ClipSlot id="coach-note" aspect="16 / 10" label="A coach note opening as a conversation" />
+                  </div>
+                </section>
+
+                <section className="landing-next-carousel-panel">
+                  <div className="landing-next-carousel-content">
+                    <div>
+                      <p className="micro-label">1:1 PREP</p>
+                      <h2 className="pencil-title mt-4">Walk into the 1:1 at minute zero</h2>
+                      <p className="mt-5 max-w-2xl text-base leading-relaxed text-foreground">
+                        A date, a few stickies, and the work behind them. Twenty minutes of reconstruction
+                        becomes a conversation about the judgment call.
+                      </p>
+                    </div>
+                    <ClipSlot id="one-on-one" aspect="16 / 10" label="Preparing work for a one to one" />
+                  </div>
+                </section>
               </div>
-              <ClipSlot id="coach-note" aspect="16 / 10" label="A coach note opening as a conversation" />
+              <div className="landing-next-carousel-progress" aria-hidden="true">
+                {Array.from({ length: 5 }, (_, index) => (
+                  <span key={index} className={`landing-next-carousel-dash landing-next-carousel-dash-${index + 1}`} />
+                ))}
+              </div>
             </div>
-          </FocusSection>
+          </section>
 
-          <FocusSection className="landing-next-beat landing-next-beat-left mt-28">
-            <p className="micro-label">1:1 PREP</p>
-            <h2 className="pencil-title mt-4">Walk into the 1:1 at minute zero</h2>
-            <p className="mt-5 max-w-2xl text-base leading-relaxed text-foreground">
-              A date, a few stickies, and the work behind them. Twenty minutes of reconstruction
-              becomes a conversation about the judgment call.
-            </p>
-            <div className="mt-8"><ClipSlot id="one-on-one" aspect="16 / 10" label="Preparing work for a one to one" /></div>
-          </FocusSection>
-
-          <FocusSection className="landing-next-beat landing-next-beat-right mt-20 border-t border-rule pt-10 md:translate-x-10 lg:translate-x-16">
+          <div className="mx-auto max-w-3xl px-6 md:px-10">
+          <FocusSection className="mt-20 border-t border-rule pt-10 md:translate-x-10 lg:translate-x-16">
             <p className="micro-label">WHAT ACCUMULATES</p>
             <h2 className="pencil-title mt-4">A library your team can learn from</h2>
             <p className="mt-5 text-base leading-relaxed text-foreground">
@@ -319,7 +346,7 @@ function LandingNextPage() {
             </figure>
           </FocusSection>
 
-          <FocusSection className="landing-next-beat landing-next-beat-left mt-20 border-t border-rule pt-10 md:-translate-x-10 lg:-translate-x-16">
+          <FocusSection className="mt-20 border-t border-rule pt-10 md:-translate-x-10 lg:-translate-x-16">
             <p className="micro-label">PRIVACY, DEMONSTRATED</p>
             <h2 className="pencil-title mt-4">What a coach sees.</h2>
             <p className="mt-5 max-w-2xl text-base leading-relaxed text-foreground">
@@ -335,6 +362,7 @@ function LandingNextPage() {
             <a href="mailto:liam@charlotte-labs.com" className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground underline underline-offset-4 transition-colors hover:text-foreground">
               Talk to Liam
             </a>
+          </div>
           </div>
         </main>
 
