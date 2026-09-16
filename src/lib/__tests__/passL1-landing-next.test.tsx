@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const route = readFileSync("src/routes/landing-next.tsx", "utf8");
@@ -50,6 +50,14 @@ describe("pass L1 hidden landing route", () => {
   it("keeps stable clip slots for the next media pass", () => {
     for (const id of ["inbox", "find-it", "decisions", "coach-note", "one-on-one"]) {
       expect(route).toContain(`id=\"${id}\"`);
+    }
+  });
+
+  it("wires every available poster frame", () => {
+    for (const id of ["inbox", "find-it", "decisions", "coach-note", "one-on-one"]) {
+      const poster = `public/videos/poster-${id}.jpg`;
+      if (!existsSync(poster)) continue;
+      expect(route).toContain(`poster="/videos/poster-${id}.jpg"`);
     }
   });
 });
