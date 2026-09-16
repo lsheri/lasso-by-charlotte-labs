@@ -333,6 +333,19 @@ export const searchRecord = createServerFn({ method: "POST" })
       return (rows ?? []) as TurnRow[];
     };
 
+    /** One lookup, several short probes, so a misspelling still pulls rows back. */
+    const turnsProbed = async (probes: string[], limit: number) => {
+      if (probes.length === 0) return [] as TurnRow[];
+      const { data: rows } = await supabase
+        .from("turns")
+        .select("work_item_id, turn_no, role, content")
+        .in("work_item_id", itemIds)
+        .or(probes.map((probe) => `content.ilike.%${likeEscape(probe)}%`).join(","))
+        .order("turn_no", { ascending: true })
+        .limit(limit);
+      return (rows ?? []) as TurnRow[];
+    };
+
     if (data.mode === "number" && canonical) {
       // Ask for every surface form, then confirm the number is truly there.
       for (const form of surfaceFormsFor(canonical)) {
