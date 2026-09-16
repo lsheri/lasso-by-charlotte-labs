@@ -47,6 +47,7 @@ export type JourneyStitch = {
   id: string;
   status: SpanStatus;
   quote: string | null;
+  to_item_id?: string | null;
   to_turn_no: number | null;
 };
 
@@ -183,6 +184,7 @@ export function buildJourney(input: {
       id: stitch.id,
       status: stitch.status,
       quote: stitch.quote,
+      to_item_id: stitch.to_item_id,
       to_turn_no: stitch.to_turn_no,
     });
   }

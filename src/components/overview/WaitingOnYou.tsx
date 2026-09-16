@@ -6,6 +6,10 @@ import { Button } from "@/components/ui/button";
 import { ThreadViewerById } from "@/components/work/ThreadViewerById";
 import { useDecisionActions } from "@/hooks/use-decision-actions";
 import { useDecisions, srcsOf, useDecisionSourceItems } from "@/hooks/use-decisions";
+import { useDecisionSourceTurns } from "@/hooks/use-decisions";
+import type { ThreadFocus } from "@/components/peek/ThreadBody";
+import { vendorLabel } from "@/lib/conversation-shared";
+import { formatDate } from "@/lib/work-types";
 import { useMotion } from "@/hooks/use-motion";
 import { useProfile } from "@/hooks/use-profile";
 
@@ -24,6 +28,7 @@ export function WaitingOnYou() {
   const actions = useDecisionActions("inbox");
   const settle = useMotion("decision.confirmed");
   const [sourceItem, setSourceItem] = useState<string | null>(null);
+  const [sourceFocus, setSourceFocus] = useState<ThreadFocus | undefined>();
   const [settled, setSettled] = useState<string[]>([]);
 
   const drafts = useMemo(
@@ -42,6 +47,8 @@ export function WaitingOnYou() {
     return Array.from(ids);
   }, [waiting]);
   const { data: sourceInfo } = useDecisionSourceItems(sourceIds);
+  const allSources = useMemo(() => waiting.flatMap(srcsOf), [waiting]);
+  const { data: sourceTurns } = useDecisionSourceTurns(allSources);
 
   if (profile?.role === "coach") return null;
   if (waiting.length === 0) return null;
@@ -60,8 +67,11 @@ export function WaitingOnYou() {
       <div className="flex flex-wrap items-start gap-4">
         {waiting.map((row) => {
           const done = settled.includes(row.id);
-          const firstSrc = srcsOf(row)[0]?.work_item_id;
-          const srcLabel = firstSrc ? (sourceInfo?.[firstSrc]?.title ?? "Source") : null;
+          const source = srcsOf(row)[0];
+          const firstSrc = source?.work_item_id;
+          const info = firstSrc ? sourceInfo?.[firstSrc] : null;
+          const turn = source?.turn_id ? sourceTurns?.[source.turn_id] : null;
+          const srcLabel = info ? [vendorLabel(info.source_vendor) || info.title, formatDate(info.work_date ?? info.created_at_source ?? info.captured_at), turn ? `turn ${turn.turn_no}` : null].filter(Boolean).join(" · ") : "Source";
           return (
             <article
               key={row.id}
@@ -93,10 +103,10 @@ export function WaitingOnYou() {
                 <div>
                   <button
                     type="button"
-                    onClick={() => setSourceItem(firstSrc)}
-                    className="max-w-full truncate rounded-[var(--radius-sm)] border border-border px-2 py-1 font-mono text-[10px] uppercase tracking-[0.08em] text-accent-deep transition-colors hover:border-foreground"
+                    onClick={() => { setSourceItem(firstSrc); setSourceFocus(turn ? { turnNo: turn.turn_no, text: turn.content } : undefined); }}
+                    className="story-link max-w-full truncate font-mono text-[10px] uppercase tracking-[0.08em] text-accent-deep"
                   >
-                    {(srcLabel ?? "Source").toUpperCase()}
+                    {srcLabel}
                   </button>
                 </div>
               ) : null}
@@ -132,7 +142,7 @@ export function WaitingOnYou() {
 
       {actions.error ? <p className="mt-2 text-sm text-destructive">{actions.error}</p> : null}
 
-      <ThreadViewerById workItemId={sourceItem} onClose={() => setSourceItem(null)} />
+      <ThreadViewerById workItemId={sourceItem} focus={sourceFocus} onClose={() => { setSourceItem(null); setSourceFocus(undefined); }} />
     </section>
   );
 }

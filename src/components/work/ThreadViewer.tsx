@@ -1,5 +1,6 @@
 import { DraftDecisionsButton } from "@/components/decisions/DraftDecisionsButton";
 import { ThreadBody } from "@/components/peek/ThreadBody";
+import type { ThreadFocus } from "@/components/peek/ThreadBody";
 import { ChatUrlLink } from "@/components/work/ChatUrlLink";
 import { ArtifactNote, SourceMark } from "@/components/work/SourceMark";
 import { TypeChip } from "@/components/work/TypeIcon";
@@ -10,10 +11,12 @@ export function ThreadViewer({
   item,
   open,
   onOpenChange,
+  focus,
 }: {
   item: WorkItemRow | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  focus?: ThreadFocus | undefined;
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -32,7 +35,7 @@ export function ThreadViewer({
           ) : null}
         </DialogHeader>
 
-        {item ? <ThreadBody item={item} enabled={open} /> : null}
+        {item ? <ThreadBody item={item} enabled={open} focus={focus} /> : null}
 
         {item && item.type === "ai_thread" ? (
           <div className="mt-6 flex justify-end border-t border-border pt-4">

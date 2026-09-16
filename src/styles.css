@@ -2069,6 +2069,46 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   stroke-dasharray: 1;
   animation: nb-mark-draw 270ms var(--nb-ease) both;
 }
+
+.nb-evidence-circle path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: nb-evidence-circle-draw 420ms var(--nb-ease, ease-out) forwards;
+}
+
+.story-link {
+  position: relative;
+}
+
+.story-link::after {
+  position: absolute;
+  right: 0;
+  bottom: -2px;
+  left: 0;
+  height: 3px;
+  content: "";
+  opacity: 0;
+  border-top: var(--stroke-pencil) solid currentColor;
+  border-radius: 47% 54% 43% 57%;
+  transform: rotate(-0.4deg);
+  transition: opacity 150ms ease;
+}
+
+.story-link:hover::after,
+.story-link:focus-visible::after {
+  opacity: 1;
+}
+
+@keyframes nb-evidence-circle-draw {
+  to { stroke-dashoffset: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nb-evidence-circle path {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+}
 @keyframes nb-mark-draw {
   from {
     stroke-dashoffset: 1;

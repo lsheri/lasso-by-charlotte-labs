@@ -5,6 +5,10 @@ import { SuggestDot } from "@/components/common/Suggested";
 import { DrawnCheck, DrawnStrike, useMark } from "@/components/notebook/marks";
 import { Textarea } from "@/components/ui/textarea";
 import { srcsOf, useDecisionSourceItems, type DecisionRow } from "@/hooks/use-decisions";
+import { useDecisionSourceTurns } from "@/hooks/use-decisions";
+import type { ThreadFocus } from "@/components/peek/ThreadBody";
+import { vendorLabel } from "@/lib/conversation-shared";
+import { formatDate } from "@/lib/work-types";
 
 export function DecisionCard({
   decision,
@@ -18,7 +22,7 @@ export function DecisionCard({
   onConfirm: () => void;
   onSaveEdit: (fields: { situation: string; call_text: string; why: string }) => void;
   onDiscard: () => void;
-  onOpenSource: (workItemId: string) => void;
+  onOpenSource: (workItemId: string, focus?: ThreadFocus) => void;
   /**
    * PASS B: when a call cites exactly one deliverable, a small hand-drawn
    * arrow runs from the row to that chip. Optional, so every other caller is
@@ -37,14 +41,15 @@ export function DecisionCard({
   const srcs = srcsOf(decision);
   const sourceItems = Array.from(new Set(srcs.map((s) => s.work_item_id)));
   const { data: itemInfo } = useDecisionSourceItems(sourceItems);
+  const { data: sourceTurns } = useDecisionSourceTurns(srcs);
 
   function sourceLabelFor(id: string): string {
     const info = itemInfo?.[id];
-    const hasTurn = srcs.some((s) => s.work_item_id === id && s.turn_id);
-    if (hasTurn) return info ? `In the conversation · ${info.title}` : "Moment in the conversation";
-    if (!info) return "Source";
-    if (info.type === "ai_thread") return `Conversation · ${info.title}`;
-    return `Where it landed · ${info.title}`;
+    const source = srcs.find((entry) => entry.work_item_id === id);
+    const turn = source?.turn_id ? sourceTurns?.[source.turn_id] : null;
+    const vendor = vendorLabel(info?.source_vendor);
+    const date = info ? formatDate(info.work_date ?? info.created_at_source ?? info.captured_at) : null;
+    return [vendor || info?.title || "Source", date, turn ? `turn ${turn.turn_no}` : null].filter(Boolean).join(" · ");
   }
 
   return (
@@ -108,18 +113,21 @@ export function DecisionCard({
 
       {sourceItems.length > 0 ? (
         <div className="mt-5 flex flex-wrap items-center gap-2">
-          {sourceItems.map((id) => (
+          {sourceItems.map((id) => {
+            const source = srcs.find((entry) => entry.work_item_id === id);
+            const turn = source?.turn_id ? sourceTurns?.[source.turn_id] : null;
+            return (
             <span key={`row-${id}`} className="flex items-center gap-1">
             {arrowToSourceId === id ? <DrawnHandArrow /> : null}
             <button
               type="button"
-              onClick={() => onOpenSource(id)}
-              className="max-w-full truncate rounded-full bg-accent-soft px-3 py-1 font-mono text-[11px] tracking-[0.06em] text-accent-deep transition-opacity hover:opacity-80"
+              onClick={() => onOpenSource(id, turn ? { turnNo: turn.turn_no, text: turn.content } : undefined)}
+              className="story-link max-w-full truncate font-mono text-[11px] tracking-[0.06em] text-accent-deep"
             >
               {sourceLabelFor(id)}
             </button>
             </span>
-          ))}
+          )})}
         </div>
       ) : null}
 

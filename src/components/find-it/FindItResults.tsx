@@ -11,6 +11,7 @@ import { WorkNote } from "@/components/work/WorkNote";
 import type { FoundSource, FindScope } from "@/lib/find-it.functions";
 import { fnv1a, mulberry32 } from "@/lib/journey-path";
 import { effectiveWorkDate, formatDate, sourceLabel, type WorkItemRow } from "@/lib/work-types";
+import type { ThreadFocus } from "@/components/peek/ThreadBody";
 
 export type FindItCandidate = { link: FoundSource; item: WorkItemRow | null };
 export type FindItPhase = "reading" | "settled" | "kept";
@@ -198,7 +199,7 @@ export function FindItResults({ phase, target, scope, candidates, reviewed, cons
   onReview: (linkId: string, action: "confirmed" | "discarded") => void | Promise<void>;
   onKeepAll: () => void | Promise<void>;
   onDone: () => void | Promise<void>;
-  onOpenThread: (workItemId: string) => void;
+  onOpenThread: (workItemId: string, focus?: ThreadFocus) => void;
 }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [mobileDetailOpen, setMobileDetailOpen] = useState(false);
@@ -272,7 +273,7 @@ export function FindItResults({ phase, target, scope, candidates, reviewed, cons
               {ordered.map((candidate, index) => {
                 const isSelected = phase === "settled" && selected?.link.link_id === candidate.link.link_id;
                 const itemId = candidate.item?.id;
-                return <div key={candidate.link.link_id} className={`find-it-arc-node absolute z-10 ${isSelected ? "w-[36%] max-w-[420px]" : "w-[21.5%] max-w-[250px]"}`} style={arcPosition(candidate.link.link_id, index, ordered.length, isSelected)}><FindItNode candidate={candidate} selected={isSelected} expanded={isSelected} status={phase === "kept" ? "confirmed" : statusOf(candidate, reviewed)} strength={strengthFor(index, ordered.length)} {...(phase === "settled" ? { onSelect: () => setSelectedId(candidate.link.link_id) } : {})} onKeep={() => act("confirmed")} onReject={() => act("discarded")} onOpen={itemId ? () => onOpenThread(itemId) : null} /></div>;
+                return <div key={candidate.link.link_id} className={`find-it-arc-node absolute z-10 ${isSelected ? "w-[36%] max-w-[420px]" : "w-[21.5%] max-w-[250px]"}`} style={arcPosition(candidate.link.link_id, index, ordered.length, isSelected)}><FindItNode candidate={candidate} selected={isSelected} expanded={isSelected} status={phase === "kept" ? "confirmed" : statusOf(candidate, reviewed)} strength={strengthFor(index, ordered.length)} {...(phase === "settled" ? { onSelect: () => setSelectedId(candidate.link.link_id) } : {})} onKeep={() => act("confirmed")} onReject={() => act("discarded")} onOpen={itemId ? () => onOpenThread(itemId, candidate.link.quote ? { turnNo: candidate.link.quote.turn_no, text: candidate.link.quote.text } : undefined) : null} /></div>;
               })}
             </div>
           )}
@@ -294,7 +295,7 @@ export function FindItResults({ phase, target, scope, candidates, reviewed, cons
         </div>
       </div>
 
-      {mobileDetailOpen && selected && phase === "settled" ? <div className="fixed inset-0 z-50 flex items-end bg-foreground/20 md:hidden" role="dialog" aria-modal="true" aria-label="Source detail"><Button type="button" variant="ghost" className="absolute inset-0 h-full w-full rounded-none" aria-label="Close source detail" onClick={() => setMobileDetailOpen(false)} /><div className="relative z-10 max-h-[78dvh] w-full overflow-y-auto rounded-t-[8px] border border-hairline bg-background p-5 shadow-[var(--shadow-modal)]"><FindItNode candidate={selected} selected expanded status={statusOf(selected, reviewed)} onKeep={() => act("confirmed")} onReject={() => act("discarded")} onOpen={selected.item ? () => onOpenThread(selected.item?.id ?? "") : null} /></div></div> : null}
+      {mobileDetailOpen && selected && phase === "settled" ? <div className="fixed inset-0 z-50 flex items-end bg-foreground/20 md:hidden" role="dialog" aria-modal="true" aria-label="Source detail"><Button type="button" variant="ghost" className="absolute inset-0 h-full w-full rounded-none" aria-label="Close source detail" onClick={() => setMobileDetailOpen(false)} /><div className="relative z-10 max-h-[78dvh] w-full overflow-y-auto rounded-t-[8px] border border-hairline bg-background p-5 shadow-[var(--shadow-modal)]"><FindItNode candidate={selected} selected expanded status={statusOf(selected, reviewed)} onKeep={() => act("confirmed")} onReject={() => act("discarded")} onOpen={selected.item ? () => onOpenThread(selected.item?.id ?? "", selected.link.quote ? { turnNo: selected.link.quote.turn_no, text: selected.link.quote.text } : undefined) : null} /></div></div> : null}
     </section>
   );
 }

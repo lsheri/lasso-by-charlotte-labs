@@ -21,11 +21,6 @@ import {
  * survived the honesty gate on the server, so nothing needs hedging in the UI.
  */
 
-function refLine(refs: TurnRef[]): string | null {
-  if (refs.length === 0) return null;
-  return refs.map((ref) => `turn ${ref.turn_no}`).join(" · ");
-}
-
 function decidedByLabel(decision: ArtifactDecision): string {
   if (decision.decided_by === "person") return "decided by the person";
   if (decision.decided_by === "ai") return "decided by the model";
@@ -38,6 +33,11 @@ function Micro({ children }: { children: ReactNode }) {
       {children}
     </p>
   );
+}
+
+function RefButtons({ refs, onOpenRef }: { refs: TurnRef[]; onOpenRef?: ((ref: TurnRef, text?: string) => void) | undefined; }) {
+  if (refs.length === 0) return null;
+  return <p className="font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">{refs.map((ref, index) => <span key={`${ref.item_id}-${ref.turn_no}`}>{index ? " · " : ""}{onOpenRef ? <button type="button" className="story-link" onClick={() => onOpenRef(ref)}>turn {ref.turn_no}</button> : `turn ${ref.turn_no}`}</span>)}</p>;
 }
 
 function Section({
@@ -82,10 +82,12 @@ export function WorkArtifactSections({
   artifact,
   drawing = false,
   startMs = 0,
+  onOpenRef,
 }: {
   artifact: WorkArtifact;
   drawing?: boolean;
   startMs?: number;
+  onOpenRef?: ((ref: TurnRef, text?: string) => void) | undefined;
 }) {
   return (
     <div className="nb-artifact-grid" data-testid="work-artifact">
@@ -101,7 +103,7 @@ export function WorkArtifactSections({
                 <p className="mt-0.5 text-[13px] leading-snug text-foreground">
                   {stage.what_happened}
                 </p>
-                {refLine(stage.turn_refs) ? <Micro>{refLine(stage.turn_refs)}</Micro> : null}
+                <RefButtons refs={stage.turn_refs} onOpenRef={onOpenRef} />
               </li>
             ))}
           </ol>
@@ -123,7 +125,7 @@ export function WorkArtifactSections({
                     {prompt.why_it_worked}
                   </p>
                 ) : null}
-                {prompt.turn_ref ? <Micro>{`turn ${prompt.turn_ref.turn_no}`}</Micro> : null}
+                {prompt.turn_ref ? <RefButtons refs={[prompt.turn_ref]} onOpenRef={(ref) => onOpenRef?.(ref, prompt.quote)} /> : null}
               </li>
             ))}
           </ul>
@@ -143,7 +145,7 @@ export function WorkArtifactSections({
                     {check.evidence}
                   </p>
                 ) : null}
-                {refLine(check.turn_refs) ? <Micro>{refLine(check.turn_refs)}</Micro> : null}
+                <RefButtons refs={check.turn_refs} onOpenRef={onOpenRef} />
               </li>
             ))}
           </ul>
@@ -163,11 +165,8 @@ export function WorkArtifactSections({
             {artifact.decisions.map((decision, i) => (
               <li key={`${decision.decision.slice(0, 20)}-${i}`}>
                 <p className="text-[13px] leading-snug text-foreground">{decision.decision}</p>
-                <Micro>
-                  {[decidedByLabel(decision), refLine(decision.turn_refs)]
-                    .filter(Boolean)
-                    .join(" · ")}
-                </Micro>
+                <Micro>{decidedByLabel(decision)}</Micro>
+                <RefButtons refs={decision.turn_refs} onOpenRef={onOpenRef} />
               </li>
             ))}
           </ul>

@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
+import { useEffect, useMemo, useRef } from "react";
 
-import { MarginFlag, VerifyInk } from "@/components/notebook/marks";
+import { EvidenceCircle, MarginFlag, VerifyInk } from "@/components/notebook/marks";
 import { supabase } from "@/integrations/supabase/client";
 import { splitByQuote, turnAnchorId, type ThreadMark } from "@/lib/verify-thread-shared";
 import { vendorLabel } from "@/lib/conversation-shared";
@@ -15,6 +16,53 @@ type Turn = {
   model?: string | null;
   meta?: unknown;
 };
+
+export type ThreadFocus = { turnNo?: number; text?: string };
+
+function normaliseWithMap(value: string): { text: string; starts: number[]; ends: number[] } {
+  let text = "";
+  const starts: number[] = [];
+  const ends: number[] = [];
+  let inSpace = false;
+  for (let index = 0; index < value.length; index += 1) {
+    const character = value[index] ?? "";
+    if (/\s/.test(character)) {
+      if (text.length > 0 && !inSpace) {
+        text += " ";
+        starts.push(index);
+        ends.push(index + 1);
+      }
+      inSpace = true;
+    } else {
+      text += character.toLocaleLowerCase();
+      starts.push(index);
+      ends.push(index + 1);
+      inSpace = false;
+    }
+  }
+  if (text.endsWith(" ")) {
+    text = text.slice(0, -1);
+    starts.pop();
+    ends.pop();
+  }
+  return { text, starts, ends };
+}
+
+export function focusedTextRange(content: string, query: string | undefined): [number, number] | null {
+  const needle = normaliseWithMap(query?.trim() ?? "").text;
+  if (!needle) return null;
+  const haystack = normaliseWithMap(content);
+  const at = haystack.text.indexOf(needle);
+  if (at < 0) return null;
+  const start = haystack.starts[at];
+  const end = haystack.ends[at + needle.length - 1];
+  return start === undefined || end === undefined ? null : [start, end];
+}
+
+function FocusedContent({ content, range }: { content: string; range: [number, number] | null }) {
+  if (!range) return <>{content}</>;
+  return <>{content.slice(0, range[0])}<span data-testid="focused-evidence-text" className="relative inline-block"><EvidenceCircle />{content.slice(range[0], range[1])}</span>{content.slice(range[1])}</>;
+}
 
 const EMPTY_SETTLED: ReadonlySet<string> = new Set<string>();
 
@@ -83,6 +131,7 @@ export function ThreadBody({
   settledIds = EMPTY_SETTLED,
   onMarkActivate,
   reducedMotion = false,
+  focus,
 }: {
   item: WorkItemRow;
   enabled?: boolean;
@@ -94,6 +143,7 @@ export function ThreadBody({
   /** Tapping a margin flag activates that finding on the rail. */
   onMarkActivate?: ((markId: string) => void) | undefined;
   reducedMotion?: boolean;
+  focus?: ThreadFocus | undefined;
 }) {
   const { data: turns, error } = useQuery({
     queryKey: ["turns", item.id],
@@ -108,6 +158,24 @@ export function ThreadBody({
       return (data ?? []) as Turn[];
     },
   });
+  const turnRefs = useRef(new Map<number, HTMLDivElement>());
+  const focusedTurn = useMemo(() => {
+    if (!focus || !turns?.length) return null;
+    if (focus.turnNo !== undefined) {
+      const exact = turns.find((turn) => turn.turn_no === focus.turnNo);
+      if (exact) return exact;
+    }
+    if (focus.text) return turns.find((turn) => focusedTextRange(turn.content, focus.text) !== null) ?? null;
+    return null;
+  }, [focus, turns]);
+
+  useEffect(() => {
+    if (!enabled || !focusedTurn) return;
+    turnRefs.current.get(focusedTurn.turn_no)?.scrollIntoView({
+      behavior: reducedMotion ? "auto" : "smooth",
+      block: "center",
+    });
+  }, [enabled, focusedTurn, reducedMotion]);
 
   const meta = item.source_meta ?? null;
   const model = meta?.model ?? null;
@@ -155,15 +223,20 @@ export function ThreadBody({
       ) : null}
 
       <div className="space-y-5">
-        {(turns ?? []).map((turn) =>
-          turn.role === "user" ? (
-            <div key={turn.id} className="flex flex-col items-end">
+        {(turns ?? []).map((turn) => {
+          const focused = focusedTurn?.id === turn.id;
+          const focusedRange = focused ? focusedTextRange(turn.content, focus?.text) : null;
+          return (
+          <div key={turn.id} ref={(node) => { if (node) turnRefs.current.set(turn.turn_no, node); else turnRefs.current.delete(turn.turn_no); }} data-turn-no={turn.turn_no}>
+          {turn.role === "user" ? (
+            <div className="flex flex-col items-end">
               <div className="micro-label mb-1">
                 Turn {turn.turn_no} · {turn.role}
                 {turnTime(turn.ts) ? ` · ${turnTime(turn.ts)}` : ""}
               </div>
-              <div className="max-w-[90%] whitespace-pre-wrap rounded-[var(--radius)] bg-grey-2 px-4 py-3 font-mono text-xs leading-relaxed text-foreground">
-                {turn.content}
+              <div className={`relative max-w-[90%] whitespace-pre-wrap rounded-[var(--radius)] bg-grey-2 px-4 py-3 font-mono text-xs leading-relaxed text-foreground ${focused && !focusedRange ? "is-evidence-focus" : ""}`}>
+                {focused && !focusedRange ? <EvidenceCircle /> : null}
+                <FocusedContent content={turn.content} range={focusedRange} />
               </div>
               {revisedLabel(turn) ? (
                 <p className="mt-1 text-[11px] text-muted-foreground">{revisedLabel(turn)}</p>
@@ -174,7 +247,7 @@ export function ThreadBody({
               const flag = marks.find((m) => m.turnNo === turn.turn_no);
               const lit = flag?.lit === true;
               return (
-                <div key={turn.id} id={turnAnchorId(turn.turn_no)}>
+                <div id={turnAnchorId(turn.turn_no)}>
                   <div className="mb-1 flex items-center gap-1.5">
                     <span className="grid w-[16px] shrink-0 place-items-center">
                       {flag ? (
@@ -199,9 +272,9 @@ export function ThreadBody({
                   <div
                     data-lit={lit ? "true" : undefined}
                     data-testid={lit ? `turn-lit-${turn.turn_no}` : undefined}
-                    className={`max-w-[90%] whitespace-pre-wrap rounded-[var(--radius)] border border-border bg-card px-4 py-3 font-mono text-xs leading-relaxed text-foreground shadow-card${
+                    className={`relative max-w-[90%] whitespace-pre-wrap rounded-[var(--radius)] border border-border bg-card px-4 py-3 font-mono text-xs leading-relaxed text-foreground shadow-card${
                       lit ? " nb-turn-lit border-l-[3px]" : ""
-                    }`}
+                    } ${focused && !focusedRange ? "is-evidence-focus" : ""}`}
                     {...(lit
                       ? {
                           style: {
@@ -212,13 +285,14 @@ export function ThreadBody({
                         }
                       : {})}
                   >
-                    <TurnContent
+                    {focused && !focusedRange ? <EvidenceCircle /> : null}
+                    {focusedRange ? <FocusedContent content={turn.content} range={focusedRange} /> : <TurnContent
                       turn={turn}
                       marks={marks}
                       activeMarkId={activeMarkId}
                       settledIds={settledIds}
                       reducedMotion={reducedMotion}
-                    />
+                    />}
                   </div>
                   {revisedLabel(turn) ? (
                     <p className="mt-1 text-[11px] text-muted-foreground">{revisedLabel(turn)}</p>
@@ -226,8 +300,11 @@ export function ThreadBody({
                 </div>
               );
             })()
-          ),
-        )}
+          )}
+          {focused ? <p className="mt-2 font-hand text-[16px] text-green">this is the turn it came from</p> : null}
+          </div>
+          );
+        })}
         {turns && turns.length === 0 ? (
           <p className="text-sm text-muted-foreground">No turns stored for this item.</p>
         ) : null}

@@ -10,6 +10,7 @@ import { ToneCard } from "@/components/notebook/ToneCard";
 import { FindItResults, type FindItCandidate, type FindItPhase } from "@/components/find-it/FindItResults";
 import { WorkNote } from "@/components/work/WorkNote";
 import { ThreadViewerById } from "@/components/work/ThreadViewerById";
+import type { ThreadFocus } from "@/components/peek/ThreadBody";
 import { useCaptureFiles } from "@/components/work/use-capture-files";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -148,6 +149,7 @@ export function FindItPage() {
   const [searchedFor, setSearchedFor] = useState("");
   const [reviewed, setReviewed] = useState<Record<string, "confirmed" | "discarded">>({});
   const [openThread, setOpenThread] = useState<string | null>(null);
+  const [threadFocus, setThreadFocus] = useState<ThreadFocus | undefined>();
   const [confirmation, setConfirmation] = useState<string | null>(null);
   const [canvasPhase, setCanvasPhase] = useState<FindItPhase | null>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -531,7 +533,10 @@ export function FindItPage() {
                             type="button"
                             variant="ghost"
                             size="sm"
-                            onClick={() => setOpenThread(hit.work_item_id)}
+                            onClick={() => {
+                              setOpenThread(hit.work_item_id);
+                              setThreadFocus({ turnNo: hit.turn_no, text: hit.excerpt });
+                            }}
                           >
                             Open
                           </Button>
@@ -621,12 +626,12 @@ export function FindItPage() {
             onReview={review}
             onKeepAll={keepAll}
             onDone={finishResults}
-            onOpenThread={setOpenThread}
+            onOpenThread={(id, focus) => { setOpenThread(id); setThreadFocus(focus); }}
           />
         </div>
       ) : null}
 
-      <ThreadViewerById workItemId={openThread} onClose={() => setOpenThread(null)} />
+      <ThreadViewerById workItemId={openThread} focus={threadFocus} onClose={() => { setOpenThread(null); setThreadFocus(undefined); }} />
     </div>
   );
 }

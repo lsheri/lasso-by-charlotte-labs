@@ -8,6 +8,7 @@ import { DecisionCard } from "@/components/decisions/DecisionCard";
 import { SuggestDot } from "@/components/common/Suggested";
 import { Button } from "@/components/ui/button";
 import { ThreadViewerById } from "@/components/work/ThreadViewerById";
+import type { ThreadFocus } from "@/components/peek/ThreadBody";
 import { useDecisionActions } from "@/hooks/use-decision-actions";
 import { isDeliverableType } from "@/lib/lineage-shared";
 import { useDecisionSourceItems } from "@/hooks/use-decisions";
@@ -35,6 +36,7 @@ export function EngagementDecisions({
   const run = useServerFn(draftEngagementDecisions);
   const [busy, setBusy] = useState(false);
   const [sourceItem, setSourceItem] = useState<string | null>(null);
+  const [sourceFocus, setSourceFocus] = useState<ThreadFocus | undefined>();
 
   // Confirmed sequence order: a decision sits where its earliest cited item
   // sits in the workflow. Everything unsequenced falls to the end, oldest first.
@@ -139,7 +141,7 @@ export function EngagementDecisions({
               <DecisionCard
                 key={decision.id}
                 decision={decision}
-                onOpenSource={setSourceItem}
+                onOpenSource={(id, focus) => { setSourceItem(id); setSourceFocus(focus); }}
                 onConfirm={() => actions.confirm(decision)}
                 onSaveEdit={(fields) => actions.saveEdit(decision, fields)}
                 onDiscard={() => actions.discard(decision)}
@@ -152,7 +154,7 @@ export function EngagementDecisions({
 
       {actions.error ? <p className="mt-3 text-sm text-destructive">{actions.error}</p> : null}
 
-      <ThreadViewerById workItemId={sourceItem} onClose={() => setSourceItem(null)} />
+      <ThreadViewerById workItemId={sourceItem} focus={sourceFocus} onClose={() => { setSourceItem(null); setSourceFocus(undefined); }} />
     </section>
   );
 }

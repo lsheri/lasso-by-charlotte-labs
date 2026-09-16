@@ -9,6 +9,9 @@ import {
   type AnalysisConfirmRequest,
 } from "@/components/reflect/AnalysisConfirm";
 import { WorkArtifactSections } from "@/components/journey/WorkArtifactSections";
+import { ThreadViewerById } from "@/components/work/ThreadViewerById";
+import type { ThreadFocus } from "@/components/peek/ThreadBody";
+import type { TurnRef } from "@/lib/work-artifact-shared";
 import {
   ANALYSIS_SOURCES,
   GROUNDING_LINE,
@@ -75,6 +78,7 @@ export function WorkArtifactPanel({
   const fetchArtifact = useServerFn(getWorkArtifact);
   const runArtifact = useServerFn(runWorkArtifactRun);
   const [confirming, setConfirming] = useState<AnalysisConfirmRequest | null>(null);
+  const [openRef, setOpenRef] = useState<{ itemId: string; focus: ThreadFocus } | null>(null);
 
   // Any click or keypress completes the reveal at once, the same skip the
   // spine already honours.
@@ -148,7 +152,7 @@ export function WorkArtifactPanel({
               </button>
             </div>
           ) : null}
-          <WorkArtifactSections artifact={artifact} drawing={revealing} startMs={startMs} />
+          <WorkArtifactSections artifact={artifact} drawing={revealing} startMs={startMs} onOpenRef={(ref: TurnRef, text?: string) => setOpenRef({ itemId: ref.item_id, focus: { turnNo: ref.turn_no, ...(text ? { text } : {}) } })} />
         </>
       ) : stored.isLoading ? null : canEdit ? (
         <div className="flex flex-col items-center gap-2 rounded-[var(--radius-md)] border border-dashed border-pencil px-4 py-8 text-center">
@@ -166,6 +170,7 @@ export function WorkArtifactPanel({
       ) : (
         <p className="text-sm text-muted-foreground">{NO_ARTIFACT_VIEWER_LINE}</p>
       )}
+      <ThreadViewerById workItemId={openRef?.itemId ?? null} focus={openRef?.focus} onClose={() => setOpenRef(null)} />
     </div>
   );
 }

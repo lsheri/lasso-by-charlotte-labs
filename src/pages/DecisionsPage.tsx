@@ -9,6 +9,7 @@ import { ToneCard } from "@/components/notebook/ToneCard";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ThreadViewerById } from "@/components/work/ThreadViewerById";
+import type { ThreadFocus } from "@/components/peek/ThreadBody";
 import { useDecisions, type DecisionRow } from "@/hooks/use-decisions";
 import type { Database } from "@/integrations/supabase/types";
 import { useProfile } from "@/hooks/use-profile";
@@ -30,6 +31,7 @@ export function DecisionsPage() {
   const queryClient = useQueryClient();
   const [actionError, setActionError] = useState<string | null>(null);
   const [sourceItem, setSourceItem] = useState<string | null>(null);
+  const [sourceFocus, setSourceFocus] = useState<ThreadFocus | undefined>();
   const [filter, setFilter] = useState<FilterId>("all");
   const [reasoningFor, setReasoningFor] = useState<DecisionRow | null>(null);
   const [reasoningText, setReasoningText] = useState("");
@@ -171,7 +173,7 @@ export function DecisionsPage() {
                 ) : null}
                 <DecisionLogRow
                   decision={d}
-                  onOpenSource={setSourceItem}
+                  onOpenSource={(id, focus) => { setSourceItem(id); setSourceFocus(focus); }}
                   onAddReasoning={startReasoning}
                   onConfirm={confirmDecision}
                   onDiscard={discardDecision}
@@ -224,7 +226,7 @@ export function DecisionsPage() {
         </div>
       )}
 
-      <ThreadViewerById workItemId={sourceItem} onClose={() => setSourceItem(null)} />
+      <ThreadViewerById workItemId={sourceItem} focus={sourceFocus} onClose={() => { setSourceItem(null); setSourceFocus(undefined); }} />
     </div>
   );
 }
