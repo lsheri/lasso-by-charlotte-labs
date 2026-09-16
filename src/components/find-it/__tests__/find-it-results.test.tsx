@@ -27,9 +27,10 @@ function item(id: string, title: string): WorkItemRow {
   };
 }
 
-function candidates(): FindItCandidate[] {
-  return Array.from({ length: 16 }, (_, index) => {
+function candidates(count = 16): FindItCandidate[] {
+  return Array.from({ length: count }, (_, index) => {
     const relation = index < 4 ? "informed" : index < 8 ? "cited" : "produced";
+    const evidence = index % 3;
     return {
       item: item(`item-${index}`, `Northwind source ${index + 1}`),
       link: {
@@ -37,15 +38,15 @@ function candidates(): FindItCandidate[] {
         from_item_id: `item-${index}`,
         relation,
         status: "draft",
-        rationale: "It contains the same pricing decision.",
-        quote: { text: `Northwind shared sentence ${index + 1}`, turn_no: 1, role: "assistant" },
+        rationale: evidence === 0 ? "It contains the same pricing decision." : evidence === 1 ? "The Northwind deck names 2026 pricing." : "The reasoning is related.",
+        quote: evidence === 0 ? { text: `Northwind shared sentence ${index + 1}`, turn_no: 1, role: "assistant" } : null,
       },
     };
   });
 }
 
 describe("Find it results mode", () => {
-  it("shows up to fourteen reading nodes and several tracing lines", () => {
+  it("uses unique seeded slots and at least three concurrent reading lines", () => {
     render(
       <FindItResults
         phase="reading"
@@ -67,7 +68,9 @@ describe("Find it results mode", () => {
     expect(screen.getByTestId("find-it-canvas").getAttribute("data-phase")).toBe("reading");
     expect(screen.getAllByTestId("find-it-node")).toHaveLength(14);
     expect(screen.getByTestId("find-it-reading-nodes")).toBeTruthy();
-    expect(screen.getAllByTestId("find-it-tracing-line").length).toBeGreaterThanOrEqual(2);
+    const slots = Array.from(screen.getByTestId("find-it-reading-nodes").children).map((node) => node.getAttribute("data-slot"));
+    expect(new Set(slots).size).toBe(slots.length);
+    expect(screen.getAllByTestId("find-it-tracing-line").length).toBeGreaterThanOrEqual(3);
     expect(screen.getAllByTestId("find-it-target")).toHaveLength(1);
   });
 
@@ -103,7 +106,34 @@ describe("Find it results mode", () => {
     fireEvent.click(screen.getByRole("button", { name: "Keep as a source" }));
 
     expect(review).toHaveBeenCalledWith("link-0", "confirmed");
-    expect(screen.getByTestId("find-it-detail").textContent).toContain("Northwind source 2");
+    expect(screen.getByTestId("find-it-detail").textContent).toContain("Northwind source 4");
+  });
+
+  it("orders cards by evidence and moves the next card by the expanded delta", () => {
+    const { rerender } = render(
+      <FindItResults phase="kept" target={{ ...item("target", "Northwind deck"), type: "deck" }} scope="engagement" candidates={candidates(6)} reviewed={Object.fromEntries(candidates(6).map(({ link }) => [link.link_id, "confirmed" as const]))} considered={6} reduceMotion={false} onChooseTarget={vi.fn()} onReturnToForm={vi.fn()} onReview={vi.fn()} onKeepAll={vi.fn()} onDone={vi.fn()} onOpenThread={vi.fn()} />,
+    );
+    const nodes = screen.getAllByTestId("find-it-arc-node");
+    expect(nodes.map((node) => node.getAttribute("data-evidence"))).toEqual(["heavy", "heavy", "normal", "normal", "light", "light"]);
+    const nextBefore = Number.parseFloat(nodes[1]?.style.getPropertyValue("--y") ?? "0");
+    rerender(<FindItResults phase="settled" target={{ ...item("target", "Northwind deck"), type: "deck" }} scope="engagement" candidates={candidates(6)} reviewed={{}} considered={6} reduceMotion={false} onChooseTarget={vi.fn()} onReturnToForm={vi.fn()} onReview={vi.fn()} onKeepAll={vi.fn()} onDone={vi.fn()} onOpenThread={vi.fn()} />);
+    const nextAfter = Number.parseFloat(screen.getAllByTestId("find-it-arc-node")[1]?.style.getPropertyValue("--y") ?? "0");
+    expect(nextAfter).toBeGreaterThan(nextBefore);
+  });
+
+  it("interleaves twelve links across two non-overlapping arcs", () => {
+    render(
+      <FindItResults phase="settled" target={{ ...item("target", "Northwind deck"), type: "deck" }} scope="engagement" candidates={candidates(12)} reviewed={{}} considered={12} reduceMotion={false} onChooseTarget={vi.fn()} onReturnToForm={vi.fn()} onReview={vi.fn()} onKeepAll={vi.fn()} onDone={vi.fn()} onOpenThread={vi.fn()} />,
+    );
+    const nodes = screen.getAllByTestId("find-it-arc-node");
+    const first = nodes.filter((node) => node.getAttribute("data-arc") === "0");
+    const second = nodes.filter((node) => node.getAttribute("data-arc") === "1");
+    expect(first).toHaveLength(6);
+    expect(second).toHaveLength(6);
+    const firstYs = first.map((node) => Number.parseFloat(node.style.getPropertyValue("--y")));
+    const secondYs = second.map((node) => Number.parseFloat(node.style.getPropertyValue("--y")));
+    expect(secondYs[0]).toBeGreaterThan(firstYs[0] ?? 0);
+    expect(secondYs[0]).toBeLessThan(firstYs[1] ?? 100);
   });
 
   it("keeps every node attached after Done without a detail rail", () => {
