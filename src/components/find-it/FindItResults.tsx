@@ -14,7 +14,6 @@ import { effectiveWorkDate, formatDate, sourceLabel, type WorkItemRow } from "@/
 
 export type FindItCandidate = { link: FoundSource; item: WorkItemRow | null };
 export type FindItPhase = "reading" | "settled" | "kept";
-type ReviewStatus = "confirmed" | "discarded" | "draft";
 type Strength = "heavy" | "normal" | "light";
 type CanvasStyle = CSSProperties & Record<`--${string}`, string>;
 
