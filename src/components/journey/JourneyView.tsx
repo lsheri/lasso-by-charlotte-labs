@@ -268,7 +268,7 @@ function JourneySurface({
                 skippable.current = false;
                 handoff.requestHandoff(HANDOFF_AFTER_ARRIVAL_MS);
               }}
-              onOpenRef={(itemId, turnNo, text) => setOpenRef({ itemId, focus: { turnNo, text } })}
+              onOpenRef={(itemId, turnNo, text) => setOpenRef({ itemId, focus: { turnNo, ...(text ? { text } : {}) } })}
             />
           )}
         </div>
@@ -342,7 +342,7 @@ export function JourneySpine({
   onSkip?: (() => void) | undefined;
   /** The last card finished its own arrival animation. */
   onLastArrival?: (() => void) | undefined;
-  onOpenRef?: ((itemId: string, turnNo: number, text: string) => void) | undefined;
+  onOpenRef?: ((itemId: string, turnNo: number, text?: string) => void) | undefined;
 }) {
   const [ownSkipped, setOwnSkipped] = useState(false);
   const skipped = skippedProp ?? ownSkipped;
@@ -539,7 +539,7 @@ export function JourneySpine({
                             : undefined
                         }
                       >
-                        <button type="button" disabled={!stitch.to_turn_no} onClick={() => { if (stitch.to_turn_no) onOpenRef?.(stitch.to_item_id, stitch.to_turn_no, stitch.quote); }} className={`${spanStatusClass(stitch.status)} block w-full rounded-md px-2 py-1.5 text-left disabled:cursor-default`}>
+                        <button type="button" disabled={!stitch.to_item_id || !stitch.to_turn_no} onClick={() => { if (stitch.to_item_id && stitch.to_turn_no) onOpenRef?.(stitch.to_item_id, stitch.to_turn_no, stitch.quote ?? undefined); }} className={`${spanStatusClass(stitch.status)} block w-full rounded-md px-2 py-1.5 text-left disabled:cursor-default`}>
                           <p className="text-[13px] leading-snug text-foreground">
                             {stitch.quote ? `"${stitch.quote}"` : spanStatusPhrase(stitch.status)}
                           </p>
