@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { FindItResults, type FindItCandidate } from "@/components/find-it/FindItResults";
 import type { WorkItemRow } from "@/lib/work-types";
@@ -11,6 +11,8 @@ vi.mock("@/components/work/SourceMark", () => ({
 vi.mock("@/components/work/WorkNote", () => ({
   WorkNote: ({ item }: { item: WorkItemRow }) => <div>{item.title}</div>,
 }));
+
+afterEach(cleanup);
 
 function item(id: string, title: string): WorkItemRow {
   return {
