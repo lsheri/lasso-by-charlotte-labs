@@ -77,4 +77,27 @@ describe("Your calls storyboard", () => {
     expect(screen.queryByText("Hold the launch")).toBeNull();
     expect(screen.queryByText("Use the revised deck")).toBeNull();
   });
+
+  it("shows a page at a time and reveals the rest, with counts from the full set", () => {
+    const many: DecisionRow[] = Array.from({ length: 60 }, (_, index) => ({
+      ...rows[1]!,
+      id: `call-${index}`,
+      call_text: `Call number ${index}`,
+      why: "It held up.",
+    }));
+    activeRows = many;
+    render(<DecisionsPage />);
+
+    expect(screen.getAllByText(/^Call number /)).toHaveLength(DECISION_PAGE_SIZE);
+    expect(screen.getByText("decisions logged").previousElementSibling?.textContent).toBe("60");
+    expect(screen.getByText("35 earlier")).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "show earlier calls" }));
+    expect(screen.getAllByText(/^Call number /)).toHaveLength(DECISION_PAGE_SIZE * 2);
+    expect(screen.getByText("decisions logged").previousElementSibling?.textContent).toBe("60");
+
+    fireEvent.click(screen.getByRole("button", { name: "show earlier calls" }));
+    expect(screen.getAllByText(/^Call number /)).toHaveLength(60);
+    expect(screen.queryByRole("button", { name: "show earlier calls" })).toBeNull();
+  });
 });
