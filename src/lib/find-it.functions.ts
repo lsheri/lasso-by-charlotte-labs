@@ -356,6 +356,41 @@ export const searchRecord = createServerFn({ method: "POST" })
         };
       });
 
+    // What a conversation was about, from Lasso's own summary of it. Only
+    // conversations, and only ones no turn already answered for.
+    const conversations: RecordConversationHit[] = [];
+    if (data.mode === "thread") {
+      const alreadyShown = new Set(turns.map((hit) => hit.work_item_id));
+      const threadIds = items
+        .filter((item) => item.type === "ai_thread" && !alreadyShown.has(item.id))
+        .map((item) => item.id);
+      if (threadIds.length > 0) {
+        try {
+          const { data: aboutRows } = await supabase
+            .from("work_item_extracts")
+            .select("work_item_id")
+            .eq("owner_id", profile.id)
+            .in("work_item_id", threadIds)
+            .textSearch("search_tsv", data.query, { type: "websearch" })
+            .limit(MAX_ABOUT_HITS);
+          for (const row of aboutRows ?? []) {
+            const item = byId.get(row.work_item_id);
+            if (!item) continue;
+            conversations.push({
+              work_item_id: item.id,
+              title: item.title,
+              vendor: item.source_vendor ?? null,
+              date: item.work_date ?? item.captured_at ?? null,
+            });
+          }
+        } catch {
+          // Silent on purpose: the turn results still answer.
+        }
+      }
+    }
+
+
+
     const { data: shortlist } = await supabase
       .from("work_item_extracts")
       .select("work_item_id")
