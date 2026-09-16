@@ -36,3 +36,8 @@
 - [x] Number canonicalization with per-hit confirmation
 - [x] Thread search tiers: exact, all words, similar, under "closest matches"
 - [x] S2: conversations found from their summaries, under "matched from the summary"
+
+## Pass P1 (scale hygiene) - complete
+- Your calls timeline paginates at 25 with a quiet "show earlier calls" control; counts and filters still read the full set.
+- Shared-sentence lookup memoized in src/lib/shared-sentence-cache.ts (server memory only, max 200, TTL 10 min, clear() for tests). Nothing persisted.
+- No database changes.
