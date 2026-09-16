@@ -55,8 +55,9 @@ async function acceptInvite(page: Page, email: string, href: string, name: strin
   await page.waitForURL(/\/(onboarding|work|join|coaching)/, { timeout: 60_000 });
   await page.goto(href, { waitUntil: "domcontentloaded" });
   const nameField = page.locator("#join-name");
+  // The accept card arrives after its own lookup, so waiting comes first.
+  await nameField.waitFor({ state: "visible", timeout: 90_000 }).catch(() => undefined);
   if (await nameField.count()) {
-    await nameField.waitFor({ state: "visible", timeout: 60_000 });
     const join = page.getByRole("button", { name: /^join$/i });
     // The form settles after its own profile lookup, so the name only sticks
     // once the button agrees it has one.
