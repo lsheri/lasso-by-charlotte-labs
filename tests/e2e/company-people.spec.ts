@@ -56,8 +56,15 @@ async function acceptInvite(page: Page, email: string, href: string, name: strin
   await page.goto(href, { waitUntil: "domcontentloaded" });
   const nameField = page.locator("#join-name");
   if (await nameField.count()) {
-    await nameField.fill(name);
-    await page.getByRole("button", { name: /^join$/i }).click();
+    await nameField.waitFor({ state: "visible", timeout: 60_000 });
+    const join = page.getByRole("button", { name: /^join$/i });
+    // The form settles after its own profile lookup, so the name only sticks
+    // once the button agrees it has one.
+    await expect(async () => {
+      await nameField.fill(name);
+      await expect(join).toBeEnabled({ timeout: 2_000 });
+    }).toPass({ timeout: 60_000 });
+    await join.click();
   }
   await page.waitForURL(/\/(work|coaching|engagements)/, { timeout: 90_000 });
 }
