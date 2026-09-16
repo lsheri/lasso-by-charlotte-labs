@@ -40,16 +40,22 @@ describe("OrgSwitcher", () => {
     expect(container.textContent).toBe("");
   });
 
-  it("renders role first and emits one switch record", () => {
+  it("stays compact until opened and emits one switch record", () => {
     logEvent.mockClear();
     const mine = profile({});
     const coaching = profile({ id: "p2", org_id: "o2", role: "coach", org_name: "Bright Path" });
     renderSwitcher([mine, coaching], mine);
 
-    expect(screen.getAllByText("Engagement Mgr").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Coach").length).toBe(1);
+    const trigger = screen.getByRole("button", { name: /change workspace.*engagement mgr.*northline/i });
+    expect(trigger.getAttribute("aria-expanded")).toBe("false");
+    expect(screen.queryByText("Coach")).toBeNull();
+
+    fireEvent.click(trigger);
+    expect(trigger.getAttribute("aria-expanded")).toBe("true");
+    expect(screen.getByText("Coach")).not.toBeNull();
 
     fireEvent.click(screen.getByText("Coach"));
+    expect(trigger.getAttribute("aria-expanded")).toBe("false");
     expect(logEvent).toHaveBeenCalledTimes(1);
     expect(logEvent).toHaveBeenCalledWith("profile.switched", "o2", {
       from_role: "em",
