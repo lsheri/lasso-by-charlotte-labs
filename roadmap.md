@@ -41,3 +41,7 @@
 - Your calls timeline paginates at 25 with a quiet "show earlier calls" control; counts and filters still read the full set.
 - Shared-sentence lookup memoized in src/lib/shared-sentence-cache.ts (server memory only, max 200, TTL 10 min, clear() for tests). Nothing persisted.
 - No database changes.
+
+## Pass S1b (typo tier) - complete
+- Closest matches now fetch candidates with widened 4-character probes from the start, middle and end of each long word, so a misspelling still retrieves rows; app-side scoring and the 0.3 floor stand.
+- No database changes; pg_trgm index from S1 accelerates the probes.
