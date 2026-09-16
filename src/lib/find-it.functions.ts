@@ -305,14 +305,25 @@ export const searchRecord = createServerFn({ method: "POST" })
         take(wordRows, "words", longest);
 
         if (collected.length < MAX_TURN_HITS) {
-          const stem = longest.slice(0, Math.max(3, Math.ceil(longest.length * 0.6)));
-          const similarRows = (await turnsLike(stem, 200))
-            .map((row) => ({ row, score: trigramSimilarity(row.content.slice(0, 400), data.query) }))
-            .filter((entry) => entry.score >= SIMILAR_FLOOR)
-            .sort((a, b) => b.score - a.score)
-            .map((entry) => entry.row);
-          take(similarRows, "similar", stem);
+          // Closest matches are worked out in the app, so they need nothing
+          // special from the database. If the lookup ever fails, this tier
+          // simply does not appear and the other two still answer.
+          try {
+            const stem = longest.slice(0, Math.max(3, Math.ceil(longest.length * 0.6)));
+            const similarRows = (await turnsLike(stem, 200))
+              .map((row) => ({
+                row,
+                score: trigramSimilarity(row.content.slice(0, 400), data.query),
+              }))
+              .filter((entry) => entry.score >= SIMILAR_FLOOR)
+              .sort((a, b) => b.score - a.score)
+              .map((entry) => entry.row);
+            take(similarRows, "similar", stem);
+          } catch {
+            // Silent on purpose: exact and all-words results still render.
+          }
         }
+
       }
     }
 
