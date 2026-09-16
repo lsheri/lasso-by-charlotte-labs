@@ -316,9 +316,11 @@ export function FindItResults({ phase, target, scope, candidates, reviewed, cons
   const unmarkedCount = candidates.filter((candidate) => statusOf(candidate, reviewed) === "draft").length;
 
   useEffect(() => {
-    if (!selectedId && ordered[0]) {
+    const selectedStillExists = ordered.some((candidate) => candidate.link.link_id === selectedId);
+    const selectedIsLight = ordered.find((candidate) => candidate.link.link_id === selectedId) ? strengthFor(ordered.find((candidate) => candidate.link.link_id === selectedId) as FindItCandidate) === "light" : false;
+    if ((!selectedId || !selectedStillExists || selectedIsLight) && ordered[0]) {
       const preferred = ordered.find((candidate) => strengthFor(candidate) !== "light") ?? ordered[0];
-      setSelectedId(preferred.link.link_id);
+      if (!selectedStillExists || !selectedId) setSelectedId(preferred.link.link_id);
     }
   }, [ordered, selectedId]);
 
