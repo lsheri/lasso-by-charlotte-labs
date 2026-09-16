@@ -21,11 +21,6 @@ import {
  * survived the honesty gate on the server, so nothing needs hedging in the UI.
  */
 
-function refLine(refs: TurnRef[]): string | null {
-  if (refs.length === 0) return null;
-  return refs.map((ref) => `turn ${ref.turn_no}`).join(" · ");
-}
-
 function decidedByLabel(decision: ArtifactDecision): string {
   if (decision.decided_by === "person") return "decided by the person";
   if (decision.decided_by === "ai") return "decided by the model";
@@ -40,7 +35,7 @@ function Micro({ children }: { children: ReactNode }) {
   );
 }
 
-function RefButtons({ refs, onOpenRef }: { refs: TurnRef[]; onOpenRef?: (ref: TurnRef, text?: string) => void; }) {
+function RefButtons({ refs, onOpenRef }: { refs: TurnRef[]; onOpenRef?: ((ref: TurnRef, text?: string) => void) | undefined; }) {
   if (refs.length === 0) return null;
   return <p className="font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">{refs.map((ref, index) => <span key={`${ref.item_id}-${ref.turn_no}`}>{index ? " · " : ""}{onOpenRef ? <button type="button" className="story-link" onClick={() => onOpenRef(ref)}>turn {ref.turn_no}</button> : `turn ${ref.turn_no}`}</span>)}</p>;
 }

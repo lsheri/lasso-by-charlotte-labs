@@ -10,6 +10,8 @@ import {
   TracedSwatch,
 } from "@/components/notebook/marks";
 import { WorkArtifactPanel } from "@/components/journey/WorkArtifactPanel";
+import { ThreadViewerById } from "@/components/work/ThreadViewerById";
+import type { ThreadFocus } from "@/components/peek/ThreadBody";
 import { SourceMark } from "@/components/work/SourceMark";
 import { useEngagementPage } from "@/hooks/use-engagement-page";
 import { useProfile } from "@/hooks/use-profile";
@@ -183,6 +185,7 @@ function JourneySurface({
   // asks for it with the button, never on a stray click or key.
   const [skipped, setSkipped] = useState(false);
   const [storyOver, setStoryOver] = useState(false);
+  const [openRef, setOpenRef] = useState<{ itemId: string; focus: ThreadFocus } | null>(null);
   const storyPlaying = !reducedMotion && !loading && journey.enough && !skipped && !storyOver;
 
   function copyLink() {
@@ -265,6 +268,7 @@ function JourneySurface({
                 skippable.current = false;
                 handoff.requestHandoff(HANDOFF_AFTER_ARRIVAL_MS);
               }}
+              onOpenRef={(itemId, turnNo, text) => setOpenRef({ itemId, focus: { turnNo, text } })}
             />
           )}
         </div>
@@ -302,6 +306,7 @@ function JourneySurface({
           />
         </div>
       ) : null}
+      <ThreadViewerById workItemId={openRef?.itemId ?? null} focus={openRef?.focus} onClose={() => setOpenRef(null)} />
     </div>
   );
 }
@@ -323,6 +328,7 @@ export function JourneySpine({
   skipped: skippedProp,
   onSkip,
   onLastArrival,
+  onOpenRef,
 }: {
   journey: Journey;
   animate?: boolean;
@@ -336,6 +342,7 @@ export function JourneySpine({
   onSkip?: (() => void) | undefined;
   /** The last card finished its own arrival animation. */
   onLastArrival?: (() => void) | undefined;
+  onOpenRef?: ((itemId: string, turnNo: number, text: string) => void) | undefined;
 }) {
   const [ownSkipped, setOwnSkipped] = useState(false);
   const skipped = skippedProp ?? ownSkipped;
@@ -532,7 +539,7 @@ export function JourneySpine({
                             : undefined
                         }
                       >
-                        <div className={`${spanStatusClass(stitch.status)} rounded-md px-2 py-1.5`}>
+                        <button type="button" disabled={!stitch.to_turn_no} onClick={() => { if (stitch.to_turn_no) onOpenRef?.(stitch.to_item_id, stitch.to_turn_no, stitch.quote); }} className={`${spanStatusClass(stitch.status)} block w-full rounded-md px-2 py-1.5 text-left disabled:cursor-default`}>
                           <p className="text-[13px] leading-snug text-foreground">
                             {stitch.quote ? `"${stitch.quote}"` : spanStatusPhrase(stitch.status)}
                           </p>
@@ -544,7 +551,7 @@ export function JourneySpine({
                               .filter(Boolean)
                               .join(" · ")}
                           </p>
-                        </div>
+                        </button>
                       </li>
                     ))}
                   </ul>
