@@ -104,13 +104,14 @@ describe("Find it results mode", () => {
   });
 
   it("keeps every node attached after Done without a detail rail", () => {
+    const reviewed = Object.fromEntries(candidates().map(({ link }) => [link.link_id, "confirmed" as const]));
     render(
       <FindItResults
         phase="kept"
         target={{ ...item("target", "Northwind deck"), type: "deck" }}
         scope="engagement"
         candidates={candidates()}
-        reviewed={{}}
+        reviewed={reviewed}
         considered={12}
         reduceMotion={false}
         onChooseTarget={vi.fn()}
