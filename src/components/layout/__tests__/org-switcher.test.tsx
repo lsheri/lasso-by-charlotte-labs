@@ -47,15 +47,15 @@ describe("OrgSwitcher", () => {
     renderSwitcher([mine, coaching], mine);
 
     const trigger = screen.getByRole("button", { name: /change workspace.*engagement mgr.*northline/i });
-    expect(trigger).toHaveAttribute("aria-expanded", "false");
-    expect(screen.queryByText("Coach")).not.toBeInTheDocument();
+    expect(trigger.getAttribute("aria-expanded")).toBe("false");
+    expect(screen.queryByText("Coach")).toBeNull();
 
     fireEvent.click(trigger);
-    expect(trigger).toHaveAttribute("aria-expanded", "true");
-    expect(screen.getByText("Coach")).toBeInTheDocument();
+    expect(trigger.getAttribute("aria-expanded")).toBe("true");
+    expect(screen.getByText("Coach")).not.toBeNull();
 
     fireEvent.click(screen.getByText("Coach"));
-    expect(trigger).toHaveAttribute("aria-expanded", "false");
+    expect(trigger.getAttribute("aria-expanded")).toBe("false");
     expect(logEvent).toHaveBeenCalledTimes(1);
     expect(logEvent).toHaveBeenCalledWith("profile.switched", "o2", {
       from_role: "em",
