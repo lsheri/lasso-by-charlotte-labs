@@ -72,6 +72,9 @@ async function acceptInvite(page: Page, email: string, href: string, name: strin
 
 test("a firm brings two people in and a note comes back", async ({ page }) => {
   test.setTimeout(14 * 60_000);
+  // The create control lives in the desktop side navigation, so the walk needs
+  // a viewport wide enough for the sidebar to be present.
+  await page.setViewportSize({ width: 1440, height: 900 });
 
   // Both people already joined QA Firm in an earlier walk, so the invite and
   // accept steps are skipped. issueInvite and acceptInvite stay for a reset.
@@ -82,18 +85,37 @@ test("a firm brings two people in and a note comes back", async ({ page }) => {
   await signIn(page, EM, /sign in/i);
 
 
-  await run(page, "teammate creates an engagement", "Create engagement", async () => {
+  await run(page, "teammate creates an engagement", "nav button New engagement", async () => {
     await page.goto("/work", { waitUntil: "domcontentloaded" });
-    await page.getByRole("button", { name: /new engagement/i }).first().click();
     const dialog = page.getByRole("dialog");
-    const full = dialog.getByRole("button", { name: /^Full engagement$/ });
-    if (await full.count()) await full.click();
-    await dialog.locator("#eng-code").fill("QA-NW-1");
+    const code = dialog.locator("#eng-code");
+    // The sidebar renders after its own engagement query, so the walk retries
+    // the open until the dialog fields are actually on screen.
+    // The card's accessible name carries its whole description, so the walk
+    // matches on the visible text instead.
+    const full = dialog.getByRole("button", { name: /^Full engagement\b/ });
+
+    await expect(async () => {
+      if (!(await dialog.count())) {
+        await page
+          .locator("nav button", { hasText: "New engagement" })
+          .first()
+          .click({ timeout: 5_000 });
+      }
+      if (!(await code.count()) && (await full.count())) {
+        await full.click({ timeout: 5_000 });
+      }
+      await expect(code).toBeVisible({ timeout: 5_000 });
+    }).toPass({ timeout: 120_000 });
+
+
+    await code.fill("QA-NW-1");
     await dialog.locator("#eng-title").fill("QA Northwind");
     await dialog.locator("#eng-brief").fill("Pilot pricing for the Northwind rollout.");
     await dialog.getByRole("button", { name: /create engagement/i }).click();
     await expect(dialog).toBeHidden({ timeout: 90_000 });
   });
+
 
   await run(page, "teammate pastes a thread", "Paste a thread + Save thread", async () => {
     await pasteThread(page);
