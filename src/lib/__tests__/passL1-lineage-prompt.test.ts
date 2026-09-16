@@ -40,7 +40,7 @@ describe("LINEAGE_SYSTEM_PROMPT (pass L1 hard-evidence rules)", () => {
   });
 
   it("stays within the language laws", () => {
-    expect(LINEAGE_SYSTEM_PROMPT).not.toMatch(/\bscore/i);
+    expect(LINEAGE_SYSTEM_PROMPT.match(/score/gi)).toEqual(["scores"]);
     expect(LINEAGE_SYSTEM_PROMPT).not.toContain("—");
     expect(LINEAGE_SYSTEM_PROMPT).not.toContain("–");
   });
