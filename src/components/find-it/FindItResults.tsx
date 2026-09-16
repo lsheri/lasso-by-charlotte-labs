@@ -317,10 +317,9 @@ export function FindItResults({ phase, target, scope, candidates, reviewed, cons
 
   useEffect(() => {
     const selectedStillExists = ordered.some((candidate) => candidate.link.link_id === selectedId);
-    const selectedIsLight = ordered.find((candidate) => candidate.link.link_id === selectedId) ? strengthFor(ordered.find((candidate) => candidate.link.link_id === selectedId) as FindItCandidate) === "light" : false;
-    if ((!selectedId || !selectedStillExists || selectedIsLight) && ordered[0]) {
+    if ((!selectedId || !selectedStillExists) && ordered[0]) {
       const preferred = ordered.find((candidate) => strengthFor(candidate) !== "light") ?? ordered[0];
-      if (!selectedStillExists || !selectedId) setSelectedId(preferred.link.link_id);
+      setSelectedId(preferred.link.link_id);
     }
   }, [ordered, selectedId]);
 
