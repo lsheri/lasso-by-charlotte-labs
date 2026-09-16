@@ -7,6 +7,14 @@
 - [ ] Capture populated desktop reading and settled screenshots
   - Blocked: the available signed-in account has no eligible Find it target.
 
+## F9c fixed-stage canvas geometry
+- [x] Scale one 1166 by 836 stage from its container width
+- [x] Keep reading and settled positions in stage pixels
+- [x] Add lane geometry, cross-column collision handling, and exact arrow endpoints
+- [x] Stagger captions and render them above cards
+- [ ] Verify collision-free placement at 10 and 16 candidates
+- [ ] Run focused tests and confirm a clean preview build
+
 ## V1 evidence circle
 - [x] Add optional turn and sentence focus to conversation viewers
 - [x] Scroll to available evidence and draw the persistent green circle
