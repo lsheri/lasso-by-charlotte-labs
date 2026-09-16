@@ -220,6 +220,39 @@ export function trigramSimilarity(a: string, b: string): number {
   return shared / (left.size + right.size - shared);
 }
 
+/**
+ * A typo breaks at most one part of a word, so each long word offers three
+ * short probes taken from its start, middle and end. One of them survives the
+ * mistake, and the trigram index makes these cheap to look up.
+ */
+export function trigramProbes(query: string): string[] {
+  const probes = new Set<string>();
+  for (const word of queryWords(query)) {
+    if (word.length < 5) continue;
+    const middle = Math.max(0, Math.floor((word.length - 4) / 2));
+    for (const start of [0, middle, word.length - 4]) {
+      const probe = word.slice(start, start + 4);
+      if (probe.length === 4) probes.add(probe);
+    }
+  }
+  return [...probes];
+}
+
+/** The closest any one word in the text comes to any one word of the query. */
+export function bestWordSimilarity(content: string, query: string): number {
+  const asked = queryWords(query);
+  if (asked.length === 0) return 0;
+  const said = content.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter((word) => word.length >= 3);
+  let best = 0;
+  for (const word of said) {
+    for (const target of asked) {
+      const score = trigramSimilarity(word, target);
+      if (score > best) best = score;
+    }
+  }
+  return best;
+}
+
 const TIER_ORDER: Record<HitTier, number> = { exact: 0, words: 1, similar: 2 };
 
 export function rankThreadHits<T extends { tier: HitTier }>(hits: T[]): T[] {
