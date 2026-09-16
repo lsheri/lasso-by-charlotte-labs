@@ -128,7 +128,7 @@ export function DecisionsPage() {
               size="sm"
               variant={filter === item.id ? "secondary" : "outline"}
               aria-pressed={filter === item.id}
-              onClick={() => setFilter(item.id)}
+              onClick={() => { setFilter(item.id); setShown(DECISION_PAGE_SIZE); }}
               className="rounded-full text-[11.5px]"
             >
               {item.label}
@@ -176,8 +176,27 @@ export function DecisionsPage() {
                     </div>
                   </div>
                 ))}
+                {hiddenCount > 0 ? (
+                  <div className="grid grid-cols-[92px_24px_minmax(0,1fr)] pt-4">
+                    <div />
+                    <div />
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setShown((count) => count + DECISION_PAGE_SIZE)}
+                        className="font-hand text-[16px] text-muted-foreground underline underline-offset-4 hover:text-foreground"
+                      >
+                        show earlier calls
+                      </button>
+                      <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
+                        {hiddenCount} earlier
+                      </span>
+                    </div>
+                  </div>
+                ) : null}
               </div>
             )}
+
           </section>
           <DecisionRail counts={counts} />
         </div>
