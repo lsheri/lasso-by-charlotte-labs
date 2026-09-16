@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useState, type AnimationEvent as ReactAnimationEvent, type CSSProperties } from "react";
 
 import "./FindItResults.css";
 
@@ -17,6 +17,19 @@ export type FindItCandidate = { link: FoundSource; item: WorkItemRow | null };
 export type FindItPhase = "reading" | "settled" | "kept";
 type Strength = "heavy" | "normal" | "light";
 type CanvasStyle = CSSProperties & Record<`--${string}`, string>;
+type Point = { x: number; y: number };
+type ArcPlacement = Point & { arc: 0 | 1; height: number; width: number; growsLeft: boolean };
+type TraceLine = { cycle: number; targetIndex: number; duration: number; delay: number; bendA: number; bendB: number };
+
+const CANVAS_WIDTH = 1166;
+const CANVAS_HEIGHT = 836;
+const FOOTER_TOP = 787;
+const ARC_TOP = 12;
+const ARC_BOTTOM = FOOTER_TOP - 12;
+const COLLAPSED_HEIGHT = 62;
+const QUOTE_HEIGHT = 236;
+const WHY_HEIGHT = 200;
+const CARD_GAP = 14;
 
 const RELATION_CAPTION: Record<string, string> = {
   produced: "where it was written",
@@ -35,42 +48,98 @@ function candidateLine(item: WorkItemRow | null): string {
   return `${item.title}, ${source}, ${formatDate(effectiveWorkDate(item))}`;
 }
 
-function readingPosition(id: string, index: number): CanvasStyle {
-  const random = mulberry32(fnv1a(id));
-  const column = index % 4;
-  const row = Math.floor(index / 4);
-  const x = 45 + column * 16 + (random() * 6 - 3);
-  const y = 14 + row * 23 + (random() * 6 - 3);
+function shuffledSlots(candidates: FindItCandidate[]): number[] {
+  const slots = Array.from({ length: 16 }, (_, index) => index);
+  const random = mulberry32(fnv1a(candidates.map(({ link }) => link.link_id).join("|")));
+  for (let index = slots.length - 1; index > 0; index -= 1) {
+    const swapWith = Math.floor(random() * (index + 1));
+    const held = slots[index];
+    slots[index] = slots[swapWith] ?? index;
+    slots[swapWith] = held ?? swapWith;
+  }
+  return slots;
+}
+
+function readingPosition(id: string, slot: number): CanvasStyle {
+  const random = mulberry32(fnv1a(`slot-${id}`));
+  const column = slot % 4;
+  const row = Math.floor(slot / 4);
+  const x = 500 + column * 185 + (random() * 20 - 10);
+  const y = 92 + row * 208 + (random() * 20 - 10);
   return {
-    ["--x" as string]: `${x}%`,
-    ["--y" as string]: `${Math.min(88, y)}%`,
+    ["--x" as string]: `${x / CANVAS_WIDTH * 100}%`,
+    ["--y" as string]: `${y / CANVAS_HEIGHT * 100}%`,
     ["--drift-x" as string]: `${4 + random() * 4}px`,
     ["--drift-y" as string]: `${4 + random() * 4}px`,
     ["--drift-duration" as string]: `${6 + random() * 3}s`,
     ["--drift-delay" as string]: `${-random() * 4}s`,
+    ["--node-height" as string]: "56px",
   };
 }
 
-function arcPosition(id: string, index: number, total: number, selected: boolean): CanvasStyle {
-  const random = mulberry32(fnv1a(id));
-  const onSecondArc = index >= 8;
-  const arcIndex = onSecondArc ? index - 8 : index;
-  const arcCount = onSecondArc ? Math.max(1, total - 8) : Math.min(8, total);
-  const progress = arcCount === 1 ? 0.5 : arcIndex / (arcCount - 1);
-  const y = 15 + progress * 70;
-  const distanceFromMiddle = Math.abs(progress - 0.5) * 2;
-  const x = selected ? 78 : onSecondArc ? 89 : 72 + distanceFromMiddle * 7;
+function strengthFor(candidate: FindItCandidate): Strength {
+  if (candidate.link.quote?.text.trim()) return "heavy";
+  const rationale = candidate.link.rationale ?? "";
+  if (/\d/.test(rationale) || /\b(?:deck|memo|document|presentation|spreadsheet|brief|proposal|report|transcript|file)(?:\s+[\w.-]+)?\b/i.test(rationale)) return "normal";
+  return "light";
+}
+
+function orderByEvidence(candidates: FindItCandidate[]): FindItCandidate[] {
+  const rank: Record<Strength, number> = { heavy: 0, normal: 1, light: 2 };
+  return candidates
+    .map((candidate, index) => ({ candidate, index }))
+    .sort((a, b) => rank[strengthFor(a.candidate)] - rank[strengthFor(b.candidate)] || a.index - b.index)
+    .map(({ candidate }) => candidate);
+}
+
+function cardHeight(candidate: FindItCandidate, selectedId: string | null): number {
+  if (candidate.link.link_id !== selectedId) return COLLAPSED_HEIGHT;
+  return candidate.link.quote ? QUOTE_HEIGHT : WHY_HEIGHT;
+}
+
+function columnTotal(entries: { height: number }[]): number {
+  return entries.reduce((sum, entry) => sum + entry.height, 0) + Math.max(0, entries.length - 1) * CARD_GAP;
+}
+
+function arcLayout(candidates: FindItCandidate[], selectedId: string | null): Map<string, ArcPlacement> {
+  const entries = candidates.map((candidate) => ({ candidate, height: cardHeight(candidate, selectedId) }));
+  const available = ARC_BOTTOM - ARC_TOP;
+  const columns = columnTotal(entries) > available
+    ? [entries.filter((_, index) => index % 2 === 0), entries.filter((_, index) => index % 2 === 1)]
+    : [entries, []];
+  const placements = new Map<string, ArcPlacement>();
+
+  columns.forEach((column, arc) => {
+    if (!column.length) return;
+    const total = columnTotal(column);
+    const interleaveOffset = arc === 1 ? (COLLAPSED_HEIGHT + CARD_GAP) / 2 : 0;
+    const unclampedStart = ARC_TOP + (available - total) / 2 + interleaveOffset;
+    const start = Math.min(Math.max(ARC_TOP, unclampedStart), ARC_BOTTOM - total);
+    let cursor = start;
+    for (const entry of column) {
+      const y = cursor + entry.height / 2;
+      const middleDistance = Math.min(1, Math.abs(y - CANVAS_HEIGHT / 2) / (available / 2));
+      const bulge = (1 - middleDistance * middleDistance) * 140;
+      const baseX = 660 + arc * 300;
+      const width = entry.candidate.link.link_id === selectedId ? 420 : 250;
+      const naturalX = Math.min(baseX + bulge, CANVAS_WIDTH - width / 2 - 12);
+      const growsLeft = width === 420 && naturalX + width / 2 > CANVAS_WIDTH - 12;
+      const x = growsLeft ? CANVAS_WIDTH - width / 2 - 12 : naturalX;
+      placements.set(entry.candidate.link.link_id, { x, y, arc: arc as 0 | 1, height: entry.height, width, growsLeft });
+      cursor += entry.height + CARD_GAP;
+    }
+  });
+  return placements;
+}
+
+function placementStyle(placement: ArcPlacement, index: number): CanvasStyle {
   return {
-    ["--x" as string]: `${x + (random() - 0.5) * 0.8}%`,
-    ["--y" as string]: `${y + (random() - 0.5) * 0.8}%`,
+    ["--x" as string]: `${placement.x / CANVAS_WIDTH * 100}%`,
+    ["--y" as string]: `${placement.y / CANVAS_HEIGHT * 100}%`,
+    ["--node-height" as string]: `${placement.height}px`,
+    ["--node-width" as string]: `${placement.width}px`,
     ["--arrow-delay" as string]: `${index * 60}ms`,
   };
-}
-
-function strengthFor(index: number, total: number): Strength {
-  if (index < Math.ceil(total / 3)) return "heavy";
-  if (index >= Math.ceil((total * 2) / 3)) return "light";
-  return "normal";
 }
 
 function strokeFor(strength: Strength): number {
