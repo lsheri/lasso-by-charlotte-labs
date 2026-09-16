@@ -140,6 +140,7 @@ export type RecordSearchResult = {
 const NUMBER_QUERY = /^[\s$£€]*\d[\d\s.,]*\s*[kKmM]?[\s%]*$/;
 const EXCERPT_CHARS = 160;
 const MAX_TURN_HITS = 50;
+const MAX_ABOUT_HITS = 15;
 const SIMILAR_FLOOR = 0.3;
 
 /**
@@ -429,6 +430,6 @@ export const searchRecord = createServerFn({ method: "POST" })
       }
     }
 
-    return { turns, deliverables };
+    return { turns, conversations, deliverables };
   });
 
