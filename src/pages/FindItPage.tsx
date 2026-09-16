@@ -505,11 +505,14 @@ export function FindItPage() {
 
               {searchHits ? (
                 <div className="mt-6">
-                  {searchHits.turns.length === 0 && searchHits.deliverables.length === 0 ? (
+                  {searchHits.turns.length === 0 &&
+                  searchHits.conversations.length === 0 &&
+                  searchHits.deliverables.length === 0 ? (
                     <p className="text-sm text-muted-foreground">
                       Nothing with those words. Try fewer of them.
                     </p>
                   ) : null}
+
                   {searchHits.turns.length > 0 ? (
                     <ul className="divide-y divide-hairline border-t border-hairline">
                       {searchHits.turns.map((hit, index) => (
@@ -549,8 +552,43 @@ export function FindItPage() {
                     </ul>
                   ) : null}
 
+                  {searchHits.conversations.length > 0 ? (
+                    <div className="mt-5">
+                      <p className="font-hand text-[16px] text-soft">matched from the summary</p>
+                      <ul className="mt-2 divide-y divide-hairline border-t border-hairline">
+                        {searchHits.conversations.map((hit) => (
+                          <li
+                            key={hit.work_item_id}
+                            className="flex items-center gap-4 py-3"
+                          >
+                            <div className="min-w-0 flex-1">
+                              <p className="text-[13px] text-foreground">{hit.title}</p>
+                              <p className="micro-label mt-1">
+                                {[hit.vendor, hit.date ? hit.date.slice(0, 10) : null]
+                                  .filter(Boolean)
+                                  .join(" · ")}
+                              </p>
+                            </div>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setOpenThread(hit.work_item_id);
+                                setThreadFocus(undefined);
+                              }}
+                            >
+                              Open
+                            </Button>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
+
                   {searchHits.deliverables.length > 0 ? (
                     <div className="mt-5">
+
                       <p className="micro-label">ALSO IN</p>
                       <div className="mt-2 flex flex-wrap gap-2">
                         {searchHits.deliverables.map((item) => (

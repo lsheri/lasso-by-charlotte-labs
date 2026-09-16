@@ -119,14 +119,28 @@ export type RecordTurnHit = {
   tier: HitTier;
 };
 
+/**
+ * A conversation found by what Lasso wrote about it, not by anything said in
+ * it. No excerpt travels with these: a summary is never shown as a quote.
+ */
+export type RecordConversationHit = {
+  work_item_id: string;
+  title: string;
+  vendor: string | null;
+  date: string | null;
+};
+
 export type RecordSearchResult = {
   turns: RecordTurnHit[];
+  conversations: RecordConversationHit[];
   deliverables: { work_item_id: string; title: string; type: string }[];
 };
+
 
 const NUMBER_QUERY = /^[\s$£€]*\d[\d\s.,]*\s*[kKmM]?[\s%]*$/;
 const EXCERPT_CHARS = 160;
 const MAX_TURN_HITS = 50;
+const MAX_ABOUT_HITS = 15;
 const SIMILAR_FLOOR = 0.3;
 
 /**
@@ -251,10 +265,11 @@ export const searchRecord = createServerFn({ method: "POST" })
 
     const { data: mine } = await supabase
       .from("work_items")
-      .select("id, title, type, source_vendor")
+      .select("id, title, type, source_vendor, work_date, captured_at")
       .eq("owner_id", profile.id);
     const items = mine ?? [];
-    if (items.length === 0) return { turns: [], deliverables: [] };
+    if (items.length === 0) return { turns: [], conversations: [], deliverables: [] };
+
     const byId = new Map(items.map((item) => [item.id, item]));
     const itemIds = items.map((item) => item.id);
 
@@ -342,6 +357,41 @@ export const searchRecord = createServerFn({ method: "POST" })
         };
       });
 
+    // What a conversation was about, from Lasso's own summary of it. Only
+    // conversations, and only ones no turn already answered for.
+    const conversations: RecordConversationHit[] = [];
+    if (data.mode === "thread") {
+      const alreadyShown = new Set(turns.map((hit) => hit.work_item_id));
+      const threadIds = items
+        .filter((item) => item.type === "ai_thread" && !alreadyShown.has(item.id))
+        .map((item) => item.id);
+      if (threadIds.length > 0) {
+        try {
+          const { data: aboutRows } = await supabase
+            .from("work_item_extracts")
+            .select("work_item_id")
+            .eq("owner_id", profile.id)
+            .in("work_item_id", threadIds)
+            .textSearch("search_tsv", data.query, { type: "websearch" })
+            .limit(MAX_ABOUT_HITS);
+          for (const row of aboutRows ?? []) {
+            const item = byId.get(row.work_item_id);
+            if (!item) continue;
+            conversations.push({
+              work_item_id: item.id,
+              title: item.title,
+              vendor: item.source_vendor ?? null,
+              date: item.work_date ?? item.captured_at ?? null,
+            });
+          }
+        } catch {
+          // Silent on purpose: the turn results still answer.
+        }
+      }
+    }
+
+
+
     const { data: shortlist } = await supabase
       .from("work_item_extracts")
       .select("work_item_id")
@@ -380,6 +430,6 @@ export const searchRecord = createServerFn({ method: "POST" })
       }
     }
 
-    return { turns, deliverables };
+    return { turns, conversations, deliverables };
   });
 

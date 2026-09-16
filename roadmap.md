@@ -35,3 +35,4 @@
 - [x] Trigram index on turns.content (additive migration)
 - [x] Number canonicalization with per-hit confirmation
 - [x] Thread search tiers: exact, all words, similar, under "closest matches"
+- [x] S2: conversations found from their summaries, under "matched from the summary"
