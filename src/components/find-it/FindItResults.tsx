@@ -256,7 +256,7 @@ function ReadingLines({ candidates, slots }: { candidates: FindItCandidate[]; sl
           ["--trace-duration" as string]: `${line.duration}s`,
           ["--trace-delay" as string]: `${line.delay}s`,
         } as CSSProperties;
-        return <path key={`${lane}-${line.cycle}`} data-testid="find-it-tracing-line" data-target={candidate.link.link_id} className="find-it-trace-line" style={style} pathLength="1" strokeWidth={1.4 + lane * 0.18} onAnimationEnd={(event) => renew(lane, event)} d={`M370 418 C${500 + line.bendA} ${350 + line.bendB}, ${x - 120 + line.bendB} ${y - line.bendA}, ${x - 82} ${y}`} />;
+        return <path key={lane} data-testid="find-it-tracing-line" data-target={candidate.link.link_id} className="find-it-trace-line" style={style} pathLength="1" strokeWidth={1.4 + lane * 0.18} onAnimationIteration={(event) => renew(lane, event)} d={`M370 418 C${500 + line.bendA} ${350 + line.bendB}, ${x - 120 + line.bendB} ${y - line.bendA}, ${x - 82} ${y}`} />;
       })}
     </svg>
   );
@@ -279,7 +279,7 @@ function ArcArrow({ candidate, index, placement }: { candidate: FindItCandidate;
   const captionWidth = Math.max(86, caption.length * 7.4);
   const style = placementStyle(placement, index);
   return (
-    <g data-testid="find-it-arrow" data-strength={strength} style={position}>
+    <g data-testid="find-it-arrow" data-strength={strength} style={style}>
       <path className="find-it-arrow-line" pathLength="1" d={d} strokeWidth={strokeFor(strength)} strokeDasharray={strength === "light" ? "0.012 0.016" : undefined} />
       <path className="find-it-arrow-head" pathLength="1" d={head} strokeWidth={strokeFor(strength)} />
       {arrowLength >= 120 ? <g className="find-it-arrow-caption"><rect x={captionX - captionWidth / 2 - 5} y={captionY - 15} width={captionWidth + 10} height={21} rx={4} /><text x={captionX} y={captionY} textAnchor="middle" className="fill-green font-hand text-[16px]">{caption}</text></g> : null}
