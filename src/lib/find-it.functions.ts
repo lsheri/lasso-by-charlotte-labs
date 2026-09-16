@@ -220,6 +220,39 @@ export function trigramSimilarity(a: string, b: string): number {
   return shared / (left.size + right.size - shared);
 }
 
+/**
+ * A typo breaks at most one part of a word, so each long word offers three
+ * short probes taken from its start, middle and end. One of them survives the
+ * mistake, and the trigram index makes these cheap to look up.
+ */
+export function trigramProbes(query: string): string[] {
+  const probes = new Set<string>();
+  for (const word of queryWords(query)) {
+    if (word.length < 5) continue;
+    const middle = Math.max(0, Math.floor((word.length - 4) / 2));
+    for (const start of [0, middle, word.length - 4]) {
+      const probe = word.slice(start, start + 4);
+      if (probe.length === 4) probes.add(probe);
+    }
+  }
+  return [...probes];
+}
+
+/** The closest any one word in the text comes to any one word of the query. */
+export function bestWordSimilarity(content: string, query: string): number {
+  const asked = queryWords(query);
+  if (asked.length === 0) return 0;
+  const said = content.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter((word) => word.length >= 3);
+  let best = 0;
+  for (const word of said) {
+    for (const target of asked) {
+      const score = trigramSimilarity(word, target);
+      if (score > best) best = score;
+    }
+  }
+  return best;
+}
+
 const TIER_ORDER: Record<HitTier, number> = { exact: 0, words: 1, similar: 2 };
 
 export function rankThreadHits<T extends { tier: HitTier }>(hits: T[]): T[] {
@@ -300,6 +333,19 @@ export const searchRecord = createServerFn({ method: "POST" })
       return (rows ?? []) as TurnRow[];
     };
 
+    /** One lookup, several short probes, so a misspelling still pulls rows back. */
+    const turnsProbed = async (probes: string[], limit: number) => {
+      if (probes.length === 0) return [] as TurnRow[];
+      const { data: rows } = await supabase
+        .from("turns")
+        .select("work_item_id, turn_no, role, content")
+        .in("work_item_id", itemIds)
+        .or(probes.map((probe) => `content.ilike.%${likeEscape(probe)}%`).join(","))
+        .order("turn_no", { ascending: true })
+        .limit(limit);
+      return (rows ?? []) as TurnRow[];
+    };
+
     if (data.mode === "number" && canonical) {
       // Ask for every surface form, then confirm the number is truly there.
       for (const form of surfaceFormsFor(canonical)) {
@@ -324,16 +370,22 @@ export const searchRecord = createServerFn({ method: "POST" })
           // special from the database. If the lookup ever fails, this tier
           // simply does not appear and the other two still answer.
           try {
-            const stem = longest.slice(0, Math.max(3, Math.ceil(longest.length * 0.6)));
-            const similarRows = (await turnsLike(stem, 200))
+            const probes = trigramProbes(data.query);
+            const fallback = longest.slice(0, Math.max(3, Math.ceil(longest.length * 0.6)));
+            const candidates =
+              probes.length > 0 ? await turnsProbed(probes, 50) : await turnsLike(fallback, 200);
+            const similarRows = candidates
               .map((row) => ({
                 row,
-                score: trigramSimilarity(row.content.slice(0, 400), data.query),
+                score: Math.max(
+                  trigramSimilarity(row.content.slice(0, 400), data.query),
+                  bestWordSimilarity(row.content, data.query),
+                ),
               }))
               .filter((entry) => entry.score >= SIMILAR_FLOOR)
               .sort((a, b) => b.score - a.score)
               .map((entry) => entry.row);
-            take(similarRows, "similar", stem);
+            take(similarRows, "similar", longest);
           } catch {
             // Silent on purpose: exact and all-words results still render.
           }
