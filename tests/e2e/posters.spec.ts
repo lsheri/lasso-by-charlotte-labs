@@ -148,7 +148,8 @@ test("poster-coach-note", async ({ page }) => {
 });
 
 test("poster-one-on-one", async ({ page }) => {
-  test.setTimeout(180_000);
+  test.setTimeout(210_000);
+  page.setDefaultTimeout(30_000);
   await signIn(page, EM, /sign in/i);
   await softPoster(page, "one-on-one", async () => {
     await page.goto("/one-on-one", { waitUntil: "networkidle" });
@@ -159,9 +160,9 @@ test("poster-one-on-one", async ({ page }) => {
         const date = page.getByLabel(/when is your next 1:1/i);
         if (!(await date.count())) await page.getByRole("button", { name: /new 1:1/i }).click();
         await page.getByLabel(/when is your next 1:1/i).fill(new Date().toISOString().slice(0, 10));
-        await page.getByRole("button", { name: /^add it$/i }).click();
+        await page.getByRole("button", { name: /^add it$/i }).click({ timeout: 30_000 });
       }
-      await expect(note).toBeEnabled({ timeout: 60_000 });
+      await expect(note).toBeEnabled({ timeout: 30_000 });
       await note.fill(stickyText);
       await note.press("Enter");
     }

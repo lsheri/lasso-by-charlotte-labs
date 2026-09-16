@@ -72,6 +72,27 @@ function ClipSlot({
     );
   }
 
+  if (poster) {
+    return (
+      <figure
+        id={`clip-slot-${id}`}
+        className="landing-next-slot overflow-hidden rounded-[var(--radius)] border border-dashed border-rule bg-card"
+      >
+        <img
+          src={poster}
+          alt={label}
+          className="w-full object-cover"
+          style={{ aspectRatio: aspect }}
+          loading="lazy"
+          decoding="async"
+        />
+        <figcaption className="border-t border-dashed border-rule px-3 py-2 font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
+          {id.replaceAll("-", " ")}
+        </figcaption>
+      </figure>
+    );
+  }
+
   return (
     <div
       id={`clip-slot-${id}`}
@@ -252,7 +273,7 @@ function LandingNextPage() {
                         leave them. Nothing is lost, nothing is required.
                       </p>
                     </div>
-                    <ClipSlot id="inbox" aspect="16 / 10" label="Work arriving in one inbox" />
+                    <ClipSlot id="inbox" aspect="16 / 10" poster="/videos/poster-inbox.jpg" label="Work arriving in one inbox" />
                   </div>
                 </section>
 
@@ -269,7 +290,7 @@ function LandingNextPage() {
                         sentence, quoted, and why.
                       </p>
                     </div>
-                    <ClipSlot id="find-it" aspect="16 / 9" label="Finding the source behind a fact" />
+                    <ClipSlot id="find-it" aspect="16 / 9" poster="/videos/poster-find-it.jpg" label="Finding the source behind a fact" />
                   </div>
                 </section>
 
@@ -283,7 +304,7 @@ function LandingNextPage() {
                         firm's judgment stops living in chat scroll.
                       </p>
                     </div>
-                    <ClipSlot id="decisions" aspect="16 / 10" label="A decision drafted from a conversation" />
+                    <ClipSlot id="decisions" aspect="16 / 10" poster="/videos/poster-decisions.jpg" label="A decision drafted from a conversation" />
                   </div>
                 </section>
 
@@ -301,7 +322,7 @@ function LandingNextPage() {
                         <img src={coachSpider.url} alt="" className="landing-next-coach-spider absolute" />
                       </div>
                     </div>
-                    <ClipSlot id="coach-note" aspect="16 / 10" label="A coach note opening as a conversation" />
+                    <ClipSlot id="coach-note" aspect="16 / 10" poster="/videos/poster-coach-note.jpg" label="A coach note opening as a conversation" />
                   </div>
                 </section>
 
@@ -315,7 +336,7 @@ function LandingNextPage() {
                         becomes a conversation about the judgment call.
                       </p>
                     </div>
-                    <ClipSlot id="one-on-one" aspect="16 / 10" label="Preparing work for a one to one" />
+                    <ClipSlot id="one-on-one" aspect="16 / 10" poster="/videos/poster-one-on-one.jpg" label="Preparing work for a one to one" />
                   </div>
                 </section>
               </div>
