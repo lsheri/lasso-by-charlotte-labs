@@ -97,7 +97,7 @@ describe("pass S2 · found by what a conversation was about", () => {
   });
 
   it("leaves the deliverable path alone", () => {
-    expect(source).toContain("ALSO");
+    expect(source).toContain("deliverables.push(");
     expect(page).toContain("ALSO IN");
   });
 });
