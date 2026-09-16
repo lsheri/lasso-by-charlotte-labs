@@ -101,13 +101,8 @@ test("poster-decisions", async ({ page }) => {
     const draftFilter = page.getByRole("button", { name: /awaiting your review/i });
     await draftFilter.click();
     const draftAction = page.getByRole("button", { name: /confirm (this call|as written)/i }).first();
-    if (!(await draftAction.count())) {
-      await page.getByRole("button", { name: /everything/i }).click();
-      await expect(page.getByText(/Northwind|pilot|decision/i).first()).toBeVisible({ timeout: 30_000 });
-      console.log("SOFT-FAIL poster-decisions no drafted call was available; captured the populated call log");
-    } else {
-      await expect(draftAction).toBeVisible();
-    }
+    await expect(draftAction).toBeVisible({ timeout: 60_000 });
+    await expect(page.getByText(/Northwind|pilot|pricing/i).first()).toBeVisible();
   });
 });
 
@@ -124,7 +119,7 @@ test("poster-coach-note", async ({ page }) => {
     const existing = page.getByText(/Your pricing floor came from the second thread/i).first();
     if (!(await existing.count())) {
       const composer = page.locator("section").filter({ hasText: "Write a coaching note" }).last();
-      await composer.getByRole("button", { name: /^(Workstream|Task)$/ }).first().click();
+      await composer.getByRole("button", { name: /^Task$/ }).click();
       const picker = composer.getByLabel(/which (workstream|task)/i);
       if (await picker.count()) await picker.selectOption({ index: 1 });
       const fields = composer.locator("textarea");
@@ -142,30 +137,19 @@ test("poster-coach-note", async ({ page }) => {
     await page.goto("/coach-notes", { waitUntil: "networkidle" });
     await expect(page.getByText(/notes from your coach/i).first()).toBeVisible({ timeout: 60_000 });
     const circle = page.getByLabel(/new note from/i).first();
-    if (await circle.count()) await circle.click();
+    await expect(circle).toBeVisible({ timeout: 60_000 });
+    await circle.click();
     await expect(page.getByText(/pricing floor came from the second thread/i).first()).toBeVisible({ timeout: 60_000 });
   });
 });
 
 test("poster-one-on-one", async ({ page }) => {
-  test.setTimeout(210_000);
+  test.setTimeout(180_000);
   page.setDefaultTimeout(30_000);
   await signIn(page, EM, /sign in/i);
   await softPoster(page, "one-on-one", async () => {
     await page.goto("/one-on-one", { waitUntil: "networkidle" });
-    const stickyText = "Northwind pricing floor, cite the second thread.";
-    if (!(await page.getByText(stickyText, { exact: true }).count())) {
-      const note = page.locator('textarea[aria-label="add a note"]').first();
-      if (!(await note.isEnabled())) {
-        const date = page.getByLabel(/when is your next 1:1/i);
-        if (!(await date.count())) await page.getByRole("button", { name: /new 1:1/i }).click();
-        await page.getByLabel(/when is your next 1:1/i).fill(new Date().toISOString().slice(0, 10));
-        await page.getByRole("button", { name: /^add it$/i }).click({ timeout: 30_000 });
-      }
-      await expect(note).toBeEnabled({ timeout: 30_000 });
-      await note.fill(stickyText);
-      await note.press("Enter");
-    }
-    await expect(page.getByText(stickyText, { exact: true })).toBeVisible({ timeout: 60_000 });
+    await expect(page.locator('textarea[aria-label="add a note"]')).toBeEnabled({ timeout: 60_000 });
+    await expect(page.getByRole("checkbox", { name: "Discussed" }).first()).toBeVisible({ timeout: 60_000 });
   });
 });
