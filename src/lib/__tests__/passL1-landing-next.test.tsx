@@ -32,7 +32,7 @@ describe("pass L1 hidden landing route", () => {
   });
 
   it("shows variant B only when v=b", () => {
-    expect(route).toContain('search.v === "b"');
+    expect(route).toContain('search["v"] === "b"');
     expect(route).toContain('variant === "b"');
     expect(route.match(/Your firm bought AI\. Now nobody can say where a number came from\./g)).toHaveLength(1);
   });

@@ -19,9 +19,8 @@ type LandingVariant = "a" | "b";
 
 export const Route = createFileRoute("/landing-next")({
   ssr: false,
-  validateSearch: (search: Record<string, unknown>): { v?: "b" } => ({
-    v: search.v === "b" ? "b" : undefined,
-  }),
+  validateSearch: (search: Record<string, unknown>): { v?: "b" } =>
+    search["v"] === "b" ? { v: "b" } : {},
   head: () => ({
     meta: [
       { title: "Lasso: see where every fact in a deliverable came from" },
