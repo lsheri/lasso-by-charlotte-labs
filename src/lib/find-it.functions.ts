@@ -370,16 +370,22 @@ export const searchRecord = createServerFn({ method: "POST" })
           // special from the database. If the lookup ever fails, this tier
           // simply does not appear and the other two still answer.
           try {
-            const stem = longest.slice(0, Math.max(3, Math.ceil(longest.length * 0.6)));
-            const similarRows = (await turnsLike(stem, 200))
+            const probes = trigramProbes(data.query);
+            const fallback = longest.slice(0, Math.max(3, Math.ceil(longest.length * 0.6)));
+            const candidates =
+              probes.length > 0 ? await turnsProbed(probes, 50) : await turnsLike(fallback, 200);
+            const similarRows = candidates
               .map((row) => ({
                 row,
-                score: trigramSimilarity(row.content.slice(0, 400), data.query),
+                score: Math.max(
+                  trigramSimilarity(row.content.slice(0, 400), data.query),
+                  bestWordSimilarity(row.content, data.query),
+                ),
               }))
               .filter((entry) => entry.score >= SIMILAR_FLOOR)
               .sort((a, b) => b.score - a.score)
               .map((entry) => entry.row);
-            take(similarRows, "similar", stem);
+            take(similarRows, "similar", longest);
           } catch {
             // Silent on purpose: exact and all-words results still render.
           }
