@@ -4089,6 +4089,24 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   animation: nb-findit-row-kf 260ms var(--nb-ease, ease-out) both;
   animation-delay: calc(var(--nb-i, 0) * 40ms);
 }
+
+/* Pass F8: one bounded canvas carries reading, settled, and kept states. */
+@keyframes nb-findit-canvas-drift {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: 0 -6px;
+  }
+}
+.find-it-scattered-node {
+  left: var(--x);
+  top: var(--y);
+  transform: translate(-50%, -50%) rotate(var(--r));
+  transition: transform 480ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity 480ms ease;
+  animation: nb-findit-canvas-drift 3.2s ease-in-out var(--delay) infinite;
+}
 @media (prefers-reduced-motion: reduce) {
   .nb-findit-drift,
   .nb-findit-head,
@@ -4104,5 +4122,9 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
     animation: none !important;
     stroke-dasharray: none;
     stroke-dashoffset: 0;
+  }
+  .find-it-scattered-node {
+    animation: none !important;
+    transition: none !important;
   }
 }

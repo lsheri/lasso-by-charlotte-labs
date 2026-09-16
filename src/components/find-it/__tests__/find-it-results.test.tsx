@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { FindItResults, type FindItCandidate } from "@/components/find-it/FindItResults";
 import type { WorkItemRow } from "@/lib/work-types";
@@ -11,6 +11,8 @@ vi.mock("@/components/work/SourceMark", () => ({
 vi.mock("@/components/work/WorkNote", () => ({
   WorkNote: ({ item }: { item: WorkItemRow }) => <div>{item.title}</div>,
 }));
+
+afterEach(cleanup);
 
 function item(id: string, title: string): WorkItemRow {
   return {
@@ -43,15 +45,44 @@ function candidates(): FindItCandidate[] {
 }
 
 describe("Find it results mode", () => {
-  it("renders one target, grouped counts, one detail rail, and advances after Keep", () => {
-    const review = vi.fn();
+  it("keeps reading nodes inside the same canvas", () => {
     render(
       <FindItResults
+        phase="reading"
         target={{ ...item("target", "Northwind deck"), type: "deck" }}
         scope="engagement"
         candidates={candidates()}
         reviewed={{}}
-        onChooseAgain={vi.fn()}
+        considered={12}
+        reduceMotion={false}
+        onChooseTarget={vi.fn()}
+        onReturnToForm={vi.fn()}
+        onReview={vi.fn()}
+        onKeepAll={vi.fn()}
+        onDone={vi.fn()}
+        onOpenThread={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByTestId("find-it-canvas").getAttribute("data-phase")).toBe("reading");
+    expect(screen.getAllByTestId("find-it-node")).toHaveLength(12);
+    expect(screen.getByTestId("find-it-reading-nodes")).toBeTruthy();
+    expect(screen.getAllByTestId("find-it-target")).toHaveLength(1);
+  });
+
+  it("settles into groups, shows one rail, and advances after Keep", () => {
+    const review = vi.fn();
+    render(
+      <FindItResults
+        phase="settled"
+        target={{ ...item("target", "Northwind deck"), type: "deck" }}
+        scope="engagement"
+        candidates={candidates()}
+        reviewed={{}}
+        considered={12}
+        reduceMotion={false}
+        onChooseTarget={vi.fn()}
+        onReturnToForm={vi.fn()}
         onReview={review}
         onKeepAll={vi.fn()}
         onDone={vi.fn()}
@@ -70,5 +101,30 @@ describe("Find it results mode", () => {
 
     expect(review).toHaveBeenCalledWith("link-0", "confirmed");
     expect(screen.getByTestId("find-it-detail").textContent).toContain("Northwind source 2");
+  });
+
+  it("keeps every node attached after Done without a detail rail", () => {
+    const reviewed = Object.fromEntries(candidates().map(({ link }) => [link.link_id, "confirmed" as const]));
+    render(
+      <FindItResults
+        phase="kept"
+        target={{ ...item("target", "Northwind deck"), type: "deck" }}
+        scope="engagement"
+        candidates={candidates()}
+        reviewed={reviewed}
+        considered={12}
+        reduceMotion={false}
+        onChooseTarget={vi.fn()}
+        onReturnToForm={vi.fn()}
+        onReview={vi.fn()}
+        onKeepAll={vi.fn()}
+        onDone={vi.fn()}
+        onOpenThread={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByTestId("find-it-canvas").getAttribute("data-phase")).toBe("kept");
+    expect(screen.getAllByTestId("find-it-node")).toHaveLength(12);
+    expect(screen.queryByTestId("find-it-detail")).toBeNull();
   });
 });
