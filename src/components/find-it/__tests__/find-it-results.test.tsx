@@ -2,7 +2,7 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { FindItResults, type FindItCandidate } from "@/components/find-it/FindItResults";
+import { arcLayout, FindItResults, type FindItCandidate } from "@/components/find-it/FindItResults";
 import type { WorkItemRow } from "@/lib/work-types";
 
 vi.mock("@/components/work/SourceMark", () => ({
@@ -42,6 +42,21 @@ function candidates(count = 16): FindItCandidate[] {
         quote: evidence === 0 ? { text: `Northwind shared sentence ${index + 1}`, turn_no: 1, role: "assistant" } : null,
       },
     };
+  });
+}
+
+function expectNoPlacementIntersections(count: number) {
+  const sourceCandidates = candidates(count);
+  const placements = [...arcLayout(sourceCandidates, "link-0").values()];
+  expect(placements).toHaveLength(count);
+  placements.forEach((first, firstIndex) => {
+    placements.slice(firstIndex + 1).forEach((second, relativeIndex) => {
+      const intersects = first.x - first.width / 2 < second.x + second.width / 2
+        && first.x + first.width / 2 > second.x - second.width / 2
+        && first.y - first.height / 2 < second.y + second.height / 2
+        && first.y + first.height / 2 > second.y - second.height / 2;
+      expect(intersects, `placements ${firstIndex} and ${firstIndex + relativeIndex + 1} intersect`).toBe(false);
+    });
   });
 }
 
@@ -134,6 +149,10 @@ describe("Find it results mode", () => {
     const secondYs = second.map((node) => Number.parseFloat(node.style.getPropertyValue("--y")));
     expect(secondYs[0]).toBeGreaterThan(firstYs[0] ?? 0);
     expect(secondYs[0]).toBeLessThan(firstYs[1] ?? 100);
+  });
+
+  it.each([10, 16])("keeps %i arc-node rectangles separate with one expanded card", (count) => {
+    expectNoPlacementIntersections(count);
   });
 
   it("keeps every node attached after Done without a detail rail", () => {
