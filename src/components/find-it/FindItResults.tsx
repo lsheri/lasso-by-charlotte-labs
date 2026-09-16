@@ -125,7 +125,7 @@ function CandidateDetail({ candidate, onKeep, onReject, onOpen }: { candidate: F
   );
 }
 
-export function FindItResults({ phase, target, scope, candidates, reviewed, considered, reduceMotion, onChooseAgain, onReview, onKeepAll, onDone, onOpenThread }: {
+export function FindItResults({ phase, target, scope, candidates, reviewed, considered, reduceMotion, onChooseTarget, onReturnToForm, onReview, onKeepAll, onDone, onOpenThread }: {
   phase: FindItPhase;
   target: WorkItemRow;
   scope: FindScope;
@@ -133,7 +133,8 @@ export function FindItResults({ phase, target, scope, candidates, reviewed, cons
   reviewed: Record<string, "confirmed" | "discarded">;
   considered: number;
   reduceMotion: boolean;
-  onChooseAgain: () => void;
+  onChooseTarget: () => void;
+  onReturnToForm: () => void;
   onReview: (linkId: string, action: "confirmed" | "discarded") => void | Promise<void>;
   onKeepAll: () => void | Promise<void>;
   onDone: () => void | Promise<void>;
@@ -186,7 +187,7 @@ export function FindItResults({ phase, target, scope, candidates, reviewed, cons
         <h2 className="shrink-0 font-serif text-[26px] leading-none text-foreground">Find it</h2>
         <span className="flex min-w-0 items-center gap-1.5 rounded-[6px] border border-hairline bg-card px-2 py-1 text-[11.5px] text-foreground"><SourceMark item={target} size={12} /><span className="truncate">{target.title}</span></span>
         <span className="hidden shrink-0 rounded-[6px] border border-hairline px-2 py-1 text-[11.5px] text-muted-foreground sm:inline">{scope === "engagement" ? "This engagement" : "Everything I have"}</span>
-        <Button type="button" variant="ghost" size="sm" className="ml-auto shrink-0" onClick={onChooseAgain}>Choose something else</Button>
+        <Button type="button" variant="ghost" size="sm" className="ml-auto shrink-0" onClick={onChooseTarget}>Choose something else</Button>
       </header>
 
       <div className="relative min-h-0 overflow-hidden">
@@ -216,7 +217,7 @@ export function FindItResults({ phase, target, scope, candidates, reviewed, cons
       <footer className="flex min-w-0 items-center gap-2 border-t border-hairline bg-background px-1 md:px-3">
         {phase === "reading" ? <p className="min-w-0 flex-1 truncate font-hand text-[16px] text-green">reading {considered} conversations</p> : <p className="min-w-0 flex-1 truncate font-hand text-[16px] text-green">Kept {phase === "kept" ? candidates.length : keptCount} of {candidates.length} · goes on the record of this deck</p>}
         {phase === "settled" ? <><Button type="button" variant="outline" size="sm" onClick={() => void onKeepAll()}>Keep all</Button><Button type="button" size="sm" onClick={() => void onDone()}>Done</Button></> : null}
-        {phase !== "reading" ? <Button type="button" variant="ghost" size="sm" onClick={onChooseAgain}>Look for something else</Button> : null}
+        {phase !== "reading" ? <Button type="button" variant="ghost" size="sm" onClick={onReturnToForm}>Look for something else</Button> : null}
       </footer>
 
       {mobileDetailOpen && selected && phase === "settled" ? <div className="fixed inset-0 z-50 flex items-end bg-foreground/20 md:hidden" role="dialog" aria-modal="true" aria-label="Source detail"><Button type="button" variant="ghost" className="absolute inset-0 h-full w-full rounded-none" aria-label="Close source detail" onClick={() => setMobileDetailOpen(false)} /><div className="relative z-10 max-h-[78dvh] w-full overflow-y-auto rounded-t-[8px] border border-hairline bg-background p-5 shadow-[var(--shadow-modal)]"><CandidateDetail candidate={selected} onKeep={() => act("confirmed")} onReject={() => act("discarded")} onOpen={selected.item ? () => onOpenThread(selected.item?.id ?? "") : null} /></div></div> : null}

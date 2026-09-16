@@ -7,8 +7,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { SectionHeader } from "@/components/notebook/SectionHeader";
 import { NotebookSpider } from "@/components/notebook/NotebookSpider";
 import { ToneCard } from "@/components/notebook/ToneCard";
-import { FindItSheet } from "@/components/find-it/FindItSheet";
-import { FindItResults } from "@/components/find-it/FindItResults";
+import { FindItResults, type FindItCandidate, type FindItPhase } from "@/components/find-it/FindItResults";
 import { WorkNote } from "@/components/work/WorkNote";
 import { ThreadViewerById } from "@/components/work/ThreadViewerById";
 import { useCaptureFiles } from "@/components/work/use-capture-files";
@@ -61,6 +60,25 @@ const MODE_CHIPS: { mode: Mode; label: string }[] = [
   { mode: "number", label: "Find a number" },
   { mode: "thread", label: "A thread I lost" },
 ];
+
+const MODE_HELP: Record<Mode, string> = {
+  sources: "Pick a deck, memo or transcript. Lasso reads your own conversations and shows which ones fed it, with the exact sentence.",
+  number: "Type a figure or a word near it. Finds the turns where that number was said.",
+  thread: "Describe what it was about. Finds it by what was said, not by title.",
+};
+
+const SCOPE_HELP: Record<FindScope, string> = {
+  engagement: "Only conversations mapped to this engagement.",
+  all_mine: "Every conversation you own.",
+};
+
+function HelpMark({ text }: { text: string }) {
+  return <span title={text} aria-label={text} className="ml-1 inline-grid h-4 w-4 place-items-center rounded-full border border-hairline font-mono text-[9px] text-muted-foreground">i</span>;
+}
+
+function PaperclipMark() {
+  return <svg width="24" height="44" viewBox="0 0 26 46" aria-hidden="true" focusable="false" className="absolute left-[10px] top-[-13px]"><path d="M13 40 C 8.4 40, 6.2 36.6, 6.2 32.6 L 6.2 11.5 C 6.2 7.6, 8.9 5.2, 12.6 5.2 C 16.3 5.2, 18.8 7.7, 18.8 11.4 L 18.8 31.5 C 18.8 34, 17.2 35.6, 15 35.6 C 12.8 35.6, 11.2 34.1, 11.2 31.6 L 11.2 13" fill="none" stroke="var(--nb-mid)" strokeWidth="2" strokeLinecap="round" /></svg>;
+}
 
 function isConversation(item: WorkItemRow): boolean {
   return item.type === "ai_thread";
@@ -131,6 +149,9 @@ export function FindItPage() {
   const [reviewed, setReviewed] = useState<Record<string, "confirmed" | "discarded">>({});
   const [openThread, setOpenThread] = useState<string | null>(null);
   const [confirmation, setConfirmation] = useState<string | null>(null);
+  const [canvasPhase, setCanvasPhase] = useState<FindItPhase | null>(null);
+  const canvasRef = useRef<HTMLDivElement>(null);
+  const formRef = useRef<HTMLDivElement>(null);
 
   // Where this page was opened from. Another surface can say so in the link.
   const entryRef = useRef<"nav" | "peek" | "upload">(search.entry ?? "nav");
@@ -208,6 +229,13 @@ export function FindItPage() {
       })),
     [found, items],
   );
+  const readingCandidates = useMemo<FindItCandidate[]>(
+    () => chats.slice(0, 12).map((item) => ({
+      item,
+      link: { link_id: `reading-${item.id}`, from_item_id: item.id, relation: "informed", status: "draft", rationale: null, quote: null },
+    })),
+    [chats],
+  );
 
   const stillDraft = candidates.filter(
     ({ link }) => (reviewed[link.link_id] ?? link.status) === "draft",
@@ -216,9 +244,11 @@ export function FindItPage() {
   async function runSources() {
     if (!target || running) return;
     const timer = perfTimer("findit.run", "cold");
+    setCanvasPhase("reading");
     setRunning(true);
     setFound(null);
     quoted.current = new Set();
+    requestAnimationFrame(() => canvasRef.current?.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" }));
     try {
       const result = await runFindSources({
         data: {
@@ -229,6 +259,7 @@ export function FindItPage() {
       });
       setFound(result);
       setReviewed({});
+      setCanvasPhase("settled");
       if (profile?.org_id) {
         logEvent("findit.run", profile.org_id, {
           scope: effectiveScope,
@@ -239,6 +270,7 @@ export function FindItPage() {
       timer.done();
     } catch (error) {
       timer.cancel();
+      setCanvasPhase(null);
       toast(error instanceof Error ? error.message : "That did not go through. Try again.");
     } finally {
       setRunning(false);
@@ -292,37 +324,25 @@ export function FindItPage() {
   function leaveResults(clearTarget = false) {
     setFound(null);
     setReviewed({});
+    setCanvasPhase(null);
     if (clearTarget) setTargetId(null);
   }
 
   async function finishResults() {
     setConfirmation("Sources kept on this deck's record.");
-    leaveResults(false);
+    setCanvasPhase("kept");
+  }
+
+  function returnToForm(clearTarget = false) {
+    formRef.current?.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
+    if (clearTarget) leaveResults(true);
   }
 
   const readingCount = found?.considered ?? chats.length;
 
-  if (mode === "sources" && found && !running && target) {
-    return (
-      <>
-        <FindItResults
-          target={target}
-          scope={effectiveScope}
-          candidates={candidates}
-          reviewed={reviewed}
-          onChooseAgain={() => leaveResults(true)}
-          onReview={review}
-          onKeepAll={keepAll}
-          onDone={finishResults}
-          onOpenThread={setOpenThread}
-        />
-        <ThreadViewerById workItemId={openThread} onClose={() => setOpenThread(null)} />
-      </>
-    );
-  }
-
   return (
-    <div>
+    <div className={mode === "sources" ? "snap-y snap-mandatory" : ""}>
+      <div ref={formRef} className={mode === "sources" ? "flex min-h-dvh snap-start flex-col" : ""}>
       <PageHeader
         title="Find"
         italicWord="it"
@@ -358,15 +378,17 @@ export function FindItPage() {
             </div>
             <div className="mt-3 flex flex-wrap items-center gap-2">
               {MODE_CHIPS.map((chip) => (
-                <button
+                <Button
                   key={chip.mode}
                   type="button"
-                  onClick={() => setMode(chip.mode)}
-                  className={chipClass(mode === chip.mode)}
+                  variant="ghost"
+                  onClick={() => { setMode(chip.mode); setCanvasPhase(null); }}
+                  className={`${chipClass(mode === chip.mode)} h-auto font-normal hover:bg-card`}
                   aria-pressed={mode === chip.mode}
+                  title={MODE_HELP[chip.mode]}
                 >
-                  {chip.label}
-                </button>
+                  {chip.label}<HelpMark text={MODE_HELP[chip.mode]} />
+                </Button>
               ))}
             </div>
           </section>
@@ -377,8 +399,13 @@ export function FindItPage() {
                 <SectionHeader title="What are you tracing?" />
                 {target ? (
                   <div className="mt-3 flex flex-wrap items-start gap-3">
-                    <div className="w-[240px]">
+                    <div className="relative w-[240px] pt-2">
+                      <PaperclipMark />
                       <WorkNote item={target} />
+                      <div className="border-x border-b border-hairline bg-card px-3 py-2">
+                        <p className="truncate text-[11.5px] text-foreground">{targetMapped ? `${target.work_item_tasks[0]?.tasks?.engagements?.title ?? "engagement"} · ${target.work_item_tasks[0]?.tasks?.name ?? "task"}` : "not filed yet, looking across everything you have"}</p>
+                        <p className="mt-1 font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">{chats.filter((chat) => chat.work_item_tasks.some((mapped) => target.work_item_tasks.some((targetTask) => targetTask.tasks?.engagement_id === mapped.tasks?.engagement_id))).length} conversations mapped · {candidates.filter((candidate) => (reviewed[candidate.link.link_id] ?? candidate.link.status) === "confirmed").length} kept sources</p>
+                      </div>
                     </div>
                     <Button
                       type="button"
@@ -387,6 +414,7 @@ export function FindItPage() {
                       onClick={() => {
                         setTargetId(null);
                         setFound(null);
+                        setCanvasPhase(null);
                       }}
                     >
                       Choose something else
@@ -420,22 +448,27 @@ export function FindItPage() {
                 )}
 
                 <div className="mt-4 flex flex-wrap items-center gap-2">
-                  <button
+                  <Button
                     type="button"
                     onClick={() => setScope("engagement")}
-                    className={chipClass(effectiveScope === "engagement")}
+                    variant="ghost"
+                    className={`${chipClass(effectiveScope === "engagement")} h-auto font-normal hover:bg-card`}
                     aria-pressed={effectiveScope === "engagement"}
+                    disabled={!targetMapped}
+                    title={!targetMapped ? "This piece of work is not filed to an engagement." : SCOPE_HELP.engagement}
                   >
-                    This engagement
-                  </button>
-                  <button
+                    This engagement<HelpMark text={SCOPE_HELP.engagement} />
+                  </Button>
+                  <Button
                     type="button"
                     onClick={() => setScope("all_mine")}
-                    className={chipClass(effectiveScope === "all_mine")}
+                    variant="ghost"
+                    className={`${chipClass(effectiveScope === "all_mine")} h-auto font-normal hover:bg-card`}
                     aria-pressed={effectiveScope === "all_mine"}
+                    title={SCOPE_HELP.all_mine}
                   >
-                    Everything I have
-                  </button>
+                    Everything I have<HelpMark text={SCOPE_HELP.all_mine} />
+                  </Button>
                   <Button
                     type="button"
                     onClick={() => void runSources()}
@@ -449,28 +482,7 @@ export function FindItPage() {
                     </span>
                   ) : null}
                 </div>
-                {running ? (
-                  <p className="mt-2 flex items-center gap-2 font-hand text-[16px] text-soft">
-                    <NotebookSpider size={22} reading={!reduceMotion} />
-                    reading {readingCount} conversations
-                  </p>
-                ) : null}
               </section>
-
-              {running ? (
-                <section className="mb-10">
-                  <FindItSheet
-                    phase="reading"
-                    reduce={reduceMotion}
-                    target={target ? <WorkNote item={target} /> : null}
-                    candidates={chats.slice(0, 12).map((chat) => ({
-                      id: chat.id,
-                      node: <WorkNote item={chat} />,
-                    }))}
-                  />
-                </section>
-              ) : null}
-
             </>
           ) : (
             <section className="mb-10">
@@ -573,6 +585,7 @@ export function FindItPage() {
                   setTargetId(item.id);
                   setScope(null);
                   setFound(null);
+                  setCanvasPhase(null);
                   setPickerOpen(false);
                 }}
                 className="block w-full truncate rounded-md px-2 py-2 text-left text-[13px] text-foreground transition-colors hover:bg-accent-soft"
@@ -591,6 +604,27 @@ export function FindItPage() {
           </div>
         </DialogContent>
       </Dialog>
+      </div>
+
+      {mode === "sources" && canvasPhase && target ? (
+        <div ref={canvasRef}>
+          <FindItResults
+            phase={canvasPhase}
+            target={target}
+            scope={effectiveScope}
+            candidates={canvasPhase === "reading" ? readingCandidates : candidates}
+            reviewed={reviewed}
+            considered={readingCount}
+            reduceMotion={reduceMotion}
+            onChooseTarget={() => returnToForm(true)}
+            onReturnToForm={() => returnToForm(false)}
+            onReview={review}
+            onKeepAll={keepAll}
+            onDone={finishResults}
+            onOpenThread={setOpenThread}
+          />
+        </div>
+      ) : null}
 
       <ThreadViewerById workItemId={openThread} onClose={() => setOpenThread(null)} />
     </div>
