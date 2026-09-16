@@ -190,8 +190,10 @@ function resolveCollisions(placements: Map<string, ArcPlacement>, candidates: Fi
           const later = laterId ? placements.get(laterId) : null;
           if (!later) continue;
           const sameColumnAfter = ids
-            .map((id) => ({ id, placement: placements.get(id) }))
-            .filter((entry): entry is { id: string; placement: ArcPlacement } => Boolean(entry.placement) && entry.placement.arc === later.arc && entry.placement.y >= later.y);
+            .flatMap((id) => {
+              const placement = placements.get(id);
+              return placement && placement.arc === later.arc && placement.y >= later.y ? [{ id, placement }] : [];
+            });
           const lowestBottom = Math.max(...sameColumnAfter.map(({ placement }) => rectOf(placement).bottom));
           const shift = Math.min(8, Math.max(0, ARC_BOTTOM - lowestBottom));
           if (shift > 0) {
