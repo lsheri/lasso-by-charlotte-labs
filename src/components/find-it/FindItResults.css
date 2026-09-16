@@ -15,8 +15,37 @@
   to { stroke-dashoffset: 0; }
 }
 
+.find-it-stage-shell {
+  height: calc(836px * var(--stage-scale));
+}
+
 .find-it-stage {
-  aspect-ratio: 1166 / 836;
+  width: 1166px;
+  height: 836px;
+  transform: scale(var(--stage-scale));
+  transform-origin: top left;
+}
+
+.find-it-target {
+  top: 418px;
+}
+
+.find-it-target-reading {
+  left: 245px;
+}
+
+.find-it-target-settled {
+  left: 455px;
+}
+
+.find-it-spider {
+  left: 58px;
+  top: 159px;
+}
+
+.find-it-reading-caption {
+  left: 16px;
+  bottom: 12px;
 }
 
 .find-it-reading-node {

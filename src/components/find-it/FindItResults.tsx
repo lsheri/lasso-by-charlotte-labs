@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type AnimationEvent as ReactAnimationEvent, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState, type AnimationEvent as ReactAnimationEvent, type CSSProperties } from "react";
 
 import "./FindItResults.css";
 
@@ -18,7 +18,7 @@ export type FindItPhase = "reading" | "settled" | "kept";
 type Strength = "heavy" | "normal" | "light";
 type CanvasStyle = CSSProperties & Record<`--${string}`, string>;
 type Point = { x: number; y: number };
-type ArcPlacement = Point & { arc: 0 | 1; height: number; width: number; growsLeft: boolean };
+export type ArcPlacement = Point & { arc: 0 | 1; height: number; width: number; growsLeft: boolean };
 type TraceLine = { cycle: number; targetIndex: number; duration: number; delay: number; bendA: number; bendB: number };
 
 const CANVAS_WIDTH = 1166;
@@ -30,6 +30,8 @@ const COLLAPSED_HEIGHT = 62;
 const QUOTE_HEIGHT = 236;
 const WHY_HEIGHT = 200;
 const CARD_GAP = 14;
+const STAGE_INSET = 12;
+const STAGE_RIGHT = CANVAS_WIDTH - STAGE_INSET;
 
 const RELATION_CAPTION: Record<string, string> = {
   produced: "where it was written",
@@ -67,8 +69,8 @@ function readingPosition(id: string, slot: number): CanvasStyle {
   const x = 500 + column * 185 + (random() * 20 - 10);
   const y = 92 + row * 208 + (random() * 20 - 10);
   return {
-    ["--x" as string]: `${x / CANVAS_WIDTH * 100}%`,
-    ["--y" as string]: `${y / CANVAS_HEIGHT * 100}%`,
+    ["--x" as string]: `${x}px`,
+    ["--y" as string]: `${y}px`,
     ["--drift-x" as string]: `${4 + random() * 4}px`,
     ["--drift-y" as string]: `${4 + random() * 4}px`,
     ["--drift-duration" as string]: `${6 + random() * 3}s`,
@@ -101,7 +103,76 @@ function columnTotal(entries: { height: number }[]): number {
   return entries.reduce((sum, entry) => sum + entry.height, 0) + Math.max(0, entries.length - 1) * CARD_GAP;
 }
 
-function arcLayout(candidates: FindItCandidate[], selectedId: string | null): Map<string, ArcPlacement> {
+function rectOf(placement: ArcPlacement) {
+  return {
+    left: placement.x - placement.width / 2,
+    right: placement.x + placement.width / 2,
+    top: placement.y - placement.height / 2,
+    bottom: placement.y + placement.height / 2,
+  };
+}
+
+function rectsIntersect(a: ReturnType<typeof rectOf>, b: ReturnType<typeof rectOf>): boolean {
+  return a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+}
+
+function resolveCollisions(placements: Map<string, ArcPlacement>, candidates: FindItCandidate[], selectedId: string | null) {
+  const rank: Record<Strength, number> = { heavy: 2, normal: 1, light: 0 };
+  const ids = candidates.map(({ link }) => link.link_id).filter((id) => placements.has(id));
+
+  for (let pass = 0; pass < 12; pass += 1) {
+    let changed = false;
+    for (let firstIndex = 0; firstIndex < ids.length; firstIndex += 1) {
+      for (let secondIndex = firstIndex + 1; secondIndex < ids.length; secondIndex += 1) {
+        const firstId = ids[firstIndex];
+        const secondId = ids[secondIndex];
+        if (!firstId || !secondId) continue;
+        const first = placements.get(firstId);
+        const second = placements.get(secondId);
+        if (!first || !second || !rectsIntersect(rectOf(first), rectOf(second))) continue;
+
+        const firstCandidate = candidates.find(({ link }) => link.link_id === firstId);
+        const secondCandidate = candidates.find(({ link }) => link.link_id === secondId);
+        if (!firstCandidate || !secondCandidate) continue;
+        const firstPriority = firstId === selectedId ? 10 : rank[strengthFor(firstCandidate)];
+        const secondPriority = secondId === selectedId ? 10 : rank[strengthFor(secondCandidate)];
+        const moveFirst = firstPriority < secondPriority;
+        const movingId = moveFirst ? firstId : secondId;
+        const fixed = moveFirst ? second : first;
+        const moving = moveFirst ? first : second;
+        const direction = moving.x < fixed.x ? -1 : 1;
+        const minX = STAGE_INSET + moving.width / 2;
+        const maxX = STAGE_RIGHT - moving.width / 2;
+
+        while (rectsIntersect(rectOf(moving), rectOf(fixed))) {
+          const nextX = Math.min(maxX, Math.max(minX, moving.x + direction * 8));
+          if (nextX === moving.x) break;
+          moving.x = nextX;
+          changed = true;
+        }
+
+        if (rectsIntersect(rectOf(moving), rectOf(fixed))) {
+          const laterId = ids[Math.max(firstIndex, secondIndex)];
+          const later = laterId ? placements.get(laterId) : null;
+          if (!later) continue;
+          const sameColumnAfter = ids
+            .map((id) => ({ id, placement: placements.get(id) }))
+            .filter((entry): entry is { id: string; placement: ArcPlacement } => Boolean(entry.placement) && entry.placement.arc === later.arc && entry.placement.y >= later.y);
+          const lowestBottom = Math.max(...sameColumnAfter.map(({ placement }) => rectOf(placement).bottom));
+          const shift = Math.min(8, Math.max(0, ARC_BOTTOM - lowestBottom));
+          if (shift > 0) {
+            sameColumnAfter.forEach(({ placement }) => { placement.y += shift; });
+            changed = true;
+          }
+        }
+        placements.set(movingId, moving);
+      }
+    }
+    if (!changed) break;
+  }
+}
+
+export function arcLayout(candidates: FindItCandidate[], selectedId: string | null): Map<string, ArcPlacement> {
   const entries = candidates.map((candidate) => ({ candidate, height: cardHeight(candidate, selectedId) }));
   const available = ARC_BOTTOM - ARC_TOP;
   const columns = columnTotal(entries) > available
@@ -119,23 +190,23 @@ function arcLayout(candidates: FindItCandidate[], selectedId: string | null): Ma
     for (const entry of column) {
       const y = cursor + entry.height / 2;
       const middleDistance = Math.min(1, Math.abs(y - CANVAS_HEIGHT / 2) / (available / 2));
-      const bulge = (1 - middleDistance * middleDistance) * 140;
-      const baseX = 660 + arc * 300;
-      const width = entry.candidate.link.link_id === selectedId ? 420 : 250;
-      const desiredX = baseX + bulge;
-      const growsLeft = width === 420 && desiredX + width / 2 > CANVAS_WIDTH - 12;
-      const x = Math.min(desiredX, CANVAS_WIDTH - width / 2 - 12);
+      const bulgeFactor = 1 - middleDistance * middleDistance;
+      const width = entry.candidate.link.link_id === selectedId ? 400 : 240;
+      const desiredX = arc === 0 ? 690 + bulgeFactor * 80 : 1015 + bulgeFactor * 25;
+      const growsLeft = width === 400 && desiredX + width / 2 > STAGE_RIGHT;
+      const x = Math.min(Math.max(STAGE_INSET + width / 2, desiredX), STAGE_RIGHT - width / 2);
       placements.set(entry.candidate.link.link_id, { x, y, arc: arc as 0 | 1, height: entry.height, width, growsLeft });
       cursor += entry.height + CARD_GAP;
     }
   });
+  resolveCollisions(placements, candidates, selectedId);
   return placements;
 }
 
 function placementStyle(placement: ArcPlacement, index: number): CanvasStyle {
   return {
-    ["--x" as string]: `${placement.x / CANVAS_WIDTH * 100}%`,
-    ["--y" as string]: `${placement.y / CANVAS_HEIGHT * 100}%`,
+    ["--x" as string]: `${placement.x}px`,
+    ["--y" as string]: `${placement.y}px`,
     ["--node-height" as string]: `${placement.height}px`,
     ["--node-width" as string]: `${placement.width}px`,
     ["--arrow-delay" as string]: `${index * 60}ms`,
@@ -208,7 +279,7 @@ function TargetCard({ target, phase }: { target: WorkItemRow; phase: FindItPhase
   const date = formatDate(effectiveWorkDate(target));
   const origin = target.source ? sourceLabel(target.source) : null;
   return (
-    <div data-testid="find-it-target" className={`absolute z-20 w-[21.5%] min-w-[210px] max-w-[250px] -translate-x-1/2 -translate-y-1/2 transition-[left] duration-[480ms] [transition-timing-function:cubic-bezier(.2,.8,.2,1)] ${phase === "reading" ? "left-[21%]" : "left-[39%]"} top-1/2`}>
+    <div data-testid="find-it-target" className={`find-it-target absolute z-20 w-[250px] -translate-x-1/2 -translate-y-1/2 transition-[left] duration-[480ms] [transition-timing-function:cubic-bezier(.2,.8,.2,1)] ${phase === "reading" ? "find-it-target-reading" : "find-it-target-settled"}`}>
       <WorkNote item={target} dense />
       <p className="mt-2 text-center font-hand text-[16px] text-green">{phase === "reading" ? `landed ${date}${origin ? ` from ${origin}` : ""}` : "line weight says how sure. no numbers."}</p>
     </div>
@@ -252,8 +323,8 @@ function ReadingLines({ candidates, slots }: { candidates: FindItCandidate[]; sl
         const candidate = candidates[line.targetIndex];
         if (!candidate) return null;
         const position = readingPosition(candidate.link.link_id, slots[line.targetIndex] ?? line.targetIndex);
-        const x = Number.parseFloat(position["--x"] ?? "0") * 11.66;
-        const y = Number.parseFloat(position["--y"] ?? "0") * 8.36;
+         const x = Number.parseFloat(position["--x"] ?? "0");
+         const y = Number.parseFloat(position["--y"] ?? "0");
         const style = {
           ["--trace-duration" as string]: `${line.duration}s`,
           ["--trace-delay" as string]: `${line.delay}s`,
@@ -264,29 +335,45 @@ function ReadingLines({ candidates, slots }: { candidates: FindItCandidate[]; sl
   );
 }
 
-function ArcArrow({ candidate, index, placement }: { candidate: FindItCandidate; index: number; placement: ArcPlacement }) {
+function arrowGeometry(candidate: FindItCandidate, placement: ArcPlacement) {
   const x = placement.x;
   const y = placement.y;
   const random = mulberry32(fnv1a(`arrow-${candidate.link.link_id}`));
   const bendX = 625 + random() * 70;
   const bendY = 418 + (y - 418) * 0.42 + (random() - 0.5) * 16;
-  const endX = x - placement.width / 2;
+  const endX = x - placement.width / 2 - 4;
   const strength = strengthFor(candidate);
   const d = `M580 418 C${610 + random() * 18} 418 ${bendX} ${bendY}, ${bendX} ${bendY} S${endX - 34} ${y} ${endX} ${y}`;
   const head = `M${endX - 11} ${y - 6} L${endX} ${y} L${endX - 11} ${y + 6}`;
-  const captionX = 580 + (endX - 580) * 0.35;
-  const captionY = 418 + (y - 418) * 0.35 - 8;
   const arrowLength = Math.hypot(endX - 580, y - 418);
-  const caption = RELATION_CAPTION[candidate.link.relation] ?? "connected to it";
-  const captionWidth = Math.max(86, caption.length * 7.4);
+  return { d, head, endX, y, strength, arrowLength };
+}
+
+function ArcArrow({ candidate, index, placement }: { candidate: FindItCandidate; index: number; placement: ArcPlacement }) {
+  const { d, head, strength } = arrowGeometry(candidate, placement);
   const style = placementStyle(placement, index);
   return (
     <g data-testid="find-it-arrow" data-strength={strength} style={style}>
       <path className="find-it-arrow-line" pathLength="1" d={d} strokeWidth={strokeFor(strength)} strokeDasharray={strength === "light" ? "0.012 0.016" : undefined} />
       <path className="find-it-arrow-head" pathLength="1" d={head} strokeWidth={strokeFor(strength)} />
-      {arrowLength >= 120 ? <g className="find-it-arrow-caption"><rect x={captionX - captionWidth / 2 - 5} y={captionY - 15} width={captionWidth + 10} height={21} rx={4} /><text x={captionX} y={captionY} textAnchor="middle" className="fill-green font-hand text-[16px]">{caption}</text></g> : null}
     </g>
   );
+}
+
+function ArcCaption({ candidate, index, placement, placements }: { candidate: FindItCandidate; index: number; placement: ArcPlacement; placements: Map<string, ArcPlacement> }) {
+  const { endX, y, arrowLength } = arrowGeometry(candidate, placement);
+  if (arrowLength < 120) return null;
+  const caption = RELATION_CAPTION[candidate.link.relation] ?? "connected to it";
+  const captionWidth = Math.max(86, caption.length * 7.4);
+  const candidatesForT = [0, 0.08, -0.08, 0.16, -0.16].map((offset) => 0.40 + (index % 4) * 0.12 + offset);
+  const position = candidatesForT.map((t) => {
+    const x = 580 + (endX - 580) * t;
+    const baseline = 418 + (y - 418) * t - 8;
+    const rect = { left: x - captionWidth / 2 - 5, right: x + captionWidth / 2 + 5, top: baseline - 15, bottom: baseline + 6 };
+    return { x, baseline, clear: Array.from(placements.values()).every((card) => !rectsIntersect(rect, rectOf(card))) };
+  }).find(({ clear }) => clear);
+  if (!position) return null;
+  return <g data-testid="find-it-arrow-caption" className="find-it-arrow-caption"><rect x={position.x - captionWidth / 2 - 5} y={position.baseline - 15} width={captionWidth + 10} height={21} rx={4} /><text x={position.x} y={position.baseline} textAnchor="middle" className="fill-green font-hand text-[16px]">{caption}</text></g>;
 }
 
 export function FindItResults({ phase, target, scope, candidates, reviewed, considered, reduceMotion, onChooseTarget, onReturnToForm, onReview, onKeepAll, onDone, onOpenThread }: {
@@ -306,6 +393,8 @@ export function FindItResults({ phase, target, scope, candidates, reviewed, cons
 }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [mobileDetailOpen, setMobileDetailOpen] = useState(false);
+  const stageShellRef = useRef<HTMLDivElement>(null);
+  const [stageScale, setStageScale] = useState(1);
   const visible = useMemo(() => (phase === "kept" ? candidates.filter((candidate) => statusOf(candidate, reviewed) === "confirmed") : candidates), [candidates, phase, reviewed]);
   const ordered = useMemo(() => orderByEvidence(visible.slice(0, 16)), [visible]);
   const selected = ordered.find((candidate) => candidate.link.link_id === selectedId) ?? ordered.find((candidate) => strengthFor(candidate) !== "light") ?? ordered[0] ?? null;
@@ -314,6 +403,17 @@ export function FindItResults({ phase, target, scope, candidates, reviewed, cons
   const readingSlots = useMemo(() => shuffledSlots(candidates.slice(0, 14)), [candidates]);
   const keptCount = candidates.filter((candidate) => statusOf(candidate, reviewed) === "confirmed").length;
   const unmarkedCount = candidates.filter((candidate) => statusOf(candidate, reviewed) === "draft").length;
+
+  useEffect(() => {
+    const shell = stageShellRef.current;
+    if (!shell || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(([entry]) => {
+      if (!entry || entry.contentRect.width <= 0) return;
+      setStageScale(entry.contentRect.width / CANVAS_WIDTH);
+    });
+    observer.observe(shell);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     const selectedStillExists = ordered.some((candidate) => candidate.link.link_id === selectedId);
@@ -364,20 +464,21 @@ export function FindItResults({ phase, target, scope, candidates, reviewed, cons
       </header>
 
       <div className="min-h-0 p-1 md:p-3">
-        <div className="find-it-stage relative hidden h-full max-h-full w-full overflow-hidden rounded-[8px] border border-hairline bg-background md:block">
+        <div ref={stageShellRef} className="find-it-stage-shell relative hidden w-full overflow-hidden md:block" style={{ ["--stage-scale" as string]: String(stageScale) } as CanvasStyle}>
+         <div className="find-it-stage absolute left-0 top-0 overflow-hidden rounded-[8px] border border-hairline bg-background">
           <TargetCard target={target} phase={phase} />
           {phase === "reading" ? (
             <>
               {!reduceMotion ? <ReadingLines candidates={candidates.slice(0, 14)} slots={readingSlots} /> : null}
-              <NotebookSpider size={160} reading={!reduceMotion} className="absolute left-[5%] top-[19%] z-10" />
+               <NotebookSpider size={160} reading={!reduceMotion} className="find-it-spider absolute z-10" />
               <div data-testid="find-it-reading-nodes" className="absolute inset-0">
                 {candidates.slice(0, 14).map((candidate, index) => <div key={candidate.link.link_id} data-slot={readingSlots[index]} className="find-it-reading-node absolute z-10 w-[160px]" style={readingPosition(candidate.link.link_id, readingSlots[index] ?? index)}><FindItNode candidate={candidate} /></div>)}
               </div>
-              <p className="absolute bottom-3 left-4 font-hand text-[16px] text-green">reading {considered} conversations</p>
+               <p className="find-it-reading-caption absolute font-hand text-[16px] text-green">reading {considered} conversations</p>
             </>
           ) : (
             <div data-testid="find-it-arc" className="absolute inset-0">
-              <svg aria-hidden viewBox="0 0 1166 836" preserveAspectRatio="none" className="pointer-events-none absolute inset-0 h-full w-full overflow-visible">
+               <svg aria-hidden viewBox="0 0 1166 836" preserveAspectRatio="none" className="pointer-events-none absolute inset-0 z-0 h-full w-full overflow-visible">
                 {ordered.map((candidate, index) => {
                   const placement = placements.get(candidate.link.link_id);
                   return placement ? <ArcArrow key={candidate.link.link_id} candidate={candidate} index={index} placement={placement} /> : null;
@@ -390,6 +491,12 @@ export function FindItResults({ phase, target, scope, candidates, reviewed, cons
                  if (!placement) return null;
                  return <div key={candidate.link.link_id} data-testid="find-it-arc-node" data-arc={placement.arc} data-evidence={strengthFor(candidate)} data-grows={placement.growsLeft ? "left" : "right"} className="find-it-arc-node absolute z-10" style={placementStyle(placement, index)}><FindItNode candidate={candidate} selected={isSelected} expanded={isSelected} status={phase === "kept" ? "confirmed" : statusOf(candidate, reviewed)} strength={strengthFor(candidate)} {...(phase === "settled" ? { onSelect: () => setSelectedId(candidate.link.link_id) } : {})} onKeep={() => act("confirmed")} onReject={() => act("discarded")} onOpen={itemId ? () => onOpenThread(itemId, candidate.link.quote ? { turnNo: candidate.link.quote.turn_no, text: candidate.link.quote.text } : undefined) : null} /></div>;
               })}
+               <svg aria-hidden viewBox="0 0 1166 836" preserveAspectRatio="none" className="pointer-events-none absolute inset-0 z-20 h-full w-full overflow-visible">
+                 {ordered.map((candidate, index) => {
+                   const placement = placements.get(candidate.link.link_id);
+                   return placement ? <ArcCaption key={candidate.link.link_id} candidate={candidate} index={index} placement={placement} placements={placements} /> : null;
+                 })}
+               </svg>
             </div>
           )}
 
@@ -402,6 +509,7 @@ export function FindItResults({ phase, target, scope, candidates, reviewed, cons
               <Button type="button" variant="ghost" size="sm" className="ml-auto font-hand text-[16px]" onClick={phase === "kept" ? onReturnToForm : onChooseTarget}>close</Button>
             </footer>
           ) : null}
+         </div>
         </div>
 
         <div className="h-full min-h-0 overflow-y-auto py-3 md:hidden">
