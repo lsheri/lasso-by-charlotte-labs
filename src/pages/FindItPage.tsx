@@ -230,7 +230,7 @@ export function FindItPage() {
     [found, items],
   );
   const readingCandidates = useMemo<FindItCandidate[]>(
-    () => chats.slice(0, 12).map((item) => ({
+    () => chats.slice(0, 14).map((item) => ({
       item,
       link: { link_id: `reading-${item.id}`, from_item_id: item.id, relation: "informed", status: "draft", rationale: null, quote: null },
     })),
