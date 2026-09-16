@@ -23,6 +23,10 @@ const FILTERS = [
 export type DecisionFilter = (typeof FILTERS)[number]["id"];
 export type DecisionBand = { label: "this week" | "earlier"; rows: DecisionRow[] };
 
+/** How many entries the timeline shows before the quiet reveal control. */
+export const DECISION_PAGE_SIZE = 25;
+
+
 export function filterDecisions(rows: DecisionRow[], filter: DecisionFilter): DecisionRow[] {
   if (filter === "draft") return rows.filter((row) => row.status === "draft");
   if (filter === "no-why") return rows.filter((row) => row.status === "confirmed" && !row.why?.trim());
