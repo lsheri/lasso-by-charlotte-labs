@@ -28,7 +28,9 @@ describe("LINEAGE_SYSTEM_PROMPT (pass L1 hard-evidence rules)", () => {
 
   it("requires the rationale to quote shared wording or name the artefact", () => {
     expect(LINEAGE_SYSTEM_PROMPT).toContain("it must quote the shared wording or name the artefact it saw");
-it("prefers an empty list over guessing", () => {
+  });
+
+  it("prefers an empty list over guessing", () => {
     expect(LINEAGE_SYSTEM_PROMPT).toContain("An empty list is a good answer. Most candidates fed nothing.");
   });
 
