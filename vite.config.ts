@@ -23,6 +23,11 @@ export default defineConfig({
     server: { entry: "server" },
   },
   vite: {
+    // The Playwright walks live in tests/e2e and need a browser and a running
+    // app. Vitest must leave them alone; `bunx playwright test` still runs them.
+    test: {
+      exclude: ["tests/e2e/**", "node_modules/**", "dist/**", ".output/**"],
+    },
     resolve: {
       alias: {
         // React Email's html parser needs entities v4.5.0; nested newer copies
