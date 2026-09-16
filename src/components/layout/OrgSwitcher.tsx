@@ -22,6 +22,7 @@ export function OrgSwitcher({ profiles, active }: { profiles: Profile[]; active:
     <div className="relative">
       <button
         type="button"
+        aria-label={`Change workspace. Current: ${roleLabel(active)}, ${active?.org_name ?? ""}`}
         aria-expanded={open}
         aria-controls="workspace-options"
         onClick={() => setOpen((value) => !value)}

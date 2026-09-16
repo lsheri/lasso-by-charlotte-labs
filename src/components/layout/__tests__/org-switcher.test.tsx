@@ -46,7 +46,7 @@ describe("OrgSwitcher", () => {
     const coaching = profile({ id: "p2", org_id: "o2", role: "coach", org_name: "Bright Path" });
     renderSwitcher([mine, coaching], mine);
 
-    const trigger = screen.getByRole("button", { name: /engagement mgr northline change/i });
+    const trigger = screen.getByRole("button", { name: /change workspace.*engagement mgr.*northline/i });
     expect(trigger).toHaveAttribute("aria-expanded", "false");
     expect(screen.queryByText("Coach")).not.toBeInTheDocument();
 
