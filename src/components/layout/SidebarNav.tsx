@@ -12,7 +12,7 @@ import { useDecisions } from "@/hooks/use-decisions";
 import { useEngagements } from "@/hooks/use-engagements";
 import { useProfile } from "@/hooks/use-profile";
 import * as roles from "@/lib/role-access";
-import { isEduOrg } from "@/lib/edu-vocab";
+import { isEduOrg, vocabFor } from "@/lib/edu-vocab";
 
 
 import {
@@ -178,6 +178,8 @@ export function SidebarNav({
   const canManageMembers = roles.canManageMembers(profile);
   const canSeeFirmView = roles.canSeeFirmView(profile);
   const groupsForOrg = isEduOrg(profile) ? eduNavGroups : navGroups;
+  const vocab = vocabFor(profile);
+
   const membersLabel = roles.membersLabel(profile);
   // "Your coach" is only a real place when someone is actually coaching you.
   // A firm or school role has that by arrangement; a solo workspace has to
@@ -428,17 +430,20 @@ export function SidebarNav({
                     );
                   })}
                   {engagements && engagements.length === 0 ? (
-                    <p className="px-2 py-1.5 text-sm text-muted-foreground">No engagements yet</p>
+                    <p className="px-2 py-1.5 text-sm text-muted-foreground">
+                      {vocab.noEngagements}
+                    </p>
                   ) : null}
                   <NewEngagementDialog
                     onDone={onNavigate}
                     trigger={
                       <button type="button" className="nb-nav-item w-full text-left">
                         <GraphiteIcon name="plus" size={20} />
-                        <span>New engagement</span>
+                        <span>{vocab.newEngagement}</span>
                       </button>
                     }
                   />
+
                   {visibleItems}
                 </>
               ) : null}
