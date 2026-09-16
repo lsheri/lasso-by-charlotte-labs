@@ -13,6 +13,7 @@ import { PaperTrail, type TrailStop } from "@/components/notebook/PaperTrail";
 import { Button } from "@/components/ui/button";
 import { ArtifactNote, SourceMark } from "@/components/work/SourceMark";
 import { ThreadViewerById } from "@/components/work/ThreadViewerById";
+import type { ThreadFocus } from "@/components/peek/ThreadBody";
 import { useProfile } from "@/hooks/use-profile";
 import { vendorLabel } from "@/lib/conversation-shared";
 import { RELATION_LABEL, type LineageRelation } from "@/lib/lineage-shared";
@@ -138,6 +139,7 @@ export function WhatFedThis({
   const [busy, setBusy] = useState(false);
   const [showAll, setShowAll] = useState(false);
   const [openThread, setOpenThread] = useState<string | null>(null);
+  const [threadFocus, setThreadFocus] = useState<ThreadFocus | undefined>();
   const check = useMark();
   const strike = useMark();
 
@@ -330,6 +332,7 @@ export function WhatFedThis({
                   onClick={() => {
                     evidenceOpened("prompt");
                     setOpenThread(prompt.work_item_id);
+                    setThreadFocus({ turnNo: prompt.turn_no, text: prompt.content });
                   }}
                   className="block w-full rounded-[var(--radius-md)] border-l-2 border-pencil bg-secondary/50 px-3 py-2 text-left transition-colors hover:border-accent"
                 >
@@ -358,7 +361,7 @@ export function WhatFedThis({
         </div>
       ) : null}
 
-      <ThreadViewerById workItemId={openThread} onClose={() => setOpenThread(null)} />
+      <ThreadViewerById workItemId={openThread} focus={threadFocus} onClose={() => { setOpenThread(null); setThreadFocus(undefined); }} />
     </section>
   );
 }

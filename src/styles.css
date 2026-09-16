@@ -2076,6 +2076,27 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   animation: nb-evidence-circle-draw 420ms var(--nb-ease, ease-out) forwards;
 }
 
+.story-link {
+  position: relative;
+}
+
+.story-link::after {
+  position: absolute;
+  right: 0;
+  bottom: -2px;
+  left: 0;
+  height: 5px;
+  content: "";
+  opacity: 0;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 5'%3E%3Cpath d='M1 3.2C28 1.4 58 4.1 119 2.1' fill='none' stroke='currentColor' stroke-width='1.4' stroke-linecap='round'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
+  transition: opacity 150ms ease;
+}
+
+.story-link:hover::after,
+.story-link:focus-visible::after {
+  opacity: 1;
+}
+
 @keyframes nb-evidence-circle-draw {
   to { stroke-dashoffset: 0; }
 }
