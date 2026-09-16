@@ -194,7 +194,7 @@ export function FindItResults({
   onDone: () => void | Promise<void>;
   onOpenThread: (workItemId: string) => void;
 }) {
-  const [selectedId, setSelectedId] = useState(candidates[0]?.link.link_id ?? null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [mobileDetailOpen, setMobileDetailOpen] = useState(false);
 
   const groups = useMemo(
@@ -237,12 +237,14 @@ export function FindItResults({
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
-      const element = event.target instanceof HTMLElement ? event.target : null;
-      if (element?.closest("button, input, textarea, [role='dialog']")) return;
       if (event.key === "Escape") {
         event.preventDefault();
         onChooseAgain();
-      } else if (event.key === "ArrowDown" || event.key.toLowerCase() === "j") {
+        return;
+      }
+      const element = event.target instanceof HTMLElement ? event.target : null;
+      if (element?.closest("button, input, textarea, [role='dialog']")) return;
+      if (event.key === "ArrowDown" || event.key.toLowerCase() === "j") {
         event.preventDefault();
         move(1);
       } else if (event.key === "ArrowUp" || event.key.toLowerCase() === "k") {
