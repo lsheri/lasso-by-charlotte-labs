@@ -48,9 +48,10 @@ describe("pass E2 - Find it, entry points and motion", () => {
     expect(whatFedThis).toContain("FindItLink");
   });
 
-  it("measures the joining lines from the elements, never from a grid", () => {
-    const sheet = read("src/components/find-it/FindItSheet.tsx");
-    expect(sheet).toContain("getBoundingClientRect");
-    expect(sheet).not.toContain("gridTemplateColumns");
+  it("uses percentage positions rather than measuring the canvas", () => {
+    const results = read("src/components/find-it/FindItResults.tsx");
+    expect(results).toContain('["--x" as string]');
+    expect(results).toContain('["--y" as string]');
+    expect(results).not.toContain("getBoundingClientRect");
   });
 });
