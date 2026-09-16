@@ -16,6 +16,7 @@ export type FindItCandidate = { link: FoundSource; item: WorkItemRow | null };
 export type FindItPhase = "reading" | "settled" | "kept";
 type ReviewStatus = "confirmed" | "discarded" | "draft";
 type Strength = "heavy" | "normal" | "light";
+type CanvasStyle = CSSProperties & Record<`--${string}`, string>;
 
 const RELATION_CAPTION: Record<string, string> = {
   produced: "where it was written",
@@ -34,7 +35,7 @@ function candidateLine(item: WorkItemRow | null): string {
   return `${item.title}, ${source}, ${formatDate(effectiveWorkDate(item))}`;
 }
 
-function readingPosition(id: string, index: number): CSSProperties {
+function readingPosition(id: string, index: number): CanvasStyle {
   const random = mulberry32(fnv1a(id));
   const column = index % 4;
   const row = Math.floor(index / 4);
@@ -50,7 +51,7 @@ function readingPosition(id: string, index: number): CSSProperties {
   };
 }
 
-function arcPosition(id: string, index: number, total: number, selected: boolean): CSSProperties {
+function arcPosition(id: string, index: number, total: number, selected: boolean): CanvasStyle {
   const random = mulberry32(fnv1a(id));
   const onSecondArc = index >= 8;
   const arcIndex = onSecondArc ? index - 8 : index;
@@ -151,8 +152,8 @@ function ReadingLines({ candidates }: { candidates: FindItCandidate[] }) {
       {candidates.slice(0, 4).map((candidate, index) => {
         const random = mulberry32(fnv1a(`trace-${candidate.link.link_id}`));
         const position = readingPosition(candidate.link.link_id, index);
-        const x = Number.parseFloat(String(position["--x" as string])) * 11.66;
-        const y = Number.parseFloat(String(position["--y" as string])) * 8.36;
+        const x = Number.parseFloat(position["--x"]) * 11.66;
+        const y = Number.parseFloat(position["--y"]) * 8.36;
         const wobbleA = (random() - 0.5) * 90;
         const wobbleB = (random() - 0.5) * 100;
         const style = {
@@ -167,8 +168,8 @@ function ReadingLines({ candidates }: { candidates: FindItCandidate[] }) {
 
 function ArcArrow({ candidate, index, total, selected }: { candidate: FindItCandidate; index: number; total: number; selected: boolean }) {
   const position = arcPosition(candidate.link.link_id, index, total, selected);
-  const x = Number.parseFloat(String(position["--x" as string])) * 11.66;
-  const y = Number.parseFloat(String(position["--y" as string])) * 8.36;
+  const x = Number.parseFloat(position["--x"]) * 11.66;
+  const y = Number.parseFloat(position["--y"]) * 8.36;
   const random = mulberry32(fnv1a(`arrow-${candidate.link.link_id}`));
   const bendX = 625 + random() * 70;
   const bendY = 418 + (y - 418) * 0.42 + (random() - 0.5) * 16;
@@ -272,7 +273,7 @@ export function FindItResults({ phase, target, scope, candidates, reviewed, cons
               {ordered.map((candidate, index) => {
                 const isSelected = phase === "settled" && selected?.link.link_id === candidate.link.link_id;
                 const itemId = candidate.item?.id;
-                return <div key={candidate.link.link_id} className={`find-it-arc-node absolute z-10 ${isSelected ? "w-[36%] max-w-[420px]" : "w-[21.5%] max-w-[250px]"}`} style={arcPosition(candidate.link.link_id, index, ordered.length, isSelected)}><FindItNode candidate={candidate} selected={isSelected} expanded={isSelected} status={phase === "kept" ? "confirmed" : statusOf(candidate, reviewed)} strength={strengthFor(index, ordered.length)} onSelect={phase === "settled" ? () => setSelectedId(candidate.link.link_id) : undefined} onKeep={() => act("confirmed")} onReject={() => act("discarded")} onOpen={itemId ? () => onOpenThread(itemId) : null} /></div>;
+                return <div key={candidate.link.link_id} className={`find-it-arc-node absolute z-10 ${isSelected ? "w-[36%] max-w-[420px]" : "w-[21.5%] max-w-[250px]"}`} style={arcPosition(candidate.link.link_id, index, ordered.length, isSelected)}><FindItNode candidate={candidate} selected={isSelected} expanded={isSelected} status={phase === "kept" ? "confirmed" : statusOf(candidate, reviewed)} strength={strengthFor(index, ordered.length)} {...(phase === "settled" ? { onSelect: () => setSelectedId(candidate.link.link_id) } : {})} onKeep={() => act("confirmed")} onReject={() => act("discarded")} onOpen={itemId ? () => onOpenThread(itemId) : null} /></div>;
               })}
             </div>
           )}
