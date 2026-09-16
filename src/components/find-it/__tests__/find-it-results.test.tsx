@@ -2,7 +2,7 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { arcLayout, FindItResults, type FindItCandidate } from "@/components/find-it/FindItResults";
+import { arcLayout, FindItResults, SETTLED_TARGET_RECT, type FindItCandidate } from "@/components/find-it/FindItResults";
 import type { WorkItemRow } from "@/lib/work-types";
 
 vi.mock("@/components/work/SourceMark", () => ({
@@ -50,6 +50,11 @@ function expectNoPlacementIntersections(count: number) {
   const placements = [...arcLayout(sourceCandidates, "link-0").values()];
   expect(placements).toHaveLength(count);
   placements.forEach((first, firstIndex) => {
+    const intersectsTarget = first.x - first.width / 2 < SETTLED_TARGET_RECT.right
+      && first.x + first.width / 2 > SETTLED_TARGET_RECT.left
+      && first.y - first.height / 2 < SETTLED_TARGET_RECT.bottom
+      && first.y + first.height / 2 > SETTLED_TARGET_RECT.top;
+    expect(intersectsTarget, `placement ${firstIndex} intersects the target`).toBe(false);
     placements.slice(firstIndex + 1).forEach((second, relativeIndex) => {
       const intersects = first.x - first.width / 2 < second.x + second.width / 2
         && first.x + first.width / 2 > second.x - second.width / 2
