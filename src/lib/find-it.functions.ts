@@ -119,10 +119,23 @@ export type RecordTurnHit = {
   tier: HitTier;
 };
 
+/**
+ * A conversation found by what Lasso wrote about it, not by anything said in
+ * it. No excerpt travels with these: a summary is never shown as a quote.
+ */
+export type RecordConversationHit = {
+  work_item_id: string;
+  title: string;
+  vendor: string | null;
+  date: string | null;
+};
+
 export type RecordSearchResult = {
   turns: RecordTurnHit[];
+  conversations: RecordConversationHit[];
   deliverables: { work_item_id: string; title: string; type: string }[];
 };
+
 
 const NUMBER_QUERY = /^[\s$£€]*\d[\d\s.,]*\s*[kKmM]?[\s%]*$/;
 const EXCERPT_CHARS = 160;
