@@ -341,8 +341,8 @@ export function FindItPage() {
   const readingCount = found?.considered ?? chats.length;
 
   return (
-    <div className={mode === "sources" ? "snap-y snap-mandatory" : ""}>
-      <div ref={formRef} className={mode === "sources" ? "flex min-h-dvh snap-start flex-col" : ""}>
+    <div className={mode === "sources" ? "snap-y snap-mandatory md:mb-[-3.5rem] md:mt-[-3rem]" : ""}>
+      <div ref={formRef} className={mode === "sources" ? "flex min-h-dvh snap-start flex-col md:h-dvh md:min-h-0 md:overflow-y-auto" : ""}>
       <PageHeader
         title="Find"
         italicWord="it"

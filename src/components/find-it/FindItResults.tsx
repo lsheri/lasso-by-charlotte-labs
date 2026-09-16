@@ -142,7 +142,11 @@ export function FindItResults({ phase, target, scope, candidates, reviewed, cons
 }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [mobileDetailOpen, setMobileDetailOpen] = useState(false);
-  const groups = useMemo(() => RELATION_ORDER.map((relation) => ({ relation, members: candidates.filter((candidate) => candidate.link.relation === relation) })).filter((group) => group.members.length > 0), [candidates]);
+  const attached = useMemo(
+    () => phase === "kept" ? candidates.filter((candidate) => statusOf(candidate, reviewed) === "confirmed") : candidates,
+    [candidates, phase, reviewed],
+  );
+  const groups = useMemo(() => RELATION_ORDER.map((relation) => ({ relation, members: attached.filter((candidate) => candidate.link.relation === relation) })).filter((group) => group.members.length > 0), [attached]);
   const ordered = useMemo(() => groups.flatMap((group) => group.members), [groups]);
   const selected = ordered.find((candidate) => candidate.link.link_id === selectedId) ?? ordered[0] ?? null;
   const keptCount = candidates.filter((candidate) => statusOf(candidate, reviewed) === "confirmed").length;
@@ -170,6 +174,11 @@ export function FindItResults({ phase, target, scope, candidates, reviewed, cons
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       if (phase !== "settled") return;
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onChooseTarget();
+        return;
+      }
       const element = event.target instanceof HTMLElement ? event.target : null;
       if (element?.closest("button, input, textarea, [role='dialog']")) return;
       if (event.key === "ArrowDown" || event.key.toLowerCase() === "j") { event.preventDefault(); move(1); }
@@ -215,7 +224,7 @@ export function FindItResults({ phase, target, scope, candidates, reviewed, cons
       </div>
 
       <footer className="flex min-w-0 items-center gap-2 border-t border-hairline bg-background px-1 md:px-3">
-        {phase === "reading" ? <p className="min-w-0 flex-1 truncate font-hand text-[16px] text-green">reading {considered} conversations</p> : <p className="min-w-0 flex-1 truncate font-hand text-[16px] text-green">Kept {phase === "kept" ? candidates.length : keptCount} of {candidates.length} · goes on the record of this deck</p>}
+        {phase === "reading" ? <p className="min-w-0 flex-1 truncate font-hand text-[16px] text-green">reading {considered} conversations</p> : <p className="min-w-0 flex-1 truncate font-hand text-[16px] text-green">Kept {keptCount} of {candidates.length} · goes on the record of this deck</p>}
         {phase === "settled" ? <><Button type="button" variant="outline" size="sm" onClick={() => void onKeepAll()}>Keep all</Button><Button type="button" size="sm" onClick={() => void onDone()}>Done</Button></> : null}
         {phase !== "reading" ? <Button type="button" variant="ghost" size="sm" onClick={onReturnToForm}>Look for something else</Button> : null}
       </footer>
