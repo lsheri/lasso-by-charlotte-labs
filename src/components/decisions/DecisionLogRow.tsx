@@ -83,7 +83,11 @@ export function DecisionLogRow({
             </Button>
           ))}
         </div>
-      ) : null}
+      ) : (
+        <p className="mb-3 font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
+          No source attached
+        </p>
+      )}
 
       {confirmed && !editing ? (
         <div className="flex max-w-[758px] items-start justify-between gap-5 border-y border-[var(--nb-yellow-edge)] bg-[var(--nb-yellow-wash)] px-4 py-3">
@@ -113,7 +117,7 @@ export function DecisionLogRow({
           <div className="flex shrink-0 items-center gap-1.5 pt-0.5 text-green">
             <GraphiteCheck seed={decision.id} />
             <span className={`font-mono text-[9px] uppercase tracking-[0.08em] ${label.still ? "" : label.className}`}>
-              On the record
+              ON THE RECORD
             </span>
           </div>
         </div>

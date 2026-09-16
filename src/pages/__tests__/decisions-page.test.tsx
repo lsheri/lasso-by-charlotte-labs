@@ -51,7 +51,7 @@ describe("Your calls storyboard", () => {
   it("renders awaiting and confirmed states", () => {
     render(<DecisionsPage />);
     expect(screen.getByPlaceholderText("Why was this the right call? A sentence is enough.")).toBeTruthy();
-    expect(screen.getByText("ON THE RECORD")).toBeTruthy();
+    expect(screen.getAllByText("ON THE RECORD")).toHaveLength(2);
   });
 
   it("shows the three truthful counts", () => {
