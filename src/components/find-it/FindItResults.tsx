@@ -122,9 +122,9 @@ function arcLayout(candidates: FindItCandidate[], selectedId: string | null): Ma
       const bulge = (1 - middleDistance * middleDistance) * 140;
       const baseX = 660 + arc * 300;
       const width = entry.candidate.link.link_id === selectedId ? 420 : 250;
-      const naturalX = Math.min(baseX + bulge, CANVAS_WIDTH - width / 2 - 12);
-      const growsLeft = width === 420 && naturalX + width / 2 > CANVAS_WIDTH - 12;
-      const x = growsLeft ? CANVAS_WIDTH - width / 2 - 12 : naturalX;
+      const desiredX = baseX + bulge;
+      const growsLeft = width === 420 && desiredX + width / 2 > CANVAS_WIDTH - 12;
+      const x = Math.min(desiredX, CANVAS_WIDTH - width / 2 - 12);
       placements.set(entry.candidate.link.link_id, { x, y, arc: arc as 0 | 1, height: entry.height, width, growsLeft });
       cursor += entry.height + CARD_GAP;
     }
