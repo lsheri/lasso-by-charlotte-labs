@@ -82,7 +82,7 @@ export function FindItNode({ candidate, selected = false, status = "draft", rank
 }) {
   const item = candidate.item;
   return (
-    <Button type="button" variant="ghost" onClick={onSelect} data-testid="find-it-node" data-selected={selected ? "true" : "false" className={`relative h-[clamp(44px,7dvh,72px)] w-full justify-start whitespace-normal rounded-[6px] border px-2 py-1.5 text-left shadow-none ${selected ? "border-pencil bg-card shadow-[2px_2px_0_var(--nb-pencil)]" : "border-hairline bg-card hover:border-pencil hover:bg-card"} ${status === "discarded" ? "opacity-50" : ""} ${className}`}>
+    <Button type="button" variant="ghost" onClick={onSelect} data-testid="find-it-node" data-selected={selected ? "true" : "false"} className={`relative h-[clamp(44px,7dvh,72px)] w-full justify-start whitespace-normal rounded-[6px] border px-2 py-1.5 text-left shadow-none ${selected ? "border-pencil bg-card shadow-[2px_2px_0_var(--nb-pencil)]" : "border-hairline bg-card hover:border-pencil hover:bg-card"} ${status === "discarded" ? "opacity-50" : ""} ${className}`}>
       {settled ? <RelationStub rank={rank} total={total} /> : null}
       <span className="relative flex min-w-0 flex-1 items-center gap-2">
         {item ? <SourceMark item={item} size={14} disc /> : null}
