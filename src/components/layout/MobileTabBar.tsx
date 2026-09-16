@@ -8,6 +8,7 @@ import { useAskLassoHandler } from "@/components/reflect/ask-lasso-context";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { useEngagements } from "@/hooks/use-engagements";
 import { useProfile } from "@/hooks/use-profile";
+import { vocabFor } from "@/lib/edu-vocab";
 import * as roles from "@/lib/role-access";
 import { engagementDisplayCode, engagementDisplayTitle } from "@/lib/clients";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,6 +34,7 @@ export function MobileTabBar() {
   const canManageMembers = roles.canManageMembers(profile);
   const canSeeFirmView = roles.canSeeFirmView(profile);
   const membersLabel = roles.membersLabel(profile);
+  const vocab = vocabFor(profile);
 
   // A coach has no work of their own, so an Ask tab would be a dead
   // affordance the way the FAB would be. Three tabs.
@@ -151,7 +153,7 @@ export function MobileTabBar() {
               </Link>
             ))}
             {engagements && engagements.length === 0 ? (
-              <p className="px-2 py-1.5 text-sm text-muted-foreground">No engagements yet</p>
+              <p className="px-2 py-1.5 text-sm text-muted-foreground">{vocab.noEngagements}</p>
             ) : null}
           </div>
         </SheetContent>

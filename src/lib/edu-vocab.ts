@@ -29,6 +29,13 @@ export type Vocab = {
   firmView: string;
   pastWork: string;
   portfolio: string;
+  /** Sidebar empty line when nothing has been created yet. */
+  noEngagements: string;
+  /** The first card in the create dialog. */
+  fullEngagement: string;
+  /** The submit button in the create dialog. */
+  createEngagement: string;
+
   /** Filtered engagement views, only shown in a school workspace. */
   classes: string;
   projects: string;
@@ -48,6 +55,10 @@ export const DEFAULT_VOCAB: Vocab = {
   firmView: "Firm view",
   pastWork: "Past work",
   portfolio: "Portfolio",
+  noEngagements: "No engagements yet",
+  fullEngagement: "Full engagement",
+  createEngagement: "Create engagement",
+
   classes: "Engagements",
   projects: "Engagements",
   assignments: "Workstreams",
@@ -65,6 +76,10 @@ export const EDU_VOCAB: Vocab = {
   firmView: "Everyone's work",
   pastWork: "Past work",
   portfolio: "Portfolio",
+  noEngagements: "No classes or projects yet",
+  fullEngagement: "Full class or project",
+  createEngagement: "Create class or project",
+
   classes: "Classes",
   projects: "Projects",
   assignments: "Assignments",

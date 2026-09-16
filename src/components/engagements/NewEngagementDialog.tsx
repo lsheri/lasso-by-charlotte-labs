@@ -17,6 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { createQuickFolder, useInvalidateClients } from "@/hooks/use-clients";
 import { useProfile } from "@/hooks/use-profile";
 import { supabase } from "@/integrations/supabase/client";
+import { vocabFor } from "@/lib/edu-vocab";
 import { logEvent } from "@/lib/telemetry";
 
 type Mode = "choose" | "engagement" | "folder";
@@ -32,6 +33,7 @@ export function NewEngagementDialog({
   const queryClient = useQueryClient();
   const invalidateClients = useInvalidateClients();
   const navigate = useNavigate();
+  const vocab = vocabFor(profile);
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<Mode>("choose");
   const [code, setCode] = useState("");
@@ -164,7 +166,7 @@ export function NewEngagementDialog({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="page-title">
-            {mode === "folder" ? "New quick folder" : "New engagement"}
+            {mode === "folder" ? "New quick folder" : vocab.newEngagement}
           </DialogTitle>
         </DialogHeader>
 
@@ -175,7 +177,7 @@ export function NewEngagementDialog({
               onClick={() => setMode("engagement")}
               className="w-full rounded-[var(--radius)] border border-border bg-card px-4 py-3 text-left shadow-card transition-colors hover:border-accent-deep"
             >
-              <p className="text-sm font-medium text-foreground">Full engagement</p>
+              <p className="text-sm font-medium text-foreground">{vocab.fullEngagement}</p>
               <p className="mt-0.5 text-sm text-muted-foreground">
                 A code, a client, a brief, and workstreams underneath it.
               </p>
@@ -187,8 +189,8 @@ export function NewEngagementDialog({
             >
               <p className="text-sm font-medium text-foreground">Quick folder</p>
               <p className="mt-0.5 text-sm text-muted-foreground">
-                A simple place to keep and analyze work for one client. You can turn it into a full
-                engagement later.
+                A simple place to keep and analyze work for one client. You can turn it into a
+                full {vocab.engagement.toLowerCase()} later.
               </p>
             </button>
           </div>
@@ -286,7 +288,7 @@ export function NewEngagementDialog({
                 ? "Creating…"
                 : confirmNoBrief && !brief.trim()
                   ? "Create without a brief"
-                  : "Create engagement"}
+                  : vocab.createEngagement}
             </Button>
           </form>
         ) : null}

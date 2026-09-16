@@ -28,8 +28,8 @@ import {
   toolCountBucket,
   type ToolId,
 } from "@/lib/onboarding-tools";
+import { orgTypeForChoice, type OrgType } from "@/lib/org-type";
 
-type OrgType = "company" | "personal" | "edu";
 
 /** The RPC creates the org; the type is workspace settings we write after. */
 async function applyOrgType(profileId: string, type: OrgType): Promise<string | null> {
@@ -45,10 +45,25 @@ async function applyOrgType(profileId: string, type: OrgType): Promise<string | 
     .eq("id", profile.org_id)
     .maybeSingle();
   const settings = (org?.settings ?? {}) as Record<string, unknown>;
+  // Pass O1: the type is what decides which product a person gets, so the
+  // write is read back and tried once more rather than assumed.
   await supabase
     .from("orgs")
     .update({ settings: { ...settings, type } })
     .eq("id", profile.org_id);
+  const { data: written } = await supabase
+    .from("orgs")
+    .select("settings")
+    .eq("id", profile.org_id)
+    .maybeSingle();
+  const landed = (written?.settings ?? {}) as Record<string, unknown>;
+  if (landed["type"] !== type) {
+    await supabase
+      .from("orgs")
+      .update({ settings: { ...landed, type } })
+      .eq("id", profile.org_id);
+  }
+
 
   // Pass 185: the front door, written once at creation and never edited afterwards.
   const source = readSignupSource() ?? "direct";
@@ -156,8 +171,9 @@ function OnboardingInner() {
   );
   const [tools, setTools] = useState<Set<ToolId>>(new Set());
   const [orgType, setOrgType] = useState<OrgType>(
-    intent === "personal" ? "personal" : intent === "edu" || readEduIntent() ? "edu" : "company",
+    orgTypeForChoice(intent ?? (readEduIntent() ? "edu" : null)),
   );
+
   const [selected, setSelected] = useState<"company" | "personal" | "edu" | "invite" | null>(
     intent ?? (readEduIntent() ? "edu" : null),
   );
@@ -406,7 +422,7 @@ function OnboardingInner() {
                     className="mt-4"
                     onClick={() => {
                       setSelected(value);
-                      setOrgType(value);
+                      setOrgType(orgTypeForChoice(value));
                       setStage("setup");
                     }}
                   >
