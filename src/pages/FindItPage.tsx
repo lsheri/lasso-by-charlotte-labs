@@ -505,11 +505,14 @@ export function FindItPage() {
 
               {searchHits ? (
                 <div className="mt-6">
-                  {searchHits.turns.length === 0 && searchHits.deliverables.length === 0 ? (
+                  {searchHits.turns.length === 0 &&
+                  searchHits.conversations.length === 0 &&
+                  searchHits.deliverables.length === 0 ? (
                     <p className="text-sm text-muted-foreground">
                       Nothing with those words. Try fewer of them.
                     </p>
                   ) : null}
+
                   {searchHits.turns.length > 0 ? (
                     <ul className="divide-y divide-hairline border-t border-hairline">
                       {searchHits.turns.map((hit, index) => (
