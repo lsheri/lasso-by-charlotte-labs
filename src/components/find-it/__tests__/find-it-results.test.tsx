@@ -50,12 +50,12 @@ function expectNoPlacementIntersections(count: number) {
   const placements = [...arcLayout(sourceCandidates, "link-0").values()];
   expect(placements).toHaveLength(count);
   placements.forEach((first, firstIndex) => {
-    placements.slice(firstIndex + 1).forEach((second) => {
+    placements.slice(firstIndex + 1).forEach((second, relativeIndex) => {
       const intersects = first.x - first.width / 2 < second.x + second.width / 2
         && first.x + first.width / 2 > second.x - second.width / 2
         && first.y - first.height / 2 < second.y + second.height / 2
         && first.y + first.height / 2 > second.y - second.height / 2;
-      expect(intersects, `placements ${firstIndex} and ${firstIndex + 1} intersect`).toBe(false);
+      expect(intersects, `placements ${firstIndex} and ${firstIndex + relativeIndex + 1} intersect`).toBe(false);
     });
   });
 }
