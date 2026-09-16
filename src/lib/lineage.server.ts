@@ -19,6 +19,8 @@ import {
   type DraftedLink,
   type LineageRelation,
 } from "./lineage-shared";
+import { sharedSentenceKey, withSharedSentenceCache } from "./shared-sentence-cache";
+
 
 type Db = SupabaseClient<Database>;
 
@@ -411,6 +413,16 @@ export async function sharedSentenceFor(
   candidateId: string,
 ): Promise<SharedSentence | null> {
   if (!deliverableText.trim()) return null;
+  return withSharedSentenceCache(sharedSentenceKey(deliverableText, candidateId), () =>
+    computeSharedSentence(supabase, deliverableText, candidateId),
+  );
+}
+
+export async function computeSharedSentence(
+  supabase: Db,
+  deliverableText: string,
+  candidateId: string,
+): Promise<SharedSentence | null> {
   const { data: row } = await supabase
     .from("work_items")
     .select(AUDIT_ITEM_COLUMNS)
@@ -432,4 +444,5 @@ export async function sharedSentenceFor(
   }
   return best;
 }
+
 

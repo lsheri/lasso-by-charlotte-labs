@@ -23,6 +23,10 @@ const FILTERS = [
 export type DecisionFilter = (typeof FILTERS)[number]["id"];
 export type DecisionBand = { label: "this week" | "earlier"; rows: DecisionRow[] };
 
+/** How many entries the timeline shows before the quiet reveal control. */
+export const DECISION_PAGE_SIZE = 25;
+
+
 export function filterDecisions(rows: DecisionRow[], filter: DecisionFilter): DecisionRow[] {
   if (filter === "draft") return rows.filter((row) => row.status === "draft");
   if (filter === "no-why") return rows.filter((row) => row.status === "confirmed" && !row.why?.trim());
@@ -62,11 +66,16 @@ export function DecisionsPage() {
   const [sourceItem, setSourceItem] = useState<string | null>(null);
   const [sourceFocus, setSourceFocus] = useState<ThreadFocus | undefined>();
   const [filter, setFilter] = useState<DecisionFilter>("all");
+  const [shown, setShown] = useState(DECISION_PAGE_SIZE);
 
   const rows = decisions ?? [];
+  // Counts and filters always read the whole set, never the visible slice.
   const visible = filterDecisions(rows, filter);
-  const groups = groupDecisions(visible);
+  const paged = visible.slice(0, shown);
+  const hiddenCount = visible.length - paged.length;
+  const groups = groupDecisions(paged);
   const counts = decisionCounts(rows);
+
 
   async function update(
     decision: DecisionRow,
@@ -119,7 +128,7 @@ export function DecisionsPage() {
               size="sm"
               variant={filter === item.id ? "secondary" : "outline"}
               aria-pressed={filter === item.id}
-              onClick={() => setFilter(item.id)}
+              onClick={() => { setFilter(item.id); setShown(DECISION_PAGE_SIZE); }}
               className="rounded-full text-[11.5px]"
             >
               {item.label}
@@ -167,8 +176,27 @@ export function DecisionsPage() {
                     </div>
                   </div>
                 ))}
+                {hiddenCount > 0 ? (
+                  <div className="grid grid-cols-[92px_24px_minmax(0,1fr)] pt-4">
+                    <div />
+                    <div />
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setShown((count) => count + DECISION_PAGE_SIZE)}
+                        className="font-hand text-[16px] text-muted-foreground underline underline-offset-4 hover:text-foreground"
+                      >
+                        show earlier calls
+                      </button>
+                      <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
+                        {hiddenCount} earlier
+                      </span>
+                    </div>
+                  </div>
+                ) : null}
               </div>
             )}
+
           </section>
           <DecisionRail counts={counts} />
         </div>
