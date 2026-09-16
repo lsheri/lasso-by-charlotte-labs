@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 
-import { GraphiteCheck, DrawnStrike } from "@/components/notebook/marks";
+import { GraphiteCheck } from "@/components/notebook/marks";
 import { ToneCard } from "@/components/notebook/ToneCard";
 import { Button } from "@/components/ui/button";
 import { SourceMark } from "@/components/work/SourceMark";
@@ -43,6 +43,23 @@ function RelationStub({ rank, total }: { rank: number; total: number }) {
         strokeLinecap="round"
         strokeDasharray={dotted ? "2 4" : undefined}
       />
+    </svg>
+  );
+}
+
+function RejectedStrike() {
+  return (
+    <svg
+      aria-hidden
+      viewBox="0 0 120 12"
+      preserveAspectRatio="none"
+      className="pointer-events-none absolute inset-x-0 top-1/2 h-3 w-full -translate-y-1/2"
+      fill="none"
+      stroke="var(--nb-graphite)"
+      strokeWidth={1.4}
+      strokeLinecap="round"
+    >
+      <path d="M4 7C24 5.4 44 8.2 64 6.6c18-1.4 36 .6 52-1.2" />
     </svg>
   );
 }
@@ -90,7 +107,7 @@ function CandidateNode({
         {status === "confirmed" ? (
           <GraphiteCheck seed={candidate.link.link_id} className="text-green" />
         ) : null}
-        {status === "discarded" ? <DrawnStrike /> : null}
+        {status === "discarded" ? <RejectedStrike /> : null}
       </span>
     </Button>
   );
@@ -220,6 +237,8 @@ export function FindItResults({
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
+      const element = event.target instanceof HTMLElement ? event.target : null;
+      if (element?.closest("button, input, textarea, [role='dialog']")) return;
       if (event.key === "Escape") {
         event.preventDefault();
         onChooseAgain();
