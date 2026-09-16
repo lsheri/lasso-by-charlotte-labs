@@ -24,3 +24,9 @@
 - [x] Add focused conversation viewer tests
 - [ ] Coach notes and engagement bench turn focus
   - Blocked: these records carry task or work-item scope, not conversation turn data.
+
+## D4 Your calls storyboard
+- [x] Re-layout the existing decision review flow as a dated notebook timeline
+- [x] Preserve source focus, manual logging, reasoning, discard, loading, empty, and error states
+- [x] Add truthful confirmed, reasoning, and awaiting counts
+- [x] Add focused grouping, state, count, and filter tests
