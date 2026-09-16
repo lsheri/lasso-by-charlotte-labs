@@ -308,7 +308,7 @@ export function FindItResults({ phase, target, scope, candidates, reviewed, cons
   const [mobileDetailOpen, setMobileDetailOpen] = useState(false);
   const visible = useMemo(() => (phase === "kept" ? candidates.filter((candidate) => statusOf(candidate, reviewed) === "confirmed") : candidates), [candidates, phase, reviewed]);
   const ordered = useMemo(() => orderByEvidence(visible.slice(0, 16)), [visible]);
-  const selected = ordered.find((candidate) => candidate.link.link_id === selectedId) ?? ordered[0] ?? null;
+  const selected = ordered.find((candidate) => candidate.link.link_id === selectedId) ?? ordered.find((candidate) => strengthFor(candidate) !== "light") ?? ordered[0] ?? null;
   const selectedForLayout = phase === "settled" ? selected?.link.link_id ?? null : null;
   const placements = useMemo(() => arcLayout(ordered, selectedForLayout), [ordered, selectedForLayout]);
   const readingSlots = useMemo(() => shuffledSlots(candidates.slice(0, 14)), [candidates]);
