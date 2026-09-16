@@ -28,7 +28,7 @@ function item(id: string, title: string): WorkItemRow {
 }
 
 function candidates(): FindItCandidate[] {
-  return Array.from({ length: 12 }, (_, index) => {
+  return Array.from({ length: 16 }, (_, index) => {
     const relation = index < 4 ? "informed" : index < 8 ? "cited" : "produced";
     return {
       item: item(`item-${index}`, `Northwind source ${index + 1}`),
@@ -45,7 +45,7 @@ function candidates(): FindItCandidate[] {
 }
 
 describe("Find it results mode", () => {
-  it("keeps reading nodes inside the same canvas", () => {
+  it("shows up to fourteen reading nodes and several tracing lines", () => {
     render(
       <FindItResults
         phase="reading"
@@ -53,7 +53,7 @@ describe("Find it results mode", () => {
         scope="engagement"
         candidates={candidates()}
         reviewed={{}}
-        considered={12}
+        considered={16}
         reduceMotion={false}
         onChooseTarget={vi.fn()}
         onReturnToForm={vi.fn()}
@@ -65,12 +65,13 @@ describe("Find it results mode", () => {
     );
 
     expect(screen.getByTestId("find-it-canvas").getAttribute("data-phase")).toBe("reading");
-    expect(screen.getAllByTestId("find-it-node")).toHaveLength(12);
+    expect(screen.getAllByTestId("find-it-node")).toHaveLength(14);
     expect(screen.getByTestId("find-it-reading-nodes")).toBeTruthy();
+    expect(screen.getAllByTestId("find-it-tracing-line").length).toBeGreaterThanOrEqual(2);
     expect(screen.getAllByTestId("find-it-target")).toHaveLength(1);
   });
 
-  it("settles into groups, shows one rail, and advances after Keep", () => {
+  it("settles onto an arc with weighted arrows and advances the inline expansion", () => {
     const review = vi.fn();
     render(
       <FindItResults
@@ -79,7 +80,7 @@ describe("Find it results mode", () => {
         scope="engagement"
         candidates={candidates()}
         reviewed={{}}
-        considered={12}
+        considered={16}
         reduceMotion={false}
         onChooseTarget={vi.fn()}
         onReturnToForm={vi.fn()}
@@ -91,9 +92,11 @@ describe("Find it results mode", () => {
     );
 
     expect(screen.getAllByTestId("find-it-target")).toHaveLength(1);
-    expect(screen.getByRole("region", { name: "INFORMED 4" })).toBeTruthy();
-    expect(screen.getByRole("region", { name: "CITED 4" })).toBeTruthy();
-    expect(screen.getByRole("region", { name: "PRODUCED 4" })).toBeTruthy();
+    expect(screen.getByTestId("find-it-arc")).toBeTruthy();
+    expect(screen.queryByText(/INFORMED ·/)).toBeNull();
+    expect(screen.getAllByTestId("find-it-arrow").some((arrow) => arrow.getAttribute("data-strength") === "heavy")).toBe(true);
+    expect(screen.getAllByTestId("find-it-arrow").some((arrow) => arrow.getAttribute("data-strength") === "normal")).toBe(true);
+    expect(screen.getAllByTestId("find-it-arrow").some((arrow) => arrow.getAttribute("data-strength") === "light")).toBe(true);
     expect(screen.getAllByTestId("find-it-detail")).toHaveLength(1);
     expect(screen.getByTestId("find-it-detail").textContent).toContain("Northwind source 1");
 
@@ -112,7 +115,7 @@ describe("Find it results mode", () => {
         scope="engagement"
         candidates={candidates()}
         reviewed={reviewed}
-        considered={12}
+        considered={16}
         reduceMotion={false}
         onChooseTarget={vi.fn()}
         onReturnToForm={vi.fn()}
@@ -124,7 +127,7 @@ describe("Find it results mode", () => {
     );
 
     expect(screen.getByTestId("find-it-canvas").getAttribute("data-phase")).toBe("kept");
-    expect(screen.getAllByTestId("find-it-node")).toHaveLength(12);
+    expect(screen.getAllByTestId("find-it-node")).toHaveLength(16);
     expect(screen.queryByTestId("find-it-detail")).toBeNull();
   });
 });
