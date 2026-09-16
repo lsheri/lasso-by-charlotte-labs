@@ -39,9 +39,13 @@ vi.mock("@tanstack/react-query", async (original) => ({
   useQueryClient: () => ({ invalidateQueries: vi.fn() }),
 }));
 
-import { DecisionsPage, decisionCounts, filterDecisions, groupDecisions } from "@/pages/DecisionsPage";
+import { DecisionsPage, DECISION_PAGE_SIZE, decisionCounts, filterDecisions, groupDecisions } from "@/pages/DecisionsPage";
 
-afterEach(() => document.body.replaceChildren());
+afterEach(() => {
+  document.body.replaceChildren();
+  activeRows = rows;
+});
+
 
 describe("Your calls storyboard", () => {
   it("groups entries into this week and earlier", () => {
