@@ -262,7 +262,7 @@ export function FindItResults({
           <WorkNote item={target} dense />
         </div>
 
-        <div className="hidden min-h-0 gap-5 overflow-hidden md:grid" style={{ gridTemplateColumns: `repeat(${Math.max(groups.length, 1)}, minmax(0, 1fr))` }}>
+        <div className="hidden min-h-0 grid-flow-col auto-cols-fr gap-5 overflow-hidden md:grid">
           {groups.map((group) => (
             <section key={group.relation} className="flex min-h-0 flex-col" aria-label={`${RELATION_LABEL[group.relation]} ${group.members.length}`}>
               <h2 className="micro-label mb-3 shrink-0">

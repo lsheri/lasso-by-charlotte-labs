@@ -5,7 +5,6 @@ import { toast } from "sonner";
 
 import { PageHeader } from "@/components/layout/PageHeader";
 import { SectionHeader } from "@/components/notebook/SectionHeader";
-import { GraphiteCheck } from "@/components/notebook/marks";
 import { NotebookSpider } from "@/components/notebook/NotebookSpider";
 import { ToneCard } from "@/components/notebook/ToneCard";
 import { FindItSheet } from "@/components/find-it/FindItSheet";
@@ -100,7 +99,6 @@ export function FindItPage() {
   const { data, isLoading } = useWorkItems();
   const reduceMotion = useReducedMotion();
   const perfTimer = usePerfTimerFactory();
-  const keptMotion = useMotion("findit.kept");
   const rowMotion = useMotion("findit.search_landed");
   const { capture, pending: capturing } = useCaptureFiles();
 
@@ -132,7 +130,6 @@ export function FindItPage() {
   const [searchedFor, setSearchedFor] = useState("");
   const [reviewed, setReviewed] = useState<Record<string, "confirmed" | "discarded">>({});
   const [openThread, setOpenThread] = useState<string | null>(null);
-  const [justKept, setJustKept] = useState<string | null>(null);
   const [confirmation, setConfirmation] = useState<string | null>(null);
 
   // Where this page was opened from. Another surface can say so in the link.
@@ -274,7 +271,6 @@ export function FindItPage() {
 
   async function review(linkId: string, action: "confirmed" | "discarded") {
     setReviewed((prev) => ({ ...prev, [linkId]: action }));
-    if (action === "confirmed") setJustKept(linkId);
     try {
       await runReviewLink({
         data: { link_id: linkId, action, surface: "find_it", profile_id: profile?.id },
@@ -296,7 +292,6 @@ export function FindItPage() {
   function leaveResults(clearTarget = false) {
     setFound(null);
     setReviewed({});
-    setJustKept(null);
     if (clearTarget) setTargetId(null);
   }
 
