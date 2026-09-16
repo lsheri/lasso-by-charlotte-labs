@@ -1,0 +1,66 @@
+@keyframes find-it-drift {
+  0%, 100% { transform: translate(-50%, -50%) translate(0, 0); }
+  50% { transform: translate(-50%, -50%) translate(var(--drift-x), var(--drift-y)); }
+}
+
+@keyframes find-it-trace {
+  0% { stroke-dashoffset: 1; opacity: 0; }
+  12% { opacity: 0.7; }
+  68% { stroke-dashoffset: 0; opacity: 0.7; }
+  100% { stroke-dashoffset: 0; opacity: 0; }
+}
+
+@keyframes find-it-arrow-land {
+  from { stroke-dashoffset: 1; }
+  to { stroke-dashoffset: 0; }
+}
+
+.find-it-stage {
+  aspect-ratio: 1166 / 836;
+}
+
+.find-it-reading-node {
+  left: var(--x);
+  top: var(--y);
+  transform: translate(-50%, -50%);
+  animation: find-it-drift var(--drift-duration) ease-in-out var(--drift-delay) infinite;
+}
+
+.find-it-trace-line {
+  fill: none;
+  opacity: 0;
+  stroke: var(--nb-pencil);
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+  animation: find-it-trace var(--trace-duration) ease-in-out var(--trace-delay) infinite;
+}
+
+.find-it-arc-node {
+  left: var(--x);
+  top: var(--y);
+  transform: translate(-50%, -50%);
+  transition: left 480ms cubic-bezier(0.2, 0.8, 0.2, 1), top 480ms cubic-bezier(0.2, 0.8, 0.2, 1), width 480ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity 480ms ease;
+}
+
+.find-it-arrow-line,
+.find-it-arrow-head {
+  fill: none;
+  stroke: var(--nb-pencil);
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+  animation: find-it-arrow-land 480ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  animation-delay: var(--arrow-delay);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .find-it-reading-node { animation: none; }
+  .find-it-trace-lines { display: none; }
+  .find-it-arc-node { transition: none; }
+  .find-it-arrow-line,
+  .find-it-arrow-head { animation: none; stroke-dashoffset: 0; }
+}
