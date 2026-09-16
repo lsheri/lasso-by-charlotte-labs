@@ -129,6 +129,31 @@ export function DrawnEllipse({ className = "" }: { className?: string }) {
   );
 }
 
+/** A persistent green loop around the exact evidence opened in a conversation. */
+export function EvidenceCircle({ className = "" }: { className?: string }) {
+  return (
+    <svg
+      data-testid="evidence-circle"
+      className={`nb-evidence-circle pointer-events-none absolute -inset-x-2 -inset-y-1 h-[calc(100%+8px)] w-[calc(100%+16px)] overflow-visible ${className}`}
+      viewBox="0 0 200 44"
+      preserveAspectRatio="none"
+      fill="none"
+      stroke="var(--nb-green)"
+      strokeWidth={1.8}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      vectorEffect="non-scaling-stroke"
+      aria-hidden
+    >
+      <path
+        pathLength={1}
+        vectorEffect="non-scaling-stroke"
+        d="M100 4C148 3.4 195 10 195 22.6c0 12.4-46 18.6-95 18.6C52 41.2 5 35.4 5 22.4 5 10.2 50 4.6 100 4c14-.2 28 .6 41 2.6"
+      />
+    </svg>
+  );
+}
+
 /** Discarded. One quick pen line through the label. */
 export function DrawnStrike({ className = "" }: { className?: string }) {
   if (!useClaim()) return null;
