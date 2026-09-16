@@ -22,7 +22,7 @@
 .find-it-stage {
   width: 1166px;
   height: 836px;
-  transform: scale(var(--stage-scale));
+  transform: translateX(var(--stage-left)) scale(var(--stage-scale));
   transform-origin: top left;
 }
 

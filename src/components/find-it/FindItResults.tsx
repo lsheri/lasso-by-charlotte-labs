@@ -32,6 +32,7 @@ const WHY_HEIGHT = 200;
 const CARD_GAP = 14;
 const STAGE_INSET = 12;
 const STAGE_RIGHT = CANVAS_WIDTH - STAGE_INSET;
+export const SETTLED_TARGET_RECT = { left: 330, right: 580, top: 308, bottom: 528 };
 
 const RELATION_CAPTION: Record<string, string> = {
   produced: "where it was written",
@@ -122,6 +123,19 @@ function resolveCollisions(placements: Map<string, ArcPlacement>, candidates: Fi
 
   for (let pass = 0; pass < 12; pass += 1) {
     let changed = false;
+    for (const id of ids) {
+      const placement = placements.get(id);
+      if (!placement || !rectsIntersect(rectOf(placement), SETTLED_TARGET_RECT)) continue;
+      const minX = STAGE_INSET + placement.width / 2;
+      const maxX = STAGE_RIGHT - placement.width / 2;
+      const direction = placement.x < (SETTLED_TARGET_RECT.left + SETTLED_TARGET_RECT.right) / 2 ? -1 : 1;
+      while (rectsIntersect(rectOf(placement), SETTLED_TARGET_RECT)) {
+        const nextX = Math.min(maxX, Math.max(minX, placement.x + direction * 8));
+        if (nextX === placement.x) break;
+        placement.x = nextX;
+        changed = true;
+      }
+    }
     for (let firstIndex = 0; firstIndex < ids.length; firstIndex += 1) {
       for (let secondIndex = firstIndex + 1; secondIndex < ids.length; secondIndex += 1) {
         const firstId = ids[firstIndex];
@@ -193,8 +207,9 @@ export function arcLayout(candidates: FindItCandidate[], selectedId: string | nu
       const bulgeFactor = 1 - middleDistance * middleDistance;
       const width = entry.candidate.link.link_id === selectedId ? 400 : 240;
       const laneCenter = arc === 0 ? 690 + bulgeFactor * 80 : 1015 + bulgeFactor * 25;
-      const growsLeft = width === 400;
-      const desiredX = growsLeft ? laneCenter - (width - 240) / 2 : laneCenter;
+      const overflow = Math.max(0, laneCenter + width / 2 - STAGE_RIGHT);
+      const growsLeft = overflow > 0;
+      const desiredX = laneCenter - overflow;
       const x = Math.min(Math.max(STAGE_INSET + width / 2, desiredX), STAGE_RIGHT - width / 2);
       placements.set(entry.candidate.link.link_id, { x, y, arc: arc as 0 | 1, height: entry.height, width, growsLeft });
       cursor += entry.height + CARD_GAP;
@@ -395,7 +410,7 @@ export function FindItResults({ phase, target, scope, candidates, reviewed, cons
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [mobileDetailOpen, setMobileDetailOpen] = useState(false);
   const stageShellRef = useRef<HTMLDivElement>(null);
-  const [stageScale, setStageScale] = useState(1);
+  const [stageMetrics, setStageMetrics] = useState({ scale: 1, left: 0 });
   const visible = useMemo(() => (phase === "kept" ? candidates.filter((candidate) => statusOf(candidate, reviewed) === "confirmed") : candidates), [candidates, phase, reviewed]);
   const ordered = useMemo(() => orderByEvidence(visible.slice(0, 16)), [visible]);
   const selected = ordered.find((candidate) => candidate.link.link_id === selectedId) ?? ordered.find((candidate) => strengthFor(candidate) !== "light") ?? ordered[0] ?? null;
@@ -407,12 +422,14 @@ export function FindItResults({ phase, target, scope, candidates, reviewed, cons
 
   useEffect(() => {
     const shell = stageShellRef.current;
-    if (!shell || typeof ResizeObserver === "undefined") return;
+    const available = shell?.parentElement;
+    if (!shell || !available || typeof ResizeObserver === "undefined") return;
     const observer = new ResizeObserver(([entry]) => {
-      if (!entry || entry.contentRect.width <= 0) return;
-      setStageScale(entry.contentRect.width / CANVAS_WIDTH);
+      if (!entry || entry.contentRect.width <= 0 || entry.contentRect.height <= 0) return;
+      const scale = Math.min(entry.contentRect.width / CANVAS_WIDTH, entry.contentRect.height / CANVAS_HEIGHT);
+      setStageMetrics({ scale, left: Math.max(0, (entry.contentRect.width - CANVAS_WIDTH * scale) / 2) });
     });
-    observer.observe(shell);
+    observer.observe(available);
     return () => observer.disconnect();
   }, []);
 
@@ -465,7 +482,7 @@ export function FindItResults({ phase, target, scope, candidates, reviewed, cons
       </header>
 
       <div className="min-h-0 p-1 md:p-3">
-        <div ref={stageShellRef} className="find-it-stage-shell relative hidden w-full overflow-hidden md:block" style={{ ["--stage-scale" as string]: String(stageScale) } as CanvasStyle}>
+        <div ref={stageShellRef} className="find-it-stage-shell relative hidden w-full overflow-hidden md:block" style={{ ["--stage-scale" as string]: String(stageMetrics.scale), ["--stage-left" as string]: `${stageMetrics.left}px` } as CanvasStyle}>
          <div className="find-it-stage absolute left-0 top-0 overflow-hidden rounded-[8px] border border-hairline bg-background">
           <TargetCard target={target} phase={phase} />
           {phase === "reading" ? (
