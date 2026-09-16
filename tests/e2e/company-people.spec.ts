@@ -92,7 +92,7 @@ test("a firm brings two people in and a note comes back", async ({ page }) => {
   await signIn(page, EM, /sign in/i);
 
   await run(page, "teammate creates an engagement", "Create engagement", async () => {
-    await page.goto("/engagements", { waitUntil: "domcontentloaded" });
+    await page.goto("/work", { waitUntil: "domcontentloaded" });
     await page.getByRole("button", { name: /new engagement/i }).first().click();
     const dialog = page.getByRole("dialog");
     const full = dialog.getByRole("button", { name: /^Full engagement$/ });
@@ -110,7 +110,7 @@ test("a firm brings two people in and a note comes back", async ({ page }) => {
 
   await check("teammate maps the thread to a task", "Map to a workstream + Add", async () => {
     await page.goto("/work", { waitUntil: "domcontentloaded" });
-    await page.getByRole("button", { name: /^map$/i }).first().click();
+    await page.getByRole("button", { name: /Map (to a workstream|conversation|just this)/ }).first().click();
     const dialog = page.getByRole("dialog");
     await dialog.getByRole("button", { name: /QA Northwind/ }).first().click();
     const newTask = dialog.getByPlaceholder(/type a new workstream name/i);
@@ -184,13 +184,14 @@ test("a firm brings two people in and a note comes back", async ({ page }) => {
     await page.getByRole("button", { name: /^(Workstream|Task)$/ }).first().click();
     const picker = page.getByLabel(/which (workstream|task)/i).first();
     if (await picker.count()) await picker.selectOption({ index: 1 });
-    await page.getByLabel(/what went well/i).fill("You held the floor and said why.");
-    await page.getByLabel(/what to try/i).fill("Name the round the number survived.");
-    await page.getByLabel(/what to watch/i).fill("Where the number came from.");
-    const cite = page.locator('input[type="checkbox"]').first();
+    const composer = page.locator("section").filter({ hasText: "Write a coaching note" }).last();
+    await composer.locator("textarea").nth(0).fill("You held the floor and said why.");
+    await composer.locator("textarea").nth(1).fill("Name the round the number survived.");
+    await composer.locator("textarea").nth(2).fill("Where the number came from.");
+    const cite = composer.locator('input[type="checkbox"]').first();
     if (await cite.count()) await cite.check();
-    await page.getByRole("button", { name: /share note/i }).click();
-    await expect(page.getByRole("button", { name: /share note/i })).toBeHidden({ timeout: 60_000 });
+    await composer.getByRole("button", { name: /share note/i }).click();
+    await expect(composer.locator("textarea").nth(0)).toHaveValue("", { timeout: 60_000 });
   });
 
   await check("coach can read the shared transcript", "turn text", async () => {
