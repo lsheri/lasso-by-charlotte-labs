@@ -66,11 +66,16 @@ export function DecisionsPage() {
   const [sourceItem, setSourceItem] = useState<string | null>(null);
   const [sourceFocus, setSourceFocus] = useState<ThreadFocus | undefined>();
   const [filter, setFilter] = useState<DecisionFilter>("all");
+  const [shown, setShown] = useState(DECISION_PAGE_SIZE);
 
   const rows = decisions ?? [];
+  // Counts and filters always read the whole set, never the visible slice.
   const visible = filterDecisions(rows, filter);
-  const groups = groupDecisions(visible);
+  const paged = visible.slice(0, shown);
+  const hiddenCount = visible.length - paged.length;
+  const groups = groupDecisions(paged);
   const counts = decisionCounts(rows);
+
 
   async function update(
     decision: DecisionRow,
