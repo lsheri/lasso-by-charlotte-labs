@@ -166,6 +166,26 @@ function resolveCollisions(placements: Map<string, ArcPlacement>, candidates: Fi
         }
 
         if (rectsIntersect(rectOf(moving), rectOf(fixed))) {
+          const selected = firstId === selectedId ? first : secondId === selectedId ? second : null;
+          if (selected) {
+            while (rectsIntersect(rectOf(moving), rectOf(fixed))) {
+              const nextX = Math.max(STAGE_INSET + selected.width / 2, selected.x - 8);
+              const nextRect = rectOf({ ...selected, x: nextX });
+              if (nextX === selected.x || rectsIntersect(nextRect, SETTLED_TARGET_RECT)) break;
+              selected.x = nextX;
+              changed = true;
+            }
+            while (rectsIntersect(rectOf(moving), rectOf(fixed))) {
+              const nextY = Math.max(ARC_TOP + selected.height / 2, selected.y - 8);
+              const nextRect = rectOf({ ...selected, y: nextY });
+              if (nextY === selected.y || rectsIntersect(nextRect, SETTLED_TARGET_RECT)) break;
+              selected.y = nextY;
+              changed = true;
+            }
+          }
+        }
+
+        if (rectsIntersect(rectOf(moving), rectOf(fixed))) {
           const laterId = ids[Math.max(firstIndex, secondIndex)];
           const later = laterId ? placements.get(laterId) : null;
           if (!later) continue;
