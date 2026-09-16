@@ -215,42 +215,74 @@ function TargetCard({ target, phase }: { target: WorkItemRow; phase: FindItPhase
   );
 }
 
-function ReadingLines({ candidates }: { candidates: FindItCandidate[] }) {
+function makeTraceLine(lane: number, cycle: number, count: number): TraceLine {
+  const random = mulberry32(fnv1a(`trace-lane-${lane}-cycle-${cycle}`));
+  const prior = count > 1 ? Math.floor(mulberry32(fnv1a(`trace-lane-${lane}-cycle-${Math.max(0, cycle - 1)}`))() * count) : 0;
+  let targetIndex = Math.floor(random() * count);
+  if (count > 1 && targetIndex === prior) targetIndex = (targetIndex + 1 + lane) % count;
+  return {
+    cycle,
+    targetIndex,
+    duration: 1.6 + random() * 1.6,
+    delay: cycle === 0 ? random() * 2.4 : 0,
+    bendA: (random() - 0.5) * 90,
+    bendB: (random() - 0.5) * 100,
+  };
+}
+
+function ReadingLines({ candidates, slots }: { candidates: FindItCandidate[]; slots: number[] }) {
+  const extraRandom = mulberry32(fnv1a(candidates.map(({ link }) => link.link_id).join("|")));
+  const lineCount = 3 + (extraRandom() < 0.3 ? 1 : 0);
+  const [lines, setLines] = useState<TraceLine[]>(() => Array.from({ length: lineCount }, (_, lane) => makeTraceLine(lane, 0, Math.max(1, candidates.length))));
+
+  useEffect(() => {
+    setLines(Array.from({ length: lineCount }, (_, lane) => makeTraceLine(lane, 0, Math.max(1, candidates.length))));
+  }, [candidates, lineCount]);
+
+  function renew(lane: number, event: ReactAnimationEvent<SVGPathElement>) {
+    if (event.animationName !== "find-it-trace") return;
+    setLines((current) => current.map((line, index) => index === lane ? makeTraceLine(lane, line.cycle + 1, Math.max(1, candidates.length)) : line));
+  }
+
   return (
     <svg data-testid="find-it-tracing-lines" aria-hidden viewBox="0 0 1166 836" preserveAspectRatio="none" className="find-it-trace-lines pointer-events-none absolute inset-0 z-0 h-full w-full">
-      {candidates.slice(0, 4).map((candidate, index) => {
-        const random = mulberry32(fnv1a(`trace-${candidate.link.link_id}`));
-        const position = readingPosition(candidate.link.link_id, index);
+      {lines.map((line, lane) => {
+        const candidate = candidates[line.targetIndex];
+        if (!candidate) return null;
+        const position = readingPosition(candidate.link.link_id, slots[line.targetIndex] ?? line.targetIndex);
         const x = Number.parseFloat(position["--x"] ?? "0") * 11.66;
         const y = Number.parseFloat(position["--y"] ?? "0") * 8.36;
-        const wobbleA = (random() - 0.5) * 90;
-        const wobbleB = (random() - 0.5) * 100;
         const style = {
-          ["--trace-duration" as string]: `${1.6 + random() * 1.6}s`,
-          ["--trace-delay" as string]: `${random() * 2.4}s`,
+          ["--trace-duration" as string]: `${line.duration}s`,
+          ["--trace-delay" as string]: `${line.delay}s`,
         } as CSSProperties;
-        return <path key={candidate.link.link_id} data-testid="find-it-tracing-line" className="find-it-trace-line" style={style} pathLength="1" strokeWidth={1.4 + random() * 0.6} d={`M370 418 C${500 + wobbleA} ${350 + wobbleB}, ${x - 120 + wobbleB} ${y - wobbleA}, ${x - 82} ${y}`} />;
+        return <path key={`${lane}-${line.cycle}`} data-testid="find-it-tracing-line" data-target={candidate.link.link_id} className="find-it-trace-line" style={style} pathLength="1" strokeWidth={1.4 + lane * 0.18} onAnimationEnd={(event) => renew(lane, event)} d={`M370 418 C${500 + line.bendA} ${350 + line.bendB}, ${x - 120 + line.bendB} ${y - line.bendA}, ${x - 82} ${y}`} />;
       })}
     </svg>
   );
 }
 
-function ArcArrow({ candidate, index, total, selected }: { candidate: FindItCandidate; index: number; total: number; selected: boolean }) {
-  const position = arcPosition(candidate.link.link_id, index, total, selected);
-  const x = Number.parseFloat(position["--x"] ?? "0") * 11.66;
-  const y = Number.parseFloat(position["--y"] ?? "0") * 8.36;
+function ArcArrow({ candidate, index, placement }: { candidate: FindItCandidate; index: number; placement: ArcPlacement }) {
+  const x = placement.x;
+  const y = placement.y;
   const random = mulberry32(fnv1a(`arrow-${candidate.link.link_id}`));
   const bendX = 625 + random() * 70;
   const bendY = 418 + (y - 418) * 0.42 + (random() - 0.5) * 16;
-  const endX = x - (selected ? 210 : 125);
-  const strength = strengthFor(index, total);
+  const endX = x - placement.width / 2;
+  const strength = strengthFor(candidate);
   const d = `M580 418 C${610 + random() * 18} 418 ${bendX} ${bendY}, ${bendX} ${bendY} S${endX - 34} ${y} ${endX} ${y}`;
   const head = `M${endX - 11} ${y - 6} L${endX} ${y} L${endX - 11} ${y + 6}`;
+  const captionX = 580 + (endX - 580) * 0.35;
+  const captionY = 418 + (y - 418) * 0.35 - 8;
+  const arrowLength = Math.hypot(endX - 580, y - 418);
+  const caption = RELATION_CAPTION[candidate.link.relation] ?? "connected to it";
+  const captionWidth = Math.max(86, caption.length * 7.4);
+  const style = placementStyle(placement, index);
   return (
     <g data-testid="find-it-arrow" data-strength={strength} style={position}>
       <path className="find-it-arrow-line" pathLength="1" d={d} strokeWidth={strokeFor(strength)} strokeDasharray={strength === "light" ? "0.012 0.016" : undefined} />
       <path className="find-it-arrow-head" pathLength="1" d={head} strokeWidth={strokeFor(strength)} />
-      <text x={(580 + endX) / 2} y={(418 + y) / 2 - 7} className={`fill-green font-hand text-[16px] transition-opacity ${selected ? "opacity-100" : "opacity-0"}`}>{RELATION_CAPTION[candidate.link.relation] ?? "connected to it"}</text>
+      {arrowLength >= 120 ? <g className="find-it-arrow-caption"><rect x={captionX - captionWidth / 2 - 5} y={captionY - 15} width={captionWidth + 10} height={21} rx={4} /><text x={captionX} y={captionY} textAnchor="middle" className="fill-green font-hand text-[16px]">{caption}</text></g> : null}
     </g>
   );
 }
@@ -273,13 +305,19 @@ export function FindItResults({ phase, target, scope, candidates, reviewed, cons
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [mobileDetailOpen, setMobileDetailOpen] = useState(false);
   const visible = useMemo(() => (phase === "kept" ? candidates.filter((candidate) => statusOf(candidate, reviewed) === "confirmed") : candidates), [candidates, phase, reviewed]);
-  const ordered = useMemo(() => visible.slice(0, 16), [visible]);
+  const ordered = useMemo(() => orderByEvidence(visible.slice(0, 16)), [visible]);
   const selected = ordered.find((candidate) => candidate.link.link_id === selectedId) ?? ordered[0] ?? null;
+  const selectedForLayout = phase === "settled" ? selected?.link.link_id ?? null : null;
+  const placements = useMemo(() => arcLayout(ordered, selectedForLayout), [ordered, selectedForLayout]);
+  const readingSlots = useMemo(() => shuffledSlots(candidates.slice(0, 14)), [candidates]);
   const keptCount = candidates.filter((candidate) => statusOf(candidate, reviewed) === "confirmed").length;
   const unmarkedCount = candidates.filter((candidate) => statusOf(candidate, reviewed) === "draft").length;
 
   useEffect(() => {
-    if (!selectedId && ordered[0]) setSelectedId(ordered[0].link.link_id);
+    if (!selectedId && ordered[0]) {
+      const preferred = ordered.find((candidate) => strengthFor(candidate) !== "light") ?? ordered[0];
+      setSelectedId(preferred.link.link_id);
+    }
   }, [ordered, selectedId]);
 
   function move(delta: number) {
@@ -327,22 +365,27 @@ export function FindItResults({ phase, target, scope, candidates, reviewed, cons
           <TargetCard target={target} phase={phase} />
           {phase === "reading" ? (
             <>
-              {!reduceMotion ? <ReadingLines candidates={candidates.slice(0, 14)} /> : null}
+              {!reduceMotion ? <ReadingLines candidates={candidates.slice(0, 14)} slots={readingSlots} /> : null}
               <NotebookSpider size={160} reading={!reduceMotion} className="absolute left-[5%] top-[19%] z-10" />
               <div data-testid="find-it-reading-nodes" className="absolute inset-0">
-                {candidates.slice(0, 14).map((candidate, index) => <div key={candidate.link.link_id} className="find-it-reading-node absolute z-10 w-[160px]" style={readingPosition(candidate.link.link_id, index)}><FindItNode candidate={candidate} /></div>)}
+                {candidates.slice(0, 14).map((candidate, index) => <div key={candidate.link.link_id} data-slot={readingSlots[index]} className="find-it-reading-node absolute z-10 w-[160px]" style={readingPosition(candidate.link.link_id, readingSlots[index] ?? index)}><FindItNode candidate={candidate} /></div>)}
               </div>
               <p className="absolute bottom-3 left-4 font-hand text-[16px] text-green">reading {considered} conversations</p>
             </>
           ) : (
             <div data-testid="find-it-arc" className="absolute inset-0">
               <svg aria-hidden viewBox="0 0 1166 836" preserveAspectRatio="none" className="pointer-events-none absolute inset-0 h-full w-full overflow-visible">
-                {ordered.map((candidate, index) => <ArcArrow key={candidate.link.link_id} candidate={candidate} index={index} total={ordered.length} selected={phase === "settled" && selected?.link.link_id === candidate.link.link_id} />)}
+                {ordered.map((candidate, index) => {
+                  const placement = placements.get(candidate.link.link_id);
+                  return placement ? <ArcArrow key={candidate.link.link_id} candidate={candidate} index={index} placement={placement} /> : null;
+                })}
               </svg>
               {ordered.map((candidate, index) => {
                 const isSelected = phase === "settled" && selected?.link.link_id === candidate.link.link_id;
                 const itemId = candidate.item?.id;
-                return <div key={candidate.link.link_id} className={`find-it-arc-node absolute z-10 ${isSelected ? "w-[36%] max-w-[420px]" : "w-[21.5%] max-w-[250px]"}`} style={arcPosition(candidate.link.link_id, index, ordered.length, isSelected)}><FindItNode candidate={candidate} selected={isSelected} expanded={isSelected} status={phase === "kept" ? "confirmed" : statusOf(candidate, reviewed)} strength={strengthFor(index, ordered.length)} {...(phase === "settled" ? { onSelect: () => setSelectedId(candidate.link.link_id) } : {})} onKeep={() => act("confirmed")} onReject={() => act("discarded")} onOpen={itemId ? () => onOpenThread(itemId, candidate.link.quote ? { turnNo: candidate.link.quote.turn_no, text: candidate.link.quote.text } : undefined) : null} /></div>;
+                 const placement = placements.get(candidate.link.link_id);
+                 if (!placement) return null;
+                 return <div key={candidate.link.link_id} data-testid="find-it-arc-node" data-arc={placement.arc} data-evidence={strengthFor(candidate)} data-grows={placement.growsLeft ? "left" : "right"} className="find-it-arc-node absolute z-10" style={placementStyle(placement, index)}><FindItNode candidate={candidate} selected={isSelected} expanded={isSelected} status={phase === "kept" ? "confirmed" : statusOf(candidate, reviewed)} strength={strengthFor(candidate)} {...(phase === "settled" ? { onSelect: () => setSelectedId(candidate.link.link_id) } : {})} onKeep={() => act("confirmed")} onReject={() => act("discarded")} onOpen={itemId ? () => onOpenThread(itemId, candidate.link.quote ? { turnNo: candidate.link.quote.turn_no, text: candidate.link.quote.text } : undefined) : null} /></div>;
               })}
             </div>
           )}
@@ -360,7 +403,7 @@ export function FindItResults({ phase, target, scope, candidates, reviewed, cons
 
         <div className="h-full min-h-0 overflow-y-auto py-3 md:hidden">
           {phase === "reading" ? <div className="mb-3 flex items-center gap-2 font-hand text-[16px] text-green"><NotebookSpider size={24} reading={!reduceMotion} />reading {considered} conversations</div> : null}
-          {(phase === "reading" ? candidates.slice(0, 14) : ordered).map((candidate, index) => <Button key={candidate.link.link_id} type="button" variant="ghost" className={`h-12 w-full justify-start rounded-none border-b border-hairline px-1 ${statusOf(candidate, reviewed) === "discarded" ? "opacity-50" : ""}`} disabled={phase !== "settled"} onClick={() => { setSelectedId(candidate.link.link_id); setMobileDetailOpen(true); }}><span className="micro-label mr-2">CONVERSATION</span><span className="min-w-0 flex-1 truncate text-left text-[13px]">{candidateLine(candidate.item)}</span>{phase !== "reading" ? <span className="sr-only">{strengthFor(index, ordered.length)}</span> : null}</Button>)}
+          {(phase === "reading" ? candidates.slice(0, 14) : ordered).map((candidate) => <Button key={candidate.link.link_id} type="button" variant="ghost" className={`h-12 w-full justify-start rounded-none border-b border-hairline px-1 ${statusOf(candidate, reviewed) === "discarded" ? "opacity-50" : ""}`} disabled={phase !== "settled"} onClick={() => { setSelectedId(candidate.link.link_id); setMobileDetailOpen(true); }}><span className="micro-label mr-2">CONVERSATION</span><span className="min-w-0 flex-1 truncate text-left text-[13px]">{candidateLine(candidate.item)}</span>{phase !== "reading" ? <span className="sr-only">{strengthFor(candidate)}</span> : null}</Button>)}
         </div>
       </div>
 
