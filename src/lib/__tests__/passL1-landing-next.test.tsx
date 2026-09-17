@@ -74,7 +74,7 @@ describe("pass L1 hidden landing route", () => {
       expect(route).toContain(`src="/videos/${id}.mp4"`);
       expect(route).toContain(`poster="/videos/${id}-poster.png"`);
     }
-    expect(route.match(/width={1440}/g)).toHaveLength(5);
-    expect(route.match(/height={900}/g)).toHaveLength(5);
+    expect(route.match(/width=\{1440\}/g)).toHaveLength(5);
+    expect(route.match(/height=\{900\}/g)).toHaveLength(5);
   });
 });
