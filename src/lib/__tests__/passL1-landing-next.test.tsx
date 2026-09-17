@@ -54,8 +54,14 @@ describe("pass L1 hidden landing route", () => {
   });
 
   it("wires every available poster frame", () => {
-    // Find it now plays a real clip with its own poster file.
-    const posterFor: Record<string, string> = { "find-it": "find-it-poster.png" };
+    // Each carousel panel plays a real clip with its own poster file.
+    const posterFor: Record<string, string> = {
+      inbox: "inbox-poster.png",
+      "find-it": "find-it-poster.png",
+      decisions: "decisions-poster.png",
+      "coach-note": "coach-note-poster.png",
+      "one-on-one": "one-on-one-poster.png",
+    };
     for (const id of ["inbox", "find-it", "decisions", "coach-note", "one-on-one"]) {
       const poster = posterFor[id] ?? `poster-${id}.jpg`;
       if (!existsSync(`public/videos/${poster}`)) continue;
@@ -63,10 +69,12 @@ describe("pass L1 hidden landing route", () => {
     }
   });
 
-  it("plays the Find it clip", () => {
-    expect(route).toContain('src="/videos/find-it.mp4"');
-    expect(route).toContain('poster="/videos/find-it-poster.png"');
-    expect(route).toContain("width={1440}");
-    expect(route).toContain("height={900}");
+  it("plays every carousel clip at its native size", () => {
+    for (const id of ["inbox", "find-it", "decisions", "coach-note", "one-on-one"]) {
+      expect(route).toContain(`src="/videos/${id}.mp4"`);
+      expect(route).toContain(`poster="/videos/${id}-poster.png"`);
+    }
+    expect(route.match(/width=\{1440\}/g)).toHaveLength(5);
+    expect(route.match(/height=\{900\}/g)).toHaveLength(5);
   });
 });

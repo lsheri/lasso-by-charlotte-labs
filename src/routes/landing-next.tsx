@@ -278,7 +278,7 @@ function LandingNextPage() {
                         leave them. Nothing is lost, nothing is required.
                       </p>
                     </div>
-                    <ClipSlot id="inbox" aspect="16 / 10" poster="/videos/poster-inbox.jpg" label="Work arriving in one inbox" />
+                    <ClipSlot id="inbox" aspect="16 / 9" src="/videos/inbox.mp4" poster="/videos/inbox-poster.png" width={1440} height={900} label="Work arriving in one inbox" />
                   </div>
                 </section>
 
@@ -309,7 +309,7 @@ function LandingNextPage() {
                         firm's judgment stops living in chat scroll.
                       </p>
                     </div>
-                    <ClipSlot id="decisions" aspect="16 / 10" poster="/videos/poster-decisions.jpg" label="A decision drafted from a conversation" />
+                    <ClipSlot id="decisions" aspect="16 / 9" src="/videos/decisions.mp4" poster="/videos/decisions-poster.png" width={1440} height={900} label="A decision drafted from a conversation" />
                   </div>
                 </section>
 
@@ -327,7 +327,7 @@ function LandingNextPage() {
                         <img src={coachSpider.url} alt="" className="landing-next-coach-spider absolute" />
                       </div>
                     </div>
-                    <ClipSlot id="coach-note" aspect="16 / 10" poster="/videos/poster-coach-note.jpg" label="A coach note opening as a conversation" />
+                    <ClipSlot id="coach-note" aspect="16 / 9" src="/videos/coach-note.mp4" poster="/videos/coach-note-poster.png" width={1440} height={900} label="A coach note opening as a conversation" />
                   </div>
                 </section>
 
@@ -341,7 +341,7 @@ function LandingNextPage() {
                         becomes a conversation about the judgment call.
                       </p>
                     </div>
-                    <ClipSlot id="one-on-one" aspect="16 / 10" poster="/videos/poster-one-on-one.jpg" label="Preparing work for a one to one" />
+                    <ClipSlot id="one-on-one" aspect="16 / 9" src="/videos/one-on-one.mp4" poster="/videos/one-on-one-poster.png" width={1440} height={900} label="Preparing work for a one to one" />
                   </div>
                 </section>
               </div>
