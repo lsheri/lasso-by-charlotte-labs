@@ -52,20 +52,25 @@ function ClipSlot({
   src,
   poster,
   label,
+  width,
+  height,
 }: {
   id: "inbox" | "find-it" | "decisions" | "coach-note" | "one-on-one";
   aspect: "16 / 10" | "16 / 9";
   src?: string;
   poster?: string;
   label: string;
+  /** Native clip size, forwarded so the player keeps the real shape. */
+  width?: number;
+  height?: number;
 }) {
   if (src && poster) {
     return (
       <ClipPlayer
         src={src}
         poster={poster}
-        width={aspect === "16 / 9" ? 16 : 8}
-        height={aspect === "16 / 9" ? 9 : 5}
+        width={width ?? (aspect === "16 / 9" ? 16 : 8)}
+        height={height ?? (aspect === "16 / 9" ? 9 : 5)}
         aspect={aspect}
         label={label}
       />
@@ -290,7 +295,7 @@ function LandingNextPage() {
                         sentence, quoted, and why.
                       </p>
                     </div>
-                    <ClipSlot id="find-it" aspect="16 / 9" poster="/videos/poster-find-it.jpg" label="Finding the source behind a fact" />
+                    <ClipSlot id="find-it" aspect="16 / 9" src="/videos/find-it.mp4" poster="/videos/find-it-poster.png" width={1440} height={900} label="Finding the source behind a fact" />
                   </div>
                 </section>
 
