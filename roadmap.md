@@ -49,3 +49,5 @@
 ## Landing-next Find it clip
 - [x] Save uploaded clip and poster as public/videos/find-it.mp4 and find-it-poster.png
 - [x] Wire the Find it ClipSlot to ClipPlayer (1440x900, 16/9) on /landing-next only
+
+- Canvas Lab prototype: hidden route /engagements/$id/canvas-lab, additive files under src/components/canvas-lab plus src/pages/CanvasLabPage.tsx. Reads the engagement payload only; all layout, context, comments and chat cards are local and reset on refresh. No schema, no events, no publish.
