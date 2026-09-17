@@ -54,10 +54,19 @@ describe("pass L1 hidden landing route", () => {
   });
 
   it("wires every available poster frame", () => {
+    // Find it now plays a real clip with its own poster file.
+    const posterFor: Record<string, string> = { "find-it": "find-it-poster.png" };
     for (const id of ["inbox", "find-it", "decisions", "coach-note", "one-on-one"]) {
-      const poster = `public/videos/poster-${id}.jpg`;
-      if (!existsSync(poster)) continue;
-      expect(route).toContain(`poster="/videos/poster-${id}.jpg"`);
+      const poster = posterFor[id] ?? `poster-${id}.jpg`;
+      if (!existsSync(`public/videos/${poster}`)) continue;
+      expect(route).toContain(`poster="/videos/${poster}"`);
     }
+  });
+
+  it("plays the Find it clip", () => {
+    expect(route).toContain('src="/videos/find-it.mp4"');
+    expect(route).toContain('poster="/videos/find-it-poster.png"');
+    expect(route).toContain("width={1440}");
+    expect(route).toContain("height={900}");
   });
 });
