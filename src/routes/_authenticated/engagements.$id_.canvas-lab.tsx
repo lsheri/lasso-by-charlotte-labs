@@ -5,15 +5,15 @@ import { CanvasLabPage } from "@/pages/CanvasLabPage";
 export const Route = createFileRoute("/_authenticated/engagements/$id_/canvas-lab")({
   head: () => ({
     meta: [
-      { title: "Canvas Lab | Lasso" },
+      { title: "Engagement Workboard | Lasso" },
       {
         name: "description",
-        content: "An experimental working surface for one engagement. Nothing here is saved.",
+        content: "A local workboard for understanding the sources, context, judgment, calls, and finished work in one engagement.",
       },
-      { property: "og:title", content: "Canvas Lab | Lasso" },
+      { property: "og:title", content: "Engagement Workboard | Lasso" },
       {
         property: "og:description",
-        content: "An experimental working surface for one engagement. Nothing here is saved.",
+        content: "A local workboard for understanding the sources, context, judgment, calls, and finished work in one engagement.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

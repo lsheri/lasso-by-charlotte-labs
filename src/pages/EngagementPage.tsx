@@ -746,7 +746,21 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
               })()}
             </div>
           ) : view === "verify" ? (
-            <EngagementCanvasView engagementId={engagementId} items={scopedItems} onOpen={openPeek} />
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--nb-rule)] pb-3">
+                <p className="text-[13px] text-muted-foreground">
+                  Arrange the sources, context, judgment, calls, and finished work for this engagement.
+                </p>
+                <Link
+                  to="/engagements/$id/canvas-lab"
+                  params={{ id: engagementId }}
+                  className="font-hand text-[16px] text-green hover:underline"
+                >
+                  Open workboard
+                </Link>
+              </div>
+              <EngagementCanvasView engagementId={engagementId} items={scopedItems} onOpen={openPeek} />
+            </div>
           ) : profile && profile.role !== "coach" ? (
             <SharedWithSection
               engagementId={engagementId}

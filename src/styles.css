@@ -1145,6 +1145,49 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   }
 }
 
+/* Canvas Lab only: a brief three-panel opening. It never intercepts input. */
+@keyframes canvas-lab-unfold-left {
+  from { transform: perspective(900px) rotateY(0deg); opacity: 1; }
+  to { transform: perspective(900px) rotateY(-88deg); opacity: 0; }
+}
+@keyframes canvas-lab-unfold-centre {
+  from { transform: scaleX(1); opacity: 1; }
+  to { transform: scaleX(0); opacity: 0; }
+}
+@keyframes canvas-lab-unfold-right {
+  from { transform: perspective(900px) rotateY(0deg); opacity: 1; }
+  to { transform: perspective(900px) rotateY(88deg); opacity: 0; }
+}
+.canvas-lab-unfold-panel {
+  width: 33.333%;
+  background: var(--nb-paper);
+  border-right: 1px solid var(--nb-pencil);
+  transform-origin: left center;
+}
+.canvas-lab-unfold .canvas-lab-unfold-panel:nth-child(1) { animation: canvas-lab-unfold-left 500ms var(--nb-ease) both; }
+.canvas-lab-unfold .canvas-lab-unfold-panel:nth-child(2) { animation: canvas-lab-unfold-centre 500ms var(--nb-ease) both; transform-origin: center; }
+.canvas-lab-unfold .canvas-lab-unfold-panel:nth-child(3) { animation: canvas-lab-unfold-right 500ms var(--nb-ease) both; transform-origin: right center; }
+.canvas-lab-surface {
+  background-color: var(--nb-paper);
+  background-image: radial-gradient(circle, var(--nb-rule) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+.canvas-lab-folded-note::after {
+  content: "";
+  position: absolute;
+  right: -1px;
+  top: -1px;
+  width: 18px;
+  height: 18px;
+  border-left: 1px solid var(--nb-rule);
+  border-bottom: 1px solid var(--nb-rule);
+  background: var(--nb-grey-1);
+}
+::highlight(canvas-lab-selection) { background: var(--nb-yellow-wash); }
+@media (prefers-reduced-motion: reduce) {
+  .canvas-lab-unfold-panel { animation: none !important; opacity: 0; }
+}
+
 /* Sidebar grammar (pass 84). */
 /* Figma 12:2: a nav group header is handwritten, Caveat Bold 16px at
    text/primary. It is a section title in the notebook voice, not a sans label. */

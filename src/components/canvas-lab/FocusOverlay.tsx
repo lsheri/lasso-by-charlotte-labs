@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import {
   actionsFor,
@@ -8,6 +8,7 @@ import {
 } from "@/components/canvas-lab/canvas-lab-model";
 import { RenderedContent } from "@/components/peek/RenderedContent";
 import { ThreadBody } from "@/components/peek/ThreadBody";
+import { WhatFedThisButton } from "@/components/engagements/WhatFedThisButton";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import type { WorkItemRow } from "@/lib/work-types";
@@ -20,6 +21,9 @@ import type { WorkItemRow } from "@/lib/work-types";
 export function FocusOverlay({
   node,
   item,
+  items,
+  orgId,
+  profileId,
   viewerName,
   comments,
   onComment,
@@ -29,6 +33,9 @@ export function FocusOverlay({
 }: {
   node: LabNode;
   item: WorkItemRow | null;
+  items: WorkItemRow[];
+  orgId?: string | undefined;
+  profileId?: string | undefined;
   viewerName: string;
   comments: LabComment[];
   onComment: (comment: LabComment) => void;
@@ -38,11 +45,19 @@ export function FocusOverlay({
 }) {
   const [quote, setQuote] = useState("");
   const [body, setBody] = useState("");
+  const readerRef = useRef<HTMLDivElement | null>(null);
   const actions = actionsFor(node.ownership);
 
   function captureSelection() {
-    const text = typeof window === "undefined" ? "" : (window.getSelection()?.toString() ?? "");
-    if (text.trim().length > 0) setQuote(text.trim());
+    if (typeof window === "undefined") return;
+    const selection = window.getSelection();
+    const text = selection?.toString() ?? "";
+    if (!selection || text.trim().length === 0) return;
+    const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+    if (!range || !readerRef.current?.contains(range.commonAncestorContainer)) return;
+    setQuote(text.trim());
+    const highlights = CSS.highlights;
+    if (highlights) highlights.set("canvas-lab-selection", new Highlight(range.cloneRange()));
   }
 
   return (
@@ -66,14 +81,18 @@ export function FocusOverlay({
                 Branch
               </Button>
             ) : null}
+            {item && isDeliverable(item) ? (
+              <WhatFedThisButton items={items} orgId={orgId} profileId={profileId} />
+            ) : null}
             <Button size="sm" variant="ghost" onClick={onClose}>
-              Back to the canvas
+              Back to the workboard
             </Button>
           </div>
         </header>
 
         <div className="flex min-h-0 flex-1 flex-col gap-0 overflow-hidden lg:flex-row">
           <div
+            ref={readerRef}
             className="min-h-0 flex-1 overflow-y-auto px-5 py-4"
             onMouseUp={captureSelection}
             onKeyUp={captureSelection}
@@ -109,13 +128,13 @@ export function FocusOverlay({
               </p>
             ) : (
               <ul className="mb-3 flex flex-col gap-2">
-                {comments.map((comment) => (
+                {comments.map((comment, index) => (
                   <li
                     key={comment.id}
                     className="rounded-[var(--radius-control)] border border-[var(--nb-yellow-edge)] bg-[var(--nb-yellow-wash)] px-2.5 py-2"
                   >
                     <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-[var(--nb-yellow-ink)]">
-                      {comment.author} · {comment.at} · not saved
+                      {index + 1} · {comment.author} · {comment.at} · not saved
                     </span>
                     <p className="mt-1 text-[11.5px] italic leading-[17px] text-muted-foreground">
                       &ldquo;{comment.quote}&rdquo;
@@ -128,7 +147,7 @@ export function FocusOverlay({
 
             {quote ? (
               <p className="mb-1 text-[11.5px] italic leading-[17px] text-muted-foreground">
-                &ldquo;{quote.slice(0, 120)}&rdquo;
+                1 · &ldquo;{quote.slice(0, 120)}&rdquo;
               </p>
             ) : null}
             <Textarea
@@ -156,4 +175,8 @@ export function FocusOverlay({
       </div>
     </div>
   );
+}
+
+function isDeliverable(item: WorkItemRow): boolean {
+  return ["doc", "slides", "sheet", "pdf", "other"].includes(item.type);
 }
