@@ -177,7 +177,7 @@ Before Phase 2, the Workboard provided: menu open/close/Escape and role-appropri
 
 After Phase 2, every control and state above remains. Added controls are: work-rail collapse/reopen; narrow-screen Board/Working from switch; five reasoning-scaffold add actions; six Human judgment choices; editable short local note; Remove from canvas for real records; Delete local node for local records; Add from engagement restore list; Connect start, source, target, Escape cancel, relationship selection, and relationship removal; and grouped reasoning-trail selection and close. Added states are open/collapsed rail, narrow board/rail view, scaffold, local node and judgment type, hidden-record list, connector idle/source/invalid/selected, and deliverable review loading/error/empty/item/exact-focus. Delete and Backspace remove only a local node or selected local relationship. They never delete a real record.
 
-The rail starts open and preserves context, draft text, and instructions while collapsed because it remains in the page state. The five scaffold squares are explicitly a guide and have no implied relationships. New nodes, notes, hidden records, and relationships say or behave as local-only and reset on refresh.
+The rail starts open and preserves context, draft text, and instructions while collapsed because its composer remains mounted but hidden. The five scaffold squares are explicitly a guide and have no implied relationships. New nodes, notes, hidden records, and relationships say or behave as local-only and reset on refresh.
 
 ### Deliverable reasoning review
 
