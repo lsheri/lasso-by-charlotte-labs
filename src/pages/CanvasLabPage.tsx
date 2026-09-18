@@ -12,6 +12,7 @@ import { WorkRail } from "@/components/canvas-lab/WorkRail";
 import {
   addLabLink,
   addLocalFrame,
+  applyDurableBoard,
   branchChatNode,
   createChatNode,
   createLabFrames,
@@ -39,6 +40,8 @@ import {
   type LabTemplateKind,
 } from "@/components/canvas-lab/canvas-lab-model";
 import {
+  noteWorkboardChangeSaved,
+  noteWorkboardConflictResolved,
   noteWorkboardNodeCreated,
   noteWorkboardCardMenuOpened,
   noteWorkboardNodeDeleted,
@@ -47,16 +50,20 @@ import {
   noteWorkboardRecordVisibility,
   noteWorkboardRelationship,
   noteWorkboardReviewOpened,
+  noteWorkboardSaveFailed,
   noteWorkboardTrailSelected,
   type LabNodeEventKind,
+  type WorkboardPersistEntity,
 } from "@/components/canvas-lab/canvas-lab-telemetry";
 import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
 import { SidebarNav } from "@/components/layout/SidebarNav";
 import { Button } from "@/components/ui/button";
+import { useCanvasLab } from "@/hooks/use-canvas-lab";
 import { useEngagementPage } from "@/hooks/use-engagement-page";
 import { useMotion } from "@/hooks/use-motion";
 import { useProfile } from "@/hooks/use-profile";
 import { dragTo, keyTo, type Point } from "@/lib/canvas-drag";
+import type { WorkboardCommand, WorkboardNodeInput } from "@/lib/canvas-lab-shared";
 import { noteCanvasOpenedFn } from "@/lib/canvas.functions";
 import { clampZoom, pinchZoom, stepZoom } from "@/lib/canvas-zoom";
 import { engagementDisplayTitle } from "@/lib/clients";
@@ -82,6 +89,7 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
   const viewerName = profile?.display_name ?? "You";
   const engagement = page?.engagement ?? null;
   const orgId = profile?.org_id;
+  const lab = useCanvasLab(engagementId, profile?.id, orgId);
 
   const workItems = useMemo(() => {
     const byId = new Map<string, WorkItemRow>();
@@ -137,17 +145,26 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
   }, []);
 
   useEffect(() => {
-    if (!page?.engagement || nodes !== null || frames !== null) return;
-    const nextFrames = createLabFrames(page.tasks ?? []);
-    const nextNodes = seedCanvas({
+    if (!page?.engagement || nodes !== null || frames !== null || lab.boardLoading) return;
+    const virtualFrames = createLabFrames(page.tasks ?? []);
+    const virtualNodes = seedCanvas({
       brief: { title: "The brief", text: page.engagement.brief },
       tasks: (page.tasks ?? []).map((task) => ({ id: task.id, name: task.name, detail: task.detail, ownedByViewer: task.owner_id === profile?.id })),
       work: workItems.map((item) => ({ id: item.id, title: item.title, typeLabel: item.type.replaceAll("_", " "), source: item.source, ownedByViewer: !item.owner_id || item.owner_id === profile?.id, taskIds: taskIdsByWork.get(item.id) ?? [], deliverable: isDeliverableType(item.type) })),
       decisions: (page.decisions ?? []).map((decision) => ({ id: decision.id, call: decision.call_text, situation: decision.situation, ownedByViewer: decision.owner_id === profile?.id })),
-    }, nextFrames);
-    setFrames(nextFrames);
-    setNodes(nextNodes);
-  }, [frames, nodes, page, profile?.id, taskIdsByWork, workItems]);
+    }, virtualFrames);
+    const board = lab.board;
+    if (board?.id) {
+      const merged = applyDurableBoard({ frames: virtualFrames, nodes: virtualNodes }, board);
+      setFrames(merged.frames);
+      setNodes(merged.nodes);
+      setLinks(merged.links);
+      setHiddenIds(merged.hiddenIds);
+      return;
+    }
+    setFrames(virtualFrames);
+    setNodes(virtualNodes);
+  }, [frames, nodes, page, profile?.id, taskIdsByWork, workItems, lab.board, lab.boardLoading]);
 
   const allNodes = nodes ?? [];
   const visibleNodes = allNodes.filter((node) => !hiddenIds.includes(node.id));
@@ -175,6 +192,153 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
   }, [bounds.height, bounds.width]);
   useEffect(() => { fit(); }, [fit]);
 
+  /* ---------------- Phase 3: durable save pipeline ---------------- */
+  const nodesRef = useRef<LabNode[]>([]);
+  nodesRef.current = allNodes;
+  const framesRef = useRef<LabFrame[]>([]);
+  framesRef.current = boardFrames;
+  const hiddenRef = useRef<string[]>([]);
+  hiddenRef.current = hiddenIds;
+  const boardIdRef = useRef<string | null>(null);
+  boardIdRef.current = lab.board?.id ? lab.board.id : null;
+
+  function frameKindOf(frame: LabFrame): "foundation" | "task" | "decisions" | "outputs" | "custom" {
+    if (frame.id === "foundation" || frame.id === "decisions" || frame.id === "outputs") return frame.id;
+    return frame.id.startsWith("task:") ? "task" : "custom";
+  }
+
+  function nodeToInput(node: LabNode): WorkboardNodeInput | null {
+    const base = { clientKey: node.id, frameKey: node.frame, x: node.x, y: node.y, hidden: hiddenRef.current.includes(node.id) };
+    if (node.kind === "work" && node.workItemId) return { ...base, kind: "work_item", workItemId: node.workItemId };
+    if (node.kind === "decision" && node.id.startsWith("decision:")) return { ...base, kind: "decision", decisionId: node.id.slice(9) };
+    if (node.kind === "brief") return { ...base, kind: "brief" };
+    if (node.kind === "judgment" && node.local) return { ...base, kind: "judgment", title: node.title, body: node.summary, judgmentType: node.judgmentType ?? null };
+    return null;
+  }
+
+  function report(result: { status: string }, entity: WorkboardPersistEntity, action: "create" | "update" | "archive" | "restore"): void {
+    if (result.status === "saved") noteWorkboardChangeSaved(orgId, entity, action);
+    else if (result.status === "conflict") noteWorkboardSaveFailed(orgId, entity, "conflict");
+    else if (result.status === "forbidden") noteWorkboardSaveFailed(orgId, entity, "permission");
+    else noteWorkboardSaveFailed(orgId, entity, "unknown");
+  }
+
+  async function materialize(): Promise<boolean> {
+    if (boardIdRef.current) return true;
+    const frameInputs = framesRef.current.map((frame, index) => ({
+      key: frame.id,
+      kind: frameKindOf(frame),
+      taskId: frame.id.startsWith("task:") ? frame.id.slice(5) : null,
+      label: frameKindOf(frame) === "custom" ? frame.name : null,
+      x: frame.x,
+      y: frame.y,
+      w: frame.width,
+      h: frame.height,
+      ord: index,
+    }));
+    const nodeInputs = nodesRef.current.flatMap((node) => {
+      const input = nodeToInput(node);
+      return input ? [input] : [];
+    });
+    const result = await lab.persist({ type: "materialize", frames: frameInputs, nodes: nodeInputs });
+    if (result.status !== "saved") {
+      report(result, "board", "create");
+      return false;
+    }
+    boardIdRef.current = result.boardId;
+    const frameMap = result.created?.frames ?? {};
+    const nodeMap = result.created?.nodes ?? {};
+    setFrames((current) => current?.map((frame) => { const durableId = frameMap[frame.id]; return durableId ? { ...frame, durableId, durableVersion: 1 } : frame; }) ?? current);
+    setNodes((current) => current?.map((node) => { const durableId = nodeMap[node.id]; return durableId ? { ...node, durableId, durableVersion: 1 } : node; }) ?? current);
+    noteWorkboardChangeSaved(orgId, "board", "create");
+    return true;
+  }
+
+  /** Give one card a durable row, creating the board first when needed. */
+  async function ensureNodeDurable(localId: string): Promise<{ id: string; version: number } | null> {
+    const existing = nodesRef.current.find((node) => node.id === localId);
+    if (existing?.durableId) return { id: existing.durableId, version: existing.durableVersion ?? 1 };
+    if (!(await materialize())) return null;
+    const node = nodesRef.current.find((entry) => entry.id === localId);
+    if (!node) return null;
+    if (node.durableId) return { id: node.durableId, version: node.durableVersion ?? 1 };
+    const input = nodeToInput(node);
+    if (!input) return null;
+    const result = await lab.persist({ type: "node_create", node: input });
+    report(result, "node", "create");
+    if (result.status !== "saved" || !result.created?.nodeId) return null;
+    const id = result.created.nodeId;
+    const version = result.versions[id] ?? 1;
+    setNodes((current) => current?.map((entry) => entry.id === localId ? { ...entry, durableId: id, durableVersion: version } : entry) ?? current);
+    return { id, version };
+  }
+
+  async function persistNodePatch(localId: string, patch: { x?: number; y?: number; hidden?: boolean; title?: string; body?: string }) {
+    const durable = await ensureNodeDurable(localId);
+    if (!durable) return;
+    const result = await lab.persist({ type: "node_update", nodeId: durable.id, expectedVersion: durable.version, patch });
+    report(result, "node", "update");
+    if (result.status === "saved") {
+      const nextVersion = result.versions[durable.id] ?? durable.version + 1;
+      setNodes((current) => current?.map((entry) => entry.durableId === durable.id ? { ...entry, durableVersion: nextVersion } : entry) ?? current);
+    }
+  }
+
+  async function persistLink(link: LabLink) {
+    const from = await ensureNodeDurable(link.fromId);
+    const to = await ensureNodeDurable(link.toId);
+    if (!from || !to) return;
+    const result = await lab.persist({ type: "link_create", fromNodeId: from.id, fromAnchor: link.fromAnchor, toNodeId: to.id, toAnchor: link.toAnchor, relation: "context" });
+    report(result, "relationship", "create");
+    if (result.status === "saved" && result.created?.linkId) {
+      const id = result.created.linkId;
+      const version = result.versions[id] ?? 1;
+      setLinks((current) => current.map((entry) => entry.id === link.id ? { ...entry, durableId: id, durableVersion: version, relation: "context" } : entry));
+    }
+  }
+
+  async function persistLinkRemoval(link: LabLink) {
+    if (!link.durableId) return;
+    const result = await lab.persist({ type: "link_archive", linkId: link.durableId, expectedVersion: link.durableVersion ?? 1 });
+    report(result, "relationship", "archive");
+  }
+
+  function resolveConflict(choice: "latest" | "retry") {
+    const state = lab.saveState;
+    if (state.status !== "conflict") return;
+    noteWorkboardConflictResolved(orgId, state.entityKind === "link" ? "relationship" : state.entityKind, choice);
+    if (choice === "latest") {
+      const latest = state.latest;
+      if (state.entityKind === "node") {
+        setNodes((current) => current?.map((entry) => entry.durableId === state.entityId
+          ? {
+              ...entry,
+              x: typeof latest["x"] === "number" ? latest["x"] : entry.x,
+              y: typeof latest["y"] === "number" ? latest["y"] : entry.y,
+              summary: typeof latest["body"] === "string" && entry.kind === "judgment" ? latest["body"] : entry.summary,
+              durableVersion: state.latestVersion,
+            }
+          : entry) ?? current);
+        if (typeof latest["hidden"] === "boolean") {
+          setHiddenIds((current) => {
+            const localId = nodesRef.current.find((entry) => entry.durableId === state.entityId)?.id;
+            if (!localId) return current;
+            return latest["hidden"] ? [...new Set([...current, localId])] : current.filter((id) => id !== localId);
+          });
+        }
+      }
+      lab.clearSaveState();
+      setAnnouncement("Loaded the newer version.");
+      return;
+    }
+    const retry = { ...state.retry, expectedVersion: state.latestVersion } as WorkboardCommand;
+    lab.clearSaveState();
+    void lab.persist(retry).then((result) => report(result, state.entityKind === "link" ? "relationship" : state.entityKind, "update"));
+    setAnnouncement("Retried your change.");
+  }
+
+  /* ---------------- end durable save pipeline ---------------- */
+
   function cancelConnect(note = true) {
     if (note && (connectSource || connectorDragRef.current?.moved)) noteWorkboardRelationship(orgId, "cancelled");
     connectorDragRef.current = null;
@@ -197,6 +361,8 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
       if (event.key !== "Delete" && event.key !== "Backspace") return;
       if (selectedLinkId) {
         event.preventDefault();
+        const link = links.find((entry) => entry.id === selectedLinkId);
+        if (link) void persistLinkRemoval(link);
         setLinks((current) => removeLabLink(current, selectedLinkId));
         setSelectedLinkId(null);
         noteWorkboardRelationship(orgId, "removed");
@@ -258,6 +424,13 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
       if (connector?.moved) finishPointerConnect(connector, event);
       connectorDragRef.current = null;
       setConnectorPreview(null);
+      const drag = dragRef.current;
+      if (drag) {
+        const moved = nodesRef.current.find((node) => node.id === drag.id);
+        if (moved && (moved.x !== drag.origin.x || moved.y !== drag.origin.y)) {
+          void persistNodePatch(drag.id, { x: moved.x, y: moved.y });
+        }
+      }
       dragRef.current = null;
       panRef.current = null;
     }
@@ -276,6 +449,7 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
       event.preventDefault();
       const to = keyTo({ x: node.x, y: node.y }, event.key as "ArrowUp" | "ArrowDown" | "ArrowLeft" | "ArrowRight", event.shiftKey);
       setNodes((current) => current ? moveNode(current, node.id, to) : current);
+      void persistNodePatch(node.id, { x: to.x, y: to.y });
     }
   }
 
@@ -283,8 +457,22 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
     const frameId = kind === "decision" ? "decisions" : kind === "deliverable" ? "outputs" : kind === "source" ? "foundation" : boardFrames.find((frame) => frame.id.startsWith("task:"))?.id ?? "foundation";
     const frame = boardFrames.find((entry) => entry.id === frameId) ?? boardFrames[0];
     if (!frame) return;
-    setNodes((current) => current ? [...current, createLocalNode(kind, frame, current, judgment)] : current);
+    const node = createLocalNode(kind, frame, allNodes, judgment);
+    setNodes((current) => current ? [...current, node] : current);
     noteWorkboardNodeCreated(orgId, kind === "judgment" ? "human_judgment" : kind, judgment);
+    if (kind === "judgment") {
+      void (async () => {
+        if (!(await materialize())) return;
+        const input = nodeToInput(node);
+        if (!input) return;
+        const result = await lab.persist({ type: "node_create", node: input });
+        report(result, "node", "create");
+        if (result.status === "saved" && result.created?.nodeId) {
+          const id = result.created.nodeId;
+          setNodes((current) => current?.map((entry) => entry.id === node.id ? { ...entry, durableId: id, durableVersion: result.versions[id] ?? 1 } : entry) ?? current);
+        }
+      })();
+    }
   }
 
   function deleteNode(node: LabNode) {
@@ -302,6 +490,7 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
 
   function hideNode(node: LabNode) {
     setHiddenIds((current) => [...current, node.id]);
+    void persistNodePatch(node.id, { hidden: true });
     setSelected((current) => removeContext(current, node.id));
     setKeyboardId(null);
     noteWorkboardRecordVisibility(orgId, "hidden", node.kind === "decision" ? "decision" : node.kind === "brief" ? "brief" : "work");
@@ -315,6 +504,7 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
     const point = localNodeAnchor(frame, visibleNodes);
     setNodes((current) => current?.map((entry) => entry.id === id ? { ...entry, ...point } : entry) ?? current);
     setHiddenIds((current) => current.filter((entry) => entry !== id));
+    void persistNodePatch(id, { hidden: false, x: point.x, y: point.y });
     noteWorkboardRecordVisibility(orgId, "restored", node.kind === "decision" ? "decision" : node.kind === "brief" ? "brief" : "work");
     setAnnouncement(`${node.title} returned to this local workboard.`);
   }
@@ -335,7 +525,9 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
     setLinks(result.links);
     setConnectSource(null);
     noteWorkboardRelationship(orgId, "created");
-    setAnnouncement("Local relationship created.");
+    const created = result.links[result.links.length - 1];
+    if (created) void persistLink(created);
+    setAnnouncement("Relationship saved to the workboard.");
   }
 
   function chooseConnectAnchor(node: LabNode, anchor: LabAnchor) {
@@ -393,8 +585,22 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
   function addWorkstream() {
     const name = newFrameName.trim();
     if (!name) return;
-    setFrames((current) => addLocalFrame(current ?? [], name));
+    const next = addLocalFrame(framesRef.current, name);
+    const frame = next[next.length - 1];
+    setFrames(next);
     setNewFrameName("");
+    if (!frame) return;
+    void (async () => {
+      const boardExisted = boardIdRef.current != null;
+      if (!(await materialize())) return;
+      if (!boardExisted) return; // materialize already carried the new frame
+      const result = await lab.persist({ type: "frame_create", frame: { key: frame.id, kind: "custom", label: name, x: frame.x, y: frame.y, w: frame.width, h: frame.height, ord: 0 } });
+      report(result, "frame", "create");
+      if (result.status === "saved" && result.created?.frameId) {
+        const id = result.created.frameId;
+        setFrames((current) => current?.map((entry) => entry.id === frame.id ? { ...entry, durableId: id, durableVersion: result.versions[id] ?? 1 } : entry) ?? current);
+      }
+    })();
   }
 
   const title = engagement ? engagementDisplayTitle(engagement) : "Engagement";
@@ -407,7 +613,8 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
       </aside>
       {menuOpen ? <div className="fixed inset-0 z-50 flex bg-[var(--nb-scrim)]" onPointerDown={() => setMenuOpen(false)}><aside className="h-full w-[280px] overflow-y-auto border-r border-border bg-sidebar p-4 shadow-[var(--shadow-modal)]" onPointerDown={(event) => event.stopPropagation()}><div className="mb-5 flex items-center justify-between"><span className="font-serif text-xl text-foreground">Lasso</span><Button size="icon" variant="ghost" aria-label="Close workboard menu" onClick={() => setMenuOpen(false)}><X className="h-4 w-4" /></Button></div><SidebarNav onNavigate={() => setMenuOpen(false)} onOpenSettings={() => void navigate({ to: "/settings" })} /><div className="mt-6 border-t border-border pt-4"><label className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft" htmlFor="canvas-lab-new-frame">Add workstream</label><div className="mt-2 flex gap-2"><input id="canvas-lab-new-frame" value={newFrameName} onChange={(event) => setNewFrameName(event.target.value)} className="min-w-0 flex-1 rounded-[var(--radius-control)] border border-input bg-background px-2 text-[12px]" placeholder="Workstream name" /><Button size="sm" variant="outline" onClick={addWorkstream}>Add</Button></div><p className="mt-1 font-hand text-[13px] text-[var(--nb-mid)]">not saved</p></div></aside></div> : null}
       <main className={`relative min-w-0 flex-1 flex-col ${mobileView === "board" ? "flex" : "hidden md:flex"}`}>
-        <header className="z-20 flex h-[52px] shrink-0 items-center justify-between gap-3 border-b border-border bg-card px-4"><div className="min-w-0"><span className="block truncate text-[13px] font-medium text-foreground">{title}</span><span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">Workboard · Not saved</span></div><div className="flex items-center gap-1"><Button type="button" size="sm" variant="outline" className="md:hidden" onClick={() => { setRailOpen(true); setMobileView("rail"); }}>Working from</Button>{selectedLinkId ? <Button type="button" size="sm" variant="ghost" onClick={() => { setLinks((current) => removeLabLink(current, selectedLinkId)); setSelectedLinkId(null); noteWorkboardRelationship(orgId, "removed"); }}>Remove relationship</Button> : null}<Button size="sm" variant="outline" onClick={fit}>Fit</Button><Button size="icon" variant="ghost" aria-label="Zoom out" onClick={() => setZoom((value) => stepZoom(value, "out"))}><Minus className="h-3.5 w-3.5" /></Button><span className="w-10 text-center font-mono text-[10px] text-soft">{Math.round(zoom * 100)}%</span><Button size="icon" variant="ghost" aria-label="Zoom in" onClick={() => setZoom((value) => stepZoom(value, "in"))}><Plus className="h-3.5 w-3.5" /></Button></div></header>
+        <header className="z-20 flex h-[52px] shrink-0 items-center justify-between gap-3 border-b border-border bg-card px-4"><div className="min-w-0"><span className="block truncate text-[13px] font-medium text-foreground">{title}</span><span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">{lab.saveState.status === "saving" ? "Workboard · Saving" : lab.saveState.status === "conflict" ? "Workboard · Newer version available" : lab.saveState.status === "forbidden" ? "Workboard · Read only" : lab.saveState.status === "error" ? "Workboard · Could not save" : lab.saveState.status === "saved" || lab.board?.id ? "Workboard · Saved" : "Workboard · Not saved"}</span></div><div className="flex items-center gap-1"><Button type="button" size="sm" variant="outline" className="md:hidden" onClick={() => { setRailOpen(true); setMobileView("rail"); }}>Working from</Button>{selectedLinkId ? <Button type="button" size="sm" variant="ghost" onClick={() => { const link = links.find((entry) => entry.id === selectedLinkId); if (link) void persistLinkRemoval(link); setLinks((current) => removeLabLink(current, selectedLinkId)); setSelectedLinkId(null); noteWorkboardRelationship(orgId, "removed"); }}>Remove relationship</Button> : null}<Button size="sm" variant="outline" onClick={fit}>Fit</Button><Button size="icon" variant="ghost" aria-label="Zoom out" onClick={() => setZoom((value) => stepZoom(value, "out"))}><Minus className="h-3.5 w-3.5" /></Button><span className="w-10 text-center font-mono text-[10px] text-soft">{Math.round(zoom * 100)}%</span><Button size="icon" variant="ghost" aria-label="Zoom in" onClick={() => setZoom((value) => stepZoom(value, "in"))}><Plus className="h-3.5 w-3.5" /></Button></div></header>
+        {lab.saveState.status === "conflict" ? <div className="z-20 flex items-center justify-between gap-3 border-b border-border bg-card px-4 py-2" role="alert"><p className="text-[13px] text-foreground">Someone saved a newer version of this record.</p><div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => resolveConflict("latest")}>Load latest</Button><Button size="sm" variant="outline" onClick={() => resolveConflict("retry")}>Retry my change</Button></div></div> : null}
         <div ref={shellRef} onPointerDown={(event) => { if (event.button === 0 && event.target === event.currentTarget) panRef.current = { from: { x: event.clientX, y: event.clientY }, origin: pan }; }} className="canvas-lab-surface relative min-h-0 flex-1 cursor-grab overflow-hidden">
           <div data-testid="canvas-lab-stage" className="absolute left-0 top-0 origin-top-left" style={{ width: bounds.width, height: bounds.height, transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})` }}>
             <ReasoningTrailGuide onAdd={addNode} />
@@ -418,7 +625,7 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
               {links.map((link) => { const source = visibleNodes.find((node) => node.id === link.fromId); const target = visibleNodes.find((node) => node.id === link.toId); if (!source || !target) return null; const from = labAnchorPoint(source, link.fromAnchor, cardHeightsRef.current.get(source.id) ?? 108); const to = labAnchorPoint(target, link.toAnchor, cardHeightsRef.current.get(target.id) ?? 108); const active = selectedLinkId === link.id; return <path key={link.id} role="button" tabIndex={0} aria-label={`Select relationship from ${source.title} to ${target.title}`} onClick={() => setSelectedLinkId(link.id)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setSelectedLinkId(link.id); } }} d={labConnectorPath(from, link.fromAnchor, to, link.toAnchor)} fill="none" stroke={active ? "var(--nb-green)" : "var(--nb-graphite)"} strokeWidth={active ? "2.4" : "1.4"} strokeLinecap="round" className="cursor-pointer outline-none focus:stroke-[var(--nb-green)]" />; })}
               {connectorPreview && connectorDragRef.current ? (() => { const source = visibleNodes.find((node) => node.id === connectorDragRef.current?.nodeId); if (!source || !connectorDragRef.current) return null; const from = labAnchorPoint(source, connectorDragRef.current.anchor, cardHeightsRef.current.get(source.id) ?? 108); return <path d={labConnectorPath(from, connectorDragRef.current.anchor, connectorPreview, connectorDragRef.current.anchor)} fill="none" stroke="var(--nb-green)" strokeWidth="2.4" strokeLinecap="round" className="pointer-events-none" />; })() : null}
             </svg>
-            {visibleNodes.map((node) => <LabCard key={node.id} node={node} item={itemByNode(node)} selected={selected.includes(node.id)} focused={keyboardId === node.id} connecting={connectSource !== null || connectorPreview !== null} connectSourceAnchor={connectSource?.nodeId === node.id ? connectSource.anchor : null} onSelect={() => setSelected((current) => toggleContext(current, node.id))} onOpen={() => openNode(node)} onBranch={() => branchFrom(node)} onHide={() => hideNode(node)} onDelete={() => deleteNode(node)} onEdit={(text) => setNodes((current) => current ? updateLocalNode(current, node.id, text) : current)} onEditCommitted={() => noteWorkboardNodeEdited(orgId, eventKind(node))} onAnchorPointerDown={(side, event) => startPointerConnect(node, side, event)} onAnchorActivate={(side) => chooseConnectAnchor(node, side)} onMenuOpened={() => { if (connectSource || connectorDragRef.current) cancelConnect(); noteWorkboardCardMenuOpened(orgId, eventKind(node), node.ownership); }} onMenuOpenChange={setCardMenuOpen} onMeasure={(height) => cardHeightsRef.current.set(node.id, height)} onPointerDown={(event) => onCardPointerDown(node, event)} onKeyDown={(event) => onCardKeyDown(node, event)} />)}
+            {visibleNodes.map((node) => <LabCard key={node.id} node={node} item={itemByNode(node)} selected={selected.includes(node.id)} focused={keyboardId === node.id} connecting={connectSource !== null || connectorPreview !== null} connectSourceAnchor={connectSource?.nodeId === node.id ? connectSource.anchor : null} onSelect={() => setSelected((current) => toggleContext(current, node.id))} onOpen={() => openNode(node)} onBranch={() => branchFrom(node)} onHide={() => hideNode(node)} onDelete={() => deleteNode(node)} onEdit={(text) => setNodes((current) => current ? updateLocalNode(current, node.id, text) : current)} onEditCommitted={() => { noteWorkboardNodeEdited(orgId, eventKind(node)); const current = nodesRef.current.find((entry) => entry.id === node.id); if (current?.durableId) void persistNodePatch(current.id, { body: current.summary, title: current.title }); }} onAnchorPointerDown={(side, event) => startPointerConnect(node, side, event)} onAnchorActivate={(side) => chooseConnectAnchor(node, side)} onMenuOpened={() => { if (connectSource || connectorDragRef.current) cancelConnect(); noteWorkboardCardMenuOpened(orgId, eventKind(node), node.ownership); }} onMenuOpenChange={setCardMenuOpen} onMeasure={(height) => cardHeightsRef.current.set(node.id, height)} onPointerDown={(event) => onCardPointerDown(node, event)} onKeyDown={(event) => onCardKeyDown(node, event)} />)}
           </div>
           {isLoading ? <p className="absolute left-4 top-4 font-hand text-[16px] text-[var(--nb-mid)]">reading the engagement</p> : null}
           {isError ? <p className="absolute left-4 top-4 text-[13px] text-muted-foreground">This workboard could not be opened.</p> : null}

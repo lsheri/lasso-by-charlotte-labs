@@ -68,7 +68,7 @@ describe("Canvas Lab Phase 2", () => {
     expect(review).not.toContain("AnalysisConfirm");
     expect(review).not.toContain("draftLineage");
     expect(review).not.toContain("reviewLink");
-    expect(review).toContain("connectedLabNodeIds(nodes, links, anchorNodeId)");
+    expect(review).toContain("inboundLabNodeIds(nodes, links, anchorNodeId)");
     expect(review).toContain('node.kind === "judgment" && connectedNodeIds.has(node.id)');
     expect(review).toContain("connectedNodeIds.has(comment.nodeId)");
     expect(review).not.toContain('nodes.filter((node) => node.kind === "judgment").map');

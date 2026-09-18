@@ -8,6 +8,7 @@
  */
 
 import { snapPoint, type Point } from "@/lib/canvas-drag";
+import type { WorkboardDto, WorkboardNodeDto, WorkboardRelation } from "@/lib/canvas-lab-shared";
 
 export type LabNodeKind = "brief" | "task" | "work" | "decision" | "chat" | "source" | "ai_work" | "judgment" | "deliverable";
 export type LabJudgmentType = "added_constraint" | "corrected_ai" | "rejected_option" | "requested_evidence" | "changed_direction" | "accepted_but_rewrote";
@@ -36,6 +37,9 @@ export type LabNode = {
   contextIds?: string[];
   judgmentType?: LabJudgmentType;
   local?: boolean;
+  /** Durable Slice 1 identity, when this card is backed by a Workboard row. */
+  durableId?: string;
+  durableVersion?: number;
   x: number;
   y: number;
 };
@@ -48,13 +52,15 @@ export type LabFrame = {
   width: number;
   height: number;
   local?: boolean;
+  durableId?: string;
+  durableVersion?: number;
 };
 
 export const CARD_WIDTH = 232;
 export const CARD_GAP_Y = 144;
 export const FRAME_PADDING = 24;
 
-export type LabLink = { id: string; fromId: string; toId: string; fromAnchor: LabAnchor; toAnchor: LabAnchor };
+export type LabLink = { id: string; fromId: string; toId: string; fromAnchor: LabAnchor; toAnchor: LabAnchor; durableId?: string; durableVersion?: number; relation?: WorkboardRelation };
 
 export const REASONING_STEPS: { kind: LabTemplateKind; label: string }[] = [
   { kind: "source", label: "Source / Context" },
@@ -104,7 +110,7 @@ export function addLocalFrame(frames: LabFrame[], name: string): LabFrame[] {
   return [
     ...frames,
     {
-      id: `local:${index}:${name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
+      id: `custom:${name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-") || `workstream-${index}`}`,
       name: name.trim(),
       x: 60 + (index % FRAME_COLUMNS) * (FRAME_WIDTH + FRAME_GAP),
       y: 420 + Math.floor(index / FRAME_COLUMNS) * (FRAME_HEIGHT + FRAME_GAP),
@@ -431,4 +437,128 @@ export function fitScale(
   if (viewportWidth <= 0 || viewportHeight <= 0) return 1;
   const scale = Math.min(viewportWidth / (stage.width + 80), viewportHeight / (stage.height + 80));
   return Math.max(0.62, Math.min(1.6, scale));
+}
+
+/* ------------------------------------------------------------------ */
+/* Phase 3 Slice 1: durable Workboard merge and review traversal       */
+/* ------------------------------------------------------------------ */
+
+/** Virtual id a durable reference card maps to in the local model. */
+export function durableLocalId(node: Pick<WorkboardNodeDto, "kind" | "workItemId" | "decisionId" | "id">): string {
+  if (node.kind === "work_item" && node.workItemId) return `work:${node.workItemId}`;
+  if (node.kind === "decision" && node.decisionId) return `decision:${node.decisionId}`;
+  if (node.kind === "brief") return "brief";
+  return `durable:${node.id}`;
+}
+
+export type DurableMerge = { frames: LabFrame[]; nodes: LabNode[]; links: LabLink[]; hiddenIds: string[] };
+
+/**
+ * Overlay a loaded durable board onto the deterministic virtual seed. The
+ * seed supplies display data from canonical records; durable rows supply
+ * placement, hidden state, authored judgments, custom frames, and explicit
+ * relationships. Durable references whose source left the engagement simply
+ * vanish; new canonical work without a durable row keeps its virtual spot.
+ */
+export function applyDurableBoard(base: { frames: LabFrame[]; nodes: LabNode[] }, board: WorkboardDto): DurableMerge {
+  const frames: LabFrame[] = [];
+  const frameIdByKey = new Map<string, string>();
+  const orderedDurableFrames = [...board.frames].sort((a, b) => a.ord - b.ord);
+  for (const baseFrame of base.frames) {
+    const durable = orderedDurableFrames.find((frame) => frame.key === baseFrame.id);
+    if (!durable) {
+      frames.push(baseFrame);
+      continue;
+    }
+    frameIdByKey.set(durable.id, baseFrame.id);
+    frames.push({ ...baseFrame, x: durable.x, y: durable.y, width: durable.w, height: durable.h, durableId: durable.id, durableVersion: durable.version });
+  }
+  for (const durable of orderedDurableFrames) {
+    if (base.frames.some((frame) => frame.id === durable.key)) continue;
+    const id = durable.key.startsWith("custom:") ? durable.key : `durable-frame:${durable.id}`;
+    frameIdByKey.set(durable.id, id);
+    frames.push({ id, name: durable.label ?? "Workstream", x: durable.x, y: durable.y, width: durable.w, height: durable.h, durableId: durable.id, durableVersion: durable.version });
+  }
+
+  const nodes: LabNode[] = [];
+  const localIdByDurable = new Map<string, string>();
+  const matchedVirtual = new Set<string>();
+  for (const durable of board.nodes) {
+    const localId = durableLocalId(durable);
+    localIdByDurable.set(durable.id, localId);
+    const frameId = durable.frameId ? frameIdByKey.get(durable.frameId) ?? null : null;
+    const virtualIndex = base.nodes.findIndex((node) => node.id === localId);
+    if (virtualIndex >= 0) {
+      const virtual = base.nodes[virtualIndex] as LabNode;
+      matchedVirtual.add(virtual.id);
+      nodes.push({
+        ...virtual,
+        frame: frameId ?? virtual.frame,
+        x: durable.x,
+        y: durable.y,
+        durableId: durable.id,
+        durableVersion: durable.version,
+      });
+      continue;
+    }
+    if (durable.kind === "judgment") {
+      const judgment = JUDGMENT_TYPES.find((entry) => entry.value === durable.judgmentType);
+      nodes.push({
+        id: localId,
+        kind: "judgment",
+        frame: frameId ?? "foundation",
+        title: durable.title || judgment?.label || "Human judgment",
+        summary: durable.body,
+        typeLabel: judgment?.label ?? "Human judgment",
+        ownership: durable.authorProfileId === board.viewerProfileId ? "draft" : "teammate",
+        ...(durable.judgmentType ? { judgmentType: durable.judgmentType as LabJudgmentType } : {}),
+        local: durable.authorProfileId === board.viewerProfileId,
+        durableId: durable.id,
+        durableVersion: durable.version,
+        x: durable.x,
+        y: durable.y,
+      });
+    }
+    // draft rows are deliberately not rehydrated in Slice 1.
+  }
+  for (const virtual of base.nodes) if (!matchedVirtual.has(virtual.id)) nodes.push(virtual);
+
+  const links: LabLink[] = board.links.flatMap((link) => {
+    const fromId = localIdByDurable.get(link.fromNodeId);
+    const toId = localIdByDurable.get(link.toNodeId);
+    if (!fromId || !toId) return [];
+    return [{ id: `durable-link:${link.id}`, fromId, toId, fromAnchor: link.fromAnchor, toAnchor: link.toAnchor, durableId: link.id, durableVersion: link.version, relation: link.relation }];
+  });
+
+  const hiddenIds = board.nodes.filter((node) => node.hidden).map((node) => durableLocalId(node));
+  return { frames, nodes, links, hiddenIds };
+}
+
+/**
+ * What fed this: walk only explicit inbound relationships from the reviewed
+ * node, with cycle protection and a depth bound. Proximity, shared frames,
+ * and node kinds contribute nothing.
+ */
+export function inboundLabNodeIds(nodes: LabNode[], links: LabLink[], anchorId: string, maxDepth = 8): Set<string> {
+  const nodeIds = new Set(nodes.map((node) => node.id));
+  if (!nodeIds.has(anchorId)) return new Set();
+  const inbound = new Map<string, string[]>();
+  for (const link of links) {
+    if (!nodeIds.has(link.fromId) || !nodeIds.has(link.toId)) continue;
+    inbound.set(link.toId, [...(inbound.get(link.toId) ?? []), link.fromId]);
+  }
+  const reached = new Set([anchorId]);
+  let frontier = [anchorId];
+  for (let depth = 0; depth < maxDepth && frontier.length > 0; depth += 1) {
+    const next: string[] = [];
+    for (const current of frontier) {
+      for (const source of inbound.get(current) ?? []) {
+        if (reached.has(source)) continue;
+        reached.add(source);
+        next.push(source);
+      }
+    }
+    frontier = next;
+  }
+  return reached;
 }

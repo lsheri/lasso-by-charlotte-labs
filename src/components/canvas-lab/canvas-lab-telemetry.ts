@@ -31,3 +31,21 @@ export function noteWorkboardTrailSelected(orgId: string | undefined, group: "co
 export function noteWorkboardCardMenuOpened(orgId: string | undefined, nodeKind: LabNodeEventKind, ownership: LabOwnershipEvent): void {
   if (orgId) logEvent("workboard.card_menu_opened", orgId, { node_kind: nodeKind, ownership });
 }
+
+export type WorkboardPersistEntity = "board" | "frame" | "node" | "relationship";
+export type WorkboardPersistAction = "create" | "update" | "archive" | "restore";
+
+/** Phase 3: a durable Workboard change was confirmed. No ids, no content. */
+export function noteWorkboardChangeSaved(orgId: string | undefined, entity: WorkboardPersistEntity, action: WorkboardPersistAction): void {
+  if (orgId) logEvent("workboard.change_saved", orgId, { entity, action });
+}
+
+/** Phase 3: a durable Workboard change failed. Closed reasons only. */
+export function noteWorkboardSaveFailed(orgId: string | undefined, entity: WorkboardPersistEntity, reason: "conflict" | "permission" | "network" | "validation" | "unknown"): void {
+  if (orgId) logEvent("workboard.save_failed", orgId, { entity, reason });
+}
+
+/** Phase 3: a person settled a newer-version conflict. Choice only. */
+export function noteWorkboardConflictResolved(orgId: string | undefined, entity: Exclude<WorkboardPersistEntity, "board">, choice: "latest" | "retry"): void {
+  if (orgId) logEvent("workboard.conflict_resolved", orgId, { entity, choice });
+}

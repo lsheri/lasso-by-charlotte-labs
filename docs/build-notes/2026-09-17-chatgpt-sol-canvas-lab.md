@@ -264,3 +264,17 @@ One additive event was added: `workboard.card_menu_opened`, with closed dimensio
 No consent, database, schema, RLS, server, production canvas, provenance, landing-page, AskDock, persistence, deployment, or publishing change was made.
 
 Verification: `bunx tsgo --noEmit` passed. The focused card-interaction, model, Phase 2, second-pass, route, motion, and token suite passed 54 tests across 7 files. The preview build completed successfully at 2026-09-18 20:47 UTC. Authenticated desktop and narrow-screen visual verification was not completed because the required Liam session approval was unavailable; no other account was substituted.
+
+## 2026-09-18 — Phase 3 Slice 1: durable Workboard
+
+**Architect (database, applied via the migration workflow):** `drizzle/migrations/0001_canvas_lab_slice1_workboards.sql` added `workboards`, `workboard_frames`, `workboard_nodes`, `workboard_links`, `workboard_revisions` with grants, RLS, author-only prose guard, soft delete, and automatic revision/version triggers. Generated types refreshed. No production table was modified.
+
+**App (this build):** client-safe contract `src/lib/canvas-lab-shared.ts`; caller-scoped server assembly/mutations `src/lib/canvas-lab.server.ts`; authenticated functions `src/lib/canvas-lab.functions.ts`; save pipeline hook `src/hooks/use-canvas-lab.ts`; page wiring in `CanvasLabPage` (drag end and keyboard moves, hide/restore, judgment create/edit, workstream create, relationship create/remove all persist; deterministic virtual board lazy-materializes on first mutation); durable merge plus inbound-only bounded traversal in the model; `CanvasLabReview` now walks explicit inbound relationships only.
+
+**Permissions:** active non-coach engagement members arrange the board; coaches are read-only (server-checked); authored prose stays author-only (database guard); conflicts offer only Load latest / Retry my change.
+
+**Events added (consent-stamped, content-free):** `workboard.change_saved` {entity, action}, `workboard.save_failed` {entity, reason}, `workboard.conflict_resolved` {entity, choice}. Portal catalog follow-up is owed for these three plus the nine Phase 2 `workboard.*` events.
+
+**Still local by design:** viewport, zoom, rail, selection, menus, connector preview, unsent composer text, comments, canvas instructions, draft chat cards. Durable storage of authored judgment text was approved for Slice 1; comments/highlights/excerpts await a consent decision.
+
+**Verification:** tsgo clean; 50 Canvas Lab tests across 6 files pass; token guard passes; preview build succeeds. Full-suite runs show 18 pre-existing failures in unrelated passes (email templates, decisions copy, chat search) that predate this change. Live multiuser RLS/conflict behavior and Liam-identity visual verification remain unverified.
