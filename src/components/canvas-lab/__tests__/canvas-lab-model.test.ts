@@ -3,6 +3,9 @@ import { beforeEach, describe, expect, it } from "vitest";
 import {
   actionsFor,
   branchChatNode,
+  addLabLink,
+  createLocalNode,
+  deleteLocalNode,
   createChatNode,
   createComment,
   createLabFrames,
@@ -166,5 +169,43 @@ describe("canvas lab model", () => {
     expect(fitScale(1000, 600)).toBeLessThan(1);
     expect(fitScale(200, 100)).toBe(0.62);
     expect(fitScale(0, 0)).toBe(1);
+  });
+
+  it("creates the five local reasoning node kinds and six judgment choices", async () => {
+    const model = await import("@/components/canvas-lab/canvas-lab-model");
+    expect(model.REASONING_STEPS.map((step) => step.label)).toEqual([
+      "Source / Context", "AI work", "Human judgment", "Decision", "Deliverable",
+    ]);
+    expect(model.JUDGMENT_TYPES).toHaveLength(6);
+  });
+
+  it("places repeated local nodes deterministically without the same anchor", () => {
+    const frame = createLabFrames(SEED.tasks)[0];
+    expect(frame).toBeDefined();
+    if (!frame) return;
+    const first = createLocalNode("source", frame, []);
+    const second = createLocalNode("source", frame, [first]);
+    expect([second.x, second.y]).not.toEqual([first.x, first.y]);
+  });
+
+  it("deletes only local nodes and removes their links and context", () => {
+    const frame = createLabFrames(SEED.tasks)[0];
+    expect(frame).toBeDefined();
+    if (!frame) return;
+    const local = createLocalNode("judgment", frame, [], "corrected_ai");
+    const real = seedCanvas(SEED)[0];
+    expect(real).toBeDefined();
+    if (!real) return;
+    const result = deleteLocalNode([real, local], [{ id: "l1", fromId: local.id, toId: real.id }], [local.id], local.id);
+    expect(result.nodes).toEqual([real]);
+    expect(result.links).toEqual([]);
+    expect(deleteLocalNode([real], [], [], real.id).nodes).toEqual([real]);
+  });
+
+  it("rejects self and duplicate local relationships", () => {
+    expect(addLabLink([], "a", "a").error).toContain("itself");
+    const created = addLabLink([], "a", "b");
+    expect(created.error).toBeNull();
+    expect(addLabLink(created.links, "a", "b").error).toContain("already connected");
   });
 });

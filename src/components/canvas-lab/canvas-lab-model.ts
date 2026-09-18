@@ -9,7 +9,9 @@
 
 import { snapPoint, type Point } from "@/lib/canvas-drag";
 
-export type LabNodeKind = "brief" | "task" | "work" | "decision" | "chat";
+export type LabNodeKind = "brief" | "task" | "work" | "decision" | "chat" | "source" | "ai_work" | "judgment" | "deliverable";
+export type LabJudgmentType = "added_constraint" | "corrected_ai" | "rejected_option" | "requested_evidence" | "changed_direction" | "accepted_but_rewrote";
+export type LabTemplateKind = "source" | "ai_work" | "judgment" | "decision" | "deliverable";
 
 /** Who the thing belongs to, which is what decides the offered actions. */
 export type LabOwnership = "yours" | "teammate" | "draft";
@@ -31,6 +33,8 @@ export type LabNode = {
   /** Local chat cards only. */
   prompt?: string | undefined;
   contextIds?: string[];
+  judgmentType?: LabJudgmentType;
+  local?: boolean;
   x: number;
   y: number;
 };
@@ -48,6 +52,25 @@ export type LabFrame = {
 export const CARD_WIDTH = 232;
 export const CARD_GAP_Y = 144;
 export const FRAME_PADDING = 24;
+
+export type LabLink = { id: string; fromId: string; toId: string };
+
+export const REASONING_STEPS: { kind: LabTemplateKind; label: string }[] = [
+  { kind: "source", label: "Source / Context" },
+  { kind: "ai_work", label: "AI work" },
+  { kind: "judgment", label: "Human judgment" },
+  { kind: "decision", label: "Decision" },
+  { kind: "deliverable", label: "Deliverable" },
+];
+
+export const JUDGMENT_TYPES: { value: LabJudgmentType; label: string }[] = [
+  { value: "added_constraint", label: "Added constraint" },
+  { value: "corrected_ai", label: "Corrected AI" },
+  { value: "rejected_option", label: "Rejected option" },
+  { value: "requested_evidence", label: "Requested evidence" },
+  { value: "changed_direction", label: "Changed direction" },
+  { value: "accepted_but_rewrote", label: "Accepted but rewrote" },
+];
 
 const FRAME_WIDTH = 430;
 const FRAME_HEIGHT = 520;
@@ -69,7 +92,7 @@ export function createLabFrames(tasks: { id: string; name: string }[]): LabFrame
   return definitions.map((definition, index) => ({
     ...definition,
     x: 60 + (index % FRAME_COLUMNS) * (FRAME_WIDTH + FRAME_GAP),
-    y: 60 + Math.floor(index / FRAME_COLUMNS) * (FRAME_HEIGHT + FRAME_GAP),
+    y: 420 + Math.floor(index / FRAME_COLUMNS) * (FRAME_HEIGHT + FRAME_GAP),
     width: FRAME_WIDTH,
     height: FRAME_HEIGHT,
   }));
@@ -83,7 +106,7 @@ export function addLocalFrame(frames: LabFrame[], name: string): LabFrame[] {
       id: `local:${index}:${name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
       name: name.trim(),
       x: 60 + (index % FRAME_COLUMNS) * (FRAME_WIDTH + FRAME_GAP),
-      y: 60 + Math.floor(index / FRAME_COLUMNS) * (FRAME_HEIGHT + FRAME_GAP),
+      y: 420 + Math.floor(index / FRAME_COLUMNS) * (FRAME_HEIGHT + FRAME_GAP),
       width: FRAME_WIDTH,
       height: FRAME_HEIGHT,
       local: true,
@@ -114,8 +137,9 @@ export type SeedInput = {
 };
 
 function stack(frame: LabFrame, index: number): Point {
-  const column = index % 1;
-  const row = Math.floor(index / 1);
+  const columns = Math.max(1, Math.floor((frame.width - FRAME_PADDING * 2) / (CARD_WIDTH + 18)));
+  const column = index % columns;
+  const row = Math.floor(index / columns);
   return snapPoint({
     x: frame.x + FRAME_PADDING + column * (CARD_WIDTH + 18),
     y: frame.y + 60 + row * CARD_GAP_Y,
@@ -125,6 +149,45 @@ function stack(frame: LabFrame, index: number): Point {
 /** Place a local draft in the next readable stack position in its frame. */
 export function draftAnchor(frame: LabFrame, nodes: LabNode[]): Point {
   return stack(frame, nodes.filter((node) => node.frame === frame.id).length);
+}
+
+export function localNodeAnchor(frame: LabFrame, nodes: LabNode[], near?: Point): Point {
+  const occupied = nodes.filter((node) => node.frame === frame.id);
+  if (!near) return stack(frame, occupied.length);
+  const candidates = Array.from({ length: 12 }, (_, index) => snapPoint({
+    x: Math.min(frame.x + frame.width - CARD_WIDTH - FRAME_PADDING, near.x + 40 + (index % 2) * 44),
+    y: Math.min(frame.y + frame.height - 96, near.y + 60 + Math.floor(index / 2) * 44),
+  }));
+  return candidates.find((point) => occupied.every((node) => Math.abs(node.x - point.x) > 40 || Math.abs(node.y - point.y) > 40)) ?? stack(frame, occupied.length);
+}
+
+let localCounter = 0;
+export function createLocalNode(kind: LabTemplateKind, frame: LabFrame, nodes: LabNode[], judgmentType?: LabJudgmentType): LabNode {
+  localCounter += 1;
+  const judgment = judgmentType ? JUDGMENT_TYPES.find((entry) => entry.value === judgmentType) : undefined;
+  const label = judgment?.label ?? REASONING_STEPS.find((entry) => entry.kind === kind)?.label ?? "Local note";
+  const at = localNodeAnchor(frame, nodes);
+  return { id: `local-node:${localCounter}`, kind, frame: frame.id, title: label, summary: "Add a short note.", typeLabel: label, ownership: "draft", ...(judgmentType ? { judgmentType } : {}), local: true, x: at.x, y: at.y };
+}
+
+export function updateLocalNode(nodes: LabNode[], id: string, text: string): LabNode[] {
+  return nodes.map((node) => node.id === id && node.local ? { ...node, summary: text } : node);
+}
+
+export function deleteLocalNode(nodes: LabNode[], links: LabLink[], selected: string[], id: string) {
+  const node = nodes.find((entry) => entry.id === id);
+  if (!node?.local && node?.kind !== "chat") return { nodes, links, selected };
+  return { nodes: nodes.filter((entry) => entry.id !== id), links: links.filter((link) => link.fromId !== id && link.toId !== id), selected: selected.filter((entry) => entry !== id) };
+}
+
+export function addLabLink(links: LabLink[], fromId: string, toId: string): { links: LabLink[]; error: string | null } {
+  if (fromId === toId) return { links, error: "A card cannot connect to itself." };
+  if (links.some((link) => link.fromId === fromId && link.toId === toId)) return { links, error: "These cards are already connected." };
+  return { links: [...links, { id: `local-link:${fromId}:${toId}`, fromId, toId }], error: null };
+}
+
+export function removeLabLink(links: LabLink[], id: string): LabLink[] {
+  return links.filter((link) => link.id !== id);
 }
 
 /**
@@ -241,6 +304,7 @@ export function createChatNode(
     ownership: "draft",
     prompt,
     contextIds: [...contextIds],
+    local: true,
     x: at.x,
     y: at.y,
   };

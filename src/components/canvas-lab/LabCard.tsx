@@ -13,7 +13,7 @@ const OWNER_LABEL: Record<LabNode["ownership"], string> = {
 const OWNER_TONE: Record<LabNode["ownership"], string> = {
   yours: "border-[var(--nb-pencil)] bg-card",
   teammate: "border-[var(--nb-rule)] bg-[var(--nb-grey-1)]",
-  draft: "border-[var(--nb-yellow-edge)] bg-[var(--nb-yellow-wash)]",
+  draft: "border-[var(--nb-green)] bg-[var(--nb-green-wash)]",
 };
 
 /**
@@ -29,6 +29,13 @@ export function LabCard({
   onSelect,
   onOpen,
   onBranch,
+  onHide,
+  onDelete,
+  onEdit,
+  onEditCommitted,
+  connecting = false,
+  connectSource = false,
+  onConnect,
   onPointerDown,
   onKeyDown,
 }: {
@@ -39,6 +46,13 @@ export function LabCard({
   onSelect: () => void;
   onOpen: () => void;
   onBranch: () => void;
+  onHide: () => void;
+  onDelete: () => void;
+  onEdit: (text: string) => void;
+  onEditCommitted: () => void;
+  connecting?: boolean;
+  connectSource?: boolean;
+  onConnect: () => void;
   onPointerDown: (event: React.PointerEvent) => void;
   onKeyDown: (event: React.KeyboardEvent) => void;
 }) {
@@ -55,7 +69,8 @@ export function LabCard({
         "absolute cursor-grab text-left transition-shadow",
         item ? "" : `canvas-lab-folded-note flex flex-col gap-1.5 rounded-[var(--radius-control)] border px-3 py-2.5 ${OWNER_TONE[node.ownership]}`,
         selected && "ring-2 ring-[var(--nb-green)]",
-        focused && "outline outline-1 outline-[var(--nb-graphite)]",
+        focused && "outline outline-2 outline-[var(--nb-green)]",
+        connectSource && "ring-2 ring-[var(--nb-green)] bg-[var(--nb-green-wash)]",
       )}
     >
       {item ? (
@@ -67,7 +82,7 @@ export function LabCard({
             <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">{OWNER_LABEL[node.ownership]}</span>
           </div>
           <span className="text-[13px] font-medium leading-[17px] text-foreground">{node.title}</span>
-          <p className="line-clamp-3 text-[11.5px] leading-[17px] text-muted-foreground">{node.summary}</p>
+          {node.local ? <textarea aria-label={`Edit ${node.title} note`} value={node.summary} onChange={(event) => onEdit(event.target.value)} onBlur={onEditCommitted} onPointerDown={(event) => event.stopPropagation()} className="min-h-14 w-full resize-none border border-[var(--nb-rule)] bg-card px-2 py-1 text-[11.5px] leading-[17px] text-foreground outline-none focus:border-[var(--nb-green)]" /> : <p className="line-clamp-3 text-[11.5px] leading-[17px] text-muted-foreground">{node.summary}</p>}
         </>
       )}
 
@@ -83,6 +98,8 @@ export function LabCard({
             Branch
           </Button>
         ) : null}
+        {connecting ? <Button size="sm" variant="ghost" className="h-6 px-1.5 font-mono text-[9px] uppercase tracking-[0.08em] text-green" onClick={(event) => { event.stopPropagation(); onConnect(); }}>{connectSource ? "Source chosen" : "Connect"}</Button> : null}
+        {node.local || node.kind === "chat" ? <Button size="sm" variant="ghost" className="h-6 px-1.5 font-mono text-[9px] uppercase tracking-[0.08em]" onClick={(event) => { event.stopPropagation(); onDelete(); }}>Delete local node</Button> : <Button size="sm" variant="ghost" className="h-6 px-1.5 font-mono text-[9px] uppercase tracking-[0.08em]" onClick={(event) => { event.stopPropagation(); onHide(); }}>Remove from canvas</Button>}
       </div>
 
       {selected ? (

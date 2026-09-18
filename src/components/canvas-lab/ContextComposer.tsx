@@ -50,7 +50,7 @@ export function ContextComposer({
   const [showInstructions, setShowInstructions] = useState(false);
 
   return (
-    <div className="pointer-events-auto w-[640px] max-w-[calc(100vw-5rem)] rounded-[var(--radius)] border border-[var(--nb-graphite)] bg-card p-3 shadow-[var(--shadow-modal)]">
+    <div className="w-full bg-card">
       {showInstructions ? (
         <div className="mb-2 rounded-[var(--radius-control)] border border-[var(--nb-rule)] bg-[var(--nb-grey-1)] p-2.5">
           <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
@@ -91,14 +91,16 @@ export function ContextComposer({
               className="inline-flex items-center gap-1 rounded-full border border-[var(--nb-pencil)] bg-secondary px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground"
             >
               {node.title.length > 28 ? `${node.title.slice(0, 25)}...` : node.title}
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="icon"
                 aria-label={`Remove ${node.title} from context`}
                 onClick={() => onRemoveContext(node.id)}
-                className="text-soft hover:text-foreground"
+                className="h-5 w-5 text-soft hover:text-foreground"
               >
                 <X className="h-3 w-3" />
-              </button>
+              </Button>
             </span>
           ))}
         </div>

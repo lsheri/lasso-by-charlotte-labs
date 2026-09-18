@@ -8,10 +8,8 @@ import {
 } from "@/components/canvas-lab/canvas-lab-model";
 import { RenderedContent } from "@/components/peek/RenderedContent";
 import { ThreadBody } from "@/components/peek/ThreadBody";
-import { WhatFedThisButton } from "@/components/engagements/WhatFedThisButton";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { isDeliverableType } from "@/lib/lineage-shared";
 import type { WorkItemRow } from "@/lib/work-types";
 
 /**
@@ -22,8 +20,6 @@ import type { WorkItemRow } from "@/lib/work-types";
 export function FocusOverlay({
   node,
   item,
-  orgId,
-  profileId,
   viewerName,
   comments,
   onComment,
@@ -33,8 +29,6 @@ export function FocusOverlay({
 }: {
   node: LabNode;
   item: WorkItemRow | null;
-  orgId?: string | undefined;
-  profileId?: string | undefined;
   viewerName: string;
   comments: LabComment[];
   onComment: (comment: LabComment) => void;
@@ -87,9 +81,6 @@ export function FocusOverlay({
                 Branch
               </Button>
             ) : null}
-            {item && isDeliverableType(item.type) ? (
-              <WhatFedThisButton items={[item]} orgId={orgId} profileId={profileId} />
-            ) : null}
             <Button size="sm" variant="ghost" onClick={onClose}>
               Back to the workboard
             </Button>
@@ -137,9 +128,9 @@ export function FocusOverlay({
                 {comments.map((comment, index) => (
                   <li
                     key={comment.id}
-                    className="rounded-[var(--radius-control)] border border-[var(--nb-yellow-edge)] bg-[var(--nb-yellow-wash)] px-2.5 py-2"
+                    className="rounded-[var(--radius-control)] border border-[var(--nb-green)] bg-[var(--nb-green-wash)] px-2.5 py-2"
                   >
-                    <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-[var(--nb-yellow-ink)]">
+                    <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-green">
                       {index + 1} · {comment.author} · {comment.at} · not saved
                     </span>
                     <p className="mt-1 text-[11.5px] italic leading-[17px] text-muted-foreground">
