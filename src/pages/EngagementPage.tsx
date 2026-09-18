@@ -748,9 +748,12 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
           ) : view === "verify" ? (
             <div className="space-y-3">
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--nb-rule)] pb-3">
-                <p className="text-[13px] text-muted-foreground">
-                  Arrange the sources, context, judgment, calls, and finished work for this engagement.
-                </p>
+                <div>
+                  <p className="font-hand text-[16px] text-green">open the workboard</p>
+                  <p className="text-[13px] text-muted-foreground">
+                    Arrange the engagement at full size. This prototype resets when you refresh.
+                  </p>
+                </div>
                 <Link
                   to="/engagements/$id/canvas-lab"
                   params={{ id: engagementId }}

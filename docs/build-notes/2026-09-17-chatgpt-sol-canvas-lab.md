@@ -154,3 +154,13 @@ Changed application files: `EngagementPage.tsx`, `CanvasLabPage.tsx`, the Canvas
 - There is no realtime collaboration or collaborator presence.
 - The CSS Custom Highlight API is best-effort. On browsers without it, the selected quote remains visible beside its numbered note.
 - The Workboard is unpublished and remains behind its hidden authenticated route.
+
+### Second-pass verification correction
+
+- The engagement entry now has the handwritten title `open the workboard`, the exact reset explanation, and the existing `Open workboard` link. EngagementCanvasView remains directly below and unchanged.
+- Focused deliverable provenance now passes only the open deliverable to WhatFedThisButton and keeps its existing confirmation flow.
+- The selected-text highlight is removed when the focused reader closes. Its pending quote number follows the existing note count, with the non-supporting-browser fallback unchanged.
+- Composer drafts now stack in the first selected context node's frame, or Foundation without context. Branch and summarize drafts stay with their source frame.
+- Seven pilot frames now begin in four columns and two rows. Fit continues to use active frame bounds.
+- Modifier-wheel zoom prevents browser zoom before applying the existing workboard zoom; ordinary vertical scrolling is unchanged.
+- Verification run: `bunx vitest run src/components/canvas-lab/__tests__/canvas-lab-model.test.ts src/components/canvas-lab/__tests__/canvas-lab-second-pass.test.ts src/routes/__tests__/canvas-lab-route.test.ts src/lib/__tests__/pass190-motion.test.tsx` passed 33 tests; `bunx vitest run src/lib/__tests__/pass83-tokens.test.ts` passed 2 tests; `bunx tsgo --noEmit` passed. The preview build completed successfully at 2026-09-18 08:10 UTC.

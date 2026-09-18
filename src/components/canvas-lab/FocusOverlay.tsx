@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import {
   actionsFor,
@@ -22,7 +22,6 @@ import type { WorkItemRow } from "@/lib/work-types";
 export function FocusOverlay({
   node,
   item,
-  items,
   orgId,
   profileId,
   viewerName,
@@ -34,7 +33,6 @@ export function FocusOverlay({
 }: {
   node: LabNode;
   item: WorkItemRow | null;
-  items: WorkItemRow[];
   orgId?: string | undefined;
   profileId?: string | undefined;
   viewerName: string;
@@ -49,6 +47,13 @@ export function FocusOverlay({
   const readerRef = useRef<HTMLDivElement | null>(null);
   const actions = actionsFor(node.ownership);
 
+  useEffect(() => {
+    return () => {
+      if (typeof CSS === "undefined" || !("highlights" in CSS)) return;
+      CSS.highlights?.delete("canvas-lab-selection");
+    };
+  }, []);
+
   function captureSelection() {
     if (typeof window === "undefined") return;
     const selection = window.getSelection();
@@ -57,8 +62,8 @@ export function FocusOverlay({
     const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
     if (!range || !readerRef.current?.contains(range.commonAncestorContainer)) return;
     setQuote(text.trim());
-    const highlights = CSS.highlights;
-    if (highlights) highlights.set("canvas-lab-selection", new Highlight(range.cloneRange()));
+    if (typeof CSS === "undefined" || !("highlights" in CSS) || typeof Highlight === "undefined") return;
+    CSS.highlights?.set("canvas-lab-selection", new Highlight(range.cloneRange()));
   }
 
   return (
@@ -83,7 +88,7 @@ export function FocusOverlay({
               </Button>
             ) : null}
             {item && isDeliverableType(item.type) ? (
-              <WhatFedThisButton items={items} orgId={orgId} profileId={profileId} />
+              <WhatFedThisButton items={[item]} orgId={orgId} profileId={profileId} />
             ) : null}
             <Button size="sm" variant="ghost" onClick={onClose}>
               Back to the workboard
@@ -148,7 +153,7 @@ export function FocusOverlay({
 
             {quote ? (
               <p className="mb-1 text-[11.5px] italic leading-[17px] text-muted-foreground">
-                1 · &ldquo;{quote.slice(0, 120)}&rdquo;
+                {comments.length + 1} · &ldquo;{quote.slice(0, 120)}&rdquo;
               </p>
             ) : null}
             <Textarea

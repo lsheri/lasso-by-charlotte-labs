@@ -6,6 +6,7 @@ import {
   createChatNode,
   createComment,
   createLabFrames,
+  draftAnchor,
   fitScale,
   moveNode,
   removeContext,
@@ -37,6 +38,15 @@ const SEED = {
       taskIds: ["t1"],
       deliverable: false,
     },
+    {
+      id: "w3",
+      title: "Final recommendation",
+      typeLabel: "deck",
+      source: "upload",
+      ownedByViewer: true,
+      taskIds: ["t1"],
+      deliverable: true,
+    },
   ],
   decisions: [
     { id: "d1", call: "Keep the pilot", situation: "Two options on the table", ownedByViewer: true },
@@ -65,6 +75,7 @@ describe("canvas lab model", () => {
     expect(frameOf("brief")).toBe("foundation");
     expect(frameOf("work:w1")).toBe("task:t1");
     expect(frameOf("work:w2")).toBe("task:t1");
+    expect(frameOf("work:w3")).toBe("outputs");
     expect(frameOf("decision:d1")).toBe("decisions");
   });
 
@@ -109,6 +120,32 @@ describe("canvas lab model", () => {
     expect(branch.id).not.toBe(chat.id);
     expect(branch.contextIds).toEqual(["work:w1", "work:w2"]);
     expect(branch.title).toContain("Branch of");
+    expect(branch.frame).toBe(chat.frame);
+  });
+
+  it("places a draft at the next stack position inside its chosen frame", () => {
+    const frames = createLabFrames(SEED.tasks);
+    const nodes = seedCanvas(SEED, frames);
+    const frame = frames.find((candidate) => candidate.id === "task:t1");
+    expect(frame).toBeDefined();
+    if (!frame) return;
+    const anchor = draftAnchor(frame, nodes);
+    expect(anchor.x).toBeGreaterThan(frame.x);
+    expect(anchor.x).toBeLessThan(frame.x + frame.width);
+    expect(anchor.y).toBeGreaterThan(frame.y);
+    expect(anchor.y).toBeLessThan(frame.y + frame.height);
+  });
+
+  it("arranges seven pilot frames across two rows", () => {
+    const frames = createLabFrames([
+      { id: "t1", name: "One" },
+      { id: "t2", name: "Two" },
+      { id: "t3", name: "Three" },
+      { id: "t4", name: "Four" },
+    ]);
+    expect(frames).toHaveLength(7);
+    expect(new Set(frames.map((frame) => frame.y)).size).toBe(2);
+    expect(frames.filter((frame) => frame.y === frames[0]?.y)).toHaveLength(4);
   });
 
   it("offers a teammate's work read actions only", () => {
