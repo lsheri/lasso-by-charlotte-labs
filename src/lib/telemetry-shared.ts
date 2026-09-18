@@ -171,6 +171,12 @@ export type TelemetryEvent =
   | "workboard.trail_item_selected"
   /** Canvas Lab interaction correction: a card's contextual action menu opened. */
   | "workboard.card_menu_opened"
+  /** Canvas Lab Phase 3: a durable Workboard change was confirmed. Entity and action only. */
+  | "workboard.change_saved"
+  /** Canvas Lab Phase 3: a durable Workboard change failed. Entity and closed reason only. */
+  | "workboard.save_failed"
+  /** Canvas Lab Phase 3: a person settled a newer-version conflict. Entity and choice only. */
+  | "workboard.conflict_resolved"
   /** Pass 185: a workspace was affiliated with an institution at creation. Slug only. */
   | "workspace.affiliated"
   /** Pass 186: the student opened the page describing what their school sees. */

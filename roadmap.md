@@ -78,3 +78,15 @@
 - [x] Run focused interaction/model/event tests, token guard, and typecheck
 - [ ] Verify the authenticated desktop and narrow-screen experience in the preview
   - Blocked unless the required Liam preview session is available. No other account will be substituted.
+
+## Canvas Lab Phase 3 Slice 1 (approved 2026-09-18)
+- [ ] Architect migration: workboards, workboard_frames, workboard_nodes, workboard_links, workboard_revisions (grants, RLS, constraints, indexes, atomic revision behavior)
+- [ ] Regenerate types
+- [ ] Typed contract + authenticated read/mutation server functions + query/mutation hook
+- [ ] Wire Canvas Lab to durable shared state with honest save/conflict/forbidden states
+- [ ] Save placement on drag end/keyboard move only
+- [ ] What-fed-this over explicit durable graph with permission filtering, cycle detection, bounded traversal
+- [ ] Add workboard.change_saved/save_failed/conflict_resolved events, catalog + tests, portal follow-up
+- [ ] Permission/concurrency/revision/contract/UI tests; typecheck; token guard; preview build
+- [ ] Append dated build record; report
+- [ ] Liam authenticated visual verification (may be blocked as before)

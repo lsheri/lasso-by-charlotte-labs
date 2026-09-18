@@ -8,6 +8,13 @@
       "when": 1789553457743,
       "tag": "0000_turns_content_trigram_index",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1789765423737,
+      "tag": "0001_canvas_lab_slice1_workboards",
+      "breakpoints": true
     }
   ]
 }

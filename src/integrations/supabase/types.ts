@@ -3337,6 +3337,414 @@ export type Database = {
           },
         ]
       }
+      workboard_frames: {
+        Row: {
+          created_at: string
+          created_by: string
+          deleted_at: string | null
+          h: number
+          id: string
+          key: string
+          kind: string
+          label: string | null
+          ord: number
+          task_id: string | null
+          updated_at: string
+          updated_by: string
+          version: number
+          w: number
+          workboard_id: string
+          x: number
+          y: number
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          deleted_at?: string | null
+          h?: number
+          id?: string
+          key: string
+          kind: string
+          label?: string | null
+          ord?: number
+          task_id?: string | null
+          updated_at?: string
+          updated_by: string
+          version?: number
+          w?: number
+          workboard_id: string
+          x?: number
+          y?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          deleted_at?: string | null
+          h?: number
+          id?: string
+          key?: string
+          kind?: string
+          label?: string | null
+          ord?: number
+          task_id?: string | null
+          updated_at?: string
+          updated_by?: string
+          version?: number
+          w?: number
+          workboard_id?: string
+          x?: number
+          y?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workboard_frames_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workboard_frames_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workboard_frames_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workboard_frames_workboard_id_fkey"
+            columns: ["workboard_id"]
+            isOneToOne: false
+            referencedRelation: "workboards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workboard_links: {
+        Row: {
+          author_profile_id: string
+          created_at: string
+          created_by: string
+          deleted_at: string | null
+          from_anchor: string
+          from_node_id: string
+          id: string
+          relation: string
+          to_anchor: string
+          to_node_id: string
+          updated_at: string
+          updated_by: string
+          version: number
+          workboard_id: string
+        }
+        Insert: {
+          author_profile_id: string
+          created_at?: string
+          created_by: string
+          deleted_at?: string | null
+          from_anchor?: string
+          from_node_id: string
+          id?: string
+          relation: string
+          to_anchor?: string
+          to_node_id: string
+          updated_at?: string
+          updated_by: string
+          version?: number
+          workboard_id: string
+        }
+        Update: {
+          author_profile_id?: string
+          created_at?: string
+          created_by?: string
+          deleted_at?: string | null
+          from_anchor?: string
+          from_node_id?: string
+          id?: string
+          relation?: string
+          to_anchor?: string
+          to_node_id?: string
+          updated_at?: string
+          updated_by?: string
+          version?: number
+          workboard_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workboard_links_author_profile_id_fkey"
+            columns: ["author_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workboard_links_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workboard_links_from_node_id_fkey"
+            columns: ["from_node_id"]
+            isOneToOne: false
+            referencedRelation: "workboard_nodes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workboard_links_to_node_id_fkey"
+            columns: ["to_node_id"]
+            isOneToOne: false
+            referencedRelation: "workboard_nodes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workboard_links_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workboard_links_workboard_id_fkey"
+            columns: ["workboard_id"]
+            isOneToOne: false
+            referencedRelation: "workboards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workboard_nodes: {
+        Row: {
+          author_profile_id: string
+          body: string
+          created_at: string
+          created_by: string
+          decision_id: string | null
+          deleted_at: string | null
+          frame_id: string | null
+          h: number
+          hidden: boolean
+          id: string
+          judgment_type: string | null
+          kind: string
+          title: string
+          updated_at: string
+          updated_by: string
+          version: number
+          w: number
+          work_item_id: string | null
+          workboard_id: string
+          x: number
+          y: number
+        }
+        Insert: {
+          author_profile_id: string
+          body?: string
+          created_at?: string
+          created_by: string
+          decision_id?: string | null
+          deleted_at?: string | null
+          frame_id?: string | null
+          h?: number
+          hidden?: boolean
+          id?: string
+          judgment_type?: string | null
+          kind: string
+          title?: string
+          updated_at?: string
+          updated_by: string
+          version?: number
+          w?: number
+          work_item_id?: string | null
+          workboard_id: string
+          x?: number
+          y?: number
+        }
+        Update: {
+          author_profile_id?: string
+          body?: string
+          created_at?: string
+          created_by?: string
+          decision_id?: string | null
+          deleted_at?: string | null
+          frame_id?: string | null
+          h?: number
+          hidden?: boolean
+          id?: string
+          judgment_type?: string | null
+          kind?: string
+          title?: string
+          updated_at?: string
+          updated_by?: string
+          version?: number
+          w?: number
+          work_item_id?: string | null
+          workboard_id?: string
+          x?: number
+          y?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workboard_nodes_author_profile_id_fkey"
+            columns: ["author_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workboard_nodes_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workboard_nodes_decision_id_fkey"
+            columns: ["decision_id"]
+            isOneToOne: false
+            referencedRelation: "decisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workboard_nodes_frame_id_fkey"
+            columns: ["frame_id"]
+            isOneToOne: false
+            referencedRelation: "workboard_frames"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workboard_nodes_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workboard_nodes_work_item_id_fkey"
+            columns: ["work_item_id"]
+            isOneToOne: false
+            referencedRelation: "work_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workboard_nodes_workboard_id_fkey"
+            columns: ["workboard_id"]
+            isOneToOne: false
+            referencedRelation: "workboards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workboard_revisions: {
+        Row: {
+          action: string
+          actor_profile_id: string
+          at: string
+          change: Json
+          entity_id: string
+          entity_kind: string
+          id: number
+          revision: number
+          workboard_id: string
+        }
+        Insert: {
+          action: string
+          actor_profile_id: string
+          at?: string
+          change?: Json
+          entity_id: string
+          entity_kind: string
+          id?: never
+          revision: number
+          workboard_id: string
+        }
+        Update: {
+          action?: string
+          actor_profile_id?: string
+          at?: string
+          change?: Json
+          entity_id?: string
+          entity_kind?: string
+          id?: never
+          revision?: number
+          workboard_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workboard_revisions_actor_profile_id_fkey"
+            columns: ["actor_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workboard_revisions_workboard_id_fkey"
+            columns: ["workboard_id"]
+            isOneToOne: false
+            referencedRelation: "workboards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workboards: {
+        Row: {
+          created_at: string
+          created_by: string
+          engagement_id: string
+          id: string
+          org_id: string
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          engagement_id: string
+          id?: string
+          org_id: string
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          engagement_id?: string
+          id?: string
+          org_id?: string
+          updated_at?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workboards_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workboards_engagement_id_fkey"
+            columns: ["engagement_id"]
+            isOneToOne: false
+            referencedRelation: "engagements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workboards_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -3420,6 +3828,7 @@ export type Database = {
         Returns: boolean
       }
       is_active_org: { Args: { o: string }; Returns: boolean }
+      is_engagement_editor: { Args: { eng: string }; Returns: boolean }
       is_engagement_member: { Args: { eng: string }; Returns: boolean }
       is_member_of: { Args: { p_org: string }; Returns: boolean }
       is_my_active_profile: { Args: { p: string }; Returns: boolean }
