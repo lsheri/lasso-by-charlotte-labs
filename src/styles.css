@@ -1249,7 +1249,11 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   background: var(--nb-paper);
 }
 @media (hover: none), (max-width: 767px) {
-  .canvas-lab-card-menu-trigger { opacity: 1; }
+  .canvas-lab-card-menu-trigger {
+    width: 44px;
+    height: 44px;
+    opacity: 1;
+  }
 }
 ::highlight(canvas-lab-selection) { background: var(--nb-green-wash); }
 

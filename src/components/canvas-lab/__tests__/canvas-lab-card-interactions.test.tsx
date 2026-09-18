@@ -11,6 +11,7 @@ describe("Canvas Lab card interaction correction", () => {
     expect(card).toContain("canvas-lab-card-paper");
     expect(card).toContain('data-side={side}');
     expect(card).toContain('aria-label={`Connect from ${side}`}');
+    expect(card).toContain('<Button key={side} type="button" size="icon" variant="ghost"');
     expect(styles).toContain('.canvas-lab-card-paper[data-selected="true"]');
     for (const side of ["top", "right", "bottom", "left"]) expect(styles).toContain(`data-side="${side}"`);
   });
@@ -22,6 +23,7 @@ describe("Canvas Lab card interaction correction", () => {
     expect(card).toContain('event.shiftKey && event.key === "F10"');
     expect(card).toContain('event.key === "ContextMenu"');
     expect(menu).toContain('aria-label="Open card menu"');
+    expect(read("src/styles.css")).toContain("width: 44px;");
     expect(menu).toContain("cardRef.current?.focus()");
     expect(menu).toContain("Remove from canvas");
     expect(menu).toContain("Delete local node");
