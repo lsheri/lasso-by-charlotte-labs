@@ -81,12 +81,12 @@
 
 ## Canvas Lab Phase 3 Slice 1 (approved 2026-09-18)
 - [x] Architect migration: workboards, workboard_frames, workboard_nodes, workboard_links, workboard_revisions (grants, RLS, constraints, indexes, atomic revision behavior)
-- [ ] Regenerate types
-- [ ] Typed contract + authenticated read/mutation server functions + query/mutation hook
-- [ ] Wire Canvas Lab to durable shared state with honest save/conflict/forbidden states
-- [ ] Save placement on drag end/keyboard move only
-- [ ] What-fed-this over explicit durable graph with permission filtering, cycle detection, bounded traversal
+- [x] Regenerate types
+- [x] Typed contract + authenticated read/mutation server functions + query/mutation hook
+- [x] Wire Canvas Lab to durable shared state with honest save/conflict/forbidden states
+- [x] Save placement on drag end/keyboard move only
+- [x] What-fed-this over explicit durable graph with permission filtering, cycle detection, bounded traversal
 - [x] Add workboard.change_saved/save_failed/conflict_resolved events, catalog + tests, portal follow-up
-- [ ] Permission/concurrency/revision/contract/UI tests; typecheck; token guard; preview build
-- [ ] Append dated build record; report
+- [x] Permission/concurrency/revision/contract/UI tests; typecheck; token guard; preview build
+- [x] Append dated build record; report
 - [ ] Liam authenticated visual verification (may be blocked as before)
