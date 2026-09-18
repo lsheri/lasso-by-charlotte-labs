@@ -242,3 +242,13 @@ Production `EngagementCanvasView`, `WhatFedThisButton`, AskDock, the landing pag
 - Exact focus depends on an existing stored turn or span locator. The review never invents one.
 - The hidden route remains unpublished.
 - The data portal requires the catalog follow-up listed above before these additive events are interpreted there.
+
+### Phase 2 reasoning-review correctness correction
+
+The Lab-only `What fed this` review no longer presents unrelated local notes as support for the open deliverable. A pure local graph helper starts from the reviewed Lab node and follows only explicit local relationships. Links are treated as undirected because the prototype relationship has no semantic direction label, and links with a missing endpoint are ignored.
+
+Human judgment now contains only persisted stitches returned by the existing permission-filtered audit read, local judgment nodes in that connected component, and local comments attached to the reviewed deliverable or another node in that component. Spatial proximity, shared frame, selected context, and node kind never imply a relationship. Every included local entry remains marked `Not saved`. Persisted stitches and explicitly sourced decisions are unchanged.
+
+No control, action, event, payload, surface, persistence, server call, consent behavior, database behavior, or portal requirement changed. Production provenance components and EngagementCanvasView were not changed.
+
+Verification: `bunx tsgo --noEmit` passed. The focused Canvas Lab model, second-pass, Phase 2, route, motion, and token suite passed 48 tests across 6 files. New model cases cover zero links, a direct link, a multi-hop component, a disconnected node, and a missing endpoint. The Phase 2 source regression confirms the review receives the anchor node ID and local links, then filters local judgments and comments through the connected set. The preview build completed successfully at 2026-09-18 20:23 UTC.
