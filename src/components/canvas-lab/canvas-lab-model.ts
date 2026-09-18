@@ -172,13 +172,21 @@ export function localNodeAnchor(frame: LabFrame, nodes: LabNode[], near?: Point)
 }
 
 let localCounter = 0;
+
+/** Random per-card key. Session counters would collide across visits. */
+export function newLabClientKey(): string {
+  const source = globalThis.crypto;
+  return `local:${source && "randomUUID" in source ? source.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`}`;
+}
+
 export function createLocalNode(kind: LabTemplateKind, frame: LabFrame, nodes: LabNode[], judgmentType?: LabJudgmentType): LabNode {
   localCounter += 1;
   const judgment = judgmentType ? JUDGMENT_TYPES.find((entry) => entry.value === judgmentType) : undefined;
   const label = judgment?.label ?? REASONING_STEPS.find((entry) => entry.kind === kind)?.label ?? "Local note";
   const at = localNodeAnchor(frame, nodes);
-  return { id: `local-node:${localCounter}`, kind, frame: frame.id, title: label, summary: "Add a short note.", typeLabel: label, ownership: "draft", ...(judgmentType ? { judgmentType } : {}), local: true, x: at.x, y: at.y };
+  return { id: `local-node:${localCounter}`, clientKey: newLabClientKey(), kind, frame: frame.id, title: label, summary: "Add a short note.", typeLabel: label, ownership: "draft", ...(judgmentType ? { judgmentType } : {}), local: true, x: at.x, y: at.y };
 }
+
 
 export function updateLocalNode(nodes: LabNode[], id: string, text: string): LabNode[] {
   return nodes.map((node) => node.id === id && node.local ? { ...node, summary: text } : node);
