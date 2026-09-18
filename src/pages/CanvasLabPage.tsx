@@ -358,14 +358,14 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
     const element = document.elementFromPoint(event.clientX, event.clientY) as HTMLElement | null;
     const anchorElement = element?.closest<HTMLElement>("[data-side][data-node-id]");
     const cardElement = element?.closest<HTMLElement>("[data-testid^='lab-card-']");
-    const targetId = anchorElement?.dataset.nodeId ?? cardElement?.dataset.nodeId;
+    const targetId = anchorElement?.dataset["nodeId"] ?? cardElement?.dataset["nodeId"];
     const target = visibleNodes.find((node) => node.id === targetId);
     if (!target) {
       noteWorkboardRelationship(orgId, "cancelled");
       setAnnouncement("Connection cancelled.");
       return;
     }
-    const explicitSide = anchorElement?.dataset.side as LabAnchor | undefined;
+    const explicitSide = anchorElement?.dataset["side"] as LabAnchor | undefined;
     const height = cardHeightsRef.current.get(target.id) ?? 108;
     const targetAnchor = explicitSide ?? nearestLabAnchor(stagePoint(event.clientX, event.clientY), target, height);
     createConnection(source.nodeId, source.anchor, target.id, targetAnchor);

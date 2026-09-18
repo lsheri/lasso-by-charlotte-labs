@@ -1,10 +1,3 @@
-## Card interaction correction
-
-- Replaced the permanent card action tray and global Connect mode with four card-edge connection anchors and one compact contextual menu.
-- Pointer drag from an anchor previews a green local relationship. Keyboard or click activation provides a two-step source and target path. Stored local relationships now retain their source and target sides.
-- Right-click, Shift+F10, the Context Menu key, and the paper-corner ellipsis open the same ownership-aware actions. The selected outline now follows only the paper boundary.
-- Added `workboard.card_menu_opened` with closed dimensions `{ node_kind, ownership }`. It uses the existing consent-stamped event path, remains workspace-only at tier t0, and requires a matching portal catalog update.
-- No consent, database, schema, RLS, server, production canvas, provenance, landing-page, AskDock, persistence, deployment, or publishing change was made.
 # Canvas Lab Build Notes
 
 - Built from: ChatGPT Sol

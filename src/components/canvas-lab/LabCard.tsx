@@ -68,7 +68,7 @@ export function LabCard({
 }) {
   const cardRef = useRef<HTMLDivElement | null>(null);
   const paperRef = useRef<HTMLDivElement | null>(null);
-  const anchorDownRef = useRef<Point | null>(null);
+  const anchorDownRef = useRef<{ x: number; y: number } | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {

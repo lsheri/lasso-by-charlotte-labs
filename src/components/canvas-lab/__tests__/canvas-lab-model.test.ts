@@ -12,7 +12,10 @@ import {
   createLabFrames,
   draftAnchor,
   fitScale,
+  labAnchorPoint,
+  labConnectorPath,
   moveNode,
+  nearestLabAnchor,
   removeContext,
   resetChatCounter,
   resetCommentCounter,
@@ -209,6 +212,17 @@ describe("canvas lab model", () => {
     expect(created.error).toBeNull();
     expect(addLabLink(created.links, "a", "right", "b", "left").error).toContain("already connected");
     expect(addLabLink(created.links, "a", "bottom", "b", "top").error).toBeNull();
+  });
+
+  it("resolves anchored card edges and deterministic nearest sides", () => {
+    const node = { x: 100, y: 200 };
+    expect(labAnchorPoint(node, "top", 120)).toEqual({ x: 216, y: 200 });
+    expect(labAnchorPoint(node, "right", 120)).toEqual({ x: 332, y: 260 });
+    expect(labAnchorPoint(node, "bottom", 120)).toEqual({ x: 216, y: 320 });
+    expect(labAnchorPoint(node, "left", 120)).toEqual({ x: 100, y: 260 });
+    expect(nearestLabAnchor({ x: 340, y: 260 }, node, 120)).toBe("right");
+    expect(nearestLabAnchor({ x: 216, y: 190 }, node, 120)).toBe("top");
+    expect(labConnectorPath({ x: 0, y: 0 }, "right", { x: 100, y: 100 }, "left")).toContain("C 64 0, 36 100");
   });
 
   it("returns only the anchor when there are no local links", () => {
