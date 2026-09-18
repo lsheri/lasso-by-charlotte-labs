@@ -274,23 +274,21 @@ export async function applyWorkboardCommand(
   }
 
   if (command.type === "node_create") {
-    // Slice 1: coaches read already-permitted sources but never rearrange the
-    // shared structure; placement and authored cards belong to other members.
-    if (!membership.isEditor) return { status: "forbidden" };
     const invalid = validNodeInput(command.node);
     if (invalid) return { status: "validation_error", message: invalid };
     const frameId = command.node.frameKey ? await frameIdForKey(db, board.id, command.node.frameKey) : null;
-    const { data, error } = await db
-      .from("workboard_nodes")
-      .insert(nodeInsert(board.id, profile.id, command.node, frameId))
-      .select("id, version")
-      .single();
-    if (error || !data) return { status: "validation_error", message: "The card could not be saved." };
-    return { status: "saved", boardId: board.id, boardVersion: board.version, created: { nodeId: data.id }, versions: { [data.id]: data.version } };
+    const saved = await insertNodeIdempotent(db, board.id, profile.id, command.node, frameId);
+    if (!saved) return { status: "validation_error", message: "The card could not be saved." };
+    return { status: "saved", boardId: board.id, boardVersion: board.version, created: { nodeId: saved.id }, versions: { [saved.id]: saved.version } };
   }
 
   if (command.type === "node_update" || command.type === "node_archive" || command.type === "node_restore") {
-    if (!membership.isEditor) return { status: "forbidden" };
+    // Authored judgment and draft cards answer only to their author, archive
+    // and restore included. Canonical reference cards are shared structure.
+    const owner = (await db.from("workboard_nodes").select("kind, author_profile_id").eq("id", command.nodeId).eq("workboard_id", board.id).maybeSingle()).data;
+    if (owner && (owner.kind === "judgment" || owner.kind === "draft") && owner.author_profile_id !== profile.id) {
+      return { status: "forbidden" };
+    }
     const patch =
       command.type === "node_update"
         ? { ...definedPatch(command.patch), ...stamp }
@@ -298,6 +296,7 @@ export async function applyWorkboardCommand(
     const { data, error } = await db
       .from("workboard_nodes")
       .update(patch)
+
       .eq("id", command.nodeId)
       .eq("workboard_id", board.id)
       .eq("version", command.expectedVersion)
