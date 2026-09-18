@@ -55,6 +55,7 @@ describe("Canvas Lab Phase 2", () => {
 
   it("opens the Lab-only review without the production confirmation flow", () => {
     const review = read("src/components/canvas-lab/CanvasLabReview.tsx");
+    const page = read("src/pages/CanvasLabPage.tsx");
     expect(review).toContain("getSpanAudit");
     expect(review).toContain("getRenditionUrl");
     expect(review).toContain("Context");
@@ -64,6 +65,11 @@ describe("Canvas Lab Phase 2", () => {
     expect(review).not.toContain("AnalysisConfirm");
     expect(review).not.toContain("draftLineage");
     expect(review).not.toContain("reviewLink");
+    expect(review).toContain("connectedLabNodeIds(nodes, links, anchorNodeId)");
+    expect(review).toContain('node.kind === "judgment" && connectedNodeIds.has(node.id)');
+    expect(review).toContain("connectedNodeIds.has(comment.nodeId)");
+    expect(review).not.toContain('nodes.filter((node) => node.kind === "judgment").map');
+    expect(page).toContain("anchorNodeId={reviewNode.id} links={links}");
   });
 
   it("uses green Lab emphasis and leaves production canvas untouched", () => {

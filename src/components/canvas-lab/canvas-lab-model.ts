@@ -191,6 +191,33 @@ export function removeLabLink(links: LabLink[], id: string): LabLink[] {
 }
 
 /**
+ * Local records that are explicitly related to one anchor. Review treats the
+ * current unlabelled links as undirected and ignores links with missing ends.
+ */
+export function connectedLabNodeIds(nodes: LabNode[], links: LabLink[], anchorId: string): Set<string> {
+  const nodeIds = new Set(nodes.map((node) => node.id));
+  if (!nodeIds.has(anchorId)) return new Set();
+  const neighbours = new Map<string, string[]>();
+  for (const link of links) {
+    if (!nodeIds.has(link.fromId) || !nodeIds.has(link.toId)) continue;
+    neighbours.set(link.fromId, [...(neighbours.get(link.fromId) ?? []), link.toId]);
+    neighbours.set(link.toId, [...(neighbours.get(link.toId) ?? []), link.fromId]);
+  }
+  const connected = new Set([anchorId]);
+  const pending = [anchorId];
+  while (pending.length > 0) {
+    const current = pending.shift();
+    if (!current) continue;
+    for (const neighbour of neighbours.get(current) ?? []) {
+      if (connected.has(neighbour)) continue;
+      connected.add(neighbour);
+      pending.push(neighbour);
+    }
+  }
+  return connected;
+}
+
+/**
  * The opening arrangement. Real content first, in the frame that explains it.
  * A frame with nothing in it still renders, so an absent kind reads as empty
  * rather than missing.

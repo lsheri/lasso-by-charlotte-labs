@@ -4,6 +4,7 @@ import {
   actionsFor,
   branchChatNode,
   addLabLink,
+  connectedLabNodeIds,
   createLocalNode,
   deleteLocalNode,
   createChatNode,
@@ -207,5 +208,41 @@ describe("canvas lab model", () => {
     const created = addLabLink([], "a", "b");
     expect(created.error).toBeNull();
     expect(addLabLink(created.links, "a", "b").error).toContain("already connected");
+  });
+
+  it("returns only the anchor when there are no local links", () => {
+    const nodes = seedCanvas(SEED);
+    expect([...connectedLabNodeIds(nodes, [], "work:w3")]).toEqual(["work:w3"]);
+  });
+
+  it("includes a directly linked node in either link direction", () => {
+    const nodes = seedCanvas(SEED);
+    const links = [{ id: "l1", fromId: "work:w1", toId: "work:w3" }];
+    expect(connectedLabNodeIds(nodes, links, "work:w3")).toEqual(new Set(["work:w3", "work:w1"]));
+  });
+
+  it("walks the full multi-hop local connected component", () => {
+    const nodes = seedCanvas(SEED);
+    const links = [
+      { id: "l1", fromId: "work:w3", toId: "work:w1" },
+      { id: "l2", fromId: "work:w1", toId: "work:w2" },
+    ];
+    expect(connectedLabNodeIds(nodes, links, "work:w3")).toEqual(new Set(["work:w3", "work:w1", "work:w2"]));
+  });
+
+  it("excludes disconnected local nodes", () => {
+    const nodes = seedCanvas(SEED);
+    const links = [{ id: "l1", fromId: "work:w3", toId: "work:w1" }];
+    expect(connectedLabNodeIds(nodes, links, "work:w3").has("work:w2")).toBe(false);
+  });
+
+  it("ignores links whose endpoint is missing", () => {
+    const nodes = seedCanvas(SEED);
+    const links = [
+      { id: "l1", fromId: "work:w3", toId: "missing" },
+      { id: "l2", fromId: "missing", toId: "work:w1" },
+    ];
+    expect([...connectedLabNodeIds(nodes, links, "work:w3")]).toEqual(["work:w3"]);
+    expect(connectedLabNodeIds(nodes, links, "missing")).toEqual(new Set());
   });
 });
