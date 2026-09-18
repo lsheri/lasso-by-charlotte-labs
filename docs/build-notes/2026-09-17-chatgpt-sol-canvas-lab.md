@@ -99,3 +99,10 @@ The AI connection is intentionally off: chat and summarize show the user's promp
 - When a branched chat inherits the full context versus the selected context only.
 - Which connectors matter first, including Granola/Fathom and LLM conversation imports.
 - Whether the canvas replaces the engagement tabs or opens full screen from them.
+
+## 11. Post-build routing correction — 2026-09-18 UTC
+
+- The first route file, `src/routes/_authenticated/engagements.$id.canvas-lab.tsx`, was accidentally generated as a child of the engagement detail route `engagements.$id.tsx`.
+- The engagement detail route renders EngagementPage directly and has no Outlet, so visiting `/engagements/{id}/canvas-lab` displayed the normal engagement screen instead of CanvasLabPage.
+- The route was moved to TanStack Router's non-nested filename convention, `src/routes/_authenticated/engagements.$id_.canvas-lab.tsx`, keeping the public URL exactly `/engagements/$id/canvas-lab`. The generated route tree now parents Canvas Lab to the authenticated layout, and the engagement detail route is unchanged with no children.
+- Lesson for future routes: verify route parentage in `src/routeTree.gen.ts` (the `parentRoute` field), not only that the path string exists. A focused regression test, `src/routes/__tests__/canvas-lab-route.test.ts`, now asserts the parentage, the preserved URL, and the absence of the old nested file.

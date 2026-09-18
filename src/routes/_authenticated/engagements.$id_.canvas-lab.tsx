@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { CanvasLabPage } from "@/pages/CanvasLabPage";
 
-export const Route = createFileRoute("/_authenticated/engagements/$id/canvas-lab")({
+export const Route = createFileRoute("/_authenticated/engagements/$id_/canvas-lab")({
   head: () => ({
     meta: [
       { title: "Canvas Lab | Lasso" },
