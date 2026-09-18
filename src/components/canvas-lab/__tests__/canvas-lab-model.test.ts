@@ -12,11 +12,13 @@ import {
   createLabFrames,
   draftAnchor,
   fitScale,
+  fitFrameToNodes,
   labAnchorPoint,
   labConnectorPath,
   moveNode,
   nearestLabAnchor,
   removeContext,
+  resizeLabRect,
   resetChatCounter,
   resetCommentCounter,
   seedCanvas,
@@ -215,7 +217,7 @@ describe("canvas lab model", () => {
   });
 
   it("resolves anchored card edges and deterministic nearest sides", () => {
-    const node = { x: 100, y: 200 };
+    const node = { x: 100, y: 200, width: 232 };
     expect(labAnchorPoint(node, "top", 120)).toEqual({ x: 216, y: 200 });
     expect(labAnchorPoint(node, "right", 120)).toEqual({ x: 332, y: 260 });
     expect(labAnchorPoint(node, "bottom", 120)).toEqual({ x: 216, y: 320 });
@@ -223,6 +225,24 @@ describe("canvas lab model", () => {
     expect(nearestLabAnchor({ x: 340, y: 260 }, node, 120)).toBe("right");
     expect(nearestLabAnchor({ x: 216, y: 190 }, node, 120)).toBe("top");
     expect(labConnectorPath({ x: 0, y: 0 }, "right", { x: 100, y: 100 }, "left")).toContain("C 64 0, 36 100");
+  });
+
+  it("resizes from every corner with minimums and optional aspect ratio", () => {
+    const start = { x: 100, y: 100, width: 232, height: 116 };
+    expect(resizeLabRect(start, "se", { x: 40, y: 20 })).toEqual({ x: 100, y: 100, width: 272, height: 136 });
+    expect(resizeLabRect(start, "nw", { x: 40, y: 20 })).toEqual({ x: 140, y: 104, width: 192, height: 112 });
+    expect(resizeLabRect(start, "ne", { x: 40, y: 20 }, true).width / resizeLabRect(start, "ne", { x: 40, y: 20 }, true).height).toBeCloseTo(2);
+  });
+
+  it("fits a frame around only its member cards", () => {
+    const frame = createLabFrames(SEED.tasks)[1];
+    expect(frame).toBeDefined();
+    if (!frame) return;
+    const members = seedCanvas(SEED).filter((node) => node.frame === frame.id);
+    const fitted = fitFrameToNodes(frame, members);
+    expect(fitted).not.toBeNull();
+    expect(fitted?.width).toBeGreaterThanOrEqual(260);
+    expect(fitFrameToNodes(frame, [])).toBeNull();
   });
 
   it("returns only the anchor when there are no local links", () => {

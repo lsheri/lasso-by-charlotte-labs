@@ -14,6 +14,18 @@ describe("Canvas Lab card interaction correction", () => {
     expect(card).toContain('<Button key={side} type="button" size="icon" variant="ghost"');
     expect(styles).toContain('.canvas-lab-card-paper[data-selected="true"]');
     for (const side of ["top", "right", "bottom", "left"]) expect(styles).toContain(`data-side="${side}"`);
+    expect(card).toContain("canvas-lab-resize-handle");
+    expect(styles).toContain("width: 8px;");
+    expect(styles).toContain('data-corner="nw"');
+  });
+
+  it("keeps resize, structure, and reassignment bounded to the workboard", () => {
+    const page = read("src/pages/CanvasLabPage.tsx");
+    expect(page).toContain('useState<LabStructureMode>("structured")');
+    expect(page).toContain('noteWorkboardStructureToggled(orgId, "freeform")');
+    expect(page).toContain('noteWorkboardElementResized(orgId, "card"');
+    expect(page).toContain('frameId: durableTarget');
+    expect(page).not.toContain("frameWithChildren");
   });
 
   it("opens one shared ownership-aware menu from pointer and keyboard paths", () => {
