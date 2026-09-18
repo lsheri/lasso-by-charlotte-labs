@@ -115,9 +115,15 @@ The second pass reframed Canvas Lab as an Engagement Workboard rather than a gen
 
 ### Controls before and after
 
-Before: Back; example presence; Cards/Live; fit and zoom; pan; select, move, open, branch; permanent ownership legend; composer and instruction toggle; narrow list; focused reader; local passage notes, summarize, and branch.
+Before, EngagementPage: Brief & Comms, Work, Canvas, and Share view controls; the Canvas branch rendered EngagementCanvasView. EngagementCanvasView provided WorkNote opening, pointer and keyboard movement, link drawing/review/removal, zoom/reset, shelf placement, and draft, empty, loading, and data states. It emitted `canvas.opened` with banded `node_band`, `link_band`, and `shelf_band`, plus `canvas.zoomed` with `direction` and `method`. EngagementPage emitted `engagement.view_changed` when the view changed.
 
-After: the existing production Canvas controls and states remain unchanged, with one new `Open workboard` link above it. The Workboard keeps back/menu, fit and zoom, pan, select, move, preview, focus, branch, local context, draft threads, notes, and the narrow fallback. It removes example presence, the permanent legend, and Cards/Live. It adds a local menu drawer, local Add workstream control, six prompt starters, and compact instructions.
+Before, Canvas Lab: Back; example presence; Cards/Live; fit and zoom; pan; select, move, open, and branch; permanent ownership legend; context removal; composer submit; instruction toggle and local instruction text; narrow list; focused reader close, summarize, branch, passage selection, note body, and note submit. Its states were loading, desktop board, narrow list, focused reader, selected context, local comments, local instructions, local draft threads, pan, zoom, drag, and keyboard focus. It emitted no events.
+
+After, EngagementPage and EngagementCanvasView: every existing control, render state, server action, and event above remains. One `Open workboard` link appears above the existing Canvas.
+
+After, Workboard: menu open/close/Escape and role-appropriate navigation; back to engagement; fit, zoom in, zoom out, modifier-wheel zoom, and pan; local Add workstream; card drag and keyboard movement; Use as context/Remove context; Preview; teammate and draft Branch; context chip removal; six starter prompts; instruction drawer and local instruction text; Add draft thread; focused reader close, summarize, branch, source tracing for deliverables, passage selection, note body, and note submit. Its states are opening, reduced-motion opening status, loading, error, empty, populated board, menu open, focused reader, selected context, local comments, local instructions, local workstreams, local draft threads, pan, zoom, drag, keyboard focus, and narrow-screen guidance. Example presence, the permanent legend, and Cards/Live are absent.
+
+After telemetry: Workboard mount calls existing `noteCanvasOpenedFn` once with `{ nodes: <local node count>, links: 0, shelf: 0, profile_id }`. That path continues to emit `canvas.opened` through `recordEvent`, which applies the existing consent stamp and bands those three counts. No other Workboard action emits an event.
 
 ### Data and consent impact
 
