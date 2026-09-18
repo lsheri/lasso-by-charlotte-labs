@@ -72,7 +72,9 @@
   - Blocked: minting the required Liam session needs approval unavailable in this build context. No other account was substituted.
 
 ## Canvas Lab card interaction correction
-- [ ] Replace the permanent card action tray and global Connect mode with card anchors and one contextual menu
-- [ ] Preserve existing card actions, local relationship removal, and ownership safeguards
-- [ ] Add the consent-stamped card-menu event and document the portal catalog follow-up
-- [ ] Run focused interaction/model/event tests, token guard, typecheck, and preview verification
+- [x] Replace the permanent card action tray and global Connect mode with card anchors and one contextual menu
+- [x] Preserve existing card actions, local relationship removal, and ownership safeguards
+- [x] Add the consent-stamped card-menu event and document the portal catalog follow-up
+- [x] Run focused interaction/model/event tests, token guard, and typecheck
+- [ ] Verify the authenticated desktop and narrow-screen experience in the preview
+  - Blocked unless the required Liam preview session is available. No other account will be substituted.
