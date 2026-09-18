@@ -71,8 +71,6 @@ function frameDto(row: FrameRow): WorkboardFrameDto {
     y: row.y,
     w: row.w,
     h: row.h,
-    w: row.w,
-    h: row.h,
     ord: row.ord,
     version: row.version,
   };
@@ -138,6 +136,8 @@ export async function loadWorkboard(db: Db, engagementId: string, profile: Resol
     judgmentType: (row.judgment_type as WorkboardNodeDto["judgmentType"]) ?? null,
     x: row.x,
     y: row.y,
+    w: row.w,
+    h: row.h,
     hidden: row.hidden,
     version: row.version,
     referenceReadable: true,
@@ -185,6 +185,20 @@ function validNodeInput(node: WorkboardNodeInput): string | null {
   return null;
 }
 
+function validFrameGeometry(frame: { x?: number; y?: number; w?: number; h?: number }): boolean {
+  const values = [frame.x, frame.y, frame.w, frame.h].filter((value): value is number => value !== undefined);
+  if (!values.every(Number.isFinite)) return false;
+  if (frame.w !== undefined && (frame.w < 260 || frame.w > 2400)) return false;
+  return frame.h === undefined || (frame.h >= 220 && frame.h <= 1800);
+}
+
+function validNodeGeometry(node: { x?: number; y?: number; w?: number; h?: number }): boolean {
+  const values = [node.x, node.y, node.w, node.h].filter((value): value is number => value !== undefined);
+  if (!values.every(Number.isFinite)) return false;
+  if (node.w !== undefined && (node.w < 180 || node.w > 520)) return false;
+  return node.h === undefined || (node.h >= 112 && node.h <= 520);
+}
+
 export async function applyWorkboardCommand(
   db: Db,
   engagementId: string,
@@ -205,6 +219,7 @@ export async function applyWorkboardCommand(
 
   if (command.type === "materialize") {
     if (!membership.isEditor) return { status: "forbidden" };
+    if (command.frames.some((frame) => !validFrameGeometry(frame))) return { status: "validation_error", message: "Workstream dimensions are outside the supported range." };
     const existingFrames = (await db.from("workboard_frames").select("id, key").eq("workboard_id", board.id).is("deleted_at", null)).data ?? [];
     const frameIdByKey = new Map(existingFrames.map((row) => [row.key, row.id]));
     const missingFrames = command.frames.filter((frame) => !frameIdByKey.has(frame.key));
@@ -245,6 +260,7 @@ export async function applyWorkboardCommand(
 
   if (command.type === "frame_create") {
     if (!membership.isEditor) return { status: "forbidden" };
+    if (!validFrameGeometry(command.frame)) return { status: "validation_error", message: "Workstream dimensions are outside the supported range." };
     const { data, error } = await db
       .from("workboard_frames")
       .insert(frameInsert(board.id, profile.id, command.frame))
@@ -256,6 +272,7 @@ export async function applyWorkboardCommand(
 
   if (command.type === "frame_update" || command.type === "frame_archive" || command.type === "frame_restore") {
     if (!membership.isEditor) return { status: "forbidden" };
+    if (command.type === "frame_update" && !validFrameGeometry(command.patch)) return { status: "validation_error", message: "Workstream dimensions are outside the supported range." };
     const patch =
       command.type === "frame_update"
         ? { ...definedPatch(command.patch), ...stamp }
@@ -291,6 +308,11 @@ export async function applyWorkboardCommand(
     const owner = (await db.from("workboard_nodes").select("kind, author_profile_id").eq("id", command.nodeId).eq("workboard_id", board.id).maybeSingle()).data;
     if (owner && (owner.kind === "judgment" || owner.kind === "draft") && owner.author_profile_id !== profile.id) {
       return { status: "forbidden" };
+    }
+    if (command.type === "node_update" && !validNodeGeometry(command.patch)) return { status: "validation_error", message: "Card dimensions are outside the supported range." };
+    if (command.type === "node_update" && command.patch.frameId) {
+      const target = (await db.from("workboard_frames").select("id").eq("id", command.patch.frameId).eq("workboard_id", board.id).is("deleted_at", null).maybeSingle()).data;
+      if (!target) return { status: "validation_error", message: "That workstream is not on this workboard." };
     }
     const patch =
       command.type === "node_update"

@@ -98,12 +98,6 @@ describe("applyDurableBoard", () => {
     expect(merged.links[0]).toMatchObject({ fromId: "brief", toId: "work:work-1", durableId: "link-1", relation: "informed" });
   });
 
-  it("registers content-free resize and local structure events", () => {
-    expect(catalog).toContain('"workboard.element_resized"');
-    expect(catalog).toContain('"workboard.structure_toggled"');
-    expect(helpers).toContain('{ element_kind: elementKind, method, axis }');
-    expect(helpers).toContain('{ state }');
-  });
 });
 
 describe("inboundLabNodeIds", () => {
@@ -149,5 +143,12 @@ describe("phase 3 persistence events", () => {
       expect(helpers).toContain(`export function ${name}`);
     }
     expect(helpers).not.toContain("body");
+  });
+
+  it("registers content-free resize and local structure events", () => {
+    expect(catalog).toContain('"workboard.element_resized"');
+    expect(catalog).toContain('"workboard.structure_toggled"');
+    expect(helpers).toContain('{ element_kind: elementKind, method, axis }');
+    expect(helpers).toContain('{ state }');
   });
 });
