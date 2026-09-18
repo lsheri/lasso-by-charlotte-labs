@@ -200,13 +200,15 @@ export function labAnchorPoint(node: Pick<LabNode, "x" | "y">, side: LabAnchor, 
 
 export function nearestLabAnchor(point: Point, node: Pick<LabNode, "x" | "y">, height: number): LabAnchor {
   const sides: LabAnchor[] = ["top", "right", "bottom", "left"];
+  const first = sides[0];
+  if (!first) return "top";
   return sides.reduce((nearest, side) => {
     const candidate = labAnchorPoint(node, side, height);
     const current = labAnchorPoint(node, nearest, height);
     const candidateDistance = Math.hypot(point.x - candidate.x, point.y - candidate.y);
     const currentDistance = Math.hypot(point.x - current.x, point.y - current.y);
     return candidateDistance < currentDistance ? side : nearest;
-  }, sides[0]);
+  }, first);
 }
 
 export function labConnectorPath(from: Point, fromSide: LabAnchor, to: Point, toSide: LabAnchor): string {

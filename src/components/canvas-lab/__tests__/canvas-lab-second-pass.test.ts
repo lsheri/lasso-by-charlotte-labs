@@ -11,6 +11,20 @@ describe("Canvas Lab second prototype pass", () => {
     expect(page).not.toContain("example:teammate");
     expect(page).not.toContain("Cards/Live");
     expect(page).not.toContain("PermissionLegend");
+    expect(page).not.toContain('>Connect</Button>');
+    expect(page).not.toContain("connectMode");
+  });
+
+  it("uses card-edge anchors and a contextual menu instead of a permanent tray", () => {
+    const card = read("src/components/canvas-lab/LabCard.tsx");
+    const menu = read("src/components/canvas-lab/LabCardMenu.tsx");
+    expect(card).toContain('const anchors: LabAnchor[] = ["top", "right", "bottom", "left"]');
+    expect(card).toContain("canvas-lab-card-paper");
+    expect(card).toContain("<LabCardMenu");
+    expect(card).not.toContain('className="mt-1 flex flex-wrap');
+    expect(menu).toContain("Use as context");
+    expect(menu).toContain("Remove from canvas");
+    expect(menu).toContain("Delete local node");
   });
 
   it("keeps all six contextual prompt starters", () => {
