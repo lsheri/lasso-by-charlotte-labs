@@ -50,7 +50,7 @@ import { Route as ApiCoachChatStreamRouteImport } from './routes/api/coach-chat.
 import { Route as ApiMcpTokenRouteImport } from './routes/api/mcp.$token'
 import { Route as ApiReflectStreamRouteImport } from './routes/api/reflect.stream'
 import { Route as AuthenticatedCoachingEngagementIdSubjectIdRouteImport } from './routes/_authenticated/coaching.$engagementId.$subjectId'
-import { Route as AuthenticatedEngagementsIdCanvasLabRouteImport } from './routes/_authenticated/engagements.$id.canvas-lab'
+import { Route as AuthenticatedEngagementsIdCanvasLabRouteImport } from './routes/_authenticated/engagements.$id_.canvas-lab'
 import { Route as ApiPublicHooksEgressSweepRouteImport } from './routes/api/public/hooks/egress-sweep'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
@@ -269,9 +269,9 @@ const AuthenticatedCoachingEngagementIdSubjectIdRoute =
   } as any)
 const AuthenticatedEngagementsIdCanvasLabRoute =
   AuthenticatedEngagementsIdCanvasLabRouteImport.update({
-    id: '/canvas-lab',
-    path: '/canvas-lab',
-    getParentRoute: () => AuthenticatedEngagementsIdRoute,
+    id: '/engagements/$id_/canvas-lab',
+    path: '/engagements/$id/canvas-lab',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const ApiPublicHooksEgressSweepRoute =
   ApiPublicHooksEgressSweepRouteImport.update({
@@ -329,7 +329,7 @@ export interface FileRoutesByFullPath {
   '/join/edu': typeof JoinEduRoute
   '/clients/$id': typeof AuthenticatedClientsIdRoute
   '/design/icons': typeof AuthenticatedDesignIconsRoute
-  '/engagements/$id': typeof AuthenticatedEngagementsIdRouteWithChildren
+  '/engagements/$id': typeof AuthenticatedEngagementsIdRoute
   '/qa/seed': typeof AuthenticatedQaSeedRoute
   '/api/analysis/stream': typeof ApiAnalysisStreamRoute
   '/api/coach-chat/stream': typeof ApiCoachChatStreamRoute
@@ -376,7 +376,7 @@ export interface FileRoutesByTo {
   '/join/edu': typeof JoinEduRoute
   '/clients/$id': typeof AuthenticatedClientsIdRoute
   '/design/icons': typeof AuthenticatedDesignIconsRoute
-  '/engagements/$id': typeof AuthenticatedEngagementsIdRouteWithChildren
+  '/engagements/$id': typeof AuthenticatedEngagementsIdRoute
   '/qa/seed': typeof AuthenticatedQaSeedRoute
   '/api/analysis/stream': typeof ApiAnalysisStreamRoute
   '/api/coach-chat/stream': typeof ApiCoachChatStreamRoute
@@ -425,7 +425,7 @@ export interface FileRoutesById {
   '/join_/edu': typeof JoinEduRoute
   '/_authenticated/clients/$id': typeof AuthenticatedClientsIdRoute
   '/_authenticated/design/icons': typeof AuthenticatedDesignIconsRoute
-  '/_authenticated/engagements/$id': typeof AuthenticatedEngagementsIdRouteWithChildren
+  '/_authenticated/engagements/$id': typeof AuthenticatedEngagementsIdRoute
   '/_authenticated/qa/seed': typeof AuthenticatedQaSeedRoute
   '/api/analysis/stream': typeof ApiAnalysisStreamRoute
   '/api/coach-chat/stream': typeof ApiCoachChatStreamRoute
@@ -433,7 +433,7 @@ export interface FileRoutesById {
   '/api/reflect/stream': typeof ApiReflectStreamRoute
   '/_authenticated/coaching/': typeof AuthenticatedCoachingIndexRoute
   '/_authenticated/coaching/$engagementId/$subjectId': typeof AuthenticatedCoachingEngagementIdSubjectIdRoute
-  '/_authenticated/engagements/$id/canvas-lab': typeof AuthenticatedEngagementsIdCanvasLabRoute
+  '/_authenticated/engagements/$id_/canvas-lab': typeof AuthenticatedEngagementsIdCanvasLabRoute
   '/api/public/hooks/egress-sweep': typeof ApiPublicHooksEgressSweepRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -577,7 +577,7 @@ export interface FileRouteTypes {
     | '/api/reflect/stream'
     | '/_authenticated/coaching/'
     | '/_authenticated/coaching/$engagementId/$subjectId'
-    | '/_authenticated/engagements/$id/canvas-lab'
+    | '/_authenticated/engagements/$id_/canvas-lab'
     | '/api/public/hooks/egress-sweep'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -895,12 +895,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCoachingEngagementIdSubjectIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/engagements/$id/canvas-lab': {
-      id: '/_authenticated/engagements/$id/canvas-lab'
-      path: '/canvas-lab'
+    '/_authenticated/engagements/$id_/canvas-lab': {
+      id: '/_authenticated/engagements/$id_/canvas-lab'
+      path: '/engagements/$id/canvas-lab'
       fullPath: '/engagements/$id/canvas-lab'
       preLoaderRoute: typeof AuthenticatedEngagementsIdCanvasLabRouteImport
-      parentRoute: typeof AuthenticatedEngagementsIdRoute
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/api/public/hooks/egress-sweep': {
       id: '/api/public/hooks/egress-sweep'
@@ -933,21 +933,6 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface AuthenticatedEngagementsIdRouteChildren {
-  AuthenticatedEngagementsIdCanvasLabRoute: typeof AuthenticatedEngagementsIdCanvasLabRoute
-}
-
-const AuthenticatedEngagementsIdRouteChildren: AuthenticatedEngagementsIdRouteChildren =
-  {
-    AuthenticatedEngagementsIdCanvasLabRoute:
-      AuthenticatedEngagementsIdCanvasLabRoute,
-  }
-
-const AuthenticatedEngagementsIdRouteWithChildren =
-  AuthenticatedEngagementsIdRoute._addFileChildren(
-    AuthenticatedEngagementsIdRouteChildren,
-  )
-
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAffiliationRoute: typeof AuthenticatedAffiliationRoute
   AuthenticatedAiRecordRoute: typeof AuthenticatedAiRecordRoute
@@ -971,10 +956,11 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedWorkRoute: typeof AuthenticatedWorkRoute
   AuthenticatedClientsIdRoute: typeof AuthenticatedClientsIdRoute
   AuthenticatedDesignIconsRoute: typeof AuthenticatedDesignIconsRoute
-  AuthenticatedEngagementsIdRoute: typeof AuthenticatedEngagementsIdRouteWithChildren
+  AuthenticatedEngagementsIdRoute: typeof AuthenticatedEngagementsIdRoute
   AuthenticatedQaSeedRoute: typeof AuthenticatedQaSeedRoute
   AuthenticatedCoachingIndexRoute: typeof AuthenticatedCoachingIndexRoute
   AuthenticatedCoachingEngagementIdSubjectIdRoute: typeof AuthenticatedCoachingEngagementIdSubjectIdRoute
+  AuthenticatedEngagementsIdCanvasLabRoute: typeof AuthenticatedEngagementsIdCanvasLabRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -1000,11 +986,13 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedWorkRoute: AuthenticatedWorkRoute,
   AuthenticatedClientsIdRoute: AuthenticatedClientsIdRoute,
   AuthenticatedDesignIconsRoute: AuthenticatedDesignIconsRoute,
-  AuthenticatedEngagementsIdRoute: AuthenticatedEngagementsIdRouteWithChildren,
+  AuthenticatedEngagementsIdRoute: AuthenticatedEngagementsIdRoute,
   AuthenticatedQaSeedRoute: AuthenticatedQaSeedRoute,
   AuthenticatedCoachingIndexRoute: AuthenticatedCoachingIndexRoute,
   AuthenticatedCoachingEngagementIdSubjectIdRoute:
     AuthenticatedCoachingEngagementIdSubjectIdRoute,
+  AuthenticatedEngagementsIdCanvasLabRoute:
+    AuthenticatedEngagementsIdCanvasLabRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
