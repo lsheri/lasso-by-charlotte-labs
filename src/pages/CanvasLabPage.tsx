@@ -309,32 +309,31 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
     report(result, "relationship", "archive");
   }
 
+  /**
+   * Load latest reads the whole durable board again and re-applies it over the
+   * deterministic seed, so workstreams, cards and relationships all reconcile.
+   * Viewport, rail, selection and unsent composer text are left alone.
+   */
   function resolveConflict(choice: "latest" | "retry") {
     const state = lab.saveState;
     if (state.status !== "conflict") return;
     noteWorkboardConflictResolved(orgId, state.entityKind === "link" ? "relationship" : state.entityKind, choice);
     if (choice === "latest") {
-      const latest = state.latest;
-      if (state.entityKind === "node") {
-        setNodes((current) => current?.map((entry) => entry.durableId === state.entityId
-          ? {
-              ...entry,
-              x: typeof latest["x"] === "number" ? latest["x"] : entry.x,
-              y: typeof latest["y"] === "number" ? latest["y"] : entry.y,
-              summary: typeof latest["body"] === "string" && entry.kind === "judgment" ? latest["body"] : entry.summary,
-              durableVersion: state.latestVersion,
-            }
-          : entry) ?? current);
-        if (typeof latest["hidden"] === "boolean") {
-          setHiddenIds((current) => {
-            const localId = nodesRef.current.find((entry) => entry.durableId === state.entityId)?.id;
-            if (!localId) return current;
-            return latest["hidden"] ? [...new Set([...current, localId])] : current.filter((id) => id !== localId);
-          });
+      void (async () => {
+        const fresh = await lab.refresh();
+        const base = virtualBaseRef.current;
+        if (fresh?.id && base) {
+          const merged = applyDurableBoard(base, fresh);
+          const localOnly = (nodesRef.current ?? []).filter((entry) => !entry.durableId && (entry.kind === "chat" || (entry.local && entry.kind !== "judgment")));
+          setFrames(merged.frames);
+          setNodes([...merged.nodes, ...localOnly]);
+          setLinks(merged.links);
+          setHiddenIds(merged.hiddenIds);
+          setSelectedLinkId(null);
         }
-      }
-      lab.clearSaveState();
-      setAnnouncement("Loaded the newer version.");
+        lab.clearSaveState();
+        setAnnouncement("Loaded the newer version of this workboard.");
+      })();
       return;
     }
     const retry = { ...state.retry, expectedVersion: state.latestVersion } as WorkboardCommand;
@@ -342,6 +341,7 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
     void lab.persist(retry).then((result) => report(result, state.entityKind === "link" ? "relationship" : state.entityKind, "update"));
     setAnnouncement("Retried your change.");
   }
+
 
   /* ---------------- end durable save pipeline ---------------- */
 
