@@ -58,3 +58,4 @@
 - [x] Keep board actions local while reusing the existing banded canvas opening event
 - [x] Add contextual draft starters, instructions, focused reading, and local notes
 - [ ] Verify the authenticated desktop and narrow-screen experience in the preview
+  - Blocked: the required Liam preview identity needs approval, while the available requesting-user session has no engagement rows.
