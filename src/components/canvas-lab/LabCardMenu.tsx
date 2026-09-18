@@ -22,6 +22,10 @@ export function LabCardMenu({
   onBranch,
   onHide,
   onDelete,
+  onFit,
+  frameChoices = [],
+  currentFrame,
+  onMoveToFrame,
 }: {
   selected: boolean;
   canBranch: boolean;
@@ -36,6 +40,10 @@ export function LabCardMenu({
   onBranch: () => void;
   onHide: () => void;
   onDelete: () => void;
+  onFit?: (() => void) | undefined;
+  frameChoices?: { id: string; name: string }[];
+  currentFrame?: string | undefined;
+  onMoveToFrame?: ((id: string) => void) | undefined;
 }) {
 
   return (
@@ -62,7 +70,9 @@ export function LabCardMenu({
       >
         <DropdownMenuItem onSelect={onSelect}>{selected ? "Remove context" : "Use as context"}</DropdownMenuItem>
         <DropdownMenuItem onSelect={onOpen}>Preview</DropdownMenuItem>
+        {onFit ? <DropdownMenuItem onSelect={onFit}>Fit content</DropdownMenuItem> : null}
         {canBranch ? <DropdownMenuItem onSelect={onBranch}>Branch</DropdownMenuItem> : null}
+        {onMoveToFrame && frameChoices.filter((frame) => frame.id !== currentFrame).map((frame) => <DropdownMenuItem key={frame.id} onSelect={() => onMoveToFrame(frame.id)}>Move to {frame.name}</DropdownMenuItem>)}
         <DropdownMenuSeparator />
         {local ? (
           <DropdownMenuItem onSelect={onDelete}>Delete local node</DropdownMenuItem>

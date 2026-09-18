@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { LabCardMenu } from "@/components/canvas-lab/LabCardMenu";
-import { CARD_WIDTH, type LabAnchor, type LabNode } from "@/components/canvas-lab/canvas-lab-model";
+import { cardSizeTier, type LabAnchor, type LabNode, type LabResizeCorner } from "@/components/canvas-lab/canvas-lab-model";
 import { Button } from "@/components/ui/button";
 import { WorkNote } from "@/components/work/WorkNote";
 import { cn } from "@/lib/utils";
@@ -45,6 +45,12 @@ export function LabCard({
   onMeasure,
   onPointerDown,
   onKeyDown,
+  canResize,
+  onResizeStart,
+  onFit,
+  frameChoices,
+  structured,
+  onMoveToFrame,
 }: {
   node: LabNode;
   item?: WorkItemRow | undefined;
@@ -66,6 +72,12 @@ export function LabCard({
   onMeasure: (height: number) => void;
   onPointerDown: (event: React.PointerEvent) => void;
   onKeyDown: (event: React.KeyboardEvent) => void;
+  canResize: boolean;
+  onResizeStart: (corner: LabResizeCorner, event: React.PointerEvent<HTMLButtonElement>) => void;
+  onFit: () => void;
+  frameChoices: { id: string; name: string }[];
+  structured: boolean;
+  onMoveToFrame: (id: string) => void;
 }) {
   const cardRef = useRef<HTMLDivElement | null>(null);
   const paperRef = useRef<HTMLDivElement | null>(null);
@@ -110,10 +122,11 @@ export function LabCard({
         if ((event.shiftKey && event.key === "F10") || event.key === "ContextMenu") openMenu(event);
         else onKeyDown(event);
       }}
-      style={{ left: node.x, top: node.y, width: CARD_WIDTH }}
+      style={{ left: node.x, top: node.y, width: node.width, height: node.height }}
+      data-size={cardSizeTier(node)}
       className="canvas-lab-card group absolute cursor-grab text-left"
     >
-      <div ref={paperRef} data-selected={selected} data-focused={focused} data-connect-source={connectSourceAnchor !== null} className={cn("canvas-lab-card-paper", item ? "" : `canvas-lab-folded-note flex flex-col gap-1.5 border px-3 py-2.5 ${OWNER_TONE[node.ownership]}`)}>
+      <div ref={paperRef} data-selected={selected} data-focused={focused} data-connect-source={connectSourceAnchor !== null} className={cn("canvas-lab-card-paper h-full overflow-hidden", item ? "" : `canvas-lab-folded-note flex flex-col gap-1.5 border px-3 py-2.5 ${OWNER_TONE[node.ownership]}`)}>
         {item ? (
           <WorkNote item={item} dense />
         ) : (
@@ -128,8 +141,9 @@ export function LabCard({
         )}
         {selected ? <span className="mt-1 block font-hand text-[13px] leading-none text-[var(--nb-green)]">in context</span> : null}
       </div>
+      {canResize && (selected || focused) ? (["nw", "ne", "se", "sw"] as LabResizeCorner[]).map((corner) => <Button key={corner} type="button" size="icon" variant="ghost" className="canvas-lab-resize-handle" data-corner={corner} aria-label={`Resize ${node.title} from ${corner}`} onDoubleClick={(event) => { event.stopPropagation(); onFit(); }} onPointerDown={(event) => onResizeStart(corner, event)} />) : null}
       {anchors.map((side) => <Button key={side} type="button" size="icon" variant="ghost" className="canvas-lab-anchor" data-node-id={node.id} data-side={side} data-active={connectSourceAnchor === side} aria-label={`Connect from ${side}`} onPointerDown={(event) => { anchorDownRef.current = { x: event.clientX, y: event.clientY }; onAnchorPointerDown(side, event); }} onClick={(event) => { event.stopPropagation(); const down = anchorDownRef.current; anchorDownRef.current = null; if (down && Math.hypot(event.clientX - down.x, event.clientY - down.y) >= 6) return; onAnchorActivate(side); }} />)}
-      <LabCardMenu selected={selected} canBranch={node.ownership === "teammate" || node.kind === "chat"} local={Boolean(node.local || node.kind === "chat")} removable={node.kind !== "judgment" || Boolean(node.local)} open={menuOpen} onOpenChange={changeMenuOpen} cardRef={cardRef} onSelect={onSelect} onOpen={onOpen} onBranch={onBranch} onHide={onHide} onDelete={onDelete} />
+      <LabCardMenu selected={selected} canBranch={node.ownership === "teammate" || node.kind === "chat"} local={Boolean(node.local || node.kind === "chat")} removable={node.kind !== "judgment" || Boolean(node.local)} open={menuOpen} onOpenChange={changeMenuOpen} cardRef={cardRef} onSelect={onSelect} onOpen={onOpen} onBranch={onBranch} onHide={onHide} onDelete={onDelete} onFit={canResize ? onFit : undefined} frameChoices={structured ? frameChoices : []} currentFrame={node.frame} onMoveToFrame={structured && canResize ? onMoveToFrame : undefined} />
     </div>
   );
 }
