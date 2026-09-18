@@ -7,6 +7,7 @@ import { CanvasLabReview } from "@/components/canvas-lab/CanvasLabReview";
 import { FocusOverlay } from "@/components/canvas-lab/FocusOverlay";
 import { FoundationGuide } from "@/components/canvas-lab/FoundationGuide";
 import { LabCard } from "@/components/canvas-lab/LabCard";
+import { LabFrame as LabFrameElement } from "@/components/canvas-lab/LabFrame";
 import { ReasoningTrailGuide } from "@/components/canvas-lab/ReasoningTrailGuide";
 import { WorkRail } from "@/components/canvas-lab/WorkRail";
 import {
@@ -20,6 +21,7 @@ import {
   deleteLocalNode,
   draftAnchor,
   fitScale,
+  fitFrameToNodes,
   labAnchorPoint,
   labConnectorPath,
   localNodeAnchor,
@@ -29,6 +31,7 @@ import {
   removeLabLink,
   seedCanvas,
   stageBounds,
+  resizeLabRect,
   toggleContext,
   updateLocalNode,
   type LabComment,
@@ -38,10 +41,14 @@ import {
   type LabLink,
   type LabNode,
   type LabTemplateKind,
+  type LabResizeCorner,
+  type LabRect,
+  type LabStructureMode,
 } from "@/components/canvas-lab/canvas-lab-model";
 import {
   noteWorkboardChangeSaved,
   noteWorkboardConflictResolved,
+  noteWorkboardElementResized,
   noteWorkboardNodeCreated,
   noteWorkboardCardMenuOpened,
   noteWorkboardNodeDeleted,
@@ -52,6 +59,7 @@ import {
   noteWorkboardReviewOpened,
   noteWorkboardSaveFailed,
   noteWorkboardTrailSelected,
+  noteWorkboardStructureToggled,
   type LabNodeEventKind,
   type WorkboardPersistEntity,
 } from "@/components/canvas-lab/canvas-lab-telemetry";
@@ -131,11 +139,14 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
   const [mobileView, setMobileView] = useState<"board" | "rail">("board");
   const [newFrameName, setNewFrameName] = useState("");
   const [opening, setOpening] = useState(true);
+  const [structureMode, setStructureMode] = useState<LabStructureMode>("structured");
+  const [selectedFrameId, setSelectedFrameId] = useState<string | null>(null);
 
   const shellRef = useRef<HTMLDivElement | null>(null);
   const dragRef = useRef<{ id: string; origin: Point; from: Point } | null>(null);
   const connectorDragRef = useRef<{ nodeId: string; anchor: LabAnchor; from: Point; moved: boolean } | null>(null);
   const cardHeightsRef = useRef(new Map<string, number>());
+  const resizeRef = useRef<{ kind: "card" | "frame"; id: string; corner: LabResizeCorner; start: LabRect; pointer: Point } | null>(null);
   const panRef = useRef<{ from: Point; origin: Point } | null>(null);
   const openedRef = useRef(false);
   /** The deterministic virtual seed a durable board is overlaid onto. */
@@ -213,7 +224,7 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
   }
 
   function nodeToInput(node: LabNode): WorkboardNodeInput | null {
-    const base = { clientKey: node.clientKey ?? node.id, frameKey: node.frame, x: node.x, y: node.y, hidden: hiddenRef.current.includes(node.id) };
+    const base = { clientKey: node.clientKey ?? node.id, frameKey: node.frame, x: node.x, y: node.y, w: node.width, h: node.height, hidden: hiddenRef.current.includes(node.id) };
     if (node.kind === "work" && node.workItemId) return { ...base, kind: "work_item", workItemId: node.workItemId };
     if (node.kind === "decision" && node.id.startsWith("decision:")) return { ...base, kind: "decision", decisionId: node.id.slice(9) };
     if (node.kind === "brief") return { ...base, kind: "brief" };
@@ -279,7 +290,7 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
     return { id, version };
   }
 
-  async function persistNodePatch(localId: string, patch: { x?: number; y?: number; hidden?: boolean; title?: string; body?: string }) {
+  async function persistNodePatch(localId: string, patch: { x?: number; y?: number; w?: number; h?: number; frameId?: string | null; hidden?: boolean; title?: string; body?: string }) {
     const durable = await ensureNodeDurable(localId);
     if (!durable) return;
     const result = await lab.persist({ type: "node_update", nodeId: durable.id, expectedVersion: durable.version, patch });
@@ -288,6 +299,15 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
       const nextVersion = result.versions[durable.id] ?? durable.version + 1;
       setNodes((current) => current?.map((entry) => entry.durableId === durable.id ? { ...entry, durableVersion: nextVersion } : entry) ?? current);
     }
+  }
+
+  async function persistFramePatch(localId: string, patch: { x?: number; y?: number; w?: number; h?: number }) {
+    if (!(await materialize())) return;
+    const frame = framesRef.current.find((entry) => entry.id === localId);
+    if (!frame?.durableId) return;
+    const result = await lab.persist({ type: "frame_update", frameId: frame.durableId, expectedVersion: frame.durableVersion ?? 1, patch });
+    report(result, "frame", "update");
+    if (result.status === "saved") setFrames((current) => current?.map((entry) => entry.id === localId ? { ...entry, durableVersion: result.versions[frame.durableId ?? ""] ?? (frame.durableVersion ?? 1) + 1 } : entry) ?? current);
   }
 
   async function persistLink(link: LabLink) {
@@ -356,6 +376,14 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
       if (event.key === "Escape") {
+        const resize = resizeRef.current;
+        if (resize) {
+          if (resize.kind === "card") setNodes((current) => current?.map((node) => node.id === resize.id ? { ...node, ...resize.start } : node) ?? current);
+          else setFrames((current) => current?.map((frame) => frame.id === resize.id ? { ...frame, ...resize.start } : frame) ?? current);
+          resizeRef.current = null;
+          setAnnouncement("Resize cancelled.");
+          return;
+        }
         if (reviewId) setReviewId(null);
         else if (focusId) setFocusId(null);
         else if (cardMenuOpen) return;
@@ -416,6 +444,13 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
         setConnectorPreview(stagePoint(event.clientX, event.clientY));
         return;
       }
+      const resizing = resizeRef.current;
+      if (resizing) {
+        const rect = resizeLabRect(resizing.start, resizing.corner, { x: (event.clientX - resizing.pointer.x) / zoom, y: (event.clientY - resizing.pointer.y) / zoom }, event.shiftKey, resizing.kind);
+        if (resizing.kind === "card") setNodes((current) => current?.map((node) => node.id === resizing.id ? { ...node, ...rect } : node) ?? current);
+        else setFrames((current) => current?.map((frame) => frame.id === resizing.id ? { ...frame, ...rect } : frame) ?? current);
+        return;
+      }
       const drag = dragRef.current;
       if (drag) {
         const delta = { x: (event.clientX - drag.from.x) / zoom, y: (event.clientY - drag.from.y) / zoom };
@@ -438,6 +473,23 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
         }
       }
       dragRef.current = null;
+      const resizing = resizeRef.current;
+      if (resizing) {
+        if (resizing.kind === "card") {
+          const node = nodesRef.current.find((entry) => entry.id === resizing.id);
+          if (node && (node.x !== resizing.start.x || node.y !== resizing.start.y || node.width !== resizing.start.width || node.height !== resizing.start.height)) {
+            void persistNodePatch(node.id, { x: node.x, y: node.y, w: node.width, h: node.height });
+            noteWorkboardElementResized(orgId, "card", "pointer", "both");
+          }
+        } else {
+          const frame = framesRef.current.find((entry) => entry.id === resizing.id);
+          if (frame && (frame.x !== resizing.start.x || frame.y !== resizing.start.y || frame.width !== resizing.start.width || frame.height !== resizing.start.height)) {
+            void persistFramePatch(frame.id, { x: frame.x, y: frame.y, w: frame.width, h: frame.height });
+            noteWorkboardElementResized(orgId, "frame", "pointer", "both");
+          }
+        }
+        resizeRef.current = null;
+      }
       panRef.current = null;
     }
     window.addEventListener("pointermove", move);
@@ -457,6 +509,56 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
       setNodes((current) => current ? moveNode(current, node.id, to) : current);
       void persistNodePatch(node.id, { x: to.x, y: to.y });
     }
+  }
+
+  function startResize(kind: "card" | "frame", id: string, corner: LabResizeCorner, rect: LabRect, event: React.PointerEvent<HTMLButtonElement>) {
+    if (event.button !== 0) return;
+    event.preventDefault();
+    event.stopPropagation();
+    dragRef.current = null;
+    connectorDragRef.current = null;
+    resizeRef.current = { kind, id, corner, start: rect, pointer: { x: event.clientX, y: event.clientY } };
+  }
+
+  function keyboardResize(kind: "card" | "frame", id: string, corner: LabResizeCorner, rect: LabRect, event: React.KeyboardEvent<HTMLButtonElement>) {
+    if (!event.key.startsWith("Arrow")) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const amount = event.shiftKey ? 24 : 8;
+    const delta = { x: event.key === "ArrowLeft" ? -amount : event.key === "ArrowRight" ? amount : 0, y: event.key === "ArrowUp" ? -amount : event.key === "ArrowDown" ? amount : 0 };
+    const next = resizeLabRect(rect, corner, delta, false, kind);
+    if (kind === "card") { setNodes((current) => current?.map((node) => node.id === id ? { ...node, ...next } : node) ?? current); void persistNodePatch(id, { x: next.x, y: next.y, w: next.width, h: next.height }); }
+    else { setFrames((current) => current?.map((frame) => frame.id === id ? { ...frame, ...next } : frame) ?? current); void persistFramePatch(id, { x: next.x, y: next.y, w: next.width, h: next.height }); }
+    noteWorkboardElementResized(orgId, kind, "keyboard", "both");
+  }
+
+  function fitCard(node: LabNode) {
+    const height = Math.max(112, Math.min(520, cardHeightsRef.current.get(node.id) ?? node.height));
+    if (node.width === 232 && node.height === height) return;
+    setNodes((current) => current?.map((entry) => entry.id === node.id ? { ...entry, width: 232, height } : entry) ?? current);
+    void persistNodePatch(node.id, { w: 232, h: height });
+    noteWorkboardElementResized(orgId, "card", "fit_content", "both");
+  }
+
+  function fitFrame(frame: LabFrame) {
+    const rect = fitFrameToNodes(frame, visibleNodes);
+    if (!rect) { setAnnouncement("This workstream has no cards to fit."); return; }
+    setFrames((current) => current?.map((entry) => entry.id === frame.id ? { ...entry, ...rect } : entry) ?? current);
+    void persistFramePatch(frame.id, { x: rect.x, y: rect.y, w: rect.width, h: rect.height });
+    noteWorkboardElementResized(orgId, "frame", "fit_content", "both");
+  }
+
+  function moveToFrame(node: LabNode, frameId: string) {
+    const target = framesRef.current.find((frame) => frame.id === frameId);
+    if (!target) return;
+    void (async () => {
+      if (!(await materialize())) return;
+      const durableTarget = framesRef.current.find((frame) => frame.id === frameId)?.durableId;
+      if (!durableTarget) return;
+      setNodes((current) => current?.map((entry) => entry.id === node.id ? { ...entry, frame: frameId } : entry) ?? current);
+      await persistNodePatch(node.id, { frameId: durableTarget });
+      setAnnouncement(`${node.title} moved to ${target.name}.`);
+    })();
   }
 
   function addNode(kind: LabTemplateKind, judgment?: LabJudgmentType) {

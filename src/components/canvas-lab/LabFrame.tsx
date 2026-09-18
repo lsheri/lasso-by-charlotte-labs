@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 
 const CORNERS: LabResizeCorner[] = ["nw", "ne", "se", "sw"];
 
-export function LabFrame({ frame, count, selected, editable, onSelect, onResizeStart, onFit }: {
+export function LabFrame({ frame, count, selected, editable, onSelect, onResizeStart, onResizeKeyDown, onFit }: {
   frame: LabFrameModel;
   count: number;
   selected: boolean;
@@ -13,6 +13,7 @@ export function LabFrame({ frame, count, selected, editable, onSelect, onResizeS
   onSelect: () => void;
   onResizeStart: (corner: LabResizeCorner, event: React.PointerEvent<HTMLButtonElement>) => void;
   onFit: () => void;
+  onResizeKeyDown?: ((corner: LabResizeCorner, event: React.KeyboardEvent<HTMLButtonElement>) => void) | undefined;
 }) {
   return (
     <section
@@ -27,7 +28,7 @@ export function LabFrame({ frame, count, selected, editable, onSelect, onResizeS
         <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">{count} {frame.local ? "· local" : ""}</span>
       </div>
       {selected && editable ? <Button type="button" size="icon" variant="ghost" className="canvas-lab-frame-fit" aria-label={`Fit ${frame.name} to its cards`} onClick={onFit}><Maximize2 className="h-3 w-3" /></Button> : null}
-      {selected && editable ? CORNERS.map((corner) => <Button key={corner} type="button" size="icon" variant="ghost" className="canvas-lab-resize-handle" data-corner={corner} aria-label={`Resize ${frame.name} from ${corner}`} onPointerDown={(event) => onResizeStart(corner, event)} />) : null}
+      {selected && editable ? CORNERS.map((corner) => <Button key={corner} type="button" size="icon" variant="ghost" className="canvas-lab-resize-handle" data-corner={corner} aria-label={`Resize ${frame.name} from ${corner}`} onPointerDown={(event) => onResizeStart(corner, event)} onKeyDown={(event) => onResizeKeyDown?.(corner, event)} />) : null}
     </section>
   );
 }
