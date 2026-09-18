@@ -164,3 +164,81 @@ Changed application files: `EngagementPage.tsx`, `CanvasLabPage.tsx`, the Canvas
 - Seven pilot frames now begin in four columns and two rows. Fit continues to use active frame bounds.
 - Modifier-wheel zoom prevents browser zoom before applying the existing workboard zoom; ordinary vertical scrolling is unchanged.
 - Verification run: `bunx vitest run src/components/canvas-lab/__tests__/canvas-lab-model.test.ts src/components/canvas-lab/__tests__/canvas-lab-second-pass.test.ts src/routes/__tests__/canvas-lab-route.test.ts src/lib/__tests__/pass190-motion.test.tsx` passed 33 tests; `bunx vitest run src/lib/__tests__/pass83-tokens.test.ts` passed 2 tests; `bunx tsgo --noEmit` passed. The preview build completed successfully at 2026-09-18 08:10 UTC.
+
+## 13. Phase 2 implementation — 2026-09-18 UTC
+
+### Design reasoning
+
+Phase 2 keeps the prototype focused on the reasoning and judgment layer for AI-assisted consulting. The only new canvas mechanics are those needed to arrange a consulting record, add clearly local reasoning notes, and draw a bounded local relationship. There are no generic shapes, freehand tools, cursors, or model choices. The persistent composer now occupies a compact right rail instead of covering the board. A deliverable opens a Lab-only read of the reasoning trail in one click while production provenance behavior remains unchanged.
+
+### Controls before and after
+
+Before Phase 2, the Workboard provided: menu open/close/Escape and role-appropriate navigation; back to engagement; fit, zoom in/out, modifier-wheel zoom, and pan; local Add workstream; card pointer and keyboard movement; Use as context/Remove context; Preview; teammate and draft Branch; context-chip removal; six prompt starters; instructions disclosure and local instructions; Add draft thread; focused-reader close, summarize, branch, text selection, local note text, and note submit. States were opening/reduced motion, loading, error, empty, populated, menu, selected context, dragging, keyboard focus, pan/zoom, local workstreams/drafts/comments/instructions, focused reader, and narrow-screen guidance. The only event was `canvas.opened` with banded node, link, and shelf counts.
+
+After Phase 2, every control and state above remains. Added controls are: work-rail collapse/reopen; narrow-screen Board/Working from switch; five reasoning-scaffold add actions; six Human judgment choices; editable short local note; Remove from canvas for real records; Delete local node for local records; Add from engagement restore list; Connect start, source, target, Escape cancel, relationship selection, and relationship removal; and grouped reasoning-trail selection and close. Added states are open/collapsed rail, narrow board/rail view, scaffold, local node and judgment type, hidden-record list, connector idle/source/invalid/selected, and deliverable review loading/error/empty/item/exact-focus. Delete and Backspace remove only a local node or selected local relationship. They never delete a real record.
+
+The rail starts open and preserves context, draft text, and instructions while collapsed because it remains in the page state. The five scaffold squares are explicitly a guide and have no implied relationships. New nodes, notes, hidden records, and relationships say or behave as local-only and reset on refresh.
+
+### Deliverable reasoning review
+
+Preview on a deliverable opens `CanvasLabReview` directly. It does not mount `AnalysisConfirm`, call lineage drafting, or call production review/write functions. The review uses existing permission-filtered span-audit and rendition reads. Its left trail is grouped as Context, AI work, Human judgment, and Decisions. An available stored turn or span receives exact focus. When no stored locator exists, the whole item is shown with the honest line `No exact passage is attached. The whole item is open.` Closing restores the existing board state because pan, zoom, selection, and rail state remain owned by CanvasLabPage.
+
+### Foundation and local model
+
+Foundation now includes Start here: the real brief, questions derived only from current task names/details, latest status from the newest dated mapped item, and an unresolved-issues fallback explicitly labelled `Prototype prompt`. Placement uses deterministic frame lanes for adds, branches, and restored records. Removing a real record hides it in local state. Deleting a local node also removes its local relationships and context selection. Connect is the bounded click-source/click-target version, rejects self and duplicate links, supports Escape, and never calls production relationship writes.
+
+### Data, consent, and events
+
+There are no database, SQL, schema, RLS, server-function, consent-copy, consent-state, consent-ledger, or production-route changes. Every new event goes through `logEvent` to the existing authenticated `recordEvent` path. That path stamps schema version `v2`, session and sequence, event UUID, effective consent tier, and ledger version. At `t0` the event remains workspace-only and is not mirrored; at tiers `a` through `d` the existing tier rules apply. Payload is empty for every event. Dimensions use closed, low-cardinality vocabularies and contain no free text, prompt, title, quote, or record ID.
+
+| Event | Dimensions | Effective consent tier | Portal follow-up |
+| --- | --- | --- | --- |
+| `workboard.rail_toggled` | `state`: `collapsed` or `reopened` | Current stamped tier; `t0` workspace-only | Add the event and `state` vocabulary to the portal catalog |
+| `workboard.node_created` | `kind`: source/AI work/human judgment/decision/deliverable/draft thread; `judgment_type`: six approved types or `none` | Current stamped tier; `t0` workspace-only | Add event, kind, and judgment-type vocabularies |
+| `workboard.node_edited` | `kind` only | Current stamped tier; `t0` workspace-only | Add event and kind vocabulary |
+| `workboard.node_deleted` | `kind` only | Current stamped tier; `t0` workspace-only | Add event and kind vocabulary |
+| `workboard.record_visibility_changed` | `action`: hidden/restored; `record_kind`: work/decision/brief | Current stamped tier; `t0` workspace-only | Add event and both vocabularies |
+| `workboard.relationship_changed` | `action`: started/created/removed/cancelled/rejected | Current stamped tier; `t0` workspace-only | Add event and action vocabulary |
+| `workboard.review_opened` | `format`: thread/document/deck/sheet | Current stamped tier; `t0` workspace-only | Add event and format vocabulary |
+| `workboard.trail_item_selected` | `group`: context/AI work/human judgment/decisions; `focus`: exact/item | Current stamped tier; `t0` workspace-only | Add event and both vocabularies |
+
+The existing `canvas.opened` event and its payload are unchanged. Portal changes are required for all eight new event names but were intentionally not performed in this pass.
+
+### Files changed
+
+- `src/pages/CanvasLabPage.tsx`
+- `src/components/canvas-lab/CanvasLabReview.tsx`
+- `src/components/canvas-lab/ContextComposer.tsx`
+- `src/components/canvas-lab/FocusOverlay.tsx`
+- `src/components/canvas-lab/FoundationGuide.tsx`
+- `src/components/canvas-lab/LabCard.tsx`
+- `src/components/canvas-lab/ReasoningTrailGuide.tsx`
+- `src/components/canvas-lab/WorkRail.tsx`
+- `src/components/canvas-lab/canvas-lab-model.ts`
+- `src/components/canvas-lab/canvas-lab-telemetry.ts`
+- `src/components/canvas-lab/__tests__/canvas-lab-model.test.ts`
+- `src/components/canvas-lab/__tests__/canvas-lab-phase2.test.ts`
+- `src/components/canvas-lab/__tests__/canvas-lab-second-pass.test.ts`
+- `src/lib/telemetry-shared.ts`
+- `src/styles.css`
+- `roadmap.md`
+- this build note
+
+Production `EngagementCanvasView`, `WhatFedThisButton`, AskDock, the landing page, shared tokens, routes, server functions, and consent code were not changed.
+
+### Verification
+
+- `bunx tsgo --noEmit`: passed.
+- `bunx vitest run src/components/canvas-lab/__tests__/canvas-lab-model.test.ts src/components/canvas-lab/__tests__/canvas-lab-second-pass.test.ts src/components/canvas-lab/__tests__/canvas-lab-phase2.test.ts src/routes/__tests__/canvas-lab-route.test.ts src/lib/__tests__/pass190-motion.test.tsx src/lib/__tests__/pass83-tokens.test.ts`: 43 tests passed across 6 files.
+- Token guard: included above and passed.
+- Motion registry tests: included above and passed.
+- Preview build: successful at 2026-09-18 20:17 UTC.
+- Authenticated visual verification: not completed. The required Liam session could not be minted without approval in this build context, and no other account was substituted.
+
+### Known limitations
+
+- All Phase 2 nodes, notes, hiding, relationships, rail state, and context remain local and reset on refresh.
+- The AI connection remains off and draft threads produce no generated answer.
+- Exact focus depends on an existing stored turn or span locator. The review never invents one.
+- The hidden route remains unpublished.
+- The data portal requires the catalog follow-up listed above before these additive events are interpreted there.

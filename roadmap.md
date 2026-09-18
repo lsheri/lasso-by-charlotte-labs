@@ -59,3 +59,14 @@
 - [x] Add contextual draft starters, instructions, focused reading, and local notes
 - [ ] Verify the authenticated desktop and narrow-screen experience in the preview
   - Blocked: the required Liam preview identity needs approval, while the available requesting-user session has no engagement rows.
+
+## Canvas Lab Phase 2
+- [x] Move the composer into a collapsible, non-overlapping right work rail
+- [x] Add the one-click Lab-only deliverable reasoning review
+- [x] Add the five-step reasoning scaffold and six human-judgment node types
+- [x] Add local hide, restore, delete, deterministic placement, and bounded Connect mode
+- [x] Add Foundation's factual Start here guide and green Lab interaction language
+- [x] Add consent-stamped Phase 2 event coverage and document portal follow-up
+- [x] Run focused tests, token and motion guards, typecheck, and preview build
+- [ ] Verify desktop and narrow-screen behavior as Liam in the authenticated preview
+  - Blocked: minting the required Liam session needs approval unavailable in this build context. No other account was substituted.

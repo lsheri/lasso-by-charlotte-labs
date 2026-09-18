@@ -50,7 +50,7 @@ export function ContextComposer({
   const [showInstructions, setShowInstructions] = useState(false);
 
   return (
-    <div className="pointer-events-auto w-[640px] max-w-[calc(100vw-5rem)] rounded-[var(--radius)] border border-[var(--nb-graphite)] bg-card p-3 shadow-[var(--shadow-modal)]">
+    <div className="w-full bg-card">
       {showInstructions ? (
         <div className="mb-2 rounded-[var(--radius-control)] border border-[var(--nb-rule)] bg-[var(--nb-grey-1)] p-2.5">
           <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">

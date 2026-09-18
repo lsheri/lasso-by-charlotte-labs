@@ -34,9 +34,11 @@ describe("Canvas Lab second prototype pass", () => {
     expect(page).toContain('<EngagementCanvasView engagementId={engagementId} items={scopedItems} onOpen={openPeek} />');
   });
 
-  it("keeps focused provenance and clears the selection highlight", () => {
+  it("keeps focused notes, clears the selection highlight, and uses the Lab review", () => {
     const overlay = read("src/components/canvas-lab/FocusOverlay.tsx");
-    expect(overlay).toContain("<WhatFedThisButton items={[item]}");
+    const page = read("src/pages/CanvasLabPage.tsx");
+    expect(page).toContain("<CanvasLabReview");
+    expect(overlay).not.toContain("WhatFedThisButton");
     expect(overlay).toContain('CSS.highlights?.delete("canvas-lab-selection")');
     expect(overlay).toContain("{comments.length + 1}");
     expect(overlay).not.toContain("items: WorkItemRow[]");

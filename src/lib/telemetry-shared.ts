@@ -153,6 +153,22 @@ export type TelemetryEvent =
    * their own eyes and their own screen and is not a dimension.
    */
   | "canvas.zoomed"
+  /** Canvas Lab Phase 2: the local work rail changed visibility. State only. */
+  | "workboard.rail_toggled"
+  /** Canvas Lab Phase 2: a local prototype node was added. Closed kinds only. */
+  | "workboard.node_created"
+  /** Canvas Lab Phase 2: a local prototype node was removed. Kind only. */
+  | "workboard.node_deleted"
+  /** Canvas Lab Phase 2: a local note was edited. Kind only. */
+  | "workboard.node_edited"
+  /** Canvas Lab Phase 2: a real record was hidden or restored locally. */
+  | "workboard.record_visibility_changed"
+  /** Canvas Lab Phase 2: a local relationship changed. Action only. */
+  | "workboard.relationship_changed"
+  /** Canvas Lab Phase 2: the read-only deliverable reasoning view opened. */
+  | "workboard.review_opened"
+  /** Canvas Lab Phase 2: a grouped reasoning-trail item was chosen. */
+  | "workboard.trail_item_selected"
   /** Pass 185: a workspace was affiliated with an institution at creation. Slug only. */
   | "workspace.affiliated"
   /** Pass 186: the student opened the page describing what their school sees. */
