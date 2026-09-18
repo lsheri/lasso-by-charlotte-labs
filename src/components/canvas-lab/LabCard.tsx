@@ -126,7 +126,7 @@ export function LabCard({
         )}
         {selected ? <span className="mt-1 block font-hand text-[13px] leading-none text-[var(--nb-green)]">in context</span> : null}
       </div>
-      {anchors.map((side) => <button key={side} type="button" className="canvas-lab-anchor" data-side={side} data-active={connectSourceAnchor === side} aria-label={`Connect from ${side}`} onPointerDown={(event) => onAnchorPointerDown(side, event)} onClick={(event) => { event.stopPropagation(); onAnchorActivate(side); }} />)}
+      {anchors.map((side) => <button key={side} type="button" className="canvas-lab-anchor" data-node-id={node.id} data-side={side} data-active={connectSourceAnchor === side} aria-label={`Connect from ${side}`} onPointerDown={(event) => onAnchorPointerDown(side, event)} onClick={(event) => { event.stopPropagation(); onAnchorActivate(side); }} />)}
       <LabCardMenu selected={selected} canBranch={node.ownership === "teammate" || node.kind === "chat"} local={Boolean(node.local || node.kind === "chat")} open={menuOpen} onOpenChange={changeMenuOpen} cardRef={cardRef} onSelect={onSelect} onOpen={onOpen} onBranch={onBranch} onHide={onHide} onDelete={onDelete} />
     </div>
   );
