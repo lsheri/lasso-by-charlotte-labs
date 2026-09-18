@@ -66,10 +66,13 @@ export function LabCardMenu({
         <DropdownMenuSeparator />
         {local ? (
           <DropdownMenuItem onSelect={onDelete}>Delete local node</DropdownMenuItem>
-        ) : (
+        ) : removable ? (
           <DropdownMenuItem onSelect={onHide}>Remove from canvas</DropdownMenuItem>
+        ) : (
+          <DropdownMenuItem disabled>Only the author can remove this</DropdownMenuItem>
         )}
       </DropdownMenuContent>
     </DropdownMenu>
   );
+
 }
