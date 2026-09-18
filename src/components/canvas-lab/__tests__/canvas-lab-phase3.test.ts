@@ -11,7 +11,7 @@ import {
 } from "@/components/canvas-lab/canvas-lab-model";
 import type { WorkboardDto } from "@/lib/canvas-lab-shared";
 
-const baseFrames = createLabFrames([{ id: "task-1", name: "Discovery", detail: null }]);
+const baseFrames = createLabFrames([{ id: "task-1", name: "Discovery" }]);
 const baseNodes = seedCanvas(
   {
     brief: { title: "The brief", text: "Grow the north region." },
