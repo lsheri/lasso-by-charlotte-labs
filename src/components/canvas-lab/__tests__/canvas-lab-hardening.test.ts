@@ -70,8 +70,10 @@ describe("server rules", () => {
 describe("client rules", () => {
   it("gives every local card its own key", () => {
     const frames = createLabFrames([{ id: "task-1", name: "Discovery" }]);
-    const first = createLocalNode("judgment", frames[0], [], "added_constraint");
-    const second = createLocalNode("judgment", frames[0], [first], "corrected_ai");
+    const frame = frames[0]!;
+    const first = createLocalNode("judgment", frame, [], "added_constraint");
+    const second = createLocalNode("judgment", frame, [first], "corrected_ai");
+
     expect(first.clientKey).toBeTruthy();
     expect(first.clientKey).not.toEqual(second.clientKey);
     expect(newLabClientKey()).not.toEqual(newLabClientKey());
