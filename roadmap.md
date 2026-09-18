@@ -70,3 +70,9 @@
 - [x] Run focused tests, token and motion guards, typecheck, and preview build
 - [ ] Verify desktop and narrow-screen behavior as Liam in the authenticated preview
   - Blocked: minting the required Liam session needs approval unavailable in this build context. No other account was substituted.
+
+## Canvas Lab card interaction correction
+- [ ] Replace the permanent card action tray and global Connect mode with card anchors and one contextual menu
+- [ ] Preserve existing card actions, local relationship removal, and ownership safeguards
+- [ ] Add the consent-stamped card-menu event and document the portal catalog follow-up
+- [ ] Run focused interaction/model/event tests, token guard, typecheck, and preview verification
