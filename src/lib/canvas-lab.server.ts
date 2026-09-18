@@ -71,6 +71,8 @@ function frameDto(row: FrameRow): WorkboardFrameDto {
     y: row.y,
     w: row.w,
     h: row.h,
+    w: row.w,
+    h: row.h,
     ord: row.ord,
     version: row.version,
   };
@@ -175,6 +177,7 @@ function snapshot<T extends { version: number }>(row: T): WorkboardRowSnapshot &
 }
 
 function validNodeInput(node: WorkboardNodeInput): string | null {
+  if (![node.x, node.y, node.w, node.h].every(Number.isFinite) || node.w < 180 || node.h < 112 || node.w > 520 || node.h > 520) return "Card dimensions are outside the supported range.";
   if (node.kind === "work_item" && !node.workItemId) return "A work card needs its work item.";
   if (node.kind === "decision" && !node.decisionId) return "A decision card needs its decision.";
   if ((node.kind === "judgment" || node.kind === "draft") && (node.workItemId || node.decisionId)) return "An authored card cannot reference a record.";
@@ -300,7 +303,7 @@ export async function applyWorkboardCommand(
       .eq("id", command.nodeId)
       .eq("workboard_id", board.id)
       .eq("version", command.expectedVersion)
-      .select("id, version, x, y, hidden, title, body, frame_id, deleted_at");
+        .select("id, version, x, y, w, h, hidden, title, body, frame_id, deleted_at");
     if (error) return { status: "forbidden" };
     const row = data?.[0];
     if (!row) {
@@ -391,6 +394,8 @@ function nodeInsert(boardId: string, profileId: string, node: WorkboardNodeInput
     judgment_type: node.judgmentType ?? null,
     x: node.x,
     y: node.y,
+    w: node.w,
+    h: node.h,
     hidden: node.hidden ?? false,
     created_by: profileId,
     updated_by: profileId,
