@@ -210,7 +210,12 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
       setSelected((current) => toggleContext(current, node.id));
       return;
     }
-    if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.key)) {
+    if (
+      event.key === "ArrowUp" ||
+      event.key === "ArrowDown" ||
+      event.key === "ArrowLeft" ||
+      event.key === "ArrowRight"
+    ) {
       event.preventDefault();
       const to = keyTo({ x: node.x, y: node.y }, event.key, event.shiftKey);
       setNodes((current) => (current ? moveNode(current, node.id, to) : current));
