@@ -156,7 +156,9 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
       work: workItems.map((item) => ({ id: item.id, title: item.title, typeLabel: item.type.replaceAll("_", " "), source: item.source, ownedByViewer: !item.owner_id || item.owner_id === profile?.id, taskIds: taskIdsByWork.get(item.id) ?? [], deliverable: isDeliverableType(item.type) })),
       decisions: (page.decisions ?? []).map((decision) => ({ id: decision.id, call: decision.call_text, situation: decision.situation, ownedByViewer: decision.owner_id === profile?.id })),
     }, virtualFrames);
+    virtualBaseRef.current = { frames: virtualFrames, nodes: virtualNodes };
     const board = lab.board;
+
     if (board?.id) {
       const merged = applyDurableBoard({ frames: virtualFrames, nodes: virtualNodes }, board);
       setFrames(merged.frames);
