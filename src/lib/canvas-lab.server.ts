@@ -190,11 +190,15 @@ export async function applyWorkboardCommand(
 ): Promise<WorkboardMutationResult> {
   const membership = await membershipFor(db, engagementId, profile.id);
   if (!membership.isMember) return { status: "forbidden" };
+  // Coaches read already-permitted sources. They never arrange the shared
+  // workboard, so nothing they send may even lazy-create the board row.
+  if (!membership.isEditor) return { status: "forbidden" };
 
   const board = await ensureBoard(db, engagementId, profile);
   if (!board) return { status: "forbidden" };
 
   const stamp = { updated_by: profile.id };
+
 
   if (command.type === "materialize") {
     if (!membership.isEditor) return { status: "forbidden" };
