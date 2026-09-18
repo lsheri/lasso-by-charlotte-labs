@@ -37,9 +37,12 @@ export type LabNode = {
   contextIds?: string[];
   judgmentType?: LabJudgmentType;
   local?: boolean;
+  /** Stable per-card key so a retried save cannot write the card twice. */
+  clientKey?: string;
   /** Durable Slice 1 identity, when this card is backed by a Workboard row. */
   durableId?: string;
   durableVersion?: number;
+
   x: number;
   y: number;
 };
