@@ -17,6 +17,7 @@ export type LabTemplateKind = "source" | "ai_work" | "judgment" | "decision" | "
 export type LabOwnership = "yours" | "teammate" | "draft";
 
 export type LabFrameId = string;
+export type LabAnchor = "top" | "right" | "bottom" | "left";
 
 export type LabNode = {
   id: string;
@@ -53,7 +54,7 @@ export const CARD_WIDTH = 232;
 export const CARD_GAP_Y = 144;
 export const FRAME_PADDING = 24;
 
-export type LabLink = { id: string; fromId: string; toId: string };
+export type LabLink = { id: string; fromId: string; toId: string; fromAnchor: LabAnchor; toAnchor: LabAnchor };
 
 export const REASONING_STEPS: { kind: LabTemplateKind; label: string }[] = [
   { kind: "source", label: "Source / Context" },
@@ -180,14 +181,47 @@ export function deleteLocalNode(nodes: LabNode[], links: LabLink[], selected: st
   return { nodes: nodes.filter((entry) => entry.id !== id), links: links.filter((link) => link.fromId !== id && link.toId !== id), selected: selected.filter((entry) => entry !== id) };
 }
 
-export function addLabLink(links: LabLink[], fromId: string, toId: string): { links: LabLink[]; error: string | null } {
+export function addLabLink(links: LabLink[], fromId: string, fromAnchor: LabAnchor, toId: string, toAnchor: LabAnchor): { links: LabLink[]; error: string | null } {
   if (fromId === toId) return { links, error: "A card cannot connect to itself." };
-  if (links.some((link) => link.fromId === fromId && link.toId === toId)) return { links, error: "These cards are already connected." };
-  return { links: [...links, { id: `local-link:${fromId}:${toId}`, fromId, toId }], error: null };
+  if (links.some((link) => link.fromId === fromId && link.fromAnchor === fromAnchor && link.toId === toId && link.toAnchor === toAnchor)) return { links, error: "These cards are already connected." };
+  return { links: [...links, { id: `local-link:${fromId}:${fromAnchor}:${toId}:${toAnchor}`, fromId, fromAnchor, toId, toAnchor }], error: null };
 }
 
 export function removeLabLink(links: LabLink[], id: string): LabLink[] {
   return links.filter((link) => link.id !== id);
+}
+
+export function labAnchorPoint(node: Pick<LabNode, "x" | "y">, side: LabAnchor, height: number): Point {
+  if (side === "top") return { x: node.x + CARD_WIDTH / 2, y: node.y };
+  if (side === "right") return { x: node.x + CARD_WIDTH, y: node.y + height / 2 };
+  if (side === "bottom") return { x: node.x + CARD_WIDTH / 2, y: node.y + height };
+  return { x: node.x, y: node.y + height / 2 };
+}
+
+export function nearestLabAnchor(point: Point, node: Pick<LabNode, "x" | "y">, height: number): LabAnchor {
+  const sides: LabAnchor[] = ["top", "right", "bottom", "left"];
+  const first = sides[0];
+  if (!first) return "top";
+  return sides.reduce((nearest, side) => {
+    const candidate = labAnchorPoint(node, side, height);
+    const current = labAnchorPoint(node, nearest, height);
+    const candidateDistance = Math.hypot(point.x - candidate.x, point.y - candidate.y);
+    const currentDistance = Math.hypot(point.x - current.x, point.y - current.y);
+    return candidateDistance < currentDistance ? side : nearest;
+  }, first);
+}
+
+export function labConnectorPath(from: Point, fromSide: LabAnchor, to: Point, toSide: LabAnchor): string {
+  const offset = 64;
+  const control = (point: Point, side: LabAnchor): Point => {
+    if (side === "top") return { x: point.x, y: point.y - offset };
+    if (side === "right") return { x: point.x + offset, y: point.y };
+    if (side === "bottom") return { x: point.x, y: point.y + offset };
+    return { x: point.x - offset, y: point.y };
+  };
+  const a = control(from, fromSide);
+  const b = control(to, toSide);
+  return `M ${from.x} ${from.y} C ${a.x} ${a.y}, ${b.x} ${b.y}, ${to.x} ${to.y}`;
 }
 
 /**

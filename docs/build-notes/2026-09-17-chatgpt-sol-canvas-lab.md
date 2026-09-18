@@ -252,3 +252,15 @@ Human judgment now contains only persisted stitches returned by the existing per
 No control, action, event, payload, surface, persistence, server call, consent behavior, database behavior, or portal requirement changed. Production provenance components and EngagementCanvasView were not changed.
 
 Verification: `bunx tsgo --noEmit` passed. The focused Canvas Lab model, second-pass, Phase 2, route, motion, and token suite passed 48 tests across 6 files. New model cases cover zero links, a direct link, a multi-hop component, a disconnected node, and a missing endpoint. The Phase 2 source regression confirms the review receives the anchor node ID and local links, then filters local judgments and comments through the connected set. The preview build completed successfully at 2026-09-18 20:23 UTC.
+
+### Card interaction correction
+
+The permanent card action tray and global Connect mode were replaced with four card-edge connection anchors and one compact contextual menu. Pointer drag from an anchor previews a green local relationship. Keyboard or click activation provides a two-step source and target path. Stored local relationships retain their source and target sides. The selected outline follows only the paper boundary.
+
+Right-click, Shift+F10, the Context Menu key, and the paper-corner ellipsis open the same ownership-aware actions. Existing context, Preview, Branch, hide, local delete, relationship removal, card movement, and local reset behavior remain available.
+
+One additive event was added: `workboard.card_menu_opened`, with closed dimensions `{ node_kind, ownership }`. It uses the existing consent-stamped event path, remains workspace-only at tier t0, and requires a matching portal catalog update. No identifiers, content, coordinates, or free text are included.
+
+No consent, database, schema, RLS, server, production canvas, provenance, landing-page, AskDock, persistence, deployment, or publishing change was made.
+
+Verification: `bunx tsgo --noEmit` passed. The focused card-interaction, model, Phase 2, second-pass, route, motion, and token suite passed 54 tests across 7 files. The preview build completed successfully at 2026-09-18 20:47 UTC. Authenticated desktop and narrow-screen visual verification was not completed because the required Liam session approval was unavailable; no other account was substituted.

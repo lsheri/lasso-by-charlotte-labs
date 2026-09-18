@@ -1183,6 +1183,74 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   border-bottom: 1px solid var(--nb-rule);
   background: var(--nb-grey-1);
 }
+.canvas-lab-card-paper {
+  position: relative;
+  border-radius: var(--radius-control);
+}
+.canvas-lab-card-paper[data-selected="true"],
+.canvas-lab-card-paper[data-focused="true"],
+.canvas-lab-card-paper[data-connect-source="true"] {
+  outline: 2px solid var(--nb-green);
+  outline-offset: 1px;
+}
+.canvas-lab-card-paper[data-connect-source="true"] {
+  background: var(--nb-green-wash);
+}
+.canvas-lab-anchor {
+  position: absolute;
+  z-index: 12;
+  width: 14px;
+  height: 14px;
+  min-height: 0;
+  padding: 0;
+  border: 2px solid var(--nb-green);
+  border-radius: var(--radius-pill);
+  background: var(--nb-paper);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--nb-fast) var(--nb-ease), background var(--nb-fast) var(--nb-ease);
+}
+.canvas-lab-card:hover .canvas-lab-anchor,
+.canvas-lab-card:focus-within .canvas-lab-anchor,
+.canvas-lab-card[data-connecting="true"] .canvas-lab-anchor {
+  opacity: 1;
+  pointer-events: auto;
+}
+.canvas-lab-anchor:hover,
+.canvas-lab-anchor:focus-visible,
+.canvas-lab-anchor[data-active="true"] {
+  background: var(--nb-green);
+  outline-color: var(--nb-green);
+}
+.canvas-lab-anchor[data-side="top"] { left: 50%; top: -7px; transform: translateX(-50%); }
+.canvas-lab-anchor[data-side="right"] { right: -7px; top: 50%; transform: translateY(-50%); }
+.canvas-lab-anchor[data-side="bottom"] { bottom: -7px; left: 50%; transform: translateX(-50%); }
+.canvas-lab-anchor[data-side="left"] { left: -7px; top: 50%; transform: translateY(-50%); }
+.canvas-lab-card-menu-trigger {
+  position: absolute;
+  right: 3px;
+  top: 3px;
+  z-index: 14;
+  width: 26px;
+  height: 26px;
+  min-height: 0;
+  background: var(--nb-paper);
+  color: var(--nb-graphite);
+  opacity: 0;
+}
+.canvas-lab-card:hover .canvas-lab-card-menu-trigger,
+.canvas-lab-card:focus-within .canvas-lab-card-menu-trigger,
+.canvas-lab-card-menu-trigger[data-state="open"] {
+  opacity: 1;
+}
+.canvas-lab-card-menu {
+  min-width: 164px;
+  border-color: var(--nb-rule);
+  background: var(--nb-paper);
+}
+@media (hover: none), (max-width: 767px) {
+  .canvas-lab-card-menu-trigger { opacity: 1; }
+}
 ::highlight(canvas-lab-selection) { background: var(--nb-green-wash); }
 
 .canvas-lab-work-rail {

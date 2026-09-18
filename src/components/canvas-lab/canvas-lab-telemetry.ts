@@ -2,6 +2,7 @@ import { logEvent } from "@/lib/telemetry";
 
 export type LabNodeEventKind = "source" | "ai_work" | "human_judgment" | "decision" | "deliverable" | "draft_thread";
 export type LabJudgmentEventType = "added_constraint" | "corrected_ai" | "rejected_option" | "requested_evidence" | "changed_direction" | "accepted_but_rewrote";
+export type LabOwnershipEvent = "yours" | "teammate" | "draft";
 
 export function noteWorkboardRail(orgId: string | undefined, state: "collapsed" | "reopened"): void {
   if (orgId) logEvent("workboard.rail_toggled", orgId, { state });
@@ -26,4 +27,7 @@ export function noteWorkboardReviewOpened(orgId: string | undefined, format: "th
 }
 export function noteWorkboardTrailSelected(orgId: string | undefined, group: "context" | "ai_work" | "human_judgment" | "decisions", focus: "exact" | "item"): void {
   if (orgId) logEvent("workboard.trail_item_selected", orgId, { group, focus });
+}
+export function noteWorkboardCardMenuOpened(orgId: string | undefined, nodeKind: LabNodeEventKind, ownership: LabOwnershipEvent): void {
+  if (orgId) logEvent("workboard.card_menu_opened", orgId, { node_kind: nodeKind, ownership });
 }

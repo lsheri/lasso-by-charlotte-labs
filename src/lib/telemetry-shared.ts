@@ -169,6 +169,8 @@ export type TelemetryEvent =
   | "workboard.review_opened"
   /** Canvas Lab Phase 2: a grouped reasoning-trail item was chosen. */
   | "workboard.trail_item_selected"
+  /** Canvas Lab interaction correction: a card's contextual action menu opened. */
+  | "workboard.card_menu_opened"
   /** Pass 185: a workspace was affiliated with an institution at creation. Slug only. */
   | "workspace.affiliated"
   /** Pass 186: the student opened the page describing what their school sees. */

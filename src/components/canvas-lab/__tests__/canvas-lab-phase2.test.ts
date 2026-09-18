@@ -6,6 +6,7 @@ const recorded: { event: string; dims: Record<string, unknown> }[] = [];
 vi.mock("@/lib/telemetry", () => ({ logEvent: (event: string, _orgId: string, dims: Record<string, unknown>) => recorded.push({ event, dims }) }));
 
 import {
+  noteWorkboardCardMenuOpened,
   noteWorkboardNodeCreated,
   noteWorkboardNodeDeleted,
   noteWorkboardNodeEdited,
@@ -30,6 +31,7 @@ describe("Canvas Lab Phase 2", () => {
     noteWorkboardRelationship("org", "created");
     noteWorkboardReviewOpened("org", "deck");
     noteWorkboardTrailSelected("org", "context", "item");
+    noteWorkboardCardMenuOpened("org", "deliverable", "yours");
     expect(recorded).toEqual([
       { event: "workboard.rail_toggled", dims: { state: "collapsed" } },
       { event: "workboard.node_created", dims: { kind: "human_judgment", judgment_type: "corrected_ai" } },
@@ -39,6 +41,7 @@ describe("Canvas Lab Phase 2", () => {
       { event: "workboard.relationship_changed", dims: { action: "created" } },
       { event: "workboard.review_opened", dims: { format: "deck" } },
       { event: "workboard.trail_item_selected", dims: { group: "context", focus: "item" } },
+      { event: "workboard.card_menu_opened", dims: { node_kind: "deliverable", ownership: "yours" } },
     ]);
     const catalog = read("src/lib/telemetry-shared.ts");
     for (const entry of recorded) expect(catalog).toContain(`| "${entry.event}"`);

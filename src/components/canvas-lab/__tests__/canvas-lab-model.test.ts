@@ -12,7 +12,10 @@ import {
   createLabFrames,
   draftAnchor,
   fitScale,
+  labAnchorPoint,
+  labConnectorPath,
   moveNode,
+  nearestLabAnchor,
   removeContext,
   resetChatCounter,
   resetCommentCounter,
@@ -197,17 +200,29 @@ describe("canvas lab model", () => {
     const real = seedCanvas(SEED)[0];
     expect(real).toBeDefined();
     if (!real) return;
-    const result = deleteLocalNode([real, local], [{ id: "l1", fromId: local.id, toId: real.id }], [local.id], local.id);
+    const result = deleteLocalNode([real, local], [{ id: "l1", fromId: local.id, fromAnchor: "right", toId: real.id, toAnchor: "left" }], [local.id], local.id);
     expect(result.nodes).toEqual([real]);
     expect(result.links).toEqual([]);
     expect(deleteLocalNode([real], [], [], real.id).nodes).toEqual([real]);
   });
 
   it("rejects self and duplicate local relationships", () => {
-    expect(addLabLink([], "a", "a").error).toContain("itself");
-    const created = addLabLink([], "a", "b");
+    expect(addLabLink([], "a", "right", "a", "left").error).toContain("itself");
+    const created = addLabLink([], "a", "right", "b", "left");
     expect(created.error).toBeNull();
-    expect(addLabLink(created.links, "a", "b").error).toContain("already connected");
+    expect(addLabLink(created.links, "a", "right", "b", "left").error).toContain("already connected");
+    expect(addLabLink(created.links, "a", "bottom", "b", "top").error).toBeNull();
+  });
+
+  it("resolves anchored card edges and deterministic nearest sides", () => {
+    const node = { x: 100, y: 200 };
+    expect(labAnchorPoint(node, "top", 120)).toEqual({ x: 216, y: 200 });
+    expect(labAnchorPoint(node, "right", 120)).toEqual({ x: 332, y: 260 });
+    expect(labAnchorPoint(node, "bottom", 120)).toEqual({ x: 216, y: 320 });
+    expect(labAnchorPoint(node, "left", 120)).toEqual({ x: 100, y: 260 });
+    expect(nearestLabAnchor({ x: 340, y: 260 }, node, 120)).toBe("right");
+    expect(nearestLabAnchor({ x: 216, y: 190 }, node, 120)).toBe("top");
+    expect(labConnectorPath({ x: 0, y: 0 }, "right", { x: 100, y: 100 }, "left")).toContain("C 64 0, 36 100");
   });
 
   it("returns only the anchor when there are no local links", () => {
@@ -217,30 +232,30 @@ describe("canvas lab model", () => {
 
   it("includes a directly linked node in either link direction", () => {
     const nodes = seedCanvas(SEED);
-    const links = [{ id: "l1", fromId: "work:w1", toId: "work:w3" }];
+    const links = [{ id: "l1", fromId: "work:w1", fromAnchor: "right" as const, toId: "work:w3", toAnchor: "left" as const }];
     expect(connectedLabNodeIds(nodes, links, "work:w3")).toEqual(new Set(["work:w3", "work:w1"]));
   });
 
   it("walks the full multi-hop local connected component", () => {
     const nodes = seedCanvas(SEED);
     const links = [
-      { id: "l1", fromId: "work:w3", toId: "work:w1" },
-      { id: "l2", fromId: "work:w1", toId: "work:w2" },
+      { id: "l1", fromId: "work:w3", fromAnchor: "right" as const, toId: "work:w1", toAnchor: "left" as const },
+      { id: "l2", fromId: "work:w1", fromAnchor: "bottom" as const, toId: "work:w2", toAnchor: "top" as const },
     ];
     expect(connectedLabNodeIds(nodes, links, "work:w3")).toEqual(new Set(["work:w3", "work:w1", "work:w2"]));
   });
 
   it("excludes disconnected local nodes", () => {
     const nodes = seedCanvas(SEED);
-    const links = [{ id: "l1", fromId: "work:w3", toId: "work:w1" }];
+    const links = [{ id: "l1", fromId: "work:w3", fromAnchor: "right" as const, toId: "work:w1", toAnchor: "left" as const }];
     expect(connectedLabNodeIds(nodes, links, "work:w3").has("work:w2")).toBe(false);
   });
 
   it("ignores links whose endpoint is missing", () => {
     const nodes = seedCanvas(SEED);
     const links = [
-      { id: "l1", fromId: "work:w3", toId: "missing" },
-      { id: "l2", fromId: "missing", toId: "work:w1" },
+      { id: "l1", fromId: "work:w3", fromAnchor: "right" as const, toId: "missing", toAnchor: "left" as const },
+      { id: "l2", fromId: "missing", fromAnchor: "right" as const, toId: "work:w1", toAnchor: "left" as const },
     ];
     expect([...connectedLabNodeIds(nodes, links, "work:w3")]).toEqual(["work:w3"]);
     expect(connectedLabNodeIds(nodes, links, "missing")).toEqual(new Set());
