@@ -72,5 +72,13 @@ export function useCanvasLab(engagementId: string, profileId: string | undefined
 
   const clearSaveState = useCallback(() => setSaveState({ status: boardRef.current?.id ? "saved" : "idle" }), []);
 
-  return { board: query.data ?? null, boardLoading: query.isLoading, saveState, persist, clearSaveState, orgId };
+  /** Read the durable board again, so a reconcile sees every entity kind. */
+  const refresh = useCallback(async (): Promise<WorkboardDto | null> => {
+    const fresh = (await queryClient.fetchQuery(canvasLabBoardQuery(engagementId, profileId))) as WorkboardDto | null;
+    boardRef.current = fresh;
+    return fresh;
+  }, [engagementId, profileId, queryClient]);
+
+  return { board: query.data ?? null, boardLoading: query.isLoading, saveState, persist, clearSaveState, refresh, orgId };
 }
+

@@ -3524,6 +3524,7 @@ export type Database = {
         Row: {
           author_profile_id: string
           body: string
+          client_key: string | null
           created_at: string
           created_by: string
           decision_id: string | null
@@ -3547,6 +3548,7 @@ export type Database = {
         Insert: {
           author_profile_id: string
           body?: string
+          client_key?: string | null
           created_at?: string
           created_by: string
           decision_id?: string | null
@@ -3570,6 +3572,7 @@ export type Database = {
         Update: {
           author_profile_id?: string
           body?: string
+          client_key?: string | null
           created_at?: string
           created_by?: string
           decision_id?: string | null

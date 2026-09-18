@@ -15,6 +15,13 @@
       "when": 1789765423737,
       "tag": "0001_canvas_lab_slice1_workboards",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789766652757,
+      "tag": "0002_canvas_lab_slice1_workboard_hardening",
+      "breakpoints": true
     }
   ]
 }

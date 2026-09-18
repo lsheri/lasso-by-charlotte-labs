@@ -190,11 +190,15 @@ export async function applyWorkboardCommand(
 ): Promise<WorkboardMutationResult> {
   const membership = await membershipFor(db, engagementId, profile.id);
   if (!membership.isMember) return { status: "forbidden" };
+  // Coaches read already-permitted sources. They never arrange the shared
+  // workboard, so nothing they send may even lazy-create the board row.
+  if (!membership.isEditor) return { status: "forbidden" };
 
   const board = await ensureBoard(db, engagementId, profile);
   if (!board) return { status: "forbidden" };
 
   const stamp = { updated_by: profile.id };
+
 
   if (command.type === "materialize") {
     if (!membership.isEditor) return { status: "forbidden" };
@@ -210,26 +214,30 @@ export async function applyWorkboardCommand(
       for (const row of inserted ?? []) frameIdByKey.set(row.key, row.id);
     }
 
-    const existingNodes = (await db.from("workboard_nodes").select("id, kind, work_item_id, decision_id").eq("workboard_id", board.id).is("deleted_at", null)).data ?? [];
+    const existingNodes = (await db.from("workboard_nodes").select("id, kind, work_item_id, decision_id, client_key").eq("workboard_id", board.id).is("deleted_at", null)).data ?? [];
     const nodeIdByRef = new Map(existingNodes.map((row) => [refKey(row.kind, row.work_item_id, row.decision_id), row.id]));
+    const nodeIdByClientKey = new Map(existingNodes.flatMap((row) => (row.client_key ? [[row.client_key, row.id] as const] : [])));
     const createdNodes: Record<string, string> = {};
     const createdFrames: Record<string, string> = Object.fromEntries(frameIdByKey);
+    // Materialize is replayable: a card this board already carries, by client
+    // key or by canonical reference, is reported back rather than made twice.
     const toInsert = command.nodes.filter((node) => {
+      if (nodeIdByClientKey.has(node.clientKey)) {
+        createdNodes[node.clientKey] = nodeIdByClientKey.get(node.clientKey) as string;
+        return false;
+      }
       if (node.kind === "judgment" || node.kind === "draft") return true;
       return !nodeIdByRef.has(refKey(node.kind, node.workItemId ?? null, node.decisionId ?? null));
     });
     for (const node of toInsert) {
       const invalid = validNodeInput(node);
       if (invalid) return { status: "validation_error", message: invalid };
-      const { data, error } = await db
-        .from("workboard_nodes")
-        .insert(nodeInsert(board.id, profile.id, node, node.frameKey ? frameIdByKey.get(node.frameKey) ?? null : null))
-        .select("id")
-        .single();
-      if (error || !data) return { status: "validation_error", message: "A workboard card could not be saved." };
-      createdNodes[node.clientKey] = data.id;
+      const saved = await insertNodeIdempotent(db, board.id, profile.id, node, node.frameKey ? frameIdByKey.get(node.frameKey) ?? null : null);
+      if (!saved) return { status: "validation_error", message: "A workboard card could not be saved." };
+      createdNodes[node.clientKey] = saved.id;
     }
     return { status: "saved", boardId: board.id, boardVersion: board.version, created: { nodes: createdNodes, frames: createdFrames }, versions: {} };
+
   }
 
   if (command.type === "frame_create") {
@@ -266,23 +274,21 @@ export async function applyWorkboardCommand(
   }
 
   if (command.type === "node_create") {
-    // Slice 1: coaches read already-permitted sources but never rearrange the
-    // shared structure; placement and authored cards belong to other members.
-    if (!membership.isEditor) return { status: "forbidden" };
     const invalid = validNodeInput(command.node);
     if (invalid) return { status: "validation_error", message: invalid };
     const frameId = command.node.frameKey ? await frameIdForKey(db, board.id, command.node.frameKey) : null;
-    const { data, error } = await db
-      .from("workboard_nodes")
-      .insert(nodeInsert(board.id, profile.id, command.node, frameId))
-      .select("id, version")
-      .single();
-    if (error || !data) return { status: "validation_error", message: "The card could not be saved." };
-    return { status: "saved", boardId: board.id, boardVersion: board.version, created: { nodeId: data.id }, versions: { [data.id]: data.version } };
+    const saved = await insertNodeIdempotent(db, board.id, profile.id, command.node, frameId);
+    if (!saved) return { status: "validation_error", message: "The card could not be saved." };
+    return { status: "saved", boardId: board.id, boardVersion: board.version, created: { nodeId: saved.id }, versions: { [saved.id]: saved.version } };
   }
 
   if (command.type === "node_update" || command.type === "node_archive" || command.type === "node_restore") {
-    if (!membership.isEditor) return { status: "forbidden" };
+    // Authored judgment and draft cards answer only to their author, archive
+    // and restore included. Canonical reference cards are shared structure.
+    const owner = (await db.from("workboard_nodes").select("kind, author_profile_id").eq("id", command.nodeId).eq("workboard_id", board.id).maybeSingle()).data;
+    if (owner && (owner.kind === "judgment" || owner.kind === "draft") && owner.author_profile_id !== profile.id) {
+      return { status: "forbidden" };
+    }
     const patch =
       command.type === "node_update"
         ? { ...definedPatch(command.patch), ...stamp }
@@ -290,6 +296,7 @@ export async function applyWorkboardCommand(
     const { data, error } = await db
       .from("workboard_nodes")
       .update(patch)
+
       .eq("id", command.nodeId)
       .eq("workboard_id", board.id)
       .eq("version", command.expectedVersion)
@@ -387,8 +394,34 @@ function nodeInsert(boardId: string, profileId: string, node: WorkboardNodeInput
     hidden: node.hidden ?? false,
     created_by: profileId,
     updated_by: profileId,
+    client_key: node.clientKey,
   };
 }
+
+/**
+ * One card, once. The client key is unique per board, so a retry after a lost
+ * response returns the row the first attempt already wrote instead of a twin.
+ */
+async function insertNodeIdempotent(
+  db: Db,
+  boardId: string,
+  profileId: string,
+  node: WorkboardNodeInput,
+  frameId: string | null,
+): Promise<{ id: string; version: number } | null> {
+  const { data, error } = await db
+    .from("workboard_nodes")
+    .insert(nodeInsert(boardId, profileId, node, frameId))
+    .select("id, version")
+    .single();
+  if (data) return { id: data.id, version: data.version };
+  if (error?.code !== "23505") return null;
+  const existing = (
+    await db.from("workboard_nodes").select("id, version").eq("workboard_id", boardId).eq("client_key", node.clientKey).is("deleted_at", null).maybeSingle()
+  ).data;
+  return existing ? { id: existing.id, version: existing.version } : null;
+}
+
 
 async function frameIdForKey(db: Db, boardId: string, key: string): Promise<string | null> {
   const { data } = await db.from("workboard_frames").select("id").eq("workboard_id", boardId).eq("key", key).is("deleted_at", null).maybeSingle();

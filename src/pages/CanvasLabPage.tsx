@@ -138,6 +138,9 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
   const cardHeightsRef = useRef(new Map<string, number>());
   const panRef = useRef<{ from: Point; origin: Point } | null>(null);
   const openedRef = useRef(false);
+  /** The deterministic virtual seed a durable board is overlaid onto. */
+  const virtualBaseRef = useRef<{ frames: LabFrame[]; nodes: LabNode[] } | null>(null);
+
 
   useEffect(() => {
     const timer = window.setTimeout(() => setOpening(false), 520);
@@ -153,7 +156,9 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
       work: workItems.map((item) => ({ id: item.id, title: item.title, typeLabel: item.type.replaceAll("_", " "), source: item.source, ownedByViewer: !item.owner_id || item.owner_id === profile?.id, taskIds: taskIdsByWork.get(item.id) ?? [], deliverable: isDeliverableType(item.type) })),
       decisions: (page.decisions ?? []).map((decision) => ({ id: decision.id, call: decision.call_text, situation: decision.situation, ownedByViewer: decision.owner_id === profile?.id })),
     }, virtualFrames);
+    virtualBaseRef.current = { frames: virtualFrames, nodes: virtualNodes };
     const board = lab.board;
+
     if (board?.id) {
       const merged = applyDurableBoard({ frames: virtualFrames, nodes: virtualNodes }, board);
       setFrames(merged.frames);
@@ -208,13 +213,14 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
   }
 
   function nodeToInput(node: LabNode): WorkboardNodeInput | null {
-    const base = { clientKey: node.id, frameKey: node.frame, x: node.x, y: node.y, hidden: hiddenRef.current.includes(node.id) };
+    const base = { clientKey: node.clientKey ?? node.id, frameKey: node.frame, x: node.x, y: node.y, hidden: hiddenRef.current.includes(node.id) };
     if (node.kind === "work" && node.workItemId) return { ...base, kind: "work_item", workItemId: node.workItemId };
     if (node.kind === "decision" && node.id.startsWith("decision:")) return { ...base, kind: "decision", decisionId: node.id.slice(9) };
     if (node.kind === "brief") return { ...base, kind: "brief" };
     if (node.kind === "judgment" && node.local) return { ...base, kind: "judgment", title: node.title, body: node.summary, judgmentType: node.judgmentType ?? null };
     return null;
   }
+
 
   function report(result: { status: string }, entity: WorkboardPersistEntity, action: "create" | "update" | "archive" | "restore"): void {
     if (result.status === "saved") noteWorkboardChangeSaved(orgId, entity, action);
@@ -303,32 +309,31 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
     report(result, "relationship", "archive");
   }
 
+  /**
+   * Load latest reads the whole durable board again and re-applies it over the
+   * deterministic seed, so workstreams, cards and relationships all reconcile.
+   * Viewport, rail, selection and unsent composer text are left alone.
+   */
   function resolveConflict(choice: "latest" | "retry") {
     const state = lab.saveState;
     if (state.status !== "conflict") return;
     noteWorkboardConflictResolved(orgId, state.entityKind === "link" ? "relationship" : state.entityKind, choice);
     if (choice === "latest") {
-      const latest = state.latest;
-      if (state.entityKind === "node") {
-        setNodes((current) => current?.map((entry) => entry.durableId === state.entityId
-          ? {
-              ...entry,
-              x: typeof latest["x"] === "number" ? latest["x"] : entry.x,
-              y: typeof latest["y"] === "number" ? latest["y"] : entry.y,
-              summary: typeof latest["body"] === "string" && entry.kind === "judgment" ? latest["body"] : entry.summary,
-              durableVersion: state.latestVersion,
-            }
-          : entry) ?? current);
-        if (typeof latest["hidden"] === "boolean") {
-          setHiddenIds((current) => {
-            const localId = nodesRef.current.find((entry) => entry.durableId === state.entityId)?.id;
-            if (!localId) return current;
-            return latest["hidden"] ? [...new Set([...current, localId])] : current.filter((id) => id !== localId);
-          });
+      void (async () => {
+        const fresh = await lab.refresh();
+        const base = virtualBaseRef.current;
+        if (fresh?.id && base) {
+          const merged = applyDurableBoard(base, fresh);
+          const localOnly = (nodesRef.current ?? []).filter((entry) => !entry.durableId && (entry.kind === "chat" || (entry.local && entry.kind !== "judgment")));
+          setFrames(merged.frames);
+          setNodes([...merged.nodes, ...localOnly]);
+          setLinks(merged.links);
+          setHiddenIds(merged.hiddenIds);
+          setSelectedLinkId(null);
         }
-      }
-      lab.clearSaveState();
-      setAnnouncement("Loaded the newer version.");
+        lab.clearSaveState();
+        setAnnouncement("Loaded the newer version of this workboard.");
+      })();
       return;
     }
     const retry = { ...state.retry, expectedVersion: state.latestVersion } as WorkboardCommand;
@@ -336,6 +341,7 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
     void lab.persist(retry).then((result) => report(result, state.entityKind === "link" ? "relationship" : state.entityKind, "update"));
     setAnnouncement("Retried your change.");
   }
+
 
   /* ---------------- end durable save pipeline ---------------- */
 
@@ -476,6 +482,17 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
   }
 
   function deleteNode(node: LabNode) {
+    // A judgment belongs to whoever wrote it. Nobody else removes it, and the
+    // author's removal is a soft archive the record keeps.
+    if ((node.kind === "judgment" || node.kind === "chat") && !node.local) {
+      setAnnouncement("This card belongs to a teammate, so only they can remove it.");
+      return;
+    }
+    if (node.durableId) {
+      void lab
+        .persist({ type: "node_archive", nodeId: node.durableId, expectedVersion: node.durableVersion ?? 1 })
+        .then((result) => report(result, "node", "archive"));
+    }
     setNodes((current) => {
       if (!current) return current;
       const result = deleteLocalNode(current, links, selected, node.id);
@@ -485,8 +502,9 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
     });
     setKeyboardId(null);
     noteWorkboardNodeDeleted(orgId, eventKind(node));
-    setAnnouncement(`${node.title} deleted from this local workboard.`);
+    setAnnouncement(`${node.title} removed from this workboard.`);
   }
+
 
   function hideNode(node: LabNode) {
     setHiddenIds((current) => [...current, node.id]);
