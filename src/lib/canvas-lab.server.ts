@@ -394,8 +394,34 @@ function nodeInsert(boardId: string, profileId: string, node: WorkboardNodeInput
     hidden: node.hidden ?? false,
     created_by: profileId,
     updated_by: profileId,
+    client_key: node.clientKey,
   };
 }
+
+/**
+ * One card, once. The client key is unique per board, so a retry after a lost
+ * response returns the row the first attempt already wrote instead of a twin.
+ */
+async function insertNodeIdempotent(
+  db: Db,
+  boardId: string,
+  profileId: string,
+  node: WorkboardNodeInput,
+  frameId: string | null,
+): Promise<{ id: string; version: number } | null> {
+  const { data, error } = await db
+    .from("workboard_nodes")
+    .insert(nodeInsert(boardId, profileId, node, frameId))
+    .select("id, version")
+    .single();
+  if (data) return { id: data.id, version: data.version };
+  if (error?.code !== "23505") return null;
+  const existing = (
+    await db.from("workboard_nodes").select("id, version").eq("workboard_id", boardId).eq("client_key", node.clientKey).is("deleted_at", null).maybeSingle()
+  ).data;
+  return existing ? { id: existing.id, version: existing.version } : null;
+}
+
 
 async function frameIdForKey(db: Db, boardId: string, key: string): Promise<string | null> {
   const { data } = await db.from("workboard_frames").select("id").eq("workboard_id", boardId).eq("key", key).is("deleted_at", null).maybeSingle();
