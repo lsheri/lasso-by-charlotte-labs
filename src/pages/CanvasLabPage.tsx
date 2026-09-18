@@ -138,6 +138,9 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
   const cardHeightsRef = useRef(new Map<string, number>());
   const panRef = useRef<{ from: Point; origin: Point } | null>(null);
   const openedRef = useRef(false);
+  /** The deterministic virtual seed a durable board is overlaid onto. */
+  const virtualBaseRef = useRef<{ frames: LabFrame[]; nodes: LabNode[] } | null>(null);
+
 
   useEffect(() => {
     const timer = window.setTimeout(() => setOpening(false), 520);
