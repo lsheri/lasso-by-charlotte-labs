@@ -262,3 +262,5 @@ Right-click, Shift+F10, the Context Menu key, and the paper-corner ellipsis open
 One additive event was added: `workboard.card_menu_opened`, with closed dimensions `{ node_kind, ownership }`. It uses the existing consent-stamped event path, remains workspace-only at tier t0, and requires a matching portal catalog update. No identifiers, content, coordinates, or free text are included.
 
 No consent, database, schema, RLS, server, production canvas, provenance, landing-page, AskDock, persistence, deployment, or publishing change was made.
+
+Verification: `bunx tsgo --noEmit` passed. The focused card-interaction, model, Phase 2, second-pass, route, motion, and token suite passed 54 tests across 7 files. The preview build completed successfully at 2026-09-18 20:47 UTC. Authenticated desktop and narrow-screen visual verification was not completed because the required Liam session approval was unavailable; no other account was substituted.
