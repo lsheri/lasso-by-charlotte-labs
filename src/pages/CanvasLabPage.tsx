@@ -166,6 +166,18 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
     return () => window.removeEventListener("keydown", onEscape);
   }, [focusId, menuOpen]);
 
+  useEffect(() => {
+    const shell = shellRef.current;
+    if (!shell) return;
+    function onModifierWheel(event: WheelEvent) {
+      if (!event.ctrlKey && !event.metaKey) return;
+      event.preventDefault();
+      setZoom((current) => pinchZoom(current, event.deltaY));
+    }
+    shell.addEventListener("wheel", onModifierWheel, { passive: false });
+    return () => shell.removeEventListener("wheel", onModifierWheel);
+  }, []);
+
   function onCardPointerDown(node: LabNode, event: React.PointerEvent) {
     if (event.button !== 0 || (event.target as Element).closest("button")) return;
     event.stopPropagation();
@@ -290,11 +302,6 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
           ref={shellRef}
           onPointerDown={(event) => {
             if (event.button === 0) panRef.current = { from: { x: event.clientX, y: event.clientY }, origin: pan };
-          }}
-          onWheel={(event) => {
-            if (!event.ctrlKey && !event.metaKey) return;
-            event.preventDefault();
-            setZoom((current) => pinchZoom(current, event.deltaY));
           }}
           className="canvas-lab-surface relative min-h-0 flex-1 cursor-grab overflow-hidden"
         >

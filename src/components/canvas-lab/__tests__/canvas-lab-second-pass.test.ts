@@ -42,6 +42,13 @@ describe("Canvas Lab second prototype pass", () => {
     expect(overlay).not.toContain("items: WorkItemRow[]");
   });
 
+  it("cancels only modifier-wheel browser zoom on a non-passive listener", () => {
+    const page = read("src/pages/CanvasLabPage.tsx");
+    expect(page).toContain('if (!event.ctrlKey && !event.metaKey) return;');
+    expect(page).toContain("event.preventDefault();");
+    expect(page).toContain('addEventListener("wheel", onModifierWheel, { passive: false })');
+  });
+
   it("registers the unfold event and a reduced-motion answer", () => {
     const registry = read("src/lib/motion-registry.ts");
     expect(registry).toContain('"canvas.unfolded"');
