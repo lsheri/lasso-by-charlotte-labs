@@ -14,7 +14,7 @@ export type LabNodeKind = "brief" | "task" | "work" | "decision" | "chat";
 /** Who the thing belongs to, which is what decides the offered actions. */
 export type LabOwnership = "yours" | "teammate" | "draft";
 
-export type LabFrameId = "brief" | "workstreams" | "evidence" | "decisions" | "conversations";
+export type LabFrameId = string;
 
 export type LabNode = {
   id: string;
@@ -28,8 +28,6 @@ export type LabNode = {
   ownership: LabOwnership;
   /** Present only when the card stands for a real work element. */
   workItemId?: string | undefined;
-  /** Set on example collaborator cards so the surface can label them. */
-  example?: boolean;
   /** Local chat cards only. */
   prompt?: string | undefined;
   contextIds?: string[];
@@ -44,28 +42,61 @@ export type LabFrame = {
   y: number;
   width: number;
   height: number;
+  local?: boolean;
 };
 
 export const CARD_WIDTH = 232;
-export const CARD_GAP_Y = 108;
-export const LIVE_CARD_EXTRA = 118;
+export const CARD_GAP_Y = 144;
 export const FRAME_PADDING = 24;
 
-export const LAB_FRAMES: LabFrame[] = [
-  { id: "brief", name: "Brief", x: 60, y: 60, width: 300, height: 320 },
-  { id: "workstreams", name: "Workstreams", x: 420, y: 60, width: 300, height: 620 },
-  { id: "evidence", name: "Evidence", x: 780, y: 60, width: 300, height: 760 },
-  { id: "decisions", name: "Decisions", x: 1140, y: 60, width: 300, height: 620 },
-  { id: "conversations", name: "Conversations", x: 1500, y: 60, width: 320, height: 760 },
-];
+const FRAME_WIDTH = 430;
+const FRAME_HEIGHT = 520;
+const FRAME_GAP = 36;
+const FRAME_COLUMNS = 3;
 
-export function frameById(id: LabFrameId): LabFrame {
-  return LAB_FRAMES.find((frame) => frame.id === id) ?? (LAB_FRAMES[0] as LabFrame);
+/** Consulting-work zones, derived from the engagement's real workstreams. */
+export function createLabFrames(tasks: { id: string; name: string }[]): LabFrame[] {
+  const workstreams =
+    tasks.length > 0
+      ? tasks.map((task) => ({ id: `task:${task.id}`, name: task.name }))
+      : [{ id: "workstreams", name: "Workstreams" }];
+  const definitions = [
+    { id: "foundation", name: "Foundation" },
+    ...workstreams,
+    { id: "decisions", name: "Decisions" },
+    { id: "outputs", name: "Outputs" },
+  ];
+  return definitions.map((definition, index) => ({
+    ...definition,
+    x: 60 + (index % FRAME_COLUMNS) * (FRAME_WIDTH + FRAME_GAP),
+    y: 60 + Math.floor(index / FRAME_COLUMNS) * (FRAME_HEIGHT + FRAME_GAP),
+    width: FRAME_WIDTH,
+    height: FRAME_HEIGHT,
+  }));
 }
 
-/** Stage size, wide enough that every frame sits inside it with air. */
-export const STAGE_WIDTH = 1980;
-export const STAGE_HEIGHT = 980;
+export function addLocalFrame(frames: LabFrame[], name: string): LabFrame[] {
+  const index = frames.length;
+  return [
+    ...frames,
+    {
+      id: `local:${index}:${name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
+      name: name.trim(),
+      x: 60 + (index % FRAME_COLUMNS) * (FRAME_WIDTH + FRAME_GAP),
+      y: 60 + Math.floor(index / FRAME_COLUMNS) * (FRAME_HEIGHT + FRAME_GAP),
+      width: FRAME_WIDTH,
+      height: FRAME_HEIGHT,
+      local: true,
+    },
+  ];
+}
+
+export function stageBounds(frames: LabFrame[]): { width: number; height: number } {
+  return {
+    width: Math.max(980, ...frames.map((frame) => frame.x + frame.width + 60)),
+    height: Math.max(720, ...frames.map((frame) => frame.y + frame.height + 120)),
+  };
+}
 
 export type SeedInput = {
   brief: { title: string; text: string | null } | null;
@@ -76,15 +107,18 @@ export type SeedInput = {
     typeLabel: string;
     source: string;
     ownedByViewer: boolean;
-    isConversation: boolean;
+    taskIds: string[];
+    deliverable: boolean;
   }[];
   decisions: { id: string; call: string; situation: string; ownedByViewer: boolean }[];
 };
 
 function stack(frame: LabFrame, index: number): Point {
+  const column = index % 1;
+  const row = Math.floor(index / 1);
   return snapPoint({
-    x: frame.x + FRAME_PADDING,
-    y: frame.y + 56 + index * CARD_GAP_Y,
+    x: frame.x + FRAME_PADDING + column * (CARD_WIDTH + 18),
+    y: frame.y + 60 + row * CARD_GAP_Y,
   });
 }
 
@@ -93,15 +127,23 @@ function stack(frame: LabFrame, index: number): Point {
  * A frame with nothing in it still renders, so an absent kind reads as empty
  * rather than missing.
  */
-export function seedCanvas(input: SeedInput): LabNode[] {
+export function seedCanvas(input: SeedInput, frames = createLabFrames(input.tasks)): LabNode[] {
   const nodes: LabNode[] = [];
+  const frameById = (id: LabFrameId) =>
+    frames.find((frame) => frame.id === id) ?? (frames[0] as LabFrame);
+  const frameCounts = new Map<string, number>();
+  const nextAt = (frameId: string) => {
+    const index = frameCounts.get(frameId) ?? 0;
+    frameCounts.set(frameId, index + 1);
+    return stack(frameById(frameId), index);
+  };
 
   if (input.brief) {
-    const at = stack(frameById("brief"), 0);
+    const at = nextAt("foundation");
     nodes.push({
       id: "brief",
       kind: "brief",
-      frame: "brief",
+      frame: "foundation",
       title: input.brief.title,
       summary: input.brief.text ?? "No brief written yet.",
       typeLabel: "brief",
@@ -111,29 +153,14 @@ export function seedCanvas(input: SeedInput): LabNode[] {
     });
   }
 
-  input.tasks.forEach((task, index) => {
-    const at = stack(frameById("workstreams"), index);
-    nodes.push({
-      id: `task:${task.id}`,
-      kind: "task",
-      frame: "workstreams",
-      title: task.name,
-      summary: task.detail ?? "No detail on this workstream.",
-      typeLabel: "workstream",
-      ownership: task.ownedByViewer ? "yours" : "teammate",
-      x: at.x,
-      y: at.y,
-    });
-  });
-
-  let evidenceIndex = 0;
-  let conversationIndex = 0;
   for (const item of input.work) {
-    const frame: LabFrameId = item.isConversation ? "conversations" : "evidence";
-    const index = item.isConversation ? conversationIndex : evidenceIndex;
-    if (item.isConversation) conversationIndex += 1;
-    else evidenceIndex += 1;
-    const at = stack(frameById(frame), index);
+    const mappedTask = item.taskIds.find((taskId) => frames.some((frame) => frame.id === `task:${taskId}`));
+    const frame: LabFrameId = item.deliverable
+      ? "outputs"
+      : mappedTask
+        ? `task:${mappedTask}`
+        : "foundation";
+    const at = nextAt(frame);
     nodes.push({
       id: `work:${item.id}`,
       kind: "work",
@@ -149,7 +176,7 @@ export function seedCanvas(input: SeedInput): LabNode[] {
   }
 
   input.decisions.forEach((decision, index) => {
-    const at = stack(frameById("decisions"), index);
+    const at = nextAt("decisions");
     nodes.push({
       id: `decision:${decision.id}`,
       kind: "decision",
@@ -194,14 +221,15 @@ export function resetChatCounter(): void {
 export function createChatNode(
   prompt: string,
   contextIds: string[],
-  anchor: Point = { x: 1520, y: 520 },
+  anchor: Point = { x: 1040, y: 640 },
+  frame: LabFrameId = "outputs",
 ): LabNode {
   chatCounter += 1;
   const at = snapPoint({ x: anchor.x, y: anchor.y + (chatCounter - 1) * 40 });
   return {
     id: `chat:${chatCounter}`,
     kind: "chat",
-    frame: "conversations",
+    frame,
     title: prompt.length > 64 ? `${prompt.slice(0, 61)}...` : prompt,
     summary: "Local draft. The live AI connection is off in this prototype.",
     typeLabel: "draft chat",
@@ -265,8 +293,12 @@ export function createComment(
 }
 
 /** Fit the whole stage inside the viewport, with a little air around it. */
-export function fitScale(viewportWidth: number, viewportHeight: number): number {
+export function fitScale(
+  viewportWidth: number,
+  viewportHeight: number,
+  stage: { width: number; height: number } = { width: 1460, height: 1240 },
+): number {
   if (viewportWidth <= 0 || viewportHeight <= 0) return 1;
-  const scale = Math.min(viewportWidth / (STAGE_WIDTH + 80), viewportHeight / (STAGE_HEIGHT + 80));
-  return Math.max(0.4, Math.min(1.6, scale));
+  const scale = Math.min(viewportWidth / (stage.width + 80), viewportHeight / (stage.height + 80));
+  return Math.max(0.62, Math.min(1.6, scale));
 }
