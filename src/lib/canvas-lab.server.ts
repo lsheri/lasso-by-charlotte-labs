@@ -316,7 +316,7 @@ export async function applyWorkboardCommand(
     }
     const patch =
       command.type === "node_update"
-        ? { ...definedPatch(command.patch), ...stamp }
+        ? { ...definedPatch({ ...command.patch, frame_id: command.patch.frameId }), frameId: undefined, ...stamp }
         : { deleted_at: command.type === "node_archive" ? new Date().toISOString() : null, ...stamp };
     const { data, error } = await db
       .from("workboard_nodes")
