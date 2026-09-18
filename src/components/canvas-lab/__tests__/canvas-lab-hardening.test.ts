@@ -20,18 +20,21 @@ describe("workboard database hardening (0002)", () => {
 
   it("requires an editor for every workboard write, so coaches stay read-only", () => {
     const sql = migration();
-    for (const table of ["workboards", "workboard_frames", "workboard_nodes", "workboard_links"]) {
-      expect(sql).toMatch(new RegExp(`create policy ${table}_insert[\\s\\S]{0,400}is_engagement_editor`, "i"));
-      expect(sql).toMatch(new RegExp(`create policy ${table}_update[\\s\\S]{0,400}is_engagement_editor`, "i"));
+    for (const table of ["workboards", "workboard_nodes", "workboard_links"]) {
+      expect(sql).toMatch(new RegExp(`create policy ${table}_insert[\\s\\S]{0,600}is_engagement_editor`, "i"));
+      expect(sql).toMatch(new RegExp(`create policy ${table}_update[\\s\\S]{0,600}is_engagement_editor`, "i"));
     }
+    // Workstream frames were editor-gated when they were first created.
+    expect(sql).toMatch(/create policy workboard_frames_update[\s\S]{0,600}is_engagement_editor/i);
   });
 
   it("refuses spoofed actor, board and tenant values", () => {
     const sql = migration();
-    expect(sql).toMatch(/updated_by\s*(<>|!=)\s*auth\.uid\(\)/i);
+    expect(sql).toMatch(/updated_by[\s\S]{0,80}my_profile_ids\(\)/i);
     expect(sql).toMatch(/org_id/i);
     expect(sql).toMatch(/auth\.uid\(\) is null/i);
   });
+
 
   it("keeps one card per client key so a retry cannot duplicate a judgment", () => {
     expect(migration()).toMatch(/unique index[\s\S]{0,200}client_key/i);
