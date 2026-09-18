@@ -28,8 +28,18 @@ describe("Canvas Lab second prototype pass", () => {
 
   it("adds one workboard entry and preserves the production canvas call", () => {
     const page = read("src/pages/EngagementPage.tsx");
+    expect(page).toContain("open the workboard");
+    expect(page).toContain("Arrange the engagement at full size. This prototype resets when you refresh.");
     expect(page).toContain("Open workboard");
     expect(page).toContain('<EngagementCanvasView engagementId={engagementId} items={scopedItems} onOpen={openPeek} />');
+  });
+
+  it("keeps focused provenance and clears the selection highlight", () => {
+    const overlay = read("src/components/canvas-lab/FocusOverlay.tsx");
+    expect(overlay).toContain("<WhatFedThisButton items={[item]}");
+    expect(overlay).toContain('CSS.highlights?.delete("canvas-lab-selection")');
+    expect(overlay).toContain("{comments.length + 1}");
+    expect(overlay).not.toContain("items: WorkItemRow[]");
   });
 
   it("registers the unfold event and a reduced-motion answer", () => {

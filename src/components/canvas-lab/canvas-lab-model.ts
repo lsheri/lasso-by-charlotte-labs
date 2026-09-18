@@ -52,7 +52,7 @@ export const FRAME_PADDING = 24;
 const FRAME_WIDTH = 430;
 const FRAME_HEIGHT = 520;
 const FRAME_GAP = 36;
-const FRAME_COLUMNS = 3;
+const FRAME_COLUMNS = 4;
 
 /** Consulting-work zones, derived from the engagement's real workstreams. */
 export function createLabFrames(tasks: { id: string; name: string }[]): LabFrame[] {
@@ -120,6 +120,11 @@ function stack(frame: LabFrame, index: number): Point {
     x: frame.x + FRAME_PADDING + column * (CARD_WIDTH + 18),
     y: frame.y + 60 + row * CARD_GAP_Y,
   });
+}
+
+/** Place a local draft in the next readable stack position in its frame. */
+export function draftAnchor(frame: LabFrame, nodes: LabNode[]): Point {
+  return stack(frame, nodes.filter((node) => node.frame === frame.id).length);
 }
 
 /**
@@ -249,7 +254,7 @@ export function branchChatNode(node: LabNode): LabNode {
   const branch = createChatNode(node.prompt ?? node.title, node.contextIds ?? [], {
     x: node.x + 260,
     y: node.y + 60,
-  });
+  }, node.frame);
   return { ...branch, title: `Branch of ${node.title}`, x: branch.x, y: branch.y };
 }
 

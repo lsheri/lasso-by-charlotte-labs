@@ -11,6 +11,7 @@ import {
   branchChatNode,
   createChatNode,
   createLabFrames,
+  draftAnchor,
   fitScale,
   moveNode,
   removeContext,
@@ -291,7 +292,9 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
             if (event.button === 0) panRef.current = { from: { x: event.clientX, y: event.clientY }, origin: pan };
           }}
           onWheel={(event) => {
-            if (event.ctrlKey || event.metaKey) setZoom((current) => pinchZoom(current, event.deltaY));
+            if (!event.ctrlKey && !event.metaKey) return;
+            event.preventDefault();
+            setZoom((current) => pinchZoom(current, event.deltaY));
           }}
           className="canvas-lab-surface relative min-h-0 flex-1 cursor-grab overflow-hidden"
         >
@@ -348,7 +351,14 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
           {!isLoading && !isError && list.length === 0 ? <p className="absolute left-4 top-4 font-hand text-[16px] text-[var(--nb-mid)]">nothing has been brought into this engagement yet</p> : null}
 
           <div className="pointer-events-none absolute inset-x-0 bottom-3 flex justify-center">
-            <ContextComposer context={contextNodes} onRemoveContext={(id) => setSelected((current) => removeContext(current, id))} onSubmit={(prompt) => setNodes((current) => current ? [...current, createChatNode(prompt, selected)] : current)} canvasInstructions={canvasInstructions} onCanvasInstructions={setCanvasInstructions} />
+            <ContextComposer context={contextNodes} onRemoveContext={(id) => setSelected((current) => removeContext(current, id))} onSubmit={(prompt) => setNodes((current) => {
+              if (!current) return current;
+              const contextNode = current.find((node) => node.id === selected[0]);
+              const targetFrameId = contextNode?.frame ?? "foundation";
+              const targetFrame = boardFrames.find((frame) => frame.id === targetFrameId) ?? boardFrames.find((frame) => frame.id === "foundation");
+              if (!targetFrame) return current;
+              return [...current, createChatNode(prompt, selected, draftAnchor(targetFrame, current), targetFrame.id)];
+            })} canvasInstructions={canvasInstructions} onCanvasInstructions={setCanvasInstructions} />
           </div>
 
           <div className="pointer-events-none absolute inset-0 grid place-items-center md:hidden">
@@ -370,7 +380,6 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
         <FocusOverlay
           node={focusNode}
           item={focusItem}
-          items={workItems}
           orgId={profile?.org_id}
           profileId={profile?.id}
           viewerName={viewerName}
