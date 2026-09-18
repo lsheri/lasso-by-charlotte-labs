@@ -5,6 +5,7 @@ import {
   branchChatNode,
   createChatNode,
   createComment,
+  createLabFrames,
   fitScale,
   moveNode,
   removeContext,
@@ -24,7 +25,8 @@ const SEED = {
       typeLabel: "sheet",
       source: "upload",
       ownedByViewer: true,
-      isConversation: false,
+      taskIds: ["t1"],
+      deliverable: false,
     },
     {
       id: "w2",
@@ -32,7 +34,8 @@ const SEED = {
       typeLabel: "ai thread",
       source: "chatgpt",
       ownedByViewer: false,
-      isConversation: true,
+      taskIds: ["t1"],
+      deliverable: false,
     },
   ],
   decisions: [
@@ -46,13 +49,22 @@ beforeEach(() => {
 });
 
 describe("canvas lab model", () => {
-  it("places each kind in its own frame", () => {
+  it("creates consulting frames from the real workstreams", () => {
+    const frames = createLabFrames(SEED.tasks);
+    expect(frames.map((frame) => frame.name)).toEqual([
+      "Foundation",
+      "Diagnostic",
+      "Decisions",
+      "Outputs",
+    ]);
+  });
+
+  it("maps the brief, work, calls, and deliverables into consulting frames", () => {
     const nodes = seedCanvas(SEED);
     const frameOf = (id: string) => nodes.find((node) => node.id === id)?.frame;
-    expect(frameOf("brief")).toBe("brief");
-    expect(frameOf("task:t1")).toBe("workstreams");
-    expect(frameOf("work:w1")).toBe("evidence");
-    expect(frameOf("work:w2")).toBe("conversations");
+    expect(frameOf("brief")).toBe("foundation");
+    expect(frameOf("work:w1")).toBe("task:t1");
+    expect(frameOf("work:w2")).toBe("task:t1");
     expect(frameOf("decision:d1")).toBe("decisions");
   });
 
@@ -115,7 +127,7 @@ describe("canvas lab model", () => {
 
   it("fits the stage inside the viewport and holds the zoom range", () => {
     expect(fitScale(1000, 600)).toBeLessThan(1);
-    expect(fitScale(200, 100)).toBe(0.4);
+    expect(fitScale(200, 100)).toBe(0.62);
     expect(fitScale(0, 0)).toBe(1);
   });
 });

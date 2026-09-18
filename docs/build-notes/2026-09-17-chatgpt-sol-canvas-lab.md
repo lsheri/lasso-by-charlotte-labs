@@ -106,3 +106,51 @@ The AI connection is intentionally off: chat and summarize show the user's promp
 - The engagement detail route renders EngagementPage directly and has no Outlet, so visiting `/engagements/{id}/canvas-lab` displayed the normal engagement screen instead of CanvasLabPage.
 - The route was moved to TanStack Router's non-nested filename convention, `src/routes/_authenticated/engagements.$id_.canvas-lab.tsx`, keeping the public URL exactly `/engagements/$id/canvas-lab`. The generated route tree now parents Canvas Lab to the authenticated layout, and the engagement detail route is unchanged with no children.
 - Lesson for future routes: verify route parentage in `src/routeTree.gen.ts` (the `parentRoute` field), not only that the path string exists. A focused regression test, `src/routes/__tests__/canvas-lab-route.test.ts`, now asserts the parentage, the preserved URL, and the absence of the old nested file.
+
+## 12. Second prototype pass — 2026-09-18 UTC
+
+### Design reasoning
+
+The second pass reframed Canvas Lab as an Engagement Workboard rather than a general-purpose canvas. The board now follows consulting work: Foundation, each real workstream, Decisions, and Outputs. Conversations and source material sit inside the workstream they support. Native chat remains a small local sidecar built only from context the person explicitly selects.
+
+### Controls before and after
+
+Before, EngagementPage: Brief & Comms, Work, Canvas, and Share view controls; the Canvas branch rendered EngagementCanvasView. EngagementCanvasView provided WorkNote opening, pointer and keyboard movement, link drawing/review/removal, zoom/reset, shelf placement, and draft, empty, loading, and data states. It emitted `canvas.opened` with banded `node_band`, `link_band`, and `shelf_band`, plus `canvas.zoomed` with `direction` and `method`. EngagementPage emitted `engagement.view_changed` when the view changed.
+
+Before, Canvas Lab: Back; example presence; Cards/Live; fit and zoom; pan; select, move, open, and branch; permanent ownership legend; context removal; composer submit; instruction toggle and local instruction text; narrow list; focused reader close, summarize, branch, passage selection, note body, and note submit. Its states were loading, desktop board, narrow list, focused reader, selected context, local comments, local instructions, local draft threads, pan, zoom, drag, and keyboard focus. It emitted no events.
+
+After, EngagementPage and EngagementCanvasView: every existing control, render state, server action, and event above remains. One `Open workboard` link appears above the existing Canvas.
+
+After, Workboard: menu open/close/Escape and role-appropriate navigation; back to engagement; fit, zoom in, zoom out, modifier-wheel zoom, and pan; local Add workstream; card drag and keyboard movement; Use as context/Remove context; Preview; teammate and draft Branch; context chip removal; six starter prompts; instruction drawer and local instruction text; Add draft thread; focused reader close, summarize, branch, source tracing for deliverables, passage selection, note body, and note submit. Its states are opening, reduced-motion opening status, loading, error, empty, populated board, menu open, focused reader, selected context, local comments, local instructions, local workstreams, local draft threads, pan, zoom, drag, keyboard focus, and narrow-screen guidance. Example presence, the permanent legend, and Cards/Live are absent.
+
+After telemetry: Workboard mount calls existing `noteCanvasOpenedFn` once with `{ nodes: <local node count>, links: 0, shelf: 0, profile_id }`. That path continues to emit `canvas.opened` through `recordEvent`, which applies the existing consent stamp and bands those three counts. No other Workboard action emits an event.
+
+### Data and consent impact
+
+- One new user-facing action: `Open workboard` in the existing engagement Canvas tab.
+- The Workboard reuses `canvas.opened` through `noteCanvasOpenedFn`, with the local node count and zero links and shelf. No event name, field, or dimension changed.
+- All workboard actions, placement, highlights, comments, instructions, and draft threads remain local and reset on refresh.
+- The existing permission-filtered engagement read is unchanged.
+- No consent surface, consent stamping, database schema, migration, RLS, event plumbing, or deployment change.
+- Portal changes: none.
+
+### Implementation
+
+- Full-screen shell above the normal app chrome, with a 52px rail, Lasso mark, close control, role-appropriate navigation drawer, title, Workboard/Not saved status, and fit/zoom controls.
+- The opening resolves `canvas.unfolded` through the motion registry to a brief three-panel unfold. Reduced motion receives the static `Workboard open` status.
+- Dynamic workstream frames derive from real engagement tasks. Real work uses the shared WorkNote presentation; brief, call, and local draft nodes remain folded-paper cards.
+- Selected source nodes connect to draft threads with local graphite curves.
+- The compact composer includes visible context, six starter prompts, the `Add draft thread` action, and honest AI-off wording.
+- The focused reader keeps existing document/thread readers and local notes. Selection is highlighted using the CSS Custom Highlight API when available. Deliverables expose the existing What fed this control.
+
+### Files and verification
+
+Changed application files: `EngagementPage.tsx`, `CanvasLabPage.tsx`, the Canvas Lab model/card/composer/focus files, `motion-registry.ts`, the route metadata, and Canvas-Lab-scoped rules in `styles.css`. Focused tests cover dynamic frame creation/mapping, fake-presence removal, prompt starters, full-screen shell, the preserved production canvas call, and reduced-motion registration.
+
+### Limitations
+
+- The AI connection remains off. Draft threads do not produce generated answers.
+- Frames, positions, highlights, notes, and drafts are not saved.
+- There is no realtime collaboration or collaborator presence.
+- The CSS Custom Highlight API is best-effort. On browsers without it, the selected quote remains visible beside its numbered note.
+- The Workboard is unpublished and remains behind its hidden authenticated route.

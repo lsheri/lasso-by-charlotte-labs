@@ -48,7 +48,8 @@ export type MotionName =
   | "keep-check"
   /** Pass E2 · Find it. Rows of what was said, arriving in order. */
   | "rows-land"
-  | "arrows";
+  | "arrows"
+  | "workboard-unfold";
 
 export type MotionEventName =
   // Auditability. Never remove one of these.
@@ -89,7 +90,8 @@ export type MotionEventName =
   | "findit.search_landed"
   | "page.enter"
   | "nav.active"
-  | "arrow.drawn";
+  | "arrow.drawn"
+  | "canvas.unfolded";
 
 interface MotionEventEntry {
   readonly group: MotionGroup;
@@ -268,6 +270,12 @@ const MOTION_EVENT_REGISTRY: Readonly<Record<MotionEventName, MotionEventEntry>>
     reduced: "Static arrows",
     promise: false,
   },
+  "canvas.unfolded": {
+    group: "chrome",
+    motion: "workboard-unfold",
+    reduced: "Workboard open",
+    promise: false,
+  },
 };
 
 interface MotionDraw {
@@ -318,6 +326,7 @@ const MOTION_CLASS: Partial<Record<MotionName, MotionDraw>> = {
   "lines-draw": { moving: "nb-findit-line", still: "nb-findit-line-still" },
   "keep-check": { moving: "nb-findit-kept" },
   "rows-land": { moving: "nb-findit-row" },
+  "workboard-unfold": { moving: "canvas-lab-unfold" },
 };
 
 /** True when the reader has asked for less movement. Safe during SSR. */
