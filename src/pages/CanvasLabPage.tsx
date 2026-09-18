@@ -482,6 +482,17 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
   }
 
   function deleteNode(node: LabNode) {
+    // A judgment belongs to whoever wrote it. Nobody else removes it, and the
+    // author's removal is a soft archive the record keeps.
+    if ((node.kind === "judgment" || node.kind === "chat") && !node.local) {
+      setAnnouncement("This card belongs to a teammate, so only they can remove it.");
+      return;
+    }
+    if (node.durableId) {
+      void lab
+        .persist({ type: "node_archive", nodeId: node.durableId, expectedVersion: node.durableVersion ?? 1 })
+        .then((result) => report(result, "node", "archive"));
+    }
     setNodes((current) => {
       if (!current) return current;
       const result = deleteLocalNode(current, links, selected, node.id);
@@ -491,8 +502,9 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
     });
     setKeyboardId(null);
     noteWorkboardNodeDeleted(orgId, eventKind(node));
-    setAnnouncement(`${node.title} deleted from this local workboard.`);
+    setAnnouncement(`${node.title} removed from this workboard.`);
   }
+
 
   function hideNode(node: LabNode) {
     setHiddenIds((current) => [...current, node.id]);
