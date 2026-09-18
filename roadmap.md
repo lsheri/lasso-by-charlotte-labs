@@ -57,5 +57,6 @@
 - [x] Reframe the full-screen board around real workstreams, decisions, and outputs
 - [x] Keep board actions local while reusing the existing banded canvas opening event
 - [x] Add contextual draft starters, instructions, focused reading, and local notes
+- [ ] Correct entry copy, focused provenance, highlight cleanup, contextual draft placement, pilot frame layout, and modifier-wheel handling
 - [ ] Verify the authenticated desktop and narrow-screen experience in the preview
   - Blocked: the required Liam preview identity needs approval, while the available requesting-user session has no engagement rows.
