@@ -214,26 +214,30 @@ export async function applyWorkboardCommand(
       for (const row of inserted ?? []) frameIdByKey.set(row.key, row.id);
     }
 
-    const existingNodes = (await db.from("workboard_nodes").select("id, kind, work_item_id, decision_id").eq("workboard_id", board.id).is("deleted_at", null)).data ?? [];
+    const existingNodes = (await db.from("workboard_nodes").select("id, kind, work_item_id, decision_id, client_key").eq("workboard_id", board.id).is("deleted_at", null)).data ?? [];
     const nodeIdByRef = new Map(existingNodes.map((row) => [refKey(row.kind, row.work_item_id, row.decision_id), row.id]));
+    const nodeIdByClientKey = new Map(existingNodes.flatMap((row) => (row.client_key ? [[row.client_key, row.id] as const] : [])));
     const createdNodes: Record<string, string> = {};
     const createdFrames: Record<string, string> = Object.fromEntries(frameIdByKey);
+    // Materialize is replayable: a card this board already carries, by client
+    // key or by canonical reference, is reported back rather than made twice.
     const toInsert = command.nodes.filter((node) => {
+      if (nodeIdByClientKey.has(node.clientKey)) {
+        createdNodes[node.clientKey] = nodeIdByClientKey.get(node.clientKey) as string;
+        return false;
+      }
       if (node.kind === "judgment" || node.kind === "draft") return true;
       return !nodeIdByRef.has(refKey(node.kind, node.workItemId ?? null, node.decisionId ?? null));
     });
     for (const node of toInsert) {
       const invalid = validNodeInput(node);
       if (invalid) return { status: "validation_error", message: invalid };
-      const { data, error } = await db
-        .from("workboard_nodes")
-        .insert(nodeInsert(board.id, profile.id, node, node.frameKey ? frameIdByKey.get(node.frameKey) ?? null : null))
-        .select("id")
-        .single();
-      if (error || !data) return { status: "validation_error", message: "A workboard card could not be saved." };
-      createdNodes[node.clientKey] = data.id;
+      const saved = await insertNodeIdempotent(db, board.id, profile.id, node, node.frameKey ? frameIdByKey.get(node.frameKey) ?? null : null);
+      if (!saved) return { status: "validation_error", message: "A workboard card could not be saved." };
+      createdNodes[node.clientKey] = saved.id;
     }
     return { status: "saved", boardId: board.id, boardVersion: board.version, created: { nodes: createdNodes, frames: createdFrames }, versions: {} };
+
   }
 
   if (command.type === "frame_create") {
