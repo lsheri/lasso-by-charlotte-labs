@@ -208,13 +208,14 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
   }
 
   function nodeToInput(node: LabNode): WorkboardNodeInput | null {
-    const base = { clientKey: node.id, frameKey: node.frame, x: node.x, y: node.y, hidden: hiddenRef.current.includes(node.id) };
+    const base = { clientKey: node.clientKey ?? node.id, frameKey: node.frame, x: node.x, y: node.y, hidden: hiddenRef.current.includes(node.id) };
     if (node.kind === "work" && node.workItemId) return { ...base, kind: "work_item", workItemId: node.workItemId };
     if (node.kind === "decision" && node.id.startsWith("decision:")) return { ...base, kind: "decision", decisionId: node.id.slice(9) };
     if (node.kind === "brief") return { ...base, kind: "brief" };
     if (node.kind === "judgment" && node.local) return { ...base, kind: "judgment", title: node.title, body: node.summary, judgmentType: node.judgmentType ?? null };
     return null;
   }
+
 
   function report(result: { status: string }, entity: WorkboardPersistEntity, action: "create" | "update" | "archive" | "restore"): void {
     if (result.status === "saved") noteWorkboardChangeSaved(orgId, entity, action);
