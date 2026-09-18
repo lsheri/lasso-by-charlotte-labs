@@ -13,6 +13,7 @@ export function LabCardMenu({
   selected,
   canBranch,
   local,
+  removable = true,
   open,
   onOpenChange,
   cardRef,
@@ -25,6 +26,8 @@ export function LabCardMenu({
   selected: boolean;
   canBranch: boolean;
   local: boolean;
+  /** False for a teammate's authored card: reading it is fine, removing it is not. */
+  removable?: boolean;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   cardRef: React.RefObject<HTMLDivElement | null>;
@@ -34,6 +37,7 @@ export function LabCardMenu({
   onHide: () => void;
   onDelete: () => void;
 }) {
+
   return (
     <DropdownMenu open={open} onOpenChange={onOpenChange}>
       <DropdownMenuTrigger asChild>
