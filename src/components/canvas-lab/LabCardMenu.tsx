@@ -1,5 +1,4 @@
 import { MoreHorizontal } from "lucide-react";
-import { useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -14,8 +13,9 @@ export function LabCardMenu({
   selected,
   canBranch,
   local,
+  open,
+  onOpenChange,
   cardRef,
-  onOpened,
   onSelect,
   onOpen,
   onBranch,
@@ -25,29 +25,17 @@ export function LabCardMenu({
   selected: boolean;
   canBranch: boolean;
   local: boolean;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   cardRef: React.RefObject<HTMLDivElement | null>;
-  onOpened: () => void;
   onSelect: () => void;
   onOpen: () => void;
   onBranch: () => void;
   onHide: () => void;
   onDelete: () => void;
 }) {
-  const [open, setOpen] = useState(false);
-  const openedFromCard = useRef(false);
-
-  function changeOpen(next: boolean) {
-    if (next && !open) onOpened();
-    setOpen(next);
-  }
-
-  function openFromCard() {
-    openedFromCard.current = true;
-    changeOpen(true);
-  }
-
   return (
-    <DropdownMenu open={open} onOpenChange={changeOpen}>
+    <DropdownMenu open={open} onOpenChange={onOpenChange}>
       <DropdownMenuTrigger asChild>
         <Button
           type="button"
@@ -64,9 +52,7 @@ export function LabCardMenu({
         align="end"
         className="canvas-lab-card-menu"
         onCloseAutoFocus={(event) => {
-          if (!openedFromCard.current) return;
           event.preventDefault();
-          openedFromCard.current = false;
           cardRef.current?.focus();
         }}
       >
@@ -80,14 +66,6 @@ export function LabCardMenu({
           <DropdownMenuItem onSelect={onHide}>Remove from canvas</DropdownMenuItem>
         )}
       </DropdownMenuContent>
-      <span
-        aria-hidden="true"
-        className="hidden"
-        data-open-card-menu=""
-        onClick={openFromCard}
-      />
     </DropdownMenu>
   );
 }
-
-export type LabCardMenuHandle = { openFromCard: () => void };
