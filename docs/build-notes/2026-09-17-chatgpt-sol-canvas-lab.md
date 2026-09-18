@@ -106,3 +106,45 @@ The AI connection is intentionally off: chat and summarize show the user's promp
 - The engagement detail route renders EngagementPage directly and has no Outlet, so visiting `/engagements/{id}/canvas-lab` displayed the normal engagement screen instead of CanvasLabPage.
 - The route was moved to TanStack Router's non-nested filename convention, `src/routes/_authenticated/engagements.$id_.canvas-lab.tsx`, keeping the public URL exactly `/engagements/$id/canvas-lab`. The generated route tree now parents Canvas Lab to the authenticated layout, and the engagement detail route is unchanged with no children.
 - Lesson for future routes: verify route parentage in `src/routeTree.gen.ts` (the `parentRoute` field), not only that the path string exists. A focused regression test, `src/routes/__tests__/canvas-lab-route.test.ts`, now asserts the parentage, the preserved URL, and the absence of the old nested file.
+
+## 12. Second prototype pass — 2026-09-18 UTC
+
+### Design reasoning
+
+The second pass reframed Canvas Lab as an Engagement Workboard rather than a general-purpose canvas. The board now follows consulting work: Foundation, each real workstream, Decisions, and Outputs. Conversations and source material sit inside the workstream they support. Native chat remains a small local sidecar built only from context the person explicitly selects.
+
+### Controls before and after
+
+Before: Back; example presence; Cards/Live; fit and zoom; pan; select, move, open, branch; permanent ownership legend; composer and instruction toggle; narrow list; focused reader; local passage notes, summarize, and branch.
+
+After: the existing production Canvas controls and states remain unchanged, with one new `Open workboard` link above it. The Workboard keeps back/menu, fit and zoom, pan, select, move, preview, focus, branch, local context, draft threads, notes, and the narrow fallback. It removes example presence, the permanent legend, and Cards/Live. It adds a local menu drawer, local Add workstream control, six prompt starters, and compact instructions.
+
+### Data and consent impact
+
+- One new user-facing action: `Open workboard` in the existing engagement Canvas tab.
+- The Workboard reuses `canvas.opened` through `noteCanvasOpenedFn`, with the local node count and zero links and shelf. No event name, field, or dimension changed.
+- All workboard actions, placement, highlights, comments, instructions, and draft threads remain local and reset on refresh.
+- The existing permission-filtered engagement read is unchanged.
+- No consent surface, consent stamping, database schema, migration, RLS, event plumbing, or deployment change.
+- Portal changes: none.
+
+### Implementation
+
+- Full-screen shell above the normal app chrome, with a 52px rail, Lasso mark, close control, role-appropriate navigation drawer, title, Workboard/Not saved status, and fit/zoom controls.
+- The opening resolves `canvas.unfolded` through the motion registry to a brief three-panel unfold. Reduced motion receives the static `Workboard open` status.
+- Dynamic workstream frames derive from real engagement tasks. Real work uses the shared WorkNote presentation; brief, call, and local draft nodes remain folded-paper cards.
+- Selected source nodes connect to draft threads with local graphite curves.
+- The compact composer includes visible context, six starter prompts, the `Add draft thread` action, and honest AI-off wording.
+- The focused reader keeps existing document/thread readers and local notes. Selection is highlighted using the CSS Custom Highlight API when available. Deliverables expose the existing What fed this control.
+
+### Files and verification
+
+Changed application files: `EngagementPage.tsx`, `CanvasLabPage.tsx`, the Canvas Lab model/card/composer/focus files, `motion-registry.ts`, the route metadata, and Canvas-Lab-scoped rules in `styles.css`. Focused tests cover dynamic frame creation/mapping, fake-presence removal, prompt starters, full-screen shell, the preserved production canvas call, and reduced-motion registration.
+
+### Limitations
+
+- The AI connection remains off. Draft threads do not produce generated answers.
+- Frames, positions, highlights, notes, and drafts are not saved.
+- There is no realtime collaboration or collaborator presence.
+- The CSS Custom Highlight API is best-effort. On browsers without it, the selected quote remains visible beside its numbered note.
+- The Workboard is unpublished and remains behind its hidden authenticated route.

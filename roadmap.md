@@ -51,3 +51,10 @@
 - [x] Wire the Find it ClipSlot to ClipPlayer (1440x900, 16/9) on /landing-next only
 
 - Canvas Lab prototype: hidden route /engagements/$id/canvas-lab, additive files under src/components/canvas-lab plus src/pages/CanvasLabPage.tsx. Reads the engagement payload only; all layout, context, comments and chat cards are local and reset on refresh. No schema, no events, no publish.
+
+## Canvas Lab second prototype pass
+- [x] Add the single engagement Canvas entry without changing the production canvas
+- [x] Reframe the full-screen board around real workstreams, decisions, and outputs
+- [x] Keep board actions local while reusing the existing banded canvas opening event
+- [x] Add contextual draft starters, instructions, focused reading, and local notes
+- [ ] Verify the authenticated desktop and narrow-screen experience in the preview

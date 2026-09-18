@@ -11,6 +11,7 @@ import { ThreadBody } from "@/components/peek/ThreadBody";
 import { WhatFedThisButton } from "@/components/engagements/WhatFedThisButton";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { isDeliverableType } from "@/lib/lineage-shared";
 import type { WorkItemRow } from "@/lib/work-types";
 
 /**
@@ -81,7 +82,7 @@ export function FocusOverlay({
                 Branch
               </Button>
             ) : null}
-            {item && isDeliverable(item) ? (
+            {item && isDeliverableType(item.type) ? (
               <WhatFedThisButton items={items} orgId={orgId} profileId={profileId} />
             ) : null}
             <Button size="sm" variant="ghost" onClick={onClose}>
@@ -175,8 +176,4 @@ export function FocusOverlay({
       </div>
     </div>
   );
-}
-
-function isDeliverable(item: WorkItemRow): boolean {
-  return ["doc", "slides", "sheet", "pdf", "other"].includes(item.type);
 }
