@@ -48,9 +48,9 @@ describe("polish 2b-vi", () => {
     expect(paper.className).toContain("h-full");
     expect(paper.className).toContain("w-full");
     const styles = read("src/styles.css");
-    expect(styles).toMatch(/\.canvas-lab-card-paper > \.nb-paper \{[^}]*height: 100%;/s);
-    expect(styles).toMatch(/\.canvas-lab-folded-note::after \{[^}]*bottom: -1px;/s);
-    expect(styles).toContain('.canvas-lab-card[data-size="expanded"] .canvas-lab-card-paper p');
+    const note = paper.querySelector<HTMLElement>(".canvas-lab-paper");
+    expect(note).not.toBeNull();
+    expect(note?.getAttribute("data-tier")).toBe("expanded");
   });
 
   it("every ending of the move prompt is answered once", () => {

@@ -3,9 +3,7 @@ import { useState } from "react";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("@/components/work/WorkNote", () => ({
-  WorkNote: ({ className = "" }: { className?: string }) => <div className={`nb-paper ${className}`}><div className="nb-paper-body">Work title</div></div>,
-}));
+vi.mock("@/hooks/use-vendor-display", () => ({ useVendorVisible: () => true }));
 
 import { LabCard } from "@/components/canvas-lab/LabCard";
 import { createLocalNode, firstFreeLocalNodeAnchor, ownerLabel, panToRevealNode, type LabNode } from "@/components/canvas-lab/canvas-lab-model";
@@ -81,7 +79,7 @@ describe("Workboard human judgment", () => {
     expect(ownerLabel({ ...localJudgment, kind: "chat", durableId: "chat", ownership: "yours" })).toBe("local draft");
   });
 
-  it("reserves context-mark space for folded and work-note titles", () => {
+  it("reserves context-mark space for paper titles and owner rows", () => {
     const folded = renderCard(localJudgment);
     expect(folded.container.querySelector(".canvas-lab-context-title")).not.toBeNull();
     const header = folded.container.querySelector(".canvas-lab-context-header");
@@ -91,7 +89,8 @@ describe("Workboard human judgment", () => {
     const item = { id: "work", title: localJudgment.title, type: "document", source: "upload", visibility: "shared", created_at: "2026-09-19T00:00:00Z", updated_at: "2026-09-19T00:00:00Z" } as never;
     const work = renderCard({ ...localJudgment, kind: "work", workItemId: "work" });
     work.rerender(<LabCard node={{ ...localJudgment, kind: "work", workItemId: "work" }} item={item} selected focused={false} connecting={false} connectSourceAnchor={null} canResize={false} onSelect={() => undefined} onOpen={() => undefined} onBranch={() => undefined} onHide={() => undefined} onDelete={() => undefined} onEdit={() => undefined} onEditCommitted={() => undefined} onAnchorPointerDown={() => undefined} onAnchorActivate={() => undefined} onMenuOpened={() => undefined} onMenuOpenChange={() => undefined} onMeasure={() => undefined} onPointerDown={() => undefined} onFocus={() => undefined} onKeyDown={() => undefined} onResizeStart={() => undefined} onFit={() => undefined} onResizeKeyDown={() => undefined} onResizeKeyUp={() => undefined} frameChoices={[]} structured onMoveToFrame={() => undefined} />);
-    expect(work.container.querySelector(".canvas-lab-work-note-context")).not.toBeNull();
+    expect(work.container.querySelector(".canvas-lab-context-title")).not.toBeNull();
+    expect(work.container.querySelector(".canvas-lab-context-header")).not.toBeNull();
   });
 
   it("uses the first board-wide collision-free stack slot for a new judgment", () => {
