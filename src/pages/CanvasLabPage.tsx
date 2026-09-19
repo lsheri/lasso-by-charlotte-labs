@@ -33,6 +33,7 @@ import {
   moveNode,
   dragEndDecision,
   nextWorkstreamRect,
+  panToRevealNode,
   workstreamAddAnchor,
   nearestLabAnchor,
   removeContext,
@@ -187,6 +188,7 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
   const connectorDragRef = useRef<{ nodeId: string; anchor: LabAnchor; from: Point; moved: boolean } | null>(null);
   const cardHeightsRef = useRef(new Map<string, number>());
   const resizeRef = useRef<{ kind: "card" | "frame"; id: string; corner: LabResizeCorner; start: LabRect; pointer: Point; method: "pointer" | "keyboard" } | null>(null);
+  const pendingJudgmentFocusRef = useRef<string | null>(null);
   const panRef = useRef<{ from: Point; origin: Point } | null>(null);
   const zoomRef = useRef(zoom);
   zoomRef.current = zoom;
@@ -243,6 +245,16 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
   const notAvailable = !loadingBoard && !isError && !engagement;
   const boardReady = !loadingBoard && !isError && Boolean(engagement) && nodes !== null && frames !== null;
   fitInputsRef.current = { frames: boardFrames, nodes: visibleNodes, structured: structureMode === "structured" };
+
+  useEffect(() => {
+    const pendingId = pendingJudgmentFocusRef.current;
+    if (!pendingId || !visibleNodes.some((node) => node.id === pendingId)) return;
+    pendingJudgmentFocusRef.current = null;
+    requestAnimationFrame(() => {
+      const card = document.querySelector<HTMLElement>(`[data-node-id="${CSS.escape(pendingId)}"]`);
+      card?.focus({ preventScroll: true });
+    });
+  }, [visibleNodes]);
 
   useEffect(() => {
     if (!boardReady) return;
@@ -835,6 +847,11 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
     setNodes((current) => current ? [...current, node] : current);
     noteWorkboardNodeCreated(orgId, kind === "judgment" ? "human_judgment" : kind, judgment);
     if (kind === "judgment") {
+      const shell = shellRef.current;
+      if (shell) setPan((current) => panToRevealNode(current, zoomRef.current, node, { width: shell.clientWidth, height: shell.clientHeight }));
+      setKeyboardId(node.id);
+      setSelectedFrameId(null);
+      pendingJudgmentFocusRef.current = node.id;
       void (async () => {
         if (!(await materialize())) return;
         const input = nodeToInput(node);

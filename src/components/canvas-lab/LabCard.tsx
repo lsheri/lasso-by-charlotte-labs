@@ -2,16 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import { Paperclip } from "lucide-react";
 
 import { LabCardMenu } from "@/components/canvas-lab/LabCardMenu";
-import { cardSizeTier, type LabAnchor, type LabNode, type LabResizeCorner } from "@/components/canvas-lab/canvas-lab-model";
+import { cardSizeTier, ownerLabel, type LabAnchor, type LabNode, type LabResizeCorner } from "@/components/canvas-lab/canvas-lab-model";
 import { WorkNote } from "@/components/work/WorkNote";
 import { cn } from "@/lib/utils";
 import type { WorkItemRow } from "@/lib/work-types";
-
-const OWNER_LABEL: Record<LabNode["ownership"], string> = {
-  yours: "yours",
-  teammate: "teammate",
-  draft: "local draft",
-};
 
 const OWNER_TONE: Record<LabNode["ownership"], string> = {
   yours: "border-[var(--nb-pencil)] bg-card",
@@ -136,14 +130,14 @@ export function LabCard({
     >
       <div ref={paperRef} data-selected={selected} data-focused={focused} data-connect-source={connectSourceAnchor !== null} className={cn("canvas-lab-card-paper h-full w-full overflow-hidden", item ? "" : `canvas-lab-folded-note flex flex-col gap-1.5 border px-3 py-2.5 ${OWNER_TONE[node.ownership]}`)}>
         {item ? (
-          <WorkNote item={item} dense className="h-full w-full" />
+          <WorkNote item={item} dense className={cn("h-full w-full", selected && "canvas-lab-work-note-context")} />
         ) : (
           <>
             <div className="flex items-center justify-between gap-2 pr-6">
               <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">{node.typeLabel}</span>
-              <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">{OWNER_LABEL[node.ownership]}</span>
+              <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">{ownerLabel(node)}</span>
             </div>
-            <span className="text-[13px] font-medium leading-[17px] text-foreground">{node.title}</span>
+            <span className={cn("text-[13px] font-medium leading-[17px] text-foreground", selected && "canvas-lab-context-title")}>{node.title}</span>
             {node.local ? <textarea aria-label={`Edit ${node.title} note`} value={node.summary} onChange={(event) => onEdit(event.target.value)} onBlur={onEditCommitted} onPointerDown={(event) => event.stopPropagation()} className="min-h-14 w-full resize-none border border-[var(--nb-rule)] bg-card px-2 py-1 text-[11.5px] leading-[17px] text-foreground outline-none focus:border-[var(--nb-green)]" /> : <p className="line-clamp-3 text-[11.5px] leading-[17px] text-muted-foreground">{node.summary}</p>}
           </>
         )}

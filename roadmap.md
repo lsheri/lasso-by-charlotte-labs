@@ -123,3 +123,10 @@
 - [x] Keep Workboard handles, anchors, outlines, and frame menu legible at every zoom
 - [x] Ignore sub-four-pixel pointer jitter at drag end
 - [x] Complete focused tests, typecheck, token/language checks, and preview build
+
+## Workboard human judgment (approved 2026-09-19)
+- [x] Replace the Human judgment details control with a pointer-safe controlled chooser
+- [x] Close the chooser on choice, Escape, and outside pointerdown
+- [x] Reveal and focus a newly created judgment without changing zoom
+- [x] Show durable judgment authorship accurately without changing edit permissions
+- [x] Keep the context paperclip clear of card titles at every zoom
