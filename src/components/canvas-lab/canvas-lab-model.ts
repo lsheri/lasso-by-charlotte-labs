@@ -135,8 +135,11 @@ export function sizeSeedFrames(frames: LabFrame[], nodes: LabNode[]): LabFrame[]
   });
 }
 
+/** The tightest frame under a point, so a grown or overlapping frame never wins. */
 export function frameContainingPoint(frames: LabFrame[], point: Point): LabFrame | null {
-  return frames.find((frame) => point.x >= frame.x && point.x <= frame.x + frame.width && point.y >= frame.y && point.y <= frame.y + frame.height) ?? null;
+  const holding = frames.filter((frame) => point.x >= frame.x && point.x <= frame.x + frame.width && point.y >= frame.y && point.y <= frame.y + frame.height);
+  if (holding.length === 0) return null;
+  return holding.reduce((smallest, frame) => (frame.width * frame.height < smallest.width * smallest.height ? frame : smallest));
 }
 
 export function dropPromptFrame(node: LabNode, frames: LabFrame[], mode: LabStructureMode, editable: boolean): LabFrame | null {
@@ -145,17 +148,32 @@ export function dropPromptFrame(node: LabNode, frames: LabFrame[], mode: LabStru
   return target && target.id !== node.frame ? target : null;
 }
 
-export function addLocalFrame(frames: LabFrame[], name: string): LabFrame[] {
+/** Free space for a new workstream: under everything on the board, in the workstream column. */
+export function nextWorkstreamRect(frames: LabFrame[], nodes: LabNode[]): LabRect {
+  const workstreams = frames.filter((frame) => frame.id.startsWith("task:") || frame.id.startsWith("custom:") || frame.id === "workstreams");
+  const left = workstreams.length > 0 ? Math.min(...workstreams.map((frame) => frame.x)) : 60;
+  const bottoms = [
+    ...frames.map((frame) => frame.y + frame.height),
+    ...nodes.map((node) => node.y + node.height),
+  ];
+  const bottom = bottoms.length > 0 ? Math.max(...bottoms) : 420;
+  return { x: left, y: bottom + 48, width: FRAME_WIDTH, height: FRAME_HEIGHT };
+}
+
+export function addLocalFrame(frames: LabFrame[], name: string, rect?: LabRect): LabFrame[] {
   const index = frames.length;
+  const placed = rect ?? {
+    x: 60 + (index % FRAME_COLUMNS) * (FRAME_WIDTH + FRAME_GAP),
+    y: 420 + Math.floor(index / FRAME_COLUMNS) * (FRAME_HEIGHT + FRAME_GAP),
+    width: FRAME_WIDTH,
+    height: FRAME_HEIGHT,
+  };
   return [
     ...frames,
     {
       id: `custom:${name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-") || `workstream-${index}`}`,
       name: name.trim(),
-      x: 60 + (index % FRAME_COLUMNS) * (FRAME_WIDTH + FRAME_GAP),
-      y: 420 + Math.floor(index / FRAME_COLUMNS) * (FRAME_HEIGHT + FRAME_GAP),
-      width: FRAME_WIDTH,
-      height: FRAME_HEIGHT,
+      ...placed,
       local: true,
     },
   ];
