@@ -167,10 +167,16 @@ export function dragEndDecision(input: {
   editable: boolean;
 }): { position: Point | null; promptFrameId: string | null } {
   const { origin, from, pointer, zoom, node, frames, mode, editable } = input;
+  if (Math.hypot(pointer.x - from.x, pointer.y - from.y) < 4) return { position: null, promptFrameId: null };
   const position = dragTo(origin, { x: (pointer.x - from.x) / zoom, y: (pointer.y - from.y) / zoom });
   if (position.x === origin.x && position.y === origin.y) return { position: null, promptFrameId: null };
   const target = dropPromptFrame({ ...node, x: position.x, y: position.y }, frames, mode, editable);
   return { position, promptFrameId: target ? target.id : null };
+}
+
+/** Counter-scale stage controls so their visible size stays constant. */
+export function labInverseZoom(zoom: number): number {
+  return 1 / clampZoom(zoom);
 }
 
 

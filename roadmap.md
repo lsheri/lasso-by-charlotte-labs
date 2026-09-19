@@ -116,3 +116,10 @@
 - [x] Add role-appropriate empty-frame guidance
 - [x] Share workstream creation between drawer and inline controls
 - [x] Complete focused tests, typecheck, token/language checks, and preview build
+
+## Workboard click, selection, and handles (approved 2026-09-19)
+- [x] Separate focused-card handles from in-context presentation
+- [x] Correct card semantics and context announcements
+- [x] Keep Workboard handles, anchors, outlines, and frame menu legible at every zoom
+- [x] Ignore sub-four-pixel pointer jitter at drag end
+- [ ] Complete focused tests, typecheck, token/language checks, and preview build
