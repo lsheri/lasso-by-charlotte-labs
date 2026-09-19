@@ -1096,7 +1096,7 @@ async function pushConversation(
         content_ref: path,
         content_fidelity: "verbatim",
         ts_precision: "capture" as const,
-        content_hash: await sha256Hex(attachment.content),
+        content_hash: newHash,
         source_meta: {
           ...sharedMeta,
           role: "attachment",
@@ -1129,6 +1129,17 @@ async function pushConversation(
         else if (result.data?.id) {
           capturedIds.push(result.data.id);
           createdAttachmentTypes.push(String(fields.type));
+          // The first stored version, so later pushes have a parent to point at.
+          const v1 = await supabaseAdmin.from("document_versions").insert({
+            work_item_id: result.data.id,
+            version_no: 1,
+            content_ref: path,
+            content_hash: newHash,
+            parent_version_id: null,
+            source_event: "mcp_push",
+            origin: "model_artifact",
+          });
+          if (!v1.error) attachmentVersionRows += 1;
         }
       }
     }
