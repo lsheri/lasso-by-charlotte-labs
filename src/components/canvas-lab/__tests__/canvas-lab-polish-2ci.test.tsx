@@ -9,7 +9,7 @@ import type { LabNode } from "@/components/canvas-lab/canvas-lab-model";
 const focused: LabNode = { id: "focused", kind: "judgment", frame: "f", title: "Focused card", summary: "Reason", typeLabel: "judgment", ownership: "draft", local: true, x: 0, y: 0, width: 232, height: 112 };
 const contextual: LabNode = { ...focused, id: "context", title: "Context card", x: 260 };
 
-function card(node: LabNode, selected: boolean, isFocused: boolean, onSelect = () => undefined) {
+function card(node: LabNode, selected: boolean, isFocused: boolean, onSelect: () => void = () => undefined) {
   return <LabCard node={node} selected={selected} focused={isFocused} connecting={false} connectSourceAnchor={null} canResize onSelect={onSelect} onOpen={() => undefined} onBranch={() => undefined} onHide={() => undefined} onDelete={() => undefined} onEdit={() => undefined} onEditCommitted={() => undefined} onAnchorPointerDown={() => undefined} onAnchorActivate={() => undefined} onMenuOpened={() => undefined} onMenuOpenChange={() => undefined} onMeasure={() => undefined} onPointerDown={() => undefined} onFocus={() => undefined} onKeyDown={() => undefined} onResizeStart={() => undefined} onFit={() => undefined} onResizeKeyDown={() => undefined} onResizeKeyUp={() => undefined} frameChoices={[]} structured onMoveToFrame={() => undefined} />;
 }
 
