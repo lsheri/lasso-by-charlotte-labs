@@ -1071,10 +1071,11 @@ async function pushConversation(
         continue;
       }
 
-      // Give every write its own object, so an earlier version is never replaced.
+      // Give every write its own object, so an earlier version is never
+      // replaced and a retry can never collide with an object already there.
       const suffix = (await sha256Hex(attachment.sourceArtifactId)).slice(0, 8);
       const base = `${owner.userId}/conv-${slugify(origId)}-${slugify(attachment.title)}-${suffix}`;
-      const path = decision === "insert" ? base : `${base}-${crypto.randomUUID()}`;
+      const path = `${base}-${crypto.randomUUID()}`;
       const upload = await supabaseAdmin.storage
         .from("work-files")
         .upload(path, encoded, { contentType: "text/plain; charset=utf-8", upsert: false });
@@ -1085,7 +1086,15 @@ async function pushConversation(
 
       if (decision === "new_version" && match) {
         try {
-          const nextNo = await recordNewVersion(supabaseAdmin, {
+          // When the item already has a version row, recordNewVersion writes
+          // only the new one; without any row it also backfills v1.
+          const { data: existingVersion } = await supabaseAdmin
+            .from("document_versions")
+            .select("id")
+            .eq("work_item_id", match.id)
+            .limit(1)
+            .maybeSingle();
+          await recordNewVersion(supabaseAdmin, {
             workItemId: match.id,
             previousRef: match.content_ref,
             previousHash: match.content_hash,
@@ -1095,8 +1104,7 @@ async function pushConversation(
             sourceEvent: "mcp_repush",
             origin: "model_artifact",
           });
-          // A first re-push also backfills the version the item already held.
-          attachmentVersionRows += nextNo === 2 ? 2 : 1;
+          attachmentVersionRows += existingVersion ? 1 : 2;
         } catch (err) {
           problems.push(`'${attachment.title}': ${err instanceof Error ? err.message : "version"}`);
           continue;
