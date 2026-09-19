@@ -100,3 +100,10 @@
 - [x] Confirm the automatic preview build
 - [ ] Complete Liam visual verification
 - [ ] Phase 3 Slice 2 remains blocked on explicit consent and retention approval for durable comments, highlights, and locators
+
+## Workboard frame actions (approved 2026-09-19)
+- [x] Add one workstream menu without removing frame select, Fit, resize, count, or local status
+- [x] Rename custom workstreams locally and through versioned durable frame updates
+- [x] Soft-remove empty custom workstreams with client and server guards
+- [x] Add the approved additive frame and shared menu dimensions
+- [ ] Verify right-click, keyboard menu opening, rename, and removal as Liam in the authenticated preview
