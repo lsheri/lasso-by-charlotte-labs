@@ -60,6 +60,7 @@ describe("Workboard relationships", () => {
   });
 
   it("activates an anchor with the keyboard without toggling card context", () => {
+    globalThis.ResizeObserver = class { observe() {} disconnect() {} unobserve() {} } as typeof ResizeObserver;
     const activate = vi.fn();
     const select = vi.fn();
     render(
