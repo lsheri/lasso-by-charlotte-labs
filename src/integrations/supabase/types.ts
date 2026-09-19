@@ -3367,7 +3367,7 @@ export type Database = {
           id: string
           kind: string
           legal_hold: boolean
-          node_id: string
+          node_id: string | null
           page_no: number | null
           purge_after: string | null
           section_key: string | null
@@ -3400,7 +3400,7 @@ export type Database = {
           id?: string
           kind: string
           legal_hold?: boolean
-          node_id: string
+          node_id?: string | null
           page_no?: number | null
           purge_after?: string | null
           section_key?: string | null
@@ -3433,7 +3433,7 @@ export type Database = {
           id?: string
           kind?: string
           legal_hold?: boolean
-          node_id?: string
+          node_id?: string | null
           page_no?: number | null
           purge_after?: string | null
           section_key?: string | null
@@ -3706,6 +3706,7 @@ export type Database = {
           id: string
           judgment_type: string | null
           kind: string
+          linked_item_removed_at: string | null
           title: string
           updated_at: string
           updated_by: string
@@ -3730,6 +3731,7 @@ export type Database = {
           id?: string
           judgment_type?: string | null
           kind: string
+          linked_item_removed_at?: string | null
           title?: string
           updated_at?: string
           updated_by: string
@@ -3754,6 +3756,7 @@ export type Database = {
           id?: string
           judgment_type?: string | null
           kind?: string
+          linked_item_removed_at?: string | null
           title?: string
           updated_at?: string
           updated_by?: string
@@ -3873,6 +3876,7 @@ export type Database = {
           created_by: string
           engagement_id: string
           id: string
+          legal_hold: boolean
           org_id: string
           updated_at: string
           version: number
@@ -3882,6 +3886,7 @@ export type Database = {
           created_by: string
           engagement_id: string
           id?: string
+          legal_hold?: boolean
           org_id: string
           updated_at?: string
           version?: number
@@ -3891,6 +3896,7 @@ export type Database = {
           created_by?: string
           engagement_id?: string
           id?: string
+          legal_hold?: boolean
           org_id?: string
           updated_at?: string
           version?: number
@@ -4027,6 +4033,7 @@ export type Database = {
       my_profile_id: { Args: never; Returns: string }
       my_profile_ids: { Args: never; Returns: string[] }
       my_role: { Args: never; Returns: Database["public"]["Enums"]["app_role"] }
+      purge_workboard_annotations: { Args: never; Returns: number }
       reactivate_member: { Args: { p_profile: string }; Returns: undefined }
       record_coaching_disclosure: {
         Args: { p_actor_profile_id?: string; p_link_id: string }
