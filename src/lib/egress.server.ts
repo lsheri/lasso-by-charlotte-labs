@@ -22,6 +22,9 @@ import { createSweepState, releaseSweep, tryStartSweep } from "./sweep-guard";
 
 export type EgressResult = { sent: number; skipped: number; failed: number };
 
+/** One post to the console must finish inside this window. */
+export const EGRESS_POST_TIMEOUT_MS = 30_000;
+
 const EVENT_COLUMNS =
   "id, event_uuid, event_type, ts, server_ts, tenant_hash, actor_hash, org_id, schema_version, consent_tier, consent_ledger_version, dims, payload";
 
@@ -164,7 +167,7 @@ export async function runEgress(): Promise<EgressResult> {
           "x-timestamp": timestamp,
           "x-nonce": crypto.randomUUID(),
         },
-        signal: AbortSignal.timeout(10_000),
+        signal: AbortSignal.timeout(EGRESS_POST_TIMEOUT_MS),
         body,
       });
       if (!response.ok) {
