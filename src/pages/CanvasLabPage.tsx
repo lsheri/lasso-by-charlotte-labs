@@ -521,6 +521,12 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
     resizeRef.current = { kind, id, corner, start: rect, pointer: { x: event.clientX, y: event.clientY }, method: "pointer" };
   }
 
+  function resizeAxis(start: LabRect, end: LabRect): "horizontal" | "vertical" | "both" {
+    const horizontal = start.width !== end.width;
+    const vertical = start.height !== end.height;
+    return horizontal && vertical ? "both" : horizontal ? "horizontal" : "vertical";
+  }
+
   function keyboardResize(kind: "card" | "frame", id: string, corner: LabResizeCorner, rect: LabRect, event: React.KeyboardEvent<HTMLButtonElement>) {
     if (!event.key.startsWith("Arrow")) return;
     event.preventDefault();
@@ -528,7 +534,7 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
     const amount = event.shiftKey ? 24 : 8;
     const delta = { x: event.key === "ArrowLeft" ? -amount : event.key === "ArrowRight" ? amount : 0, y: event.key === "ArrowUp" ? -amount : event.key === "ArrowDown" ? amount : 0 };
     if (!resizeRef.current) resizeRef.current = { kind, id, corner, start: rect, pointer: { x: 0, y: 0 }, method: "keyboard" };
-    const resized = resizeLabRect(rect, corner, delta, false, kind);
+    const resized = resizeLabRect(rect, corner, delta, event.shiftKey, kind);
     const next = kind === "frame" ? containFrameMembers(resized, id, nodesRef.current) : resized;
     if (kind === "card") setNodes((current) => current?.map((node) => node.id === id ? { ...node, ...next } : node) ?? current);
     else setFrames((current) => current?.map((frame) => frame.id === id ? { ...frame, ...next } : frame) ?? current);
@@ -538,14 +544,15 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
     if (!event.key.startsWith("Arrow")) return;
     const resizing = resizeRef.current;
     if (!resizing || resizing.method !== "keyboard") return;
+    let end: LabRect | null = null;
     if (resizing.kind === "card") {
       const node = nodesRef.current.find((entry) => entry.id === resizing.id);
-      if (node) void persistNodePatch(node.id, { x: node.x, y: node.y, w: node.width, h: node.height });
+      if (node) { end = { x: node.x, y: node.y, width: node.width, height: node.height }; void persistNodePatch(node.id, { x: node.x, y: node.y, w: node.width, h: node.height }); }
     } else {
       const frame = framesRef.current.find((entry) => entry.id === resizing.id);
-      if (frame) void persistFramePatch(frame.id, { x: frame.x, y: frame.y, w: frame.width, h: frame.height });
+      if (frame) { end = { x: frame.x, y: frame.y, width: frame.width, height: frame.height }; void persistFramePatch(frame.id, { x: frame.x, y: frame.y, w: frame.width, h: frame.height }); }
     }
-    noteWorkboardElementResized(orgId, resizing.kind, "keyboard", "both");
+    if (end) noteWorkboardElementResized(orgId, resizing.kind, "keyboard", resizeAxis(resizing.start, end));
     resizeRef.current = null;
   }
 
