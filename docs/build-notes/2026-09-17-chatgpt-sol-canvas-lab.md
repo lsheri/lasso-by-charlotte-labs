@@ -323,3 +323,13 @@ Frontend only. No data impact: no new user action, consent untouched, no event, 
 4. Drop prompt root cause: `frameContainingPoint` returned the first frame in array order containing the card centre, so a grown home frame overlapping the target won and `dropPromptFrame` saw the same frame. It now returns the tightest frame under the point.
 
 Tests: 82 focused Canvas Lab and route tests, plus the durable-board drop-prompt case and the token guard. `tsgo --noEmit` clean. Liam's authenticated visual verification on NWG-02 is still pending.
+
+## 2026-09-19 · Drag end reads the event, not the render (POLISH 2b-iv)
+
+Frontend only. No new action, consent untouched, no event or payload change, no database work.
+
+Root cause of the silent data loss: `up()` read the moved position from `nodesRef.current`, which only refreshes on render. When pointerup arrived before React rendered the last pointermove (fast drags, all automated drags), the node still sat at its origin, so neither the save nor the drop prompt ran while the card still rendered in its new place.
+
+Fix: new pure `dragEndDecision({ origin, from, pointer, zoom, node, frames, mode, editable })` in `canvas-lab-model.ts` computes the landing point from the pointerup event with the same `dragTo` snapping and clamping as the move path, returns `{ position, promptFrameId }`, and returns a null position only when the computed delta is zero. `up()` applies that position with `moveNode`, persists exactly those coordinates and opens the prompt from it. Pointer resize end now recomputes its final rect from the event too, applies it, and persists and reports that rect. The tightest-frame `frameContainingPoint` from 2b-iii stays.
+
+Tests: three `dragEndDecision` cases, including a pointerup before any render, zero delta, and Freeform or read-only. 87 focused Canvas Lab, route and token tests green; `tsgo --noEmit` clean.
