@@ -11,10 +11,23 @@ import { LabCard } from "@/components/canvas-lab/LabCard";
 import { LabFrame as LabFrameElement } from "@/components/canvas-lab/LabFrame";
 import { LabLinkRejection } from "@/components/canvas-lab/LabLinkRejection";
 import { LabRelationships } from "@/components/canvas-lab/LabRelationships";
+import { LabUndoToast } from "@/components/canvas-lab/LabUndoToast";
+import {
+  emptyUndoStacks,
+  popRedo,
+  popUndo,
+  recordUndo,
+  undoAnnouncement,
+  type UndoDirection,
+  type UndoEntry,
+  type UndoStacks,
+} from "@/components/canvas-lab/canvas-lab-undo";
 import { ReasoningTrailGuide } from "@/components/canvas-lab/ReasoningTrailGuide";
 import { WorkRail } from "@/components/canvas-lab/WorkRail";
 import {
   addLabLink,
+  bringToFront,
+  cardStackZ,
   connectDisarmed,
   addLocalFrame,
   markFrameSaved,
@@ -79,6 +92,7 @@ import {
   noteWorkboardStructureToggled,
   noteWorkboardSaveErrorResolved,
   noteWorkboardContextChanged,
+  noteWorkboardUndoUsed,
   type LabNodeEventKind,
   type WorkboardPersistEntity,
 } from "@/components/canvas-lab/canvas-lab-telemetry";
@@ -97,13 +111,22 @@ import { engagementDisplayTitle } from "@/lib/clients";
 import { isDeliverableType } from "@/lib/lineage-shared";
 import type { WorkItemRow } from "@/lib/work-types";
 
-function eventKind(node: LabNode): LabNodeEventKind {
+export function eventKind(node: LabNode): LabNodeEventKind {
   if (node.kind === "chat") return "draft_thread";
   if (node.kind === "judgment") return "human_judgment";
   if (node.kind === "ai_work") return "ai_work";
   if (node.kind === "deliverable") return "deliverable";
   if (node.kind === "decision") return "decision";
+  if (node.kind === "work" && node.deliverable) return "deliverable";
   return "source";
+}
+
+/** A retried change reports the action it always was, not a blanket update. */
+export function retryAction(command: WorkboardCommand): "create" | "update" | "archive" | "restore" {
+  if (command.type === "node_create" || command.type === "frame_create" || command.type === "link_create") return "create";
+  if (command.type.endsWith("_archive")) return "archive";
+  if (command.type.endsWith("_restore")) return "restore";
+  return "update";
 }
 
 /** True when something between the target and the board can still scroll that way. */
@@ -190,6 +213,11 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
   const [interaction, setInteraction] = useState<"idle" | "drag" | "pan" | "resize" | "connect">("idle");
   const [structureMode, setStructureMode] = useState<LabStructureMode>("structured");
   const [selectedFrameId, setSelectedFrameId] = useState<string | null>(null);
+  const [front, setFront] = useState<string[]>([]);
+  /** The inline workstream name takes the caret as soon as it appears. */
+  const inlineNameRef = useCallback((element: HTMLInputElement | null) => { element?.focus({ preventScroll: true }); }, []);
+  const [undoToast, setUndoToast] = useState<{ message: string; entry: UndoEntry } | null>(null);
+  const undoRef = useRef<UndoStacks>(emptyUndoStacks());
 
   const shellRef = useRef<HTMLDivElement | null>(null);
   const dragRef = useRef<{ id: string; origin: Point; from: Point } | null>(null);
@@ -224,6 +252,7 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
     }, initialFrames);
     const virtualFrames = sizeSeedFrames(initialFrames, virtualNodes);
     virtualBaseRef.current = { frames: virtualFrames, nodes: virtualNodes };
+    undoRef.current = emptyUndoStacks();
     const board = lab.board;
 
     if (board?.id) {
@@ -313,6 +342,17 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
   hiddenRef.current = hiddenIds;
   const boardIdRef = useRef<string | null>(null);
   boardIdRef.current = lab.board?.id ? lab.board.id : null;
+  const linksRef = useRef<LabLink[]>([]);
+  linksRef.current = links;
+  /** Coaches read the board, so nothing they do lands on an undo stack. */
+  const canArrangeRef = useRef(true);
+  canArrangeRef.current = lab.board?.canEditStructure !== false;
+
+  /** Put one arranging step on the stack. A new step clears the redo side. */
+  function record(entry: UndoEntry): void {
+    if (!canArrangeRef.current) return;
+    undoRef.current = recordUndo(undoRef.current, entry);
+  }
 
   function frameKindOf(frame: LabFrame): "foundation" | "task" | "decisions" | "outputs" | "custom" {
     if (frame.id === "foundation" || frame.id === "decisions" || frame.id === "outputs") return frame.id;
@@ -427,6 +467,121 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
     report(result, "relationship", "archive");
   }
 
+  /* ---------------- 2c-v: one step back ---------------- */
+
+  /** Whatever the board holds right now, never the version stored on a stack. */
+  function liveNode(id: string, fallback?: LabNode): LabNode | undefined {
+    return nodesRef.current.find((entry) => entry.id === id) ?? fallback;
+  }
+
+  function setNodeHidden(id: string, hidden: boolean, point: { x: number; y: number } | null) {
+    setHiddenIds((current) => hidden ? (current.includes(id) ? current : [...current, id]) : current.filter((entry) => entry !== id));
+    if (point) setNodes((current) => current?.map((entry) => entry.id === id ? { ...entry, ...point } : entry) ?? current);
+    void persistNodePatch(id, point ? { hidden, x: point.x, y: point.y } : { hidden });
+  }
+
+  function applyFrameMove(nodeId: string, frameId: string) {
+    void (async () => {
+      if (!(await materialize())) return;
+      const durableTarget = framesRef.current.find((frame) => frame.id === frameId)?.durableId;
+      setNodes((current) => current?.map((entry) => entry.id === nodeId ? { ...entry, frame: frameId } : entry) ?? current);
+      if (durableTarget) await persistNodePatch(nodeId, { frameId: durableTarget });
+    })();
+  }
+
+  /** Apply one stack entry, either backwards or forwards. No action events. */
+  function applyUndoEntry(entry: UndoEntry, direction: UndoDirection): void {
+    if (entry.action === "move") {
+      const to = direction === "undo" ? entry.before : entry.after;
+      setNodes((current) => current ? moveNode(current, entry.nodeId, to) : current);
+      void persistNodePatch(entry.nodeId, { x: to.x, y: to.y });
+      return;
+    }
+    if (entry.action === "resize") {
+      const rect = direction === "undo" ? entry.before : entry.after;
+      if (entry.kind === "card") {
+        setNodes((current) => current?.map((node) => node.id === entry.id ? { ...node, ...rect } : node) ?? current);
+        void persistNodePatch(entry.id, { x: rect.x, y: rect.y, w: rect.width, h: rect.height });
+      } else {
+        setFrames((current) => current?.map((frame) => frame.id === entry.id ? { ...frame, ...rect } : frame) ?? current);
+        void persistFramePatch(entry.id, { x: rect.x, y: rect.y, w: rect.width, h: rect.height });
+      }
+      return;
+    }
+    if (entry.action === "hide") {
+      setNodeHidden(entry.nodeId, direction === "redo", null);
+      return;
+    }
+    if (entry.action === "restore") {
+      if (direction === "undo") setNodeHidden(entry.nodeId, true, entry.before);
+      else setNodeHidden(entry.nodeId, false, entry.after);
+      return;
+    }
+    if (entry.action === "remove_note") {
+      const stored = entry.node;
+      if (direction === "undo") {
+        setNodes((current) => current && !current.some((node) => node.id === stored.id) ? [...current, stored] : current);
+        setLinks((current) => [...current, ...entry.links.filter((link) => !current.some((existing) => existing.id === link.id))]);
+        if (stored.durableId) {
+          const version = liveNode(stored.id, stored)?.durableVersion ?? stored.durableVersion ?? 1;
+          void lab.persist({ type: "node_restore", nodeId: stored.durableId, expectedVersion: version }).then((result) => report(result, "node", "restore"));
+        }
+        return;
+      }
+      if (stored.durableId) {
+        const version = liveNode(stored.id, stored)?.durableVersion ?? stored.durableVersion ?? 1;
+        void lab.persist({ type: "node_archive", nodeId: stored.durableId, expectedVersion: version }).then((result) => report(result, "node", "archive"));
+      }
+      setNodes((current) => {
+        if (!current) return current;
+        const result = deleteLocalNode(current, linksRef.current, selected, stored.id);
+        setLinks(result.links);
+        setSelected(result.selected);
+        return result.nodes;
+      });
+      return;
+    }
+    if (entry.action === "relationship_add" || entry.action === "relationship_remove") {
+      const removing = entry.action === "relationship_add" ? direction === "undo" : direction === "redo";
+      const live = linksRef.current.find((link) => link.id === entry.link.id) ?? entry.link;
+      if (removing) {
+        void persistLinkRemoval(live);
+        setLinks((current) => removeLabLink(current, live.id));
+        setSelectedLinkId((current) => relationshipSelection(current, "deselect"));
+        return;
+      }
+      const result = addLabLink(linksRef.current, entry.link.fromId, entry.link.fromAnchor, entry.link.toId, entry.link.toAnchor);
+      if (result.error) return;
+      setLinks(result.links);
+      const created = result.links[result.links.length - 1];
+      if (created) void persistLink(created);
+      return;
+    }
+    applyFrameMove(entry.nodeId, direction === "undo" ? entry.before : entry.after);
+  }
+
+  /** Take one step back or put one step forward, and say which. */
+  function runUndo(direction: UndoDirection): boolean {
+    const popped = direction === "undo" ? popUndo(undoRef.current) : popRedo(undoRef.current);
+    if (!popped.entry) {
+      setAnnouncement(direction === "undo" ? "Nothing to undo." : "Nothing to redo.");
+      return false;
+    }
+    undoRef.current = popped.stacks;
+    setUndoToast(null);
+    applyUndoEntry(popped.entry, direction);
+    noteWorkboardUndoUsed(orgId, popped.entry.action, direction);
+    setAnnouncement(undoAnnouncement(popped.entry.action, direction));
+    return true;
+  }
+
+  /** The toast only speaks for the step it was raised about. */
+  function undoFromToast(entry: UndoEntry) {
+    const top = undoRef.current.undo[undoRef.current.undo.length - 1];
+    if (top === entry) runUndo("undo");
+    setUndoToast(null);
+  }
+
   /**
    * Load latest reads the whole durable board again and re-applies it over the
    * deterministic seed, so workstreams, cards and relationships all reconcile.
@@ -447,6 +602,8 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
     setLinks(merged.links);
     setHiddenIds(merged.hiddenIds);
     setSelectedLinkId(null);
+    undoRef.current = emptyUndoStacks();
+    setUndoToast(null);
     lab.clearSaveState();
     return true;
   }
@@ -460,7 +617,7 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
       const retry = state.retry;
       const entity = state.entityKind;
       lab.clearSaveState();
-      void lab.persist(retry).then((result) => report(result, entity, "update"));
+      void lab.persist(retry).then((result) => report(result, entity, retryAction(retry)));
       setAnnouncement("Retried your change.");
       return;
     }
@@ -483,7 +640,7 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
     }
     const retry = { ...state.retry, expectedVersion: state.latestVersion } as WorkboardCommand;
     lab.clearSaveState();
-    void lab.persist(retry).then((result) => report(result, state.entityKind === "link" ? "relationship" : state.entityKind, "update"));
+    void lab.persist(retry).then((result) => report(result, state.entityKind === "link" ? "relationship" : state.entityKind, retryAction(retry)));
     setAnnouncement("Retried your change.");
   }
 
@@ -531,13 +688,36 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
       }
       if (!keyboardId) return;
       const node = allNodes.find((entry) => entry.id === keyboardId);
-      if (!node?.local && node?.kind !== "chat") return;
+      if (!node) return;
+      if (!node.local && node.kind !== "chat") {
+        event.preventDefault();
+        const hint = "Real work is removed from the board, not deleted. Use Remove from canvas.";
+        setLinkRejection({ targetId: node.id, message: hint });
+        setAnnouncement(hint);
+        return;
+      }
       event.preventDefault();
       deleteNode(node);
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [allNodes, cardMenuOpen, closeDropPrompt, connectSource, dropPrompt, focusId, keyboardId, menuOpen, orgId, reviewId, selectedLinkId]);
+
+  /** Cmd or Ctrl with Z and Y, unless the keys belong to a text field. */
+  useEffect(() => {
+    function onUndoKey(event: KeyboardEvent) {
+      if (!event.ctrlKey && !event.metaKey) return;
+      const key = event.key.toLowerCase();
+      if (key !== "z" && key !== "y") return;
+      const active = document.activeElement as HTMLElement | null;
+      if (active?.closest("textarea,input,[contenteditable='true']")) return;
+      if (cardMenuOpen || menuOpen || focusId || reviewId) return;
+      event.preventDefault();
+      runUndo(key === "y" || event.shiftKey ? "redo" : "undo");
+    }
+    window.addEventListener("keydown", onUndoKey, { passive: false });
+    return () => window.removeEventListener("keydown", onUndoKey);
+  }, [cardMenuOpen, focusId, menuOpen, orgId, reviewId]);
 
   useEffect(() => {
     if (!dropPrompt) return;
@@ -706,6 +886,7 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
             const landed = decision.position;
             setNodes((current) => current ? moveNode(current, drag.id, landed) : current);
             void persistNodePatch(drag.id, { x: landed.x, y: landed.y });
+            record({ action: "move", nodeId: drag.id, before: drag.origin, after: landed });
             const target = decision.promptFrameId ? framesRef.current.find((frame) => frame.id === decision.promptFrameId) : null;
             if (target) {
               setDropPrompt({ nodeId: moved.id, frameId: target.id });
@@ -724,12 +905,14 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
             setNodes((current) => current?.map((node) => node.id === resizing.id ? { ...node, ...rect } : node) ?? current);
             void persistNodePatch(resizing.id, { x: rect.x, y: rect.y, w: rect.width, h: rect.height });
             noteWorkboardElementResized(orgId, "card", "pointer", resizeAxis(resizing.start, rect));
+            record({ action: "resize", kind: "card", id: resizing.id, before: resizing.start, after: rect });
           }
         } else if (changed) {
           const contained = containFrameMembers(rect, resizing.id, nodesRef.current);
           setFrames((current) => current?.map((frame) => frame.id === resizing.id ? { ...frame, ...contained } : frame) ?? current);
           void persistFramePatch(resizing.id, { x: contained.x, y: contained.y, w: contained.width, h: contained.height });
           noteWorkboardElementResized(orgId, "frame", "pointer", resizeAxis(resizing.start, contained));
+          record({ action: "resize", kind: "frame", id: resizing.id, before: resizing.start, after: contained });
         }
         resizeRef.current = null;
       }
@@ -756,6 +939,7 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
       const to = keyTo({ x: node.x, y: node.y }, event.key as "ArrowUp" | "ArrowDown" | "ArrowLeft" | "ArrowRight", event.shiftKey);
       setNodes((current) => current ? moveNode(current, node.id, to) : current);
       void persistNodePatch(node.id, { x: to.x, y: to.y });
+      record({ action: "move", nodeId: node.id, before: { x: node.x, y: node.y }, after: to, coalesceKey: `nudge:${node.id}` });
     }
   }
 
@@ -801,7 +985,10 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
       const frame = framesRef.current.find((entry) => entry.id === resizing.id);
       if (frame) { end = { x: frame.x, y: frame.y, width: frame.width, height: frame.height }; void persistFramePatch(frame.id, { x: frame.x, y: frame.y, w: frame.width, h: frame.height }); }
     }
-    if (end) noteWorkboardElementResized(orgId, resizing.kind, "keyboard", resizeAxis(resizing.start, end));
+    if (end) {
+      noteWorkboardElementResized(orgId, resizing.kind, "keyboard", resizeAxis(resizing.start, end));
+      record({ action: "resize", kind: resizing.kind, id: resizing.id, before: resizing.start, after: end });
+    }
     resizeRef.current = null;
     setInteraction("idle");
   }
@@ -853,15 +1040,10 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
 
   function moveToFrame(node: LabNode, frameId: string) {
     const target = framesRef.current.find((frame) => frame.id === frameId);
-    if (!target) return;
-    void (async () => {
-      if (!(await materialize())) return;
-      const durableTarget = framesRef.current.find((frame) => frame.id === frameId)?.durableId;
-      if (!durableTarget) return;
-      setNodes((current) => current?.map((entry) => entry.id === node.id ? { ...entry, frame: frameId } : entry) ?? current);
-      await persistNodePatch(node.id, { frameId: durableTarget });
-      setAnnouncement(`${node.title} moved to ${target.name}.`);
-    })();
+    if (!target || node.frame === frameId) return;
+    record({ action: "workstream_move", nodeId: node.id, before: node.frame, after: frameId });
+    applyFrameMove(node.id, frameId);
+    setAnnouncement(`${node.title} moved to ${target.name}.`);
   }
 
   function addNode(kind: LabTemplateKind, judgment?: LabJudgmentType) {
@@ -913,6 +1095,9 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
     setKeyboardId(null);
     noteWorkboardNodeDeleted(orgId, eventKind(node));
     setAnnouncement(`${node.title} removed from this workboard.`);
+    const entry: UndoEntry = { action: "remove_note", node, links: links.filter((link) => link.fromId === node.id || link.toId === node.id) };
+    record(entry);
+    setUndoToast({ message: "Note removed", entry });
   }
 
 
@@ -923,6 +1108,9 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
     setKeyboardId(null);
     noteWorkboardRecordVisibility(orgId, "hidden", node.kind === "decision" ? "decision" : node.kind === "brief" ? "brief" : "work");
     setAnnouncement(`${node.title} removed from this local workboard.`);
+    const entry: UndoEntry = { action: "hide", nodeId: node.id };
+    record(entry);
+    setUndoToast({ message: "Removed from the board", entry });
   }
 
   function restoreNode(id: string) {
@@ -935,6 +1123,7 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
     void persistNodePatch(id, { hidden: false, x: point.x, y: point.y });
     noteWorkboardRecordVisibility(orgId, "restored", node.kind === "decision" ? "decision" : node.kind === "brief" ? "brief" : "work");
     setAnnouncement(`${node.title} returned to this local workboard.`);
+    record({ action: "restore", nodeId: id, before: { x: node.x, y: node.y }, after: point });
   }
 
   function stagePoint(clientX: number, clientY: number): Point {
@@ -961,7 +1150,7 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
     setInteraction(disarmed.interaction);
     noteWorkboardRelationship(orgId, "created");
     const created = result.links[result.links.length - 1];
-    if (created) void persistLink(created);
+    if (created) { void persistLink(created); record({ action: "relationship_add", link: created }); }
     setAnnouncement("Relationship saved to the workboard.");
   }
 
@@ -971,6 +1160,7 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
     setSelectedLinkId((current) => relationshipSelection(current, "deselect"));
     noteWorkboardRelationship(orgId, "removed");
     setAnnouncement(linkRemovalAnnouncement(link));
+    record({ action: "relationship_remove", link });
   }
 
   function chooseConnectAnchor(node: LabNode, anchor: LabAnchor) {
