@@ -185,8 +185,8 @@ describe("canvas lab model", () => {
     expect(large.zoom).toBeCloseTo(0.41);
     expect(large.bounds.width * large.zoom).toBeLessThanOrEqual(1048 - 64);
     expect(large.bounds.height * large.zoom).toBeLessThanOrEqual(713 - 64);
-    expect(large.pan.x + large.bounds.x * large.zoom).toBeCloseTo(44);
-    expect(large.pan.y + large.bounds.y * large.zoom).toBeCloseTo(56.5);
+    expect(large.pan.x + (large.bounds.x + large.bounds.width / 2) * large.zoom).toBeCloseTo(1048 / 2);
+    expect(large.pan.y + (large.bounds.y + large.bounds.height / 2) * large.zoom).toBeCloseTo(713 / 2);
 
     const oversized = fitWorkboardViewport({ width: 1048, height: 713 }, [{ ...largeFrame, width: 2600, height: 1800 }], [], new Map());
     expect(oversized.zoom).toBe(0.4);
