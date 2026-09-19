@@ -4,7 +4,7 @@ import { ContextComposer } from "@/components/canvas-lab/ContextComposer";
 import type { LabNode } from "@/components/canvas-lab/canvas-lab-model";
 import { Button } from "@/components/ui/button";
 
-export function WorkRail({ open, mobileVisible, context, hidden, canvasInstructions, onToggle, onRemoveContext, onSubmit, onCanvasInstructions, onRestore, onShowBoard }: { open: boolean; mobileVisible: boolean; context: LabNode[]; hidden: LabNode[]; canvasInstructions: string; onToggle: () => void; onRemoveContext: (id: string) => void; onSubmit: (prompt: string) => void; onCanvasInstructions: (value: string) => void; onRestore: (id: string) => void; onShowBoard: () => void }) {
+export function WorkRail({ open, mobileVisible, context, hidden, canvasInstructions, onToggle, onRemoveContext, onClearContext, onSubmit, onCanvasInstructions, onRestore, onShowBoard }: { open: boolean; mobileVisible: boolean; context: LabNode[]; hidden: LabNode[]; canvasInstructions: string; onToggle: () => void; onRemoveContext: (id: string) => void; onClearContext: () => void; onSubmit: (prompt: string) => void; onCanvasInstructions: (value: string) => void; onRestore: (id: string) => void; onShowBoard: () => void }) {
   return (
     <aside className={`${open ? "canvas-lab-work-rail" : "canvas-lab-rail-collapsed"} ${mobileVisible ? "flex" : "hidden md:flex"}`} aria-label="Working from">
       {!open ? <Button type="button" variant="ghost" size="sm" className="h-auto min-h-32 w-10 px-1 [writing-mode:vertical-rl]" aria-label="Open working from rail" onClick={onToggle}><Paperclip className="mb-2 h-4 w-4" />Working from</Button> : null}
