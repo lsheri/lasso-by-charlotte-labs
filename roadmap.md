@@ -97,5 +97,6 @@
 - [x] Add local Structured / Freeform mode and explicit Structured-only workstream reassignment
 - [x] Add consent-stamped resize and structure events; retain existing save/conflict behavior
 - [x] Complete focused tests, typecheck, and token/language guards
-- [ ] Confirm the automatic preview build and complete Liam visual verification
+- [x] Confirm the automatic preview build
+- [ ] Complete Liam visual verification
 - [ ] Phase 3 Slice 2 remains blocked on explicit consent and retention approval for durable comments, highlights, and locators
