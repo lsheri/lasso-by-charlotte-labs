@@ -75,7 +75,10 @@ describe("LabFrame menu and rename", () => {
   it("puts the cursor in the rename field when Rename comes from the menu", async () => {
     renderFrame();
     fireEvent.pointerDown(screen.getByRole("button", { name: "Open workstream menu" }), { button: 0, ctrlKey: false });
-    fireEvent.click(screen.getByRole("menuitem", { name: "Rename" }));
+    const item = screen.getByRole("menuitem", { name: "Rename" });
+    fireEvent.pointerDown(item, { button: 0, ctrlKey: false });
+    fireEvent.pointerUp(item, { button: 0, ctrlKey: false });
+    fireEvent.click(item);
     const input = await screen.findByRole("textbox", { name: "Rename workstream" });
     await new Promise((resolve) => window.requestAnimationFrame(() => setTimeout(resolve, 0)));
     expect(document.activeElement).toBe(input);
