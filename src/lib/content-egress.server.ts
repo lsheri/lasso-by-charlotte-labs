@@ -22,17 +22,19 @@ export type ContentEgressResult = { sent: number; skipped: number; failed: numbe
 
 type Admin = Awaited<typeof import("@/integrations/supabase/client.server")>["supabaseAdmin"];
 
-const ITEM_COLUMNS = "id, org_id, owner_id, title, captured_at, created_at_source, meta";
+const ITEM_COLUMNS = "id, org_id, owner_id, title, captured_at, created_at_source, visibility, meta";
 
-/** The oldest items that have never been considered. */
+/** The oldest shared items that have never been considered. */
 export async function selectContentPending(admin: Admin): Promise<WorkItemRow[]> {
   const { data, error } = await admin
     .from("work_items")
     .select(ITEM_COLUMNS)
+    .eq("visibility", "mapped")
     .is("content_egressed_at", null)
     .is("content_egress_skipped_reason", null)
     .order("captured_at", { ascending: true })
     .limit(CONTENT_BATCH_SIZE);
+
   if (error) {
     console.error("[content-egress] selectContentPending failed:", error.message);
     return [];
