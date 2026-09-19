@@ -4538,6 +4538,12 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   line-height: 1;
 }
 .canvas-lab-undo-toast button {
+  display: inline-flex;
+  min-width: 44px;
+  min-height: 24px;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 8px;
   color: var(--nb-green);
   font-family: var(--font-mono);
   font-size: 9px;

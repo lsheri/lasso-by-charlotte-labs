@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { eventKind, retryAction, type LabNode } from "@/components/canvas-lab/canvas-lab-model";
 import {
   UNDO_LIMIT,
+  canUndoToastEntry,
   emptyUndoStacks,
   popRedo,
   popUndo,
@@ -13,7 +14,7 @@ import {
 } from "@/components/canvas-lab/canvas-lab-undo";
 
 function move(nodeId: string, x: number, coalesce?: string): UndoEntry {
-  return { action: "move", nodeId, before: { x: 0, y: 0 }, after: { x, y: 0 }, ...(coalesce ? { coalesceKey: coalesce } : {}) };
+  return { id: `move:${nodeId}:${x}`, action: "move", nodeId, before: { x: 0, y: 0 }, after: { x, y: 0 }, ...(coalesce ? { coalesceKey: coalesce } : {}) };
 }
 
 function workNode(deliverable: boolean): LabNode {
@@ -55,8 +56,21 @@ describe("canvas lab undo stack", () => {
     const entry = stacks.undo[0] as { before: { x: number }; after: { x: number } };
     expect(entry.before.x).toBe(0);
     expect(entry.after.x).toBe(16);
+    expect(stacks.undo[0]?.id).toBe("move:a:8");
     stacks = recordUndo(stacks, move("a", 24, "nudge:a"), 4_000);
     expect(stacks.undo).toHaveLength(2);
+  });
+
+  it("matches a toast step by stable id only while it remains on top", () => {
+    const toastEntry = move("a", 10);
+    const first = recordUndo(emptyUndoStacks(), toastEntry, 1_000);
+    expect(canUndoToastEntry(first, toastEntry.id)).toBe(true);
+    expect(canUndoToastEntry(first, toastEntry.id) ? popUndo(first).entry?.id : null).toBe(toastEntry.id);
+
+    const later = recordUndo(first, move("b", 20), 2_000);
+    expect(canUndoToastEntry(later, toastEntry.id)).toBe(false);
+    expect(canUndoToastEntry(later, toastEntry.id) ? popUndo(later).entry : null).toBeNull();
+    expect(later.undo).toHaveLength(2);
   });
 
   it("says the plain word for each direction", () => {

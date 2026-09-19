@@ -30,3 +30,8 @@ move (drag and coalesced keyboard nudges), resize (card and frame), hide, restor
 
 ## Files
 canvas-lab-undo.ts (new), LabUndoToast.tsx (new), canvas-lab-model.ts, canvas-lab-telemetry.ts, telemetry-shared.ts, CanvasLabPage.tsx, LabCard.tsx, ReasoningTrailGuide.tsx, styles.css, canvas-lab-undo.test.ts (new), roadmap.md.
+
+## Follow-up at base 754d4b6
+- Data impact: none. Controls and all 18 event names and dimensions remain identical.
+- Every undo entry now has a stable page-assigned id. Coalescing retains the first entry's id, and undo/redo retain it unchanged. The toast compares that id with the current top entry before using the existing undo path.
+- The toast Undo control keeps its 9px mono label and now has a minimum 44 by 24 pixel hit area.
