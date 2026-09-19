@@ -361,3 +361,9 @@ Tests: three `dragEndDecision` cases, including a pointerup before any render, z
 - Durable authored judgments now read "yours" while preserving their existing local and ownership values; teammate judgments and unsaved drafts remain distinct. Chat drafts still read "local draft".
 - In-context folded notes and real work notes reserve screen-constant title space for the paperclip.
 - No action, event, payload, consent, database, route, landing, AskDock, or production canvas change.
+
+### Follow-up
+
+- The new judgment now takes focus while its card mounts, after the chosen menu item is removed. Enter continues through the existing card context action.
+- New local nodes use the first stack slot that does not intersect any visible card on the board, then fall below the lowest card in their workstream only when no stack slot remains. Existing cards do not move.
+- In-context folded cards reserve screen-constant paperclip space in both the owner row and title. All five reasoning-step Add controls share the same 24px screen hit area.

@@ -98,6 +98,7 @@
 - [x] Add consent-stamped resize and structure events; retain existing save/conflict behavior
 - [x] Complete focused tests, typecheck, and token/language guards
 - [x] Confirm the automatic preview build
+- [x] Polish 2c-ii follow-up: reliable judgment focus, collision-free creation, paperclip clearance, and consistent Add hit areas
 - [ ] Complete Liam visual verification
 - [ ] Phase 3 Slice 2 remains blocked on explicit consent and retention approval for durable comments, highlights, and locators
 
