@@ -4,6 +4,7 @@ import {
   actionsFor,
   branchChatNode,
   addLabLink,
+  addLocalFrame,
   connectedLabNodeIds,
   containFrameMembers,
   createLocalNode,
@@ -27,6 +28,8 @@ import {
   seedCanvas,
   sizeSeedFrames,
   dropPromptFrame,
+  nextWorkstreamRect,
+  workstreamAddAnchor,
   toggleContext,
 } from "@/components/canvas-lab/canvas-lab-model";
 
@@ -125,6 +128,36 @@ describe("canvas lab model", () => {
     expect(dropPromptFrame(moved, frames, "freeform", true)).toBeNull();
     expect(dropPromptFrame(moved, frames, "structured", false)).toBeNull();
     expect(dropPromptFrame({ ...moved, frame: "decisions" }, frames, "structured", true)).toBeNull();
+  });
+
+  it("prompts when a grown home workstream still overlaps the card's new frame", () => {
+    const frames = [
+      { id: "task:tier2", name: "Tier 2 modelling", x: 60, y: 420, width: 1200, height: 900 },
+      { id: "task:readout", name: "Readout deck", x: 900, y: 460, width: 380, height: 420 },
+    ];
+    const node = { id: "work:w1", frame: "task:tier2", x: 1000, y: 520, width: 232, height: 120 } as ReturnType<typeof seedCanvas>[number];
+    expect(frameContainingPoint(frames, { x: node.x + node.width / 2, y: node.y + node.height / 2 })?.id).toBe("task:readout");
+    expect(dropPromptFrame(node, frames, "structured", true)?.id).toBe("task:readout");
+  });
+
+  it("places a new workstream and the add control clear of every frame and card", () => {
+    const frames = createLabFrames(SEED.tasks);
+    const nodes = seedCanvas(SEED, frames).map((node) => ({ ...node, y: node.y + 600 }));
+    const rect = nextWorkstreamRect(frames, nodes);
+    for (const frame of frames) {
+      expect(rect.y).toBeGreaterThan(frame.y + frame.height);
+    }
+    for (const node of nodes) {
+      expect(rect.y).toBeGreaterThan(node.y + node.height);
+    }
+    const created = addLocalFrame(frames, "New stream", rect).at(-1);
+    expect(created?.x).toBe(rect.x);
+    expect(created?.y).toBe(rect.y);
+    const anchor = workstreamAddAnchor(frames, nodes);
+    expect(anchor).not.toBeNull();
+    for (const frame of frames.filter((entry) => entry.id.startsWith("task:"))) {
+      expect(anchor?.y).toBeGreaterThan(frame.y + frame.height);
+    }
   });
 
   it("marks work the viewer does not own as a teammate's", () => {
