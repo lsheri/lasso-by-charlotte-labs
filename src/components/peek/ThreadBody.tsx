@@ -72,8 +72,12 @@ function HighlightedContent({
         key={start}
         data-testid={inMark ? "turn-highlight" : "turn-comment-mark"}
         data-commented={inNote ? "true" : undefined}
-        className={`rounded-[2px] text-foreground ${inMark ? "bg-[var(--nb-yellow-wash)]" : "bg-transparent"} ${
-          inNote ? "underline decoration-[var(--nb-mid)] decoration-2 underline-offset-2" : ""
+        className={`rounded-[2px] text-foreground ${
+          inMark
+            ? "border-b-2 border-solid border-[var(--nb-lasso-green)] bg-[var(--nb-lasso-green-wash)]"
+            : "bg-transparent"
+        } ${
+          inNote ? "underline decoration-[var(--nb-lasso-green)] decoration-2 underline-offset-2" : ""
         }`}
       >
         {text}
