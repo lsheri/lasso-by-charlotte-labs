@@ -63,7 +63,7 @@ describe("Canvas Lab card interaction correction", () => {
     expect(page).toContain("chooseConnectAnchor(node, side)");
     expect(page).toContain("nearestLabAnchor(stagePoint");
     expect(page).toContain('noteWorkboardRelationship(orgId, "started")');
-    expect(page).toContain('noteWorkboardRelationship(orgId, "created")');
+    expect(page).toContain('noteWorkboardRelationship(orgId, "created", created?.relation ?? "context")');
     expect(page).toContain('noteWorkboardRelationship(orgId, "rejected")');
     expect(page).toContain('noteWorkboardRelationship(orgId, "cancelled")');
     expect(page).toContain('className="pointer-events-none"');

@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { LabCard } from "@/components/canvas-lab/LabCard";
 import { LabLinkRejection } from "@/components/canvas-lab/LabLinkRejection";
+import { LabRelationshipOverlays } from "@/components/canvas-lab/LabRelationshipOverlays";
 import { LabRelationships } from "@/components/canvas-lab/LabRelationships";
 import { connectDisarmed, linkRemovalAnnouncement, type LabLink, type LabNode } from "@/components/canvas-lab/canvas-lab-model";
 
@@ -20,7 +21,7 @@ afterEach(() => {
 
 describe("Workboard relationships", () => {
   it("draws an arrow marker for every relationship", () => {
-    const { container } = render(<svg><LabRelationships links={[link, { ...link, id: "reverse", fromId: "b", toId: "a" }]} nodes={nodes} measuredHeights={new Map()} selectedLinkId={null} inverseZoom={2} editable onSelect={() => undefined} onRemove={() => undefined} /></svg>);
+    const { container } = render(<svg><LabRelationships links={[link, { ...link, id: "reverse", fromId: "b", toId: "a" }]} nodes={nodes} measuredHeights={new Map()} selectedLinkId={null} inverseZoom={2} onSelect={() => undefined} /></svg>);
     const lines = container.querySelectorAll(".canvas-lab-relationship-line");
     expect(lines).toHaveLength(2);
     for (const line of lines) expect(line.getAttribute("marker-end")).toBe("url(#canvas-lab-arrow-graphite)");
@@ -28,12 +29,12 @@ describe("Workboard relationships", () => {
 
   it("shows the remove control on hover and removes once through the supplied path", () => {
     const remove = vi.fn();
-    const { container } = render(<svg><LabRelationships links={[link]} nodes={nodes} measuredHeights={new Map()} selectedLinkId={null} inverseZoom={1} editable onSelect={() => undefined} onRemove={remove} /></svg>);
-    expect(screen.queryByRole("button", { name: "Remove relationship from Source to Target" })).toBeNull();
+    const { container } = render(<svg><LabRelationships links={[link]} nodes={nodes} measuredHeights={new Map()} selectedLinkId={null} inverseZoom={1} onSelect={() => undefined} /></svg>);
     const group = container.querySelector("[data-testid='lab-relationship-link']");
     expect(group).not.toBeNull();
     if (!group) return;
     fireEvent.pointerEnter(group);
+    render(<svg><LabRelationshipOverlays links={[link]} nodes={nodes} measuredHeights={new Map()} selectedLinkId={null} hoveredLinkId="link" inverseZoom={1} zoom={1} editable onRemove={remove} onChangeRelation={() => undefined} /></svg>);
     const button = screen.getByRole("button", { name: "Remove relationship from Source to Target" });
     fireEvent.click(button);
     expect(remove).toHaveBeenCalledOnce();
@@ -41,7 +42,7 @@ describe("Workboard relationships", () => {
   });
 
   it("never offers removal to a read-only viewer", () => {
-    const { container } = render(<svg><LabRelationships links={[link]} nodes={nodes} measuredHeights={new Map()} selectedLinkId="link" inverseZoom={1} editable={false} onSelect={() => undefined} onRemove={() => undefined} /></svg>);
+    const { container } = render(<svg><LabRelationshipOverlays links={[link]} nodes={nodes} measuredHeights={new Map()} selectedLinkId="link" hoveredLinkId={null} inverseZoom={1} zoom={1} editable={false} onRemove={() => undefined} onChangeRelation={() => undefined} /></svg>);
     expect(container.querySelector(".canvas-lab-relationship-remove")).toBeNull();
   });
 

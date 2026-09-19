@@ -416,21 +416,70 @@ export function labConnectorPath(from: Point, fromSide: LabAnchor, to: Point, to
   return `M ${from.x} ${from.y} C ${a.x} ${a.y}, ${b.x} ${b.y}, ${to.x} ${to.y}`;
 }
 
+function connectorControl(point: Point, side: LabAnchor): Point {
+  if (side === "top") return { x: point.x, y: point.y - 64 };
+  if (side === "right") return { x: point.x + 64, y: point.y };
+  if (side === "bottom") return { x: point.x, y: point.y + 64 };
+  return { x: point.x - 64, y: point.y };
+}
+
+function connectorPoint(from: Point, fromSide: LabAnchor, to: Point, toSide: LabAnchor, t: number): Point {
+  const a = connectorControl(from, fromSide);
+  const b = connectorControl(to, toSide);
+  const inverse = 1 - t;
+  return {
+    x: inverse ** 3 * from.x + 3 * inverse ** 2 * t * a.x + 3 * inverse * t ** 2 * b.x + t ** 3 * to.x,
+    y: inverse ** 3 * from.y + 3 * inverse ** 2 * t * a.y + 3 * inverse * t ** 2 * b.y + t ** 3 * to.y,
+  };
+}
+
+function connectorPointAtLength(from: Point, fromSide: LabAnchor, to: Point, toSide: LabAnchor, ratio: number): Point {
+  const points = Array.from({ length: 101 }, (_, index) => connectorPoint(from, fromSide, to, toSide, index / 100));
+  const lengths = points.slice(1).map((point, index) => {
+    const previous = points[index] ?? point;
+    return Math.hypot(point.x - previous.x, point.y - previous.y);
+  });
+  const wanted = lengths.reduce((sum, length) => sum + length, 0) * ratio;
+  let travelled = 0;
+  for (let index = 0; index < lengths.length; index += 1) {
+    const length = lengths[index] ?? 0;
+    if (travelled + length >= wanted) {
+      const start = points[index] ?? from;
+      const end = points[index + 1] ?? to;
+      const fraction = length > 0 ? (wanted - travelled) / length : 0;
+      return { x: start.x + (end.x - start.x) * fraction, y: start.y + (end.y - start.y) * fraction };
+    }
+    travelled += length;
+  }
+  return to;
+}
+
+function centredBoxIntersects(point: Point, size: { width: number; height: number }, rect: LabRect): boolean {
+  const left = point.x - size.width / 2;
+  const top = point.y - size.height / 2;
+  return left < rect.x + rect.width && left + size.width > rect.x && top < rect.y + rect.height && top + size.height > rect.y;
+}
+
+/** Keep a link label or picker clear of both cards, preferring the curve midpoint. */
+export function labConnectorAffordancePoint(
+  from: Point,
+  fromSide: LabAnchor,
+  to: Point,
+  toSide: LabAnchor,
+  size: { width: number; height: number },
+  sourceRect: LabRect,
+  targetRect: LabRect,
+): Point {
+  for (let percent = 50; percent >= 35; percent -= 1) {
+    const point = connectorPointAtLength(from, fromSide, to, toSide, percent / 100);
+    if (!centredBoxIntersects(point, size, sourceRect) && !centredBoxIntersects(point, size, targetRect)) return point;
+  }
+  return connectorPointAtLength(from, fromSide, to, toSide, 0.35);
+}
+
 /** Midpoint of the same cubic curve used for a relationship. */
 export function labConnectorMidpoint(from: Point, fromSide: LabAnchor, to: Point, toSide: LabAnchor): Point {
-  const offset = 64;
-  const control = (point: Point, side: LabAnchor): Point => {
-    if (side === "top") return { x: point.x, y: point.y - offset };
-    if (side === "right") return { x: point.x + offset, y: point.y };
-    if (side === "bottom") return { x: point.x, y: point.y + offset };
-    return { x: point.x - offset, y: point.y };
-  };
-  const a = control(from, fromSide);
-  const b = control(to, toSide);
-  return {
-    x: (from.x + 3 * a.x + 3 * b.x + to.x) / 8,
-    y: (from.y + 3 * a.y + 3 * b.y + to.y) / 8,
-  };
+  return connectorPoint(from, fromSide, to, toSide, 0.5);
 }
 
 /**

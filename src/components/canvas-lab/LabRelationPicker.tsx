@@ -33,7 +33,7 @@ export function LabRelationPicker({
       ref={shellRef}
       data-testid="lab-relation-picker"
       className="canvas-lab-relation-picker"
-      style={{ left: point.x, top: point.y }}
+      style={{ left: point.x, top: point.y, transform: "translate(-50%, -50%)" }}
       role="listbox"
       aria-label="What does this link mean?"
       tabIndex={0}

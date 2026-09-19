@@ -28,7 +28,7 @@ describe("Canvas Lab Phase 2", () => {
     noteWorkboardNodeEdited("org", "human_judgment");
     noteWorkboardNodeDeleted("org", "human_judgment");
     noteWorkboardRecordVisibility("org", "hidden", "work");
-    noteWorkboardRelationship("org", "created");
+    noteWorkboardRelationship("org", "created", "context");
     noteWorkboardReviewOpened("org", "deck");
     noteWorkboardTrailSelected("org", "context", "item");
     noteWorkboardCardMenuOpened("org", "deliverable", "yours");
@@ -38,7 +38,7 @@ describe("Canvas Lab Phase 2", () => {
       { event: "workboard.node_edited", dims: { kind: "human_judgment" } },
       { event: "workboard.node_deleted", dims: { kind: "human_judgment" } },
       { event: "workboard.record_visibility_changed", dims: { action: "hidden", record_kind: "work" } },
-      { event: "workboard.relationship_changed", dims: { action: "created" } },
+      { event: "workboard.relationship_changed", dims: { action: "created", relation: "context" } },
       { event: "workboard.review_opened", dims: { format: "deck" } },
       { event: "workboard.trail_item_selected", dims: { group: "context", focus: "item" } },
       { event: "workboard.card_menu_opened", dims: { node_kind: "deliverable", ownership: "yours" } },

@@ -1412,6 +1412,7 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 }
 .canvas-lab-frame-name-error { display: block; margin-top: 3px; color: var(--destructive); font-size: 13px; line-height: 1; }
 .canvas-lab-relationships { pointer-events: none; }
+.canvas-lab-relationship-overlays { z-index: 20; pointer-events: none; }
 .canvas-lab-relationship-hit,
 .canvas-lab-relationship-line { pointer-events: stroke; }
 .canvas-lab-relationship-remove-wrap { overflow: visible; pointer-events: auto; }
@@ -1431,10 +1432,11 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   cursor: pointer;
 }
 .canvas-lab-relationship-label {
-  fill: var(--nb-mid);
   font-family: var(--font-hand);
   pointer-events: none;
 }
+.canvas-lab-relationship-label rect { fill: var(--nb-paper); stroke: var(--nb-rule); }
+.canvas-lab-relationship-label text { fill: var(--nb-mid); }
 .canvas-lab-relationship-controls {
   display: flex;
   width: 100%;
