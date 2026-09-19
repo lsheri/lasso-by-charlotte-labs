@@ -27,6 +27,8 @@ import {
   seedCanvas,
   sizeSeedFrames,
   dropPromptFrame,
+  nextWorkstreamRect,
+  workstreamAddAnchor,
   toggleContext,
 } from "@/components/canvas-lab/canvas-lab-model";
 
