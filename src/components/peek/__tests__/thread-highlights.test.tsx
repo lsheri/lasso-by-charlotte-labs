@@ -51,7 +51,7 @@ describe("highlights drawn on chat turns", () => {
         highlights={[
           { id: "a", turnNo: 2, charStart: 4, charEnd: 17, stale: false },
           { id: "b", turnNo: 2, charStart: 12, charEnd: 24, stale: false },
-          { id: "c", turnNo: 2, charStart: 42, charEnd: 50, stale: false },
+          { id: "c", turnNo: 2, charStart: 40, charEnd: 48, stale: false },
         ]}
       />,
     );
