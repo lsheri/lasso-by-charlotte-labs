@@ -4,6 +4,7 @@ import {
   actionsFor,
   branchChatNode,
   addLabLink,
+  addLocalFrame,
   connectedLabNodeIds,
   containFrameMembers,
   createLocalNode,
