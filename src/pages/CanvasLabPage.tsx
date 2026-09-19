@@ -420,17 +420,91 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [allNodes, cardMenuOpen, connectSource, focusId, keyboardId, menuOpen, orgId, reviewId, selectedLinkId]);
 
+  /** Change the zoom while holding one point of the board still. */
+  const zoomTo = useCallback((next: number, point: Point) => {
+    const from = zoomRef.current;
+    const to = clampZoom(next);
+    if (to === from) return;
+    setPan(zoomAbout(panStateRef.current, from, to, point));
+    setZoom(to);
+  }, []);
+
+  /** The middle of what the person can currently see. */
+  const viewportCentre = useCallback((): Point => {
+    const shell = shellRef.current;
+    if (!shell) return { x: 0, y: 0 };
+    return { x: shell.clientWidth / 2, y: shell.clientHeight / 2 };
+  }, []);
+
+  const zoomAtCentre = useCallback((next: number) => zoomTo(next, viewportCentre()), [viewportCentre, zoomTo]);
+
   useEffect(() => {
     const shell = shellRef.current;
     if (!shell) return;
+    function pointIn(event: WheelEvent): Point {
+      const rect = shell!.getBoundingClientRect();
+      return { x: event.clientX - rect.left, y: event.clientY - rect.top };
+    }
     function onModifierWheel(event: WheelEvent) {
       if (!event.ctrlKey && !event.metaKey) return;
       event.preventDefault();
-      setZoom((current) => pinchZoom(current, event.deltaY));
+      zoomTo(pinchZoom(zoomRef.current, event.deltaY), pointIn(event));
+    }
+    function onSurfaceWheel(event: WheelEvent) {
+      if (event.ctrlKey || event.metaKey) return;
+      const target = event.target as HTMLElement | null;
+      if (target?.closest("textarea,input,[contenteditable='true'],[role='menu'],[data-radix-popper-content-wrapper]")) return;
+      const delta = wheelPanDelta(event);
+      if (scrollableUnder(target, shell!, delta)) return;
+      event.preventDefault();
+      setPan((current) => ({ x: current.x - delta.x, y: current.y - delta.y }));
     }
     shell.addEventListener("wheel", onModifierWheel, { passive: false });
-    return () => shell.removeEventListener("wheel", onModifierWheel);
+    shell.addEventListener("wheel", onSurfaceWheel, { passive: false });
+    return () => { shell.removeEventListener("wheel", onModifierWheel); shell.removeEventListener("wheel", onSurfaceWheel); };
+  }, [zoomTo]);
+
+  /** Space holds the board still for panning, unless a card or a field has focus. */
+  useEffect(() => {
+    function down(event: KeyboardEvent) {
+      if (event.key !== " " && event.code !== "Space") return;
+      const active = document.activeElement as HTMLElement | null;
+      if (active?.closest("textarea,input,[contenteditable='true'],[role='menu'],[data-testid^='lab-card-']")) return;
+      if (spaceRef.current) return;
+      event.preventDefault();
+      spaceRef.current = true;
+      setSpaceHeld(true);
+    }
+    function up(event: KeyboardEvent) {
+      if (event.key !== " " && event.code !== "Space") return;
+      spaceRef.current = false;
+      setSpaceHeld(false);
+    }
+    function blur() { spaceRef.current = false; setSpaceHeld(false); }
+    window.addEventListener("keydown", down);
+    window.addEventListener("keyup", up);
+    window.addEventListener("blur", blur);
+    return () => { window.removeEventListener("keydown", down); window.removeEventListener("keyup", up); window.removeEventListener("blur", blur); };
   }, []);
+
+  /** Ctrl or Cmd with =, -, 0 and 1, instead of the browser's page zoom. */
+  useEffect(() => {
+    function onZoomKey(event: KeyboardEvent) {
+      if (!event.ctrlKey && !event.metaKey) return;
+      const active = document.activeElement as HTMLElement | null;
+      if (active?.closest("textarea,input,[contenteditable='true']")) return;
+      if (event.key === "=" || event.key === "+") { event.preventDefault(); zoomAtCentre(stepZoom(zoomRef.current, "in")); return; }
+      if (event.key === "-" || event.key === "_") { event.preventDefault(); zoomAtCentre(stepZoom(zoomRef.current, "out")); return; }
+      if (event.key === "0") { event.preventDefault(); fit(); return; }
+      if (event.key === "1") { event.preventDefault(); zoomAtCentre(1); }
+    }
+    window.addEventListener("keydown", onZoomKey, { passive: false });
+    return () => window.removeEventListener("keydown", onZoomKey);
+  }, [fit, zoomAtCentre]);
+
+  function startSpacePan(event: React.PointerEvent) {
+    panRef.current = { from: { x: event.clientX, y: event.clientY }, origin: panStateRef.current };
+  }
 
   function onCardPointerDown(node: LabNode, event: React.PointerEvent) {
     if (event.button !== 0 || (event.target as Element).closest("button,textarea")) return;
