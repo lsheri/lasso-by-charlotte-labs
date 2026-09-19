@@ -182,11 +182,16 @@ describe("canvas lab model", () => {
   it("fits an NWG-02-sized union at minimum zoom and keeps its visible region centred", () => {
     const largeFrame = { id: "large", name: "All work", x: 60, y: 60, width: 2400, height: 1500 };
     const large = fitWorkboardViewport({ width: 1048, height: 713 }, [largeFrame], [], new Map());
-    expect(large.zoom).toBe(0.4);
+    expect(large.zoom).toBeCloseTo(0.41);
     expect(large.bounds.width * large.zoom).toBeLessThanOrEqual(1048 - 64);
     expect(large.bounds.height * large.zoom).toBeLessThanOrEqual(713 - 64);
     expect(large.pan.x + large.bounds.x * large.zoom).toBeCloseTo(44);
     expect(large.pan.y + large.bounds.y * large.zoom).toBeCloseTo(56.5);
+
+    const oversized = fitWorkboardViewport({ width: 1048, height: 713 }, [{ ...largeFrame, width: 2600, height: 1800 }], [], new Map());
+    expect(oversized.zoom).toBe(0.4);
+    expect(oversized.pan.x + oversized.bounds.x * oversized.zoom).toBe(32);
+    expect(oversized.pan.y + oversized.bounds.y * oversized.zoom).toBe(32);
 
     const frame = { id: "f", name: "Work", x: 60, y: 420, width: 430, height: 220 };
     const card = { id: "n", kind: "work" as const, frame: "f", title: "Card", summary: "", typeLabel: "work", ownership: "yours" as const, x: 100, y: 590, width: 232, height: 112 };
