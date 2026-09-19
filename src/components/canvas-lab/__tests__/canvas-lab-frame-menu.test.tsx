@@ -1,11 +1,13 @@
 // @vitest-environment jsdom
-import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { LabFrame } from "@/components/canvas-lab/LabFrame";
 import type { LabFrame as LabFrameModel } from "@/components/canvas-lab/canvas-lab-model";
 
 const customFrame: LabFrameModel = { id: "custom:risks", name: "Risks", x: 0, y: 0, width: 430, height: 520, local: true };
+
+afterEach(cleanup);
 
 function renderFrame(overrides: Partial<React.ComponentProps<typeof LabFrame>> = {}) {
   const props: React.ComponentProps<typeof LabFrame> = {
