@@ -32,6 +32,20 @@ export function pinchZoom(z: number, deltaY: number): number {
   return clampZoom(z * Math.exp(-deltaY * 0.0015));
 }
 
+/**
+ * The Workboard's own pinch response. A trackpad pinch reports a handful of
+ * pixels per event, a mouse wheel notch reports about a hundred, so the two
+ * need different sensitivity to feel the same under the hand. The per-event
+ * factor is held inside a narrow band so no single event jumps the view.
+ */
+export function workboardPinchZoom(z: number, deltaY: number, deltaMode = 0): number {
+  const unit = deltaMode === 1 ? 16 : deltaMode === 2 ? 100 : 1;
+  const pixels = deltaY * unit;
+  const sensitivity = deltaMode === 0 && Math.abs(pixels) < 40 ? 0.01 : 0.002;
+  const factor = Math.min(1.18, Math.max(0.85, Math.exp(-pixels * sensitivity)));
+  return clampZoom((Number.isFinite(z) && z > 0 ? z : ZOOM_DEFAULT) * factor);
+}
+
 export type ZoomPoint = { x: number; y: number };
 
 /**
