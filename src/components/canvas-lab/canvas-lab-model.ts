@@ -120,6 +120,31 @@ export function createLabFrames(tasks: { id: string; name: string }[]): LabFrame
   }));
 }
 
+/** Grow only a fresh virtual seed so every opening card is inside its frame. */
+export function sizeSeedFrames(frames: LabFrame[], nodes: LabNode[]): LabFrame[] {
+  return frames.map((frame) => {
+    const members = nodes.filter((node) => node.frame === frame.id);
+    if (members.length === 0) return frame;
+    const right = Math.max(...members.map((node) => node.x + node.width));
+    const bottom = Math.max(...members.map((node) => node.y + node.height));
+    return {
+      ...frame,
+      width: Math.max(frame.width, right - frame.x + FRAME_PADDING),
+      height: Math.max(frame.height, bottom - frame.y + 48),
+    };
+  });
+}
+
+export function frameContainingPoint(frames: LabFrame[], point: Point): LabFrame | null {
+  return frames.find((frame) => point.x >= frame.x && point.x <= frame.x + frame.width && point.y >= frame.y && point.y <= frame.y + frame.height) ?? null;
+}
+
+export function dropPromptFrame(node: LabNode, frames: LabFrame[], mode: LabStructureMode, editable: boolean): LabFrame | null {
+  if (mode !== "structured" || !editable) return null;
+  const target = frameContainingPoint(frames, { x: node.x + node.width / 2, y: node.y + node.height / 2 });
+  return target && target.id !== node.frame ? target : null;
+}
+
 export function addLocalFrame(frames: LabFrame[], name: string): LabFrame[] {
   const index = frames.length;
   return [
