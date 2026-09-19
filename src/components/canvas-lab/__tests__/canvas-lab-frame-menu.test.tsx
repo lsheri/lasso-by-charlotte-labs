@@ -72,6 +72,15 @@ describe("LabFrame menu and rename", () => {
     expect(onAddWorkstream).toHaveBeenCalledWith("Delivery");
   });
 
+  it("puts the cursor in the rename field when Rename comes from the menu", async () => {
+    renderFrame();
+    fireEvent.pointerDown(screen.getByRole("button", { name: "Open workstream menu" }), { button: 0, ctrlKey: false });
+    fireEvent.click(screen.getByRole("menuitem", { name: "Rename" }));
+    const input = await screen.findByRole("textbox", { name: "Rename workstream" });
+    await new Promise((resolve) => window.requestAnimationFrame(() => setTimeout(resolve, 0)));
+    expect(document.activeElement).toBe(input);
+  });
+
   it("commits trimmed names on Enter and reverts with Escape", () => {
     const { props } = renderFrame();
     fireEvent.doubleClick(screen.getByText("Risks"));
