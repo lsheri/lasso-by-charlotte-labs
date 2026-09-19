@@ -259,6 +259,14 @@ The permanent card action tray and global Connect mode were replaced with four c
 
 Right-click, Shift+F10, the Context Menu key, and the paper-corner ellipsis open the same ownership-aware actions. Existing context, Preview, Branch, hide, local delete, relationship removal, card movement, and local reset behavior remain available.
 
+## Workboard click, selection, and handles correction — 2026-09-19 UTC
+
+Focused cards and selected frames are now the only elements that show resize handles and the solid green focus treatment. In-context cards instead use a dashed green paper edge, a paperclip, and the existing handwritten label. Card roots are accessible groups rather than buttons containing controls, while Enter and Space continue to change context and now announce the result through the existing live region. Pointer clicks never change context.
+
+The stage exposes an inverse-zoom value used by card and frame resize handles, card anchors, frame menu triggers, and focus borders. Their visible dimensions remain constant while the board scales. Drag endings under four screen pixels are treated as hand jitter and cannot save or open a move prompt.
+
+All prior card, frame, menu, resize, connection, rename, workstream, rail, and persistence controls remain. All existing telemetry calls and payloads remain unchanged. No database, migration, consent, portal, route, landing, AskDock, or production-canvas work was included.
+
 One additive event was added: `workboard.card_menu_opened`, with closed dimensions `{ node_kind, ownership }`. It uses the existing consent-stamped event path, remains workspace-only at tier t0, and requires a matching portal catalog update. No identifiers, content, coordinates, or free text are included.
 
 No consent, database, schema, RLS, server, production canvas, provenance, landing-page, AskDock, persistence, deployment, or publishing change was made.
