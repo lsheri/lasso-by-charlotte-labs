@@ -65,7 +65,7 @@ export function LabCardMenu({
         className="canvas-lab-card-menu"
         onCloseAutoFocus={(event) => {
           event.preventDefault();
-          cardRef.current?.focus();
+          cardRef.current?.focus({ preventScroll: true });
         }}
       >
         <DropdownMenuItem onSelect={onSelect}>{selected ? "Remove context" : "Use as context"}</DropdownMenuItem>

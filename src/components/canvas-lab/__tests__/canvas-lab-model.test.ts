@@ -5,6 +5,8 @@ import {
   branchChatNode,
   addLabLink,
   addLocalFrame,
+  markFrameSaved,
+  keepViewportUnscrolled,
   connectedLabNodeIds,
   containFrameMembers,
   createLocalNode,
@@ -438,5 +440,22 @@ describe("dragEndDecision", () => {
     expect(dragEndDecision({ ...base, mode: "freeform", editable: true }).position).not.toBeNull();
     expect(dragEndDecision({ ...base, mode: "freeform", editable: true }).promptFrameId).toBeNull();
     expect(dragEndDecision({ ...base, mode: "structured", editable: false }).promptFrameId).toBeNull();
+  });
+});
+
+describe("pass 2b-v board state", () => {
+  it("drops the local flag once a frame create comes back saved", () => {
+    const frames = addLocalFrame([], "Delivery");
+    expect(frames[0]!.local).toBe(true);
+    const saved = markFrameSaved(frames, frames[0]!.id, "durable-1", 1);
+    expect(saved[0]!.local).toBe(false);
+    expect(saved[0]!.durableId).toBe("durable-1");
+    expect(saved[0]!.durableVersion).toBe(1);
+  });
+
+  it("keeps the surface at the top left when focus tries to scroll it", () => {
+    const element = { scrollTop: 218, scrollLeft: 40 };
+    keepViewportUnscrolled(element);
+    expect(element).toEqual({ scrollTop: 0, scrollLeft: 0 });
   });
 });

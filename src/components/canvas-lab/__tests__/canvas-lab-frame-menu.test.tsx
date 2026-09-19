@@ -116,3 +116,24 @@ describe("LabFrame menu and rename", () => {
     expect(screen.getByText(/Move its cards first/)).toBeTruthy();
   });
 });
+describe("pass 2b-v frame fixes", () => {
+  it("puts the cursor in the rename field when Rename is clicked with a mouse", async () => {
+    renderFrame();
+    fireEvent.pointerDown(screen.getByRole("button", { name: "Open workstream menu" }), { button: 0, ctrlKey: false });
+    const item = screen.getByRole("menuitem", { name: "Rename" });
+    fireEvent.pointerDown(item, { button: 0, ctrlKey: false });
+    fireEvent.pointerUp(item, { button: 0 });
+    fireEvent.click(item);
+    const input = await screen.findByRole("textbox", { name: "Rename workstream" });
+    await new Promise((resolve) => window.requestAnimationFrame(() => setTimeout(resolve, 5)));
+    expect(document.activeElement).toBe(input);
+  });
+
+  it("stops calling a saved workstream local", () => {
+    const first = renderFrame({ frame: { ...customFrame, local: true } });
+    expect(screen.getByText(/local/)).toBeTruthy();
+    first.unmount();
+    renderFrame({ frame: { ...customFrame, local: false } });
+    expect(screen.queryByText(/local/)).toBeNull();
+  });
+});

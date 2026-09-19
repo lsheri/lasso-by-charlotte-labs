@@ -50,7 +50,7 @@ export function LabFrameMenu({
         }}
       >
         <DropdownMenuItem onSelect={onFit}>Fit contents</DropdownMenuItem>
-        {editable && custom ? <DropdownMenuItem onSelect={onRename}>Rename</DropdownMenuItem> : null}
+        {editable && custom ? <DropdownMenuItem onSelect={(event) => { event.preventDefault(); onRename(); }}>Rename</DropdownMenuItem> : null}
         {editable && custom ? (
           <DropdownMenuItem disabled={!removable} title={removable ? undefined : "Move its cards first"} onSelect={onRemove}>
             Remove workstream{removable ? "" : " · Move its cards first"}

@@ -333,3 +333,9 @@ Root cause of the silent data loss: `up()` read the moved position from `nodesRe
 Fix: new pure `dragEndDecision({ origin, from, pointer, zoom, node, frames, mode, editable })` in `canvas-lab-model.ts` computes the landing point from the pointerup event with the same `dragTo` snapping and clamping as the move path, returns `{ position, promptFrameId }`, and returns a null position only when the computed delta is zero. `up()` applies that position with `moveNode`, persists exactly those coordinates and opens the prompt from it. Pointer resize end now recomputes its final rect from the event too, applies it, and persists and reports that rect. The tightest-frame `frameContainingPoint` from 2b-iii stays.
 
 Tests: three `dragEndDecision` cases, including a pointerup before any render, zero delta, and Freeform or read-only. 87 focused Canvas Lab, route and token tests green; `tsgo --noEmit` clean.
+
+## 2026-09-19 · polish 2b-v
+- Rename from the frame menu now prevents the menu's own close/focus sequence, closes the menu itself and focuses/selects the name field on the next frame and again on a 0 ms timeout. Mouse-click path covered by a test.
+- A custom workstream stops reading "local" once its create (or materialize) comes back saved: new pure `markFrameSaved`.
+- Focus no longer scrolls the board: every programmatic focus inside the stage uses `preventScroll`, and the surface resets scroll through `keepViewportUnscrolled`.
+- No data, consent, event or database change.
