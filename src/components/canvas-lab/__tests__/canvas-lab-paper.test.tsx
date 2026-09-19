@@ -83,7 +83,9 @@ describe("Canvas Lab paper", () => {
     const body = container.querySelector(".canvas-lab-paper-body");
     const editor = screen.getByRole("textbox");
     expect(body?.classList.contains("canvas-lab-paper-body")).toBe(true);
-    expect(editor.classList.contains("canvas-lab-paper-edit")).toBe(true);
+    expect(editor.classList.contains("flex-1")).toBe(true);
+    expect(editor.classList.contains("basis-0")).toBe(true);
+    expect(editor.classList.contains("min-h-[34px]")).toBe(true);
   });
 
   it("renders a document glyph when an upload has no vendor mark", () => {

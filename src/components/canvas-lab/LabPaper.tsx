@@ -88,7 +88,7 @@ export function LabPaper({
             onChange={(event) => onEdit(event.target.value)}
             onBlur={onEditCommitted}
             onPointerDown={(event) => event.stopPropagation()}
-            className="canvas-lab-paper-edit w-full resize-none border border-[var(--nb-rule)] bg-card px-2 py-1 text-[11.5px] leading-[17px] text-foreground outline-none focus:border-[var(--nb-green)]"
+            className="canvas-lab-paper-edit min-h-[34px] w-full flex-1 basis-0 resize-none border border-[var(--nb-rule)] bg-card px-2 py-1 text-[11.5px] leading-[17px] text-foreground outline-none focus:border-[var(--nb-green)]"
           />
         ) : summary && (!item || tier !== "compact") ? (
           <p className={cn("canvas-lab-paper-summary text-[11.5px] leading-[17px] text-muted-foreground", tier === "compact" ? "line-clamp-2" : "line-clamp-3")}>{summary}</p>
