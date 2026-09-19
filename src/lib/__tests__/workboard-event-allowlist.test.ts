@@ -21,6 +21,7 @@ describe("the workboard allowlist", () => {
           "anchor_kind",
           "visibility",
           "length_band",
+          "is_reply",
         ],
         "workboard.card_menu_opened": [
           "node_kind",
