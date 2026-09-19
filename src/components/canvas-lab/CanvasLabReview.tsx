@@ -32,6 +32,9 @@ export function CanvasLabReview({ item, anchorNodeId, links, profileId, decision
   const relatedLocalComments = comments.filter((comment) => connectedNodeIds.has(comment.nodeId));
   const relatedDecisions = decisions.filter((decision) => srcsOf(decision).some((source) => sourceIds.has(source.work_item_id)));
   const focusedSource = (data?.upstream ?? []).find((entry) => entry.id === sourceId) ?? null;
+  /** Nothing about the trail is claimed until the record has been read. */
+  const ready = !isLoading && !isError && Boolean(data);
+  const judgmentEmpty = (data?.stitches ?? []).length === 0 && relatedLocalJudgments.length === 0 && relatedLocalComments.length === 0;
   const groups = [
     { id: "context" as const, label: "Context", rows: (data?.upstream ?? []).filter((entry) => entry.type !== "ai_thread") },
     { id: "ai_work" as const, label: "AI work", rows: (data?.upstream ?? []).filter((entry) => entry.type === "ai_thread") },
