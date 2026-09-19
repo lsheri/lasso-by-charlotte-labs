@@ -82,7 +82,7 @@ import { useProfile } from "@/hooks/use-profile";
 import { dragTo, keyTo, type Point } from "@/lib/canvas-drag";
 import type { WorkboardCommand, WorkboardNodeInput } from "@/lib/canvas-lab-shared";
 import { noteCanvasOpenedFn } from "@/lib/canvas.functions";
-import { clampZoom, pinchZoom, stepZoom, wheelPanDelta, zoomAbout } from "@/lib/canvas-zoom";
+import { clampZoom, stepZoom, wheelPanDelta, workboardPinchZoom, zoomAbout } from "@/lib/canvas-zoom";
 import { engagementDisplayTitle } from "@/lib/clients";
 import { isDeliverableType } from "@/lib/lineage-shared";
 import type { WorkItemRow } from "@/lib/work-types";
@@ -532,7 +532,7 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
       if (!event.ctrlKey && !event.metaKey) return;
       event.preventDefault();
       viewportChangedRef.current = true;
-      zoomTo(pinchZoom(zoomRef.current, event.deltaY), pointIn(event));
+      zoomTo(workboardPinchZoom(zoomRef.current, event.deltaY, event.deltaMode), pointIn(event));
     }
     function onSurfaceWheel(event: WheelEvent) {
       if (event.ctrlKey || event.metaKey) return;
