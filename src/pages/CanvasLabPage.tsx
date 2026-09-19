@@ -15,6 +15,7 @@ import { ReasoningTrailGuide } from "@/components/canvas-lab/ReasoningTrailGuide
 import { WorkRail } from "@/components/canvas-lab/WorkRail";
 import {
   addLabLink,
+  connectDisarmed,
   addLocalFrame,
   markFrameSaved,
   keepViewportUnscrolled,
