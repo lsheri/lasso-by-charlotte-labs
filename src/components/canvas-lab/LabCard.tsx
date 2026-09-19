@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Paperclip } from "lucide-react";
 
 import { LabCardMenu } from "@/components/canvas-lab/LabCardMenu";
@@ -23,6 +23,7 @@ export function LabCard({
   item,
   selected,
   focused,
+  focusOnMount = false,
   onSelect,
   onOpen,
   onBranch,
@@ -53,6 +54,7 @@ export function LabCard({
   item?: WorkItemRow | undefined;
   selected: boolean;
   focused: boolean;
+  focusOnMount?: boolean;
   onSelect: () => void;
   onOpen: () => void;
   onBranch: () => void;
@@ -83,6 +85,10 @@ export function LabCard({
   const paperRef = useRef<HTMLDivElement | null>(null);
   const anchorDownRef = useRef<{ x: number; y: number } | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+
+  useLayoutEffect(() => {
+    if (focusOnMount) cardRef.current?.focus({ preventScroll: true });
+  }, [focusOnMount]);
 
   useEffect(() => {
     const paper = paperRef.current;
@@ -133,7 +139,7 @@ export function LabCard({
           <WorkNote item={item} dense className={cn("h-full w-full", selected && "canvas-lab-work-note-context")} />
         ) : (
           <>
-            <div className="flex items-center justify-between gap-2 pr-6">
+            <div className={cn("flex items-center justify-between gap-2 pr-6", selected && "canvas-lab-context-header")}>
               <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">{node.typeLabel}</span>
               <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">{ownerLabel(node)}</span>
             </div>

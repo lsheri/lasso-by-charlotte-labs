@@ -39,7 +39,7 @@ export function ReasoningTrailGuide({ onAdd }: { onAdd: (kind: LabTemplateKind, 
             <p className="mt-1 text-[11.5px] font-medium text-foreground">{step.label}</p>
             {step.kind === "judgment" ? (
               <div ref={judgmentRef} className="relative mt-1" onPointerDown={(event) => event.stopPropagation()} onKeyDown={closeFromEscape}>
-                <Button ref={triggerRef} type="button" variant="ghost" size="sm" className="canvas-lab-judgment-trigger h-6 px-1 text-[9px]" aria-haspopup="menu" aria-expanded={judgmentOpen} aria-label="Add Human judgment local node" onPointerDown={(event) => event.stopPropagation()} onClick={() => setJudgmentOpen((open) => !open)}><Plus className="mr-1 h-3 w-3" />Add</Button>
+                <Button ref={triggerRef} type="button" variant="ghost" size="sm" className="canvas-lab-step-add h-6 px-1 text-[9px]" aria-haspopup="menu" aria-expanded={judgmentOpen} aria-label="Add Human judgment local node" onPointerDown={(event) => event.stopPropagation()} onClick={() => setJudgmentOpen((open) => !open)}><Plus className="mr-1 h-3 w-3" />Add</Button>
                 {judgmentOpen ? <div role="menu" aria-label="Human judgment type" className="absolute left-0 top-full z-20 mt-1 w-48 border border-border bg-card p-1 shadow-[var(--shadow-modal)]" onPointerDown={(event) => event.stopPropagation()}>
                   {JUDGMENT_TYPES.map((choice) => (
                     <Button key={choice.value} type="button" role="menuitem" variant="ghost" size="sm" className="w-full justify-start text-[11px]" onClick={() => { onAdd("judgment", choice.value); setJudgmentOpen(false); }}>{choice.label}</Button>
@@ -47,7 +47,7 @@ export function ReasoningTrailGuide({ onAdd }: { onAdd: (kind: LabTemplateKind, 
                 </div> : null}
               </div>
             ) : (
-              <Button type="button" variant="ghost" size="sm" className="mt-1 h-6 px-1 text-[9px]" aria-label={`Add ${step.label} local node`} onClick={() => onAdd(step.kind)}><Plus className="mr-1 h-3 w-3" />Add</Button>
+              <Button type="button" variant="ghost" size="sm" className="canvas-lab-step-add mt-1 h-6 px-1 text-[9px]" aria-label={`Add ${step.label} local node`} onPointerDown={(event) => event.stopPropagation()} onClick={() => onAdd(step.kind)}><Plus className="mr-1 h-3 w-3" />Add</Button>
             )}
           </div>
         ))}
