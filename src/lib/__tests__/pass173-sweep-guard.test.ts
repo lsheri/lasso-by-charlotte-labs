@@ -44,7 +44,7 @@ describe("pass 173 no concurrent run", () => {
   it("refuses while a run is still in flight, past the interval but inside the stale window", () => {
     const state = createSweepState();
     expect(tryStartSweep(state, 0)).toBe(true);
-    const during = 2 * SWEEP_MIN_INTERVAL_MS; // past the interval, under SWEEP_STALE_MS
+    const during = Math.floor(1.5 * SWEEP_MIN_INTERVAL_MS); // past the interval, under SWEEP_STALE_MS
     expect(decideSweep(state, during)).toBe("already-running");
     expect(tryStartSweep(state, during)).toBe(false);
   });
