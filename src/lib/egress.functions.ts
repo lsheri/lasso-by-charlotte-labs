@@ -30,3 +30,32 @@ export const runEgressNow = createServerFn({ method: "POST" })
       content_failed: content.failed,
     };
   });
+
+export type EgressSweepView =
+  | { status: "skipped"; reason: "too-soon" | "already-running" }
+  | {
+      status: "ran";
+      events: { sent: number; skipped: number; failed: number };
+      samples: { sent: number; skipped: number; failed: number };
+    };
+
+/**
+ * Pass 175b: any signed-in page may give the sweep an awaited home. It never
+ * changes an event and never reports anything to the person.
+ */
+export const runEgressSweepFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async (): Promise<EgressSweepView> => {
+    const { runGuardedSweepNow } = await import("./egress.server");
+    const result = await runGuardedSweepNow();
+    if (result.status === "skipped") return result;
+    return {
+      status: "ran",
+      events: result.events,
+      samples: {
+        sent: result.samples.sent,
+        skipped: result.samples.skipped,
+        failed: result.samples.failed,
+      },
+    };
+  });
