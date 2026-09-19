@@ -12,8 +12,8 @@ export const DEFAULT_INGEST_URL = "https://lasso-data-console.lovable.app/api/pu
 /** At most one sweep per instance per minute. */
 export const EGRESS_DEBOUNCE_MS = 60_000;
 
-/** How many rows one sweep takes. */
-export const EGRESS_BATCH_SIZE = 500;
+/** How many rows one sweep takes. Small enough for one post to finish well inside the timeout. */
+export const EGRESS_BATCH_SIZE = 100;
 
 export type EgressEventRow = {
   id: number;

@@ -7,6 +7,9 @@
 /** Several minutes between opportunistic runs. */
 export const SWEEP_MIN_INTERVAL_MS = 5 * 60 * 1000;
 
+/** A lock this old is assumed to belong to a run that was cut off before its release. */
+export const SWEEP_STALE_MS = 10 * 60 * 1000;
+
 export type SweepState = {
   lastStartedAt: number | null;
   running: boolean;
@@ -24,7 +27,12 @@ export function decideSweep(
   now: number,
   minIntervalMs: number = SWEEP_MIN_INTERVAL_MS,
 ): SweepDecision {
-  if (state.running) return "already-running";
+  if (state.running) {
+    const stale =
+      state.lastStartedAt !== null && now - state.lastStartedAt >= SWEEP_STALE_MS;
+    if (!stale) return "already-running";
+    // Fall through: the old run is presumed lost; this call may take over.
+  }
   if (state.lastStartedAt !== null && now - state.lastStartedAt < minIntervalMs) return "too-soon";
   return "run";
 }
