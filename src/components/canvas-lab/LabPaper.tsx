@@ -75,7 +75,7 @@ export function LabPaper({
           {node.title} {item ? <ArtifactNote item={item} /> : null}
         </p>
 
-        {node.local && tier !== "compact" ? (
+        {node.local ? (
           <textarea
             aria-label={`Edit ${node.title} note`}
             value={node.summary}
@@ -94,6 +94,7 @@ export function LabPaper({
             <span>{date}</span>
           </div>
         ) : null}
+        {selected ? <span className="mt-auto block font-hand text-[13px] leading-none text-[var(--nb-green)]">in context</span> : null}
       </div>
     </div>
   );

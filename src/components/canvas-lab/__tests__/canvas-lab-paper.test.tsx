@@ -28,7 +28,7 @@ const workItem: WorkItemRow = {
   type: "document",
   source: "connector:googledrive",
   source_vendor: "googledrive",
-  visibility: "shared",
+  visibility: "mapped",
   captured_at: "2026-09-19T00:00:00Z",
   content_ref: null,
   work_item_tasks: [],
