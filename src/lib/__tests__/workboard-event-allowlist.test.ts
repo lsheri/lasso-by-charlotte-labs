@@ -15,6 +15,13 @@ describe("the workboard allowlist", () => {
   it("pins every name and its dim keys", () => {
     expect(WORKBOARD_EVENT_DIMS).toMatchInlineSnapshot(`
       {
+        "workboard.annotation_changed": [
+          "kind",
+          "action",
+          "anchor_kind",
+          "visibility",
+          "length_band",
+        ],
         "workboard.card_menu_opened": [
           "node_kind",
           "ownership",
@@ -142,6 +149,8 @@ describe("the workboard allowlist", () => {
       () => helpers.noteWorkboardSaveErrorResolved("o", "board", "retry"),
       () => helpers.noteWorkboardContextChanged("o", "cleared"),
       () => helpers.noteWorkboardUndoUsed("o", "move", "undo"),
+      () => helpers.noteAnnotationChanged("o", "created", 120),
+      () => helpers.noteAnnotationChanged("o", "archived", 4),
     ];
     const mocked = vi.mocked(logEvent);
     for (const call of calls) {
@@ -150,6 +159,6 @@ describe("the workboard allowlist", () => {
       const [name, , dims] = mocked.mock.calls[0] as [string, string, Record<string, unknown>];
       expect(guardWorkboardEvent(name, dims as never)).toEqual({ keep: true, dims });
     }
-    expect(Object.keys(WORKBOARD_EVENT_DIMS)).toHaveLength(19);
+    expect(Object.keys(WORKBOARD_EVENT_DIMS)).toHaveLength(20);
   });
 });
