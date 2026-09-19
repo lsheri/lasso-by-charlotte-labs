@@ -88,6 +88,20 @@ function eventKind(node: LabNode): LabNodeEventKind {
   return "source";
 }
 
+/** True when something between the target and the board can still scroll that way. */
+function scrollableUnder(target: HTMLElement | null, shell: HTMLElement, delta: { x: number; y: number }): boolean {
+  let element: HTMLElement | null = target;
+  while (element && element !== shell) {
+    const style = window.getComputedStyle(element);
+    const scrollsY = /auto|scroll|overlay/.test(style.overflowY) && element.scrollHeight > element.clientHeight;
+    const scrollsX = /auto|scroll|overlay/.test(style.overflowX) && element.scrollWidth > element.clientWidth;
+    if (scrollsY && delta.y !== 0 && (delta.y < 0 ? element.scrollTop > 0 : element.scrollTop + element.clientHeight < element.scrollHeight)) return true;
+    if (scrollsX && delta.x !== 0 && (delta.x < 0 ? element.scrollLeft > 0 : element.scrollLeft + element.clientWidth < element.scrollWidth)) return true;
+    element = element.parentElement;
+  }
+  return false;
+}
+
 /** A local workboard over one permission-filtered engagement read. */
 export function CanvasLabPage({ engagementId }: { engagementId: string }) {
   const navigate = useNavigate();
