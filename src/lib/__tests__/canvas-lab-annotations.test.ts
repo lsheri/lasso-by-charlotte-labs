@@ -94,7 +94,7 @@ describe("a comment body", () => {
   it("refuses an empty body and one past the cap", () => {
     expect(validateCommentBody("   ")).toBe("Write something first.");
     expect(validateCommentBody("x".repeat(MAX_BODY_LENGTH + 1))).toBe(
-      "That comment is too long.",
+      "That is longer than a comment can be.",
     );
     expect(validateCommentBody("Worth a second look.")).toBeNull();
   });
