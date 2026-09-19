@@ -41,11 +41,12 @@ describe("pass 173 sweep rate guard", () => {
 });
 
 describe("pass 173 no concurrent run", () => {
-  it("refuses while a run is still in flight, even long after the window", () => {
+  it("refuses while a run is still in flight, past the interval but inside the stale window", () => {
     const state = createSweepState();
     expect(tryStartSweep(state, 0)).toBe(true);
-    expect(decideSweep(state, 10 * SWEEP_MIN_INTERVAL_MS)).toBe("already-running");
-    expect(tryStartSweep(state, 10 * SWEEP_MIN_INTERVAL_MS)).toBe(false);
+    const during = 2 * SWEEP_MIN_INTERVAL_MS; // past the interval, under SWEEP_STALE_MS
+    expect(decideSweep(state, during)).toBe("already-running");
+    expect(tryStartSweep(state, during)).toBe(false);
   });
 
   it("only one of many simultaneous callers claims the slot", () => {
