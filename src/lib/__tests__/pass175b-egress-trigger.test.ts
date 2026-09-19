@@ -1,27 +1,30 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { EGRESS_NUDGE_INTERVAL_MS, shouldNudgeEgress } from "../egress-nudge";
 
-const runFullSweep = vi.fn();
+const contentEgress = vi.fn(async () => ({ sent: 0, skipped: 0, failed: 0 }));
 
 vi.mock("../content-egress.server", () => ({
-  runContentEgress: vi.fn(async () => ({ sent: 0, skipped: 0, failed: 0 })),
+  runContentEgress: () => contentEgress(),
 }));
 
+const savedSecret = process.env["LASSO_DATA_INGEST_SECRET"];
+
 describe("pass 175b: awaited sweep home", () => {
-  beforeEach(async () => {
+  beforeEach(() => {
     vi.resetModules();
-    runFullSweep.mockReset();
-    runFullSweep.mockResolvedValue({
-      events: { sent: 3, skipped: 1, failed: 0 },
-      content: { sent: 2, skipped: 0, failed: 0 },
-    });
+    contentEgress.mockClear();
+    // No secret: the sending half stops before it reads anything, so the test
+    // exercises the guard and nothing leaves the machine.
+    delete process.env["LASSO_DATA_INGEST_SECRET"];
+  });
+
+  afterEach(() => {
+    if (savedSecret !== undefined) process.env["LASSO_DATA_INGEST_SECRET"] = savedSecret;
   });
 
   async function loadModule() {
     const mod = await import("../egress.server");
-    // The guard is the real one; only the work itself is stood in for.
-    vi.spyOn(mod, "runFullSweep").mockImplementation(runFullSweep as never);
     mod.resetEgressSchedule();
     return mod;
   }
@@ -31,10 +34,10 @@ describe("pass 175b: awaited sweep home", () => {
     const result = await mod.runGuardedSweepNow(1_000_000);
     expect(result.status).toBe("ran");
     if (result.status === "ran") {
-      expect(result.events).toEqual({ sent: 3, skipped: 1, failed: 0 });
-      expect(result.samples).toEqual({ sent: 2, skipped: 0, failed: 0 });
+      expect(result.events).toEqual({ sent: 0, skipped: 0, failed: 0 });
+      expect(result.samples).toEqual({ sent: 0, skipped: 0, failed: 0 });
     }
-    expect(runFullSweep).toHaveBeenCalledTimes(1);
+    expect(contentEgress).toHaveBeenCalledTimes(1);
   });
 
   it("skips as too-soon inside the interval", async () => {
@@ -42,32 +45,25 @@ describe("pass 175b: awaited sweep home", () => {
     await mod.runGuardedSweepNow(1_000_000);
     const again = await mod.runGuardedSweepNow(1_000_000 + 60_000);
     expect(again).toEqual({ status: "skipped", reason: "too-soon" });
-    expect(runFullSweep).toHaveBeenCalledTimes(1);
+    expect(contentEgress).toHaveBeenCalledTimes(1);
   });
 
   it("skips as already-running while a run holds the slot", async () => {
     const mod = await loadModule();
-    let release: () => void = () => {};
-    runFullSweep.mockImplementation(
-      () =>
-        new Promise((resolve) => {
-          release = () =>
-            resolve({
-              events: { sent: 0, skipped: 0, failed: 0 },
-              content: { sent: 0, skipped: 0, failed: 0 },
-            });
-        }),
+    let release: (v: { sent: number; skipped: number; failed: number }) => void = () => {};
+    contentEgress.mockImplementationOnce(
+      () => new Promise((resolve) => (release = resolve)) as Promise<never>,
     );
     const first = mod.runGuardedSweepNow(2_000_000);
     const second = await mod.runGuardedSweepNow(2_000_100);
     expect(second).toEqual({ status: "skipped", reason: "already-running" });
-    release();
+    release({ sent: 0, skipped: 0, failed: 0 });
     await first;
   });
 
   it("releases the slot even when the sweep fails", async () => {
     const mod = await loadModule();
-    runFullSweep.mockRejectedValueOnce(new Error("boom"));
+    contentEgress.mockRejectedValueOnce(new Error("boom") as never);
     await expect(mod.runGuardedSweepNow(3_000_000)).rejects.toThrow("boom");
     const next = await mod.runGuardedSweepNow(3_000_100);
     expect(next).toEqual({ status: "skipped", reason: "too-soon" });
