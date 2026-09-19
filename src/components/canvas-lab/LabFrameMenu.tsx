@@ -10,7 +10,7 @@ import {
 export function LabFrameMenu({
   open,
   onOpenChange,
-  frameRef,
+  restoreFocus,
   editable,
   custom,
   removable,
@@ -20,7 +20,7 @@ export function LabFrameMenu({
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  frameRef: React.RefObject<HTMLElement | null>;
+  restoreFocus: () => void;
   editable: boolean;
   custom: boolean;
   removable: boolean;
@@ -46,7 +46,7 @@ export function LabFrameMenu({
         className="canvas-lab-card-menu"
         onCloseAutoFocus={(event) => {
           event.preventDefault();
-          frameRef.current?.focus();
+          restoreFocus();
         }}
       >
         <DropdownMenuItem onSelect={onFit}>Fit contents</DropdownMenuItem>
