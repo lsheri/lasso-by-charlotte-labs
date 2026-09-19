@@ -78,8 +78,9 @@ describe("Canvas Lab Phase 2", () => {
   it("uses green Lab emphasis and leaves production canvas untouched", () => {
     const styles = read("src/styles.css");
     const page = read("src/pages/CanvasLabPage.tsx");
+    const relationships = read("src/components/canvas-lab/LabRelationships.tsx");
     expect(styles).toContain("::highlight(canvas-lab-selection) { background: var(--nb-green-wash); }");
-    expect(page).toContain('stroke={active ? "var(--nb-green)" : "var(--nb-graphite)"}');
+    expect(relationships).toContain('stroke={selected ? "var(--nb-green)" : "var(--nb-graphite)"}');
     expect(page).not.toContain("drawCanvasLinkFn");
   });
 });
