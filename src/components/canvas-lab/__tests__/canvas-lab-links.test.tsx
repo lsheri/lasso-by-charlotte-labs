@@ -2,9 +2,10 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { LabCard } from "@/components/canvas-lab/LabCard";
 import { LabLinkRejection } from "@/components/canvas-lab/LabLinkRejection";
 import { LabRelationships } from "@/components/canvas-lab/LabRelationships";
-import { linkRemovalAnnouncement, type LabLink, type LabNode } from "@/components/canvas-lab/canvas-lab-model";
+import { connectDisarmed, linkRemovalAnnouncement, type LabLink, type LabNode } from "@/components/canvas-lab/canvas-lab-model";
 
 const nodes: LabNode[] = [
   { id: "a", kind: "work", frame: "f", title: "Source", summary: "", typeLabel: "document", ownership: "yours", x: 0, y: 0, width: 232, height: 112 },
