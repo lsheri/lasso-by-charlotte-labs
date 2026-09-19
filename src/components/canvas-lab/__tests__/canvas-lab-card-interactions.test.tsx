@@ -16,6 +16,10 @@ describe("Canvas Lab card interaction correction", () => {
     for (const side of ["top", "right", "bottom", "left"]) expect(styles).toContain(`data-side="${side}"`);
     expect(card).toContain("canvas-lab-resize-handle");
     expect(styles).toContain("width: 8px;");
+    expect(styles).toContain("border: 1.4px solid var(--nb-green);");
+    expect(styles).toContain("border-radius: 1px;");
+    expect(styles).toContain("cursor: crosshair;");
+    expect(styles).toContain('[data-interaction="drag"]');
     expect(styles).toContain('data-corner="nw"');
   });
 

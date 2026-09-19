@@ -4,6 +4,7 @@ import { Menu, Minus, Plus, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { CanvasLabReview } from "@/components/canvas-lab/CanvasLabReview";
+import { CanvasLabStatusLine } from "@/components/canvas-lab/CanvasLabStatusLine";
 import { FocusOverlay } from "@/components/canvas-lab/FocusOverlay";
 import { FoundationGuide } from "@/components/canvas-lab/FoundationGuide";
 import { LabCard } from "@/components/canvas-lab/LabCard";
@@ -431,6 +432,7 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
           if (resize.kind === "card") setNodes((current) => current?.map((node) => node.id === resize.id ? { ...node, ...resize.start } : node) ?? current);
           else setFrames((current) => current?.map((frame) => frame.id === resize.id ? { ...frame, ...resize.start } : frame) ?? current);
           resizeRef.current = null;
+          setInteraction("idle");
           setAnnouncement("Resize cancelled.");
           return;
         }
@@ -669,6 +671,7 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
     const amount = event.shiftKey ? 24 : 8;
     const delta = { x: event.key === "ArrowLeft" ? -amount : event.key === "ArrowRight" ? amount : 0, y: event.key === "ArrowUp" ? -amount : event.key === "ArrowDown" ? amount : 0 };
     if (!resizeRef.current) resizeRef.current = { kind, id, corner, start: rect, pointer: { x: 0, y: 0 }, method: "keyboard" };
+    setInteraction("resize");
     const resized = resizeLabRect(rect, corner, delta, event.shiftKey, kind);
     const next = kind === "frame" ? containFrameMembers(resized, id, nodesRef.current) : resized;
     if (kind === "card") setNodes((current) => current?.map((node) => node.id === id ? { ...node, ...next } : node) ?? current);
@@ -689,6 +692,7 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
     }
     if (end) noteWorkboardElementResized(orgId, resizing.kind, "keyboard", resizeAxis(resizing.start, end));
     resizeRef.current = null;
+    setInteraction("idle");
   }
 
   function fitCard(node: LabNode) {
@@ -892,7 +896,7 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
       : lab.saveState.status === "conflict" ? "Workboard · Newer version available"
         : lab.saveState.status === "forbidden" ? "Workboard · Read only"
           : lab.saveState.status === "error" ? "Workboard · Could not save"
-            : lab.saveState.status === "saved" || lab.board?.id ? "Workboard · Saved"
+            : lab.board?.id ? "Workboard · Saved"
               : "Workboard · Not saved";
   return (
     <div className="fixed inset-0 z-50 flex bg-[var(--nb-paper)]" data-testid="canvas-lab-shell" data-interaction={interaction === "idle" && connectSource ? "connect" : interaction}>
@@ -917,9 +921,7 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
             </svg>
             {visibleNodes.map((node) => { const canResize = Boolean(lab.board?.canEditStructure) && (node.kind !== "judgment" || Boolean(node.local)); return <LabCard key={node.id} node={node} item={itemByNode(node)} selected={selected.includes(node.id)} focused={keyboardId === node.id} connecting={connectSource !== null || connectorPreview !== null} connectSourceAnchor={connectSource?.nodeId === node.id ? connectSource.anchor : null} onSelect={() => setSelected((current) => toggleContext(current, node.id))} onOpen={() => openNode(node)} onBranch={() => branchFrom(node)} onHide={() => hideNode(node)} onDelete={() => deleteNode(node)} onEdit={(text) => setNodes((current) => current ? updateLocalNode(current, node.id, text) : current)} onEditCommitted={() => { noteWorkboardNodeEdited(orgId, eventKind(node)); const current = nodesRef.current.find((entry) => entry.id === node.id); if (current?.durableId) void persistNodePatch(current.id, { body: current.summary, title: current.title }); }} onAnchorPointerDown={(side, event) => startPointerConnect(node, side, event)} onAnchorActivate={(side) => chooseConnectAnchor(node, side)} onMenuOpened={() => { if (connectSource || connectorDragRef.current) cancelConnect(); noteWorkboardCardMenuOpened(orgId, eventKind(node), node.ownership); }} onMenuOpenChange={setCardMenuOpen} onMeasure={(height) => cardHeightsRef.current.set(node.id, height)} onPointerDown={(event) => onCardPointerDown(node, event)} onKeyDown={(event) => onCardKeyDown(node, event)} canResize={canResize} onResizeStart={(corner, event) => startResize("card", node.id, corner, { x: node.x, y: node.y, width: node.width, height: node.height }, event)} onResizeKeyDown={(corner, event) => keyboardResize("card", node.id, corner, { x: node.x, y: node.y, width: node.width, height: node.height }, event)} onResizeKeyUp={finishKeyboardResize} onFit={() => fitCard(node)} frameChoices={boardFrames.map((frame) => ({ id: frame.id, name: frame.name }))} structured={structureMode === "structured"} onMoveToFrame={(frameId) => moveToFrame(node, frameId)} />; })}
           </div> : null}
-          {loadingBoard ? <p className="absolute left-4 top-4 font-hand text-[16px] text-[var(--nb-mid)]">reading the engagement</p> : null}
-          {isError || notAvailable ? <p className="absolute left-4 top-4 text-[13px] text-muted-foreground">This workboard could not be opened.</p> : null}
-          {boardReady && visibleNodes.length === 0 ? <p className="absolute left-4 top-4 font-hand text-[16px] text-[var(--nb-mid)]">nothing is on this workboard yet</p> : null}
+          <CanvasLabStatusLine loading={loadingBoard} unavailable={isError || notAvailable} empty={boardReady && visibleNodes.length === 0} />
         </div>
         {boardReady && opening ? <div className={`pointer-events-none absolute inset-0 z-40 flex ${unfold.className}`} aria-hidden={!unfold.still}>{unfold.still ? <span className="sr-only">{unfold.reduced}</span> : null}<span className="canvas-lab-unfold-panel" /><span className="canvas-lab-unfold-panel" /><span className="canvas-lab-unfold-panel" /></div> : null}
       </main>

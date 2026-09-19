@@ -1,8 +1,10 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+import { cleanup, render, screen } from "@testing-library/react";
 
 import { ZOOM_MAX, ZOOM_MIN, clampZoom, stepZoom, wheelPanDelta, zoomAbout } from "../canvas-zoom";
+import { CanvasLabStatusLine } from "@/components/canvas-lab/CanvasLabStatusLine";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
@@ -63,11 +65,16 @@ describe("pass 200 — viewport gestures", () => {
     expect(page).not.toContain("active?.closest(\"textarea,input,[contenteditable='true'],[role='menu'],[data-testid^='lab-card-']\")");
   });
 
-  it("shows only the reading line on the stage until both reads are ready", () => {
+  it("renders only the reading line while the Workboard reads are pending", () => {
+    render(<CanvasLabStatusLine loading unavailable empty />);
+    expect(screen.getByText("reading the engagement")).toBeTruthy();
+    expect(screen.queryByText("nothing is on this workboard yet")).toBeNull();
+    expect(screen.queryByText("This workboard could not be opened.")).toBeNull();
+    cleanup();
     const page = read("src/pages/CanvasLabPage.tsx");
     expect(page).toContain("const loadingBoard = isLoading || lab.boardLoading");
     expect(page).toContain('{boardReady ? <div data-testid="canvas-lab-stage"');
-    expect(page).toContain('{loadingBoard ? <p className="absolute left-4 top-4');
-    expect(page).toContain("boardReady && visibleNodes.length === 0");
+    expect(page).toContain("loading={loadingBoard}");
+    expect(page).toContain("empty={boardReady && visibleNodes.length === 0}");
   });
 });
