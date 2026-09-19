@@ -107,3 +107,12 @@
 - [x] Soft-remove empty custom workstreams with client and server guards
 - [x] Add the approved additive frame and shared menu dimensions
 - [ ] Verify right-click, keyboard menu opening, rename, and removal as Liam in the authenticated preview
+
+## Workboard frames part two (approved 2026-09-19)
+- [ ] Restore frame pointer access while preserving broad relationship hit targets
+- [ ] Hide empty frame menus for coaches
+- [ ] Make virtual seed frames contain all seeded cards
+- [ ] Add Structured-only card drop confirmation
+- [ ] Add role-appropriate empty-frame guidance
+- [ ] Share workstream creation between drawer and inline controls
+- [ ] Complete focused tests, typecheck, token/language checks, and preview build
