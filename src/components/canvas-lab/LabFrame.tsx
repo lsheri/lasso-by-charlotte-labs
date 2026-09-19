@@ -41,9 +41,13 @@ export function LabFrame({ frame, count, selected, editable, custom, namedByWork
 
   useEffect(() => {
     if (!renaming) return;
-    inputRef.current?.focus();
-    inputRef.current?.select();
+    focusNameInput();
   }, [renaming]);
+
+  function focusNameInput() {
+    inputRef.current?.focus({ preventScroll: true });
+    inputRef.current?.select();
+  }
 
   function changeMenuOpen(open: boolean) {
     if (open && !menuOpen) onMenuOpened();
@@ -53,21 +57,22 @@ export function LabFrame({ frame, count, selected, editable, custom, namedByWork
 
   /** After the menu closes, the frame takes focus back unless a rename just started. */
   function restoreFocus() {
-    if (pendingRenameRef.current) {
-      window.requestAnimationFrame(() => {
-        inputRef.current?.focus();
-        inputRef.current?.select();
-        pendingRenameRef.current = false;
-      });
-      return;
-    }
-    frameRef.current?.focus();
+    if (pendingRenameRef.current) return;
+    frameRef.current?.focus({ preventScroll: true });
   }
 
+  /** Mouse and keyboard both land here; the menu never gets to move focus itself. */
   function renameFromMenu() {
     pendingRenameRef.current = true;
+    changeMenuOpen(false);
     beginRename();
+    window.requestAnimationFrame(() => focusNameInput());
+    window.setTimeout(() => {
+      focusNameInput();
+      pendingRenameRef.current = false;
+    }, 0);
   }
+
 
   function openMenu(event: React.MouseEvent | React.KeyboardEvent) {
     if (!editable) return;
