@@ -22,6 +22,8 @@ export type HighlightDto = {
   turnHash: string | null;
   version: number;
   createdAt: string;
+  /** The turn has changed since this was taken, so the range is not drawn. */
+  stale: boolean;
 };
 
 export type AnnotationMutationResult =

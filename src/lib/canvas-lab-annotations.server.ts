@@ -13,6 +13,7 @@ import type { Database } from "@/integrations/supabase/types";
 import {
   annotationTextHash,
   excerptFor,
+  isStaleHighlight,
   validateHighlightRange,
   type AnnotationMutationResult,
   type HighlightDto,
@@ -37,8 +38,9 @@ type AnnotationRow = {
   created_at: string;
 };
 
-function highlightDto(row: AnnotationRow): HighlightDto {
+function highlightDto(row: AnnotationRow, contentHash?: string | null): HighlightDto {
   return {
+    stale: isStaleHighlight(row.turn_hash, contentHash ?? row.turn_hash),
     id: row.id,
     workItemId: row.work_item_id ?? "",
     turnNo: row.turn_no ?? 0,
