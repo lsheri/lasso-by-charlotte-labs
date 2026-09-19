@@ -28,6 +28,7 @@ export function LabFrameMenu({
   onRename: () => void;
   onRemove: () => void;
 }) {
+  if (!editable) return null;
   return (
     <DropdownMenu open={open} onOpenChange={onOpenChange}>
       <DropdownMenuTrigger asChild>
@@ -48,7 +49,7 @@ export function LabFrameMenu({
           frameRef.current?.focus();
         }}
       >
-        {editable ? <DropdownMenuItem onSelect={onFit}>Fit contents</DropdownMenuItem> : null}
+        <DropdownMenuItem onSelect={onFit}>Fit contents</DropdownMenuItem>
         {editable && custom ? <DropdownMenuItem onSelect={onRename}>Rename</DropdownMenuItem> : null}
         {editable && custom ? (
           <DropdownMenuItem disabled={!removable} title={removable ? undefined : "Move its cards first"} onSelect={onRemove}>

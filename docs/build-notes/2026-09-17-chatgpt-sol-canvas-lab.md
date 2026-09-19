@@ -304,3 +304,11 @@ Verification: `bunx tsgo --noEmit` passed. The focused card-interaction, model, 
 - **Permissions and rules:** coaches may open the menu but receive no mutation actions. Only custom workstreams can be renamed or removed. Removal is disabled until every visible and hidden card has moved elsewhere. The server independently enforces both rules and keeps geometry updates available for every frame kind.
 - **Durability:** custom labels use the existing versioned `frame_update` command. Removal uses the existing soft `frame_archive` command. Local custom workstreams can be renamed or removed before materialization, and their current name is carried when materialized. No SQL, migration, generated type, consent, route, production canvas, landing, or AskDock change.
 - **Events:** menu opening reuses `workboard.card_menu_opened` with additive values `{node_kind: "frame", ownership: "shared"}`. Rename and removal reuse `workboard.change_saved`; failures reuse `workboard.save_failed`; Fit contents continues using `workboard.element_resized`. The console catalog update remains a separate part of the approved unit.
+
+## 2026-09-19 — Workboard frames, part two
+
+- **Pointer access:** the relationship SVG no longer blocks workstream selection or menus. Each saved relationship retains its visible line and adds a transparent 10px stroke target; the connector preview remains noninteractive.
+- **Opening layout:** fresh virtual seeds grow each workstream to contain all of its seeded cards with header and bottom room. Existing durable workstream geometry is never rewritten automatically.
+- **Placement choice:** dropping an editable card over another workstream in Structured mode asks whether to move it. Yes reuses the existing versioned node update; Keep, Escape, another drag, and outside clicks close the local prompt without an event.
+- **Empty workstreams:** factual guidance varies by workstream kind and permissions. Editors can create a workstream beside the workstream frames or inside the zero-task placeholder using the same creation function as the drawer.
+- **Data boundary:** no event schema, consent, portal, SQL, migration, production canvas, landing, AskDock, or route change.
