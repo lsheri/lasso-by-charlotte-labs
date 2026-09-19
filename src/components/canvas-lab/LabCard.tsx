@@ -44,6 +44,7 @@ export function LabCard({
   onMenuOpenChange,
   onMeasure,
   onPointerDown,
+  onFocus,
   onKeyDown,
   canResize,
   onResizeStart,
@@ -73,6 +74,7 @@ export function LabCard({
   onMenuOpenChange: (open: boolean) => void;
   onMeasure: (height: number) => void;
   onPointerDown: (event: React.PointerEvent) => void;
+  onFocus: () => void;
   onKeyDown: (event: React.KeyboardEvent) => void;
   canResize: boolean;
   onResizeStart: (corner: LabResizeCorner, event: React.PointerEvent<HTMLButtonElement>) => void;
@@ -122,6 +124,7 @@ export function LabCard({
       data-node-id={node.id}
       data-connecting={connecting}
       onPointerDown={onPointerDown}
+      onFocus={onFocus}
       onContextMenu={openMenu}
       onKeyDown={(event) => {
         if ((event.shiftKey && event.key === "F10") || event.key === "ContextMenu") openMenu(event);
