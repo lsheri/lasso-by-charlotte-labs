@@ -55,8 +55,11 @@ export type WorkItemRow = {
   title: string;
   captured_at: string;
   created_at_source?: string | null;
+  /** Only work the person mapped can ever leave. */
+  visibility?: string | null;
   meta?: unknown;
 };
+
 
 export type WorkSample = {
   sample_uuid: string;
