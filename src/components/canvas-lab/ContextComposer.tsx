@@ -36,12 +36,14 @@ export const PROMPT_STARTERS = [
 export function ContextComposer({
   context,
   onRemoveContext,
+  onClearContext,
   onSubmit,
   canvasInstructions,
   onCanvasInstructions,
 }: {
   context: LabNode[];
   onRemoveContext: (id: string) => void;
+  onClearContext: () => void;
   onSubmit: (prompt: string) => void;
   canvasInstructions: string;
   onCanvasInstructions: (value: string) => void;
