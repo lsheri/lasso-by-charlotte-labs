@@ -486,7 +486,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
 
       </header>
 
-      <div className="mb-2 flex items-end justify-between gap-2 border-b border-[var(--nb-rule)]">
+      <div className="mb-2 flex items-end gap-2 border-b border-[var(--nb-rule)]">
         <div ref={tabBarRef} className="relative flex min-w-0 overflow-x-auto" role="group" aria-label="Engagement views">
           <button
             ref={(node) => {
@@ -597,7 +597,7 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
         >
           Workboard
         </Link>
-        <Button asChild className="mb-2 hidden shrink-0 md:inline-flex">
+        <Button asChild className="ml-4 hidden shrink-0 self-center md:inline-flex">
           <Link
             to="/engagements/$id/canvas-lab"
             params={{ id: engagementId }}
