@@ -78,6 +78,11 @@ export function FocusOverlay({
     const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
     if (!range || !readerRef.current?.contains(range.commonAncestorContainer)) return;
     setQuote(text.trim());
+    if (isThread) {
+      const resolved = resolveTurnSelection(range);
+      setCrossTurn(resolved.kind === "cross_turn");
+      setTurnSelection(resolved.kind === "ok" ? resolved.selection : null);
+    }
     if (typeof CSS === "undefined" || !("highlights" in CSS) || typeof Highlight === "undefined") return;
     CSS.highlights?.set("canvas-lab-selection", new Highlight(range.cloneRange()));
   }
@@ -117,7 +122,7 @@ export function FocusOverlay({
             onKeyUp={captureSelection}
           >
             {item && item.type === "ai_thread" ? (
-              <ThreadBody item={item} enabled />
+              <ThreadBody item={item} enabled highlights={highlights} />
             ) : item ? (
               <RenderedContent item={item} onDownload={() => undefined} canEdit={false} />
             ) : (
