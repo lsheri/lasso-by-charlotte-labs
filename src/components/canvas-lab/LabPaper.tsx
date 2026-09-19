@@ -1,5 +1,5 @@
 import { GraphiteIcon, type GraphiteIconName } from "@/components/notebook/icons";
-import { ArtifactNote, SourceMark, VendorMark } from "@/components/work/SourceMark";
+import { ArtifactNote, SourceMark, sourceVendorKey, VendorMark } from "@/components/work/SourceMark";
 import { colourKey, noteHue, notePaper } from "@/components/work/note-paper";
 import { cardSizeTier, ownerLabel, type LabNode } from "@/components/canvas-lab/canvas-lab-model";
 import { workIdentityLabel } from "@/lib/work-identity";
@@ -48,6 +48,7 @@ export function LabPaper({
   const date = item ? formatDate(effectiveWorkDate(item)) : null;
   const colour = item ? clientAndEngagement(item) : null;
   const summary = item ? identity : node.summary;
+  const needsSourceFallback = item ? sourceVendorKey(item) === null : false;
 
   return (
     <div
@@ -62,7 +63,12 @@ export function LabPaper({
       <div className="canvas-lab-paper-body">
         <div className={cn("canvas-lab-paper-header", selected && "canvas-lab-context-header")}>
           <span className="canvas-lab-paper-source">
-            {item ? <SourceMark item={item} size={12} /> : <GraphiteIcon name={nodeIcon(node)} size={13} animate={false} />}
+            {item ? (
+              <>
+                <SourceMark item={item} size={12} />
+                {needsSourceFallback ? <GraphiteIcon name="work" size={13} animate={false} /> : null}
+              </>
+            ) : <GraphiteIcon name={nodeIcon(node)} size={13} animate={false} />}
             <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
               {item ? <><VendorMark item={item} />{" · "}{date}</> : node.typeLabel}
             </span>
@@ -82,10 +88,10 @@ export function LabPaper({
             onChange={(event) => onEdit(event.target.value)}
             onBlur={onEditCommitted}
             onPointerDown={(event) => event.stopPropagation()}
-            className="canvas-lab-paper-edit w-full resize-none border border-[var(--nb-rule)] bg-card px-2 py-1 text-[11.5px] leading-[17px] text-foreground outline-none focus:border-[var(--nb-green)]"
+            className="canvas-lab-paper-edit min-h-[34px] w-full flex-1 basis-0 resize-none border border-[var(--nb-rule)] bg-card px-2 py-1 text-[11.5px] leading-[17px] text-foreground outline-none focus:border-[var(--nb-green)]"
           />
-        ) : tier !== "compact" && summary ? (
-          <p className="canvas-lab-paper-summary line-clamp-3 text-[11.5px] leading-[17px] text-muted-foreground">{summary}</p>
+        ) : summary && (!item || tier !== "compact") ? (
+          <p className={cn("canvas-lab-paper-summary text-[11.5px] leading-[17px] text-muted-foreground", tier === "compact" ? "line-clamp-2" : "line-clamp-3")}>{summary}</p>
         ) : null}
 
         {tier === "expanded" && item ? (

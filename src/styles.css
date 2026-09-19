@@ -1265,8 +1265,8 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 }
 .canvas-lab-paper-summary { min-height: 0; }
 .canvas-lab-paper-edit {
-  min-height: 54px;
-  flex: 1 1 auto;
+  min-height: 34px;
+  flex: 1 1 0;
 }
 .canvas-lab-paper-footer {
   margin-top: auto;
@@ -1274,7 +1274,6 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   border-top: 1px solid var(--nb-rule);
   padding-top: 5px;
 }
-.canvas-lab-card[data-size="compact"] .canvas-lab-paper-summary,
 .canvas-lab-card:not([data-size="expanded"]) .canvas-lab-paper-footer { display: none; }
 .canvas-lab-card-paper[data-focused="true"],
 .canvas-lab-card-paper[data-connect-source="true"] {
