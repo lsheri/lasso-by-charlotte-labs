@@ -55,8 +55,11 @@ export type WorkItemRow = {
   title: string;
   captured_at: string;
   created_at_source?: string | null;
+  /** Only work the person mapped can ever leave. */
+  visibility?: string | null;
   meta?: unknown;
 };
+
 
 export type WorkSample = {
   sample_uuid: string;
@@ -131,19 +134,25 @@ export function planContentBatch(
     personKeyByItem?: Map<string, string | null>;
   },
 ): ContentPlanEntry[] {
-  return items.map((item) => {
+  return items.flatMap((item): ContentPlanEntry[] => {
+    // Unmapped and private work produces no entry at all: no skip reason is
+    // written, so it can still flow later if the person maps it.
+    if (item.visibility !== "mapped") return [];
     const posture = input.postures.get(item.org_id);
     const verdict = contentEligibility(posture);
-    if (!verdict.ok) return { kind: "skip", id: item.id, reason: verdict.reason };
-    return {
-      kind: "send",
-      id: item.id,
-      sample: mapWorkSampleForEgress(item, {
-        posture: posture as OrgPosture,
-        turns: input.turnsByItem.get(item.id) ?? [],
-        analysisSummary: input.analysisByItem?.get(item.id) ?? null,
-        personKey: input.personKeyByItem?.get(item.id) ?? null,
-      }),
-    };
+    if (!verdict.ok) return [{ kind: "skip", id: item.id, reason: verdict.reason }];
+    return [
+      {
+        kind: "send",
+        id: item.id,
+        sample: mapWorkSampleForEgress(item, {
+          posture: posture as OrgPosture,
+          turns: input.turnsByItem.get(item.id) ?? [],
+          analysisSummary: input.analysisByItem?.get(item.id) ?? null,
+          personKey: input.personKeyByItem?.get(item.id) ?? null,
+        }),
+      },
+    ];
   });
+
 }

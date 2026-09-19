@@ -17,6 +17,13 @@ export const recordEventFn = createServerFn({ method: "POST" })
     }) => input,
   )
   .handler(async ({ data, context }) => {
+    let dims = data.dims ?? {};
+    const { guardWorkboardEvent, isWorkboardEvent } = await import("./workboard-event-allowlist");
+    if (isWorkboardEvent(data.event_type)) {
+      const verdict = guardWorkboardEvent(data.event_type, dims);
+      if (!verdict.keep) return { ok: true };
+      dims = verdict.dims;
+    }
     const { resolveProfile } = await import("./profile-resolve");
     const profile = await resolveProfile(context.supabase, context.userId, data.profile_id).catch(
       () => null,
@@ -26,11 +33,12 @@ export const recordEventFn = createServerFn({ method: "POST" })
       eventType: data.event_type,
       orgId: data.org_id,
       userId: context.userId,
-      dims: data.dims ?? {},
+      dims,
       profileId: profile?.id ?? null,
       sessionId: data.session_id ?? null,
       clientSeq: data.client_seq ?? null,
     });
+
     if (profile) {
       await notePresence(context.supabase, {
         orgId: profile.org_id,
