@@ -63,10 +63,12 @@ describe("what a link means", () => {
     expect(undoActionWord("link_relation")).toBe("what this link means");
   });
 
-  it.each([
-    [{ ...nodes[0], x: 0, y: 0 }, { ...nodes[1], x: 400, y: 120 }, "right", "top"],
-    [{ ...nodes[0], x: 80, y: 0 }, { ...nodes[1], x: 260, y: 190 }, "bottom", "left"],
-  ] as const)("nudges the label box clear of both end cards", (source, target, fromSide, toSide) => {
+  const placementSamples: [LabNode, LabNode, "right" | "bottom", "top" | "left"][] = [
+    [{ ...(nodes[0] as LabNode), x: 0, y: 0 }, { ...(nodes[1] as LabNode), x: 400, y: 120 }, "right", "top"],
+    [{ ...(nodes[0] as LabNode), x: 80, y: 0 }, { ...(nodes[1] as LabNode), x: 260, y: 190 }, "bottom", "left"],
+  ];
+
+  it.each(placementSamples)("nudges the label box clear of both end cards", (source, target, fromSide, toSide) => {
     const from = labAnchorPoint(source, fromSide, source.height);
     const to = labAnchorPoint(target, toSide, target.height);
     const size = { width: 68, height: 20 };
