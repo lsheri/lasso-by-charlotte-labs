@@ -68,6 +68,7 @@ describe("the workboard allowlist", () => {
         ],
         "workboard.relationship_changed": [
           "action",
+          "relation",
         ],
         "workboard.review_opened": [
           "format",
