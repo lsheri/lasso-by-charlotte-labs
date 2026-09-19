@@ -91,6 +91,7 @@ export function undoActionWord(action: UndoAction): string {
   if (action === "remove_note") return "note removal";
   if (action === "relationship_add") return "relationship";
   if (action === "relationship_remove") return "relationship removal";
+  if (action === "link_relation") return "what this link means";
   return "move to a workstream";
 }
 
