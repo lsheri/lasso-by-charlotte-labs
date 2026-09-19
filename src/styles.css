@@ -4517,3 +4517,43 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
     transition: none !important;
   }
 }
+
+/* One step back, offered briefly over the board. The canvas never shifts. */
+.canvas-lab-undo-toast {
+  position: absolute;
+  left: 16px;
+  bottom: 16px;
+  z-index: 24;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--nb-pencil);
+  border-radius: var(--radius-control);
+  background: var(--nb-paper);
+  padding: 7px 10px;
+  box-shadow: var(--shadow-modal);
+  color: var(--nb-mid);
+  font-family: var(--font-hand);
+  font-size: 16px;
+  line-height: 1;
+}
+.canvas-lab-undo-toast button {
+  color: var(--nb-green);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.canvas-lab-undo-toast button:focus-visible { outline: 2px solid var(--nb-green); outline-offset: 2px; }
+
+/* The judgment type list keeps a readable, reachable size at any zoom. */
+.canvas-lab-judgment-menu {
+  width: calc(192px * var(--lab-inverse-zoom, 1));
+  padding: calc(4px * var(--lab-inverse-zoom, 1));
+}
+.canvas-lab-judgment-item {
+  min-height: calc(24px * var(--lab-inverse-zoom, 1));
+  height: auto;
+  padding: calc(4px * var(--lab-inverse-zoom, 1)) calc(8px * var(--lab-inverse-zoom, 1));
+  font-size: calc(11px * var(--lab-inverse-zoom, 1));
+}

@@ -1,3 +1,4 @@
+import type { UndoAction, UndoDirection } from "@/components/canvas-lab/canvas-lab-undo";
 import { logEvent } from "@/lib/telemetry";
 
 export type LabNodeEventKind = "source" | "ai_work" | "human_judgment" | "decision" | "deliverable" | "draft_thread";
@@ -76,4 +77,9 @@ export type WorkboardContextAction = "cleared";
 /** Canvas Lab polish 2c-iv: the local context selection changed. Action only. */
 export function noteWorkboardContextChanged(orgId: string | undefined, action: WorkboardContextAction): void {
   if (orgId) logEvent("workboard.context_changed", orgId, { action });
+}
+
+/** Canvas Lab polish 2c-v: one arranging step taken back or put back. */
+export function noteWorkboardUndoUsed(orgId: string | undefined, action: UndoAction, direction: UndoDirection): void {
+  if (orgId) logEvent("workboard.undo_used", orgId, { action, direction });
 }

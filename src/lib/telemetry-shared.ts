@@ -187,6 +187,8 @@ export type TelemetryEvent =
   | "workboard.save_error_resolved"
   /** Canvas Lab polish: the local context selection changed. Action only. */
   | "workboard.context_changed"
+  /** Canvas Lab polish: one arranging step was taken back or put back. Closed vocabulary only. */
+  | "workboard.undo_used"
   /** Pass 185: a workspace was affiliated with an institution at creation. Slug only. */
   | "workspace.affiliated"
   /** Pass 186: the student opened the page describing what their school sees. */

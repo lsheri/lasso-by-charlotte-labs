@@ -49,6 +49,7 @@ export function LabCard({
   frameChoices,
   structured,
   onMoveToFrame,
+  stackZ = 1,
 }: {
   node: LabNode;
   item?: WorkItemRow | undefined;
@@ -80,6 +81,7 @@ export function LabCard({
   frameChoices: { id: string; name: string }[];
   structured: boolean;
   onMoveToFrame: (id: string) => void;
+  stackZ?: number;
 }) {
   const cardRef = useRef<HTMLDivElement | null>(null);
   const paperRef = useRef<HTMLDivElement | null>(null);
@@ -130,7 +132,7 @@ export function LabCard({
         if ((event.shiftKey && event.key === "F10") || event.key === "ContextMenu") openMenu(event);
         else if (event.target === event.currentTarget) onKeyDown(event);
       }}
-      style={{ left: node.x, top: node.y, width: node.width, height: node.height }}
+      style={{ left: node.x, top: node.y, width: node.width, height: node.height, zIndex: stackZ }}
       data-size={cardSizeTier(node)}
       className="canvas-lab-card group absolute text-left outline-none"
     >

@@ -8,7 +8,8 @@
  */
 
 import { dragTo, snapPoint, type Point } from "@/lib/canvas-drag";
-import type { WorkboardDto, WorkboardNodeDto, WorkboardRelation } from "@/lib/canvas-lab-shared";
+import type { LabNodeEventKind } from "@/components/canvas-lab/canvas-lab-telemetry";
+import type { WorkboardCommand, WorkboardDto, WorkboardNodeDto, WorkboardRelation } from "@/lib/canvas-lab-shared";
 import { clampZoom } from "@/lib/canvas-zoom";
 
 export type LabNodeKind = "brief" | "task" | "work" | "decision" | "chat" | "source" | "ai_work" | "judgment" | "deliverable";
@@ -46,6 +47,8 @@ export type LabNode = {
   ownership: LabOwnership;
   /** Present only when the card stands for a real work element. */
   workItemId?: string | undefined;
+  /** True when the real work element this card stands for is a deliverable. */
+  deliverable?: boolean;
   /** Local chat cards only. */
   prompt?: string | undefined;
   contextIds?: string[];
@@ -505,6 +508,7 @@ export function seedCanvas(input: SeedInput, frames = createLabFrames(input.task
       typeLabel: item.typeLabel,
       ownership: item.ownedByViewer ? "yours" : "teammate",
       workItemId: item.id,
+      deliverable: item.deliverable,
       x: at.x,
       y: at.y,
       width: CARD_WIDTH,
@@ -873,4 +877,36 @@ export function inboundLabNodeIds(nodes: LabNode[], links: LabLink[], anchorId: 
     frontier = next;
   }
   return reached;
+}
+
+/** Cards recently pressed or focused render above the rest, newest last. */
+export const LAB_FRONT_LIMIT = 12;
+
+export function bringToFront(front: string[], id: string): string[] {
+  return [...front.filter((entry) => entry !== id), id].slice(-LAB_FRONT_LIMIT);
+}
+
+/** The stacking order for one card, kept below the stage's own overlays. */
+export function cardStackZ(front: string[], id: string): number {
+  const index = front.indexOf(id);
+  return index === -1 ? 1 : 2 + index;
+}
+
+/** The closed event vocabulary for one card. A deliverable says so. */
+export function eventKind(node: LabNode): LabNodeEventKind {
+  if (node.kind === "chat") return "draft_thread";
+  if (node.kind === "judgment") return "human_judgment";
+  if (node.kind === "ai_work") return "ai_work";
+  if (node.kind === "deliverable") return "deliverable";
+  if (node.kind === "decision") return "decision";
+  if (node.kind === "work" && node.deliverable) return "deliverable";
+  return "source";
+}
+
+/** A retried change reports the action it always was, not a blanket update. */
+export function retryAction(command: WorkboardCommand): "create" | "update" | "archive" | "restore" {
+  if (command.type === "node_create" || command.type === "frame_create" || command.type === "link_create") return "create";
+  if (command.type.endsWith("_archive")) return "archive";
+  if (command.type.endsWith("_restore")) return "restore";
+  return "update";
 }
