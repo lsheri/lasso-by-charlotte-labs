@@ -15,8 +15,6 @@ export function LabRelationships({
   selectedLinkId,
   inverseZoom,
   editable,
-  width,
-  height,
   onSelect,
   onRemove,
 }: {
@@ -26,8 +24,6 @@ export function LabRelationships({
   selectedLinkId: string | null;
   inverseZoom: number;
   editable: boolean;
-  width: number;
-  height: number;
   onSelect: (id: string) => void;
   onRemove: (link: LabLink) => void;
 }) {
@@ -35,7 +31,7 @@ export function LabRelationships({
   const arrowSize = 8 * inverseZoom;
 
   return (
-    <svg className="canvas-lab-relationships absolute inset-0 overflow-visible" width={width} height={height} aria-label="Local workboard relationships">
+    <g aria-label="Saved workboard relationships">
       <defs>
         <marker id="canvas-lab-arrow-graphite" markerUnits="userSpaceOnUse" markerWidth={arrowSize} markerHeight={arrowSize} refX="7" refY="4" orient="auto" viewBox="0 0 8 8">
           <path d="M 0 0 L 8 4 L 0 8 Z" fill="var(--nb-graphite)" />
@@ -98,6 +94,6 @@ export function LabRelationships({
           </g>
         );
       })}
-    </svg>
+    </g>
   );
 }

@@ -1353,6 +1353,36 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 .canvas-lab-relationships { pointer-events: none; }
 .canvas-lab-relationship-hit,
 .canvas-lab-relationship-line { pointer-events: stroke; }
+.canvas-lab-relationship-remove-wrap { overflow: visible; pointer-events: auto; }
+.canvas-lab-relationship-remove {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  border: calc(1.4px * var(--lab-inverse-zoom, 1)) solid var(--nb-pencil);
+  border-radius: 50%;
+  background: var(--nb-paper);
+  color: var(--nb-graphite);
+  font-family: var(--font-mono);
+  font-size: calc(11.5px * var(--lab-inverse-zoom, 1));
+  line-height: 1;
+  cursor: pointer;
+}
+.canvas-lab-relationship-remove:focus-visible { outline: calc(2px * var(--lab-inverse-zoom, 1)) solid var(--nb-green); outline-offset: calc(2px * var(--lab-inverse-zoom, 1)); }
+.canvas-lab-link-rejection {
+  position: absolute;
+  z-index: 18;
+  border: 1px solid var(--nb-pencil);
+  border-radius: var(--radius-control);
+  background: var(--nb-paper);
+  padding: 5px 7px;
+  color: var(--nb-mid);
+  font-family: var(--font-hand);
+  font-size: 16px;
+  line-height: 1;
+  pointer-events: none;
+}
 .canvas-lab-frame-guidance { position: absolute; left: 24px; right: 24px; top: 58px; line-height: 1.25; }
 .canvas-lab-add-workstream { display: inline-flex; align-items: center; min-height: 28px; padding: 0 8px; color: var(--nb-green); font-family: var(--font-hand); font-size: 16px; }
 .canvas-lab-inline-add { position: absolute; z-index: 15; width: 220px; min-height: 28px; }
