@@ -56,7 +56,7 @@ describe("Canvas Lab second prototype pass", () => {
     expect(page).toContain("<CanvasLabReview");
     expect(overlay).not.toContain("WhatFedThisButton");
     expect(overlay).toContain('CSS.highlights?.delete("canvas-lab-selection")');
-    expect(overlay).toContain("{comments.length + 1}");
+    expect(overlay).not.toContain("notes in the margin");
     expect(overlay).not.toContain("items: WorkItemRow[]");
   });
 

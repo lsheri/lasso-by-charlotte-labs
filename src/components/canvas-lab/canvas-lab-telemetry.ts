@@ -90,18 +90,44 @@ export function noteWorkboardUndoUsed(orgId: string | undefined, action: UndoAct
   if (orgId) logEvent("workboard.undo_used", orgId, { action, direction });
 }
 
-/** Slice 2a unit 1: a highlight was made or removed. No text, no hash, no ids. */
-export function noteAnnotationChanged(
+/**
+ * Slice 2a: a highlight or a comment was made, changed or removed. Shape only:
+ * no text, no hash, no ids, no author and no role.
+ */
+export type AnnotationChange = {
+  kind: "highlight" | "comment";
+  action: "created" | "edited" | "archived";
+  anchorKind: "turn" | "item";
+  visibility: "just_me" | "engagement";
+  /** How long the passage or the written note was, in characters. */
+  length: number;
+  isReply: boolean;
+};
+
+export function noteAnnotationChanged(orgId: string | undefined, change: AnnotationChange): void {
+  if (!orgId) return;
+  logEvent("workboard.annotation_changed", orgId, {
+    kind: change.kind,
+    action: change.action,
+    anchor_kind: change.anchorKind,
+    visibility: change.visibility,
+    length_band: lengthBand(change.length),
+    is_reply: change.isReply,
+  });
+}
+
+/** The common highlight case, kept short at every call site. */
+export function noteHighlightChanged(
   orgId: string | undefined,
   action: "created" | "archived",
   excerptLength: number,
 ): void {
-  if (!orgId) return;
-  logEvent("workboard.annotation_changed", orgId, {
+  noteAnnotationChanged(orgId, {
     kind: "highlight",
     action,
-    anchor_kind: "turn",
+    anchorKind: "turn",
     visibility: "just_me",
-    length_band: lengthBand(excerptLength),
+    length: excerptLength,
+    isReply: false,
   });
 }

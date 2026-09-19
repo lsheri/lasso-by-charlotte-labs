@@ -78,3 +78,32 @@ describe("highlights drawn on chat turns", () => {
     expect(screen.getByText("Start at the top.")).toBeTruthy();
   });
 });
+
+describe("comment marks on chat turns", () => {
+  beforeEach(() => {
+    Element.prototype.scrollIntoView = vi.fn();
+  });
+  afterEach(cleanup);
+
+  it("underlines a commented passage", () => {
+    render(
+      <ThreadBody
+        item={item}
+        reducedMotion
+        commentMarks={[{ id: "c1", turnNo: 2, charStart: 4, charEnd: 17, stale: false }]}
+      />,
+    );
+    expect(screen.getByTestId("turn-comment-mark").textContent).toBe("pricing floor");
+  });
+
+  it("does not draw a comment whose turn has moved on", () => {
+    render(
+      <ThreadBody
+        item={item}
+        reducedMotion
+        commentMarks={[{ id: "c1", turnNo: 2, charStart: 4, charEnd: 17, stale: true }]}
+      />,
+    );
+    expect(screen.queryByTestId("turn-comment-mark")).toBeNull();
+  });
+});
