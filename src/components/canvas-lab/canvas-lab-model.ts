@@ -7,7 +7,7 @@
  * whole state lives in memory for one visit.
  */
 
-import { snapPoint, type Point } from "@/lib/canvas-drag";
+import { dragTo, snapPoint, type Point } from "@/lib/canvas-drag";
 import type { WorkboardDto, WorkboardNodeDto, WorkboardRelation } from "@/lib/canvas-lab-shared";
 import { clampZoom } from "@/lib/canvas-zoom";
 
