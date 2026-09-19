@@ -9,6 +9,7 @@
 
 import { snapPoint, type Point } from "@/lib/canvas-drag";
 import type { WorkboardDto, WorkboardNodeDto, WorkboardRelation } from "@/lib/canvas-lab-shared";
+import { clampZoom } from "@/lib/canvas-zoom";
 
 export type LabNodeKind = "brief" | "task" | "work" | "decision" | "chat" | "source" | "ai_work" | "judgment" | "deliverable";
 export type LabJudgmentType = "added_constraint" | "corrected_ai" | "rejected_option" | "requested_evidence" | "changed_direction" | "accepted_but_rewrote";
@@ -473,6 +474,12 @@ export type LabRect = { x: number; y: number; width: number; height: number };
 
 export type LabFitResult = { zoom: number; pan: Point; bounds: LabRect };
 
+export type LabViewportSize = { width: number; height: number };
+
+export function viewportSizeChanged(previous: LabViewportSize | null, next: LabViewportSize): boolean {
+  return previous === null || previous.width !== next.width || previous.height !== next.height;
+}
+
 /**
  * Fit the visible workboard union into its shell. Measured card heights are
  * accepted separately because paper can extend beyond its stored rectangle.
@@ -502,12 +509,14 @@ export function fitWorkboardViewport(
   const bounds = { x: left, y: top, width: right - left, height: bottom - top };
   const availableWidth = Math.max(0, viewport.width - padding * 2);
   const availableHeight = Math.max(0, viewport.height - padding * 2);
-  const zoom = Math.max(0.62, Math.min(1, availableWidth / bounds.width, availableHeight / bounds.height));
+  const zoom = clampZoom(Math.min(1, availableWidth / bounds.width, availableHeight / bounds.height));
+  const fitsWidth = bounds.width * zoom <= availableWidth;
+  const fitsHeight = bounds.height * zoom <= availableHeight;
   return {
     zoom,
     pan: {
-      x: (viewport.width - bounds.width * zoom) / 2 - bounds.x * zoom,
-      y: (viewport.height - bounds.height * zoom) / 2 - bounds.y * zoom,
+      x: fitsWidth ? (viewport.width - bounds.width * zoom) / 2 - bounds.x * zoom : padding - bounds.x * zoom,
+      y: fitsHeight ? (viewport.height - bounds.height * zoom) / 2 - bounds.y * zoom : padding - bounds.y * zoom,
     },
     bounds,
   };

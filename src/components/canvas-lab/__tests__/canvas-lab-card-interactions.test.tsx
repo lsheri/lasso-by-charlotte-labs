@@ -1,26 +1,38 @@
+// @vitest-environment jsdom
 import { readFileSync } from "node:fs";
 
+import { cleanup, render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
+
+import { LabCard } from "@/components/canvas-lab/LabCard";
 
 const read = (path: string) => readFileSync(path, "utf8");
 
 describe("Canvas Lab card interaction correction", () => {
-  it("keeps the outline on paper and exposes four side anchors", () => {
-    const card = read("src/components/canvas-lab/LabCard.tsx");
+  it("renders native controls without shadcn sizing classes", () => {
+    globalThis.ResizeObserver = class { observe() {} disconnect() {} unobserve() {} } as typeof ResizeObserver;
+    const { container } = render(<LabCard node={{ id: "n", kind: "judgment", frame: "f", title: "Judgment", summary: "Reason", typeLabel: "judgment", ownership: "draft", local: true, x: 0, y: 0, width: 232, height: 112 }} selected focused={false} connecting={false} connectSourceAnchor={null} canResize onSelect={() => undefined} onOpen={() => undefined} onBranch={() => undefined} onHide={() => undefined} onDelete={() => undefined} onEdit={() => undefined} onEditCommitted={() => undefined} onAnchorPointerDown={() => undefined} onAnchorActivate={() => undefined} onMenuOpened={() => undefined} onMenuOpenChange={() => undefined} onMeasure={() => undefined} onPointerDown={() => undefined} onKeyDown={() => undefined} onResizeStart={() => undefined} onFit={() => undefined} onResizeKeyDown={() => undefined} onResizeKeyUp={() => undefined} frameChoices={[]} structured onMoveToFrame={() => undefined} />);
     const styles = read("src/styles.css");
-    expect(card).toContain("canvas-lab-card-paper");
-    expect(card).toContain('data-side={side}');
-    expect(card).toContain('aria-label={`Connect from ${side}`}');
-    expect(card).toContain('<Button key={side} type="button" size="icon" variant="ghost"');
+    const controls = container.querySelectorAll(".canvas-lab-anchor, .canvas-lab-resize-handle");
+    expect(controls).toHaveLength(8);
+    for (const control of controls) {
+      expect(control.tagName).toBe("BUTTON");
+      expect(control.className).not.toMatch(/h-9|w-9|rounded-md/);
+    }
+    expect(container.querySelectorAll(".canvas-lab-anchor")).toHaveLength(4);
+    expect(container.querySelectorAll(".canvas-lab-resize-handle")).toHaveLength(4);
     expect(styles).toContain('.canvas-lab-card-paper[data-selected="true"]');
     for (const side of ["top", "right", "bottom", "left"]) expect(styles).toContain(`data-side="${side}"`);
-    expect(card).toContain("canvas-lab-resize-handle");
-    expect(styles).toContain("width: 8px;");
-    expect(styles).toContain("border: 1.4px solid var(--nb-green);");
-    expect(styles).toContain("border-radius: 1px;");
-    expect(styles).toContain("cursor: crosshair;");
+    expect(styles).toMatch(/\.canvas-lab-anchor \{[^}]*width: 8px;[^}]*height: 8px;/s);
+    expect(styles).toMatch(/\.canvas-lab-anchor \{[^}]*border-radius: 50%;/s);
+    expect(styles).toMatch(/\.canvas-lab-anchor \{[^}]*cursor: crosshair;/s);
+    expect(styles).toMatch(/\.canvas-lab-resize-handle \{[^}]*width: 8px;[^}]*height: 8px;/s);
+    expect(styles).toMatch(/\.canvas-lab-resize-handle \{[^}]*border: 1\.4px solid var\(--nb-green\);/s);
+    expect(styles).toMatch(/\.canvas-lab-resize-handle \{[^}]*border-radius: 1px;/s);
+    expect(styles).toMatch(/data-corner="nw"[^}]*cursor: nwse-resize;/s);
+    expect(styles).toMatch(/data-corner="ne"[^}]*cursor: nesw-resize;/s);
     expect(styles).toContain('[data-interaction="drag"]');
-    expect(styles).toContain('data-corner="nw"');
+    cleanup();
   });
 
   it("keeps resize, structure, and reassignment bounded to the workboard", () => {
