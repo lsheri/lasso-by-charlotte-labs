@@ -117,7 +117,7 @@ import { useEngagementPage } from "@/hooks/use-engagement-page";
 import { useMotion } from "@/hooks/use-motion";
 import { useProfile } from "@/hooks/use-profile";
 import { dragTo, keyTo, type Point } from "@/lib/canvas-drag";
-import type { WorkboardCommand, WorkboardNodeInput } from "@/lib/canvas-lab-shared";
+import type { WorkboardCommand, WorkboardNodeInput, WorkboardRelation } from "@/lib/canvas-lab-shared";
 import { noteCanvasOpenedFn } from "@/lib/canvas.functions";
 import { clampZoom, stepZoom, wheelPanDelta, workboardPinchZoom, zoomAbout } from "@/lib/canvas-zoom";
 import { engagementDisplayTitle } from "@/lib/clients";
