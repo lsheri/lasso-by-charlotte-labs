@@ -219,6 +219,20 @@ export function addLocalFrame(frames: LabFrame[], name: string, rect?: LabRect):
   ];
 }
 
+/**
+ * A frame that has a durable row is no longer local, so the header must stop
+ * saying so.
+ */
+export function markFrameSaved(frames: LabFrame[], localId: string, durableId: string, durableVersion: number): LabFrame[] {
+  return frames.map((frame) => frame.id === localId ? { ...frame, durableId, durableVersion, local: false } : frame);
+}
+
+/** The board pans and zooms; the surface itself never scrolls. */
+export function keepViewportUnscrolled(element: { scrollTop: number; scrollLeft: number }): void {
+  if (element.scrollTop !== 0) element.scrollTop = 0;
+  if (element.scrollLeft !== 0) element.scrollLeft = 0;
+}
+
 export function stageBounds(frames: LabFrame[]): { width: number; height: number } {
   return {
     width: Math.max(980, ...frames.map((frame) => frame.x + frame.width + 60)),
