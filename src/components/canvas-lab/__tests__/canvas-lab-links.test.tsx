@@ -2,9 +2,10 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { LabCard } from "@/components/canvas-lab/LabCard";
 import { LabLinkRejection } from "@/components/canvas-lab/LabLinkRejection";
 import { LabRelationships } from "@/components/canvas-lab/LabRelationships";
-import { linkRemovalAnnouncement, type LabLink, type LabNode } from "@/components/canvas-lab/canvas-lab-model";
+import { connectDisarmed, linkRemovalAnnouncement, type LabLink, type LabNode } from "@/components/canvas-lab/canvas-lab-model";
 
 const nodes: LabNode[] = [
   { id: "a", kind: "work", frame: "f", title: "Source", summary: "", typeLabel: "document", ownership: "yours", x: 0, y: 0, width: 232, height: 112 },
@@ -56,5 +57,57 @@ describe("Workboard relationships", () => {
   it("uses accurate durable and local removal announcements", () => {
     expect(linkRemovalAnnouncement(link)).toBe("Local relationship removed.");
     expect(linkRemovalAnnouncement({ ...link, durableId: "durable" })).toBe("Relationship removed from the workboard.");
+  });
+
+  it("activates an anchor with the keyboard without toggling card context", () => {
+    globalThis.ResizeObserver = class { observe() {} disconnect() {} unobserve() {} } as typeof ResizeObserver;
+    const activate = vi.fn();
+    const select = vi.fn();
+    render(
+      <LabCard
+        node={{ id: "n", kind: "work", workItemId: "w", frame: "f", title: "Source", summary: "", typeLabel: "document", ownership: "yours", x: 0, y: 0, width: 232, height: 112 }}
+        selected={false}
+        focused
+        connecting={false}
+        connectSourceAnchor={null}
+        canResize={false}
+        onSelect={select}
+        onOpen={() => undefined}
+        onBranch={() => undefined}
+        onHide={() => undefined}
+        onDelete={() => undefined}
+        onEdit={() => undefined}
+        onEditCommitted={() => undefined}
+        onAnchorPointerDown={() => undefined}
+        onAnchorActivate={activate}
+        onMenuOpened={() => undefined}
+        onMenuOpenChange={() => undefined}
+        onMeasure={() => undefined}
+        onPointerDown={() => undefined}
+        onFocus={() => undefined}
+        onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") select(); }}
+        onResizeStart={() => undefined}
+        onFit={() => undefined}
+        onResizeKeyDown={() => undefined}
+        onResizeKeyUp={() => undefined}
+        frameChoices={[]}
+        structured
+        onMoveToFrame={() => undefined}
+      />,
+    );
+    const anchor = screen.getByRole("button", { name: "Connect from left" });
+    anchor.focus();
+    // Keydown on the anchor must not bubble into the card's context toggle.
+    fireEvent.keyDown(anchor, { key: "Enter" });
+    expect(select).not.toHaveBeenCalled();
+    // The browser turns Enter on a focused button into a click, which activates the anchor.
+    fireEvent.click(anchor);
+    expect(activate).toHaveBeenCalledOnce();
+    expect(activate).toHaveBeenCalledWith("left");
+    expect(select).not.toHaveBeenCalled();
+  });
+
+  it("disarms the connect source when an attempt ends", () => {
+    expect(connectDisarmed()).toEqual({ connectSource: null, interaction: "idle" });
   });
 });

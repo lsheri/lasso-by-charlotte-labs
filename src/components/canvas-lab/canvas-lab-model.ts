@@ -355,6 +355,11 @@ export function deleteLocalNode(nodes: LabNode[], links: LabLink[], selected: st
   return { nodes: nodes.filter((entry) => entry.id !== id), links: links.filter((link) => link.fromId !== id && link.toId !== id), selected: selected.filter((entry) => entry !== id) };
 }
 
+/** When a connection attempt ends (created or rejected), the source disarms and the board returns to idle. */
+export function connectDisarmed(): { connectSource: null; interaction: "idle" } {
+  return { connectSource: null, interaction: "idle" };
+}
+
 export function addLabLink(links: LabLink[], fromId: string, fromAnchor: LabAnchor, toId: string, toAnchor: LabAnchor): { links: LabLink[]; error: string | null } {
   if (fromId === toId) return { links, error: "A card cannot feed itself" };
   if (links.some((link) => link.fromId === fromId && link.toId === toId)) return { links, error: "Already connected" };

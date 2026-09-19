@@ -128,7 +128,7 @@ export function LabCard({
       onContextMenu={openMenu}
       onKeyDown={(event) => {
         if ((event.shiftKey && event.key === "F10") || event.key === "ContextMenu") openMenu(event);
-        else onKeyDown(event);
+        else if (event.target === event.currentTarget) onKeyDown(event);
       }}
       style={{ left: node.x, top: node.y, width: node.width, height: node.height }}
       data-size={cardSizeTier(node)}
