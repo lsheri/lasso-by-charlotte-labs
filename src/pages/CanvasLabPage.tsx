@@ -194,6 +194,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   const [keyboardId, setKeyboardId] = useState<string | null>(null);
   const [selectedLinkId, setSelectedLinkId] = useState<string | null>(null);
   const [linkRejection, setLinkRejection] = useState<{ targetId: string; message: string } | null>(null);
+  const [relationPicker, setRelationPicker] = useState<{ linkId: string } | null>(null);
   const [connectSource, setConnectSource] = useState<{ nodeId: string; anchor: LabAnchor } | null>(null);
   const [connectorPreview, setConnectorPreview] = useState<Point | null>(null);
   const [cardMenuOpen, setCardMenuOpen] = useState(false);
@@ -469,13 +470,47 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     const from = await ensureNodeDurable(link.fromId);
     const to = await ensureNodeDurable(link.toId);
     if (!from || !to) return;
-    const result = await lab.persist({ type: "link_create", fromNodeId: from.id, fromAnchor: link.fromAnchor, toNodeId: to.id, toAnchor: link.toAnchor, relation: "context" });
+    const result = await lab.persist({ type: "link_create", fromNodeId: from.id, fromAnchor: link.fromAnchor, toNodeId: to.id, toAnchor: link.toAnchor, relation: link.relation ?? "context" });
     report(result, "relationship", "create");
     if (result.status === "saved" && result.created?.linkId) {
       const id = result.created.linkId;
       const version = result.versions[id] ?? 1;
-      setLinks((current) => current.map((entry) => entry.id === link.id ? { ...entry, durableId: id, durableVersion: version, relation: "context" } : entry));
+      setLinks((current) => current.map((entry) => entry.id === link.id ? { ...entry, durableId: id, durableVersion: version, relation: entry.relation ?? "context" } : entry));
     }
+  }
+
+  /** A link is saved before its meaning is chosen, so wait for its durable id. */
+  async function linkDurable(localId: string): Promise<LabLink | null> {
+    for (let attempt = 0; attempt < 20; attempt += 1) {
+      const live = linksRef.current.find((entry) => entry.id === localId);
+      if (live?.durableId) return live;
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    return null;
+  }
+
+  /** Change what one link means, and say so on the stack. */
+  function changeRelation(localId: string, relation: WorkboardRelation, options?: { silent?: boolean }) {
+    const current = linksRef.current.find((entry) => entry.id === localId);
+    if (!current) return;
+    const before = current.relation ?? "context";
+    if (before === relation) return;
+    setLinks((links) => links.map((entry) => entry.id === localId ? { ...entry, relation } : entry));
+    if (!options?.silent) {
+      record({ action: "link_relation", linkId: localId, before, after: relation });
+      noteWorkboardRelationship(orgId, "relation_changed", relation);
+      setAnnouncement(`This link now means ${relation}.`);
+    }
+    void (async () => {
+      const durable = await linkDurable(localId);
+      if (!durable?.durableId) return;
+      const result = await lab.persist({ type: "link_update", linkId: durable.durableId, expectedVersion: durable.durableVersion ?? 1, relation });
+      report(result, "relationship", "update");
+      if (result.status === "saved") {
+        const nextVersion = result.versions[durable.durableId] ?? (durable.durableVersion ?? 1) + 1;
+        setLinks((links) => links.map((entry) => entry.id === localId ? { ...entry, durableVersion: nextVersion } : entry));
+      }
+    })();
   }
 
   async function persistLinkRemoval(link: LabLink) {
@@ -572,6 +607,10 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       setLinks(result.links);
       const created = result.links[result.links.length - 1];
       if (created) void persistLink(created);
+      return;
+    }
+    if (entry.action === "link_relation") {
+      changeRelation(entry.linkId, (direction === "undo" ? entry.before : entry.after) as WorkboardRelation, { silent: true });
       return;
     }
     applyFrameMove(entry.nodeId, direction === "undo" ? entry.before : entry.after);
@@ -1162,7 +1201,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     setInteraction(disarmed.interaction);
     noteWorkboardRelationship(orgId, "created");
     const created = result.links[result.links.length - 1];
-    if (created) { void persistLink(created); record({ action: "relationship_add", link: created }); }
+    if (created) { void persistLink(created); record({ action: "relationship_add", link: created }); setRelationPicker({ linkId: created.id }); }
     setAnnouncement("Relationship saved to the workboard.");
   }
 
@@ -1268,7 +1307,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       </aside>
       {menuOpen ? <div className="fixed inset-0 z-50 flex bg-[var(--nb-scrim)]" onPointerDown={() => setMenuOpen(false)}><aside className="h-full w-[280px] overflow-y-auto border-r border-border bg-sidebar p-4 shadow-[var(--shadow-modal)]" onPointerDown={(event) => event.stopPropagation()}><div className="mb-5 flex items-center justify-between"><span className="font-serif text-xl text-foreground">Lasso</span><Button size="icon" variant="ghost" aria-label="Close workboard menu" onClick={() => setMenuOpen(false)}><X className="h-4 w-4" /></Button></div><SidebarNav onNavigate={() => setMenuOpen(false)} onOpenSettings={() => void navigate({ to: "/settings" })} /><div className="mt-6 border-t border-border pt-4"><label className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft" htmlFor="canvas-lab-new-frame">Add workstream</label><div className="mt-2 flex gap-2"><input id="canvas-lab-new-frame" maxLength={60} value={newFrameName} onChange={(event) => { setNewFrameName(event.target.value); if (event.target.value.trim()) setNewFrameError(false); }} className="min-w-0 flex-1 rounded-[var(--radius-control)] border border-input bg-background px-2 text-[12px]" placeholder="Workstream name" /><Button size="sm" variant="outline" onClick={() => { if (addWorkstream(newFrameName)) { setNewFrameName(""); setNewFrameError(false); } else setNewFrameError(true); }}>Add</Button></div>{newFrameError ? <p className="mt-1 font-hand text-[13px] text-destructive">a workstream needs a name</p> : <p className="mt-1 font-hand text-[13px] text-[var(--nb-mid)]">not saved</p>}</div></aside></div> : null}
       <main className={`relative min-w-0 flex-1 flex-col ${mobileView === "board" ? "flex" : "hidden md:flex"}`}>
-        <header className="z-20 flex h-[52px] shrink-0 items-center justify-between gap-3 border-b border-border bg-card px-4"><div className="min-w-0"><span className="block truncate text-[13px] font-medium text-foreground">{title}</span><span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">{status}</span></div><div className="flex items-center gap-1"><div className="canvas-lab-structure-toggle" aria-label="Workboard structure"><Button type="button" size="sm" variant={structureMode === "structured" ? "secondary" : "ghost"} aria-pressed={structureMode === "structured"} onClick={() => { if (structureMode === "structured") return; setStructureMode("structured"); noteWorkboardStructureToggled(orgId, "structured"); }}>Structured</Button><Button type="button" size="sm" variant={structureMode === "freeform" ? "secondary" : "ghost"} aria-pressed={structureMode === "freeform"} onClick={() => { if (structureMode === "freeform") return; setStructureMode("freeform"); setSelectedFrameId(null); noteWorkboardStructureToggled(orgId, "freeform"); }}>Freeform</Button></div><Button type="button" size="sm" variant="outline" className="md:hidden" onClick={() => { setRailOpen(true); setMobileView("rail"); }}>Working from</Button>{selectedLinkId ? <Button type="button" size="sm" variant="ghost" onClick={() => { const link = links.find((entry) => entry.id === selectedLinkId); if (link) removeRelationship(link); }}>Remove relationship</Button> : null}<Button size="sm" variant="outline" onClick={() => fit(true)}>Fit</Button><Button size="icon" variant="ghost" aria-label="Zoom out" onClick={() => zoomAtCentre(stepZoom(zoomRef.current, "out"))}><Minus className="h-3.5 w-3.5" /></Button><button type="button" aria-label="Zoom to 100 percent" className="w-10 text-center font-mono text-[10px] text-soft" onClick={() => zoomAtCentre(1)}>{Math.round(zoom * 100)}%</button><Button size="icon" variant="ghost" aria-label="Zoom in" onClick={() => zoomAtCentre(stepZoom(zoomRef.current, "in"))}><Plus className="h-3.5 w-3.5" /></Button></div></header>
+        <header className="z-20 flex h-[52px] shrink-0 items-center justify-between gap-3 border-b border-border bg-card px-4"><div className="min-w-0"><span className="block truncate text-[13px] font-medium text-foreground">{title}</span><span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">{status}</span></div><div className="flex items-center gap-1"><div className="canvas-lab-structure-toggle" aria-label="Workboard structure"><Button type="button" size="sm" variant={structureMode === "structured" ? "secondary" : "ghost"} aria-pressed={structureMode === "structured"} onClick={() => { if (structureMode === "structured") return; setStructureMode("structured"); noteWorkboardStructureToggled(orgId, "structured"); }}>Structured</Button><Button type="button" size="sm" variant={structureMode === "freeform" ? "secondary" : "ghost"} aria-pressed={structureMode === "freeform"} onClick={() => { if (structureMode === "freeform") return; setStructureMode("freeform"); setSelectedFrameId(null); noteWorkboardStructureToggled(orgId, "freeform"); }}>Freeform</Button></div><Button type="button" size="sm" variant="outline" className="md:hidden" onClick={() => { setRailOpen(true); setMobileView("rail"); }}>Working from</Button>{selectedLinkId ? <Button type="button" size="sm" variant="ghost" onClick={() => { const link = links.find((entry) => entry.id === selectedLinkId); if (link) removeRelationship(link); }}>Remove relationship</Button> : null}{selectedLinkId ? <Button type="button" size="sm" variant="ghost" onClick={() => setRelationPicker({ linkId: selectedLinkId })}>Change relation</Button> : null}<Button size="sm" variant="outline" onClick={() => fit(true)}>Fit</Button><Button size="icon" variant="ghost" aria-label="Zoom out" onClick={() => zoomAtCentre(stepZoom(zoomRef.current, "out"))}><Minus className="h-3.5 w-3.5" /></Button><button type="button" aria-label="Zoom to 100 percent" className="w-10 text-center font-mono text-[10px] text-soft" onClick={() => zoomAtCentre(1)}>{Math.round(zoom * 100)}%</button><Button size="icon" variant="ghost" aria-label="Zoom in" onClick={() => zoomAtCentre(stepZoom(zoomRef.current, "in"))}><Plus className="h-3.5 w-3.5" /></Button></div></header>
         {lab.saveState.status === "conflict" ? <div data-testid="canvas-lab-banner" className="canvas-lab-banner" role="alert"><p className="text-[13px] text-foreground">A newer version of this record was saved.</p><div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => resolveConflict("latest")}>Load latest</Button><Button size="sm" variant="outline" onClick={() => resolveConflict("retry")}>Retry my change</Button></div></div> : null}
         {lab.saveState.status === "error" ? <div data-testid="canvas-lab-banner" className="canvas-lab-banner" role="alert"><p className="text-[13px] text-foreground">Could not save your last change.</p><div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => resolveSaveError("retry")}>Retry</Button><Button size="sm" variant="outline" onClick={() => resolveSaveError("discard")}>Discard</Button></div></div> : null}
         <div ref={shellRef} tabIndex={-1} onPointerDownCapture={(event) => { if (event.button === 0 && spaceRef.current) { event.preventDefault(); event.stopPropagation(); startSpacePan(event); } }} onPointerDown={(event) => { const target = event.target as HTMLElement; const empty = event.target === event.currentTarget || target.dataset["testid"] === "canvas-lab-stage"; if (event.button === 0 && empty) { setKeyboardId(null); setSelectedFrameId(null); setSelectedLinkId((current) => relationshipSelection(current, "deselect")); viewportChangedRef.current = true; setInteraction("pan"); panRef.current = { from: { x: event.clientX, y: event.clientY }, origin: pan }; } }} data-space-pan={spaceHeld} onScroll={(event) => keepViewportUnscrolled(event.currentTarget)} className="canvas-lab-surface relative min-h-0 flex-1 overflow-hidden">
@@ -1279,11 +1318,21 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
             {structureMode === "structured" && Boolean(lab.board?.canEditStructure) && !boardFrames.some((frame) => frame.id === "workstreams") ? (() => { const anchor = workstreamAddAnchor(boardFrames, visibleNodes); if (!anchor) return null; return <div className="canvas-lab-inline-add" style={{ left: anchor.x, top: anchor.y, transform: `scale(${1 / zoom})`, transformOrigin: "top left" }}>{inlineAddOpen ? <div className="canvas-lab-inline-workstream"><input aria-label="Workstream name" ref={inlineNameRef} maxLength={60} value={inlineFrameName} onChange={(event) => { setInlineFrameName(event.target.value); if (event.target.value.trim()) setInlineFrameError(false); }} onKeyDown={(event) => { if (event.key === "Enter" && addWorkstream(inlineFrameName)) { setInlineFrameName(""); setInlineFrameError(false); setInlineAddOpen(false); } if (event.key === "Escape") { setInlineAddOpen(false); setInlineFrameError(false); } }} /><button type="button" onClick={() => { if (addWorkstream(inlineFrameName)) { setInlineFrameName(""); setInlineFrameError(false); setInlineAddOpen(false); } else setInlineFrameError(true); }}>Add</button>{inlineFrameError ? <span>a workstream needs a name</span> : null}</div> : <button type="button" className="canvas-lab-add-workstream" onClick={() => setInlineAddOpen(true)}>+ workstream</button>}</div>; })() : null}
             <svg className="canvas-lab-relationships absolute inset-0 overflow-visible" width={bounds.width} height={bounds.height} aria-label="Local workboard relationships">
               {visibleNodes.filter((node) => node.kind === "chat").flatMap((draft) => (draft.contextIds ?? []).map((contextId) => { const source = visibleNodes.find((node) => node.id === contextId); if (!source) return null; const sx = source.x + source.width; const sy = source.y + source.height / 2; const tx = draft.x; const ty = draft.y + draft.height / 2; const middle = (sx + tx) / 2; return <path key={`${draft.id}:${contextId}`} d={`M ${sx} ${sy} C ${middle} ${sy}, ${middle} ${ty}, ${tx} ${ty}`} fill="none" stroke="var(--nb-graphite)" strokeWidth="1.4" strokeDasharray="4 4" strokeLinecap="round" className="pointer-events-none" />; }))}
-              <LabRelationships links={links} nodes={visibleNodes} measuredHeights={cardHeightsRef.current} selectedLinkId={selectedLinkId} inverseZoom={labInverseZoom(zoom)} editable={Boolean(lab.board?.canEditStructure)} onSelect={(id) => { setKeyboardId(null); setSelectedFrameId(null); setSelectedLinkId((current) => relationshipSelection(current, "select", id)); }} onRemove={removeRelationship} />
+              <LabRelationships links={links} nodes={visibleNodes} measuredHeights={cardHeightsRef.current} selectedLinkId={selectedLinkId} inverseZoom={labInverseZoom(zoom)} zoom={zoom} editable={Boolean(lab.board?.canEditStructure)} onSelect={(id) => { setKeyboardId(null); setSelectedFrameId(null); setSelectedLinkId((current) => relationshipSelection(current, "select", id)); }} onRemove={removeRelationship} onChangeRelation={(link) => setRelationPicker({ linkId: link.id })} />
               {connectorPreview && connectorDragRef.current ? (() => { const source = visibleNodes.find((node) => node.id === connectorDragRef.current?.nodeId); if (!source || !connectorDragRef.current) return null; const from = labAnchorPoint(source, connectorDragRef.current.anchor, cardHeightsRef.current.get(source.id) ?? 108); return <path d={labConnectorPath(from, connectorDragRef.current.anchor, connectorPreview, connectorDragRef.current.anchor)} fill="none" stroke="var(--nb-green)" strokeWidth="2.4" strokeLinecap="round" className="pointer-events-none" />; })() : null}
             </svg>
             {visibleNodes.map((node) => { const canResize = Boolean(lab.board?.canEditStructure) && (node.kind !== "judgment" || Boolean(node.local)); return <LabCard key={node.id} node={node} item={itemByNode(node)} selected={selected.includes(node.id)} focused={keyboardId === node.id} focusOnMount={pendingJudgmentFocusId === node.id} connecting={connectSource !== null || connectorPreview !== null} connectSourceAnchor={connectSource?.nodeId === node.id ? connectSource.anchor : null} onSelect={() => { setAnnouncement(selected.includes(node.id) ? "Removed from context" : "Added to context"); setSelected((current) => toggleContext(current, node.id)); }} onOpen={() => openNode(node)} onBranch={() => branchFrom(node)} onHide={() => hideNode(node)} onDelete={() => deleteNode(node)} onEdit={(text) => setNodes((current) => current ? updateLocalNode(current, node.id, text) : current)} onEditCommitted={() => { noteWorkboardNodeEdited(orgId, eventKind(node)); const current = nodesRef.current.find((entry) => entry.id === node.id); if (current?.durableId) void persistNodePatch(current.id, { body: current.summary, title: current.title }); }} onAnchorPointerDown={(side, event) => startPointerConnect(node, side, event)} onAnchorActivate={(side) => chooseConnectAnchor(node, side)} onMenuOpened={() => { if (connectSource || connectorDragRef.current) cancelConnect(); noteWorkboardCardMenuOpened(orgId, eventKind(node), node.ownership); }} onMenuOpenChange={setCardMenuOpen} onMeasure={(height) => cardHeightsRef.current.set(node.id, height)} onPointerDown={(event) => { setFront((current) => bringToFront(current, node.id)); onCardPointerDown(node, event); }} onFocus={() => { setFront((current) => bringToFront(current, node.id)); setKeyboardId(node.id); setSelectedFrameId(null); setSelectedLinkId((current) => relationshipSelection(current, "deselect")); if (pendingJudgmentFocusId === node.id) setPendingJudgmentFocusId(null); }} onKeyDown={(event) => onCardKeyDown(node, event)} canResize={canResize} onResizeStart={(corner, event) => startResize("card", node.id, corner, { x: node.x, y: node.y, width: node.width, height: node.height }, event)} onResizeKeyDown={(corner, event) => keyboardResize("card", node.id, corner, { x: node.x, y: node.y, width: node.width, height: node.height }, event)} onResizeKeyUp={finishKeyboardResize} onFit={() => fitCard(node)} frameChoices={boardFrames.map((frame) => ({ id: frame.id, name: frame.name }))} structured={structureMode === "structured"} onMoveToFrame={(frameId) => moveToFrame(node, frameId)} stackZ={cardStackZ(front, node.id)} commentCount={node.workItemId ? commentCounts[node.workItemId] ?? 0 : 0} onOpenComments={() => { setFocusOpensComments(true); setFocusId(node.id); }} />; })}
             {linkRejection ? (() => { const target = visibleNodes.find((node) => node.id === linkRejection.targetId); if (!target) return null; return <LabLinkRejection target={target} message={linkRejection.message} onClear={() => setLinkRejection(null)} />; })() : null}
+            {relationPicker ? (() => {
+              const link = links.find((entry) => entry.id === relationPicker.linkId);
+              const source = link ? visibleNodes.find((node) => node.id === link.fromId) : undefined;
+              const target = link ? visibleNodes.find((node) => node.id === link.toId) : undefined;
+              if (!link || !source || !target) return null;
+              const from = labAnchorPoint(source, link.fromAnchor, cardHeightsRef.current.get(source.id) ?? source.height);
+              const to = labAnchorPoint(target, link.toAnchor, cardHeightsRef.current.get(target.id) ?? target.height);
+              const midpoint = labConnectorMidpoint(from, link.fromAnchor, to, link.toAnchor);
+              return <LabRelationPicker point={{ x: midpoint.x, y: midpoint.y + 14 }} current={link.relation ?? "context"} onPick={(relation) => { changeRelation(link.id, relation); setRelationPicker(null); }} onClose={() => setRelationPicker(null)} />;
+            })() : null}
             {dropPrompt ? (() => { const node = visibleNodes.find((entry) => entry.id === dropPrompt.nodeId); const frame = boardFrames.find((entry) => entry.id === dropPrompt.frameId); if (!node || !frame) return null; return <div data-drop-prompt="true" className="canvas-lab-drop-prompt" style={{ left: node.x, top: node.y + node.height + 10 }}><span>Move to {frame.name}?</span><button type="button" onClick={() => { moveToFrame(node, frame.id); closeDropPrompt("yes"); }}>Yes</button><button type="button" onClick={() => closeDropPrompt("keep")}>Keep</button></div>; })() : null}
           </div> : null}
           {undoToast ? <LabUndoToast message={undoToast.message} onUndo={() => undoFromToast(undoToast.entry)} onClose={() => setUndoToast(null)} /> : null}
