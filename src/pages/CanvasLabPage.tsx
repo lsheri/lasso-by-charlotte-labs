@@ -11,6 +11,7 @@ import { LabCard } from "@/components/canvas-lab/LabCard";
 import { LabFrame as LabFrameElement } from "@/components/canvas-lab/LabFrame";
 import { LabLinkRejection } from "@/components/canvas-lab/LabLinkRejection";
 import { LabRelationships } from "@/components/canvas-lab/LabRelationships";
+import { LabRelationPicker } from "@/components/canvas-lab/LabRelationPicker";
 import { LabUndoToast } from "@/components/canvas-lab/LabUndoToast";
 import {
   canUndoToastEntry,
@@ -48,6 +49,7 @@ import {
   fitWorkboardViewport,
   fitFrameToNodes,
   labAnchorPoint,
+  labConnectorMidpoint,
   labConnectorPath,
   labInverseZoom,
   linkRemovalAnnouncement,
