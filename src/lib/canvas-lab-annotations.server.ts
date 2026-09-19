@@ -71,7 +71,17 @@ export async function listMyAnnotations(
     .is("archived_at", null)
     .order("turn_no", { ascending: true })
     .order("char_start", { ascending: true });
-  return ((data ?? []) as AnnotationRow[]).map(highlightDto);
+  const rows = (data ?? []) as AnnotationRow[];
+  if (rows.length === 0) return [];
+
+  const { data: turns } = await db
+    .from("turns")
+    .select("turn_no, content_hash")
+    .eq("work_item_id", workItemId);
+  const hashByTurn = new Map<number, string | null>(
+    (turns ?? []).map((turn) => [turn.turn_no, turn.content_hash ?? null]),
+  );
+  return rows.map((row) => highlightDto(row, hashByTurn.get(row.turn_no ?? -1) ?? null));
 }
 
 export type CreateHighlightInput = {
