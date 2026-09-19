@@ -188,7 +188,7 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
   const connectorDragRef = useRef<{ nodeId: string; anchor: LabAnchor; from: Point; moved: boolean } | null>(null);
   const cardHeightsRef = useRef(new Map<string, number>());
   const resizeRef = useRef<{ kind: "card" | "frame"; id: string; corner: LabResizeCorner; start: LabRect; pointer: Point; method: "pointer" | "keyboard" } | null>(null);
-  const pendingJudgmentFocusRef = useRef<string | null>(null);
+  const [pendingJudgmentFocusId, setPendingJudgmentFocusId] = useState<string | null>(null);
   const panRef = useRef<{ from: Point; origin: Point } | null>(null);
   const zoomRef = useRef(zoom);
   zoomRef.current = zoom;
@@ -245,16 +245,6 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
   const notAvailable = !loadingBoard && !isError && !engagement;
   const boardReady = !loadingBoard && !isError && Boolean(engagement) && nodes !== null && frames !== null;
   fitInputsRef.current = { frames: boardFrames, nodes: visibleNodes, structured: structureMode === "structured" };
-
-  useEffect(() => {
-    const pendingId = pendingJudgmentFocusRef.current;
-    if (!pendingId || !visibleNodes.some((node) => node.id === pendingId)) return;
-    pendingJudgmentFocusRef.current = null;
-    requestAnimationFrame(() => {
-      const card = document.querySelector<HTMLElement>(`[data-node-id="${CSS.escape(pendingId)}"]`);
-      card?.focus({ preventScroll: true });
-    });
-  }, [visibleNodes]);
 
   useEffect(() => {
     if (!boardReady) return;
@@ -843,7 +833,7 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
     const frameId = kind === "decision" ? "decisions" : kind === "deliverable" ? "outputs" : kind === "source" ? "foundation" : boardFrames.find((frame) => frame.id.startsWith("task:"))?.id ?? "foundation";
     const frame = boardFrames.find((entry) => entry.id === frameId) ?? boardFrames[0];
     if (!frame) return;
-    const node = createLocalNode(kind, frame, allNodes, judgment);
+    const node = createLocalNode(kind, frame, visibleNodes, judgment);
     setNodes((current) => current ? [...current, node] : current);
     noteWorkboardNodeCreated(orgId, kind === "judgment" ? "human_judgment" : kind, judgment);
     if (kind === "judgment") {
@@ -851,7 +841,7 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
       if (shell) setPan((current) => panToRevealNode(current, zoomRef.current, node, { width: shell.clientWidth, height: shell.clientHeight }));
       setKeyboardId(node.id);
       setSelectedFrameId(null);
-      pendingJudgmentFocusRef.current = node.id;
+      setPendingJudgmentFocusId(node.id);
       void (async () => {
         if (!(await materialize())) return;
         const input = nodeToInput(node);
@@ -1040,7 +1030,7 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
               {links.map((link) => { const source = visibleNodes.find((node) => node.id === link.fromId); const target = visibleNodes.find((node) => node.id === link.toId); if (!source || !target) return null; const from = labAnchorPoint(source, link.fromAnchor, cardHeightsRef.current.get(source.id) ?? 108); const to = labAnchorPoint(target, link.toAnchor, cardHeightsRef.current.get(target.id) ?? 108); const active = selectedLinkId === link.id; const path = labConnectorPath(from, link.fromAnchor, to, link.toAnchor); const selectLink = () => setSelectedLinkId(link.id); return <g key={link.id}><path d={path} fill="none" stroke="transparent" strokeWidth="10" className="canvas-lab-relationship-hit" onClick={selectLink} /><path role="button" tabIndex={0} aria-label={`Select relationship from ${source.title} to ${target.title}`} onClick={selectLink} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); selectLink(); } }} d={path} fill="none" stroke={active ? "var(--nb-green)" : "var(--nb-graphite)"} strokeWidth={active ? "2.4" : "1.4"} strokeLinecap="round" className="canvas-lab-relationship-line cursor-pointer outline-none focus:stroke-[var(--nb-green)]" /></g>; })}
               {connectorPreview && connectorDragRef.current ? (() => { const source = visibleNodes.find((node) => node.id === connectorDragRef.current?.nodeId); if (!source || !connectorDragRef.current) return null; const from = labAnchorPoint(source, connectorDragRef.current.anchor, cardHeightsRef.current.get(source.id) ?? 108); return <path d={labConnectorPath(from, connectorDragRef.current.anchor, connectorPreview, connectorDragRef.current.anchor)} fill="none" stroke="var(--nb-green)" strokeWidth="2.4" strokeLinecap="round" className="pointer-events-none" />; })() : null}
             </svg>
-            {visibleNodes.map((node) => { const canResize = Boolean(lab.board?.canEditStructure) && (node.kind !== "judgment" || Boolean(node.local)); return <LabCard key={node.id} node={node} item={itemByNode(node)} selected={selected.includes(node.id)} focused={keyboardId === node.id} connecting={connectSource !== null || connectorPreview !== null} connectSourceAnchor={connectSource?.nodeId === node.id ? connectSource.anchor : null} onSelect={() => setSelected((current) => { const adding = !current.includes(node.id); setAnnouncement(adding ? "Added to context" : "Removed from context"); return toggleContext(current, node.id); })} onOpen={() => openNode(node)} onBranch={() => branchFrom(node)} onHide={() => hideNode(node)} onDelete={() => deleteNode(node)} onEdit={(text) => setNodes((current) => current ? updateLocalNode(current, node.id, text) : current)} onEditCommitted={() => { noteWorkboardNodeEdited(orgId, eventKind(node)); const current = nodesRef.current.find((entry) => entry.id === node.id); if (current?.durableId) void persistNodePatch(current.id, { body: current.summary, title: current.title }); }} onAnchorPointerDown={(side, event) => startPointerConnect(node, side, event)} onAnchorActivate={(side) => chooseConnectAnchor(node, side)} onMenuOpened={() => { if (connectSource || connectorDragRef.current) cancelConnect(); noteWorkboardCardMenuOpened(orgId, eventKind(node), node.ownership); }} onMenuOpenChange={setCardMenuOpen} onMeasure={(height) => cardHeightsRef.current.set(node.id, height)} onPointerDown={(event) => onCardPointerDown(node, event)} onFocus={() => { setKeyboardId(node.id); setSelectedFrameId(null); }} onKeyDown={(event) => onCardKeyDown(node, event)} canResize={canResize} onResizeStart={(corner, event) => startResize("card", node.id, corner, { x: node.x, y: node.y, width: node.width, height: node.height }, event)} onResizeKeyDown={(corner, event) => keyboardResize("card", node.id, corner, { x: node.x, y: node.y, width: node.width, height: node.height }, event)} onResizeKeyUp={finishKeyboardResize} onFit={() => fitCard(node)} frameChoices={boardFrames.map((frame) => ({ id: frame.id, name: frame.name }))} structured={structureMode === "structured"} onMoveToFrame={(frameId) => moveToFrame(node, frameId)} />; })}
+            {visibleNodes.map((node) => { const canResize = Boolean(lab.board?.canEditStructure) && (node.kind !== "judgment" || Boolean(node.local)); return <LabCard key={node.id} node={node} item={itemByNode(node)} selected={selected.includes(node.id)} focused={keyboardId === node.id} focusOnMount={pendingJudgmentFocusId === node.id} connecting={connectSource !== null || connectorPreview !== null} connectSourceAnchor={connectSource?.nodeId === node.id ? connectSource.anchor : null} onSelect={() => setSelected((current) => { const adding = !current.includes(node.id); setAnnouncement(adding ? "Added to context" : "Removed from context"); return toggleContext(current, node.id); })} onOpen={() => openNode(node)} onBranch={() => branchFrom(node)} onHide={() => hideNode(node)} onDelete={() => deleteNode(node)} onEdit={(text) => setNodes((current) => current ? updateLocalNode(current, node.id, text) : current)} onEditCommitted={() => { noteWorkboardNodeEdited(orgId, eventKind(node)); const current = nodesRef.current.find((entry) => entry.id === node.id); if (current?.durableId) void persistNodePatch(current.id, { body: current.summary, title: current.title }); }} onAnchorPointerDown={(side, event) => startPointerConnect(node, side, event)} onAnchorActivate={(side) => chooseConnectAnchor(node, side)} onMenuOpened={() => { if (connectSource || connectorDragRef.current) cancelConnect(); noteWorkboardCardMenuOpened(orgId, eventKind(node), node.ownership); }} onMenuOpenChange={setCardMenuOpen} onMeasure={(height) => cardHeightsRef.current.set(node.id, height)} onPointerDown={(event) => onCardPointerDown(node, event)} onFocus={() => { setKeyboardId(node.id); setSelectedFrameId(null); if (pendingJudgmentFocusId === node.id) setPendingJudgmentFocusId(null); }} onKeyDown={(event) => onCardKeyDown(node, event)} canResize={canResize} onResizeStart={(corner, event) => startResize("card", node.id, corner, { x: node.x, y: node.y, width: node.width, height: node.height }, event)} onResizeKeyDown={(corner, event) => keyboardResize("card", node.id, corner, { x: node.x, y: node.y, width: node.width, height: node.height }, event)} onResizeKeyUp={finishKeyboardResize} onFit={() => fitCard(node)} frameChoices={boardFrames.map((frame) => ({ id: frame.id, name: frame.name }))} structured={structureMode === "structured"} onMoveToFrame={(frameId) => moveToFrame(node, frameId)} />; })}
             {dropPrompt ? (() => { const node = visibleNodes.find((entry) => entry.id === dropPrompt.nodeId); const frame = boardFrames.find((entry) => entry.id === dropPrompt.frameId); if (!node || !frame) return null; return <div data-drop-prompt="true" className="canvas-lab-drop-prompt" style={{ left: node.x, top: node.y + node.height + 10 }}><span>Move to {frame.name}?</span><button type="button" onClick={() => { moveToFrame(node, frame.id); closeDropPrompt("yes"); }}>Yes</button><button type="button" onClick={() => closeDropPrompt("keep")}>Keep</button></div>; })() : null}
           </div> : null}
           <CanvasLabStatusLine loading={loadingBoard} unavailable={isError || notAvailable} empty={boardReady && visibleNodes.length === 0} />

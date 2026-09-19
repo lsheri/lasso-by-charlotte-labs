@@ -1243,6 +1243,9 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 .canvas-lab-context-title {
   padding-right: calc(24px * var(--lab-inverse-zoom, 1));
 }
+.canvas-lab-context-header {
+  padding-right: calc(24px * var(--lab-inverse-zoom, 1));
+}
 .canvas-lab-work-note-context .nb-paper-body > p {
   padding-right: calc(24px * var(--lab-inverse-zoom, 1));
 }
@@ -1419,10 +1422,10 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   padding: 12px;
 }
 .canvas-lab-guide { top: 60px; width: 896px; }
-.canvas-lab-judgment-trigger {
+.canvas-lab-step-add {
   position: relative;
 }
-.canvas-lab-judgment-trigger::before {
+.canvas-lab-step-add::before {
   content: "";
   position: absolute;
   left: 50%;

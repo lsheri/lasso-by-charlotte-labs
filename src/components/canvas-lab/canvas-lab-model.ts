@@ -302,12 +302,30 @@ export function draftAnchor(frame: LabFrame, nodes: LabNode[]): Point {
 
 export function localNodeAnchor(frame: LabFrame, nodes: LabNode[], near?: Point): Point {
   const occupied = nodes.filter((node) => node.frame === frame.id);
-  if (!near) return stack(frame, occupied.length);
+  if (!near) return firstFreeLocalNodeAnchor(frame, nodes);
   const candidates = Array.from({ length: 12 }, (_, index) => snapPoint({
     x: Math.min(frame.x + frame.width - CARD_WIDTH - FRAME_PADDING, near.x + 40 + (index % 2) * 44),
     y: Math.min(frame.y + frame.height - 96, near.y + 60 + Math.floor(index / 2) * 44),
   }));
   return candidates.find((point) => occupied.every((node) => Math.abs(node.x - point.x) > 40 || Math.abs(node.y - point.y) > 40)) ?? stack(frame, occupied.length);
+}
+
+function cardRectsIntersect(point: Point, node: LabNode): boolean {
+  return point.x < node.x + node.width && point.x + CARD_WIDTH > node.x && point.y < node.y + node.height && point.y + CARD_HEIGHT > node.y;
+}
+
+/** Choose the first stack slot clear of every visible card on the board. */
+export function firstFreeLocalNodeAnchor(frame: LabFrame, visibleNodes: LabNode[]): Point {
+  const columns = Math.max(1, Math.floor((frame.width - FRAME_PADDING * 2) / (CARD_WIDTH + 18)));
+  const rows = Math.max(1, Math.floor((frame.height - 60 - FRAME_PADDING - CARD_HEIGHT) / CARD_GAP_Y) + 1);
+  const candidateCount = columns * rows;
+  for (let index = 0; index < candidateCount; index += 1) {
+    const candidate = stack(frame, index);
+    if (visibleNodes.every((node) => !cardRectsIntersect(candidate, node))) return candidate;
+  }
+  const members = visibleNodes.filter((node) => node.frame === frame.id);
+  const bottom = members.length > 0 ? Math.max(...members.map((node) => node.y + node.height)) : frame.y + 60 - CARD_GAP_Y;
+  return snapPoint({ x: frame.x + FRAME_PADDING, y: bottom + 32 });
 }
 
 let localCounter = 0;
