@@ -36,6 +36,7 @@ import {
   resizeLabRect,
   toggleContext,
   updateLocalNode,
+  viewportSizeChanged,
   type LabComment,
   type LabAnchor,
   type LabFrame,
@@ -174,6 +175,8 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
   const openedRef = useRef(false);
   const fittedReadyRef = useRef(false);
   const viewportChangedRef = useRef(false);
+  const fitInputsRef = useRef<{ frames: LabFrame[]; nodes: LabNode[]; structured: boolean }>({ frames: [], nodes: [], structured: true });
+  const observedSizeRef = useRef<{ width: number; height: number } | null>(null);
   /** The deterministic virtual seed a durable board is overlaid onto. */
   const virtualBaseRef = useRef<{ frames: LabFrame[]; nodes: LabNode[] } | null>(null);
 
@@ -216,6 +219,7 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
   const loadingBoard = isLoading || lab.boardLoading;
   const notAvailable = !loadingBoard && !isError && !engagement;
   const boardReady = !loadingBoard && !isError && Boolean(engagement) && nodes !== null && frames !== null;
+  fitInputsRef.current = { frames: boardFrames, nodes: visibleNodes, structured: structureMode === "structured" };
 
   useEffect(() => {
     if (!boardReady) return;
@@ -234,29 +238,38 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
     const shell = shellRef.current;
     if (!shell || !boardReady) return;
     if (manual) viewportChangedRef.current = true;
+    const inputs = fitInputsRef.current;
     const result = fitWorkboardViewport(
       { width: shell.clientWidth, height: shell.clientHeight },
-      structureMode === "structured" ? boardFrames : [],
-      visibleNodes,
+      inputs.structured ? inputs.frames : [],
+      inputs.nodes,
       cardHeightsRef.current,
     );
     setZoom(result.zoom);
     setPan(result.pan);
-  }, [boardFrames, boardReady, structureMode, visibleNodes]);
+  }, [boardReady]);
 
   useEffect(() => {
     const shell = shellRef.current;
     if (!shell || !boardReady) return;
+    const size = { width: shell.clientWidth, height: shell.clientHeight };
     if (!fittedReadyRef.current) {
       fittedReadyRef.current = true;
+      observedSizeRef.current = size;
       fit();
     }
-    const observer = new ResizeObserver(() => {
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      const next = entry
+        ? { width: entry.contentRect.width, height: entry.contentRect.height }
+        : { width: shell.clientWidth, height: shell.clientHeight };
+      if (!viewportSizeChanged(observedSizeRef.current, next)) return;
+      observedSizeRef.current = next;
       if (!viewportChangedRef.current) fit();
     });
     observer.observe(shell);
     return () => observer.disconnect();
-  }, [boardReady, fit]);
+  }, [boardReady]);
 
   /* ---------------- Phase 3: durable save pipeline ---------------- */
   const nodesRef = useRef<LabNode[]>([]);
