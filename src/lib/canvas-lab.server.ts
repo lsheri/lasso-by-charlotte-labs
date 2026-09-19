@@ -392,7 +392,7 @@ export async function applyWorkboardCommand(
         to_node_id: command.toNodeId,
         from_anchor: command.fromAnchor,
         to_anchor: command.toAnchor,
-        relation: command.relation,
+        relation: command.relation ?? "context",
         author_profile_id: profile.id,
         created_by: profile.id,
         updated_by: profile.id,
