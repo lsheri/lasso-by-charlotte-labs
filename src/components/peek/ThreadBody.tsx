@@ -324,6 +324,7 @@ export function ThreadBody({
                     </span>
                   </div>
                   <div
+                    data-turn-content={turn.turn_no}
                     data-lit={lit ? "true" : undefined}
                     data-testid={lit ? `turn-lit-${turn.turn_no}` : undefined}
                     className={`relative max-w-[90%] whitespace-pre-wrap rounded-[var(--radius)] border border-border bg-card px-4 py-3 font-mono text-xs leading-relaxed text-foreground shadow-card${
@@ -340,13 +341,19 @@ export function ThreadBody({
                       : {})}
                   >
                     {focused && !focusedRange ? <EvidenceCircle /> : null}
-                    {focusedRange ? <FocusedContent content={turn.content} range={focusedRange} /> : <TurnContent
-                      turn={turn}
-                      marks={marks}
-                      activeMarkId={activeMarkId}
-                      settledIds={settledIds}
-                      reducedMotion={reducedMotion}
-                    />}
+                    {focusedRange ? (
+                      <FocusedContent content={turn.content} range={focusedRange} />
+                    ) : marked && !flag ? (
+                      <HighlightedContent content={turn.content} ranges={liveRanges} />
+                    ) : (
+                      <TurnContent
+                        turn={turn}
+                        marks={marks}
+                        activeMarkId={activeMarkId}
+                        settledIds={settledIds}
+                        reducedMotion={reducedMotion}
+                      />
+                    )}
                   </div>
                   {revisedLabel(turn) ? (
                     <p className="mt-1 text-[11px] text-muted-foreground">{revisedLabel(turn)}</p>
