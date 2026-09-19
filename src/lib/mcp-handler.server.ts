@@ -1043,17 +1043,46 @@ async function pushConversation(
           continue;
         }
       }
-      // Reuse the stored path for a known attachment; give new ones a collision-proof suffix.
+      const newHash = await sha256Hex(attachment.content);
+      const decision = decideAttachmentWrite(match ?? null, newHash);
+
+      // Same bytes as the stored version: nothing to write, nothing lost.
+      if (decision === "unchanged") {
+        saved += 1;
+        if (match?.id) capturedIds.push(match.id);
+        continue;
+      }
+
+      // Give every write its own object, so an earlier version is never replaced.
       const suffix = (await sha256Hex(attachment.sourceArtifactId)).slice(0, 8);
-      const path =
-        match?.content_ref ??
-        `${owner.userId}/conv-${slugify(origId)}-${slugify(attachment.title)}-${suffix}`;
+      const base = `${owner.userId}/conv-${slugify(origId)}-${slugify(attachment.title)}-${suffix}`;
+      const path = decision === "insert" ? base : `${base}-${crypto.randomUUID()}`;
       const upload = await supabaseAdmin.storage
         .from("work-files")
-        .upload(path, encoded, { contentType: "text/plain; charset=utf-8", upsert: true });
+        .upload(path, encoded, { contentType: "text/plain; charset=utf-8", upsert: false });
       if (upload.error) {
         problems.push(`'${attachment.title}': ${upload.error.message}`);
         continue;
+      }
+
+      if (decision === "new_version" && match) {
+        try {
+          const nextNo = await recordNewVersion(supabaseAdmin, {
+            workItemId: match.id,
+            previousRef: match.content_ref,
+            previousHash: match.content_hash,
+            previousAt: match.captured_at,
+            newRef: path,
+            newHash,
+            sourceEvent: "mcp_repush",
+            origin: "model_artifact",
+          });
+          // A first re-push also backfills the version the item already held.
+          attachmentVersionRows += nextNo === 2 ? 2 : 1;
+        } catch (err) {
+          problems.push(`'${attachment.title}': ${err instanceof Error ? err.message : "version"}`);
+          continue;
+        }
       }
 
       const fields = {
