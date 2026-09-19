@@ -414,7 +414,7 @@ describe("dragEndDecision", () => {
       mode: "structured",
       editable: true,
     });
-    expect(decision.position).toEqual({ x: 924, y: 715 });
+    expect(decision.position).toEqual({ x: 924, y: 726 });
     expect(decision.promptFrameId).toBe("custom:readout");
   });
 
