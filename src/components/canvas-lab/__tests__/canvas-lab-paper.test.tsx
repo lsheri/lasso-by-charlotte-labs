@@ -85,7 +85,9 @@ describe("Canvas Lab paper", () => {
     expect(body?.classList.contains("canvas-lab-paper-body")).toBe(true);
     expect(editor.classList.contains("flex-1")).toBe(true);
     expect(editor.classList.contains("basis-0")).toBe(true);
-    expect(editor.classList.contains("min-h-[34px]")).toBe(true);
+    expect(editor.classList.contains("min-h-0")).toBe(true);
+    expect(editor.classList.contains("overflow-auto")).toBe(true);
+    expect(editor.classList.contains("min-h-[34px]")).toBe(false);
   });
 
   it("renders a document glyph when an upload has no vendor mark", () => {
@@ -103,5 +105,33 @@ describe("Canvas Lab paper", () => {
   it("marks an existing deliverable flag in the header", () => {
     paper({ ...baseNode, kind: "work", workItemId: "work", deliverable: true }, workItem);
     expect(screen.getByText("Deliverable")).not.toBeNull();
+  });
+
+  it("keeps the header and title from shrinking at compact", () => {
+    const { container } = paper({ ...baseNode, width: 232, height: 112 });
+    expect(container.querySelector(".canvas-lab-paper-header")?.classList.contains("shrink-0")).toBe(true);
+    expect(container.querySelector(".canvas-lab-paper-title")?.classList.contains("shrink-0")).toBe(true);
+  });
+
+  it("truncates the header source label with an ellipsis", () => {
+    const { container } = paper(baseNode);
+    const label = container.querySelector(".canvas-lab-paper-source > span") as HTMLElement;
+    expect(label.classList.contains("min-w-0")).toBe(true);
+    expect(label.classList.contains("overflow-hidden")).toBe(true);
+    expect(label.classList.contains("text-ellipsis")).toBe(true);
+    expect(label.classList.contains("whitespace-nowrap")).toBe(true);
+  });
+
+  it("drops the header date at compact and keeps it in the expanded footer", () => {
+    const compact = paper({ ...baseNode, width: 232, height: 112 }, workItem);
+    const compactLabel = compact.container.querySelector(".canvas-lab-paper-source") as HTMLElement;
+    expect(compactLabel.textContent).not.toContain("·");
+    compact.unmount();
+
+    const expanded = paper({ ...baseNode, width: 340, height: 240 }, workItem);
+    const expandedLabel = expanded.container.querySelector(".canvas-lab-paper-source") as HTMLElement;
+    expect(expandedLabel.textContent).toContain("·");
+    const footer = expanded.container.querySelector(".canvas-lab-paper-footer") as HTMLElement;
+    expect(footer.textContent).not.toBe("");
   });
 });

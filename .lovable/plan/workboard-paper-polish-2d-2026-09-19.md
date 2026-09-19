@@ -23,3 +23,6 @@ Neither `LabCard` nor `LabCardMenu` emits telemetry directly. Their existing cal
 ## Visual change
 
 Every card kind now uses the same tier-aware paper anatomy: factual glyph and micro labels, owner, handwritten title, available summary, and expanded factual footer.
+## Follow-up 2 (b60bf7d)
+
+Data impact: none. Controls, states, events, consent, and schema unchanged; the header/title no longer shrink, the source label truncates with an ellipsis, and the compact header drops the date (it stays in the expanded footer). The compact judgment editor now fills only the remaining body space with min-height 0 and overflow auto.
