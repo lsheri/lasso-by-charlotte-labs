@@ -71,6 +71,27 @@ describe("Canvas Lab paper", () => {
     expect(expanded.container.querySelector(".canvas-lab-paper-footer")).not.toBeNull();
   });
 
+  it("shows a compact decision summary in two lines", () => {
+    const { container } = paper({ ...baseNode, kind: "decision", width: 232, height: 112 });
+    const summary = screen.getByText(baseNode.summary);
+    expect(summary.classList.contains("line-clamp-2")).toBe(true);
+    expect(container.querySelector(".canvas-lab-paper-summary")).toBe(summary);
+  });
+
+  it("lets a compact own judgment editor use the remaining body space", () => {
+    const { container } = paper({ ...baseNode, kind: "judgment", ownership: "yours", local: true, width: 232, height: 112 });
+    const body = container.querySelector(".canvas-lab-paper-body");
+    const editor = screen.getByRole("textbox");
+    expect(body?.classList.contains("canvas-lab-paper-body")).toBe(true);
+    expect(editor.classList.contains("canvas-lab-paper-edit")).toBe(true);
+  });
+
+  it("renders a document glyph when an upload has no vendor mark", () => {
+    const uploadItem = { ...workItem, source: "upload", source_vendor: null };
+    const { container } = paper({ ...baseNode, kind: "work", workItemId: uploadItem.id }, uploadItem);
+    expect(container.querySelector('svg[data-icon="work"]')).not.toBeNull();
+  });
+
   it("does not use a work node summary when the record has no summary field", () => {
     paper({ ...baseNode, kind: "work", workItemId: "work", summary: "Invented summary must not appear" }, workItem);
     expect(screen.queryByText("Invented summary must not appear")).toBeNull();

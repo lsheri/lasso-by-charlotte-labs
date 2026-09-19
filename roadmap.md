@@ -166,3 +166,5 @@
 - [x] Use one tier-aware paper treatment for every Workboard card kind
 - [x] Keep existing card controls, states, and events unchanged
 - [x] Show only record-backed labels and details
+- [x] Keep non-item reasoning visible and own judgment editors contained at compact size
+- [x] Show a document glyph when a work source has no vendor mark
