@@ -139,7 +139,7 @@ export function LabCard({
           <WorkNote item={item} dense className={cn("h-full w-full", selected && "canvas-lab-work-note-context")} />
         ) : (
           <>
-            <div className={cn("flex items-center justify-between gap-2 pr-6", selected && "canvas-lab-context-header")}>
+            <div className={cn("flex items-center justify-between gap-2", selected ? "canvas-lab-context-header" : "pr-6")}>
               <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">{node.typeLabel}</span>
               <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">{ownerLabel(node)}</span>
             </div>
