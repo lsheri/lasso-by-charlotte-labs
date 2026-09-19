@@ -77,6 +77,8 @@ import {
   noteWorkboardTrailSelected,
   noteWorkboardDropPromptAnswered,
   noteWorkboardStructureToggled,
+  noteWorkboardSaveErrorResolved,
+  noteWorkboardContextChanged,
   type LabNodeEventKind,
   type WorkboardPersistEntity,
 } from "@/components/canvas-lab/canvas-lab-telemetry";
