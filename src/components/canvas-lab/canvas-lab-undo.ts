@@ -16,6 +16,7 @@ export type UndoAction =
   | "remove_note"
   | "relationship_add"
   | "relationship_remove"
+  | "link_relation"
   | "workstream_move";
 
 export type UndoDirection = "undo" | "redo";
