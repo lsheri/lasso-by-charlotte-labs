@@ -28,6 +28,7 @@ import {
   seedCanvas,
   sizeSeedFrames,
   dropPromptFrame,
+  dragEndDecision,
   nextWorkstreamRect,
   workstreamAddAnchor,
   toggleContext,
@@ -392,5 +393,50 @@ describe("canvas lab model", () => {
     ];
     expect([...connectedLabNodeIds(nodes, links, "work:w3")]).toEqual(["work:w3"]);
     expect(connectedLabNodeIds(nodes, links, "missing")).toEqual(new Set());
+  });
+});
+
+describe("dragEndDecision", () => {
+  const frames = [
+    { id: "task:tier2", name: "Tier 2 modelling", x: 60, y: 420, width: 1200, height: 900 },
+    { id: "custom:readout", name: "Readout deck", x: 900, y: 460, width: 380, height: 420 },
+  ];
+  const node = { id: "work:w1", frame: "task:tier2", x: 748, y: 638, width: 232, height: 112 } as ReturnType<typeof seedCanvas>[number];
+
+  it("lands the move from the pointerup event even when no render happened", () => {
+    const decision = dragEndDecision({
+      origin: { x: node.x, y: node.y },
+      from: { x: 500, y: 400 },
+      pointer: { x: 676, y: 477 },
+      zoom: 1,
+      node,
+      frames,
+      mode: "structured",
+      editable: true,
+    });
+    expect(decision.position).toEqual({ x: 924, y: 715 });
+    expect(decision.promptFrameId).toBe("custom:readout");
+  });
+
+  it("writes nothing when the computed delta is zero", () => {
+    const decision = dragEndDecision({
+      origin: { x: node.x, y: node.y },
+      from: { x: 500, y: 400 },
+      pointer: { x: 502, y: 401 },
+      zoom: 1,
+      node,
+      frames,
+      mode: "structured",
+      editable: true,
+    });
+    expect(decision.position).toBeNull();
+    expect(decision.promptFrameId).toBeNull();
+  });
+
+  it("saves without prompting in Freeform or for a read-only card", () => {
+    const base = { origin: { x: node.x, y: node.y }, from: { x: 500, y: 400 }, pointer: { x: 676, y: 477 }, zoom: 1, node, frames };
+    expect(dragEndDecision({ ...base, mode: "freeform", editable: true }).position).not.toBeNull();
+    expect(dragEndDecision({ ...base, mode: "freeform", editable: true }).promptFrameId).toBeNull();
+    expect(dragEndDecision({ ...base, mode: "structured", editable: false }).promptFrameId).toBeNull();
   });
 });

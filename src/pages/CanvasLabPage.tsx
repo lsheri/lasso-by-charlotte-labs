@@ -28,7 +28,6 @@ import {
   labConnectorPath,
   localNodeAnchor,
   moveNode,
-  dropPromptFrame,
   dragEndDecision,
   nextWorkstreamRect,
   workstreamAddAnchor,
