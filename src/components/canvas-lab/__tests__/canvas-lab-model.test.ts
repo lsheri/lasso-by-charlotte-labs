@@ -321,7 +321,7 @@ describe("canvas lab model", () => {
     expect(addLabLink([], "a", "right", "a", "left").error).toContain("itself");
     const created = addLabLink([], "a", "right", "b", "left");
     expect(created.error).toBeNull();
-    expect(addLabLink(created.links, "a", "right", "b", "left").error).toContain("already connected");
+    expect(addLabLink(created.links, "a", "right", "b", "left").error).toBe("Already connected");
     expect(addLabLink(created.links, "a", "bottom", "b", "top").error).toBe("Already connected");
     expect(addLabLink(created.links, "b", "left", "a", "right").error).toBeNull();
   });
