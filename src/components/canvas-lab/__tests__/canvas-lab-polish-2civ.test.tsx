@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * Canvas Lab polish 2c-iv: persistence feedback.
  *

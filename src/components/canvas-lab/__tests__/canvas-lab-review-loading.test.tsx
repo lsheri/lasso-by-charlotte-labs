@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * Canvas Lab polish 2c-iv: "What fed this" claims nothing while it reads.
  */
