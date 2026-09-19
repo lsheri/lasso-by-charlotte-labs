@@ -765,22 +765,22 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
             </div>
           ) : view === "verify" ? (
             <div className="space-y-3">
-              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--nb-rule)] pb-3">
-                <div>
-                  <h2 className="font-hand text-[16px] text-green">Workboard</h2>
-                  <p className="text-[13px] text-muted-foreground">
-                    Arrange this engagement&apos;s work, calls and judgment on one board. Changes save as you go.
-                  </p>
+              <div className="border-b border-[var(--nb-rule)] pb-3">
+                <h2 className="font-hand text-[16px] text-green">Workboard</h2>
+                <p className="text-[13px] text-muted-foreground">
+                  Arrange this engagement&apos;s work, calls and judgment on one board. Changes save as you go.
+                </p>
+                <div className="mt-2">
+                  <Button asChild>
+                    <Link
+                      to="/engagements/$id/canvas-lab"
+                      params={{ id: engagementId }}
+                      search={{ from: "canvas_tab" }}
+                    >
+                      Open workboard
+                    </Link>
+                  </Button>
                 </div>
-                <Button asChild>
-                  <Link
-                    to="/engagements/$id/canvas-lab"
-                    params={{ id: engagementId }}
-                    search={{ from: "canvas_tab" }}
-                  >
-                    Open workboard
-                  </Link>
-                </Button>
               </div>
               <EngagementCanvasView engagementId={engagementId} items={scopedItems} onOpen={openPeek} />
             </div>
