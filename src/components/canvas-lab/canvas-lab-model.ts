@@ -369,6 +369,10 @@ export function linkRemovalAnnouncement(link: Pick<LabLink, "durableId">): strin
   return link.durableId ? "Relationship removed from the workboard." : "Local relationship removed.";
 }
 
+export function relationshipSelection(current: string | null, action: "select" | "deselect", id?: string): string | null {
+  return action === "select" ? id ?? current : null;
+}
+
 export function labAnchorPoint(node: Pick<LabNode, "x" | "y" | "width">, side: LabAnchor, height: number): Point {
   if (side === "top") return { x: node.x + node.width / 2, y: node.y };
   if (side === "right") return { x: node.x + node.width, y: node.y + height / 2 };

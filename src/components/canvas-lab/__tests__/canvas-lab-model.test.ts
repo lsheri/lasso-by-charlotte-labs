@@ -26,6 +26,7 @@ import {
   moveNode,
   nearestLabAnchor,
   removeContext,
+  relationshipSelection,
   resizeLabRect,
   resetChatCounter,
   resetCommentCounter,
@@ -323,6 +324,11 @@ describe("canvas lab model", () => {
     expect(addLabLink(created.links, "a", "right", "b", "left").error).toContain("already connected");
     expect(addLabLink(created.links, "a", "bottom", "b", "top").error).toBe("Already connected");
     expect(addLabLink(created.links, "b", "left", "a", "right").error).toBeNull();
+  });
+
+  it("clears a selected relationship on empty pointer down and Escape decisions", () => {
+    expect(relationshipSelection("link-1", "deselect")).toBeNull();
+    expect(relationshipSelection(null, "select", "link-2")).toBe("link-2");
   });
 
   it("resolves anchored card edges and deterministic nearest sides", () => {
