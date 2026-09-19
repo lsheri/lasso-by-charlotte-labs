@@ -11,8 +11,6 @@ export function LabRelationships({
   measuredHeights,
   selectedLinkId,
   inverseZoom,
-  zoom = 1,
-  editable,
   onSelect,
   onHover,
 }: {
@@ -21,8 +19,6 @@ export function LabRelationships({
   measuredHeights: ReadonlyMap<string, number>;
   selectedLinkId: string | null;
   inverseZoom: number;
-  zoom?: number;
-  editable: boolean;
   onSelect: (id: string) => void;
   onHover?: (id: string | null) => void;
 }) {
