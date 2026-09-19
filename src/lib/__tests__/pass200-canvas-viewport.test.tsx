@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { cleanup, render, screen } from "@testing-library/react";
+import { renderToStaticMarkup } from "react-dom/server";
 
 import { ZOOM_MAX, ZOOM_MIN, clampZoom, stepZoom, wheelPanDelta, zoomAbout } from "../canvas-zoom";
 import { CanvasLabStatusLine } from "@/components/canvas-lab/CanvasLabStatusLine";
@@ -66,11 +66,10 @@ describe("pass 200 — viewport gestures", () => {
   });
 
   it("renders only the reading line while the Workboard reads are pending", () => {
-    render(<CanvasLabStatusLine loading unavailable empty />);
-    expect(screen.getByText("reading the engagement")).toBeTruthy();
-    expect(screen.queryByText("nothing is on this workboard yet")).toBeNull();
-    expect(screen.queryByText("This workboard could not be opened.")).toBeNull();
-    cleanup();
+    const html = renderToStaticMarkup(<CanvasLabStatusLine loading unavailable empty />);
+    expect(html).toContain("reading the engagement");
+    expect(html).not.toContain("nothing is on this workboard yet");
+    expect(html).not.toContain("This workboard could not be opened.");
     const page = read("src/pages/CanvasLabPage.tsx");
     expect(page).toContain("const loadingBoard = isLoading || lab.boardLoading");
     expect(page).toContain('{boardReady ? <div data-testid="canvas-lab-stage"');
