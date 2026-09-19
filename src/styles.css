@@ -1172,6 +1172,12 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   background-image: radial-gradient(circle, var(--nb-rule) 1px, transparent 1px);
   background-size: 22px 22px;
 }
+.canvas-lab-surface[data-space-pan="true"] {
+  cursor: grab;
+}
+.canvas-lab-surface[data-space-pan="true"]:active {
+  cursor: grabbing;
+}
 .canvas-lab-folded-note::after {
   content: "";
   position: absolute;
