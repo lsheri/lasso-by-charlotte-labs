@@ -1167,6 +1167,22 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 .canvas-lab-unfold .canvas-lab-unfold-panel:nth-child(1) { animation: canvas-lab-unfold-left 500ms var(--nb-ease) both; }
 .canvas-lab-unfold .canvas-lab-unfold-panel:nth-child(2) { animation: canvas-lab-unfold-centre 500ms var(--nb-ease) both; transform-origin: center; }
 .canvas-lab-unfold .canvas-lab-unfold-panel:nth-child(3) { animation: canvas-lab-unfold-right 500ms var(--nb-ease) both; transform-origin: right center; }
+/* A banner floats over the board, so the canvas never shifts when it appears. */
+.canvas-lab-banner {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 52px;
+  z-index: 25;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--card);
+  padding: 8px 16px;
+}
+
 .canvas-lab-surface {
   background-color: var(--nb-paper);
   background-image: radial-gradient(circle, var(--nb-rule) 1px, transparent 1px);
