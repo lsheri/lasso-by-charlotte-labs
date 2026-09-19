@@ -18,6 +18,7 @@ function renderFrame(overrides: Partial<React.ComponentProps<typeof LabFrame>> =
     custom: true,
     namedByWorkstream: false,
     removable: true,
+    kind: "custom",
     onSelect: vi.fn(),
     onResizeStart: vi.fn(),
     onResizeKeyDown: vi.fn(),
@@ -42,16 +43,33 @@ describe("LabFrame menu and rename", () => {
     expect(props.onMenuOpened).toHaveBeenCalledTimes(1);
   });
 
-  it("keeps the menu read-only for coaches and limits task workstreams to Fit", () => {
+  it("hides the menu for coaches and limits task workstreams to Fit", () => {
     const first = renderFrame({ editable: false });
-    fireEvent.pointerDown(screen.getByRole("button", { name: "Open workstream menu" }), { button: 0, ctrlKey: false });
+    expect(screen.queryByRole("button", { name: "Open workstream menu" })).toBeNull();
+    fireEvent.contextMenu(screen.getByTestId("lab-frame-custom:risks"));
     expect(screen.queryByRole("menuitem")).toBeNull();
+    expect(first.props.onMenuOpened).not.toHaveBeenCalled();
     first.unmount();
-    renderFrame({ custom: false, namedByWorkstream: true, frame: { ...customFrame, id: "task:1", name: "Discovery", local: false } });
+    renderFrame({ custom: false, kind: "task", namedByWorkstream: true, frame: { ...customFrame, id: "task:1", name: "Discovery", local: false } });
     fireEvent.pointerDown(screen.getByRole("button", { name: "Open workstream menu" }), { button: 0, ctrlKey: false });
     expect(screen.getByRole("menuitem", { name: "Fit contents" })).toBeTruthy();
     expect(screen.queryByRole("menuitem", { name: "Rename" })).toBeNull();
     expect(screen.getByText("Discovery").getAttribute("title")).toBe("Named by the workstream");
+  });
+
+  it("shows role-appropriate guidance and inline creation only to editors", () => {
+    const onAddWorkstream = vi.fn(() => true);
+    const first = renderFrame({ kind: "decisions", custom: false, frame: { ...customFrame, id: "decisions", name: "Decisions" } });
+    expect(screen.getByText("No decisions recorded on this engagement yet.")).toBeTruthy();
+    first.unmount();
+    renderFrame({ editable: false, kind: "outputs", custom: false, frame: { ...customFrame, id: "outputs", name: "Outputs" } });
+    expect(screen.getByText("Nothing here yet.")).toBeTruthy();
+    cleanup();
+    renderFrame({ kind: "task", custom: false, frame: { ...customFrame, id: "workstreams", name: "Workstreams" }, onAddWorkstream });
+    fireEvent.click(screen.getByRole("button", { name: "+ workstream" }));
+    fireEvent.change(screen.getByRole("textbox", { name: "Workstream name" }), { target: { value: "Delivery" } });
+    fireEvent.click(screen.getByRole("button", { name: "Add" }));
+    expect(onAddWorkstream).toHaveBeenCalledWith("Delivery");
   });
 
   it("commits trimmed names on Enter and reverts with Escape", () => {

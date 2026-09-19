@@ -15,6 +15,7 @@ import {
   fitScale,
   fitWorkboardViewport,
   fitFrameToNodes,
+  frameContainingPoint,
   labAnchorPoint,
   labConnectorPath,
   moveNode,
@@ -24,6 +25,8 @@ import {
   resetChatCounter,
   resetCommentCounter,
   seedCanvas,
+  sizeSeedFrames,
+  dropPromptFrame,
   toggleContext,
 } from "@/components/canvas-lab/canvas-lab-model";
 
@@ -88,6 +91,40 @@ describe("canvas lab model", () => {
     expect(frameOf("work:w2")).toBe("task:t1");
     expect(frameOf("work:w3")).toBe("outputs");
     expect(frameOf("decision:d1")).toBe("decisions");
+  });
+
+  it("grows fresh seed frames to contain six workstream cards and five decisions", () => {
+    const crowded = {
+      ...SEED,
+      work: Array.from({ length: 6 }, (_, index) => ({ id: `w${index}`, title: `Work ${index}`, typeLabel: "document", source: "upload", ownedByViewer: true, taskIds: ["t1"], deliverable: false })),
+      decisions: Array.from({ length: 5 }, (_, index) => ({ id: `d${index}`, call: `Decision ${index}`, situation: "Reviewed", ownedByViewer: true })),
+    };
+    const initial = createLabFrames(crowded.tasks);
+    const nodes = seedCanvas(crowded, initial);
+    const frames = sizeSeedFrames(initial, nodes);
+    for (const node of nodes) {
+      const frame = frames.find((entry) => entry.id === node.frame);
+      expect(frame).toBeDefined();
+      if (!frame) continue;
+      expect(node.x).toBeGreaterThanOrEqual(frame.x);
+      expect(node.y).toBeGreaterThanOrEqual(frame.y);
+      expect(node.x + node.width).toBeLessThanOrEqual(frame.x + frame.width);
+      expect(node.y + node.height).toBeLessThanOrEqual(frame.y + frame.height);
+    }
+  });
+
+  it("finds a containing frame and prompts only for a different Structured workstream", () => {
+    const frames = createLabFrames(SEED.tasks);
+    const node = { ...seedCanvas(SEED, frames).find((entry) => entry.id === "work:w1") };
+    expect(node.id).toBe("work:w1");
+    const decisions = frames.find((frame) => frame.id === "decisions");
+    if (!decisions || !node.id || node.width === undefined || node.height === undefined) return;
+    const moved = { ...node, x: decisions.x + 30, y: decisions.y + 80 } as ReturnType<typeof seedCanvas>[number];
+    expect(frameContainingPoint(frames, { x: moved.x + moved.width / 2, y: moved.y + moved.height / 2 })?.id).toBe("decisions");
+    expect(dropPromptFrame(moved, frames, "structured", true)?.id).toBe("decisions");
+    expect(dropPromptFrame(moved, frames, "freeform", true)).toBeNull();
+    expect(dropPromptFrame(moved, frames, "structured", false)).toBeNull();
+    expect(dropPromptFrame({ ...moved, frame: "decisions" }, frames, "structured", true)).toBeNull();
   });
 
   it("marks work the viewer does not own as a teammate's", () => {
