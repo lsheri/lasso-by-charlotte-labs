@@ -1430,6 +1430,55 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   line-height: 1;
   cursor: pointer;
 }
+.canvas-lab-relationship-label {
+  fill: var(--nb-mid);
+  font-family: var(--font-hand);
+  pointer-events: none;
+}
+.canvas-lab-relationship-controls {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+}
+.canvas-lab-relationship-change {
+  border: calc(1.4px * var(--lab-inverse-zoom, 1)) solid var(--nb-pencil);
+  border-radius: var(--radius-control);
+  background: var(--nb-paper);
+  color: var(--nb-mid);
+  font-family: var(--font-hand);
+  line-height: 1;
+  padding: calc(3px * var(--lab-inverse-zoom, 1)) calc(6px * var(--lab-inverse-zoom, 1));
+  white-space: nowrap;
+  cursor: pointer;
+}
+.canvas-lab-relationship-change:focus-visible { outline: calc(2px * var(--lab-inverse-zoom, 1)) solid var(--nb-green); outline-offset: calc(2px * var(--lab-inverse-zoom, 1)); }
+.canvas-lab-relation-picker {
+  position: absolute;
+  z-index: 22;
+  border: 1.4px solid var(--nb-pencil);
+  border-radius: var(--radius-control);
+  background: var(--nb-paper);
+  padding: 5px 6px;
+  outline: none;
+}
+.canvas-lab-relation-picker ul { display: flex; flex-direction: column; gap: 1px; }
+.canvas-lab-relation-picker button {
+  display: block;
+  width: 100%;
+  border-radius: var(--radius-control);
+  padding: 2px 8px;
+  text-align: left;
+  color: var(--nb-ink);
+  font-family: var(--font-hand);
+  font-size: 16px;
+  line-height: 1.2;
+  cursor: pointer;
+}
+.canvas-lab-relation-picker button[data-active="true"],
+.canvas-lab-relation-picker button:hover { background: var(--nb-green-wash); }
+.canvas-lab-relation-picker p { margin-top: 4px; color: var(--nb-mid); font-size: 11.5px; }
 .canvas-lab-relationship-remove:focus-visible { outline: calc(2px * var(--lab-inverse-zoom, 1)) solid var(--nb-green); outline-offset: calc(2px * var(--lab-inverse-zoom, 1)); }
 .canvas-lab-link-rejection {
   position: absolute;
