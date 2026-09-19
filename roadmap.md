@@ -115,4 +115,4 @@
 - [x] Add Structured-only card drop confirmation
 - [x] Add role-appropriate empty-frame guidance
 - [x] Share workstream creation between drawer and inline controls
-- [ ] Complete focused tests, typecheck, token/language checks, and preview build
+- [x] Complete focused tests, typecheck, token/language checks, and preview build
