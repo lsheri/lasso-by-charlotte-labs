@@ -29,6 +29,7 @@ export function LabFrame({ frame, count, selected, editable, custom, namedByWork
 }) {
   const frameRef = useRef<HTMLElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const pendingRenameRef = useRef(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [renaming, setRenaming] = useState(false);
   const [draftName, setDraftName] = useState(frame.name);
@@ -39,13 +40,33 @@ export function LabFrame({ frame, count, selected, editable, custom, namedByWork
   }, [frame.name, renaming]);
 
   useEffect(() => {
-    if (renaming) inputRef.current?.select();
+    if (!renaming) return;
+    inputRef.current?.focus();
+    inputRef.current?.select();
   }, [renaming]);
 
   function changeMenuOpen(open: boolean) {
     if (open && !menuOpen) onMenuOpened();
     setMenuOpen(open);
     onMenuOpenChange(open);
+  }
+
+  /** After the menu closes, the frame takes focus back unless a rename just started. */
+  function restoreFocus() {
+    if (pendingRenameRef.current) {
+      pendingRenameRef.current = false;
+      window.requestAnimationFrame(() => {
+        inputRef.current?.focus();
+        inputRef.current?.select();
+      });
+      return;
+    }
+    frameRef.current?.focus();
+  }
+
+  function renameFromMenu() {
+    pendingRenameRef.current = true;
+    beginRename();
   }
 
   function openMenu(event: React.MouseEvent | React.KeyboardEvent) {
