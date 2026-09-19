@@ -10,7 +10,19 @@ import { RenderedContent } from "@/components/peek/RenderedContent";
 import { ThreadBody } from "@/components/peek/ThreadBody";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { resolveTurnSelection, type TurnSelection } from "@/lib/turn-selection";
 import type { WorkItemRow } from "@/lib/work-types";
+
+/** One saved highlight, already told whether its turn has moved on. */
+export type OverlayHighlight = {
+  id: string;
+  turnNo: number;
+  charStart: number;
+  charEnd: number;
+  excerpt: string;
+  stale: boolean;
+  version: number;
+};
 
 /**
  * Reading at full size without losing the board. The overlay sits above the
@@ -26,6 +38,9 @@ export function FocusOverlay({
   onSummarize,
   onBranch,
   onClose,
+  highlights = [],
+  onHighlight,
+  onRemoveHighlight,
 }: {
   node: LabNode;
   item: WorkItemRow | null;
@@ -35,11 +50,18 @@ export function FocusOverlay({
   onSummarize: () => void;
   onBranch: () => void;
   onClose: () => void;
+  /** Slice 2a: the reader's own highlights on this chat. */
+  highlights?: readonly OverlayHighlight[];
+  onHighlight?: ((selection: TurnSelection) => void) | undefined;
+  onRemoveHighlight?: ((highlight: OverlayHighlight) => void) | undefined;
 }) {
   const [quote, setQuote] = useState("");
   const [body, setBody] = useState("");
+  const [turnSelection, setTurnSelection] = useState<TurnSelection | null>(null);
+  const [crossTurn, setCrossTurn] = useState(false);
   const readerRef = useRef<HTMLDivElement | null>(null);
   const actions = actionsFor(node.ownership);
+  const isThread = item?.type === "ai_thread";
 
   useEffect(() => {
     return () => {
