@@ -122,4 +122,4 @@
 - [x] Correct card semantics and context announcements
 - [x] Keep Workboard handles, anchors, outlines, and frame menu legible at every zoom
 - [x] Ignore sub-four-pixel pointer jitter at drag end
-- [ ] Complete focused tests, typecheck, token/language checks, and preview build
+- [x] Complete focused tests, typecheck, token/language checks, and preview build

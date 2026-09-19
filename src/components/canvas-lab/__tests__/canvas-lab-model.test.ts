@@ -21,6 +21,7 @@ import {
   frameContainingPoint,
   labAnchorPoint,
   labConnectorPath,
+  labInverseZoom,
   moveNode,
   nearestLabAnchor,
   removeContext,
@@ -433,6 +434,18 @@ describe("dragEndDecision", () => {
     });
     expect(decision.position).toBeNull();
     expect(decision.promptFrameId).toBeNull();
+  });
+
+  it("ignores hand jitter in screen pixels at every zoom", () => {
+    const base = { origin: { x: node.x, y: node.y }, from: { x: 500, y: 400 }, node, frames, mode: "structured" as const, editable: true };
+    expect(dragEndDecision({ ...base, pointer: { x: 503, y: 400 }, zoom: 0.45 }).position).toBeNull();
+    expect(dragEndDecision({ ...base, pointer: { x: 503, y: 400 }, zoom: 2 }).position).toBeNull();
+    expect(dragEndDecision({ ...base, pointer: { x: 506, y: 400 }, zoom: 0.45 }).position).not.toBeNull();
+  });
+
+  it("provides the stage inverse zoom", () => {
+    expect(labInverseZoom(0.45)).toBeCloseTo(1 / 0.45);
+    expect(labInverseZoom(1.6)).toBeCloseTo(1 / 1.6);
   });
 
   it("saves without prompting in Freeform or for a read-only card", () => {
