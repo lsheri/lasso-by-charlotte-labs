@@ -105,6 +105,16 @@ export function ContextComposer({
               </Button>
             </span>
           ))}
+          {context.length > 1 ? (
+            <button
+              type="button"
+              aria-label="Clear all context"
+              onClick={onClearContext}
+              className="self-center text-[11.5px] text-muted-foreground hover:underline"
+            >
+              Clear
+            </button>
+          ) : null}
         </div>
       ) : (
         <p className="mb-2 font-hand text-[15px] leading-none text-[var(--nb-mid)]">
