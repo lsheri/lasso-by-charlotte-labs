@@ -58,7 +58,7 @@ describe("Canvas Lab paper", () => {
     const { container } = paper(node, item);
     expect(container.querySelector("svg")).not.toBeNull();
     expect(screen.getByText(new RegExp(`^${label}$`, "i"))).not.toBeNull();
-    expect(screen.getByText(kind === "chat" ? "local draft" : "yours")).not.toBeNull();
+    expect(screen.getByText(kind === "chat" || kind === "judgment" ? "local draft" : "yours")).not.toBeNull();
   });
 
   it("shows a footer only at the expanded tier", () => {

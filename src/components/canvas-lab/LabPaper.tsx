@@ -75,7 +75,7 @@ export function LabPaper({
           {node.title} {item ? <ArtifactNote item={item} /> : null}
         </p>
 
-        {node.local ? (
+        {node.local && tier !== "compact" ? (
           <textarea
             aria-label={`Edit ${node.title} note`}
             value={node.summary}
