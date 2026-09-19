@@ -12,6 +12,7 @@ vi.mock("@/lib/rendition.functions", () => ({ getRenditionUrl: async () => null 
 vi.mock("@/components/peek/RenderedContent", () => ({ RenderedContent: () => <div /> }));
 vi.mock("@/components/provenance/AnchorPane", () => ({ AnchorPane: () => <div /> }));
 vi.mock("@/components/provenance/SlidesPane", () => ({ SlidesPane: () => <div /> }));
+vi.mock("@/hooks/use-decisions", () => ({ srcsOf: () => [] }));
 vi.mock("@/components/work/SourceMark", () => ({ SourceMark: () => <span /> }));
 
 let audit: () => Promise<unknown> = async () => ({ anchor: {}, upstream: [], stitches: [] });

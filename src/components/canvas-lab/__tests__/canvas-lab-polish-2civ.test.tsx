@@ -78,16 +78,16 @@ describe("banner overlay", () => {
     document.head.append(style);
     const { rerender } = render(
       <main style={{ position: "relative" }}>
-        <header style={{ height: 52 }} />
-        <div data-testid="surface" />
+        <header key="header" style={{ height: 52 }} />
+        <div key="surface" data-testid="surface" />
       </main>,
     );
     const before = screen.getByTestId("surface");
     rerender(
       <main style={{ position: "relative" }}>
-        <header style={{ height: 52 }} />
-        <div data-testid="canvas-lab-banner" className="canvas-lab-banner" role="alert" />
-        <div data-testid="surface" />
+        <header key="header" style={{ height: 52 }} />
+        <div key="banner" data-testid="canvas-lab-banner" className="canvas-lab-banner" role="alert" />
+        <div key="surface" data-testid="surface" />
       </main>,
     );
     const banner = screen.getByTestId("canvas-lab-banner");
