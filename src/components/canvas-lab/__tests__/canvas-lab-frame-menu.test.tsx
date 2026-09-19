@@ -35,7 +35,7 @@ afterEach(() => document.body.replaceChildren());
 describe("LabFrame menu and rename", () => {
   it("offers all three actions on an editable custom workstream", () => {
     const { props } = renderFrame();
-    fireEvent.click(screen.getByRole("button", { name: "Open workstream menu" }));
+    fireEvent.pointerDown(screen.getByRole("button", { name: "Open workstream menu" }), { button: 0, ctrlKey: false });
     expect(screen.getByRole("menuitem", { name: "Fit contents" })).toBeTruthy();
     expect(screen.getByRole("menuitem", { name: "Rename" })).toBeTruthy();
     expect(screen.getByRole("menuitem", { name: "Remove workstream" })).toBeTruthy();
@@ -44,11 +44,11 @@ describe("LabFrame menu and rename", () => {
 
   it("keeps the menu read-only for coaches and limits task workstreams to Fit", () => {
     const first = renderFrame({ editable: false });
-    fireEvent.click(screen.getByRole("button", { name: "Open workstream menu" }));
+    fireEvent.pointerDown(screen.getByRole("button", { name: "Open workstream menu" }), { button: 0, ctrlKey: false });
     expect(screen.queryByRole("menuitem")).toBeNull();
     first.unmount();
     renderFrame({ custom: false, namedByWorkstream: true, frame: { ...customFrame, id: "task:1", name: "Discovery", local: false } });
-    fireEvent.click(screen.getByRole("button", { name: "Open workstream menu" }));
+    fireEvent.pointerDown(screen.getByRole("button", { name: "Open workstream menu" }), { button: 0, ctrlKey: false });
     expect(screen.getByRole("menuitem", { name: "Fit contents" })).toBeTruthy();
     expect(screen.queryByRole("menuitem", { name: "Rename" })).toBeNull();
     expect(screen.getByText("Discovery").getAttribute("title")).toBe("Named by the workstream");
@@ -82,7 +82,7 @@ describe("LabFrame menu and rename", () => {
 
   it("disables removal when the workstream still has cards", () => {
     renderFrame({ removable: false });
-    fireEvent.click(screen.getByRole("button", { name: "Open workstream menu" }));
+    fireEvent.pointerDown(screen.getByRole("button", { name: "Open workstream menu" }), { button: 0, ctrlKey: false });
     expect(screen.getByRole("menuitem", { name: /Remove workstream/ }).getAttribute("data-disabled")).not.toBeNull();
     expect(screen.getByText(/Move its cards first/)).toBeTruthy();
   });
