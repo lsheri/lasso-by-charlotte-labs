@@ -87,6 +87,7 @@ import {
   noteWorkboardCardMenuOpened,
   noteWorkboardNodeDeleted,
   noteWorkboardNodeEdited,
+  noteWorkboardOpened,
   noteWorkboardRail,
   noteWorkboardRecordVisibility,
   noteWorkboardRelationship,
@@ -99,6 +100,7 @@ import {
   noteWorkboardContextChanged,
   noteWorkboardUndoUsed,
   type LabNodeEventKind,
+  type WorkboardOpenVia,
   type WorkboardPersistEntity,
 } from "@/components/canvas-lab/canvas-lab-telemetry";
 import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
@@ -132,7 +134,12 @@ function scrollableUnder(target: HTMLElement | null, shell: HTMLElement, delta: 
 }
 
 /** A local workboard over one permission-filtered engagement read. */
-export function CanvasLabPage({ engagementId }: { engagementId: string }) {
+export function workboardOpenVia(value: string | undefined): WorkboardOpenVia {
+  if (value === "header" || value === "canvas_tab") return value;
+  return "direct";
+}
+
+export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string; entryVia?: string }) {
   const navigate = useNavigate();
   const { data: profile } = useProfile();
   const { data: page, isLoading, isError } = useEngagementPage(engagementId);
@@ -141,7 +148,15 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
   const viewerName = profile?.display_name ?? "You";
   const engagement = page?.engagement ?? null;
   const orgId = profile?.org_id;
+  const entryViaRef = useRef(workboardOpenVia(entryVia));
+  const entryLoggedRef = useRef(false);
   const lab = useCanvasLab(engagementId, profile?.id, orgId);
+
+  useEffect(() => {
+    if (!orgId || entryLoggedRef.current) return;
+    entryLoggedRef.current = true;
+    noteWorkboardOpened(orgId, entryViaRef.current);
+  }, [orgId]);
 
   const workItems = useMemo(() => {
     const byId = new Map<string, WorkItemRow>();

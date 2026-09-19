@@ -48,6 +48,9 @@ describe("the workboard allowlist", () => {
         "workboard.node_edited": [
           "kind",
         ],
+        "workboard.opened": [
+          "via",
+        ],
         "workboard.rail_toggled": [
           "state",
         ],
@@ -119,6 +122,7 @@ describe("the workboard allowlist", () => {
 
   it("passes every current helper's output through unchanged", () => {
     const calls: Array<() => void> = [
+      () => helpers.noteWorkboardOpened("o", "header"),
       () => helpers.noteWorkboardRail("o", "collapsed"),
       () => helpers.noteWorkboardNodeCreated("o", "source", "corrected_ai"),
       () => helpers.noteWorkboardNodeCreated("o", "source"),
@@ -146,6 +150,6 @@ describe("the workboard allowlist", () => {
       const [name, , dims] = mocked.mock.calls[0] as [string, string, Record<string, unknown>];
       expect(guardWorkboardEvent(name, dims as never)).toEqual({ keep: true, dims });
     }
-    expect(Object.keys(WORKBOARD_EVENT_DIMS)).toHaveLength(18);
+    expect(Object.keys(WORKBOARD_EVENT_DIMS)).toHaveLength(19);
   });
 });
