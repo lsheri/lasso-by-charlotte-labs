@@ -16,6 +16,7 @@ export type UndoAction =
   | "remove_note"
   | "relationship_add"
   | "relationship_remove"
+  | "link_relation"
   | "workstream_move";
 
 export type UndoDirection = "undo" | "redo";
@@ -28,6 +29,7 @@ export type UndoEntry =
   | { id: string; action: "remove_note"; node: LabNode; links: LabLink[]; coalesceKey?: string; at?: number }
   | { id: string; action: "relationship_add"; link: LabLink; coalesceKey?: string; at?: number }
   | { id: string; action: "relationship_remove"; link: LabLink; coalesceKey?: string; at?: number }
+  | { id: string; action: "link_relation"; linkId: string; before: string; after: string; coalesceKey?: string; at?: number }
   | { id: string; action: "workstream_move"; nodeId: string; before: string; after: string; coalesceKey?: string; at?: number };
 
 export type UndoEntryDraft = UndoEntry extends infer Entry
@@ -89,6 +91,7 @@ export function undoActionWord(action: UndoAction): string {
   if (action === "remove_note") return "note removal";
   if (action === "relationship_add") return "relationship";
   if (action === "relationship_remove") return "relationship removal";
+  if (action === "link_relation") return "what this link means";
   return "move to a workstream";
 }
 

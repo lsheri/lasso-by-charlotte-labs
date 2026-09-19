@@ -125,7 +125,8 @@ export type WorkboardCommand =
     }
   | { type: "node_archive"; nodeId: string; expectedVersion: number }
   | { type: "node_restore"; nodeId: string; expectedVersion: number }
-  | { type: "link_create"; fromNodeId: string; fromAnchor: WorkboardAnchor; toNodeId: string; toAnchor: WorkboardAnchor; relation: WorkboardRelation }
+  | { type: "link_create"; fromNodeId: string; fromAnchor: WorkboardAnchor; toNodeId: string; toAnchor: WorkboardAnchor; relation?: WorkboardRelation }
+  | { type: "link_update"; linkId: string; expectedVersion: number; relation: WorkboardRelation }
   | { type: "link_archive"; linkId: string; expectedVersion: number };
 
 /** JSON-safe snapshot of the newer row shipped with a conflict. */

@@ -68,6 +68,7 @@ describe("the workboard allowlist", () => {
         ],
         "workboard.relationship_changed": [
           "action",
+          "relation",
         ],
         "workboard.review_opened": [
           "format",
@@ -137,7 +138,8 @@ describe("the workboard allowlist", () => {
       () => helpers.noteWorkboardNodeDeleted("o", "decision"),
       () => helpers.noteWorkboardNodeEdited("o", "deliverable"),
       () => helpers.noteWorkboardRecordVisibility("o", "hidden", "work"),
-      () => helpers.noteWorkboardRelationship("o", "created"),
+      () => helpers.noteWorkboardRelationship("o", "created", "context"),
+      () => helpers.noteWorkboardRelationship("o", "relation_changed", "informed"),
       () => helpers.noteWorkboardReviewOpened("o", "thread"),
       () => helpers.noteWorkboardTrailSelected("o", "ai_work", "exact"),
       () => helpers.noteWorkboardCardMenuOpened("o", "frame", "shared"),
