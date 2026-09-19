@@ -201,11 +201,11 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
     setNodes(virtualNodes);
   }, [frames, nodes, page, profile?.id, taskIdsByWork, workItems, lab.board, lab.boardLoading]);
 
-  const allNodes = nodes ?? [];
-  const visibleNodes = allNodes.filter((node) => !hiddenIds.includes(node.id));
-  const hiddenNodes = allNodes.filter((node) => hiddenIds.includes(node.id));
-  const boardFrames = frames ?? [];
-  const bounds = stageBounds(boardFrames);
+  const allNodes = useMemo(() => nodes ?? [], [nodes]);
+  const visibleNodes = useMemo(() => allNodes.filter((node) => !hiddenIds.includes(node.id)), [allNodes, hiddenIds]);
+  const hiddenNodes = useMemo(() => allNodes.filter((node) => hiddenIds.includes(node.id)), [allNodes, hiddenIds]);
+  const boardFrames = useMemo(() => frames ?? [], [frames]);
+  const bounds = useMemo(() => stageBounds(boardFrames), [boardFrames]);
   const contextNodes = visibleNodes.filter((node) => selected.includes(node.id));
   const focusNode = visibleNodes.find((node) => node.id === focusId) ?? null;
   const reviewNode = visibleNodes.find((node) => node.id === reviewId) ?? null;
@@ -229,9 +229,10 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
     void noteOpened({ data: { nodes: nodes.length, links: 0, shelf: 0, profile_id: profile?.id } }).catch(() => undefined);
   }, [nodes, noteOpened, profile?.id]);
 
-  const fit = useCallback(() => {
+  const fit = useCallback((manual = false) => {
     const shell = shellRef.current;
     if (!shell || !boardReady) return;
+    if (manual) viewportChangedRef.current = true;
     const result = fitWorkboardViewport(
       { width: shell.clientWidth, height: shell.clientHeight },
       structureMode === "structured" ? boardFrames : [],
@@ -418,6 +419,7 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
     connectorDragRef.current = null;
     setConnectorPreview(null);
     setConnectSource(null);
+    setInteraction("idle");
     setAnnouncement("Connection cancelled.");
   }
 
@@ -541,7 +543,7 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
       if (active?.closest("textarea,input,[contenteditable='true']")) return;
       if (event.key === "=" || event.key === "+") { event.preventDefault(); zoomAtCentre(stepZoom(zoomRef.current, "in")); return; }
       if (event.key === "-" || event.key === "_") { event.preventDefault(); zoomAtCentre(stepZoom(zoomRef.current, "out")); return; }
-      if (event.key === "0") { event.preventDefault(); fit(); return; }
+      if (event.key === "0") { event.preventDefault(); fit(true); return; }
       if (event.key === "1") { event.preventDefault(); zoomAtCentre(1); }
     }
     window.addEventListener("keydown", onZoomKey, { passive: false });
@@ -801,6 +803,7 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
     }
     setLinks(result.links);
     setConnectSource(null);
+    setInteraction("idle");
     noteWorkboardRelationship(orgId, "created");
     const created = result.links[result.links.length - 1];
     if (created) void persistLink(created);
@@ -810,6 +813,7 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
   function chooseConnectAnchor(node: LabNode, anchor: LabAnchor) {
     if (!connectSource) {
       setConnectSource({ nodeId: node.id, anchor });
+      setInteraction("connect");
       noteWorkboardRelationship(orgId, "started");
       setAnnouncement(`${node.title} chosen as the source. Choose a target anchor.`);
       return;
@@ -820,6 +824,7 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
   function startPointerConnect(node: LabNode, anchor: LabAnchor, event: React.PointerEvent<HTMLButtonElement>) {
     event.preventDefault();
     event.stopPropagation();
+    setInteraction("connect");
     connectorDragRef.current = { nodeId: node.id, anchor, from: { x: event.clientX, y: event.clientY }, moved: false };
   }
 
