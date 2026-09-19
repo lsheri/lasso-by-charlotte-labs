@@ -64,6 +64,7 @@ describe("polish 2b-vi", () => {
     expect(page).toContain('closeDropPrompt("yes")');
     expect(page).toContain('closeDropPrompt("keep")');
     expect(page).toContain('closeDropPrompt("dismissed")');
-    expect(page).not.toContain("setDropPrompt(null)");
+    // Only the one closer clears the prompt, so no ending goes uncounted.
+    expect(page.split("setDropPrompt(null)").length - 1).toBe(1);
   });
 });
