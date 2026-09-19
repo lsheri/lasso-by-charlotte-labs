@@ -14,6 +14,8 @@ import { WorkRail } from "@/components/canvas-lab/WorkRail";
 import {
   addLabLink,
   addLocalFrame,
+  markFrameSaved,
+  keepViewportUnscrolled,
   applyDurableBoard,
   branchChatNode,
   createChatNode,
