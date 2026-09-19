@@ -1243,7 +1243,7 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 .canvas-lab-context-title {
   padding-right: calc(24px * var(--lab-inverse-zoom, 1));
 }
-.canvas-lab-work-note-context .nb-paper-body {
+.canvas-lab-work-note-context .nb-paper-body > p {
   padding-right: calc(24px * var(--lab-inverse-zoom, 1));
 }
 .canvas-lab-card-paper[data-connect-source="true"] {

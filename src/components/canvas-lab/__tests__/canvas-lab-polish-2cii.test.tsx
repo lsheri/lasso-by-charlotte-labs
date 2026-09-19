@@ -46,6 +46,14 @@ describe("Workboard human judgment", () => {
     vi.unstubAllGlobals();
   });
 
+  it("closes on pointerdown outside", () => {
+    render(<><ReasoningTrailGuide onAdd={() => undefined} /><button type="button">Outside</button></>);
+    fireEvent.click(screen.getByRole("button", { name: "Add Human judgment local node" }));
+    expect(screen.getByRole("menu", { name: "Human judgment type" })).not.toBeNull();
+    fireEvent.pointerDown(screen.getByRole("button", { name: "Outside" }));
+    expect(screen.queryByRole("menu", { name: "Human judgment type" })).toBeNull();
+  });
+
   it("labels durable judgment authorship without changing local semantics", () => {
     expect(ownerLabel({ ...localJudgment, durableId: "own", ownership: "draft" })).toBe("yours");
     expect(ownerLabel({ ...localJudgment, durableId: "other", ownership: "teammate", local: false })).toBe("teammate");
