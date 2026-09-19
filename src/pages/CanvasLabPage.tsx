@@ -30,6 +30,7 @@ import {
   moveNode,
   dropPromptFrame,
   nextWorkstreamRect,
+  workstreamAddAnchor,
   nearestLabAnchor,
   removeContext,
   removeLabLink,
