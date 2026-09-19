@@ -177,6 +177,10 @@ export type TelemetryEvent =
   | "workboard.save_failed"
   /** Canvas Lab Phase 3: a person settled a newer-version conflict. Entity and choice only. */
   | "workboard.conflict_resolved"
+  /** Canvas Lab polish: one completed card or frame resize. Closed geometry vocabulary only. */
+  | "workboard.element_resized"
+  /** Canvas Lab polish: the local frame-boundary view changed. State only. */
+  | "workboard.structure_toggled"
   /** Pass 185: a workspace was affiliated with an institution at creation. Slug only. */
   | "workspace.affiliated"
   /** Pass 186: the student opened the page describing what their school sees. */

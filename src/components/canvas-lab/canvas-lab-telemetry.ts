@@ -49,3 +49,11 @@ export function noteWorkboardSaveFailed(orgId: string | undefined, entity: Workb
 export function noteWorkboardConflictResolved(orgId: string | undefined, entity: Exclude<WorkboardPersistEntity, "board">, choice: "latest" | "retry"): void {
   if (orgId) logEvent("workboard.conflict_resolved", orgId, { entity, choice });
 }
+
+export function noteWorkboardElementResized(orgId: string | undefined, elementKind: "card" | "frame", method: "pointer" | "keyboard" | "fit_content", axis: "horizontal" | "vertical" | "both"): void {
+  if (orgId) logEvent("workboard.element_resized", orgId, { element_kind: elementKind, method, axis });
+}
+
+export function noteWorkboardStructureToggled(orgId: string | undefined, state: "structured" | "freeform"): void {
+  if (orgId) logEvent("workboard.structure_toggled", orgId, { state });
+}

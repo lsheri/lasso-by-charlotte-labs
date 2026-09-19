@@ -42,11 +42,12 @@ describe("applyDurableBoard", () => {
       nodes: [{
         id: "node-1", frameId: null, kind: "work_item", workItemId: "work-1", decisionId: null,
         authorProfileId: "me", authorName: "Me", title: "", body: "", judgmentType: null,
-        x: 999, y: 888, hidden: true, version: 3, referenceReadable: true,
+        x: 999, y: 888, w: 360, h: 180, hidden: true, version: 3, referenceReadable: true,
       }],
     }));
     const card = merged.nodes.find((node) => node.id === "work:work-1");
     expect(card?.x).toBe(999);
+    expect(card).toMatchObject({ width: 360, height: 180 });
     expect(card?.durableId).toBe("node-1");
     expect(card?.durableVersion).toBe(3);
     expect(merged.hiddenIds).toEqual(["work:work-1"]);
@@ -57,7 +58,7 @@ describe("applyDurableBoard", () => {
       nodes: [{
         id: "node-9", frameId: null, kind: "judgment", workItemId: null, decisionId: null,
         authorProfileId: "teammate", authorName: "Lee", title: "Changed direction", body: "Chose retention over reach.",
-        judgmentType: "changed_direction", x: 10, y: 20, hidden: false, version: 1, referenceReadable: true,
+        judgmentType: "changed_direction", x: 10, y: 20, w: 232, h: 112, hidden: false, version: 1, referenceReadable: true,
       }],
     }));
     const judgment = merged.nodes.find((node) => node.durableId === "node-9");
@@ -73,7 +74,7 @@ describe("applyDurableBoard", () => {
       nodes: [{
         id: "node-7", frameId: "frame-9", kind: "judgment", workItemId: null, decisionId: null,
         authorProfileId: "me", authorName: "Me", title: "Corrected AI", body: "Fixed the figure.",
-        judgmentType: "corrected_ai", x: 30, y: 40, hidden: false, version: 2, referenceReadable: true,
+        judgmentType: "corrected_ai", x: 30, y: 40, w: 232, h: 112, hidden: false, version: 2, referenceReadable: true,
       }],
     }));
     expect(merged.frames.some((frame) => frame.id === "custom:risks" && frame.durableId === "frame-9")).toBe(true);
@@ -85,8 +86,8 @@ describe("applyDurableBoard", () => {
   it("maps durable links to local cards and drops links with missing endpoints", () => {
     const merged = applyDurableBoard({ frames: baseFrames, nodes: baseNodes }, board({
       nodes: [
-        { id: "n1", frameId: null, kind: "brief", workItemId: null, decisionId: null, authorProfileId: "me", authorName: "Me", title: "", body: "", judgmentType: null, x: 0, y: 0, hidden: false, version: 1, referenceReadable: true },
-        { id: "n2", frameId: null, kind: "work_item", workItemId: "work-1", decisionId: null, authorProfileId: "me", authorName: "Me", title: "", body: "", judgmentType: null, x: 0, y: 0, hidden: false, version: 1, referenceReadable: true },
+        { id: "n1", frameId: null, kind: "brief", workItemId: null, decisionId: null, authorProfileId: "me", authorName: "Me", title: "", body: "", judgmentType: null, x: 0, y: 0, w: 232, h: 112, hidden: false, version: 1, referenceReadable: true },
+        { id: "n2", frameId: null, kind: "work_item", workItemId: "work-1", decisionId: null, authorProfileId: "me", authorName: "Me", title: "", body: "", judgmentType: null, x: 0, y: 0, w: 232, h: 112, hidden: false, version: 1, referenceReadable: true },
       ],
       links: [
         { id: "link-1", fromNodeId: "n1", toNodeId: "n2", fromAnchor: "right", toAnchor: "left", relation: "informed", authorProfileId: "me", version: 1 },
@@ -96,6 +97,7 @@ describe("applyDurableBoard", () => {
     expect(merged.links).toHaveLength(1);
     expect(merged.links[0]).toMatchObject({ fromId: "brief", toId: "work:work-1", durableId: "link-1", relation: "informed" });
   });
+
 });
 
 describe("inboundLabNodeIds", () => {
@@ -141,5 +143,12 @@ describe("phase 3 persistence events", () => {
       expect(helpers).toContain(`export function ${name}`);
     }
     expect(helpers).not.toContain("body");
+  });
+
+  it("registers content-free resize and local structure events", () => {
+    expect(catalog).toContain('"workboard.element_resized"');
+    expect(catalog).toContain('"workboard.structure_toggled"');
+    expect(helpers).toContain('{ element_kind: elementKind, method, axis }');
+    expect(helpers).toContain('{ state }');
   });
 });

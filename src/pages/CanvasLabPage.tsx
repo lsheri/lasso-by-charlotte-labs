@@ -7,6 +7,7 @@ import { CanvasLabReview } from "@/components/canvas-lab/CanvasLabReview";
 import { FocusOverlay } from "@/components/canvas-lab/FocusOverlay";
 import { FoundationGuide } from "@/components/canvas-lab/FoundationGuide";
 import { LabCard } from "@/components/canvas-lab/LabCard";
+import { LabFrame as LabFrameElement } from "@/components/canvas-lab/LabFrame";
 import { ReasoningTrailGuide } from "@/components/canvas-lab/ReasoningTrailGuide";
 import { WorkRail } from "@/components/canvas-lab/WorkRail";
 import {
@@ -15,11 +16,13 @@ import {
   applyDurableBoard,
   branchChatNode,
   createChatNode,
+  containFrameMembers,
   createLabFrames,
   createLocalNode,
   deleteLocalNode,
   draftAnchor,
   fitScale,
+  fitFrameToNodes,
   labAnchorPoint,
   labConnectorPath,
   localNodeAnchor,
@@ -29,6 +32,7 @@ import {
   removeLabLink,
   seedCanvas,
   stageBounds,
+  resizeLabRect,
   toggleContext,
   updateLocalNode,
   type LabComment,
@@ -38,10 +42,14 @@ import {
   type LabLink,
   type LabNode,
   type LabTemplateKind,
+  type LabResizeCorner,
+  type LabRect,
+  type LabStructureMode,
 } from "@/components/canvas-lab/canvas-lab-model";
 import {
   noteWorkboardChangeSaved,
   noteWorkboardConflictResolved,
+  noteWorkboardElementResized,
   noteWorkboardNodeCreated,
   noteWorkboardCardMenuOpened,
   noteWorkboardNodeDeleted,
@@ -52,6 +60,7 @@ import {
   noteWorkboardReviewOpened,
   noteWorkboardSaveFailed,
   noteWorkboardTrailSelected,
+  noteWorkboardStructureToggled,
   type LabNodeEventKind,
   type WorkboardPersistEntity,
 } from "@/components/canvas-lab/canvas-lab-telemetry";
@@ -131,11 +140,14 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
   const [mobileView, setMobileView] = useState<"board" | "rail">("board");
   const [newFrameName, setNewFrameName] = useState("");
   const [opening, setOpening] = useState(true);
+  const [structureMode, setStructureMode] = useState<LabStructureMode>("structured");
+  const [selectedFrameId, setSelectedFrameId] = useState<string | null>(null);
 
   const shellRef = useRef<HTMLDivElement | null>(null);
   const dragRef = useRef<{ id: string; origin: Point; from: Point } | null>(null);
   const connectorDragRef = useRef<{ nodeId: string; anchor: LabAnchor; from: Point; moved: boolean } | null>(null);
   const cardHeightsRef = useRef(new Map<string, number>());
+  const resizeRef = useRef<{ kind: "card" | "frame"; id: string; corner: LabResizeCorner; start: LabRect; pointer: Point; method: "pointer" | "keyboard" } | null>(null);
   const panRef = useRef<{ from: Point; origin: Point } | null>(null);
   const openedRef = useRef(false);
   /** The deterministic virtual seed a durable board is overlaid onto. */
@@ -213,7 +225,7 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
   }
 
   function nodeToInput(node: LabNode): WorkboardNodeInput | null {
-    const base = { clientKey: node.clientKey ?? node.id, frameKey: node.frame, x: node.x, y: node.y, hidden: hiddenRef.current.includes(node.id) };
+    const base = { clientKey: node.clientKey ?? node.id, frameKey: node.frame, x: node.x, y: node.y, w: node.width, h: node.height, hidden: hiddenRef.current.includes(node.id) };
     if (node.kind === "work" && node.workItemId) return { ...base, kind: "work_item", workItemId: node.workItemId };
     if (node.kind === "decision" && node.id.startsWith("decision:")) return { ...base, kind: "decision", decisionId: node.id.slice(9) };
     if (node.kind === "brief") return { ...base, kind: "brief" };
@@ -279,7 +291,7 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
     return { id, version };
   }
 
-  async function persistNodePatch(localId: string, patch: { x?: number; y?: number; hidden?: boolean; title?: string; body?: string }) {
+  async function persistNodePatch(localId: string, patch: { x?: number; y?: number; w?: number; h?: number; frameId?: string | null; hidden?: boolean; title?: string; body?: string }) {
     const durable = await ensureNodeDurable(localId);
     if (!durable) return;
     const result = await lab.persist({ type: "node_update", nodeId: durable.id, expectedVersion: durable.version, patch });
@@ -288,6 +300,15 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
       const nextVersion = result.versions[durable.id] ?? durable.version + 1;
       setNodes((current) => current?.map((entry) => entry.durableId === durable.id ? { ...entry, durableVersion: nextVersion } : entry) ?? current);
     }
+  }
+
+  async function persistFramePatch(localId: string, patch: { x?: number; y?: number; w?: number; h?: number }) {
+    if (!(await materialize())) return;
+    const frame = framesRef.current.find((entry) => entry.id === localId);
+    if (!frame?.durableId) return;
+    const result = await lab.persist({ type: "frame_update", frameId: frame.durableId, expectedVersion: frame.durableVersion ?? 1, patch });
+    report(result, "frame", "update");
+    if (result.status === "saved") setFrames((current) => current?.map((entry) => entry.id === localId ? { ...entry, durableVersion: result.versions[frame.durableId ?? ""] ?? (frame.durableVersion ?? 1) + 1 } : entry) ?? current);
   }
 
   async function persistLink(link: LabLink) {
@@ -356,6 +377,14 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
       if (event.key === "Escape") {
+        const resize = resizeRef.current;
+        if (resize) {
+          if (resize.kind === "card") setNodes((current) => current?.map((node) => node.id === resize.id ? { ...node, ...resize.start } : node) ?? current);
+          else setFrames((current) => current?.map((frame) => frame.id === resize.id ? { ...frame, ...resize.start } : frame) ?? current);
+          resizeRef.current = null;
+          setAnnouncement("Resize cancelled.");
+          return;
+        }
         if (reviewId) setReviewId(null);
         else if (focusId) setFocusId(null);
         else if (cardMenuOpen) return;
@@ -416,6 +445,13 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
         setConnectorPreview(stagePoint(event.clientX, event.clientY));
         return;
       }
+      const resizing = resizeRef.current;
+      if (resizing?.method === "pointer") {
+        const rect = resizeLabRect(resizing.start, resizing.corner, { x: (event.clientX - resizing.pointer.x) / zoom, y: (event.clientY - resizing.pointer.y) / zoom }, event.shiftKey, resizing.kind);
+        if (resizing.kind === "card") setNodes((current) => current?.map((node) => node.id === resizing.id ? { ...node, ...rect } : node) ?? current);
+        else setFrames((current) => current?.map((frame) => frame.id === resizing.id ? { ...frame, ...containFrameMembers(rect, frame.id, nodesRef.current) } : frame) ?? current);
+        return;
+      }
       const drag = dragRef.current;
       if (drag) {
         const delta = { x: (event.clientX - drag.from.x) / zoom, y: (event.clientY - drag.from.y) / zoom };
@@ -438,6 +474,23 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
         }
       }
       dragRef.current = null;
+      const resizing = resizeRef.current;
+      if (resizing?.method === "pointer") {
+        if (resizing.kind === "card") {
+          const node = nodesRef.current.find((entry) => entry.id === resizing.id);
+          if (node && (node.x !== resizing.start.x || node.y !== resizing.start.y || node.width !== resizing.start.width || node.height !== resizing.start.height)) {
+            void persistNodePatch(node.id, { x: node.x, y: node.y, w: node.width, h: node.height });
+            noteWorkboardElementResized(orgId, "card", "pointer", resizeAxis(resizing.start, { x: node.x, y: node.y, width: node.width, height: node.height }));
+          }
+        } else {
+          const frame = framesRef.current.find((entry) => entry.id === resizing.id);
+          if (frame && (frame.x !== resizing.start.x || frame.y !== resizing.start.y || frame.width !== resizing.start.width || frame.height !== resizing.start.height)) {
+            void persistFramePatch(frame.id, { x: frame.x, y: frame.y, w: frame.width, h: frame.height });
+            noteWorkboardElementResized(orgId, "frame", "pointer", resizeAxis(resizing.start, { x: frame.x, y: frame.y, width: frame.width, height: frame.height }));
+          }
+        }
+        resizeRef.current = null;
+      }
       panRef.current = null;
     }
     window.addEventListener("pointermove", move);
@@ -457,6 +510,79 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
       setNodes((current) => current ? moveNode(current, node.id, to) : current);
       void persistNodePatch(node.id, { x: to.x, y: to.y });
     }
+  }
+
+  function startResize(kind: "card" | "frame", id: string, corner: LabResizeCorner, rect: LabRect, event: React.PointerEvent<HTMLButtonElement>) {
+    if (event.button !== 0) return;
+    event.preventDefault();
+    event.stopPropagation();
+    dragRef.current = null;
+    connectorDragRef.current = null;
+    resizeRef.current = { kind, id, corner, start: rect, pointer: { x: event.clientX, y: event.clientY }, method: "pointer" };
+  }
+
+  function resizeAxis(start: LabRect, end: LabRect): "horizontal" | "vertical" | "both" {
+    const horizontal = start.width !== end.width;
+    const vertical = start.height !== end.height;
+    return horizontal && vertical ? "both" : horizontal ? "horizontal" : "vertical";
+  }
+
+  function keyboardResize(kind: "card" | "frame", id: string, corner: LabResizeCorner, rect: LabRect, event: React.KeyboardEvent<HTMLButtonElement>) {
+    if (!event.key.startsWith("Arrow")) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const amount = event.shiftKey ? 24 : 8;
+    const delta = { x: event.key === "ArrowLeft" ? -amount : event.key === "ArrowRight" ? amount : 0, y: event.key === "ArrowUp" ? -amount : event.key === "ArrowDown" ? amount : 0 };
+    if (!resizeRef.current) resizeRef.current = { kind, id, corner, start: rect, pointer: { x: 0, y: 0 }, method: "keyboard" };
+    const resized = resizeLabRect(rect, corner, delta, event.shiftKey, kind);
+    const next = kind === "frame" ? containFrameMembers(resized, id, nodesRef.current) : resized;
+    if (kind === "card") setNodes((current) => current?.map((node) => node.id === id ? { ...node, ...next } : node) ?? current);
+    else setFrames((current) => current?.map((frame) => frame.id === id ? { ...frame, ...next } : frame) ?? current);
+  }
+
+  function finishKeyboardResize(event: React.KeyboardEvent<HTMLButtonElement>) {
+    if (!event.key.startsWith("Arrow")) return;
+    const resizing = resizeRef.current;
+    if (!resizing || resizing.method !== "keyboard") return;
+    let end: LabRect | null = null;
+    if (resizing.kind === "card") {
+      const node = nodesRef.current.find((entry) => entry.id === resizing.id);
+      if (node) { end = { x: node.x, y: node.y, width: node.width, height: node.height }; void persistNodePatch(node.id, { x: node.x, y: node.y, w: node.width, h: node.height }); }
+    } else {
+      const frame = framesRef.current.find((entry) => entry.id === resizing.id);
+      if (frame) { end = { x: frame.x, y: frame.y, width: frame.width, height: frame.height }; void persistFramePatch(frame.id, { x: frame.x, y: frame.y, w: frame.width, h: frame.height }); }
+    }
+    if (end) noteWorkboardElementResized(orgId, resizing.kind, "keyboard", resizeAxis(resizing.start, end));
+    resizeRef.current = null;
+  }
+
+  function fitCard(node: LabNode) {
+    const height = Math.max(112, Math.min(520, cardHeightsRef.current.get(node.id) ?? node.height));
+    if (node.width === 232 && node.height === height) return;
+    setNodes((current) => current?.map((entry) => entry.id === node.id ? { ...entry, width: 232, height } : entry) ?? current);
+    void persistNodePatch(node.id, { w: 232, h: height });
+    noteWorkboardElementResized(orgId, "card", "fit_content", "both");
+  }
+
+  function fitFrame(frame: LabFrame) {
+    const rect = fitFrameToNodes(frame, visibleNodes);
+    if (!rect) { setAnnouncement("This workstream has no cards to fit."); return; }
+    setFrames((current) => current?.map((entry) => entry.id === frame.id ? { ...entry, ...rect } : entry) ?? current);
+    void persistFramePatch(frame.id, { x: rect.x, y: rect.y, w: rect.width, h: rect.height });
+    noteWorkboardElementResized(orgId, "frame", "fit_content", "both");
+  }
+
+  function moveToFrame(node: LabNode, frameId: string) {
+    const target = framesRef.current.find((frame) => frame.id === frameId);
+    if (!target) return;
+    void (async () => {
+      if (!(await materialize())) return;
+      const durableTarget = framesRef.current.find((frame) => frame.id === frameId)?.durableId;
+      if (!durableTarget) return;
+      setNodes((current) => current?.map((entry) => entry.id === node.id ? { ...entry, frame: frameId } : entry) ?? current);
+      await persistNodePatch(node.id, { frameId: durableTarget });
+      setAnnouncement(`${node.title} moved to ${target.name}.`);
+    })();
   }
 
   function addNode(kind: LabTemplateKind, judgment?: LabJudgmentType) {
@@ -631,19 +757,19 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
       </aside>
       {menuOpen ? <div className="fixed inset-0 z-50 flex bg-[var(--nb-scrim)]" onPointerDown={() => setMenuOpen(false)}><aside className="h-full w-[280px] overflow-y-auto border-r border-border bg-sidebar p-4 shadow-[var(--shadow-modal)]" onPointerDown={(event) => event.stopPropagation()}><div className="mb-5 flex items-center justify-between"><span className="font-serif text-xl text-foreground">Lasso</span><Button size="icon" variant="ghost" aria-label="Close workboard menu" onClick={() => setMenuOpen(false)}><X className="h-4 w-4" /></Button></div><SidebarNav onNavigate={() => setMenuOpen(false)} onOpenSettings={() => void navigate({ to: "/settings" })} /><div className="mt-6 border-t border-border pt-4"><label className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft" htmlFor="canvas-lab-new-frame">Add workstream</label><div className="mt-2 flex gap-2"><input id="canvas-lab-new-frame" value={newFrameName} onChange={(event) => setNewFrameName(event.target.value)} className="min-w-0 flex-1 rounded-[var(--radius-control)] border border-input bg-background px-2 text-[12px]" placeholder="Workstream name" /><Button size="sm" variant="outline" onClick={addWorkstream}>Add</Button></div><p className="mt-1 font-hand text-[13px] text-[var(--nb-mid)]">not saved</p></div></aside></div> : null}
       <main className={`relative min-w-0 flex-1 flex-col ${mobileView === "board" ? "flex" : "hidden md:flex"}`}>
-        <header className="z-20 flex h-[52px] shrink-0 items-center justify-between gap-3 border-b border-border bg-card px-4"><div className="min-w-0"><span className="block truncate text-[13px] font-medium text-foreground">{title}</span><span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">{lab.saveState.status === "saving" ? "Workboard · Saving" : lab.saveState.status === "conflict" ? "Workboard · Newer version available" : lab.saveState.status === "forbidden" ? "Workboard · Read only" : lab.saveState.status === "error" ? "Workboard · Could not save" : lab.saveState.status === "saved" || lab.board?.id ? "Workboard · Saved" : "Workboard · Not saved"}</span></div><div className="flex items-center gap-1"><Button type="button" size="sm" variant="outline" className="md:hidden" onClick={() => { setRailOpen(true); setMobileView("rail"); }}>Working from</Button>{selectedLinkId ? <Button type="button" size="sm" variant="ghost" onClick={() => { const link = links.find((entry) => entry.id === selectedLinkId); if (link) void persistLinkRemoval(link); setLinks((current) => removeLabLink(current, selectedLinkId)); setSelectedLinkId(null); noteWorkboardRelationship(orgId, "removed"); }}>Remove relationship</Button> : null}<Button size="sm" variant="outline" onClick={fit}>Fit</Button><Button size="icon" variant="ghost" aria-label="Zoom out" onClick={() => setZoom((value) => stepZoom(value, "out"))}><Minus className="h-3.5 w-3.5" /></Button><span className="w-10 text-center font-mono text-[10px] text-soft">{Math.round(zoom * 100)}%</span><Button size="icon" variant="ghost" aria-label="Zoom in" onClick={() => setZoom((value) => stepZoom(value, "in"))}><Plus className="h-3.5 w-3.5" /></Button></div></header>
+        <header className="z-20 flex h-[52px] shrink-0 items-center justify-between gap-3 border-b border-border bg-card px-4"><div className="min-w-0"><span className="block truncate text-[13px] font-medium text-foreground">{title}</span><span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">{lab.saveState.status === "saving" ? "Workboard · Saving" : lab.saveState.status === "conflict" ? "Workboard · Newer version available" : lab.saveState.status === "forbidden" ? "Workboard · Read only" : lab.saveState.status === "error" ? "Workboard · Could not save" : lab.saveState.status === "saved" || lab.board?.id ? "Workboard · Saved" : "Workboard · Not saved"}</span></div><div className="flex items-center gap-1"><div className="canvas-lab-structure-toggle" aria-label="Workboard structure"><Button type="button" size="sm" variant={structureMode === "structured" ? "secondary" : "ghost"} aria-pressed={structureMode === "structured"} onClick={() => { if (structureMode === "structured") return; setStructureMode("structured"); noteWorkboardStructureToggled(orgId, "structured"); }}>Structured</Button><Button type="button" size="sm" variant={structureMode === "freeform" ? "secondary" : "ghost"} aria-pressed={structureMode === "freeform"} onClick={() => { if (structureMode === "freeform") return; setStructureMode("freeform"); setSelectedFrameId(null); noteWorkboardStructureToggled(orgId, "freeform"); }}>Freeform</Button></div><Button type="button" size="sm" variant="outline" className="md:hidden" onClick={() => { setRailOpen(true); setMobileView("rail"); }}>Working from</Button>{selectedLinkId ? <Button type="button" size="sm" variant="ghost" onClick={() => { const link = links.find((entry) => entry.id === selectedLinkId); if (link) void persistLinkRemoval(link); setLinks((current) => removeLabLink(current, selectedLinkId)); setSelectedLinkId(null); noteWorkboardRelationship(orgId, "removed"); }}>Remove relationship</Button> : null}<Button size="sm" variant="outline" onClick={fit}>Fit</Button><Button size="icon" variant="ghost" aria-label="Zoom out" onClick={() => setZoom((value) => stepZoom(value, "out"))}><Minus className="h-3.5 w-3.5" /></Button><span className="w-10 text-center font-mono text-[10px] text-soft">{Math.round(zoom * 100)}%</span><Button size="icon" variant="ghost" aria-label="Zoom in" onClick={() => setZoom((value) => stepZoom(value, "in"))}><Plus className="h-3.5 w-3.5" /></Button></div></header>
         {lab.saveState.status === "conflict" ? <div className="z-20 flex items-center justify-between gap-3 border-b border-border bg-card px-4 py-2" role="alert"><p className="text-[13px] text-foreground">Someone saved a newer version of this record.</p><div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => resolveConflict("latest")}>Load latest</Button><Button size="sm" variant="outline" onClick={() => resolveConflict("retry")}>Retry my change</Button></div></div> : null}
         <div ref={shellRef} onPointerDown={(event) => { if (event.button === 0 && event.target === event.currentTarget) panRef.current = { from: { x: event.clientX, y: event.clientY }, origin: pan }; }} className="canvas-lab-surface relative min-h-0 flex-1 cursor-grab overflow-hidden">
           <div data-testid="canvas-lab-stage" className="absolute left-0 top-0 origin-top-left" style={{ width: bounds.width, height: bounds.height, transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})` }}>
             <ReasoningTrailGuide onAdd={addNode} />
             <FoundationGuide brief={engagement?.brief ?? null} tasks={(page?.tasks ?? []).map((task) => ({ id: task.id, name: task.name, detail: task.detail }))} work={workItems} />
-            {boardFrames.map((frame) => { const count = visibleNodes.filter((node) => node.frame === frame.id).length; return <section key={frame.id} style={{ left: frame.x, top: frame.y, width: frame.width, height: frame.height }} className="absolute rounded-[var(--radius)] border border-dashed border-[var(--nb-pencil)]"><div className="absolute inset-x-3 top-2 flex items-baseline justify-between gap-2"><h2 className="font-hand text-[18px] leading-none text-[var(--nb-mid)]">{frame.name}</h2><span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">{count} {frame.local ? "· local" : ""}</span></div></section>; })}
+            {structureMode === "structured" ? boardFrames.map((frame) => { const count = visibleNodes.filter((node) => node.frame === frame.id).length; return <LabFrameElement key={frame.id} frame={frame} count={count} selected={selectedFrameId === frame.id} editable={Boolean(lab.board?.canEditStructure)} onSelect={() => { setSelectedFrameId(frame.id); setKeyboardId(null); }} onResizeStart={(corner, event) => startResize("frame", frame.id, corner, { x: frame.x, y: frame.y, width: frame.width, height: frame.height }, event)} onResizeKeyDown={(corner, event) => keyboardResize("frame", frame.id, corner, { x: frame.x, y: frame.y, width: frame.width, height: frame.height }, event)} onResizeKeyUp={finishKeyboardResize} onFit={() => fitFrame(frame)} />; }) : null}
             <svg className="absolute inset-0 overflow-visible" width={bounds.width} height={bounds.height} aria-label="Local workboard relationships">
-              {visibleNodes.filter((node) => node.kind === "chat").flatMap((draft) => (draft.contextIds ?? []).map((contextId) => { const source = visibleNodes.find((node) => node.id === contextId); if (!source) return null; const sx = source.x + 232; const sy = source.y + 54; const tx = draft.x; const ty = draft.y + 54; const middle = (sx + tx) / 2; return <path key={`${draft.id}:${contextId}`} d={`M ${sx} ${sy} C ${middle} ${sy}, ${middle} ${ty}, ${tx} ${ty}`} fill="none" stroke="var(--nb-graphite)" strokeWidth="1.4" strokeDasharray="4 4" strokeLinecap="round" className="pointer-events-none" />; }))}
+              {visibleNodes.filter((node) => node.kind === "chat").flatMap((draft) => (draft.contextIds ?? []).map((contextId) => { const source = visibleNodes.find((node) => node.id === contextId); if (!source) return null; const sx = source.x + source.width; const sy = source.y + source.height / 2; const tx = draft.x; const ty = draft.y + draft.height / 2; const middle = (sx + tx) / 2; return <path key={`${draft.id}:${contextId}`} d={`M ${sx} ${sy} C ${middle} ${sy}, ${middle} ${ty}, ${tx} ${ty}`} fill="none" stroke="var(--nb-graphite)" strokeWidth="1.4" strokeDasharray="4 4" strokeLinecap="round" className="pointer-events-none" />; }))}
               {links.map((link) => { const source = visibleNodes.find((node) => node.id === link.fromId); const target = visibleNodes.find((node) => node.id === link.toId); if (!source || !target) return null; const from = labAnchorPoint(source, link.fromAnchor, cardHeightsRef.current.get(source.id) ?? 108); const to = labAnchorPoint(target, link.toAnchor, cardHeightsRef.current.get(target.id) ?? 108); const active = selectedLinkId === link.id; return <path key={link.id} role="button" tabIndex={0} aria-label={`Select relationship from ${source.title} to ${target.title}`} onClick={() => setSelectedLinkId(link.id)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setSelectedLinkId(link.id); } }} d={labConnectorPath(from, link.fromAnchor, to, link.toAnchor)} fill="none" stroke={active ? "var(--nb-green)" : "var(--nb-graphite)"} strokeWidth={active ? "2.4" : "1.4"} strokeLinecap="round" className="cursor-pointer outline-none focus:stroke-[var(--nb-green)]" />; })}
               {connectorPreview && connectorDragRef.current ? (() => { const source = visibleNodes.find((node) => node.id === connectorDragRef.current?.nodeId); if (!source || !connectorDragRef.current) return null; const from = labAnchorPoint(source, connectorDragRef.current.anchor, cardHeightsRef.current.get(source.id) ?? 108); return <path d={labConnectorPath(from, connectorDragRef.current.anchor, connectorPreview, connectorDragRef.current.anchor)} fill="none" stroke="var(--nb-green)" strokeWidth="2.4" strokeLinecap="round" className="pointer-events-none" />; })() : null}
             </svg>
-            {visibleNodes.map((node) => <LabCard key={node.id} node={node} item={itemByNode(node)} selected={selected.includes(node.id)} focused={keyboardId === node.id} connecting={connectSource !== null || connectorPreview !== null} connectSourceAnchor={connectSource?.nodeId === node.id ? connectSource.anchor : null} onSelect={() => setSelected((current) => toggleContext(current, node.id))} onOpen={() => openNode(node)} onBranch={() => branchFrom(node)} onHide={() => hideNode(node)} onDelete={() => deleteNode(node)} onEdit={(text) => setNodes((current) => current ? updateLocalNode(current, node.id, text) : current)} onEditCommitted={() => { noteWorkboardNodeEdited(orgId, eventKind(node)); const current = nodesRef.current.find((entry) => entry.id === node.id); if (current?.durableId) void persistNodePatch(current.id, { body: current.summary, title: current.title }); }} onAnchorPointerDown={(side, event) => startPointerConnect(node, side, event)} onAnchorActivate={(side) => chooseConnectAnchor(node, side)} onMenuOpened={() => { if (connectSource || connectorDragRef.current) cancelConnect(); noteWorkboardCardMenuOpened(orgId, eventKind(node), node.ownership); }} onMenuOpenChange={setCardMenuOpen} onMeasure={(height) => cardHeightsRef.current.set(node.id, height)} onPointerDown={(event) => onCardPointerDown(node, event)} onKeyDown={(event) => onCardKeyDown(node, event)} />)}
+            {visibleNodes.map((node) => { const canResize = Boolean(lab.board?.canEditStructure) && (node.kind !== "judgment" || Boolean(node.local)); return <LabCard key={node.id} node={node} item={itemByNode(node)} selected={selected.includes(node.id)} focused={keyboardId === node.id} connecting={connectSource !== null || connectorPreview !== null} connectSourceAnchor={connectSource?.nodeId === node.id ? connectSource.anchor : null} onSelect={() => setSelected((current) => toggleContext(current, node.id))} onOpen={() => openNode(node)} onBranch={() => branchFrom(node)} onHide={() => hideNode(node)} onDelete={() => deleteNode(node)} onEdit={(text) => setNodes((current) => current ? updateLocalNode(current, node.id, text) : current)} onEditCommitted={() => { noteWorkboardNodeEdited(orgId, eventKind(node)); const current = nodesRef.current.find((entry) => entry.id === node.id); if (current?.durableId) void persistNodePatch(current.id, { body: current.summary, title: current.title }); }} onAnchorPointerDown={(side, event) => startPointerConnect(node, side, event)} onAnchorActivate={(side) => chooseConnectAnchor(node, side)} onMenuOpened={() => { if (connectSource || connectorDragRef.current) cancelConnect(); noteWorkboardCardMenuOpened(orgId, eventKind(node), node.ownership); }} onMenuOpenChange={setCardMenuOpen} onMeasure={(height) => cardHeightsRef.current.set(node.id, height)} onPointerDown={(event) => onCardPointerDown(node, event)} onKeyDown={(event) => onCardKeyDown(node, event)} canResize={canResize} onResizeStart={(corner, event) => startResize("card", node.id, corner, { x: node.x, y: node.y, width: node.width, height: node.height }, event)} onResizeKeyDown={(corner, event) => keyboardResize("card", node.id, corner, { x: node.x, y: node.y, width: node.width, height: node.height }, event)} onResizeKeyUp={finishKeyboardResize} onFit={() => fitCard(node)} frameChoices={boardFrames.map((frame) => ({ id: frame.id, name: frame.name }))} structured={structureMode === "structured"} onMoveToFrame={(frameId) => moveToFrame(node, frameId)} />; })}
           </div>
           {isLoading ? <p className="absolute left-4 top-4 font-hand text-[16px] text-[var(--nb-mid)]">reading the engagement</p> : null}
           {isError ? <p className="absolute left-4 top-4 text-[13px] text-muted-foreground">This workboard could not be opened.</p> : null}

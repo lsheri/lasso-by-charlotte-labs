@@ -48,6 +48,8 @@ export type WorkboardNodeDto = {
   judgmentType: WorkboardJudgmentType | null;
   x: number;
   y: number;
+  w: number;
+  h: number;
   hidden: boolean;
   version: number;
   /** False when the referenced record exists but this caller may not read it. */
@@ -101,6 +103,8 @@ export type WorkboardNodeInput = {
   judgmentType?: WorkboardJudgmentType | null;
   x: number;
   y: number;
+  w: number;
+  h: number;
   hidden?: boolean;
 };
 
@@ -115,7 +119,7 @@ export type WorkboardCommand =
       type: "node_update";
       nodeId: string;
       expectedVersion: number;
-      patch: Partial<{ x: number; y: number; frameId: string | null; hidden: boolean; title: string; body: string }>;
+      patch: Partial<{ x: number; y: number; w: number; h: number; frameId: string | null; hidden: boolean; title: string; body: string }>;
     }
   | { type: "node_archive"; nodeId: string; expectedVersion: number }
   | { type: "node_restore"; nodeId: string; expectedVersion: number }

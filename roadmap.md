@@ -90,3 +90,13 @@
 - [x] Permission/concurrency/revision/contract/UI tests; typecheck; token guard; preview build
 - [x] Append dated build record; report
 - [ ] Liam authenticated visual verification (may be blocked as before)
+
+## Canvas Interaction Polish (approved 2026-09-18)
+- [x] Separate paper selection, four corner resize handles, and four edge connection anchors
+- [x] Add durable card and frame resize with pointer, keyboard, cancellation, and Fit content
+- [x] Add local Structured / Freeform mode and explicit Structured-only workstream reassignment
+- [x] Add consent-stamped resize and structure events; retain existing save/conflict behavior
+- [x] Complete focused tests, typecheck, and token/language guards
+- [x] Confirm the automatic preview build
+- [ ] Complete Liam visual verification
+- [ ] Phase 3 Slice 2 remains blocked on explicit consent and retention approval for durable comments, highlights, and locators

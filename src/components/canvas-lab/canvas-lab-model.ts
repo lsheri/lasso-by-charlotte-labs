@@ -19,6 +19,8 @@ export type LabOwnership = "yours" | "teammate" | "draft";
 
 export type LabFrameId = string;
 export type LabAnchor = "top" | "right" | "bottom" | "left";
+export type LabResizeCorner = "nw" | "ne" | "se" | "sw";
+export type LabStructureMode = "structured" | "freeform";
 
 export type LabNode = {
   id: string;
@@ -45,6 +47,8 @@ export type LabNode = {
 
   x: number;
   y: number;
+  width: number;
+  height: number;
 };
 
 export type LabFrame = {
@@ -60,6 +64,13 @@ export type LabFrame = {
 };
 
 export const CARD_WIDTH = 232;
+export const CARD_HEIGHT = 112;
+export const CARD_MIN_WIDTH = 180;
+export const CARD_MIN_HEIGHT = 112;
+export const CARD_MAX_WIDTH = 520;
+export const CARD_MAX_HEIGHT = 520;
+export const FRAME_MIN_WIDTH = 260;
+export const FRAME_MIN_HEIGHT = 220;
 export const CARD_GAP_Y = 144;
 export const FRAME_PADDING = 24;
 
@@ -184,7 +195,7 @@ export function createLocalNode(kind: LabTemplateKind, frame: LabFrame, nodes: L
   const judgment = judgmentType ? JUDGMENT_TYPES.find((entry) => entry.value === judgmentType) : undefined;
   const label = judgment?.label ?? REASONING_STEPS.find((entry) => entry.kind === kind)?.label ?? "Local note";
   const at = localNodeAnchor(frame, nodes);
-  return { id: `local-node:${localCounter}`, clientKey: newLabClientKey(), kind, frame: frame.id, title: label, summary: "Add a short note.", typeLabel: label, ownership: "draft", ...(judgmentType ? { judgmentType } : {}), local: true, x: at.x, y: at.y };
+  return { id: `local-node:${localCounter}`, clientKey: newLabClientKey(), kind, frame: frame.id, title: label, summary: "Add a short note.", typeLabel: label, ownership: "draft", ...(judgmentType ? { judgmentType } : {}), local: true, x: at.x, y: at.y, width: CARD_WIDTH, height: CARD_HEIGHT };
 }
 
 
@@ -208,14 +219,14 @@ export function removeLabLink(links: LabLink[], id: string): LabLink[] {
   return links.filter((link) => link.id !== id);
 }
 
-export function labAnchorPoint(node: Pick<LabNode, "x" | "y">, side: LabAnchor, height: number): Point {
-  if (side === "top") return { x: node.x + CARD_WIDTH / 2, y: node.y };
-  if (side === "right") return { x: node.x + CARD_WIDTH, y: node.y + height / 2 };
-  if (side === "bottom") return { x: node.x + CARD_WIDTH / 2, y: node.y + height };
+export function labAnchorPoint(node: Pick<LabNode, "x" | "y" | "width">, side: LabAnchor, height: number): Point {
+  if (side === "top") return { x: node.x + node.width / 2, y: node.y };
+  if (side === "right") return { x: node.x + node.width, y: node.y + height / 2 };
+  if (side === "bottom") return { x: node.x + node.width / 2, y: node.y + height };
   return { x: node.x, y: node.y + height / 2 };
 }
 
-export function nearestLabAnchor(point: Point, node: Pick<LabNode, "x" | "y">, height: number): LabAnchor {
+export function nearestLabAnchor(point: Point, node: Pick<LabNode, "x" | "y" | "width">, height: number): LabAnchor {
   const sides: LabAnchor[] = ["top", "right", "bottom", "left"];
   const first = sides[0];
   if (!first) return "top";
@@ -296,6 +307,8 @@ export function seedCanvas(input: SeedInput, frames = createLabFrames(input.task
       ownership: "yours",
       x: at.x,
       y: at.y,
+      width: CARD_WIDTH,
+      height: CARD_HEIGHT,
     });
   }
 
@@ -318,6 +331,8 @@ export function seedCanvas(input: SeedInput, frames = createLabFrames(input.task
       workItemId: item.id,
       x: at.x,
       y: at.y,
+      width: CARD_WIDTH,
+      height: CARD_HEIGHT,
     });
   }
 
@@ -333,6 +348,8 @@ export function seedCanvas(input: SeedInput, frames = createLabFrames(input.task
       ownership: decision.ownedByViewer ? "yours" : "teammate",
       x: at.x,
       y: at.y,
+      width: CARD_WIDTH,
+      height: CARD_HEIGHT,
     });
   });
 
@@ -385,6 +402,8 @@ export function createChatNode(
     local: true,
     x: at.x,
     y: at.y,
+    width: CARD_WIDTH,
+    height: CARD_HEIGHT,
   };
 }
 
@@ -450,6 +469,58 @@ export function fitScale(
   return Math.max(0.62, Math.min(1.6, scale));
 }
 
+export type LabRect = { x: number; y: number; width: number; height: number };
+
+export function resizeLabRect(start: LabRect, corner: LabResizeCorner, delta: Point, preserveAspect = false, kind: "card" | "frame" = "card"): LabRect {
+  const minWidth = kind === "card" ? CARD_MIN_WIDTH : FRAME_MIN_WIDTH;
+  const minHeight = kind === "card" ? CARD_MIN_HEIGHT : FRAME_MIN_HEIGHT;
+  const maxWidth = kind === "card" ? CARD_MAX_WIDTH : 2400;
+  const maxHeight = kind === "card" ? CARD_MAX_HEIGHT : 1800;
+  const left = corner === "nw" || corner === "sw";
+  const top = corner === "nw" || corner === "ne";
+  let width = Math.max(minWidth, Math.min(maxWidth, start.width + (left ? -delta.x : delta.x)));
+  let height = Math.max(minHeight, Math.min(maxHeight, start.height + (top ? -delta.y : delta.y)));
+  if (preserveAspect) {
+    const ratio = start.width / start.height;
+    if (Math.abs(width - start.width) >= Math.abs(height - start.height) * ratio) height = Math.max(minHeight, Math.min(maxHeight, width / ratio));
+    else width = Math.max(minWidth, Math.min(maxWidth, height * ratio));
+  }
+  return {
+    x: left ? start.x + start.width - width : start.x,
+    y: top ? start.y + start.height - height : start.y,
+    width: Math.round(width),
+    height: Math.round(height),
+  };
+}
+
+export function cardSizeTier(node: Pick<LabNode, "width" | "height">): "compact" | "standard" | "expanded" {
+  if (node.width < 220 || node.height < 136) return "compact";
+  if (node.width >= 320 || node.height >= 220) return "expanded";
+  return "standard";
+}
+
+export function fitFrameToNodes(frame: LabFrame, nodes: LabNode[]): LabRect | null {
+  const members = nodes.filter((node) => node.frame === frame.id);
+  if (members.length === 0) return null;
+  const left = Math.min(...members.map((node) => node.x)) - FRAME_PADDING;
+  const top = Math.min(...members.map((node) => node.y)) - 60;
+  const right = Math.max(...members.map((node) => node.x + node.width)) + FRAME_PADDING;
+  const bottom = Math.max(...members.map((node) => node.y + node.height)) + FRAME_PADDING;
+  return { x: left, y: top, width: Math.max(FRAME_MIN_WIDTH, right - left), height: Math.max(FRAME_MIN_HEIGHT, bottom - top) };
+}
+
+export function containFrameMembers(rect: LabRect, frameId: string, nodes: LabNode[]): LabRect {
+  const members = nodes.filter((node) => node.frame === frameId);
+  if (members.length === 0) return rect;
+  const contentLeft = Math.min(...members.map((node) => node.x)) - FRAME_PADDING;
+  const contentTop = Math.min(...members.map((node) => node.y)) - 60;
+  const contentRight = Math.max(...members.map((node) => node.x + node.width)) + FRAME_PADDING;
+  const contentBottom = Math.max(...members.map((node) => node.y + node.height)) + FRAME_PADDING;
+  const x = Math.min(rect.x, contentLeft);
+  const y = Math.min(rect.y, contentTop);
+  return { x, y, width: Math.max(rect.x + rect.width, contentRight) - x, height: Math.max(rect.y + rect.height, contentBottom) - y };
+}
+
 /* ------------------------------------------------------------------ */
 /* Phase 3 Slice 1: durable Workboard merge and review traversal       */
 /* ------------------------------------------------------------------ */
@@ -507,6 +578,8 @@ export function applyDurableBoard(base: { frames: LabFrame[]; nodes: LabNode[] }
         frame: frameId ?? virtual.frame,
         x: durable.x,
         y: durable.y,
+        width: durable.w > 0 ? durable.w : CARD_WIDTH,
+        height: durable.h > 0 ? durable.h : CARD_HEIGHT,
         durableId: durable.id,
         durableVersion: durable.version,
       });
@@ -528,6 +601,8 @@ export function applyDurableBoard(base: { frames: LabFrame[]; nodes: LabNode[] }
         durableVersion: durable.version,
         x: durable.x,
         y: durable.y,
+        width: durable.w > 0 ? durable.w : CARD_WIDTH,
+        height: durable.h > 0 ? durable.h : CARD_HEIGHT,
       });
     }
     // draft rows are deliberately not rehydrated in Slice 1.

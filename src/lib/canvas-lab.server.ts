@@ -136,6 +136,8 @@ export async function loadWorkboard(db: Db, engagementId: string, profile: Resol
     judgmentType: (row.judgment_type as WorkboardNodeDto["judgmentType"]) ?? null,
     x: row.x,
     y: row.y,
+    w: row.w,
+    h: row.h,
     hidden: row.hidden,
     version: row.version,
     referenceReadable: true,
@@ -175,11 +177,31 @@ function snapshot<T extends { version: number }>(row: T): WorkboardRowSnapshot &
 }
 
 function validNodeInput(node: WorkboardNodeInput): string | null {
+  if (![node.x, node.y, node.w, node.h].every(Number.isFinite) || node.w < 180 || node.h < 112 || node.w > 520 || node.h > 520) return "Card dimensions are outside the supported range.";
   if (node.kind === "work_item" && !node.workItemId) return "A work card needs its work item.";
   if (node.kind === "decision" && !node.decisionId) return "A decision card needs its decision.";
   if ((node.kind === "judgment" || node.kind === "draft") && (node.workItemId || node.decisionId)) return "An authored card cannot reference a record.";
   if (node.judgmentType && !WORKBOARD_JUDGMENT_TYPES.includes(node.judgmentType)) return "Unknown judgment type.";
   return null;
+}
+
+function validFrameGeometry(frame: { x?: number; y?: number; w?: number; h?: number }): boolean {
+  const values = [frame.x, frame.y, frame.w, frame.h].filter((value): value is number => value !== undefined);
+  if (!values.every(Number.isFinite)) return false;
+  if (frame.w !== undefined && (frame.w < 260 || frame.w > 2400)) return false;
+  return frame.h === undefined || (frame.h >= 220 && frame.h <= 1800);
+}
+
+function validNodeGeometry(node: { x?: number; y?: number; w?: number; h?: number }): boolean {
+  const values = [node.x, node.y, node.w, node.h].filter((value): value is number => value !== undefined);
+  if (!values.every(Number.isFinite)) return false;
+  if (node.w !== undefined && (node.w < 180 || node.w > 520)) return false;
+  return node.h === undefined || (node.h >= 112 && node.h <= 520);
+}
+
+function nodePatchForDatabase(patch: Extract<WorkboardCommand, { type: "node_update" }>["patch"]): Record<string, unknown> {
+  const { frameId, ...rest } = patch;
+  return definedPatch({ ...rest, ...(frameId !== undefined ? { frame_id: frameId } : {}) });
 }
 
 export async function applyWorkboardCommand(
@@ -202,6 +224,7 @@ export async function applyWorkboardCommand(
 
   if (command.type === "materialize") {
     if (!membership.isEditor) return { status: "forbidden" };
+    if (command.frames.some((frame) => !validFrameGeometry(frame))) return { status: "validation_error", message: "Workstream dimensions are outside the supported range." };
     const existingFrames = (await db.from("workboard_frames").select("id, key").eq("workboard_id", board.id).is("deleted_at", null)).data ?? [];
     const frameIdByKey = new Map(existingFrames.map((row) => [row.key, row.id]));
     const missingFrames = command.frames.filter((frame) => !frameIdByKey.has(frame.key));
@@ -242,6 +265,7 @@ export async function applyWorkboardCommand(
 
   if (command.type === "frame_create") {
     if (!membership.isEditor) return { status: "forbidden" };
+    if (!validFrameGeometry(command.frame)) return { status: "validation_error", message: "Workstream dimensions are outside the supported range." };
     const { data, error } = await db
       .from("workboard_frames")
       .insert(frameInsert(board.id, profile.id, command.frame))
@@ -253,6 +277,7 @@ export async function applyWorkboardCommand(
 
   if (command.type === "frame_update" || command.type === "frame_archive" || command.type === "frame_restore") {
     if (!membership.isEditor) return { status: "forbidden" };
+    if (command.type === "frame_update" && !validFrameGeometry(command.patch)) return { status: "validation_error", message: "Workstream dimensions are outside the supported range." };
     const patch =
       command.type === "frame_update"
         ? { ...definedPatch(command.patch), ...stamp }
@@ -289,9 +314,14 @@ export async function applyWorkboardCommand(
     if (owner && (owner.kind === "judgment" || owner.kind === "draft") && owner.author_profile_id !== profile.id) {
       return { status: "forbidden" };
     }
+    if (command.type === "node_update" && !validNodeGeometry(command.patch)) return { status: "validation_error", message: "Card dimensions are outside the supported range." };
+    if (command.type === "node_update" && command.patch.frameId) {
+      const target = (await db.from("workboard_frames").select("id").eq("id", command.patch.frameId).eq("workboard_id", board.id).is("deleted_at", null).maybeSingle()).data;
+      if (!target) return { status: "validation_error", message: "That workstream is not on this workboard." };
+    }
     const patch =
       command.type === "node_update"
-        ? { ...definedPatch(command.patch), ...stamp }
+        ? { ...nodePatchForDatabase(command.patch), ...stamp }
         : { deleted_at: command.type === "node_archive" ? new Date().toISOString() : null, ...stamp };
     const { data, error } = await db
       .from("workboard_nodes")
@@ -300,7 +330,7 @@ export async function applyWorkboardCommand(
       .eq("id", command.nodeId)
       .eq("workboard_id", board.id)
       .eq("version", command.expectedVersion)
-      .select("id, version, x, y, hidden, title, body, frame_id, deleted_at");
+        .select("id, version, x, y, w, h, hidden, title, body, frame_id, deleted_at");
     if (error) return { status: "forbidden" };
     const row = data?.[0];
     if (!row) {
@@ -391,6 +421,8 @@ function nodeInsert(boardId: string, profileId: string, node: WorkboardNodeInput
     judgment_type: node.judgmentType ?? null,
     x: node.x,
     y: node.y,
+    w: node.w,
+    h: node.h,
     hidden: node.hidden ?? false,
     created_by: profileId,
     updated_by: profileId,
