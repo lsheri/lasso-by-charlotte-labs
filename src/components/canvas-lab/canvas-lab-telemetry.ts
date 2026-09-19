@@ -64,3 +64,16 @@ export function noteWorkboardDropPromptAnswered(orgId: string | undefined, answe
 export function noteWorkboardStructureToggled(orgId: string | undefined, state: "structured" | "freeform"): void {
   if (orgId) logEvent("workboard.structure_toggled", orgId, { state });
 }
+
+/** Canvas Lab polish 2c-iv: how a save error ended. Closed choice only. */
+export function noteWorkboardSaveErrorResolved(orgId: string | undefined, entity: WorkboardPersistEntity, choice: "retry" | "discard"): void {
+  if (orgId) logEvent("workboard.save_error_resolved", orgId, { entity, choice });
+}
+
+/** Closed union so later actions can be added without repurposing a field. */
+export type WorkboardContextAction = "cleared";
+
+/** Canvas Lab polish 2c-iv: the local context selection changed. Action only. */
+export function noteWorkboardContextChanged(orgId: string | undefined, action: WorkboardContextAction): void {
+  if (orgId) logEvent("workboard.context_changed", orgId, { action });
+}

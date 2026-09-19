@@ -140,3 +140,11 @@
 - [x] Clear selected relationships on board, card, frame, and Escape paths
 - [x] Distinguish durable and local relationship removal announcements
 - [ ] Verify link geometry and removal as Liam at 45% zoom
+
+## Workboard persistence feedback (approved 2026-09-19)
+- [x] Carry the failed change in the save error state and offer Retry and Discard
+- [x] Report an unreachable record as a network failure, not a validation failure
+- [x] Float both banners over the board so the canvas never shifts
+- [x] Claim nothing in "What fed this" until the record has been read
+- [x] Clear all context in one move when two or more cards are selected
+- [ ] Portal catalog: add workboard.save_error_resolved and workboard.context_changed (architect)

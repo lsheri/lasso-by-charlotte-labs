@@ -13,11 +13,24 @@ import { useCallback, useRef, useState } from "react";
 import { getCanvasLabBoardFn, mutateCanvasLabBoardFn } from "@/lib/canvas-lab.functions";
 import type { WorkboardCommand, WorkboardDto, WorkboardMutationResult, WorkboardRowSnapshot } from "@/lib/canvas-lab-shared";
 
+/** Which durable thing a command touches, for honest error reporting. */
+export type WorkboardCommandEntity = "board" | "frame" | "node" | "relationship";
+
+export function commandEntityKind(command: WorkboardCommand): WorkboardCommandEntity {
+  if (command.type === "materialize") return "board";
+  if (command.type.startsWith("frame_")) return "frame";
+  if (command.type.startsWith("link_")) return "relationship";
+  return "node";
+}
+
+/** A reachability failure, kept apart from a real validation answer. */
+export type WorkboardClientResult = WorkboardMutationResult | { status: "network_error"; message: string };
+
 export type WorkboardSaveState =
   | { status: "idle" }
   | { status: "saving" }
   | { status: "saved" }
-  | { status: "error"; message: string }
+  | { status: "error"; message: string; retry: WorkboardCommand; entityKind: WorkboardCommandEntity }
   | { status: "forbidden" }
   | { status: "conflict"; entityKind: "frame" | "node" | "link"; entityId: string; latestVersion: number; latest: WorkboardRowSnapshot; retry: WorkboardCommand };
 
@@ -43,13 +56,13 @@ export function useCanvasLab(engagementId: string, profileId: string | undefined
   if (query.data && boardRef.current !== query.data) boardRef.current = query.data;
 
   const persist = useCallback(
-    async (command: WorkboardCommand): Promise<WorkboardMutationResult> => {
+    async (command: WorkboardCommand): Promise<WorkboardClientResult> => {
       setSaveState({ status: "saving" });
-      let result: WorkboardMutationResult;
+      let result: WorkboardClientResult;
       try {
         result = (await mutateFn({ data: { engagement_id: engagementId, command, ...(profileId ? { profile_id: profileId } : {}) } })) as WorkboardMutationResult;
       } catch {
-        result = { status: "validation_error", message: "Could not reach the record." };
+        result = { status: "network_error", message: "Could not reach the record." };
       }
       if (result.status === "saved") {
         setSaveState({ status: "saved" });
@@ -64,7 +77,7 @@ export function useCanvasLab(engagementId: string, profileId: string | undefined
         setSaveState({ status: "forbidden" });
         return result;
       }
-      setSaveState({ status: "error", message: result.message });
+      setSaveState({ status: "error", message: result.message, retry: command, entityKind: commandEntityKind(command) });
       return result;
     },
     [engagementId, mutateFn, profileId, queryClient],

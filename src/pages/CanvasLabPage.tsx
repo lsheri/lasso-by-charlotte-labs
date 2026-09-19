@@ -77,6 +77,8 @@ import {
   noteWorkboardTrailSelected,
   noteWorkboardDropPromptAnswered,
   noteWorkboardStructureToggled,
+  noteWorkboardSaveErrorResolved,
+  noteWorkboardContextChanged,
   type LabNodeEventKind,
   type WorkboardPersistEntity,
 } from "@/components/canvas-lab/canvas-lab-telemetry";
@@ -331,6 +333,7 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
     if (result.status === "saved") noteWorkboardChangeSaved(orgId, entity, action);
     else if (result.status === "conflict") noteWorkboardSaveFailed(orgId, entity, "conflict");
     else if (result.status === "forbidden") noteWorkboardSaveFailed(orgId, entity, "permission");
+    else if (result.status === "network_error") noteWorkboardSaveFailed(orgId, entity, "network");
     else if (result.status === "validation_error") noteWorkboardSaveFailed(orgId, entity, "validation");
     else noteWorkboardSaveFailed(orgId, entity, "unknown");
   }
@@ -429,24 +432,51 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
    * deterministic seed, so workstreams, cards and relationships all reconcile.
    * Viewport, rail, selection and unsent composer text are left alone.
    */
+  /** One reload path, shared by Load latest and Discard. */
+  async function reloadDurableBoard(): Promise<boolean> {
+    const fresh = await lab.refresh();
+    const base = virtualBaseRef.current;
+    if (!fresh?.id || !base) {
+      lab.clearSaveState();
+      return false;
+    }
+    const merged = applyDurableBoard(base, fresh);
+    const localOnly = (nodesRef.current ?? []).filter((entry) => !entry.durableId && (entry.kind === "chat" || (entry.local && entry.kind !== "judgment")));
+    setFrames(merged.frames);
+    setNodes([...merged.nodes, ...localOnly]);
+    setLinks(merged.links);
+    setHiddenIds(merged.hiddenIds);
+    setSelectedLinkId(null);
+    lab.clearSaveState();
+    return true;
+  }
+
+  /** Retry the exact failed change, or go back to the last saved version. */
+  function resolveSaveError(choice: "retry" | "discard") {
+    const state = lab.saveState;
+    if (state.status !== "error") return;
+    noteWorkboardSaveErrorResolved(orgId, state.entityKind, choice);
+    if (choice === "retry") {
+      const retry = state.retry;
+      const entity = state.entityKind;
+      lab.clearSaveState();
+      void lab.persist(retry).then((result) => report(result, entity, "update"));
+      setAnnouncement("Retried your change.");
+      return;
+    }
+    void (async () => {
+      const reloaded = await reloadDurableBoard();
+      setAnnouncement(reloaded ? "Went back to the last saved version." : "Nothing was saved yet.");
+    })();
+  }
+
   function resolveConflict(choice: "latest" | "retry") {
     const state = lab.saveState;
     if (state.status !== "conflict") return;
     noteWorkboardConflictResolved(orgId, state.entityKind === "link" ? "relationship" : state.entityKind, choice);
     if (choice === "latest") {
       void (async () => {
-        const fresh = await lab.refresh();
-        const base = virtualBaseRef.current;
-        if (fresh?.id && base) {
-          const merged = applyDurableBoard(base, fresh);
-          const localOnly = (nodesRef.current ?? []).filter((entry) => !entry.durableId && (entry.kind === "chat" || (entry.local && entry.kind !== "judgment")));
-          setFrames(merged.frames);
-          setNodes([...merged.nodes, ...localOnly]);
-          setLinks(merged.links);
-          setHiddenIds(merged.hiddenIds);
-          setSelectedLinkId(null);
-        }
-        lab.clearSaveState();
+        await reloadDurableBoard();
         setAnnouncement("Loaded the newer version of this workboard.");
       })();
       return;
@@ -1037,7 +1067,8 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
       {menuOpen ? <div className="fixed inset-0 z-50 flex bg-[var(--nb-scrim)]" onPointerDown={() => setMenuOpen(false)}><aside className="h-full w-[280px] overflow-y-auto border-r border-border bg-sidebar p-4 shadow-[var(--shadow-modal)]" onPointerDown={(event) => event.stopPropagation()}><div className="mb-5 flex items-center justify-between"><span className="font-serif text-xl text-foreground">Lasso</span><Button size="icon" variant="ghost" aria-label="Close workboard menu" onClick={() => setMenuOpen(false)}><X className="h-4 w-4" /></Button></div><SidebarNav onNavigate={() => setMenuOpen(false)} onOpenSettings={() => void navigate({ to: "/settings" })} /><div className="mt-6 border-t border-border pt-4"><label className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft" htmlFor="canvas-lab-new-frame">Add workstream</label><div className="mt-2 flex gap-2"><input id="canvas-lab-new-frame" maxLength={60} value={newFrameName} onChange={(event) => { setNewFrameName(event.target.value); if (event.target.value.trim()) setNewFrameError(false); }} className="min-w-0 flex-1 rounded-[var(--radius-control)] border border-input bg-background px-2 text-[12px]" placeholder="Workstream name" /><Button size="sm" variant="outline" onClick={() => { if (addWorkstream(newFrameName)) { setNewFrameName(""); setNewFrameError(false); } else setNewFrameError(true); }}>Add</Button></div>{newFrameError ? <p className="mt-1 font-hand text-[13px] text-destructive">a workstream needs a name</p> : <p className="mt-1 font-hand text-[13px] text-[var(--nb-mid)]">not saved</p>}</div></aside></div> : null}
       <main className={`relative min-w-0 flex-1 flex-col ${mobileView === "board" ? "flex" : "hidden md:flex"}`}>
         <header className="z-20 flex h-[52px] shrink-0 items-center justify-between gap-3 border-b border-border bg-card px-4"><div className="min-w-0"><span className="block truncate text-[13px] font-medium text-foreground">{title}</span><span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">{status}</span></div><div className="flex items-center gap-1"><div className="canvas-lab-structure-toggle" aria-label="Workboard structure"><Button type="button" size="sm" variant={structureMode === "structured" ? "secondary" : "ghost"} aria-pressed={structureMode === "structured"} onClick={() => { if (structureMode === "structured") return; setStructureMode("structured"); noteWorkboardStructureToggled(orgId, "structured"); }}>Structured</Button><Button type="button" size="sm" variant={structureMode === "freeform" ? "secondary" : "ghost"} aria-pressed={structureMode === "freeform"} onClick={() => { if (structureMode === "freeform") return; setStructureMode("freeform"); setSelectedFrameId(null); noteWorkboardStructureToggled(orgId, "freeform"); }}>Freeform</Button></div><Button type="button" size="sm" variant="outline" className="md:hidden" onClick={() => { setRailOpen(true); setMobileView("rail"); }}>Working from</Button>{selectedLinkId ? <Button type="button" size="sm" variant="ghost" onClick={() => { const link = links.find((entry) => entry.id === selectedLinkId); if (link) removeRelationship(link); }}>Remove relationship</Button> : null}<Button size="sm" variant="outline" onClick={() => fit(true)}>Fit</Button><Button size="icon" variant="ghost" aria-label="Zoom out" onClick={() => zoomAtCentre(stepZoom(zoomRef.current, "out"))}><Minus className="h-3.5 w-3.5" /></Button><button type="button" aria-label="Zoom to 100 percent" className="w-10 text-center font-mono text-[10px] text-soft" onClick={() => zoomAtCentre(1)}>{Math.round(zoom * 100)}%</button><Button size="icon" variant="ghost" aria-label="Zoom in" onClick={() => zoomAtCentre(stepZoom(zoomRef.current, "in"))}><Plus className="h-3.5 w-3.5" /></Button></div></header>
-        {lab.saveState.status === "conflict" ? <div className="z-20 flex items-center justify-between gap-3 border-b border-border bg-card px-4 py-2" role="alert"><p className="text-[13px] text-foreground">Someone saved a newer version of this record.</p><div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => resolveConflict("latest")}>Load latest</Button><Button size="sm" variant="outline" onClick={() => resolveConflict("retry")}>Retry my change</Button></div></div> : null}
+        {lab.saveState.status === "conflict" ? <div data-testid="canvas-lab-banner" className="canvas-lab-banner" role="alert"><p className="text-[13px] text-foreground">A newer version of this record was saved.</p><div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => resolveConflict("latest")}>Load latest</Button><Button size="sm" variant="outline" onClick={() => resolveConflict("retry")}>Retry my change</Button></div></div> : null}
+        {lab.saveState.status === "error" ? <div data-testid="canvas-lab-banner" className="canvas-lab-banner" role="alert"><p className="text-[13px] text-foreground">Could not save your last change.</p><div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => resolveSaveError("retry")}>Retry</Button><Button size="sm" variant="outline" onClick={() => resolveSaveError("discard")}>Discard</Button></div></div> : null}
         <div ref={shellRef} tabIndex={-1} onPointerDownCapture={(event) => { if (event.button === 0 && spaceRef.current) { event.preventDefault(); event.stopPropagation(); startSpacePan(event); } }} onPointerDown={(event) => { const target = event.target as HTMLElement; const empty = event.target === event.currentTarget || target.dataset["testid"] === "canvas-lab-stage"; if (event.button === 0 && empty) { setKeyboardId(null); setSelectedFrameId(null); setSelectedLinkId((current) => relationshipSelection(current, "deselect")); viewportChangedRef.current = true; setInteraction("pan"); panRef.current = { from: { x: event.clientX, y: event.clientY }, origin: pan }; } }} data-space-pan={spaceHeld} onScroll={(event) => keepViewportUnscrolled(event.currentTarget)} className="canvas-lab-surface relative min-h-0 flex-1 overflow-hidden">
           {boardReady ? <div data-testid="canvas-lab-stage" tabIndex={-1} className="canvas-lab-stage absolute left-0 top-0 origin-top-left" style={{ width: bounds.width, height: bounds.height, transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`, "--lab-inverse-zoom": labInverseZoom(zoom) } as CSSProperties}>
             <ReasoningTrailGuide onAdd={addNode} />
@@ -1049,7 +1080,7 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
               <LabRelationships links={links} nodes={visibleNodes} measuredHeights={cardHeightsRef.current} selectedLinkId={selectedLinkId} inverseZoom={labInverseZoom(zoom)} editable={Boolean(lab.board?.canEditStructure)} onSelect={(id) => { setKeyboardId(null); setSelectedFrameId(null); setSelectedLinkId((current) => relationshipSelection(current, "select", id)); }} onRemove={removeRelationship} />
               {connectorPreview && connectorDragRef.current ? (() => { const source = visibleNodes.find((node) => node.id === connectorDragRef.current?.nodeId); if (!source || !connectorDragRef.current) return null; const from = labAnchorPoint(source, connectorDragRef.current.anchor, cardHeightsRef.current.get(source.id) ?? 108); return <path d={labConnectorPath(from, connectorDragRef.current.anchor, connectorPreview, connectorDragRef.current.anchor)} fill="none" stroke="var(--nb-green)" strokeWidth="2.4" strokeLinecap="round" className="pointer-events-none" />; })() : null}
             </svg>
-            {visibleNodes.map((node) => { const canResize = Boolean(lab.board?.canEditStructure) && (node.kind !== "judgment" || Boolean(node.local)); return <LabCard key={node.id} node={node} item={itemByNode(node)} selected={selected.includes(node.id)} focused={keyboardId === node.id} focusOnMount={pendingJudgmentFocusId === node.id} connecting={connectSource !== null || connectorPreview !== null} connectSourceAnchor={connectSource?.nodeId === node.id ? connectSource.anchor : null} onSelect={() => setSelected((current) => { const adding = !current.includes(node.id); setAnnouncement(adding ? "Added to context" : "Removed from context"); return toggleContext(current, node.id); })} onOpen={() => openNode(node)} onBranch={() => branchFrom(node)} onHide={() => hideNode(node)} onDelete={() => deleteNode(node)} onEdit={(text) => setNodes((current) => current ? updateLocalNode(current, node.id, text) : current)} onEditCommitted={() => { noteWorkboardNodeEdited(orgId, eventKind(node)); const current = nodesRef.current.find((entry) => entry.id === node.id); if (current?.durableId) void persistNodePatch(current.id, { body: current.summary, title: current.title }); }} onAnchorPointerDown={(side, event) => startPointerConnect(node, side, event)} onAnchorActivate={(side) => chooseConnectAnchor(node, side)} onMenuOpened={() => { if (connectSource || connectorDragRef.current) cancelConnect(); noteWorkboardCardMenuOpened(orgId, eventKind(node), node.ownership); }} onMenuOpenChange={setCardMenuOpen} onMeasure={(height) => cardHeightsRef.current.set(node.id, height)} onPointerDown={(event) => onCardPointerDown(node, event)} onFocus={() => { setKeyboardId(node.id); setSelectedFrameId(null); setSelectedLinkId((current) => relationshipSelection(current, "deselect")); if (pendingJudgmentFocusId === node.id) setPendingJudgmentFocusId(null); }} onKeyDown={(event) => onCardKeyDown(node, event)} canResize={canResize} onResizeStart={(corner, event) => startResize("card", node.id, corner, { x: node.x, y: node.y, width: node.width, height: node.height }, event)} onResizeKeyDown={(corner, event) => keyboardResize("card", node.id, corner, { x: node.x, y: node.y, width: node.width, height: node.height }, event)} onResizeKeyUp={finishKeyboardResize} onFit={() => fitCard(node)} frameChoices={boardFrames.map((frame) => ({ id: frame.id, name: frame.name }))} structured={structureMode === "structured"} onMoveToFrame={(frameId) => moveToFrame(node, frameId)} />; })}
+            {visibleNodes.map((node) => { const canResize = Boolean(lab.board?.canEditStructure) && (node.kind !== "judgment" || Boolean(node.local)); return <LabCard key={node.id} node={node} item={itemByNode(node)} selected={selected.includes(node.id)} focused={keyboardId === node.id} focusOnMount={pendingJudgmentFocusId === node.id} connecting={connectSource !== null || connectorPreview !== null} connectSourceAnchor={connectSource?.nodeId === node.id ? connectSource.anchor : null} onSelect={() => { setAnnouncement(selected.includes(node.id) ? "Removed from context" : "Added to context"); setSelected((current) => toggleContext(current, node.id)); }} onOpen={() => openNode(node)} onBranch={() => branchFrom(node)} onHide={() => hideNode(node)} onDelete={() => deleteNode(node)} onEdit={(text) => setNodes((current) => current ? updateLocalNode(current, node.id, text) : current)} onEditCommitted={() => { noteWorkboardNodeEdited(orgId, eventKind(node)); const current = nodesRef.current.find((entry) => entry.id === node.id); if (current?.durableId) void persistNodePatch(current.id, { body: current.summary, title: current.title }); }} onAnchorPointerDown={(side, event) => startPointerConnect(node, side, event)} onAnchorActivate={(side) => chooseConnectAnchor(node, side)} onMenuOpened={() => { if (connectSource || connectorDragRef.current) cancelConnect(); noteWorkboardCardMenuOpened(orgId, eventKind(node), node.ownership); }} onMenuOpenChange={setCardMenuOpen} onMeasure={(height) => cardHeightsRef.current.set(node.id, height)} onPointerDown={(event) => onCardPointerDown(node, event)} onFocus={() => { setKeyboardId(node.id); setSelectedFrameId(null); setSelectedLinkId((current) => relationshipSelection(current, "deselect")); if (pendingJudgmentFocusId === node.id) setPendingJudgmentFocusId(null); }} onKeyDown={(event) => onCardKeyDown(node, event)} canResize={canResize} onResizeStart={(corner, event) => startResize("card", node.id, corner, { x: node.x, y: node.y, width: node.width, height: node.height }, event)} onResizeKeyDown={(corner, event) => keyboardResize("card", node.id, corner, { x: node.x, y: node.y, width: node.width, height: node.height }, event)} onResizeKeyUp={finishKeyboardResize} onFit={() => fitCard(node)} frameChoices={boardFrames.map((frame) => ({ id: frame.id, name: frame.name }))} structured={structureMode === "structured"} onMoveToFrame={(frameId) => moveToFrame(node, frameId)} />; })}
             {linkRejection ? (() => { const target = visibleNodes.find((node) => node.id === linkRejection.targetId); if (!target) return null; return <LabLinkRejection target={target} message={linkRejection.message} onClear={() => setLinkRejection(null)} />; })() : null}
             {dropPrompt ? (() => { const node = visibleNodes.find((entry) => entry.id === dropPrompt.nodeId); const frame = boardFrames.find((entry) => entry.id === dropPrompt.frameId); if (!node || !frame) return null; return <div data-drop-prompt="true" className="canvas-lab-drop-prompt" style={{ left: node.x, top: node.y + node.height + 10 }}><span>Move to {frame.name}?</span><button type="button" onClick={() => { moveToFrame(node, frame.id); closeDropPrompt("yes"); }}>Yes</button><button type="button" onClick={() => closeDropPrompt("keep")}>Keep</button></div>; })() : null}
           </div> : null}
@@ -1057,7 +1088,7 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
         </div>
         {boardReady && opening ? <div className={`pointer-events-none absolute inset-0 z-40 flex ${unfold.className}`} aria-hidden={!unfold.still}>{unfold.still ? <span className="sr-only">{unfold.reduced}</span> : null}<span className="canvas-lab-unfold-panel" /><span className="canvas-lab-unfold-panel" /><span className="canvas-lab-unfold-panel" /></div> : null}
       </main>
-      <WorkRail open={railOpen} mobileVisible={mobileView === "rail"} context={contextNodes} hidden={hiddenNodes} canvasInstructions={canvasInstructions} onToggle={() => { const next = !railOpen; setRailOpen(next); noteWorkboardRail(orgId, next ? "reopened" : "collapsed"); }} onRemoveContext={(id) => setSelected((current) => removeContext(current, id))} onSubmit={(prompt) => { setNodes((current) => { if (!current) return current; const contextNode = current.find((node) => node.id === selected[0]); const frame = boardFrames.find((entry) => entry.id === (contextNode?.frame ?? "foundation")) ?? boardFrames[0]; if (!frame) return current; return [...current, createChatNode(prompt, selected, draftAnchor(frame, current), frame.id)]; }); noteWorkboardNodeCreated(orgId, "draft_thread"); }} onCanvasInstructions={setCanvasInstructions} onRestore={restoreNode} onShowBoard={() => setMobileView("board")} />
+      <WorkRail open={railOpen} mobileVisible={mobileView === "rail"} context={contextNodes} hidden={hiddenNodes} canvasInstructions={canvasInstructions} onToggle={() => { const next = !railOpen; setRailOpen(next); noteWorkboardRail(orgId, next ? "reopened" : "collapsed"); }} onRemoveContext={(id) => setSelected((current) => removeContext(current, id))} onClearContext={() => { setSelected([]); noteWorkboardContextChanged(orgId, "cleared"); setAnnouncement("Cleared context."); }} onSubmit={(prompt) => { setNodes((current) => { if (!current) return current; const contextNode = current.find((node) => node.id === selected[0]); const frame = boardFrames.find((entry) => entry.id === (contextNode?.frame ?? "foundation")) ?? boardFrames[0]; if (!frame) return current; return [...current, createChatNode(prompt, selected, draftAnchor(frame, current), frame.id)]; }); noteWorkboardNodeCreated(orgId, "draft_thread"); }} onCanvasInstructions={setCanvasInstructions} onRestore={restoreNode} onShowBoard={() => setMobileView("board")} />
       <p className="sr-only" aria-live="polite">{announcement}</p>
       {focusNode ? <FocusOverlay node={focusNode} item={focusItem} viewerName={viewerName} comments={comments.filter((comment) => comment.nodeId === focusNode.id)} onComment={(comment) => setComments((current) => [...current, comment])} onSummarize={() => { branchFrom({ ...focusNode, prompt: `Summarize: ${focusNode.title}` }); setFocusId(null); }} onBranch={() => { branchFrom(focusNode); setFocusId(null); }} onClose={() => setFocusId(null)} /> : null}
       {reviewItem && reviewNode ? <CanvasLabReview item={reviewItem} anchorNodeId={reviewNode.id} links={links} profileId={profile?.id} decisions={page?.decisions ?? []} nodes={visibleNodes} comments={comments} onTrailSelect={(group, focus) => noteWorkboardTrailSelected(orgId, group, focus)} onClose={() => setReviewId(null)} /> : null}

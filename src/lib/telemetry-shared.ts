@@ -183,6 +183,10 @@ export type TelemetryEvent =
   | "workboard.drop_prompt_answered"
   /** Canvas Lab polish: the local frame-boundary view changed. State only. */
   | "workboard.structure_toggled"
+  /** Canvas Lab polish: a save error was settled. Entity and choice only. */
+  | "workboard.save_error_resolved"
+  /** Canvas Lab polish: the local context selection changed. Action only. */
+  | "workboard.context_changed"
   /** Pass 185: a workspace was affiliated with an institution at creation. Slug only. */
   | "workspace.affiliated"
   /** Pass 186: the student opened the page describing what their school sees. */
