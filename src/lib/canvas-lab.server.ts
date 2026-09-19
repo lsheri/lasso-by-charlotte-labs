@@ -48,7 +48,16 @@ async function findBoard(db: Db, engagementId: string): Promise<BoardRow | null>
   return data ?? null;
 }
 
-async function ensureBoard(db: Db, engagementId: string, profile: ResolvedProfile): Promise<BoardRow | null> {
+/** Slice 2a: annotations need the same board and the same editor test. */
+export async function findBoardFor(db: Db, engagementId: string): Promise<BoardRow | null> {
+  return findBoard(db, engagementId);
+}
+
+export async function isEngagementEditor(db: Db, engagementId: string, profileId: string): Promise<boolean> {
+  return (await membershipFor(db, engagementId, profileId)).isEditor;
+}
+
+export async function ensureBoard(db: Db, engagementId: string, profile: ResolvedProfile): Promise<BoardRow | null> {
   const existing = await findBoard(db, engagementId);
   if (existing) return existing;
   const { error } = await db.from("workboards").insert({
