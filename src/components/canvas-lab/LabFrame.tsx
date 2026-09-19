@@ -50,7 +50,7 @@ export function LabFrame({ frame, count, selected, editable, custom, namedByWork
   }
 
   function changeMenuOpen(open: boolean) {
-    if (open && !menuOpen) onMenuOpened();
+    if (open && !menuOpen) { pendingRenameRef.current = false; onMenuOpened(); }
     setMenuOpen(open);
     onMenuOpenChange(open);
   }
@@ -67,10 +67,7 @@ export function LabFrame({ frame, count, selected, editable, custom, namedByWork
     changeMenuOpen(false);
     beginRename();
     window.requestAnimationFrame(() => focusNameInput());
-    window.setTimeout(() => {
-      focusNameInput();
-      pendingRenameRef.current = false;
-    }, 0);
+    window.setTimeout(() => focusNameInput(), 0);
   }
 
 
