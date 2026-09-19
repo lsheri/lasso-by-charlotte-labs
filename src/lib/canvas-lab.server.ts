@@ -141,6 +141,7 @@ export async function loadWorkboard(db: Db, engagementId: string, profile: Resol
     hidden: row.hidden,
     version: row.version,
     referenceReadable: true,
+    linkedItemRemovedAt: row.linked_item_removed_at ?? null,
   }));
   const links: WorkboardLinkDto[] = linkRows
     .filter((row) => visibleIds.has(row.from_node_id) && visibleIds.has(row.to_node_id))

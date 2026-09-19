@@ -135,3 +135,13 @@ describe("Canvas Lab paper", () => {
     expect(footer.textContent).not.toBe("");
   });
 });
+describe("deleted source label", () => {
+  it("shows Item deleted only when the linked item was removed", () => {
+    const node: LabNode = { ...baseNode, kind: "work", workItemId: "work" };
+    const plain = paper(node, workItem);
+    expect(plain.queryByText("Item deleted")).toBeNull();
+    cleanup();
+    paper({ ...node, linkedItemRemovedAt: "2026-09-19T00:00:00Z" }, workItem);
+    expect(screen.getByText("Item deleted")).not.toBeNull();
+  });
+});

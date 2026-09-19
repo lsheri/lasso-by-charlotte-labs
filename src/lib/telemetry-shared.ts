@@ -7,6 +7,8 @@ export type TelemetryEvent =
   | "workitem.mapped"
   | "workitem.marked_private"
   | "workitem.dated"
+  /** A work item was deleted for good from the inbox. Content-free. */
+  | "workitem.deleted"
   | "decision.drafted"
   | "decision.confirmed"
   | "decision.resolved"

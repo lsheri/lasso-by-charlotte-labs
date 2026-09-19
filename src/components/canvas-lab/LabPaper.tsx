@@ -74,6 +74,7 @@ export function LabPaper({
             </span>
             {node.deliverable ? <span className="shrink-0 font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">Deliverable</span> : null}
           </span>
+          {node.linkedItemRemovedAt ? <span className="shrink-0 font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">Item deleted</span> : null}
           <span className="shrink-0 font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">{ownerLabel(node)}</span>
         </div>
 

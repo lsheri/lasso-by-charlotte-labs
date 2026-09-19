@@ -59,6 +59,8 @@ export type LabNode = {
   /** Durable Slice 1 identity, when this card is backed by a Workboard row. */
   durableId?: string;
   durableVersion?: number;
+  /** Set when the work item this card stood for was deleted from the inbox. */
+  linkedItemRemovedAt?: string | null;
 
   x: number;
   y: number;
@@ -812,6 +814,7 @@ export function applyDurableBoard(base: { frames: LabFrame[]; nodes: LabNode[] }
         height: durable.h > 0 ? durable.h : CARD_HEIGHT,
         durableId: durable.id,
         durableVersion: durable.version,
+        linkedItemRemovedAt: durable.linkedItemRemovedAt ?? null,
       });
       continue;
     }
@@ -829,6 +832,7 @@ export function applyDurableBoard(base: { frames: LabFrame[]; nodes: LabNode[] }
         local: durable.authorProfileId === board.viewerProfileId,
         durableId: durable.id,
         durableVersion: durable.version,
+        linkedItemRemovedAt: durable.linkedItemRemovedAt ?? null,
         x: durable.x,
         y: durable.y,
         width: durable.w > 0 ? durable.w : CARD_WIDTH,

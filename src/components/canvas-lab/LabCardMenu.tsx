@@ -77,7 +77,7 @@ export function LabCardMenu({
         {local ? (
           <DropdownMenuItem onSelect={onDelete}>Delete local node</DropdownMenuItem>
         ) : removable ? (
-          <DropdownMenuItem onSelect={onHide}>Remove from canvas</DropdownMenuItem>
+          <DropdownMenuItem onSelect={onHide}>Remove from board</DropdownMenuItem>
         ) : (
           <DropdownMenuItem disabled>Only the author can remove this</DropdownMenuItem>
         )}
