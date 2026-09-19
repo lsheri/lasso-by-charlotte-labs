@@ -172,6 +172,7 @@ export function ThreadBody({
   onMarkActivate,
   reducedMotion = false,
   focus,
+  highlights = [],
 }: {
   item: WorkItemRow;
   enabled?: boolean;
@@ -184,6 +185,8 @@ export function ThreadBody({
   onMarkActivate?: ((markId: string) => void) | undefined;
   reducedMotion?: boolean;
   focus?: ThreadFocus | undefined;
+  /** The reader's own highlights. A stale one is listed, never drawn. */
+  highlights?: readonly ThreadHighlight[];
 }) {
   const { data: turns, error } = useQuery({
     queryKey: ["turns", item.id],
@@ -191,7 +194,7 @@ export function ThreadBody({
     queryFn: async (): Promise<Turn[]> => {
       const { data, error: turnsError } = await supabase
         .from("turns")
-        .select("id, turn_no, role, content, ts, model, meta")
+        .select("id, turn_no, role, content, content_hash, ts, model, meta")
         .eq("work_item_id", item.id)
         .order("turn_no", { ascending: true });
       if (turnsError) throw turnsError;
