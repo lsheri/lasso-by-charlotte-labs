@@ -918,14 +918,16 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
       noteWorkboardRelationship(orgId, "rejected");
       setAnnouncement(result.error);
       setLinkRejection({ targetId, message: result.error });
-      setConnectSource(null);
-      setInteraction("idle");
+      const disarmed = connectDisarmed();
+      setConnectSource(disarmed.connectSource);
+      setInteraction(disarmed.interaction);
       return;
     }
     setLinks(result.links);
     setLinkRejection(null);
-    setConnectSource(null);
-    setInteraction("idle");
+    const disarmed = connectDisarmed();
+    setConnectSource(disarmed.connectSource);
+    setInteraction(disarmed.interaction);
     noteWorkboardRelationship(orgId, "created");
     const created = result.links[result.links.length - 1];
     if (created) void persistLink(created);
