@@ -312,3 +312,14 @@ Verification: `bunx tsgo --noEmit` passed. The focused card-interaction, model, 
 - **Placement choice:** dropping an editable card over another workstream in Structured mode asks whether to move it. Yes reuses the existing versioned node update; Keep, Escape, another drag, and outside clicks close the local prompt without an event.
 - **Empty workstreams:** factual guidance varies by workstream kind and permissions. Editors can create a workstream beside the workstream frames or inside the zero-task placeholder using the same creation function as the drawer.
 - **Data boundary:** no event schema, consent, portal, SQL, migration, production canvas, landing, AskDock, or route change.
+
+## 2026-09-19 · Workboard frames, part three (POLISH 2b-iii)
+
+Frontend only. No data impact: no new user action, consent untouched, no event, payload, dimension or portal change, no database work.
+
+1. Rename from the menu now lands in the field. Root cause was two-part: the menu returned focus to the frame section, and the rename input committed on the blur that the closing menu caused. LabFrame keeps a pending-rename ref, LabFrameMenu takes `restoreFocus` instead of a frame ref, and blur is ignored while that rename is still settling.
+2. "+ workstream" moved below the workstream row, left-aligned with the first workstream frame, 24px under the lowest frame or spilled card in the row's x-range (`workstreamAddAnchor`), with inverse-zoom scaling and a 28px minimum hit height.
+3. New custom workstreams are placed by `nextWorkstreamRect`, 48px below the union of every frame and visible card, shared by the drawer and the inline control.
+4. Drop prompt root cause: `frameContainingPoint` returned the first frame in array order containing the card centre, so a grown home frame overlapping the target won and `dropPromptFrame` saw the same frame. It now returns the tightest frame under the point.
+
+Tests: 82 focused Canvas Lab and route tests, plus the durable-board drop-prompt case and the token guard. `tsgo --noEmit` clean. Liam's authenticated visual verification on NWG-02 is still pending.
