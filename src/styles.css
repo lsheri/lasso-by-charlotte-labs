@@ -1240,6 +1240,12 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   color: var(--nb-green);
   pointer-events: none;
 }
+.canvas-lab-context-title {
+  padding-right: calc(24px * var(--lab-inverse-zoom, 1));
+}
+.canvas-lab-work-note-context .nb-paper-body {
+  padding-right: calc(24px * var(--lab-inverse-zoom, 1));
+}
 .canvas-lab-card-paper[data-connect-source="true"] {
   background: var(--nb-green-wash);
 }
@@ -1413,6 +1419,18 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   padding: 12px;
 }
 .canvas-lab-guide { top: 60px; width: 896px; }
+.canvas-lab-judgment-trigger {
+  position: relative;
+}
+.canvas-lab-judgment-trigger::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 24px;
+  height: 24px;
+  transform: translate(-50%, -50%) scale(var(--lab-inverse-zoom, 1));
+}
 .canvas-lab-start-here { top: 228px; width: 896px; }
 @media (max-width: 767px) {
   .canvas-lab-work-rail { position: absolute; inset: 52px 0 0 52px; z-index: 35; width: auto; }

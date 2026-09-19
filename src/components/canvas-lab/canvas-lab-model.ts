@@ -18,6 +18,17 @@ export type LabTemplateKind = "source" | "ai_work" | "judgment" | "decision" | "
 /** Who the thing belongs to, which is what decides the offered actions. */
 export type LabOwnership = "yours" | "teammate" | "draft";
 
+/** Display ownership without changing the edit and menu permission semantics. */
+export function ownerLabel(node: LabNode): "yours" | "teammate" | "local draft" {
+  if (node.kind === "chat") return "local draft";
+  if (node.kind === "judgment") {
+    if (!node.durableId) return "local draft";
+    return node.ownership === "teammate" ? "teammate" : "yours";
+  }
+  if (node.ownership === "draft") return "local draft";
+  return node.ownership;
+}
+
 export type LabFrameId = string;
 export type LabAnchor = "top" | "right" | "bottom" | "left";
 export type LabResizeCorner = "nw" | "ne" | "se" | "sw";
@@ -177,6 +188,19 @@ export function dragEndDecision(input: {
 /** Counter-scale stage controls so their visible size stays constant. */
 export function labInverseZoom(zoom: number): number {
   return 1 / clampZoom(zoom);
+}
+
+/** Keep a newly-created card visible without disturbing an already-visible view. */
+export function panToRevealNode(pan: Point, zoom: number, node: LabNode, viewport: { width: number; height: number }): Point {
+  const left = pan.x + node.x * zoom;
+  const top = pan.y + node.y * zoom;
+  const right = left + node.width * zoom;
+  const bottom = top + node.height * zoom;
+  if (left >= 0 && top >= 0 && right <= viewport.width && bottom <= viewport.height) return pan;
+  return {
+    x: viewport.width / 2 - (node.x + node.width / 2) * zoom,
+    y: viewport.height / 2 - (node.y + node.height / 2) * zoom,
+  };
 }
 
 

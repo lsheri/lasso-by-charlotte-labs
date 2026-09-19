@@ -33,6 +33,7 @@ import {
   moveNode,
   dragEndDecision,
   nextWorkstreamRect,
+  panToRevealNode,
   workstreamAddAnchor,
   nearestLabAnchor,
   removeContext,
@@ -835,6 +836,14 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
     setNodes((current) => current ? [...current, node] : current);
     noteWorkboardNodeCreated(orgId, kind === "judgment" ? "human_judgment" : kind, judgment);
     if (kind === "judgment") {
+      const shell = shellRef.current;
+      if (shell) setPan((current) => panToRevealNode(current, zoomRef.current, node, { width: shell.clientWidth, height: shell.clientHeight }));
+      setKeyboardId(node.id);
+      setSelectedFrameId(null);
+      requestAnimationFrame(() => {
+        const card = document.querySelector<HTMLElement>(`[data-node-id="${CSS.escape(node.id)}"]`);
+        card?.focus({ preventScroll: true });
+      });
       void (async () => {
         if (!(await materialize())) return;
         const input = nodeToInput(node);
