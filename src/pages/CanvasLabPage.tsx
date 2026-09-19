@@ -430,24 +430,51 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
    * deterministic seed, so workstreams, cards and relationships all reconcile.
    * Viewport, rail, selection and unsent composer text are left alone.
    */
+  /** One reload path, shared by Load latest and Discard. */
+  async function reloadDurableBoard(): Promise<boolean> {
+    const fresh = await lab.refresh();
+    const base = virtualBaseRef.current;
+    if (!fresh?.id || !base) {
+      lab.clearSaveState();
+      return false;
+    }
+    const merged = applyDurableBoard(base, fresh);
+    const localOnly = (nodesRef.current ?? []).filter((entry) => !entry.durableId && (entry.kind === "chat" || (entry.local && entry.kind !== "judgment")));
+    setFrames(merged.frames);
+    setNodes([...merged.nodes, ...localOnly]);
+    setLinks(merged.links);
+    setHiddenIds(merged.hiddenIds);
+    setSelectedLinkId(null);
+    lab.clearSaveState();
+    return true;
+  }
+
+  /** Retry the exact failed change, or go back to the last saved version. */
+  function resolveSaveError(choice: "retry" | "discard") {
+    const state = lab.saveState;
+    if (state.status !== "error") return;
+    noteWorkboardSaveErrorResolved(orgId, state.entityKind, choice);
+    if (choice === "retry") {
+      const retry = state.retry;
+      const entity = state.entityKind;
+      lab.clearSaveState();
+      void lab.persist(retry).then((result) => report(result, entity, "update"));
+      setAnnouncement("Retried your change.");
+      return;
+    }
+    void (async () => {
+      const reloaded = await reloadDurableBoard();
+      setAnnouncement(reloaded ? "Went back to the last saved version." : "Nothing was saved yet.");
+    })();
+  }
+
   function resolveConflict(choice: "latest" | "retry") {
     const state = lab.saveState;
     if (state.status !== "conflict") return;
     noteWorkboardConflictResolved(orgId, state.entityKind === "link" ? "relationship" : state.entityKind, choice);
     if (choice === "latest") {
       void (async () => {
-        const fresh = await lab.refresh();
-        const base = virtualBaseRef.current;
-        if (fresh?.id && base) {
-          const merged = applyDurableBoard(base, fresh);
-          const localOnly = (nodesRef.current ?? []).filter((entry) => !entry.durableId && (entry.kind === "chat" || (entry.local && entry.kind !== "judgment")));
-          setFrames(merged.frames);
-          setNodes([...merged.nodes, ...localOnly]);
-          setLinks(merged.links);
-          setHiddenIds(merged.hiddenIds);
-          setSelectedLinkId(null);
-        }
-        lab.clearSaveState();
+        await reloadDurableBoard();
         setAnnouncement("Loaded the newer version of this workboard.");
       })();
       return;
