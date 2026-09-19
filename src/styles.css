@@ -1255,6 +1255,8 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 .canvas-lab-paper-header { justify-content: space-between; }
 .canvas-lab-paper-source { overflow: hidden; }
 .canvas-lab-paper-source > span { white-space: nowrap; }
+.canvas-lab-paper-source > span,
+.canvas-lab-paper-footer > span { font-size: 9px; }
 .canvas-lab-paper-title {
   display: -webkit-box;
   overflow: hidden;

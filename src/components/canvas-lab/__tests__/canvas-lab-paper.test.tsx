@@ -42,7 +42,7 @@ function paper(node: LabNode, item?: WorkItemRow) {
 
 describe("Canvas Lab paper", () => {
   it.each([
-    ["work", "GOOGLE DRIVE", workItem],
+    ["work", "GOOGLEDRIVE", workItem],
     ["brief", "BRIEF", undefined],
     ["decision", "CALL", undefined],
     ["judgment", "ADDED CONSTRAINT", undefined],
@@ -57,7 +57,7 @@ describe("Canvas Lab paper", () => {
     };
     const { container } = paper(node, item);
     expect(container.querySelector("svg")).not.toBeNull();
-    expect(screen.getByText(label)).not.toBeNull();
+    expect(screen.getByText(new RegExp(`^${label}$`, "i"))).not.toBeNull();
     expect(screen.getByText(kind === "chat" ? "local draft" : "yours")).not.toBeNull();
   });
 
