@@ -12,12 +12,51 @@ type Turn = {
   turn_no: number;
   role: string;
   content: string;
+  content_hash?: string | null;
   ts: string | null;
   model?: string | null;
   meta?: unknown;
 };
 
 export type ThreadFocus = { turnNo?: number; text?: string };
+
+/** Slice 2a: a person's own highlights, already resolved against the turn. */
+export type ThreadHighlight = {
+  id: string;
+  turnNo: number;
+  charStart: number;
+  charEnd: number;
+  stale: boolean;
+};
+
+/**
+ * Every live range on one turn, drawn as one quiet marker per merged span.
+ * Overlapping ranges merge so a doubled highlight never reads as darker ink.
+ */
+function HighlightedContent({ content, ranges }: { content: string; ranges: readonly CharRange[] }) {
+  const merged = mergeRanges(ranges).filter((range) => range.charStart < content.length);
+  if (merged.length === 0) return <>{content}</>;
+  const parts: React.ReactNode[] = [];
+  let cursor = 0;
+  merged.forEach((range, index) => {
+    const start = Math.max(cursor, range.charStart);
+    const end = Math.min(content.length, range.charEnd);
+    if (end <= start) return;
+    if (start > cursor) parts.push(<span key={`plain-${index}`}>{content.slice(cursor, start)}</span>);
+    parts.push(
+      <mark
+        key={`mark-${index}`}
+        data-testid="turn-highlight"
+        className="rounded-[2px] bg-[var(--nb-yellow-wash)] text-foreground"
+      >
+        {content.slice(start, end)}
+      </mark>,
+    );
+    cursor = end;
+  });
+  if (cursor < content.length) parts.push(<span key="plain-tail">{content.slice(cursor)}</span>);
+  return <>{parts}</>;
+}
 
 function normaliseWithMap(value: string): { text: string; starts: number[]; ends: number[] } {
   let text = "";
