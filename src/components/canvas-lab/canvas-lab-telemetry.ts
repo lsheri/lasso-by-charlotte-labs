@@ -99,7 +99,7 @@ export type AnnotationChange = {
   action: "created" | "edited" | "archived";
   anchorKind: "turn" | "item";
   visibility: "just_me" | "engagement";
-  /** Excerpt length for a highlight, body length for a comment. */
+  /** How long the passage or the written note was, in characters. */
   length: number;
   isReply: boolean;
 };
