@@ -29,6 +29,7 @@ export type UndoEntry =
   | { id: string; action: "remove_note"; node: LabNode; links: LabLink[]; coalesceKey?: string; at?: number }
   | { id: string; action: "relationship_add"; link: LabLink; coalesceKey?: string; at?: number }
   | { id: string; action: "relationship_remove"; link: LabLink; coalesceKey?: string; at?: number }
+  | { id: string; action: "link_relation"; linkId: string; before: string; after: string; coalesceKey?: string; at?: number }
   | { id: string; action: "workstream_move"; nodeId: string; before: string; after: string; coalesceKey?: string; at?: number };
 
 export type UndoEntryDraft = UndoEntry extends infer Entry
