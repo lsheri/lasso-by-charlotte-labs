@@ -23,8 +23,8 @@ describe("Workboard click, selection, and handles", () => {
     expect(focusedRoot.querySelectorAll(".canvas-lab-resize-handle")).toHaveLength(4);
     expect(contextRoot.querySelector(".canvas-lab-card-paper")?.getAttribute("data-selected")).toBe("true");
     expect(contextRoot.querySelectorAll(".canvas-lab-resize-handle")).toHaveLength(0);
-    expect(contextRoot).not.toHaveAttribute("aria-pressed");
-    expect(contextRoot).toHaveAttribute("aria-roledescription", "card");
+    expect(contextRoot.hasAttribute("aria-pressed")).toBe(false);
+    expect(contextRoot.getAttribute("aria-roledescription")).toBe("card");
   });
 
   it("never toggles context from a pointer click on the card", () => {

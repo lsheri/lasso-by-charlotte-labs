@@ -127,6 +127,7 @@ export function LabFrame({ frame, count, selected, editable, custom, namedByWork
       style={{ left: frame.x, top: frame.y, width: frame.width, height: frame.height }}
       className="canvas-lab-frame absolute outline-none"
       onPointerDown={(event) => { if (event.target === event.currentTarget) onSelect(); }}
+      onFocus={(event) => { if (event.target === event.currentTarget) onSelect(); }}
       onContextMenu={openMenu}
       onKeyDown={(event) => {
         if ((event.shiftKey && event.key === "F10") || event.key === "ContextMenu") openMenu(event);
