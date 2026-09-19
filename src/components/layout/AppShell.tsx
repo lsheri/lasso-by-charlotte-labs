@@ -20,6 +20,11 @@ import { ChecklistLauncher } from "@/components/onboarding/checklist/ChecklistLa
 import { StepPopover } from "@/components/onboarding/checklist/StepPopover";
 import { SettingsDialogProvider, useSettingsDialog } from "@/lib/settings-dialog-context";
 import { SettingsDialog } from "@/components/settings/SettingsDialog";
+import { EGRESS_NUDGE_KEY, shouldNudgeEgress } from "@/lib/egress-nudge";
+import { runEgressSweepFn } from "@/lib/egress.functions";
+
+let egressNudged = false;
+
 
 function AppShellInner() {
   const { openSettings } = useSettingsDialog();
@@ -34,6 +39,22 @@ function AppShellInner() {
   useEffect(() => {
     identifyPostHog(profile?.id ?? null);
   }, [profile?.id]);
+  // Pass 175b: the sending sweep needs a live request to finish inside. This
+  // is invisible: no UI, no state, no event, at most once every ten minutes.
+  useEffect(() => {
+    if (egressNudged) return;
+    egressNudged = true;
+    try {
+      const now = Date.now();
+      const last = window.sessionStorage.getItem(EGRESS_NUDGE_KEY);
+      if (!shouldNudgeEgress(last, now)) return;
+      window.sessionStorage.setItem(EGRESS_NUDGE_KEY, String(now));
+      void runEgressSweepFn().catch(() => {});
+    } catch {
+      // Never a person's problem.
+    }
+  }, []);
+
   const userName = profile?.display_name ?? "Signed in";
 
   async function handleSignOut() {
