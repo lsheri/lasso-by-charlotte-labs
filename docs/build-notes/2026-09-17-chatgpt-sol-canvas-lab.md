@@ -353,3 +353,11 @@ Tests: three `dragEndDecision` cases, including a pointerup before any render, z
 - Pinch feel: new pure `workboardPinchZoom(z, deltaY, deltaMode)` in `canvas-zoom.ts` (0.01 sensitivity for trackpad-sized pixel deltas, 0.002 otherwise, per-event factor held to [0.85, 1.18]). Used only by the Workboard modifier-wheel handler, still anchored on the cursor. `pinchZoom` and every other export are unchanged, so `EngagementCanvasView` is untouched.
 - W9: the card paper now fills the card rect exactly (`h-full w-full` plus `.canvas-lab-card-paper > .nb-paper` flex fill), the note body reflows and clips inside it, size tiers still widen the line clamp, and the folded-corner decoration moved to the paper's bottom-right. A pointer resize now wins over any drag at pointer up, so a south-east resize can no longer shift x or y.
 - New event `workboard.drop_prompt_answered` with one closed dimension `answer: "yes" | "keep" | "dismissed"`, emitted once per prompt through the existing consent-stamped `logEvent` path. Yes still also produces `change_saved {node, update}`. No allowlist of event names exists outside `telemetry.server.ts`, so nothing there was touched. The console catalog entry is added separately.
+
+## 2026-09-19 · polish 2c-ii
+
+- Replaced the Human judgment details disclosure with a controlled, pointer-safe menu. Its Add trigger matches the other reasoning steps, keeps a 24px screen hit area, closes after a choice or outside pointerdown, and returns focus after Escape without invoking the board Escape path.
+- A new judgment keeps the current zoom, pans only when needed to reveal the card, and receives keyboard focus.
+- Durable authored judgments now read "yours" while preserving their existing local and ownership values; teammate judgments and unsaved drafts remain distinct. Chat drafts still read "local draft".
+- In-context folded notes and real work notes reserve screen-constant title space for the paperclip.
+- No action, event, payload, consent, database, route, landing, AskDock, or production canvas change.

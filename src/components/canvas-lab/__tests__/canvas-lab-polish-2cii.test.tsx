@@ -2,6 +2,10 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("@/components/work/WorkNote", () => ({
+  WorkNote: ({ className = "" }: { className?: string }) => <div className={`nb-paper ${className}`}><div className="nb-paper-body">Work title</div></div>,
+}));
+
 import { LabCard } from "@/components/canvas-lab/LabCard";
 import { ownerLabel, panToRevealNode, type LabNode } from "@/components/canvas-lab/canvas-lab-model";
 import { ReasoningTrailGuide } from "@/components/canvas-lab/ReasoningTrailGuide";
@@ -61,6 +65,6 @@ describe("Workboard human judgment", () => {
 
   it("centres an off-screen new card and leaves a visible card alone", () => {
     expect(panToRevealNode({ x: 0, y: 0 }, 0.5, { ...localJudgment, x: 20, y: 20 }, { width: 800, height: 600 })).toEqual({ x: 0, y: 0 });
-    expect(panToRevealNode({ x: 0, y: 0 }, 0.5, localJudgment, { width: 800, height: 600 })).toEqual({ x: -108, y: -78 });
+    expect(panToRevealNode({ x: 0, y: 0 }, 0.5, { ...localJudgment, x: 1800, y: 1300 }, { width: 800, height: 600 })).toEqual({ x: -558, y: -378 });
   });
 });
