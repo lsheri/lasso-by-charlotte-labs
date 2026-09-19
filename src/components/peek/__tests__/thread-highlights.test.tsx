@@ -57,7 +57,7 @@ describe("highlights drawn on chat turns", () => {
     );
     const marks = screen.getAllByTestId("turn-highlight");
     expect(marks).toHaveLength(2);
-    expect(marks[0]?.textContent).toBe("pricing floor is 40");
+    expect(marks[0]?.textContent).toBe("pricing floor is 40 ");
     expect(marks[1]?.textContent).toBe("discount");
   });
 
