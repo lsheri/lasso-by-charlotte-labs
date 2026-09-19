@@ -179,6 +179,8 @@ export type TelemetryEvent =
   | "workboard.conflict_resolved"
   /** Canvas Lab polish: one completed card or frame resize. Closed geometry vocabulary only. */
   | "workboard.element_resized"
+  /** Canvas Lab polish: a move prompt after a drop was answered. Answer only. */
+  | "workboard.drop_prompt_answered"
   /** Canvas Lab polish: the local frame-boundary view changed. State only. */
   | "workboard.structure_toggled"
   /** Pass 185: a workspace was affiliated with an institution at creation. Slug only. */

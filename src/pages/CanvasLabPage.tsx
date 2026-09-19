@@ -68,6 +68,7 @@ import {
   noteWorkboardReviewOpened,
   noteWorkboardSaveFailed,
   noteWorkboardTrailSelected,
+  noteWorkboardDropPromptAnswered,
   noteWorkboardStructureToggled,
   type LabNodeEventKind,
   type WorkboardPersistEntity,
@@ -166,6 +167,15 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
   const [inlineFrameName, setInlineFrameName] = useState("");
   const [inlineFrameError, setInlineFrameError] = useState(false);
   const [dropPrompt, setDropPrompt] = useState<{ nodeId: string; frameId: string } | null>(null);
+  const dropPromptRef = useRef<{ nodeId: string; frameId: string } | null>(null);
+  dropPromptRef.current = dropPrompt;
+  /** Every way a move prompt can end, counted once, answer only. */
+  const closeDropPrompt = useCallback((answer: "yes" | "keep" | "dismissed") => {
+    if (!dropPromptRef.current) return;
+    noteWorkboardDropPromptAnswered(orgId, answer);
+    dropPromptRef.current = null;
+    setDropPrompt(null);
+  }, [orgId]);
   const [opening, setOpening] = useState(true);
   const [interaction, setInteraction] = useState<"idle" | "drag" | "pan" | "resize" | "connect">("idle");
   const [structureMode, setStructureMode] = useState<LabStructureMode>("structured");
@@ -453,7 +463,7 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
       if (event.key === "Escape") {
-        if (dropPrompt) { setDropPrompt(null); return; }
+        if (dropPrompt) { closeDropPrompt("dismissed"); return; }
         const resize = resizeRef.current;
         if (resize) {
           if (resize.kind === "card") setNodes((current) => current?.map((node) => node.id === resize.id ? { ...node, ...resize.start } : node) ?? current);
@@ -496,7 +506,7 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
     if (!dropPrompt) return;
     function close(event: PointerEvent) {
       if ((event.target as Element | null)?.closest("[data-drop-prompt='true']")) return;
-      setDropPrompt(null);
+      closeDropPrompt("dismissed");
     }
     window.addEventListener("pointerdown", close);
     return () => window.removeEventListener("pointerdown", close);
@@ -599,7 +609,7 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
     if (spaceRef.current) return; // Space pans the board, even over a card.
     if (event.button !== 0 || (event.target as Element).closest("button,textarea")) return;
     event.stopPropagation();
-    setDropPrompt(null);
+    closeDropPrompt("dismissed");
     setKeyboardId(node.id);
     setInteraction("drag");
     dragRef.current = { id: node.id, origin: { x: node.x, y: node.y }, from: { x: event.clientX, y: event.clientY } };
@@ -639,7 +649,7 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
       if (connector?.moved) finishPointerConnect(connector, event);
       connectorDragRef.current = null;
       setConnectorPreview(null);
-      const drag = dragRef.current;
+      const drag = resizeRef.current?.method === "pointer" ? null : dragRef.current;
       if (drag) {
         const moved = nodesRef.current.find((node) => node.id === drag.id);
         if (moved) {
@@ -1008,7 +1018,7 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
               {connectorPreview && connectorDragRef.current ? (() => { const source = visibleNodes.find((node) => node.id === connectorDragRef.current?.nodeId); if (!source || !connectorDragRef.current) return null; const from = labAnchorPoint(source, connectorDragRef.current.anchor, cardHeightsRef.current.get(source.id) ?? 108); return <path d={labConnectorPath(from, connectorDragRef.current.anchor, connectorPreview, connectorDragRef.current.anchor)} fill="none" stroke="var(--nb-green)" strokeWidth="2.4" strokeLinecap="round" className="pointer-events-none" />; })() : null}
             </svg>
             {visibleNodes.map((node) => { const canResize = Boolean(lab.board?.canEditStructure) && (node.kind !== "judgment" || Boolean(node.local)); return <LabCard key={node.id} node={node} item={itemByNode(node)} selected={selected.includes(node.id)} focused={keyboardId === node.id} connecting={connectSource !== null || connectorPreview !== null} connectSourceAnchor={connectSource?.nodeId === node.id ? connectSource.anchor : null} onSelect={() => setSelected((current) => toggleContext(current, node.id))} onOpen={() => openNode(node)} onBranch={() => branchFrom(node)} onHide={() => hideNode(node)} onDelete={() => deleteNode(node)} onEdit={(text) => setNodes((current) => current ? updateLocalNode(current, node.id, text) : current)} onEditCommitted={() => { noteWorkboardNodeEdited(orgId, eventKind(node)); const current = nodesRef.current.find((entry) => entry.id === node.id); if (current?.durableId) void persistNodePatch(current.id, { body: current.summary, title: current.title }); }} onAnchorPointerDown={(side, event) => startPointerConnect(node, side, event)} onAnchorActivate={(side) => chooseConnectAnchor(node, side)} onMenuOpened={() => { if (connectSource || connectorDragRef.current) cancelConnect(); noteWorkboardCardMenuOpened(orgId, eventKind(node), node.ownership); }} onMenuOpenChange={setCardMenuOpen} onMeasure={(height) => cardHeightsRef.current.set(node.id, height)} onPointerDown={(event) => onCardPointerDown(node, event)} onKeyDown={(event) => onCardKeyDown(node, event)} canResize={canResize} onResizeStart={(corner, event) => startResize("card", node.id, corner, { x: node.x, y: node.y, width: node.width, height: node.height }, event)} onResizeKeyDown={(corner, event) => keyboardResize("card", node.id, corner, { x: node.x, y: node.y, width: node.width, height: node.height }, event)} onResizeKeyUp={finishKeyboardResize} onFit={() => fitCard(node)} frameChoices={boardFrames.map((frame) => ({ id: frame.id, name: frame.name }))} structured={structureMode === "structured"} onMoveToFrame={(frameId) => moveToFrame(node, frameId)} />; })}
-            {dropPrompt ? (() => { const node = visibleNodes.find((entry) => entry.id === dropPrompt.nodeId); const frame = boardFrames.find((entry) => entry.id === dropPrompt.frameId); if (!node || !frame) return null; return <div data-drop-prompt="true" className="canvas-lab-drop-prompt" style={{ left: node.x, top: node.y + node.height + 10 }}><span>Move to {frame.name}?</span><button type="button" onClick={() => { moveToFrame(node, frame.id); setDropPrompt(null); }}>Yes</button><button type="button" onClick={() => setDropPrompt(null)}>Keep</button></div>; })() : null}
+            {dropPrompt ? (() => { const node = visibleNodes.find((entry) => entry.id === dropPrompt.nodeId); const frame = boardFrames.find((entry) => entry.id === dropPrompt.frameId); if (!node || !frame) return null; return <div data-drop-prompt="true" className="canvas-lab-drop-prompt" style={{ left: node.x, top: node.y + node.height + 10 }}><span>Move to {frame.name}?</span><button type="button" onClick={() => { moveToFrame(node, frame.id); closeDropPrompt("yes"); }}>Yes</button><button type="button" onClick={() => closeDropPrompt("keep")}>Keep</button></div>; })() : null}
           </div> : null}
           <CanvasLabStatusLine loading={loadingBoard} unavailable={isError || notAvailable} empty={boardReady && visibleNodes.length === 0} />
         </div>

@@ -56,6 +56,11 @@ export function noteWorkboardElementResized(orgId: string | undefined, elementKi
   if (orgId) logEvent("workboard.element_resized", orgId, { element_kind: elementKind, method, axis });
 }
 
+/** Canvas Lab polish: how a "Move to" prompt ended. Closed answer only. */
+export function noteWorkboardDropPromptAnswered(orgId: string | undefined, answer: "yes" | "keep" | "dismissed"): void {
+  if (orgId) logEvent("workboard.drop_prompt_answered", orgId, { answer });
+}
+
 export function noteWorkboardStructureToggled(orgId: string | undefined, state: "structured" | "freeform"): void {
   if (orgId) logEvent("workboard.structure_toggled", orgId, { state });
 }
