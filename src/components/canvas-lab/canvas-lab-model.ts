@@ -163,7 +163,7 @@ export function addLocalFrame(frames: LabFrame[], name: string): LabFrame[] {
 
 export function stageBounds(frames: LabFrame[]): { width: number; height: number } {
   return {
-    width: Math.max(980, ...frames.map((frame) => frame.x + frame.width + 220)),
+    width: Math.max(980, ...frames.map((frame) => frame.x + frame.width + 60)),
     height: Math.max(720, ...frames.map((frame) => frame.y + frame.height + 120)),
   };
 }

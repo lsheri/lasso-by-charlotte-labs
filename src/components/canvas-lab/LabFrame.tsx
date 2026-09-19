@@ -66,7 +66,9 @@ export function LabFrame({ frame, count, selected, editable, custom, namedByWork
         ? "No deliverables on this engagement yet."
         : frame.id === "workstreams"
           ? "No workstreams yet."
-          : `Nothing here yet. Drag a card in and choose Move to ${frame.name}.`;
+          : kind === "task" || kind === "custom"
+            ? `Nothing here yet. Drag a card in and choose Move to ${frame.name}.`
+            : null;
 
   function submitInlineWorkstream() {
     if (!onAddWorkstream || !onAddWorkstream(newName)) { setAddError(true); return; }
@@ -139,7 +141,7 @@ export function LabFrame({ frame, count, selected, editable, custom, namedByWork
         <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">{count} {frame.local ? "· local" : ""}</span>
       </div>
       <LabFrameMenu open={menuOpen} onOpenChange={changeMenuOpen} frameRef={frameRef} editable={editable} custom={custom} removable={removable} onFit={onFit} onRename={beginRename} onRemove={onRemove} />
-      {count === 0 ? <div className="canvas-lab-frame-guidance font-hand text-[16px] text-[var(--nb-mid)]"><p>{guidance}</p>{editable && frame.id === "workstreams" && onAddWorkstream ? (adding ? <div className="canvas-lab-inline-workstream"><input aria-label="Workstream name" maxLength={60} value={newName} onChange={(event) => { setNewName(event.target.value); if (event.target.value.trim()) setAddError(false); }} onKeyDown={(event) => { if (event.key === "Enter") submitInlineWorkstream(); if (event.key === "Escape") { setAdding(false); setAddError(false); } }} /><button type="button" onClick={submitInlineWorkstream}>Add</button>{addError ? <span>a workstream needs a name</span> : null}</div> : <button type="button" className="canvas-lab-add-workstream" onClick={() => setAdding(true)}>+ workstream</button>) : null}</div> : null}
+      {count === 0 && guidance ? <div className="canvas-lab-frame-guidance font-hand text-[16px] text-[var(--nb-mid)]"><p>{guidance}</p>{editable && frame.id === "workstreams" && onAddWorkstream ? (adding ? <div className="canvas-lab-inline-workstream"><input aria-label="Workstream name" maxLength={60} value={newName} onChange={(event) => { setNewName(event.target.value); if (event.target.value.trim()) setAddError(false); }} onKeyDown={(event) => { if (event.key === "Enter") submitInlineWorkstream(); if (event.key === "Escape") { setAdding(false); setAddError(false); } }} /><button type="button" onClick={submitInlineWorkstream}>Add</button>{addError ? <span>a workstream needs a name</span> : null}</div> : <button type="button" className="canvas-lab-add-workstream" onClick={() => setAdding(true)}>+ workstream</button>) : null}</div> : null}
       {selected && editable ? <Button type="button" size="icon" variant="ghost" className="canvas-lab-frame-fit" aria-label={`Fit ${frame.name} to its cards`} onPointerDown={(event) => event.stopPropagation()} onClick={(event) => { event.stopPropagation(); onFit(); }}><Maximize2 className="h-3 w-3" /></Button> : null}
       {selected && editable ? CORNERS.map((corner) => <button key={corner} type="button" className="canvas-lab-resize-handle" data-corner={corner} aria-label={`Resize ${frame.name} from ${corner}`} onPointerDown={(event) => { event.stopPropagation(); onResizeStart(corner, event); }} onKeyDown={(event) => onResizeKeyDown?.(corner, event)} onKeyUp={onResizeKeyUp} />) : null}
     </section>
