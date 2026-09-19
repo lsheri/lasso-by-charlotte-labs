@@ -471,6 +471,48 @@ export function fitScale(
 
 export type LabRect = { x: number; y: number; width: number; height: number };
 
+export type LabFitResult = { zoom: number; pan: Point; bounds: LabRect };
+
+/**
+ * Fit the visible workboard union into its shell. Measured card heights are
+ * accepted separately because paper can extend beyond its stored rectangle.
+ */
+export function fitWorkboardViewport(
+  viewport: { width: number; height: number },
+  frames: LabFrame[],
+  nodes: LabNode[],
+  measuredHeights: ReadonlyMap<string, number>,
+  guides: LabRect = { x: 60, y: 60, width: 896, height: 300 },
+  padding = 32,
+): LabFitResult {
+  const rects: LabRect[] = [
+    guides,
+    ...frames,
+    ...nodes.map((node) => ({
+      x: node.x,
+      y: node.y,
+      width: node.width,
+      height: Math.max(node.height, measuredHeights.get(node.id) ?? 0),
+    })),
+  ];
+  const left = Math.min(...rects.map((rect) => rect.x));
+  const top = Math.min(...rects.map((rect) => rect.y));
+  const right = Math.max(...rects.map((rect) => rect.x + rect.width));
+  const bottom = Math.max(...rects.map((rect) => rect.y + rect.height));
+  const bounds = { x: left, y: top, width: right - left, height: bottom - top };
+  const availableWidth = Math.max(0, viewport.width - padding * 2);
+  const availableHeight = Math.max(0, viewport.height - padding * 2);
+  const zoom = Math.max(0.62, Math.min(1, availableWidth / bounds.width, availableHeight / bounds.height));
+  return {
+    zoom,
+    pan: {
+      x: (viewport.width - bounds.width * zoom) / 2 - bounds.x * zoom,
+      y: (viewport.height - bounds.height * zoom) / 2 - bounds.y * zoom,
+    },
+    bounds,
+  };
+}
+
 export function resizeLabRect(start: LabRect, corner: LabResizeCorner, delta: Point, preserveAspect = false, kind: "card" | "frame" = "card"): LabRect {
   const minWidth = kind === "card" ? CARD_MIN_WIDTH : FRAME_MIN_WIDTH;
   const minHeight = kind === "card" ? CARD_MIN_HEIGHT : FRAME_MIN_HEIGHT;

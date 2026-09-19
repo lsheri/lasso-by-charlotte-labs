@@ -20,8 +20,9 @@ export function LabFrame({ frame, count, selected, editable, onSelect, onResizeS
     <section
       data-testid={`lab-frame-${frame.id}`}
       data-selected={selected}
+      tabIndex={0}
       style={{ left: frame.x, top: frame.y, width: frame.width, height: frame.height }}
-      className="canvas-lab-frame absolute"
+      className="canvas-lab-frame absolute outline-none"
       onPointerDown={(event) => { if (event.target === event.currentTarget) onSelect(); }}
     >
       <div className="absolute inset-x-3 top-2 flex items-baseline justify-between gap-2">

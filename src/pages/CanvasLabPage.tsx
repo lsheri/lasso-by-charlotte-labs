@@ -21,7 +21,7 @@ import {
   createLocalNode,
   deleteLocalNode,
   draftAnchor,
-  fitScale,
+  fitWorkboardViewport,
   fitFrameToNodes,
   labAnchorPoint,
   labConnectorPath,
@@ -154,6 +154,7 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
   const [mobileView, setMobileView] = useState<"board" | "rail">("board");
   const [newFrameName, setNewFrameName] = useState("");
   const [opening, setOpening] = useState(true);
+  const [interaction, setInteraction] = useState<"idle" | "drag" | "pan" | "resize" | "connect">("idle");
   const [structureMode, setStructureMode] = useState<LabStructureMode>("structured");
   const [selectedFrameId, setSelectedFrameId] = useState<string | null>(null);
 
@@ -170,14 +171,11 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
   const spaceRef = useRef(false);
   const [spaceHeld, setSpaceHeld] = useState(false);
   const openedRef = useRef(false);
+  const fittedReadyRef = useRef(false);
+  const viewportChangedRef = useRef(false);
   /** The deterministic virtual seed a durable board is overlaid onto. */
   const virtualBaseRef = useRef<{ frames: LabFrame[]; nodes: LabNode[] } | null>(null);
 
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => setOpening(false), 520);
-    return () => window.clearTimeout(timer);
-  }, []);
 
   useEffect(() => {
     if (!page?.engagement || nodes !== null || frames !== null || lab.boardLoading) return;
@@ -214,6 +212,16 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
   const itemByNode = (node: LabNode) => node.workItemId ? workItems.find((item) => item.id === node.workItemId) : undefined;
   const focusItem = focusNode ? itemByNode(focusNode) ?? null : null;
   const reviewItem = reviewNode ? itemByNode(reviewNode) ?? null : null;
+  const loadingBoard = isLoading || lab.boardLoading;
+  const notAvailable = !loadingBoard && !isError && !engagement;
+  const boardReady = !loadingBoard && !isError && Boolean(engagement) && nodes !== null && frames !== null;
+
+  useEffect(() => {
+    if (!boardReady) return;
+    setOpening(true);
+    const timer = window.setTimeout(() => setOpening(false), 520);
+    return () => window.clearTimeout(timer);
+  }, [boardReady]);
 
   useEffect(() => {
     if (!nodes || openedRef.current) return;
@@ -223,11 +231,30 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
 
   const fit = useCallback(() => {
     const shell = shellRef.current;
-    if (!shell) return;
-    setZoom(clampZoom(fitScale(shell.clientWidth, shell.clientHeight, bounds)));
-    setPan({ x: 0, y: 0 });
-  }, [bounds.height, bounds.width]);
-  useEffect(() => { fit(); }, [fit]);
+    if (!shell || !boardReady) return;
+    const result = fitWorkboardViewport(
+      { width: shell.clientWidth, height: shell.clientHeight },
+      structureMode === "structured" ? boardFrames : [],
+      visibleNodes,
+      cardHeightsRef.current,
+    );
+    setZoom(result.zoom);
+    setPan(result.pan);
+  }, [boardFrames, boardReady, structureMode, visibleNodes]);
+
+  useEffect(() => {
+    const shell = shellRef.current;
+    if (!shell || !boardReady) return;
+    if (!fittedReadyRef.current) {
+      fittedReadyRef.current = true;
+      fit();
+    }
+    const observer = new ResizeObserver(() => {
+      if (!viewportChangedRef.current) fit();
+    });
+    observer.observe(shell);
+    return () => observer.disconnect();
+  }, [boardReady, fit]);
 
   /* ---------------- Phase 3: durable save pipeline ---------------- */
   const nodesRef = useRef<LabNode[]>([]);
@@ -439,6 +466,7 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
     const from = zoomRef.current;
     const to = clampZoom(next);
     if (to === from) return;
+    viewportChangedRef.current = true;
     setPan(zoomAbout(panStateRef.current, from, to, point));
     setZoom(to);
   }, []);
@@ -462,6 +490,7 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
     function onModifierWheel(event: WheelEvent) {
       if (!event.ctrlKey && !event.metaKey) return;
       event.preventDefault();
+      viewportChangedRef.current = true;
       zoomTo(pinchZoom(zoomRef.current, event.deltaY), pointIn(event));
     }
     function onSurfaceWheel(event: WheelEvent) {
@@ -471,6 +500,7 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
       const delta = wheelPanDelta(event);
       if (scrollableUnder(target, shell!, delta)) return;
       event.preventDefault();
+      viewportChangedRef.current = true;
       setPan((current) => ({ x: current.x - delta.x, y: current.y - delta.y }));
     }
     shell.addEventListener("wheel", onModifierWheel, { passive: false });
@@ -478,12 +508,14 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
     return () => { shell.removeEventListener("wheel", onModifierWheel); shell.removeEventListener("wheel", onSurfaceWheel); };
   }, [zoomTo]);
 
-  /** Space holds the board still for panning, unless a card or a field has focus. */
+  /** Space pans only from the document or board itself; controls keep native Space. */
   useEffect(() => {
     function down(event: KeyboardEvent) {
       if (event.key !== " " && event.code !== "Space") return;
       const active = document.activeElement as HTMLElement | null;
-      if (active?.closest("textarea,input,[contenteditable='true'],[role='menu'],[data-testid^='lab-card-']")) return;
+      const shell = shellRef.current;
+      const stage = shell?.querySelector<HTMLElement>("[data-testid='canvas-lab-stage']") ?? null;
+      if (active !== document.body && active !== shell && active !== stage) return;
       if (spaceRef.current) return;
       event.preventDefault();
       spaceRef.current = true;
@@ -517,6 +549,8 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
   }, [fit, zoomAtCentre]);
 
   function startSpacePan(event: React.PointerEvent) {
+    viewportChangedRef.current = true;
+    setInteraction("pan");
     panRef.current = { from: { x: event.clientX, y: event.clientY }, origin: panStateRef.current };
   }
 
@@ -525,6 +559,7 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
     if (event.button !== 0 || (event.target as Element).closest("button,textarea")) return;
     event.stopPropagation();
     setKeyboardId(node.id);
+    setInteraction("drag");
     dragRef.current = { id: node.id, origin: { x: node.x, y: node.y }, from: { x: event.clientX, y: event.clientY } };
   }
 
@@ -535,6 +570,7 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
         if (!connector.moved && Math.hypot(event.clientX - connector.from.x, event.clientY - connector.from.y) < 6) return;
         if (!connector.moved) {
           connector.moved = true;
+          setInteraction("connect");
           noteWorkboardRelationship(orgId, "started");
         }
         setConnectorPreview(stagePoint(event.clientX, event.clientY));
@@ -587,6 +623,7 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
         resizeRef.current = null;
       }
       panRef.current = null;
+      setInteraction("idle");
     }
     window.addEventListener("pointermove", move);
     window.addEventListener("pointerup", up);
@@ -613,6 +650,7 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
     event.stopPropagation();
     dragRef.current = null;
     connectorDragRef.current = null;
+    setInteraction("resize");
     resizeRef.current = { kind, id, corner, start: rect, pointer: { x: event.clientX, y: event.clientY }, method: "pointer" };
   }
 
@@ -842,9 +880,17 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
     })();
   }
 
-  const title = engagement ? engagementDisplayTitle(engagement) : "Engagement";
+  const title = engagement ? engagementDisplayTitle(engagement) : "Workboard";
+  const status = loadingBoard || (boardReady && opening)
+    ? "Workboard · Opening"
+    : lab.saveState.status === "saving" ? "Workboard · Saving"
+      : lab.saveState.status === "conflict" ? "Workboard · Newer version available"
+        : lab.saveState.status === "forbidden" ? "Workboard · Read only"
+          : lab.saveState.status === "error" ? "Workboard · Could not save"
+            : lab.saveState.status === "saved" || lab.board?.id ? "Workboard · Saved"
+              : "Workboard · Not saved";
   return (
-    <div className="fixed inset-0 z-50 flex bg-[var(--nb-paper)]" data-testid="canvas-lab-shell">
+    <div className="fixed inset-0 z-50 flex bg-[var(--nb-paper)]" data-testid="canvas-lab-shell" data-interaction={interaction}>
       <aside className="z-30 flex w-[52px] shrink-0 flex-col items-center border-r border-border bg-card py-3">
         <LassoLoopMark className="h-7 w-7 text-green" />
         <Button className="mt-5" size="icon" variant="ghost" aria-label="Open workboard menu" onClick={() => setMenuOpen(true)}><Menu className="h-4 w-4" /></Button>
@@ -852,10 +898,10 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
       </aside>
       {menuOpen ? <div className="fixed inset-0 z-50 flex bg-[var(--nb-scrim)]" onPointerDown={() => setMenuOpen(false)}><aside className="h-full w-[280px] overflow-y-auto border-r border-border bg-sidebar p-4 shadow-[var(--shadow-modal)]" onPointerDown={(event) => event.stopPropagation()}><div className="mb-5 flex items-center justify-between"><span className="font-serif text-xl text-foreground">Lasso</span><Button size="icon" variant="ghost" aria-label="Close workboard menu" onClick={() => setMenuOpen(false)}><X className="h-4 w-4" /></Button></div><SidebarNav onNavigate={() => setMenuOpen(false)} onOpenSettings={() => void navigate({ to: "/settings" })} /><div className="mt-6 border-t border-border pt-4"><label className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft" htmlFor="canvas-lab-new-frame">Add workstream</label><div className="mt-2 flex gap-2"><input id="canvas-lab-new-frame" value={newFrameName} onChange={(event) => setNewFrameName(event.target.value)} className="min-w-0 flex-1 rounded-[var(--radius-control)] border border-input bg-background px-2 text-[12px]" placeholder="Workstream name" /><Button size="sm" variant="outline" onClick={addWorkstream}>Add</Button></div><p className="mt-1 font-hand text-[13px] text-[var(--nb-mid)]">not saved</p></div></aside></div> : null}
       <main className={`relative min-w-0 flex-1 flex-col ${mobileView === "board" ? "flex" : "hidden md:flex"}`}>
-        <header className="z-20 flex h-[52px] shrink-0 items-center justify-between gap-3 border-b border-border bg-card px-4"><div className="min-w-0"><span className="block truncate text-[13px] font-medium text-foreground">{title}</span><span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">{lab.saveState.status === "saving" ? "Workboard · Saving" : lab.saveState.status === "conflict" ? "Workboard · Newer version available" : lab.saveState.status === "forbidden" ? "Workboard · Read only" : lab.saveState.status === "error" ? "Workboard · Could not save" : lab.saveState.status === "saved" || lab.board?.id ? "Workboard · Saved" : "Workboard · Not saved"}</span></div><div className="flex items-center gap-1"><div className="canvas-lab-structure-toggle" aria-label="Workboard structure"><Button type="button" size="sm" variant={structureMode === "structured" ? "secondary" : "ghost"} aria-pressed={structureMode === "structured"} onClick={() => { if (structureMode === "structured") return; setStructureMode("structured"); noteWorkboardStructureToggled(orgId, "structured"); }}>Structured</Button><Button type="button" size="sm" variant={structureMode === "freeform" ? "secondary" : "ghost"} aria-pressed={structureMode === "freeform"} onClick={() => { if (structureMode === "freeform") return; setStructureMode("freeform"); setSelectedFrameId(null); noteWorkboardStructureToggled(orgId, "freeform"); }}>Freeform</Button></div><Button type="button" size="sm" variant="outline" className="md:hidden" onClick={() => { setRailOpen(true); setMobileView("rail"); }}>Working from</Button>{selectedLinkId ? <Button type="button" size="sm" variant="ghost" onClick={() => { const link = links.find((entry) => entry.id === selectedLinkId); if (link) void persistLinkRemoval(link); setLinks((current) => removeLabLink(current, selectedLinkId)); setSelectedLinkId(null); noteWorkboardRelationship(orgId, "removed"); }}>Remove relationship</Button> : null}<Button size="sm" variant="outline" onClick={fit}>Fit</Button><Button size="icon" variant="ghost" aria-label="Zoom out" onClick={() => zoomAtCentre(stepZoom(zoomRef.current, "out"))}><Minus className="h-3.5 w-3.5" /></Button><button type="button" aria-label="Zoom to 100 percent" className="w-10 text-center font-mono text-[10px] text-soft" onClick={() => zoomAtCentre(1)}>{Math.round(zoom * 100)}%</button><Button size="icon" variant="ghost" aria-label="Zoom in" onClick={() => zoomAtCentre(stepZoom(zoomRef.current, "in"))}><Plus className="h-3.5 w-3.5" /></Button></div></header>
+        <header className="z-20 flex h-[52px] shrink-0 items-center justify-between gap-3 border-b border-border bg-card px-4"><div className="min-w-0"><span className="block truncate text-[13px] font-medium text-foreground">{title}</span><span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">{status}</span></div><div className="flex items-center gap-1"><div className="canvas-lab-structure-toggle" aria-label="Workboard structure"><Button type="button" size="sm" variant={structureMode === "structured" ? "secondary" : "ghost"} aria-pressed={structureMode === "structured"} onClick={() => { if (structureMode === "structured") return; setStructureMode("structured"); noteWorkboardStructureToggled(orgId, "structured"); }}>Structured</Button><Button type="button" size="sm" variant={structureMode === "freeform" ? "secondary" : "ghost"} aria-pressed={structureMode === "freeform"} onClick={() => { if (structureMode === "freeform") return; setStructureMode("freeform"); setSelectedFrameId(null); noteWorkboardStructureToggled(orgId, "freeform"); }}>Freeform</Button></div><Button type="button" size="sm" variant="outline" className="md:hidden" onClick={() => { setRailOpen(true); setMobileView("rail"); }}>Working from</Button>{selectedLinkId ? <Button type="button" size="sm" variant="ghost" onClick={() => { const link = links.find((entry) => entry.id === selectedLinkId); if (link) void persistLinkRemoval(link); setLinks((current) => removeLabLink(current, selectedLinkId)); setSelectedLinkId(null); noteWorkboardRelationship(orgId, "removed"); }}>Remove relationship</Button> : null}<Button size="sm" variant="outline" onClick={fit}>Fit</Button><Button size="icon" variant="ghost" aria-label="Zoom out" onClick={() => zoomAtCentre(stepZoom(zoomRef.current, "out"))}><Minus className="h-3.5 w-3.5" /></Button><button type="button" aria-label="Zoom to 100 percent" className="w-10 text-center font-mono text-[10px] text-soft" onClick={() => zoomAtCentre(1)}>{Math.round(zoom * 100)}%</button><Button size="icon" variant="ghost" aria-label="Zoom in" onClick={() => zoomAtCentre(stepZoom(zoomRef.current, "in"))}><Plus className="h-3.5 w-3.5" /></Button></div></header>
         {lab.saveState.status === "conflict" ? <div className="z-20 flex items-center justify-between gap-3 border-b border-border bg-card px-4 py-2" role="alert"><p className="text-[13px] text-foreground">Someone saved a newer version of this record.</p><div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => resolveConflict("latest")}>Load latest</Button><Button size="sm" variant="outline" onClick={() => resolveConflict("retry")}>Retry my change</Button></div></div> : null}
-        <div ref={shellRef} onPointerDownCapture={(event) => { if (event.button === 0 && spaceRef.current) { event.preventDefault(); event.stopPropagation(); startSpacePan(event); } }} onPointerDown={(event) => { if (event.button === 0 && event.target === event.currentTarget) panRef.current = { from: { x: event.clientX, y: event.clientY }, origin: pan }; }} data-space-pan={spaceHeld} className="canvas-lab-surface relative min-h-0 flex-1 cursor-grab overflow-hidden">
-          <div data-testid="canvas-lab-stage" className="absolute left-0 top-0 origin-top-left" style={{ width: bounds.width, height: bounds.height, transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})` }}>
+        <div ref={shellRef} tabIndex={-1} onPointerDownCapture={(event) => { if (event.button === 0 && spaceRef.current) { event.preventDefault(); event.stopPropagation(); startSpacePan(event); } }} onPointerDown={(event) => { if (event.button === 0 && event.target === event.currentTarget) { viewportChangedRef.current = true; setInteraction("pan"); panRef.current = { from: { x: event.clientX, y: event.clientY }, origin: pan }; } }} data-space-pan={spaceHeld} className="canvas-lab-surface relative min-h-0 flex-1 overflow-hidden">
+          {boardReady ? <div data-testid="canvas-lab-stage" tabIndex={-1} className="canvas-lab-stage absolute left-0 top-0 origin-top-left" style={{ width: bounds.width, height: bounds.height, transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})` }}>
             <ReasoningTrailGuide onAdd={addNode} />
             <FoundationGuide brief={engagement?.brief ?? null} tasks={(page?.tasks ?? []).map((task) => ({ id: task.id, name: task.name, detail: task.detail }))} work={workItems} />
             {structureMode === "structured" ? boardFrames.map((frame) => { const count = visibleNodes.filter((node) => node.frame === frame.id).length; return <LabFrameElement key={frame.id} frame={frame} count={count} selected={selectedFrameId === frame.id} editable={Boolean(lab.board?.canEditStructure)} onSelect={() => { setSelectedFrameId(frame.id); setKeyboardId(null); }} onResizeStart={(corner, event) => startResize("frame", frame.id, corner, { x: frame.x, y: frame.y, width: frame.width, height: frame.height }, event)} onResizeKeyDown={(corner, event) => keyboardResize("frame", frame.id, corner, { x: frame.x, y: frame.y, width: frame.width, height: frame.height }, event)} onResizeKeyUp={finishKeyboardResize} onFit={() => fitFrame(frame)} />; }) : null}
@@ -865,12 +911,12 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
               {connectorPreview && connectorDragRef.current ? (() => { const source = visibleNodes.find((node) => node.id === connectorDragRef.current?.nodeId); if (!source || !connectorDragRef.current) return null; const from = labAnchorPoint(source, connectorDragRef.current.anchor, cardHeightsRef.current.get(source.id) ?? 108); return <path d={labConnectorPath(from, connectorDragRef.current.anchor, connectorPreview, connectorDragRef.current.anchor)} fill="none" stroke="var(--nb-green)" strokeWidth="2.4" strokeLinecap="round" className="pointer-events-none" />; })() : null}
             </svg>
             {visibleNodes.map((node) => { const canResize = Boolean(lab.board?.canEditStructure) && (node.kind !== "judgment" || Boolean(node.local)); return <LabCard key={node.id} node={node} item={itemByNode(node)} selected={selected.includes(node.id)} focused={keyboardId === node.id} connecting={connectSource !== null || connectorPreview !== null} connectSourceAnchor={connectSource?.nodeId === node.id ? connectSource.anchor : null} onSelect={() => setSelected((current) => toggleContext(current, node.id))} onOpen={() => openNode(node)} onBranch={() => branchFrom(node)} onHide={() => hideNode(node)} onDelete={() => deleteNode(node)} onEdit={(text) => setNodes((current) => current ? updateLocalNode(current, node.id, text) : current)} onEditCommitted={() => { noteWorkboardNodeEdited(orgId, eventKind(node)); const current = nodesRef.current.find((entry) => entry.id === node.id); if (current?.durableId) void persistNodePatch(current.id, { body: current.summary, title: current.title }); }} onAnchorPointerDown={(side, event) => startPointerConnect(node, side, event)} onAnchorActivate={(side) => chooseConnectAnchor(node, side)} onMenuOpened={() => { if (connectSource || connectorDragRef.current) cancelConnect(); noteWorkboardCardMenuOpened(orgId, eventKind(node), node.ownership); }} onMenuOpenChange={setCardMenuOpen} onMeasure={(height) => cardHeightsRef.current.set(node.id, height)} onPointerDown={(event) => onCardPointerDown(node, event)} onKeyDown={(event) => onCardKeyDown(node, event)} canResize={canResize} onResizeStart={(corner, event) => startResize("card", node.id, corner, { x: node.x, y: node.y, width: node.width, height: node.height }, event)} onResizeKeyDown={(corner, event) => keyboardResize("card", node.id, corner, { x: node.x, y: node.y, width: node.width, height: node.height }, event)} onResizeKeyUp={finishKeyboardResize} onFit={() => fitCard(node)} frameChoices={boardFrames.map((frame) => ({ id: frame.id, name: frame.name }))} structured={structureMode === "structured"} onMoveToFrame={(frameId) => moveToFrame(node, frameId)} />; })}
-          </div>
-          {isLoading ? <p className="absolute left-4 top-4 font-hand text-[16px] text-[var(--nb-mid)]">reading the engagement</p> : null}
-          {isError ? <p className="absolute left-4 top-4 text-[13px] text-muted-foreground">This workboard could not be opened.</p> : null}
-          {!isLoading && !isError && visibleNodes.length === 0 ? <p className="absolute left-4 top-4 font-hand text-[16px] text-[var(--nb-mid)]">nothing is on this workboard yet</p> : null}
+          </div> : null}
+          {loadingBoard ? <p className="absolute left-4 top-4 font-hand text-[16px] text-[var(--nb-mid)]">reading the engagement</p> : null}
+          {isError || notAvailable ? <p className="absolute left-4 top-4 text-[13px] text-muted-foreground">This workboard could not be opened.</p> : null}
+          {boardReady && visibleNodes.length === 0 ? <p className="absolute left-4 top-4 font-hand text-[16px] text-[var(--nb-mid)]">nothing is on this workboard yet</p> : null}
         </div>
-        {opening ? <div className={`pointer-events-none absolute inset-0 z-40 flex ${unfold.className}`} aria-hidden={!unfold.still}>{unfold.still ? <span className="sr-only">{unfold.reduced}</span> : null}<span className="canvas-lab-unfold-panel" /><span className="canvas-lab-unfold-panel" /><span className="canvas-lab-unfold-panel" /></div> : null}
+        {boardReady && opening ? <div className={`pointer-events-none absolute inset-0 z-40 flex ${unfold.className}`} aria-hidden={!unfold.still}>{unfold.still ? <span className="sr-only">{unfold.reduced}</span> : null}<span className="canvas-lab-unfold-panel" /><span className="canvas-lab-unfold-panel" /><span className="canvas-lab-unfold-panel" /></div> : null}
       </main>
       <WorkRail open={railOpen} mobileVisible={mobileView === "rail"} context={contextNodes} hidden={hiddenNodes} canvasInstructions={canvasInstructions} onToggle={() => { const next = !railOpen; setRailOpen(next); noteWorkboardRail(orgId, next ? "reopened" : "collapsed"); }} onRemoveContext={(id) => setSelected((current) => removeContext(current, id))} onSubmit={(prompt) => { setNodes((current) => { if (!current) return current; const contextNode = current.find((node) => node.id === selected[0]); const frame = boardFrames.find((entry) => entry.id === (contextNode?.frame ?? "foundation")) ?? boardFrames[0]; if (!frame) return current; return [...current, createChatNode(prompt, selected, draftAnchor(frame, current), frame.id)]; }); noteWorkboardNodeCreated(orgId, "draft_thread"); }} onCanvasInstructions={setCanvasInstructions} onRestore={restoreNode} onShowBoard={() => setMobileView("board")} />
       <p className="sr-only" aria-live="polite">{announcement}</p>

@@ -128,7 +128,7 @@ export function LabCard({
       }}
       style={{ left: node.x, top: node.y, width: node.width, height: node.height }}
       data-size={cardSizeTier(node)}
-      className="canvas-lab-card group absolute cursor-grab text-left"
+      className="canvas-lab-card group absolute text-left outline-none"
     >
       <div ref={paperRef} data-selected={selected} data-focused={focused} data-connect-source={connectSourceAnchor !== null} className={cn("canvas-lab-card-paper h-full overflow-hidden", item ? "" : `canvas-lab-folded-note flex flex-col gap-1.5 border px-3 py-2.5 ${OWNER_TONE[node.ownership]}`)}>
         {item ? (
