@@ -84,20 +84,56 @@ export function LabRelationships({
               markerEnd={selected ? "url(#canvas-lab-arrow-green)" : "url(#canvas-lab-arrow-graphite)"}
               className="canvas-lab-relationship-line cursor-pointer outline-none"
             />
+            {showLabel ? (
+              <text
+                data-testid={`lab-relationship-label-${link.id}`}
+                x={midpoint.x}
+                y={midpoint.y - 14 * inverseZoom}
+                textAnchor="middle"
+                className="canvas-lab-relationship-label"
+                style={{ fontSize: 13 * inverseZoom }}
+              >
+                {relation}
+              </text>
+            ) : null}
             {editable && emphasized ? (
-              <foreignObject x={midpoint.x - removeSize / 2} y={midpoint.y - removeSize / 2} width={removeSize} height={removeSize} className="canvas-lab-relationship-remove-wrap">
-                <button
-                  type="button"
-                  className="canvas-lab-relationship-remove"
-                  aria-label={`Remove relationship from ${source.title} to ${target.title}`}
-                  onPointerDown={(event) => event.stopPropagation()}
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    onRemove(link);
-                  }}
-                >
-                  ×
-                </button>
+              <foreignObject
+                x={midpoint.x - controlsWidth / 2}
+                y={midpoint.y - removeSize / 2}
+                width={controlsWidth}
+                height={removeSize}
+                className="canvas-lab-relationship-remove-wrap"
+              >
+                <div className="canvas-lab-relationship-controls" style={{ gap: 6 * inverseZoom }}>
+                  {onChangeRelation ? (
+                    <button
+                      type="button"
+                      className="canvas-lab-relationship-change"
+                      style={{ fontSize: 13 * inverseZoom }}
+                      aria-label={`Change relation from ${source.title} to ${target.title}`}
+                      onPointerDown={(event) => event.stopPropagation()}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onChangeRelation(link);
+                      }}
+                    >
+                      Change relation
+                    </button>
+                  ) : null}
+                  <button
+                    type="button"
+                    className="canvas-lab-relationship-remove"
+                    style={{ width: removeSize, height: removeSize }}
+                    aria-label={`Remove relationship from ${source.title} to ${target.title}`}
+                    onPointerDown={(event) => event.stopPropagation()}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onRemove(link);
+                    }}
+                  >
+                    ×
+                  </button>
+                </div>
               </foreignObject>
             ) : null}
           </g>
