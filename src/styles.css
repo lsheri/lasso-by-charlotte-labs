@@ -1252,9 +1252,14 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   align-items: center;
   gap: 6px;
 }
-.canvas-lab-paper-header { justify-content: space-between; }
+.canvas-lab-paper-header { flex-shrink: 0; justify-content: space-between; }
 .canvas-lab-paper-source { overflow: hidden; }
-.canvas-lab-paper-source > span { white-space: nowrap; }
+.canvas-lab-paper-source > span {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
 .canvas-lab-paper-source > span,
 .canvas-lab-paper-footer > span { font-size: 9px; }
 .canvas-lab-paper-title {
@@ -1262,11 +1267,13 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   overflow: hidden;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+  flex-shrink: 0;
 }
 .canvas-lab-paper-summary { min-height: 0; }
 .canvas-lab-paper-edit {
-  min-height: 34px;
+  min-height: 0;
   flex: 1 1 0;
+  overflow: auto;
 }
 .canvas-lab-paper-footer {
   margin-top: auto;

@@ -61,7 +61,7 @@ export function LabPaper({
       }}
     >
       <div className="canvas-lab-paper-body">
-        <div className={cn("canvas-lab-paper-header", selected && "canvas-lab-context-header")}>
+        <div className={cn("canvas-lab-paper-header shrink-0", selected && "canvas-lab-context-header")}>
           <span className="canvas-lab-paper-source">
             {item ? (
               <>
@@ -69,15 +69,15 @@ export function LabPaper({
                 {needsSourceFallback ? <GraphiteIcon name="work" size={13} animate={false} /> : null}
               </>
             ) : <GraphiteIcon name={nodeIcon(node)} size={13} animate={false} />}
-            <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
-              {item ? <><VendorMark item={item} />{" · "}{date}</> : node.typeLabel}
+            <span className="min-w-0 shrink overflow-hidden text-ellipsis whitespace-nowrap font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
+              {item ? <><VendorMark item={item} />{tier !== "compact" && date ? <>{" · "}{date}</> : null}</> : node.typeLabel}
             </span>
-            {node.deliverable ? <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">Deliverable</span> : null}
+            {node.deliverable ? <span className="shrink-0 font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">Deliverable</span> : null}
           </span>
           <span className="shrink-0 font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">{ownerLabel(node)}</span>
         </div>
 
-        <p className={cn("canvas-lab-paper-title font-hand text-[16px] leading-[18px] text-foreground", selected && "canvas-lab-context-title")}>
+        <p className={cn("canvas-lab-paper-title shrink-0 font-hand text-[16px] leading-[18px] text-foreground", selected && "canvas-lab-context-title")}>
           {node.title} {item ? <ArtifactNote item={item} /> : null}
         </p>
 
@@ -88,7 +88,7 @@ export function LabPaper({
             onChange={(event) => onEdit(event.target.value)}
             onBlur={onEditCommitted}
             onPointerDown={(event) => event.stopPropagation()}
-            className="canvas-lab-paper-edit min-h-[34px] w-full flex-1 basis-0 resize-none border border-[var(--nb-rule)] bg-card px-2 py-1 text-[11.5px] leading-[17px] text-foreground outline-none focus:border-[var(--nb-green)]"
+            className="canvas-lab-paper-edit min-h-0 w-full flex-1 basis-0 resize-none overflow-auto border border-[var(--nb-rule)] bg-card px-2 py-1 text-[11.5px] leading-[17px] text-foreground outline-none focus:border-[var(--nb-green)]"
           />
         ) : summary && (!item || tier !== "compact") ? (
           <p className={cn("canvas-lab-paper-summary text-[11.5px] leading-[17px] text-muted-foreground", tier === "compact" ? "line-clamp-2" : "line-clamp-3")}>{summary}</p>
