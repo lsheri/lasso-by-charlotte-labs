@@ -158,8 +158,8 @@ describe("drop prompt on a durable board", () => {
   it("offers the workstream under the card even when the home frame overlaps it", () => {
     const merged = applyDurableBoard({ frames: baseFrames, nodes: baseNodes }, board({
       frames: [
-        { id: "frame-a", key: "task:task-1", kind: "task", label: "Discovery", x: 60, y: 420, w: 1200, h: 900, ord: 0, version: 1 },
-        { id: "frame-b", key: "custom:readout", kind: "custom", label: "Readout deck", x: 900, y: 460, w: 380, h: 420, ord: 1, version: 1 },
+        { id: "frame-a", key: "task:task-1", kind: "task", taskId: "task-1", label: "Discovery", x: 60, y: 420, w: 1200, h: 900, ord: 0, version: 1 },
+        { id: "frame-b", key: "custom:readout", kind: "custom", taskId: null, label: "Readout deck", x: 900, y: 460, w: 380, h: 420, ord: 1, version: 1 },
       ],
       nodes: [{
         id: "node-1", frameId: "frame-a", kind: "work_item", workItemId: "work-1", decisionId: null,
