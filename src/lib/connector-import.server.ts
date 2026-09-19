@@ -128,6 +128,10 @@ export async function recordNewVersion(
     newRef: string;
     newHash: string;
     sourceEvent: string;
+    /** Where the new bytes came from. Omitted by callers that predate the column. */
+    origin?: string;
+    createdAtTurn?: number;
+    promptedByTurn?: number;
   },
 ): Promise<number> {
   const { data: rows, error } = await supabase
