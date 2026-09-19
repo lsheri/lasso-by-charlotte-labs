@@ -148,3 +148,12 @@
 - [x] Claim nothing in "What fed this" until the record has been read
 - [x] Clear all context in one move when two or more cards are selected
 - [ ] Portal catalog: add workboard.save_error_resolved and workboard.context_changed (architect)
+
+## Workboard polish 2c-v (undo)
+- [x] Bounded undo and redo stack for arranging actions, with coalesced keyboard nudges
+- [x] Undo toast after Remove from canvas and after removing your own note
+- [x] Bring the pressed or focused card to the front locally
+- [x] Delete hint on real records instead of silence
+- [x] Counter-scale the judgment chooser and focus the inline workstream name
+- [x] Say deliverable for a deliverable work card, and carry the original action through a retry
+- [ ] Portal catalog: add workboard.undo_used (architect)
