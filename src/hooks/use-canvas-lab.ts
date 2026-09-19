@@ -13,11 +13,24 @@ import { useCallback, useRef, useState } from "react";
 import { getCanvasLabBoardFn, mutateCanvasLabBoardFn } from "@/lib/canvas-lab.functions";
 import type { WorkboardCommand, WorkboardDto, WorkboardMutationResult, WorkboardRowSnapshot } from "@/lib/canvas-lab-shared";
 
+/** Which durable thing a command touches, for honest error reporting. */
+export type WorkboardCommandEntity = "board" | "frame" | "node" | "relationship";
+
+export function commandEntityKind(command: WorkboardCommand): WorkboardCommandEntity {
+  if (command.type === "materialize") return "board";
+  if (command.type.startsWith("frame_")) return "frame";
+  if (command.type.startsWith("link_")) return "relationship";
+  return "node";
+}
+
+/** A reachability failure, kept apart from a real validation answer. */
+export type WorkboardClientResult = WorkboardMutationResult | { status: "network_error"; message: string };
+
 export type WorkboardSaveState =
   | { status: "idle" }
   | { status: "saving" }
   | { status: "saved" }
-  | { status: "error"; message: string }
+  | { status: "error"; message: string; retry: WorkboardCommand; entityKind: WorkboardCommandEntity }
   | { status: "forbidden" }
   | { status: "conflict"; entityKind: "frame" | "node" | "link"; entityId: string; latestVersion: number; latest: WorkboardRowSnapshot; retry: WorkboardCommand };
 
