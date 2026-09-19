@@ -179,7 +179,15 @@ describe("canvas lab model", () => {
     expect(fitScale(0, 0)).toBe(1);
   });
 
-  it("fits frames, guides, and measured card overflow as one centred union", () => {
+  it("fits an NWG-02-sized union at minimum zoom and keeps its visible region centred", () => {
+    const largeFrame = { id: "large", name: "All work", x: 60, y: 60, width: 2400, height: 1500 };
+    const large = fitWorkboardViewport({ width: 1048, height: 713 }, [largeFrame], [], new Map());
+    expect(large.zoom).toBe(0.4);
+    expect(large.bounds.width * large.zoom).toBeLessThanOrEqual(1048 - 64);
+    expect(large.bounds.height * large.zoom).toBeLessThanOrEqual(713 - 64);
+    expect(large.pan.x + large.bounds.x * large.zoom).toBeCloseTo(44);
+    expect(large.pan.y + large.bounds.y * large.zoom).toBeCloseTo(56.5);
+
     const frame = { id: "f", name: "Work", x: 60, y: 420, width: 430, height: 220 };
     const card = { id: "n", kind: "work" as const, frame: "f", title: "Card", summary: "", typeLabel: "work", ownership: "yours" as const, x: 100, y: 590, width: 232, height: 112 };
     const result = fitWorkboardViewport({ width: 1000, height: 700 }, [frame], [card], new Map([["n", 240]]));
@@ -188,6 +196,13 @@ describe("canvas lab model", () => {
     expect(result.pan.y + (result.bounds.y + result.bounds.height / 2) * result.zoom).toBeCloseTo(350);
     const tiny = fitWorkboardViewport({ width: 1400, height: 900 }, [], [], new Map(), { x: 10, y: 10, width: 100, height: 80 });
     expect(tiny.zoom).toBe(1);
+  });
+
+  it("recognises only real shell size changes", async () => {
+    const { viewportSizeChanged } = await import("@/components/canvas-lab/canvas-lab-model");
+    expect(viewportSizeChanged(null, { width: 1048, height: 713 })).toBe(true);
+    expect(viewportSizeChanged({ width: 1048, height: 713 }, { width: 1048, height: 713 })).toBe(false);
+    expect(viewportSizeChanged({ width: 1048, height: 713 }, { width: 1049, height: 713 })).toBe(true);
   });
 
   it("creates the five local reasoning node kinds and six judgment choices", async () => {
