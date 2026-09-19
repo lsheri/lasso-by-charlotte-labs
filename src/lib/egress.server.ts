@@ -18,7 +18,7 @@ import {
   type PostureStateRow,
 } from "./egress-shared";
 import { runAfterResponse } from "./background";
-import { createSweepState, releaseSweep, tryStartSweep } from "./sweep-guard";
+import { createSweepState, decideSweep, releaseSweep, tryStartSweep } from "./sweep-guard";
 
 export type EgressResult = { sent: number; skipped: number; failed: number };
 
@@ -229,6 +229,34 @@ export async function runFullSweep(): Promise<{
   const content = await runContentEgress();
   return { events, content };
 }
+
+export type GuardedSweepResult =
+  | { status: "skipped"; reason: "too-soon" | "already-running" }
+  | {
+      status: "ran";
+      events: EgressResult;
+      samples: Awaited<ReturnType<typeof import("./content-egress.server").runContentEgress>>;
+    };
+
+/**
+ * Pass 175b: the awaited home for the sweep. Same single guard as the
+ * opportunistic path, but it finishes inside a live request instead of
+ * relying on post-response work the host may cut off.
+ */
+export async function runGuardedSweepNow(now: number = Date.now()): Promise<GuardedSweepResult> {
+  const decision = decideSweep(sweepState, now);
+  console.info("[egress] trigger:", decision);
+  if (!tryStartSweep(sweepState, now)) {
+    return { status: "skipped", reason: decision === "already-running" ? "already-running" : "too-soon" };
+  }
+  try {
+    const full = await runFullSweep();
+    return { status: "ran", events: full.events, samples: full.content };
+  } finally {
+    releaseSweep(sweepState);
+  }
+}
+
 
 /**
  * Opportunistic trigger from server activity: at most one run per window per
