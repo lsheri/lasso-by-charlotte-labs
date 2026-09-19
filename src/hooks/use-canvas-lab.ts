@@ -56,13 +56,13 @@ export function useCanvasLab(engagementId: string, profileId: string | undefined
   if (query.data && boardRef.current !== query.data) boardRef.current = query.data;
 
   const persist = useCallback(
-    async (command: WorkboardCommand): Promise<WorkboardMutationResult> => {
+    async (command: WorkboardCommand): Promise<WorkboardClientResult> => {
       setSaveState({ status: "saving" });
-      let result: WorkboardMutationResult;
+      let result: WorkboardClientResult;
       try {
         result = (await mutateFn({ data: { engagement_id: engagementId, command, ...(profileId ? { profile_id: profileId } : {}) } })) as WorkboardMutationResult;
       } catch {
-        result = { status: "validation_error", message: "Could not reach the record." };
+        result = { status: "network_error", message: "Could not reach the record." };
       }
       if (result.status === "saved") {
         setSaveState({ status: "saved" });
