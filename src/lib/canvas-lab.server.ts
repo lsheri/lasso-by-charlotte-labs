@@ -489,6 +489,35 @@ async function insertNodeIdempotent(
 }
 
 
+/**
+ * Slice 2a: a highlight hangs off the card for its work item, so the card has
+ * to be durable. An existing card is reused exactly as it sits; nothing moves.
+ */
+export async function ensureWorkItemNode(
+  db: Db,
+  boardId: string,
+  profileId: string,
+  workItemId: string,
+): Promise<string | null> {
+  const { data } = await db
+    .from("workboard_nodes")
+    .select("id")
+    .eq("workboard_id", boardId)
+    .eq("work_item_id", workItemId)
+    .is("deleted_at", null)
+    .limit(1);
+  const existing = (data ?? [])[0];
+  if (existing) return existing.id;
+  const created = await insertNodeIdempotent(
+    db,
+    boardId,
+    profileId,
+    { clientKey: `work:${workItemId}`, frameKey: null, kind: "work_item", workItemId, x: 0, y: 0, w: 260, h: 160 },
+    null,
+  );
+  return created?.id ?? null;
+}
+
 async function frameIdForKey(db: Db, boardId: string, key: string): Promise<string | null> {
   const { data } = await db.from("workboard_frames").select("id").eq("workboard_id", boardId).eq("key", key).is("deleted_at", null).maybeSingle();
   return data?.id ?? null;
