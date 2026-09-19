@@ -918,6 +918,8 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
       noteWorkboardRelationship(orgId, "rejected");
       setAnnouncement(result.error);
       setLinkRejection({ targetId, message: result.error });
+      setConnectSource(null);
+      setInteraction("idle");
       return;
     }
     setLinks(result.links);
