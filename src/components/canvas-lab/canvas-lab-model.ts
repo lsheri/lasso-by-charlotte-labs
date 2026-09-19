@@ -148,6 +148,19 @@ export function dropPromptFrame(node: LabNode, frames: LabFrame[], mode: LabStru
   return target && target.id !== node.frame ? target : null;
 }
 
+/** Where the inline add control sits: under the workstream row, clear of spilled cards. */
+export function workstreamAddAnchor(frames: LabFrame[], nodes: LabNode[]): Point | null {
+  const row = frames.filter((frame) => frame.id.startsWith("task:") || frame.id.startsWith("custom:"));
+  if (row.length === 0) return null;
+  const left = Math.min(...row.map((frame) => frame.x));
+  const right = Math.max(...row.map((frame) => frame.x + frame.width));
+  const bottoms = [
+    ...row.map((frame) => frame.y + frame.height),
+    ...nodes.filter((node) => node.x + node.width > left && node.x < right).map((node) => node.y + node.height),
+  ];
+  return { x: left, y: Math.max(...bottoms) + 24 };
+}
+
 /** Free space for a new workstream: under everything on the board, in the workstream column. */
 export function nextWorkstreamRect(frames: LabFrame[], nodes: LabNode[]): LabRect {
   const workstreams = frames.filter((frame) => frame.id.startsWith("task:") || frame.id.startsWith("custom:") || frame.id === "workstreams");
