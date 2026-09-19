@@ -292,8 +292,9 @@ export async function applyWorkboardCommand(
     if (command.type === "frame_update" && !validFrameGeometry(command.patch)) return { status: "validation_error", message: "Workstream dimensions are outside the supported range." };
     const target = (await db.from("workboard_frames").select("id, kind").eq("id", command.frameId).eq("workboard_id", board.id).is("deleted_at", null).maybeSingle()).data;
     if (!target) return { status: "validation_error", message: "That workstream is gone." };
+    const normalizedLabel = command.type === "frame_update" && typeof command.patch.label === "string" ? command.patch.label.trim() : command.type === "frame_update" ? command.patch.label : undefined;
     if (command.type === "frame_update" && command.patch.label !== undefined) {
-      const invalid = validateFrameLabel(target.kind, command.patch.label);
+      const invalid = validateFrameLabel(target.kind, normalizedLabel);
       if (invalid) return { status: "validation_error", message: invalid };
     }
     if (command.type === "frame_archive") {
@@ -303,7 +304,7 @@ export async function applyWorkboardCommand(
     }
     const patch =
       command.type === "frame_update"
-        ? { ...definedPatch({ ...command.patch, ...(command.patch.label !== undefined ? { label: command.patch.label.trim() } : {}) }), ...stamp }
+        ? { ...definedPatch({ ...command.patch, ...(normalizedLabel !== undefined ? { label: normalizedLabel } : {}) }), ...stamp }
         : { deleted_at: command.type === "frame_archive" ? new Date().toISOString() : null, ...stamp };
     const { data } = await db
       .from("workboard_frames")

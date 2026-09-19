@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { LabFrame } from "@/components/canvas-lab/LabFrame";
 import type { LabFrame as LabFrameModel } from "@/components/canvas-lab/canvas-lab-model";
@@ -29,8 +29,6 @@ function renderFrame(overrides: Partial<React.ComponentProps<typeof LabFrame>> =
   };
   return { ...render(<LabFrame {...props} />), props };
 }
-
-afterEach(() => document.body.replaceChildren());
 
 describe("LabFrame menu and rename", () => {
   it("offers all three actions on an editable custom workstream", () => {
