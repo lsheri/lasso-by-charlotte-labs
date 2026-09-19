@@ -149,8 +149,17 @@ describe("the workboard allowlist", () => {
       () => helpers.noteWorkboardSaveErrorResolved("o", "board", "retry"),
       () => helpers.noteWorkboardContextChanged("o", "cleared"),
       () => helpers.noteWorkboardUndoUsed("o", "move", "undo"),
-      () => helpers.noteAnnotationChanged("o", "created", 120),
-      () => helpers.noteAnnotationChanged("o", "archived", 4),
+      () => helpers.noteHighlightChanged("o", "created", 120),
+      () => helpers.noteHighlightChanged("o", "archived", 4),
+      () =>
+        helpers.noteAnnotationChanged("o", {
+          kind: "comment",
+          action: "created",
+          anchorKind: "item",
+          visibility: "engagement",
+          length: 900,
+          isReply: true,
+        }),
     ];
     const mocked = vi.mocked(logEvent);
     for (const call of calls) {
