@@ -128,6 +128,10 @@ export async function recordNewVersion(
     newRef: string;
     newHash: string;
     sourceEvent: string;
+    /** Where the new bytes came from. Omitted by callers that predate the column. */
+    origin?: string;
+    createdAtTurn?: number;
+    promptedByTurn?: number;
   },
 ): Promise<number> {
   const { data: rows, error } = await supabase
@@ -136,6 +140,14 @@ export async function recordNewVersion(
     .eq("work_item_id", args.workItemId)
     .order("version_no", { ascending: false });
   if (error) throw new Error(error.message);
+
+  // Omitted by a caller that predates these columns, so the written row is
+  // byte-identical to what it wrote before.
+  const extras = {
+    ...(args.origin !== undefined ? { origin: args.origin } : {}),
+    ...(args.createdAtTurn !== undefined ? { created_at_turn: args.createdAtTurn } : {}),
+    ...(args.promptedByTurn !== undefined ? { prompted_by_turn: args.promptedByTurn } : {}),
+  };
 
   let versions = rows ?? [];
   if (versions.length === 0 && args.previousRef) {
@@ -149,6 +161,7 @@ export async function recordNewVersion(
         parent_version_id: null,
         source_event: "initial_capture",
         created_at: args.previousAt,
+        ...extras,
       })
       .select("id, version_no")
       .maybeSingle();
@@ -165,6 +178,7 @@ export async function recordNewVersion(
     content_hash: args.newHash,
     parent_version_id: parent?.id ?? null,
     source_event: args.sourceEvent,
+    ...extras,
   });
   if (inserted.error) throw new Error(inserted.error.message);
   return nextNo;

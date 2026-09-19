@@ -1073,8 +1073,11 @@ export type Database = {
           content_hash: string
           content_ref: string
           created_at: string
+          created_at_turn: number | null
           id: string
+          origin: string | null
           parent_version_id: string | null
+          prompted_by_turn: number | null
           slide_map: Json | null
           source_event: string
           version_no: number
@@ -1084,8 +1087,11 @@ export type Database = {
           content_hash: string
           content_ref: string
           created_at?: string
+          created_at_turn?: number | null
           id?: string
+          origin?: string | null
           parent_version_id?: string | null
+          prompted_by_turn?: number | null
           slide_map?: Json | null
           source_event?: string
           version_no: number
@@ -1095,8 +1101,11 @@ export type Database = {
           content_hash?: string
           content_ref?: string
           created_at?: string
+          created_at_turn?: number | null
           id?: string
+          origin?: string | null
           parent_version_id?: string | null
+          prompted_by_turn?: number | null
           slide_map?: Json | null
           source_event?: string
           version_no?: number
@@ -2830,6 +2839,7 @@ export type Database = {
           content: string
           content_hash: string
           id: string
+          reason: string
           replaced_at: string
           role: string
           turn_id: string
@@ -2840,6 +2850,7 @@ export type Database = {
           content: string
           content_hash: string
           id?: string
+          reason?: string
           replaced_at?: string
           role: string
           turn_id: string
@@ -2850,6 +2861,7 @@ export type Database = {
           content?: string
           content_hash?: string
           id?: string
+          reason?: string
           replaced_at?: string
           role?: string
           turn_id?: string
@@ -2858,10 +2870,10 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "turn_revisions_turn_id_fkey"
-            columns: ["turn_id"]
+            foreignKeyName: "turn_revisions_work_item_id_fkey"
+            columns: ["work_item_id"]
             isOneToOne: false
-            referencedRelation: "turns"
+            referencedRelation: "work_items"
             referencedColumns: ["id"]
           },
         ]
@@ -3333,6 +3345,165 @@ export type Database = {
             columns: ["owner_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workboard_annotations: {
+        Row: {
+          anchor_kind: string
+          archive_reason: string | null
+          archived_at: string | null
+          archived_by: string | null
+          author_profile_id: string
+          body: string
+          char_end: number | null
+          char_start: number | null
+          client_key: string | null
+          created_at: string
+          created_by: string
+          document_version_id: string | null
+          excerpt: string | null
+          id: string
+          kind: string
+          legal_hold: boolean
+          node_id: string
+          page_no: number | null
+          purge_after: string | null
+          section_key: string | null
+          source_hash: string | null
+          source_removed_at: string | null
+          text_hash: string | null
+          turn_hash: string | null
+          turn_no: number | null
+          updated_at: string
+          updated_by: string
+          version: number
+          visibility: string
+          work_item_id: string | null
+          workboard_id: string
+        }
+        Insert: {
+          anchor_kind: string
+          archive_reason?: string | null
+          archived_at?: string | null
+          archived_by?: string | null
+          author_profile_id: string
+          body?: string
+          char_end?: number | null
+          char_start?: number | null
+          client_key?: string | null
+          created_at?: string
+          created_by: string
+          document_version_id?: string | null
+          excerpt?: string | null
+          id?: string
+          kind: string
+          legal_hold?: boolean
+          node_id: string
+          page_no?: number | null
+          purge_after?: string | null
+          section_key?: string | null
+          source_hash?: string | null
+          source_removed_at?: string | null
+          text_hash?: string | null
+          turn_hash?: string | null
+          turn_no?: number | null
+          updated_at?: string
+          updated_by: string
+          version?: number
+          visibility: string
+          work_item_id?: string | null
+          workboard_id: string
+        }
+        Update: {
+          anchor_kind?: string
+          archive_reason?: string | null
+          archived_at?: string | null
+          archived_by?: string | null
+          author_profile_id?: string
+          body?: string
+          char_end?: number | null
+          char_start?: number | null
+          client_key?: string | null
+          created_at?: string
+          created_by?: string
+          document_version_id?: string | null
+          excerpt?: string | null
+          id?: string
+          kind?: string
+          legal_hold?: boolean
+          node_id?: string
+          page_no?: number | null
+          purge_after?: string | null
+          section_key?: string | null
+          source_hash?: string | null
+          source_removed_at?: string | null
+          text_hash?: string | null
+          turn_hash?: string | null
+          turn_no?: number | null
+          updated_at?: string
+          updated_by?: string
+          version?: number
+          visibility?: string
+          work_item_id?: string | null
+          workboard_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workboard_annotations_archived_by_fkey"
+            columns: ["archived_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workboard_annotations_author_profile_id_fkey"
+            columns: ["author_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workboard_annotations_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workboard_annotations_document_version_id_fkey"
+            columns: ["document_version_id"]
+            isOneToOne: false
+            referencedRelation: "document_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workboard_annotations_node_id_fkey"
+            columns: ["node_id"]
+            isOneToOne: false
+            referencedRelation: "workboard_nodes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workboard_annotations_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workboard_annotations_work_item_id_fkey"
+            columns: ["work_item_id"]
+            isOneToOne: false
+            referencedRelation: "work_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workboard_annotations_workboard_id_fkey"
+            columns: ["workboard_id"]
+            isOneToOne: false
+            referencedRelation: "workboards"
             referencedColumns: ["id"]
           },
         ]
@@ -3898,6 +4069,7 @@ export type Database = {
         Args: { p_actor_profile_id?: string; p_link_id: string }
         Returns: undefined
       }
+      workboard_node_readable: { Args: { n: string }; Returns: boolean }
     }
     Enums: {
       app_role: "em" | "coach" | "lead" | "admin"

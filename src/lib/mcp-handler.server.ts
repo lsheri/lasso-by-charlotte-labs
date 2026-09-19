@@ -10,6 +10,7 @@ import {
 } from "@/lib/attachment-guard";
 import { workTypeForFile } from "@/lib/work-types";
 import { recordEvent } from "@/lib/telemetry.server";
+import { recordNewVersion } from "@/lib/connector-import.server";
 import { noteModelUsed, noteThreadShape } from "@/lib/work-taxonomy.server";
 import { machineLabel } from "@/lib/capture-census";
 import { clientDisplayName, engagementDisplayTitle, isQuickFolder } from "@/lib/clients";
@@ -36,6 +37,21 @@ const MAX_ATTACHMENTS = 12;
 /** A re-push may improve the record; it may never shrink it silently. */
 const SHRINK_RATIO = 0.6;
 const SHRINK_FLOOR = 200;
+
+/** A re-push either adds nothing, replaces nothing, or adds a version. */
+export function decideAttachmentWrite(
+  match: { content_hash: string | null } | null,
+  newHash: string,
+): "insert" | "unchanged" | "new_version" {
+  if (!match) return "insert";
+  return match.content_hash === newHash ? "unchanged" : "new_version";
+}
+
+/** Content-free size band for the number of versions a push recorded. */
+export function versionRowsBucket(n: number): "0" | "1" | "2+" {
+  if (n <= 0) return "0";
+  return n === 1 ? "1" : "2+";
+}
 
 function looksCondensed(incomingChars: number, storedChars: number): boolean {
   return storedChars > SHRINK_FLOOR && incomingChars < storedChars * SHRINK_RATIO;
@@ -990,6 +1006,8 @@ async function pushConversation(
   const problems: string[] = [];
   const rejected: RejectedAttachment[] = [];
   const degradedAttachments: { title: string; stored_chars: number; incoming_chars: number }[] = [];
+  /** document_versions rows written by this call, including v1 backfills. */
+  let attachmentVersionRows = 0;
   const transcriptText = messages.map((m) => m.content).join("\n\n");
   const messageTexts = messages.map((m) => m.content);
   if (attachments.length > 0 && !owner.userId) {
@@ -997,7 +1015,7 @@ async function pushConversation(
   } else {
     const { data: existingAttachments } = await supabaseAdmin
       .from("work_items")
-      .select("id, title, content_ref, source_meta")
+      .select("id, title, content_ref, content_hash, captured_at, source_meta")
       .eq("owner_id", owner.profileId)
       .eq("orig_conversation_id", origId)
       .neq("type", "ai_thread");
@@ -1043,17 +1061,46 @@ async function pushConversation(
           continue;
         }
       }
-      // Reuse the stored path for a known attachment; give new ones a collision-proof suffix.
+      const newHash = await sha256Hex(attachment.content);
+      const decision = decideAttachmentWrite(match ?? null, newHash);
+
+      // Same bytes as the stored version: nothing to write, nothing lost.
+      if (decision === "unchanged") {
+        saved += 1;
+        if (match?.id) capturedIds.push(match.id);
+        continue;
+      }
+
+      // Give every write its own object, so an earlier version is never replaced.
       const suffix = (await sha256Hex(attachment.sourceArtifactId)).slice(0, 8);
-      const path =
-        match?.content_ref ??
-        `${owner.userId}/conv-${slugify(origId)}-${slugify(attachment.title)}-${suffix}`;
+      const base = `${owner.userId}/conv-${slugify(origId)}-${slugify(attachment.title)}-${suffix}`;
+      const path = decision === "insert" ? base : `${base}-${crypto.randomUUID()}`;
       const upload = await supabaseAdmin.storage
         .from("work-files")
-        .upload(path, encoded, { contentType: "text/plain; charset=utf-8", upsert: true });
+        .upload(path, encoded, { contentType: "text/plain; charset=utf-8", upsert: false });
       if (upload.error) {
         problems.push(`'${attachment.title}': ${upload.error.message}`);
         continue;
+      }
+
+      if (decision === "new_version" && match) {
+        try {
+          const nextNo = await recordNewVersion(supabaseAdmin, {
+            workItemId: match.id,
+            previousRef: match.content_ref,
+            previousHash: match.content_hash,
+            previousAt: match.captured_at,
+            newRef: path,
+            newHash,
+            sourceEvent: "mcp_repush",
+            origin: "model_artifact",
+          });
+          // A first re-push also backfills the version the item already held.
+          attachmentVersionRows += nextNo === 2 ? 2 : 1;
+        } catch (err) {
+          problems.push(`'${attachment.title}': ${err instanceof Error ? err.message : "version"}`);
+          continue;
+        }
       }
 
       const fields = {
@@ -1067,7 +1114,7 @@ async function pushConversation(
         content_ref: path,
         content_fidelity: "verbatim",
         ts_precision: "capture" as const,
-        content_hash: await sha256Hex(attachment.content),
+        content_hash: newHash,
         source_meta: {
           ...sharedMeta,
           role: "attachment",
@@ -1100,6 +1147,17 @@ async function pushConversation(
         else if (result.data?.id) {
           capturedIds.push(result.data.id);
           createdAttachmentTypes.push(String(fields.type));
+          // The first stored version, so later pushes have a parent to point at.
+          const v1 = await supabaseAdmin.from("document_versions").insert({
+            work_item_id: result.data.id,
+            version_no: 1,
+            content_ref: path,
+            content_hash: newHash,
+            parent_version_id: null,
+            source_event: "mcp_push",
+            origin: "model_artifact",
+          });
+          if (!v1.error) attachmentVersionRows += 1;
         }
       }
     }
@@ -1137,6 +1195,7 @@ async function pushConversation(
       mode: pushMode,
       windowed: win ? "yes" : "no",
       degraded_refusals: flaggedBucket(degradedTurns.length + degradedAttachments.length),
+      attachment_versions: versionRowsBucket(attachmentVersionRows),
     },
   });
   await recordEvent(supabaseAdmin, {
