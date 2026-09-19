@@ -331,6 +331,7 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
     if (result.status === "saved") noteWorkboardChangeSaved(orgId, entity, action);
     else if (result.status === "conflict") noteWorkboardSaveFailed(orgId, entity, "conflict");
     else if (result.status === "forbidden") noteWorkboardSaveFailed(orgId, entity, "permission");
+    else if (result.status === "network_error") noteWorkboardSaveFailed(orgId, entity, "network");
     else if (result.status === "validation_error") noteWorkboardSaveFailed(orgId, entity, "validation");
     else noteWorkboardSaveFailed(orgId, entity, "unknown");
   }
