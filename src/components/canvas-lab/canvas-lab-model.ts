@@ -356,13 +356,21 @@ export function deleteLocalNode(nodes: LabNode[], links: LabLink[], selected: st
 }
 
 export function addLabLink(links: LabLink[], fromId: string, fromAnchor: LabAnchor, toId: string, toAnchor: LabAnchor): { links: LabLink[]; error: string | null } {
-  if (fromId === toId) return { links, error: "A card cannot connect to itself." };
-  if (links.some((link) => link.fromId === fromId && link.fromAnchor === fromAnchor && link.toId === toId && link.toAnchor === toAnchor)) return { links, error: "These cards are already connected." };
+  if (fromId === toId) return { links, error: "A card cannot feed itself" };
+  if (links.some((link) => link.fromId === fromId && link.toId === toId)) return { links, error: "Already connected" };
   return { links: [...links, { id: `local-link:${fromId}:${fromAnchor}:${toId}:${toAnchor}`, fromId, fromAnchor, toId, toAnchor }], error: null };
 }
 
 export function removeLabLink(links: LabLink[], id: string): LabLink[] {
   return links.filter((link) => link.id !== id);
+}
+
+export function linkRemovalAnnouncement(link: Pick<LabLink, "durableId">): string {
+  return link.durableId ? "Relationship removed from the workboard." : "Local relationship removed.";
+}
+
+export function relationshipSelection(current: string | null, action: "select" | "deselect", id?: string): string | null {
+  return action === "select" ? id ?? current : null;
 }
 
 export function labAnchorPoint(node: Pick<LabNode, "x" | "y" | "width">, side: LabAnchor, height: number): Point {
@@ -396,6 +404,23 @@ export function labConnectorPath(from: Point, fromSide: LabAnchor, to: Point, to
   const a = control(from, fromSide);
   const b = control(to, toSide);
   return `M ${from.x} ${from.y} C ${a.x} ${a.y}, ${b.x} ${b.y}, ${to.x} ${to.y}`;
+}
+
+/** Midpoint of the same cubic curve used for a relationship. */
+export function labConnectorMidpoint(from: Point, fromSide: LabAnchor, to: Point, toSide: LabAnchor): Point {
+  const offset = 64;
+  const control = (point: Point, side: LabAnchor): Point => {
+    if (side === "top") return { x: point.x, y: point.y - offset };
+    if (side === "right") return { x: point.x + offset, y: point.y };
+    if (side === "bottom") return { x: point.x, y: point.y + offset };
+    return { x: point.x - offset, y: point.y };
+  };
+  const a = control(from, fromSide);
+  const b = control(to, toSide);
+  return {
+    x: (from.x + 3 * a.x + 3 * b.x + to.x) / 8,
+    y: (from.y + 3 * a.y + 3 * b.y + to.y) / 8,
+  };
 }
 
 /**

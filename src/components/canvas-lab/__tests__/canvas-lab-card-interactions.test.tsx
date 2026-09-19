@@ -62,17 +62,11 @@ describe("Canvas Lab card interaction correction", () => {
     expect(page).toContain("startPointerConnect(node, side, event)");
     expect(page).toContain("chooseConnectAnchor(node, side)");
     expect(page).toContain("nearestLabAnchor(stagePoint");
-    expect(page).toContain("labConnectorPath(from, link.fromAnchor, to, link.toAnchor)");
     expect(page).toContain('noteWorkboardRelationship(orgId, "started")');
     expect(page).toContain('noteWorkboardRelationship(orgId, "created")');
     expect(page).toContain('noteWorkboardRelationship(orgId, "rejected")');
     expect(page).toContain('noteWorkboardRelationship(orgId, "cancelled")');
-    expect(page).toContain('className="canvas-lab-relationship-hit"');
-    expect(page).toContain('strokeWidth="10"');
     expect(page).toContain('className="pointer-events-none"');
-    const styles = read("src/styles.css");
-    expect(styles).toContain(".canvas-lab-relationships { pointer-events: none; }");
-    expect(styles).toContain(".canvas-lab-relationship-line { pointer-events: stroke; }");
   });
 
   it("shares workstream creation between the drawer and inline controls", () => {

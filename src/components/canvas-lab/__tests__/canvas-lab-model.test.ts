@@ -21,10 +21,12 @@ import {
   frameContainingPoint,
   labAnchorPoint,
   labConnectorPath,
+  labConnectorMidpoint,
   labInverseZoom,
   moveNode,
   nearestLabAnchor,
   removeContext,
+  relationshipSelection,
   resizeLabRect,
   resetChatCounter,
   resetCommentCounter,
@@ -319,8 +321,14 @@ describe("canvas lab model", () => {
     expect(addLabLink([], "a", "right", "a", "left").error).toContain("itself");
     const created = addLabLink([], "a", "right", "b", "left");
     expect(created.error).toBeNull();
-    expect(addLabLink(created.links, "a", "right", "b", "left").error).toContain("already connected");
-    expect(addLabLink(created.links, "a", "bottom", "b", "top").error).toBeNull();
+    expect(addLabLink(created.links, "a", "right", "b", "left").error).toBe("Already connected");
+    expect(addLabLink(created.links, "a", "bottom", "b", "top").error).toBe("Already connected");
+    expect(addLabLink(created.links, "b", "left", "a", "right").error).toBeNull();
+  });
+
+  it("clears a selected relationship on empty pointer down and Escape decisions", () => {
+    expect(relationshipSelection("link-1", "deselect")).toBeNull();
+    expect(relationshipSelection(null, "select", "link-2")).toBe("link-2");
   });
 
   it("resolves anchored card edges and deterministic nearest sides", () => {
@@ -332,6 +340,7 @@ describe("canvas lab model", () => {
     expect(nearestLabAnchor({ x: 340, y: 260 }, node, 120)).toBe("right");
     expect(nearestLabAnchor({ x: 216, y: 190 }, node, 120)).toBe("top");
     expect(labConnectorPath({ x: 0, y: 0 }, "right", { x: 100, y: 100 }, "left")).toContain("C 64 0, 36 100");
+    expect(labConnectorMidpoint({ x: 0, y: 0 }, "right", { x: 100, y: 100 }, "left")).toEqual({ x: 50, y: 50 });
   });
 
   it("resizes from every corner with minimums and optional aspect ratio", () => {
