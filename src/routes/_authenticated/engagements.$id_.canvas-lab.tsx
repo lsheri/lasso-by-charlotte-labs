@@ -1,8 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { fallback, zodValidator } from "@tanstack/zod-adapter";
+import { useEffect } from "react";
+import { z } from "zod";
 
 import { CanvasLabPage } from "@/pages/CanvasLabPage";
 
+const canvasLabSearchSchema = z.object({
+  from: fallback(z.string(), "").default(""),
+});
+
 export const Route = createFileRoute("/_authenticated/engagements/$id_/canvas-lab")({
+  validateSearch: zodValidator(canvasLabSearchSchema),
   head: () => ({
     meta: [
       { title: "Engagement Workboard | Lasso" },
@@ -25,5 +33,13 @@ export const Route = createFileRoute("/_authenticated/engagements/$id_/canvas-la
 
 function CanvasLabRoute() {
   const { id } = Route.useParams();
-  return <CanvasLabPage engagementId={id} />;
+  const { from } = Route.useSearch();
+  const navigate = Route.useNavigate();
+
+  useEffect(() => {
+    if (!from) return;
+    void navigate({ search: {}, replace: true });
+  }, [from, navigate]);
+
+  return <CanvasLabPage engagementId={id} entryVia={from} />;
 }

@@ -30,6 +30,7 @@ import { ContextCard } from "@/components/engagements/ContextCard";
 import { usePanelWidth, panelWidthBucket } from "@/components/engagements/use-panel-width";
 
 import { SharedWithSection } from "@/components/engagements/SharedWithSection";
+import { Button } from "@/components/ui/button";
 import { SubjectCoachingSection } from "@/components/coaching/SubjectCoachingSection";
 import { useRegisterAskLasso } from "@/components/reflect/ask-lasso-context";
 import { usePerfNavFinish } from "@/hooks/use-perf-timer";
@@ -485,8 +486,8 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
 
       </header>
 
-      <div className="mb-2 border-b border-[var(--nb-rule)]" role="group" aria-label="Engagement views">
-        <div ref={tabBarRef} className="relative flex flex-wrap">
+      <div className="mb-2 flex items-end justify-between gap-2 border-b border-[var(--nb-rule)]">
+        <div ref={tabBarRef} className="relative flex min-w-0 overflow-x-auto" role="group" aria-label="Engagement views">
           <button
             ref={(node) => {
               if (node) tabRefs.current.brief = node;
@@ -588,6 +589,23 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
             <GraphiteRule className="text-[var(--nb-green)]" />
           </span>
         </div>
+        <Link
+          to="/engagements/$id/canvas-lab"
+          params={{ id: engagementId }}
+          search={{ from: "header" }}
+          className="mb-2 shrink-0 font-hand text-[16px] text-green underline-offset-2 hover:underline md:hidden"
+        >
+          Workboard
+        </Link>
+        <Button asChild className="mb-2 hidden shrink-0 md:inline-flex">
+          <Link
+            to="/engagements/$id/canvas-lab"
+            params={{ id: engagementId }}
+            search={{ from: "header" }}
+          >
+            Open workboard
+          </Link>
+        </Button>
       </div>
       <div className="nb-bench-grid relative">
         <div>
@@ -749,18 +767,20 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
             <div className="space-y-3">
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--nb-rule)] pb-3">
                 <div>
-                  <p className="font-hand text-[16px] text-green">open the workboard</p>
+                  <h2 className="font-hand text-[16px] text-green">Workboard</h2>
                   <p className="text-[13px] text-muted-foreground">
-                    Arrange the engagement at full size. This prototype resets when you refresh.
+                    Arrange this engagement&apos;s work, calls and judgment on one board. Changes save as you go.
                   </p>
                 </div>
-                <Link
-                  to="/engagements/$id/canvas-lab"
-                  params={{ id: engagementId }}
-                  className="font-hand text-[16px] text-green hover:underline"
-                >
-                  Open workboard
-                </Link>
+                <Button asChild>
+                  <Link
+                    to="/engagements/$id/canvas-lab"
+                    params={{ id: engagementId }}
+                    search={{ from: "canvas_tab" }}
+                  >
+                    Open workboard
+                  </Link>
+                </Button>
               </div>
               <EngagementCanvasView engagementId={engagementId} items={scopedItems} onOpen={openPeek} />
             </div>

@@ -40,10 +40,12 @@ describe("Canvas Lab second prototype pass", () => {
     expect(composer).toContain("Add draft thread");
   });
 
-  it("adds one workboard entry and preserves the production canvas call", () => {
+  it("adds both workboard entries and preserves the production canvas call", () => {
     const page = read("src/pages/EngagementPage.tsx");
-    expect(page).toContain("open the workboard");
-    expect(page).toContain("Arrange the engagement at full size. This prototype resets when you refresh.");
+    expect(page).toContain('search={{ from: "header" }}');
+    expect(page).toContain('search={{ from: "canvas_tab" }}');
+    expect(page).toContain("Arrange this engagement&apos;s work, calls and judgment on one board. Changes save as you go.");
+    expect(page).not.toContain("prototype resets");
     expect(page).toContain("Open workboard");
     expect(page).toContain('<EngagementCanvasView engagementId={engagementId} items={scopedItems} onOpen={openPeek} />');
   });

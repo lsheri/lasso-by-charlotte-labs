@@ -6,6 +6,11 @@ export type LabJudgmentEventType = "added_constraint" | "corrected_ai" | "reject
 export type LabOwnershipEvent = "yours" | "teammate" | "draft";
 export type LabCardMenuEventKind = LabNodeEventKind | "frame";
 export type LabCardMenuOwnershipEvent = LabOwnershipEvent | "shared";
+export type WorkboardOpenVia = "header" | "canvas_tab" | "direct";
+
+export function noteWorkboardOpened(orgId: string | undefined, via: WorkboardOpenVia): void {
+  if (orgId) logEvent("workboard.opened", orgId, { via });
+}
 
 export function noteWorkboardRail(orgId: string | undefined, state: "collapsed" | "reopened"): void {
   if (orgId) logEvent("workboard.rail_toggled", orgId, { state });

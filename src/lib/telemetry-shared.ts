@@ -157,6 +157,8 @@ export type TelemetryEvent =
   | "canvas.zoomed"
   /** Canvas Lab Phase 2: the local work rail changed visibility. State only. */
   | "workboard.rail_toggled"
+  /** The workboard opened, with its content-free entry point. */
+  | "workboard.opened"
   /** Canvas Lab Phase 2: a local prototype node was added. Closed kinds only. */
   | "workboard.node_created"
   /** Canvas Lab Phase 2: a local prototype node was removed. Kind only. */
