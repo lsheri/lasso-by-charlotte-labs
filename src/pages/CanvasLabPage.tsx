@@ -640,30 +640,45 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
       const drag = dragRef.current;
       if (drag) {
         const moved = nodesRef.current.find((node) => node.id === drag.id);
-        if (moved && (moved.x !== drag.origin.x || moved.y !== drag.origin.y)) {
-          void persistNodePatch(drag.id, { x: moved.x, y: moved.y });
-          const target = dropPromptFrame(moved, framesRef.current, structureMode, Boolean(lab.board?.canEditStructure) && (moved.kind !== "judgment" || Boolean(moved.local)));
-          if (target) {
-            setDropPrompt({ nodeId: moved.id, frameId: target.id });
-            setAnnouncement(`Move to ${target.name}?`);
+        if (moved) {
+          const decision = dragEndDecision({
+            origin: drag.origin,
+            from: drag.from,
+            pointer: { x: event.clientX, y: event.clientY },
+            zoom,
+            node: moved,
+            frames: framesRef.current,
+            mode: structureMode,
+            editable: Boolean(lab.board?.canEditStructure) && (moved.kind !== "judgment" || Boolean(moved.local)),
+          });
+          if (decision.position) {
+            const landed = decision.position;
+            setNodes((current) => current ? moveNode(current, drag.id, landed) : current);
+            void persistNodePatch(drag.id, { x: landed.x, y: landed.y });
+            const target = decision.promptFrameId ? framesRef.current.find((frame) => frame.id === decision.promptFrameId) : null;
+            if (target) {
+              setDropPrompt({ nodeId: moved.id, frameId: target.id });
+              setAnnouncement(`Move to ${target.name}?`);
+            }
           }
         }
       }
       dragRef.current = null;
       const resizing = resizeRef.current;
       if (resizing?.method === "pointer") {
+        const rect = resizeLabRect(resizing.start, resizing.corner, { x: (event.clientX - resizing.pointer.x) / zoom, y: (event.clientY - resizing.pointer.y) / zoom }, event.shiftKey, resizing.kind);
+        const changed = rect.x !== resizing.start.x || rect.y !== resizing.start.y || rect.width !== resizing.start.width || rect.height !== resizing.start.height;
         if (resizing.kind === "card") {
-          const node = nodesRef.current.find((entry) => entry.id === resizing.id);
-          if (node && (node.x !== resizing.start.x || node.y !== resizing.start.y || node.width !== resizing.start.width || node.height !== resizing.start.height)) {
-            void persistNodePatch(node.id, { x: node.x, y: node.y, w: node.width, h: node.height });
-            noteWorkboardElementResized(orgId, "card", "pointer", resizeAxis(resizing.start, { x: node.x, y: node.y, width: node.width, height: node.height }));
+          if (changed) {
+            setNodes((current) => current?.map((node) => node.id === resizing.id ? { ...node, ...rect } : node) ?? current);
+            void persistNodePatch(resizing.id, { x: rect.x, y: rect.y, w: rect.width, h: rect.height });
+            noteWorkboardElementResized(orgId, "card", "pointer", resizeAxis(resizing.start, rect));
           }
-        } else {
-          const frame = framesRef.current.find((entry) => entry.id === resizing.id);
-          if (frame && (frame.x !== resizing.start.x || frame.y !== resizing.start.y || frame.width !== resizing.start.width || frame.height !== resizing.start.height)) {
-            void persistFramePatch(frame.id, { x: frame.x, y: frame.y, w: frame.width, h: frame.height });
-            noteWorkboardElementResized(orgId, "frame", "pointer", resizeAxis(resizing.start, { x: frame.x, y: frame.y, width: frame.width, height: frame.height }));
-          }
+        } else if (changed) {
+          const contained = containFrameMembers(rect, resizing.id, nodesRef.current);
+          setFrames((current) => current?.map((frame) => frame.id === resizing.id ? { ...frame, ...contained } : frame) ?? current);
+          void persistFramePatch(resizing.id, { x: contained.x, y: contained.y, w: contained.width, h: contained.height });
+          noteWorkboardElementResized(orgId, "frame", "pointer", resizeAxis(resizing.start, contained));
         }
         resizeRef.current = null;
       }
