@@ -10,6 +10,7 @@ import {
 } from "@/lib/attachment-guard";
 import { workTypeForFile } from "@/lib/work-types";
 import { recordEvent } from "@/lib/telemetry.server";
+import { recordNewVersion } from "@/lib/connector-import.server";
 import { noteModelUsed, noteThreadShape } from "@/lib/work-taxonomy.server";
 import { machineLabel } from "@/lib/capture-census";
 import { clientDisplayName, engagementDisplayTitle, isQuickFolder } from "@/lib/clients";
@@ -36,6 +37,21 @@ const MAX_ATTACHMENTS = 12;
 /** A re-push may improve the record; it may never shrink it silently. */
 const SHRINK_RATIO = 0.6;
 const SHRINK_FLOOR = 200;
+
+/** A re-push either adds nothing, replaces nothing, or adds a version. */
+export function decideAttachmentWrite(
+  match: { content_hash: string | null } | null,
+  newHash: string,
+): "insert" | "unchanged" | "new_version" {
+  if (!match) return "insert";
+  return match.content_hash === newHash ? "unchanged" : "new_version";
+}
+
+/** Content-free size band for the number of versions a push recorded. */
+export function versionRowsBucket(n: number): "0" | "1" | "2+" {
+  if (n <= 0) return "0";
+  return n === 1 ? "1" : "2+";
+}
 
 function looksCondensed(incomingChars: number, storedChars: number): boolean {
   return storedChars > SHRINK_FLOOR && incomingChars < storedChars * SHRINK_RATIO;
@@ -990,6 +1006,8 @@ async function pushConversation(
   const problems: string[] = [];
   const rejected: RejectedAttachment[] = [];
   const degradedAttachments: { title: string; stored_chars: number; incoming_chars: number }[] = [];
+  /** document_versions rows written by this call, including v1 backfills. */
+  let attachmentVersionRows = 0;
   const transcriptText = messages.map((m) => m.content).join("\n\n");
   const messageTexts = messages.map((m) => m.content);
   if (attachments.length > 0 && !owner.userId) {
@@ -997,7 +1015,7 @@ async function pushConversation(
   } else {
     const { data: existingAttachments } = await supabaseAdmin
       .from("work_items")
-      .select("id, title, content_ref, source_meta")
+      .select("id, title, content_ref, content_hash, captured_at, source_meta")
       .eq("owner_id", owner.profileId)
       .eq("orig_conversation_id", origId)
       .neq("type", "ai_thread");
@@ -1177,6 +1195,7 @@ async function pushConversation(
       mode: pushMode,
       windowed: win ? "yes" : "no",
       degraded_refusals: flaggedBucket(degradedTurns.length + degradedAttachments.length),
+      attachment_versions: versionRowsBucket(attachmentVersionRows),
     },
   });
   await recordEvent(supabaseAdmin, {
