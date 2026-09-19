@@ -138,7 +138,61 @@ export function FocusOverlay({
             )}
           </div>
 
-          <aside className="w-full shrink-0 border-t border-border bg-[var(--nb-paper)] px-4 py-4 lg:w-[300px] lg:border-l lg:border-t-0">
+          <aside className="w-full shrink-0 overflow-y-auto border-t border-border bg-[var(--nb-paper)] px-4 py-4 lg:w-[300px] lg:border-l lg:border-t-0">
+            {isThread ? (
+              <section className="mb-5 border-b border-border pb-4">
+                <h2 className="section-title mb-2">your highlights</h2>
+                {crossTurn ? (
+                  <p className="mb-2 text-[11.5px] leading-[17px] text-muted-foreground">
+                    Highlight one turn at a time
+                  </p>
+                ) : turnSelection ? (
+                  <Button
+                    size="sm"
+                    className="mb-2 w-full"
+                    onClick={() => {
+                      onHighlight?.(turnSelection);
+                      setTurnSelection(null);
+                      setQuote("");
+                    }}
+                  >
+                    Highlight
+                  </Button>
+                ) : (
+                  <p className="mb-2 text-[11.5px] leading-[17px] text-muted-foreground">
+                    Select a passage in one turn to highlight it.
+                  </p>
+                )}
+
+                {highlights.length === 0 ? null : (
+                  <ul className="flex flex-col gap-2">
+                    {highlights.map((highlight) => (
+                      <li
+                        key={highlight.id}
+                        className="rounded-[var(--radius-control)] border border-border bg-card px-2.5 py-2"
+                      >
+                        <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
+                          Turn {highlight.turnNo}
+                          {highlight.stale ? " · From an earlier version" : ""}
+                        </span>
+                        <p className="mt-1 line-clamp-2 text-[12px] leading-[18px] text-foreground">
+                          {highlight.excerpt}
+                        </p>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="mt-1 h-7 px-2 text-[11.5px]"
+                          onClick={() => onRemoveHighlight?.(highlight)}
+                        >
+                          Remove
+                        </Button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </section>
+            ) : null}
+
             <div className="mb-2 flex items-baseline justify-between gap-2">
               <h2 className="section-title">notes in the margin</h2>
               <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
