@@ -111,10 +111,21 @@ async function collectPosture(admin: Admin): Promise<PostureEntry[]> {
  * post simply leaves the rows for the next run.
  */
 export async function runEgress(): Promise<EgressResult> {
+  const startedAt = Date.now();
+  const report = (selected: number, result: EgressResult): EgressResult => {
+    console.info("[egress] run:", {
+      selected,
+      sent: result.sent,
+      skipped: result.skipped,
+      failed: result.failed,
+      ms: Date.now() - startedAt,
+    });
+    return result;
+  };
   const secret = process.env["LASSO_DATA_INGEST_SECRET"];
   if (!secret) {
     console.warn("[egress] LASSO_DATA_INGEST_SECRET is not set; nothing sent, rows left pending.");
-    return { sent: 0, skipped: 0, failed: 0 };
+    return report(0, { sent: 0, skipped: 0, failed: 0 });
   }
   const url = process.env["LASSO_DATA_INGEST_URL"] || DEFAULT_INGEST_URL;
 
@@ -122,7 +133,7 @@ export async function runEgress(): Promise<EgressResult> {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const admin = supabaseAdmin as Admin;
     const rows = await selectPending(admin);
-    if (rows.length === 0) return { sent: 0, skipped: 0, failed: 0 };
+    if (rows.length === 0) return report(0, { sent: 0, skipped: 0, failed: 0 });
 
     // Only the fuller levels carry a workspace name, so only those need a lookup.
     const namedOrgIds = Array.from(
@@ -172,7 +183,7 @@ export async function runEgress(): Promise<EgressResult> {
       });
       if (!response.ok) {
         console.error(`[egress] post failed: ${response.status} ${await response.text()}`);
-        return { sent: 0, skipped: 0, failed: events.length };
+        return report(rows.length, { sent: 0, skipped: 0, failed: events.length });
       }
       const now = new Date().toISOString();
       const { error } = await admin.from("events").update({ egressed_at: now }).in("id", sendIds);
@@ -187,10 +198,15 @@ export async function runEgress(): Promise<EgressResult> {
       if (error) console.error(`[egress] marking ${reason} rows failed:`, error.message);
     }
 
-    return { sent: events.length, skipped: skippedCount, failed: 0 };
+    return report(rows.length, { sent: events.length, skipped: skippedCount, failed: 0 });
   } catch (e) {
-    console.error("[egress] runEgress failed:", (e as Error).message);
-    return { sent: 0, skipped: 0, failed: 0 };
+    const err = e as Error;
+    const timedOut = err.name === "TimeoutError" || err.name === "AbortError";
+    console.error(
+      `[egress] runEgress failed (${timedOut ? "timeout/abort" : "error"}):`,
+      err.message,
+    );
+    return report(-1, { sent: 0, skipped: 0, failed: 0 });
   }
 }
 
