@@ -3369,6 +3369,7 @@ export type Database = {
           legal_hold: boolean
           node_id: string | null
           page_no: number | null
+          parent_id: string | null
           purge_after: string | null
           section_key: string | null
           source_hash: string | null
@@ -3402,6 +3403,7 @@ export type Database = {
           legal_hold?: boolean
           node_id?: string | null
           page_no?: number | null
+          parent_id?: string | null
           purge_after?: string | null
           section_key?: string | null
           source_hash?: string | null
@@ -3435,6 +3437,7 @@ export type Database = {
           legal_hold?: boolean
           node_id?: string | null
           page_no?: number | null
+          parent_id?: string | null
           purge_after?: string | null
           section_key?: string | null
           source_hash?: string | null
@@ -3483,6 +3486,13 @@ export type Database = {
             columns: ["node_id"]
             isOneToOne: false
             referencedRelation: "workboard_nodes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workboard_annotations_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "workboard_annotations"
             referencedColumns: ["id"]
           },
           {

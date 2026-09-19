@@ -7,10 +7,13 @@
  * no range is drawn in the text.
  */
 
-export type AnnotationLengthBand = "le50" | "le200" | "le500";
+export type AnnotationLengthBand = "le50" | "le200" | "le500" | "gt500";
 
 /** The excerpt column is capped in the database; the server truncates to match. */
 export const MAX_EXCERPT_LENGTH = 500;
+
+/** A comment body is longer-form than an excerpt, and the column says so. */
+export const MAX_BODY_LENGTH = 4000;
 
 export type HighlightDto = {
   id: string;
@@ -36,7 +39,55 @@ export type AnnotationMutationResult =
 export function lengthBand(length: number): AnnotationLengthBand {
   if (length <= 50) return "le50";
   if (length <= 200) return "le200";
-  return "le500";
+  if (length <= 500) return "le500";
+  return "gt500";
+}
+
+/**
+ * Slice 2a unit 2: a comment is review, so it is readable by everyone who can
+ * already see the item. Only its author changes or removes it.
+ */
+export type CommentDto = {
+  id: string;
+  parentId: string | null;
+  authorProfileId: string;
+  authorName: string;
+  isMine: boolean;
+  body: string;
+  excerpt: string;
+  turnNo: number | null;
+  charStart: number | null;
+  charEnd: number | null;
+  /** Top level only: the turn has changed, so the passage is not drawn. */
+  stale: boolean;
+  version: number;
+  createdAt: string;
+  updatedAt: string;
+  edited: boolean;
+};
+
+export type CommentThreadDto = CommentDto & { replies: CommentDto[] };
+
+export type CommentMutationResult =
+  | { status: "saved"; comment: CommentDto }
+  | { status: "conflict" }
+  | { status: "forbidden" }
+  | { status: "validation_error"; message: string };
+
+/** A body has to say something, and it has to fit the column. */
+export function validateCommentBody(body: string): string | null {
+  const trimmed = body.trim();
+  if (trimmed.length === 0) return "Write something first.";
+  if (trimmed.length > MAX_BODY_LENGTH) return "That is longer than a comment can be.";
+  return null;
+}
+
+/** An update within a few seconds of writing is the write itself, not an edit. */
+export function isEdited(createdAt: string, updatedAt: string): boolean {
+  const created = new Date(createdAt).getTime();
+  const updated = new Date(updatedAt).getTime();
+  if (Number.isNaN(created) || Number.isNaN(updated)) return false;
+  return updated > created + 5000;
 }
 
 /** Whitespace and case are not content differences for anchoring purposes. */

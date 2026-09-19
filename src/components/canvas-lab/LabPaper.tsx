@@ -36,12 +36,17 @@ export function LabPaper({
   selected,
   onEdit,
   onEditCommitted,
+  commentCount = 0,
+  onOpenComments,
 }: {
   node: LabNode;
   item?: WorkItemRow | undefined;
   selected: boolean;
   onEdit: (text: string) => void;
   onEditCommitted: () => void;
+  /** Slice 2a unit 2: live top-level comments on this card's item. */
+  commentCount?: number;
+  onOpenComments?: (() => void) | undefined;
 }) {
   const tier = cardSizeTier(node);
   const identity = item ? workIdentityLabel(item) : null;
@@ -75,6 +80,19 @@ export function LabPaper({
             {node.deliverable ? <span className="shrink-0 font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">Deliverable</span> : null}
           </span>
           {node.linkedItemRemovedAt ? <span className="shrink-0 font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">Item deleted</span> : null}
+          {commentCount > 0 ? (
+            <button
+              type="button"
+              data-testid="lab-comment-chip"
+              aria-label={`${commentCount} ${commentCount === 1 ? "comment" : "comments"}`}
+              onPointerDown={(event) => event.stopPropagation()}
+              onClick={(event) => { event.stopPropagation(); onOpenComments?.(); }}
+              className="inline-flex shrink-0 items-center gap-0.5 font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground"
+            >
+              <GraphiteIcon name="messages" size={11} animate={false} />
+              {commentCount}
+            </button>
+          ) : null}
           <span className="shrink-0 font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">{ownerLabel(node)}</span>
         </div>
 

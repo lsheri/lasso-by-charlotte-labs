@@ -33,29 +33,53 @@ export type ThreadHighlight = {
 /**
  * Every live range on one turn, drawn as one quiet marker per merged span.
  * Overlapping ranges merge so a doubled highlight never reads as darker ink.
+ * A commented passage carries an underline instead of a wash, so review reads
+ * differently from a person's own private highlight even where they overlap.
  */
-function HighlightedContent({ content, ranges }: { content: string; ranges: readonly CharRange[] }) {
-  const merged = mergeRanges(ranges).filter((range) => range.charStart < content.length);
-  if (merged.length === 0) return <>{content}</>;
+function HighlightedContent({
+  content,
+  ranges,
+  commentRanges = [],
+}: {
+  content: string;
+  ranges: readonly CharRange[];
+  commentRanges?: readonly CharRange[];
+}) {
+  const marks = mergeRanges(ranges).filter((range) => range.charStart < content.length);
+  const notes = mergeRanges(commentRanges).filter((range) => range.charStart < content.length);
+  if (marks.length === 0 && notes.length === 0) return <>{content}</>;
+
+  const cuts = new Set<number>([0, content.length]);
+  for (const range of [...marks, ...notes]) {
+    cuts.add(Math.max(0, Math.min(range.charStart, content.length)));
+    cuts.add(Math.max(0, Math.min(range.charEnd, content.length)));
+  }
+  const edges = [...cuts].sort((a, b) => a - b);
   const parts: React.ReactNode[] = [];
-  let cursor = 0;
-  merged.forEach((range, index) => {
-    const start = Math.max(cursor, range.charStart);
-    const end = Math.min(content.length, range.charEnd);
-    if (end <= start) return;
-    if (start > cursor) parts.push(<span key={`plain-${index}`}>{content.slice(cursor, start)}</span>);
+  for (let index = 0; index < edges.length - 1; index += 1) {
+    const start = edges[index] ?? 0;
+    const end = edges[index + 1] ?? 0;
+    if (end <= start) continue;
+    const text = content.slice(start, end);
+    const inMark = marks.some((range) => range.charStart <= start && range.charEnd >= end);
+    const inNote = notes.some((range) => range.charStart <= start && range.charEnd >= end);
+    if (!inMark && !inNote) {
+      parts.push(<span key={start}>{text}</span>);
+      continue;
+    }
     parts.push(
       <mark
-        key={`mark-${index}`}
-        data-testid="turn-highlight"
-        className="rounded-[2px] bg-[var(--nb-yellow-wash)] text-foreground"
+        key={start}
+        data-testid={inMark ? "turn-highlight" : "turn-comment-mark"}
+        data-commented={inNote ? "true" : undefined}
+        className={`rounded-[2px] text-foreground ${inMark ? "bg-[var(--nb-yellow-wash)]" : "bg-transparent"} ${
+          inNote ? "underline decoration-[var(--nb-mid)] decoration-2 underline-offset-2" : ""
+        }`}
       >
-        {content.slice(start, end)}
+        {text}
       </mark>,
     );
-    cursor = end;
-  });
-  if (cursor < content.length) parts.push(<span key="plain-tail">{content.slice(cursor)}</span>);
+  }
   return <>{parts}</>;
 }
 
@@ -173,6 +197,7 @@ export function ThreadBody({
   reducedMotion = false,
   focus,
   highlights = [],
+  commentMarks = [],
 }: {
   item: WorkItemRow;
   enabled?: boolean;
@@ -187,6 +212,8 @@ export function ThreadBody({
   focus?: ThreadFocus | undefined;
   /** The reader's own highlights. A stale one is listed, never drawn. */
   highlights?: readonly ThreadHighlight[];
+  /** Passages carrying a live comment. A stale one is listed, never drawn. */
+  commentMarks?: readonly ThreadHighlight[];
 }) {
   const { data: turns, error } = useQuery({
     queryKey: ["turns", item.id],
@@ -272,7 +299,10 @@ export function ThreadBody({
           const liveRanges: CharRange[] = highlights
             .filter((highlight) => highlight.turnNo === turn.turn_no && !highlight.stale)
             .map((highlight) => ({ charStart: highlight.charStart, charEnd: highlight.charEnd }));
-          const marked = !focusedRange && liveRanges.length > 0;
+          const noteRanges: CharRange[] = commentMarks
+            .filter((mark) => mark.turnNo === turn.turn_no && !mark.stale)
+            .map((mark) => ({ charStart: mark.charStart, charEnd: mark.charEnd }));
+          const marked = !focusedRange && (liveRanges.length > 0 || noteRanges.length > 0);
           return (
           <div key={turn.id} ref={(node) => { if (node) turnRefs.current.set(turn.turn_no, node); else turnRefs.current.delete(turn.turn_no); }} data-turn-no={turn.turn_no}>
           {turn.role === "user" ? (
@@ -287,7 +317,7 @@ export function ThreadBody({
               >
                 {focused && !focusedRange ? <EvidenceCircle /> : null}
                 {marked ? (
-                  <HighlightedContent content={turn.content} ranges={liveRanges} />
+                  <HighlightedContent content={turn.content} ranges={liveRanges} commentRanges={noteRanges} />
                 ) : (
                   <FocusedContent content={turn.content} range={focusedRange} />
                 )}
@@ -344,7 +374,7 @@ export function ThreadBody({
                     {focusedRange ? (
                       <FocusedContent content={turn.content} range={focusedRange} />
                     ) : marked && !flag ? (
-                      <HighlightedContent content={turn.content} ranges={liveRanges} />
+                      <HighlightedContent content={turn.content} ranges={liveRanges} commentRanges={noteRanges} />
                     ) : (
                       <TurnContent
                         turn={turn}
