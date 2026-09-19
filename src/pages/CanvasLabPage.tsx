@@ -13,6 +13,7 @@ import { LabLinkRejection } from "@/components/canvas-lab/LabLinkRejection";
 import { LabRelationships } from "@/components/canvas-lab/LabRelationships";
 import { LabUndoToast } from "@/components/canvas-lab/LabUndoToast";
 import {
+  canUndoToastEntry,
   emptyUndoStacks,
   popRedo,
   popUndo,
@@ -567,8 +568,7 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
 
   /** The toast only speaks for the step it was raised about. */
   function undoFromToast(entry: UndoEntry) {
-    const top = undoRef.current.undo[undoRef.current.undo.length - 1];
-    if (top?.id === entry.id) runUndo("undo");
+    if (canUndoToastEntry(undoRef.current, entry.id)) runUndo("undo");
     setUndoToast(null);
   }
 

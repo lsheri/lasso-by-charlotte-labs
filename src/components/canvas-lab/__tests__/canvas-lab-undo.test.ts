@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { eventKind, retryAction, type LabNode } from "@/components/canvas-lab/canvas-lab-model";
 import {
   UNDO_LIMIT,
+  canUndoToastEntry,
   emptyUndoStacks,
   popRedo,
   popUndo,
@@ -63,13 +64,12 @@ describe("canvas lab undo stack", () => {
   it("matches a toast step by stable id only while it remains on top", () => {
     const toastEntry = move("a", 10);
     const first = recordUndo(emptyUndoStacks(), toastEntry, 1_000);
-    const matchingTop = first.undo[first.undo.length - 1];
-    expect(matchingTop?.id).toBe(toastEntry.id);
-    expect(matchingTop?.id === toastEntry.id ? popUndo(first).entry?.id : null).toBe(toastEntry.id);
+    expect(canUndoToastEntry(first, toastEntry.id)).toBe(true);
+    expect(canUndoToastEntry(first, toastEntry.id) ? popUndo(first).entry?.id : null).toBe(toastEntry.id);
 
     const later = recordUndo(first, move("b", 20), 2_000);
-    const laterTop = later.undo[later.undo.length - 1];
-    expect(laterTop?.id === toastEntry.id ? popUndo(later).entry : null).toBeNull();
+    expect(canUndoToastEntry(later, toastEntry.id)).toBe(false);
+    expect(canUndoToastEntry(later, toastEntry.id) ? popUndo(later).entry : null).toBeNull();
     expect(later.undo).toHaveLength(2);
   });
 

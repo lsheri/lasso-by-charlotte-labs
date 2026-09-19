@@ -75,6 +75,11 @@ export function popRedo(stacks: UndoStacks): { stacks: UndoStacks; entry: UndoEn
   return { stacks: { undo: [...stacks.undo, entry].slice(-UNDO_LIMIT), redo: stacks.redo.slice(0, -1) }, entry };
 }
 
+/** A toast may only take back the exact step it was opened for. */
+export function canUndoToastEntry(stacks: UndoStacks, entryId: string): boolean {
+  return stacks.undo[stacks.undo.length - 1]?.id === entryId;
+}
+
 /** The plain word said back to the person for each action. */
 export function undoActionWord(action: UndoAction): string {
   if (action === "move") return "move";
