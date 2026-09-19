@@ -84,7 +84,9 @@ describe("Workboard human judgment", () => {
   it("reserves context-mark space for folded and work-note titles", () => {
     const folded = renderCard(localJudgment);
     expect(folded.container.querySelector(".canvas-lab-context-title")).not.toBeNull();
-    expect(folded.container.querySelector(".canvas-lab-context-header")).not.toBeNull();
+    const header = folded.container.querySelector(".canvas-lab-context-header");
+    expect(header).not.toBeNull();
+    expect(header!.classList.contains("pr-6")).toBe(false);
     folded.unmount();
     const item = { id: "work", title: localJudgment.title, type: "document", source: "upload", visibility: "shared", created_at: "2026-09-19T00:00:00Z", updated_at: "2026-09-19T00:00:00Z" } as never;
     const work = renderCard({ ...localJudgment, kind: "work", workItemId: "work" });
