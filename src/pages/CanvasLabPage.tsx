@@ -282,6 +282,8 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   const itemByNode = (node: LabNode) => node.workItemId ? workItems.find((item) => item.id === node.workItemId) : undefined;
   const focusItem = focusNode ? itemByNode(focusNode) ?? null : null;
   const reviewItem = reviewNode ? itemByNode(reviewNode) ?? null : null;
+  const focusThreadId = focusItem && focusItem.type === "ai_thread" ? focusItem.id : null;
+  const annotations = useCanvasLabAnnotations(engagementId, focusThreadId, profile?.id);
   const loadingBoard = isLoading || lab.boardLoading;
   const notAvailable = !loadingBoard && !isError && !engagement;
   const boardReady = !loadingBoard && !isError && Boolean(engagement) && nodes !== null && frames !== null;
