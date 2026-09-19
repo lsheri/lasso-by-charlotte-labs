@@ -26,6 +26,7 @@ const item: WorkItemRow = {
   title: "Q3 pricing review",
   captured_at: "2026-09-01T09:14:00Z",
   created_at_source: null,
+  visibility: "mapped",
   meta: {
     declared: { output_kind: "deck", disposition: "shipped", ai_involvement: "drafted" },
     coach_outcome: { verdict: "accept", rubric_band: 4, rework_needed: false },
@@ -123,5 +124,27 @@ describe("planContentBatch", () => {
       id: "item-3",
       reason: "pre_dc_v3",
     });
+  });
+});
+
+describe("visibility gate", () => {
+  const postures = new Map<string, OrgPosture>([["org-1", openPosture]]);
+  const turnsByItem = new Map([["item-1", [{ turn_no: 1, role: "user", content: "hi" }]]]);
+
+  it("never plans unmapped or private work, even at a fully open workspace", () => {
+    const plan = planContentBatch(
+      [
+        { ...item, id: "unmapped", visibility: "unmapped" },
+        { ...item, id: "private", visibility: "private" },
+        { ...item, id: "missing", visibility: null },
+      ],
+      { postures, turnsByItem },
+    );
+    expect(plan).toEqual([]);
+  });
+
+  it("sends mapped work at the same workspace", () => {
+    const plan = planContentBatch([item], { postures, turnsByItem });
+    expect(plan.map((e) => [e.kind, e.id])).toEqual([["send", "item-1"]]);
   });
 });
