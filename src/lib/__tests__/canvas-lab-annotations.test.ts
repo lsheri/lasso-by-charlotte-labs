@@ -7,7 +7,10 @@ import {
   lengthBand,
   mergeRanges,
   normalizeAnnotationText,
+  validateCommentBody,
   validateHighlightRange,
+  isEdited,
+  MAX_BODY_LENGTH,
   MAX_EXCERPT_LENGTH,
 } from "../canvas-lab-annotations-shared";
 
@@ -84,5 +87,22 @@ describe("the length band", () => {
     expect(lengthBand(500)).toBe("le500");
     expect(lengthBand(501)).toBe("gt500");
     expect(lengthBand(5000)).toBe("gt500");
+  });
+});
+
+describe("a comment body", () => {
+  it("refuses an empty body and one past the cap", () => {
+    expect(validateCommentBody("   ")).toBe("Write something first.");
+    expect(validateCommentBody("x".repeat(MAX_BODY_LENGTH + 1))).toBe(
+      "That comment is too long.",
+    );
+    expect(validateCommentBody("Worth a second look.")).toBeNull();
+  });
+
+  it("calls a comment edited only after a real later change", () => {
+    const made = "2026-09-19T10:00:00.000Z";
+    expect(isEdited(made, made)).toBe(false);
+    expect(isEdited(made, "2026-09-19T10:00:03.000Z")).toBe(false);
+    expect(isEdited(made, "2026-09-19T10:05:00.000Z")).toBe(true);
   });
 });
