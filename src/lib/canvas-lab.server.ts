@@ -192,6 +192,18 @@ function validFrameGeometry(frame: { x?: number; y?: number; w?: number; h?: num
   return frame.h === undefined || (frame.h >= 220 && frame.h <= 1800);
 }
 
+export function validateFrameLabel(kind: string, label: unknown): string | null {
+  if (kind !== "custom") return "Only a custom workstream can be renamed.";
+  if (typeof label !== "string" || label.trim().length < 1 || label.trim().length > 60) return "A workstream name must be between 1 and 60 characters.";
+  return null;
+}
+
+export function validateFrameArchive(kind: string, liveNodeCount: number): string | null {
+  if (kind !== "custom") return "Only a custom workstream can be removed.";
+  if (liveNodeCount > 0) return "Move its cards first.";
+  return null;
+}
+
 function validNodeGeometry(node: { x?: number; y?: number; w?: number; h?: number }): boolean {
   const values = [node.x, node.y, node.w, node.h].filter((value): value is number => value !== undefined);
   if (!values.every(Number.isFinite)) return false;
@@ -278,9 +290,21 @@ export async function applyWorkboardCommand(
   if (command.type === "frame_update" || command.type === "frame_archive" || command.type === "frame_restore") {
     if (!membership.isEditor) return { status: "forbidden" };
     if (command.type === "frame_update" && !validFrameGeometry(command.patch)) return { status: "validation_error", message: "Workstream dimensions are outside the supported range." };
+    const target = (await db.from("workboard_frames").select("id, kind").eq("id", command.frameId).eq("workboard_id", board.id).is("deleted_at", null).maybeSingle()).data;
+    if (!target) return { status: "validation_error", message: "That workstream is gone." };
+    const normalizedLabel = command.type === "frame_update" && typeof command.patch.label === "string" ? command.patch.label.trim() : command.type === "frame_update" ? command.patch.label : undefined;
+    if (command.type === "frame_update" && command.patch.label !== undefined) {
+      const invalid = validateFrameLabel(target.kind, normalizedLabel);
+      if (invalid) return { status: "validation_error", message: invalid };
+    }
+    if (command.type === "frame_archive") {
+      const { count } = await db.from("workboard_nodes").select("id", { count: "exact", head: true }).eq("workboard_id", board.id).eq("frame_id", command.frameId).is("deleted_at", null);
+      const invalid = validateFrameArchive(target.kind, count ?? 0);
+      if (invalid) return { status: "validation_error", message: invalid };
+    }
     const patch =
       command.type === "frame_update"
-        ? { ...definedPatch(command.patch), ...stamp }
+        ? { ...definedPatch({ ...command.patch, ...(normalizedLabel !== undefined ? { label: normalizedLabel } : {}) }), ...stamp }
         : { deleted_at: command.type === "frame_archive" ? new Date().toISOString() : null, ...stamp };
     const { data } = await db
       .from("workboard_frames")

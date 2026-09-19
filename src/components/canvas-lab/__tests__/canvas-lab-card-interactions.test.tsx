@@ -74,5 +74,8 @@ describe("Canvas Lab card interaction correction", () => {
     const telemetry = read("src/components/canvas-lab/canvas-lab-telemetry.ts");
     expect(page).toContain("noteWorkboardCardMenuOpened(orgId, eventKind(node), node.ownership)");
     expect(telemetry).toContain('logEvent("workboard.card_menu_opened", orgId, { node_kind: nodeKind, ownership })');
+    expect(telemetry).toContain('LabNodeEventKind | "frame"');
+    expect(telemetry).toContain('LabOwnershipEvent | "shared"');
+    expect(page).toContain('noteWorkboardCardMenuOpened(orgId, "frame", "shared")');
   });
 });
