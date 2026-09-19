@@ -77,7 +77,7 @@ export function useCanvasLab(engagementId: string, profileId: string | undefined
         setSaveState({ status: "forbidden" });
         return result;
       }
-      setSaveState({ status: "error", message: result.message });
+      setSaveState({ status: "error", message: result.message, retry: command, entityKind: commandEntityKind(command) });
       return result;
     },
     [engagementId, mutateFn, profileId, queryClient],
