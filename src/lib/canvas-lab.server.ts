@@ -199,6 +199,11 @@ function validNodeGeometry(node: { x?: number; y?: number; w?: number; h?: numbe
   return node.h === undefined || (node.h >= 112 && node.h <= 520);
 }
 
+function nodePatchForDatabase(patch: Extract<WorkboardCommand, { type: "node_update" }>["patch"]): Record<string, unknown> {
+  const { frameId, ...rest } = patch;
+  return definedPatch({ ...rest, ...(frameId !== undefined ? { frame_id: frameId } : {}) });
+}
+
 export async function applyWorkboardCommand(
   db: Db,
   engagementId: string,
@@ -316,7 +321,7 @@ export async function applyWorkboardCommand(
     }
     const patch =
       command.type === "node_update"
-        ? { ...definedPatch({ ...command.patch, frame_id: command.patch.frameId }), frameId: undefined, ...stamp }
+        ? { ...nodePatchForDatabase(command.patch), ...stamp }
         : { deleted_at: command.type === "node_archive" ? new Date().toISOString() : null, ...stamp };
     const { data, error } = await db
       .from("workboard_nodes")

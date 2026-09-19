@@ -509,6 +509,18 @@ export function fitFrameToNodes(frame: LabFrame, nodes: LabNode[]): LabRect | nu
   return { x: left, y: top, width: Math.max(FRAME_MIN_WIDTH, right - left), height: Math.max(FRAME_MIN_HEIGHT, bottom - top) };
 }
 
+export function containFrameMembers(rect: LabRect, frameId: string, nodes: LabNode[]): LabRect {
+  const members = nodes.filter((node) => node.frame === frameId);
+  if (members.length === 0) return rect;
+  const contentLeft = Math.min(...members.map((node) => node.x)) - FRAME_PADDING;
+  const contentTop = Math.min(...members.map((node) => node.y)) - 60;
+  const contentRight = Math.max(...members.map((node) => node.x + node.width)) + FRAME_PADDING;
+  const contentBottom = Math.max(...members.map((node) => node.y + node.height)) + FRAME_PADDING;
+  const x = Math.min(rect.x, contentLeft);
+  const y = Math.min(rect.y, contentTop);
+  return { x, y, width: Math.max(rect.x + rect.width, contentRight) - x, height: Math.max(rect.y + rect.height, contentBottom) - y };
+}
+
 /* ------------------------------------------------------------------ */
 /* Phase 3 Slice 1: durable Workboard merge and review traversal       */
 /* ------------------------------------------------------------------ */

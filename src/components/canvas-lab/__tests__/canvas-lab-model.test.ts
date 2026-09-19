@@ -5,6 +5,7 @@ import {
   branchChatNode,
   addLabLink,
   connectedLabNodeIds,
+  containFrameMembers,
   createLocalNode,
   deleteLocalNode,
   createChatNode,
@@ -243,6 +244,16 @@ describe("canvas lab model", () => {
     expect(fitted).not.toBeNull();
     expect(fitted?.width).toBeGreaterThanOrEqual(260);
     expect(fitFrameToNodes(frame, [])).toBeNull();
+  });
+
+  it("will not resize a frame boundary through its member cards", () => {
+    const frame = createLabFrames(SEED.tasks)[1];
+    expect(frame).toBeDefined();
+    if (!frame) return;
+    const members = seedCanvas(SEED).filter((node) => node.frame === frame.id);
+    const constrained = containFrameMembers({ x: frame.x + 200, y: frame.y + 200, width: 260, height: 220 }, frame.id, members);
+    expect(constrained.x).toBeLessThanOrEqual(Math.min(...members.map((node) => node.x)) - 24);
+    expect(constrained.y).toBeLessThanOrEqual(Math.min(...members.map((node) => node.y)) - 60);
   });
 
   it("returns only the anchor when there are no local links", () => {

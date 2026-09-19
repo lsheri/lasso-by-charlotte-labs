@@ -16,6 +16,7 @@ import {
   applyDurableBoard,
   branchChatNode,
   createChatNode,
+  containFrameMembers,
   createLabFrames,
   createLocalNode,
   deleteLocalNode,
@@ -448,7 +449,7 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
       if (resizing?.method === "pointer") {
         const rect = resizeLabRect(resizing.start, resizing.corner, { x: (event.clientX - resizing.pointer.x) / zoom, y: (event.clientY - resizing.pointer.y) / zoom }, event.shiftKey, resizing.kind);
         if (resizing.kind === "card") setNodes((current) => current?.map((node) => node.id === resizing.id ? { ...node, ...rect } : node) ?? current);
-        else setFrames((current) => current?.map((frame) => frame.id === resizing.id ? { ...frame, ...rect } : frame) ?? current);
+        else setFrames((current) => current?.map((frame) => frame.id === resizing.id ? { ...frame, ...containFrameMembers(rect, frame.id, nodesRef.current) } : frame) ?? current);
         return;
       }
       const drag = dragRef.current;
@@ -527,7 +528,8 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
     const amount = event.shiftKey ? 24 : 8;
     const delta = { x: event.key === "ArrowLeft" ? -amount : event.key === "ArrowRight" ? amount : 0, y: event.key === "ArrowUp" ? -amount : event.key === "ArrowDown" ? amount : 0 };
     if (!resizeRef.current) resizeRef.current = { kind, id, corner, start: rect, pointer: { x: 0, y: 0 }, method: "keyboard" };
-    const next = resizeLabRect(rect, corner, delta, false, kind);
+    const resized = resizeLabRect(rect, corner, delta, false, kind);
+    const next = kind === "frame" ? containFrameMembers(resized, id, nodesRef.current) : resized;
     if (kind === "card") setNodes((current) => current?.map((node) => node.id === id ? { ...node, ...next } : node) ?? current);
     else setFrames((current) => current?.map((frame) => frame.id === id ? { ...frame, ...next } : frame) ?? current);
   }
