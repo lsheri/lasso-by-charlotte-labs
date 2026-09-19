@@ -37,6 +37,17 @@ describe("pass V1 attachment branch", () => {
     expect(branch).toContain("recordNewVersion(supabaseAdmin");
     expect(branch).toContain('sourceEvent: "mcp_repush"');
   });
+
+  it("gives inserts a unique path too, so a retry cannot collide", () => {
+    expect(branch).not.toContain('decision === "insert" ? base');
+    expect(branch).toContain('const path = `${base}-${crypto.randomUUID()}`;');
+  });
+
+  it("counts one row when the item already has a version", () => {
+    expect(branch).toContain('from("document_versions")');
+    expect(branch).toContain("attachmentVersionRows += existingVersion ? 1 : 2;");
+    expect(branch).not.toContain("nextNo === 2 ? 2 : 1");
+  });
 });
 
 type Row = Record<string, unknown>;
