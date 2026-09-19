@@ -140,7 +140,7 @@ export function LabFrame({ frame, count, selected, editable, custom, namedByWork
               value={draftName}
               maxLength={60}
               onChange={(event) => { setDraftName(event.target.value); if (event.target.value.trim()) setRenameError(false); }}
-              onBlur={commitRename}
+              onBlur={() => { if (pendingRenameRef.current) return; commitRename(); }}
               onPointerDown={(event) => event.stopPropagation()}
               onKeyDown={(event) => {
                 event.stopPropagation();
