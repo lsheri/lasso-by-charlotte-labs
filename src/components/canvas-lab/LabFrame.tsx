@@ -7,12 +7,13 @@ import { Button } from "@/components/ui/button";
 
 const CORNERS: LabResizeCorner[] = ["nw", "ne", "se", "sw"];
 
-export function LabFrame({ frame, count, selected, editable, custom, removable, onSelect, onResizeStart, onResizeKeyDown, onResizeKeyUp, onFit, onRename, onRemove, onMenuOpened, onMenuOpenChange }: {
+export function LabFrame({ frame, count, selected, editable, custom, namedByWorkstream, removable, onSelect, onResizeStart, onResizeKeyDown, onResizeKeyUp, onFit, onRename, onRemove, onMenuOpened, onMenuOpenChange }: {
   frame: LabFrameModel;
   count: number;
   selected: boolean;
   editable: boolean;
   custom: boolean;
+  namedByWorkstream: boolean;
   removable: boolean;
   onSelect: () => void;
   onResizeStart: (corner: LabResizeCorner, event: React.PointerEvent<HTMLButtonElement>) => void;
@@ -106,7 +107,7 @@ export function LabFrame({ frame, count, selected, editable, custom, removable, 
         ) : (
           <h2
             className="font-hand text-[18px] leading-none text-[var(--nb-mid)]"
-            title={custom ? undefined : "Named by the workstream"}
+            title={namedByWorkstream ? "Named by the workstream" : undefined}
             onDoubleClick={custom && editable ? beginRename : undefined}
           >
             {frame.name}

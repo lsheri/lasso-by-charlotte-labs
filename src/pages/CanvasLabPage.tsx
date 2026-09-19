@@ -727,12 +727,18 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
 
   function renameFrame(frame: LabFrame, name: string) {
     setFrames((current) => current?.map((entry) => entry.id === frame.id ? { ...entry, name } : entry) ?? current);
-    void persistFramePatch(frame.id, { label: name });
+    if (frame.durableId) void persistFramePatch(frame.id, { label: name });
   }
 
   function removeFrame(frame: LabFrame) {
     if (allNodes.some((node) => node.frame === frame.id)) {
       setAnnouncement("Move its cards first.");
+      return;
+    }
+    if (!frame.durableId) {
+      setFrames((entries) => entries?.filter((entry) => entry.id !== frame.id) ?? entries);
+      setSelectedFrameId((selectedId) => selectedId === frame.id ? null : selectedId);
+      setAnnouncement("Workstream removed");
       return;
     }
     void (async () => {
@@ -950,7 +956,7 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
           {boardReady ? <div data-testid="canvas-lab-stage" tabIndex={-1} className="canvas-lab-stage absolute left-0 top-0 origin-top-left" style={{ width: bounds.width, height: bounds.height, transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})` }}>
             <ReasoningTrailGuide onAdd={addNode} />
             <FoundationGuide brief={engagement?.brief ?? null} tasks={(page?.tasks ?? []).map((task) => ({ id: task.id, name: task.name, detail: task.detail }))} work={workItems} />
-            {structureMode === "structured" ? boardFrames.map((frame) => { const count = visibleNodes.filter((node) => node.frame === frame.id).length; const custom = frameKindOf(frame) === "custom"; const removable = !allNodes.some((node) => node.frame === frame.id); return <LabFrameElement key={frame.id} frame={frame} count={count} selected={selectedFrameId === frame.id} editable={Boolean(lab.board?.canEditStructure)} custom={custom} removable={removable} onSelect={() => { setSelectedFrameId(frame.id); setKeyboardId(null); }} onResizeStart={(corner, event) => startResize("frame", frame.id, corner, { x: frame.x, y: frame.y, width: frame.width, height: frame.height }, event)} onResizeKeyDown={(corner, event) => keyboardResize("frame", frame.id, corner, { x: frame.x, y: frame.y, width: frame.width, height: frame.height }, event)} onResizeKeyUp={finishKeyboardResize} onFit={() => fitFrame(frame)} onRename={(name) => renameFrame(frame, name)} onRemove={() => removeFrame(frame)} onMenuOpened={() => noteWorkboardCardMenuOpened(orgId, "frame", "shared")} onMenuOpenChange={setCardMenuOpen} />; }) : null}
+            {structureMode === "structured" ? boardFrames.map((frame) => { const kind = frameKindOf(frame); const count = visibleNodes.filter((node) => node.frame === frame.id).length; const custom = kind === "custom"; const removable = !allNodes.some((node) => node.frame === frame.id); return <LabFrameElement key={frame.id} frame={frame} count={count} selected={selectedFrameId === frame.id} editable={Boolean(lab.board?.canEditStructure)} custom={custom} namedByWorkstream={kind === "task"} removable={removable} onSelect={() => { setSelectedFrameId(frame.id); setKeyboardId(null); }} onResizeStart={(corner, event) => startResize("frame", frame.id, corner, { x: frame.x, y: frame.y, width: frame.width, height: frame.height }, event)} onResizeKeyDown={(corner, event) => keyboardResize("frame", frame.id, corner, { x: frame.x, y: frame.y, width: frame.width, height: frame.height }, event)} onResizeKeyUp={finishKeyboardResize} onFit={() => fitFrame(frame)} onRename={(name) => renameFrame(frame, name)} onRemove={() => removeFrame(frame)} onMenuOpened={() => noteWorkboardCardMenuOpened(orgId, "frame", "shared")} onMenuOpenChange={setCardMenuOpen} />; }) : null}
             <svg className="absolute inset-0 overflow-visible" width={bounds.width} height={bounds.height} aria-label="Local workboard relationships">
               {visibleNodes.filter((node) => node.kind === "chat").flatMap((draft) => (draft.contextIds ?? []).map((contextId) => { const source = visibleNodes.find((node) => node.id === contextId); if (!source) return null; const sx = source.x + source.width; const sy = source.y + source.height / 2; const tx = draft.x; const ty = draft.y + draft.height / 2; const middle = (sx + tx) / 2; return <path key={`${draft.id}:${contextId}`} d={`M ${sx} ${sy} C ${middle} ${sy}, ${middle} ${ty}, ${tx} ${ty}`} fill="none" stroke="var(--nb-graphite)" strokeWidth="1.4" strokeDasharray="4 4" strokeLinecap="round" className="pointer-events-none" />; }))}
               {links.map((link) => { const source = visibleNodes.find((node) => node.id === link.fromId); const target = visibleNodes.find((node) => node.id === link.toId); if (!source || !target) return null; const from = labAnchorPoint(source, link.fromAnchor, cardHeightsRef.current.get(source.id) ?? 108); const to = labAnchorPoint(target, link.toAnchor, cardHeightsRef.current.get(target.id) ?? 108); const active = selectedLinkId === link.id; return <path key={link.id} role="button" tabIndex={0} aria-label={`Select relationship from ${source.title} to ${target.title}`} onClick={() => setSelectedLinkId(link.id)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setSelectedLinkId(link.id); } }} d={labConnectorPath(from, link.fromAnchor, to, link.toAnchor)} fill="none" stroke={active ? "var(--nb-green)" : "var(--nb-graphite)"} strokeWidth={active ? "2.4" : "1.4"} strokeLinecap="round" className="cursor-pointer outline-none focus:stroke-[var(--nb-green)]" />; })}
