@@ -940,7 +940,7 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
   function addWorkstream(nameInput: string): boolean {
     const name = nameInput.trim();
     if (!name || name.length > 60) return false;
-    const next = addLocalFrame(framesRef.current, name);
+    const next = addLocalFrame(framesRef.current, name, nextWorkstreamRect(framesRef.current, nodesRef.current.filter((node) => !hiddenIds.includes(node.id))));
     const frame = next[next.length - 1];
     setFrames(next);
     if (!frame) return false;
