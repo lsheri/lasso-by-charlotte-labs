@@ -480,13 +480,13 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
           const node = nodesRef.current.find((entry) => entry.id === resizing.id);
           if (node && (node.x !== resizing.start.x || node.y !== resizing.start.y || node.width !== resizing.start.width || node.height !== resizing.start.height)) {
             void persistNodePatch(node.id, { x: node.x, y: node.y, w: node.width, h: node.height });
-            noteWorkboardElementResized(orgId, "card", "pointer", "both");
+            noteWorkboardElementResized(orgId, "card", "pointer", resizeAxis(resizing.start, { x: node.x, y: node.y, width: node.width, height: node.height }));
           }
         } else {
           const frame = framesRef.current.find((entry) => entry.id === resizing.id);
           if (frame && (frame.x !== resizing.start.x || frame.y !== resizing.start.y || frame.width !== resizing.start.width || frame.height !== resizing.start.height)) {
             void persistFramePatch(frame.id, { x: frame.x, y: frame.y, w: frame.width, h: frame.height });
-            noteWorkboardElementResized(orgId, "frame", "pointer", "both");
+            noteWorkboardElementResized(orgId, "frame", "pointer", resizeAxis(resizing.start, { x: frame.x, y: frame.y, width: frame.width, height: frame.height }));
           }
         }
         resizeRef.current = null;
