@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   applyDurableBoard,
+  dropPromptFrame,
   createLabFrames,
   inboundLabNodeIds,
   seedCanvas,
@@ -150,5 +151,26 @@ describe("phase 3 persistence events", () => {
     expect(catalog).toContain('"workboard.structure_toggled"');
     expect(helpers).toContain('{ element_kind: elementKind, method, axis }');
     expect(helpers).toContain('{ state }');
+  });
+});
+
+describe("drop prompt on a durable board", () => {
+  it("offers the workstream under the card even when the home frame overlaps it", () => {
+    const merged = applyDurableBoard({ frames: baseFrames, nodes: baseNodes }, board({
+      frames: [
+        { id: "frame-a", key: "task:task-1", kind: "task", label: "Discovery", x: 60, y: 420, w: 1200, h: 900, ord: 0, version: 1 },
+        { id: "frame-b", key: "custom:readout", kind: "custom", label: "Readout deck", x: 900, y: 460, w: 380, h: 420, ord: 1, version: 1 },
+      ],
+      nodes: [{
+        id: "node-1", frameId: "frame-a", kind: "work_item", workItemId: "work-1", decisionId: null,
+        authorProfileId: "me", authorName: "Me", title: "", body: "", judgmentType: null,
+        x: 1000, y: 520, w: 232, h: 112, hidden: false, version: 1, referenceReadable: true,
+      }],
+    }));
+    const card = merged.nodes.find((node) => node.durableId === "node-1");
+    expect(card?.frame).toBe("task:task-1");
+    if (!card) return;
+    expect(dropPromptFrame(card, merged.frames, "structured", true)?.name).toBe("Readout deck");
+    expect(dropPromptFrame(card, merged.frames, "freeform", true)).toBeNull();
   });
 });
