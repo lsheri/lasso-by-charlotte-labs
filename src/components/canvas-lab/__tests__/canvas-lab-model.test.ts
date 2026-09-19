@@ -5,6 +5,8 @@ import {
   branchChatNode,
   addLabLink,
   addLocalFrame,
+  markFrameSaved,
+  keepViewportUnscrolled,
   connectedLabNodeIds,
   containFrameMembers,
   createLocalNode,
