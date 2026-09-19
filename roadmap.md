@@ -131,3 +131,12 @@
 - [x] Reveal and focus a newly created judgment without changing zoom
 - [x] Show durable judgment authorship accurately without changing edit permissions
 - [x] Keep the context paperclip clear of card titles at every zoom
+
+## Workboard links (approved 2026-09-19)
+- [x] Add directed arrowheads and hover emphasis at every zoom
+- [x] Add an editable-only relationship remove control using the existing removal path
+- [x] Reject duplicate directed pairs regardless of anchor choice
+- [x] Show short-lived visible rejection notes
+- [x] Clear selected relationships on board, card, frame, and Escape paths
+- [x] Distinguish durable and local relationship removal announcements
+- [ ] Verify link geometry and removal as Liam at 45% zoom
