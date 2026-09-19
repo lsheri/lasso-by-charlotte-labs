@@ -66,3 +66,34 @@ describe("context composer", () => {
     expect(draft.value).toBe("keep me");
   });
 });
+
+describe("banner overlay", () => {
+  it("floats over the board instead of pushing it down", async () => {
+    const css = await import("node:fs/promises").then((fs) => fs.readFile("src/styles.css", "utf8"));
+    const block = /\.canvas-lab-banner\s*\{[^}]*\}/.exec(css);
+    expect(block).not.toBeNull();
+    const style = document.createElement("style");
+    style.textContent = block?.[0] ?? "";
+    document.head.append(style);
+    const { rerender } = render(
+      <main style={{ position: "relative" }}>
+        <header style={{ height: 52 }} />
+        <div data-testid="surface" />
+      </main>,
+    );
+    const before = screen.getByTestId("surface");
+    rerender(
+      <main style={{ position: "relative" }}>
+        <header style={{ height: 52 }} />
+        <div data-testid="canvas-lab-banner" className="canvas-lab-banner" role="alert" />
+        <div data-testid="surface" />
+      </main>,
+    );
+    const banner = screen.getByTestId("canvas-lab-banner");
+    const computed = window.getComputedStyle(banner);
+    expect(computed.position).toBe("absolute");
+    expect(computed.top).toBe("52px");
+    expect(screen.getByTestId("surface")).toBe(before);
+    style.remove();
+  });
+});
