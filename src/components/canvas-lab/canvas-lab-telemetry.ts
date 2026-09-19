@@ -28,8 +28,12 @@ export function noteWorkboardNodeEdited(orgId: string | undefined, kind: LabNode
 export function noteWorkboardRecordVisibility(orgId: string | undefined, action: "hidden" | "restored", recordKind: "work" | "decision" | "brief"): void {
   if (orgId) logEvent("workboard.record_visibility_changed", orgId, { action, record_kind: recordKind });
 }
-export function noteWorkboardRelationship(orgId: string | undefined, action: "started" | "created" | "removed" | "cancelled" | "rejected"): void {
-  if (orgId) logEvent("workboard.relationship_changed", orgId, { action });
+export function noteWorkboardRelationship(
+  orgId: string | undefined,
+  action: "started" | "created" | "removed" | "cancelled" | "rejected" | "relation_changed",
+  relation?: WorkboardRelation,
+): void {
+  if (orgId) logEvent("workboard.relationship_changed", orgId, relation ? { action, relation } : { action });
 }
 export function noteWorkboardReviewOpened(orgId: string | undefined, format: "thread" | "document" | "deck" | "sheet"): void {
   if (orgId) logEvent("workboard.review_opened", orgId, { format });
