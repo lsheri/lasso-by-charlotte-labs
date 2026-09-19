@@ -157,3 +157,7 @@
 - [x] Counter-scale the judgment chooser and focus the inline workstream name
 - [x] Say deliverable for a deliverable work card, and carry the original action through a retry
 - [ ] Portal catalog: add workboard.undo_used (architect)
+
+## Workboard polish 2c-v follow-up
+- [x] Match the toast step by stable undo id so its Undo control reaches the existing path
+- [x] Give the toast Undo control a 44 by 24 pixel minimum hit area
