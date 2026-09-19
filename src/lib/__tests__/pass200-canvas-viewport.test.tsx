@@ -1,8 +1,10 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+import { renderToStaticMarkup } from "react-dom/server";
 
 import { ZOOM_MAX, ZOOM_MIN, clampZoom, stepZoom, wheelPanDelta, zoomAbout } from "../canvas-zoom";
+import { CanvasLabStatusLine } from "@/components/canvas-lab/CanvasLabStatusLine";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
@@ -55,5 +57,23 @@ describe("pass 200 — viewport gestures", () => {
     expect(page).toContain('addEventListener("wheel", onSurfaceWheel, { passive: false })');
     expect(page).toContain("zoomAtCentre(1)");
     expect(page).toContain("spaceRef.current) return; // Space pans the board");
+  });
+
+  it("keeps native Space activation for focused controls", () => {
+    const page = read("src/pages/CanvasLabPage.tsx");
+    expect(page).toContain("active !== document.body && active !== shell && active !== stage");
+    expect(page).not.toContain("active?.closest(\"textarea,input,[contenteditable='true'],[role='menu'],[data-testid^='lab-card-']\")");
+  });
+
+  it("renders only the reading line while the Workboard reads are pending", () => {
+    const html = renderToStaticMarkup(<CanvasLabStatusLine loading unavailable empty />);
+    expect(html).toContain("reading the engagement");
+    expect(html).not.toContain("nothing is on this workboard yet");
+    expect(html).not.toContain("This workboard could not be opened.");
+    const page = read("src/pages/CanvasLabPage.tsx");
+    expect(page).toContain("const loadingBoard = isLoading || lab.boardLoading");
+    expect(page).toContain('{boardReady ? <div data-testid="canvas-lab-stage"');
+    expect(page).toContain("loading={loadingBoard}");
+    expect(page).toContain("empty={boardReady && visibleNodes.length === 0}");
   });
 });

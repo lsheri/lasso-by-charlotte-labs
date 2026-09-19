@@ -13,6 +13,7 @@ import {
   createLabFrames,
   draftAnchor,
   fitScale,
+  fitWorkboardViewport,
   fitFrameToNodes,
   labAnchorPoint,
   labConnectorPath,
@@ -176,6 +177,17 @@ describe("canvas lab model", () => {
     expect(fitScale(1000, 600)).toBeLessThan(1);
     expect(fitScale(200, 100)).toBe(0.62);
     expect(fitScale(0, 0)).toBe(1);
+  });
+
+  it("fits frames, guides, and measured card overflow as one centred union", () => {
+    const frame = { id: "f", name: "Work", x: 60, y: 420, width: 430, height: 220 };
+    const card = { id: "n", kind: "work" as const, frame: "f", title: "Card", summary: "", typeLabel: "work", ownership: "yours" as const, x: 100, y: 590, width: 232, height: 112 };
+    const result = fitWorkboardViewport({ width: 1000, height: 700 }, [frame], [card], new Map([["n", 240]]));
+    expect(result.bounds.y + result.bounds.height).toBe(830);
+    expect(result.pan.x + (result.bounds.x + result.bounds.width / 2) * result.zoom).toBeCloseTo(500);
+    expect(result.pan.y + (result.bounds.y + result.bounds.height / 2) * result.zoom).toBeCloseTo(350);
+    const tiny = fitWorkboardViewport({ width: 1400, height: 900 }, [], [], new Map(), { x: 10, y: 10, width: 100, height: 80 });
+    expect(tiny.zoom).toBe(1);
   });
 
   it("creates the five local reasoning node kinds and six judgment choices", async () => {
