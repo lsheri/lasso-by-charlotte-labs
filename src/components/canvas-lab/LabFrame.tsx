@@ -54,10 +54,10 @@ export function LabFrame({ frame, count, selected, editable, custom, namedByWork
   /** After the menu closes, the frame takes focus back unless a rename just started. */
   function restoreFocus() {
     if (pendingRenameRef.current) {
-      pendingRenameRef.current = false;
       window.requestAnimationFrame(() => {
         inputRef.current?.focus();
         inputRef.current?.select();
+        pendingRenameRef.current = false;
       });
       return;
     }
