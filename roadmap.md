@@ -168,3 +168,7 @@
 - [x] Show only record-backed labels and details
 - [x] Keep non-item reasoning visible and own judgment editors contained at compact size
 - [x] Show a document glyph when a work source has no vendor mark
+
+## Workboard polish 2d follow-up 2
+- [x] Keep the paper header and handwritten title from shrinking so compact judgment editors cannot cover the title
+- [x] Truncate the header source label with an ellipsis and drop the header date at compact
