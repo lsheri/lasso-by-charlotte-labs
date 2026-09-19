@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef } from "react";
 
 import { EvidenceCircle, MarginFlag, VerifyInk } from "@/components/notebook/marks";
+import { mergeRanges, type CharRange } from "@/lib/canvas-lab-annotations-shared";
 import { supabase } from "@/integrations/supabase/client";
 import { splitByQuote, turnAnchorId, type ThreadMark } from "@/lib/verify-thread-shared";
 import { vendorLabel } from "@/lib/conversation-shared";
@@ -12,12 +13,51 @@ type Turn = {
   turn_no: number;
   role: string;
   content: string;
+  content_hash?: string | null;
   ts: string | null;
   model?: string | null;
   meta?: unknown;
 };
 
 export type ThreadFocus = { turnNo?: number; text?: string };
+
+/** Slice 2a: a person's own highlights, already resolved against the turn. */
+export type ThreadHighlight = {
+  id: string;
+  turnNo: number;
+  charStart: number;
+  charEnd: number;
+  stale: boolean;
+};
+
+/**
+ * Every live range on one turn, drawn as one quiet marker per merged span.
+ * Overlapping ranges merge so a doubled highlight never reads as darker ink.
+ */
+function HighlightedContent({ content, ranges }: { content: string; ranges: readonly CharRange[] }) {
+  const merged = mergeRanges(ranges).filter((range) => range.charStart < content.length);
+  if (merged.length === 0) return <>{content}</>;
+  const parts: React.ReactNode[] = [];
+  let cursor = 0;
+  merged.forEach((range, index) => {
+    const start = Math.max(cursor, range.charStart);
+    const end = Math.min(content.length, range.charEnd);
+    if (end <= start) return;
+    if (start > cursor) parts.push(<span key={`plain-${index}`}>{content.slice(cursor, start)}</span>);
+    parts.push(
+      <mark
+        key={`mark-${index}`}
+        data-testid="turn-highlight"
+        className="rounded-[2px] bg-[var(--nb-yellow-wash)] text-foreground"
+      >
+        {content.slice(start, end)}
+      </mark>,
+    );
+    cursor = end;
+  });
+  if (cursor < content.length) parts.push(<span key="plain-tail">{content.slice(cursor)}</span>);
+  return <>{parts}</>;
+}
 
 function normaliseWithMap(value: string): { text: string; starts: number[]; ends: number[] } {
   let text = "";
@@ -132,6 +172,7 @@ export function ThreadBody({
   onMarkActivate,
   reducedMotion = false,
   focus,
+  highlights = [],
 }: {
   item: WorkItemRow;
   enabled?: boolean;
@@ -144,6 +185,8 @@ export function ThreadBody({
   onMarkActivate?: ((markId: string) => void) | undefined;
   reducedMotion?: boolean;
   focus?: ThreadFocus | undefined;
+  /** The reader's own highlights. A stale one is listed, never drawn. */
+  highlights?: readonly ThreadHighlight[];
 }) {
   const { data: turns, error } = useQuery({
     queryKey: ["turns", item.id],
@@ -151,7 +194,7 @@ export function ThreadBody({
     queryFn: async (): Promise<Turn[]> => {
       const { data, error: turnsError } = await supabase
         .from("turns")
-        .select("id, turn_no, role, content, ts, model, meta")
+        .select("id, turn_no, role, content, content_hash, ts, model, meta")
         .eq("work_item_id", item.id)
         .order("turn_no", { ascending: true });
       if (turnsError) throw turnsError;
@@ -226,6 +269,10 @@ export function ThreadBody({
         {(turns ?? []).map((turn) => {
           const focused = focusedTurn?.id === turn.id;
           const focusedRange = focused ? focusedTextRange(turn.content, focus?.text) : null;
+          const liveRanges: CharRange[] = highlights
+            .filter((highlight) => highlight.turnNo === turn.turn_no && !highlight.stale)
+            .map((highlight) => ({ charStart: highlight.charStart, charEnd: highlight.charEnd }));
+          const marked = !focusedRange && liveRanges.length > 0;
           return (
           <div key={turn.id} ref={(node) => { if (node) turnRefs.current.set(turn.turn_no, node); else turnRefs.current.delete(turn.turn_no); }} data-turn-no={turn.turn_no}>
           {turn.role === "user" ? (
@@ -234,9 +281,16 @@ export function ThreadBody({
                 Turn {turn.turn_no} · {turn.role}
                 {turnTime(turn.ts) ? ` · ${turnTime(turn.ts)}` : ""}
               </div>
-              <div className={`relative max-w-[90%] whitespace-pre-wrap rounded-[var(--radius)] bg-grey-2 px-4 py-3 font-mono text-xs leading-relaxed text-foreground ${focused && !focusedRange ? "is-evidence-focus" : ""}`}>
+              <div
+                data-turn-content={turn.turn_no}
+                className={`relative max-w-[90%] whitespace-pre-wrap rounded-[var(--radius)] bg-grey-2 px-4 py-3 font-mono text-xs leading-relaxed text-foreground ${focused && !focusedRange ? "is-evidence-focus" : ""}`}
+              >
                 {focused && !focusedRange ? <EvidenceCircle /> : null}
-                <FocusedContent content={turn.content} range={focusedRange} />
+                {marked ? (
+                  <HighlightedContent content={turn.content} ranges={liveRanges} />
+                ) : (
+                  <FocusedContent content={turn.content} range={focusedRange} />
+                )}
               </div>
               {revisedLabel(turn) ? (
                 <p className="mt-1 text-[11px] text-muted-foreground">{revisedLabel(turn)}</p>
@@ -270,6 +324,7 @@ export function ThreadBody({
                     </span>
                   </div>
                   <div
+                    data-turn-content={turn.turn_no}
                     data-lit={lit ? "true" : undefined}
                     data-testid={lit ? `turn-lit-${turn.turn_no}` : undefined}
                     className={`relative max-w-[90%] whitespace-pre-wrap rounded-[var(--radius)] border border-border bg-card px-4 py-3 font-mono text-xs leading-relaxed text-foreground shadow-card${
@@ -286,13 +341,19 @@ export function ThreadBody({
                       : {})}
                   >
                     {focused && !focusedRange ? <EvidenceCircle /> : null}
-                    {focusedRange ? <FocusedContent content={turn.content} range={focusedRange} /> : <TurnContent
-                      turn={turn}
-                      marks={marks}
-                      activeMarkId={activeMarkId}
-                      settledIds={settledIds}
-                      reducedMotion={reducedMotion}
-                    />}
+                    {focusedRange ? (
+                      <FocusedContent content={turn.content} range={focusedRange} />
+                    ) : marked && !flag ? (
+                      <HighlightedContent content={turn.content} ranges={liveRanges} />
+                    ) : (
+                      <TurnContent
+                        turn={turn}
+                        marks={marks}
+                        activeMarkId={activeMarkId}
+                        settledIds={settledIds}
+                        reducedMotion={reducedMotion}
+                      />
+                    )}
                   </div>
                   {revisedLabel(turn) ? (
                     <p className="mt-1 text-[11px] text-muted-foreground">{revisedLabel(turn)}</p>

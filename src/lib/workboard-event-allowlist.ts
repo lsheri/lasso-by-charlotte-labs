@@ -29,6 +29,7 @@ export const WORKBOARD_EVENT_DIMS: Readonly<Record<string, readonly string[]>> =
   "workboard.save_error_resolved": ["entity", "choice"],
   "workboard.context_changed": ["action"],
   "workboard.undo_used": ["action", "direction"],
+  "workboard.annotation_changed": ["kind", "action", "anchor_kind", "visibility", "length_band"],
 } as const;
 
 const SAFE_VALUE = /^[a-z0-9_.:-]{1,40}$/;

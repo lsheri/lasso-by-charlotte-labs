@@ -1,4 +1,5 @@
 import type { UndoAction, UndoDirection } from "@/components/canvas-lab/canvas-lab-undo";
+import { lengthBand } from "@/lib/canvas-lab-annotations-shared";
 import { logEvent } from "@/lib/telemetry";
 
 export type LabNodeEventKind = "source" | "ai_work" | "human_judgment" | "decision" | "deliverable" | "draft_thread";
@@ -87,4 +88,20 @@ export function noteWorkboardContextChanged(orgId: string | undefined, action: W
 /** Canvas Lab polish 2c-v: one arranging step taken back or put back. */
 export function noteWorkboardUndoUsed(orgId: string | undefined, action: UndoAction, direction: UndoDirection): void {
   if (orgId) logEvent("workboard.undo_used", orgId, { action, direction });
+}
+
+/** Slice 2a unit 1: a highlight was made or removed. No text, no hash, no ids. */
+export function noteAnnotationChanged(
+  orgId: string | undefined,
+  action: "created" | "archived",
+  excerptLength: number,
+): void {
+  if (!orgId) return;
+  logEvent("workboard.annotation_changed", orgId, {
+    kind: "highlight",
+    action,
+    anchor_kind: "turn",
+    visibility: "just_me",
+    length_band: lengthBand(excerptLength),
+  });
 }

@@ -48,7 +48,16 @@ async function findBoard(db: Db, engagementId: string): Promise<BoardRow | null>
   return data ?? null;
 }
 
-async function ensureBoard(db: Db, engagementId: string, profile: ResolvedProfile): Promise<BoardRow | null> {
+/** Slice 2a: annotations need the same board and the same editor test. */
+export async function findBoardFor(db: Db, engagementId: string): Promise<BoardRow | null> {
+  return findBoard(db, engagementId);
+}
+
+export async function isEngagementEditor(db: Db, engagementId: string, profileId: string): Promise<boolean> {
+  return (await membershipFor(db, engagementId, profileId)).isEditor;
+}
+
+export async function ensureBoard(db: Db, engagementId: string, profile: ResolvedProfile): Promise<BoardRow | null> {
   const existing = await findBoard(db, engagementId);
   if (existing) return existing;
   const { error } = await db.from("workboards").insert({
@@ -479,6 +488,35 @@ async function insertNodeIdempotent(
   return existing ? { id: existing.id, version: existing.version } : null;
 }
 
+
+/**
+ * Slice 2a: a highlight hangs off the card for its work item, so the card has
+ * to be durable. An existing card is reused exactly as it sits; nothing moves.
+ */
+export async function ensureWorkItemNode(
+  db: Db,
+  boardId: string,
+  profileId: string,
+  workItemId: string,
+): Promise<string | null> {
+  const { data } = await db
+    .from("workboard_nodes")
+    .select("id")
+    .eq("workboard_id", boardId)
+    .eq("work_item_id", workItemId)
+    .is("deleted_at", null)
+    .limit(1);
+  const existing = (data ?? [])[0];
+  if (existing) return existing.id;
+  const created = await insertNodeIdempotent(
+    db,
+    boardId,
+    profileId,
+    { clientKey: `work:${workItemId}`, frameKey: null, kind: "work_item", workItemId, x: 0, y: 0, w: 260, h: 160 },
+    null,
+  );
+  return created?.id ?? null;
+}
 
 async function frameIdForKey(db: Db, boardId: string, key: string): Promise<string | null> {
   const { data } = await db.from("workboard_frames").select("id").eq("workboard_id", boardId).eq("key", key).is("deleted_at", null).maybeSingle();

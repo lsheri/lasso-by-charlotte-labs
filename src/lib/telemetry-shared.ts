@@ -193,6 +193,8 @@ export type TelemetryEvent =
   | "workboard.context_changed"
   /** Canvas Lab polish: one arranging step was taken back or put back. Closed vocabulary only. */
   | "workboard.undo_used"
+  /** Slice 2a: a highlight was made or removed. Closed vocabulary and a length band only. */
+  | "workboard.annotation_changed"
   /** Pass 185: a workspace was affiliated with an institution at creation. Slug only. */
   | "workspace.affiliated"
   /** Pass 186: the student opened the page describing what their school sees. */

@@ -10,7 +10,19 @@ import { RenderedContent } from "@/components/peek/RenderedContent";
 import { ThreadBody } from "@/components/peek/ThreadBody";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { resolveTurnSelection, type TurnSelection } from "@/lib/turn-selection";
 import type { WorkItemRow } from "@/lib/work-types";
+
+/** One saved highlight, already told whether its turn has moved on. */
+export type OverlayHighlight = {
+  id: string;
+  turnNo: number;
+  charStart: number;
+  charEnd: number;
+  excerpt: string;
+  stale: boolean;
+  version: number;
+};
 
 /**
  * Reading at full size without losing the board. The overlay sits above the
@@ -26,6 +38,9 @@ export function FocusOverlay({
   onSummarize,
   onBranch,
   onClose,
+  highlights = [],
+  onHighlight,
+  onRemoveHighlight,
 }: {
   node: LabNode;
   item: WorkItemRow | null;
@@ -35,11 +50,18 @@ export function FocusOverlay({
   onSummarize: () => void;
   onBranch: () => void;
   onClose: () => void;
+  /** Slice 2a: the reader's own highlights on this chat. */
+  highlights?: readonly OverlayHighlight[];
+  onHighlight?: ((selection: TurnSelection) => void) | undefined;
+  onRemoveHighlight?: ((highlight: OverlayHighlight) => void) | undefined;
 }) {
   const [quote, setQuote] = useState("");
   const [body, setBody] = useState("");
+  const [turnSelection, setTurnSelection] = useState<TurnSelection | null>(null);
+  const [crossTurn, setCrossTurn] = useState(false);
   const readerRef = useRef<HTMLDivElement | null>(null);
   const actions = actionsFor(node.ownership);
+  const isThread = item?.type === "ai_thread";
 
   useEffect(() => {
     return () => {
@@ -56,6 +78,11 @@ export function FocusOverlay({
     const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
     if (!range || !readerRef.current?.contains(range.commonAncestorContainer)) return;
     setQuote(text.trim());
+    if (isThread) {
+      const resolved = resolveTurnSelection(range);
+      setCrossTurn(resolved.kind === "cross_turn");
+      setTurnSelection(resolved.kind === "ok" ? resolved.selection : null);
+    }
     if (typeof CSS === "undefined" || !("highlights" in CSS) || typeof Highlight === "undefined") return;
     CSS.highlights?.set("canvas-lab-selection", new Highlight(range.cloneRange()));
   }
@@ -95,7 +122,7 @@ export function FocusOverlay({
             onKeyUp={captureSelection}
           >
             {item && item.type === "ai_thread" ? (
-              <ThreadBody item={item} enabled />
+              <ThreadBody item={item} enabled highlights={highlights} />
             ) : item ? (
               <RenderedContent item={item} onDownload={() => undefined} canEdit={false} />
             ) : (
@@ -111,7 +138,61 @@ export function FocusOverlay({
             )}
           </div>
 
-          <aside className="w-full shrink-0 border-t border-border bg-[var(--nb-paper)] px-4 py-4 lg:w-[300px] lg:border-l lg:border-t-0">
+          <aside className="w-full shrink-0 overflow-y-auto border-t border-border bg-[var(--nb-paper)] px-4 py-4 lg:w-[300px] lg:border-l lg:border-t-0">
+            {isThread ? (
+              <section className="mb-5 border-b border-border pb-4">
+                <h2 className="section-title mb-2">your highlights</h2>
+                {crossTurn ? (
+                  <p className="mb-2 text-[11.5px] leading-[17px] text-muted-foreground">
+                    Highlight one turn at a time
+                  </p>
+                ) : turnSelection ? (
+                  <Button
+                    size="sm"
+                    className="mb-2 w-full"
+                    onClick={() => {
+                      onHighlight?.(turnSelection);
+                      setTurnSelection(null);
+                      setQuote("");
+                    }}
+                  >
+                    Highlight
+                  </Button>
+                ) : (
+                  <p className="mb-2 text-[11.5px] leading-[17px] text-muted-foreground">
+                    Select a passage in one turn to highlight it.
+                  </p>
+                )}
+
+                {highlights.length === 0 ? null : (
+                  <ul className="flex flex-col gap-2">
+                    {highlights.map((highlight) => (
+                      <li
+                        key={highlight.id}
+                        className="rounded-[var(--radius-control)] border border-border bg-card px-2.5 py-2"
+                      >
+                        <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
+                          Turn {highlight.turnNo}
+                          {highlight.stale ? " · From an earlier version" : ""}
+                        </span>
+                        <p className="mt-1 line-clamp-2 text-[12px] leading-[18px] text-foreground">
+                          {highlight.excerpt}
+                        </p>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="mt-1 h-7 px-2 text-[11.5px]"
+                          onClick={() => onRemoveHighlight?.(highlight)}
+                        >
+                          Remove
+                        </Button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </section>
+            ) : null}
+
             <div className="mb-2 flex items-baseline justify-between gap-2">
               <h2 className="section-title">notes in the margin</h2>
               <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">

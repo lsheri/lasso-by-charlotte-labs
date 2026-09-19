@@ -99,6 +99,7 @@ import {
   noteWorkboardSaveErrorResolved,
   noteWorkboardContextChanged,
   noteWorkboardUndoUsed,
+  noteAnnotationChanged,
   type LabNodeEventKind,
   type WorkboardOpenVia,
   type WorkboardPersistEntity,
@@ -107,6 +108,7 @@ import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
 import { SidebarNav } from "@/components/layout/SidebarNav";
 import { Button } from "@/components/ui/button";
 import { useCanvasLab } from "@/hooks/use-canvas-lab";
+import { useCanvasLabAnnotations } from "@/hooks/use-canvas-lab-annotations";
 import { useEngagementPage } from "@/hooks/use-engagement-page";
 import { useMotion } from "@/hooks/use-motion";
 import { useProfile } from "@/hooks/use-profile";
@@ -282,6 +284,8 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   const itemByNode = (node: LabNode) => node.workItemId ? workItems.find((item) => item.id === node.workItemId) : undefined;
   const focusItem = focusNode ? itemByNode(focusNode) ?? null : null;
   const reviewItem = reviewNode ? itemByNode(reviewNode) ?? null : null;
+  const focusThreadId = focusItem && focusItem.type === "ai_thread" ? focusItem.id : null;
+  const annotations = useCanvasLabAnnotations(engagementId, focusThreadId, profile?.id);
   const loadingBoard = isLoading || lab.boardLoading;
   const notAvailable = !loadingBoard && !isError && !engagement;
   const boardReady = !loadingBoard && !isError && Boolean(engagement) && nodes !== null && frames !== null;
@@ -1282,7 +1286,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       </main>
       <WorkRail open={railOpen} mobileVisible={mobileView === "rail"} context={contextNodes} hidden={hiddenNodes} canvasInstructions={canvasInstructions} onToggle={() => { const next = !railOpen; setRailOpen(next); noteWorkboardRail(orgId, next ? "reopened" : "collapsed"); }} onRemoveContext={(id) => setSelected((current) => removeContext(current, id))} onClearContext={() => { setSelected([]); noteWorkboardContextChanged(orgId, "cleared"); setAnnouncement("Cleared context."); }} onSubmit={(prompt) => { setNodes((current) => { if (!current) return current; const contextNode = current.find((node) => node.id === selected[0]); const frame = boardFrames.find((entry) => entry.id === (contextNode?.frame ?? "foundation")) ?? boardFrames[0]; if (!frame) return current; return [...current, createChatNode(prompt, selected, draftAnchor(frame, current), frame.id)]; }); noteWorkboardNodeCreated(orgId, "draft_thread"); }} onCanvasInstructions={setCanvasInstructions} onRestore={restoreNode} onShowBoard={() => setMobileView("board")} />
       <p className="sr-only" aria-live="polite">{announcement}</p>
-      {focusNode ? <FocusOverlay node={focusNode} item={focusItem} viewerName={viewerName} comments={comments.filter((comment) => comment.nodeId === focusNode.id)} onComment={(comment) => setComments((current) => [...current, comment])} onSummarize={() => { branchFrom({ ...focusNode, prompt: `Summarize: ${focusNode.title}` }); setFocusId(null); }} onBranch={() => { branchFrom(focusNode); setFocusId(null); }} onClose={() => setFocusId(null)} /> : null}
+      {focusNode ? <FocusOverlay node={focusNode} item={focusItem} viewerName={viewerName} comments={comments.filter((comment) => comment.nodeId === focusNode.id)} onComment={(comment) => setComments((current) => [...current, comment])} onSummarize={() => { branchFrom({ ...focusNode, prompt: `Summarize: ${focusNode.title}` }); setFocusId(null); }} onBranch={() => { branchFrom(focusNode); setFocusId(null); }} onClose={() => setFocusId(null)} highlights={annotations.highlights} onHighlight={focusThreadId ? (selection) => { void annotations.createHighlight({ turnNo: selection.turnNo, charStart: selection.charStart, charEnd: selection.charEnd, clientKey: crypto.randomUUID() }).then((result) => { if (result.status === "saved") noteAnnotationChanged(orgId, "created", result.highlight.excerpt.length); }).catch(() => undefined); } : undefined} onRemoveHighlight={focusThreadId ? (highlight) => { void annotations.archiveHighlight({ id: highlight.id, expectedVersion: highlight.version }).then((result) => { if (result.status === "saved") noteAnnotationChanged(orgId, "archived", highlight.excerpt.length); }).catch(() => undefined); } : undefined} /> : null}
       {reviewItem && reviewNode ? <CanvasLabReview item={reviewItem} anchorNodeId={reviewNode.id} links={links} profileId={profile?.id} decisions={page?.decisions ?? []} nodes={visibleNodes} comments={comments} onTrailSelect={(group, focus) => noteWorkboardTrailSelected(orgId, group, focus)} onClose={() => setReviewId(null)} /> : null}
     </div>
   );

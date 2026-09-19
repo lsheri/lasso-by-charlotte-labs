@@ -7,6 +7,7 @@
 import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { AnnotationMutationResult, HighlightDto } from "@/lib/canvas-lab-annotations-shared";
 import type { WorkboardCommand, WorkboardDto, WorkboardMutationResult } from "@/lib/canvas-lab-shared";
 import { resolveProfile } from "@/lib/profile-resolve";
 
@@ -39,4 +40,72 @@ export const mutateCanvasLabBoardFn = createServerFn({ method: "POST" })
     if (!profile) return { status: "forbidden" };
     const { applyWorkboardCommand } = await import("@/lib/canvas-lab.server");
     return applyWorkboardCommand(supabase, data.engagement_id, profile, data.command);
+  });
+
+/** Slice 2a unit 1: the caller's own highlights on one chat. */
+export const listMyAnnotationsFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { engagement_id: string; work_item_id: string; profile_id?: string }) => ({
+    engagement_id: typeof input?.engagement_id === "string" ? input.engagement_id : "",
+    work_item_id: typeof input?.work_item_id === "string" ? input.work_item_id : "",
+    profile_id: typeof input?.profile_id === "string" ? input.profile_id : undefined,
+  }))
+  .handler(async ({ data, context }): Promise<HighlightDto[]> => {
+    if (!data.engagement_id || !data.work_item_id) return [];
+    const { supabase, userId } = context;
+    const profile = await resolveProfile(supabase, userId, data.profile_id);
+    if (!profile) return [];
+    const { listMyAnnotations } = await import("@/lib/canvas-lab-annotations.server");
+    return listMyAnnotations(supabase, data.engagement_id, data.work_item_id, profile);
+  });
+
+export const createHighlightFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: {
+      engagement_id: string;
+      work_item_id: string;
+      turn_no: number;
+      char_start: number;
+      char_end: number;
+      client_key: string;
+      profile_id?: string;
+    }) => ({
+      engagement_id: typeof input?.engagement_id === "string" ? input.engagement_id : "",
+      work_item_id: typeof input?.work_item_id === "string" ? input.work_item_id : "",
+      turn_no: typeof input?.turn_no === "number" ? input.turn_no : Number.NaN,
+      char_start: typeof input?.char_start === "number" ? input.char_start : Number.NaN,
+      char_end: typeof input?.char_end === "number" ? input.char_end : Number.NaN,
+      client_key: typeof input?.client_key === "string" ? input.client_key : "",
+      profile_id: typeof input?.profile_id === "string" ? input.profile_id : undefined,
+    }),
+  )
+  .handler(async ({ data, context }): Promise<AnnotationMutationResult> => {
+    const { supabase, userId } = context;
+    const profile = await resolveProfile(supabase, userId, data.profile_id);
+    if (!profile) return { status: "forbidden" };
+    const { createHighlight } = await import("@/lib/canvas-lab-annotations.server");
+    return createHighlight(supabase, profile, {
+      engagementId: data.engagement_id,
+      workItemId: data.work_item_id,
+      turnNo: data.turn_no,
+      charStart: data.char_start,
+      charEnd: data.char_end,
+      clientKey: data.client_key,
+    });
+  });
+
+export const archiveHighlightFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { id: string; expected_version: number; profile_id?: string }) => ({
+    id: typeof input?.id === "string" ? input.id : "",
+    expected_version: typeof input?.expected_version === "number" ? input.expected_version : Number.NaN,
+    profile_id: typeof input?.profile_id === "string" ? input.profile_id : undefined,
+  }))
+  .handler(async ({ data, context }): Promise<AnnotationMutationResult> => {
+    const { supabase, userId } = context;
+    const profile = await resolveProfile(supabase, userId, data.profile_id);
+    if (!profile) return { status: "forbidden" };
+    const { archiveHighlight } = await import("@/lib/canvas-lab-annotations.server");
+    return archiveHighlight(supabase, profile, data.id, data.expected_version);
   });
