@@ -14,18 +14,22 @@ export function LabRelationships({
   measuredHeights,
   selectedLinkId,
   inverseZoom,
+  zoom = 1,
   editable,
   onSelect,
   onRemove,
+  onChangeRelation,
 }: {
   links: LabLink[];
   nodes: LabNode[];
   measuredHeights: ReadonlyMap<string, number>;
   selectedLinkId: string | null;
   inverseZoom: number;
+  zoom?: number;
   editable: boolean;
   onSelect: (id: string) => void;
   onRemove: (link: LabLink) => void;
+  onChangeRelation?: (link: LabLink) => void;
 }) {
   const [hoveredLinkId, setHoveredLinkId] = useState<string | null>(null);
   const arrowSize = 8 * inverseZoom;
