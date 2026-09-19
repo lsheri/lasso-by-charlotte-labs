@@ -149,6 +149,12 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
   const cardHeightsRef = useRef(new Map<string, number>());
   const resizeRef = useRef<{ kind: "card" | "frame"; id: string; corner: LabResizeCorner; start: LabRect; pointer: Point; method: "pointer" | "keyboard" } | null>(null);
   const panRef = useRef<{ from: Point; origin: Point } | null>(null);
+  const zoomRef = useRef(zoom);
+  zoomRef.current = zoom;
+  const panStateRef = useRef<Point>(pan);
+  panStateRef.current = pan;
+  const spaceRef = useRef(false);
+  const [spaceHeld, setSpaceHeld] = useState(false);
   const openedRef = useRef(false);
   /** The deterministic virtual seed a durable board is overlaid onto. */
   const virtualBaseRef = useRef<{ frames: LabFrame[]; nodes: LabNode[] } | null>(null);
