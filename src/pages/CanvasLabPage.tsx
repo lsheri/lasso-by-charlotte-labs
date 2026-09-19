@@ -339,7 +339,7 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
     boardIdRef.current = result.boardId;
     const frameMap = result.created?.frames ?? {};
     const nodeMap = result.created?.nodes ?? {};
-    setFrames((current) => current?.map((frame) => { const durableId = frameMap[frame.id]; return durableId ? { ...frame, durableId, durableVersion: 1 } : frame; }) ?? current);
+    setFrames((current) => current?.map((frame) => { const durableId = frameMap[frame.id]; return durableId ? { ...frame, durableId, durableVersion: 1, local: false } : frame; }) ?? current);
     setNodes((current) => current?.map((node) => { const durableId = nodeMap[node.id]; return durableId ? { ...node, durableId, durableVersion: 1 } : node; }) ?? current);
     noteWorkboardChangeSaved(orgId, "board", "create");
     return true;
@@ -968,7 +968,7 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
       report(result, "frame", "create");
       if (result.status === "saved" && result.created?.frameId) {
         const id = result.created.frameId;
-        setFrames((current) => current?.map((entry) => entry.id === frame.id ? { ...entry, durableId: id, durableVersion: result.versions[id] ?? 1 } : entry) ?? current);
+        setFrames((current) => current ? markFrameSaved(current, frame.id, id, result.versions[id] ?? 1) : current);
       }
     })();
     return true;
