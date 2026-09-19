@@ -269,6 +269,10 @@ export function ThreadBody({
         {(turns ?? []).map((turn) => {
           const focused = focusedTurn?.id === turn.id;
           const focusedRange = focused ? focusedTextRange(turn.content, focus?.text) : null;
+          const liveRanges: CharRange[] = highlights
+            .filter((highlight) => highlight.turnNo === turn.turn_no && !highlight.stale)
+            .map((highlight) => ({ charStart: highlight.charStart, charEnd: highlight.charEnd }));
+          const marked = !focusedRange && liveRanges.length > 0;
           return (
           <div key={turn.id} ref={(node) => { if (node) turnRefs.current.set(turn.turn_no, node); else turnRefs.current.delete(turn.turn_no); }} data-turn-no={turn.turn_no}>
           {turn.role === "user" ? (
@@ -277,9 +281,16 @@ export function ThreadBody({
                 Turn {turn.turn_no} · {turn.role}
                 {turnTime(turn.ts) ? ` · ${turnTime(turn.ts)}` : ""}
               </div>
-              <div className={`relative max-w-[90%] whitespace-pre-wrap rounded-[var(--radius)] bg-grey-2 px-4 py-3 font-mono text-xs leading-relaxed text-foreground ${focused && !focusedRange ? "is-evidence-focus" : ""}`}>
+              <div
+                data-turn-content={turn.turn_no}
+                className={`relative max-w-[90%] whitespace-pre-wrap rounded-[var(--radius)] bg-grey-2 px-4 py-3 font-mono text-xs leading-relaxed text-foreground ${focused && !focusedRange ? "is-evidence-focus" : ""}`}
+              >
                 {focused && !focusedRange ? <EvidenceCircle /> : null}
-                <FocusedContent content={turn.content} range={focusedRange} />
+                {marked ? (
+                  <HighlightedContent content={turn.content} ranges={liveRanges} />
+                ) : (
+                  <FocusedContent content={turn.content} range={focusedRange} />
+                )}
               </div>
               {revisedLabel(turn) ? (
                 <p className="mt-1 text-[11px] text-muted-foreground">{revisedLabel(turn)}</p>
