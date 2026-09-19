@@ -18,6 +18,7 @@ import {
   popUndo,
   recordUndo,
   undoAnnouncement,
+  undoKeyIntent,
   type UndoDirection,
   type UndoEntry,
   type UndoStacks,
@@ -27,6 +28,8 @@ import { WorkRail } from "@/components/canvas-lab/WorkRail";
 import {
   addLabLink,
   bringToFront,
+  eventKind,
+  retryAction,
   cardStackZ,
   connectDisarmed,
   addLocalFrame,
@@ -111,23 +114,6 @@ import { engagementDisplayTitle } from "@/lib/clients";
 import { isDeliverableType } from "@/lib/lineage-shared";
 import type { WorkItemRow } from "@/lib/work-types";
 
-export function eventKind(node: LabNode): LabNodeEventKind {
-  if (node.kind === "chat") return "draft_thread";
-  if (node.kind === "judgment") return "human_judgment";
-  if (node.kind === "ai_work") return "ai_work";
-  if (node.kind === "deliverable") return "deliverable";
-  if (node.kind === "decision") return "decision";
-  if (node.kind === "work" && node.deliverable) return "deliverable";
-  return "source";
-}
-
-/** A retried change reports the action it always was, not a blanket update. */
-export function retryAction(command: WorkboardCommand): "create" | "update" | "archive" | "restore" {
-  if (command.type === "node_create" || command.type === "frame_create" || command.type === "link_create") return "create";
-  if (command.type.endsWith("_archive")) return "archive";
-  if (command.type.endsWith("_restore")) return "restore";
-  return "update";
-}
 
 /** True when something between the target and the board can still scroll that way. */
 function scrollableUnder(target: HTMLElement | null, shell: HTMLElement, delta: { x: number; y: number }): boolean {
@@ -706,14 +692,12 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
   /** Cmd or Ctrl with Z and Y, unless the keys belong to a text field. */
   useEffect(() => {
     function onUndoKey(event: KeyboardEvent) {
-      if (!event.ctrlKey && !event.metaKey) return;
-      const key = event.key.toLowerCase();
-      if (key !== "z" && key !== "y") return;
       const active = document.activeElement as HTMLElement | null;
-      if (active?.closest("textarea,input,[contenteditable='true']")) return;
+      const direction = undoKeyIntent(event, Boolean(active?.closest("textarea,input,[contenteditable='true']")));
+      if (!direction) return;
       if (cardMenuOpen || menuOpen || focusId || reviewId) return;
       event.preventDefault();
-      runUndo(key === "y" || event.shiftKey ? "redo" : "undo");
+      runUndo(direction);
     }
     window.addEventListener("keydown", onUndoKey, { passive: false });
     return () => window.removeEventListener("keydown", onUndoKey);

@@ -8,7 +8,8 @@
  */
 
 import { dragTo, snapPoint, type Point } from "@/lib/canvas-drag";
-import type { WorkboardDto, WorkboardNodeDto, WorkboardRelation } from "@/lib/canvas-lab-shared";
+import type { LabNodeEventKind } from "@/components/canvas-lab/canvas-lab-telemetry";
+import type { WorkboardCommand, WorkboardDto, WorkboardNodeDto, WorkboardRelation } from "@/lib/canvas-lab-shared";
 import { clampZoom } from "@/lib/canvas-zoom";
 
 export type LabNodeKind = "brief" | "task" | "work" | "decision" | "chat" | "source" | "ai_work" | "judgment" | "deliverable";
@@ -889,4 +890,23 @@ export function bringToFront(front: string[], id: string): string[] {
 export function cardStackZ(front: string[], id: string): number {
   const index = front.indexOf(id);
   return index === -1 ? 1 : 2 + index;
+}
+
+/** The closed event vocabulary for one card. A deliverable says so. */
+export function eventKind(node: LabNode): LabNodeEventKind {
+  if (node.kind === "chat") return "draft_thread";
+  if (node.kind === "judgment") return "human_judgment";
+  if (node.kind === "ai_work") return "ai_work";
+  if (node.kind === "deliverable") return "deliverable";
+  if (node.kind === "decision") return "decision";
+  if (node.kind === "work" && node.deliverable) return "deliverable";
+  return "source";
+}
+
+/** A retried change reports the action it always was, not a blanket update. */
+export function retryAction(command: WorkboardCommand): "create" | "update" | "archive" | "restore" {
+  if (command.type === "node_create" || command.type === "frame_create" || command.type === "link_create") return "create";
+  if (command.type.endsWith("_archive")) return "archive";
+  if (command.type.endsWith("_restore")) return "restore";
+  return "update";
 }

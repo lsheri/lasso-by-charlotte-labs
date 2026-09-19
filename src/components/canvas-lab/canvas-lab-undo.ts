@@ -86,3 +86,16 @@ export function undoActionWord(action: UndoAction): string {
 export function undoAnnouncement(action: UndoAction, direction: UndoDirection): string {
   return `${direction === "undo" ? "Undid" : "Redid"} ${undoActionWord(action)}.`;
 }
+
+/** Which way the keys point, or nothing when they are not an undo request. */
+export function undoKeyIntent(
+  event: { key: string; ctrlKey: boolean; metaKey: boolean; shiftKey: boolean },
+  inTextField: boolean,
+): UndoDirection | null {
+  if (inTextField) return null;
+  if (!event.ctrlKey && !event.metaKey) return null;
+  const key = event.key.toLowerCase();
+  if (key === "y") return "redo";
+  if (key !== "z") return null;
+  return event.shiftKey ? "redo" : "undo";
+}
