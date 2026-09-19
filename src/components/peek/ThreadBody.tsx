@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef } from "react";
 
 import { EvidenceCircle, MarginFlag, VerifyInk } from "@/components/notebook/marks";
+import { mergeRanges, type CharRange } from "@/lib/canvas-lab-annotations-shared";
 import { supabase } from "@/integrations/supabase/client";
 import { splitByQuote, turnAnchorId, type ThreadMark } from "@/lib/verify-thread-shared";
 import { vendorLabel } from "@/lib/conversation-shared";
