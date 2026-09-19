@@ -681,7 +681,7 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
       if (!node) return;
       if (!node.local && node.kind !== "chat") {
         event.preventDefault();
-        const hint = "Real work is removed from the board, not deleted. Use Remove from canvas.";
+        const hint = "Real work is removed from the board, not deleted. Use Remove from board.";
         setLinkRejection({ targetId: node.id, message: hint });
         setAnnouncement(hint);
         return;
@@ -1096,7 +1096,7 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
     noteWorkboardRecordVisibility(orgId, "hidden", node.kind === "decision" ? "decision" : node.kind === "brief" ? "brief" : "work");
     setAnnouncement(`${node.title} removed from this local workboard.`);
     const entry = record({ action: "hide", nodeId: node.id });
-    if (entry) setUndoToast({ message: "Removed from the board", entry });
+    if (entry) setUndoToast({ message: node.workItemId ? "Removed from the board. It's still in your inbox." : "Removed from the board", entry });
   }
 
   function restoreNode(id: string) {

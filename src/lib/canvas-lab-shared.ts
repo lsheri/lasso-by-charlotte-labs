@@ -54,6 +54,8 @@ export type WorkboardNodeDto = {
   version: number;
   /** False when the referenced record exists but this caller may not read it. */
   referenceReadable: boolean;
+  /** Set when the work item this card stood for was deleted from the inbox. */
+  linkedItemRemovedAt?: string | null;
 };
 
 export type WorkboardLinkDto = {
