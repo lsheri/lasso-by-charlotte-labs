@@ -22,6 +22,7 @@ afterEach(cleanup);
 
 describe("Workboard human judgment", () => {
   it("focuses a mouse-created judgment and Enter reaches its context action", () => {
+    globalThis.ResizeObserver = class { observe() {} disconnect() {} unobserve() {} } as typeof ResizeObserver;
     const selected = vi.fn();
     function Harness() {
       const [node, setNode] = useState<LabNode | null>(null);
