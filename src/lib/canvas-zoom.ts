@@ -31,3 +31,22 @@ export function stepZoom(z: number, direction: "in" | "out"): number {
 export function pinchZoom(z: number, deltaY: number): number {
   return clampZoom(z * Math.exp(-deltaY * 0.0015));
 }
+
+export type ZoomPoint = { x: number; y: number };
+
+/**
+ * Keep one world point under the cursor while the zoom changes.
+ * `point` is measured from the viewport's top-left, in screen pixels.
+ */
+export function zoomAbout(pan: ZoomPoint, zoom: number, nextZoom: number, point: ZoomPoint): ZoomPoint {
+  const from = Number.isFinite(zoom) && zoom > 0 ? zoom : ZOOM_DEFAULT;
+  const to = clampZoom(nextZoom);
+  const ratio = to / from;
+  return { x: point.x - (point.x - pan.x) * ratio, y: point.y - (point.y - pan.y) * ratio };
+}
+
+/** A wheel event turned into pixels, whatever unit the browser reported. */
+export function wheelPanDelta(event: { deltaX: number; deltaY: number; deltaMode?: number }): ZoomPoint {
+  const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? 100 : 1;
+  return { x: event.deltaX * unit, y: event.deltaY * unit };
+}

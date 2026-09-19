@@ -74,7 +74,7 @@ import { useProfile } from "@/hooks/use-profile";
 import { dragTo, keyTo, type Point } from "@/lib/canvas-drag";
 import type { WorkboardCommand, WorkboardNodeInput } from "@/lib/canvas-lab-shared";
 import { noteCanvasOpenedFn } from "@/lib/canvas.functions";
-import { clampZoom, pinchZoom, stepZoom } from "@/lib/canvas-zoom";
+import { clampZoom, pinchZoom, stepZoom, wheelPanDelta, zoomAbout } from "@/lib/canvas-zoom";
 import { engagementDisplayTitle } from "@/lib/clients";
 import { isDeliverableType } from "@/lib/lineage-shared";
 import type { WorkItemRow } from "@/lib/work-types";
@@ -86,6 +86,20 @@ function eventKind(node: LabNode): LabNodeEventKind {
   if (node.kind === "deliverable") return "deliverable";
   if (node.kind === "decision") return "decision";
   return "source";
+}
+
+/** True when something between the target and the board can still scroll that way. */
+function scrollableUnder(target: HTMLElement | null, shell: HTMLElement, delta: { x: number; y: number }): boolean {
+  let element: HTMLElement | null = target;
+  while (element && element !== shell) {
+    const style = window.getComputedStyle(element);
+    const scrollsY = /auto|scroll|overlay/.test(style.overflowY) && element.scrollHeight > element.clientHeight;
+    const scrollsX = /auto|scroll|overlay/.test(style.overflowX) && element.scrollWidth > element.clientWidth;
+    if (scrollsY && delta.y !== 0 && (delta.y < 0 ? element.scrollTop > 0 : element.scrollTop + element.clientHeight < element.scrollHeight)) return true;
+    if (scrollsX && delta.x !== 0 && (delta.x < 0 ? element.scrollLeft > 0 : element.scrollLeft + element.clientWidth < element.scrollWidth)) return true;
+    element = element.parentElement;
+  }
+  return false;
 }
 
 /** A local workboard over one permission-filtered engagement read. */
@@ -149,6 +163,12 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
   const cardHeightsRef = useRef(new Map<string, number>());
   const resizeRef = useRef<{ kind: "card" | "frame"; id: string; corner: LabResizeCorner; start: LabRect; pointer: Point; method: "pointer" | "keyboard" } | null>(null);
   const panRef = useRef<{ from: Point; origin: Point } | null>(null);
+  const zoomRef = useRef(zoom);
+  zoomRef.current = zoom;
+  const panStateRef = useRef<Point>(pan);
+  panStateRef.current = pan;
+  const spaceRef = useRef(false);
+  const [spaceHeld, setSpaceHeld] = useState(false);
   const openedRef = useRef(false);
   /** The deterministic virtual seed a durable board is overlaid onto. */
   const virtualBaseRef = useRef<{ frames: LabFrame[]; nodes: LabNode[] } | null>(null);
@@ -414,19 +434,94 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [allNodes, cardMenuOpen, connectSource, focusId, keyboardId, menuOpen, orgId, reviewId, selectedLinkId]);
 
+  /** Change the zoom while holding one point of the board still. */
+  const zoomTo = useCallback((next: number, point: Point) => {
+    const from = zoomRef.current;
+    const to = clampZoom(next);
+    if (to === from) return;
+    setPan(zoomAbout(panStateRef.current, from, to, point));
+    setZoom(to);
+  }, []);
+
+  /** The middle of what the person can currently see. */
+  const viewportCentre = useCallback((): Point => {
+    const shell = shellRef.current;
+    if (!shell) return { x: 0, y: 0 };
+    return { x: shell.clientWidth / 2, y: shell.clientHeight / 2 };
+  }, []);
+
+  const zoomAtCentre = useCallback((next: number) => zoomTo(next, viewportCentre()), [viewportCentre, zoomTo]);
+
   useEffect(() => {
     const shell = shellRef.current;
     if (!shell) return;
+    function pointIn(event: WheelEvent): Point {
+      const rect = shell!.getBoundingClientRect();
+      return { x: event.clientX - rect.left, y: event.clientY - rect.top };
+    }
     function onModifierWheel(event: WheelEvent) {
       if (!event.ctrlKey && !event.metaKey) return;
       event.preventDefault();
-      setZoom((current) => pinchZoom(current, event.deltaY));
+      zoomTo(pinchZoom(zoomRef.current, event.deltaY), pointIn(event));
+    }
+    function onSurfaceWheel(event: WheelEvent) {
+      if (event.ctrlKey || event.metaKey) return;
+      const target = event.target as HTMLElement | null;
+      if (target?.closest("textarea,input,[contenteditable='true'],[role='menu'],[data-radix-popper-content-wrapper]")) return;
+      const delta = wheelPanDelta(event);
+      if (scrollableUnder(target, shell!, delta)) return;
+      event.preventDefault();
+      setPan((current) => ({ x: current.x - delta.x, y: current.y - delta.y }));
     }
     shell.addEventListener("wheel", onModifierWheel, { passive: false });
-    return () => shell.removeEventListener("wheel", onModifierWheel);
+    shell.addEventListener("wheel", onSurfaceWheel, { passive: false });
+    return () => { shell.removeEventListener("wheel", onModifierWheel); shell.removeEventListener("wheel", onSurfaceWheel); };
+  }, [zoomTo]);
+
+  /** Space holds the board still for panning, unless a card or a field has focus. */
+  useEffect(() => {
+    function down(event: KeyboardEvent) {
+      if (event.key !== " " && event.code !== "Space") return;
+      const active = document.activeElement as HTMLElement | null;
+      if (active?.closest("textarea,input,[contenteditable='true'],[role='menu'],[data-testid^='lab-card-']")) return;
+      if (spaceRef.current) return;
+      event.preventDefault();
+      spaceRef.current = true;
+      setSpaceHeld(true);
+    }
+    function up(event: KeyboardEvent) {
+      if (event.key !== " " && event.code !== "Space") return;
+      spaceRef.current = false;
+      setSpaceHeld(false);
+    }
+    function blur() { spaceRef.current = false; setSpaceHeld(false); }
+    window.addEventListener("keydown", down);
+    window.addEventListener("keyup", up);
+    window.addEventListener("blur", blur);
+    return () => { window.removeEventListener("keydown", down); window.removeEventListener("keyup", up); window.removeEventListener("blur", blur); };
   }, []);
 
+  /** Ctrl or Cmd with =, -, 0 and 1, instead of the browser's page zoom. */
+  useEffect(() => {
+    function onZoomKey(event: KeyboardEvent) {
+      if (!event.ctrlKey && !event.metaKey) return;
+      const active = document.activeElement as HTMLElement | null;
+      if (active?.closest("textarea,input,[contenteditable='true']")) return;
+      if (event.key === "=" || event.key === "+") { event.preventDefault(); zoomAtCentre(stepZoom(zoomRef.current, "in")); return; }
+      if (event.key === "-" || event.key === "_") { event.preventDefault(); zoomAtCentre(stepZoom(zoomRef.current, "out")); return; }
+      if (event.key === "0") { event.preventDefault(); fit(); return; }
+      if (event.key === "1") { event.preventDefault(); zoomAtCentre(1); }
+    }
+    window.addEventListener("keydown", onZoomKey, { passive: false });
+    return () => window.removeEventListener("keydown", onZoomKey);
+  }, [fit, zoomAtCentre]);
+
+  function startSpacePan(event: React.PointerEvent) {
+    panRef.current = { from: { x: event.clientX, y: event.clientY }, origin: panStateRef.current };
+  }
+
   function onCardPointerDown(node: LabNode, event: React.PointerEvent) {
+    if (spaceRef.current) return; // Space pans the board, even over a card.
     if (event.button !== 0 || (event.target as Element).closest("button,textarea")) return;
     event.stopPropagation();
     setKeyboardId(node.id);
@@ -757,9 +852,9 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
       </aside>
       {menuOpen ? <div className="fixed inset-0 z-50 flex bg-[var(--nb-scrim)]" onPointerDown={() => setMenuOpen(false)}><aside className="h-full w-[280px] overflow-y-auto border-r border-border bg-sidebar p-4 shadow-[var(--shadow-modal)]" onPointerDown={(event) => event.stopPropagation()}><div className="mb-5 flex items-center justify-between"><span className="font-serif text-xl text-foreground">Lasso</span><Button size="icon" variant="ghost" aria-label="Close workboard menu" onClick={() => setMenuOpen(false)}><X className="h-4 w-4" /></Button></div><SidebarNav onNavigate={() => setMenuOpen(false)} onOpenSettings={() => void navigate({ to: "/settings" })} /><div className="mt-6 border-t border-border pt-4"><label className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft" htmlFor="canvas-lab-new-frame">Add workstream</label><div className="mt-2 flex gap-2"><input id="canvas-lab-new-frame" value={newFrameName} onChange={(event) => setNewFrameName(event.target.value)} className="min-w-0 flex-1 rounded-[var(--radius-control)] border border-input bg-background px-2 text-[12px]" placeholder="Workstream name" /><Button size="sm" variant="outline" onClick={addWorkstream}>Add</Button></div><p className="mt-1 font-hand text-[13px] text-[var(--nb-mid)]">not saved</p></div></aside></div> : null}
       <main className={`relative min-w-0 flex-1 flex-col ${mobileView === "board" ? "flex" : "hidden md:flex"}`}>
-        <header className="z-20 flex h-[52px] shrink-0 items-center justify-between gap-3 border-b border-border bg-card px-4"><div className="min-w-0"><span className="block truncate text-[13px] font-medium text-foreground">{title}</span><span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">{lab.saveState.status === "saving" ? "Workboard · Saving" : lab.saveState.status === "conflict" ? "Workboard · Newer version available" : lab.saveState.status === "forbidden" ? "Workboard · Read only" : lab.saveState.status === "error" ? "Workboard · Could not save" : lab.saveState.status === "saved" || lab.board?.id ? "Workboard · Saved" : "Workboard · Not saved"}</span></div><div className="flex items-center gap-1"><div className="canvas-lab-structure-toggle" aria-label="Workboard structure"><Button type="button" size="sm" variant={structureMode === "structured" ? "secondary" : "ghost"} aria-pressed={structureMode === "structured"} onClick={() => { if (structureMode === "structured") return; setStructureMode("structured"); noteWorkboardStructureToggled(orgId, "structured"); }}>Structured</Button><Button type="button" size="sm" variant={structureMode === "freeform" ? "secondary" : "ghost"} aria-pressed={structureMode === "freeform"} onClick={() => { if (structureMode === "freeform") return; setStructureMode("freeform"); setSelectedFrameId(null); noteWorkboardStructureToggled(orgId, "freeform"); }}>Freeform</Button></div><Button type="button" size="sm" variant="outline" className="md:hidden" onClick={() => { setRailOpen(true); setMobileView("rail"); }}>Working from</Button>{selectedLinkId ? <Button type="button" size="sm" variant="ghost" onClick={() => { const link = links.find((entry) => entry.id === selectedLinkId); if (link) void persistLinkRemoval(link); setLinks((current) => removeLabLink(current, selectedLinkId)); setSelectedLinkId(null); noteWorkboardRelationship(orgId, "removed"); }}>Remove relationship</Button> : null}<Button size="sm" variant="outline" onClick={fit}>Fit</Button><Button size="icon" variant="ghost" aria-label="Zoom out" onClick={() => setZoom((value) => stepZoom(value, "out"))}><Minus className="h-3.5 w-3.5" /></Button><span className="w-10 text-center font-mono text-[10px] text-soft">{Math.round(zoom * 100)}%</span><Button size="icon" variant="ghost" aria-label="Zoom in" onClick={() => setZoom((value) => stepZoom(value, "in"))}><Plus className="h-3.5 w-3.5" /></Button></div></header>
+        <header className="z-20 flex h-[52px] shrink-0 items-center justify-between gap-3 border-b border-border bg-card px-4"><div className="min-w-0"><span className="block truncate text-[13px] font-medium text-foreground">{title}</span><span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">{lab.saveState.status === "saving" ? "Workboard · Saving" : lab.saveState.status === "conflict" ? "Workboard · Newer version available" : lab.saveState.status === "forbidden" ? "Workboard · Read only" : lab.saveState.status === "error" ? "Workboard · Could not save" : lab.saveState.status === "saved" || lab.board?.id ? "Workboard · Saved" : "Workboard · Not saved"}</span></div><div className="flex items-center gap-1"><div className="canvas-lab-structure-toggle" aria-label="Workboard structure"><Button type="button" size="sm" variant={structureMode === "structured" ? "secondary" : "ghost"} aria-pressed={structureMode === "structured"} onClick={() => { if (structureMode === "structured") return; setStructureMode("structured"); noteWorkboardStructureToggled(orgId, "structured"); }}>Structured</Button><Button type="button" size="sm" variant={structureMode === "freeform" ? "secondary" : "ghost"} aria-pressed={structureMode === "freeform"} onClick={() => { if (structureMode === "freeform") return; setStructureMode("freeform"); setSelectedFrameId(null); noteWorkboardStructureToggled(orgId, "freeform"); }}>Freeform</Button></div><Button type="button" size="sm" variant="outline" className="md:hidden" onClick={() => { setRailOpen(true); setMobileView("rail"); }}>Working from</Button>{selectedLinkId ? <Button type="button" size="sm" variant="ghost" onClick={() => { const link = links.find((entry) => entry.id === selectedLinkId); if (link) void persistLinkRemoval(link); setLinks((current) => removeLabLink(current, selectedLinkId)); setSelectedLinkId(null); noteWorkboardRelationship(orgId, "removed"); }}>Remove relationship</Button> : null}<Button size="sm" variant="outline" onClick={fit}>Fit</Button><Button size="icon" variant="ghost" aria-label="Zoom out" onClick={() => zoomAtCentre(stepZoom(zoomRef.current, "out"))}><Minus className="h-3.5 w-3.5" /></Button><button type="button" aria-label="Zoom to 100 percent" className="w-10 text-center font-mono text-[10px] text-soft" onClick={() => zoomAtCentre(1)}>{Math.round(zoom * 100)}%</button><Button size="icon" variant="ghost" aria-label="Zoom in" onClick={() => zoomAtCentre(stepZoom(zoomRef.current, "in"))}><Plus className="h-3.5 w-3.5" /></Button></div></header>
         {lab.saveState.status === "conflict" ? <div className="z-20 flex items-center justify-between gap-3 border-b border-border bg-card px-4 py-2" role="alert"><p className="text-[13px] text-foreground">Someone saved a newer version of this record.</p><div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => resolveConflict("latest")}>Load latest</Button><Button size="sm" variant="outline" onClick={() => resolveConflict("retry")}>Retry my change</Button></div></div> : null}
-        <div ref={shellRef} onPointerDown={(event) => { if (event.button === 0 && event.target === event.currentTarget) panRef.current = { from: { x: event.clientX, y: event.clientY }, origin: pan }; }} className="canvas-lab-surface relative min-h-0 flex-1 cursor-grab overflow-hidden">
+        <div ref={shellRef} onPointerDownCapture={(event) => { if (event.button === 0 && spaceRef.current) { event.preventDefault(); event.stopPropagation(); startSpacePan(event); } }} onPointerDown={(event) => { if (event.button === 0 && event.target === event.currentTarget) panRef.current = { from: { x: event.clientX, y: event.clientY }, origin: pan }; }} data-space-pan={spaceHeld} className="canvas-lab-surface relative min-h-0 flex-1 cursor-grab overflow-hidden">
           <div data-testid="canvas-lab-stage" className="absolute left-0 top-0 origin-top-left" style={{ width: bounds.width, height: bounds.height, transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})` }}>
             <ReasoningTrailGuide onAdd={addNode} />
             <FoundationGuide brief={engagement?.brief ?? null} tasks={(page?.tasks ?? []).map((task) => ({ id: task.id, name: task.name, detail: task.detail }))} work={workItems} />
