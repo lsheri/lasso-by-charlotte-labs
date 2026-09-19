@@ -8,7 +8,7 @@ vi.mock("@/components/work/WorkNote", () => ({
 }));
 
 import { LabCard } from "@/components/canvas-lab/LabCard";
-import { createLocalNode, ownerLabel, panToRevealNode, type LabNode } from "@/components/canvas-lab/canvas-lab-model";
+import { createLocalNode, firstFreeLocalNodeAnchor, ownerLabel, panToRevealNode, type LabNode } from "@/components/canvas-lab/canvas-lab-model";
 import { ReasoningTrailGuide } from "@/components/canvas-lab/ReasoningTrailGuide";
 
 const localJudgment: LabNode = { id: "judgment", kind: "judgment", frame: "f", title: "Set the tier 2 floor at $4,200 per seat", summary: "Reason", typeLabel: "Added constraint", ownership: "draft", local: true, x: 900, y: 700, width: 232, height: 112 };
@@ -98,6 +98,7 @@ describe("Workboard human judgment", () => {
     const created = createLocalNode("judgment", frame, [blocking], "corrected_ai");
     expect([created.x, created.y]).not.toEqual([blocking.x, blocking.y]);
     expect(created.x >= blocking.x + blocking.width || created.x + created.width <= blocking.x || created.y >= blocking.y + blocking.height || created.y + created.height <= blocking.y).toBe(true);
+    expect(firstFreeLocalNodeAnchor(frame, [blocking])).toEqual({ x: created.x, y: created.y });
   });
 
   it("gives all five reasoning Add buttons the same hit-area class", () => {

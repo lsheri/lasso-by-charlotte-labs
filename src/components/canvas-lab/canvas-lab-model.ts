@@ -316,7 +316,9 @@ function cardRectsIntersect(point: Point, node: LabNode): boolean {
 
 /** Choose the first stack slot clear of every visible card on the board. */
 export function firstFreeLocalNodeAnchor(frame: LabFrame, visibleNodes: LabNode[]): Point {
-  const candidateCount = Math.max(24, visibleNodes.length * 4 + 4);
+  const columns = Math.max(1, Math.floor((frame.width - FRAME_PADDING * 2) / (CARD_WIDTH + 18)));
+  const rows = Math.max(1, Math.floor((frame.height - 60 - FRAME_PADDING - CARD_HEIGHT) / CARD_GAP_Y) + 1);
+  const candidateCount = columns * rows;
   for (let index = 0; index < candidateCount; index += 1) {
     const candidate = stack(frame, index);
     if (visibleNodes.every((node) => !cardRectsIntersect(candidate, node))) return candidate;
