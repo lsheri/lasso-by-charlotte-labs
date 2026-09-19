@@ -345,7 +345,7 @@ export async function createReply(
 
   const { data: parent } = await db
     .from("workboard_annotations")
-    .select("id, workboard_id, work_item_id, node_id, parent_id, archived_at")
+    .select("id, workboard_id, work_item_id, node_id, parent_id, archived_at, visibility")
     .eq("id", input.parentId)
     .maybeSingle();
   if (!parent || parent.archived_at) {
@@ -364,6 +364,8 @@ export async function createReply(
       parent_id: parent.id,
       kind: "comment",
       anchor_kind: "item",
+      // The DB forces the parent's visibility; sending it keeps the row shape complete.
+      visibility: parent.visibility,
       body: input.body.trim(),
       excerpt: "",
       author_profile_id: profile.id,
