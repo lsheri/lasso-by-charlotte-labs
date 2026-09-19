@@ -82,7 +82,7 @@ function CommentComposer({
         className="text-[12px]"
       />
       <p className="mt-1 text-[11.5px] leading-[17px] text-muted-foreground">
-        Visible to everyone on this engagement
+        Visible to people who can open this chat
       </p>
       <div className="mt-1 flex items-center gap-2">
         <Button size="sm" className="h-7 px-2 text-[11.5px]" disabled={!ready} onClick={() => onSubmit(body.trim())}>
@@ -264,7 +264,7 @@ export function FocusOverlay({
                 {threads.length === 0 ? (
                   <p className="text-[11.5px] leading-[17px] text-muted-foreground">
                     {canWrite
-                      ? "Select a passage, then leave a comment for the people on this engagement."
+                      ? "Select a passage, then leave a comment for people who can open this chat."
                       : "No comments on this chat yet."}
                   </p>
                 ) : (
