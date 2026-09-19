@@ -99,6 +99,7 @@ import {
   noteWorkboardSaveErrorResolved,
   noteWorkboardContextChanged,
   noteWorkboardUndoUsed,
+  noteAnnotationChanged,
   type LabNodeEventKind,
   type WorkboardOpenVia,
   type WorkboardPersistEntity,
@@ -107,6 +108,7 @@ import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
 import { SidebarNav } from "@/components/layout/SidebarNav";
 import { Button } from "@/components/ui/button";
 import { useCanvasLab } from "@/hooks/use-canvas-lab";
+import { useCanvasLabAnnotations } from "@/hooks/use-canvas-lab-annotations";
 import { useEngagementPage } from "@/hooks/use-engagement-page";
 import { useMotion } from "@/hooks/use-motion";
 import { useProfile } from "@/hooks/use-profile";
