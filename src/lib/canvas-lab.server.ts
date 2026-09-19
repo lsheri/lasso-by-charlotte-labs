@@ -380,7 +380,7 @@ export async function applyWorkboardCommand(
     if (!WORKBOARD_ANCHORS.includes(command.fromAnchor) || !WORKBOARD_ANCHORS.includes(command.toAnchor)) {
       return { status: "validation_error", message: "Unknown anchor." };
     }
-    if (!WORKBOARD_RELATIONS.includes(command.relation)) return { status: "validation_error", message: "Unknown relationship." };
+    if (command.relation !== undefined && !WORKBOARD_RELATIONS.includes(command.relation)) return { status: "validation_error", message: "Unknown relationship." };
     if (command.fromNodeId === command.toNodeId) return { status: "validation_error", message: "A card cannot connect to itself." };
     const endpoints = (await db.from("workboard_nodes").select("id").eq("workboard_id", board.id).is("deleted_at", null).in("id", [command.fromNodeId, command.toNodeId])).data ?? [];
     if (endpoints.length !== 2) return { status: "validation_error", message: "One of those cards is not on this workboard." };
