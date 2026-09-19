@@ -129,9 +129,9 @@ export function LabCard({
       data-size={cardSizeTier(node)}
       className="canvas-lab-card group absolute text-left outline-none"
     >
-      <div ref={paperRef} data-selected={selected} data-focused={focused} data-connect-source={connectSourceAnchor !== null} className={cn("canvas-lab-card-paper h-full overflow-hidden", item ? "" : `canvas-lab-folded-note flex flex-col gap-1.5 border px-3 py-2.5 ${OWNER_TONE[node.ownership]}`)}>
+      <div ref={paperRef} data-selected={selected} data-focused={focused} data-connect-source={connectSourceAnchor !== null} className={cn("canvas-lab-card-paper h-full w-full overflow-hidden", item ? "" : `canvas-lab-folded-note flex flex-col gap-1.5 border px-3 py-2.5 ${OWNER_TONE[node.ownership]}`)}>
         {item ? (
-          <WorkNote item={item} dense />
+          <WorkNote item={item} dense className="h-full w-full" />
         ) : (
           <>
             <div className="flex items-center justify-between gap-2 pr-6">

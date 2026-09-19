@@ -500,7 +500,7 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [allNodes, cardMenuOpen, connectSource, dropPrompt, focusId, keyboardId, menuOpen, orgId, reviewId, selectedLinkId]);
+  }, [allNodes, cardMenuOpen, closeDropPrompt, connectSource, dropPrompt, focusId, keyboardId, menuOpen, orgId, reviewId, selectedLinkId]);
 
   useEffect(() => {
     if (!dropPrompt) return;
@@ -510,7 +510,7 @@ export function CanvasLabPage({ engagementId }: { engagementId: string }) {
     }
     window.addEventListener("pointerdown", close);
     return () => window.removeEventListener("pointerdown", close);
-  }, [dropPrompt]);
+  }, [closeDropPrompt, dropPrompt]);
 
   /** Change the zoom while holding one point of the board still. */
   const zoomTo = useCallback((next: number, point: Point) => {
