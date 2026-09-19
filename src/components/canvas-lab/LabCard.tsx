@@ -2,16 +2,9 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Paperclip } from "lucide-react";
 
 import { LabCardMenu } from "@/components/canvas-lab/LabCardMenu";
+import { LabPaper } from "@/components/canvas-lab/LabPaper";
 import { cardSizeTier, ownerLabel, type LabAnchor, type LabNode, type LabResizeCorner } from "@/components/canvas-lab/canvas-lab-model";
-import { WorkNote } from "@/components/work/WorkNote";
-import { cn } from "@/lib/utils";
 import type { WorkItemRow } from "@/lib/work-types";
-
-const OWNER_TONE: Record<LabNode["ownership"], string> = {
-  yours: "border-[var(--nb-pencil)] bg-card",
-  teammate: "border-[var(--nb-rule)] bg-[var(--nb-grey-1)]",
-  draft: "border-[var(--nb-green)] bg-[var(--nb-green-wash)]",
-};
 
 /**
  * One object on the board. Cards mode is a sticky summary for orientation,
@@ -136,19 +129,8 @@ export function LabCard({
       data-size={cardSizeTier(node)}
       className="canvas-lab-card group absolute text-left outline-none"
     >
-      <div ref={paperRef} data-selected={selected} data-focused={focused} data-connect-source={connectSourceAnchor !== null} className={cn("canvas-lab-card-paper h-full w-full overflow-hidden", item ? "" : `canvas-lab-folded-note flex flex-col gap-1.5 border px-3 py-2.5 ${OWNER_TONE[node.ownership]}`)}>
-        {item ? (
-          <WorkNote item={item} dense className={cn("h-full w-full", selected && "canvas-lab-work-note-context")} />
-        ) : (
-          <>
-            <div className={cn("flex items-center justify-between gap-2", selected ? "canvas-lab-context-header" : "pr-6")}>
-              <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">{node.typeLabel}</span>
-              <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">{ownerLabel(node)}</span>
-            </div>
-            <span className={cn("text-[13px] font-medium leading-[17px] text-foreground", selected && "canvas-lab-context-title")}>{node.title}</span>
-            {node.local ? <textarea aria-label={`Edit ${node.title} note`} value={node.summary} onChange={(event) => onEdit(event.target.value)} onBlur={onEditCommitted} onPointerDown={(event) => event.stopPropagation()} className="min-h-14 w-full resize-none border border-[var(--nb-rule)] bg-card px-2 py-1 text-[11.5px] leading-[17px] text-foreground outline-none focus:border-[var(--nb-green)]" /> : <p className="line-clamp-3 text-[11.5px] leading-[17px] text-muted-foreground">{node.summary}</p>}
-          </>
-        )}
+      <div ref={paperRef} data-selected={selected} data-focused={focused} data-connect-source={connectSourceAnchor !== null} className="canvas-lab-card-paper h-full w-full overflow-hidden">
+        <LabPaper node={node} item={item} selected={selected} onEdit={onEdit} onEditCommitted={onEditCommitted} />
         {selected ? <><Paperclip aria-hidden="true" className="canvas-lab-context-mark" /><span className="mt-1 block font-hand text-[13px] leading-none text-[var(--nb-green)]">in context</span></> : null}
       </div>
       {canResize && focused ? (["nw", "ne", "se", "sw"] as LabResizeCorner[]).map((corner) => <button key={corner} type="button" className="canvas-lab-resize-handle" data-corner={corner} aria-label={`Resize ${node.title} from ${corner}`} onDoubleClick={(event) => { event.stopPropagation(); onFit(); }} onPointerDown={(event) => onResizeStart(corner, event)} onKeyDown={(event) => onResizeKeyDown(corner, event)} onKeyUp={onResizeKeyUp} />) : null}

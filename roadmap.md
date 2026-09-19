@@ -161,3 +161,8 @@
 ## Workboard polish 2c-v follow-up
 - [x] Match the toast step by stable undo id so its Undo control reaches the existing path
 - [x] Give the toast Undo control a 44 by 24 pixel minimum hit area
+
+## Workboard polish 2d (paper)
+- [x] Use one tier-aware paper treatment for every Workboard card kind
+- [x] Keep existing card controls, states, and events unchanged
+- [x] Show only record-backed labels and details
