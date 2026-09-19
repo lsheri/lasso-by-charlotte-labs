@@ -1,5 +1,6 @@
 import type { UndoAction, UndoDirection } from "@/components/canvas-lab/canvas-lab-undo";
 import { lengthBand } from "@/lib/canvas-lab-annotations-shared";
+import type { WorkboardRelation } from "@/lib/canvas-lab-shared";
 import { logEvent } from "@/lib/telemetry";
 
 export type LabNodeEventKind = "source" | "ai_work" | "human_judgment" | "decision" | "deliverable" | "draft_thread";
