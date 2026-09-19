@@ -81,6 +81,8 @@ describe("the length band", () => {
     expect(lengthBand(51)).toBe("le200");
     expect(lengthBand(200)).toBe("le200");
     expect(lengthBand(201)).toBe("le500");
-    expect(lengthBand(5000)).toBe("le500");
+    expect(lengthBand(500)).toBe("le500");
+    expect(lengthBand(501)).toBe("gt500");
+    expect(lengthBand(5000)).toBe("gt500");
   });
 });
