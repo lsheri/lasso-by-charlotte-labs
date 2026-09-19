@@ -148,6 +148,33 @@ export function dropPromptFrame(node: LabNode, frames: LabFrame[], mode: LabStru
   return target && target.id !== node.frame ? target : null;
 }
 
+/**
+ * What a pointer drag ends as, decided from the pointerup event alone.
+ *
+ * React may not have rendered the last pointermove when the pointer comes up
+ * (fast drags, and every automated drag), so the live node can still sit at
+ * its origin. Reading the position from the event keeps the save and the drop
+ * prompt honest.
+ */
+export function dragEndDecision(input: {
+  origin: Point;
+  from: Point;
+  pointer: Point;
+  zoom: number;
+  node: LabNode;
+  frames: LabFrame[];
+  mode: LabStructureMode;
+  editable: boolean;
+}): { position: Point | null; promptFrameId: string | null } {
+  const { origin, from, pointer, zoom, node, frames, mode, editable } = input;
+  const position = dragTo(origin, { x: (pointer.x - from.x) / zoom, y: (pointer.y - from.y) / zoom });
+  if (position.x === origin.x && position.y === origin.y) return { position: null, promptFrameId: null };
+  const target = dropPromptFrame({ ...node, x: position.x, y: position.y }, frames, mode, editable);
+  return { position, promptFrameId: target ? target.id : null };
+}
+
+
+
 /** Where the inline add control sits: under the workstream row, clear of spilled cards. */
 export function workstreamAddAnchor(frames: LabFrame[], nodes: LabNode[]): Point | null {
   const row = frames.filter((frame) => frame.id.startsWith("task:") || frame.id.startsWith("custom:"));
