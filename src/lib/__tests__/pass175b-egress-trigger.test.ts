@@ -50,16 +50,23 @@ describe("pass 175b: awaited sweep home", () => {
 
   it("skips as already-running while a run holds the slot", async () => {
     const mod = await loadModule();
-    let release: (v: { sent: number; skipped: number; failed: number }) => void = () => {};
-    contentEgress.mockImplementationOnce(
-      () => new Promise((resolve) => (release = resolve)) as Promise<never>,
-    );
+    let release!: () => void;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    contentEgress.mockImplementation(async () => {
+      await held;
+      return { sent: 0, skipped: 0, failed: 0 };
+    });
     const first = mod.runGuardedSweepNow(2_000_000);
+    await Promise.resolve();
     const second = await mod.runGuardedSweepNow(2_000_100);
     expect(second).toEqual({ status: "skipped", reason: "already-running" });
-    release({ sent: 0, skipped: 0, failed: 0 });
+    release();
     await first;
+    contentEgress.mockImplementation(async () => ({ sent: 0, skipped: 0, failed: 0 }));
   });
+
 
   it("releases the slot even when the sweep fails", async () => {
     const mod = await loadModule();
