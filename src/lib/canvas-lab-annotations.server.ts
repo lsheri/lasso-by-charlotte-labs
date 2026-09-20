@@ -169,7 +169,9 @@ export async function createHighlight(
       excerpt,
       text_hash: textHash,
       body: "",
-      visibility: "just_me",
+      // Teammate visibility: a new highlight is shared with the engagement
+      // team, and its author can set it back to just themselves.
+      visibility: "engagement",
       author_profile_id: profile.id,
       created_by: profile.id,
       updated_by: profile.id,
@@ -178,7 +180,7 @@ export async function createHighlight(
     .select(ANNOTATION_COLUMNS)
     .single();
 
-  if (data) return { status: "saved", highlight: highlightDto(data as AnnotationRow) };
+  if (data) return { status: "saved", highlight: highlightDto(data as AnnotationRow, profile.id, "You") };
 
   if (error?.code === "23505") {
     const existing = (
@@ -189,8 +191,11 @@ export async function createHighlight(
         .eq("client_key", input.clientKey)
         .maybeSingle()
     ).data;
-    if (existing) return { status: "saved", highlight: highlightDto(existing as AnnotationRow) };
+    if (existing) {
+      return { status: "saved", highlight: highlightDto(existing as AnnotationRow, profile.id, "You") };
+    }
   }
+
   if (error?.code === "42501") return { status: "forbidden" };
   return { status: "validation_error", message: "That highlight could not be saved." };
 }
