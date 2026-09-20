@@ -2,13 +2,17 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const route = readFileSync("src/components/marketing/B2BLanding.tsx", "utf8");
-const jsxText = Array.from(route.matchAll(/>([^<{]+)</gs), (match) => match[1]);
+const copyInput = route
+  .replace(/^import .*$/gm, "")
+  .replace(/className="[^"]*"/g, "")
+  .replace(/(?:href|src|poster|to|rel|target|autoComplete|type|name|id)="[^"]*"/g, "");
+const jsxText = Array.from(copyInput.matchAll(/>([^<{]+)</gs), (match) => match[1]);
 const renderedStringProps = Array.from(
-  route.matchAll(/(?:aria-label|label|alt|title)="([^"]*)"/g),
+  copyInput.matchAll(/(?:aria-label|label|alt|title)="([^"]*)"/g),
   (match) => match[1],
 );
 const stringLiterals = Array.from(
-  route.matchAll(/(?:"([^"\n]*)"|'([^'\n]*)'|`([^`\n]*)`)/g),
+  copyInput.matchAll(/(?:"([^"\n]*)"|'([^'\n]*)'|`([^`\n]*)`)/g),
   (match) => match[1] ?? match[2] ?? match[3] ?? "",
 );
 const renderedCopy = [...jsxText, ...renderedStringProps, ...stringLiterals]
