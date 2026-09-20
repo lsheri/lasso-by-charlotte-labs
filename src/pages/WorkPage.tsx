@@ -669,6 +669,15 @@ export function WorkPage() {
               (item) => item.work_item_tasks[0]?.tasks?.engagements?.code === columnFilter,
             );
 
+  /**
+   * P1: the page counts and files GROUPED entries. One pushed conversation is
+   * one thing to look at, so it is grouped once here and every column, count
+   * and filter reads the same list.
+   */
+  const filteredEntries = groupConversations(filtered);
+  const unmappedCount = groupedCount(unmapped);
+  const pieceCount = groupedCount(all);
+
   const chipBase = "rounded-full px-3 py-1 text-[11.5px] transition-colors";
   const chipOn = `${chipBase} border border-graphite bg-nb-white font-medium text-foreground`;
   const chipOff = `${chipBase} border border-[var(--nb-pencil)] text-muted-foreground hover:border-foreground`;
