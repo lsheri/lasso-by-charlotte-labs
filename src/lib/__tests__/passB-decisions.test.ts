@@ -82,7 +82,7 @@ describe("pass B: the surfaces keep their controls", () => {
 
   it("names the engagement panel and the 1:1 section", () => {
     expect(read("src/components/decisions/EngagementDecisions.tsx")).toContain(
-      "Calls on this engagement",
+      "Decisions on this engagement",
     );
     const oneToOne = read("src/components/oneonone/ConfirmedCalls.tsx");
     expect(oneToOne).toContain("Decisions you confirmed");
