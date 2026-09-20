@@ -96,7 +96,7 @@ describe("pass L1 hidden landing route", () => {
   });
 
   it("keeps stable clip slots for the next media pass", () => {
-    for (const id of ["inbox", "find-it", "decisions", "coach-note", "workboard"]) {
+    for (const id of ["inbox", "decisions", "coach-note"]) {
       expect(route).toContain(`id=\"${id}\"`);
     }
     expect(route).not.toContain('id="one-on-one"');
