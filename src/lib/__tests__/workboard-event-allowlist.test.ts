@@ -55,6 +55,9 @@ describe("the workboard allowlist", () => {
           "method",
           "axis",
         ],
+        "workboard.example_viewed": [
+          "via",
+        ],
         "workboard.node_created": [
           "kind",
           "judgment_type",
