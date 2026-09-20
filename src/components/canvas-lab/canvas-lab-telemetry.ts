@@ -83,8 +83,8 @@ export function noteWorkboardDisplayModeToggled(orgId: string | undefined, mode:
   if (orgId) logEvent("workboard.display_mode_toggled", orgId, { mode });
 }
 
-export function noteWorkboardCardContentViewed(orgId: string | undefined, kind: WorkboardPreviewKind): void {
-  if (orgId) logEvent("workboard.card_content_viewed", orgId, { kind, via: "scroll" });
+export function noteWorkboardCardContentViewed(orgId: string | undefined, kind: WorkboardPreviewKind, via: "scroll" | "open" = "scroll"): void {
+  if (orgId) logEvent("workboard.card_content_viewed", orgId, { kind, via });
 }
 
 /** Canvas Lab polish 2c-iv: how a save error ended. Closed choice only. */

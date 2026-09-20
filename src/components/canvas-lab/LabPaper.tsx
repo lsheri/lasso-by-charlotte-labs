@@ -1,13 +1,14 @@
 import { GraphiteIcon, type GraphiteIconName } from "@/components/notebook/icons";
+import { WorkboardFilePreview } from "@/components/canvas-lab/WorkboardFilePreview";
 import { ArtifactNote, SourceMark, sourceVendorKey, VendorMark } from "@/components/work/SourceMark";
 import { colourKey, noteHue, notePaper } from "@/components/work/note-paper";
 import { cardSizeTier, ownerLabel, type LabNode } from "@/components/canvas-lab/canvas-lab-model";
 import { workIdentityLabel } from "@/lib/work-identity";
 import { effectiveWorkDate, formatDate, type WorkItemRow } from "@/lib/work-types";
 import { cn } from "@/lib/utils";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 
-import type { WorkboardCardPreview, WorkboardDisplayMode } from "@/lib/workboard-card-preview.shared";
+import type { WorkboardCardPreview, WorkboardDisplayMode, WorkboardFilePreview as FilePreview } from "@/lib/workboard-card-preview.shared";
 
 const KIND_ICON: Record<Exclude<LabNode["kind"], "work" | "task">, GraphiteIconName> = {
   brief: "engagement",
@@ -43,6 +44,7 @@ export function LabPaper({
   onOpenComments,
   displayMode = "sticky",
   preview,
+  filePreview,
   focused = false,
   onPreviewScroll,
 }: {
@@ -56,6 +58,7 @@ export function LabPaper({
   onOpenComments?: (() => void) | undefined;
   displayMode?: WorkboardDisplayMode;
   preview?: WorkboardCardPreview | undefined;
+  filePreview?: FilePreview | undefined;
   focused?: boolean;
   onPreviewScroll?: ((kind: "chat" | "document" | "deck") => void) | undefined;
 }) {
@@ -67,6 +70,8 @@ export function LabPaper({
   const needsSourceFallback = item ? sourceVendorKey(item) === null : false;
   const chatPreview = displayMode === "preview" && item?.type === "ai_thread";
   const excerptPreview = displayMode === "preview" && item && item.type !== "ai_thread";
+  const [filePreviewFailed, setFilePreviewFailed] = useState(false);
+  const showFilePreview = Boolean(excerptPreview && filePreview && filePreview.kind !== "fallback" && !filePreviewFailed);
   const excerpt = item?.work_item_extracts?.find((extract) => extract.summary)?.summary ?? summary;
   const vendorKey = item ? sourceVendorKey(item) : null;
   const vendorTone = vendorKey === "claude" || vendorKey === "chatgpt" || vendorKey === "gemini" ? vendorKey : "other";
@@ -96,6 +101,7 @@ export function LabPaper({
               {item ? <><VendorMark item={item} />{tier !== "compact" && date ? <>{" · "}{date}</> : null}</> : node.typeLabel}
             </span>
             {node.deliverable ? <span className="shrink-0 font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">Deliverable</span> : null}
+            {item && (item.type === "document" || item.type === "deck") && (filePreview?.versionCount ?? 0) > 0 ? <span data-testid="workboard-version-chip" className="canvas-lab-version-chip">v{filePreview?.versionCount}</span> : null}
           </span>
           {node.linkedItemRemovedAt ? <span className="shrink-0 font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">Item deleted</span> : null}
           {commentCount > 0 ? (
@@ -136,6 +142,8 @@ export function LabPaper({
               </div>
             ))}
           </div>
+        ) : showFilePreview && filePreview ? (
+          <WorkboardFilePreview preview={filePreview} onFailure={() => setFilePreviewFailed(true)} />
         ) : node.local ? (
           <textarea
             aria-label={`Edit ${node.title} note`}
