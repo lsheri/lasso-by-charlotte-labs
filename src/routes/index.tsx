@@ -3,7 +3,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { B2BLanding } from "@/components/marketing/B2BLanding";
 import { supabase } from "@/integrations/supabase/client";
 
-const TITLE = "Lasso: see where every number in a deliverable came from";
+const TITLE = "Lasso: the human judgment in your team's AI work, traced";
 const DESCRIPTION =
   "Lasso keeps the record of AI-assisted consulting work, the sources behind it, and the judgment your people made on top of it.";
 

@@ -2,18 +2,48 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const route = readFileSync("src/components/marketing/B2BLanding.tsx", "utf8");
-const copySource = route.replace(/className="[^"]*"/g, "").toLowerCase();
+const jsxText = Array.from(route.matchAll(/>([^<{]+)</gs), (match) => match[1]);
+const renderedStringProps = Array.from(
+  route.matchAll(/(?:aria-label|label|alt|title)="([^"]*)"/g),
+  (match) => match[1],
+);
+const renderedCopy = [...jsxText, ...renderedStringProps].join(" ").replace(/\s+/g, " ").toLowerCase();
 const requiredReportHeadline = "a note in the margin, not a report on you";
-const copyWithoutRequiredHeadline = copySource.replace(requiredReportHeadline, "");
+const copyWithoutRequiredHeadline = renderedCopy.replace(requiredReportHeadline, "");
 
-const BANNED = ["audit", "monitor", "oversight", "track", "caught", "score", "adoption", "leaderboard", "performance", "observability", "enablement", "endorsement"];
+const BANNED = [
+  "calls?",
+  "audit(?:able| trail)?",
+  "monitor",
+  "oversight",
+  "track",
+  "caught",
+  "score",
+  "adoption",
+  "leaderboard",
+  "performance",
+  "observability",
+  "enablement",
+  "endorsement",
+  "stand behind",
+  "roi",
+  "return on",
+  "your manager",
+  "who decided",
+  "who made each call",
+  "workslop",
+  "shadow ai",
+  "usage",
+];
 
 describe("pass L1 hidden landing route", () => {
   it("keeps banned language out", () => {
-    for (const word of BANNED) {
-      expect(copyWithoutRequiredHeadline).not.toContain(word);
+    for (const phrase of BANNED) {
+      expect(copyWithoutRequiredHeadline).not.toMatch(new RegExp(`\\b(?:${phrase})\\b`, "i"));
     }
-    expect(copySource).toContain(requiredReportHeadline);
+    expect(renderedCopy).toContain(requiredReportHeadline);
+    expect(renderedCopy).toContain("the decisions your team made");
+    expect(renderedCopy).toContain("defend to a client, a partner, or a board");
   });
 
   it("has no em dashes in page strings", () => {
@@ -23,7 +53,9 @@ describe("pass L1 hidden landing route", () => {
   it("uses one B2B variant with no search-param branch", () => {
     expect(route).not.toContain("validateSearch");
     expect(route).not.toContain('variant === "b"');
+    expect(route).toContain("Your firm bought AI. The human judgment in your team's work went invisible.");
     expect(route.match(/Your firm bought AI\. Now nobody can say where a number came from\./g)).toHaveLength(1);
+    expect(route).toContain("export const HERO_H1_FALLBACK");
   });
 
   it("is the indexable home page, with the old path redirecting to it", () => {
@@ -32,7 +64,7 @@ describe("pass L1 hidden landing route", () => {
     expect(home).toContain("<B2BLanding surface=\"home\" />");
     expect(home).not.toContain("noindex");
     expect(home).toContain(
-      "Lasso: see where every number in a deliverable came from",
+      "Lasso: the human judgment in your team's AI work, traced",
     );
     expect(old).toContain('redirect({ to: "/", replace: true })');
     expect(route).not.toContain('to="/landing-next"');
@@ -48,6 +80,8 @@ describe("pass L1 hidden landing route", () => {
     expect(route).toContain('dims: { variant: "b2b", surface }');
     expect(route).toContain('event_type: "landing.pilot_cta_clicked"');
     expect(route).toContain('dims: { location }');
+    expect(route).toContain('event_type: "landing.see_it_work_clicked"');
+    expect(route).toContain('dims: { location: "hero" }');
   });
 
   it("keeps stable clip slots for the next media pass", () => {
@@ -59,9 +93,10 @@ describe("pass L1 hidden landing route", () => {
 
   it("wires every available poster frame", () => {
     // Each carousel panel plays a real clip with its own poster file.
-    for (const poster of ["inbox-poster.png", "find-it-poster.png", "decisions-poster.png", "coach-note-poster.png", "poster-what-fed-this.jpg"]) {
+    for (const poster of ["inbox-poster.png", "find-it-poster.png", "decisions-poster.png", "coach-note-poster.png"]) {
       expect(route).toContain(`poster="/videos/${poster}"`);
     }
+    expect(route).not.toContain("poster-what-fed-this.jpg");
   });
 
   it("plays every carousel clip at its native size", () => {
@@ -69,7 +104,8 @@ describe("pass L1 hidden landing route", () => {
       expect(route).toContain(`src="/videos/${id}.mp4"`);
       expect(route).toContain(`poster="/videos/${id}-poster.png"`);
     }
-    expect(route).toContain('src="/videos/lasso-what-fed-this.mp4"');
+    expect(route).not.toContain('src="/videos/lasso-what-fed-this.mp4"');
+    expect(route).toContain('<ClipSlot id="workboard" label="An engagement arranged on one board" />');
     expect(route).toContain('playback="hold"');
   });
 
