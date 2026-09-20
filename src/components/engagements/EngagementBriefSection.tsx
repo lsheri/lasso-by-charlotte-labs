@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { MarkBriefDialog } from "@/components/work/MarkBriefDialog";
 import { PasteThreadDialog } from "@/components/work/PasteThreadDialog";
 import { UploadFilesButton } from "@/components/work/UploadFilesButton";
+import { useBriefFiles } from "@/hooks/use-brief-files";
 import { setBriefRole, useBriefs, useInvalidateBriefs } from "@/hooks/use-briefs";
 import { useWorkItems } from "@/hooks/use-work-items";
 import { supabase } from "@/integrations/supabase/client";
@@ -147,6 +148,7 @@ export function EngagementBriefSection({
             }}
           />
         </div>
+        <BriefAttachments engagementId={engagementId} />
         <PickBriefDialog open={pickOpen} onOpenChange={setPickOpen} onPick={markExisting} />
       </section>
     );
@@ -214,6 +216,8 @@ export function EngagementBriefSection({
             </div>
           </div>
         ) : null}
+
+        <BriefAttachments engagementId={engagementId} />
       </div>
 
       <PeekPanel entry={brief} open={peekOpen} onOpenChange={setPeekOpen} canEdit />
@@ -225,6 +229,43 @@ export function EngagementBriefSection({
         }}
       />
     </section>
+  );
+}
+
+/** Files that came in when the engagement was created, each one openable. */
+function BriefAttachments({ engagementId }: { engagementId: string }) {
+  const { data } = useBriefFiles(engagementId);
+  const [openItem, setOpenItem] = useState<WorkItemRow | null>(null);
+  const files = (data ?? []).flatMap((entry) => (entry.item ? [entry.item] : []));
+  if (files.length === 0) return null;
+  return (
+    <div className="mt-4 border-t border-border pt-3">
+      <h3 className="micro-label">Came with the brief</h3>
+      <ul className="mt-2 space-y-1">
+        {files.map((item) => (
+          <li key={item.id}>
+            <button
+              type="button"
+              onClick={() => {
+                markOpenStart("peek.open");
+                setOpenItem(item);
+              }}
+              className="max-w-full truncate text-sm text-accent-deep transition-opacity hover:opacity-70"
+            >
+              {item.title}
+            </button>
+          </li>
+        ))}
+      </ul>
+      <PeekPanel
+        entry={openItem}
+        open={openItem !== null}
+        onOpenChange={(next) => {
+          if (!next) setOpenItem(null);
+        }}
+        canEdit
+      />
+    </div>
   );
 }
 
