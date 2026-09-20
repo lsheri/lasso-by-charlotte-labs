@@ -16,7 +16,8 @@ export type ClaimCandidate = {
   y: number;
   width: number;
   height: number;
-  frame: string;
+  /** Null on a blank board, where no outline exists to belong to. */
+  frame?: string | null | undefined;
   /** Present on work cards. Cards without one never reach the placement call. */
   workItemId?: string | null | undefined;
 };
