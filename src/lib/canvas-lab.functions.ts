@@ -9,6 +9,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type {
   AnnotationMutationResult,
+  AnnotationVisibility,
+
   CommentMutationResult,
   CommentThreadDto,
   HighlightDto,
@@ -121,7 +123,7 @@ export const setHighlightVisibilityFn = createServerFn({ method: "POST" })
   .inputValidator(
     (input: { id: string; visibility: string; expected_version: number; profile_id?: string }) => ({
       id: typeof input?.id === "string" ? input.id : "",
-      visibility: input?.visibility === "just_me" ? "just_me" : "engagement",
+      visibility: (input?.visibility === "just_me" ? "just_me" : "engagement") as AnnotationVisibility,
       expected_version: typeof input?.expected_version === "number" ? input.expected_version : Number.NaN,
       profile_id: typeof input?.profile_id === "string" ? input.profile_id : undefined,
     }),
