@@ -49,6 +49,7 @@ import { logEvent } from "@/lib/telemetry";
 import { supabase } from "@/integrations/supabase/client";
 import type { WorkItemRow } from "@/lib/work-types";
 import { sourceVendorKey } from "@/components/work/SourceMark";
+import { workstreamTasks } from "@/lib/board-default-task";
 import { useVendorVisible } from "@/hooks/use-vendor-display";
 import { vendorLabel } from "@/lib/conversation-shared";
 
@@ -273,7 +274,9 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
 
   // PASS 143 — a wrap-up is an ordinary task carrying is_wrap. It never renders
   // as a board column: it reads below the board as the thing the rest fed.
-  const allTasks = tasksQuery.data ?? [];
+  // B2: the board's default home is a real task row but never a workstream, so
+  // it is filtered out before anything renders a column, a count or a ledger.
+  const allTasks = workstreamTasks(tasksQuery.data ?? []);
   const wrapTask = allTasks.find((task) => task.is_wrap === true);
   const boardTasks = allTasks.filter((task) => task.is_wrap !== true);
   const scopedItems = scopedTask

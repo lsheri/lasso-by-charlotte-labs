@@ -34,15 +34,18 @@ export function useMappingSuggestions() {
       const ids = Array.from(new Set(active.map((s) => s.task_id)));
       const { data: rows, error: taskError } = await supabase
         .from("tasks")
-        .select("id, name, engagements(code)")
+        .select("id, name, is_board_default, engagements(code)")
         .in("id", ids);
       if (taskError) throw taskError;
       const out: Record<string, string> = {};
       for (const row of (rows ?? []) as unknown as {
         id: string;
         name: string;
+        is_board_default?: boolean | null;
         engagements: { code: string } | null;
       }[]) {
+        // The board's default home never reads as a workstream label.
+        if (row.is_board_default) continue;
         out[row.id] = `${row.engagements?.code ?? "Not set"} · ${row.name}`;
       }
       return out;

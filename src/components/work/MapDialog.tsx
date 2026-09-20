@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { useEngagements } from "@/hooks/use-engagements";
 import { useProfile } from "@/hooks/use-profile";
 import { supabase } from "@/integrations/supabase/client";
+import { workstreamTasks } from "@/lib/board-default-task";
 import { guessWorkflowDeclaration, type WorkflowDeclaration } from "@/lib/declared-work";
 import { declareWorkflow } from "@/lib/declared-work.functions";
 import { detachEpisodeItems, syncEpisodeForMapping } from "@/lib/episodes.functions";
@@ -53,12 +54,13 @@ export function MapDialog({
     queryFn: async (): Promise<TaskRow[]> => {
       const { data, error: taskError } = await supabase
         .from("tasks")
-        .select("id, name")
+        .select("id, name, is_board_default")
         .eq("engagement_id", engagementId as string)
         .order("position", { ascending: true })
         .order("created_at", { ascending: true });
       if (taskError) throw taskError;
-      return data ?? [];
+      // The board's default home is never offered as a workstream to map into.
+      return workstreamTasks(data ?? []);
     },
   });
 

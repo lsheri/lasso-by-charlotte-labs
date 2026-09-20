@@ -26,6 +26,8 @@ export type EngagementTask = {
   detail: string | null;
   /** Pass 143: the one task that wraps the engagement up, if there is one. */
   is_wrap?: boolean;
+  /** B2: the hidden home for board work that is not in a workstream. */
+  is_board_default?: boolean;
   work_item_tasks: EngagementTaskLink[];
 };
 
