@@ -96,6 +96,8 @@ export function LabCard({
   const cardRef = useRef<HTMLDivElement | null>(null);
   const paperRef = useRef<HTMLDivElement | null>(null);
   const anchorDownRef = useRef<{ x: number; y: number } | null>(null);
+  const cardDownRef = useRef<{ x: number; y: number } | null>(null);
+  const lastClickMovedRef = useRef(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
   useLayoutEffect(() => {
@@ -125,6 +127,27 @@ export function LabCard({
     changeMenuOpen(true);
   }
 
+  function handleCardPointerDown(event: React.PointerEvent) {
+    cardDownRef.current = { x: event.clientX, y: event.clientY };
+    lastClickMovedRef.current = false;
+    onPointerDown(event);
+  }
+
+  function handleCardPointerUp(event: React.PointerEvent) {
+    const down = cardDownRef.current;
+    cardDownRef.current = null;
+    if (down && Math.hypot(event.clientX - down.x, event.clientY - down.y) > 4) lastClickMovedRef.current = true;
+  }
+
+  /** A deliverable opens its trail on a clean double-click; a drag never does. */
+  function handleDoubleClick(event: React.MouseEvent) {
+    if (readOnly || !node.deliverable) return;
+    if (lastClickMovedRef.current) return;
+    if ((event.target as Element).closest("button,textarea")) return;
+    event.stopPropagation();
+    onOpen();
+  }
+
   const anchors: LabAnchor[] = ["top", "right", "bottom", "left"];
   return (
     <div
@@ -137,7 +160,9 @@ export function LabCard({
       data-node-id={node.id}
       data-connecting={connecting}
       data-read-only={readOnly}
-      onPointerDown={readOnly ? undefined : onPointerDown}
+      onPointerDown={readOnly ? undefined : handleCardPointerDown}
+      onPointerUp={readOnly ? undefined : handleCardPointerUp}
+      onDoubleClick={readOnly ? undefined : handleDoubleClick}
       onFocus={readOnly ? undefined : onFocus}
       onContextMenu={openMenu}
       onKeyDown={readOnly ? undefined : (event) => {
@@ -149,7 +174,7 @@ export function LabCard({
       className="canvas-lab-card group absolute text-left outline-none"
     >
       <div ref={paperRef} data-selected={selected} data-focused={focused} data-connect-source={connectSourceAnchor !== null} className="canvas-lab-card-paper h-full w-full overflow-hidden">
-        <LabPaper node={node} item={item} selected={selected} focused={focused} displayMode={displayMode} preview={preview} filePreview={filePreview} onPreviewScroll={onPreviewScroll} showOwnership={!readOnly} onEdit={onEdit} onEditCommitted={onEditCommitted} commentCount={commentCount} onOpenComments={onOpenComments} />
+        <LabPaper node={node} item={item} selected={selected} focused={focused} displayMode={displayMode} preview={preview} filePreview={filePreview} onPreviewScroll={onPreviewScroll} showOwnership={!readOnly} onEdit={onEdit} onEditCommitted={onEditCommitted} commentCount={commentCount} onOpenComments={onOpenComments} onOpenTrail={readOnly || !node.deliverable ? undefined : onOpen} />
         {selected ? <Paperclip aria-hidden="true" className="canvas-lab-context-mark" /> : null}
       </div>
       {canResize && focused && !readOnly ? (["nw", "ne", "se", "sw"] as LabResizeCorner[]).map((corner) => <button key={corner} type="button" className="canvas-lab-resize-handle" data-corner={corner} aria-label={`Resize ${node.title} from ${corner}`} onDoubleClick={(event) => { event.stopPropagation(); onFit(); }} onPointerDown={(event) => onResizeStart(corner, event)} onKeyDown={(event) => onResizeKeyDown(corner, event)} onKeyUp={onResizeKeyUp} />) : null}
