@@ -300,6 +300,20 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   const itemByNode = (node: LabNode) => node.workItemId ? workItems.find((item) => item.id === node.workItemId) : undefined;
   const focusItem = focusNode ? itemByNode(focusNode) ?? null : null;
   const reviewItem = reviewNode ? itemByNode(reviewNode) ?? null : null;
+  const onScreenChatIds = useMemo(() => {
+    if (displayMode !== "preview" || viewportSize.width === 0 || zoom <= 0) return [];
+    const left = -pan.x / zoom;
+    const top = -pan.y / zoom;
+    const right = left + viewportSize.width / zoom;
+    const bottom = top + viewportSize.height / zoom;
+    return visibleNodes.flatMap((node) => {
+      const item = node.workItemId ? workItems.find((entry) => entry.id === node.workItemId) : undefined;
+      const height = cardHeightsRef.current.get(node.id) ?? node.height;
+      const intersects = node.x < right && node.x + node.width > left && node.y < bottom && node.y + height > top;
+      return item?.type === "ai_thread" && intersects ? [item.id] : [];
+    });
+  }, [displayMode, pan.x, pan.y, viewportSize.height, viewportSize.width, visibleNodes, workItems, zoom]);
+  const cardPreviews = useWorkboardCardPreviews(engagementId, profile?.id, displayMode === "preview", onScreenChatIds);
   const focusThreadId = focusItem && focusItem.type === "ai_thread" ? focusItem.id : null;
   const annotations = useCanvasLabAnnotations(engagementId, focusThreadId, profile?.id);
   const commentThreads = useCanvasLabComments(engagementId, focusThreadId, profile?.id);
@@ -309,6 +323,11 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   const notAvailable = !loadingBoard && !isError && !engagement;
   const boardReady = !loadingBoard && !isError && Boolean(engagement) && nodes !== null && frames !== null;
   fitInputsRef.current = { frames: boardFrames, nodes: visibleNodes, structured: structureMode === "structured" };
+
+  useEffect(() => {
+    if (!profile?.id) return;
+    setDisplayMode(readWorkboardDisplayMode(window.localStorage.getItem(workboardDisplayModeKey(profile.id, engagementId))));
+  }, [engagementId, profile?.id]);
 
   useEffect(() => {
     if (!boardReady) return;
@@ -342,6 +361,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     const shell = shellRef.current;
     if (!shell || !boardReady) return;
     const size = { width: shell.clientWidth, height: shell.clientHeight };
+    setViewportSize(size);
     if (!fittedReadyRef.current) {
       fittedReadyRef.current = true;
       observedSizeRef.current = size;
@@ -354,11 +374,26 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
         : { width: shell.clientWidth, height: shell.clientHeight };
       if (!viewportSizeChanged(observedSizeRef.current, next)) return;
       observedSizeRef.current = next;
+      setViewportSize(next);
       if (!viewportChangedRef.current) fit();
     });
     observer.observe(shell);
     return () => observer.disconnect();
   }, [boardReady]);
+
+  function chooseDisplayMode(mode: WorkboardDisplayMode) {
+    if (mode === displayMode) return;
+    setDisplayMode(mode);
+    if (profile?.id) window.localStorage.setItem(workboardDisplayModeKey(profile.id, engagementId), mode);
+    noteWorkboardDisplayModeToggled(orgId, mode);
+  }
+
+  function notePreviewScroll(item: WorkItemRow) {
+    if (viewedPreviewIdsRef.current.has(item.id)) return;
+    viewedPreviewIdsRef.current.add(item.id);
+    const kind = item.type === "ai_thread" ? "chat" : item.type.includes("deck") ? "deck" : "document";
+    noteWorkboardCardContentViewed(orgId, kind);
+  }
 
   /* ---------------- Phase 3: durable save pipeline ---------------- */
   const nodesRef = useRef<LabNode[]>([]);
