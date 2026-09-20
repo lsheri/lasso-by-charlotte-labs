@@ -2,44 +2,45 @@ import type { ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 
 import { ClaimToClient } from "@/components/work/ClaimToClient";
+import { ConversationCard } from "@/components/work/ConversationCard";
 import { WorkNote } from "@/components/work/WorkNote";
 import { useMappingSuggestions } from "@/hooks/use-mapping-suggestions";
-import type { MappingSuggestion } from "@/lib/mapping-shared";
-import type { WorkItemRow } from "@/lib/work-types";
+import {
+  entryHead,
+  entryItems,
+  entryKey,
+  groupConversations,
+  isConversationGroup,
+  type ConversationGroup,
+  type WorkItemRow,
+} from "@/lib/work-types";
 
 /** The most a person can usefully scan at a glance on the overview. */
 const QUEUE_CAP = 4;
 
-function NoteRow({
-  item,
-  action,
-}: {
-  item: WorkItemRow;
-  /** Line three: the next act this card offers. */
-  action: ReactNode;
-}) {
-  return <WorkNote item={item} actions={action} />;
-}
+type Entry = WorkItemRow | ConversationGroup;
 
 function Queue({
   title,
   count,
   note,
-  items,
+  entries,
   remainderTestId,
   headerAction,
   cardAction,
+  onOpen,
 }: {
   title?: string;
   count?: number;
   note?: string;
-  items: WorkItemRow[];
+  entries: Entry[];
   remainderTestId: string;
   headerAction?: ReactNode;
-  cardAction: (item: WorkItemRow) => ReactNode;
+  cardAction: (entry: Entry) => ReactNode;
+  onOpen?: ((item: WorkItemRow, entry: Entry) => void) | undefined;
 }) {
-  const shown = items.slice(0, QUEUE_CAP);
-  const rest = items.length - shown.length;
+  const shown = entries.slice(0, QUEUE_CAP);
+  const rest = entries.length - shown.length;
 
   return (
     <>
@@ -60,9 +61,27 @@ function Queue({
       ) : null}
 
       <div className="nb-paper-wall">
-        {shown.map((item) => (
-          <NoteRow key={item.id} item={item} action={cardAction(item)} />
-        ))}
+        {shown.map((entry) =>
+          isConversationGroup(entry) ? (
+            // P1: one pushed conversation, one card, every artifact inside it.
+            <ConversationCard
+              key={entry.key}
+              group={entry}
+              variant="unmapped"
+              dense
+              onOpen={(item) => onOpen?.(item, entry)}
+              actions={null}
+              primaryAction={cardAction(entry)}
+            />
+          ) : (
+            <WorkNote
+              key={entry.id}
+              item={entry}
+              {...(onOpen ? { onOpen: () => onOpen(entry, entry) } : {})}
+              actions={cardAction(entry)}
+            />
+          ),
+        )}
       </div>
 
       {rest > 0 ? (
@@ -86,15 +105,24 @@ function Queue({
  * It renders from data already on the page; the only server call it makes is
  * the explicit suggestion job, triggered by the button on the second section.
  */
-export function ChatsToOrganise({ items }: { items: WorkItemRow[] }) {
+export function ChatsToOrganise({
+  items,
+  onOpen,
+}: {
+  items: WorkItemRow[];
+  /** Opens a piece of work, using the page's own reading panel. */
+  onOpen?: ((item: WorkItemRow, entry: Entry) => void) | undefined;
+}) {
   const { active, taskLabels, suggesting, acceptPending, suggest, accept } =
     useMappingSuggestions();
 
   const unmapped = items
     .filter((item) => item.visibility === "unmapped")
     .sort((a, b) => (b.captured_at ?? "").localeCompare(a.captured_at ?? ""));
-  const unclaimed = unmapped.filter((item) => !item.client_id);
-  const awaiting = unmapped.filter((item) => Boolean(item.client_id));
+  // P1: group first, then split. A push is one entry wherever it lands.
+  const entries = groupConversations(unmapped);
+  const unclaimed = entries.filter((entry) => !entryHead(entry).client_id);
+  const awaiting = entries.filter((entry) => Boolean(entryHead(entry).client_id));
 
   if (unclaimed.length === 0 && awaiting.length === 0) return null;
 
@@ -106,11 +134,13 @@ export function ChatsToOrganise({ items }: { items: WorkItemRow[] }) {
               heading said it twice. The teaching sentence moved to that
               filter's empty state. */}
           <Queue
-            items={unclaimed}
+            entries={unclaimed}
             remainderTestId="overview-chats-remainder"
-            cardAction={(item) => (
+            onOpen={onOpen}
+            cardAction={(entry) => (
               <ClaimToClient
-                item={item}
+                item={entryHead(entry)}
+                items={entryItems(entry)}
                 surface="overview"
                 emphasis="lead"
                 label="Say whose this is"
@@ -126,8 +156,9 @@ export function ChatsToOrganise({ items }: { items: WorkItemRow[] }) {
             title="Waiting on a workstream"
             count={awaiting.length}
             note="You have said whose these are. They still need a place in the work."
-            items={awaiting}
+            entries={awaiting}
             remainderTestId="overview-chats-awaiting-remainder"
+            onOpen={onOpen}
             headerAction={
               <button
                 type="button"
@@ -138,7 +169,8 @@ export function ChatsToOrganise({ items }: { items: WorkItemRow[] }) {
                 {suggesting ? "Thinking…" : "Suggest where these go"}
               </button>
             }
-            cardAction={(item) => {
+            cardAction={(entry) => {
+              const item = entryHead(entry);
               const suggestion = active.find((s) => s.work_item_id === item.id);
               const suggestedLabel = suggestion ? taskLabels?.[suggestion.task_id] : undefined;
               return suggestedLabel ? (

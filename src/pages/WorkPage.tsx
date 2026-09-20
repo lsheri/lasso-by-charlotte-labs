@@ -65,6 +65,7 @@ import { logV2 } from "@/lib/telemetry-v2";
 import { markOpenStart } from "@/lib/perf-timing";
 import {
   groupConversations,
+  groupedCount,
   isConversationGroup,
   sourceLabel,
   type ConversationGroup,
@@ -75,7 +76,7 @@ import { SpiderLassoScene } from "@/components/motion/SpiderLassoScene";
 import { ToneCard } from "@/components/notebook/ToneCard";
 import { WorkSubtitle } from "@/components/work/WorkSubtitle";
 import { sourceVendorKey } from "@/components/work/SourceMark";
-import { BUCKETS, bucketFor, type BucketKey } from "@/components/work/work-buckets";
+import { BUCKETS, bucketKeyForEntry, type BucketKey } from "@/components/work/work-buckets";
 import { useSettingsDialog } from "@/lib/settings-dialog-context";
 
 /** Each type column pages its entries five at a time, replacing not growing. */
@@ -404,7 +405,7 @@ export function WorkPage() {
           setPeek({ entry: group, focusId: item.id });
         }}
         actions={rowActions(head, variant, group.items, { inCardMenu: true })}
-        primaryAction={claimAction(head)}
+        primaryAction={claimAction(head, group.items)}
         onFluency={(next) => {
           setLensPreset(undefined);
           setLensItem(next);
@@ -482,10 +483,17 @@ export function WorkPage() {
   }
 
   /** The one act that stays on the card face: saying whose work this is. */
-  function claimAction(item: WorkItemRow) {
+  /** P1: claiming a pushed conversation claims every piece inside it. */
+  function claimAction(item: WorkItemRow, group?: WorkItemRow[]) {
     if (item.client_id) return undefined;
     return (
-      <ClaimToClient item={item} surface="work" emphasis="lead" label="Say whose this is" />
+      <ClaimToClient
+        item={item}
+        {...(group && group.length > 1 ? { items: group } : {})}
+        surface="work"
+        emphasis="lead"
+        label="Say whose this is"
+      />
     );
   }
 
@@ -620,7 +628,8 @@ export function WorkPage() {
     }
   }
 
-  const subtitle = <WorkSubtitle pieces={all.length} unmapped={unmapped.length} />;
+  // P1: a pushed conversation counts as one thing, here and everywhere below.
+  const subtitle = <WorkSubtitle pieces={groupedCount(all)} unmapped={groupedCount(unmapped)} />;
 
   const engagementCodes = Array.from(
     new Set(
@@ -668,6 +677,15 @@ export function WorkPage() {
           : visible.filter(
               (item) => item.work_item_tasks[0]?.tasks?.engagements?.code === columnFilter,
             );
+
+  /**
+   * P1: the page counts and files GROUPED entries. One pushed conversation is
+   * one thing to look at, so it is grouped once here and every column, count
+   * and filter reads the same list.
+   */
+  const filteredEntries = groupConversations(filtered);
+  const unmappedCount = groupedCount(unmapped);
+
 
   const chipBase = "rounded-full px-3 py-1 text-[11.5px] transition-colors";
   const chipOn = `${chipBase} border border-graphite bg-nb-white font-medium text-foreground`;
@@ -732,7 +750,7 @@ export function WorkPage() {
       <CoachingLinkNotices />
       <PageHeader title="Inbox" subtitle={subtitle} />
       <BringWorkInRow
-        unmappedCount={unmapped.length}
+        unmappedCount={unmappedCount}
         suggesting={suggesting}
         onSuggest={() => void handleSuggest()}
         isCoach={isCoach}
@@ -922,7 +940,13 @@ export function WorkPage() {
       {/* PASS A1 - lifted off the retired Overview: the chats to put away sit
           with the pile. Decisions live on their own page. */}
       <ArrivalsStrip items={all} />
-      <ChatsToOrganise items={all} />
+      <ChatsToOrganise
+        items={all}
+        onOpen={(item, entry) => {
+          markOpenStart("peek.open");
+          setPeek({ entry: entry as PeekEntry, focusId: item.id });
+        }}
+      />
 
       {error ? <p className="mb-6 text-sm text-destructive">{(error as Error).message}</p> : null}
       {actionError ? <p className="mb-6 text-sm text-destructive">{actionError}</p> : null}
@@ -939,7 +963,7 @@ export function WorkPage() {
           <p className="text-sm text-foreground">Your work lands here.</p>
           <div className="mt-6 inline-block text-left">
             <BringWorkInRow
-              unmappedCount={unmapped.length}
+              unmappedCount={unmappedCount}
               suggesting={suggesting}
               onSuggest={() => void handleSuggest()}
               isCoach={isCoach}
@@ -974,8 +998,12 @@ export function WorkPage() {
           <div className={suggesting ? "animate-pulse" : undefined}>
             <div className={`nb-type-columns${gusting ? " nb-gust" : ""}`}>
               {BUCKETS.map((bucket) => {
-                const items = filtered.filter((item) => bucketFor(item.type).key === bucket.key);
-                const entries = groupConversations(items);
+                // P1: group beats bucket. A pushed conversation appears once,
+                // under AI conversations, whatever its artifacts are typed as,
+                // and never again on its own in another column.
+                const entries = filteredEntries.filter(
+                  (entry) => bucketKeyForEntry(entry) === bucket.key,
+                );
                 // Five entries a page; a page REPLACES the previous one so the
                 // four columns stay aligned. The effect above resets every
                 // column when the set changes; this clamp is the belt to those
@@ -997,7 +1025,7 @@ export function WorkPage() {
                     <div className="mb-3 border-b border-[var(--nb-rule)] pb-2">
                       <h2 className="flex items-baseline justify-between gap-3 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
                         <span className="truncate">{bucket.label}</span>
-                        <span className="shrink-0 text-soft">{items.length}</span>
+                        <span className="shrink-0 text-soft">{entries.length}</span>
                       </h2>
                     </div>
                     <div className="nb-paper-wall">
@@ -1069,7 +1097,7 @@ export function WorkPage() {
               foot of this page is for. */}
           <div className="max-w-[760px]">
             {unmapped.length > 0 ? (
-              <ToneCard tone="attention" label={`${unmapped.length} UNMAPPED`}>
+              <ToneCard tone="attention" label={`${unmappedCount} UNMAPPED`}>
                 <p className="leading-[19px]">
                   Unmapped work is private and belongs to no engagement. It is not in any receipt,
                   no coach can see it, and it will not appear in the firm view until you map it.

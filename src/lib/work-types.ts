@@ -110,6 +110,26 @@ export function isConversationGroup(
   return "items" in value;
 }
 
+/** The piece that gives an entry its name: a conversation reads as its head. */
+export function entryHead(entry: WorkItemRow | ConversationGroup): WorkItemRow {
+  return isConversationGroup(entry) ? (entry.transcript ?? entry.items[0]!) : entry;
+}
+
+/** A stable React key for either shape. */
+export function entryKey(entry: WorkItemRow | ConversationGroup): string {
+  return isConversationGroup(entry) ? entry.key : entry.id;
+}
+
+/** Every piece of an entry, so an act on the head can carry the whole push. */
+export function entryItems(entry: WorkItemRow | ConversationGroup): WorkItemRow[] {
+  return isConversationGroup(entry) ? entry.items : [entry];
+}
+
+/** How many things a person sees: one pushed conversation counts as one. */
+export function groupedCount(items: WorkItemRow[]): number {
+  return groupConversations(items).length;
+}
+
 const EXT_MAP: Record<string, WorkType> = {
   pdf: "document",
   doc: "document",
