@@ -64,7 +64,9 @@ import { logEvent } from "@/lib/telemetry";
 import { logV2 } from "@/lib/telemetry-v2";
 import { markOpenStart } from "@/lib/perf-timing";
 import {
+  entryItems,
   groupConversations,
+  groupedCount,
   isConversationGroup,
   sourceLabel,
   type ConversationGroup,
@@ -742,7 +744,7 @@ export function WorkPage() {
       <CoachingLinkNotices />
       <PageHeader title="Inbox" subtitle={subtitle} />
       <BringWorkInRow
-        unmappedCount={unmapped.length}
+        unmappedCount={unmappedCount}
         suggesting={suggesting}
         onSuggest={() => void handleSuggest()}
         isCoach={isCoach}
@@ -932,7 +934,13 @@ export function WorkPage() {
       {/* PASS A1 - lifted off the retired Overview: the chats to put away sit
           with the pile. Decisions live on their own page. */}
       <ArrivalsStrip items={all} />
-      <ChatsToOrganise items={all} />
+      <ChatsToOrganise
+        items={all}
+        onOpen={(item, entry) => {
+          markOpenStart("peek.open");
+          setPeek({ entry: entry as PeekEntry, focusId: item.id });
+        }}
+      />
 
       {error ? <p className="mb-6 text-sm text-destructive">{(error as Error).message}</p> : null}
       {actionError ? <p className="mb-6 text-sm text-destructive">{actionError}</p> : null}
@@ -949,7 +957,7 @@ export function WorkPage() {
           <p className="text-sm text-foreground">Your work lands here.</p>
           <div className="mt-6 inline-block text-left">
             <BringWorkInRow
-              unmappedCount={unmapped.length}
+              unmappedCount={unmappedCount}
               suggesting={suggesting}
               onSuggest={() => void handleSuggest()}
               isCoach={isCoach}
@@ -1085,7 +1093,7 @@ export function WorkPage() {
               foot of this page is for. */}
           <div className="max-w-[760px]">
             {unmapped.length > 0 ? (
-              <ToneCard tone="attention" label={`${unmapped.length} UNMAPPED`}>
+              <ToneCard tone="attention" label={`${unmappedCount} UNMAPPED`}>
                 <p className="leading-[19px]">
                   Unmapped work is private and belongs to no engagement. It is not in any receipt,
                   no coach can see it, and it will not appear in the firm view until you map it.
