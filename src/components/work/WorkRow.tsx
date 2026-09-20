@@ -17,6 +17,8 @@ export function WorkRow({
   lead,
   footer,
   clientLabel,
+  primaryAction,
+  onFluency,
 }: {
   item: WorkItemRow;
   actions: React.ReactNode;
@@ -27,15 +29,19 @@ export function WorkRow({
   /**
    * Figma 22:220 draws a piece of work inside a type column as three lines and
    * nothing else: where it came from, what it is called, and where it sits.
-   * Every action still exists — it waits for hover, for keyboard focus, or for
-   * a touch screen, where there is no hover to wait for.
+   * Everything else lives behind one always-visible menu in the card's corner.
    *
    * Off by default, so every existing caller renders exactly as before.
    */
   dense?: boolean;
   lead?: React.ReactNode;
   footer?: React.ReactNode;
+  /** Dense only: the one act that stays on the card face, e.g. claiming. */
+  primaryAction?: React.ReactNode;
+  /** Dense only: passed through to the card menu's shared item actions. */
+  onFluency?: ((item: WorkItemRow) => void) | undefined;
 }) {
+
   const mapping = item.work_item_tasks[0]?.tasks ?? null;
   const link = item.meta?.web_view_link ?? null;
   const dateIso = effectiveWorkDate(item);
