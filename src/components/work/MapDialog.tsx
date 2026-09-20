@@ -132,6 +132,10 @@ export function MapDialog({
         <DialogHeader>
           <DialogTitle className="page-title">Map to a workstream</DialogTitle>
         </DialogHeader>
+        <p className="-mt-1 text-[11.5px] leading-[17px] text-muted-foreground">
+          Your engagement team can see mapped work.
+        </p>
+
 
         {item ? (
           <div className="-mt-2 flex min-w-0 items-center gap-2">

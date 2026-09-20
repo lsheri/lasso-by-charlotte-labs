@@ -18,7 +18,12 @@ export type OverlayHighlight = {
   excerpt: string;
   stale: boolean;
   version: number;
+  /** Teammate visibility: who can read this one, and who made it. */
+  visibility?: "just_me" | "engagement";
+  isMine?: boolean;
+  authorName?: string;
 };
+
 
 /** Where a composer is anchored: a fresh selection or an existing highlight. */
 type ComposerAnchor = { turnNo: number; charStart: number; charEnd: number; excerpt: string };
@@ -119,6 +124,7 @@ export function FocusOverlay({
   highlights = [],
   onHighlight,
   onRemoveHighlight,
+  onSetHighlightVisibility,
   threads = [],
   canWrite = false,
   onCreateComment,
@@ -132,10 +138,15 @@ export function FocusOverlay({
   onSummarize: () => void;
   onBranch: () => void;
   onClose: () => void;
-  /** Slice 2a: the reader's own highlights on this chat. */
+  /** Slice 2a: highlights on this chat the reader is allowed to see. */
   highlights?: readonly OverlayHighlight[];
   onHighlight?: ((selection: TurnSelection) => void) | undefined;
   onRemoveHighlight?: ((highlight: OverlayHighlight) => void) | undefined;
+  /** The author alone flips one of their own between shared and just them. */
+  onSetHighlightVisibility?:
+    | ((highlight: OverlayHighlight, visibility: "just_me" | "engagement") => void)
+    | undefined;
+
   /** Slice 2a unit 2: live comment threads on this chat, oldest first. */
   threads?: readonly CommentThreadDto[];
   /** A coach can read the review without being able to add to it. */
@@ -206,6 +217,11 @@ export function FocusOverlay({
     stale: thread.stale,
   }));
 
+  // A teammate's shared highlight is listed, not drawn over the reader's text.
+  const myHighlights = highlights.filter((highlight) => highlight.isMine !== false);
+  const teamHighlights = highlights.filter((highlight) => highlight.isMine === false);
+
+
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-[var(--nb-scrim)] p-4 md:p-8">
       <div className="mx-auto flex h-full w-full max-w-[1200px] flex-col overflow-hidden rounded-[var(--radius)] border border-[var(--nb-graphite)] bg-card shadow-[var(--shadow-modal)]">
@@ -241,7 +257,7 @@ export function FocusOverlay({
             onKeyUp={captureSelection}
           >
             {item && item.type === "ai_thread" ? (
-              <ThreadBody item={item} enabled highlights={highlights} commentMarks={commentMarks} />
+              <ThreadBody item={item} enabled highlights={myHighlights} commentMarks={commentMarks} />
             ) : item ? (
               <RenderedContent item={item} onDownload={() => undefined} canEdit={false} />
             ) : (
@@ -453,9 +469,9 @@ export function FocusOverlay({
                   />
                 ) : null}
 
-                {highlights.length === 0 ? null : (
+                {myHighlights.length === 0 ? null : (
                   <ul className="mt-2 flex flex-col gap-2">
-                    {highlights.map((highlight) => (
+                    {myHighlights.map((highlight) => (
                       <li
                         key={highlight.id}
                         className="rounded-[var(--radius-control)] border border-border bg-card px-2.5 py-2"
@@ -494,11 +510,52 @@ export function FocusOverlay({
                             Remove
                           </Button>
                         </div>
+                        {onSetHighlightVisibility ? (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="mt-1 h-6 px-1.5 text-[11.5px] text-muted-foreground"
+                            aria-pressed={highlight.visibility !== "just_me"}
+                            onClick={() =>
+                              onSetHighlightVisibility(
+                                highlight,
+                                highlight.visibility === "just_me" ? "engagement" : "just_me",
+                              )
+                            }
+                          >
+                            {highlight.visibility === "just_me"
+                              ? "Just me"
+                              : "Visible to your engagement team"}
+                          </Button>
+                        ) : null}
                       </li>
                     ))}
                   </ul>
                 )}
+
+                {teamHighlights.length === 0 ? null : (
+                  <>
+                    <h2 className="section-title mb-2 mt-4">shared by your team</h2>
+                    <ul className="flex flex-col gap-2">
+                      {teamHighlights.map((highlight) => (
+                        <li
+                          key={highlight.id}
+                          className="rounded-[var(--radius-control)] border border-border bg-card px-2.5 py-2"
+                        >
+                          <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
+                            {highlight.authorName ?? "A colleague"} · Turn {highlight.turnNo}
+                            {highlight.stale ? " · From an earlier version" : ""}
+                          </span>
+                          <p className="mt-1 line-clamp-2 text-[12px] leading-[18px] text-foreground">
+                            {highlight.excerpt}
+                          </p>
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
               </section>
+
             ) : null}
           </aside>
         </div>

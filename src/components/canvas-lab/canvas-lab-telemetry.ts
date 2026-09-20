@@ -101,7 +101,7 @@ export function noteWorkboardUndoUsed(orgId: string | undefined, action: UndoAct
  */
 export type AnnotationChange = {
   kind: "highlight" | "comment";
-  action: "created" | "edited" | "archived";
+  action: "created" | "edited" | "archived" | "updated";
   anchorKind: "turn" | "item";
   visibility: "just_me" | "engagement";
   /** How long the passage or the written note was, in characters. */

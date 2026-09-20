@@ -9,6 +9,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type {
   AnnotationMutationResult,
+  AnnotationVisibility,
+
   CommentMutationResult,
   CommentThreadDto,
   HighlightDto,
@@ -114,6 +116,26 @@ export const archiveHighlightFn = createServerFn({ method: "POST" })
     const { archiveHighlight } = await import("@/lib/canvas-lab-annotations.server");
     return archiveHighlight(supabase, profile, data.id, data.expected_version);
   });
+
+/** Teammate visibility: the author alone flips one of their highlights. */
+export const setHighlightVisibilityFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: { id: string; visibility: string; expected_version: number; profile_id?: string }) => ({
+      id: typeof input?.id === "string" ? input.id : "",
+      visibility: (input?.visibility === "just_me" ? "just_me" : "engagement") as AnnotationVisibility,
+      expected_version: typeof input?.expected_version === "number" ? input.expected_version : Number.NaN,
+      profile_id: typeof input?.profile_id === "string" ? input.profile_id : undefined,
+    }),
+  )
+  .handler(async ({ data, context }): Promise<AnnotationMutationResult> => {
+    const { supabase, userId } = context;
+    const profile = await resolveProfile(supabase, userId, data.profile_id);
+    if (!profile) return { status: "forbidden" };
+    const { setHighlightVisibility } = await import("@/lib/canvas-lab-annotations.server");
+    return setHighlightVisibility(supabase, profile, data.id, data.visibility, data.expected_version);
+  });
+
 
 /* Slice 2a unit 2: comments are review, so they are readable by everyone who
  * can already see the item. Only the author edits or removes their own. */

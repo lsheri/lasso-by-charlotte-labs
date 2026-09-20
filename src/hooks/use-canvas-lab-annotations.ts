@@ -7,12 +7,18 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback } from "react";
 
-import type { AnnotationMutationResult, HighlightDto } from "@/lib/canvas-lab-annotations-shared";
+import type {
+  AnnotationMutationResult,
+  AnnotationVisibility,
+  HighlightDto,
+} from "@/lib/canvas-lab-annotations-shared";
 import {
   archiveHighlightFn,
   createHighlightFn,
   listMyAnnotationsFn,
+  setHighlightVisibilityFn,
 } from "@/lib/canvas-lab.functions";
+
 
 export function annotationsQueryKey(engagementId: string, workItemId: string) {
   return ["workboard-annotations", engagementId, workItemId] as const;
@@ -27,6 +33,8 @@ export function useCanvasLabAnnotations(
   const listFn = useServerFn(listMyAnnotationsFn);
   const createFn = useServerFn(createHighlightFn);
   const archiveFn = useServerFn(archiveHighlightFn);
+  const visibilityFn = useServerFn(setHighlightVisibilityFn);
+
 
   const query = useQuery({
     queryKey: annotationsQueryKey(engagementId, workItemId ?? ""),
@@ -78,11 +86,30 @@ export function useCanvasLabAnnotations(
     onSuccess: invalidate,
   });
 
+  const setVisibility = useMutation({
+    mutationFn: async (input: {
+      id: string;
+      visibility: AnnotationVisibility;
+      expectedVersion: number;
+    }): Promise<AnnotationMutationResult> =>
+      (await visibilityFn({
+        data: {
+          id: input.id,
+          visibility: input.visibility,
+          expected_version: input.expectedVersion,
+          ...(profileId ? { profile_id: profileId } : {}),
+        },
+      })) as AnnotationMutationResult,
+    onSuccess: invalidate,
+  });
+
   return {
     highlights: query.data ?? [],
     loading: query.isLoading,
     createHighlight: create.mutateAsync,
     archiveHighlight: archive.mutateAsync,
+    setHighlightVisibility: setVisibility.mutateAsync,
     refresh: invalidate,
   };
+
 }
