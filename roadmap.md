@@ -213,4 +213,4 @@
 - [x] Prepare the supplied connector clip and its final-frame poster
 - [x] Create the staged Claude-to-Lasso phone clip and its final-frame poster
 - [x] Place both clips in the source-finding panel without changing its approved copy or actions
-- [ ] Verify focused landing tests, typecheck, media metadata, and preview build
+- [x] Verify focused landing tests, typecheck, media metadata, and preview build
