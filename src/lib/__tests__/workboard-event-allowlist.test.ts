@@ -55,6 +55,9 @@ describe("the workboard allowlist", () => {
           "method",
           "axis",
         ],
+        "workboard.example_viewed": [
+          "via",
+        ],
         "workboard.node_created": [
           "kind",
           "judgment_type",
@@ -163,6 +166,7 @@ describe("the workboard allowlist", () => {
       () => helpers.noteWorkboardElementResized("o", "card", "pointer", "both"),
       () => helpers.noteWorkboardDropPromptAnswered("o", "yes"),
       () => helpers.noteWorkboardStructureToggled("o", "structured"),
+      () => helpers.noteWorkboardExampleViewed("o", "header"),
       () => helpers.noteWorkboardDisplayModeToggled("o", "preview"),
       () => helpers.noteWorkboardCardContentViewed("o", "chat"),
       () => helpers.noteWorkboardCardContentViewed("o", "document", "open"),
@@ -190,7 +194,7 @@ describe("the workboard allowlist", () => {
       const [name, , dims] = mocked.mock.calls[0] as [string, string, Record<string, unknown>];
       expect(guardWorkboardEvent(name, dims as never)).toEqual({ keep: true, dims });
     }
-    expect(Object.keys(WORKBOARD_EVENT_DIMS)).toHaveLength(23);
+    expect(Object.keys(WORKBOARD_EVENT_DIMS)).toHaveLength(24);
   });
 
   it("keeps the additive open path for previewed document and deck cards", () => {

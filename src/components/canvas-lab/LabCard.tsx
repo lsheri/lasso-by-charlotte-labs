@@ -50,6 +50,7 @@ export function LabCard({
   preview,
   filePreview,
   onPreviewScroll,
+  readOnly = false,
 }: {
   node: LabNode;
   item?: WorkItemRow | undefined;
@@ -89,6 +90,8 @@ export function LabCard({
   preview?: WorkboardCardPreview | undefined;
   filePreview?: WorkboardFilePreview | undefined;
   onPreviewScroll?: ((kind: "chat" | "document" | "deck") => void) | undefined;
+  /** Sample board only: no drag, no menu, no anchors, no handles. */
+  readOnly?: boolean;
 }) {
   const cardRef = useRef<HTMLDivElement | null>(null);
   const paperRef = useRef<HTMLDivElement | null>(null);
@@ -117,6 +120,7 @@ export function LabCard({
 
   function openMenu(event: React.MouseEvent | React.KeyboardEvent) {
     event.preventDefault();
+    if (readOnly) return;
     event.stopPropagation();
     changeMenuOpen(true);
   }
@@ -128,14 +132,15 @@ export function LabCard({
       role="group"
       aria-roledescription="card"
       aria-label={`${node.title}${selected ? ", in context" : ""}`}
-      tabIndex={0}
+      tabIndex={readOnly ? -1 : 0}
       data-testid={`lab-card-${node.id}`}
       data-node-id={node.id}
       data-connecting={connecting}
-      onPointerDown={onPointerDown}
-      onFocus={onFocus}
+      data-read-only={readOnly}
+      onPointerDown={readOnly ? undefined : onPointerDown}
+      onFocus={readOnly ? undefined : onFocus}
       onContextMenu={openMenu}
-      onKeyDown={(event) => {
+      onKeyDown={readOnly ? undefined : (event) => {
         if ((event.shiftKey && event.key === "F10") || event.key === "ContextMenu") openMenu(event);
         else if (event.target === event.currentTarget) onKeyDown(event);
       }}
@@ -147,9 +152,9 @@ export function LabCard({
         <LabPaper node={node} item={item} selected={selected} focused={focused} displayMode={displayMode} preview={preview} filePreview={filePreview} onPreviewScroll={onPreviewScroll} onEdit={onEdit} onEditCommitted={onEditCommitted} commentCount={commentCount} onOpenComments={onOpenComments} />
         {selected ? <Paperclip aria-hidden="true" className="canvas-lab-context-mark" /> : null}
       </div>
-      {canResize && focused ? (["nw", "ne", "se", "sw"] as LabResizeCorner[]).map((corner) => <button key={corner} type="button" className="canvas-lab-resize-handle" data-corner={corner} aria-label={`Resize ${node.title} from ${corner}`} onDoubleClick={(event) => { event.stopPropagation(); onFit(); }} onPointerDown={(event) => onResizeStart(corner, event)} onKeyDown={(event) => onResizeKeyDown(corner, event)} onKeyUp={onResizeKeyUp} />) : null}
-      {anchors.map((side) => <button key={side} type="button" className="canvas-lab-anchor" data-node-id={node.id} data-side={side} data-active={connectSourceAnchor === side} aria-label={`Connect from ${side}`} onPointerDown={(event) => { anchorDownRef.current = { x: event.clientX, y: event.clientY }; onAnchorPointerDown(side, event); }} onClick={(event) => { event.stopPropagation(); const down = anchorDownRef.current; anchorDownRef.current = null; if (down && Math.hypot(event.clientX - down.x, event.clientY - down.y) >= 6) return; onAnchorActivate(side); }} />)}
-      <LabCardMenu selected={selected} canBranch={node.ownership === "teammate" || node.kind === "chat"} local={Boolean(node.local || node.kind === "chat")} removable={node.kind !== "judgment" || Boolean(node.local)} open={menuOpen} onOpenChange={changeMenuOpen} cardRef={cardRef} onSelect={onSelect} onOpen={onOpen} onBranch={onBranch} onHide={onHide} onDelete={onDelete} onFit={canResize ? onFit : undefined} frameChoices={structured ? frameChoices : []} currentFrame={node.frame} onMoveToFrame={structured && canResize ? onMoveToFrame : undefined} />
+      {canResize && focused && !readOnly ? (["nw", "ne", "se", "sw"] as LabResizeCorner[]).map((corner) => <button key={corner} type="button" className="canvas-lab-resize-handle" data-corner={corner} aria-label={`Resize ${node.title} from ${corner}`} onDoubleClick={(event) => { event.stopPropagation(); onFit(); }} onPointerDown={(event) => onResizeStart(corner, event)} onKeyDown={(event) => onResizeKeyDown(corner, event)} onKeyUp={onResizeKeyUp} />) : null}
+      {readOnly ? null : anchors.map((side) => <button key={side} type="button" className="canvas-lab-anchor" data-node-id={node.id} data-side={side} data-active={connectSourceAnchor === side} aria-label={`Connect from ${side}`} onPointerDown={(event) => { anchorDownRef.current = { x: event.clientX, y: event.clientY }; onAnchorPointerDown(side, event); }} onClick={(event) => { event.stopPropagation(); const down = anchorDownRef.current; anchorDownRef.current = null; if (down && Math.hypot(event.clientX - down.x, event.clientY - down.y) >= 6) return; onAnchorActivate(side); }} />)}
+      {readOnly ? null : <LabCardMenu selected={selected} canBranch={node.ownership === "teammate" || node.kind === "chat"} local={Boolean(node.local || node.kind === "chat")} removable={node.kind !== "judgment" || Boolean(node.local)} open={menuOpen} onOpenChange={changeMenuOpen} cardRef={cardRef} onSelect={onSelect} onOpen={onOpen} onBranch={onBranch} onHide={onHide} onDelete={onDelete} onFit={canResize ? onFit : undefined} frameChoices={structured ? frameChoices : []} currentFrame={node.frame} onMoveToFrame={structured && canResize ? onMoveToFrame : undefined} />}
     </div>
   );
 }

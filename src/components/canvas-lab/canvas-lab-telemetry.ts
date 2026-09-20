@@ -79,6 +79,11 @@ export function noteWorkboardStructureToggled(orgId: string | undefined, state: 
   if (orgId) logEvent("workboard.structure_toggled", orgId, { state });
 }
 
+/** B3a: the built-in sample board was opened. Entry point only. */
+export function noteWorkboardExampleViewed(orgId: string | undefined, via: "header"): void {
+  if (orgId) logEvent("workboard.example_viewed", orgId, { via });
+}
+
 export function noteWorkboardDisplayModeToggled(orgId: string | undefined, mode: WorkboardDisplayMode): void {
   if (orgId) logEvent("workboard.display_mode_toggled", orgId, { mode });
 }
