@@ -11,8 +11,18 @@ import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
+export type PlacedWorkItem = {
+  id: string;
+  title: string;
+  type: string;
+  source: string;
+  owner_id: string | null;
+};
+
 export type PlaceWorkResult = {
   taskId: string;
+  /** The placed items, enough to draw a card before the page read catches up. */
+  items: PlacedWorkItem[];
   /** Ids that now have a placement on this engagement because of this call. */
   placed: string[];
   /** Ids that were already on this engagement, left exactly as they were. */
@@ -58,5 +68,16 @@ export const placeWorkOnBoardFn = createServerFn({ method: "POST" })
       if (insert.error) throw new Error(insert.error.message);
     }
 
-    return { taskId, placed: toPlace, alreadyHere: [...alreadyHere] };
+    const details = await supabase
+      .from("work_items")
+      .select("id, title, type, source, owner_id")
+      .in("id", data.work_item_ids);
+    if (details.error) throw new Error(details.error.message);
+
+    return {
+      taskId,
+      items: (details.data ?? []) as PlacedWorkItem[],
+      placed: toPlace,
+      alreadyHere: [...alreadyHere],
+    };
   });
