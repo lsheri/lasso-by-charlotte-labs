@@ -1590,7 +1590,8 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 }
 .canvas-lab-frame-guidance { position: absolute; left: 24px; right: 24px; top: 58px; line-height: 1.25; }
 .canvas-lab-add-workstream { display: inline-flex; align-items: center; min-height: 28px; padding: 0 8px; color: var(--nb-green); font-family: var(--font-hand); font-size: 16px; }
-.canvas-lab-inline-add { position: absolute; z-index: 15; width: 220px; min-height: 28px; }
+/* Size comes from BOARD_INLINE_ADD_SIZE, set inline. */
+.canvas-lab-inline-add { position: absolute; z-index: 15; }
 .canvas-lab-inline-workstream { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 8px; }
 .canvas-lab-inline-workstream input { width: 132px; border: 0; border-bottom: 1.4px solid var(--nb-green); background: var(--nb-paper); color: var(--nb-ink); font-family: var(--font-hand); font-size: 16px; outline: none; }
 .canvas-lab-inline-workstream button { color: var(--nb-ink); font-family: var(--font-mono); font-size: 9px; text-transform: uppercase; }
