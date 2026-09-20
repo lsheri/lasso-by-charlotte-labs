@@ -700,8 +700,14 @@ export function WorkPage() {
         }
         onOpen={openItem(entry)}
         chips={<ConversationChips item={entry} />}
-        actions={rowActions(entry, variant)}
+        actions={rowActions(entry, variant, undefined, { inCardMenu: true })}
+        primaryAction={claimAction(entry)}
+        onFluency={(next) => {
+          setLensPreset(undefined);
+          setLensItem(next);
+        }}
         clientLabel={clientName(entry.client_id)}
+
         {...(entry.visibility === "mapped" ? {} : { footer: suggestionFor(entry) })}
       />
     );
