@@ -147,7 +147,7 @@ export function DecisionsPage() {
         <div className="grid gap-10 xl:grid-cols-[minmax(0,1fr)_210px]">
           <section aria-label="Decision timeline">
             {rows.length === 0 ? (
-              <p className="py-5 text-sm text-muted-foreground">Nothing logged yet. A decision lands here the moment you make a decision.</p>
+              <p className="py-5 text-sm text-muted-foreground">Nothing logged yet. A decision lands here the moment you make one.</p>
             ) : visible.length === 0 ? (
               <p className="py-5 text-sm text-muted-foreground">Nothing in this view.</p>
             ) : (
