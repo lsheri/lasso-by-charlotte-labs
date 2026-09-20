@@ -31,6 +31,7 @@ export const WORKBOARD_EVENT_DIMS: Readonly<Record<string, readonly string[]>> =
   "workboard.save_error_resolved": ["entity", "choice"],
   "workboard.context_changed": ["action"],
   "workboard.undo_used": ["action", "direction"],
+  "workboard.work_added": ["source", "via", "count"],
   "workboard.annotation_changed": [
     "kind",
     "action",

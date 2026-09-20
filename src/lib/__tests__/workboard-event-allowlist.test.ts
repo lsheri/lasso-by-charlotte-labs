@@ -101,6 +101,11 @@ describe("the workboard allowlist", () => {
           "action",
           "direction",
         ],
+        "workboard.work_added": [
+          "source",
+          "via",
+          "count",
+        ],
       }
     `);
   });
