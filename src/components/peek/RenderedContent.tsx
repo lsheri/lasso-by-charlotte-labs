@@ -280,7 +280,7 @@ export function RenderedContent({
     return <TextOrFallback item={item} onDownload={onDownload} canEdit={canEdit} />;
   }
   if (urlQuery.isError) {
-    return <Notice>{(urlQuery.error as Error).message}</Notice>;
+    return <Notice>Couldn&apos;t open this file.</Notice>;
   }
   if (!url) return <Notice>Loading preview…</Notice>;
 

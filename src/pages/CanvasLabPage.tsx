@@ -1309,7 +1309,8 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
 
   function openNode(node: LabNode) {
     const item = itemByNode(node);
-    if (displayMode === "preview" && item && (item.type === "document" || item.type === "deck" || item.type === "sheet") && filePreviews[item.id]?.kind !== "fallback" && !viewedPreviewIdsRef.current.has(item.id)) {
+    const openedPreview = item ? filePreviews[item.id] : undefined;
+    if (displayMode === "preview" && item && openedPreview && openedPreview.kind !== "fallback" && (item.type === "document" || item.type === "deck" || item.type === "sheet") && !viewedPreviewIdsRef.current.has(item.id)) {
       viewedPreviewIdsRef.current.add(item.id);
       noteWorkboardCardContentViewed(orgId, item.type === "deck" ? "deck" : "document", "open");
     }

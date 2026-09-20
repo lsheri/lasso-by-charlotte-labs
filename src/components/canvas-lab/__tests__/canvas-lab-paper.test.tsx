@@ -97,6 +97,26 @@ describe("Canvas Lab paper", () => {
     expect(onPreviewScroll).not.toHaveBeenCalled();
   });
 
+  it("shows a real text page only in Preview mode and keeps the excerpt as fallback", () => {
+    const item = { ...workItem, work_item_extracts: [{ summary: "Existing six-line excerpt" }] };
+    const node = { ...baseNode, kind: "work" as const, workItemId: item.id };
+    const sticky = render(<LabPaper node={node} item={item} selected={false} displayMode="sticky" filePreview={{ workItemId: item.id, kind: "text", url: null, lines: ["First page line"], slideTitle: null, versionCount: 0 }} onEdit={() => undefined} onEditCommitted={() => undefined} />);
+    expect(sticky.queryByTestId("workboard-text-preview")).toBeNull();
+    sticky.unmount();
+
+    render(<LabPaper node={node} item={item} selected={false} displayMode="preview" filePreview={{ workItemId: item.id, kind: "text", url: null, lines: ["First page line"], slideTitle: null, versionCount: 0 }} onEdit={() => undefined} onEditCommitted={() => undefined} />);
+    expect(screen.getByTestId("workboard-text-preview")).not.toBeNull();
+    cleanup();
+
+    render(<LabPaper node={node} item={item} selected={false} displayMode="preview" filePreview={{ workItemId: item.id, kind: "fallback", url: null, lines: [], slideTitle: null, versionCount: 0 }} onEdit={() => undefined} onEditCommitted={() => undefined} />);
+    expect(screen.getByText("Existing six-line excerpt")).not.toBeNull();
+  });
+
+  it("shows the document version count as a quiet chip", () => {
+    render(<LabPaper node={{ ...baseNode, kind: "work", workItemId: workItem.id }} item={workItem} selected={false} displayMode="preview" filePreview={{ workItemId: workItem.id, kind: "fallback", url: null, lines: [], slideTitle: null, versionCount: 3 }} onEdit={() => undefined} onEditCommitted={() => undefined} />);
+    expect(screen.getByTestId("workboard-version-chip").textContent).toBe("v3");
+  });
+
   it.each([
     ["work", "GOOGLEDRIVE", workItem],
     ["brief", "BRIEF", undefined],

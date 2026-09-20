@@ -160,6 +160,7 @@ describe("the workboard allowlist", () => {
       () => helpers.noteWorkboardStructureToggled("o", "structured"),
       () => helpers.noteWorkboardDisplayModeToggled("o", "preview"),
       () => helpers.noteWorkboardCardContentViewed("o", "chat"),
+      () => helpers.noteWorkboardCardContentViewed("o", "document", "open"),
       () => helpers.noteWorkboardSaveErrorResolved("o", "board", "retry"),
       () => helpers.noteWorkboardContextChanged("o", "cleared"),
       () => helpers.noteWorkboardUndoUsed("o", "move", "undo"),
@@ -183,6 +184,15 @@ describe("the workboard allowlist", () => {
       expect(guardWorkboardEvent(name, dims as never)).toEqual({ keep: true, dims });
     }
     expect(Object.keys(WORKBOARD_EVENT_DIMS)).toHaveLength(22);
+  });
+
+  it("keeps the additive open path for previewed document and deck cards", () => {
+    const mocked = vi.mocked(logEvent);
+    helpers.noteWorkboardCardContentViewed("o", "deck", "open");
+    expect(mocked).toHaveBeenLastCalledWith("workboard.card_content_viewed", "o", {
+      kind: "deck",
+      via: "open",
+    });
   });
 
   it("reports each highlight's actual visibility without changing the action schema", () => {
