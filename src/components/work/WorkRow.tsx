@@ -7,6 +7,7 @@ import { WorkNote } from "@/components/work/WorkNote";
 import { UNREAD_MARKER_LINE, contentsUnread, textStatusReason } from "@/lib/text-status";
 import { engagementHue, workIdentityLabel } from "@/lib/work-identity";
 import { effectiveWorkDate, formatDate, type WorkItemRow } from "@/lib/work-types";
+import type { WorkboardCardPreview, WorkboardDisplayMode, WorkboardFilePreview } from "@/lib/workboard-card-preview.shared";
 
 export function WorkRow({
   item,
@@ -20,6 +21,9 @@ export function WorkRow({
   clientLabel,
   primaryAction,
   onFluency,
+  displayMode = "sticky",
+  chatPreview,
+  filePreview,
 }: {
   item: WorkItemRow;
   actions: React.ReactNode;
@@ -41,6 +45,9 @@ export function WorkRow({
   primaryAction?: React.ReactNode;
   /** Dense only: passed through to the card menu's shared item actions. */
   onFluency?: ((item: WorkItemRow) => void) | undefined;
+  displayMode?: WorkboardDisplayMode;
+  chatPreview?: WorkboardCardPreview | undefined;
+  filePreview?: WorkboardFilePreview | undefined;
 }) {
 
   const mapping = item.work_item_tasks[0]?.tasks ?? null;
@@ -88,6 +95,9 @@ export function WorkRow({
           lead={lead}
           clientLabel={clientLabel}
           dense
+          displayMode={displayMode}
+          chatPreview={chatPreview}
+          filePreview={filePreview}
           chips={
             primaryAction ? (
               <span onClick={(event) => event.stopPropagation()}>{primaryAction}</span>

@@ -2,12 +2,14 @@ import { useState } from "react";
 import { CircleDashed, Lock } from "lucide-react";
 
 import { CardMenu } from "@/components/work/CardMenu";
+import { WorkCardPreview } from "@/components/work/WorkCardPreview";
 import { SourceMark, VendorMark } from "@/components/work/SourceMark";
 import { TypeIcon } from "@/components/work/TypeIcon";
 import { stampDate } from "@/components/work/card-stamp";
 import { attachmentKindLabel, vendorLabel } from "@/lib/conversation-shared";
 import { engagementHue, workIdentityLabel } from "@/lib/work-identity";
 import { effectiveWorkDate, formatDate, type ConversationGroup, type WorkItemRow } from "@/lib/work-types";
+import type { WorkboardCardPreview, WorkboardDisplayMode } from "@/lib/workboard-card-preview.shared";
 
 /** Pieces beyond this fold away behind a single line, so the card stays a card. */
 const PREVIEW = 4;
@@ -26,6 +28,8 @@ export function ConversationCard({
   dense = false,
   primaryAction,
   onFluency,
+  displayMode = "sticky",
+  preview,
 }: {
   group: ConversationGroup;
   variant: "mapped" | "unmapped" | "private";
@@ -44,6 +48,8 @@ export function ConversationCard({
   primaryAction?: React.ReactNode;
   /** Dense only: passed through to the card menu's shared item actions. */
   onFluency?: ((item: WorkItemRow) => void) | undefined;
+  displayMode?: WorkboardDisplayMode;
+  preview?: WorkboardCardPreview | undefined;
 }) {
   const head = group.transcript ?? group.items[0]!;
   const pieces = group.transcript ? group.attachments : group.items.slice(1);
@@ -134,6 +140,8 @@ export function ConversationCard({
               {head.title}
             </span>
           </button>
+
+          {displayMode === "preview" ? <WorkCardPreview item={head} chatPreview={preview} /> : null}
 
           {/* Line three: where it sits, and how much of it there is. */}
           <p className="mt-1 truncate font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
