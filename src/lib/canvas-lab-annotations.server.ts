@@ -222,10 +222,43 @@ export async function archiveHighlight(
     .is("archived_at", null)
     .select(ANNOTATION_COLUMNS)
     .maybeSingle();
-  if (data) return { status: "saved", highlight: highlightDto(data as AnnotationRow) };
+  if (data) return { status: "saved", highlight: highlightDto(data as AnnotationRow, profile.id, "You") };
   if (error?.code === "42501") return { status: "forbidden" };
   return { status: "conflict" };
 }
+
+/**
+ * The author alone decides who sees one of their highlights. The author check
+ * is repeated here as well as in the database.
+ */
+export async function setHighlightVisibility(
+  db: Db,
+  profile: ResolvedProfile,
+  id: string,
+  visibility: AnnotationVisibility,
+  expectedVersion: number,
+): Promise<AnnotationMutationResult> {
+  if (!id || !Number.isInteger(expectedVersion)) {
+    return { status: "validation_error", message: "That highlight could not be read." };
+  }
+  if (visibility !== "just_me" && visibility !== "engagement") {
+    return { status: "validation_error", message: "That choice could not be read." };
+  }
+  const { data, error } = await db
+    .from("workboard_annotations")
+    .update({ visibility, updated_by: profile.id })
+    .eq("id", id)
+    .eq("version", expectedVersion)
+    .eq("author_profile_id", profile.id)
+    .eq("kind", "highlight")
+    .is("archived_at", null)
+    .select(ANNOTATION_COLUMNS)
+    .maybeSingle();
+  if (data) return { status: "saved", highlight: highlightDto(data as AnnotationRow, profile.id, "You") };
+  if (error?.code === "42501") return { status: "forbidden" };
+  return { status: "conflict" };
+}
+
 
 /* -------------------------------------------------------------------------
  * Slice 2a unit 2: comments, replies, and the count behind a card's chip.
