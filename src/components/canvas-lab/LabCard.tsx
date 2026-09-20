@@ -131,14 +131,15 @@ export function LabCard({
       role="group"
       aria-roledescription="card"
       aria-label={`${node.title}${selected ? ", in context" : ""}`}
-      tabIndex={0}
+      tabIndex={readOnly ? -1 : 0}
       data-testid={`lab-card-${node.id}`}
       data-node-id={node.id}
       data-connecting={connecting}
-      onPointerDown={onPointerDown}
-      onFocus={onFocus}
-      onContextMenu={openMenu}
-      onKeyDown={(event) => {
+      data-read-only={readOnly}
+      onPointerDown={readOnly ? undefined : onPointerDown}
+      onFocus={readOnly ? undefined : onFocus}
+      onContextMenu={readOnly ? (event) => event.preventDefault() : openMenu}
+      onKeyDown={readOnly ? undefined : (event) => {
         if ((event.shiftKey && event.key === "F10") || event.key === "ContextMenu") openMenu(event);
         else if (event.target === event.currentTarget) onKeyDown(event);
       }}
