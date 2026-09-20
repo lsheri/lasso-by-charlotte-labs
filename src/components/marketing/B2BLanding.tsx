@@ -2,7 +2,6 @@ import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { type FormEvent, useEffect, useRef, useState } from "react";
 
-import coachSpider from "@/assets/coach-lasso-spider.png.asset.json";
 import pastWorkLibrary from "@/assets/past-work-library.png.asset.json";
 import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
 import { PublicHeader } from "@/components/layout/PublicHeader";
@@ -23,6 +22,9 @@ type ClipSlotProps = {
   width?: number;
   height?: number;
 };
+
+// Fallback variant for the landing hero.
+export const HERO_H1_FALLBACK = "Your firm bought AI. Now nobody can say where a number came from.";
 
 function ClipSlot({ id, src, poster, label, width = 1440, height = 900 }: ClipSlotProps) {
   if (src && poster) {
@@ -89,6 +91,18 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
     });
   }
 
+  function noteSeeItWorkClick() {
+    void recordAnonymousEventFn({
+      data: {
+        event_type: "landing.see_it_work_clicked",
+        view_id: viewId.current,
+        dims: { location: "hero" },
+      },
+    }).catch(() => {
+      /* This signal must never surface to the visitor. */
+    });
+  }
+
   async function submitPilotRequest(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     notePilotClick("pilot");
@@ -145,13 +159,12 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
           <div className="mx-auto max-w-3xl px-6 md:px-10">
             <section className="landing-next-hero">
               <h1 className="pencil-title mt-5 text-foreground">
-                Your firm bought AI. Now nobody can say where a number came from.
+                Your firm bought AI. The human judgment in your team's work went invisible.
               </h1>
-              <p className="mt-6 max-w-2xl text-base leading-relaxed text-muted-foreground">
-                Analysis, drafting and judgment happen one prompt at a time, across tools nobody
-                keeps a copy of. Lasso keeps the record, and the judgment your people made on top of
-                it.
-              </p>
+              <h2 className="mt-6 max-w-2xl text-[26px] leading-relaxed text-muted-foreground">
+                Lasso traces every fact in a deliverable to its source and keeps the decisions your
+                team made alongside it. Work you can defend to a client, a partner, or a board.
+              </h2>
               <div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-3">
                 <Button asChild>
                   <a href="#pilot" onClick={() => notePilotClick("hero")}>
@@ -160,9 +173,10 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
                 </Button>
                 <a
                   href="#how-it-works"
+                  onClick={noteSeeItWorkClick}
                   className="story-link text-sm text-foreground transition-colors hover:text-muted-foreground"
                 >
-                  See how it works ↓
+                  See it work ↓
                 </a>
               </div>
               <Link
@@ -177,7 +191,7 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
             <div id="how-it-works">
             <FocusSection className="mt-24">
               <h2 className="pencil-title">
-                The thinking moved into chat windows. The record didn't follow.
+                Where the work actually happens now.
               </h2>
               <p className="micro-label mt-8">Clips show sample data.</p>
               <div className="mt-5 grid grid-cols-2 gap-x-3 gap-y-12 sm:gap-x-5 sm:gap-y-14">
@@ -225,11 +239,11 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
                     <div>
                       <p className="micro-label">THE ENGAGEMENT, LAID OUT</p>
                       <h2 className="pencil-title mt-4">
-                        Sources. AI work. Your call. The deliverable. In that order, on one board.
+                        Sources, AI work, your team's decisions, the deliverable. One board, in that order.
                       </h2>
                       <p className="mt-5 max-w-2xl text-base leading-relaxed text-foreground">
                         Every engagement gets a board: one frame per workstream, cards for the brief,
-                        the calls, the chats and the drafts. Your judgment is its own card, not a
+                        the meetings, the chats and the drafts. Your judgment is its own card, not a
                         comment in the margin. Draw a line and say what it means: informed, produced,
                         revised, cited. Nothing on the board feeds AI by proximity. What fed this
                         follows the lines you drew, never a guess.
@@ -238,7 +252,7 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
                         Your engagement team sees the same board. Coaches read, they don't edit.
                       </p>
                     </div>
-                    <ClipSlot id="workboard" src="/videos/lasso-what-fed-this.mp4" poster="/videos/poster-what-fed-this.jpg" width={2692} height={1520} label="An engagement arranged on one board" />
+                    <ClipSlot id="workboard" label="An engagement arranged on one board" />
                   </div>
                 </section>
 
@@ -250,9 +264,9 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
                         The decisions you made, written down before you forget them
                       </h2>
                       <p className="mt-5 max-w-2xl text-base leading-relaxed text-foreground">
-                        Lasso drafts the decision from the conversation. You confirm it or discard
-                        it. The firm's judgment stops living in chat scroll, and the client sees a
-                        “how we got here” page instead of a shrug.
+                        Lasso drafts the decision from the conversation. You confirm it or discard it.
+                        The firm's judgment stops living in chat scroll, and the client gets a “how we
+                        got here” page with the deliverable.
                       </p>
                     </div>
                     <ClipSlot id="decisions" src="/videos/decisions.mp4" poster="/videos/decisions-poster.png" label="A decision drafted from a conversation" />
@@ -265,8 +279,8 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
                       <p className="micro-label">WHAT LANDS</p>
                       <h2 className="pencil-title mt-4">Everything you made this week, in one inbox</h2>
                       <p className="mt-5 max-w-2xl text-base leading-relaxed text-foreground">
-                        Chats, files, calls and drafts arrive as they happen. You shape them into work,
-                        or leave them. Nothing is lost, nothing is required.
+                        Chats, files, meetings and drafts arrive as they happen. You shape them into
+                        work, or leave them. Nothing is lost, nothing is required.
                       </p>
                     </div>
                     <ClipSlot id="inbox" src="/videos/inbox.mp4" poster="/videos/inbox-poster.png" label="Work arriving in one inbox" />
@@ -290,10 +304,6 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
                 opens as a conversation, and you write back. Not prescriptive. It shows how people
                 work, it does not tell them how to work.
               </p>
-              <div className="landing-next-coach-art relative mt-6" aria-hidden="true">
-                <LassoLoopMark className="h-full w-full text-green" />
-                <img src={coachSpider.url} alt="" className="landing-next-coach-spider absolute" />
-              </div>
               <div className="mt-6">
                 <ClipSlot id="coach-note" src="/videos/coach-note.mp4" poster="/videos/coach-note-poster.png" label="A coach note opening as a conversation" />
               </div>
@@ -334,6 +344,9 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
               <p className="mt-5 max-w-2xl text-base leading-relaxed text-foreground">
                 Four months, one real engagement, your team, your tools. You keep every record whether
                 or not you continue.
+              </p>
+              <p className="mt-3 max-w-2xl font-mono text-[11.5px] text-muted-foreground">
+                Fixed fee for the pilot. No per-seat pricing until you've seen it work.
               </p>
 
               {submitted ? (
