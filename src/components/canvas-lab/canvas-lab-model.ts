@@ -38,7 +38,8 @@ export type LabStructureMode = "structured" | "freeform";
 export type LabNode = {
   id: string;
   kind: LabNodeKind;
-  frame: LabFrameId;
+  /** A blank board has no outlines at all, so a card can belong to none. */
+  frame?: LabFrameId | null;
   title: string;
   /** One quiet line under the title in Cards, the preview header in Live. */
   summary: string;
