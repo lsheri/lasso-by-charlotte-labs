@@ -5,6 +5,8 @@ export type TelemetryEvent =
   | "landing.viewed"
   /** B2B landing: a visitor chose either pilot entry point. Location only. */
   | "landing.pilot_cta_clicked"
+  /** B2B landing: a pilot request was saved. Team-size band only. */
+  | "landing.pilot_requested"
   | "workitem.captured"
   | "workitem.mapped"
   | "workitem.marked_private"

@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { type FormEvent, useEffect, useRef, useState } from "react";
 
 import coachSpider from "@/assets/coach-lasso-spider.png.asset.json";
@@ -11,6 +12,7 @@ import { PrivacyToggleDemo } from "@/components/marketing/PrivacyToggleDemo";
 import { VendorLabel } from "@/components/marketing/VendorMark";
 import { Button } from "@/components/ui/button";
 import { startSessionReplay, stopSessionReplay } from "@/lib/posthog-client";
+import { submitPilotRequestFn } from "@/lib/pilot-request.functions";
 import { recordAnonymousEventFn } from "@/lib/telemetry.functions";
 
 export const Route = createFileRoute("/landing-next")({
@@ -81,6 +83,9 @@ function ClipSlot({ id, src, poster, label, width = 1440, height = 900 }: ClipSl
 function LandingNextPage() {
   const viewId = useRef<string>(crypto.randomUUID());
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState(false);
+  const submitPilot = useServerFn(submitPilotRequestFn);
 
   useEffect(() => {
     void recordAnonymousEventFn({
@@ -111,10 +116,47 @@ function LandingNextPage() {
     });
   }
 
-  function submitPilotRequest(event: FormEvent<HTMLFormElement>) {
+  async function submitPilotRequest(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     notePilotClick("pilot");
-    setSubmitted(true);
+    setSubmitting(true);
+    setSubmitError(false);
+    const form = event.currentTarget;
+    const controls = form.elements as typeof form.elements & {
+      name: HTMLInputElement;
+      firm: HTMLInputElement;
+      email: HTMLInputElement;
+      teamSize: HTMLSelectElement;
+      note: HTMLTextAreaElement;
+      website: HTMLInputElement;
+    };
+    const teamSize = controls.teamSize.value as "1-5" | "6-15" | "16-40" | "40+";
+    try {
+      await submitPilot({
+        data: {
+          name: controls.name.value,
+          firm: controls.firm.value,
+          email: controls.email.value,
+          team_size: teamSize,
+          note: controls.note.value || undefined,
+          website: controls.website.value,
+        },
+      });
+      void recordAnonymousEventFn({
+        data: {
+          event_type: "landing.pilot_requested",
+          view_id: viewId.current,
+          dims: { team_size: teamSize },
+        },
+      }).catch(() => {
+        /* This signal must never surface to the visitor. */
+      });
+      setSubmitted(true);
+    } catch {
+      setSubmitError(true);
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -327,6 +369,10 @@ function LandingNextPage() {
                 </p>
               ) : (
                 <form className="landing-next-pilot-form mt-8 grid gap-5" onSubmit={submitPilotRequest}>
+                  <label className="sr-only" aria-hidden="true">
+                    <span>Website</span>
+                    <input name="website" tabIndex={-1} autoComplete="off" />
+                  </label>
                   <label>
                     <span>Name</span>
                     <input name="name" autoComplete="name" required />
@@ -353,7 +399,12 @@ function LandingNextPage() {
                     <span>Anything we should know</span>
                     <textarea name="note" rows={4} />
                   </label>
-                  <div><Button type="submit">Book a pilot</Button></div>
+                  <div><Button type="submit" disabled={submitting}>{submitting ? "Sending…" : "Book a pilot"}</Button></div>
+                  {submitError ? (
+                    <p className="text-sm text-destructive" role="alert">
+                      That didn't go through. Email liam@charlotte-labs.com and we'll pick it up.
+                    </p>
+                  ) : null}
                 </form>
               )}
 
