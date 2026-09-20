@@ -620,7 +620,8 @@ export function WorkPage() {
     }
   }
 
-  const subtitle = <WorkSubtitle pieces={all.length} unmapped={unmapped.length} />;
+  // P1: a pushed conversation counts as one thing, here and everywhere below.
+  const subtitle = <WorkSubtitle pieces={groupedCount(all)} unmapped={groupedCount(unmapped)} />;
 
   const engagementCodes = Array.from(
     new Set(
@@ -676,7 +677,7 @@ export function WorkPage() {
    */
   const filteredEntries = groupConversations(filtered);
   const unmappedCount = groupedCount(unmapped);
-  const pieceCount = groupedCount(all);
+
 
   const chipBase = "rounded-full px-3 py-1 text-[11.5px] transition-colors";
   const chipOn = `${chipBase} border border-graphite bg-nb-white font-medium text-foreground`;
