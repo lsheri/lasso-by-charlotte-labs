@@ -185,3 +185,9 @@
 ## Workboard polish 2d follow-up 2
 - [x] Keep the paper header and handwritten title from shrinking so compact judgment editors cannot cover the title
 - [x] Truncate the header source label with an ellipsis and drop the header date at compact
+
+## Landing unit L1
+- [x] Rebuild `/landing-next` as the approved B2B page.
+- [x] Add opt-in held clip playback without changing `/` defaults.
+- [x] Add anonymous pilot CTA event and focused tests.
+- [x] Run landing tests, language scan, typecheck, and inspect build status.

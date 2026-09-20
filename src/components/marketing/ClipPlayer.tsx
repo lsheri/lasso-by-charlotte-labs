@@ -12,16 +12,25 @@ import { useEffect, useRef, useState } from "react";
  * Only one clip on the page ever runs. Whichever clip is most in view claims
  * playback and every other clip is paused, so scrolling hands the loop along.
  */
-const players = new Set<{ el: HTMLVideoElement; ratio: number; group: string }>();
+type Playback = "loop" | "hold";
+
+const players = new Set<{
+  el: HTMLVideoElement;
+  ratio: number;
+  group: string;
+  playback: Playback;
+}>();
 
 function arbitrate() {
-  let best: { el: HTMLVideoElement; ratio: number; group: string } | null = null;
+  let best: { el: HTMLVideoElement; ratio: number; group: string; playback: Playback } | null = null;
   for (const p of players) {
     if (p.ratio < 0.35) continue;
     if (!best || p.ratio > best.ratio) best = p;
   }
   for (const p of players) {
-    if (best && p.group === best.group) void p.el.play().catch(() => {});
+    if (best && (p === best || (best.playback === "loop" && p.group === best.group))) {
+      void p.el.play().catch(() => {});
+    }
     else p.el.pause();
   }
 }
@@ -36,6 +45,7 @@ export function ClipPlayer({
   group,
   cover,
   aspect,
+  playback = "loop",
 }: {
   src: string;
   poster: string;
@@ -49,12 +59,15 @@ export function ClipPlayer({
   cover?: boolean;
   /** Override the tile shape, e.g. "4 / 3" for a collage grid. */
   aspect?: string;
+  /** Opt-in landing playback: hold the last frame for two seconds, then restart. */
+  playback?: Playback;
 }) {
 
 
   const ref = useRef<HTMLVideoElement | null>(null);
   const [reduced, setReduced] = useState(false);
   const [manual, setManual] = useState(false);
+  const holdTimer = useRef<number | null>(null);
 
   useEffect(() => {
     if (typeof window === "undefined" || !window.matchMedia) return;
@@ -73,7 +86,7 @@ export function ClipPlayer({
       return;
     }
     if (typeof IntersectionObserver === "undefined") return;
-    const entry = { el, ratio: 0, group: group ?? src };
+    const entry = { el, ratio: 0, group: group ?? src, playback };
     players.add(entry);
     const io = new IntersectionObserver(
       (entries) => {
@@ -85,11 +98,23 @@ export function ClipPlayer({
     io.observe(el);
     return () => {
       io.disconnect();
+      if (holdTimer.current !== null) window.clearTimeout(holdTimer.current);
       players.delete(entry);
       el.pause();
       arbitrate();
     };
-  }, [reduced, manual, group, src]);
+  }, [reduced, manual, group, src, playback]);
+
+  function holdAndRestart() {
+    if (playback !== "hold") return;
+    if (holdTimer.current !== null) window.clearTimeout(holdTimer.current);
+    holdTimer.current = window.setTimeout(() => {
+      const el = ref.current;
+      if (!el) return;
+      el.currentTime = 0;
+      arbitrate();
+    }, 2000);
+  }
 
   return (
     <figure className="relative m-0">
@@ -98,7 +123,8 @@ export function ClipPlayer({
         src={src}
         poster={poster}
         muted
-        loop
+        loop={playback === "loop"}
+        onEnded={holdAndRestart}
         playsInline
         preload="none"
         aria-label={label}

@@ -4108,7 +4108,40 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 
 @keyframes landing-next-carousel-slide {
   from { transform: translateX(0); }
-  to { transform: translateX(-400vw); }
+  to { transform: translateX(-300vw); }
+}
+
+.landing-next-pilot-form label {
+  display: grid;
+  gap: 0.45rem;
+  color: var(--foreground);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.landing-next-pilot-form input,
+.landing-next-pilot-form select,
+.landing-next-pilot-form textarea {
+  width: 100%;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--card);
+  color: var(--foreground);
+  padding: 0.75rem 0.875rem;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.landing-next-pilot-form input:focus,
+.landing-next-pilot-form select:focus,
+.landing-next-pilot-form textarea:focus {
+  border-color: var(--ring);
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
 }
 
 @supports (animation-timeline: scroll()) {
@@ -4122,7 +4155,7 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 
     @media (min-width: 768px) {
       .landing-next-carousel {
-        height: 600vh;
+        height: 500vh;
         padding-inline: 0;
         view-timeline-name: --landing-next-carousel;
         view-timeline-axis: block;
@@ -4137,7 +4170,7 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 
       .landing-next-carousel-track {
         display: flex;
-        width: 500vw;
+        width: 400vw;
         height: 100%;
         animation: landing-next-carousel-slide linear both;
         animation-timeline: --landing-next-carousel;
