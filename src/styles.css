@@ -3675,7 +3675,10 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
     height: 100%;
     z-index: 40;
   }
-  .nb-bench-page[data-rail="closed"] > .nb-bench-main > * > .nb-sticky-head {
+  /* Unit D1: the corner card hangs the full height of the column, so the whole
+     main column keeps the gutter clear. Reserving it only on the title row let
+     the card sit over the tab row, the Details buttons and "Add a wrap-up". */
+  .nb-bench-page[data-rail="closed"] > .nb-bench-main {
     padding-right: 252px;
   }
 
