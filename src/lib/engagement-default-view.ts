@@ -19,6 +19,9 @@ export type EngagementLandingInput = {
 
 export const ENGAGEMENT_NARROW_WIDTH = 768;
 
+/** The search both board-to-details links carry, so the details page holds. */
+export const DETAILS_SEARCH = { view: "details" } as const;
+
 export function shouldOpenWorkboard(input: EngagementLandingInput): boolean {
   if (input.work) return false;
   if (input.view === "details") return false;

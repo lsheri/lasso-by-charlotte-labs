@@ -2,7 +2,11 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/telemetry", () => ({ logEvent: vi.fn() }));
 
-import { shouldOpenWorkboard, ENGAGEMENT_NARROW_WIDTH } from "@/lib/engagement-default-view";
+import {
+  shouldOpenWorkboard,
+  ENGAGEMENT_NARROW_WIDTH,
+  DETAILS_SEARCH,
+} from "@/lib/engagement-default-view";
 import { workboardOpenVia } from "@/pages/CanvasLabPage";
 
 const base = {
