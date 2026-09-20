@@ -1,6 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import {
@@ -195,11 +194,10 @@ describe("M3 — Undo and Put it back", () => {
   });
 
   it("undoes a placement, records it, and can put it back", async () => {
-    const user = userEvent.setup();
     renderStrip([item({ id: "i1", work_item_tasks: mappedTo("CFT-01", "General") })]);
     expect(screen.getByText("Placed on CFT-01 · General")).toBeTruthy();
 
-    await user.click(screen.getByRole("button", { name: "Undo" }));
+    fireEvent.click(screen.getByRole("button", { name: "Undo" }));
     await waitFor(() => expect(deletes).toEqual(["i1"]));
     expect(events).toEqual([{ name: "inbox.arrival_undone", dims: { reverted: false } }]);
     expect(toasts[0]?.text).toBe("Moved back to your inbox.");
@@ -217,13 +215,12 @@ describe("M3 — Undo and Put it back", () => {
   });
 
   it("pages past eight with Show all", async () => {
-    const user = userEvent.setup();
     const many = Array.from({ length: 10 }, (_, i) =>
       item({ id: `i${i}`, captured_at: new Date(Date.now() - i * 60_000).toISOString() }),
     );
     renderStrip(many);
     expect(screen.getAllByTestId("arrival-row")).toHaveLength(8);
-    await user.click(screen.getByRole("button", { name: "Show all (10)" }));
+    fireEvent.click(screen.getByRole("button", { name: "Show all (10)" }));
     expect(screen.getAllByTestId("arrival-row")).toHaveLength(10);
   });
 });
