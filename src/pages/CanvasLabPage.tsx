@@ -231,7 +231,8 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   }, [orgId]);
   const [opening, setOpening] = useState(true);
   const [interaction, setInteraction] = useState<"idle" | "drag" | "pan" | "resize" | "connect">("idle");
-  const [structureMode, setStructureMode] = useState<LabStructureMode>("structured");
+  const [structureMode, setStructureMode] = useState<LabStructureMode>("freeform");
+  const [exampleOpen, setExampleOpen] = useState(false);
   const [displayMode, setDisplayMode] = useState<WorkboardDisplayMode>("sticky");
   const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
   const [selectedFrameId, setSelectedFrameId] = useState<string | null>(null);
