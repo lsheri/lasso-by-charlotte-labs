@@ -91,7 +91,7 @@ function LandingPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <PublicHeader current="/" />
+      <PublicHeader />
 
       <main className="mx-auto max-w-3xl px-6 pb-24 pt-16 md:px-10 md:pt-20">
         <section>
