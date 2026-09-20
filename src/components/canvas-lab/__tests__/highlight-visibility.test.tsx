@@ -125,6 +125,22 @@ describe("the per highlight visibility choice", () => {
     expect(calls).toEqual([["h1", "engagement"]]);
   });
 
+  it("uses the team visibility label in the comment composer", () => {
+    renderOverlay([mine]);
+    const source = readFileSync("src/components/canvas-lab/FocusOverlay.tsx", "utf8");
+    expect(source).toContain("Visible to your engagement team");
+    expect(source).not.toContain("Visible to everyone on this engagement");
+    expect(source).not.toContain("Visible to people who can open this chat");
+  });
+
+  it("uses edited for a visibility flip and passes row visibility for create and archive", () => {
+    const source = readFileSync("src/pages/CanvasLabPage.tsx", "utf8");
+    expect(source).toContain('action: "edited", anchorKind: "turn", visibility');
+    expect(source).toContain('noteHighlightChanged(orgId, "created", result.highlight.visibility');
+    expect(source).toContain('noteHighlightChanged(orgId, "archived", highlight.visibility');
+    expect(source).not.toContain('kind: "highlight", action: "updated"');
+  });
+
   it("shows a teammate's highlight with their name and no controls", () => {
     renderOverlay([theirs], () => undefined);
     expect(screen.getByText(/Dana/)).toBeTruthy();

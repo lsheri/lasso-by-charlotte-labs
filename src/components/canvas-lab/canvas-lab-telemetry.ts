@@ -101,7 +101,7 @@ export function noteWorkboardUndoUsed(orgId: string | undefined, action: UndoAct
  */
 export type AnnotationChange = {
   kind: "highlight" | "comment";
-  action: "created" | "edited" | "archived" | "updated";
+  action: "created" | "edited" | "archived";
   anchorKind: "turn" | "item";
   visibility: "just_me" | "engagement";
   /** How long the passage or the written note was, in characters. */
@@ -125,13 +125,14 @@ export function noteAnnotationChanged(orgId: string | undefined, change: Annotat
 export function noteHighlightChanged(
   orgId: string | undefined,
   action: "created" | "archived",
+  visibility: "just_me" | "engagement",
   excerptLength: number,
 ): void {
   noteAnnotationChanged(orgId, {
     kind: "highlight",
     action,
     anchorKind: "turn",
-    visibility: "just_me",
+    visibility,
     length: excerptLength,
     isReply: false,
   });
