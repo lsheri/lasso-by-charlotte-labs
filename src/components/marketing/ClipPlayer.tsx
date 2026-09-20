@@ -22,7 +22,7 @@ const players = new Set<{
 }>();
 
 function arbitrate() {
-  let best: { el: HTMLVideoElement; ratio: number; group: string } | null = null;
+  let best: { el: HTMLVideoElement; ratio: number; group: string; playback: Playback } | null = null;
   for (const p of players) {
     if (p.ratio < 0.35) continue;
     if (!best || p.ratio > best.ratio) best = p;

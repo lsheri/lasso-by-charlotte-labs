@@ -159,7 +159,8 @@ function LandingNextPage() {
               </Link>
             </section>
 
-            <FocusSection id="how-it-works" className="mt-24">
+            <div id="how-it-works">
+            <FocusSection className="mt-24">
               <h2 className="pencil-title">
                 The thinking moved into chat windows. The record didn't follow.
               </h2>
@@ -183,6 +184,7 @@ function LandingNextPage() {
                 </div>
               </div>
             </FocusSection>
+            </div>
           </div>
 
           <section className="landing-next-carousel mt-20" aria-label="How Lasso works">
@@ -206,7 +208,7 @@ function LandingNextPage() {
                 <section className="landing-next-carousel-panel">
                   <div className="landing-next-carousel-content">
                     <div>
-                      <p className="micro-label">THE ENGAGEMENT, LAID OUT</p>
+                      <p className="micro-label">THE ENGAGEMENT, LAIED OUT</p>
                       <h2 className="pencil-title mt-4">
                         Sources. AI work. Your call. The deliverable. In that order, on one board.
                       </h2>
@@ -310,7 +312,8 @@ function LandingNextPage() {
               </figure>
             </FocusSection>
 
-            <FocusSection id="pilot" className="mt-20 border-t border-rule pt-10">
+            <div id="pilot">
+            <FocusSection className="mt-20 border-t border-rule pt-10">
               <p className="micro-label">PILOT</p>
               <h2 className="pencil-title mt-4">Run it on one engagement.</h2>
               <p className="mt-5 max-w-2xl text-base leading-relaxed text-foreground">
@@ -358,6 +361,7 @@ function LandingNextPage() {
                 liam@charlotte-labs.com
               </a>
             </FocusSection>
+            </div>
           </div>
         </main>
 
