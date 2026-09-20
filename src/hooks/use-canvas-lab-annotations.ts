@@ -33,6 +33,8 @@ export function useCanvasLabAnnotations(
   const listFn = useServerFn(listMyAnnotationsFn);
   const createFn = useServerFn(createHighlightFn);
   const archiveFn = useServerFn(archiveHighlightFn);
+  const visibilityFn = useServerFn(setHighlightVisibilityFn);
+
 
   const query = useQuery({
     queryKey: annotationsQueryKey(engagementId, workItemId ?? ""),
@@ -84,11 +86,30 @@ export function useCanvasLabAnnotations(
     onSuccess: invalidate,
   });
 
+  const setVisibility = useMutation({
+    mutationFn: async (input: {
+      id: string;
+      visibility: AnnotationVisibility;
+      expectedVersion: number;
+    }): Promise<AnnotationMutationResult> =>
+      (await visibilityFn({
+        data: {
+          id: input.id,
+          visibility: input.visibility,
+          expected_version: input.expectedVersion,
+          ...(profileId ? { profile_id: profileId } : {}),
+        },
+      })) as AnnotationMutationResult,
+    onSuccess: invalidate,
+  });
+
   return {
     highlights: query.data ?? [],
     loading: query.isLoading,
     createHighlight: create.mutateAsync,
     archiveHighlight: archive.mutateAsync,
+    setHighlightVisibility: setVisibility.mutateAsync,
     refresh: invalidate,
   };
+
 }
