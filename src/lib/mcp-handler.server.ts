@@ -447,6 +447,46 @@ export async function handleMcpRequest(request: Request, token: string): Promise
   return rpcError(id, -32601, `Method not found: ${method}`);
 }
 
+
+/**
+ * Unit M2b. A pushed item lands on a board only when the user named one.
+ * The database function decides what is allowed; nothing here writes a mapping.
+ */
+async function applyDestination(
+  owner: Owner,
+  vocab: McpVocab,
+  itemId: string,
+  plan: PlacementPlan,
+): Promise<{ text: string; target: "inbox" | "workboard" }> {
+  if (!plan.destination) return { text: "", target: "inbox" };
+  const { places } = await readPlaces(owner);
+  const wanted = plan.destination.toLowerCase();
+  const place = places.find((one) => one.ref.toLowerCase() === wanted);
+  if (!place) {
+    return { text: renderUnknownRef(vocab, places.map((one) => one.ref)), target: "inbox" };
+  }
+  const { data, error } = await supabaseAdmin.rpc("mcp_place_item", {
+    p_actor: owner.profileId,
+    p_work_item: itemId,
+    p_task: place.taskId,
+    p_move: plan.move,
+  });
+  if (error) {
+    return { text: "Saved to your inbox only; placing it did not work.", target: "inbox" };
+  }
+  const result = (data ?? {}) as { status?: string; ref?: string | null };
+  const status = String(result.status ?? "");
+  return {
+    text: renderPlacement(vocab, status, place.ref, result.ref ?? null),
+    target: placementTarget(status),
+  };
+}
+
+/** The workspace's words, read once for a push that may place something. */
+async function placementVocab(owner: Owner): Promise<McpVocab> {
+  return mcpVocabFor(await workspaceTypeOf(owner));
+}
+
 type IncomingTurn = { role: string; content: string; ts?: string };
 
 async function pushThread(
@@ -477,6 +517,7 @@ async function pushThread(
     return rpcError(id, -32602, "Conversation is larger than the 2MB limit. Push it in parts.");
   }
 
+  const plan = parsePlacementArgs(args);
   const sourceAi = ["claude", "chatgpt", "gemini", "other"].includes(String(args["source_ai"]))
     ? String(args["source_ai"])
     : "other";
@@ -498,7 +539,10 @@ async function pushThread(
       content_fidelity: "transcribed",
       ts_precision: "capture",
       content_hash: await sha256Hex(serialized),
-      ...(safeChatUrl(args["chat_url"]) ? { source_meta: { url: safeChatUrl(args["chat_url"])! } } : {}),
+      source_meta: {
+        ...(safeChatUrl(args["chat_url"]) ? { url: safeChatUrl(args["chat_url"])! } : {}),
+        ...(plan.sourceProject ? { source_project: plan.sourceProject } : {}),
+      } as unknown as Json,
       meta: { assistant_transcribed: true },
     })
     .select("id")
@@ -529,7 +573,14 @@ async function pushThread(
   const { ensureExtracts } = await import("./extract.server");
   await ensureExtracts([item.id]);
 
-  await logPush(owner, { tool: "push_thread", source_ai: sourceAi });
+  const threadVocab = await placementVocab(owner);
+  const threadPlacement = await applyDestination(owner, threadVocab, item.id, plan);
+  await logPush(owner, {
+    tool: "push_thread",
+    source_ai: sourceAi,
+    target: threadPlacement.target,
+    suggestion_outcome: plan.suggestionOutcome,
+  });
   const threadActor = { orgId: owner.orgId, userId: owner.userId, profileId: owner.profileId };
   await noteModelUsed(supabaseAdmin, threadActor, {
     item: { type: "ai_thread", source: `mcp:${sourceAi}` },
@@ -552,11 +603,14 @@ async function pushThread(
   });
   return textResult(
     id,
-    `Saved to Lasso: '${title}' (${turns.length} turns). It is private until you map it.`,
+    `Saved to Lasso: '${title}' (${turns.length} turns). It is private until you map it.${
+      threadPlacement.text ? ` ${threadPlacement.text}` : ""
+    }`,
   );
 }
 
 async function pushDocument(owner: Owner, args: Obj, id: unknown): Promise<Response> {
+  const plan = parsePlacementArgs(args);
   const filename = typeof args["filename"] === "string" ? args["filename"] : "";
   const content = typeof args["content"] === "string" ? args["content"] : "";
   if (!filename || !content) return rpcError(id, -32602, "filename and content are required");
@@ -589,7 +643,11 @@ async function pushDocument(owner: Owner, args: Obj, id: unknown): Promise<Respo
       title,
       visibility: "unmapped",
       content_ref: path,
-      source_meta: { filename, mime_type: mime },
+      source_meta: {
+        filename,
+        mime_type: mime,
+        ...(plan.sourceProject ? { source_project: plan.sourceProject } : {}),
+      } as unknown as Json,
       content_fidelity: "verbatim",
       ts_precision: "capture",
       content_hash: await sha256Hex(content),
@@ -604,13 +662,24 @@ async function pushDocument(owner: Owner, args: Obj, id: unknown): Promise<Respo
   const { ensureExtracts } = await import("./extract.server");
   if (doc?.id) await ensureExtracts([doc.id]);
 
-  await logPush(owner, { tool: "push_document" });
+  const docVocab = await placementVocab(owner);
+  const docPlacement = doc?.id
+    ? await applyDestination(owner, docVocab, doc.id, plan)
+    : { text: "", target: "inbox" as const };
+  await logPush(owner, {
+    tool: "push_document",
+    target: docPlacement.target,
+    suggestion_outcome: plan.suggestionOutcome,
+  });
   await noteModelUsed(
     supabaseAdmin,
     { orgId: owner.orgId, userId: owner.userId, profileId: owner.profileId },
     { item: { type: workTypeForFile(safe), source: "mcp:push" }, via: "mcp_push" },
   );
-  return textResult(id, `Saved '${title}' to Lasso (private, unmapped).`);
+  return textResult(
+    id,
+    `Saved '${title}' to Lasso (private, unmapped).${docPlacement.text ? ` ${docPlacement.text}` : ""}`,
+  );
 }
 
 /** The workspace's type, read once per call. Ceiba·Uni reads as personal. */
@@ -1070,6 +1139,7 @@ async function pushConversation(
     research_mode?: unknown;
     notes?: unknown;
   };
+  const plan = parsePlacementArgs(args);
   const chatUrl = safeChatUrl(args["chat_url"]);
   const sharedMeta: SourceMeta = {
     vendor,
@@ -1081,7 +1151,8 @@ async function pushConversation(
     ...(typeof metaIn.thinking_level === "string" ? { thinking_level: metaIn.thinking_level } : {}),
     ...(typeof metaIn.research_mode === "string" ? { research_mode: metaIn.research_mode } : {}),
     ...(typeof metaIn.notes === "string" ? { notes: metaIn.notes } : {}),
-  };
+    ...(plan.sourceProject ? { source_project: plan.sourceProject } : {}),
+  } as SourceMeta;
 
   // ---- locate the existing thread: source_url, then orig id, then continuation
   let existingThread: { id: string; meta: unknown } | null = null;
@@ -1493,12 +1564,17 @@ async function pushConversation(
       ? "appended"
       : "unchanged";
 
+  const convoVocab = await placementVocab(owner);
+  const convoPlacement = await applyDestination(owner, convoVocab, threadId, plan);
+
   await recordEvent(supabaseAdmin, {
     eventType: "mcp.push",
     orgId: owner.orgId,
     userId: owner.userId,
     dims: {
       vendor,
+      target: convoPlacement.target,
+      suggestion_outcome: plan.suggestionOutcome,
       attachment_count: attachmentBucket(attachments.length),
       rejected_attachments: flaggedBucket(rejected.length),
       mode: pushMode,
@@ -1638,6 +1714,8 @@ async function pushConversation(
     : "";
   return textResult(
     id,
-    `${verb} '${title}' in Lasso${tail}.${counts}${shortNote}${degradedNote}${degradedAttachmentNote}${cursor} It stays private until the user maps it.${rejectedNote}${warn}${continuation}`,
+    `${verb} '${title}' in Lasso${tail}.${counts}${shortNote}${degradedNote}${degradedAttachmentNote}${cursor}${
+      convoPlacement.text ? ` ${convoPlacement.text}` : " It stays private until the user maps it."
+    }${rejectedNote}${warn}${continuation}`,
   );
 }
