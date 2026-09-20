@@ -15,6 +15,9 @@ export const MAX_EXCERPT_LENGTH = 500;
 /** A comment body is longer-form than an excerpt, and the column says so. */
 export const MAX_BODY_LENGTH = 4000;
 
+/** Who can read a highlight. New highlights are shared with the team. */
+export type AnnotationVisibility = "just_me" | "engagement";
+
 export type HighlightDto = {
   id: string;
   workItemId: string;
@@ -27,7 +30,12 @@ export type HighlightDto = {
   createdAt: string;
   /** The turn has changed since this was taken, so the range is not drawn. */
   stale: boolean;
+  visibility: AnnotationVisibility;
+  /** The reader made this one, so the reader can change or remove it. */
+  isMine: boolean;
+  authorName: string;
 };
+
 
 export type AnnotationMutationResult =
   | { status: "saved"; highlight: HighlightDto }
