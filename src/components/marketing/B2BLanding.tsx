@@ -2,6 +2,10 @@ import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { type FormEvent, useEffect, useRef, useState } from "react";
 
+import claudePushPoster from "@/assets/landing/lasso-claude-push-poster.png.asset.json";
+import claudePushVideo from "@/assets/landing/lasso-claude-push.mp4.asset.json";
+import connectorPoster from "@/assets/landing/lasso-connector-poster.png.asset.json";
+import connectorVideo from "@/assets/landing/lasso-connector.mp4.asset.json";
 import pastWorkLibrary from "@/assets/past-work-library.png.asset.json";
 import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
 import { PublicHeader } from "@/components/layout/PublicHeader";
@@ -230,7 +234,28 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
                         else your team used.
                       </p>
                     </div>
-                    <ClipSlot id="find-it" src="/videos/find-it.mp4" poster="/videos/find-it-poster.png" label="Finding the source behind a fact" />
+                    <div id="find-it" className="landing-next-source-clips">
+                      <ClipPlayer
+                        src={connectorVideo.url}
+                        poster={connectorPoster.url}
+                        width={1920}
+                        height={1132}
+                        aspect="1920 / 1132"
+                        label="Work arriving in Lasso from connected tools"
+                        group="landing-sources"
+                        playback="hold"
+                      />
+                      <ClipPlayer
+                        src={claudePushVideo.url}
+                        poster={claudePushPoster.url}
+                        width={1080}
+                        height={1920}
+                        aspect="9 / 16"
+                        label="A Claude conversation being sent to Lasso"
+                        group="landing-sources"
+                        playback="hold"
+                      />
+                    </div>
                   </div>
                 </section>
 
