@@ -69,6 +69,8 @@ import {
   removeLabLink,
   relationshipSelection,
   seedCanvas,
+  seedBlankCanvas,
+  boardHasSeededStructure,
   sizeSeedFrames,
   stageBounds,
   resizeLabRect,
@@ -286,7 +288,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   const openedRef = useRef(false);
   const fittedReadyRef = useRef(false);
   const viewportChangedRef = useRef(false);
-  const fitInputsRef = useRef<{ frames: LabFrame[]; nodes: LabNode[]; structured: boolean }>({ frames: [], nodes: [], structured: true });
+  const fitInputsRef = useRef<{ frames: LabFrame[]; nodes: LabNode[]; structured: boolean; guides: boolean }>({ frames: [], nodes: [], structured: true, guides: true });
   const observedSizeRef = useRef<{ width: number; height: number } | null>(null);
   const viewedPreviewIdsRef = useRef(new Set<string>());
   /** The deterministic virtual seed a durable board is overlaid onto. */
@@ -298,14 +300,18 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     // The board's default home is not a workstream, so it gets no outline and
     // its work reads as free cards.
     const boardTasks = workstreamTasks(page.tasks ?? []);
-    const initialFrames = createLabFrames(boardTasks);
-    const virtualNodes = seedCanvas({
+    // A board with saved outlines keeps the seeded structure it has always
+    // had. A board with none is new, and opens blank.
+    const seeded = boardHasSeededStructure(lab.board);
+    const initialFrames = seeded ? createLabFrames(boardTasks) : [];
+    const seedInput = {
       brief: { title: "The brief", text: page.engagement.brief },
       tasks: boardTasks.map((task) => ({ id: task.id, name: task.name, detail: task.detail, ownedByViewer: task.owner_id === profile?.id })),
       work: workItems.map((item) => ({ id: item.id, title: item.title, typeLabel: item.type.replaceAll("_", " "), source: item.source, ownedByViewer: !item.owner_id || item.owner_id === profile?.id, taskIds: taskIdsByWork.get(item.id) ?? [], deliverable: isDeliverableType(item.type) })),
       decisions: (page.decisions ?? []).map((decision) => ({ id: decision.id, call: decision.call_text, situation: decision.situation, ownedByViewer: decision.owner_id === profile?.id })),
-    }, initialFrames);
-    const virtualFrames = sizeSeedFrames(initialFrames, virtualNodes);
+    };
+    const virtualNodes = seeded ? seedCanvas(seedInput, initialFrames) : seedBlankCanvas(seedInput);
+    const virtualFrames = seeded ? sizeSeedFrames(initialFrames, virtualNodes) : [];
     virtualBaseRef.current = { frames: virtualFrames, nodes: virtualNodes };
     undoRef.current = emptyUndoStacks();
     const board = lab.board;
@@ -326,7 +332,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   const visibleNodes = useMemo(() => allNodes.filter((node) => !hiddenIds.includes(node.id)), [allNodes, hiddenIds]);
   const hiddenNodes = useMemo(() => allNodes.filter((node) => hiddenIds.includes(node.id)), [allNodes, hiddenIds]);
   const boardFrames = useMemo(() => frames ?? [], [frames]);
-  const bounds = useMemo(() => stageBounds(boardFrames), [boardFrames]);
+  const bounds = useMemo(() => stageBounds(boardFrames, visibleNodes), [boardFrames, visibleNodes]);
   const contextNodes = visibleNodes.filter((node) => selected.includes(node.id));
   const focusNode = visibleNodes.find((node) => node.id === focusId) ?? null;
   const reviewNode = visibleNodes.find((node) => node.id === reviewId) ?? null;
@@ -368,11 +374,13 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   const canComment = Boolean(lab.board?.canEditStructure);
   /** Bringing work in is arranging the board, so a coach never sees it. */
   const canAddWork = lab.board?.canEditStructure !== false;
+  /** The fixed guide panels belong to boards that were seeded with structure. */
+  const showGuides = boardHasSeededStructure(lab.board);
   const showExample = boardIsNearEmpty(visibleNodes);
   const loadingBoard = isLoading || lab.boardLoading;
   const notAvailable = !loadingBoard && !isError && !engagement;
   const boardReady = !loadingBoard && !isError && Boolean(engagement) && nodes !== null && frames !== null;
-  fitInputsRef.current = { frames: boardFrames, nodes: visibleNodes, structured: structureMode === "structured" };
+  fitInputsRef.current = { frames: boardFrames, nodes: visibleNodes, structured: structureMode === "structured", guides: showGuides };
 
   useEffect(() => {
     if (!profile?.id) return;
@@ -407,6 +415,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       inputs.structured ? inputs.frames : [],
       inputs.nodes,
       cardHeightsRef.current,
+      inputs.guides ? undefined : null,
     );
     setZoom(result.zoom);
     setPan(result.pan);
@@ -555,7 +564,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   }
 
   function nodeToInput(node: LabNode): WorkboardNodeInput | null {
-    const base = { clientKey: node.clientKey ?? node.id, frameKey: node.frame, x: node.x, y: node.y, w: node.width, h: node.height, hidden: hiddenRef.current.includes(node.id) };
+    const base = { clientKey: node.clientKey ?? node.id, frameKey: node.frame ?? null, x: node.x, y: node.y, w: node.width, h: node.height, hidden: hiddenRef.current.includes(node.id) };
     if (node.kind === "work" && node.workItemId) return { ...base, kind: "work_item", workItemId: node.workItemId };
     if (node.kind === "decision" && node.id.startsWith("decision:")) return { ...base, kind: "decision", decisionId: node.id.slice(9) };
     if (node.kind === "brief") return { ...base, kind: "brief" };
@@ -1045,7 +1054,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
         const taken: PlacementRect[] = [
           ...visibleNodes.map((node) => ({ x: node.x, y: node.y, width: node.width, height: node.height })),
           ...boardFrames.map((frame) => ({ x: frame.x, y: frame.y, width: frame.width, height: frame.height })),
-          ...BOARD_GUIDE_RECTS.map((rect) => ({ x: rect.x, y: rect.y, width: rect.width, height: rect.height })),
+          ...(showGuides ? BOARD_GUIDE_RECTS.map((rect) => ({ x: rect.x, y: rect.y, width: rect.width, height: rect.height })) : []),
           ...(inlineAnchor ? [{ x: inlineAnchor.x, y: inlineAnchor.y, ...BOARD_INLINE_ADD_SIZE }] : []),
         ];
         const points = placeAddedCards(anchor, taken, fresh.length);
@@ -1054,7 +1063,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
           return {
             id: `work:${item.id}`,
             kind: "work",
-            frame: "foundation",
+            frame: showGuides ? "foundation" : null,
             title: item.title,
             summary: item.source,
             typeLabel: item.type.replaceAll("_", " "),
@@ -1379,7 +1388,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   function moveToFrame(node: LabNode, frameId: string) {
     const target = framesRef.current.find((frame) => frame.id === frameId);
     if (!target || node.frame === frameId) return;
-    record({ action: "workstream_move", nodeId: node.id, before: node.frame, after: frameId });
+    record({ action: "workstream_move", nodeId: node.id, before: node.frame ?? "", after: frameId });
     applyFrameMove(node.id, frameId);
     setAnnouncement(`${node.title} moved to ${target.name}.`);
   }
@@ -1745,8 +1754,8 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
         {lab.saveState.status === "error" ? <div data-testid="canvas-lab-banner" className="canvas-lab-banner" role="alert"><p className="text-[13px] text-foreground">Could not save your last change.</p><div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => resolveSaveError("retry")}>Retry</Button><Button size="sm" variant="outline" onClick={() => resolveSaveError("discard")}>Discard</Button></div></div> : null}
         <div ref={shellRef} tabIndex={-1} onPointerDownCapture={(event) => { if (event.button === 0 && spaceRef.current) { event.preventDefault(); event.stopPropagation(); startSpacePan(event); } }} onPointerDown={(event) => { const target = event.target as HTMLElement; const empty = event.target === event.currentTarget || target.dataset["testid"] === "canvas-lab-stage"; if (event.button === 0 && empty && drawTool) { event.preventDefault(); const at = stagePoint(event.clientX, event.clientY); drawingRef.current = { from: at, to: at }; setDrawing({ from: at, to: at }); return; } if (event.button === 0 && empty) { setKeyboardId(null); setSelectedFrameId(null); setSelectedLinkId((current) => relationshipSelection(current, "deselect")); viewportChangedRef.current = true; setInteraction("pan"); panRef.current = { from: { x: event.clientX, y: event.clientY }, origin: pan }; } }} onContextMenu={(event) => { const target = event.target as HTMLElement; const empty = event.target === event.currentTarget || target.dataset["testid"] === "canvas-lab-stage"; if (!empty || !canAddWork) return; event.preventDefault(); const rect = event.currentTarget.getBoundingClientRect(); const screen = { x: event.clientX - rect.left, y: event.clientY - rect.top }; setBoardMenu({ screen, board: boardPointFromScreen(screen) }); }} data-space-pan={spaceHeld} data-drawing={drawTool ? "true" : undefined} onScroll={(event) => keepViewportUnscrolled(event.currentTarget)} className="canvas-lab-surface relative min-h-0 flex-1 overflow-hidden">
           {boardReady ? <div data-testid="canvas-lab-stage" tabIndex={-1} className="canvas-lab-stage absolute left-0 top-0 origin-top-left" style={{ width: bounds.width, height: bounds.height, transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`, "--lab-inverse-zoom": labInverseZoom(zoom) } as CSSProperties}>
-            <ReasoningTrailGuide onAdd={addNode} />
-            <FoundationGuide brief={engagement?.brief ?? null} tasks={workstreamTasks(page?.tasks ?? []).map((task) => ({ id: task.id, name: task.name, detail: task.detail }))} work={workItems} />
+            {showGuides ? <ReasoningTrailGuide onAdd={addNode} /> : null}
+            {showGuides ? <FoundationGuide brief={engagement?.brief ?? null} tasks={workstreamTasks(page?.tasks ?? []).map((task) => ({ id: task.id, name: task.name, detail: task.detail }))} work={workItems} /> : null}
             {structureMode === "structured" ? boardFrames.map((frame) => { const kind = frameKindOf(frame); const count = visibleNodes.filter((node) => node.frame === frame.id).length; const custom = kind === "custom"; const removable = !allNodes.some((node) => node.frame === frame.id); return <LabFrameElement key={frame.id} frame={frame} count={count} selected={selectedFrameId === frame.id} editable={Boolean(lab.board?.canEditStructure)} custom={custom} kind={kind} namedByWorkstream={kind === "task"} removable={removable} onSelect={() => { setSelectedFrameId(frame.id); setKeyboardId(null); setSelectedLinkId((current) => relationshipSelection(current, "deselect")); }} onResizeStart={(corner, event) => startResize("frame", frame.id, corner, { x: frame.x, y: frame.y, width: frame.width, height: frame.height }, event)} onResizeKeyDown={(corner, event) => keyboardResize("frame", frame.id, corner, { x: frame.x, y: frame.y, width: frame.width, height: frame.height }, event)} onResizeKeyUp={finishKeyboardResize} onFit={() => fitFrame(frame)} onRename={(name) => renameFrame(frame, name)} onRemove={() => removeFrame(frame)} onMenuOpened={() => noteWorkboardCardMenuOpened(orgId, "frame", "shared")} onMenuOpenChange={setCardMenuOpen} onAddWorkstream={frame.id === "workstreams" ? addWorkstream : undefined} />; }) : null}
             {structureMode === "structured" && Boolean(lab.board?.canEditStructure) && !boardFrames.some((frame) => frame.id === "workstreams") ? (() => { const anchor = workstreamAddAnchor(boardFrames, visibleNodes); if (!anchor) return null; return <div className="canvas-lab-inline-add" style={{ left: anchor.x, top: anchor.y, width: BOARD_INLINE_ADD_SIZE.width, minHeight: BOARD_INLINE_ADD_SIZE.height, transform: `scale(${1 / zoom})`, transformOrigin: "top left" }}>{inlineAddOpen ? <div className="canvas-lab-inline-workstream"><input aria-label="Workstream name" ref={inlineNameRef} maxLength={60} value={inlineFrameName} onChange={(event) => { setInlineFrameName(event.target.value); if (event.target.value.trim()) setInlineFrameError(false); }} onKeyDown={(event) => { if (event.key === "Enter" && addWorkstream(inlineFrameName)) { setInlineFrameName(""); setInlineFrameError(false); setInlineAddOpen(false); } if (event.key === "Escape") { setInlineAddOpen(false); setInlineFrameError(false); } }} /><button type="button" onClick={() => { if (addWorkstream(inlineFrameName)) { setInlineFrameName(""); setInlineFrameError(false); setInlineAddOpen(false); } else setInlineFrameError(true); }}>Add</button>{inlineFrameError ? <span>a workstream needs a name</span> : null}</div> : <button type="button" className="canvas-lab-add-workstream" onClick={() => setInlineAddOpen(true)}>+ workstream</button>}</div>; })() : null}
             <svg className="canvas-lab-relationships absolute inset-0 overflow-visible" width={bounds.width} height={bounds.height} aria-label="Local workboard relationships">

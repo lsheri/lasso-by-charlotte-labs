@@ -11,6 +11,7 @@ import { dragTo, snapPoint, type Point } from "@/lib/canvas-drag";
 import type { LabNodeEventKind } from "@/components/canvas-lab/canvas-lab-telemetry";
 import type { WorkboardCommand, WorkboardDto, WorkboardNodeDto, WorkboardRelation } from "@/lib/canvas-lab-shared";
 import { clampZoom } from "@/lib/canvas-zoom";
+import { placeAddedCards } from "@/lib/workboard-placement";
 
 export type LabNodeKind = "brief" | "task" | "work" | "decision" | "chat" | "source" | "ai_work" | "judgment" | "deliverable";
 export type LabJudgmentType = "added_constraint" | "corrected_ai" | "rejected_option" | "requested_evidence" | "changed_direction" | "accepted_but_rewrote";
@@ -38,7 +39,8 @@ export type LabStructureMode = "structured" | "freeform";
 export type LabNode = {
   id: string;
   kind: LabNodeKind;
-  frame: LabFrameId;
+  /** A blank board has no outlines at all, so a card can belong to none. */
+  frame?: LabFrameId | null;
   title: string;
   /** One quiet line under the title in Cards, the preview header in Live. */
   summary: string;
@@ -282,10 +284,14 @@ export function keepViewportUnscrolled(element: { scrollTop: number; scrollLeft:
   if (element.scrollLeft !== 0) element.scrollLeft = 0;
 }
 
-export function stageBounds(frames: LabFrame[]): { width: number; height: number } {
+/**
+ * The canvas size. With no outlines it is measured from the cards alone, and
+ * a blank board still keeps a usable minimum so it can be panned and zoomed.
+ */
+export function stageBounds(frames: LabFrame[], nodes: LabNode[] = []): { width: number; height: number } {
   return {
-    width: Math.max(980, ...frames.map((frame) => frame.x + frame.width + 60)),
-    height: Math.max(720, ...frames.map((frame) => frame.y + frame.height + 120)),
+    width: Math.max(980, ...frames.map((frame) => frame.x + frame.width + 60), ...nodes.map((node) => node.x + node.width + 120)),
+    height: Math.max(720, ...frames.map((frame) => frame.y + frame.height + 120), ...nodes.map((node) => node.y + node.height + 160)),
   };
 }
 
@@ -601,6 +607,60 @@ export function seedCanvas(input: SeedInput, frames = createLabFrames(input.task
   return nodes;
 }
 
+/** A board carries seeded structure when it holds saved workstream outlines. */
+export function boardHasSeededStructure(board: { frames: unknown[] } | null | undefined): boolean {
+  return (board?.frames.length ?? 0) > 0;
+}
+
+/**
+ * The opening arrangement on a blank board. No outlines exist, so position is
+ * the only thing placing a card: a packed flow from the origin, on the grid,
+ * with the same clear space the rest of the board keeps.
+ */
+export function seedBlankCanvas(input: SeedInput): LabNode[] {
+  const entries: Omit<LabNode, "x" | "y" | "width" | "height">[] = [];
+  if (input.brief) {
+    entries.push({
+      id: "brief",
+      kind: "brief",
+      frame: null,
+      title: input.brief.title,
+      summary: input.brief.text ?? "No brief written yet.",
+      typeLabel: "brief",
+      ownership: "yours",
+    });
+  }
+  for (const item of input.work) {
+    entries.push({
+      id: `work:${item.id}`,
+      kind: "work",
+      frame: null,
+      title: item.title,
+      summary: item.source,
+      typeLabel: item.typeLabel,
+      ownership: item.ownedByViewer ? "yours" : "teammate",
+      workItemId: item.id,
+      deliverable: item.deliverable,
+    });
+  }
+  for (const decision of input.decisions) {
+    entries.push({
+      id: `decision:${decision.id}`,
+      kind: "decision",
+      frame: null,
+      title: decision.call,
+      summary: decision.situation,
+      typeLabel: "call",
+      ownership: decision.ownedByViewer ? "yours" : "teammate",
+    });
+  }
+  const points = placeAddedCards({ x: 0, y: 0 }, [], entries.length);
+  return entries.map((entry, index) => {
+    const at = points[index] ?? { x: 0, y: 0 };
+    return { ...entry, x: at.x, y: at.y, width: CARD_WIDTH, height: CARD_HEIGHT };
+  });
+}
+
 /** Move one node. Positions snap to the grid, exactly like the board does. */
 export function moveNode(nodes: LabNode[], id: string, to: Point): LabNode[] {
   const at = snapPoint(to);
@@ -660,7 +720,7 @@ export function branchChatNode(node: LabNode): LabNode {
   const branch = createChatNode(node.prompt ?? node.title, node.contextIds ?? [], {
     x: node.x + 260,
     y: node.y + 60,
-  }, node.frame);
+  }, node.frame ?? undefined);
   return { ...branch, title: `Branch of ${node.title}`, x: branch.x, y: branch.y };
 }
 
@@ -733,11 +793,11 @@ export function fitWorkboardViewport(
   frames: LabFrame[],
   nodes: LabNode[],
   measuredHeights: ReadonlyMap<string, number>,
-  guides: LabRect = { x: 60, y: 60, width: 896, height: 300 },
+  guides: LabRect | null = { x: 60, y: 60, width: 896, height: 300 },
   padding = 32,
 ): LabFitResult {
   const rects: LabRect[] = [
-    guides,
+    ...(guides ? [guides] : []),
     ...frames,
     ...nodes.map((node) => ({
       x: node.x,
@@ -746,11 +806,16 @@ export function fitWorkboardViewport(
       height: Math.max(node.height, measuredHeights.get(node.id) ?? 0),
     })),
   ];
-  const left = Math.min(...rects.map((rect) => rect.x));
-  const top = Math.min(...rects.map((rect) => rect.y));
-  const right = Math.max(...rects.map((rect) => rect.x + rect.width));
-  const bottom = Math.max(...rects.map((rect) => rect.y + rect.height));
-  const bounds = { x: left, y: top, width: right - left, height: bottom - top };
+  // Nothing on the board yet: keep a usable canvas rather than collapsing.
+  const bounds = rects.length === 0
+    ? { x: 0, y: 0, width: 980, height: 720 }
+    : (() => {
+      const left = Math.min(...rects.map((rect) => rect.x));
+      const top = Math.min(...rects.map((rect) => rect.y));
+      const right = Math.max(...rects.map((rect) => rect.x + rect.width));
+      const bottom = Math.max(...rects.map((rect) => rect.y + rect.height));
+      return { x: left, y: top, width: Math.max(1, right - left), height: Math.max(1, bottom - top) };
+    })();
   const availableWidth = Math.max(0, viewport.width - padding * 2);
   const availableHeight = Math.max(0, viewport.height - padding * 2);
   const zoom = clampZoom(Math.min(1, availableWidth / bounds.width, availableHeight / bounds.height));
@@ -870,7 +935,7 @@ export function applyDurableBoard(base: { frames: LabFrame[]; nodes: LabNode[] }
       matchedVirtual.add(virtual.id);
       nodes.push({
         ...virtual,
-        frame: frameId ?? virtual.frame,
+        frame: frameId ?? virtual.frame ?? null,
         x: durable.x,
         y: durable.y,
         width: durable.w > 0 ? durable.w : CARD_WIDTH,
@@ -886,7 +951,7 @@ export function applyDurableBoard(base: { frames: LabFrame[]; nodes: LabNode[] }
       nodes.push({
         id: localId,
         kind: "judgment",
-        frame: frameId ?? "foundation",
+        frame: frameId ?? (base.frames.length > 0 ? "foundation" : null),
         title: durable.title || judgment?.label || "Human judgment",
         summary: durable.body,
         typeLabel: judgment?.label ?? "Human judgment",

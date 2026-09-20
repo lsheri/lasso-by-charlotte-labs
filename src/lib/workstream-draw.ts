@@ -16,7 +16,8 @@ export type ClaimCandidate = {
   y: number;
   width: number;
   height: number;
-  frame: string;
+  /** Null on a blank board, where no outline exists to belong to. */
+  frame?: string | null | undefined;
   /** Present on work cards. Cards without one never reach the placement call. */
   workItemId?: string | null | undefined;
 };
@@ -55,8 +56,8 @@ export function fullyInside(rect: DrawRect, card: ClaimCandidate): boolean {
 }
 
 /** A frame that stands for a workstream of its own, not a base area. */
-function isWorkstreamFrame(frameId: string, defaultHomeFrameIds: readonly string[]): boolean {
-  if (!frameId.startsWith("task:")) return false;
+function isWorkstreamFrame(frameId: string | null | undefined, defaultHomeFrameIds: readonly string[]): boolean {
+  if (!frameId || !frameId.startsWith("task:")) return false;
   return !defaultHomeFrameIds.includes(frameId);
 }
 

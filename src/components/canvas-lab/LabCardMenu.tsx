@@ -42,7 +42,7 @@ export function LabCardMenu({
   onDelete: () => void;
   onFit?: (() => void) | undefined;
   frameChoices?: { id: string; name: string }[];
-  currentFrame?: string | undefined;
+  currentFrame?: string | null | undefined;
   onMoveToFrame?: ((id: string) => void) | undefined;
 }) {
 
