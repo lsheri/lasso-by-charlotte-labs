@@ -13,6 +13,17 @@ export type WorkboardCardPreview = {
   model: string | null;
 };
 
+export type WorkboardFilePreview = {
+  workItemId: string;
+  kind: "pdf" | "slide" | "text" | "fallback";
+  url: string | null;
+  lines: string[];
+  slideTitle: string | null;
+  versionCount: number;
+};
+
+export type WorkboardFilePreviewMap = Record<string, WorkboardFilePreview>;
+
 export function workboardDisplayModeKey(profileId: string, engagementId: string): string {
   return `lasso:workboard:${profileId}:${engagementId}:display`;
 }
