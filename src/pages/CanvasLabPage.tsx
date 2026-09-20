@@ -435,17 +435,21 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     briefAttachBusyRef.current = true;
     void (async () => {
       try {
-        // Read the brief and its neighbours at compute time, after the
-        // board's first layout has settled, never from an earlier copy.
-        const briefNode = nodesRef.current.find((node) => node.id === "brief");
+        // The brief's place is read at compute time, and the saved row wins
+        // whenever there is one: it is what the canvas draws and the record
+        // holds. Outlines are not occupied space, since cards live inside
+        // them; only other cards are.
+        const liveBrief = nodesRef.current.find((node) => node.id === "brief");
+        const savedBrief = (lab.board?.nodes ?? []).find((node) => node.kind === "brief");
+        const briefNode = savedBrief
+          ? { x: savedBrief.x, y: savedBrief.y, width: savedBrief.w > 0 ? savedBrief.w : (liveBrief?.width ?? 232) }
+          : liveBrief;
         if (!briefNode) return;
         const pendingIds = new Set(pending.map((card) => card.nodeId));
-        const taken: PlacementRect[] = [
-          ...nodesRef.current
-            .filter((node) => !pendingIds.has(node.id) && !hiddenIds.includes(node.id))
-            .map((node) => ({ x: node.x, y: node.y, width: node.width, height: node.height })),
-          ...framesRef.current.map((frame) => ({ x: frame.x, y: frame.y, width: frame.width, height: frame.height })),
-        ];
+        const taken: PlacementRect[] = nodesRef.current
+          .filter((node) => !pendingIds.has(node.id) && !hiddenIds.includes(node.id))
+          .map((node) => ({ x: node.x, y: node.y, width: node.width, height: node.height }));
+
         const points = briefAttachmentPoints(briefNode, taken, pending.length);
         for (const [index, card] of pending.entries()) {
           const at = points[index];
