@@ -127,6 +127,27 @@ export function LabCard({
     changeMenuOpen(true);
   }
 
+  function handleCardPointerDown(event: React.PointerEvent) {
+    cardDownRef.current = { x: event.clientX, y: event.clientY };
+    lastClickMovedRef.current = false;
+    onPointerDown(event);
+  }
+
+  function handleCardPointerUp(event: React.PointerEvent) {
+    const down = cardDownRef.current;
+    cardDownRef.current = null;
+    if (down && Math.hypot(event.clientX - down.x, event.clientY - down.y) > 4) lastClickMovedRef.current = true;
+  }
+
+  /** A deliverable opens its trail on a clean double-click; a drag never does. */
+  function handleDoubleClick(event: React.MouseEvent) {
+    if (readOnly || !node.deliverable) return;
+    if (lastClickMovedRef.current) return;
+    if ((event.target as Element).closest("button,textarea")) return;
+    event.stopPropagation();
+    onOpen();
+  }
+
   const anchors: LabAnchor[] = ["top", "right", "bottom", "left"];
   return (
     <div
