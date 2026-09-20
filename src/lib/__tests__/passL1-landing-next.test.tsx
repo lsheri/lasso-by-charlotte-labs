@@ -80,5 +80,8 @@ describe("ClipPlayer held playback", () => {
     expect(clip).toContain("}, 2000)");
     expect(clip).toContain("el.currentTime = 0");
     expect(clip).toContain("arbitrate()");
+    expect(clip).toContain("!p.holding");
+    expect(clip).toContain("playerEntry.current.holding = true");
+    expect(clip).toContain("playerEntry.current.holding = false");
   });
 });

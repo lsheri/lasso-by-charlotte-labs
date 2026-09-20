@@ -208,7 +208,7 @@ function LandingNextPage() {
                 <section className="landing-next-carousel-panel">
                   <div className="landing-next-carousel-content">
                     <div>
-                      <p className="micro-label">THE ENGAGEMENT, LAIED OUT</p>
+                      <p className="micro-label">THE ENGAGEMENT, LAID OUT</p>
                       <h2 className="pencil-title mt-4">
                         Sources. AI work. Your call. The deliverable. In that order, on one board.
                       </h2>
