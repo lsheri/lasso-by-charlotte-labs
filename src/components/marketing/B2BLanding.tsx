@@ -223,7 +223,7 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
           <section className="landing-next-carousel mt-20" aria-label="How Lasso works">
             <div className="landing-next-carousel-sticky">
               <div className="landing-next-carousel-track">
-                <section className="landing-next-carousel-panel landing-next-carousel-panel-find">
+                <section className="landing-next-carousel-panel">
                   <div className="landing-next-carousel-content">
                     <div>
                       <p className="micro-label">THE ONE THING NOBODY ELSE CAN SHOW</p>
@@ -233,28 +233,6 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
                         exact sentence, quoted, and why. Across ChatGPT, Claude, Gemini and whatever
                         else your team used.
                       </p>
-                    </div>
-                    <div id="find-it" className="landing-next-source-clips">
-                      <ClipPlayer
-                        src={connectorVideo.url}
-                        poster={connectorPoster.url}
-                        width={1920}
-                        height={1132}
-                        aspect="1920 / 1132"
-                        label="Work arriving in Lasso from connected tools"
-                        group="landing-sources"
-                        playback="hold"
-                      />
-                      <ClipPlayer
-                        src={claudePushVideo.url}
-                        poster={claudePushPoster.url}
-                        width={1080}
-                        height={1920}
-                        aspect="9 / 16"
-                        label="A Claude conversation being sent to Lasso"
-                        group="landing-sources"
-                        playback="hold"
-                      />
                     </div>
                   </div>
                 </section>
