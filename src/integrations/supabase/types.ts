@@ -2384,6 +2384,42 @@ export type Database = {
         }
         Relationships: []
       }
+      pilot_requests: {
+        Row: {
+          created_at: string
+          email: string
+          email_status: string
+          firm: string
+          id: string
+          name: string
+          note: string | null
+          notify_status: string
+          team_size: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          email_status?: string
+          firm: string
+          id?: string
+          name: string
+          note?: string | null
+          notify_status?: string
+          team_size: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          email_status?: string
+          firm?: string
+          id?: string
+          name?: string
+          note?: string | null
+          notify_status?: string
+          team_size?: string
+        }
+        Relationships: []
+      }
       practice_signatures: {
         Row: {
           carry_through: number
