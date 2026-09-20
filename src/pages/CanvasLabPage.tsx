@@ -123,27 +123,13 @@ import { useProfile } from "@/hooks/use-profile";
 import { dragTo, keyTo, type Point } from "@/lib/canvas-drag";
 import type { WorkboardCommand, WorkboardNodeInput, WorkboardRelation } from "@/lib/canvas-lab-shared";
 import { noteCanvasOpenedFn } from "@/lib/canvas.functions";
-import { clampZoom, stepZoom, wheelPanDelta, workboardPinchZoom, zoomAbout } from "@/lib/canvas-zoom";
+import { clampZoom, scrollableUnder, stepZoom, wheelPanVector, workboardPinchZoom, zoomAbout } from "@/lib/canvas-zoom";
 import { needsHighlightForComment } from "@/lib/canvas-lab-annotations-shared";
 import { engagementDisplayTitle } from "@/lib/clients";
 import { isDeliverableType } from "@/lib/lineage-shared";
 import type { WorkItemRow } from "@/lib/work-types";
 import { readWorkboardDisplayMode, workboardDisplayModeKey, type WorkboardDisplayMode } from "@/lib/workboard-card-preview.shared";
 
-
-/** True when something between the target and the board can still scroll that way. */
-function scrollableUnder(target: HTMLElement | null, shell: HTMLElement, delta: { x: number; y: number }): boolean {
-  let element: HTMLElement | null = target;
-  while (element && element !== shell) {
-    const style = window.getComputedStyle(element);
-    const scrollsY = /auto|scroll|overlay/.test(style.overflowY) && element.scrollHeight > element.clientHeight;
-    const scrollsX = /auto|scroll|overlay/.test(style.overflowX) && element.scrollWidth > element.clientWidth;
-    if (scrollsY && delta.y !== 0 && (delta.y < 0 ? element.scrollTop > 0 : element.scrollTop + element.clientHeight < element.scrollHeight)) return true;
-    if (scrollsX && delta.x !== 0 && (delta.x < 0 ? element.scrollLeft > 0 : element.scrollLeft + element.clientWidth < element.scrollWidth)) return true;
-    element = element.parentElement;
-  }
-  return false;
-}
 
 /** A local workboard over one permission-filtered engagement read. */
 export function workboardOpenVia(value: string | undefined): WorkboardOpenVia {
@@ -864,7 +850,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       if (event.ctrlKey || event.metaKey) return;
       const target = event.target as HTMLElement | null;
       if (target?.closest("textarea,input,[contenteditable='true'],[role='menu'],[data-radix-popper-content-wrapper]")) return;
-      const delta = wheelPanDelta(event);
+      const delta = wheelPanVector(event);
       if (scrollableUnder(target, shell!, delta)) return;
       event.preventDefault();
       viewportChangedRef.current = true;
