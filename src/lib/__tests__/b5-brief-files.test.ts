@@ -19,6 +19,28 @@ describe("where an attached file lands", () => {
     expect(points[1]!.y).toBeGreaterThan(points[0]!.y + PLACEMENT_CARD.height);
   });
 
+  it("stays beside the brief when the whole area around it is claimed", () => {
+    // The live case: the brief sits at 88, 484 inside a large outline. The
+    // outline is not occupied space, so the card lands one column right of
+    // the brief, never up and to the left of it.
+    const sitting = { x: 88, y: 484, width: 232 };
+    const points = briefAttachmentPoints(sitting, [{ x: 88, y: 484, width: 232, height: 112 }], 2);
+    for (const point of points) {
+      expect(point.x).toBeGreaterThan(sitting.x + sitting.width);
+      expect(point.y).toBeGreaterThanOrEqual(sitting.y);
+    }
+    expect(points[0]).toEqual({ x: 352, y: 484 });
+    expect(points[1]).toEqual({ x: 352, y: 638 });
+  });
+
+  it("moves down, then across, when the column beside the brief is full", () => {
+    const sitting = { x: 0, y: 0, width: 232 };
+    const column = Array.from({ length: 40 }, (_, row) => ({ x: 264, y: row * 154, width: 232, height: 112 }));
+    const points = briefAttachmentPoints(sitting, column, 1);
+    expect(points[0]!.x).toBeGreaterThan(264);
+    expect(points[0]!.y).toBeGreaterThanOrEqual(0);
+  });
+
   it("keeps clear of anything already on the board", () => {
     const taken = [{ x: 256, y: 0, width: 232, height: 112 }];
     const points = briefAttachmentPoints(brief, taken, 1);
