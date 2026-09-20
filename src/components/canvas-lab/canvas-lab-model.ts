@@ -184,7 +184,7 @@ export function dragEndDecision(input: {
 }): { position: Point | null; promptFrameId: string | null } {
   const { origin, from, pointer, zoom, node, frames, mode, editable } = input;
   if (Math.hypot(pointer.x - from.x, pointer.y - from.y) < 4) return { position: null, promptFrameId: null };
-  const position = dragTo(origin, { x: (pointer.x - from.x) / zoom, y: (pointer.y - from.y) / zoom }, true);
+  const position = dragTo(origin, { x: (pointer.x - from.x) / zoom, y: (pointer.y - from.y) / zoom });
   if (position.x === origin.x && position.y === origin.y) return { position: null, promptFrameId: null };
   const target = dropPromptFrame({ ...node, x: position.x, y: position.y }, frames, mode, editable);
   return { position, promptFrameId: target ? target.id : null };
@@ -589,7 +589,7 @@ export function seedCanvas(input: SeedInput, frames = createLabFrames(input.task
 
 /** Move one node. Positions snap to the grid, exactly like the board does. */
 export function moveNode(nodes: LabNode[], id: string, to: Point): LabNode[] {
-  const at = snapPoint(to, true);
+  const at = snapPoint(to);
   return nodes.map((node) => (node.id === id ? { ...node, x: at.x, y: at.y } : node));
 }
 
