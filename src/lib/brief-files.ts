@@ -62,7 +62,7 @@ export function briefAttachmentPoints(
   const occupied = [...taken];
   const points: Point[] = [];
   for (let index = 0; index < Math.max(0, count); index += 1) {
-    let landed: Point = { x: base.x + index * 0, y: base.y + index * stepY };
+    let landed: Point = { x: base.x, y: base.y + index * stepY };
     search: for (let column = 0; column < 12; column += 1) {
       for (let row = 0; row < 40; row += 1) {
         const point = { x: base.x + column * stepX, y: base.y + row * stepY };
