@@ -199,6 +199,8 @@ export type TelemetryEvent =
   | "workboard.drop_prompt_answered"
   /** Canvas Lab polish: the local frame-boundary view changed. State only. */
   | "workboard.structure_toggled"
+  /** B3a: the built-in sample board was opened. Entry point only. */
+  | "workboard.example_viewed"
   | "workboard.display_mode_toggled"
   | "workboard.card_content_viewed"
   /** Canvas Lab polish: a save error was settled. Entity and choice only. */
