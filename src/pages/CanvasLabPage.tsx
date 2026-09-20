@@ -247,7 +247,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   const [interaction, setInteraction] = useState<"idle" | "drag" | "pan" | "resize" | "connect">("idle");
   const [structureMode, setStructureMode] = useState<LabStructureMode>("freeform");
   const [exampleOpen, setExampleOpen] = useState(false);
-  const [displayMode, setDisplayMode] = useState<WorkboardDisplayMode>("sticky");
+  const [displayMode, setDisplayMode] = useState<WorkboardDisplayMode>("preview");
   const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
   const [selectedFrameId, setSelectedFrameId] = useState<string | null>(null);
   const [front, setFront] = useState<string[]>([]);

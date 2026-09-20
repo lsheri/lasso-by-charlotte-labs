@@ -1,18 +1,15 @@
-/**
- * Which way the unmapped set is being looked at. Pile is the default on a first
- * visit; after that the person's own last choice is what they get back.
- */
-export type WorkView = "pile" | "matrix";
+/** How work cards are drawn. The four-column layout never changes. */
+export type WorkView = "preview" | "sticky";
 
 export const WORK_VIEW_KEY = "lasso.work.view";
 
 export function readWorkView(): WorkView {
-  if (typeof window === "undefined") return "pile";
+  if (typeof window === "undefined") return "preview";
   try {
     const stored = window.localStorage.getItem(WORK_VIEW_KEY);
-    return stored === "matrix" ? "matrix" : "pile";
+    return stored === "sticky" ? "sticky" : "preview";
   } catch {
-    return "pile";
+    return "preview";
   }
 }
 
