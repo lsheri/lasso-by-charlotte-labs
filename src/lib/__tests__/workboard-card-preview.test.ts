@@ -5,9 +5,9 @@ import { readWorkboardCardPreviews } from "@/lib/workboard-card-preview.server";
 import { previewWheelConsumesScroll, readWorkboardDisplayMode, workboardDisplayModeKey } from "@/lib/workboard-card-preview.shared";
 
 describe("workboard card previews", () => {
-  it("defaults to Sticky and scopes the choice to viewer and engagement", () => {
-    expect(readWorkboardDisplayMode(null)).toBe("sticky");
-    expect(readWorkboardDisplayMode("preview")).toBe("preview");
+  it("defaults to Preview and scopes the choice to viewer and engagement", () => {
+    expect(readWorkboardDisplayMode(null)).toBe("preview");
+    expect(readWorkboardDisplayMode("pile")).toBe("preview");
     expect(workboardDisplayModeKey("person", "engagement")).toContain("person:engagement");
   });
 

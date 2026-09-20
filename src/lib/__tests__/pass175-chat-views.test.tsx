@@ -8,13 +8,14 @@ const functions = readFileSync("src/lib/chat-library.functions.ts", "utf8");
 const styles = readFileSync("src/styles.css", "utf8");
 const chatRow = readFileSync("src/components/work/ChatRow.tsx", "utf8");
 
-describe("pass 175 — cards and list", () => {
-  it("defaults the chat library to cards", () => {
-    expect(page).toContain('useState<"cards" | "list">("cards")');
+describe("pass 175 — preview and sticky", () => {
+  it("defaults the chat library to Preview", () => {
+    expect(page).toContain('useState<WorkView>("preview")');
   });
 
-  it("uses the shared note rather than a local card", () => {
+  it("uses the shared note and Workboard preview path", () => {
     expect(page).toContain('import { WorkNote } from "@/components/work/WorkNote"');
+    expect(page).toContain('useWorkboardCardPreviews');
     expect(page).not.toMatch(/function\s+Chat(Card|Note)\b/);
   });
 

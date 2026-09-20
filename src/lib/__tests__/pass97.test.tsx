@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { render, screen, fireEvent, cleanup, waitFor } from "@testing-library/react";
+import { render, screen, cleanup, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
@@ -8,7 +8,6 @@ import { safeChatUrl, chatUrlLabel } from "@/lib/chat-url";
 import { WORK_VIEW_KEY, readWorkView, writeWorkView } from "@/lib/work-view";
 import { connectStreamKey, defaultStream, rememberStream } from "@/lib/connect-to-work";
 import { ChatUrlLink } from "@/components/work/ChatUrlLink";
-import { WorkPile } from "@/components/work/WorkPile";
 import { ConnectToWorkSheet } from "@/components/engagements/ConnectToWorkSheet";
 import { remapItems } from "@/lib/workflow-order";
 import type { WorkItemRow } from "@/lib/work-types";
@@ -78,39 +77,17 @@ function withQuery(ui: React.ReactNode) {
 }
 
 describe("pass 97 — work view persistence", () => {
-  it("defaults to pile and persists the choice under lasso.work.view", () => {
+  it("defaults to Preview and migrates old layout values", () => {
     expect(WORK_VIEW_KEY).toBe("lasso.work.view");
-    expect(readWorkView()).toBe("pile");
-    writeWorkView("matrix");
-    expect(window.localStorage.getItem(WORK_VIEW_KEY)).toBe("matrix");
-    expect(readWorkView()).toBe("matrix");
-    writeWorkView("pile");
-    expect(readWorkView()).toBe("pile");
-  });
-
-  it("restores the stored view and never switches view on a paper click", () => {
-    const onOpenEntry = vi.fn();
-    render(
-      withQuery(<WorkPile
-        entries={[item()]}
-        renderEntry={() => <div data-testid="matrix-row" />}
-        onOpenEntry={onOpenEntry}
-      />),
-    );
-    // First visit lands on pile: the scatter field is present, no matrix rows.
-    expect(document.querySelector("[data-scatter]")).not.toBeNull();
-    expect(screen.queryByTestId("matrix-row")).toBeNull();
-
-    fireEvent.click(screen.getByText("A conversation"));
-    expect(onOpenEntry).toHaveBeenCalledTimes(1);
-    expect(document.querySelector("[data-scatter]")).not.toBeNull();
-    expect(screen.queryByTestId("matrix-row")).toBeNull();
-  });
-
-  it("writes the view when the toggle is used", () => {
-    render(withQuery(<WorkPile entries={[item()]} renderEntry={() => <div />} />));
-    fireEvent.click(screen.getByText("Matrix"));
-    expect(window.localStorage.getItem(WORK_VIEW_KEY)).toBe("matrix");
+    expect(readWorkView()).toBe("preview");
+    for (const legacy of ["pile", "matrix"]) {
+      window.localStorage.setItem(WORK_VIEW_KEY, legacy);
+      expect(readWorkView()).toBe("preview");
+    }
+    writeWorkView("sticky");
+    expect(readWorkView()).toBe("sticky");
+    writeWorkView("preview");
+    expect(readWorkView()).toBe("preview");
   });
 });
 
