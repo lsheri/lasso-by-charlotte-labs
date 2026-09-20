@@ -4232,7 +4232,7 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
         gap: clamp(3rem, 7vw, 7rem);
       }
 
-      .landing-next-carousel-panel-find .landing-next-carousel-content {
+      .landing-next-carousel-panel-sources .landing-next-carousel-content {
         grid-template-columns: minmax(0, 0.68fr) minmax(0, 1.32fr);
       }
 
