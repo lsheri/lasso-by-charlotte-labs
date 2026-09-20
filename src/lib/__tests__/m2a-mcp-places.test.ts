@@ -234,7 +234,7 @@ describe("M2a recheck — container matching and owner scope", () => {
 
   it("several partial matches ask in words and create nothing", () => {
     expect(handler).toContain("partials.length > 1");
-    expect(handler).toContain("` did you mean: ${");
+    expect(handler).toContain("did you mean: ${names}");
     expect(handler).toContain("? Ask the user before creating anything.");
     const ambiguous = handler.slice(
       handler.indexOf("partials.length > 1"),
