@@ -23,7 +23,7 @@ import {
 import { safeChatUrl } from "@/lib/chat-url";
 import { isAffiliatedStrict, orgTypeOfStrict } from "@/lib/org-type.server";
 import {
-  PLACEMENT_LINE,
+  placementLine,
   chooseSuggestion,
   createToolsFor,
   mcpVocabFor,
@@ -192,7 +192,7 @@ const pushTools = (vocab: McpVocab) => [
     title: "Push a conversation",
     icons: ICONS,
     description:
-      `When the user says 'Push to Lasso', 'send to Lasso', or similar: call push_conversation with the ENTIRE conversation, every message, verbatim, unabridged, plus any artifact, canvas or file that already existed as its own object in this app, as attachments. Never summarize the transcript. Never compose new summaries, recaps or section write-ups and send them as attachments. Never use push_document for conversation artifacts. Verbatim is non-negotiable: never substitute a summary, paraphrase, or shortened version of a message at any position, the server rejects shrunken overwrites. Before pushing, assess how many messages you can reproduce word-for-word in a single call given their actual lengths. If the whole conversation fits, push it whole. If not, push it in consecutive windows using window {from, to, total}: start with the first window sized to what you can reproduce verbatim, then follow the server's response, which tells you the next starting position, until all messages are stored. When re-pushing a conversation that grew, push only the new messages as a window, never re-send earlier messages unless correcting them. A smaller window is always the answer; a shorter message never is. ${PLACEMENT_LINE}`,
+      `When the user says 'Push to Lasso', 'send to Lasso', or similar: call push_conversation with the ENTIRE conversation, every message, verbatim, unabridged, plus any artifact, canvas or file that already existed as its own object in this app, as attachments. Never summarize the transcript. Never compose new summaries, recaps or section write-ups and send them as attachments. Never use push_document for conversation artifacts. Verbatim is non-negotiable: never substitute a summary, paraphrase, or shortened version of a message at any position, the server rejects shrunken overwrites. Before pushing, assess how many messages you can reproduce word-for-word in a single call given their actual lengths. If the whole conversation fits, push it whole. If not, push it in consecutive windows using window {from, to, total}: start with the first window sized to what you can reproduce verbatim, then follow the server's response, which tells you the next starting position, until all messages are stored. When re-pushing a conversation that grew, push only the new messages as a window, never re-send earlier messages unless correcting them. A smaller window is always the answer; a shorter message never is. ${placementLine(vocab)}`,
     // Windowing is the only sanctioned way to split a push, and only because
     // the alternative the model reaches for otherwise is shortening messages.
     inputSchema: {
@@ -297,7 +297,7 @@ const pushTools = (vocab: McpVocab) => [
     title: "Push a transcript",
     icons: ICONS,
     description:
-      `Prefer push_conversation for anything conversation-shaped; use this only for a standalone transcript with no artifacts and no source conversation to group it with. ${PLACEMENT_LINE}`,
+      `Prefer push_conversation for anything conversation-shaped; use this only for a standalone transcript with no artifacts and no source conversation to group it with. ${placementLine(vocab)}`,
     inputSchema: {
       type: "object",
       properties: {
@@ -331,7 +331,7 @@ const pushTools = (vocab: McpVocab) => [
     title: "Push a document",
     icons: ICONS,
     description:
-      `Prefer push_conversation for anything conversation-shaped; use this only for a standalone document with no source conversation. ${PLACEMENT_LINE}`,
+      `Prefer push_conversation for anything conversation-shaped; use this only for a standalone document with no source conversation. ${placementLine(vocab)}`,
     inputSchema: {
       type: "object",
       properties: {
