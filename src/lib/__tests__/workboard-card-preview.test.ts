@@ -15,7 +15,7 @@ describe("workboard card previews", () => {
       work_item_id: "visible-chat",
       turn_no: index + 1,
       role: index % 2 ? "assistant" : "user",
-      content: `turn ${index + 1}`,
+      content: index === 4 ? "x".repeat(450) : `turn ${index + 1}`,
       model: "model-name",
     }));
     const order = vi.fn().mockResolvedValue({ data: rows, error: null });
@@ -28,6 +28,7 @@ describe("workboard card previews", () => {
     expect(inFn).toHaveBeenCalledWith("work_item_id", ["visible-chat"]);
     expect(result[0]?.turns.map((turn) => turn.turnNo)).toEqual([3, 4, 5]);
     expect(result[0]?.turnCount).toBe(5);
+    expect(result[0]?.turns[2]?.content).toHaveLength(400);
   });
 
   it("chains the wheel at either edge and never captures it before focus", () => {

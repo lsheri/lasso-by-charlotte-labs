@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/hooks/use-vendor-display", () => ({ useVendorVisible: () => true }));
@@ -65,6 +65,36 @@ describe("Canvas Lab paper", () => {
     expect(screen.getByTestId("workboard-chat-preview")).not.toBeNull();
     expect(screen.getByText("8 turns")).not.toBeNull();
     expect(screen.getByText("Last visible turn")).not.toBeNull();
+  });
+
+  it("reports a focused chat preview only after its scroll position changes", () => {
+    const onPreviewScroll = vi.fn();
+    render(
+      <LabPaper
+        node={{ ...baseNode, kind: "work", workItemId: workItem.id }}
+        item={{ ...workItem, type: "ai_thread", source_vendor: "openai" }}
+        selected={false}
+        focused
+        displayMode="preview"
+        preview={{ workItemId: workItem.id, turnCount: 3, model: "Model", turns: [] }}
+        onPreviewScroll={onPreviewScroll}
+        onEdit={() => undefined}
+        onEditCommitted={() => undefined}
+      />,
+    );
+    const preview = screen.getByTestId("workboard-chat-preview");
+    fireEvent.scroll(preview, { target: { scrollTop: 0 } });
+    expect(onPreviewScroll).not.toHaveBeenCalled();
+    Object.defineProperty(preview, "scrollTop", { configurable: true, value: 24 });
+    fireEvent.scroll(preview);
+    expect(onPreviewScroll).toHaveBeenCalledWith("chat");
+  });
+
+  it("does not report wheel movement over a document excerpt", () => {
+    const onPreviewScroll = vi.fn();
+    const { container } = render(<LabPaper node={{ ...baseNode, kind: "work", workItemId: workItem.id }} item={{ ...workItem, work_item_extracts: [{ summary: "Longer document excerpt" }] }} selected={false} focused displayMode="preview" onPreviewScroll={onPreviewScroll} onEdit={() => undefined} onEditCommitted={() => undefined} />);
+    fireEvent.wheel(container.querySelector(".canvas-lab-paper-summary") as Element, { deltaY: 20 });
+    expect(onPreviewScroll).not.toHaveBeenCalled();
   });
 
   it.each([
