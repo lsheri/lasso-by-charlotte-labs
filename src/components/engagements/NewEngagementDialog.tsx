@@ -22,12 +22,20 @@ import { logEvent } from "@/lib/telemetry";
 
 type Mode = "choose" | "engagement" | "folder";
 
+/** Where the person started from. One additive dim on engagement.updated. */
+export type NewEngagementFrom = "sidebar" | "sidebar_client" | "client_page";
+
 export function NewEngagementDialog({
   trigger,
   onDone,
+  initialClientId,
+  from = "sidebar",
 }: {
   trigger: ReactNode;
   onDone?: (() => void) | undefined;
+  /** A client chosen for the person before the dialog opens. Still changeable. */
+  initialClientId?: string | null | undefined;
+  from?: NewEngagementFrom;
 }) {
   const { data: profile } = useProfile();
   const queryClient = useQueryClient();
