@@ -47,10 +47,10 @@
 - No database changes; pg_trgm index from S1 accelerates the probes.
 
 ## Unit P2: Workboard document and deck previews
-- [ ] Load first-page or first-slide previews only for visible cards in Preview mode
-- [ ] Keep silent excerpt fallback and show document-version counts
-- [ ] Preserve mapped teammate reader access and add `via: open`
-- [ ] Add focused tests and confirm a clean preview build
+- [x] Load first-page or first-slide previews only for visible cards in Preview mode
+- [x] Keep silent excerpt fallback and show document-version counts
+- [x] Preserve mapped teammate reader access and add `via: open`
+- [x] Add focused tests and confirm a clean preview build
 
 ## Landing-next Find it clip
 - [x] Save uploaded clip and poster as public/videos/find-it.mp4 and find-it-poster.png
