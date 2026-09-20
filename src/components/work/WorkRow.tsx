@@ -87,6 +87,11 @@ export function WorkRow({
           lead={lead}
           clientLabel={clientLabel}
           dense
+          chips={
+            primaryAction ? (
+              <span onClick={(event) => event.stopPropagation()}>{primaryAction}</span>
+            ) : null
+          }
           actions={
             actions || chips ? (
               <CardMenu item={item} clientLabel={clientLabel} onFluency={onFluency}>
@@ -96,11 +101,7 @@ export function WorkRow({
             ) : null
           }
         />
-        {primaryAction ? (
-          <div className="mt-1.5 px-3 pb-2" onClick={(event) => event.stopPropagation()}>
-            {primaryAction}
-          </div>
-        ) : null}
+
         {contentsUnread(item.meta as never) ? (
           <p className="mt-1 text-[11px] text-muted-foreground">{UNREAD_MARKER_LINE}</p>
         ) : null}
