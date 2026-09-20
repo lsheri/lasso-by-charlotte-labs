@@ -257,7 +257,7 @@ export function FocusOverlay({
             onKeyUp={captureSelection}
           >
             {item && item.type === "ai_thread" ? (
-              <ThreadBody item={item} enabled highlights={highlights} commentMarks={commentMarks} />
+              <ThreadBody item={item} enabled highlights={myHighlights} commentMarks={commentMarks} />
             ) : item ? (
               <RenderedContent item={item} onDownload={() => undefined} canEdit={false} />
             ) : (
