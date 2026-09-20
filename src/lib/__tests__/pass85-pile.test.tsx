@@ -29,7 +29,7 @@ describe("pass 85 type matrix", () => {
       "AI conversations",
       "Documents",
       "Models & sheets",
-      "Call transcripts",
+      "Meeting transcripts",
     ]);
     for (const bucket of BUCKETS) expect(bucket.letter).toHaveLength(1);
   });

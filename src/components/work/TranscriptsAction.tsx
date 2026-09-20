@@ -15,7 +15,7 @@ export function TranscriptsAction() {
   if (!drive) {
     return (
       <Button type="button" variant="outline" asChild>
-        <Link to="/connectors">Find call transcripts</Link>
+        <Link to="/connectors">Find meeting transcripts</Link>
       </Button>
     );
   }
@@ -25,7 +25,7 @@ export function TranscriptsAction() {
       trigger={
         <Button type="button" variant="outline" className="gap-2">
           <BrandLogo brand="granola" size={17} />
-          Find call transcripts
+          Find meeting transcripts
         </Button>
       }
     />
