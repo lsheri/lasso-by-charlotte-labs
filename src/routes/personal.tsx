@@ -50,7 +50,11 @@ function LandingPage() {
   // Content-free, and unchanged from the existing landing signal.
   useEffect(() => {
     void recordAnonymousEventFn({
-      data: { event_type: "landing.viewed", view_id: crypto.randomUUID(), dims: {} },
+      data: {
+        event_type: "landing.viewed",
+        view_id: crypto.randomUUID(),
+        dims: { surface: "personal" },
+      },
     }).catch(() => {
       /* telemetry must never surface to the user */
     });

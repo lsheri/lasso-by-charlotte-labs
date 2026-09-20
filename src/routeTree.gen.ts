@@ -17,6 +17,7 @@ import { Route as LandingNextRouteImport } from './routes/landing-next'
 import { Route as NextRouteImport } from './routes/next'
 import { Route as NoAccessRouteImport } from './routes/no-access'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
+import { Route as PersonalRouteImport } from './routes/personal'
 import { Route as TrustRouteImport } from './routes/trust'
 import { Route as WhyRouteImport } from './routes/why'
 import { Route as AuthenticatedAffiliationRouteImport } from './routes/_authenticated/affiliation'
@@ -93,6 +94,11 @@ const NoAccessRoute = NoAccessRouteImport.update({
 const OnboardingRoute = OnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PersonalRoute = PersonalRouteImport.update({
+  id: '/personal',
+  path: '/personal',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TrustRoute = TrustRouteImport.update({
@@ -304,6 +310,7 @@ export interface FileRoutesByFullPath {
   '/next': typeof NextRoute
   '/no-access': typeof NoAccessRoute
   '/onboarding': typeof OnboardingRoute
+  '/personal': typeof PersonalRoute
   '/trust': typeof TrustRoute
   '/why': typeof WhyRoute
   '/affiliation': typeof AuthenticatedAffiliationRoute
@@ -351,6 +358,7 @@ export interface FileRoutesByTo {
   '/next': typeof NextRoute
   '/no-access': typeof NoAccessRoute
   '/onboarding': typeof OnboardingRoute
+  '/personal': typeof PersonalRoute
   '/trust': typeof TrustRoute
   '/why': typeof WhyRoute
   '/affiliation': typeof AuthenticatedAffiliationRoute
@@ -400,6 +408,7 @@ export interface FileRoutesById {
   '/next': typeof NextRoute
   '/no-access': typeof NoAccessRoute
   '/onboarding': typeof OnboardingRoute
+  '/personal': typeof PersonalRoute
   '/trust': typeof TrustRoute
   '/why': typeof WhyRoute
   '/_authenticated/affiliation': typeof AuthenticatedAffiliationRoute
@@ -449,6 +458,7 @@ export interface FileRouteTypes {
     | '/next'
     | '/no-access'
     | '/onboarding'
+    | '/personal'
     | '/trust'
     | '/why'
     | '/affiliation'
@@ -496,6 +506,7 @@ export interface FileRouteTypes {
     | '/next'
     | '/no-access'
     | '/onboarding'
+    | '/personal'
     | '/trust'
     | '/why'
     | '/affiliation'
@@ -544,6 +555,7 @@ export interface FileRouteTypes {
     | '/next'
     | '/no-access'
     | '/onboarding'
+    | '/personal'
     | '/trust'
     | '/why'
     | '/_authenticated/affiliation'
@@ -593,6 +605,7 @@ export interface RootRouteChildren {
   NextRoute: typeof NextRoute
   NoAccessRoute: typeof NoAccessRoute
   OnboardingRoute: typeof OnboardingRoute
+  PersonalRoute: typeof PersonalRoute
   TrustRoute: typeof TrustRoute
   WhyRoute: typeof WhyRoute
   JoinEduRoute: typeof JoinEduRoute
@@ -662,6 +675,13 @@ declare module '@tanstack/react-router' {
       path: '/onboarding'
       fullPath: '/onboarding'
       preLoaderRoute: typeof OnboardingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/personal': {
+      id: '/personal'
+      path: '/personal'
+      fullPath: '/personal'
+      preLoaderRoute: typeof PersonalRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/trust': {
@@ -1007,6 +1027,7 @@ const rootRouteChildren: RootRouteChildren = {
   NextRoute: NextRoute,
   NoAccessRoute: NoAccessRoute,
   OnboardingRoute: OnboardingRoute,
+  PersonalRoute: PersonalRoute,
   TrustRoute: TrustRoute,
   WhyRoute: WhyRoute,
   JoinEduRoute: JoinEduRoute,
