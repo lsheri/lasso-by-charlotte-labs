@@ -96,6 +96,8 @@ export function LabCard({
   const cardRef = useRef<HTMLDivElement | null>(null);
   const paperRef = useRef<HTMLDivElement | null>(null);
   const anchorDownRef = useRef<{ x: number; y: number } | null>(null);
+  const cardDownRef = useRef<{ x: number; y: number } | null>(null);
+  const lastClickMovedRef = useRef(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
   useLayoutEffect(() => {
