@@ -120,6 +120,14 @@ export function noteWorkboardWorkAdded(orgId: string | undefined, source: WorkAd
 }
 
 /**
+ * B4: one workstream was drawn on the board. How many cards the box claimed,
+ * and whether a prompt was shown. No names, no ids.
+ */
+export function noteWorkboardWorkstreamDrawn(orgId: string | undefined, claimed: number, asked: "true" | "false"): void {
+  if (orgId) logEvent("workboard.workstream_drawn", orgId, { claimed, asked });
+}
+
+/**
  * Slice 2a: a highlight or a comment was made, changed or removed. Shape only:
  * no text, no hash, no ids, no author and no role.
  */
