@@ -6,7 +6,7 @@ import { LabCard } from "@/components/canvas-lab/LabCard";
 import type { LabNode } from "@/components/canvas-lab/canvas-lab-model";
 
 function node(overrides: Partial<LabNode>): LabNode {
-  return { id: "n", kind: "work", frame: "f", title: "Pricing deck", summary: "", typeLabel: "deck", ownership: "mine", x: 0, y: 0, width: 232, height: 160, ...overrides };
+  return { id: "n", kind: "work", frame: "f", title: "Pricing deck", summary: "", typeLabel: "deck", ownership: "yours", x: 0, y: 0, width: 232, height: 160, ...overrides };
 }
 
 function renderCard(labNode: LabNode, onOpen: () => void) {
