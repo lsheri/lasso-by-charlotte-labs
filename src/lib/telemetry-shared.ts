@@ -187,6 +187,8 @@ export type TelemetryEvent =
   | "workboard.drop_prompt_answered"
   /** Canvas Lab polish: the local frame-boundary view changed. State only. */
   | "workboard.structure_toggled"
+  | "workboard.display_mode_toggled"
+  | "workboard.card_content_viewed"
   /** Canvas Lab polish: a save error was settled. Entity and choice only. */
   | "workboard.save_error_resolved"
   /** Canvas Lab polish: the local context selection changed. Action only. */
