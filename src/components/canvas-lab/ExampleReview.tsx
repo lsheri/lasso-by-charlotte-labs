@@ -15,7 +15,7 @@ function feeders() {
   const byId = new Map(EXAMPLE_NODES.map((node) => [node.id, node]));
   const rows = inbound.flatMap((link) => {
     const node = byId.get(link.fromId);
-    return node ? [{ node, relation: link.relation }] : [];
+    return node ? [{ node, relation: link.relation ?? "context" }] : [];
   });
   return {
     context: rows.filter((row) => row.node.kind === "source"),
