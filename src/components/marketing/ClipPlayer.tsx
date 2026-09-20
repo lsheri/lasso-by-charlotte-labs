@@ -19,16 +19,27 @@ const players = new Set<{
   ratio: number;
   group: string;
   playback: Playback;
+  holding: boolean;
 }>();
 
 function arbitrate() {
-  let best: { el: HTMLVideoElement; ratio: number; group: string; playback: Playback } | null = null;
+  let best: {
+    el: HTMLVideoElement;
+    ratio: number;
+    group: string;
+    playback: Playback;
+    holding: boolean;
+  } | null = null;
   for (const p of players) {
     if (p.ratio < 0.35) continue;
     if (!best || p.ratio > best.ratio) best = p;
   }
   for (const p of players) {
-    if (best && (p === best || (best.playback === "loop" && p.group === best.group))) {
+    if (
+      best &&
+      !p.holding &&
+      (p === best || (best.playback === "loop" && p.group === best.group))
+    ) {
       void p.el.play().catch(() => {});
     }
     else p.el.pause();
@@ -68,6 +79,13 @@ export function ClipPlayer({
   const [reduced, setReduced] = useState(false);
   const [manual, setManual] = useState(false);
   const holdTimer = useRef<number | null>(null);
+  const playerEntry = useRef<{
+    el: HTMLVideoElement;
+    ratio: number;
+    group: string;
+    playback: Playback;
+    holding: boolean;
+  } | null>(null);
 
   useEffect(() => {
     if (typeof window === "undefined" || !window.matchMedia) return;
@@ -86,7 +104,8 @@ export function ClipPlayer({
       return;
     }
     if (typeof IntersectionObserver === "undefined") return;
-    const entry = { el, ratio: 0, group: group ?? src, playback };
+    const entry = { el, ratio: 0, group: group ?? src, playback, holding: false };
+    playerEntry.current = entry;
     players.add(entry);
     const io = new IntersectionObserver(
       (entries) => {
@@ -99,6 +118,7 @@ export function ClipPlayer({
     return () => {
       io.disconnect();
       if (holdTimer.current !== null) window.clearTimeout(holdTimer.current);
+      playerEntry.current = null;
       players.delete(entry);
       el.pause();
       arbitrate();
@@ -108,9 +128,12 @@ export function ClipPlayer({
   function holdAndRestart() {
     if (playback !== "hold") return;
     if (holdTimer.current !== null) window.clearTimeout(holdTimer.current);
+    if (playerEntry.current) playerEntry.current.holding = true;
     holdTimer.current = window.setTimeout(() => {
       const el = ref.current;
       if (!el) return;
+      if (playerEntry.current) playerEntry.current.holding = false;
+      holdTimer.current = null;
       el.currentTime = 0;
       arbitrate();
     }, 2000);

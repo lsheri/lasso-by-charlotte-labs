@@ -191,3 +191,8 @@
 - [x] Add opt-in held clip playback without changing `/` defaults.
 - [x] Add anonymous pilot CTA event and focused tests.
 - [x] Run landing tests, language scan, typecheck, and inspect build status.
+
+## Landing L1 recheck
+- [x] Restore the exact engagement label.
+- [x] Keep held clips paused through observer arbitration.
+- [x] Re-run landing tests.
