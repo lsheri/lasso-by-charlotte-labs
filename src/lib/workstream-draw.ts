@@ -56,8 +56,8 @@ export function fullyInside(rect: DrawRect, card: ClaimCandidate): boolean {
 }
 
 /** A frame that stands for a workstream of its own, not a base area. */
-function isWorkstreamFrame(frameId: string, defaultHomeFrameIds: readonly string[]): boolean {
-  if (!frameId.startsWith("task:")) return false;
+function isWorkstreamFrame(frameId: string | null | undefined, defaultHomeFrameIds: readonly string[]): boolean {
+  if (!frameId || !frameId.startsWith("task:")) return false;
   return !defaultHomeFrameIds.includes(frameId);
 }
 
