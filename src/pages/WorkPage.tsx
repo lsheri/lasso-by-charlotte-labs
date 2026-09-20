@@ -406,7 +406,7 @@ export function WorkPage() {
           setPeek({ entry: group, focusId: item.id });
         }}
         actions={rowActions(head, variant, group.items, { inCardMenu: true })}
-        primaryAction={claimAction(head)}
+        primaryAction={claimAction(head, group.items)}
         onFluency={(next) => {
           setLensPreset(undefined);
           setLensItem(next);
@@ -484,10 +484,17 @@ export function WorkPage() {
   }
 
   /** The one act that stays on the card face: saying whose work this is. */
-  function claimAction(item: WorkItemRow) {
+  /** P1: claiming a pushed conversation claims every piece inside it. */
+  function claimAction(item: WorkItemRow, group?: WorkItemRow[]) {
     if (item.client_id) return undefined;
     return (
-      <ClaimToClient item={item} surface="work" emphasis="lead" label="Say whose this is" />
+      <ClaimToClient
+        item={item}
+        {...(group && group.length > 1 ? { items: group } : {})}
+        surface="work"
+        emphasis="lead"
+        label="Say whose this is"
+      />
     );
   }
 
