@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-const route = readFileSync("src/routes/index.tsx", "utf8");
+const route = readFileSync("src/routes/personal.tsx", "utf8");
 const clip = readFileSync("src/components/marketing/ClipPlayer.tsx", "utf8");
 const header = readFileSync("src/components/layout/PublicHeader.tsx", "utf8");
 const source = `${route}\n${clip}`;
@@ -101,7 +101,7 @@ describe("pass 138 landing page", () => {
 describe("pass139 restored navigation and CTAs", () => {
   it("renders the shared PublicHeader on /", () => {
     expect(route).toContain('import { PublicHeader } from "@/components/layout/PublicHeader"');
-    expect(route).toContain('<PublicHeader current="/" />');
+    expect(route).toContain('<PublicHeader />');
   });
 
   it("links the route to /auth, /why and /trust", () => {

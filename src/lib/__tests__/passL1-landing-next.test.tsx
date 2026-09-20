@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-const route = readFileSync("src/routes/landing-next.tsx", "utf8");
+const route = readFileSync("src/components/marketing/B2BLanding.tsx", "utf8");
 const copySource = route.replace(/className="[^"]*"/g, "").toLowerCase();
 const requiredReportHeadline = "a note in the margin, not a report on you";
 const copyWithoutRequiredHeadline = copySource.replace(requiredReportHeadline, "");
