@@ -51,7 +51,7 @@ describe("pass 200 — viewport gestures", () => {
 
   it("the workboard pans on a plain wheel and zooms about the cursor", () => {
     const page = read("src/pages/CanvasLabPage.tsx");
-    expect(page).toContain("wheelPanDelta");
+    expect(page).toContain("wheelPanVector");
     expect(page).toContain("zoomAbout");
     expect(page).toContain("scrollableUnder(target, shell!, delta)");
     expect(page).toContain('addEventListener("wheel", onSurfaceWheel, { passive: false })');

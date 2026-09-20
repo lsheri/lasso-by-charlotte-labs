@@ -3952,6 +3952,10 @@ export type Database = {
       }
       analytics_upsert_episode: { Args: { p_row: Json }; Returns: undefined }
       analytics_upsert_feature: { Args: { p_row: Json }; Returns: undefined }
+      can_self_join_engagement: {
+        Args: { eng: string; prof: string }
+        Returns: boolean
+      }
       claim_coaching_links: {
         Args: { p_actor_profile_id?: string; p_code: string }
         Returns: number

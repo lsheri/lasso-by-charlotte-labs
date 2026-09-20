@@ -153,3 +153,22 @@ export function isStaleHighlight(turnHash: string | null, contentHash: string | 
   if (!turnHash || !contentHash) return false;
   return turnHash !== contentHash;
 }
+
+/** An anchor a comment was written against. */
+export type AnnotationAnchor = { turnNo: number; charStart: number; charEnd: number };
+
+/**
+ * Commenting on a fresh passage marks it too, so the passage stays visible in
+ * the chat. An exact match is left alone rather than marked twice.
+ */
+export function needsHighlightForComment(
+  highlights: readonly AnnotationAnchor[],
+  anchor: AnnotationAnchor,
+): boolean {
+  return !highlights.some(
+    (one) =>
+      one.turnNo === anchor.turnNo &&
+      one.charStart === anchor.charStart &&
+      one.charEnd === anchor.charEnd,
+  );
+}

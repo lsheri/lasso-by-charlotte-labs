@@ -64,3 +64,38 @@ export function wheelPanDelta(event: { deltaX: number; deltaY: number; deltaMode
   const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? 100 : 1;
   return { x: event.deltaX * unit, y: event.deltaY * unit };
 }
+
+/**
+ * Shift plus a wheel means sideways. Most browsers already report it as
+ * `deltaX`; the ones that do not send it down as `deltaY`, so it is turned
+ * here. There is no smoothing anywhere on this path, so a reader who asked
+ * for less movement gets exactly the same pan.
+ */
+export function wheelPanVector(event: {
+  deltaX: number;
+  deltaY: number;
+  deltaMode?: number;
+  shiftKey?: boolean;
+}): ZoomPoint {
+  const delta = wheelPanDelta(event);
+  if (event.shiftKey && delta.x === 0) return { x: delta.y, y: 0 };
+  return delta;
+}
+
+/** True when something between the target and the board can still scroll that way. */
+export function scrollableUnder(
+  target: HTMLElement | null,
+  shell: HTMLElement,
+  delta: { x: number; y: number },
+): boolean {
+  let element: HTMLElement | null = target;
+  while (element && element !== shell) {
+    const style = window.getComputedStyle(element);
+    const scrollsY = /auto|scroll|overlay/.test(style.overflowY) && element.scrollHeight > element.clientHeight;
+    const scrollsX = /auto|scroll|overlay/.test(style.overflowX) && element.scrollWidth > element.clientWidth;
+    if (scrollsY && delta.y !== 0 && (delta.y < 0 ? element.scrollTop > 0 : element.scrollTop + element.clientHeight < element.scrollHeight)) return true;
+    if (scrollsX && delta.x !== 0 && (delta.x < 0 ? element.scrollLeft > 0 : element.scrollLeft + element.clientWidth < element.scrollWidth)) return true;
+    element = element.parentElement;
+  }
+  return false;
+}
