@@ -72,7 +72,7 @@ describe("M3 — which arrivals the strip shows", () => {
         item({ id: "old", captured_at: new Date(NOW - 8 * day).toISOString() }),
         item({ id: "edge", captured_at: new Date(NOW - 6.9 * day).toISOString() }),
         item({ id: "fresh", captured_at: new Date(NOW - 1 * day).toISOString() }),
-        item({ id: "nodate", captured_at: null }),
+        item({ id: "nodate", captured_at: undefined as unknown as string }),
       ],
       "me",
       NOW,
@@ -159,7 +159,7 @@ vi.mock("@/integrations/supabase/client", () => ({
   },
 }));
 
-const toasts: { text: string; action?: { label: string; onClick: () => void } }[] = [];
+const toasts: { text: string; action: { label: string; onClick: () => void } | undefined }[] = [];
 vi.mock("sonner", () => {
   const toast = Object.assign(
     (text: string, opts?: { action?: { label: string; onClick: () => void } }) => {
