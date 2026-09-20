@@ -132,6 +132,17 @@ export function ClientPage({ clientId }: { clientId: string }) {
     <div>
       <PageHeader
         title={client.name}
+        action={
+          <NewEngagementDialog
+            initialClientId={clientId}
+            from="client_page"
+            trigger={
+              <Button type="button" variant="outline" size="sm">
+                {vocab.newEngagement}
+              </Button>
+            }
+          />
+        }
         subtitle={
           <>
             {subtitle}
