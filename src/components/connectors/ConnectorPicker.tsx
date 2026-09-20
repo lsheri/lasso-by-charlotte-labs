@@ -130,6 +130,7 @@ export function ConnectorPicker({
   onOpenChange,
   initialFolder,
   highlightIds,
+  onImported,
 }: {
   kind: PickerKind;
   trigger?: React.ReactNode;
@@ -140,6 +141,8 @@ export function ConnectorPicker({
   initialFolder?: { id: string; name: string } | null;
   /** Provider ids to call out as new, still default-unchecked. */
   highlightIds?: string[];
+  /** Additive: the work item ids this import created or refreshed. */
+  onImported?: (ids: string[]) => void;
 }) {
   const isTranscripts = kind === "transcripts";
   const isWispr = kind === "wispr";
@@ -402,6 +405,7 @@ export function ConnectorPicker({
         parts.push(`${result.unchanged} already captured and unchanged`);
       }
       toast.success(parts.length > 0 ? parts.join(", ") : "Nothing new to bring in");
+      if (onImported && result.ids && result.ids.length > 0) onImported(result.ids);
       setSelected(new Set());
       await queryClient.invalidateQueries({ queryKey: ["work-items"] });
       const refreshed = await load();
