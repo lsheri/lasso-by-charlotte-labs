@@ -1,7 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef } from "react";
 
+import { NewEngagementDialog } from "@/components/engagements/NewEngagementDialog";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { Button } from "@/components/ui/button";
+import { vocabFor } from "@/lib/edu-vocab";
 import { SectionHeader } from "@/components/notebook/SectionHeader";
 import { WorkRow } from "@/components/work/WorkRow";
 import { useProfile } from "@/hooks/use-profile";
@@ -26,6 +29,7 @@ function plural(n: number, one: string, many: string): string {
 export function ClientPage({ clientId }: { clientId: string }) {
   const { data: profile } = useProfile();
   const { data: workData } = useWorkItems();
+  const vocab = vocabFor(profile);
 
   const clientQuery = useQuery({
     queryKey: ["client", clientId],
@@ -132,6 +136,17 @@ export function ClientPage({ clientId }: { clientId: string }) {
     <div>
       <PageHeader
         title={client.name}
+        action={
+          <NewEngagementDialog
+            initialClientId={clientId}
+            from="client_page"
+            trigger={
+              <Button type="button" variant="outline" size="sm">
+                {vocab.newEngagement}
+              </Button>
+            }
+          />
+        }
         subtitle={
           <>
             {subtitle}

@@ -22,12 +22,20 @@ import { logEvent } from "@/lib/telemetry";
 
 type Mode = "choose" | "engagement" | "folder";
 
+/** Where the person started from. One additive dim on engagement.updated. */
+export type NewEngagementFrom = "sidebar" | "sidebar_client" | "client_page";
+
 export function NewEngagementDialog({
   trigger,
   onDone,
+  initialClientId,
+  from = "sidebar",
 }: {
   trigger: ReactNode;
   onDone?: (() => void) | undefined;
+  /** A client chosen for the person before the dialog opens. Still changeable. */
+  initialClientId?: string | null | undefined;
+  from?: NewEngagementFrom;
 }) {
   const { data: profile } = useProfile();
   const queryClient = useQueryClient();
@@ -38,7 +46,7 @@ export function NewEngagementDialog({
   const [mode, setMode] = useState<Mode>("choose");
   const [code, setCode] = useState("");
   const [title, setTitle] = useState("");
-  const [clientId, setClientId] = useState<string | null>(null);
+  const [clientId, setClientId] = useState<string | null>(initialClientId ?? null);
   const [brief, setBrief] = useState("");
   const [folderName, setFolderName] = useState("");
   const [confirmNoBrief, setConfirmNoBrief] = useState(false);
@@ -49,7 +57,7 @@ export function NewEngagementDialog({
     setMode("choose");
     setCode("");
     setTitle("");
-    setClientId(null);
+    setClientId(initialClientId ?? null);
     setBrief("");
     setFolderName("");
     setConfirmNoBrief(false);
@@ -115,6 +123,7 @@ export function NewEngagementDialog({
       created: "true",
       brief_skipped: brief.trim() ? "false" : "true",
       has_client: clientId ? "true" : "false",
+      from,
     });
 
     await queryClient.invalidateQueries({ queryKey: ["engagements"] });
@@ -140,6 +149,7 @@ export function NewEngagementDialog({
         created: "true",
         quick_folder: "true",
         brief_skipped: "true",
+        from,
       });
       invalidateClients();
       await queryClient.invalidateQueries({ queryKey: ["engagements"] });

@@ -68,6 +68,10 @@ export type TelemetryEvent =
   | "coachlink.ended"
   | "coachlink.item_excluded"
   | "coachlink.item_restored"
+  /**
+   * C1: on create this carries {created, brief_skipped, has_client} and one
+   * additive dim, from: "sidebar" | "sidebar_client" | "client_page".
+   */
   | "engagement.updated"
   /** A person opened or collapsed the engagement Ask rail. */
   | "engagement.ask_rail_toggled"
