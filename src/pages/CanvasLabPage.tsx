@@ -421,7 +421,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   const briefAttachBusyRef = useRef(false);
 
   useEffect(() => {
-    if (!nodes || !frames || briefAttachBusyRef.current) return;
+    if (!boardFitted || !nodes || !frames || briefAttachBusyRef.current) return;
     if (!lab.board?.canEditStructure) return;
     const ids = (briefFiles.data ?? [])
       .map((entry) => entry.workItemId)
@@ -430,19 +430,21 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     const pending = pendingBriefAttachments(ids, nodesRef.current, linksRef.current);
     for (const id of ids) briefAttachSeenRef.current.add(id);
     if (pending.length === 0) return;
-    const briefNode = nodesRef.current.find((node) => node.id === "brief");
-    if (!briefNode) return;
-    const pendingIds = new Set(pending.map((card) => card.nodeId));
-    const taken: PlacementRect[] = [
-      ...nodesRef.current
-        .filter((node) => !pendingIds.has(node.id) && !hiddenIds.includes(node.id))
-        .map((node) => ({ x: node.x, y: node.y, width: node.width, height: node.height })),
-      ...framesRef.current.map((frame) => ({ x: frame.x, y: frame.y, width: frame.width, height: frame.height })),
-    ];
-    const points = briefAttachmentPoints(briefNode, taken, pending.length);
     briefAttachBusyRef.current = true;
     void (async () => {
       try {
+        // Read the brief and its neighbours at compute time, after the
+        // board's first layout has settled, never from an earlier copy.
+        const briefNode = nodesRef.current.find((node) => node.id === "brief");
+        if (!briefNode) return;
+        const pendingIds = new Set(pending.map((card) => card.nodeId));
+        const taken: PlacementRect[] = [
+          ...nodesRef.current
+            .filter((node) => !pendingIds.has(node.id) && !hiddenIds.includes(node.id))
+            .map((node) => ({ x: node.x, y: node.y, width: node.width, height: node.height })),
+          ...framesRef.current.map((frame) => ({ x: frame.x, y: frame.y, width: frame.width, height: frame.height })),
+        ];
+        const points = briefAttachmentPoints(briefNode, taken, pending.length);
         for (const [index, card] of pending.entries()) {
           const at = points[index];
           if (at) {
@@ -450,7 +452,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
             setNodes((current) => current?.map((node) => node.id === card.nodeId ? { ...node, x: at.x, y: at.y } : node) ?? current);
             await persistNodePatch(card.nodeId, { x: at.x, y: at.y });
           }
-          const result = addLabLink(linksRef.current, briefNode.id, "right", card.nodeId, "left");
+          const result = addLabLink(linksRef.current, "brief", "right", card.nodeId, "left");
           if (result.error) continue;
           const created = result.links[result.links.length - 1];
           if (!created) continue;
@@ -463,7 +465,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
         briefAttachBusyRef.current = false;
       }
     })();
-  }, [briefFiles.data, frames, hiddenIds, lab.board?.canEditStructure, nodes]);
+  }, [boardFitted, briefFiles.data, frames, hiddenIds, lab.board?.canEditStructure, nodes]);
 
   useEffect(() => {
     const shell = shellRef.current;
