@@ -88,7 +88,6 @@ export function WorkNote({
         </div>
 
         <p
-          title={item.title}
           className={`mt-1 break-words text-[13px] leading-[18px] text-foreground ${dense ? "line-clamp-3" : "line-clamp-2"}`}
         >
           {item.title} <ArtifactNote item={item} />

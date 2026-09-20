@@ -1,5 +1,6 @@
 import { CircleDashed, Lock } from "lucide-react";
 
+import { CardMenu } from "@/components/work/CardMenu";
 import { EngagementChip, TypeBadge, TypeIcon } from "@/components/work/TypeIcon";
 import { ArtifactNote, SourceMark, VendorMark } from "@/components/work/SourceMark";
 import { WorkNote } from "@/components/work/WorkNote";
