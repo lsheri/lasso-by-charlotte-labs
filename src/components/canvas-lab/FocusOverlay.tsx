@@ -18,7 +18,12 @@ export type OverlayHighlight = {
   excerpt: string;
   stale: boolean;
   version: number;
+  /** Teammate visibility: who can read this one, and who made it. */
+  visibility?: "just_me" | "engagement";
+  isMine?: boolean;
+  authorName?: string;
 };
+
 
 /** Where a composer is anchored: a fresh selection or an existing highlight. */
 type ComposerAnchor = { turnNo: number; charStart: number; charEnd: number; excerpt: string };
