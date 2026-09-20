@@ -476,6 +476,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       fittedReadyRef.current = true;
       observedSizeRef.current = size;
       fit();
+      setBoardFitted(true);
     }
     const observer = new ResizeObserver((entries) => {
       const entry = entries[0];
