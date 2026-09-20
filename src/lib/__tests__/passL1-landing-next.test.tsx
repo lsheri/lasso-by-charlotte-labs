@@ -7,7 +7,14 @@ const renderedStringProps = Array.from(
   route.matchAll(/(?:aria-label|label|alt|title)="([^"]*)"/g),
   (match) => match[1],
 );
-const renderedCopy = [...jsxText, ...renderedStringProps].join(" ").replace(/\s+/g, " ").toLowerCase();
+const stringLiterals = Array.from(
+  route.matchAll(/(?:"([^"\n]*)"|'([^'\n]*)'|`([^`\n]*)`)/g),
+  (match) => match[1] ?? match[2] ?? match[3] ?? "",
+);
+const renderedCopy = [...jsxText, ...renderedStringProps, ...stringLiterals]
+  .join(" ")
+  .replace(/\s+/g, " ")
+  .toLowerCase();
 const requiredReportHeadline = "a note in the margin, not a report on you";
 const copyWithoutRequiredHeadline = renderedCopy.replace(requiredReportHeadline, "");
 
