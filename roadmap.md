@@ -198,7 +198,7 @@
 - [x] Re-run landing tests.
 
 ## Landing unit L2
-- [ ] Validate and save pilot requests through a public server function.
-- [ ] Send the internal pilot email and safely skip Inkbox without its key.
-- [ ] Wire pending, success, and network-error form states plus success telemetry.
-- [ ] Add focused schema and landing tests; verify build.
+- [x] Validate and save pilot requests through a public server function.
+- [x] Send the internal pilot email and safely skip Inkbox without its key.
+- [x] Wire pending, success, and network-error form states plus success telemetry.
+- [x] Add focused schema and landing tests; verify build.
