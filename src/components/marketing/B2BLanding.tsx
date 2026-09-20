@@ -65,7 +65,7 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
       data: {
         event_type: "landing.viewed",
         view_id: viewId.current,
-        dims: { variant: "b2b", surface: "landing-next" },
+        dims: { variant: "b2b", surface },
       },
     }).catch(() => {
       /* This signal must never surface to the visitor. */
