@@ -207,7 +207,8 @@ describe("M2a — the handler's own wiring", () => {
   });
 
   it("offers the create pair for the token's workspace only", () => {
-    expect(handler).toContain("...readToolsFor(type, ICONS), ...createToolsFor(type, ICONS)");
+    expect(handler).toContain("...readToolsFor(type, ICONS),");
+    expect(handler).toContain("...createToolsFor(type, ICONS),");
     expect(handler).toContain("if (name === vocab.createContainerTool)");
     expect(handler).toContain("if (name === vocab.createBoardTool)");
   });
