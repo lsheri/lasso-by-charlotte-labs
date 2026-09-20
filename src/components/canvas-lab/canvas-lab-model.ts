@@ -738,11 +738,11 @@ export function fitWorkboardViewport(
   frames: LabFrame[],
   nodes: LabNode[],
   measuredHeights: ReadonlyMap<string, number>,
-  guides: LabRect = { x: 60, y: 60, width: 896, height: 300 },
+  guides: LabRect | null = { x: 60, y: 60, width: 896, height: 300 },
   padding = 32,
 ): LabFitResult {
   const rects: LabRect[] = [
-    guides,
+    ...(guides ? [guides] : []),
     ...frames,
     ...nodes.map((node) => ({
       x: node.x,
@@ -751,11 +751,16 @@ export function fitWorkboardViewport(
       height: Math.max(node.height, measuredHeights.get(node.id) ?? 0),
     })),
   ];
-  const left = Math.min(...rects.map((rect) => rect.x));
-  const top = Math.min(...rects.map((rect) => rect.y));
-  const right = Math.max(...rects.map((rect) => rect.x + rect.width));
-  const bottom = Math.max(...rects.map((rect) => rect.y + rect.height));
-  const bounds = { x: left, y: top, width: right - left, height: bottom - top };
+  // Nothing on the board yet: keep a usable canvas rather than collapsing.
+  const bounds = rects.length === 0
+    ? { x: 0, y: 0, width: 980, height: 720 }
+    : (() => {
+      const left = Math.min(...rects.map((rect) => rect.x));
+      const top = Math.min(...rects.map((rect) => rect.y));
+      const right = Math.max(...rects.map((rect) => rect.x + rect.width));
+      const bottom = Math.max(...rects.map((rect) => rect.y + rect.height));
+      return { x: left, y: top, width: Math.max(1, right - left), height: Math.max(1, bottom - top) };
+    })();
   const availableWidth = Math.max(0, viewport.width - padding * 2);
   const availableHeight = Math.max(0, viewport.height - padding * 2);
   const zoom = clampZoom(Math.min(1, availableWidth / bounds.width, availableHeight / bounds.height));
