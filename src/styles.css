@@ -1833,60 +1833,6 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   font-size: 11px;
   color: var(--nb-mid);
 }
-/* Loose paper: the scatter is the resting state, hover tidies it up. */
-.nb-scatter[data-scatter="1"] .nb-paper {
-  transform: translate(var(--nb-dx, 0), var(--nb-dy, 0)) rotate(var(--nb-rot, 0deg));
-}
-.nb-scatter[data-scatter="1"]:hover .nb-paper,
-.nb-scatter[data-scatter="1"] .nb-paper:focus-visible {
-  transform: none;
-}
-
-/* Touch surfaces have no hover, so they get the organised grid outright. */
-@media (max-width: 767px) {
-  .nb-scatter[data-scatter="1"] .nb-paper {
-    transform: none;
-  }
-}
-
-/* Pass 142: the spiral settle. The wrapper travels, the paper inside keeps its
-   resting scatter, and layout never moves because only transforms animate. */
-.nb-scatter > span {
-  display: block;
-  min-width: 0;
-}
-.nb-scatter > span > .nb-paper {
-  width: 100%;
-  height: 100%;
-}
-@keyframes nb-spiral-settle {
-  0% {
-    transform: translate(var(--nb-sx, 0), var(--nb-sy, 0)) rotate(var(--nb-srot, 0deg));
-    opacity: 0;
-  }
-  70% {
-    opacity: 1;
-  }
-  85% {
-    transform: translate(0, 0) rotate(0deg) scale(1.012);
-  }
-  100% {
-    transform: translate(0, 0) rotate(0deg) scale(1);
-    opacity: 1;
-  }
-}
-.nb-spiral-in {
-  animation-name: nb-spiral-settle;
-  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
-  animation-fill-mode: backwards;
-  will-change: transform;
-}
-@media (prefers-reduced-motion: reduce) {
-  .nb-spiral-in {
-    animation: none !important;
-  }
-}
-
 /* Pass 175: the chat wall arrives as one wave, left to right, then rests. */
 @keyframes nb-sticky-wave {
   0% {
@@ -2016,15 +1962,10 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   }
 }
 
-/* Reduced motion: pile and matrix swap instantly, both directions. */
 @media (prefers-reduced-motion: reduce) {
   .nb-paper {
     transition: none !important;
     transition-delay: 0ms !important;
-  }
-  /* No scatter animation: the organised grid is the only state. */
-  .nb-scatter[data-scatter="1"] .nb-paper {
-    transform: none !important;
   }
   .nb-ask-backdrop {
     animation: none !important;
