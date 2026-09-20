@@ -14,6 +14,13 @@ import { ExampleBoardOverlay } from "@/components/canvas-lab/ExampleBoardOverlay
 import * as telemetry from "@/components/canvas-lab/canvas-lab-telemetry";
 import { logEvent } from "@/lib/telemetry";
 
+class TestResizeObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+(globalThis as unknown as { ResizeObserver: unknown }).ResizeObserver = TestResizeObserver;
+
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
