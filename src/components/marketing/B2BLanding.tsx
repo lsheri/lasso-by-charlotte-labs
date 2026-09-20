@@ -53,7 +53,7 @@ function ClipSlot({ id, src, poster, label, width = 1440, height = 900 }: ClipSl
   );
 }
 
-function LandingNextPage() {
+export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
   const viewId = useRef<string>(crypto.randomUUID());
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
