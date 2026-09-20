@@ -242,6 +242,8 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     setDropPrompt(null);
   }, [orgId]);
   const [opening, setOpening] = useState(true);
+  /** True once the board's first layout has settled and the opening fit has run. */
+  const [boardFitted, setBoardFitted] = useState(false);
   const [interaction, setInteraction] = useState<"idle" | "drag" | "pan" | "resize" | "connect">("idle");
   const [structureMode, setStructureMode] = useState<LabStructureMode>("freeform");
   const [exampleOpen, setExampleOpen] = useState(false);
