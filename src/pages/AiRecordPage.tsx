@@ -27,7 +27,7 @@ import { PasteThreadDialog } from "@/components/work/PasteThreadDialog";
 import { Button } from "@/components/ui/button";
 import { BrandLogo } from "@/components/connectors/BrandLogo";
 import { SubjectsPanel } from "@/components/work/SubjectsPanel";
-import { ChatRow, chatWhen, fedPhrase } from "@/components/work/ChatRow";
+import { fedPhrase } from "@/components/work/ChatRow";
 import { WorkNote } from "@/components/work/WorkNote";
 import {
   noteChatViewChangedFn,
@@ -50,6 +50,8 @@ import { markOpenStart } from "@/lib/perf-timing";
 import { peekFormat } from "@/lib/peek-format";
 import { getWorkFileUrl } from "@/lib/work-files.functions";
 import { formatDate } from "@/lib/work-types";
+import { useWorkboardCardPreviews } from "@/hooks/use-workboard-card-previews";
+import type { WorkView } from "@/lib/work-view";
 
 type MonthGroup = { key: string; label: string; items: WorkItemRow[] };
 
@@ -135,7 +137,7 @@ export function AiRecordPage() {
   const [tool, setTool] = useState<ToolVendor | "all">("all");
   const [engagement, setEngagement] = useState<string | "all">("all");
   const [recursOpen, setRecursOpen] = useState(false);
-  const [view, setView] = useState<"cards" | "list">("cards");
+  const [view, setView] = useState<WorkView>("preview");
   const [source, setSource] = useState<"captured" | "asked" | "everything">("captured");
   const [askSession, setAskSession] = useState<string | null>(null);
   const [askOpen, setAskOpen] = useState(false);
@@ -173,13 +175,13 @@ export function AiRecordPage() {
   useEffect(() => {
     try {
       const saved = window.localStorage.getItem("lasso.chatlib.view");
-      if (saved === "cards" || saved === "list") setView(saved);
+      setView(saved === "sticky" ? "sticky" : "preview");
     } catch {
-      // Stay on cards.
+      // Stay on Preview.
     }
   }, []);
 
-  function chooseView(next: "cards" | "list") {
+  function chooseView(next: WorkView) {
     setView(next);
     try {
       window.localStorage.setItem("lasso.chatlib.view", next);
@@ -229,6 +231,7 @@ export function AiRecordPage() {
   // The id list is sorted before it becomes part of a key, so a reordered but
   // identical set of threads does not churn the cache and repaint the page.
   const threadIds = threads.map((i) => i.id);
+  const cardPreviews = useWorkboardCardPreviews("chat-library", profile?.id, view === "preview", threadIds);
   const threadKey = [...threadIds].sort().join(",");
   const needle = query.trim().toLowerCase();
   const shown = needle
@@ -535,7 +538,7 @@ export function AiRecordPage() {
             aria-label="How conversations are shown"
             className="ml-auto inline-flex items-center rounded-full border border-[var(--nb-rule)] bg-card p-0.5"
           >
-            {(["cards", "list"] as const).map((option) => (
+            {(["preview", "sticky"] as const).map((option) => (
               <button
                 key={option}
                 type="button"
@@ -547,7 +550,7 @@ export function AiRecordPage() {
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                {option === "cards" ? "Cards" : "List"}
+                {option === "preview" ? "Preview" : "Sticky"}
               </button>
             ))}
           </span>
@@ -708,7 +711,6 @@ export function AiRecordPage() {
                 {/* Figma 27:635 draws these as a hairline-ruled list, not a
                     stack of bordered cards. Same handlers, same actions: they
                     move onto hover, focus and touch instead of sitting open. */}
-                {view === "cards" ? (
                   <div
                     key={`cards:${view}`}
                     className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6"
@@ -726,6 +728,8 @@ export function AiRecordPage() {
                         <WorkNote
                           item={item}
                           dense
+                          displayMode={view}
+                          chatPreview={cardPreviews[item.id]}
                           onOpen={() => openItem(item)}
                           chips={
                             <>
@@ -774,46 +778,6 @@ export function AiRecordPage() {
                       </span>
                     ))}
                   </div>
-                ) : (
-                <div className="border-t border-[var(--nb-rule)]">
-                  {group.items.map((item) => (
-                    <div
-                      key={`${group.key}:${item.id}`}
-                      aria-current={selected?.id === item.id ? "true" : undefined}
-                      className={
-                        selected?.id === item.id
-                          ? "nb-card-lift rounded-[var(--radius)] bg-secondary"
-                          : "nb-card-lift"
-                      }
-                    >
-                      <ChatRow
-                        item={item}
-                        turns={turnCounts?.[item.id] ?? 0}
-                        fed={fed?.[item.id] ?? []}
-                        when={chatWhen(item.captured_at)}
-                        engagement={firstEngagement(item)}
-                        model={itemModel(item)}
-                        onOpen={() => openItem(item)}
-                        actions={
-                          <>
-                            <button
-                              type="button"
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                setLensItem(item);
-                              }}
-                              className="text-xs font-medium text-accent-deep transition-opacity hover:opacity-70"
-                            >
-                              Analyse
-                            </button>
-                            <ChatUrlLink item={item} />
-                          </>
-                        }
-                      />
-                    </div>
-                  ))}
-                </div>
-                )}
               </section>
             );
           })}
