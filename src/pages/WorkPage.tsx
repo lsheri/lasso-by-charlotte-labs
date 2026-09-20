@@ -974,8 +974,14 @@ export function WorkPage() {
           <div className={suggesting ? "animate-pulse" : undefined}>
             <div className={`nb-type-columns${gusting ? " nb-gust" : ""}`}>
               {BUCKETS.map((bucket) => {
-                const items = filtered.filter((item) => bucketFor(item.type).key === bucket.key);
-                const entries = groupConversations(items);
+                // P1: group beats bucket. A pushed conversation appears once,
+                // under AI conversations, whatever its artifacts are typed as,
+                // and never again on its own in another column.
+                const entries = filteredEntries.filter((entry) =>
+                  isConversationGroup(entry)
+                    ? bucket.key === "llm"
+                    : bucketFor(entry.type).key === bucket.key,
+                );
                 // Five entries a page; a page REPLACES the previous one so the
                 // four columns stay aligned. The effect above resets every
                 // column when the set changes; this clamp is the belt to those
@@ -997,7 +1003,7 @@ export function WorkPage() {
                     <div className="mb-3 border-b border-[var(--nb-rule)] pb-2">
                       <h2 className="flex items-baseline justify-between gap-3 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
                         <span className="truncate">{bucket.label}</span>
-                        <span className="shrink-0 text-soft">{items.length}</span>
+                        <span className="shrink-0 text-soft">{entries.length}</span>
                       </h2>
                     </div>
                     <div className="nb-paper-wall">
