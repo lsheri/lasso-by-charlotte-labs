@@ -24,7 +24,9 @@ function stringsIn(value: Json, out: string[]): void {
     return;
   }
   if (value && typeof value === "object") {
-    for (const entry of Object.values(value)) stringsIn(entry, out);
+    for (const entry of Object.values(value)) {
+      if (entry !== undefined) stringsIn(entry, out);
+    }
   }
 }
 
