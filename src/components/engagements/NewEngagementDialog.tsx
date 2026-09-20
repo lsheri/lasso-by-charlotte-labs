@@ -46,7 +46,7 @@ export function NewEngagementDialog({
   const [mode, setMode] = useState<Mode>("choose");
   const [code, setCode] = useState("");
   const [title, setTitle] = useState("");
-  const [clientId, setClientId] = useState<string | null>(null);
+  const [clientId, setClientId] = useState<string | null>(initialClientId ?? null);
   const [brief, setBrief] = useState("");
   const [folderName, setFolderName] = useState("");
   const [confirmNoBrief, setConfirmNoBrief] = useState(false);
@@ -57,7 +57,7 @@ export function NewEngagementDialog({
     setMode("choose");
     setCode("");
     setTitle("");
-    setClientId(null);
+    setClientId(initialClientId ?? null);
     setBrief("");
     setFolderName("");
     setConfirmNoBrief(false);
