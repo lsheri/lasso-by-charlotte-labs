@@ -720,7 +720,7 @@ export function branchChatNode(node: LabNode): LabNode {
   const branch = createChatNode(node.prompt ?? node.title, node.contextIds ?? [], {
     x: node.x + 260,
     y: node.y + 60,
-  }, node.frame);
+  }, node.frame ?? undefined);
   return { ...branch, title: `Branch of ${node.title}`, x: branch.x, y: branch.y };
 }
 

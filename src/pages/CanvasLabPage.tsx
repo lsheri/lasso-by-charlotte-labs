@@ -1388,7 +1388,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   function moveToFrame(node: LabNode, frameId: string) {
     const target = framesRef.current.find((frame) => frame.id === frameId);
     if (!target || node.frame === frameId) return;
-    record({ action: "workstream_move", nodeId: node.id, before: node.frame, after: frameId });
+    record({ action: "workstream_move", nodeId: node.id, before: node.frame ?? "", after: frameId });
     applyFrameMove(node.id, frameId);
     setAnnouncement(`${node.title} moved to ${target.name}.`);
   }
