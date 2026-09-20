@@ -46,6 +46,12 @@
 - Closest matches now fetch candidates with widened 4-character probes from the start, middle and end of each long word, so a misspelling still retrieves rows; app-side scoring and the 0.3 floor stand.
 - No database changes; pg_trgm index from S1 accelerates the probes.
 
+## Unit P2: Workboard document and deck previews
+- [x] Load first-page or first-slide previews only for visible cards in Preview mode
+- [x] Keep silent excerpt fallback and show document-version counts
+- [x] Preserve mapped teammate reader access and add `via: open`
+- [x] Add focused tests and confirm a clean preview build
+
 ## Landing-next Find it clip
 - [x] Save uploaded clip and poster as public/videos/find-it.mp4 and find-it-poster.png
 - [x] Wire the Find it ClipSlot to ClipPlayer (1440x900, 16/9) on /landing-next only
