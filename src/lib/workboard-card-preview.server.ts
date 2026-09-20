@@ -17,11 +17,10 @@ type PreviewTurnRow = {
 export async function readWorkboardCardPreviews(db: Db, workItemIds: string[]): Promise<WorkboardCardPreview[]> {
   const ids = [...new Set(workItemIds.filter(Boolean))].slice(0, 100);
   if (ids.length === 0) return [];
-  const { data, error } = await db
-    .from("turns")
-    .select("work_item_id, turn_no, role, content, model")
-    .in("work_item_id", ids)
-    .order("turn_no", { ascending: true });
+  const { data, error } = await db.rpc("workboard_card_previews" as never, { p_work_item_ids: ids } as never) as unknown as {
+    data: PreviewTurnRow[] | null;
+    error: { message: string } | null;
+  };
   if (error) throw new Error(error.message);
 
   const grouped = new Map<string, PreviewTurnRow[]>();
