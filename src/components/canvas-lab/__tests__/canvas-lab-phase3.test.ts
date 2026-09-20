@@ -7,6 +7,8 @@ import {
   createLabFrames,
   inboundLabNodeIds,
   seedCanvas,
+  fitWorkboardViewport,
+  stageBounds,
   type LabLink,
   type LabNode,
 } from "@/components/canvas-lab/canvas-lab-model";
@@ -38,6 +40,29 @@ function board(overrides: Partial<WorkboardDto> = {}): WorkboardDto {
 }
 
 describe("applyDurableBoard", () => {
+  it("loads a saved layout with positive frames and a negative-position card", () => {
+    const saved = board({
+      frames: [
+        { id: "frame-foundation", key: "foundation", kind: "foundation", taskId: null, label: null, x: 60, y: 420, w: 430, h: 520, ord: 0, version: 2 },
+        { id: "frame-discovery", key: "task:task-1", kind: "task", taskId: "task-1", label: "Discovery", x: 526, y: 420, w: 430, h: 520, ord: 1, version: 2 },
+      ],
+      nodes: [
+        { id: "node-brief", frameId: "frame-foundation", kind: "brief", workItemId: null, decisionId: null, authorProfileId: "me", authorName: "Me", title: "", body: "", judgmentType: null, x: 88, y: 484, w: 232, h: 112, hidden: false, version: 2, referenceReadable: true },
+        { id: "node-work", frameId: "frame-discovery", kind: "work_item", workItemId: "work-1", decisionId: null, authorProfileId: "me", authorName: "Me", title: "", body: "", judgmentType: null, x: -154, y: -88, w: 232, h: 112, hidden: false, version: 3, referenceReadable: true },
+      ],
+    });
+
+    const loaded = applyDurableBoard({ frames: baseFrames, nodes: baseNodes }, saved);
+    const negative = loaded.nodes.find((node) => node.durableId === "node-work");
+    expect(negative).toMatchObject({ x: -154, y: -88 });
+    expect(stageBounds(loaded.frames)).toEqual(expect.objectContaining({ width: expect.any(Number), height: expect.any(Number) }));
+    const fitted = fitWorkboardViewport({ width: 1200, height: 760 }, loaded.frames, loaded.nodes, new Map());
+    expect(fitted.bounds.x).toBe(-154);
+    expect(Number.isFinite(fitted.zoom)).toBe(true);
+    expect(Number.isFinite(fitted.pan.x)).toBe(true);
+    expect(Number.isFinite(fitted.pan.y)).toBe(true);
+  });
+
   it("overlays durable placement and hidden state onto virtual reference cards", () => {
     const merged = applyDurableBoard({ frames: baseFrames, nodes: baseNodes }, board({
       nodes: [{
