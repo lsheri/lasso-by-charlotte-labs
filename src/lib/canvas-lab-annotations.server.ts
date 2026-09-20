@@ -18,6 +18,8 @@ import {
   validateCommentBody,
   validateHighlightRange,
   type AnnotationMutationResult,
+  type AnnotationVisibility,
+
   type CommentDto,
   type CommentMutationResult,
   type CommentThreadDto,
