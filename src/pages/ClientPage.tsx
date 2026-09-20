@@ -29,6 +29,7 @@ function plural(n: number, one: string, many: string): string {
 export function ClientPage({ clientId }: { clientId: string }) {
   const { data: profile } = useProfile();
   const { data: workData } = useWorkItems();
+  const vocab = vocabFor(profile);
 
   const clientQuery = useQuery({
     queryKey: ["client", clientId],
