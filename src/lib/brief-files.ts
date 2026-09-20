@@ -17,7 +17,7 @@ export type BriefAttachmentCard = { nodeId: string; workItemId: string };
  */
 export function pendingBriefAttachments(
   workItemIds: string[],
-  nodes: { id: string; workItemId?: string | null }[],
+  nodes: { id: string; workItemId?: string | null | undefined }[],
   links: { fromId: string; toId: string; relation?: string | undefined }[],
   briefNodeId = "brief",
 ): BriefAttachmentCard[] {
