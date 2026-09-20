@@ -80,16 +80,27 @@ export function WorkRow({
 
   if (dense) {
     return (
-      <div className="group/row relative">
-        <WorkNote item={item} onOpen={onOpen} lead={lead} clientLabel={clientLabel} dense />
-        {/* Every control stays reachable on touch, hover, and the keyboard path. */}
-        <div
-          className="absolute bottom-0 left-0 right-0 flex flex-wrap items-center gap-x-3 gap-y-1 bg-[color-mix(in_oklab,var(--nb-paper-fill,var(--nb-white))_88%,transparent)] p-2 backdrop-blur-sm md:hidden md:group-focus-within/row:flex md:group-hover/row:flex"
-          onClick={(event) => event.stopPropagation()}
-        >
-          {chips}
-          {actions}
-        </div>
+      <div className="relative">
+        <WorkNote
+          item={item}
+          onOpen={onOpen}
+          lead={lead}
+          clientLabel={clientLabel}
+          dense
+          actions={
+            actions || chips ? (
+              <CardMenu item={item} clientLabel={clientLabel} onFluency={onFluency}>
+                {chips}
+                {actions}
+              </CardMenu>
+            ) : null
+          }
+        />
+        {primaryAction ? (
+          <div className="mt-1.5 px-3 pb-2" onClick={(event) => event.stopPropagation()}>
+            {primaryAction}
+          </div>
+        ) : null}
         {contentsUnread(item.meta as never) ? (
           <p className="mt-1 text-[11px] text-muted-foreground">{UNREAD_MARKER_LINE}</p>
         ) : null}
@@ -97,6 +108,7 @@ export function WorkRow({
       </div>
     );
   }
+
 
   return (
     <div
