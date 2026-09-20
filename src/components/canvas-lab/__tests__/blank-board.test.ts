@@ -76,12 +76,12 @@ describe("a board with structure is untouched", () => {
     expect(frames.map((frame) => frame.id)).toEqual(["foundation", "task:t1", "decisions", "outputs"]);
     const nodes = seedCanvas(SEED, frames);
     expect(nodes.map((node) => ({ id: node.id, frame: node.frame, x: node.x, y: node.y }))).toEqual([
-      { id: "brief", frame: "foundation", x: 84, y: 120 },
-      { id: "work:w1", frame: "task:t1", x: 550, y: 120 },
-      { id: "work:w2", frame: "outputs", x: 1482, y: 120 },
-      { id: "decision:d1", frame: "decisions", x: 1016, y: 120 },
+      { id: "brief", frame: "foundation", x: 88, y: 484 },
+      { id: "work:w1", frame: "task:t1", x: 550, y: 484 },
+      { id: "work:w2", frame: "outputs", x: 1474, y: 484 },
+      { id: "decision:d1", frame: "decisions", x: 1012, y: 484 },
     ]);
     const fitted = fitWorkboardViewport({ width: 1200, height: 760 }, frames, nodes, new Map());
-    expect(fitted.bounds).toEqual({ x: 60, y: 60, width: 1638, height: 520 });
+    expect(fitted.bounds).toEqual({ x: 60, y: 60, width: 1828, height: 880 });
   });
 });
