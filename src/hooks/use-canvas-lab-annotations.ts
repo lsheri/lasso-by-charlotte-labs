@@ -7,12 +7,18 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback } from "react";
 
-import type { AnnotationMutationResult, HighlightDto } from "@/lib/canvas-lab-annotations-shared";
+import type {
+  AnnotationMutationResult,
+  AnnotationVisibility,
+  HighlightDto,
+} from "@/lib/canvas-lab-annotations-shared";
 import {
   archiveHighlightFn,
   createHighlightFn,
   listMyAnnotationsFn,
+  setHighlightVisibilityFn,
 } from "@/lib/canvas-lab.functions";
+
 
 export function annotationsQueryKey(engagementId: string, workItemId: string) {
   return ["workboard-annotations", engagementId, workItemId] as const;
