@@ -327,3 +327,53 @@ export function SharedWithSection({
     </section>
   );
 }
+
+/**
+ * The send control, shared by the normal Share tab and the quick-folder
+ * branch, so an unfiled engagement keeps the same path to the firm.
+ */
+function ShipBlock({
+  anchor,
+  canShip,
+  engagementId,
+  orgId,
+  coachCount,
+  open,
+  onOpenChange,
+}: {
+  anchor: WorkItemRow | null;
+  canShip: boolean;
+  engagementId: string;
+  orgId: string;
+  coachCount: number;
+  open: boolean;
+  onOpenChange: (next: boolean) => void;
+}) {
+  return (
+    <>
+      <Button
+        type="button"
+        variant="ink"
+        disabled={!canShip}
+        title={canShip ? undefined : SHIP_EMPTY_HINT}
+        onClick={() => onOpenChange(true)}
+        className="h-auto flex-col items-start gap-0 py-2"
+      >
+        <span>{SHIP_ACTION_LABEL}</span>
+        <span className="text-[11px] font-normal opacity-70">Empower your team</span>
+      </Button>
+      {anchor && canShip ? (
+        <ShipToFirmDialog
+          workItemId={anchor.id}
+          title={anchor.title}
+          item={anchor}
+          engagementId={engagementId}
+          orgId={orgId}
+          coachCount={coachCount}
+          open={open}
+          onOpenChange={onOpenChange}
+        />
+      ) : null}
+    </>
+  );
+}
