@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { type FormEvent, useEffect, useRef, useState } from "react";
 
 import coachSpider from "@/assets/coach-lasso-spider.png.asset.json";
 import pastWorkLibrary from "@/assets/past-work-library.png.asset.json";
@@ -7,36 +7,30 @@ import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
 import { PublicHeader } from "@/components/layout/PublicHeader";
 import { ClipPlayer } from "@/components/marketing/ClipPlayer";
 import { FocusSection } from "@/components/marketing/FocusSection";
-import { InvisibleWorkStrip } from "@/components/marketing/InvisibleWorkStrip";
 import { PrivacyToggleDemo } from "@/components/marketing/PrivacyToggleDemo";
 import { VendorLabel } from "@/components/marketing/VendorMark";
-import { FrontDoorRule, ScrollCue } from "@/components/notebook/marks";
 import { Button } from "@/components/ui/button";
 import { startSessionReplay, stopSessionReplay } from "@/lib/posthog-client";
 import { recordAnonymousEventFn } from "@/lib/telemetry.functions";
 
-type LandingVariant = "a" | "b";
-
 export const Route = createFileRoute("/landing-next")({
   ssr: false,
-  validateSearch: (search: Record<string, unknown>): { v?: "b" } =>
-    search["v"] === "b" ? { v: "b" } : {},
   head: () => ({
     meta: [
-      { title: "Lasso: see where every fact in a deliverable came from" },
+      { title: "Lasso: the reasoning and judgment layer for AI-assisted consulting" },
       {
         name: "description",
         content:
-          "Circle any fact in a deliverable and see exactly where it came from, across every tool your team used.",
+          "Lasso keeps the record of AI-assisted consulting work, the sources behind it, and the judgment people add.",
       },
       {
         property: "og:title",
-        content: "Lasso: see where every fact in a deliverable came from",
+        content: "Lasso: the reasoning and judgment layer for AI-assisted consulting",
       },
       {
         property: "og:description",
         content:
-          "Circle any fact in a deliverable and see exactly where it came from, across every tool your team used.",
+          "Lasso keeps the record of AI-assisted consulting work, the sources behind it, and the judgment people add.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -46,55 +40,27 @@ export const Route = createFileRoute("/landing-next")({
   component: LandingNextPage,
 });
 
-function ClipSlot({
-  id,
-  aspect,
-  src,
-  poster,
-  label,
-  width,
-  height,
-}: {
-  id: "inbox" | "find-it" | "decisions" | "coach-note" | "one-on-one";
-  aspect: "16 / 10" | "16 / 9";
+type ClipSlotProps = {
+  id: string;
   src?: string;
   poster?: string;
   label: string;
-  /** Native clip size, forwarded so the player keeps the real shape. */
   width?: number;
   height?: number;
-}) {
+};
+
+function ClipSlot({ id, src, poster, label, width = 1440, height = 900 }: ClipSlotProps) {
   if (src && poster) {
     return (
       <ClipPlayer
         src={src}
         poster={poster}
-        width={width ?? (aspect === "16 / 9" ? 16 : 8)}
-        height={height ?? (aspect === "16 / 9" ? 9 : 5)}
-        aspect={aspect}
+        width={width}
+        height={height}
+        aspect="16 / 9"
         label={label}
+        playback="hold"
       />
-    );
-  }
-
-  if (poster) {
-    return (
-      <figure
-        id={`clip-slot-${id}`}
-        className="landing-next-slot overflow-hidden rounded-[var(--radius)] border border-dashed border-rule bg-card"
-      >
-        <img
-          src={poster}
-          alt={label}
-          className="w-full object-cover"
-          style={{ aspectRatio: aspect }}
-          loading="lazy"
-          decoding="async"
-        />
-        <figcaption className="border-t border-dashed border-rule px-3 py-2 font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
-          {id.replaceAll("-", " ")}
-        </figcaption>
-      </figure>
     );
   }
 
@@ -102,7 +68,7 @@ function ClipSlot({
     <div
       id={`clip-slot-${id}`}
       className="landing-next-slot flex w-full items-center justify-center rounded-[var(--radius)] border border-dashed border-rule bg-card"
-      style={{ aspectRatio: aspect }}
+      style={{ aspectRatio: "16 / 9" }}
       aria-label={`${label}. Clip coming soon.`}
     >
       <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
@@ -113,51 +79,47 @@ function ClipSlot({
 }
 
 function LandingNextPage() {
-  const { v } = Route.useSearch();
-  const variant: LandingVariant = v === "b" ? "b" : "a";
+  const viewId = useRef<string>(crypto.randomUUID());
+  const [submitted, setSubmitted] = useState(false);
 
   useEffect(() => {
     void recordAnonymousEventFn({
       data: {
         event_type: "landing.viewed",
-        view_id: crypto.randomUUID(),
-        dims: { variant, surface: "landing-next" },
+        view_id: viewId.current,
+        dims: { variant: "b2b", surface: "landing-next" },
       },
     }).catch(() => {
       /* This signal must never surface to the visitor. */
     });
-  }, [variant]);
+  }, []);
 
   useEffect(() => {
     stopSessionReplay();
     return () => startSessionReplay();
   }, []);
 
-  const [scrolled, setScrolled] = useState(false);
-  useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      setScrolled(true);
-      return;
-    }
-    let frame = 0;
-    const onScroll = () => {
-      if (frame) return;
-      frame = window.requestAnimationFrame(() => {
-        frame = 0;
-        if (window.scrollY > 120) setScrolled(true);
-      });
-    };
-    onScroll();
-    if (!scrolled) window.addEventListener("scroll", onScroll, { passive: true });
-    return () => {
-      if (frame) window.cancelAnimationFrame(frame);
-      window.removeEventListener("scroll", onScroll);
-    };
-  }, [scrolled]);
+  function notePilotClick(location: "hero" | "pilot") {
+    void recordAnonymousEventFn({
+      data: {
+        event_type: "landing.pilot_cta_clicked",
+        view_id: viewId.current,
+        dims: { location },
+      },
+    }).catch(() => {
+      /* This signal must never surface to the visitor. */
+    });
+  }
+
+  function submitPilotRequest(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    notePilotClick("pilot");
+    setSubmitted(true);
+  }
 
   return (
     <div className="landing-next min-h-screen overflow-x-clip bg-background">
-      <div className="landing-next-loop-small fixed pointer-events-none" aria-hidden="true">
+      <div className="landing-next-loop-small pointer-events-none fixed" aria-hidden="true">
         <LassoLoopMark className="h-full w-full text-green" drawWithScroll />
       </div>
 
@@ -166,136 +128,100 @@ function LandingNextPage() {
 
         <main className="pb-24 pt-16 md:pt-20">
           <div className="mx-auto max-w-3xl px-6 md:px-10">
-          <section>
-            <h1 className="pencil-title mt-5 text-foreground">
-              {variant === "b"
-                ? "Your firm bought AI. Now nobody can say where a number came from."
-                : "AI made knowledge work invisible. We make it audit ready and coachable."}
-            </h1>
-            <p className="mt-6 max-w-2xl text-base leading-relaxed text-muted-foreground">
-              {variant === "b"
-                ? "Analysis, drafting and judgment happen one prompt at a time, across tools nobody keeps a copy of. Lasso keeps the record."
-                : "Knowledge work is moving into LLM conversations and AI apps. Analysis, drafting and judgment happen one prompt at a time, and the reasoning behind the answer vanishes when the window closes. Not because anyone hides it, because nothing keeps it."}
-            </p>
-            <div className="mt-8 flex flex-wrap items-center gap-3">
-              <Button asChild>
-                <Link to="/auth" search={{ intent: "personal" }}>
-                  Start your record
-                </Link>
-              </Button>
-              <Button asChild variant="outline">
-                <Link to="/auth" search={{ intent: "company" }}>
-                  Set up for a company
-                </Link>
-              </Button>
-            </div>
-            <div className="mt-14 flex justify-center">
-              <ScrollCue />
-            </div>
-          </section>
-
-          <FocusSection
-            className={`mt-12 md:translate-x-8 lg:translate-x-12 ${scrolled ? "" : "landing-locked"}`}
-          >
-            <p className="micro-label">WHERE THE WORK NOW HAPPENS</p>
-            <div className="relative h-16 md:h-8 md:-translate-x-8 lg:-translate-x-12">
-              <p
-                className="hand-mark hand-mark-ember absolute left-[calc((-100vw+100%)/2+1rem)] top-6"
-                aria-hidden="true"
-              >
-                The Problem
+            <section className="landing-next-hero">
+              <h1 className="pencil-title mt-5 text-foreground">
+                Your firm bought AI. Now nobody can say where a number came from.
+              </h1>
+              <p className="mt-6 max-w-2xl text-base leading-relaxed text-muted-foreground">
+                Analysis, drafting and judgment happen one prompt at a time, across tools nobody
+                keeps a copy of. Lasso keeps the record, and the judgment your people made on top of
+                it.
               </p>
-            </div>
-            <h2 className="pencil-title mt-4">
-              Work has shifted into LLMs and AI apps...The process is lost in conversational UIs
-            </h2>
-            <p className="mt-5 max-w-2xl text-base leading-relaxed text-foreground">
-              The thinking has moved. Analysis, drafting and judgment now happen inside ChatGPT,
-              Claude, Gemini and Lovable, one prompt at a time, spread across products nobody keeps a
-              copy of. The reasoning that shaped the answer scrolls away the moment the window closes.
-            </p>
-            <p className="mt-4 max-w-2xl text-base leading-relaxed text-muted-foreground">
-              What ships is the deliverable. What is lost is how it was made, what it was based on,
-              and what a colleague could have learned from it.
-            </p>
-            <div className="mt-10 grid grid-cols-2 gap-x-3 gap-y-12 sm:gap-x-5 sm:gap-y-14">
-              <div className="sm:-rotate-[0.6deg]">
-                <VendorLabel vendor="chatgpt" name="ChatGPT" />
-                <ClipPlayer src="/videos/lasso-chatgpt.mp4" poster="/videos/poster-chatgpt.jpg" width={720} height={672} cover aspect="4 / 3" group="llm-products" label="Work happening inside ChatGPT" />
+              <div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-3">
+                <Button asChild>
+                  <a href="#pilot" onClick={() => notePilotClick("hero")}>
+                    Book a pilot
+                  </a>
+                </Button>
+                <a
+                  href="#how-it-works"
+                  className="story-link text-sm text-foreground transition-colors hover:text-muted-foreground"
+                >
+                  See how it works ↓
+                </a>
               </div>
-              <div className="sm:rotate-[0.5deg] sm:translate-y-5">
-                <VendorLabel vendor="claude" name="Claude" />
-                <ClipPlayer src="/videos/lasso-claude.mp4" poster="/videos/poster-claude.jpg" width={720} height={672} cover aspect="5 / 4" group="llm-products" label="Work happening inside Claude" />
-              </div>
-              <div className="sm:rotate-[0.4deg]">
-                <VendorLabel vendor="gemini" name="Gemini" />
-                <ClipPlayer src="/videos/lasso-gemini.mp4" poster="/videos/poster-gemini.jpg" width={720} height={374} cover aspect="5 / 4" group="llm-products" label="Work happening inside Gemini" />
-              </div>
-              <div className="sm:-rotate-[0.5deg] sm:translate-y-5">
-                <VendorLabel vendor="lovable" name="Lovable" />
-                <ClipPlayer src="/videos/lasso-lovable.mp4" poster="/videos/poster-lovable.jpg" width={720} height={374} cover aspect="4 / 3" group="llm-products" label="Work happening inside Lovable" />
-              </div>
-            </div>
-          </FocusSection>
+              <Link
+                to="/auth"
+                search={{ intent: "personal" }}
+                className="mt-5 inline-block text-xs text-muted-foreground underline underline-offset-4 transition-colors hover:text-foreground"
+              >
+                Start your own record
+              </Link>
+            </section>
 
-          <FocusSection className="mt-24 md:-mx-24 lg:-mx-36">
-            <p className="micro-label">THE GAP</p>
-            <h2 className="pencil-title mt-4">The output is the only part that survives</h2>
-            <p className="mt-5 max-w-2xl text-base leading-relaxed text-foreground">
-              Every tool feeds the work. The deliverable comes out clean and shareable, while the
-              judgment, the decisions, the drafts and the process behind it stay out of reach.
-            </p>
-            <div className="mt-8 grid gap-8 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] md:items-center md:gap-10 lg:gap-14">
-              <InvisibleWorkStrip />
-              <div className="flex items-center justify-center py-2 md:py-0" aria-hidden="true">
-                <svg viewBox="0 0 48 48" className="h-10 w-10 rotate-90 text-graphite md:h-12 md:w-12 md:rotate-0" fill="none">
-                  <path d="M6 24c10.5-.5 22.5-1 34-1M34 15l9 9-9 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
+            <FocusSection id="how-it-works" className="mt-24">
+              <h2 className="pencil-title">
+                The thinking moved into chat windows. The record didn't follow.
+              </h2>
+              <p className="micro-label mt-8">Clips show sample data.</p>
+              <div className="mt-5 grid grid-cols-2 gap-x-3 gap-y-12 sm:gap-x-5 sm:gap-y-14">
+                <div className="sm:-rotate-[0.6deg]">
+                  <VendorLabel vendor="chatgpt" name="ChatGPT" />
+                  <ClipPlayer src="/videos/lasso-chatgpt.mp4" poster="/videos/poster-chatgpt.jpg" width={720} height={672} cover aspect="4 / 3" label="Work happening inside ChatGPT" playback="hold" />
+                </div>
+                <div className="sm:translate-y-5 sm:rotate-[0.5deg]">
+                  <VendorLabel vendor="claude" name="Claude" />
+                  <ClipPlayer src="/videos/lasso-claude.mp4" poster="/videos/poster-claude.jpg" width={720} height={672} cover aspect="5 / 4" label="Work happening inside Claude" playback="hold" />
+                </div>
+                <div className="sm:rotate-[0.4deg]">
+                  <VendorLabel vendor="gemini" name="Gemini" />
+                  <ClipPlayer src="/videos/lasso-gemini.mp4" poster="/videos/poster-gemini.jpg" width={720} height={374} cover aspect="5 / 4" label="Work happening inside Gemini" playback="hold" />
+                </div>
+                <div className="sm:translate-y-5 sm:-rotate-[0.5deg]">
+                  <VendorLabel vendor="lovable" name="Lovable" />
+                  <ClipPlayer src="/videos/lasso-lovable.mp4" poster="/videos/poster-lovable.jpg" width={720} height={374} cover aspect="4 / 3" label="Work happening inside Lovable" playback="hold" />
+                </div>
               </div>
-              <div>
-                <p className="micro-label mb-3">WHAT COMES OUT</p>
-                <ClipPlayer src="/videos/lasso-clean-output.mp4" poster="/videos/poster-clean-output.jpg" width={1280} height={716} group="clean-output" label="A finished deliverable, clean and shareable" />
-              </div>
-            </div>
-          </FocusSection>
-
-          <FrontDoorRule className="mt-20 h-[10px] w-full" />
-          <div className="mt-6 flex flex-col items-center gap-3">
-            <p className="micro-label font-bold">HOW IT WORKS</p>
-          </div>
+            </FocusSection>
           </div>
 
           <section className="landing-next-carousel mt-20" aria-label="How Lasso works">
             <div className="landing-next-carousel-sticky">
               <div className="landing-next-carousel-track">
-                <section className="landing-next-carousel-panel">
-                  <div className="landing-next-carousel-content">
-                    <div>
-                      <p className="micro-label">WHAT LANDS</p>
-                      <h2 className="pencil-title mt-4">Everything you made this week, in one inbox</h2>
-                      <p className="mt-5 max-w-2xl text-base leading-relaxed text-foreground">
-                        Chats, files, calls and drafts arrive as they happen. You shape them into work, or
-                        leave them. Nothing is lost, nothing is required.
-                      </p>
-                    </div>
-                    <ClipSlot id="inbox" aspect="16 / 9" src="/videos/inbox.mp4" poster="/videos/inbox-poster.png" width={1440} height={900} label="Work arriving in one inbox" />
-                  </div>
-                </section>
-
                 <section className="landing-next-carousel-panel landing-next-carousel-panel-find">
                   <div className="landing-next-carousel-content">
                     <div>
-                      <p className="micro-label">FIND IT</p>
-                      <p className="hand-mark hand-mark-blue mt-5" aria-hidden="true">
-                        the one thing nobody else can show
-                      </p>
+                      <p className="micro-label">THE ONE THING NOBODY ELSE CAN SHOW</p>
                       <h2 className="pencil-title mt-4">Circle any fact. See where it came from.</h2>
                       <p className="mt-5 max-w-2xl text-base leading-relaxed text-foreground">
-                        Drop a deck on the canvas. The conversations that fed it come forward with the exact
-                        sentence, quoted, and why.
+                        Drop a deck on the board. The conversations that fed it come forward with the
+                        exact sentence, quoted, and why. Across ChatGPT, Claude, Gemini and whatever
+                        else your team used.
                       </p>
                     </div>
-                    <ClipSlot id="find-it" aspect="16 / 9" src="/videos/find-it.mp4" poster="/videos/find-it-poster.png" width={1440} height={900} label="Finding the source behind a fact" />
+                    <ClipSlot id="find-it" src="/videos/find-it.mp4" poster="/videos/find-it-poster.png" label="Finding the source behind a fact" />
+                  </div>
+                </section>
+
+                <section className="landing-next-carousel-panel">
+                  <div className="landing-next-carousel-content">
+                    <div>
+                      <p className="micro-label">THE ENGAGEMENT, LAID OUT</p>
+                      <h2 className="pencil-title mt-4">
+                        Sources. AI work. Your call. The deliverable. In that order, on one board.
+                      </h2>
+                      <p className="mt-5 max-w-2xl text-base leading-relaxed text-foreground">
+                        Every engagement gets a board: one frame per workstream, cards for the brief,
+                        the calls, the chats and the drafts. Your judgment is its own card, not a
+                        comment in the margin. Draw a line and say what it means: informed, produced,
+                        revised, cited. Nothing on the board feeds AI by proximity. What fed this
+                        follows the lines you drew, never a guess.
+                      </p>
+                      <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
+                        Your engagement team sees the same board. Coaches read, they don't edit.
+                      </p>
+                    </div>
+                    <ClipSlot id="workboard" src="/videos/lasso-what-fed-this.mp4" poster="/videos/poster-what-fed-this.jpg" width={2692} height={1520} label="An engagement arranged on one board" />
                   </div>
                 </section>
 
@@ -303,50 +229,35 @@ function LandingNextPage() {
                   <div className="landing-next-carousel-content">
                     <div>
                       <p className="micro-label">DECISIONS</p>
-                      <h2 className="pencil-title mt-4">The decisions you made, written down before you forget them</h2>
+                      <h2 className="pencil-title mt-4">
+                        The decisions you made, written down before you forget them
+                      </h2>
                       <p className="mt-5 max-w-2xl text-base leading-relaxed text-foreground">
-                        Lasso drafts the decision from the conversation. You confirm it or discard it. A
-                        firm's judgment stops living in chat scroll.
+                        Lasso drafts the decision from the conversation. You confirm it or discard
+                        it. The firm's judgment stops living in chat scroll, and the client sees a
+                        “how we got here” page instead of a shrug.
                       </p>
                     </div>
-                    <ClipSlot id="decisions" aspect="16 / 9" src="/videos/decisions.mp4" poster="/videos/decisions-poster.png" width={1440} height={900} label="A decision drafted from a conversation" />
+                    <ClipSlot id="decisions" src="/videos/decisions.mp4" poster="/videos/decisions-poster.png" label="A decision drafted from a conversation" />
                   </div>
                 </section>
 
                 <section className="landing-next-carousel-panel">
                   <div className="landing-next-carousel-content">
                     <div>
-                      <p className="micro-label">YOUR COACH</p>
-                      <h2 className="pencil-title mt-4">A note in the margin, not a report on you</h2>
+                      <p className="micro-label">WHAT LANDS</p>
+                      <h2 className="pencil-title mt-4">Everything you made this week, in one inbox</h2>
                       <p className="mt-5 max-w-2xl text-base leading-relaxed text-foreground">
-                        A coach picks one piece of work and writes to you about it. It shows up as a circle,
-                        opens as a conversation, and you write back.
-                      </p>
-                      <div className="landing-next-coach-art relative mt-6" aria-hidden="true">
-                        <LassoLoopMark className="h-full w-full text-green" />
-                        <img src={coachSpider.url} alt="" className="landing-next-coach-spider absolute" />
-                      </div>
-                    </div>
-                    <ClipSlot id="coach-note" aspect="16 / 9" src="/videos/coach-note.mp4" poster="/videos/coach-note-poster.png" width={1440} height={900} label="A coach note opening as a conversation" />
-                  </div>
-                </section>
-
-                <section className="landing-next-carousel-panel">
-                  <div className="landing-next-carousel-content">
-                    <div>
-                      <p className="micro-label">1:1 PREP</p>
-                      <h2 className="pencil-title mt-4">Walk into the 1:1 at minute zero</h2>
-                      <p className="mt-5 max-w-2xl text-base leading-relaxed text-foreground">
-                        A date, a few stickies, and the work behind them. Twenty minutes of reconstruction
-                        becomes a conversation about the judgment call.
+                        Chats, files, calls and drafts arrive as they happen. You shape them into work,
+                        or leave them. Nothing is lost, nothing is required.
                       </p>
                     </div>
-                    <ClipSlot id="one-on-one" aspect="16 / 9" src="/videos/one-on-one.mp4" poster="/videos/one-on-one-poster.png" width={1440} height={900} label="Preparing work for a one to one" />
+                    <ClipSlot id="inbox" src="/videos/inbox.mp4" poster="/videos/inbox-poster.png" label="Work arriving in one inbox" />
                   </div>
                 </section>
               </div>
               <div className="landing-next-carousel-progress" aria-hidden="true">
-                {Array.from({ length: 5 }, (_, index) => (
+                {Array.from({ length: 4 }, (_, index) => (
                   <span key={index} className={`landing-next-carousel-dash landing-next-carousel-dash-${index + 1}`} />
                 ))}
               </div>
@@ -354,41 +265,99 @@ function LandingNextPage() {
           </section>
 
           <div className="mx-auto max-w-3xl px-6 md:px-10">
-          <FocusSection className="mt-20 border-t border-rule pt-10 md:translate-x-10 lg:translate-x-16">
-            <p className="micro-label">WHAT ACCUMULATES</p>
-            <h2 className="pencil-title mt-4">A library your team can learn from</h2>
-            <p className="mt-5 text-base leading-relaxed text-foreground">
-              Every finished piece of work keeps the record of how it was made. Over an engagement,
-              then a practice, then a firm, those records become something a firm can actually learn
-              from: how this kind of analysis gets built here, what the good version looked like,
-              which claims held up.
-            </p>
-            <p className="mt-4 text-base leading-relaxed text-foreground">
-              The work belongs to the people who did it. What the firm sees is the work they chose to
-              place there, never a feed of what anyone is doing.
-            </p>
-            <figure className="mt-8">
-              <img src={pastWorkLibrary.url} alt="A firm library of finished work, searchable by describing what you are working on" width={1962} height={1174} loading="lazy" decoding="async" className="w-full rounded-[var(--radius)] border border-rule shadow-card" />
-            </figure>
-          </FocusSection>
+            <FocusSection className="mt-20 border-t border-rule pt-10">
+              <p className="micro-label">YOUR COACH</p>
+              <h2 className="pencil-title mt-4">A note in the margin, not a report on you</h2>
+              <p className="mt-5 max-w-2xl text-base leading-relaxed text-foreground">
+                A coach picks one piece of work and writes to you about it. It shows up as a circle,
+                opens as a conversation, and you write back. Not prescriptive. It shows how people
+                work, it does not tell them how to work.
+              </p>
+              <div className="landing-next-coach-art relative mt-6" aria-hidden="true">
+                <LassoLoopMark className="h-full w-full text-green" />
+                <img src={coachSpider.url} alt="" className="landing-next-coach-spider absolute" />
+              </div>
+              <div className="mt-6">
+                <ClipSlot id="coach-note" src="/videos/coach-note.mp4" poster="/videos/coach-note-poster.png" label="A coach note opening as a conversation" />
+              </div>
+            </FocusSection>
 
-          <FocusSection className="mt-20 border-t border-rule pt-10 md:-translate-x-10 lg:-translate-x-16">
-            <p className="micro-label">PRIVACY, DEMONSTRATED</p>
-            <h2 className="pencil-title mt-4">What a coach sees.</h2>
-            <p className="mt-5 max-w-2xl text-base leading-relaxed text-foreground">
-              Your work is private by default. You choose what to share with a <strong className="font-semibold text-foreground">manager</strong>, <strong className="font-semibold text-foreground">coach</strong> or enablement lead, and they see only that, so the conversation is about learning, development and getting better at AI shaped work.
-            </p>
-            <div className="mt-8"><PrivacyToggleDemo /></div>
-          </FocusSection>
+            <FocusSection className="mt-20 border-t border-rule pt-10">
+              <p className="micro-label">PRIVACY, DEMONSTRATED</p>
+              <h2 className="pencil-title mt-4">What a coach sees.</h2>
+              <p className="mt-5 max-w-2xl text-base leading-relaxed text-foreground">
+                Your work is private by default. You choose what to share with an engagement lead or
+                coach, and they see only that. The firm sees work people chose to place there, never
+                a feed of what anyone is doing.
+              </p>
+              <div className="mt-8"><PrivacyToggleDemo /></div>
+            </FocusSection>
 
-          <div className="mt-16 flex flex-wrap items-center gap-x-6 gap-y-3">
-            <Link to="/auth" search={{ intent: "personal" }} className="font-mono text-[11px] uppercase tracking-[0.08em] text-ember-deep transition-colors hover:text-foreground">
-              Start my own record →
-            </Link>
-            <a href="mailto:liam@charlotte-labs.com" className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground underline underline-offset-4 transition-colors hover:text-foreground">
-              Talk to Liam
-            </a>
-          </div>
+            <FocusSection className="mt-20 border-t border-rule pt-10">
+              <p className="micro-label">WHAT ACCUMULATES</p>
+              <h2 className="pencil-title mt-4">A library your firm can learn from</h2>
+              <p className="mt-5 text-base leading-relaxed text-foreground">
+                Copilot sees Microsoft. Gemini sees Google. ChatGPT sees ChatGPT. Your engagements
+                cross all of them. Lasso keeps the one record that spans tools, and over an
+                engagement, then a practice, then a firm, that record becomes how this kind of
+                analysis gets built here.
+              </p>
+              <p className="mt-4 text-base leading-relaxed text-foreground">
+                The work belongs to the people who did it.
+              </p>
+              <figure className="mt-8">
+                <img src={pastWorkLibrary.url} alt="A firm library of finished work" width={1962} height={1174} loading="lazy" decoding="async" className="w-full rounded-[var(--radius)] border border-rule shadow-card" />
+              </figure>
+            </FocusSection>
+
+            <FocusSection id="pilot" className="mt-20 border-t border-rule pt-10">
+              <p className="micro-label">PILOT</p>
+              <h2 className="pencil-title mt-4">Run it on one engagement.</h2>
+              <p className="mt-5 max-w-2xl text-base leading-relaxed text-foreground">
+                Four months, one real engagement, your team, your tools. You keep every record whether
+                or not you continue.
+              </p>
+
+              {submitted ? (
+                <p className="mt-8 border-l-2 border-green pl-4 text-base text-foreground" role="status">
+                  Thanks. Liam will be in touch within a day.
+                </p>
+              ) : (
+                <form className="landing-next-pilot-form mt-8 grid gap-5" onSubmit={submitPilotRequest}>
+                  <label>
+                    <span>Name</span>
+                    <input name="name" autoComplete="name" required />
+                  </label>
+                  <label>
+                    <span>Firm</span>
+                    <input name="firm" autoComplete="organization" required />
+                  </label>
+                  <label>
+                    <span>Work email</span>
+                    <input name="email" type="email" autoComplete="email" required />
+                  </label>
+                  <label>
+                    <span>Team size</span>
+                    <select name="teamSize" required defaultValue="">
+                      <option value="" disabled>Select team size</option>
+                      <option value="1-5">1 to 5</option>
+                      <option value="6-15">6 to 15</option>
+                      <option value="16-40">16 to 40</option>
+                      <option value="40+">40+</option>
+                    </select>
+                  </label>
+                  <label>
+                    <span>Anything we should know</span>
+                    <textarea name="note" rows={4} />
+                  </label>
+                  <div><Button type="submit">Book a pilot</Button></div>
+                </form>
+              )}
+
+              <a href="mailto:liam@charlotte-labs.com" className="mt-6 inline-block text-sm text-muted-foreground underline underline-offset-4 transition-colors hover:text-foreground">
+                liam@charlotte-labs.com
+              </a>
+            </FocusSection>
           </div>
         </main>
 

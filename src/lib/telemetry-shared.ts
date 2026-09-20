@@ -3,6 +3,8 @@ export type TelemetryEvent =
   | "org.created"
   | "onboarding.tools_selected"
   | "landing.viewed"
+  /** B2B landing: a visitor chose either pilot entry point. Location only. */
+  | "landing.pilot_cta_clicked"
   | "workitem.captured"
   | "workitem.mapped"
   | "workitem.marked_private"
