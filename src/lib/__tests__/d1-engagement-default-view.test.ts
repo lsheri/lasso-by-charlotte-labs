@@ -2,7 +2,11 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/telemetry", () => ({ logEvent: vi.fn() }));
 
-import { shouldOpenWorkboard, ENGAGEMENT_NARROW_WIDTH } from "@/lib/engagement-default-view";
+import {
+  shouldOpenWorkboard,
+  ENGAGEMENT_NARROW_WIDTH,
+  DETAILS_SEARCH,
+} from "@/lib/engagement-default-view";
 import { workboardOpenVia } from "@/pages/CanvasLabPage";
 
 const base = {
@@ -37,6 +41,11 @@ describe("D1 engagement default view", () => {
   it("keeps phones on the details page", () => {
     expect(ENGAGEMENT_NARROW_WIDTH).toBe(768);
     expect(shouldOpenWorkboard({ ...base, isNarrow: true })).toBe(false);
+  });
+
+  it("sends both board-to-details links home with view=details", () => {
+    expect(DETAILS_SEARCH).toEqual({ view: "details" });
+    expect(shouldOpenWorkboard({ ...base, ...DETAILS_SEARCH })).toBe(false);
   });
 
   it("does not bounce back after Details, then opens again from a fresh link", () => {
