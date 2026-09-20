@@ -21,22 +21,26 @@ import { isBriefItem } from "@/lib/brief-shared";
 import { ownsWorkItem } from "@/lib/work-ownership";
 import type { WorkItemRow } from "@/lib/work-types";
 
-/**
- * The row's quieter actions live behind one control, so the AI actions get a
- * full label instead of competing for row width as muted text.
- */
-export function RowMenu({
-  item,
-  onFluency,
-  engagementId,
-  onRemoved,
-}: {
+export type RowMenuProps = {
   item: WorkItemRow;
   onFluency?: ((item: WorkItemRow) => void) | undefined;
   /** Present only where the row is being read inside one engagement. */
   engagementId?: string | undefined;
   onRemoved?: (() => void) | undefined;
-}) {
+};
+
+/**
+ * The menu's items and its dialogs, split apart.
+ *
+ * The dialogs must be mounted by the component that owns the menu, not inside
+ * the dropdown's content: content unmounts on close, and a dialog opened from
+ * an item would go with it. Splitting them lets one card put the items inside
+ * a larger menu and still keep the dialogs alive.
+ */
+export function useRowMenuParts({ item, onFluency, engagementId, onRemoved }: RowMenuProps): {
+  items: React.ReactNode;
+  dialogs: React.ReactNode;
+} {
   const { busy, draft } = useDraftDecisions(item.id);
   const [briefOpen, setBriefOpen] = useState(false);
   const [removeOpen, setRemoveOpen] = useState(false);
@@ -44,60 +48,54 @@ export function RowMenu({
   const profile = useProfile().data;
   const isThread = item.type === "ai_thread";
   const isDeliverable = ["document", "deck", "sheet"].includes(item.type);
-  const readable = isThread || ["document", "deck", "sheet"].includes(item.type);
+  const readable = isThread || isDeliverable;
   // Ownership truth, not page truth: coaches never see these two.
   const owned = ownsWorkItem(profile, item);
 
-  return (
+  const items = (
     <>
-      <DropdownMenu>
-        <DropdownMenuTrigger
-          aria-label="More actions"
-          className="rounded-full border border-border bg-card p-1.5 text-muted-foreground transition-colors hover:text-foreground"
-          onClick={(event) => event.stopPropagation()}
+      <DropdownMenuItem onSelect={() => setBriefOpen(true)}>
+        {isBriefItem(item) ? "Change what this briefs" : "Mark as the brief"}
+      </DropdownMenuItem>
+      {readable ? (
+        <DropdownMenuItem disabled={busy} onSelect={() => draft()}>
+          {busy
+            ? isThread
+              ? "Reading this conversation…"
+              : "Reading this document…"
+            : isThread
+              ? "Find decisions in this conversation"
+              : "Find decisions in this document"}
+        </DropdownMenuItem>
+      ) : null}
+      {onFluency && (isThread || isDeliverable) ? (
+        <DropdownMenuItem onSelect={() => onFluency(item)}>
+          {isThread ? "Analyse this conversation" : "Analyse this work"}
+        </DropdownMenuItem>
+      ) : null}
+      {owned ? <DropdownMenuSeparator /> : null}
+      {owned && engagementId ? (
+        <DropdownMenuItem
+          className="flex-col items-start gap-0.5"
+          onSelect={() => setRemoveOpen(true)}
         >
-          <MoreHorizontal className="h-4 w-4" aria-hidden />
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-64">
-          <DropdownMenuItem onSelect={() => setBriefOpen(true)}>
-            {isBriefItem(item) ? "Change what this briefs" : "Mark as the brief"}
-          </DropdownMenuItem>
-          {readable ? (
-            <DropdownMenuItem disabled={busy} onSelect={() => draft()}>
-              {busy
-                ? isThread
-                  ? "Reading this conversation…"
-                  : "Reading this document…"
-                : isThread
-                  ? "Find decisions in this conversation"
-                  : "Find decisions in this document"}
-            </DropdownMenuItem>
-          ) : null}
-          {onFluency && (isThread || isDeliverable) ? (
-            <DropdownMenuItem onSelect={() => onFluency(item)}>
-              {isThread ? "Analyse this conversation" : "Analyse this work"}
-            </DropdownMenuItem>
-          ) : null}
-          {owned ? <DropdownMenuSeparator /> : null}
-          {owned && engagementId ? (
-            <DropdownMenuItem
-              className="flex-col items-start gap-0.5"
-              onSelect={() => setRemoveOpen(true)}
-            >
-              <span>{REMOVE_LABEL}</span>
-              <span className="text-[11px] text-muted-foreground">{REMOVE_HELP}</span>
-            </DropdownMenuItem>
-          ) : null}
-          {owned ? (
-            <DropdownMenuItem
-              className="text-destructive focus:text-destructive"
-              onSelect={() => setDeleteOpen(true)}
-            >
-              {DELETE_LABEL}
-            </DropdownMenuItem>
-          ) : null}
-        </DropdownMenuContent>
-      </DropdownMenu>
+          <span>{REMOVE_LABEL}</span>
+          <span className="text-[11px] text-muted-foreground">{REMOVE_HELP}</span>
+        </DropdownMenuItem>
+      ) : null}
+      {owned ? (
+        <DropdownMenuItem
+          className="text-destructive focus:text-destructive"
+          onSelect={() => setDeleteOpen(true)}
+        >
+          {DELETE_LABEL}
+        </DropdownMenuItem>
+      ) : null}
+    </>
+  );
+
+  const dialogs = (
+    <>
       <MarkBriefDialog item={item} open={briefOpen} onOpenChange={setBriefOpen} />
       {owned && engagementId ? (
         <RemoveFromEngagementDialog
@@ -118,6 +116,34 @@ export function RowMenu({
           onDone={onRemoved}
         />
       ) : null}
+    </>
+  );
+
+  return { items, dialogs };
+}
+
+/**
+ * The row's quieter actions live behind one control, so the AI actions get a
+ * full label instead of competing for row width as muted text.
+ */
+export function RowMenu(props: RowMenuProps) {
+  const { items, dialogs } = useRowMenuParts(props);
+
+  return (
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          aria-label="More actions"
+          className="rounded-full border border-border bg-card p-1.5 text-muted-foreground transition-colors hover:text-foreground"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <MoreHorizontal className="h-4 w-4" aria-hidden />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-64">
+          {items}
+        </DropdownMenuContent>
+      </DropdownMenu>
+      {dialogs}
     </>
   );
 }
