@@ -142,6 +142,8 @@ import { CARD_HEIGHT, CARD_WIDTH } from "@/components/canvas-lab/canvas-lab-mode
 import { placeWorkOnBoardFn } from "@/lib/workboard-add-work.functions";
 import { placeAddedCards, type PlacementRect } from "@/lib/workboard-placement";
 import { workstreamTasks } from "@/lib/board-default-task";
+import { boardIsNearEmpty, readWorkboardStructureMode, workboardStructureModeKey } from "@/lib/workboard-view-mode";
+import { ExampleBoardOverlay } from "@/components/canvas-lab/ExampleBoardOverlay";
 
 
 /** A local workboard over one permission-filtered engagement read. */
