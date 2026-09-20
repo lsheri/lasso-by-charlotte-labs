@@ -1,4 +1,9 @@
-import type { WorkType } from "@/lib/work-types";
+import {
+  isConversationGroup,
+  type ConversationGroup,
+  type WorkItemRow,
+  type WorkType,
+} from "@/lib/work-types";
 
 /**
  * Four columns and only four. AI conversations leads, because that is where
@@ -81,4 +86,12 @@ const BY_TYPE: Record<WorkType, BucketKey> = {
 export function bucketFor(type: WorkType): Bucket {
   const key = BY_TYPE[type] ?? "documents";
   return BUCKETS.find((b) => b.key === key) ?? BUCKETS[0]!;
+}
+/**
+ * P1: group beats bucket. A pushed conversation is filed under AI
+ * conversations whatever its artifacts are typed as, so a single push is never
+ * torn across two columns.
+ */
+export function bucketKeyForEntry(entry: WorkItemRow | ConversationGroup): BucketKey {
+  return isConversationGroup(entry) ? "llm" : bucketFor(entry.type).key;
 }

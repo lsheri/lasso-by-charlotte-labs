@@ -76,7 +76,7 @@ import { SpiderLassoScene } from "@/components/motion/SpiderLassoScene";
 import { ToneCard } from "@/components/notebook/ToneCard";
 import { WorkSubtitle } from "@/components/work/WorkSubtitle";
 import { sourceVendorKey } from "@/components/work/SourceMark";
-import { BUCKETS, bucketFor, type BucketKey } from "@/components/work/work-buckets";
+import { BUCKETS, bucketKeyForEntry, type BucketKey } from "@/components/work/work-buckets";
 import { useSettingsDialog } from "@/lib/settings-dialog-context";
 
 /** Each type column pages its entries five at a time, replacing not growing. */
@@ -1001,10 +1001,8 @@ export function WorkPage() {
                 // P1: group beats bucket. A pushed conversation appears once,
                 // under AI conversations, whatever its artifacts are typed as,
                 // and never again on its own in another column.
-                const entries = filteredEntries.filter((entry) =>
-                  isConversationGroup(entry)
-                    ? bucket.key === "llm"
-                    : bucketFor(entry.type).key === bucket.key,
+                const entries = filteredEntries.filter(
+                  (entry) => bucketKeyForEntry(entry) === bucket.key,
                 );
                 // Five entries a page; a page REPLACES the previous one so the
                 // four columns stay aligned. The effect above resets every
