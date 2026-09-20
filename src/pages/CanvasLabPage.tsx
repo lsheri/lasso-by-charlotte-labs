@@ -103,6 +103,7 @@ import {
   noteWorkboardStructureToggled,
   noteWorkboardDisplayModeToggled,
   noteWorkboardCardContentViewed,
+  noteWorkboardExampleViewed,
   noteWorkboardSaveErrorResolved,
   noteWorkboardContextChanged,
   noteWorkboardUndoUsed,
