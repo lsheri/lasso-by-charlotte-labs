@@ -4126,6 +4126,10 @@ export type Database = {
         }
         Returns: Json
       }
+      move_item_to_workstream: {
+        Args: { p_item: string; p_task: string }
+        Returns: Json
+      }
       my_org_id: { Args: never; Returns: string }
       my_profile_id: { Args: never; Returns: string }
       my_profile_ids: { Args: never; Returns: string[] }

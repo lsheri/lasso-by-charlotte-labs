@@ -58,6 +58,8 @@ import {
   moveNode,
   dragEndDecision,
   nextWorkstreamRect,
+  FRAME_MIN_HEIGHT,
+  FRAME_MIN_WIDTH,
   panToRevealNode,
   workstreamAddAnchor,
   BOARD_GUIDE_RECTS,
@@ -110,6 +112,7 @@ import {
   noteAnnotationChanged,
   noteHighlightChanged,
   noteWorkboardWorkAdded,
+  noteWorkboardWorkstreamDrawn,
   type LabNodeEventKind,
   type WorkboardOpenVia,
   type WorkboardPersistEntity,
@@ -142,7 +145,9 @@ import { AddWorkPanel, type AddWorkSource } from "@/components/canvas-lab/AddWor
 import { CARD_HEIGHT, CARD_WIDTH } from "@/components/canvas-lab/canvas-lab-model";
 import { placeWorkOnBoardFn } from "@/lib/workboard-add-work.functions";
 import { placeAddedCards, type PlacementRect } from "@/lib/workboard-placement";
-import { workstreamTasks } from "@/lib/board-default-task";
+import { isBoardDefaultTask, workstreamTasks } from "@/lib/board-default-task";
+import { createDrawnWorkstreamFn, moveItemToWorkstreamFn } from "@/lib/workstream-draw.functions";
+import { defaultWorkstreamName, drawnRect, drawnRectUsable, movePromptText, splitClaims, type ClaimCandidate, type DrawRect } from "@/lib/workstream-draw";
 import { boardIsNearEmpty, readWorkboardStructureMode, workboardStructureModeKey } from "@/lib/workboard-view-mode";
 import { ExampleBoardOverlay } from "@/components/canvas-lab/ExampleBoardOverlay";
 
@@ -167,6 +172,8 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   const lab = useCanvasLab(engagementId, profile?.id, orgId);
   const queryClient = useQueryClient();
   const placeWork = useServerFn(placeWorkOnBoardFn);
+  const createDrawnWorkstream = useServerFn(createDrawnWorkstreamFn);
+  const moveItemToWorkstream = useServerFn(moveItemToWorkstreamFn);
 
   useEffect(() => {
     if (!orgId || entryLoggedRef.current) return;
@@ -248,6 +255,13 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   const [addWorkBusy, setAddWorkBusy] = useState(false);
   /** Right-click on empty board space. Screen coords for the menu, board coords for the drop. */
   const [boardMenu, setBoardMenu] = useState<{ screen: Point; board: Point } | null>(null);
+  /** B4: the workstream tool, the box being dragged and the name still to be given. */
+  const [drawTool, setDrawTool] = useState(false);
+  const [drawing, setDrawing] = useState<{ from: Point; to: Point } | null>(null);
+  const drawingRef = useRef<{ from: Point; to: Point } | null>(null);
+  const [pendingWorkstream, setPendingWorkstream] = useState<{ rect: DrawRect; name: string } | null>(null);
+  const [pendingWorkstreamError, setPendingWorkstreamError] = useState(false);
+  const [claimPrompt, setClaimPrompt] = useState<{ rect: DrawRect; taskId: string; frameId: string; cards: ClaimCandidate[]; claimed: number } | null>(null);
   const [undoToast, setUndoToast] = useState<{ message: string; entry: UndoEntry } | null>(null);
   const undoRef = useRef<UndoStacks>(emptyUndoStacks());
   const undoIdRef = useRef(0);
@@ -808,9 +822,36 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     setAnnouncement("Connection cancelled.");
   }
 
+  /** B4: the box follows the pointer while the tool is on. */
+  const isDrawing = drawing !== null;
+  useEffect(() => {
+    if (!isDrawing) return;
+    function move(event: PointerEvent) {
+      const current = drawingRef.current;
+      if (!current) return;
+      const next = { from: current.from, to: stagePoint(event.clientX, event.clientY) };
+      drawingRef.current = next;
+      setDrawing(next);
+    }
+    function up() {
+      const current = drawingRef.current;
+      drawingRef.current = null;
+      setDrawing(null);
+      if (!current) return;
+      const rect = drawnRect(current.from, current.to);
+      if (!drawnRectUsable(rect)) { setAnnouncement("Drag a bigger box to draw a workstream."); return; }
+      setPendingWorkstream({ rect, name: defaultWorkstreamName(framesRef.current.map((frame) => frame.name)) });
+      setPendingWorkstreamError(false);
+    }
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+    return () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); };
+  }, [isDrawing, pan.x, pan.y, zoom]);
+
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
       if (event.key === "Escape") {
+        if (drawTool || pendingWorkstream || drawingRef.current) { cancelDraw(); setAnnouncement("Workstream drawing cancelled."); return; }
         if (selectedLinkId) setSelectedLinkId((current) => relationshipSelection(current, "deselect"));
         if (dropPrompt) { closeDropPrompt("dismissed"); return; }
         const resize = resizeRef.current;
@@ -877,7 +918,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     }
     window.addEventListener("pointerdown", close);
     return () => window.removeEventListener("pointerdown", close);
-  }, [closeDropPrompt, dropPrompt]);
+  }, [closeDropPrompt, dropPrompt, drawTool, pendingWorkstream]);
 
   /** Change the zoom while holding one point of the board still. */
   const zoomTo = useCallback((next: number, point: Point) => {
@@ -1451,6 +1492,149 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     } else setFocusId(node.id);
   }
 
+  /* ---------------- B4: draw a workstream ---------------- */
+
+  /** Cards sitting in the hidden board home count as having no workstream. */
+  const defaultHomeFrameIds = useMemo(
+    () => (page?.tasks ?? []).filter(isBoardDefaultTask).map((task) => `task:${task.id}`),
+    [page?.tasks],
+  );
+
+  function claimCandidates(): ClaimCandidate[] {
+    return visibleNodes.map((node) => ({
+      id: node.id,
+      x: node.x,
+      y: node.y,
+      width: node.width,
+      height: node.height,
+      frame: node.frame,
+      workItemId: node.workItemId ?? null,
+    }));
+  }
+
+  function cancelDraw() {
+    drawingRef.current = null;
+    setDrawing(null);
+    setDrawTool(false);
+    setPendingWorkstream(null);
+    setPendingWorkstreamError(false);
+  }
+
+  function toggleDrawTool() {
+    if (drawTool || pendingWorkstream) {
+      cancelDraw();
+      setAnnouncement("Workstream drawing off.");
+      return;
+    }
+    if (structureMode !== "structured") {
+      setStructureMode("structured");
+      rememberStructureMode("structured");
+      noteWorkboardStructureToggled(orgId, "structured");
+    }
+    setDrawTool(true);
+    setAnnouncement("Drag on empty board space to draw a workstream.");
+  }
+
+  /** The outline is saved the same way every other outline is. */
+  async function persistDrawnFrame(frame: LabFrame, taskId: string) {
+    const boardExisted = boardIdRef.current != null;
+    if (!(await materialize())) return;
+    if (!boardExisted) return;
+    const result = await lab.persist({ type: "frame_create", frame: { key: frame.id, kind: "task", taskId, label: frame.name, x: frame.x, y: frame.y, w: frame.width, h: frame.height, ord: 0 } });
+    report(result, "frame", "create");
+    if (result.status === "saved" && result.created?.frameId) {
+      const id = result.created.frameId;
+      const version = result.versions[id] ?? 1;
+      setFrames((current) => current ? markFrameSaved(current, frame.id, id, version) : current);
+      framesRef.current = markFrameSaved(framesRef.current, frame.id, id, version);
+    }
+  }
+
+  /**
+   * One card into the new workstream. The outline only takes the card once the
+   * placement is agreed, so the board never shows a claim the database refused.
+   */
+  async function claimCard(card: ClaimCandidate, taskId: string, frameId: string): Promise<boolean> {
+    if (card.workItemId) {
+      try {
+        const result = await moveItemToWorkstream({ data: { item_id: card.workItemId, task_id: taskId, profile_id: profile?.id } });
+        if (result.status === "refused") return false;
+      } catch {
+        return false;
+      }
+    }
+    applyFrameMove(card.id, frameId);
+    return true;
+  }
+
+  async function commitDrawnWorkstream(nameInput: string) {
+    const pending = pendingWorkstream;
+    if (!pending) return;
+    const name = nameInput.trim();
+    if (!name || name.length > 60) { setPendingWorkstreamError(true); return; }
+    setPendingWorkstream(null);
+    setPendingWorkstreamError(false);
+    setDrawTool(false);
+    const split = splitClaims(pending.rect, claimCandidates(), { defaultHomeFrameIds });
+    let created: { id: string };
+    try {
+      created = await createDrawnWorkstream({ data: { engagement_id: engagementId, name, profile_id: profile?.id } });
+    } catch {
+      setAnnouncement("That workstream could not be created. Nothing moved.");
+      return;
+    }
+    const taskId = created.id;
+    const frameId = `task:${taskId}`;
+    const frame: LabFrame = {
+      id: frameId,
+      name,
+      x: pending.rect.x,
+      y: pending.rect.y,
+      width: Math.max(FRAME_MIN_WIDTH, pending.rect.width),
+      height: Math.max(FRAME_MIN_HEIGHT, pending.rect.height),
+      local: true,
+    };
+    setFrames((current) => current ? [...current, frame] : [frame]);
+    framesRef.current = [...framesRef.current, frame];
+    await persistDrawnFrame(frame, taskId);
+    let claimed = 0;
+    let refused = false;
+    for (const card of split.silent) {
+      const ok = await claimCard(card, taskId, frameId);
+      if (ok) claimed += 1;
+      else refused = true;
+    }
+    for (const card of split.frameOnly) {
+      applyFrameMove(card.id, frameId);
+      claimed += 1;
+    }
+    if (refused) setAnnouncement("Some cards stayed where they were.");
+    if (split.ask.length > 0) {
+      setClaimPrompt({ rect: pending.rect, taskId, frameId, cards: split.ask, claimed });
+      return;
+    }
+    noteWorkboardWorkstreamDrawn(orgId, claimed, "false");
+    if (!refused) setAnnouncement(`${name} drawn with ${claimed} cards.`);
+  }
+
+  async function answerClaimPrompt(answer: "yes" | "keep") {
+    const prompt = claimPrompt;
+    if (!prompt) return;
+    setClaimPrompt(null);
+    noteWorkboardDropPromptAnswered(orgId, answer);
+    let claimed = prompt.claimed;
+    let refused = false;
+    if (answer === "yes") {
+      for (const card of prompt.cards) {
+        const ok = await claimCard(card, prompt.taskId, prompt.frameId);
+        if (ok) claimed += 1;
+        else refused = true;
+      }
+    }
+    noteWorkboardWorkstreamDrawn(orgId, claimed, "true");
+    setAnnouncement(refused ? "Some cards stayed where they were." : answer === "yes" ? `${claimed} cards in this workstream.` : "Those cards stayed where they were.");
+  }
+
   function addWorkstream(nameInput: string): boolean {
     const name = nameInput.trim();
     if (!name || name.length > 60) return false;
@@ -1490,10 +1674,10 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       </aside>
       {menuOpen ? <div className="fixed inset-0 z-50 flex bg-[var(--nb-scrim)]" onPointerDown={() => setMenuOpen(false)}><aside className="h-full w-[280px] overflow-y-auto border-r border-border bg-sidebar p-4 shadow-[var(--shadow-modal)]" onPointerDown={(event) => event.stopPropagation()}><div className="mb-5 flex items-center justify-between"><span className="font-serif text-xl text-foreground">Lasso</span><Button size="icon" variant="ghost" aria-label="Close workboard menu" onClick={() => setMenuOpen(false)}><X className="h-4 w-4" /></Button></div><SidebarNav onNavigate={() => setMenuOpen(false)} onOpenSettings={() => void navigate({ to: "/settings" })} /><div className="mt-6 border-t border-border pt-4"><label className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft" htmlFor="canvas-lab-new-frame">Add workstream</label><div className="mt-2 flex gap-2"><input id="canvas-lab-new-frame" maxLength={60} value={newFrameName} onChange={(event) => { setNewFrameName(event.target.value); if (event.target.value.trim()) setNewFrameError(false); }} className="min-w-0 flex-1 rounded-[var(--radius-control)] border border-input bg-background px-2 text-[12px]" placeholder="Workstream name" /><Button size="sm" variant="outline" onClick={() => { if (addWorkstream(newFrameName)) { setNewFrameName(""); setNewFrameError(false); } else setNewFrameError(true); }}>Add</Button></div>{newFrameError ? <p className="mt-1 font-hand text-[13px] text-destructive">a workstream needs a name</p> : <p className="mt-1 font-hand text-[13px] text-[var(--nb-mid)]">not saved</p>}</div></aside></div> : null}
       <main className={`relative min-w-0 flex-1 flex-col ${mobileView === "board" ? "flex" : "hidden md:flex"}`}>
-        <header className="z-20 flex h-[52px] shrink-0 items-center justify-between gap-3 border-b border-border bg-card px-4"><div className="min-w-0"><span className="block truncate text-[13px] font-medium text-foreground">{title}</span><span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">{status}</span></div><div className="flex items-center gap-1"><div className="canvas-lab-workstream-switch"><Label htmlFor="canvas-lab-show-workstreams">Show workstreams</Label><Switch id="canvas-lab-show-workstreams" checked={structureMode === "structured"} onCheckedChange={(checked) => { const next = checked ? "structured" : "freeform"; if (next === structureMode) return; setStructureMode(next); if (!checked) setSelectedFrameId(null); rememberStructureMode(next); noteWorkboardStructureToggled(orgId, next); }} /></div><div className="canvas-lab-structure-toggle" aria-label="Card display"><Button type="button" size="sm" variant={displayMode === "sticky" ? "secondary" : "ghost"} aria-pressed={displayMode === "sticky"} onClick={() => chooseDisplayMode("sticky")}>Sticky</Button><Button type="button" size="sm" variant={displayMode === "preview" ? "secondary" : "ghost"} aria-pressed={displayMode === "preview"} onClick={() => chooseDisplayMode("preview")}>Preview</Button></div><Button type="button" size="sm" variant="outline" className="md:hidden" onClick={() => { setRailOpen(true); setMobileView("rail"); }}>Working from</Button>{selectedLinkId ? <Button type="button" size="sm" variant="ghost" onClick={() => { const link = links.find((entry) => entry.id === selectedLinkId); if (link) removeRelationship(link); }}>Remove relationship</Button> : null}{selectedLinkId ? <Button type="button" size="sm" variant="ghost" onClick={() => setRelationPicker({ linkId: selectedLinkId })}>Change relation</Button> : null}{canAddWork ? <Button size="sm" variant="outline" onClick={() => openAddWork("header", null)}>Add work</Button> : null}{showExample ? <Button size="sm" className="bg-green text-paper hover:bg-[var(--nb-green-deep)]" onClick={openExample}>See an example board</Button> : null}<Button size="sm" variant="outline" asChild><Link to="/engagements/$id" params={{ id: engagementId }} search={{ ...DETAILS_SEARCH }}>Details</Link></Button><Button size="sm" variant="outline" onClick={() => fit(true)}>Fit</Button><Button size="icon" variant="ghost" aria-label="Zoom out" onClick={() => zoomAtCentre(stepZoom(zoomRef.current, "out"))}><Minus className="h-3.5 w-3.5" /></Button><button type="button" aria-label="Zoom to 100 percent" className="w-10 text-center font-mono text-[10px] text-soft" onClick={() => zoomAtCentre(1)}>{Math.round(zoom * 100)}%</button><Button size="icon" variant="ghost" aria-label="Zoom in" onClick={() => zoomAtCentre(stepZoom(zoomRef.current, "in"))}><Plus className="h-3.5 w-3.5" /></Button></div></header>
+        <header className="z-20 flex h-[52px] shrink-0 items-center justify-between gap-3 border-b border-border bg-card px-4"><div className="min-w-0"><span className="block truncate text-[13px] font-medium text-foreground">{title}</span><span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">{status}</span></div><div className="flex items-center gap-1"><div className="canvas-lab-workstream-switch"><Label htmlFor="canvas-lab-show-workstreams">Show workstreams</Label><Switch id="canvas-lab-show-workstreams" checked={structureMode === "structured"} onCheckedChange={(checked) => { const next = checked ? "structured" : "freeform"; if (next === structureMode) return; setStructureMode(next); if (!checked) setSelectedFrameId(null); rememberStructureMode(next); noteWorkboardStructureToggled(orgId, next); }} /></div><div className="canvas-lab-structure-toggle" aria-label="Card display"><Button type="button" size="sm" variant={displayMode === "sticky" ? "secondary" : "ghost"} aria-pressed={displayMode === "sticky"} onClick={() => chooseDisplayMode("sticky")}>Sticky</Button><Button type="button" size="sm" variant={displayMode === "preview" ? "secondary" : "ghost"} aria-pressed={displayMode === "preview"} onClick={() => chooseDisplayMode("preview")}>Preview</Button></div><Button type="button" size="sm" variant="outline" className="md:hidden" onClick={() => { setRailOpen(true); setMobileView("rail"); }}>Working from</Button>{selectedLinkId ? <Button type="button" size="sm" variant="ghost" onClick={() => { const link = links.find((entry) => entry.id === selectedLinkId); if (link) removeRelationship(link); }}>Remove relationship</Button> : null}{selectedLinkId ? <Button type="button" size="sm" variant="ghost" onClick={() => setRelationPicker({ linkId: selectedLinkId })}>Change relation</Button> : null}{canAddWork ? <Button size="sm" variant="outline" onClick={() => openAddWork("header", null)}>Add work</Button> : null}{canAddWork ? <Button size="sm" variant={drawTool ? "secondary" : "outline"} aria-pressed={drawTool} onClick={toggleDrawTool}>Workstream</Button> : null}{showExample ? <Button size="sm" className="bg-green text-paper hover:bg-[var(--nb-green-deep)]" onClick={openExample}>See an example board</Button> : null}<Button size="sm" variant="outline" asChild><Link to="/engagements/$id" params={{ id: engagementId }} search={{ ...DETAILS_SEARCH }}>Details</Link></Button><Button size="sm" variant="outline" onClick={() => fit(true)}>Fit</Button><Button size="icon" variant="ghost" aria-label="Zoom out" onClick={() => zoomAtCentre(stepZoom(zoomRef.current, "out"))}><Minus className="h-3.5 w-3.5" /></Button><button type="button" aria-label="Zoom to 100 percent" className="w-10 text-center font-mono text-[10px] text-soft" onClick={() => zoomAtCentre(1)}>{Math.round(zoom * 100)}%</button><Button size="icon" variant="ghost" aria-label="Zoom in" onClick={() => zoomAtCentre(stepZoom(zoomRef.current, "in"))}><Plus className="h-3.5 w-3.5" /></Button></div></header>
         {lab.saveState.status === "conflict" ? <div data-testid="canvas-lab-banner" className="canvas-lab-banner" role="alert"><p className="text-[13px] text-foreground">A newer version of this record was saved.</p><div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => resolveConflict("latest")}>Load latest</Button><Button size="sm" variant="outline" onClick={() => resolveConflict("retry")}>Retry my change</Button></div></div> : null}
         {lab.saveState.status === "error" ? <div data-testid="canvas-lab-banner" className="canvas-lab-banner" role="alert"><p className="text-[13px] text-foreground">Could not save your last change.</p><div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => resolveSaveError("retry")}>Retry</Button><Button size="sm" variant="outline" onClick={() => resolveSaveError("discard")}>Discard</Button></div></div> : null}
-        <div ref={shellRef} tabIndex={-1} onPointerDownCapture={(event) => { if (event.button === 0 && spaceRef.current) { event.preventDefault(); event.stopPropagation(); startSpacePan(event); } }} onPointerDown={(event) => { const target = event.target as HTMLElement; const empty = event.target === event.currentTarget || target.dataset["testid"] === "canvas-lab-stage"; if (event.button === 0 && empty) { setKeyboardId(null); setSelectedFrameId(null); setSelectedLinkId((current) => relationshipSelection(current, "deselect")); viewportChangedRef.current = true; setInteraction("pan"); panRef.current = { from: { x: event.clientX, y: event.clientY }, origin: pan }; } }} onContextMenu={(event) => { const target = event.target as HTMLElement; const empty = event.target === event.currentTarget || target.dataset["testid"] === "canvas-lab-stage"; if (!empty || !canAddWork) return; event.preventDefault(); const rect = event.currentTarget.getBoundingClientRect(); const screen = { x: event.clientX - rect.left, y: event.clientY - rect.top }; setBoardMenu({ screen, board: boardPointFromScreen(screen) }); }} data-space-pan={spaceHeld} onScroll={(event) => keepViewportUnscrolled(event.currentTarget)} className="canvas-lab-surface relative min-h-0 flex-1 overflow-hidden">
+        <div ref={shellRef} tabIndex={-1} onPointerDownCapture={(event) => { if (event.button === 0 && spaceRef.current) { event.preventDefault(); event.stopPropagation(); startSpacePan(event); } }} onPointerDown={(event) => { const target = event.target as HTMLElement; const empty = event.target === event.currentTarget || target.dataset["testid"] === "canvas-lab-stage"; if (event.button === 0 && empty && drawTool) { event.preventDefault(); const at = stagePoint(event.clientX, event.clientY); drawingRef.current = { from: at, to: at }; setDrawing({ from: at, to: at }); return; } if (event.button === 0 && empty) { setKeyboardId(null); setSelectedFrameId(null); setSelectedLinkId((current) => relationshipSelection(current, "deselect")); viewportChangedRef.current = true; setInteraction("pan"); panRef.current = { from: { x: event.clientX, y: event.clientY }, origin: pan }; } }} onContextMenu={(event) => { const target = event.target as HTMLElement; const empty = event.target === event.currentTarget || target.dataset["testid"] === "canvas-lab-stage"; if (!empty || !canAddWork) return; event.preventDefault(); const rect = event.currentTarget.getBoundingClientRect(); const screen = { x: event.clientX - rect.left, y: event.clientY - rect.top }; setBoardMenu({ screen, board: boardPointFromScreen(screen) }); }} data-space-pan={spaceHeld} data-drawing={drawTool ? "true" : undefined} onScroll={(event) => keepViewportUnscrolled(event.currentTarget)} className="canvas-lab-surface relative min-h-0 flex-1 overflow-hidden">
           {boardReady ? <div data-testid="canvas-lab-stage" tabIndex={-1} className="canvas-lab-stage absolute left-0 top-0 origin-top-left" style={{ width: bounds.width, height: bounds.height, transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`, "--lab-inverse-zoom": labInverseZoom(zoom) } as CSSProperties}>
             <ReasoningTrailGuide onAdd={addNode} />
             <FoundationGuide brief={engagement?.brief ?? null} tasks={workstreamTasks(page?.tasks ?? []).map((task) => ({ id: task.id, name: task.name, detail: task.detail }))} work={workItems} />
@@ -1521,6 +1705,10 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
                return <LabRelationPicker point={point} current={link.relation ?? "context"} onPick={(relation) => { changeRelation(link.id, relation); setRelationPicker(null); }} onClose={() => setRelationPicker(null)} />;
             })() : null}
             {dropPrompt ? (() => { const node = visibleNodes.find((entry) => entry.id === dropPrompt.nodeId); const frame = boardFrames.find((entry) => entry.id === dropPrompt.frameId); if (!node || !frame) return null; return <div data-drop-prompt="true" className="canvas-lab-drop-prompt" style={{ left: node.x, top: node.y + node.height + 10 }}><span>Move to {frame.name}?</span><button type="button" onClick={() => { moveToFrame(node, frame.id); closeDropPrompt("yes"); }}>Yes</button><button type="button" onClick={() => closeDropPrompt("keep")}>Keep</button></div>; })() : null}
+            {drawing ? (() => { const rect = drawnRect(drawing.from, drawing.to); return <div data-testid="canvas-lab-draw-rect" className="canvas-lab-draw-rect" style={{ left: rect.x, top: rect.y, width: rect.width, height: rect.height }} aria-hidden />; })() : null}
+            {pendingWorkstream ? <div className="canvas-lab-draw-rect" style={{ left: pendingWorkstream.rect.x, top: pendingWorkstream.rect.y, width: pendingWorkstream.rect.width, height: pendingWorkstream.rect.height }} aria-hidden /> : null}
+            {pendingWorkstream ? <div className="canvas-lab-draw-name" style={{ left: pendingWorkstream.rect.x + 8, top: pendingWorkstream.rect.y + 8, transform: `scale(${1 / zoom})`, transformOrigin: "top left" }}><div className="canvas-lab-inline-workstream"><input aria-label="Workstream name" ref={inlineNameRef} maxLength={60} value={pendingWorkstream.name} onChange={(event) => { const name = event.target.value; setPendingWorkstream((current) => current ? { ...current, name } : current); if (name.trim()) setPendingWorkstreamError(false); }} onPointerDown={(event) => event.stopPropagation()} onKeyDown={(event) => { event.stopPropagation(); if (event.key === "Enter") { event.preventDefault(); void commitDrawnWorkstream(pendingWorkstream.name); } if (event.key === "Escape") { event.preventDefault(); cancelDraw(); } }} /><button type="button" onPointerDown={(event) => event.stopPropagation()} onClick={() => void commitDrawnWorkstream(pendingWorkstream.name)}>Add</button>{pendingWorkstreamError ? <span>a workstream needs a name</span> : null}</div></div> : null}
+            {claimPrompt ? <div data-claim-prompt="true" className="canvas-lab-drop-prompt" style={{ left: claimPrompt.rect.x, top: claimPrompt.rect.y + claimPrompt.rect.height + 10 }}><span>{movePromptText(claimPrompt.cards.length)}</span><button type="button" onClick={() => void answerClaimPrompt("yes")}>Move them</button><button type="button" onClick={() => void answerClaimPrompt("keep")}>Leave them</button></div> : null}
           </div> : null}
           {boardMenu ? (
             <>
