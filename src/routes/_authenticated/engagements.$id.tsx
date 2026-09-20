@@ -1,5 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useRef } from "react";
+import { Navigate, createFileRoute } from "@tanstack/react-router";
+
 
 import { useEngagementPage } from "@/hooks/use-engagement-page";
 import {
