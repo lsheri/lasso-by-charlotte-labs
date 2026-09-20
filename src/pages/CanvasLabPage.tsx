@@ -900,11 +900,11 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       const fresh = result.items.filter((item) => !known.has(item.id));
       if (fresh.length > 0) {
         const anchor = addWorkAnchor ?? boardPointFromScreen(viewportCentre());
+        // Outlines count as occupied even while "Show workstreams" is off: a
+        // loose card never lands inside an outline it cannot see.
         const taken: PlacementRect[] = [
           ...visibleNodes.map((node) => ({ x: node.x, y: node.y, width: node.width, height: node.height })),
-          ...(structureMode === "structured"
-            ? boardFrames.map((frame) => ({ x: frame.x, y: frame.y, width: frame.width, height: frame.height }))
-            : []),
+          ...boardFrames.map((frame) => ({ x: frame.x, y: frame.y, width: frame.width, height: frame.height })),
         ];
         const points = placeAddedCards(anchor, taken, fresh.length);
         const added: LabNode[] = fresh.map((item, index) => {

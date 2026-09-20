@@ -279,6 +279,17 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
   const allTasks = workstreamTasks(tasksQuery.data ?? []);
   const wrapTask = allTasks.find((task) => task.is_wrap === true);
   const boardTasks = allTasks.filter((task) => task.is_wrap !== true);
+  // B2.1 — work in the board's default home is on the board but in no
+  // workstream column, so it reads as a small list under the board.
+  const boardDefaultTask = (tasksQuery.data ?? []).find((task) => task.is_board_default === true);
+  const boardDefaultItems = Array.from(
+    new Map(
+      (boardDefaultTask?.work_item_tasks ?? [])
+        .map((link) => link.work_items)
+        .filter((item): item is NonNullable<typeof item> => Boolean(item))
+        .map((item) => [item.id, item as unknown as WorkItemRow] as const),
+    ).values(),
+  );
   const scopedItems = scopedTask
     ? Array.from(
         new Map(
