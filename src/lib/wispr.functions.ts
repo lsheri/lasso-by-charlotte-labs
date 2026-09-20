@@ -311,5 +311,5 @@ export const importWisprMeetings = createServerFn({ method: "POST" })
       source: "wispr",
       imported,
     });
-    return { imported, skipped, updated: 0, unchanged: 0 };
+    return { imported, skipped, updated: 0, unchanged: 0, ids: newIds };
   });

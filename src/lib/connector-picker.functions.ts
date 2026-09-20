@@ -310,7 +310,7 @@ export const importGranolaMeetings = createServerFn({ method: "POST" })
       source: "granola",
       imported,
     });
-    return { imported, skipped, updated: 0, unchanged: 0 };
+    return { imported, skipped, updated: 0, unchanged: 0, ids: newIds };
   });
 
 /** Gmail: label chips stand in for folders, plus Gmail query syntax passthrough. */
@@ -439,5 +439,5 @@ export const importGmailThreads = createServerFn({ method: "POST" })
       source: "gmail",
       imported,
     });
-    return { imported, skipped, updated: 0, unchanged: 0 };
+    return { imported, skipped, updated: 0, unchanged: 0, ids: newIds };
   });

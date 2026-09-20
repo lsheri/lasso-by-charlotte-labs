@@ -105,6 +105,15 @@ export function noteWorkboardUndoUsed(orgId: string | undefined, action: UndoAct
   if (orgId) logEvent("workboard.undo_used", orgId, { action, direction });
 }
 
+/** Where added work came from, and how the panel was reached. No ids, no titles. */
+export type WorkAddedSource = "inbox" | "upload" | "connector";
+export type WorkAddedVia = "header" | "context_menu";
+
+/** B2: work landed on the board. Fired once per successful add. */
+export function noteWorkboardWorkAdded(orgId: string | undefined, source: WorkAddedSource, via: WorkAddedVia, count: number): void {
+  if (orgId) logEvent("workboard.work_added", orgId, { source, via, count });
+}
+
 /**
  * Slice 2a: a highlight or a comment was made, changed or removed. Shape only:
  * no text, no hash, no ids, no author and no role.
