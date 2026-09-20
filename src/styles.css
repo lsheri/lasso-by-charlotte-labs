@@ -308,9 +308,8 @@
 
   /* Vendor tones, brand-adjacent but pulled into the notebook palette. */
   --vendor-claude: #a8452a;
-  --vendor-chatgpt: var(--nb-graphite);
+  --vendor-chatgpt: #0f6b5c;
   --vendor-gemini: #2d5bb9;
-  --vendor-other: var(--nb-mid);
   --vendor-copilot: #0b6a86;
   --vendor-gdrive: #4d7a1f;
   --vendor-granola: #b1601c;
@@ -334,9 +333,8 @@
   --state-teal-band: var(--nb-green);
   --state-indigo: #a3b0e8;
   --vendor-claude: #e39c84;
-  --vendor-chatgpt: var(--nb-pencil);
+  --vendor-chatgpt: #6fc4b2;
   --vendor-gemini: #8fb1ea;
-  --vendor-other: var(--nb-soft);
   --vendor-copilot: #74c0d6;
   --vendor-gdrive: #a8cf75;
   --vendor-granola: #e5aa72;
@@ -1235,7 +1233,13 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   max-width: none;
   aspect-ratio: auto;
 }
-.canvas-lab-paper-preview { border-top: 3px solid var(--canvas-preview-vendor, var(--vendor-other)); }
+.canvas-lab-paper-preview {
+  --canvas-vendor-claude: var(--vendor-claude);
+  --canvas-vendor-chatgpt: var(--nb-graphite);
+  --canvas-vendor-gemini: var(--vendor-gemini);
+  --canvas-vendor-other: var(--nb-mid);
+  border-top: 3px solid var(--canvas-preview-vendor, var(--canvas-vendor-other));
+}
 .canvas-lab-chat-preview {
   position: relative;
   min-height: 0;

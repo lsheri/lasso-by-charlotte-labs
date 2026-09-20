@@ -5,7 +5,9 @@ import { cardSizeTier, ownerLabel, type LabNode } from "@/components/canvas-lab/
 import { workIdentityLabel } from "@/lib/work-identity";
 import { effectiveWorkDate, formatDate, type WorkItemRow } from "@/lib/work-types";
 import { cn } from "@/lib/utils";
-import { previewWheelConsumesScroll, type WorkboardCardPreview, type WorkboardDisplayMode } from "@/lib/workboard-card-preview.shared";
+import { useRef } from "react";
+
+import type { WorkboardCardPreview, WorkboardDisplayMode } from "@/lib/workboard-card-preview.shared";
 
 const KIND_ICON: Record<Exclude<LabNode["kind"], "work" | "task">, GraphiteIconName> = {
   brief: "engagement",
@@ -68,6 +70,7 @@ export function LabPaper({
   const excerpt = item?.work_item_extracts?.find((extract) => extract.summary)?.summary ?? summary;
   const vendorKey = item ? sourceVendorKey(item) : null;
   const vendorTone = vendorKey === "claude" || vendorKey === "chatgpt" || vendorKey === "gemini" ? vendorKey : "other";
+  const previewScrollTopRef = useRef(0);
 
   return (
     <div
@@ -77,7 +80,7 @@ export function LabPaper({
       style={{
         ...notePaper(node.id),
         ...(colour ? noteHue(colourKey(colour)) : {}),
-        ...(displayMode === "preview" && item ? { "--canvas-preview-vendor": `var(--vendor-${vendorTone})` } : {}),
+        ...(displayMode === "preview" && item ? { "--canvas-preview-vendor": `var(--canvas-vendor-${vendorTone})` } : {}),
       }}
     >
       <div className="canvas-lab-paper-body">
@@ -120,11 +123,10 @@ export function LabPaper({
             data-testid="workboard-chat-preview"
             data-focused={focused}
             className="canvas-lab-chat-preview"
-            onWheel={(event) => {
-              if (!focused) return;
-              const element = event.currentTarget;
-              const canScroll = previewWheelConsumesScroll(focused, event.deltaY, element.scrollTop, element.clientHeight, element.scrollHeight);
-              if (canScroll) onPreviewScroll?.("chat");
+            onScroll={(event) => {
+              const scrollTop = event.currentTarget.scrollTop;
+              if (focused && scrollTop !== previewScrollTopRef.current) onPreviewScroll?.("chat");
+              previewScrollTopRef.current = scrollTop;
             }}
           >
             {(preview?.turns ?? []).map((turn) => (
@@ -144,7 +146,7 @@ export function LabPaper({
             className="canvas-lab-paper-edit min-h-0 w-full flex-1 basis-0 resize-none overflow-auto border border-[var(--nb-rule)] bg-card px-2 py-1 text-[11.5px] leading-[17px] text-foreground outline-none focus:border-[var(--nb-green)]"
           />
         ) : (excerptPreview ? excerpt : summary) && (!item || tier !== "compact" || excerptPreview) ? (
-          <p className={cn("canvas-lab-paper-summary text-[11.5px] leading-[17px] text-muted-foreground", excerptPreview ? "line-clamp-6" : tier === "compact" ? "line-clamp-2" : "line-clamp-3")} onWheel={() => { if (excerptPreview && focused) onPreviewScroll?.(item?.type.includes("deck") ? "deck" : "document"); }}>{excerptPreview ? excerpt : summary}</p>
+          <p className={cn("canvas-lab-paper-summary text-[11.5px] leading-[17px] text-muted-foreground", excerptPreview ? "line-clamp-6" : tier === "compact" ? "line-clamp-2" : "line-clamp-3")}>{excerptPreview ? excerpt : summary}</p>
         ) : null}
 
         {chatPreview ? (
