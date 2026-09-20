@@ -99,6 +99,8 @@ import {
   noteWorkboardTrailSelected,
   noteWorkboardDropPromptAnswered,
   noteWorkboardStructureToggled,
+  noteWorkboardDisplayModeToggled,
+  noteWorkboardCardContentViewed,
   noteWorkboardSaveErrorResolved,
   noteWorkboardContextChanged,
   noteWorkboardUndoUsed,
@@ -115,6 +117,7 @@ import { useCanvasLab } from "@/hooks/use-canvas-lab";
 import { useCanvasLabAnnotations } from "@/hooks/use-canvas-lab-annotations";
 import { useCanvasLabComments, useWorkboardCommentCounts } from "@/hooks/use-canvas-lab-comments";
 import { useEngagementPage } from "@/hooks/use-engagement-page";
+import { useWorkboardCardPreviews } from "@/hooks/use-workboard-card-previews";
 import { useMotion } from "@/hooks/use-motion";
 import { useProfile } from "@/hooks/use-profile";
 import { dragTo, keyTo, type Point } from "@/lib/canvas-drag";
@@ -124,6 +127,7 @@ import { clampZoom, stepZoom, wheelPanDelta, workboardPinchZoom, zoomAbout } fro
 import { engagementDisplayTitle } from "@/lib/clients";
 import { isDeliverableType } from "@/lib/lineage-shared";
 import type { WorkItemRow } from "@/lib/work-types";
+import { readWorkboardDisplayMode, workboardDisplayModeKey, type WorkboardDisplayMode } from "@/lib/workboard-card-preview.shared";
 
 
 /** True when something between the target and the board can still scroll that way. */
@@ -226,6 +230,8 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   const [opening, setOpening] = useState(true);
   const [interaction, setInteraction] = useState<"idle" | "drag" | "pan" | "resize" | "connect">("idle");
   const [structureMode, setStructureMode] = useState<LabStructureMode>("structured");
+  const [displayMode, setDisplayMode] = useState<WorkboardDisplayMode>("sticky");
+  const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
   const [selectedFrameId, setSelectedFrameId] = useState<string | null>(null);
   const [front, setFront] = useState<string[]>([]);
   /** The inline workstream name takes the caret as soon as it appears. */
@@ -252,6 +258,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   const viewportChangedRef = useRef(false);
   const fitInputsRef = useRef<{ frames: LabFrame[]; nodes: LabNode[]; structured: boolean }>({ frames: [], nodes: [], structured: true });
   const observedSizeRef = useRef<{ width: number; height: number } | null>(null);
+  const viewedPreviewIdsRef = useRef(new Set<string>());
   /** The deterministic virtual seed a durable board is overlaid onto. */
   const virtualBaseRef = useRef<{ frames: LabFrame[]; nodes: LabNode[] } | null>(null);
 
