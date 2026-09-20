@@ -710,6 +710,7 @@ async function pushOptions(owner: Owner, args: Obj, id: unknown): Promise<Respon
       .from("work_items")
       .select("id")
       .eq("org_id", owner.orgId)
+      .eq("owner_id", owner.profileId)
       .eq("orig_conversation_id", origId)
       .limit(20);
     conversationRef = await refsForItems((data ?? []).map((row) => row.id), byTask);
@@ -820,12 +821,20 @@ async function createBoard(
 
   const { data: containers } = await supabaseAdmin
     .from("clients")
-    .select("id, name")
+    .select("id, name, quick_folder")
     .eq("org_id", owner.orgId);
+  const candidates = (containers ?? []).filter((row) => !row.quick_folder);
   const needle = wanted.toLowerCase();
-  const match =
-    (containers ?? []).find((row) => row.name.toLowerCase() === needle) ??
-    (containers ?? []).find((row) => row.name.toLowerCase().includes(needle));
+  const exact = candidates.find((row) => row.name.toLowerCase() === needle);
+  const partials = exact ? [] : candidates.filter((row) => row.name.toLowerCase().includes(needle));
+  if (!exact && partials.length > 1) {
+    const names = partials.map((row) => row.name).join(", ");
+    return textResult(
+      id,
+      `Which ${vocab.container} did you mean: ${names}? Ask the user before creating anything.`,
+    );
+  }
+  const match = exact ?? partials[0];
   if (!match) {
     return textResult(
       id,
