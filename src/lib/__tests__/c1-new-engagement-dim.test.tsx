@@ -99,6 +99,7 @@ describe("C1 the client page entry point", () => {
   it("offers a new engagement with the client already chosen", () => {
     render(<ClientPage clientId="cl1" />);
     fireEvent.click(screen.getByText("New engagement"));
+    fireEvent.click(screen.getByText("Full engagement"));
     expect((screen.getByLabelText("Client (optional)") as HTMLSelectElement).value).toBe("cl1");
   });
 });
