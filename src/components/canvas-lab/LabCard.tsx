@@ -120,6 +120,7 @@ export function LabCard({
 
   function openMenu(event: React.MouseEvent | React.KeyboardEvent) {
     event.preventDefault();
+    if (readOnly) return;
     event.stopPropagation();
     changeMenuOpen(true);
   }
@@ -138,7 +139,7 @@ export function LabCard({
       data-read-only={readOnly}
       onPointerDown={readOnly ? undefined : onPointerDown}
       onFocus={readOnly ? undefined : onFocus}
-      onContextMenu={readOnly ? (event) => event.preventDefault() : openMenu}
+      onContextMenu={openMenu}
       onKeyDown={readOnly ? undefined : (event) => {
         if ((event.shiftKey && event.key === "F10") || event.key === "ContextMenu") openMenu(event);
         else if (event.target === event.currentTarget) onKeyDown(event);
