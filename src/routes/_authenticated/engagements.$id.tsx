@@ -1,5 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useRef } from "react";
+import { Navigate, createFileRoute } from "@tanstack/react-router";
+
 
 import { useEngagementPage } from "@/hooks/use-engagement-page";
 import {
@@ -31,16 +31,16 @@ export const Route = createFileRoute("/_authenticated/engagements/$id")({
 function EngagementRoute() {
   const { id } = Route.useParams();
   const { work, view } = Route.useSearch();
-  const navigate = Route.useNavigate();
   const page = useEngagementPage(id);
   const engagement = page.data?.engagement ?? null;
-  const sentRef = useRef(false);
 
   // The board is the default view of an engagement. The details page is still
   // where a workstream ledger, a shared trace or journey link, a quick folder
   // and a phone land. The decision is made during render so the details page
-  // never paints for an opening that immediately redirects; the effect below
-  // performs the actual navigation.
+  // never paints for an opening that immediately redirects; the <Navigate>
+  // component below performs the actual navigation, which switches the router
+  // to the board route (an imperative navigate from an effect updated the URL
+  // without remounting the matched route).
   const openBoard = (() => {
     if (page.isLoading || !engagement) return false;
     if (typeof window === "undefined") return false;
@@ -54,20 +54,15 @@ function EngagementRoute() {
     });
   })();
 
-  useEffect(() => {
-    if (sentRef.current || typeof window === "undefined") return;
-    if (!openBoard) return;
-    sentRef.current = true;
-    void navigate({
-      to: "/engagements/$id/canvas-lab",
-      params: { id },
-      search: { from: "default" },
-      replace: true,
-    });
-  }, [engagement, id, navigate, openBoard, page.isLoading, view, work]);
-
   if (openBoard) {
-    return <p className="text-sm text-muted-foreground">Loading…</p>;
+    return (
+      <Navigate
+        to="/engagements/$id/canvas-lab"
+        params={{ id }}
+        search={{ from: "default" }}
+        replace
+      />
+    );
   }
   return <EngagementPage engagementId={id} />;
 }
