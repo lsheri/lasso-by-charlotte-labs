@@ -87,7 +87,7 @@ function CommentComposer({
         className="text-[12px]"
       />
       <p className="mt-1 text-[11.5px] leading-[17px] text-muted-foreground">
-        Visible to people who can open this chat
+        Visible to your engagement team
       </p>
       <div className="mt-1 flex items-center gap-2">
         <Button size="sm" className="h-7 px-2 text-[11.5px]" disabled={!ready} onClick={() => onSubmit(body.trim())}>

@@ -152,8 +152,8 @@ describe("the workboard allowlist", () => {
       () => helpers.noteWorkboardSaveErrorResolved("o", "board", "retry"),
       () => helpers.noteWorkboardContextChanged("o", "cleared"),
       () => helpers.noteWorkboardUndoUsed("o", "move", "undo"),
-      () => helpers.noteHighlightChanged("o", "created", 120),
-      () => helpers.noteHighlightChanged("o", "archived", 4),
+      () => helpers.noteHighlightChanged("o", "created", "engagement", 120),
+      () => helpers.noteHighlightChanged("o", "archived", "just_me", 4),
       () =>
         helpers.noteAnnotationChanged("o", {
           kind: "comment",
@@ -172,5 +172,25 @@ describe("the workboard allowlist", () => {
       expect(guardWorkboardEvent(name, dims as never)).toEqual({ keep: true, dims });
     }
     expect(Object.keys(WORKBOARD_EVENT_DIMS)).toHaveLength(20);
+  });
+
+  it("reports each highlight's actual visibility without changing the action schema", () => {
+    const mocked = vi.mocked(logEvent);
+    helpers.noteHighlightChanged("o", "created", "engagement", 120);
+    expect(mocked).toHaveBeenLastCalledWith(
+      "workboard.annotation_changed",
+      "o",
+      expect.objectContaining({ action: "created", visibility: "engagement" }),
+    );
+
+    helpers.noteHighlightChanged("o", "archived", "just_me", 4);
+    expect(mocked).toHaveBeenLastCalledWith(
+      "workboard.annotation_changed",
+      "o",
+      expect.objectContaining({ action: "archived", visibility: "just_me" }),
+    );
+
+    const source = readFileSync("src/components/canvas-lab/canvas-lab-telemetry.ts", "utf8");
+    expect(source).not.toContain('action: "created" | "edited" | "archived" | "updated"');
   });
 });
