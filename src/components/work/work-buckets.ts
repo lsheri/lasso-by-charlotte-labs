@@ -60,7 +60,7 @@ export const BUCKETS: Bucket[] = [
   },
   {
     key: "calls",
-    label: "Call transcripts",
+    label: "Meeting transcripts",
     letter: "C",
     color: "var(--nb-mid)",
     textColor: "var(--nb-mid)",

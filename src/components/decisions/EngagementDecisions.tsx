@@ -106,7 +106,7 @@ export function EngagementDecisions({
     <section className="mt-10">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="micro-label micro-label-section">
-          Calls on this engagement · {rows.length}
+          Decisions on this engagement · {rows.length}
         </h2>
         {rows.length > 0 ? (
           <span className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">

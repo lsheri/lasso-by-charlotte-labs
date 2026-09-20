@@ -115,8 +115,8 @@ export function DecisionsPage() {
     <div>
       <PageHeader
         title="Your"
-        italicWord="calls"
-        subtitle="The calls you made along the way, in the order you made them, with the reasoning you kept."
+        italicWord="decisions"
+        subtitle="The decisions you made along the way, in the order you made them, with the reasoning you kept."
       />
 
       <div className="mb-7 flex flex-wrap items-center justify-between gap-3">
@@ -147,7 +147,7 @@ export function DecisionsPage() {
         <div className="grid gap-10 xl:grid-cols-[minmax(0,1fr)_210px]">
           <section aria-label="Decision timeline">
             {rows.length === 0 ? (
-              <p className="py-5 text-sm text-muted-foreground">Nothing logged yet. A decision lands here the moment you make a call.</p>
+              <p className="py-5 text-sm text-muted-foreground">Nothing logged yet. A decision lands here the moment you make a decision.</p>
             ) : visible.length === 0 ? (
               <p className="py-5 text-sm text-muted-foreground">Nothing in this view.</p>
             ) : (
@@ -186,7 +186,7 @@ export function DecisionsPage() {
                         onClick={() => setShown((count) => count + DECISION_PAGE_SIZE)}
                         className="font-hand text-[16px] text-muted-foreground underline underline-offset-4 hover:text-foreground"
                       >
-                        show earlier calls
+                        show earlier decisions
                       </button>
                       <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
                         {hiddenCount} earlier

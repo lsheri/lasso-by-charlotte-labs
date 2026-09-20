@@ -57,7 +57,7 @@ export function WaitingOnYou() {
     <section className="mb-8" data-testid="overview-waiting">
       <div className="mb-3 flex items-baseline justify-between gap-4">
         <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
-          Calls waiting on you · {drafts.length}
+          Decisions waiting on you · {drafts.length}
         </span>
         <Link to="/decisions" className="text-[11.5px] text-accent-deep hover:underline">
           Review all
@@ -81,7 +81,7 @@ export function WaitingOnYou() {
             >
               <div className="flex items-start justify-between gap-2">
                 <span className="font-hand text-[16px] leading-[18px] text-[var(--nb-yellow-ink)]">
-                  your call
+                  your decision
                   {row.date_label ? ` · ${row.date_label}` : ""}
                 </span>
                 {done ? (
@@ -93,7 +93,7 @@ export function WaitingOnYou() {
               </div>
 
               <p className="text-[16px] font-medium leading-[21px] text-foreground">
-                {row.call_text ?? row.situation ?? "Untitled call"}
+                {row.call_text ?? row.situation ?? "Untitled decision"}
               </p>
               {row.situation ? (
                 <p className="text-[13px] leading-[18px] text-muted-foreground">{row.situation}</p>
@@ -121,7 +121,7 @@ export function WaitingOnYou() {
                     actions.confirm(row);
                   }}
                 >
-                  Confirm this call
+                  Confirm this decision
                 </Button>
                 <button
                   type="button"

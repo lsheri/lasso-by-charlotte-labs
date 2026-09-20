@@ -91,11 +91,11 @@ export function AddDecisionDialog({
             <Textarea rows={2} value={situation} onChange={(e) => setSituation(e.target.value)} />
           </div>
           <div>
-            <div className="micro-label mb-1.5">The call</div>
+            <div className="micro-label mb-1.5">The decision</div>
             <Textarea rows={2} value={callText} onChange={(e) => setCallText(e.target.value)} />
           </div>
           <div>
-            <div className="micro-label mb-1.5">Why it was the right call</div>
+            <div className="micro-label mb-1.5">Why it was the right decision</div>
             <Textarea rows={3} value={why} onChange={(e) => setWhy(e.target.value)} />
           </div>
           <div>

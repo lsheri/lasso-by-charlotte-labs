@@ -21,7 +21,6 @@ import { WatchSuggestionBanner } from "@/components/connectors/WatchSuggestionBa
 import { CoachingLinkNotices } from "@/components/coaching/CoachingLinkNotices";
 import { ChatsToOrganise } from "@/components/overview/ChatsToOrganise";
 import { ArrivalsStrip } from "@/components/work/ArrivalsStrip";
-import { WaitingOnYou } from "@/components/overview/WaitingOnYou";
 import { ReadingPanel } from "@/components/overview/ReadingPanel";
 import { NotCovered } from "@/components/overview/NotCovered";
 
@@ -889,10 +888,9 @@ export function WorkPage() {
         </div>
       ) : null}
 
-      {/* PASS A1 — both lifted off the retired Overview. The calls waiting on
-          you sit above the pile; the chats to put away sit with it. */}
+      {/* PASS A1 - lifted off the retired Overview: the chats to put away sit
+          with the pile. Decisions live on their own page. */}
       <ArrivalsStrip items={all} />
-      <WaitingOnYou />
       <ChatsToOrganise items={all} />
 
       {error ? <p className="mb-6 text-sm text-destructive">{(error as Error).message}</p> : null}

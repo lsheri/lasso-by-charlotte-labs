@@ -215,6 +215,13 @@
   --nb-stagger-loose: 300ms;
 
   /*
+   * C2: one pause before an icon redraws on hover or keyboard focus, so a
+   * passing cursor does not set the whole sidebar drawing. Mount motion, the
+   * play-on-mount case and reduced motion are untouched.
+   */
+  --nb-ico-delay: 200ms;
+
+  /*
    * Spring curves. CSS has no spring primitive, so these are the overshoot
    * beziers already in use here, promoted to tokens and matched to the design
    * system's spring/bounce scale by feel rather than by formula. The system's
@@ -831,18 +838,22 @@
   transform-box: fill-box;
 }
 
-/* Hover/focus/tap: the glyph redraws from scratch, then the signature move
-   fires once the draw has landed. One chained declaration, so a re-hover
-   restarts the whole thing instead of stacking. */
+/* Hover/focus/tap: the glyph redraws from scratch after one shared pause
+   (--nb-ico-delay), then the signature move fires once the draw has landed.
+   One chained declaration, so a re-hover restarts the whole thing instead of
+   stacking. C2: a sidebar client shelf row is one trigger, so hovering the row
+   redraws every icon sitting on it. */
 a:hover .nb-ico[data-anim="1"] path,
 a:focus-visible .nb-ico[data-anim="1"] path,
 button:hover .nb-ico[data-anim="1"] path,
 button:focus-visible .nb-ico[data-anim="1"] path,
 [role="button"]:hover .nb-ico[data-anim="1"] path,
 [role="button"]:focus-visible .nb-ico[data-anim="1"] path,
+.nb-nav-shelf:hover .nb-ico[data-anim="1"] path,
+.nb-nav-shelf:focus-within .nb-ico[data-anim="1"] path,
 .nb-ico[data-anim="1"]:hover path,
 .nb-ico[data-anim="1"]:focus-visible path {
-  animation: nb-ico-draw var(--nb-ico-draw, 700ms) var(--nb-ease) both;
+  animation: nb-ico-draw var(--nb-ico-draw, 700ms) var(--nb-ease) var(--nb-ico-delay) both;
 }
 a:hover .nb-ico[data-anim="1"] .nb-sig,
 a:focus-visible .nb-ico[data-anim="1"] .nb-sig,
@@ -850,29 +861,40 @@ button:hover .nb-ico[data-anim="1"] .nb-sig,
 button:focus-visible .nb-ico[data-anim="1"] .nb-sig,
 [role="button"]:hover .nb-ico[data-anim="1"] .nb-sig,
 [role="button"]:focus-visible .nb-ico[data-anim="1"] .nb-sig,
+.nb-nav-shelf:hover .nb-ico[data-anim="1"] .nb-sig,
+.nb-nav-shelf:focus-within .nb-ico[data-anim="1"] .nb-sig,
 .nb-ico[data-anim="1"]:hover .nb-sig,
 .nb-ico[data-anim="1"]:focus-visible .nb-sig {
   animation:
-    nb-ico-draw var(--nb-ico-draw, 700ms) var(--nb-ease) both,
-    var(--nb-sig) 600ms var(--nb-ease) var(--nb-ico-draw, 700ms) both;
+    nb-ico-draw var(--nb-ico-draw, 700ms) var(--nb-ease) var(--nb-ico-delay) both,
+    var(--nb-sig) 600ms var(--nb-ease) calc(var(--nb-ico-delay) + var(--nb-ico-draw, 700ms)) both;
 }
 .nb-ico[data-play="1"] .nb-sig {
   animation: var(--nb-sig) 900ms var(--nb-ease) var(--nb-stagger-loose) both;
 }
 a:hover .nb-ico[data-icon="drag-handle"] .nb-sig:nth-of-type(2),
 button:hover .nb-ico[data-icon="drag-handle"] .nb-sig:nth-of-type(2),
+.nb-nav-shelf:hover .nb-ico[data-icon="drag-handle"] .nb-sig:nth-of-type(2),
 .nb-ico[data-icon="drag-handle"]:hover .nb-sig:nth-of-type(2) {
-  animation-delay: 0ms, calc(var(--nb-ico-draw, 700ms) + var(--nb-stagger-base));
+  animation-delay:
+    var(--nb-ico-delay),
+    calc(var(--nb-ico-delay) + var(--nb-ico-draw, 700ms) + var(--nb-stagger-base));
 }
 a:hover .nb-ico[data-icon="drag-handle"] .nb-sig:nth-of-type(3),
 button:hover .nb-ico[data-icon="drag-handle"] .nb-sig:nth-of-type(3),
+.nb-nav-shelf:hover .nb-ico[data-icon="drag-handle"] .nb-sig:nth-of-type(3),
 .nb-ico[data-icon="drag-handle"]:hover .nb-sig:nth-of-type(3) {
-  animation-delay: 0ms, calc(var(--nb-ico-draw, 700ms) + 240ms);
+  animation-delay:
+    var(--nb-ico-delay),
+    calc(var(--nb-ico-delay) + var(--nb-ico-draw, 700ms) + 240ms);
 }
 a:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
+.nb-nav-shelf:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 .nb-ico[data-icon="close"]:hover .nb-sig:nth-of-type(2) {
-  animation-delay: 0ms, calc(var(--nb-ico-draw, 700ms) + 180ms);
+  animation-delay:
+    var(--nb-ico-delay),
+    calc(var(--nb-ico-delay) + var(--nb-ico-draw, 700ms) + 180ms);
 }
 
 @keyframes nb-ico-draw {

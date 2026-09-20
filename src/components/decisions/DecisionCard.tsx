@@ -94,7 +94,7 @@ export function DecisionCard({
           )}
         </Field>
 
-        <Field label="The call">
+        <Field label="The decision">
           {editing ? (
             <Textarea value={callText} onChange={(e) => setCallText(e.target.value)} rows={2} />
           ) : (
@@ -102,7 +102,7 @@ export function DecisionCard({
           )}
         </Field>
 
-        <Field label="Why it was the right call">
+        <Field label="Why it was the right decision">
           {editing ? (
             <Textarea value={why} onChange={(e) => setWhy(e.target.value)} rows={3} />
           ) : (

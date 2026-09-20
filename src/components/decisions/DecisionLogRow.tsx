@@ -93,7 +93,7 @@ export function DecisionLogRow({
         <div className="flex max-w-[758px] items-start justify-between gap-5 border-y border-[var(--nb-yellow-edge)] bg-[var(--nb-yellow-wash)] px-4 py-3">
           <div className="min-w-0 flex-1">
             <p className="text-[13px] font-semibold leading-[18px] text-foreground">
-              {decision.call_text || decision.situation || "Untitled call"}
+              {decision.call_text || decision.situation || "Untitled decision"}
             </p>
             {decision.why?.trim() ? (
               <p className="mt-1 font-hand text-[16px] italic leading-[20px] text-muted-foreground">
@@ -130,18 +130,18 @@ export function DecisionLogRow({
             </div>
           ) : null}
           <div className="mt-3">
-            <p className="font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">The call</p>
+            <p className="font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">The decision</p>
             <p className="mt-1 text-[13px] font-semibold leading-[18px] text-foreground">
-              {decision.call_text || decision.situation || "Untitled call"}
+              {decision.call_text || decision.situation || "Untitled decision"}
             </p>
           </div>
           <label className="mt-3 block">
-            <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">Why it was the right call</span>
+            <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">Why it was the right decision</span>
             <Textarea
               rows={3}
               value={reasoning}
               onChange={(event) => setReasoning(event.target.value)}
-              placeholder="Why was this the right call? A sentence is enough."
+              placeholder="Why was this the right decision? A sentence is enough."
               className="mt-1 bg-card"
             />
           </label>

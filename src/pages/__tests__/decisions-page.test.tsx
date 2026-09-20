@@ -57,7 +57,7 @@ describe("Your calls storyboard", () => {
 
   it("renders awaiting and confirmed states", () => {
     render(<DecisionsPage />);
-    expect(screen.getByPlaceholderText("Why was this the right call? A sentence is enough.")).toBeTruthy();
+    expect(screen.getByPlaceholderText("Why was this the right decision? A sentence is enough.")).toBeTruthy();
     expect(screen.getAllByText("ON THE RECORD")).toHaveLength(2);
   });
 
@@ -92,12 +92,12 @@ describe("Your calls storyboard", () => {
     expect(screen.getByText("decisions logged").previousElementSibling?.textContent).toBe("60");
     expect(screen.getByText("35 earlier")).toBeTruthy();
 
-    fireEvent.click(screen.getByRole("button", { name: "show earlier calls" }));
+    fireEvent.click(screen.getByRole("button", { name: "show earlier decisions" }));
     expect(screen.getAllByText(/^Call number /)).toHaveLength(DECISION_PAGE_SIZE * 2);
     expect(screen.getByText("decisions logged").previousElementSibling?.textContent).toBe("60");
 
-    fireEvent.click(screen.getByRole("button", { name: "show earlier calls" }));
+    fireEvent.click(screen.getByRole("button", { name: "show earlier decisions" }));
     expect(screen.getAllByText(/^Call number /)).toHaveLength(60);
-    expect(screen.queryByRole("button", { name: "show earlier calls" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "show earlier decisions" })).toBeNull();
   });
 });
