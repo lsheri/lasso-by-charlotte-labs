@@ -4010,6 +4010,10 @@ export type Database = {
         Args: { p_actor_profile_id?: string; p_link_id: string }
         Returns: undefined
       }
+      engagement_member_can_see_item: {
+        Args: { item: string }
+        Returns: boolean
+      }
       has_org_role: {
         Args: {
           p_org: string
