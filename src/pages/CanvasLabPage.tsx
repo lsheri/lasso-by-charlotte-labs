@@ -106,6 +106,7 @@ import {
   noteWorkboardUndoUsed,
   noteAnnotationChanged,
   noteHighlightChanged,
+  noteWorkboardWorkAdded,
   type LabNodeEventKind,
   type WorkboardOpenVia,
   type WorkboardPersistEntity,
@@ -133,6 +134,11 @@ import { engagementDisplayTitle } from "@/lib/clients";
 import { isDeliverableType } from "@/lib/lineage-shared";
 import type { WorkItemRow } from "@/lib/work-types";
 import { readWorkboardDisplayMode, workboardDisplayModeKey, type WorkboardDisplayMode } from "@/lib/workboard-card-preview.shared";
+import { useQueryClient } from "@tanstack/react-query";
+import { AddWorkPanel, type AddWorkSource } from "@/components/canvas-lab/AddWorkPanel";
+import { CARD_HEIGHT, CARD_WIDTH } from "@/components/canvas-lab/canvas-lab-model";
+import { placeWorkOnBoardFn } from "@/lib/workboard-add-work.functions";
+import { placeAddedCards, type PlacementRect } from "@/lib/workboard-placement";
 
 
 /** A local workboard over one permission-filtered engagement read. */
@@ -227,6 +233,12 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   const [front, setFront] = useState<string[]>([]);
   /** The inline workstream name takes the caret as soon as it appears. */
   const inlineNameRef = useCallback((element: HTMLInputElement | null) => { element?.focus({ preventScroll: true }); }, []);
+  const [addWorkOpen, setAddWorkOpen] = useState(false);
+  const [addWorkVia, setAddWorkVia] = useState<"header" | "context_menu">("header");
+  const [addWorkAnchor, setAddWorkAnchor] = useState<Point | null>(null);
+  const [addWorkBusy, setAddWorkBusy] = useState(false);
+  /** Right-click on empty board space. Screen coords for the menu, board coords for the drop. */
+  const [boardMenu, setBoardMenu] = useState<{ screen: Point; board: Point } | null>(null);
   const [undoToast, setUndoToast] = useState<{ message: string; entry: UndoEntry } | null>(null);
   const undoRef = useRef<UndoStacks>(emptyUndoStacks());
   const undoIdRef = useRef(0);
