@@ -86,7 +86,7 @@ export function LabCard({
   onOpenComments?: (() => void) | undefined;
   displayMode?: WorkboardDisplayMode;
   preview?: WorkboardCardPreview | undefined;
-  onPreviewScroll?: (() => void) | undefined;
+  onPreviewScroll?: ((kind: "chat" | "document" | "deck") => void) | undefined;
 }) {
   const cardRef = useRef<HTMLDivElement | null>(null);
   const paperRef = useRef<HTMLDivElement | null>(null);

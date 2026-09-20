@@ -55,7 +55,7 @@ export function LabPaper({
   displayMode?: WorkboardDisplayMode;
   preview?: WorkboardCardPreview | undefined;
   focused?: boolean;
-  onPreviewScroll?: (() => void) | undefined;
+  onPreviewScroll?: ((kind: "chat" | "document" | "deck") => void) | undefined;
 }) {
   const tier = cardSizeTier(node);
   const identity = item ? workIdentityLabel(item) : null;
@@ -124,7 +124,7 @@ export function LabPaper({
               if (!focused) return;
               const element = event.currentTarget;
               const canScroll = previewWheelConsumesScroll(focused, event.deltaY, element.scrollTop, element.clientHeight, element.scrollHeight);
-              if (canScroll) onPreviewScroll?.();
+              if (canScroll) onPreviewScroll?.("chat");
             }}
           >
             {(preview?.turns ?? []).map((turn) => (
@@ -144,7 +144,7 @@ export function LabPaper({
             className="canvas-lab-paper-edit min-h-0 w-full flex-1 basis-0 resize-none overflow-auto border border-[var(--nb-rule)] bg-card px-2 py-1 text-[11.5px] leading-[17px] text-foreground outline-none focus:border-[var(--nb-green)]"
           />
         ) : (excerptPreview ? excerpt : summary) && (!item || tier !== "compact" || excerptPreview) ? (
-          <p className={cn("canvas-lab-paper-summary text-[11.5px] leading-[17px] text-muted-foreground", excerptPreview ? "line-clamp-6" : tier === "compact" ? "line-clamp-2" : "line-clamp-3")}>{excerptPreview ? excerpt : summary}</p>
+          <p className={cn("canvas-lab-paper-summary text-[11.5px] leading-[17px] text-muted-foreground", excerptPreview ? "line-clamp-6" : tier === "compact" ? "line-clamp-2" : "line-clamp-3")} onWheel={() => { if (excerptPreview && focused) onPreviewScroll?.(item?.type.includes("deck") ? "deck" : "document"); }}>{excerptPreview ? excerpt : summary}</p>
         ) : null}
 
         {chatPreview ? (

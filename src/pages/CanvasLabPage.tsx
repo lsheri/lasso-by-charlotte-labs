@@ -388,10 +388,9 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     noteWorkboardDisplayModeToggled(orgId, mode);
   }
 
-  function notePreviewScroll(item: WorkItemRow) {
+  function notePreviewScroll(item: WorkItemRow, kind: "chat" | "document" | "deck") {
     if (viewedPreviewIdsRef.current.has(item.id)) return;
     viewedPreviewIdsRef.current.add(item.id);
-    const kind = item.type === "ai_thread" ? "chat" : item.type.includes("deck") ? "deck" : "document";
     noteWorkboardCardContentViewed(orgId, kind);
   }
 
