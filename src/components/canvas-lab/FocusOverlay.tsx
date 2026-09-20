@@ -124,6 +124,7 @@ export function FocusOverlay({
   highlights = [],
   onHighlight,
   onRemoveHighlight,
+  onSetHighlightVisibility,
   threads = [],
   canWrite = false,
   onCreateComment,
@@ -137,10 +138,15 @@ export function FocusOverlay({
   onSummarize: () => void;
   onBranch: () => void;
   onClose: () => void;
-  /** Slice 2a: the reader's own highlights on this chat. */
+  /** Slice 2a: highlights on this chat the reader is allowed to see. */
   highlights?: readonly OverlayHighlight[];
   onHighlight?: ((selection: TurnSelection) => void) | undefined;
   onRemoveHighlight?: ((highlight: OverlayHighlight) => void) | undefined;
+  /** The author alone flips one of their own between shared and just them. */
+  onSetHighlightVisibility?:
+    | ((highlight: OverlayHighlight, visibility: "just_me" | "engagement") => void)
+    | undefined;
+
   /** Slice 2a unit 2: live comment threads on this chat, oldest first. */
   threads?: readonly CommentThreadDto[];
   /** A coach can read the review without being able to add to it. */
