@@ -388,7 +388,9 @@ export function SidebarNav({
                             />
                           </button>
                         ) : (
-                          <div className={`${linkClass} nb-nav-shelf w-full text-left`}>
+                          <div
+                            className={`${linkClass} nb-nav-shelf group/shelf w-full text-left`}
+                          >
                             <GraphiteIcon name="engagement" size={20} />
                             <Link
                               to="/clients/$id"
