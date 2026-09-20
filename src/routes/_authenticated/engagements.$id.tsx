@@ -38,11 +38,13 @@ function EngagementRoute() {
 
   // The board is the default view of an engagement. The details page is still
   // where a workstream ledger, a shared trace or journey link, a quick folder
-  // and a phone land.
-  useEffect(() => {
-    if (sentRef.current || typeof window === "undefined") return;
-    if (page.isLoading || !engagement) return;
-    const open = shouldOpenWorkboard({
+  // and a phone land. The decision is made during render so the details page
+  // never paints for an opening that immediately redirects; the effect below
+  // performs the actual navigation.
+  const openBoard = (() => {
+    if (page.isLoading || !engagement) return false;
+    if (typeof window === "undefined") return false;
+    return shouldOpenWorkboard({
       work,
       view,
       hasTrace: Boolean(readTraceId(window.location.search)),
@@ -50,7 +52,11 @@ function EngagementRoute() {
       isQuickFolder: engagement.clients?.quick_folder === true,
       isNarrow: window.innerWidth < ENGAGEMENT_NARROW_WIDTH,
     });
-    if (!open) return;
+  })();
+
+  useEffect(() => {
+    if (sentRef.current || typeof window === "undefined") return;
+    if (!openBoard) return;
     sentRef.current = true;
     void navigate({
       to: "/engagements/$id/canvas-lab",
@@ -58,7 +64,10 @@ function EngagementRoute() {
       search: { from: "default" },
       replace: true,
     });
-  }, [engagement, id, navigate, page.isLoading, view, work]);
+  }, [engagement, id, navigate, openBoard, page.isLoading, view, work]);
 
+  if (openBoard) {
+    return <p className="text-sm text-muted-foreground">Loading…</p>;
+  }
   return <EngagementPage engagementId={id} />;
 }

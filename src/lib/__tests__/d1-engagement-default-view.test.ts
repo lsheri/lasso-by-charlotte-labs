@@ -43,6 +43,11 @@ describe("D1 engagement default view", () => {
     expect(shouldOpenWorkboard({ ...base, isNarrow: true })).toBe(false);
   });
 
+  it("sends both board-to-details links home with view=details", () => {
+    expect(DETAILS_SEARCH).toEqual({ view: "details" });
+    expect(shouldOpenWorkboard({ ...base, ...DETAILS_SEARCH })).toBe(false);
+  });
+
   it("does not bounce back after Details, then opens again from a fresh link", () => {
     expect(shouldOpenWorkboard({ ...base, view: "details" })).toBe(false);
     expect(shouldOpenWorkboard({ ...base, view: undefined })).toBe(true);

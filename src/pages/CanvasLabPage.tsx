@@ -113,6 +113,7 @@ import {
 import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
 import { SidebarNav } from "@/components/layout/SidebarNav";
 import { Button } from "@/components/ui/button";
+import { DETAILS_SEARCH } from "@/lib/engagement-default-view";
 import { useCanvasLab } from "@/hooks/use-canvas-lab";
 import { useCanvasLabAnnotations } from "@/hooks/use-canvas-lab-annotations";
 import { useCanvasLabComments, useWorkboardCommentCounts } from "@/hooks/use-canvas-lab-comments";
