@@ -50,7 +50,7 @@ describe("Canvas Lab card interaction correction", () => {
     expect(card).toContain("onContextMenu={openMenu}");
     expect(card).toContain('event.shiftKey && event.key === "F10"');
     expect(card).toContain('event.key === "ContextMenu"');
-    expect(menu).toContain('aria-label="Open card menu"');
+    expect(menu).toContain('aria-label="Card options"');
     expect(read("src/styles.css")).toContain("width: 44px;");
     expect(menu).toContain("cardRef.current?.focus({ preventScroll: true })");
     expect(menu).toContain("Remove from board");
