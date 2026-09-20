@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { readFileSync } from "node:fs";
 
 import { readWorkboardCardPreviews } from "@/lib/workboard-card-preview.server";
 import { previewWheelConsumesScroll, readWorkboardDisplayMode, workboardDisplayModeKey } from "@/lib/workboard-card-preview.shared";
@@ -29,6 +30,23 @@ describe("workboard card previews", () => {
     expect(result[0]?.turns.map((turn) => turn.turnNo)).toEqual([3, 4, 5]);
     expect(result[0]?.turnCount).toBe(5);
     expect(result[0]?.turns[2]?.content).toHaveLength(400);
+  });
+
+  it("keeps the read capped at 100 unique ids", async () => {
+    const order = vi.fn().mockResolvedValue({ data: [], error: null });
+    const inFn = vi.fn().mockReturnValue({ order });
+    const db = { from: vi.fn().mockReturnValue({ select: vi.fn().mockReturnValue({ in: inFn }) }) };
+    const ids = Array.from({ length: 110 }, (_, index) => `chat-${index}`);
+    await readWorkboardCardPreviews(db as never, ids);
+    expect(inFn.mock.calls[0]?.[1]).toHaveLength(100);
+  });
+
+  it("keeps shared vendor colors intact and isolates Preview card colors", () => {
+    const css = readFileSync("src/styles.css", "utf8");
+    expect(css).toContain("--vendor-chatgpt: #0f6b5c;");
+    expect(css).toContain("--vendor-chatgpt: #6fc4b2;");
+    expect(css).toContain("--canvas-vendor-chatgpt: var(--nb-graphite);");
+    expect(css).toContain("var(--canvas-preview-vendor, var(--canvas-vendor-other))");
   });
 
   it("chains the wheel at either edge and never captures it before focus", () => {
