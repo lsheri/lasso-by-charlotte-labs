@@ -469,9 +469,9 @@ export function FocusOverlay({
                   />
                 ) : null}
 
-                {highlights.length === 0 ? null : (
+                {myHighlights.length === 0 ? null : (
                   <ul className="mt-2 flex flex-col gap-2">
-                    {highlights.map((highlight) => (
+                    {myHighlights.map((highlight) => (
                       <li
                         key={highlight.id}
                         className="rounded-[var(--radius-control)] border border-border bg-card px-2.5 py-2"
@@ -510,11 +510,52 @@ export function FocusOverlay({
                             Remove
                           </Button>
                         </div>
+                        {onSetHighlightVisibility ? (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="mt-1 h-6 px-1.5 text-[11.5px] text-muted-foreground"
+                            aria-pressed={highlight.visibility !== "just_me"}
+                            onClick={() =>
+                              onSetHighlightVisibility(
+                                highlight,
+                                highlight.visibility === "just_me" ? "engagement" : "just_me",
+                              )
+                            }
+                          >
+                            {highlight.visibility === "just_me"
+                              ? "Just me"
+                              : "Visible to your engagement team"}
+                          </Button>
+                        ) : null}
                       </li>
                     ))}
                   </ul>
                 )}
+
+                {teamHighlights.length === 0 ? null : (
+                  <>
+                    <h2 className="section-title mb-2 mt-4">shared by your team</h2>
+                    <ul className="flex flex-col gap-2">
+                      {teamHighlights.map((highlight) => (
+                        <li
+                          key={highlight.id}
+                          className="rounded-[var(--radius-control)] border border-border bg-card px-2.5 py-2"
+                        >
+                          <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
+                            {highlight.authorName ?? "A colleague"} · Turn {highlight.turnNo}
+                            {highlight.stale ? " · From an earlier version" : ""}
+                          </span>
+                          <p className="mt-1 line-clamp-2 text-[12px] leading-[18px] text-foreground">
+                            {highlight.excerpt}
+                          </p>
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
               </section>
+
             ) : null}
           </aside>
         </div>
