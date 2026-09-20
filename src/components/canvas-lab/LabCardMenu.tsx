@@ -54,10 +54,10 @@ export function LabCardMenu({
           size="icon"
           variant="ghost"
           className="canvas-lab-card-menu-trigger"
-          aria-label="Open card menu"
+          aria-label="Card options"
           onPointerDown={(event) => event.stopPropagation()}
         >
-          <MoreHorizontal className="h-3.5 w-3.5" />
+          <MoreHorizontal className="h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent

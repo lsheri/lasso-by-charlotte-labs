@@ -13,9 +13,9 @@ export const DRAG_STEP_COARSE = 110; // shift + arrow
 
 export type Point = { x: number; y: number };
 
-const snapOne = (value: number) => Math.max(0, Math.round(value / DRAG_STEP) * DRAG_STEP);
+const snapOne = (value: number) => Math.round(value / DRAG_STEP) * DRAG_STEP;
 
-/** Snap to the grid and never allow a negative coordinate. */
+/** Snap to the grid in either direction from the board origin. */
 export function snapPoint(p: Point): Point {
   return { x: snapOne(p.x), y: snapOne(p.y) };
 }
@@ -32,9 +32,9 @@ export function keyTo(
   shift: boolean,
 ): Point {
   const step = shift ? DRAG_STEP_COARSE : DRAG_STEP;
-  if (key === "ArrowUp") return { x: from.x, y: Math.max(0, from.y - step) };
+  if (key === "ArrowUp") return { x: from.x, y: from.y - step };
   if (key === "ArrowDown") return { x: from.x, y: from.y + step };
-  if (key === "ArrowLeft") return { x: Math.max(0, from.x - step), y: from.y };
+  if (key === "ArrowLeft") return { x: from.x - step, y: from.y };
   return { x: from.x + step, y: from.y };
 }
 

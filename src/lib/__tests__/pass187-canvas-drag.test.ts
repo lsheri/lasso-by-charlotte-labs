@@ -7,9 +7,9 @@ import { dragTo, keyTo, passedSlop, snapPoint } from "@/lib/canvas-drag";
 const read = (path: string) => readFileSync(path, "utf8");
 
 describe("pass 187 canvas drag", () => {
-  it("snaps to the grid and never goes negative", () => {
+  it("snaps to the grid on both sides of the origin", () => {
     const snapped = snapPoint({ x: -40, y: 47 });
-    expect(snapped.x).toBe(0);
+    expect(snapped.x).toBe(-44);
     expect(snapped.y % 22).toBe(0);
   });
 
@@ -25,7 +25,7 @@ describe("pass 187 canvas drag", () => {
   it("moves by one square, or by the coarse step with shift", () => {
     expect(keyTo({ x: 0, y: 0 }, "ArrowRight", false).x).toBe(22);
     expect(keyTo({ x: 0, y: 0 }, "ArrowRight", true).x).toBe(110);
-    expect(keyTo({ x: 0, y: 0 }, "ArrowLeft", false).x).toBe(0);
+    expect(keyTo({ x: 0, y: 0 }, "ArrowLeft", false).x).toBe(-22);
   });
 
   it("persists position only, through the request scoped client", () => {

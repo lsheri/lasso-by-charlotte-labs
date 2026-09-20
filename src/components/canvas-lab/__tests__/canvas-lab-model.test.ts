@@ -185,6 +185,15 @@ describe("canvas lab model", () => {
     expect(moved.find((node) => node.id === "task:t1")).toEqual(before);
   });
 
+  it("moves and drops cards above and left of the board origin", () => {
+    const nodes = seedCanvas(SEED);
+    expect(moveNode(nodes, "work:w1", { x: -301, y: -205 }).find((node) => node.id === "work:w1")).toMatchObject({ x: -308, y: -198 });
+    const node = nodes.find((entry) => entry.id === "work:w1");
+    expect(node).toBeDefined();
+    if (!node) return;
+    expect(dragEndDecision({ origin: { x: 22, y: 22 }, from: { x: 100, y: 100 }, pointer: { x: 40, y: 30 }, zoom: 1, node, frames: [], mode: "freeform", editable: true }).position).toEqual({ x: -44, y: -44 });
+  });
+
   it("adds and removes context", () => {
     expect(toggleContext([], "work:w1")).toEqual(["work:w1"]);
     expect(toggleContext(["work:w1"], "work:w1")).toEqual([]);
@@ -277,6 +286,17 @@ describe("canvas lab model", () => {
     expect(result.pan.y + (result.bounds.y + result.bounds.height / 2) * result.zoom).toBeCloseTo(350);
     const tiny = fitWorkboardViewport({ width: 1400, height: 900 }, [], [], new Map(), { x: 10, y: 10, width: 100, height: 80 });
     expect(tiny.zoom).toBe(1);
+  });
+
+  it("fits frames and cards above and left of the origin", () => {
+    const frame = { id: "f", name: "Work", x: -520, y: -340, width: 430, height: 220 };
+    const card = { id: "n", kind: "work" as const, frame: "f", title: "Card", summary: "", typeLabel: "work", ownership: "yours" as const, x: -490, y: -280, width: 232, height: 112 };
+    expect(fitFrameToNodes(frame, [card])).toMatchObject({ x: -514, y: -340 });
+    const result = fitWorkboardViewport({ width: 1000, height: 700 }, [frame], [card], new Map(), { x: -700, y: -500, width: 100, height: 80 });
+    expect(result.bounds.x).toBe(-700);
+    expect(result.bounds.y).toBe(-500);
+    expect(result.pan.x + (result.bounds.x + result.bounds.width / 2) * result.zoom).toBeCloseTo(500);
+    expect(result.pan.y + (result.bounds.y + result.bounds.height / 2) * result.zoom).toBeCloseTo(350);
   });
 
   it("recognises only real shell size changes", async () => {
