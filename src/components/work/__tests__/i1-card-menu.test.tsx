@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { readFileSync } from "node:fs";
 
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -45,11 +46,20 @@ const ITEM = {
 /** Classes that make an element invisible, and so zero-sized, until hover or focus. */
 const HOVER_GATED = ["group-hover", "group-focus-within", "md:hidden", "peer-hover"];
 
+function renderCard() {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(
+    <QueryClientProvider client={client}>
+      <WorkRow item={ITEM} dense actions={<button type="button">Work date</button>} />
+    </QueryClientProvider>,
+  );
+}
+
 afterEach(cleanup);
 
 describe("I1 the Inbox card menu", () => {
   it("renders the trigger at rest and keeps it measurable while the menu is open", () => {
-    render(<WorkRow item={ITEM} dense actions={<button type="button">Work date</button>} />);
+    renderCard();
     const trigger = screen.getByTestId("card-menu-trigger");
     expect(trigger).toBeTruthy();
 
@@ -63,7 +73,7 @@ describe("I1 the Inbox card menu", () => {
   });
 
   it("renders the trigger outside every hover-gated container", () => {
-    render(<WorkRow item={ITEM} dense actions={<button type="button">Work date</button>} />);
+    renderCard();
     let node: HTMLElement | null = screen.getByTestId("card-menu-trigger");
     while (node) {
       const classes = node.className;
