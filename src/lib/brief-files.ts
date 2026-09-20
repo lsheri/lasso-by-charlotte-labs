@@ -60,10 +60,10 @@ export type BriefConfirmShape = { message: string; submitLabel: string };
  * attached the ask is for one summarizing line; with nothing at all it is the
  * original sentence. Neither shape ever blocks the person.
  */
-export function briefConfirmShape(
-  input: { hasBriefText: boolean; fileCount: number },
-  createLabel: string,
-): BriefConfirmShape | null {
+export function briefConfirmShape(input: {
+  hasBriefText: boolean;
+  fileCount: number;
+}): BriefConfirmShape | null {
   if (input.hasBriefText) return null;
   if (input.fileCount > 0) {
     return {
@@ -75,6 +75,6 @@ export function briefConfirmShape(
   return {
     message:
       "Create without a brief? Drift analysis and Firm checks will say no brief is in the record until one exists.",
-    submitLabel: createLabel,
+    submitLabel: "Create without a brief",
   };
 }
