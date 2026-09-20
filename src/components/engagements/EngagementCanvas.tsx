@@ -49,6 +49,8 @@ export type CanvasTask = {
   detail: string | null;
   /** Pass 143: a wrap-up never renders as a board column. */
   is_wrap?: boolean;
+  /** B2: the board's default home is never a workstream column. */
+  is_board_default?: boolean;
   work_item_tasks: {
     step_no: number | null;
     step_confirmed: boolean;
