@@ -196,3 +196,9 @@
 - [x] Restore the exact engagement label.
 - [x] Keep held clips paused through observer arbitration.
 - [x] Re-run landing tests.
+
+## Landing unit L2
+- [x] Validate and save pilot requests through a public server function.
+- [x] Send the internal pilot email and safely skip Inkbox without its key.
+- [x] Wire pending, success, and network-error form states plus success telemetry.
+- [x] Add focused schema and landing tests; verify build.
