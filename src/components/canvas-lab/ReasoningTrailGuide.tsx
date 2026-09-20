@@ -1,7 +1,7 @@
 import { Plus } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
-import { REASONING_STEPS, type LabJudgmentType, type LabTemplateKind, JUDGMENT_TYPES } from "@/components/canvas-lab/canvas-lab-model";
+import { BOARD_GUIDE_RECTS, REASONING_STEPS, type LabJudgmentType, type LabTemplateKind, JUDGMENT_TYPES } from "@/components/canvas-lab/canvas-lab-model";
 import { Button } from "@/components/ui/button";
 
 export function ReasoningTrailGuide({ onAdd }: { onAdd: (kind: LabTemplateKind, judgment?: LabJudgmentType) => void }) {
@@ -26,8 +26,14 @@ export function ReasoningTrailGuide({ onAdd }: { onAdd: (kind: LabTemplateKind, 
     requestAnimationFrame(() => triggerRef.current?.focus({ preventScroll: true }));
   }
 
+  // One source for where this panel sits, shared with anything placing cards.
+  const rect = BOARD_GUIDE_RECTS[0]!;
   return (
-    <section className="canvas-lab-guide" aria-labelledby="reasoning-trail-title">
+    <section
+      className="canvas-lab-guide"
+      style={{ left: rect.x, top: rect.y, width: rect.width, minHeight: rect.height }}
+      aria-labelledby="reasoning-trail-title"
+    >
       <div className="flex items-baseline justify-between gap-2">
         <h2 id="reasoning-trail-title" className="font-hand text-[18px] text-[var(--nb-mid)]">Reasoning trail</h2>
         <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">Guide · no links implied</span>
