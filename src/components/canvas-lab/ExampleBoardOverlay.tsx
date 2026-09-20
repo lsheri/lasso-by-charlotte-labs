@@ -1,11 +1,12 @@
 import { X } from "lucide-react";
-import { useEffect } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import { LabCard } from "@/components/canvas-lab/LabCard";
 import { LabFrame as LabFrameElement } from "@/components/canvas-lab/LabFrame";
 import { LabRelationships } from "@/components/canvas-lab/LabRelationships";
 import { LabRelationshipOverlays } from "@/components/canvas-lab/LabRelationshipOverlays";
-import { labInverseZoom } from "@/components/canvas-lab/canvas-lab-model";
+import { fitWorkboardViewport, labInverseZoom } from "@/components/canvas-lab/canvas-lab-model";
+import { ExampleReview } from "@/components/canvas-lab/ExampleReview";
 import {
   EXAMPLE_BOARD_SIZE,
   EXAMPLE_CLIENT,
@@ -17,7 +18,7 @@ import {
 import { Button } from "@/components/ui/button";
 
 const noop = () => undefined;
-const EXAMPLE_ZOOM = 0.72;
+const DECK_ID = "example-deck";
 const HEIGHTS: ReadonlyMap<string, number> = new Map(EXAMPLE_NODES.map((node) => [node.id, node.height]));
 
 /**
@@ -26,11 +27,38 @@ const HEIGHTS: ReadonlyMap<string, number> = new Map(EXAMPLE_NODES.map((node) =>
  * every outline is rendered as not editable.
  */
 export function ExampleBoardOverlay({ onClose }: { onClose: () => void }) {
+  const stageRef = useRef<HTMLDivElement | null>(null);
+  const [view, setView] = useState({ zoom: 0.72, pan: { x: 0, y: 0 } });
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const deck = EXAMPLE_NODES.find((node) => node.id === DECK_ID);
+
+  /** Same fit maths as the board's Fit, so the whole sample sits centred. */
+  const fit = useCallback(() => {
+    const shell = stageRef.current;
+    if (!shell) return;
+    const first = EXAMPLE_FRAMES[0]!;
+    const result = fitWorkboardViewport(
+      { width: shell.clientWidth, height: shell.clientHeight },
+      EXAMPLE_FRAMES,
+      EXAMPLE_NODES,
+      HEIGHTS,
+      { x: first.x, y: first.y, width: 1, height: 1 },
+      48,
+    );
+    setView({ zoom: result.zoom, pan: result.pan });
+  }, []);
+
+  useLayoutEffect(() => {
+    fit();
+    window.addEventListener("resize", fit);
+    return () => window.removeEventListener("resize", fit);
+  }, [fit]);
+
   useEffect(() => {
-    const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") onClose(); };
+    const onKey = (event: KeyboardEvent) => { if (event.key !== "Escape") return; if (reviewOpen) setReviewOpen(false); else onClose(); };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  }, [onClose, reviewOpen]);
 
   return (
     <div data-testid="canvas-lab-example" role="dialog" aria-modal="true" aria-label="Example board" className="fixed inset-0 z-[60] flex flex-col bg-[var(--nb-paper)]">
@@ -44,10 +72,10 @@ export function ExampleBoardOverlay({ onClose }: { onClose: () => void }) {
           <Button size="icon" variant="ghost" aria-label="Close example board" onClick={onClose}><X className="h-4 w-4" /></Button>
         </div>
       </header>
-      <div className="relative min-h-0 flex-1 overflow-auto">
+      <div ref={stageRef} data-testid="canvas-lab-example-stage" className="relative min-h-0 flex-1 overflow-hidden [user-select:none] [-webkit-user-select:none]">
         <div
-          className="canvas-lab-stage relative origin-top-left"
-          style={{ width: EXAMPLE_BOARD_SIZE.width, height: EXAMPLE_BOARD_SIZE.height, transform: `scale(${EXAMPLE_ZOOM})` }}
+          className="canvas-lab-stage absolute left-0 top-0 origin-top-left"
+          style={{ width: EXAMPLE_BOARD_SIZE.width, height: EXAMPLE_BOARD_SIZE.height, transform: `translate(${view.pan.x}px, ${view.pan.y}px) scale(${view.zoom})` }}
         >
           {EXAMPLE_FRAMES.map((frame) => (
             <LabFrameElement
@@ -70,7 +98,7 @@ export function ExampleBoardOverlay({ onClose }: { onClose: () => void }) {
             />
           ))}
           <svg className="canvas-lab-relationships absolute inset-0 overflow-visible" width={EXAMPLE_BOARD_SIZE.width} height={EXAMPLE_BOARD_SIZE.height} aria-label="Example board relationships">
-            <LabRelationships links={EXAMPLE_LINKS} nodes={EXAMPLE_NODES} measuredHeights={HEIGHTS} selectedLinkId={null} inverseZoom={labInverseZoom(EXAMPLE_ZOOM)} onSelect={noop} />
+            <LabRelationships links={EXAMPLE_LINKS} nodes={EXAMPLE_NODES} measuredHeights={HEIGHTS} selectedLinkId={null} inverseZoom={labInverseZoom(view.zoom)} onSelect={noop} />
           </svg>
           {EXAMPLE_NODES.map((node) => (
             <LabCard
@@ -106,11 +134,32 @@ export function ExampleBoardOverlay({ onClose }: { onClose: () => void }) {
               onMoveToFrame={noop}
             />
           ))}
+          {deck ? (
+            <>
+              <button
+                type="button"
+                aria-label={`What fed ${deck.title}`}
+                onClick={() => setReviewOpen(true)}
+                className="absolute z-10 bg-transparent"
+                style={{ left: deck.x, top: deck.y, width: deck.width, height: deck.height }}
+              />
+              <button
+                type="button"
+                data-testid="example-what-fed-this"
+                onClick={() => setReviewOpen(true)}
+                className="absolute z-10 border border-[var(--nb-green)] bg-card px-2 py-1 font-mono text-[9px] uppercase tracking-[0.08em] text-green"
+                style={{ left: deck.x, top: deck.y + deck.height + 8 }}
+              >
+                What fed this
+              </button>
+            </>
+          ) : null}
           <svg className="canvas-lab-relationship-overlays absolute inset-0 overflow-visible" width={EXAMPLE_BOARD_SIZE.width} height={EXAMPLE_BOARD_SIZE.height} aria-label="Example board relationship labels">
-            <LabRelationshipOverlays links={EXAMPLE_LINKS} nodes={EXAMPLE_NODES} measuredHeights={HEIGHTS} selectedLinkId={null} hoveredLinkId={null} inverseZoom={labInverseZoom(EXAMPLE_ZOOM)} zoom={EXAMPLE_ZOOM} editable={false} onRemove={noop} onChangeRelation={noop} />
+            <LabRelationshipOverlays links={EXAMPLE_LINKS} nodes={EXAMPLE_NODES} measuredHeights={HEIGHTS} selectedLinkId={null} hoveredLinkId={null} inverseZoom={labInverseZoom(view.zoom)} zoom={view.zoom} editable={false} onRemove={noop} onChangeRelation={noop} />
           </svg>
         </div>
       </div>
+      {reviewOpen ? <ExampleReview onClose={() => setReviewOpen(false)} /> : null}
     </div>
   );
 }
