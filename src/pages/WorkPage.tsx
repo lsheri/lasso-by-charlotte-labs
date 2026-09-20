@@ -404,6 +404,8 @@ export function WorkPage() {
         group={group}
         variant={variant}
         dense
+        displayMode={workView}
+        preview={chatPreviews[head.id]}
         onOpen={(item: WorkItemRow) => {
           markOpenStart("peek.open");
           setPeek({ entry: group, focusId: item.id });
@@ -719,6 +721,9 @@ export function WorkPage() {
         key={entry.id}
         item={entry}
         dense
+        displayMode={workView}
+        chatPreview={chatPreviews[entry.id]}
+        filePreview={filePreviews[entry.id]}
         lead={
           selectMode && !isCoach && entry.visibility === "unmapped" ? (
             <Checkbox
@@ -907,6 +912,13 @@ export function WorkPage() {
 
       {all.length > 0 ? (
         <div className="mb-6 flex flex-wrap items-center gap-2">
+          <span role="group" aria-label="How work is shown" className="mr-auto inline-flex items-center rounded-full border border-[var(--nb-rule)] bg-card p-0.5">
+            {(["preview", "sticky"] as const).map((option) => (
+              <Button key={option} type="button" size="sm" variant={workView === option ? "secondary" : "ghost"} aria-pressed={workView === option} onClick={() => { setWorkView(option); writeWorkView(option); }}>
+                {option === "preview" ? "Preview" : "Sticky"}
+              </Button>
+            ))}
+          </span>
           <button
             type="button"
             onClick={() => setColumnFilter("all")}
