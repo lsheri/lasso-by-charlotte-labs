@@ -177,6 +177,17 @@ export function SharedWithSection({
     return profile && profile.role !== "coach" ? (
       <section className="flex flex-col gap-2">
         <h2 className="micro-label micro-label-section">SEND TO THE FIRM</h2>
+        <div className="flex flex-wrap items-center gap-2">
+          <ShipBlock
+            anchor={anchor}
+            canShip={canShip}
+            engagementId={engagementId}
+            orgId={orgId}
+            coachCount={(shared.data ?? []).length}
+            open={shipOpen}
+            onOpenChange={setShipOpen}
+          />
+        </div>
         <CanvasDeliverableActions items={items} engagementId={engagementId} profile={profile} />
       </section>
     ) : null;
@@ -212,30 +223,16 @@ export function SharedWithSection({
           <h2 className="micro-label micro-label-section">SEND TO THE FIRM</h2>
           <div className="flex flex-wrap items-center gap-2">
             {/* One control: it builds the record, shows it, then offers the send. */}
-            <Button
-              type="button"
-              variant="ink"
-              disabled={!canShip}
-              title={canShip ? undefined : SHIP_EMPTY_HINT}
-              onClick={() => setShipOpen(true)}
-              className="h-auto flex-col items-start gap-0 py-2"
-            >
-              <span>{SHIP_ACTION_LABEL}</span>
-              <span className="text-[11px] font-normal opacity-70">Empower your team</span>
-            </Button>
-          </div>
-          {anchor && canShip ? (
-            <ShipToFirmDialog
-              workItemId={anchor.id}
-              title={anchor.title}
-              item={anchor}
+            <ShipBlock
+              anchor={anchor}
+              canShip={canShip}
               engagementId={engagementId}
               orgId={orgId}
               coachCount={(shared.data ?? []).length}
               open={shipOpen}
               onOpenChange={setShipOpen}
             />
-          ) : null}
+          </div>
         </div>
       ) : null}
 
@@ -328,5 +325,55 @@ export function SharedWithSection({
         </AlertDialogContent>
       </AlertDialog>
     </section>
+  );
+}
+
+/**
+ * The send control, shared by the normal Share tab and the quick-folder
+ * branch, so an unfiled engagement keeps the same path to the firm.
+ */
+function ShipBlock({
+  anchor,
+  canShip,
+  engagementId,
+  orgId,
+  coachCount,
+  open,
+  onOpenChange,
+}: {
+  anchor: WorkItemRow | null;
+  canShip: boolean;
+  engagementId: string;
+  orgId: string;
+  coachCount: number;
+  open: boolean;
+  onOpenChange: (next: boolean) => void;
+}) {
+  return (
+    <>
+      <Button
+        type="button"
+        variant="ink"
+        disabled={!canShip}
+        title={canShip ? undefined : SHIP_EMPTY_HINT}
+        onClick={() => onOpenChange(true)}
+        className="h-auto flex-col items-start gap-0 py-2"
+      >
+        <span>{SHIP_ACTION_LABEL}</span>
+        <span className="text-[11px] font-normal opacity-70">Empower your team</span>
+      </Button>
+      {anchor && canShip ? (
+        <ShipToFirmDialog
+          workItemId={anchor.id}
+          title={anchor.title}
+          item={anchor}
+          engagementId={engagementId}
+          orgId={orgId}
+          coachCount={coachCount}
+          open={open}
+          onOpenChange={onOpenChange}
+        />
+      ) : null}
+    </>
   );
 }

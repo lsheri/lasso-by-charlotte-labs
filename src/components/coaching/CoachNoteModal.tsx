@@ -92,7 +92,12 @@ export function CoachNoteModal({
           notes_shown_band: "1",
           newest_age_band: newestAgeBand(note.created_at),
         });
-        return queryClient.invalidateQueries({ queryKey: unreadNotesKey(profile.id) });
+        // Both lists the circle reads: the unread set and the full page rows
+        // (their read_at feeds the circle on the notes page).
+        return Promise.all([
+          queryClient.invalidateQueries({ queryKey: unreadNotesKey(profile.id) }),
+          queryClient.invalidateQueries({ queryKey: ["notes-about-me-all", profile.id] }),
+        ]);
       })
       .catch(() => {
         /* a read mark that does not land leaves the circle in place */

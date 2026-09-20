@@ -172,8 +172,9 @@ export function ConnectToWorkSheet({
         ) : null}
 
         <div className="mt-6">
-          {/* The connectors surface is a settings section now, so this opens
-              the dialog on it rather than navigating to a page. */}
+          {/* The setup card lives in the MCP section of settings. The sheet has
+              to close first: it is modal and portals above the dialog, so the
+              settings panel would sit underneath and take no clicks. */}
           <button
             type="button"
             onClick={() => {
@@ -181,7 +182,8 @@ export function ConnectToWorkSheet({
                 surface: "connect_sheet",
                 had_connector: false,
               });
-              settings?.openSettings("connectors", "connect_sheet");
+              setOpen(false);
+              settings?.openSettings("mcp", "connect_sheet");
             }}
             className="text-xs text-muted-foreground transition-colors hover:text-foreground"
           >

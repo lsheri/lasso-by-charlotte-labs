@@ -202,3 +202,9 @@
 - [x] Send the internal pilot email and safely skip Inkbox without its key.
 - [x] Wire pending, success, and network-error form states plus success telemetry.
 - [x] Add focused schema and landing tests; verify build.
+
+## Project monitoring fixes (2026-09-20)
+- [x] Coach note circle: opening a note also refreshes the full notes list (CoachNoteModal)
+- [x] Quick-folder Share tab: send path restored via shared ShipBlock (SharedWithSection)
+- [x] Connect-to-work sheet: closes itself, settings opens on MCP (ConnectToWorkSheet)
+- [ ] engagements insert refused by its access rules (high) - database policy work, left with the architect per rule 2
