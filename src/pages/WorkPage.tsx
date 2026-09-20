@@ -964,6 +964,13 @@ export function WorkPage() {
         </div>
       ) : (
         <div className="space-y-8">
+          {/* I1: the sentence that used to head the unclaimed section is taught
+              here instead, where the filter has nothing to show. */}
+          {columnFilter === "unmapped" && filtered.length === 0 ? (
+            <p className="rounded-[var(--radius-md)] border border-dashed border-pencil bg-card px-4 py-6 text-center text-[11.5px] text-soft">
+              These landed on their own. Say whose work it is and the rest gets easier.
+            </p>
+          ) : null}
           <div className={suggesting ? "animate-pulse" : undefined}>
             <div className={`nb-type-columns${gusting ? " nb-gust" : ""}`}>
               {BUCKETS.map((bucket) => {
