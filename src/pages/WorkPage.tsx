@@ -64,7 +64,6 @@ import { logEvent } from "@/lib/telemetry";
 import { logV2 } from "@/lib/telemetry-v2";
 import { markOpenStart } from "@/lib/perf-timing";
 import {
-  entryItems,
   groupConversations,
   groupedCount,
   isConversationGroup,
