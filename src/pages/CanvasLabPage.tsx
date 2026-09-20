@@ -863,6 +863,79 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
 
   const zoomAtCentre = useCallback((next: number) => zoomTo(next, viewportCentre()), [viewportCentre, zoomTo]);
 
+  /** Screen point inside the board surface to a point on the board itself. */
+  const boardPointFromScreen = useCallback((screen: Point): Point => {
+    const z = zoomRef.current || 1;
+    const at = panStateRef.current;
+    return { x: (screen.x - at.x) / z, y: (screen.y - at.y) / z };
+  }, []);
+
+  function openAddWork(via: "header" | "context_menu", anchor: Point | null) {
+    setAddWorkVia(via);
+    setAddWorkAnchor(anchor);
+    setAddWorkOpen(true);
+  }
+
+  /**
+   * Work chosen, uploaded or brought in from a connected app lands here. The
+   * placement is a plain row per item, so nothing already on the board moves
+   * and nothing already placed is written twice.
+   */
+  async function addWorkToBoard(ids: string[], source: AddWorkSource) {
+    if (ids.length === 0 || addWorkBusy) return;
+    setAddWorkBusy(true);
+    try {
+      const result = await placeWork({
+        data: { engagement_id: engagementId, work_item_ids: ids, profile_id: profile?.id },
+      });
+      const known = new Set((nodesRef.current ?? []).flatMap((node) => (node.workItemId ? [node.workItemId] : [])));
+      const fresh = result.items.filter((item) => !known.has(item.id));
+      if (fresh.length > 0) {
+        const anchor = addWorkAnchor ?? boardPointFromScreen(viewportCentre());
+        const taken: PlacementRect[] = [
+          ...visibleNodes.map((node) => ({ x: node.x, y: node.y, width: node.width, height: node.height })),
+          ...(structureMode === "structured"
+            ? boardFrames.map((frame) => ({ x: frame.x, y: frame.y, width: frame.width, height: frame.height }))
+            : []),
+        ];
+        const points = placeAddedCards(anchor, taken, fresh.length);
+        const added: LabNode[] = fresh.map((item, index) => {
+          const at = points[index] ?? anchor;
+          return {
+            id: `work:${item.id}`,
+            kind: "work",
+            frame: "foundation",
+            title: item.title,
+            summary: item.source,
+            typeLabel: item.type.replaceAll("_", " "),
+            ownership: !item.owner_id || item.owner_id === profile?.id ? "yours" : "teammate",
+            workItemId: item.id,
+            deliverable: isDeliverableType(item.type),
+            x: at.x,
+            y: at.y,
+            width: CARD_WIDTH,
+            height: CARD_HEIGHT,
+          } satisfies LabNode;
+        });
+        // The live board gains the new cards in place: nothing already on it is
+        // moved, reset or re-seeded.
+        nodesRef.current = [...nodesRef.current, ...added];
+        setNodes((current) => [...(current ?? []), ...added]);
+        const base = virtualBaseRef.current;
+        if (base) virtualBaseRef.current = { frames: base.frames, nodes: [...base.nodes, ...added] };
+        for (const node of added) await ensureNodeDurable(node.id);
+      }
+      await queryClient.invalidateQueries({ queryKey: ["work-items"] });
+      await queryClient.invalidateQueries({ queryKey: ["engagement"] });
+      noteWorkboardWorkAdded(orgId, source, addWorkVia, ids.length);
+      setAddWorkOpen(false);
+    } catch {
+      setAnnouncement("That work could not be added here.");
+    } finally {
+      setAddWorkBusy(false);
+    }
+  }
+
   useEffect(() => {
     const shell = shellRef.current;
     if (!shell) return;
