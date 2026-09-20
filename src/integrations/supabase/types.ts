@@ -4125,6 +4125,7 @@ export type Database = {
         Args: { p_actor_profile_id?: string; p_link_id: string }
         Returns: undefined
       }
+      work_file_readable: { Args: { p_name: string }; Returns: boolean }
       workboard_node_readable: { Args: { n: string }; Returns: boolean }
     }
     Enums: {
