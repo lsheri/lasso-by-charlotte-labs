@@ -403,7 +403,12 @@ export function WorkPage() {
           markOpenStart("peek.open");
           setPeek({ entry: group, focusId: item.id });
         }}
-        actions={rowActions(head, variant, group.items)}
+        actions={rowActions(head, variant, group.items, { inCardMenu: true })}
+        primaryAction={claimAction(head)}
+        onFluency={(next) => {
+          setLensPreset(undefined);
+          setLensItem(next);
+        }}
         footerFor={(piece: WorkItemRow) =>
           isFlaggedRestatement(piece) ? <FlaggedMarker item={piece} /> : undefined
         }
