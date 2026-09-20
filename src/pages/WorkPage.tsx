@@ -20,6 +20,7 @@ import { ConnectorBrowseActions } from "@/components/connectors/ConnectorBrowseA
 import { WatchSuggestionBanner } from "@/components/connectors/WatchSuggestionBanner";
 import { CoachingLinkNotices } from "@/components/coaching/CoachingLinkNotices";
 import { ChatsToOrganise } from "@/components/overview/ChatsToOrganise";
+import { ArrivalsStrip } from "@/components/work/ArrivalsStrip";
 import { WaitingOnYou } from "@/components/overview/WaitingOnYou";
 import { ReadingPanel } from "@/components/overview/ReadingPanel";
 import { NotCovered } from "@/components/overview/NotCovered";
