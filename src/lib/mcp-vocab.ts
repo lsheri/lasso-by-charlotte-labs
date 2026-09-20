@@ -255,3 +255,99 @@ export function chooseSuggestion(vocab: McpVocab, signals: SuggestionSignals): P
   }
   return null;
 }
+
+/* ------------------------------------------------------------------ *
+ * Unit M2b: where a pushed item lands, and the words for what happened.
+ * ------------------------------------------------------------------ */
+
+/** The sentence every push tool carries about placing work on a board. */
+export const PLACEMENT_LINE =
+  "Before pushing, call lasso_push_options and ask the user: inbox only, or the suggested place? Placing work on a board makes it visible to everyone on that engagement, so only pass destination after the user says yes.";
+
+export type SuggestionOutcome = "accepted" | "changed" | "declined" | "none";
+
+export type SourceProject = { name: string; id?: string };
+
+export type PlacementPlan = {
+  destination: string | null;
+  move: boolean;
+  suggestionOutcome: SuggestionOutcome;
+  sourceProject: SourceProject | null;
+};
+
+const SUGGESTION_OUTCOMES: SuggestionOutcome[] = ["accepted", "changed", "declined", "none"];
+
+/** Read the four optional placement inputs, defensively. */
+export function parsePlacementArgs(args: Record<string, unknown>): PlacementPlan {
+  const rawDestination = typeof args["destination"] === "string" ? args["destination"].trim() : "";
+  const rawOutcome = String(args["suggestion_outcome"] ?? "");
+  const project = args["source_project"] as { name?: unknown; id?: unknown } | null | undefined;
+  const projectName = typeof project?.name === "string" ? project.name.trim() : "";
+  return {
+    destination: rawDestination ? rawDestination : null,
+    move: args["move"] === true,
+    suggestionOutcome: (SUGGESTION_OUTCOMES as string[]).includes(rawOutcome)
+      ? (rawOutcome as SuggestionOutcome)
+      : "none",
+    sourceProject: projectName
+      ? { name: projectName, ...(typeof project?.id === "string" && project.id ? { id: project.id } : {}) }
+      : null,
+  };
+}
+
+/** The placement input shape shared by the three push tools. */
+export function placementInputs(vocab: McpVocab): Record<string, unknown> {
+  return {
+    destination: {
+      type: "string",
+      description: `Optional. A place ref exactly as lasso_list_places or lasso_push_options gave it ("CODE · ${vocab.workstream}"). Leave it out to keep the item in the user's inbox.`,
+    },
+    move: {
+      type: "boolean",
+      description: `Optional. Only after the user says yes to moving work already on another ${vocab.board}.`,
+    },
+    suggestion_outcome: {
+      type: "string",
+      enum: ["accepted", "changed", "declined", "none"],
+      description: "What the user did with Lasso's suggested place.",
+    },
+    source_project: {
+      type: "object",
+      description: "Optional. The Project in the source app this chat lives in.",
+      properties: { name: { type: "string" }, id: { type: "string" } },
+      required: ["name"],
+    },
+  };
+}
+
+/** What mcp_place_item answered, in the workspace's words. */
+export function renderPlacement(
+  vocab: McpVocab,
+  status: string,
+  ref: string,
+  otherRef: string | null,
+): string {
+  if (status === "placed" || status === "moved") {
+    return `Saved and placed on ${ref}. Your ${vocab.board} team can see it there.`;
+  }
+  if (status === "already_here") return `Already on ${ref}.`;
+  if (status === "on_other") {
+    const other = otherRef ?? `another ${vocab.board}`;
+    return `Saved. It is already on ${other}. Ask the user whether to move it to ${ref}; if yes, call again with move: true.`;
+  }
+  return `Saved to your inbox only; you can't place work on that ${vocab.board}.`;
+}
+
+/** An unknown ref never guesses. The item stays in the inbox and says so. */
+export function renderUnknownRef(vocab: McpVocab, refs: readonly string[]): string {
+  if (refs.length === 0) return `Saved to your inbox only; that place is not one of yours, and you have no ${vocab.boards} yet.`;
+  return `Saved to your inbox only; that place is not one of yours. Valid places: ${refs.join(", ")}.`;
+}
+
+/** Only a real landing counts as a board target. */
+export function placementTarget(status: string): "inbox" | "workboard" {
+  return status === "placed" || status === "moved" || status === "already_here"
+    ? "workboard"
+    : "inbox";
+}
+
