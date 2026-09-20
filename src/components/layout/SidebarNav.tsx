@@ -398,6 +398,20 @@ export function SidebarNav({
                             >
                               <span className="truncate">{shelf.name}</span>
                             </Link>
+                            <NewEngagementDialog
+                              onDone={onNavigate}
+                              initialClientId={shelf.clientId}
+                              from="sidebar_client"
+                              trigger={
+                                <button
+                                  type="button"
+                                  aria-label={`${vocab.newEngagement} in ${shelf.name}`}
+                                  className="shrink-0 opacity-0 transition-opacity focus-visible:opacity-100 group-hover/shelf:opacity-100 group-focus-within/shelf:opacity-100"
+                                >
+                                  <GraphiteIcon name="plus" size={14} />
+                                </button>
+                              }
+                            />
                             <button
                               type="button"
                               aria-expanded={!collapsed}
