@@ -18,15 +18,14 @@ describe("workboard card previews", () => {
       content: `turn ${index + 1}`,
       model: "model-name",
     }));
-    const limit = vi.fn().mockResolvedValue({ data: rows, error: null });
-    const order = vi.fn().mockReturnValue({ limit });
-    const eq = vi.fn().mockReturnValue({ order });
-    const select = vi.fn().mockReturnValue({ eq });
+    const order = vi.fn().mockResolvedValue({ data: rows, error: null });
+    const inFn = vi.fn().mockReturnValue({ order });
+    const select = vi.fn().mockReturnValue({ in: inFn });
     const db = { from: vi.fn().mockReturnValue({ select }) };
 
     const result = await readWorkboardCardPreviews(db as never, ["visible-chat"]);
     expect(db.from).toHaveBeenCalledTimes(1);
-    expect(eq).toHaveBeenCalledWith("work_item_id", "visible-chat");
+    expect(inFn).toHaveBeenCalledWith("work_item_id", ["visible-chat"]);
     expect(result[0]?.turns.map((turn) => turn.turnNo)).toEqual([3, 4, 5]);
     expect(result[0]?.turnCount).toBe(5);
   });
