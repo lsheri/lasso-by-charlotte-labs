@@ -283,10 +283,14 @@ export function keepViewportUnscrolled(element: { scrollTop: number; scrollLeft:
   if (element.scrollLeft !== 0) element.scrollLeft = 0;
 }
 
-export function stageBounds(frames: LabFrame[]): { width: number; height: number } {
+/**
+ * The canvas size. With no outlines it is measured from the cards alone, and
+ * a blank board still keeps a usable minimum so it can be panned and zoomed.
+ */
+export function stageBounds(frames: LabFrame[], nodes: LabNode[] = []): { width: number; height: number } {
   return {
-    width: Math.max(980, ...frames.map((frame) => frame.x + frame.width + 60)),
-    height: Math.max(720, ...frames.map((frame) => frame.y + frame.height + 120)),
+    width: Math.max(980, ...frames.map((frame) => frame.x + frame.width + 60), ...nodes.map((node) => node.x + node.width + 120)),
+    height: Math.max(720, ...frames.map((frame) => frame.y + frame.height + 120), ...nodes.map((node) => node.y + node.height + 160)),
   };
 }
 
