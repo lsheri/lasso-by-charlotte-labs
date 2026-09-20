@@ -4118,6 +4118,17 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   gap: 2rem;
 }
 
+.landing-next-source-clips {
+  display: grid;
+  grid-template-columns: minmax(0, 1.48fr) minmax(7rem, 0.52fr);
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.landing-next-source-clips figure {
+  min-width: 0;
+}
+
 .landing-next-carousel-progress {
   display: none;
 }
@@ -4223,6 +4234,10 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 
       .landing-next-carousel-panel-find .landing-next-carousel-content {
         grid-template-columns: minmax(0, 0.68fr) minmax(0, 1.32fr);
+      }
+
+      .landing-next-source-clips {
+        gap: 1rem;
       }
 
       .landing-next-carousel-progress {
