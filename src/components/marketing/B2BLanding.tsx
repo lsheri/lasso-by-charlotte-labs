@@ -223,7 +223,7 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
           <section className="landing-next-carousel mt-20" aria-label="How Lasso works">
             <div className="landing-next-carousel-sticky">
               <div className="landing-next-carousel-track">
-                <section className="landing-next-carousel-panel landing-next-carousel-panel-find">
+                <section className="landing-next-carousel-panel">
                   <div className="landing-next-carousel-content">
                     <div>
                       <p className="micro-label">THE ONE THING NOBODY ELSE CAN SHOW</p>
@@ -234,7 +234,28 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
                         else your team used.
                       </p>
                     </div>
-                    <div id="find-it" className="landing-next-source-clips">
+                  </div>
+                </section>
+
+                <section className="landing-next-carousel-panel landing-next-carousel-panel-sources">
+                  <div className="landing-next-carousel-content">
+                    <div>
+                      <p className="micro-label">THE ENGAGEMENT, LAID OUT</p>
+                      <h2 className="pencil-title mt-4">
+                        Sources, AI work, your team's decisions, the deliverable. One board, in that order.
+                      </h2>
+                      <p className="mt-5 max-w-2xl text-base leading-relaxed text-foreground">
+                        Every engagement gets a board: one frame per workstream, cards for the brief,
+                        the meetings, the chats and the drafts. Your judgment is its own card, not a
+                        comment in the margin. Draw a line and say what it means: informed, produced,
+                        revised, cited. Nothing on the board feeds AI by proximity. What fed this
+                        follows the lines you drew, never a guess.
+                      </p>
+                      <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
+                        Your engagement team sees the same board. Coaches read, they don't edit.
+                      </p>
+                    </div>
+                    <div className="landing-next-source-clips">
                       <ClipPlayer
                         src={connectorVideo.url}
                         poster={connectorPoster.url}
@@ -256,28 +277,6 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
                         playback="hold"
                       />
                     </div>
-                  </div>
-                </section>
-
-                <section className="landing-next-carousel-panel">
-                  <div className="landing-next-carousel-content">
-                    <div>
-                      <p className="micro-label">THE ENGAGEMENT, LAID OUT</p>
-                      <h2 className="pencil-title mt-4">
-                        Sources, AI work, your team's decisions, the deliverable. One board, in that order.
-                      </h2>
-                      <p className="mt-5 max-w-2xl text-base leading-relaxed text-foreground">
-                        Every engagement gets a board: one frame per workstream, cards for the brief,
-                        the meetings, the chats and the drafts. Your judgment is its own card, not a
-                        comment in the margin. Draw a line and say what it means: informed, produced,
-                        revised, cited. Nothing on the board feeds AI by proximity. What fed this
-                        follows the lines you drew, never a guess.
-                      </p>
-                      <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
-                        Your engagement team sees the same board. Coaches read, they don't edit.
-                      </p>
-                    </div>
-                    <ClipSlot id="workboard" label="An engagement arranged on one board" />
                   </div>
                 </section>
 

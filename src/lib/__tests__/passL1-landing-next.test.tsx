@@ -96,7 +96,7 @@ describe("pass L1 hidden landing route", () => {
   });
 
   it("keeps stable clip slots for the next media pass", () => {
-    for (const id of ["inbox", "find-it", "decisions", "coach-note", "workboard"]) {
+    for (const id of ["inbox", "decisions", "coach-note"]) {
       expect(route).toContain(`id=\"${id}\"`);
     }
     expect(route).not.toContain('id="one-on-one"');
@@ -123,7 +123,8 @@ describe("pass L1 hidden landing route", () => {
     expect(route).toContain('aspect="1920 / 1132"');
     expect(route).toContain('aspect="9 / 16"');
     expect(route).not.toContain('src="/videos/lasso-what-fed-this.mp4"');
-    expect(route).toContain('<ClipSlot id="workboard" label="An engagement arranged on one board" />');
+    expect(route).toContain('landing-next-carousel-panel-sources');
+    expect(route).not.toContain('<ClipSlot id="workboard"');
     expect(route).toContain('playback="hold"');
   });
 
