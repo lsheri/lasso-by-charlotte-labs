@@ -177,6 +177,17 @@ export function SharedWithSection({
     return profile && profile.role !== "coach" ? (
       <section className="flex flex-col gap-2">
         <h2 className="micro-label micro-label-section">SEND TO THE FIRM</h2>
+        <div className="flex flex-wrap items-center gap-2">
+          <ShipBlock
+            anchor={anchor}
+            canShip={canShip}
+            engagementId={engagementId}
+            orgId={orgId}
+            coachCount={(shared.data ?? []).length}
+            open={shipOpen}
+            onOpenChange={setShipOpen}
+          />
+        </div>
         <CanvasDeliverableActions items={items} engagementId={engagementId} profile={profile} />
       </section>
     ) : null;
