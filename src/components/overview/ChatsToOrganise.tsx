@@ -30,9 +30,9 @@ function Queue({
   headerAction,
   cardAction,
 }: {
-  title: string;
-  count: number;
-  note: string;
+  title?: string;
+  count?: number;
+  note?: string;
   items: WorkItemRow[];
   remainderTestId: string;
   headerAction?: ReactNode;
@@ -43,17 +43,23 @@ function Queue({
 
   return (
     <>
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <div>
-          <h2 className="text-[16px] font-semibold leading-[22px] text-foreground">
-            {title} ({count})
-          </h2>
-          <p className="mt-0.5 text-[11.5px] leading-[17px] text-muted-foreground">{note}</p>
+      {title || headerAction ? (
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          {title ? (
+            <div>
+              <h2 className="text-[16px] font-semibold leading-[22px] text-foreground">
+                {title} ({count})
+              </h2>
+              {note ? (
+                <p className="mt-0.5 text-[11.5px] leading-[17px] text-muted-foreground">{note}</p>
+              ) : null}
+            </div>
+          ) : null}
+          {headerAction}
         </div>
-        {headerAction}
-      </div>
+      ) : null}
 
-      <div className="mt-3 nb-paper-wall">
+      <div className="nb-paper-wall">
         {shown.map((item) => (
           <NoteRow key={item.id} item={item} action={cardAction(item)} />
         ))}
@@ -96,10 +102,10 @@ export function ChatsToOrganise({ items }: { items: WorkItemRow[] }) {
     <>
       {unclaimed.length > 0 ? (
         <section className="mt-2" data-testid="overview-chats-to-organise">
+          {/* I1: the Unmapped filter chip above already names this set, so the
+              heading said it twice. The teaching sentence moved to that
+              filter's empty state. */}
           <Queue
-            title="Not claimed yet"
-            count={unclaimed.length}
-            note="These landed on their own. Say whose work it is and the rest gets easier."
             items={unclaimed}
             remainderTestId="overview-chats-remainder"
             cardAction={(item) => (

@@ -403,7 +403,12 @@ export function WorkPage() {
           markOpenStart("peek.open");
           setPeek({ entry: group, focusId: item.id });
         }}
-        actions={rowActions(head, variant, group.items)}
+        actions={rowActions(head, variant, group.items, { inCardMenu: true })}
+        primaryAction={claimAction(head)}
+        onFluency={(next) => {
+          setLensPreset(undefined);
+          setLensItem(next);
+        }}
         footerFor={(piece: WorkItemRow) =>
           isFlaggedRestatement(piece) ? <FlaggedMarker item={piece} /> : undefined
         }
@@ -415,7 +420,14 @@ export function WorkPage() {
     item: WorkItemRow,
     variant: "mapped" | "unmapped" | "private",
     group?: WorkItemRow[],
+    /**
+     * Inside a card menu the shared item actions are already part of the menu,
+     * and the claim stays on the card face, so both are dropped here.
+     */
+    opts?: { inCardMenu?: boolean },
   ) {
+    const inMenu = opts?.inCardMenu === true;
+    const claimIsPrimary = inMenu && !item.client_id;
     // A private row keeps its own action set wherever it renders, now that the
     // pile holds private and unmapped work side by side.
     if (item.visibility === "private") {
@@ -423,15 +435,17 @@ export function WorkPage() {
         <>
           {item.content_ref ? <OpenFileAction workItemId={item.id} /> : null}
           <RowAction onClick={() => setDateItem(item)}>Work date</RowAction>
-          <ClaimToClient item={item} surface="work" />
+          {claimIsPrimary ? null : <ClaimToClient item={item} surface="work" />}
           <RowAction onClick={() => void unmark(item)}>Unmark</RowAction>
-          <RowMenu
-            item={item}
-            onFluency={(next) => {
-              setLensPreset(undefined);
-              setLensItem(next);
-            }}
-          />
+          {inMenu ? null : (
+            <RowMenu
+              item={item}
+              onFluency={(next) => {
+                setLensPreset(undefined);
+                setLensItem(next);
+              }}
+            />
+          )}
         </>
       );
     }
@@ -448,22 +462,33 @@ export function WorkPage() {
               ? "Map conversation"
               : "Map to a workstream"}
         </MapButton>
-        <ClaimToClient item={item} surface="work" />
+        {claimIsPrimary ? null : <ClaimToClient item={item} surface="work" />}
         {group && group.length > 1 ? (
           <RowAction onClick={() => openMap(item)}>Map just this</RowAction>
         ) : null}
         <RowAction onClick={() => setDateItem(item)}>Work date</RowAction>
         <RowAction onClick={() => void makePrivate(item)}>Make private</RowAction>
-        <RowMenu
-          item={item}
-          onFluency={(next) => {
-            setLensPreset(undefined);
-            setLensItem(next);
-          }}
-        />
+        {inMenu ? null : (
+          <RowMenu
+            item={item}
+            onFluency={(next) => {
+              setLensPreset(undefined);
+              setLensItem(next);
+            }}
+          />
+        )}
       </>
     );
   }
+
+  /** The one act that stays on the card face: saying whose work this is. */
+  function claimAction(item: WorkItemRow) {
+    if (item.client_id) return undefined;
+    return (
+      <ClaimToClient item={item} surface="work" emphasis="lead" label="Say whose this is" />
+    );
+  }
+
 
   async function handleSuggest() {
     setSuggesting(true);
@@ -680,8 +705,14 @@ export function WorkPage() {
         }
         onOpen={openItem(entry)}
         chips={<ConversationChips item={entry} />}
-        actions={rowActions(entry, variant)}
+        actions={rowActions(entry, variant, undefined, { inCardMenu: true })}
+        primaryAction={claimAction(entry)}
+        onFluency={(next) => {
+          setLensPreset(undefined);
+          setLensItem(next);
+        }}
         clientLabel={clientName(entry.client_id)}
+
         {...(entry.visibility === "mapped" ? {} : { footer: suggestionFor(entry) })}
       />
     );
@@ -933,6 +964,13 @@ export function WorkPage() {
         </div>
       ) : (
         <div className="space-y-8">
+          {/* I1: the sentence that used to head the unclaimed section is taught
+              here instead, where the filter has nothing to show. */}
+          {columnFilter === "unmapped" && filtered.length === 0 ? (
+            <p className="rounded-[var(--radius-md)] border border-dashed border-pencil bg-card px-4 py-6 text-center text-[11.5px] text-soft">
+              These landed on their own. Say whose work it is and the rest gets easier.
+            </p>
+          ) : null}
           <div className={suggesting ? "animate-pulse" : undefined}>
             <div className={`nb-type-columns${gusting ? " nb-gust" : ""}`}>
               {BUCKETS.map((bucket) => {

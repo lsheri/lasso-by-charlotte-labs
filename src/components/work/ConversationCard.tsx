@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { CircleDashed, Lock } from "lucide-react";
 
+import { CardMenu } from "@/components/work/CardMenu";
 import { SourceMark, VendorMark } from "@/components/work/SourceMark";
 import { TypeIcon } from "@/components/work/TypeIcon";
 import { stampDate } from "@/components/work/card-stamp";
@@ -23,6 +24,8 @@ export function ConversationCard({
   actions,
   footerFor,
   dense = false,
+  primaryAction,
+  onFluency,
 }: {
   group: ConversationGroup;
   variant: "mapped" | "unmapped" | "private";
@@ -37,6 +40,10 @@ export function ConversationCard({
    * Off by default, so every existing caller renders exactly as before.
    */
   dense?: boolean;
+  /** Dense only: the one act that stays on the card face, e.g. claiming. */
+  primaryAction?: React.ReactNode;
+  /** Dense only: passed through to the card menu's shared item actions. */
+  onFluency?: ((item: WorkItemRow) => void) | undefined;
 }) {
   const head = group.transcript ?? group.items[0]!;
   const pieces = group.transcript ? group.attachments : group.items.slice(1);
@@ -109,8 +116,11 @@ export function ConversationCard({
               {" · "}
               {stampDate(effectiveWorkDate(head))}
             </span>
-            <span className="shrink-0">
+            <span className="flex shrink-0 items-center gap-1.5">
               <SourceMark item={head} />
+              <CardMenu item={head} onFluency={onFluency}>
+                {actions}
+              </CardMenu>
             </span>
           </div>
 
@@ -170,8 +180,8 @@ export function ConversationCard({
                 ) : null}
               </ul>
             ) : null}
-            <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">{actions}</div>
           </div>
+          {primaryAction ? <div className="mt-2">{primaryAction}</div> : null}
         </div>
       </div>
     );
