@@ -63,6 +63,7 @@ export type WorkItemRow = {
     | null
     | undefined;
   work_item_tasks: MappedTask[];
+  work_item_extracts?: { summary: string | null }[] | null;
 };
 
 /** A transcript plus every artifact pushed with it, from one MCP conversation. */

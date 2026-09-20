@@ -9,6 +9,8 @@ export type LabOwnershipEvent = "yours" | "teammate" | "draft";
 export type LabCardMenuEventKind = LabNodeEventKind | "frame";
 export type LabCardMenuOwnershipEvent = LabOwnershipEvent | "shared";
 export type WorkboardOpenVia = "header" | "canvas_tab" | "direct";
+export type WorkboardDisplayMode = "sticky" | "preview";
+export type WorkboardPreviewKind = "chat" | "document" | "deck";
 
 export function noteWorkboardOpened(orgId: string | undefined, via: WorkboardOpenVia): void {
   if (orgId) logEvent("workboard.opened", orgId, { via });
@@ -75,6 +77,14 @@ export function noteWorkboardDropPromptAnswered(orgId: string | undefined, answe
 
 export function noteWorkboardStructureToggled(orgId: string | undefined, state: "structured" | "freeform"): void {
   if (orgId) logEvent("workboard.structure_toggled", orgId, { state });
+}
+
+export function noteWorkboardDisplayModeToggled(orgId: string | undefined, mode: WorkboardDisplayMode): void {
+  if (orgId) logEvent("workboard.display_mode_toggled", orgId, { mode });
+}
+
+export function noteWorkboardCardContentViewed(orgId: string | undefined, kind: WorkboardPreviewKind): void {
+  if (orgId) logEvent("workboard.card_content_viewed", orgId, { kind, via: "scroll" });
 }
 
 /** Canvas Lab polish 2c-iv: how a save error ended. Closed choice only. */

@@ -16,6 +16,7 @@ import type {
   HighlightDto,
 } from "@/lib/canvas-lab-annotations-shared";
 import type { WorkboardCommand, WorkboardDto, WorkboardMutationResult } from "@/lib/canvas-lab-shared";
+import type { WorkboardCardPreview } from "@/lib/workboard-card-preview.shared";
 import { resolveProfile } from "@/lib/profile-resolve";
 
 export const getCanvasLabBoardFn = createServerFn({ method: "POST" })
@@ -47,6 +48,24 @@ export const mutateCanvasLabBoardFn = createServerFn({ method: "POST" })
     if (!profile) return { status: "forbidden" };
     const { applyWorkboardCommand } = await import("@/lib/canvas-lab.server");
     return applyWorkboardCommand(supabase, data.engagement_id, profile, data.command);
+  });
+
+export const getWorkboardCardPreviewsFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { engagement_id: string; work_item_ids: string[]; profile_id?: string }) => ({
+    engagement_id: typeof input?.engagement_id === "string" ? input.engagement_id : "",
+    work_item_ids: Array.isArray(input?.work_item_ids)
+      ? input.work_item_ids.filter((id): id is string => typeof id === "string" && id.length > 0).slice(0, 100)
+      : [],
+    profile_id: typeof input?.profile_id === "string" ? input.profile_id : undefined,
+  }))
+  .handler(async ({ data, context }): Promise<WorkboardCardPreview[]> => {
+    if (!data.engagement_id || data.work_item_ids.length === 0) return [];
+    const { supabase, userId } = context;
+    const profile = await resolveProfile(supabase, userId, data.profile_id);
+    if (!profile) return [];
+    const { readWorkboardCardPreviews } = await import("@/lib/workboard-card-preview.server");
+    return readWorkboardCardPreviews(supabase, data.work_item_ids);
   });
 
 /** Slice 2a unit 1: the caller's own highlights on one chat. */

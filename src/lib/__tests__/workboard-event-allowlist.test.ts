@@ -25,6 +25,10 @@ describe("the workboard allowlist", () => {
           "length_band",
           "is_reply",
         ],
+        "workboard.card_content_viewed": [
+          "kind",
+          "via",
+        ],
         "workboard.card_menu_opened": [
           "node_kind",
           "ownership",
@@ -39,6 +43,9 @@ describe("the workboard allowlist", () => {
         ],
         "workboard.context_changed": [
           "action",
+        ],
+        "workboard.display_mode_toggled": [
+          "mode",
         ],
         "workboard.drop_prompt_answered": [
           "answer",
@@ -151,6 +158,8 @@ describe("the workboard allowlist", () => {
       () => helpers.noteWorkboardElementResized("o", "card", "pointer", "both"),
       () => helpers.noteWorkboardDropPromptAnswered("o", "yes"),
       () => helpers.noteWorkboardStructureToggled("o", "structured"),
+      () => helpers.noteWorkboardDisplayModeToggled("o", "preview"),
+      () => helpers.noteWorkboardCardContentViewed("o", "chat"),
       () => helpers.noteWorkboardSaveErrorResolved("o", "board", "retry"),
       () => helpers.noteWorkboardContextChanged("o", "cleared"),
       () => helpers.noteWorkboardUndoUsed("o", "move", "undo"),
@@ -173,7 +182,7 @@ describe("the workboard allowlist", () => {
       const [name, , dims] = mocked.mock.calls[0] as [string, string, Record<string, unknown>];
       expect(guardWorkboardEvent(name, dims as never)).toEqual({ keep: true, dims });
     }
-    expect(Object.keys(WORKBOARD_EVENT_DIMS)).toHaveLength(20);
+    expect(Object.keys(WORKBOARD_EVENT_DIMS)).toHaveLength(22);
   });
 
   it("reports each highlight's actual visibility without changing the action schema", () => {
