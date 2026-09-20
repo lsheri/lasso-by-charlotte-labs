@@ -18,6 +18,8 @@ export type ImportResult = {
   skipped: number;
   updated: number;
   unchanged: number;
+  /** The work item ids this import created or refreshed. Additive. */
+  ids?: string[];
 };
 
 export type PickerPage = {

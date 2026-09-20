@@ -211,7 +211,7 @@ export async function importConnectorFiles(
       page_index?: number;
     } | null;
   },
-): Promise<{ imported: number; skipped: number; updated: number; unchanged: number }> {
+): Promise<{ imported: number; skipped: number; updated: number; unchanged: number; ids: string[] }> {
   const { storeFile, captureEvents, existingByProviderId, sha256Bytes, recordNewVersion } =
     await import("@/lib/connector-import.server");
   const idKey = TOOLKIT_ID_KEY[args.toolkit];
@@ -354,5 +354,5 @@ export async function importConnectorFiles(
     imported,
     browse: args.browse ?? null,
   });
-  return { imported, skipped, updated, unchanged };
+  return { imported, skipped, updated, unchanged, ids: [...newIds, ...touchedIds] };
 }
