@@ -890,6 +890,7 @@ export function WorkPage() {
 
       {/* PASS A1 — both lifted off the retired Overview. The calls waiting on
           you sit above the pile; the chats to put away sit with it. */}
+      <ArrivalsStrip items={all} />
       <WaitingOnYou />
       <ChatsToOrganise items={all} />
 
