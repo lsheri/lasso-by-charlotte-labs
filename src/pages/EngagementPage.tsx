@@ -693,6 +693,20 @@ export function EngagementPage({ engagementId }: { engagementId: string }) {
                   }}
                   headerAction={headerAction}
                 />
+                {/* B2.1 — work brought in from the board lives in the default
+                    home: on the board, in no workstream column. */}
+                {boardDefaultItems.length > 0 ? (
+                  <section className="mt-6 space-y-3">
+                    <h2 className="micro-label micro-label-section">
+                      ON THE BOARD, NOT IN A WORKSTREAM
+                    </h2>
+                    <div className="nb-paper-wall">
+                      {boardDefaultItems.map((item) => (
+                        <WorkNote key={item.id} item={item} onOpen={() => openPeek(item)} />
+                      ))}
+                    </div>
+                  </section>
+                ) : null}
                 {/* PASS 143 — the wrap-up, when there is one. An engagement
                     without one is not incomplete, so nothing renders here. */}
                 {wrapTask ? (
