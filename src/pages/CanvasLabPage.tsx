@@ -134,7 +134,7 @@ import { readWorkboardDisplayMode, workboardDisplayModeKey, type WorkboardDispla
 
 /** A local workboard over one permission-filtered engagement read. */
 export function workboardOpenVia(value: string | undefined): WorkboardOpenVia {
-  if (value === "header" || value === "canvas_tab") return value;
+  if (value === "header" || value === "canvas_tab" || value === "default") return value;
   return "direct";
 }
 

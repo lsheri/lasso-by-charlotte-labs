@@ -8,7 +8,7 @@ export type LabJudgmentEventType = "added_constraint" | "corrected_ai" | "reject
 export type LabOwnershipEvent = "yours" | "teammate" | "draft";
 export type LabCardMenuEventKind = LabNodeEventKind | "frame";
 export type LabCardMenuOwnershipEvent = LabOwnershipEvent | "shared";
-export type WorkboardOpenVia = "header" | "canvas_tab" | "direct";
+export type WorkboardOpenVia = "header" | "canvas_tab" | "default" | "direct";
 export type WorkboardDisplayMode = "sticky" | "preview";
 export type WorkboardPreviewKind = "chat" | "document" | "deck";
 
