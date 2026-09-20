@@ -48,6 +48,7 @@ export function LabPaper({
   focused = false,
   onPreviewScroll,
   showOwnership = true,
+  onOpenTrail,
 }: {
   node: LabNode;
   item?: WorkItemRow | undefined;
