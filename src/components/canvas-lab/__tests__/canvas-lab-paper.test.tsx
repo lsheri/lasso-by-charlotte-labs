@@ -41,6 +41,32 @@ function paper(node: LabNode, item?: WorkItemRow) {
 }
 
 describe("Canvas Lab paper", () => {
+  it("renders the last three chat turns and footer in Preview mode", () => {
+    render(
+      <LabPaper
+        node={{ ...baseNode, kind: "work", workItemId: workItem.id }}
+        item={{ ...workItem, type: "ai_thread", source_vendor: "anthropic" }}
+        selected={false}
+        displayMode="preview"
+        preview={{
+          workItemId: workItem.id,
+          turnCount: 8,
+          model: "Sonnet",
+          turns: [
+            { turnNo: 6, role: "user", content: "First visible turn" },
+            { turnNo: 7, role: "assistant", content: "Second visible turn" },
+            { turnNo: 8, role: "user", content: "Last visible turn" },
+          ],
+        }}
+        onEdit={() => undefined}
+        onEditCommitted={() => undefined}
+      />,
+    );
+    expect(screen.getByTestId("workboard-chat-preview")).not.toBeNull();
+    expect(screen.getByText("8 turns")).not.toBeNull();
+    expect(screen.getByText("Last visible turn")).not.toBeNull();
+  });
+
   it.each([
     ["work", "GOOGLEDRIVE", workItem],
     ["brief", "BRIEF", undefined],
