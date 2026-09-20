@@ -47,6 +47,7 @@ export function LabPaper({
   filePreview,
   focused = false,
   onPreviewScroll,
+  showOwnership = true,
 }: {
   node: LabNode;
   item?: WorkItemRow | undefined;
@@ -61,6 +62,8 @@ export function LabPaper({
   filePreview?: FilePreview | undefined;
   focused?: boolean;
   onPreviewScroll?: ((kind: "chat" | "document" | "deck") => void) | undefined;
+  /** The sample board has no owner, so it shows no ownership label. */
+  showOwnership?: boolean;
 }) {
   const tier = cardSizeTier(node);
   const identity = item ? workIdentityLabel(item) : null;
@@ -117,7 +120,7 @@ export function LabPaper({
               {commentCount}
             </button>
           ) : null}
-          <span className="shrink-0 font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">{ownerLabel(node)}</span>
+          {showOwnership ? <span className="shrink-0 font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">{ownerLabel(node)}</span> : null}
         </div>
 
         <p className={cn("canvas-lab-paper-title shrink-0 font-hand text-[16px] leading-[18px] text-foreground", selected && "canvas-lab-context-title")}>
