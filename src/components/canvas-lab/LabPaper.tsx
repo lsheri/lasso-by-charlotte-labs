@@ -5,7 +5,7 @@ import { cardSizeTier, ownerLabel, type LabNode } from "@/components/canvas-lab/
 import { workIdentityLabel } from "@/lib/work-identity";
 import { effectiveWorkDate, formatDate, type WorkItemRow } from "@/lib/work-types";
 import { cn } from "@/lib/utils";
-import type { WorkboardCardPreview, WorkboardDisplayMode } from "@/lib/workboard-card-preview.shared";
+import { previewWheelConsumesScroll, type WorkboardCardPreview, type WorkboardDisplayMode } from "@/lib/workboard-card-preview.shared";
 
 const KIND_ICON: Record<Exclude<LabNode["kind"], "work" | "task">, GraphiteIconName> = {
   brief: "engagement",
@@ -123,7 +123,7 @@ export function LabPaper({
             onWheel={(event) => {
               if (!focused) return;
               const element = event.currentTarget;
-              const canScroll = event.deltaY < 0 ? element.scrollTop > 0 : element.scrollTop + element.clientHeight < element.scrollHeight;
+              const canScroll = previewWheelConsumesScroll(focused, event.deltaY, element.scrollTop, element.clientHeight, element.scrollHeight);
               if (canScroll) onPreviewScroll?.();
             }}
           >

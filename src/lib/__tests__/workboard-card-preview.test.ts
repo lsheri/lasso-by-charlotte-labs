@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { readWorkboardCardPreviews } from "@/lib/workboard-card-preview.server";
-import { readWorkboardDisplayMode, workboardDisplayModeKey } from "@/lib/workboard-card-preview.shared";
+import { previewWheelConsumesScroll, readWorkboardDisplayMode, workboardDisplayModeKey } from "@/lib/workboard-card-preview.shared";
 
 describe("workboard card previews", () => {
   it("defaults to Sticky and scopes the choice to viewer and engagement", () => {
@@ -28,5 +28,12 @@ describe("workboard card previews", () => {
     expect(inFn).toHaveBeenCalledWith("work_item_id", ["visible-chat"]);
     expect(result[0]?.turns.map((turn) => turn.turnNo)).toEqual([3, 4, 5]);
     expect(result[0]?.turnCount).toBe(5);
+  });
+
+  it("chains the wheel at either edge and never captures it before focus", () => {
+    expect(previewWheelConsumesScroll(false, 20, 20, 100, 300)).toBe(false);
+    expect(previewWheelConsumesScroll(true, -20, 0, 100, 300)).toBe(false);
+    expect(previewWheelConsumesScroll(true, 20, 200, 100, 300)).toBe(false);
+    expect(previewWheelConsumesScroll(true, 20, 40, 100, 300)).toBe(true);
   });
 });
