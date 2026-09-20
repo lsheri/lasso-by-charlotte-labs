@@ -1235,6 +1235,37 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   max-width: none;
   aspect-ratio: auto;
 }
+.canvas-lab-paper-preview { border-top: 3px solid var(--canvas-preview-vendor, var(--vendor-other)); }
+.canvas-lab-chat-preview {
+  position: relative;
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  padding-right: 3px;
+  -webkit-mask-image: linear-gradient(to bottom, black 78%, transparent 100%);
+  mask-image: linear-gradient(to bottom, black 78%, transparent 100%);
+}
+.canvas-lab-chat-preview[data-focused="true"] { overflow-y: auto; }
+.canvas-lab-preview-turn { margin-bottom: 7px; }
+.canvas-lab-preview-turn > span {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 8px;
+  line-height: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted-foreground);
+}
+.canvas-lab-preview-turn > p {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  font-size: 11px;
+  line-height: 15px;
+  color: var(--foreground);
+}
+.canvas-lab-preview-footer { display: flex !important; }
 .canvas-lab-paper-teammate {
   --nb-paper-fill: var(--nb-grey-1);
   --nb-paper-edge: var(--nb-rule);

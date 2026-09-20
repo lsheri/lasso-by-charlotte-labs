@@ -5,6 +5,7 @@ import { LabCardMenu } from "@/components/canvas-lab/LabCardMenu";
 import { LabPaper } from "@/components/canvas-lab/LabPaper";
 import { cardSizeTier, type LabAnchor, type LabNode, type LabResizeCorner } from "@/components/canvas-lab/canvas-lab-model";
 import type { WorkItemRow } from "@/lib/work-types";
+import type { WorkboardCardPreview, WorkboardDisplayMode } from "@/lib/workboard-card-preview.shared";
 
 /**
  * One object on the board. Cards mode is a sticky summary for orientation,
@@ -45,6 +46,9 @@ export function LabCard({
   stackZ = 1,
   commentCount = 0,
   onOpenComments,
+  displayMode = "sticky",
+  preview,
+  onPreviewScroll,
 }: {
   node: LabNode;
   item?: WorkItemRow | undefined;
@@ -80,6 +84,9 @@ export function LabCard({
   /** Slice 2a unit 2: live top-level comments on this card's item. */
   commentCount?: number;
   onOpenComments?: (() => void) | undefined;
+  displayMode?: WorkboardDisplayMode;
+  preview?: WorkboardCardPreview | undefined;
+  onPreviewScroll?: (() => void) | undefined;
 }) {
   const cardRef = useRef<HTMLDivElement | null>(null);
   const paperRef = useRef<HTMLDivElement | null>(null);
@@ -135,7 +142,7 @@ export function LabCard({
       className="canvas-lab-card group absolute text-left outline-none"
     >
       <div ref={paperRef} data-selected={selected} data-focused={focused} data-connect-source={connectSourceAnchor !== null} className="canvas-lab-card-paper h-full w-full overflow-hidden">
-        <LabPaper node={node} item={item} selected={selected} onEdit={onEdit} onEditCommitted={onEditCommitted} commentCount={commentCount} onOpenComments={onOpenComments} />
+        <LabPaper node={node} item={item} selected={selected} focused={focused} displayMode={displayMode} preview={preview} onPreviewScroll={onPreviewScroll} onEdit={onEdit} onEditCommitted={onEditCommitted} commentCount={commentCount} onOpenComments={onOpenComments} />
         {selected ? <Paperclip aria-hidden="true" className="canvas-lab-context-mark" /> : null}
       </div>
       {canResize && focused ? (["nw", "ne", "se", "sw"] as LabResizeCorner[]).map((corner) => <button key={corner} type="button" className="canvas-lab-resize-handle" data-corner={corner} aria-label={`Resize ${node.title} from ${corner}`} onDoubleClick={(event) => { event.stopPropagation(); onFit(); }} onPointerDown={(event) => onResizeStart(corner, event)} onKeyDown={(event) => onResizeKeyDown(corner, event)} onKeyUp={onResizeKeyUp} />) : null}
