@@ -90,6 +90,8 @@ export function LabCard({
   preview?: WorkboardCardPreview | undefined;
   filePreview?: WorkboardFilePreview | undefined;
   onPreviewScroll?: ((kind: "chat" | "document" | "deck") => void) | undefined;
+  /** Sample board only: no drag, no menu, no anchors, no handles. */
+  readOnly?: boolean;
 }) {
   const cardRef = useRef<HTMLDivElement | null>(null);
   const paperRef = useRef<HTMLDivElement | null>(null);
