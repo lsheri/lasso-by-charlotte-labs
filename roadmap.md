@@ -193,6 +193,6 @@
 - [x] Run landing tests, language scan, typecheck, and inspect build status.
 
 ## Landing L1 recheck
-- [ ] Restore the exact engagement label.
-- [ ] Keep held clips paused through observer arbitration.
-- [ ] Re-run landing tests.
+- [x] Restore the exact engagement label.
+- [x] Keep held clips paused through observer arbitration.
+- [x] Re-run landing tests.
