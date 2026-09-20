@@ -474,10 +474,22 @@ async function applyDestination(
   if (error) {
     return { text: "Saved to your inbox only; placing it did not work.", target: "inbox" };
   }
-  const result = (data ?? {}) as { status?: string; ref?: string | null };
+  const result = (data ?? {}) as {
+    status?: string;
+    ref?: string | null;
+    placements?: { ref?: string | null }[] | null;
+  };
   const status = String(result.status ?? "");
+  // on_other carries no top-level ref; the boards it already sits on do.
+  const others = (result.placements ?? [])
+    .map((one) => one?.ref)
+    .filter((one): one is string => typeof one === "string" && one.length > 0);
+  const otherRef =
+    status === "on_other" && others.length > 0
+      ? `${others[0]}${others.length > 1 ? ", …" : ""}`
+      : (result.ref ?? null);
   return {
-    text: renderPlacement(vocab, status, place.ref, result.ref ?? null),
+    text: renderPlacement(vocab, status, place.ref, otherRef),
     target: placementTarget(status),
   };
 }
@@ -603,9 +615,9 @@ async function pushThread(
   });
   return textResult(
     id,
-    `Saved to Lasso: '${title}' (${turns.length} turns). It is private until you map it.${
-      threadPlacement.text ? ` ${threadPlacement.text}` : ""
-    }`,
+    `Saved to Lasso: '${title}' (${turns.length} turns).${
+      threadPlacement.target === "workboard" ? "" : " It is private until you map it."
+    }${threadPlacement.text ? ` ${threadPlacement.text}` : ""}`,
   );
 }
 
@@ -678,7 +690,9 @@ async function pushDocument(owner: Owner, args: Obj, id: unknown): Promise<Respo
   );
   return textResult(
     id,
-    `Saved '${title}' to Lasso (private, unmapped).${docPlacement.text ? ` ${docPlacement.text}` : ""}`,
+    `Saved '${title}' to Lasso${docPlacement.target === "workboard" ? "" : " (private, unmapped)"}.${
+      docPlacement.text ? ` ${docPlacement.text}` : ""
+    }`,
   );
 }
 
@@ -1715,7 +1729,9 @@ async function pushConversation(
   return textResult(
     id,
     `${verb} '${title}' in Lasso${tail}.${counts}${shortNote}${degradedNote}${degradedAttachmentNote}${cursor}${
-      convoPlacement.text ? ` ${convoPlacement.text}` : " It stays private until the user maps it."
+      convoPlacement.target === "workboard"
+        ? ` ${convoPlacement.text}`
+        : ` It stays private until the user maps it.${convoPlacement.text ? ` ${convoPlacement.text}` : ""}`
     }${rejectedNote}${warn}${continuation}`,
   );
 }
