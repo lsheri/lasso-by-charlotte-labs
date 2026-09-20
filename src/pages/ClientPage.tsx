@@ -1,7 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef } from "react";
 
+import { NewEngagementDialog } from "@/components/engagements/NewEngagementDialog";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { Button } from "@/components/ui/button";
+import { vocabFor } from "@/lib/edu-vocab";
 import { SectionHeader } from "@/components/notebook/SectionHeader";
 import { WorkRow } from "@/components/work/WorkRow";
 import { useProfile } from "@/hooks/use-profile";
