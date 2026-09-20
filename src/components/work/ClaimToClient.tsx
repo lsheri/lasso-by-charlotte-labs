@@ -52,10 +52,11 @@ export function ClaimToClient({
     setBusy(true);
     try {
       const wasClaimed = Boolean(item.client_id);
-      const { error } = await supabase
-        .from("work_items")
-        .update({ client_id: nextId })
-        .eq("id", item.id);
+      const ids = Array.from(new Set((items ?? [item]).map((piece) => piece.id)));
+      const { error } =
+        ids.length > 1
+          ? await supabase.from("work_items").update({ client_id: nextId }).in("id", ids)
+          : await supabase.from("work_items").update({ client_id: nextId }).eq("id", item.id);
       if (error) {
         toast.error(error.message);
         return;
