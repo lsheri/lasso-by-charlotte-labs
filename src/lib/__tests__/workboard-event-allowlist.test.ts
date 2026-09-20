@@ -25,13 +25,13 @@ describe("the workboard allowlist", () => {
           "length_band",
           "is_reply",
         ],
-        "workboard.card_menu_opened": [
-          "node_kind",
-          "ownership",
-        ],
         "workboard.card_content_viewed": [
           "kind",
           "via",
+        ],
+        "workboard.card_menu_opened": [
+          "node_kind",
+          "ownership",
         ],
         "workboard.change_saved": [
           "entity",
@@ -44,11 +44,11 @@ describe("the workboard allowlist", () => {
         "workboard.context_changed": [
           "action",
         ],
-        "workboard.drop_prompt_answered": [
-          "answer",
-        ],
         "workboard.display_mode_toggled": [
           "mode",
+        ],
+        "workboard.drop_prompt_answered": [
+          "answer",
         ],
         "workboard.element_resized": [
           "element_kind",
