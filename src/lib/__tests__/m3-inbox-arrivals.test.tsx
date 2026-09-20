@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-import { describe, expect, it, vi, beforeEach } from "vitest";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi, beforeEach } from "vitest";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import {
@@ -188,6 +188,8 @@ describe("M3 — Undo and Put it back", () => {
     events.length = 0;
     toasts.length = 0;
   });
+
+  afterEach(() => cleanup());
 
   it("shows nothing when no connector work arrived", () => {
     const { container } = renderStrip([item({ source: "upload" })]);
