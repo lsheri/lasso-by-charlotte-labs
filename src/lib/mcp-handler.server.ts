@@ -21,6 +21,22 @@ import {
   type SourceMeta,
 } from "@/lib/conversation-shared";
 import { safeChatUrl } from "@/lib/chat-url";
+import { isAffiliatedStrict, orgTypeOfStrict } from "@/lib/org-type.server";
+import {
+  chooseSuggestion,
+  createToolsFor,
+  mcpVocabFor,
+  mcpWorkspaceType,
+  placeRef,
+  readToolsFor,
+  renderBoardResult,
+  renderContainerResult,
+  type BoardResult,
+  type ContainerResult,
+  type McpPlace,
+  type McpVocab,
+  type McpWorkspaceType,
+} from "@/lib/mcp-vocab";
 import { CANONICAL_ORIGIN } from "@/lib/app-host";
 
 const PROTOCOL_VERSION = "2025-11-25";
@@ -381,7 +397,12 @@ export async function handleMcpRequest(request: Request, token: string): Promise
 
   if (method === "ping") return rpcResult(id, {});
 
-  if (method === "tools/list") return rpcResult(id, { tools: TOOLS });
+  if (method === "tools/list") {
+    const type = await workspaceTypeOf(owner);
+    return rpcResult(id, {
+      tools: [...TOOLS, ...readToolsFor(type, ICONS), ...createToolsFor(type, ICONS)],
+    });
+  }
 
   if (method === "tools/call") {
     const name = String(params["name"] ?? "");
@@ -397,6 +418,12 @@ export async function handleMcpRequest(request: Request, token: string): Promise
       if (name === "push_thread") return await pushThread(owner, args, id, client);
       if (name === "push_document") return await pushDocument(owner, args, id);
       if (name === "list_engagements") return await listEngagements(owner, id);
+      if (name === "lasso_list_places") return await listPlaces(owner, id);
+      if (name === "lasso_push_options") return await pushOptions(owner, args, id);
+      const type = await workspaceTypeOf(owner);
+      const vocab = mcpVocabFor(type);
+      if (name === vocab.createContainerTool) return await createContainer(owner, args, id, type, vocab);
+      if (name === vocab.createBoardTool) return await createBoard(owner, args, id, type, vocab);
       return rpcError(id, -32602, `Unknown tool: ${name}`);
     } catch (e) {
       return rpcError(id, -32603, (e as Error).message);
@@ -570,6 +597,257 @@ async function pushDocument(owner: Owner, args: Obj, id: unknown): Promise<Respo
     { item: { type: workTypeForFile(safe), source: "mcp:push" }, via: "mcp_push" },
   );
   return textResult(id, `Saved '${title}' to Lasso (private, unmapped).`);
+}
+
+/** The workspace's type, read once per call. Ceiba·Uni reads as personal. */
+async function workspaceTypeOf(owner: Owner): Promise<McpWorkspaceType> {
+  const type = await orgTypeOfStrict(owner.orgId);
+  const affiliated = await isAffiliatedStrict(owner.orgId);
+  return mcpWorkspaceType(type, affiliated);
+}
+
+type PlaceRow = McpPlace & { taskId: string; engagementId: string };
+
+/** Every board the owner is a non-coach member of, and its workstreams. */
+async function readPlaces(owner: Owner): Promise<{ places: PlaceRow[]; boards: { code: string; title: string; containerName: string | null; workstreams: string[] }[] }> {
+  const { data: memberships } = await supabaseAdmin
+    .from("engagement_members")
+    .select("engagement_id, member_role")
+    .eq("profile_id", owner.profileId);
+  const ids = (memberships ?? [])
+    .filter((m) => m.member_role !== "coach")
+    .map((m) => m.engagement_id);
+  if (ids.length === 0) return { places: [], boards: [] };
+
+  const { data: engagements } = await supabaseAdmin
+    .from("engagements")
+    .select("id, code, title, client_label, clients(name, quick_folder)")
+    .in("id", ids);
+  const { data: tasks } = await supabaseAdmin
+    .from("tasks")
+    .select("id, engagement_id, name")
+    .in("engagement_id", ids);
+
+  const places: PlaceRow[] = [];
+  const boards: { code: string; title: string; containerName: string | null; workstreams: string[] }[] = [];
+  for (const row of engagements ?? []) {
+    const e = row as unknown as {
+      id: string;
+      code: string;
+      title: string;
+      client_label: string | null;
+      clients: { name: string; quick_folder: boolean } | null;
+    };
+    const containerName = clientDisplayName(e) || e.client_label || null;
+    const own = (tasks ?? []).filter((t) => t.engagement_id === e.id);
+    boards.push({ code: e.code, title: e.title, containerName, workstreams: own.map((t) => t.name) });
+    for (const task of own) {
+      places.push({
+        ref: placeRef(e.code, task.name),
+        containerName,
+        code: e.code,
+        boardTitle: e.title,
+        workstreamName: task.name,
+        taskId: task.id,
+        engagementId: e.id,
+      });
+    }
+  }
+  return { places, boards };
+}
+
+async function listPlaces(owner: Owner, id: unknown): Promise<Response> {
+  const type = await workspaceTypeOf(owner);
+  const vocab = mcpVocabFor(type);
+  const { boards } = await readPlaces(owner);
+  await logPush(owner, { tool: "list_places" });
+  if (boards.length === 0) return textResult(id, `No ${vocab.boards} yet.`);
+
+  const byContainer = new Map<string, string[]>();
+  for (const board of boards) {
+    const key = board.containerName ?? `(no ${vocab.container})`;
+    const lines = byContainer.get(key) ?? [];
+    lines.push(`  ${board.code} · ${board.title}`);
+    if (board.workstreams.length === 0) lines.push(`    (no ${vocab.workstream}s yet)`);
+    for (const name of board.workstreams) lines.push(`    ${placeRef(board.code, name)}`);
+    byContainer.set(key, lines);
+  }
+  const text = [...byContainer.entries()].map(([name, lines]) => [name, ...lines].join("\n")).join("\n\n");
+  return textResult(id, text);
+}
+
+/** The project a captured item came from, if an earlier push recorded one. */
+function sourceProjectName(meta: unknown): string | null {
+  const project = (meta as Record<string, unknown> | null)?.["source_project"];
+  if (typeof project === "string") return project;
+  const name = (project as Record<string, unknown> | null)?.["name"];
+  return typeof name === "string" ? name : null;
+}
+
+async function refsForItems(itemIds: string[], byTask: Map<string, string>): Promise<string | null> {
+  if (itemIds.length === 0) return null;
+  const { data } = await supabaseAdmin
+    .from("work_item_tasks")
+    .select("task_id")
+    .in("work_item_id", itemIds);
+  for (const row of data ?? []) {
+    const ref = byTask.get(row.task_id);
+    if (ref) return ref;
+  }
+  return null;
+}
+
+async function pushOptions(owner: Owner, args: Obj, id: unknown): Promise<Response> {
+  const type = await workspaceTypeOf(owner);
+  const vocab = mcpVocabFor(type);
+  const { places } = await readPlaces(owner);
+  const byTask = new Map(places.map((place) => [place.taskId, place.ref]));
+
+  const origId = typeof args["orig_conversation_id"] === "string" ? args["orig_conversation_id"] : null;
+  let conversationRef: string | null = null;
+  if (origId) {
+    const { data } = await supabaseAdmin
+      .from("work_items")
+      .select("id")
+      .eq("org_id", owner.orgId)
+      .eq("orig_conversation_id", origId)
+      .limit(20);
+    conversationRef = await refsForItems((data ?? []).map((row) => row.id), byTask);
+  }
+
+  const project = (args["source_project"] ?? null) as { name?: unknown } | null;
+  const projectName = typeof project?.name === "string" ? project.name : null;
+  let projectRef: string | null = null;
+  if (!conversationRef && projectName) {
+    const { data } = await supabaseAdmin
+      .from("work_items")
+      .select("id, source_meta")
+      .eq("org_id", owner.orgId)
+      .eq("owner_id", owner.profileId)
+      .limit(200);
+    const matching = (data ?? [])
+      .filter((row) => (sourceProjectName(row.source_meta) ?? "").toLowerCase() === projectName.toLowerCase())
+      .map((row) => row.id);
+    projectRef = await refsForItems(matching, byTask);
+  }
+
+  const suggested = chooseSuggestion(vocab, {
+    places,
+    conversationRef,
+    projectRef,
+    title: typeof args["title"] === "string" ? args["title"] : null,
+    projectName,
+  });
+
+  await logPush(owner, { tool: "push_options" });
+  await recordEvent(supabaseAdmin, {
+    eventType: "mcp.push_options_requested",
+    orgId: owner.orgId,
+    userId: owner.userId,
+    dims: { has_suggestion: suggested ? "true" : "false" },
+  });
+
+  const lines = [
+    suggested
+      ? `Suggested place: ${suggested.ref}. ${suggested.reason}`
+      : `No suggested place. Ask the user: inbox only, or a place they name?`,
+    ...places.map((place) => `- ${place.ref}`),
+  ];
+  return rpcResult(id, {
+    content: [{ type: "text", text: lines.join("\n") }],
+    structuredContent: {
+      suggested,
+      places: places.map((place) => ({
+        ref: place.ref,
+        container: place.containerName,
+        board: place.boardTitle,
+        workstream: place.workstreamName,
+      })),
+    },
+  });
+}
+
+async function noteCreated(
+  owner: Owner,
+  entity: "container" | "board",
+  type: McpWorkspaceType,
+  outcome: "created" | "existing",
+): Promise<void> {
+  await recordEvent(supabaseAdmin, {
+    eventType: "mcp.container_created",
+    orgId: owner.orgId,
+    userId: owner.userId,
+    dims: { entity, workspace_type: type, outcome },
+  });
+}
+
+async function createContainer(
+  owner: Owner,
+  args: Obj,
+  id: unknown,
+  type: McpWorkspaceType,
+  vocab: McpVocab,
+): Promise<Response> {
+  const name = String(args["name"] ?? "").trim();
+  await logPush(owner, { tool: "create_container" });
+  if (!name) return textResult(id, `Tell me the ${vocab.container} name first, exactly as the user gave it.`);
+
+  const { data, error } = await supabaseAdmin.rpc("mcp_create_container", {
+    p_actor: owner.profileId,
+    p_name: name,
+  });
+  if (error) return rpcError(id, -32603, error.message);
+  const result = (data ?? {}) as ContainerResult;
+  if (result.status === "created" || result.status === "existing") {
+    await noteCreated(owner, "container", type, result.status);
+  }
+  return textResult(id, renderContainerResult(vocab, result));
+}
+
+async function createBoard(
+  owner: Owner,
+  args: Obj,
+  id: unknown,
+  type: McpWorkspaceType,
+  vocab: McpVocab,
+): Promise<Response> {
+  const wanted = String(args["container"] ?? "").trim();
+  const title = String(args["title"] ?? "").trim();
+  await logPush(owner, { tool: "create_board" });
+  if (!wanted || !title) {
+    return textResult(id, `Tell me the ${vocab.container} and the ${vocab.board} title first.`);
+  }
+
+  const { data: containers } = await supabaseAdmin
+    .from("clients")
+    .select("id, name")
+    .eq("org_id", owner.orgId);
+  const needle = wanted.toLowerCase();
+  const match =
+    (containers ?? []).find((row) => row.name.toLowerCase() === needle) ??
+    (containers ?? []).find((row) => row.name.toLowerCase().includes(needle));
+  if (!match) {
+    return textResult(
+      id,
+      `I could not find a ${vocab.container} called ${wanted}. Create it first with ${vocab.createContainerTool}.`,
+    );
+  }
+
+  const first = typeof args["first_workstream"] === "string" ? args["first_workstream"].trim() : "";
+  const code = typeof args["code"] === "string" ? args["code"].trim() : "";
+  const { data, error } = await supabaseAdmin.rpc("mcp_create_board", {
+    p_actor: owner.profileId,
+    p_container: match.id,
+    p_title: title,
+    ...(first ? { p_first_workstream: first } : {}),
+    ...(code ? { p_code: code } : {}),
+  });
+  if (error) return rpcError(id, -32603, error.message);
+  const result = (data ?? {}) as BoardResult;
+  if (result.status === "created" || result.status === "existing") {
+    await noteCreated(owner, "board", type, result.status);
+  }
+  return textResult(id, renderBoardResult(vocab, result, match.name));
 }
 
 async function listEngagements(owner: Owner, id: unknown): Promise<Response> {

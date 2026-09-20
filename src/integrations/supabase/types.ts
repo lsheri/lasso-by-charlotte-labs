@@ -4047,6 +4047,37 @@ export type Database = {
         Args: { p_note_id: string }
         Returns: undefined
       }
+      mcp_actor_ok: {
+        Args: { p_actor: string }
+        Returns: {
+          org_id: string
+          role: string
+          wtype: string
+        }[]
+      }
+      mcp_create_board: {
+        Args: {
+          p_actor: string
+          p_code?: string
+          p_container: string
+          p_first_workstream?: string
+          p_title: string
+        }
+        Returns: Json
+      }
+      mcp_create_container: {
+        Args: { p_actor: string; p_name: string }
+        Returns: Json
+      }
+      mcp_place_item: {
+        Args: {
+          p_actor: string
+          p_move?: boolean
+          p_task: string
+          p_work_item: string
+        }
+        Returns: Json
+      }
       my_org_id: { Args: never; Returns: string }
       my_profile_id: { Args: never; Returns: string }
       my_profile_ids: { Args: never; Returns: string[] }

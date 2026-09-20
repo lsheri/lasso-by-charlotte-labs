@@ -32,6 +32,10 @@ export type TelemetryEvent =
   | "import.completed"
   | "import.abandoned"
   | "mcp.push"
+  /** M2a: a model asked where a push could go. Whether there was a signal. */
+  | "mcp.push_options_requested"
+  /** M2a: a place was made through MCP. Shape only, never a name. */
+  | "mcp.container_created"
   | "workflow.reordered"
   | "workflow.reset"
   | "coach.invite_created"
