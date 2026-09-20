@@ -960,7 +960,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       const drag = dragRef.current;
       if (drag) {
         const delta = { x: (event.clientX - drag.from.x) / zoom, y: (event.clientY - drag.from.y) / zoom };
-        setNodes((current) => current ? moveNode(current, drag.id, dragTo(drag.origin, delta)) : current);
+        setNodes((current) => current ? moveNode(current, drag.id, dragTo(drag.origin, delta, true)) : current);
         return;
       }
       const panning = panRef.current;
@@ -1039,7 +1039,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     }
     if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.key)) {
       event.preventDefault();
-      const to = keyTo({ x: node.x, y: node.y }, event.key as "ArrowUp" | "ArrowDown" | "ArrowLeft" | "ArrowRight", event.shiftKey);
+      const to = keyTo({ x: node.x, y: node.y }, event.key as "ArrowUp" | "ArrowDown" | "ArrowLeft" | "ArrowRight", event.shiftKey, true);
       setNodes((current) => current ? moveNode(current, node.id, to) : current);
       void persistNodePatch(node.id, { x: to.x, y: to.y });
       record({ action: "move", nodeId: node.id, before: { x: node.x, y: node.y }, after: to, coalesceKey: `nudge:${node.id}` });

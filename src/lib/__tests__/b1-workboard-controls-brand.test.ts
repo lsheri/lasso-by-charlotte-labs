@@ -14,6 +14,16 @@ describe("B1 workboard controls and brand identity", () => {
     expect(page).not.toContain(">Freeform</Button>");
   });
 
+  it("keeps negative coordinates scoped to the Workboard", () => {
+    const drag = read("src/lib/canvas-drag.ts");
+    const page = read("src/pages/CanvasLabPage.tsx");
+    const model = read("src/components/canvas-lab/canvas-lab-model.ts");
+    expect(drag).toContain("allowNegative = false");
+    expect(page).toContain("dragTo(drag.origin, delta, true)");
+    expect(page).toContain("event.shiftKey, true)");
+    expect(model).toContain("snapPoint(to, true)");
+  });
+
   it("keeps workstream and card option buttons visible and large enough", () => {
     const frameMenu = read("src/components/canvas-lab/LabFrameMenu.tsx");
     const cardMenu = read("src/components/canvas-lab/LabCardMenu.tsx");
