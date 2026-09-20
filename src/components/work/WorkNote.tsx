@@ -1,8 +1,10 @@
 import { Lock } from "lucide-react";
 
 import { ArtifactNote, SourceMark, VendorMark } from "@/components/work/SourceMark";
+import { WorkCardPreview } from "@/components/work/WorkCardPreview";
 import { colourKey, noteHue, notePaper } from "@/components/work/note-paper";
 import { useNoteLive } from "@/hooks/use-note-live";
+import type { WorkboardCardPreview, WorkboardDisplayMode, WorkboardFilePreview } from "@/lib/workboard-card-preview.shared";
 import { workIdentityLabel } from "@/lib/work-identity";
 import { effectiveWorkDate, formatDate, type WorkItemRow } from "@/lib/work-types";
 
@@ -16,6 +18,9 @@ export function WorkNote({
   clientLabel,
   dense = false,
   className = "",
+  displayMode = "sticky",
+  chatPreview,
+  filePreview,
 }: {
   // Callers join different relations: the board and Inbox carry
   // work_item_tasks, Verify's deliverables do not. The type must say so.
@@ -31,6 +36,9 @@ export function WorkNote({
   clientLabel?: string | null | undefined;
   dense?: boolean;
   className?: string;
+  displayMode?: WorkboardDisplayMode;
+  chatPreview?: WorkboardCardPreview | undefined;
+  filePreview?: WorkboardFilePreview | undefined;
 }) {
   const live = useNoteLive<HTMLDivElement>();
   // Verify's deliverables arrive nested from the engagement read and carry no
@@ -38,11 +46,14 @@ export function WorkNote({
   const mapping = item.work_item_tasks?.[0]?.tasks ?? null;
   const clientId = mapping?.engagements?.clients?.id ?? item.client_id ?? null;
   const date = formatDate(effectiveWorkDate(item));
+  const hasPreview = item.type === "ai_thread"
+    ? Boolean(chatPreview?.turns.length)
+    : Boolean(filePreview && filePreview.kind !== "fallback");
 
   return (
     <div
       ref={live}
-      className={`nb-paper ${className}`}
+      className={`nb-paper ${displayMode === "preview" && hasPreview ? "canvas-lab-paper-preview" : ""} ${className}`}
       data-paper-state={item.visibility}
       data-client-label={clientLabel ?? undefined}
       style={{
@@ -92,6 +103,10 @@ export function WorkNote({
         >
           {item.title} <ArtifactNote item={item} />
         </p>
+
+        {displayMode === "preview" ? (
+          <WorkCardPreview item={item as WorkItemRow} chatPreview={chatPreview} filePreview={filePreview} />
+        ) : null}
 
         {workIdentityLabel(item) ? (
           <p className="mt-1 truncate font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">

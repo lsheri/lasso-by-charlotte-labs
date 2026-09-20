@@ -31,7 +31,7 @@ describe("pass A2 · All conversations absorbs Reflect", () => {
 
   it("adds the new values to the closed view vocabulary without removing the old ones", () => {
     expect(chatlib).toContain(
-      'const CHAT_VIEWS = ["cards", "list", "captured", "asked", "everything"] as const;',
+      'const CHAT_VIEWS = ["cards", "list", "preview", "sticky", "captured", "asked", "everything"] as const;',
     );
     expect(chatlib).toContain('eventType: "chatlib.view_changed"');
   });

@@ -84,7 +84,7 @@ export const noteChatSearchFn = createServerFn({ method: "POST" })
  * conversations are shown: captured, asked, everything. Additive only; the
  * existing two values are unchanged.
  */
-const CHAT_VIEWS = ["cards", "list", "captured", "asked", "everything"] as const;
+const CHAT_VIEWS = ["cards", "list", "preview", "sticky", "captured", "asked", "everything"] as const;
 
 export const noteChatViewChangedFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

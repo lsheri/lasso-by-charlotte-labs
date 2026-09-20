@@ -29,7 +29,7 @@ export function workboardDisplayModeKey(profileId: string, engagementId: string)
 }
 
 export function readWorkboardDisplayMode(value: string | null): WorkboardDisplayMode {
-  return value === "preview" ? "preview" : "sticky";
+  return value === "sticky" ? "sticky" : "preview";
 }
 
 /** A focused mini-window consumes the wheel only while it can move that way. */
