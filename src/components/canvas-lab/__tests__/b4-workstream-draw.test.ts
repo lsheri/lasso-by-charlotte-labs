@@ -78,7 +78,7 @@ describe("drawing a workstream", () => {
     const moved: string[] = [];
     const move = async (entry: ClaimCandidate) => { moved.push(entry.id); return true; };
     for (const entry of split.silent) await move(entry);
-    const answer: "yes" | "keep" = "keep";
+    const answer = "keep" as "yes" | "keep";
     if (answer === "yes") for (const entry of split.ask) await move(entry);
     expect(moved).toEqual(["loose"]);
   });
