@@ -606,6 +606,60 @@ export function seedCanvas(input: SeedInput, frames = createLabFrames(input.task
   return nodes;
 }
 
+/** A board carries seeded structure when it holds saved workstream outlines. */
+export function boardHasSeededStructure(board: { frames: unknown[] } | null | undefined): boolean {
+  return (board?.frames.length ?? 0) > 0;
+}
+
+/**
+ * The opening arrangement on a blank board. No outlines exist, so position is
+ * the only thing placing a card: a packed flow from the origin, on the grid,
+ * with the same clear space the rest of the board keeps.
+ */
+export function seedBlankCanvas(input: SeedInput): LabNode[] {
+  const entries: Omit<LabNode, "x" | "y" | "width" | "height">[] = [];
+  if (input.brief) {
+    entries.push({
+      id: "brief",
+      kind: "brief",
+      frame: null,
+      title: input.brief.title,
+      summary: input.brief.text ?? "No brief written yet.",
+      typeLabel: "brief",
+      ownership: "yours",
+    });
+  }
+  for (const item of input.work) {
+    entries.push({
+      id: `work:${item.id}`,
+      kind: "work",
+      frame: null,
+      title: item.title,
+      summary: item.source,
+      typeLabel: item.typeLabel,
+      ownership: item.ownedByViewer ? "yours" : "teammate",
+      workItemId: item.id,
+      deliverable: item.deliverable,
+    });
+  }
+  for (const decision of input.decisions) {
+    entries.push({
+      id: `decision:${decision.id}`,
+      kind: "decision",
+      frame: null,
+      title: decision.call,
+      summary: decision.situation,
+      typeLabel: "call",
+      ownership: decision.ownedByViewer ? "yours" : "teammate",
+    });
+  }
+  const points = placeAddedCards({ x: 0, y: 0 }, [], entries.length);
+  return entries.map((entry, index) => {
+    const at = points[index] ?? { x: 0, y: 0 };
+    return { ...entry, x: at.x, y: at.y, width: CARD_WIDTH, height: CARD_HEIGHT };
+  });
+}
+
 /** Move one node. Positions snap to the grid, exactly like the board does. */
 export function moveNode(nodes: LabNode[], id: string, to: Point): LabNode[] {
   const at = snapPoint(to);
