@@ -1483,6 +1483,14 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
             })() : null}
             {dropPrompt ? (() => { const node = visibleNodes.find((entry) => entry.id === dropPrompt.nodeId); const frame = boardFrames.find((entry) => entry.id === dropPrompt.frameId); if (!node || !frame) return null; return <div data-drop-prompt="true" className="canvas-lab-drop-prompt" style={{ left: node.x, top: node.y + node.height + 10 }}><span>Move to {frame.name}?</span><button type="button" onClick={() => { moveToFrame(node, frame.id); closeDropPrompt("yes"); }}>Yes</button><button type="button" onClick={() => closeDropPrompt("keep")}>Keep</button></div>; })() : null}
           </div> : null}
+          {boardMenu ? (
+            <>
+              <div className="fixed inset-0 z-40" onPointerDown={() => setBoardMenu(null)} onContextMenu={(event) => { event.preventDefault(); setBoardMenu(null); }} />
+              <div role="menu" className="absolute z-50 min-w-[180px] rounded-md border border-border bg-card p-1 shadow-md" style={{ left: boardMenu.screen.x, top: boardMenu.screen.y }}>
+                <button type="button" role="menuitem" className="w-full rounded-[6px] px-2 py-1.5 text-left text-[13px] text-foreground hover:bg-muted" onClick={() => { const at = boardMenu.board; setBoardMenu(null); openAddWork("context_menu", at); }}>Bring in work here</button>
+              </div>
+            </>
+          ) : null}
           {undoToast ? <LabUndoToast message={undoToast.message} onUndo={() => undoFromToast(undoToast.entry)} onClose={() => setUndoToast(null)} /> : null}
           <CanvasLabStatusLine loading={loadingBoard} unavailable={isError || notAvailable} empty={boardReady && visibleNodes.length === 0} />
         </div>
