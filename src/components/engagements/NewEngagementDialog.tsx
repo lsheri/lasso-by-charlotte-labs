@@ -123,6 +123,7 @@ export function NewEngagementDialog({
       created: "true",
       brief_skipped: brief.trim() ? "false" : "true",
       has_client: clientId ? "true" : "false",
+      from,
     });
 
     await queryClient.invalidateQueries({ queryKey: ["engagements"] });
@@ -148,6 +149,7 @@ export function NewEngagementDialog({
         created: "true",
         quick_folder: "true",
         brief_skipped: "true",
+        from,
       });
       invalidateClients();
       await queryClient.invalidateQueries({ queryKey: ["engagements"] });
