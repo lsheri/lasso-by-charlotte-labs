@@ -20,6 +20,11 @@ export type McpVocab = {
   workstream: string;
   createContainerTool: string;
   createBoardTool: string;
+  /**
+   * Company boards have a team; personal and edu workspaces are
+   * single-member, so nothing placed there is shared with anyone.
+   */
+  shared: boolean;
 };
 
 export const MCP_VOCAB: Record<McpWorkspaceType, McpVocab> = {
@@ -31,6 +36,7 @@ export const MCP_VOCAB: Record<McpWorkspaceType, McpVocab> = {
     workstream: "workstream",
     createContainerTool: "create_client",
     createBoardTool: "create_engagement",
+    shared: true,
   },
   personal: {
     container: "folder",
@@ -40,6 +46,7 @@ export const MCP_VOCAB: Record<McpWorkspaceType, McpVocab> = {
     workstream: "step",
     createContainerTool: "create_folder",
     createBoardTool: "create_project",
+    shared: false,
   },
   edu: {
     container: "class",
@@ -49,6 +56,7 @@ export const MCP_VOCAB: Record<McpWorkspaceType, McpVocab> = {
     workstream: "step",
     createContainerTool: "create_class",
     createBoardTool: "create_assignment",
+    shared: false,
   },
 };
 
@@ -260,9 +268,17 @@ export function chooseSuggestion(vocab: McpVocab, signals: SuggestionSignals): P
  * Unit M2b: where a pushed item lands, and the words for what happened.
  * ------------------------------------------------------------------ */
 
-/** The sentence every push tool carries about placing work on a board. */
-export const PLACEMENT_LINE =
-  "Before pushing, call lasso_push_options and ask the user: inbox only, or the suggested place? Placing work on a board makes it visible to everyone on that engagement, so only pass destination after the user says yes.";
+/**
+ * The sentence every push tool carries about placing work on a board.
+ * Only a company board has a team; everywhere else placing is filing,
+ * and nothing is shared with anyone.
+ */
+export function placementLine(vocab: McpVocab): string {
+  const sharing = vocab.shared
+    ? "Placing work on a board makes it visible to everyone on that engagement, so only pass destination after the user says yes."
+    : `Placing work files it under that ${vocab.board}; nothing is shared with anyone. Only pass destination after the user says yes.`;
+  return `Before pushing, call lasso_push_options and ask the user: inbox only, or the suggested place? ${sharing}`;
+}
 
 export type SuggestionOutcome = "accepted" | "changed" | "declined" | "none";
 
@@ -328,7 +344,9 @@ export function renderPlacement(
   otherRef: string | null,
 ): string {
   if (status === "placed" || status === "moved") {
-    return `Saved and placed on ${ref}. Your ${vocab.board} team can see it there.`;
+    return vocab.shared
+      ? `Saved and placed on ${ref}. Your ${vocab.board} team can see it there.`
+      : `Saved and placed on ${ref}.`;
   }
   if (status === "already_here") return `Already on ${ref}.`;
   if (status === "on_other") {

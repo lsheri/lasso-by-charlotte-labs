@@ -4,8 +4,8 @@ import { describe, expect, it } from "vitest";
 
 import {
   MCP_VOCAB,
-  PLACEMENT_LINE,
   parsePlacementArgs,
+  placementLine,
   placementInputs,
   placementTarget,
   renderPlacement,
@@ -58,8 +58,8 @@ describe("M2b — the optional placement inputs", () => {
       "suggestion_outcome",
       "source_project",
     ]);
-    expect(PLACEMENT_LINE).toContain("only pass destination after the user says yes");
-    expect(handler.match(/\$\{PLACEMENT_LINE\}/g) ?? []).toHaveLength(3);
+    expect(placementLine(company)).toContain("only pass destination after the user says yes");
+    expect(handler.match(/\$\{placementLine\(vocab\)\}/g) ?? []).toHaveLength(3);
     expect(handler.match(/\.\.\.placementInputs\(vocab\)/g) ?? []).toHaveLength(3);
   });
 });
@@ -99,10 +99,41 @@ describe("M2b — what the reply says", () => {
     expect(renderUnknownRef(company, [])).toContain("no engagements yet");
   });
 
-  it("reads in the workspace's own words", () => {
-    expect(renderPlacement(MCP_VOCAB.edu, "placed", "BIO-1 · Week 2", null)).toContain(
-      "Your assignment team can see it there.",
+  it("single-member workspaces never promise a team", () => {
+    for (const vocab of [MCP_VOCAB.personal, MCP_VOCAB.edu]) {
+      const placed = renderPlacement(vocab, "placed", "BIO-1 · Week 2", null);
+      const moved = renderPlacement(vocab, "moved", "BIO-1 · Week 2", null);
+      expect(placed).toBe("Saved and placed on BIO-1 · Week 2.");
+      expect(moved).toBe("Saved and placed on BIO-1 · Week 2.");
+      expect(placed).not.toContain("team");
+      expect(placementLine(vocab)).not.toContain("team");
+      expect(placementLine(vocab)).toContain("nothing is shared with anyone");
+    }
+    expect(placementLine(company)).toContain(
+      "Placing work on a board makes it visible to everyone on that engagement",
     );
+  });
+
+  it("the push replies drop the private line only when the item landed", () => {
+    expect(handler).toContain(
+      'threadPlacement.target === "workboard" ? "" : " It is private until you map it."',
+    );
+    expect(handler).toContain(
+      'docPlacement.target === "workboard" ? "" : " (private, unmapped)"',
+    );
+    expect(handler).toContain('convoPlacement.target === "workboard"');
+    expect(handler).toContain("It stays private until the user maps it.");
+  });
+
+  it("on_other names the board it is already on", () => {
+    expect(handler).toContain("result.placements");
+    expect(handler).toContain('others.length > 1 ? ", …" : ""');
+    expect(
+      renderPlacement(company, "on_other", "CFT-01 · General", "NWG-02 · Research"),
+    ).toContain("already on NWG-02 · Research");
+    expect(
+      renderPlacement(company, "on_other", "CFT-01 · General", "NWG-02 · Research, …"),
+    ).toContain("already on NWG-02 · Research, …");
   });
 
   it("no reply carries an id", () => {
