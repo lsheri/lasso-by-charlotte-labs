@@ -1,5 +1,6 @@
 import { MoreHorizontal } from "lucide-react";
 
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,14 +33,16 @@ export function LabFrameMenu({
   return (
     <DropdownMenu open={open} onOpenChange={onOpenChange}>
       <DropdownMenuTrigger asChild>
-        <button
+        <Button
           type="button"
+          size="sm"
+          variant="ghost"
           className="canvas-lab-frame-menu-trigger"
-          aria-label="Open workstream menu"
+          aria-label="Workstream options"
           onPointerDown={(event) => event.stopPropagation()}
         >
-          <MoreHorizontal className="h-3.5 w-3.5" />
-        </button>
+          <MoreHorizontal className="h-4 w-4" />
+        </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="end"

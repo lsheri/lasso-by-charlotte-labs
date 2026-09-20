@@ -1478,17 +1478,19 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   top: 3px;
   z-index: 14;
   display: inline-flex;
-  width: 8px;
-  height: 8px;
+  width: 28px;
+  height: 28px;
+  min-height: 28px;
   align-items: center;
   justify-content: center;
   border-radius: var(--radius-control);
   color: var(--nb-graphite);
-  opacity: 0;
+  background: var(--nb-paper);
+  opacity: 1;
   transform: scale(var(--lab-inverse-zoom, 1));
   transform-origin: center;
 }
-.canvas-lab-frame-menu-trigger svg { width: 8px; height: 8px; }
+.canvas-lab-frame-menu-trigger svg { width: 16px; height: 16px; }
 .canvas-lab-frame:hover .canvas-lab-frame-menu-trigger,
 .canvas-lab-frame:focus-within .canvas-lab-frame-menu-trigger,
 .canvas-lab-frame[data-selected="true"] .canvas-lab-frame-menu-trigger,
@@ -1601,17 +1603,19 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 .canvas-lab-inline-workstream input:focus-visible,
 .canvas-lab-drop-prompt button:focus-visible { outline: 2px solid var(--nb-green); outline-offset: 2px; }
 .canvas-lab-structure-toggle { display: flex; align-items: center; border: 1px solid var(--nb-rule); border-radius: var(--radius-control); padding: 2px; }
+.canvas-lab-workstream-switch { display: flex; min-height: 32px; align-items: center; gap: 7px; padding-inline: 6px; white-space: nowrap; }
+.canvas-lab-workstream-switch label { color: var(--nb-mid); font-size: 11.5px; }
 .canvas-lab-card-menu-trigger {
   position: absolute;
   right: 3px;
   top: 3px;
   z-index: 14;
-  width: 26px;
-  height: 26px;
-  min-height: 0;
+  width: 28px;
+  height: 28px;
+  min-height: 28px;
   background: var(--nb-paper);
   color: var(--nb-graphite);
-  opacity: 0;
+  opacity: 1;
 }
 .canvas-lab-card:hover .canvas-lab-card-menu-trigger,
 .canvas-lab-card:focus-within .canvas-lab-card-menu-trigger,

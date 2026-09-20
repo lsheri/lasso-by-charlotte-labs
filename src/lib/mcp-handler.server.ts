@@ -83,8 +83,7 @@ function looksCondensed(incomingChars: number, storedChars: number): boolean {
 // Contract surface: external MCP clients read this. Canonical host only.
 const SITE_URL = CANONICAL_ORIGIN;
 const ICONS = [
-  { src: `${SITE_URL}/mcp-icon-256.png`, mimeType: "image/png", sizes: ["256x256"] },
-  { src: `${SITE_URL}/mcp-icon-48.png`, mimeType: "image/png", sizes: ["48x48"] },
+  { src: `${SITE_URL}/favicon.svg`, mimeType: "image/svg+xml", sizes: ["any"] },
 ];
 
 export const CORS_HEADERS: Record<string, string> = {
@@ -392,7 +391,7 @@ export async function handleMcpRequest(request: Request, token: string): Promise
       protocolVersion: ACCEPTED_PROTOCOLS.has(asked) ? asked : PROTOCOL_VERSION,
       capabilities: { tools: {} },
       serverInfo: {
-        name: "lasso",
+        name: "Lasso",
         title: "Lasso by Charlotte Labs",
         version: "1.1.0",
         websiteUrl: SITE_URL,

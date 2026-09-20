@@ -36,7 +36,7 @@ function renderFrame(overrides: Partial<React.ComponentProps<typeof LabFrame>> =
 describe("LabFrame menu and rename", () => {
   it("offers all three actions on an editable custom workstream", () => {
     const { props } = renderFrame();
-    fireEvent.pointerDown(screen.getByRole("button", { name: "Open workstream menu" }), { button: 0, ctrlKey: false });
+    fireEvent.pointerDown(screen.getByRole("button", { name: "Workstream options" }), { button: 0, ctrlKey: false });
     expect(screen.getByRole("menuitem", { name: "Fit contents" })).toBeTruthy();
     expect(screen.getByRole("menuitem", { name: "Rename" })).toBeTruthy();
     expect(screen.getByRole("menuitem", { name: "Remove workstream" })).toBeTruthy();
@@ -45,13 +45,13 @@ describe("LabFrame menu and rename", () => {
 
   it("hides the menu for coaches and limits task workstreams to Fit", () => {
     const first = renderFrame({ editable: false });
-    expect(screen.queryByRole("button", { name: "Open workstream menu" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Workstream options" })).toBeNull();
     fireEvent.contextMenu(screen.getByTestId("lab-frame-custom:risks"));
     expect(screen.queryByRole("menuitem")).toBeNull();
     expect(first.props.onMenuOpened).not.toHaveBeenCalled();
     first.unmount();
     renderFrame({ custom: false, kind: "task", namedByWorkstream: true, frame: { ...customFrame, id: "task:1", name: "Discovery", local: false } });
-    fireEvent.pointerDown(screen.getByRole("button", { name: "Open workstream menu" }), { button: 0, ctrlKey: false });
+    fireEvent.pointerDown(screen.getByRole("button", { name: "Workstream options" }), { button: 0, ctrlKey: false });
     expect(screen.getByRole("menuitem", { name: "Fit contents" })).toBeTruthy();
     expect(screen.queryByRole("menuitem", { name: "Rename" })).toBeNull();
     expect(screen.getByText("Discovery").getAttribute("title")).toBe("Named by the workstream");
@@ -74,7 +74,7 @@ describe("LabFrame menu and rename", () => {
 
   it("puts the cursor in the rename field when Rename comes from the menu", async () => {
     renderFrame();
-    fireEvent.pointerDown(screen.getByRole("button", { name: "Open workstream menu" }), { button: 0, ctrlKey: false });
+    fireEvent.pointerDown(screen.getByRole("button", { name: "Workstream options" }), { button: 0, ctrlKey: false });
     const item = screen.getByRole("menuitem", { name: "Rename" });
     item.focus();
     fireEvent.keyDown(item, { key: "Enter" });
@@ -111,7 +111,7 @@ describe("LabFrame menu and rename", () => {
 
   it("disables removal when the workstream still has cards", () => {
     renderFrame({ removable: false });
-    fireEvent.pointerDown(screen.getByRole("button", { name: "Open workstream menu" }), { button: 0, ctrlKey: false });
+    fireEvent.pointerDown(screen.getByRole("button", { name: "Workstream options" }), { button: 0, ctrlKey: false });
     expect(screen.getByRole("menuitem", { name: /Remove workstream/ }).getAttribute("data-disabled")).not.toBeNull();
     expect(screen.getByText(/Move its cards first/)).toBeTruthy();
   });
@@ -119,7 +119,7 @@ describe("LabFrame menu and rename", () => {
 describe("pass 2b-v frame fixes", () => {
   it("puts the cursor in the rename field when Rename is clicked with a mouse", async () => {
     renderFrame();
-    fireEvent.pointerDown(screen.getByRole("button", { name: "Open workstream menu" }), { button: 0, ctrlKey: false });
+    fireEvent.pointerDown(screen.getByRole("button", { name: "Workstream options" }), { button: 0, ctrlKey: false });
     const item = screen.getByRole("menuitem", { name: "Rename" });
     fireEvent.pointerDown(item, { button: 0, ctrlKey: false });
     fireEvent.pointerUp(item, { button: 0 });

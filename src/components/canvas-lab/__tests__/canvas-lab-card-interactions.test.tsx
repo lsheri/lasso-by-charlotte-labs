@@ -38,7 +38,8 @@ describe("Canvas Lab card interaction correction", () => {
   it("keeps resize, structure, and reassignment bounded to the workboard", () => {
     const page = read("src/pages/CanvasLabPage.tsx");
     expect(page).toContain('useState<LabStructureMode>("structured")');
-    expect(page).toContain('noteWorkboardStructureToggled(orgId, "freeform")');
+    expect(page).toContain('checked ? "structured" : "freeform"');
+    expect(page).toContain("noteWorkboardStructureToggled(orgId, next)");
     expect(page).toContain('noteWorkboardElementResized(orgId, "card"');
     expect(page).toContain('frameId: durableTarget');
     expect(page).not.toContain("frameWithChildren");
@@ -50,7 +51,7 @@ describe("Canvas Lab card interaction correction", () => {
     expect(card).toContain("onContextMenu={openMenu}");
     expect(card).toContain('event.shiftKey && event.key === "F10"');
     expect(card).toContain('event.key === "ContextMenu"');
-    expect(menu).toContain('aria-label="Open card menu"');
+    expect(menu).toContain('aria-label="Card options"');
     expect(read("src/styles.css")).toContain("width: 44px;");
     expect(menu).toContain("cardRef.current?.focus({ preventScroll: true })");
     expect(menu).toContain("Remove from board");
