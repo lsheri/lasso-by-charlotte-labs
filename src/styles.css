@@ -308,8 +308,9 @@
 
   /* Vendor tones, brand-adjacent but pulled into the notebook palette. */
   --vendor-claude: #a8452a;
-  --vendor-chatgpt: #0f6b5c;
+  --vendor-chatgpt: var(--nb-graphite);
   --vendor-gemini: #2d5bb9;
+  --vendor-other: var(--nb-mid);
   --vendor-copilot: #0b6a86;
   --vendor-gdrive: #4d7a1f;
   --vendor-granola: #b1601c;
@@ -333,8 +334,9 @@
   --state-teal-band: var(--nb-green);
   --state-indigo: #a3b0e8;
   --vendor-claude: #e39c84;
-  --vendor-chatgpt: #6fc4b2;
+  --vendor-chatgpt: var(--nb-pencil);
   --vendor-gemini: #8fb1ea;
+  --vendor-other: var(--nb-soft);
   --vendor-copilot: #74c0d6;
   --vendor-gdrive: #a8cf75;
   --vendor-granola: #e5aa72;

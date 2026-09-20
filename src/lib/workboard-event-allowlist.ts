@@ -26,6 +26,8 @@ export const WORKBOARD_EVENT_DIMS: Readonly<Record<string, readonly string[]>> =
   "workboard.element_resized": ["element_kind", "method", "axis"],
   "workboard.drop_prompt_answered": ["answer"],
   "workboard.structure_toggled": ["state"],
+  "workboard.display_mode_toggled": ["mode"],
+  "workboard.card_content_viewed": ["kind", "via"],
   "workboard.save_error_resolved": ["entity", "choice"],
   "workboard.context_changed": ["action"],
   "workboard.undo_used": ["action", "direction"],
