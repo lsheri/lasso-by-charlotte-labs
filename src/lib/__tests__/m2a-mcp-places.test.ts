@@ -245,8 +245,8 @@ describe("M2a recheck — container matching and owner scope", () => {
 
   it("the conversation signal only reads the owner's own work", () => {
     const signal = handler.slice(
-      handler.indexOf('if (origId) {'),
-      handler.indexOf("const project ="),
+      handler.indexOf("if (origId) {"),
+      handler.indexOf("conversationRef = await refsForItems"),
     );
     expect(signal).toContain('.eq("orig_conversation_id", origId)');
     expect(signal).toContain('.eq("owner_id", owner.profileId)');
