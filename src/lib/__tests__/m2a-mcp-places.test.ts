@@ -218,3 +218,38 @@ describe("M2a — the handler's own wiring", () => {
     expect(mcpVocabFor(null).workstream).toBe("step");
   });
 });
+
+describe("M2a recheck — container matching and owner scope", () => {
+  it("quick folders are never matched as containers", () => {
+    expect(handler).toContain('.select("id, name, quick_folder")');
+    expect(handler).toContain(".filter((row) => !row.quick_folder)");
+  });
+
+  it("an exact name wins before any partial match is considered", () => {
+    expect(handler).toContain(
+      "candidates.find((row) => row.name.toLowerCase() === needle)",
+    );
+    expect(handler).toContain("const match = exact ?? partials[0];");
+  });
+
+  it("several partial matches ask in words and create nothing", () => {
+    expect(handler).toContain("partials.length > 1");
+    expect(handler).toContain("did you mean: ${names}");
+    expect(handler).toContain("? Ask the user before creating anything.");
+    const ambiguous = handler.slice(
+      handler.indexOf("partials.length > 1"),
+      handler.indexOf("const match = exact"),
+    );
+    expect(ambiguous).not.toContain('rpc("mcp_create_board"');
+  });
+
+  it("the conversation signal only reads the owner's own work", () => {
+    const signal = handler.slice(
+      handler.indexOf("if (origId) {"),
+      handler.indexOf("conversationRef = await refsForItems"),
+    );
+    expect(signal).toContain('.eq("orig_conversation_id", origId)');
+    expect(signal).toContain('.eq("owner_id", owner.profileId)');
+    expect(signal).toContain('.eq("org_id", owner.orgId)');
+  });
+});
