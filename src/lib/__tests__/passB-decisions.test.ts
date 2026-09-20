@@ -59,8 +59,8 @@ describe("pass B: the two motion events", () => {
 describe("pass B: the surfaces keep their controls", () => {
   it("keeps confirm, discard, the source chip and the note on the inbox strip", () => {
     const src = read("src/components/overview/WaitingOnYou.tsx");
-    expect(src).toContain("Calls waiting on you");
-    expect(src).toContain("Confirm this call");
+    expect(src).toContain("Decisions waiting on you");
+    expect(src).toContain("Confirm this decision");
     expect(src).toContain("Not a decision");
     expect(src).toContain("Review all");
     expect(src).toContain("Nothing goes on the record until you say so.");
@@ -72,12 +72,12 @@ describe("pass B: the surfaces keep their controls", () => {
     expect(src).toContain("Log a decision");
     expect(src).toContain("AddDecisionDialog");
     expect(src).toContain("Save the reasoning");
-    expect(src).toContain("Why was this the right call? A sentence is enough.");
+    expect(src).toContain("Why was this the right decision? A sentence is enough.");
     expect(src).toContain("WHY THE LOG EXISTS");
     expect(src).toContain("Everything");
     expect(src).toContain("Awaiting your review");
     expect(src).toContain("Needs reasoning");
-    expect(src).toContain('italicWord="calls"');
+    expect(src).toContain('italicWord="decisions"');
   });
 
   it("names the engagement panel and the 1:1 section", () => {
@@ -85,7 +85,7 @@ describe("pass B: the surfaces keep their controls", () => {
       "Calls on this engagement",
     );
     const oneToOne = read("src/components/oneonone/ConfirmedCalls.tsx");
-    expect(oneToOne).toContain("Calls you confirmed");
+    expect(oneToOne).toContain("Decisions you confirmed");
     expect(oneToOne).toContain("you confirm once, it travels with the work");
   });
 
