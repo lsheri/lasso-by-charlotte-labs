@@ -3992,6 +3992,10 @@ export type Database = {
       analytics_upsert_episode: { Args: { p_row: Json }; Returns: undefined }
       analytics_upsert_feature: { Args: { p_row: Json }; Returns: undefined }
       can_place_in_task: { Args: { p_task: string }; Returns: boolean }
+      can_place_item_in_task: {
+        Args: { p_item: string; p_task: string }
+        Returns: boolean
+      }
       can_self_join_engagement: {
         Args: { eng: string; prof: string }
         Returns: boolean
