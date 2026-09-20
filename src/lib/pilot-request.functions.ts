@@ -59,12 +59,7 @@ export const submitPilotRequestFn = createServerFn({ method: "POST" })
     const saved: SavedPilotRequest = { ...data, id: row.id, created_at: row.created_at };
     let emailStatus: "sent" | "failed" = "failed";
     try {
-      const [{ sendTemplateEmail }, { pilotRequestTemplate }, { TEMPLATES }] = await Promise.all([
-        import("./email-templates/send-email"),
-        import("./email-templates/pilot-request"),
-        import("./email-templates/registry"),
-      ]);
-      TEMPLATES["pilot-request"] = pilotRequestTemplate;
+      const { sendTemplateEmail } = await import("./email-templates/send-email");
       const result = await sendTemplateEmail("pilot-request", "liam@charlotte-labs.com", {
         replyTo: data.email,
         idempotencyKey: `pilot-request-${row.id}`,

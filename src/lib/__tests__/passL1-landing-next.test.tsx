@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-const route = readFileSync("src/routes/landing-next.tsx", "utf8");
+const route = readFileSync("src/components/marketing/B2BLanding.tsx", "utf8");
 const copySource = route.replace(/className="[^"]*"/g, "").toLowerCase();
 const requiredReportHeadline = "a note in the margin, not a report on you";
 const copyWithoutRequiredHeadline = copySource.replace(requiredReportHeadline, "");
@@ -26,14 +26,26 @@ describe("pass L1 hidden landing route", () => {
     expect(route.match(/Your firm bought AI\. Now nobody can say where a number came from\./g)).toHaveLength(1);
   });
 
-  it("is hidden from indexing and navigation", () => {
-    expect(route).toContain('{ name: "robots", content: "noindex, nofollow" }');
+  it("is the indexable home page, with the old path redirecting to it", () => {
+    const home = readFileSync("src/routes/index.tsx", "utf8");
+    const old = readFileSync("src/routes/landing-next.tsx", "utf8");
+    expect(home).toContain("<B2BLanding surface=\"home\" />");
+    expect(home).not.toContain("noindex");
+    expect(home).toContain(
+      "Lasso: see where every number in a deliverable came from",
+    );
+    expect(old).toContain('redirect({ to: "/", replace: true })');
     expect(route).not.toContain('to="/landing-next"');
+  });
+
+  it("keeps a link to the individual page", () => {
+    expect(route).toContain('to="/personal"');
+    expect(route).toContain("For individuals");
   });
 
   it("reuses the existing event with additive dimensions", () => {
     expect(route).toContain('event_type: "landing.viewed"');
-    expect(route).toContain('dims: { variant: "b2b", surface: "landing-next" }');
+    expect(route).toContain('dims: { variant: "b2b", surface }');
     expect(route).toContain('event_type: "landing.pilot_cta_clicked"');
     expect(route).toContain('dims: { location }');
   });
