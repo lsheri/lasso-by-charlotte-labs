@@ -215,6 +215,13 @@
   --nb-stagger-loose: 300ms;
 
   /*
+   * C2: one pause before an icon redraws on hover or keyboard focus, so a
+   * passing cursor does not set the whole sidebar drawing. Mount motion, the
+   * play-on-mount case and reduced motion are untouched.
+   */
+  --nb-ico-delay: 200ms;
+
+  /*
    * Spring curves. CSS has no spring primitive, so these are the overshoot
    * beziers already in use here, promoted to tokens and matched to the design
    * system's spring/bounce scale by feel rather than by formula. The system's
