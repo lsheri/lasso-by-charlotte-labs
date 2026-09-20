@@ -29,7 +29,7 @@ import type { ResolvedProfile } from "@/lib/profile-resolve";
 type Db = SupabaseClient<Database>;
 
 const ANNOTATION_COLUMNS =
-  "id, work_item_id, turn_no, char_start, char_end, excerpt, turn_hash, version, created_at";
+  "id, work_item_id, turn_no, char_start, char_end, excerpt, turn_hash, version, created_at, visibility, author_profile_id";
 
 type AnnotationRow = {
   id: string;
@@ -41,9 +41,16 @@ type AnnotationRow = {
   turn_hash: string | null;
   version: number;
   created_at: string;
+  visibility: string | null;
+  author_profile_id: string;
 };
 
-function highlightDto(row: AnnotationRow, contentHash?: string | null): HighlightDto {
+function highlightDto(
+  row: AnnotationRow,
+  viewerProfileId: string,
+  authorName: string,
+  contentHash?: string | null,
+): HighlightDto {
   return {
     stale: isStaleHighlight(row.turn_hash, contentHash ?? row.turn_hash),
     id: row.id,
@@ -55,9 +62,17 @@ function highlightDto(row: AnnotationRow, contentHash?: string | null): Highligh
     turnHash: row.turn_hash,
     version: row.version,
     createdAt: row.created_at,
+    visibility: row.visibility === "just_me" ? "just_me" : "engagement",
+    isMine: row.author_profile_id === viewerProfileId,
+    authorName,
   };
 }
 
+/**
+ * Teammate visibility: the database decides what comes back. A reader sees
+ * their own highlights plus any a teammate chose to share on an item the
+ * reader can already open.
+ */
 export async function listMyAnnotations(
   db: Db,
   engagementId: string,
@@ -72,22 +87,35 @@ export async function listMyAnnotations(
     .eq("workboard_id", board.id)
     .eq("work_item_id", workItemId)
     .eq("kind", "highlight")
-    .eq("author_profile_id", profile.id)
     .is("archived_at", null)
     .order("turn_no", { ascending: true })
     .order("char_start", { ascending: true });
   const rows = (data ?? []) as AnnotationRow[];
   if (rows.length === 0) return [];
 
-  const { data: turns } = await db
-    .from("turns")
-    .select("turn_no, content_hash")
-    .eq("work_item_id", workItemId);
+  const [{ data: turns }, { data: authors }] = await Promise.all([
+    db.from("turns").select("turn_no, content_hash").eq("work_item_id", workItemId),
+    db
+      .from("profiles")
+      .select("id, display_name")
+      .in("id", [...new Set(rows.map((row) => row.author_profile_id))]),
+  ]);
   const hashByTurn = new Map<number, string | null>(
     (turns ?? []).map((turn) => [turn.turn_no, turn.content_hash ?? null]),
   );
-  return rows.map((row) => highlightDto(row, hashByTurn.get(row.turn_no ?? -1) ?? null));
+  const nameById = new Map<string, string>(
+    (authors ?? []).map((row) => [row.id, row.display_name || "A colleague"]),
+  );
+  return rows.map((row) =>
+    highlightDto(
+      row,
+      profile.id,
+      row.author_profile_id === profile.id ? "You" : nameById.get(row.author_profile_id) ?? "A colleague",
+      hashByTurn.get(row.turn_no ?? -1) ?? null,
+    ),
+  );
 }
+
 
 export type CreateHighlightInput = {
   engagementId: string;
