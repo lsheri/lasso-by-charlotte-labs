@@ -166,6 +166,7 @@ describe("the workboard allowlist", () => {
       () => helpers.noteWorkboardElementResized("o", "card", "pointer", "both"),
       () => helpers.noteWorkboardDropPromptAnswered("o", "yes"),
       () => helpers.noteWorkboardStructureToggled("o", "structured"),
+      () => helpers.noteWorkboardExampleViewed("o", "header"),
       () => helpers.noteWorkboardDisplayModeToggled("o", "preview"),
       () => helpers.noteWorkboardCardContentViewed("o", "chat"),
       () => helpers.noteWorkboardCardContentViewed("o", "document", "open"),
