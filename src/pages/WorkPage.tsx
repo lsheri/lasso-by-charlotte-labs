@@ -55,6 +55,8 @@ import { useMakePrivate } from "@/hooks/use-make-private";
 import { useClients } from "@/hooks/use-clients";
 import { useProfile } from "@/hooks/use-profile";
 import { useWorkItems } from "@/hooks/use-work-items";
+import { useWorkboardCardPreviews } from "@/hooks/use-workboard-card-previews";
+import { useWorkboardFilePreviews } from "@/hooks/use-workboard-file-previews";
 import { supabase } from "@/integrations/supabase/client";
 import type { MappingSuggestion } from "@/lib/mapping-shared";
 import { suggestMappings } from "@/lib/mapping.functions";
@@ -78,6 +80,7 @@ import { WorkSubtitle } from "@/components/work/WorkSubtitle";
 import { sourceVendorKey } from "@/components/work/SourceMark";
 import { BUCKETS, bucketKeyForEntry, type BucketKey } from "@/components/work/work-buckets";
 import { useSettingsDialog } from "@/lib/settings-dialog-context";
+import { readWorkView, writeWorkView, type WorkView } from "@/lib/work-view";
 
 /** Each type column pages its entries five at a time, replacing not growing. */
 const COLUMN_PAGE_SIZE = 5;
@@ -260,6 +263,7 @@ export function WorkPage() {
   const [showPrivate, setShowPrivate] = useState(true);
   // Presentation-only filter for the type columns. Local state, no query.
   const [columnFilter, setColumnFilter] = useState<string>("all");
+  const [workView, setWorkView] = useState<WorkView>(() => readWorkView());
   // Which page each type column is on. Presentation-only local state, exactly
   // like columnFilter above: no query behind it and nothing to record.
   const [columnPages, setColumnPages] = useState<Record<BucketKey, number>>({
@@ -685,6 +689,9 @@ export function WorkPage() {
    */
   const filteredEntries = groupConversations(filtered);
   const unmappedCount = groupedCount(unmapped);
+  const previewHeads = filteredEntries.map((entry) => isConversationGroup(entry) ? (entry.transcript ?? entry.items[0]!) : entry);
+  const chatPreviews = useWorkboardCardPreviews("work", profile?.id, workView === "preview", previewHeads.filter((item) => item.type === "ai_thread").map((item) => item.id));
+  const filePreviews = useWorkboardFilePreviews(profile?.id, workView === "preview", previewHeads.filter((item) => item.type !== "ai_thread"));
 
 
   const chipBase = "rounded-full px-3 py-1 text-[11.5px] transition-colors";
