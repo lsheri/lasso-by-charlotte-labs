@@ -187,7 +187,7 @@
 - [x] Truncate the header source label with an ellipsis and drop the header date at compact
 
 ## Landing unit L1
-- [ ] Rebuild `/landing-next` as the approved B2B page.
-- [ ] Add opt-in held clip playback without changing `/` defaults.
-- [ ] Add anonymous pilot CTA event and focused tests.
-- [ ] Run landing tests, language scan, typecheck, and inspect build status.
+- [x] Rebuild `/landing-next` as the approved B2B page.
+- [x] Add opt-in held clip playback without changing `/` defaults.
+- [x] Add anonymous pilot CTA event and focused tests.
+- [x] Run landing tests, language scan, typecheck, and inspect build status.
