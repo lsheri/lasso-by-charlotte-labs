@@ -223,30 +223,16 @@ export function SharedWithSection({
           <h2 className="micro-label micro-label-section">SEND TO THE FIRM</h2>
           <div className="flex flex-wrap items-center gap-2">
             {/* One control: it builds the record, shows it, then offers the send. */}
-            <Button
-              type="button"
-              variant="ink"
-              disabled={!canShip}
-              title={canShip ? undefined : SHIP_EMPTY_HINT}
-              onClick={() => setShipOpen(true)}
-              className="h-auto flex-col items-start gap-0 py-2"
-            >
-              <span>{SHIP_ACTION_LABEL}</span>
-              <span className="text-[11px] font-normal opacity-70">Empower your team</span>
-            </Button>
-          </div>
-          {anchor && canShip ? (
-            <ShipToFirmDialog
-              workItemId={anchor.id}
-              title={anchor.title}
-              item={anchor}
+            <ShipBlock
+              anchor={anchor}
+              canShip={canShip}
               engagementId={engagementId}
               orgId={orgId}
               coachCount={(shared.data ?? []).length}
               open={shipOpen}
               onOpenChange={setShipOpen}
             />
-          ) : null}
+          </div>
         </div>
       ) : null}
 
