@@ -355,6 +355,11 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   useEffect(() => {
     if (!profile?.id) return;
     setDisplayMode(readWorkboardDisplayMode(window.localStorage.getItem(workboardDisplayModeKey(profile.id, engagementId))));
+    try {
+      setStructureMode(readWorkboardStructureMode(window.localStorage.getItem(workboardStructureModeKey(profile.id, engagementId))));
+    } catch {
+      setStructureMode("freeform");
+    }
   }, [engagementId, profile?.id]);
 
   useEffect(() => {
