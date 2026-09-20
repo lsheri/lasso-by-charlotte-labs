@@ -6,7 +6,7 @@ import { EngagementStats } from "@/components/engagements/EngagementStats";
 
 vi.mock("@/hooks/use-decisions", () => ({
   useEngagementDecisions: () => ({ data: [] }),
-});
+}));
 
 type StatTask = {
   is_board_default?: boolean | null;
