@@ -11,6 +11,7 @@ import { dragTo, snapPoint, type Point } from "@/lib/canvas-drag";
 import type { LabNodeEventKind } from "@/components/canvas-lab/canvas-lab-telemetry";
 import type { WorkboardCommand, WorkboardDto, WorkboardNodeDto, WorkboardRelation } from "@/lib/canvas-lab-shared";
 import { clampZoom } from "@/lib/canvas-zoom";
+import { placeAddedCards } from "@/lib/workboard-placement";
 
 export type LabNodeKind = "brief" | "task" | "work" | "decision" | "chat" | "source" | "ai_work" | "judgment" | "deliverable";
 export type LabJudgmentType = "added_constraint" | "corrected_ai" | "rejected_option" | "requested_evidence" | "changed_direction" | "accepted_but_rewrote";
