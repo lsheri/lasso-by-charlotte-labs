@@ -123,7 +123,8 @@ describe("pass L1 hidden landing route", () => {
     expect(route).toContain('aspect="1920 / 1132"');
     expect(route).toContain('aspect="9 / 16"');
     expect(route).not.toContain('src="/videos/lasso-what-fed-this.mp4"');
-    expect(route).toContain('<ClipSlot id="workboard" label="An engagement arranged on one board" />');
+    expect(route).toContain('landing-next-carousel-panel-sources');
+    expect(route).not.toContain('<ClipSlot id="workboard"');
     expect(route).toContain('playback="hold"');
   });
 
