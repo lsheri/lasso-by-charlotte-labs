@@ -111,8 +111,8 @@ export function noteWorkboardUndoUsed(orgId: string | undefined, action: UndoAct
 }
 
 /** Where added work came from, and how the panel was reached. No ids, no titles. */
-export type WorkAddedSource = "inbox" | "upload" | "connector";
-export type WorkAddedVia = "header" | "context_menu";
+export type WorkAddedSource = "inbox" | "upload" | "connector" | "brief";
+export type WorkAddedVia = "header" | "context_menu" | "new_engagement";
 
 /** B2: work landed on the board. Fired once per successful add. */
 export function noteWorkboardWorkAdded(orgId: string | undefined, source: WorkAddedSource, via: WorkAddedVia, count: number): void {

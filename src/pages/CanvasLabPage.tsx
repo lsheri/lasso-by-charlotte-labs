@@ -145,6 +145,8 @@ import { AddWorkPanel, type AddWorkSource } from "@/components/canvas-lab/AddWor
 import { CARD_HEIGHT, CARD_WIDTH } from "@/components/canvas-lab/canvas-lab-model";
 import { placeWorkOnBoardFn } from "@/lib/workboard-add-work.functions";
 import { placeAddedCards, type PlacementRect } from "@/lib/workboard-placement";
+import { briefAttachmentPoints, pendingBriefAttachments } from "@/lib/brief-files";
+import { useBriefFiles } from "@/hooks/use-brief-files";
 import { isBoardDefaultTask, workstreamTasks } from "@/lib/board-default-task";
 import { createDrawnWorkstreamFn, moveItemToWorkstreamFn } from "@/lib/workstream-draw.functions";
 import { defaultWorkstreamName, drawnRect, drawnRectUsable, movePromptText, splitClaims, type ClaimCandidate, type DrawRect } from "@/lib/workstream-draw";
@@ -407,6 +409,61 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     setZoom(result.zoom);
     setPan(result.pan);
   }, [boardReady]);
+
+  /**
+   * B5: files that came in with the brief sit in a column beside the brief
+   * card, joined to it by one context link. Both steps happen once: a card
+   * that already has its link is never moved again, so a person's own
+   * arrangement stands.
+   */
+  const briefFiles = useBriefFiles(engagementId);
+  const briefAttachSeenRef = useRef(new Set<string>());
+  const briefAttachBusyRef = useRef(false);
+
+  useEffect(() => {
+    if (!nodes || !frames || briefAttachBusyRef.current) return;
+    if (!lab.board?.canEditStructure) return;
+    const ids = (briefFiles.data ?? [])
+      .map((entry) => entry.workItemId)
+      .filter((id) => !briefAttachSeenRef.current.has(id));
+    if (ids.length === 0) return;
+    const pending = pendingBriefAttachments(ids, nodesRef.current, linksRef.current);
+    for (const id of ids) briefAttachSeenRef.current.add(id);
+    if (pending.length === 0) return;
+    const briefNode = nodesRef.current.find((node) => node.id === "brief");
+    if (!briefNode) return;
+    const pendingIds = new Set(pending.map((card) => card.nodeId));
+    const taken: PlacementRect[] = [
+      ...nodesRef.current
+        .filter((node) => !pendingIds.has(node.id) && !hiddenIds.includes(node.id))
+        .map((node) => ({ x: node.x, y: node.y, width: node.width, height: node.height })),
+      ...framesRef.current.map((frame) => ({ x: frame.x, y: frame.y, width: frame.width, height: frame.height })),
+    ];
+    const points = briefAttachmentPoints(briefNode, taken, pending.length);
+    briefAttachBusyRef.current = true;
+    void (async () => {
+      try {
+        for (const [index, card] of pending.entries()) {
+          const at = points[index];
+          if (at) {
+            nodesRef.current = nodesRef.current.map((node) => node.id === card.nodeId ? { ...node, x: at.x, y: at.y } : node);
+            setNodes((current) => current?.map((node) => node.id === card.nodeId ? { ...node, x: at.x, y: at.y } : node) ?? current);
+            await persistNodePatch(card.nodeId, { x: at.x, y: at.y });
+          }
+          const result = addLabLink(linksRef.current, briefNode.id, "right", card.nodeId, "left");
+          if (result.error) continue;
+          const created = result.links[result.links.length - 1];
+          if (!created) continue;
+          const link: LabLink = { ...created, relation: "context" };
+          linksRef.current = [...linksRef.current, link];
+          setLinks((current) => current.some((entry) => entry.id === link.id) ? current : [...current, link]);
+          await persistLink(link);
+        }
+      } finally {
+        briefAttachBusyRef.current = false;
+      }
+    })();
+  }, [briefFiles.data, frames, hiddenIds, lab.board?.canEditStructure, nodes]);
 
   useEffect(() => {
     const shell = shellRef.current;

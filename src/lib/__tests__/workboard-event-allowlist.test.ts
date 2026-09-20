@@ -117,6 +117,16 @@ describe("the workboard allowlist", () => {
     `);
   });
 
+  it("keeps the brief attachment vocabulary on work_added", () => {
+    expect(
+      guardWorkboardEvent("workboard.work_added", {
+        source: "brief",
+        via: "new_engagement",
+        count: 2,
+      }),
+    ).toEqual({ keep: true, dims: { source: "brief", via: "new_engagement", count: 2 } });
+  });
+
   it("knows which names it covers", () => {
     expect(isWorkboardEvent("workboard.rail_toggled")).toBe(true);
     expect(isWorkboardEvent("workitem.captured")).toBe(false);
@@ -179,6 +189,7 @@ describe("the workboard allowlist", () => {
       () => helpers.noteWorkboardUndoUsed("o", "move", "undo"),
       () => helpers.noteWorkboardWorkAdded("o", "inbox", "header", 3),
       () => helpers.noteWorkboardWorkAdded("o", "connector", "context_menu", 1),
+      () => helpers.noteWorkboardWorkAdded("o", "brief", "new_engagement", 2),
       () => helpers.noteWorkboardWorkstreamDrawn("o", 3, "true"),
       () => helpers.noteWorkboardWorkstreamDrawn("o", 0, "false"),
       () => helpers.noteHighlightChanged("o", "created", "engagement", 120),
