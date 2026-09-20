@@ -2807,6 +2807,7 @@ export type Database = {
           engagement_id: string
           goal: string | null
           id: string
+          is_board_default: boolean
           is_wrap: boolean
           lane_ai: string | null
           lane_edited_by_human: boolean
@@ -2825,6 +2826,7 @@ export type Database = {
           engagement_id: string
           goal?: string | null
           id?: string
+          is_board_default?: boolean
           is_wrap?: boolean
           lane_ai?: string | null
           lane_edited_by_human?: boolean
@@ -2843,6 +2845,7 @@ export type Database = {
           engagement_id?: string
           goal?: string | null
           id?: string
+          is_board_default?: boolean
           is_wrap?: boolean
           lane_ai?: string | null
           lane_edited_by_human?: boolean
@@ -3988,6 +3991,7 @@ export type Database = {
       }
       analytics_upsert_episode: { Args: { p_row: Json }; Returns: undefined }
       analytics_upsert_feature: { Args: { p_row: Json }; Returns: undefined }
+      can_place_in_task: { Args: { p_task: string }; Returns: boolean }
       can_self_join_engagement: {
         Args: { eng: string; prof: string }
         Returns: boolean
@@ -4053,6 +4057,10 @@ export type Database = {
       engagement_member_can_see_item: {
         Args: { item: string }
         Returns: boolean
+      }
+      ensure_board_default_task: {
+        Args: { p_engagement: string }
+        Returns: string
       }
       has_org_role: {
         Args: {
