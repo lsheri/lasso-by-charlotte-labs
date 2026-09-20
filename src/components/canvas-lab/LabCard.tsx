@@ -50,6 +50,7 @@ export function LabCard({
   preview,
   filePreview,
   onPreviewScroll,
+  readOnly = false,
 }: {
   node: LabNode;
   item?: WorkItemRow | undefined;
