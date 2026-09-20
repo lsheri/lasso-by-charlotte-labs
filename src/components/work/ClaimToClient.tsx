@@ -20,11 +20,17 @@ import type { WorkItemRow } from "@/lib/work-types";
  */
 export function ClaimToClient({
   item,
+  items,
   surface,
   emphasis = "quiet",
   label = "Client",
 }: {
   item: WorkItemRow;
+  /**
+   * P1: a pushed conversation is claimed whole. When present, every piece of
+   * the push takes the same client; the head still names the act.
+   */
+  items?: WorkItemRow[] | undefined;
   /** Which screen the claim was made from, sent with the claim event. */
   surface: "work" | "overview";
   /** Quiet sits in a row of other actions; lead stands alone as the card's act. */
