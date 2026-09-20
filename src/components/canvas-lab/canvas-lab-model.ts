@@ -935,7 +935,7 @@ export function applyDurableBoard(base: { frames: LabFrame[]; nodes: LabNode[] }
       matchedVirtual.add(virtual.id);
       nodes.push({
         ...virtual,
-        frame: frameId ?? virtual.frame,
+        frame: frameId ?? virtual.frame ?? null,
         x: durable.x,
         y: durable.y,
         width: durable.w > 0 ? durable.w : CARD_WIDTH,
@@ -951,7 +951,7 @@ export function applyDurableBoard(base: { frames: LabFrame[]; nodes: LabNode[] }
       nodes.push({
         id: localId,
         kind: "judgment",
-        frame: frameId ?? "foundation",
+        frame: frameId ?? (base.frames.length > 0 ? "foundation" : null),
         title: durable.title || judgment?.label || "Human judgment",
         summary: durable.body,
         typeLabel: judgment?.label ?? "Human judgment",
