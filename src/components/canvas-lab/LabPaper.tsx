@@ -65,6 +65,8 @@ export function LabPaper({
   onPreviewScroll?: ((kind: "chat" | "document" | "deck") => void) | undefined;
   /** The sample board has no owner, so it shows no ownership label. */
   showOwnership?: boolean;
+  /** Deliverable cards only: opens the card's trail, the same path the menu uses. */
+  onOpenTrail?: (() => void) | undefined;
 }) {
   const tier = cardSizeTier(node);
   const identity = item ? workIdentityLabel(item) : null;
@@ -174,6 +176,22 @@ export function LabPaper({
           </div>
         ) : null}
         {selected ? <span className="mt-auto block font-hand text-[13px] leading-none text-[var(--nb-green)]">in context</span> : null}
+        {node.deliverable && onOpenTrail ? (
+          <button
+            type="button"
+            data-testid="lab-what-fed-this"
+            aria-label={`What fed ${node.title}`}
+            onPointerDown={(event) => event.stopPropagation()}
+            onClick={(event) => { event.stopPropagation(); onOpenTrail(); }}
+            className={cn(
+              "mt-auto self-start font-mono text-[9px] uppercase tracking-[0.08em] text-[var(--nb-green)] underline-offset-2 hover:underline",
+              "opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100",
+              selected && "opacity-100",
+            )}
+          >
+            What fed this
+          </button>
+        ) : null}
       </div>
     </div>
   );
