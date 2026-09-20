@@ -6,8 +6,9 @@
  * the create confirm can take. No React, no database, no DOM.
  */
 
-import type { Point } from "@/lib/canvas-drag";
-import { PLACEMENT_GAP, placeAddedCards, type PlacementRect } from "@/lib/workboard-placement";
+import { DRAG_STEP, snapPoint, type Point } from "@/lib/canvas-drag";
+import { PLACEMENT_CARD, PLACEMENT_GAP, slotIsFree, type PlacementRect } from "@/lib/workboard-placement";
+
 
 export type BriefAttachmentCard = { nodeId: string; workItemId: string };
 
@@ -42,16 +43,41 @@ export function pendingBriefAttachments(
 
 /**
  * A single column immediately to the right of the brief card, on the grid and
- * keeping the usual clear space from everything already on the board.
+ * keeping the usual clear space from every other card.
+ *
+ * The search only ever walks down, and then across to the next column on the
+ * right. It never drifts up or to the left of the brief: a card that came in
+ * with the brief has to read as sitting beside it. Workstream outlines are not
+ * occupied space here, since cards live inside them.
  */
 export function briefAttachmentPoints(
   brief: { x: number; y: number; width: number },
   taken: PlacementRect[],
   count: number,
 ): Point[] {
-  const anchor = { x: brief.x + brief.width + PLACEMENT_GAP, y: brief.y };
-  return placeAddedCards(anchor, taken, count, { columns: 1 });
+  const size = PLACEMENT_CARD;
+  const stepX = Math.ceil((size.width + PLACEMENT_GAP) / DRAG_STEP) * DRAG_STEP;
+  const stepY = Math.ceil((size.height + PLACEMENT_GAP) / DRAG_STEP) * DRAG_STEP;
+  const base = snapPoint({ x: brief.x + brief.width + PLACEMENT_GAP, y: brief.y });
+  const occupied = [...taken];
+  const points: Point[] = [];
+  for (let index = 0; index < Math.max(0, count); index += 1) {
+    let landed: Point = { x: base.x, y: base.y + index * stepY };
+    search: for (let column = 0; column < 12; column += 1) {
+      for (let row = 0; row < 40; row += 1) {
+        const point = { x: base.x + column * stepX, y: base.y + row * stepY };
+        if (slotIsFree({ ...point, ...size }, occupied, PLACEMENT_GAP)) {
+          landed = point;
+          break search;
+        }
+      }
+    }
+    points.push(landed);
+    occupied.push({ ...landed, ...size });
+  }
+  return points;
 }
+
 
 export type BriefConfirmShape = { message: string; submitLabel: string };
 
