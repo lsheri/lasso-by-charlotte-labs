@@ -21,7 +21,7 @@ export function useWorkboardCardPreviews(
 
   useEffect(() => {
     if (!enabled || !profileId) return;
-    for (const id of visibleIds) if (!cacheRef.current[id]) pendingRef.current.add(id);
+    for (const id of idsKey.split(":").filter(Boolean)) if (!cacheRef.current[id]) pendingRef.current.add(id);
     if (pendingRef.current.size === 0) return;
     const timer = window.setTimeout(() => {
       const workItemIds = [...pendingRef.current];
@@ -36,7 +36,7 @@ export function useWorkboardCardPreviews(
         .catch(() => undefined);
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [enabled, engagementId, fetchPreviews, idsKey, profileId, visibleIds]);
+  }, [enabled, engagementId, fetchPreviews, idsKey, profileId]);
 
   return cache;
 }
