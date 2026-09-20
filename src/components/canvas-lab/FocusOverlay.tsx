@@ -217,6 +217,11 @@ export function FocusOverlay({
     stale: thread.stale,
   }));
 
+  // A teammate's shared highlight is listed, not drawn over the reader's text.
+  const myHighlights = highlights.filter((highlight) => highlight.isMine !== false);
+  const teamHighlights = highlights.filter((highlight) => highlight.isMine === false);
+
+
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-[var(--nb-scrim)] p-4 md:p-8">
       <div className="mx-auto flex h-full w-full max-w-[1200px] flex-col overflow-hidden rounded-[var(--radius)] border border-[var(--nb-graphite)] bg-card shadow-[var(--shadow-modal)]">
