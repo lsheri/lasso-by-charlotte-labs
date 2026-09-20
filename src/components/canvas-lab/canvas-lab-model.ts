@@ -210,8 +210,22 @@ export function panToRevealNode(pan: Point, zoom: number, node: LabNode, viewpor
 
 
 
+/**
+ * The fixed panels that sit on the board but are neither a card nor an
+ * outline. These values position the panels themselves, so anything choosing
+ * a free spot can read the same board space bounds instead of the screen.
+ */
+export const BOARD_GUIDE_RECTS: { id: string; x: number; y: number; width: number; height: number }[] = [
+  { id: "reasoning-trail", x: 60, y: 60, width: 896, height: 156 },
+  { id: "start-here", x: 60, y: 228, width: 896, height: 180 },
+];
+
+/** The inline add control's own size, in board space. */
+export const BOARD_INLINE_ADD_SIZE = { width: 220, height: 28 };
+
 /** Where the inline add control sits: under the workstream row, clear of spilled cards. */
 export function workstreamAddAnchor(frames: LabFrame[], nodes: LabNode[]): Point | null {
+
   const row = frames.filter((frame) => frame.id.startsWith("task:") || frame.id.startsWith("custom:"));
   if (row.length === 0) return null;
   const left = Math.min(...row.map((frame) => frame.x));
