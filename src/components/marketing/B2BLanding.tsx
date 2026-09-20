@@ -399,6 +399,7 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
           <nav className="mx-auto flex max-w-3xl flex-wrap items-center gap-x-5 gap-y-2 px-6 pb-8 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground md:px-10">
             <Link to="/why" className="transition-colors hover:text-foreground">Why Lasso</Link>
             <Link to="/trust" className="transition-colors hover:text-foreground">Trust &amp; data</Link>
+            <Link to="/personal" className="transition-colors hover:text-foreground">For individuals</Link>
             <Link to="/auth" className="transition-colors hover:text-foreground">Sign in</Link>
           </nav>
         </footer>
