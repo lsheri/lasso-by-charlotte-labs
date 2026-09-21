@@ -159,8 +159,20 @@ export function workTypeForFile(filename: string): WorkType {
   return EXT_MAP[ext] ?? "document";
 }
 
+/**
+ * A calendar date has no time of day, so reading it as midnight UTC slides it a
+ * day back for anyone behind UTC. A day-only value is read as that day.
+ */
+export function calendarDate(iso: string): Date {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(iso)) {
+    const [year, month, day] = iso.split("-").map(Number);
+    return new Date(year!, month! - 1, day!);
+  }
+  return new Date(iso);
+}
+
 export function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString(undefined, {
+  return calendarDate(iso).toLocaleDateString(undefined, {
     year: "numeric",
     month: "short",
     day: "numeric",
