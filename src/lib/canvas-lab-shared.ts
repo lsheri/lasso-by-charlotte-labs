@@ -35,6 +35,12 @@ export type WorkboardTextWeight = (typeof WORKBOARD_TEXT_WEIGHTS)[number];
 export type WorkboardTextColour = (typeof WORKBOARD_TEXT_COLOURS)[number];
 export type WorkboardTextBody = { text: string; size: WorkboardTextSize; weight: WorkboardTextWeight; colour: WorkboardTextColour };
 
+const WORKBOARD_DECORATION_KINDS: readonly WorkboardNodeKind[] = ["shape", "text", "mark"];
+
+export function isWorkboardDecorationKind(kind: string): kind is WorkboardNodeKind {
+  return WORKBOARD_DECORATION_KINDS.includes(kind as WorkboardNodeKind);
+}
+
 export function parseWorkboardTextBody(value: unknown): WorkboardTextBody | null {
   if (typeof value !== "string") return null;
   try {
