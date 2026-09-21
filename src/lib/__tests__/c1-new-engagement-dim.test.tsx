@@ -39,7 +39,18 @@ vi.mock("@tanstack/react-query", () => ({
   }),
 }));
 
-vi.mock("@tanstack/react-router", () => ({ useNavigate: () => () => {} }));
+// useServerFn (reached through the dialog's file capture hook) asks the router
+// for its state, so the mock has to answer useRouter as well as useNavigate.
+vi.mock("@tanstack/react-router", () => ({
+  useNavigate: () => () => {},
+  useRouter: () => ({
+    state: { matches: [] },
+    subscribe: () => () => {},
+    invalidate: async () => {},
+    navigate: async () => {},
+    options: {},
+  }),
+}));
 
 vi.mock("@/hooks/use-work-items", () => ({ useWorkItems: () => ({ data: { items: [] } }) }));
 

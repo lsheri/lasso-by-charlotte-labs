@@ -8,6 +8,8 @@ import type { VerifyThreadRequest } from "@/components/verify/verify-thread-stat
 
 type Props = { req: VerifyThreadRequest | null };
 import { RESOLVE_GRACE_MS } from "@/lib/verify-thread-shared";
+import { PAGE_FADE_MS } from "@/lib/turn-story-shared";
+import { cssDurationMs } from "./pass115-polish.test";
 
 const READER = readFileSync("src/components/verify/VerifyThreadReader.tsx", "utf8");
 const STORY = readFileSync("src/components/verify/TurnCardStory.tsx", "utf8");
@@ -79,7 +81,10 @@ describe("pass 133.1 page-turn fade", () => {
     expect(STORY).toContain("PAGE_FADE_MS");
     expect(STORY).toContain("usePageTurnFade");
     expect(STORY).toContain("nb-page-fade");
-    expect(CSS).toMatch(/\.nb-journey-node\.nb-page-fade\s*\{[^}]*animation:\s*nb-page-fade-out 400ms ease forwards/);
+    // Assert the timing, not the spelling: the rule may name a token, so long
+    // as it resolves to the same fade the component waits for.
+    expect(CSS).toMatch(/\.nb-journey-node\.nb-page-fade\s*\{[^}]*animation:\s*nb-page-fade-out\s+\S+/);
+    expect(cssDurationMs(CSS, ".nb-journey-node.nb-page-fade")).toBe(PAGE_FADE_MS);
     expect(CSS).toContain("@keyframes nb-page-fade-out");
     expect(CSS).toMatch(/@keyframes nb-page-fade-out\s*\{[^}]*from\s*\{\s*opacity:\s*1/s);
 

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { renderInviteEmail, inviteSubject, MAIL_FOOTER } from "@/lib/invite-email";
+import { MAIL, renderInviteEmail, inviteSubject, MAIL_FOOTER } from "@/lib/invite-email";
 import {
   SIGNUP_NO_INVITE_LINE,
   evaluateSignupInvite,
@@ -114,8 +114,9 @@ describe("invite email", () => {
   it("carries the accept link in both parts, with the branded button", () => {
     expect(mail.html).toContain("https://lasso.charlotte-labs.com/join?code=a1b2c3d4e5f6");
     expect(mail.html).toContain("Accept your invite");
-    expect(mail.html).toContain("#12653d");
-    expect(mail.html).toContain("#fafafa");
+    // Read from the shared palette, so a colour change moves the check with it.
+    expect(mail.html).toContain(MAIL.cta);
+    expect(mail.html).toContain(MAIL.paper);
     expect(mail.html).toContain("BY CHARLOTTE LABS");
     expect(mail.html).toContain("https://charlotte-labs.com/email/lasso-mark.gif");
     expect(mail.html).not.toContain("background:#111413");
