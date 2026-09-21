@@ -1,7 +1,20 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { Menu, Minus, Plus, X } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { Menu, Minus, MoreHorizontal, Plus, X } from "lucide-react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { planToolbarOverflow, type ToolbarControlSpec } from "@/lib/toolbar-overflow";
 
 import { BoardAsk } from "@/components/canvas-lab/BoardAsk";
 import { LabAnswerCard } from "@/components/canvas-lab/LabAnswerCard";
@@ -2264,6 +2277,149 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
           : lab.saveState.status === "error" ? "Workboard · Could not save"
             : lab.board?.id ? "Workboard · Saved"
               : "Workboard · Not saved";
+
+  /** The width the control row actually has, so it can shed controls instead of running past its box. */
+  const toolbarRef = useRef<HTMLDivElement | null>(null);
+  const [toolbarWidth, setToolbarWidth] = useState(0);
+  useEffect(() => {
+    const element = toolbarRef.current;
+    if (!element || typeof ResizeObserver === "undefined") return;
+    const read = () => setToolbarWidth(element.clientWidth);
+    const observer = new ResizeObserver(read);
+    observer.observe(element);
+    read();
+    return () => observer.disconnect();
+  }, []);
+
+  const toolbarItems: { spec: ToolbarControlSpec; row: ReactNode; menu?: ReactNode }[] = [];
+  const setStructured = (checked: boolean) => {
+    const next = checked ? "structured" : "freeform";
+    if (next === structureMode) return;
+    setStructureMode(next);
+    if (!checked) setSelectedFrameId(null);
+    rememberStructureMode(next);
+    noteWorkboardStructureToggled(orgId, next);
+  };
+  toolbarItems.push({
+    spec: { id: "workstreams", width: 190, moveOrder: 1 },
+    row: (
+      <div className="canvas-lab-workstream-switch">
+        <Label htmlFor="canvas-lab-show-workstreams">Show workstreams</Label>
+        <Switch id="canvas-lab-show-workstreams" checked={structureMode === "structured"} onCheckedChange={setStructured} />
+      </div>
+    ),
+    menu: (
+      <DropdownMenuCheckboxItem checked={structureMode === "structured"} onCheckedChange={setStructured}>Show workstreams</DropdownMenuCheckboxItem>
+    ),
+  });
+  toolbarItems.push({
+    spec: { id: "display", width: 150, moveOrder: 2 },
+    row: (
+      <div className="canvas-lab-structure-toggle" aria-label="Card display">
+        <Button type="button" size="sm" variant={displayMode === "preview" ? "secondary" : "ghost"} aria-pressed={displayMode === "preview"} onClick={() => chooseDisplayMode("preview")}>Preview</Button>
+        <Button type="button" size="sm" variant={displayMode === "sticky" ? "secondary" : "ghost"} aria-pressed={displayMode === "sticky"} onClick={() => chooseDisplayMode("sticky")}>Sticky</Button>
+      </div>
+    ),
+    menu: (
+      <>
+        <DropdownMenuLabel>Card display</DropdownMenuLabel>
+        <DropdownMenuRadioGroup value={displayMode} onValueChange={(value) => chooseDisplayMode(value as typeof displayMode)}>
+          <DropdownMenuRadioItem value="preview">Preview</DropdownMenuRadioItem>
+          <DropdownMenuRadioItem value="sticky">Sticky</DropdownMenuRadioItem>
+        </DropdownMenuRadioGroup>
+        <DropdownMenuSeparator />
+      </>
+    ),
+  });
+  toolbarItems.push({
+    spec: { id: "working-from", width: 0, pinned: true },
+    row: <Button type="button" size="sm" variant="outline" className="md:hidden" onClick={() => { setRailOpen(true); setMobileView("rail"); }}>Working from</Button>,
+  });
+  if (selectedLinkId) {
+    toolbarItems.push({
+      spec: { id: "remove-relationship", width: 160, moveOrder: 6 },
+      row: <Button type="button" size="sm" variant="ghost" onClick={() => { const link = links.find((entry) => entry.id === selectedLinkId); if (link) removeRelationship(link); }}>Remove relationship</Button>,
+      menu: <DropdownMenuItem onSelect={() => { const link = links.find((entry) => entry.id === selectedLinkId); if (link) removeRelationship(link); }}>Remove relationship</DropdownMenuItem>,
+    });
+    toolbarItems.push({
+      spec: { id: "change-relation", width: 140, moveOrder: 7 },
+      row: <Button type="button" size="sm" variant="ghost" onClick={() => setRelationPicker({ linkId: selectedLinkId })}>Change relation</Button>,
+      menu: <DropdownMenuItem onSelect={() => setRelationPicker({ linkId: selectedLinkId })}>Change relation</DropdownMenuItem>,
+    });
+  }
+  if (canAddWork) {
+    toolbarItems.push({
+      spec: { id: "add-work", width: 96, pinned: true },
+      row: <Button size="sm" variant="outline" onClick={() => openAddWork("header", null)}>Add work</Button>,
+    });
+    toolbarItems.push({
+      spec: { id: "region-fill", width: 130, moveOrder: 3 },
+      row: (
+        <select aria-label="Region colour" className="h-8 rounded-md border border-input bg-background px-2 text-xs" value={regionFill} onChange={(event) => setRegionFill(event.target.value as RegionFill)}>
+          {REGION_FILLS.map((fill) => <option key={fill} value={fill}>{fill.replace("-", " ")}</option>)}
+        </select>
+      ),
+      menu: (
+        <>
+          <DropdownMenuLabel>Region colour</DropdownMenuLabel>
+          <DropdownMenuRadioGroup value={regionFill} onValueChange={(value) => setRegionFill(value as RegionFill)}>
+            {REGION_FILLS.map((fill) => <DropdownMenuRadioItem key={fill} value={fill}>{fill.replace("-", " ")}</DropdownMenuRadioItem>)}
+          </DropdownMenuRadioGroup>
+          <DropdownMenuSeparator />
+        </>
+      ),
+    });
+    toolbarItems.push({
+      spec: { id: "add-text", width: 92, moveOrder: 4 },
+      row: <Button size="sm" variant="outline" onClick={() => void addTextBlock()}>Add text</Button>,
+      menu: <DropdownMenuItem onSelect={() => void addTextBlock()}>Add text</DropdownMenuItem>,
+    });
+    toolbarItems.push({
+      spec: { id: "region", width: 84, moveOrder: 5 },
+      row: <Button size="sm" variant={drawTool ? "secondary" : "outline"} aria-pressed={drawTool} onClick={toggleDrawTool}>Region</Button>,
+      menu: <DropdownMenuItem onSelect={toggleDrawTool}>Region</DropdownMenuItem>,
+    });
+  }
+  if (showExample) {
+    toolbarItems.push({
+      spec: { id: "example", width: 180, moveOrder: 8 },
+      row: <Button size="sm" className="bg-green text-paper hover:bg-[var(--nb-green-deep)]" onClick={openExample}>See an example board</Button>,
+      menu: <DropdownMenuItem onSelect={openExample}>See an example board</DropdownMenuItem>,
+    });
+  }
+  toolbarItems.push({
+    spec: { id: "ask", width: 100, pinned: true },
+    row: <Button size="sm" variant={askOpen ? "secondary" : "outline"} aria-pressed={askOpen} onClick={() => setAskOpen((current) => !current)}>Ask Lasso</Button>,
+  });
+  if (canAddWork) {
+    toolbarItems.push({
+      spec: { id: "share", width: 80, pinned: true },
+      row: <ShareDialog engagementId={engagementId} profileId={profile?.id} />,
+    });
+  }
+  toolbarItems.push({
+    spec: { id: "details", width: 80, moveOrder: 9 },
+    row: <Button size="sm" variant="outline" asChild><Link to="/engagements/$id" params={{ id: engagementId }} search={{ ...DETAILS_SEARCH }}>Details</Link></Button>,
+    menu: <DropdownMenuItem asChild><Link to="/engagements/$id" params={{ id: engagementId }} search={{ ...DETAILS_SEARCH }}>Details</Link></DropdownMenuItem>,
+  });
+  toolbarItems.push({
+    spec: { id: "fit", width: 56, moveOrder: 10 },
+    row: <Button size="sm" variant="outline" onClick={() => fit(true)}>Fit</Button>,
+    menu: <DropdownMenuItem onSelect={() => fit(true)}>Fit</DropdownMenuItem>,
+  });
+  toolbarItems.push({
+    spec: { id: "zoom", width: 116, pinned: true },
+    row: (
+      <>
+        <Button size="icon" variant="ghost" aria-label="Zoom out" onClick={() => zoomAtCentre(stepZoom(zoomRef.current, "out"))}><Minus className="h-3.5 w-3.5" /></Button>
+        <button type="button" aria-label="Zoom to 100 percent" className="w-10 text-center font-mono text-[10px] text-soft" onClick={() => zoomAtCentre(1)}>{Math.round(zoom * 100)}%</button>
+        <Button size="icon" variant="ghost" aria-label="Zoom in" onClick={() => zoomAtCentre(stepZoom(zoomRef.current, "in"))}><Plus className="h-3.5 w-3.5" /></Button>
+      </>
+    ),
+  });
+  const toolbarPlan = planToolbarOverflow(toolbarWidth > 0 ? toolbarWidth : Number.MAX_SAFE_INTEGER, toolbarItems.map((item) => item.spec));
+  const toolbarOverflowItems = toolbarItems.filter((item) => toolbarPlan.overflow.includes(item.spec.id));
+
   return (
     <div className="fixed inset-0 z-50 flex bg-[var(--nb-paper)]" data-testid="canvas-lab-shell" data-interaction={interaction === "idle" && connectSource ? "connect" : interaction}>
       <aside className="z-30 flex w-[52px] shrink-0 flex-col items-center border-r border-border bg-card py-3">
@@ -2273,7 +2429,22 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       </aside>
       {menuOpen ? <div className="fixed inset-0 z-50 flex bg-[var(--nb-scrim)]" onPointerDown={() => setMenuOpen(false)}><aside className="h-full w-[280px] overflow-y-auto border-r border-border bg-sidebar p-4 shadow-[var(--shadow-modal)]" onPointerDown={(event) => event.stopPropagation()}><div className="mb-5 flex items-center justify-between"><span className="font-serif text-xl text-foreground">Lasso</span><Button size="icon" variant="ghost" aria-label="Close workboard menu" onClick={() => setMenuOpen(false)}><X className="h-4 w-4" /></Button></div><SidebarNav onNavigate={() => setMenuOpen(false)} onOpenSettings={() => void navigate({ to: "/settings" })} /><div className="mt-6 border-t border-border pt-4"><label className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft" htmlFor="canvas-lab-new-frame">Add workstream</label><div className="mt-2 flex gap-2"><input id="canvas-lab-new-frame" maxLength={60} value={newFrameName} onChange={(event) => { setNewFrameName(event.target.value); if (event.target.value.trim()) setNewFrameError(false); }} className="min-w-0 flex-1 rounded-[var(--radius-control)] border border-input bg-background px-2 text-[12px]" placeholder="Workstream name" /><Button size="sm" variant="outline" onClick={() => { if (addWorkstream(newFrameName)) { setNewFrameName(""); setNewFrameError(false); } else setNewFrameError(true); }}>Add</Button></div>{newFrameError ? <p className="mt-1 font-hand text-[13px] text-destructive">a workstream needs a name</p> : <p className="mt-1 font-hand text-[13px] text-[var(--nb-mid)]">not saved</p>}</div></aside></div> : null}
       <main className={`relative min-w-0 flex-1 flex-col ${mobileView === "board" ? "flex" : "hidden md:flex"}`}>
-        <header className="z-20 flex h-[52px] shrink-0 items-center justify-between gap-3 border-b border-border bg-card px-4"><div className="min-w-0"><span className="block truncate text-[13px] font-medium text-foreground">{title}</span><span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">{status}</span></div><div className="flex items-center gap-1"><div className="canvas-lab-workstream-switch"><Label htmlFor="canvas-lab-show-workstreams">Show workstreams</Label><Switch id="canvas-lab-show-workstreams" checked={structureMode === "structured"} onCheckedChange={(checked) => { const next = checked ? "structured" : "freeform"; if (next === structureMode) return; setStructureMode(next); if (!checked) setSelectedFrameId(null); rememberStructureMode(next); noteWorkboardStructureToggled(orgId, next); }} /></div><div className="canvas-lab-structure-toggle" aria-label="Card display"><Button type="button" size="sm" variant={displayMode === "preview" ? "secondary" : "ghost"} aria-pressed={displayMode === "preview"} onClick={() => chooseDisplayMode("preview")}>Preview</Button><Button type="button" size="sm" variant={displayMode === "sticky" ? "secondary" : "ghost"} aria-pressed={displayMode === "sticky"} onClick={() => chooseDisplayMode("sticky")}>Sticky</Button></div><Button type="button" size="sm" variant="outline" className="md:hidden" onClick={() => { setRailOpen(true); setMobileView("rail"); }}>Working from</Button>{selectedLinkId ? <Button type="button" size="sm" variant="ghost" onClick={() => { const link = links.find((entry) => entry.id === selectedLinkId); if (link) removeRelationship(link); }}>Remove relationship</Button> : null}{selectedLinkId ? <Button type="button" size="sm" variant="ghost" onClick={() => setRelationPicker({ linkId: selectedLinkId })}>Change relation</Button> : null}{canAddWork ? <Button size="sm" variant="outline" onClick={() => openAddWork("header", null)}>Add work</Button> : null}{canAddWork ? <><select aria-label="Region colour" className="h-8 rounded-md border border-input bg-background px-2 text-xs" value={regionFill} onChange={(event) => setRegionFill(event.target.value as RegionFill)}>{REGION_FILLS.map((fill) => <option key={fill} value={fill}>{fill.replace("-", " ")}</option>)}</select><Button size="sm" variant="outline" onClick={() => void addTextBlock()}>Add text</Button></> : null}{canAddWork ? <Button size="sm" variant={drawTool ? "secondary" : "outline"} aria-pressed={drawTool} onClick={toggleDrawTool}>Region</Button> : null}{showExample ? <Button size="sm" className="bg-green text-paper hover:bg-[var(--nb-green-deep)]" onClick={openExample}>See an example board</Button> : null}<Button size="sm" variant={askOpen ? "secondary" : "outline"} aria-pressed={askOpen} onClick={() => setAskOpen((current) => !current)}>Ask Lasso</Button>{canAddWork ? <ShareDialog engagementId={engagementId} profileId={profile?.id} /> : null}<Button size="sm" variant="outline" asChild><Link to="/engagements/$id" params={{ id: engagementId }} search={{ ...DETAILS_SEARCH }}>Details</Link></Button><Button size="sm" variant="outline" onClick={() => fit(true)}>Fit</Button><Button size="icon" variant="ghost" aria-label="Zoom out" onClick={() => zoomAtCentre(stepZoom(zoomRef.current, "out"))}><Minus className="h-3.5 w-3.5" /></Button><button type="button" aria-label="Zoom to 100 percent" className="w-10 text-center font-mono text-[10px] text-soft" onClick={() => zoomAtCentre(1)}>{Math.round(zoom * 100)}%</button><Button size="icon" variant="ghost" aria-label="Zoom in" onClick={() => zoomAtCentre(stepZoom(zoomRef.current, "in"))}><Plus className="h-3.5 w-3.5" /></Button></div></header>
+        <header className="z-20 flex h-[52px] shrink-0 items-center justify-between gap-3 border-b border-border bg-card px-4">
+          <div className="min-w-0 shrink"><span className="block truncate text-[13px] font-medium text-foreground">{title}</span><span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">{status}</span></div>
+          <div ref={toolbarRef} className="flex min-w-0 flex-1 items-center justify-end gap-1 overflow-hidden">
+            {toolbarItems.filter((item) => toolbarPlan.row.includes(item.spec.id)).map((item) => <div key={item.spec.id} className="flex shrink-0 items-center gap-1">{item.row}</div>)}
+            {toolbarOverflowItems.length > 0 ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="icon" variant="ghost" aria-label="More board controls"><MoreHorizontal className="h-4 w-4" /></Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {toolbarOverflowItems.map((item) => <Fragment key={item.spec.id}>{item.menu}</Fragment>)}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : null}
+          </div>
+        </header>
         {lab.saveState.status === "conflict" ? <div data-testid="canvas-lab-banner" className="canvas-lab-banner" role="alert"><p className="text-[13px] text-foreground">A newer version of this record was saved.</p><div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => resolveConflict("latest")}>Load latest</Button><Button size="sm" variant="outline" onClick={() => resolveConflict("retry")}>Retry my change</Button></div></div> : null}
         {lab.saveState.status === "error" ? <div data-testid="canvas-lab-banner" className="canvas-lab-banner" role="alert"><p className="text-[13px] text-foreground">Could not save your last change. {lab.saveState.message}</p><div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => resolveSaveError("retry")}>Retry</Button><Button size="sm" variant="outline" onClick={() => resolveSaveError("discard")}>Discard</Button></div></div> : null}
         <div ref={shellRef} tabIndex={-1} onPointerDownCapture={(event) => { if (event.button === 0 && spaceRef.current) { event.preventDefault(); event.stopPropagation(); startSpacePan(event); } }} onPointerDown={(event) => { const target = event.target as HTMLElement; const empty = event.target === event.currentTarget || target.dataset["testid"] === "canvas-lab-stage"; if (event.button === 0 && empty && drawTool) { event.preventDefault(); const at = stagePoint(event.clientX, event.clientY); drawingRef.current = { from: at, to: at }; setDrawing({ from: at, to: at }); return; } if (event.button === 0 && empty) { setKeyboardId(null); setSelectedFrameId(null); setSelectedLinkId((current) => relationshipSelection(current, "deselect")); viewportChangedRef.current = true; setInteraction("pan"); panRef.current = { from: { x: event.clientX, y: event.clientY }, origin: pan }; } }} onContextMenu={(event) => { const target = event.target as HTMLElement; const empty = event.target === event.currentTarget || target.dataset["testid"] === "canvas-lab-stage"; if (!empty || !canAddWork) return; event.preventDefault(); const rect = event.currentTarget.getBoundingClientRect(); const screen = { x: event.clientX - rect.left, y: event.clientY - rect.top }; setBoardMenu({ screen, board: boardPointFromScreen(screen) }); }} data-space-pan={spaceHeld} data-drawing={drawTool ? "true" : undefined} onScroll={(event) => keepViewportUnscrolled(event.currentTarget)} className="canvas-lab-surface relative min-h-0 flex-1 overflow-hidden">
