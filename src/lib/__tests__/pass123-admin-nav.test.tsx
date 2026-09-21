@@ -148,7 +148,9 @@ describe("Pass 123: the sidebar follows the weekly loop", () => {
     expect(screen.queryByText("Settings")).not.toBeNull();
   });
 
-  it("coach nav is unchanged and shows Coaching + Your account", () => {
+  it("guest nav shows Coaching only when a board was shared for review", () => {
+    // S4 — the coaching destination follows the grant, not the workspace role.
+    mocks.canReach = true;
     setup("coach", "company");
 
     expect(screen.queryByText("What you learned")).toBeNull();
@@ -159,5 +161,23 @@ describe("Pass 123: the sidebar follows the weekly loop", () => {
     expect(screen.queryByText("People you coach")).not.toBeNull();
     expect(screen.queryByText("Your account")).not.toBeNull();
     expect(screen.queryByText("Settings")).not.toBeNull();
+    cleanup();
+
+    mocks.canReach = false;
+    setup("coach", "company");
+    expect(screen.queryByText("People you coach")).toBeNull();
+    expect(screen.queryByText("Settings")).not.toBeNull();
+  });
+
+  it("gives a worker the coaching destination once they hold Review somewhere", () => {
+    mocks.canReach = true;
+    setup("member", "company");
+    expect(screen.queryByText("People you coach")).not.toBeNull();
+    cleanup();
+
+    mocks.canReach = false;
+    setup("member", "company");
+    expect(screen.queryByText("People you coach")).toBeNull();
   });
 });
+
