@@ -14,6 +14,7 @@ export function LabFrameMenu({
   restoreFocus,
   editable,
   custom,
+  context,
   removable,
   onFit,
   onRename,
@@ -24,6 +25,7 @@ export function LabFrameMenu({
   restoreFocus: () => void;
   editable: boolean;
   custom: boolean;
+  context: boolean;
   removable: boolean;
   onFit: () => void;
   onRename: () => void;
@@ -38,7 +40,7 @@ export function LabFrameMenu({
           size="sm"
           variant="ghost"
           className="canvas-lab-frame-menu-trigger"
-          aria-label="Workstream options"
+          aria-label={context ? "Context area options" : "Workstream options"}
           onPointerDown={(event) => event.stopPropagation()}
         >
           <MoreHorizontal className="h-4 w-4" />
@@ -59,6 +61,7 @@ export function LabFrameMenu({
             Remove workstream{removable ? "" : " · Move its cards first"}
           </DropdownMenuItem>
         ) : null}
+        {editable && context ? <DropdownMenuItem onSelect={onRemove}>Remove the context area</DropdownMenuItem> : null}
       </DropdownMenuContent>
     </DropdownMenu>
   );

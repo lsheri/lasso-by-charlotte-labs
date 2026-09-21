@@ -105,6 +105,14 @@ export const FRAME_MIN_HEIGHT = 220;
 export const CARD_GAP_Y = 144;
 export const FRAME_PADDING = 24;
 
+/** Fit content shares the exact same floor as pointer and keyboard resizing. */
+export function fitCardRect(node: Pick<LabNode, "width" | "height">, measuredHeight: number): Pick<LabNode, "width" | "height"> {
+  return {
+    width: Math.max(CARD_MIN_WIDTH, CARD_WIDTH),
+    height: Math.max(CARD_MIN_HEIGHT, Math.min(CARD_MAX_HEIGHT, measuredHeight || node.height)),
+  };
+}
+
 export type LabLink = { id: string; fromId: string; toId: string; fromAnchor: LabAnchor; toAnchor: LabAnchor; durableId?: string; durableVersion?: number; relation?: WorkboardRelation };
 
 export const REASONING_STEPS: { kind: LabTemplateKind; label: string }[] = [

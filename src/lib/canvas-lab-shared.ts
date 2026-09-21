@@ -13,8 +13,8 @@ export type WorkboardNodeKind = "brief" | "work_item" | "decision" | "judgment" 
 export type WorkboardFrameKind = "foundation" | "task" | "decisions" | "outputs" | "custom" | "context";
 export type WorkboardAnchor = "top" | "right" | "bottom" | "left";
 export type WorkboardRelation = "informed" | "produced" | "revised" | "cited" | "context";
-export const WORKBOARD_CARD_MIN_WIDTH = 180;
-export const WORKBOARD_CARD_MIN_HEIGHT = 112;
+export const WORKBOARD_CARD_MIN_WIDTH = 260;
+export const WORKBOARD_CARD_MIN_HEIGHT = 180;
 export const WORKBOARD_CARD_MAX_WIDTH = 520;
 export const WORKBOARD_CARD_MAX_HEIGHT = 520;
 
@@ -90,6 +90,8 @@ export type WorkboardDto = {
   viewerProfileId: string;
   /** Non-coach engagement members may arrange shared structure. */
   canEditStructure: boolean;
+  /** An archived context outline records that automatic creation must stay off. */
+  archivedContextFrame: { id: string; version: number } | null;
 };
 
 export type WorkboardFrameInput = {
@@ -126,7 +128,7 @@ export type WorkboardCommand =
   | { type: "frame_create"; frame: WorkboardFrameInput }
   | { type: "frame_update"; frameId: string; expectedVersion: number; patch: Partial<Pick<WorkboardFrameInput, "x" | "y" | "w" | "h" | "label" | "ord">> }
   | { type: "frame_archive"; frameId: string; expectedVersion: number }
-  | { type: "frame_restore"; frameId: string; expectedVersion: number }
+  | { type: "frame_restore"; frameId: string; expectedVersion: number; patch?: Pick<WorkboardFrameInput, "x" | "y" | "w" | "h"> }
   | { type: "node_create"; node: WorkboardNodeInput }
   | {
       type: "node_update";

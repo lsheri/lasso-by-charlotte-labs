@@ -48,8 +48,8 @@ export function noteWorkboardCardMenuOpened(orgId: string | undefined, nodeKind:
   if (orgId) logEvent("workboard.card_menu_opened", orgId, { node_kind: nodeKind, ownership });
 }
 
-/** Widened for B2 (a document joining or leaving context) and B3 (the trail). */
-export type WorkboardPersistEntity = "board" | "frame" | "node" | "relationship" | "context_doc" | "trail";
+/** Widened additively for context documents, the trail, and the context area. */
+export type WorkboardPersistEntity = "board" | "frame" | "node" | "relationship" | "context_doc" | "trail" | "context_area";
 export type WorkboardPersistAction = "create" | "update" | "archive" | "restore" | "added" | "removed" | "created";
 
 /** Phase 3: a durable Workboard change was confirmed. No ids, no content. */
