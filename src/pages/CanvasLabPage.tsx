@@ -278,6 +278,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   const [addWorkAnchor, setAddWorkAnchor] = useState<Point | null>(null);
   const [addWorkTarget, setAddWorkTarget] = useState<"board" | "context">("board");
   const [addWorkBusy, setAddWorkBusy] = useState(false);
+  const [blockColour, setBlockColour] = useState<WorkboardShapeColour>("green");
   /** Right-click on empty board space. Screen coords for the menu, board coords for the drop. */
   const [boardMenu, setBoardMenu] = useState<{ screen: Point; board: Point } | null>(null);
   /** B4: the workstream tool, the box being dragged and the name still to be given. */
@@ -1000,7 +1001,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       if (!keyboardId) return;
       const node = allNodes.find((entry) => entry.id === keyboardId);
       if (!node) return;
-      if (!node.local && node.kind !== "chat") {
+      if (!node.local && node.kind !== "chat" && node.kind !== "shape") {
         event.preventDefault();
         const hint = "Real work is removed from the board, not deleted. Use Remove from board.";
         setLinkRejection({ targetId: node.id, message: hint });
@@ -1738,7 +1739,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     });
     setKeyboardId(null);
     noteWorkboardNodeDeleted(orgId, eventKind(node));
-    setAnnouncement(`${node.title} removed from this workboard.`);
+    setAnnouncement(node.kind === "shape" ? "Colour block removed." : `${node.title} removed from this workboard.`);
     const entry = record({ action: "remove_note", node, links: links.filter((link) => link.fromId === node.id || link.toId === node.id) });
     if (entry) setUndoToast({ message: "Note removed", entry });
   }
