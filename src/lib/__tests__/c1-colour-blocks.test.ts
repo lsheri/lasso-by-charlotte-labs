@@ -39,6 +39,7 @@ describe("C1 colour block vocabulary and validation", () => {
 
     for (const kind of WORKBOARD_NODE_KINDS) {
       expect(validNodeInput(validByKind[kind])).toBe(kind === "mark" ? "Marks are not available yet." : null);
+      // W3 retired the colour block: a region is a frame, so the write path is closed.
     }
     expect(validNodeInput({ ...input(), kind: "unknown" as WorkboardNodeInput["kind"] })).toBe("Unknown workboard item kind.");
   });
@@ -48,14 +49,14 @@ describe("C1 colour block vocabulary and validation", () => {
     expect(validWorkboardNodeGeometry({ kind: "work_item", w: 1200, h: 900 })).toBe(false);
   });
 
-  it("accepts only closed palette tokens for colour blocks", () => {
-    expect(WORKBOARD_SHAPE_COLOURS).toContain("green");
-    expect(validNodeInput(input())).toBeNull();
-    expect(validNodeInput(input({ body: "#00ff00" }))).toBe("Choose one of the available block colours.");
+  it("keeps the colour block write path closed on purpose, the way marks are closed", () => {
+    expect(WORKBOARD_NODE_KINDS).not.toContain("shape");
+    expect(validNodeInput(input())).toBe("Unknown workboard item kind.");
+    expect(validNodeInput(input({ body: "#00ff00" }))).toBe("Unknown workboard item kind.");
   });
 
   it("refuses references and unknown kinds before the record does", () => {
-    expect(validNodeInput(input({ workItemId: "work-1" }))).toBe("A colour block cannot reference work or a decision.");
+    expect(validNodeInput(input({ workItemId: "work-1" }))).toBe("Unknown workboard item kind.");
     expect(validNodeInput({ ...input(), kind: "unknown" as WorkboardNodeInput["kind"] })).toBe("Unknown workboard item kind.");
   });
 
