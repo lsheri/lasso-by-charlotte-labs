@@ -82,27 +82,8 @@ export function BoardLinkSection({
   const live = (links.data?.links ?? []).filter((link) => shareLinkLive(link));
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(next) => {
-        setOpen(next);
-        if (!next) {
-          setFreshUrl(null);
-          setCopied(false);
-          setProblem(null);
-        }
-      }}
-    >
-      <DialogTrigger asChild>
-        <Button size="sm" variant="outline">
-          Share a link
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
-          <DialogTitle>Share this board</DialogTitle>
-          <DialogDescription>{shareExposureSentence(holdsOthersWork)}</DialogDescription>
-        </DialogHeader>
+    <section className="flex flex-col gap-3">
+        <p className="text-[11.5px] text-muted">{shareExposureSentence(holdsOthersWork)}</p>
 
         <ul className="space-y-1 text-[11.5px] text-muted">
           {shareLinkNotes().map((note) => (
