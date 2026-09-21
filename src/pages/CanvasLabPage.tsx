@@ -2057,6 +2057,25 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     setAnnouncement("Reasoning trail added.");
   }
 
+  async function addColourBlock(colour: WorkboardShapeColour, at = boardPointFromScreen(viewportCentre())) {
+    const id = `shape:${crypto.randomUUID()}`;
+    const node: LabNode = {
+      id, clientKey: id, kind: "shape", frame: null, title: "Colour block", summary: "", typeLabel: "colour block",
+      ownership: "yours", colour, local: true, x: Math.round(at.x - 210), y: Math.round(at.y - 140), width: 420, height: 280,
+    };
+    nodesRef.current = [...nodesRef.current, node];
+    setNodes((current) => [...(current ?? []), node]);
+    setKeyboardId(id);
+    if (!(await ensureNodeDurable(id))) {
+      nodesRef.current = nodesRef.current.filter((entry) => entry.id !== id);
+      setNodes((current) => current?.filter((entry) => entry.id !== id) ?? current);
+      setAnnouncement("That colour block could not be saved.");
+      return;
+    }
+    noteWorkboardNodeCreated(orgId, "shape");
+    setAnnouncement("Colour block added.");
+  }
+
   async function removeTrail() {
     const frame = framesRef.current.find((entry) => isTrailFrameId(entry.id));
     if (!frame) return;
