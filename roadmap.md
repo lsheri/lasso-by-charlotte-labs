@@ -82,7 +82,7 @@
 ## F7 Fit content width preservation
 - [x] Reproduce a widened card resetting to the default width
 - [x] Preserve current width within the interaction and record limits
-- [ ] Verify focused checks, types, and preview build
+- [x] Verify focused checks, types, and preview build
 
 ## Landing-next Find it clip
 - [x] Save uploaded clip and poster as public/videos/find-it.mp4 and find-it-poster.png
