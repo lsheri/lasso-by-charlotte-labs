@@ -18,6 +18,12 @@ vi.mock("@tanstack/react-start", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@tanstack/react-start")>()),
   useServerFn: () => vi.fn(),
 }));
+vi.mock("@tanstack/react-router", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@tanstack/react-router")>()),
+  Link: ({ children, ...props }: React.AnchorHTMLAttributes<HTMLAnchorElement>) => (
+    <a {...props}>{children}</a>
+  ),
+}));
 vi.mock("@tanstack/react-query", () => ({
   useQuery: () => ({ data: {} }),
   useQueryClient: () => ({ invalidateQueries: vi.fn() }),
