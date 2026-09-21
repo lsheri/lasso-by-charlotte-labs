@@ -1,6 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { Link, useMatchRoute, useSearch } from "@tanstack/react-router";
-import { useState, useSyncExternalStore } from "react";
+import { Fragment, useState, useSyncExternalStore } from "react";
 
 import { NewEngagementDialog } from "@/components/engagements/NewEngagementDialog";
 import { GraphiteIcon } from "@/components/notebook/icons";
@@ -9,12 +9,14 @@ import { useAffiliation } from "@/hooks/use-affiliation";
 import { useUnreadNotesAboutMe } from "@/hooks/use-coach-note-thread";
 import { useHasLiveCoachLink } from "@/hooks/use-coaching-links";
 import { useCoachingReach } from "@/hooks/use-coaching-reach";
+import { useSharedWithMe } from "@/hooks/use-shared-with-me";
 
 import { useDecisions } from "@/hooks/use-decisions";
 import { useEngagements } from "@/hooks/use-engagements";
 import { useProfile } from "@/hooks/use-profile";
 import * as roles from "@/lib/role-access";
 import { isEduOrg, vocabFor } from "@/lib/edu-vocab";
+import { logEvent } from "@/lib/telemetry";
 
 
 import {
@@ -155,6 +157,68 @@ function EngagementRow({
         </div>
       ) : null}
     </>
+  );
+}
+
+/**
+ * S5a — what someone handed you, under the name of the person who handed it.
+ * Silent when nothing was handed over: no section, no empty line. The person's
+ * name is a label, not a place to go; the boards under it are the links.
+ */
+function SharedWithMeGroup({
+  profiles,
+  orgId,
+  onNavigate,
+}: {
+  profiles: ReturnType<typeof useProfile>["profiles"];
+  orgId: string | undefined;
+  onNavigate?: (() => void) | undefined;
+}) {
+  const { groups } = useSharedWithMe(profiles);
+  if (groups.length === 0) return null;
+  return (
+    <div>
+      <div className="nb-group-header nb-shared-ink px-2">Shared with me</div>
+      <div className="mt-2 flex flex-col gap-0.5">
+        {groups.map((group) => (
+          <div key={group.granterId}>
+            <div className="nb-shared-ink truncate px-2 py-1 font-sans text-[11.5px]">
+              {group.granterName}
+            </div>
+            {group.engagements.map((engagement) => (
+              <Link
+                key={engagement.id}
+                to="/engagements/$id"
+                params={{ id: engagement.id }}
+                search={{ work: undefined }}
+                onClick={() => {
+                  if (orgId) {
+                    logEvent("shared.board_opened", orgId, {
+                      engagement_id: engagement.id,
+                      granter_id: group.granterId,
+                    });
+                  }
+                  onNavigate?.();
+                }}
+                className={`${linkClass} nb-nav-item-nested`}
+                activeProps={activeProps}
+                activeOptions={{ includeSearch: false }}
+              >
+                <PencilIndent />
+                <span className="flex min-w-0 items-center gap-1.5">
+                  {engagement.code ? (
+                    <span className="font-mono text-xs text-muted-foreground">
+                      {engagement.code}
+                    </span>
+                  ) : null}
+                  <span className="truncate">{engagement.title}</span>
+                </span>
+              </Link>
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
