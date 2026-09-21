@@ -34,7 +34,6 @@ function item(overrides: Partial<WorkItemRow> = {}): WorkItemRow {
 describe("pass 126 — deriveChatUrl", () => {
   it("derives the vendor URL from a real conversation UUID", () => {
     expect(deriveChatUrl("claude", UUID)).toBe(`https://claude.ai/chat/${UUID}`);
-    expect(deriveChatUrl("chatgpt", UUID)).toBe(`https://chatgpt.com/c/${UUID}`);
   });
 
   it("accepts an uppercase UUID", () => {
@@ -47,12 +46,13 @@ describe("pass 126 — deriveChatUrl", () => {
     expect(deriveChatUrl("claude", "charlotte-pricing-model-artemis-aug-2026")).toBeNull();
     expect(deriveChatUrl("claude", "session_016BPWabcdefghijklmnop")).toBeNull();
     expect(deriveChatUrl("claude", `${UUID}/../../evil`)).toBeNull();
-    expect(deriveChatUrl("chatgpt", `${UUID}?x=1`)).toBeNull();
+    expect(deriveChatUrl("chatgpt", UUID)).toBeNull();
     expect(deriveChatUrl("claude", null)).toBeNull();
   });
 
   it("does not derive for vendors whose URLs are not id-deterministic", () => {
     expect(deriveChatUrl("gemini", UUID)).toBeNull();
+    expect(deriveChatUrl("chatgpt", UUID)).toBeNull();
     expect(deriveChatUrl("copilot", UUID)).toBeNull();
     expect(deriveChatUrl(null, UUID)).toBeNull();
   });
