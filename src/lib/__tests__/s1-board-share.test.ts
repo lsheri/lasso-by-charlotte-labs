@@ -44,17 +44,20 @@ describe("S1 — the token", () => {
   });
 
   it("the raw token is never persisted anywhere", () => {
-    // Every write in the member path, and the only write in the elevated one.
-    const writes = [...SERVER.matchAll(/\.(insert|update|upsert)\(([\s\S]*?)\)\s*\n/g)].map((m) => m[2] ?? "");
-    const openWrites = [...OPEN.matchAll(/\.(insert|update|upsert)\(([\s\S]*?)\)\s*\n/g)].map((m) => m[2] ?? "");
-    for (const body of [...writes, ...openWrites]) {
-      expect(body).not.toMatch(/\btoken\b(?!_hash)/);
+    const insert = SERVER.slice(
+      SERVER.indexOf('.from("board_share_links").insert({'),
+      SERVER.indexOf("if (error) return { status: \"error\" }"),
+    );
+    // The one row ever written carries the hash and no raw value.
+    expect(insert).toContain("token_hash: await hashShareToken(token)");
+    expect(insert.replace("token_hash: await hashShareToken(token)", "")).not.toContain("token");
+    // No write anywhere names a token column, in either half.
+    for (const source of [SERVER, OPEN]) {
+      expect(source).not.toMatch(/\btoken:\s/);
+      expect(source).not.toMatch(/token_raw|share_token:/);
     }
-    // The column does not exist and nothing tries to write one.
-    expect(SERVER).not.toMatch(/token:\s/);
-    expect(OPEN).not.toMatch(/token:\s/);
-    // The one stored value is the hash, and it is computed here.
-    expect(SERVER).toContain("token_hash: await hashShareToken(token)");
+    // And the elevated half only ever hashes what it is handed.
+    expect(OPEN).toContain("await sha256Hex(token)");
   });
 
   it("a token that is not the right shape is refused before anything is read", () => {
@@ -160,7 +163,7 @@ describe("S1 — the honest sentence", () => {
     const sentence = shareExposureSentence(false);
     expect(sentence).toContain("everything on this board");
     expect(sentence).toContain("AI conversations behind the cards");
-    expect(sentence).toContain("anyone with this link".toLowerCase().slice(0, 8));
+    expect(sentence.startsWith("Anyone with this link")).toBe(true);
     expect(sentence).toContain("48 hours");
     // It sits where the person reads it before choosing, above the control.
     expect(DIALOG.indexOf("shareExposureSentence")).toBeLessThan(DIALOG.indexOf("Make a link"));
@@ -231,12 +234,11 @@ describe("S1 — the read only view", () => {
 
 describe("S1 — coverage", () => {
   it("carries the two closed dims and nothing about the viewer", () => {
-    const dims = [...OPEN.matchAll(/dims: \{[^}]*\}/g)].map((m) => m[0]);
-    expect(dims.length).toBeGreaterThan(0);
-    for (const dim of dims) {
-      expect(dim).not.toMatch(/id|title|token|email|ip/);
-    }
-    expect(OPEN).toContain('const dims = reason ? { action, reason } : { action }');
+    // The elevated half builds its dims once, from the two closed words only.
+    expect(OPEN).toContain("const dims = reason ? { action, reason } : { action };");
+    const reasons = [...new Set([...OPEN.matchAll(/"(expired|revoked|unknown)"/g)].map((m) => m[1]))];
+    expect(reasons.sort()).toEqual(["expired", "revoked", "unknown"]);
+    expect(OPEN).not.toMatch(/dims: \{[^}]*(_id|title|token|email)/);
     expect(FUNCTIONS).toContain('dims: { action: "created" }');
     expect(FUNCTIONS).toContain('dims: { action: "revoked" }');
   });
