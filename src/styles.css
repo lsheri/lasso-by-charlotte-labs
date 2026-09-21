@@ -1714,6 +1714,11 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 .canvas-lab-draw-rect { position: absolute; z-index: 18; pointer-events: none; border: 1.4px dashed var(--nb-green); border-radius: var(--radius-control); background: color-mix(in srgb, var(--nb-green) 8%, transparent); }
 .canvas-lab-draw-name { position: absolute; z-index: 21; }
 .canvas-lab-surface[data-drawing="true"] { cursor: crosshair; }
+.canvas-lab-region-palette { position: absolute; right: 16px; top: calc(100% + 8px); z-index: 30; }
+.canvas-lab-region-swatches { display: flex; align-items: center; gap: 4px; border: 1px solid var(--nb-line-hairline); border-radius: var(--radius-control); background: var(--nb-paper); padding: 5px; box-shadow: var(--shadow-modal); }
+.canvas-lab-region-swatch { width: 22px; height: 22px; min-width: 22px; border: 1.4px solid; border-radius: var(--radius-control); padding: 0; box-shadow: none; }
+.canvas-lab-region-swatch:hover { box-shadow: inset 0 0 0 1px var(--nb-graphite); }
+.canvas-lab-region-swatch[aria-pressed="true"] { outline: 2px solid var(--nb-graphite); outline-offset: 2px; }
 .canvas-lab-add-workstream:focus-visible,
 .canvas-lab-inline-workstream button:focus-visible,
 .canvas-lab-inline-workstream input:focus-visible,
