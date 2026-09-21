@@ -12,11 +12,12 @@ import {
   arrivalWhen,
   selectArrivals,
 } from "@/lib/inbox-arrivals";
-import {
 import { workDateLabel } from "@/lib/work-date-label";
+import {
   entryHead,
   entryItems,
   entryKey,
+  formatDate,
   groupConversations,
   isConversationGroup,
   type WorkItemRow,
