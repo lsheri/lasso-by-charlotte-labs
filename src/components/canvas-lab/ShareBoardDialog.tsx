@@ -139,8 +139,7 @@ export function BoardLinkSection({
             </ul>
           )}
         </div>
-      </DialogContent>
-    </Dialog>
+    </section>
   );
 }
 
