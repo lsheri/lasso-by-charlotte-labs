@@ -45,6 +45,7 @@ export function useCaptureFiles() {
     const userId = userData.user?.id;
     if (!userId) {
       setError("You're signed out.");
+      for (const file of files) failures.push({ name: file.name, reason: "You're signed out." });
       setPending(false);
       setProgress(null);
       return [];
@@ -53,10 +54,11 @@ export function useCaptureFiles() {
     const capturedIds: string[] = [];
     for (const [index, file] of files.entries()) {
       setProgress({ done: index, total: files.length });
-      const path = `${userId}/${crypto.randomUUID()}-${file.name}`;
+      const path = storageObjectKey(userId, crypto.randomUUID(), file.name);
       const { error: uploadError } = await supabase.storage.from("work-files").upload(path, file);
       if (uploadError) {
         setError(uploadError.message);
+        failures.push({ name: file.name, reason: uploadError.message });
         continue;
       }
 
