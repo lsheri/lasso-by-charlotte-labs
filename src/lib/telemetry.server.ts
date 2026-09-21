@@ -9,6 +9,7 @@ import {
   shouldNotePresence,
   type DataTier,
 } from "./data-consent-shared";
+import { resolveEnvironment } from "./environment.server";
 import type { TelemetryDims, TelemetryEvent } from "./telemetry-shared";
 
 
