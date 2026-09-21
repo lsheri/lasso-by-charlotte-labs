@@ -6,7 +6,9 @@ import {
   type WorkboardNodeInput,
   type WorkboardNodeKind,
 } from "@/lib/canvas-lab-shared";
-import { validNodeInput } from "@/lib/canvas-lab.server";
+import { validateLinkNodeKinds, validNodeInput } from "@/lib/canvas-lab.server";
+import { applyDurableBoard, inboundLabNodeIds, shapePointerIntent, type LabLink, type LabNode } from "@/components/canvas-lab/canvas-lab-model";
+import { placementRectsForNodes } from "@/lib/workboard-placement";
 
 function input(overrides: Partial<WorkboardNodeInput> = {}): WorkboardNodeInput {
   return {
@@ -42,5 +44,46 @@ describe("C1 colour block vocabulary and validation", () => {
   it("refuses references and unknown kinds before the record does", () => {
     expect(validNodeInput(input({ workItemId: "work-1" }))).toBe("A colour block cannot reference work or a decision.");
     expect(validNodeInput({ ...input(), kind: "unknown" as WorkboardNodeKind })).toBe("Unknown workboard item kind.");
+  });
+
+  it("refuses a relationship with a colour block at either end", () => {
+    expect(validateLinkNodeKinds(["shape", "work_item"])).toBe("A colour block cannot be connected.");
+    expect(validateLinkNodeKinds(["work_item", "decision"])).toBeNull();
+  });
+});
+
+describe("C1 colour block record and board behavior", () => {
+  const shapeDto = {
+    id: "shape-1", frameId: null, kind: "shape" as const, workItemId: null, decisionId: null,
+    authorProfileId: "teammate", authorName: "Lee", title: "", body: "green", judgmentType: null,
+    x: 40, y: 80, w: 1200, h: 900, hidden: false, version: 2, referenceReadable: true,
+  };
+
+  it("rehydrates a saved colour block with its token and attribution", () => {
+    const merged = applyDurableBoard({ frames: [], nodes: [] }, {
+      id: "board-1", engagementId: "eng-1", version: 1, frames: [], nodes: [shapeDto], links: [],
+      viewerProfileId: "me", canEditStructure: true, archivedContextFrame: null,
+    });
+    expect(merged.nodes[0]).toMatchObject({ kind: "shape", colour: "green", ownership: "teammate", width: 1200, height: 900 });
+  });
+
+  it("keeps colour blocks out of the inbound walk even with an old malformed relationship", () => {
+    const nodes = [{ id: "shape", kind: "shape" }, { id: "card", kind: "work" }] as LabNode[];
+    const links = [{ id: "link", fromId: "shape", toId: "card", fromAnchor: "right", toAnchor: "left" }] as LabLink[];
+    expect([...inboundLabNodeIds(nodes, links, "card")]).toEqual(["card"]);
+  });
+
+  it("routes pointer presses according to block selection and edge position", () => {
+    expect(shapePointerIntent({ selected: false, onEdge: false })).toBe("pan");
+    expect(shapePointerIntent({ selected: false, onEdge: true })).toBe("drag");
+    expect(shapePointerIntent({ selected: true, onEdge: false })).toBe("drag");
+  });
+
+  it("does not reserve placement space for colour blocks", () => {
+    const nodes = [
+      { id: "shape", kind: "shape", x: 0, y: 0, width: 1200, height: 900 },
+      { id: "card", kind: "work", x: 300, y: 0, width: 260, height: 180 },
+    ] as LabNode[];
+    expect(placementRectsForNodes(nodes)).toEqual([{ x: 300, y: 0, width: 260, height: 180 }]);
   });
 });
