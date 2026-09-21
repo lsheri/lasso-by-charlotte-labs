@@ -108,7 +108,7 @@ describe("CG1 inbox congruency", () => {
       itemOfType("thread", "ai_thread"),
       itemOfType("document", "document"),
       itemOfType("sheet", "sheet"),
-      itemOfType("call", "call_transcript"),
+      itemOfType("call", "call"),
     ];
     render(<WorkPage />);
     fireEvent.click(screen.getByRole("button", { name: "Claimed by you" }));
