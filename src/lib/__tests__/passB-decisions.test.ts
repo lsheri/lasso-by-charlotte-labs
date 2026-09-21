@@ -96,7 +96,9 @@ describe("pass B: the surfaces keep their controls", () => {
     const row = read("src/components/decisions/DecisionLogRow.tsx");
     expect(row).toContain("Save the reasoning");
     expect(row).toContain("Why was this the right decision? A sentence is enough.");
-    expect(src).toContain("WHY THE LOG EXISTS");
+    // The "WHY THE LOG EXISTS" label is gone from the product; only the
+    // filter rail below is still a control worth keeping.
+
     expect(src).toContain("Everything");
     expect(src).toContain("Awaiting your review");
     expect(src).toContain("Needs reasoning");
