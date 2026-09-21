@@ -97,16 +97,16 @@ function SharedCard({
           {itemLabel(item.type)}
         </p>
       ) : null}
-      {node.body ? <p className="mt-1 whitespace-pre-wrap text-[11.5px] text-muted">{node.body}</p> : null}
+      {node.body ? <p className="mt-1 whitespace-pre-wrap nb-type-small text-muted">{node.body}</p> : null}
       {decision ? (
-        <div className="mt-1 space-y-1 text-[11.5px] text-muted">
+        <div className="mt-1 space-y-1 nb-type-small text-muted">
           <p>{decision.situation}</p>
           <p className="text-foreground">{decision.call}</p>
           <p>{decision.why}</p>
         </div>
       ) : null}
       {item && item.turns.length > 0 ? (
-        <ol className="mt-2 max-h-full space-y-2 overflow-y-auto pr-1 text-[11.5px]">
+        <ol className="mt-2 max-h-full space-y-2 overflow-y-auto pr-1 nb-type-small">
           {item.turns.map((turn) => (
             <li key={turn.turnNo}>
               <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">

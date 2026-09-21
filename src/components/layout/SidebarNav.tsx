@@ -16,7 +16,7 @@ import { useEngagements } from "@/hooks/use-engagements";
 import { useProfile } from "@/hooks/use-profile";
 import * as roles from "@/lib/role-access";
 import { isEduOrg, vocabFor } from "@/lib/edu-vocab";
-import { logEvent } from "@/lib/telemetry";
+import { bucket, logEvent } from "@/lib/telemetry";
 
 
 import {
@@ -176,13 +176,18 @@ function SharedWithMeGroup({
 }) {
   const { groups } = useSharedWithMe(profiles);
   if (groups.length === 0) return null;
+  // S5b · the event says how big the section is, never which row was opened.
+  const grantersBand = bucket(groups.length);
+  const boardsBand = bucket(
+    groups.reduce((total, group) => total + group.engagements.length, 0),
+  );
   return (
     <div>
       <div className="nb-group-header nb-shared-ink px-2">Shared with me</div>
       <div className="mt-2 flex flex-col gap-0.5">
         {groups.map((group) => (
           <div key={group.granterId}>
-            <div className="nb-shared-ink truncate px-2 py-1 font-sans text-[11.5px]">
+            <div className="nb-shared-ink nb-shared-name truncate px-2 py-1">
               {group.granterName}
             </div>
             {group.engagements.map((engagement) => (
@@ -194,8 +199,8 @@ function SharedWithMeGroup({
                 onClick={() => {
                   if (orgId) {
                     logEvent("shared.board_opened", orgId, {
-                      engagement_id: engagement.id,
-                      granter_id: group.granterId,
+                      boards_band: boardsBand,
+                      granters_band: grantersBand,
                     });
                   }
                   onNavigate?.();

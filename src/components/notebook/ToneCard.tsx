@@ -66,7 +66,7 @@ export function ToneCard({
 
 
       {children ? (
-        <div className="text-[11.5px] leading-[17px] text-muted-foreground">{children}</div>
+        <div className="nb-type-small leading-[17px] text-muted-foreground">{children}</div>
       ) : null}
 
       {meta ? (

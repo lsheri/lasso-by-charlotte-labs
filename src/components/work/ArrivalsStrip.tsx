@@ -89,7 +89,7 @@ export function ArrivalsStrip({ items }: { items: WorkItemRow[] }) {
             <li
               key={key}
               data-testid="arrival-row"
-              className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11.5px] text-muted-foreground"
+              className="flex flex-wrap items-center gap-x-3 gap-y-1 nb-type-small text-muted-foreground"
             >
               <SourceMark item={head} />
               <span className="min-w-0 max-w-[280px] truncate text-foreground">{head.title}</span>
@@ -107,7 +107,7 @@ export function ArrivalsStrip({ items }: { items: WorkItemRow[] }) {
                   type="button"
                   disabled={busy === key}
                   onClick={() => void undo(pieces, key, place.taskId)}
-                  className="text-[11.5px] font-medium text-accent-deep transition-opacity hover:opacity-70 disabled:opacity-50"
+                  className="nb-type-small font-medium text-accent-deep transition-opacity hover:opacity-70 disabled:opacity-50"
                 >
                   Undo
                 </button>
@@ -120,7 +120,7 @@ export function ArrivalsStrip({ items }: { items: WorkItemRow[] }) {
         <button
           type="button"
           onClick={() => setShowAll(true)}
-          className="mt-2 text-[11.5px] text-muted-foreground transition-colors hover:text-foreground"
+          className="mt-2 nb-type-small text-muted-foreground transition-colors hover:text-foreground"
         >
           Show all ({arrivals.length})
         </button>

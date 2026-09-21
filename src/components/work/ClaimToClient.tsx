@@ -101,7 +101,7 @@ export function ClaimToClient({
           onClick={(event) => event.stopPropagation()}
           className={
             emphasis === "lead"
-              ? "inline-flex min-h-11 items-center text-[11.5px] font-medium text-accent-deep transition-opacity hover:opacity-70 md:min-h-0"
+              ? "inline-flex min-h-11 items-center nb-type-small font-medium text-accent-deep transition-opacity hover:opacity-70 md:min-h-0"
               : "inline-flex min-h-11 items-center text-xs text-muted-foreground transition-colors hover:text-foreground md:min-h-0"
           }
         >

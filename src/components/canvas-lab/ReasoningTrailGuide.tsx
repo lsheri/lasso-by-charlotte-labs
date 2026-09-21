@@ -56,7 +56,7 @@ export function ReasoningTrailGuide({ onAdd, rect: placed, onHandlePointerDown, 
         {REASONING_STEPS.map((step, index) => (
           <div key={step.kind} className="relative min-w-[124px] border border-dashed border-[var(--nb-pencil)] bg-card p-2">
             <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">{index + 1}</span>
-            <p className="mt-1 text-[11.5px] font-medium text-foreground">{step.label}</p>
+            <p className="mt-1 nb-type-small font-medium text-foreground">{step.label}</p>
             {step.kind === "judgment" ? (
               <div ref={judgmentRef} className="relative mt-1" onPointerDown={(event) => event.stopPropagation()} onKeyDown={closeFromEscape}>
                 <Button ref={triggerRef} type="button" variant="ghost" size="sm" className="canvas-lab-step-add h-6 px-1 text-[9px]" aria-haspopup="menu" aria-expanded={judgmentOpen} aria-label="Add Human judgment local node" onPointerDown={(event) => event.stopPropagation()} onClick={() => setJudgmentOpen((open) => !open)}><Plus className="mr-1 h-3 w-3" />Add</Button>

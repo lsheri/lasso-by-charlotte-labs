@@ -83,9 +83,9 @@ export function BoardLinkSection({
 
   return (
     <section className="flex flex-col gap-3">
-        <p className="text-[11.5px] text-muted">{shareExposureSentence(holdsOthersWork)}</p>
+        <p className="nb-type-small text-muted">{shareExposureSentence(holdsOthersWork)}</p>
 
-        <ul className="space-y-1 text-[11.5px] text-muted">
+        <ul className="space-y-1 nb-type-small text-muted">
           {shareLinkNotes().map((note) => (
             <li key={note}>{note}</li>
           ))}
@@ -93,7 +93,7 @@ export function BoardLinkSection({
 
         {freshUrl ? (
           <div className="space-y-2">
-            <p className="text-[11.5px] text-muted">
+            <p className="nb-type-small text-muted">
               Copy it now. This is the only time it is shown.
             </p>
             <div className="flex items-center gap-2">
@@ -120,12 +120,12 @@ export function BoardLinkSection({
           </Button>
         )}
 
-        {problem ? <p className="text-[11.5px] text-foreground">{problem}</p> : null}
+        {problem ? <p className="nb-type-small text-foreground">{problem}</p> : null}
 
         <div className="space-y-2">
           <p className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">Live links</p>
           {live.length === 0 ? (
-            <p className="text-[11.5px] text-muted">No link to this board is open right now.</p>
+            <p className="nb-type-small text-muted">No link to this board is open right now.</p>
           ) : (
             <ul className="space-y-2">
               {live.map((link) => (
@@ -154,7 +154,7 @@ function LiveLinkRow({
 }) {
   return (
     <li className="flex items-center justify-between gap-3 rounded-md border border-border p-2">
-      <span className="text-[11.5px] text-muted">
+      <span className="nb-type-small text-muted">
         {shareTimeLeftLabel(link.expiresAt)}
         {link.openedCount > 0
           ? ` · opened ${link.openedCount} ${link.openedCount === 1 ? "time" : "times"}`

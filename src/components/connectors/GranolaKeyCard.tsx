@@ -72,7 +72,7 @@ export function GranolaKeyCard() {
           <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
             {busy ? "Pending" : statusLabel(account)}
           </p>
-          <p className="mt-1 text-[11.5px] leading-[17px] text-muted-foreground">
+          <p className="mt-1 nb-type-small leading-[17px] text-muted-foreground">
             Meeting notes and transcripts from your calls.
           </p>
           {connected && masked?.masked ? (

@@ -46,7 +46,7 @@ export function ReadingPanel({ items }: { items: WorkItemRow[] }) {
             </li>
           ))}
         </ul>
-        <p className="mt-3 text-[11.5px] leading-[17px] text-muted-foreground">
+        <p className="mt-3 nb-type-small leading-[17px] text-muted-foreground">
           Nothing enters your record until you ask a tool to send it.
         </p>
       </ToneCard>

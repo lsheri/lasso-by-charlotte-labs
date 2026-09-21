@@ -3,6 +3,7 @@ import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
+import { EVENT_DIM_KEYS } from "@/lib/event-dim-allowlist";
 import { sharedWithMe, type SharedMembershipRow } from "@/lib/shared-with-me";
 
 function files(dir: string): string[] {
@@ -108,6 +109,19 @@ describe("s5 · shared with me", () => {
   it("has no surface deciding inline who shared something", () => {
     const offenders = [...files("src/components"), ...files("src/pages")].filter((path) =>
       /\badded_by\b/.test(readFileSync(path, "utf8")),
+    );
+    expect(offenders).toEqual([]);
+  });
+
+  it("carries no id on the shared event's dims", () => {
+    const dims = EVENT_DIM_KEYS["shared.board_opened"];
+    if (!dims) throw new Error("event not in the allowlist");
+    expect(dims.filter((key) => /_id$/.test(key))).toEqual([]);
+  });
+
+  it("leaves the arbitrary small type out of the components", () => {
+    const offenders = files("src/components").filter((path) =>
+      readFileSync(path, "utf8").includes("text-[11.5px]"),
     );
     expect(offenders).toEqual([]);
   });

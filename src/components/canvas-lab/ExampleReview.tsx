@@ -30,11 +30,11 @@ function TrailGroup({ label, rows }: { label: string; rows: { node: { id: string
     <section className="mb-4">
       <h2 className="font-hand text-[16px] text-green">{label}</h2>
       {rows.length === 0 ? (
-        <p className="mt-1 text-[11.5px] text-muted-foreground">Nothing attached here.</p>
+        <p className="mt-1 nb-type-small text-muted-foreground">Nothing attached here.</p>
       ) : (
         <ul className="mt-1 space-y-1">
           {rows.map((row) => (
-            <li key={row.node.id} className="border-l-2 border-[var(--nb-green)] pl-2 text-[11.5px] leading-[17px] text-foreground">
+            <li key={row.node.id} className="border-l-2 border-[var(--nb-green)] pl-2 nb-type-small leading-[17px] text-foreground">
               {row.node.title}
               {row.relation === "context" ? "" : ` · ${row.relation}`}
             </li>
@@ -73,7 +73,7 @@ export function ExampleReview({ onClose }: { onClose: () => void }) {
               <li key={node.id} className="border border-border bg-card p-3">
                 <p className="font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">{node.typeLabel}</p>
                 <p className="mt-1 text-[13px] leading-[20px] text-foreground">{node.title}</p>
-                <p className="text-[11.5px] leading-[17px] text-muted-foreground">{node.summary}</p>
+                <p className="nb-type-small leading-[17px] text-muted-foreground">{node.summary}</p>
               </li>
             ))}
           </ul>

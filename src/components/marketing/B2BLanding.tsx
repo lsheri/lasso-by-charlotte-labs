@@ -369,7 +369,7 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
                 Four months, one real engagement, your team, your tools. You keep every record whether
                 or not you continue.
               </p>
-              <p className="mt-3 max-w-2xl font-mono text-[11.5px] text-muted-foreground">
+              <p className="mt-3 max-w-2xl font-mono nb-type-small text-muted-foreground">
                 Fixed fee for the pilot. No per-seat pricing until you've seen it work.
               </p>
 

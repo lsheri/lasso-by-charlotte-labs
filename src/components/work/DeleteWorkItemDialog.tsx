@@ -131,7 +131,7 @@ export function DeleteWorkItemDialog({
               </p>
             ) : null}
             <p className="text-[13px] leading-[18px] text-foreground">{title}</p>
-            <label className="block text-[11.5px] text-muted-foreground" htmlFor="delete-work-confirm">
+            <label className="block nb-type-small text-muted-foreground" htmlFor="delete-work-confirm">
               {DELETE_CONFIRM_LABEL}
             </label>
             <Input

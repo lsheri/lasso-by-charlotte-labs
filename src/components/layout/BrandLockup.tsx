@@ -13,7 +13,7 @@ export function BrandLockup({ className = "" }: { className?: string }) {
       <LassoLoopMark className="h-10 w-10 shrink-0" />
       <div className="flex flex-col leading-none">
         <span className="font-serif text-2xl text-foreground">Lasso</span>
-        <span className="font-hand text-[11.5px] text-green">by Charlotte Labs</span>
+        <span className="font-hand nb-type-small text-green">by Charlotte Labs</span>
       </div>
     </div>
   );

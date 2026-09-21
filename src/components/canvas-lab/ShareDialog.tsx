@@ -123,7 +123,7 @@ function PeopleSection({
       <p className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">People</p>
 
       <div className="flex flex-col gap-2">
-        <label className="text-[11.5px] text-muted" htmlFor="share-person">
+        <label className="nb-type-small text-muted" htmlFor="share-person">
           Choose someone from your workspace
         </label>
         <select
@@ -144,7 +144,7 @@ function PeopleSection({
         <div className="flex flex-col gap-2">
           {ACCESS_CHOICES.map((choice) => (
             <div key={choice.value} className="flex items-start justify-between gap-3">
-              <p className="text-[11.5px] text-muted">{choice.line}</p>
+              <p className="nb-type-small text-muted">{choice.line}</p>
               <Button
                 size="sm"
                 variant="outline"
@@ -158,14 +158,14 @@ function PeopleSection({
         </div>
       </div>
 
-      {problem ? <p className="text-[11.5px] text-foreground">{problem}</p> : null}
+      {problem ? <p className="nb-type-small text-foreground">{problem}</p> : null}
 
       <div className="flex flex-col gap-2">
         <p className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">
           Already on this board
         </p>
         {onBoard.length === 0 ? (
-          <p className="text-[11.5px] text-muted">Nobody else is on this board yet.</p>
+          <p className="nb-type-small text-muted">Nobody else is on this board yet.</p>
         ) : (
           <ul className="space-y-2">
             {onBoard.map((person) => (
@@ -173,11 +173,11 @@ function PeopleSection({
                 key={person.id}
                 className="flex items-center justify-between gap-3 rounded-md border border-border p-2"
               >
-                <span className="text-[11.5px] text-muted">
+                <span className="nb-type-small text-muted">
                   {person.display_name} · {accessLabel(person.access as EngagementAccessChoice)}
                 </span>
                 {person.isYou ? (
-                  <span className="text-[11.5px] text-muted">You</span>
+                  <span className="nb-type-small text-muted">You</span>
                 ) : (
                   <Button
                     size="sm"
@@ -202,8 +202,8 @@ function ComingSection() {
   return (
     <section aria-disabled="true" className="flex flex-col gap-2 opacity-60">
       <p className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">{COMING_STATE}</p>
-      <p className="text-[11.5px] text-foreground">{COMING_TITLE}</p>
-      <p className="text-[11.5px] text-muted">{COMING_LINE}</p>
+      <p className="nb-type-small text-foreground">{COMING_TITLE}</p>
+      <p className="nb-type-small text-muted">{COMING_LINE}</p>
     </section>
   );
 }

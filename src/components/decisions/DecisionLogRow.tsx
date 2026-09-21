@@ -76,7 +76,7 @@ export function DecisionLogRow({
                   {source.heading}
                 </span>
                 {source.quote ? (
-                  <span className="mt-2 block font-mono text-[11.5px] font-normal leading-[17px] text-foreground">
+                  <span className="mt-2 block font-mono nb-type-small font-normal leading-[17px] text-foreground">
                     “{source.quote}”
                   </span>
                 ) : null}

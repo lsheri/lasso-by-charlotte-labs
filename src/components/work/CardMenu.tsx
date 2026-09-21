@@ -20,7 +20,7 @@ function fidelityLine(value: string | null | undefined): string | null {
 
 function InfoLine({ label, value }: { label: string; value: string }) {
   return (
-    <p className="flex items-baseline justify-between gap-3 text-[11.5px] leading-[17px]">
+    <p className="flex items-baseline justify-between gap-3 nb-type-small leading-[17px]">
       <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
         {label}
       </span>

@@ -95,7 +95,7 @@ export function WisprCard() {
           <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
             {busy ? "Pending" : connected ? "Connected" : "Not connected"}
           </p>
-          <p className="mt-1 text-[11.5px] leading-[17px] text-muted-foreground">
+          <p className="mt-1 nb-type-small leading-[17px] text-muted-foreground">
             Meetings, notes and transcripts from your calls. Read only, so Lasso never writes
             anything back to Wispr.
           </p>

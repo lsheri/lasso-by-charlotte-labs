@@ -1815,6 +1815,17 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 .nb-shared-ink {
   color: var(--nb-shared);
 }
+/* S5b · the person label under the section title, at type/small like the rest
+   of the sidebar grammar. */
+.nb-shared-name {
+  font-family: var(--font-sans);
+  font-size: 11.5px;
+}
+/* type/small, resolved through the sheet rather than an arbitrary Tailwind
+   value, so every 11.5px surface reads from one place. */
+.nb-type-small {
+  font-size: 11.5px;
+}
 .nb-nav-item {
   position: relative;
   display: flex;

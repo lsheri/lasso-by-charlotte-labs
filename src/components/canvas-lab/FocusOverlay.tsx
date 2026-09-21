@@ -67,7 +67,7 @@ function CommentComposer({
   return (
     <div className="mt-2">
       {quote ? (
-        <p className="mb-1 line-clamp-2 text-[11.5px] italic leading-[17px] text-muted-foreground">
+        <p className="mb-1 line-clamp-2 nb-type-small italic leading-[17px] text-muted-foreground">
           &ldquo;{quote}&rdquo;
         </p>
       ) : null}
@@ -86,14 +86,14 @@ function CommentComposer({
         aria-label={label}
         className="text-[12px]"
       />
-      <p className="mt-1 text-[11.5px] leading-[17px] text-muted-foreground">
+      <p className="mt-1 nb-type-small leading-[17px] text-muted-foreground">
         Visible to your engagement team
       </p>
       <div className="mt-1 flex items-center gap-2">
-        <Button size="sm" className="h-7 px-2 text-[11.5px]" disabled={!ready} onClick={() => onSubmit(body.trim())}>
+        <Button size="sm" className="h-7 px-2 nb-type-small" disabled={!ready} onClick={() => onSubmit(body.trim())}>
           {submitLabel}
         </Button>
-        <Button size="sm" variant="ghost" className="h-7 px-2 text-[11.5px]" onClick={onCancel}>
+        <Button size="sm" variant="ghost" className="h-7 px-2 nb-type-small" onClick={onCancel}>
           Cancel
         </Button>
       </div>
@@ -278,7 +278,7 @@ export function FocusOverlay({
               <section ref={commentsRef} className="mb-5 border-b border-border pb-4">
                 <h2 className="section-title mb-2">comments</h2>
                 {threads.length === 0 ? (
-                  <p className="text-[11.5px] leading-[17px] text-muted-foreground">
+                  <p className="nb-type-small leading-[17px] text-muted-foreground">
                     {canWrite
                       ? "Select a passage, then leave a comment for people who can open this chat."
                       : "No comments on this chat yet."}
@@ -296,7 +296,7 @@ export function FocusOverlay({
                           onClick={() => goToTurn(thread.turnNo)}
                         >
                           <CommentLine comment={thread} />
-                          <p className="mt-1 line-clamp-2 text-[11.5px] italic leading-[17px] text-muted-foreground">
+                          <p className="mt-1 line-clamp-2 nb-type-small italic leading-[17px] text-muted-foreground">
                             &ldquo;{thread.excerpt}&rdquo;
                             {thread.stale ? " · From an earlier version" : ""}
                           </p>
@@ -342,7 +342,7 @@ export function FocusOverlay({
                                     <Button
                                       size="sm"
                                       variant="ghost"
-                                      className="h-6 px-1.5 text-[11.5px]"
+                                      className="h-6 px-1.5 nb-type-small"
                                       onClick={() => setEditingId(reply.id)}
                                     >
                                       Edit
@@ -350,7 +350,7 @@ export function FocusOverlay({
                                     <Button
                                       size="sm"
                                       variant="ghost"
-                                      className="h-6 px-1.5 text-[11.5px]"
+                                      className="h-6 px-1.5 nb-type-small"
                                       onClick={() => onArchiveComment?.(reply)}
                                     >
                                       Remove
@@ -379,7 +379,7 @@ export function FocusOverlay({
                               <Button
                                 size="sm"
                                 variant="ghost"
-                                className="h-6 px-1.5 text-[11.5px]"
+                                className="h-6 px-1.5 nb-type-small"
                                 onClick={() => setReplyTo(thread.id)}
                               >
                                 Reply
@@ -390,7 +390,7 @@ export function FocusOverlay({
                                 <Button
                                   size="sm"
                                   variant="ghost"
-                                  className="h-6 px-1.5 text-[11.5px]"
+                                  className="h-6 px-1.5 nb-type-small"
                                   onClick={() => setEditingId(thread.id)}
                                 >
                                   Edit
@@ -398,7 +398,7 @@ export function FocusOverlay({
                                 <Button
                                   size="sm"
                                   variant="ghost"
-                                  className="h-6 px-1.5 text-[11.5px]"
+                                  className="h-6 px-1.5 nb-type-small"
                                   onClick={() => onArchiveComment?.(thread)}
                                 >
                                   Remove
@@ -418,14 +418,14 @@ export function FocusOverlay({
               <section>
                 <h2 className="section-title mb-2">your highlights</h2>
                 {crossTurn ? (
-                  <p className="mb-2 text-[11.5px] leading-[17px] text-muted-foreground">
+                  <p className="mb-2 nb-type-small leading-[17px] text-muted-foreground">
                     Highlight one turn at a time
                   </p>
                 ) : turnSelection && canWrite ? (
                   <div className="mb-2 flex items-center gap-2">
                     <Button
                       size="sm"
-                      className="h-7 flex-1 px-2 text-[11.5px]"
+                      className="h-7 flex-1 px-2 nb-type-small"
                       onClick={() => {
                         onHighlight?.(turnSelection);
                         clearSelection();
@@ -436,7 +436,7 @@ export function FocusOverlay({
                     <Button
                       size="sm"
                       variant="outline"
-                      className="h-7 flex-1 px-2 text-[11.5px]"
+                      className="h-7 flex-1 px-2 nb-type-small"
                       onClick={() =>
                         setComposerAnchor({
                           turnNo: turnSelection.turnNo,
@@ -450,7 +450,7 @@ export function FocusOverlay({
                     </Button>
                   </div>
                 ) : canWrite ? (
-                  <p className="mb-2 text-[11.5px] leading-[17px] text-muted-foreground">
+                  <p className="mb-2 nb-type-small leading-[17px] text-muted-foreground">
                     Select a passage in one turn to highlight it.
                   </p>
                 ) : null}
@@ -488,7 +488,7 @@ export function FocusOverlay({
                             <Button
                               size="sm"
                               variant="ghost"
-                              className="h-7 px-2 text-[11.5px]"
+                              className="h-7 px-2 nb-type-small"
                               onClick={() =>
                                 setComposerAnchor({
                                   turnNo: highlight.turnNo,
@@ -504,7 +504,7 @@ export function FocusOverlay({
                           <Button
                             size="sm"
                             variant="ghost"
-                            className="h-7 px-2 text-[11.5px]"
+                            className="h-7 px-2 nb-type-small"
                             onClick={() => onRemoveHighlight?.(highlight)}
                           >
                             Remove
@@ -514,7 +514,7 @@ export function FocusOverlay({
                           <Button
                             size="sm"
                             variant="ghost"
-                            className="mt-1 h-6 px-1.5 text-[11.5px] text-muted-foreground"
+                            className="mt-1 h-6 px-1.5 nb-type-small text-muted-foreground"
                             aria-pressed={highlight.visibility !== "just_me"}
                             onClick={() =>
                               onSetHighlightVisibility(

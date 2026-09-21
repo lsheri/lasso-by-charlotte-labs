@@ -53,7 +53,7 @@ function Queue({
                 {title} ({count})
               </h2>
               {note ? (
-                <p className="mt-0.5 text-[11.5px] leading-[17px] text-muted-foreground">{note}</p>
+                <p className="mt-0.5 nb-type-small leading-[17px] text-muted-foreground">{note}</p>
               ) : null}
             </div>
           ) : null}
@@ -163,7 +163,7 @@ export function ChatsToOrganise({
                 type="button"
                 onClick={() => void suggest()}
                 disabled={suggesting}
-                className="nb-pencil-cta inline-flex items-center justify-center rounded-[var(--radius)] border px-3 py-1.5 text-[11.5px] font-medium transition-all disabled:opacity-50"
+                className="nb-pencil-cta inline-flex items-center justify-center rounded-[var(--radius)] border px-3 py-1.5 nb-type-small font-medium transition-all disabled:opacity-50"
               >
                 {suggesting ? "Thinking…" : "Suggest where these go"}
               </button>
@@ -186,7 +186,7 @@ export function ChatsToOrganise({
               ) : (
                 <Link
                   to="/work"
-                  className="inline-flex items-center text-[11.5px] font-medium text-accent-deep hover:underline"
+                  className="inline-flex items-center nb-type-small font-medium text-accent-deep hover:underline"
                 >
                   File it
                 </Link>
