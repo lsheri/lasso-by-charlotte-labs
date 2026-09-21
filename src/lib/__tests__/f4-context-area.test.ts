@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-import { CARD_MIN_WIDTH, fitCardRect } from "@/components/canvas-lab/canvas-lab-model";
+import { CARD_MAX_WIDTH, CARD_MIN_WIDTH, fitCardRect } from "@/components/canvas-lab/canvas-lab-model";
 import { contextAreaAvailability } from "@/lib/context-region";
 
 describe("F4 context area removal and restore", () => {
@@ -19,7 +19,12 @@ describe("F4 context area removal and restore", () => {
     expect(card).toContain("Delete this work");
   });
 
-  it("fits a card no narrower than the resize floor", () => {
-    expect(fitCardRect({ width: 420, height: 300 }, 120)).toEqual({ width: CARD_MIN_WIDTH, height: 180 });
+  it("fits height without throwing away a person's card width", () => {
+    expect(fitCardRect({ width: 400, height: 300 }, 220)).toEqual({ width: 400, height: 220 });
+  });
+
+  it("clamps fitted width to the interaction range", () => {
+    expect(fitCardRect({ width: 180, height: 300 }, 120)).toEqual({ width: CARD_MIN_WIDTH, height: 180 });
+    expect(fitCardRect({ width: 600, height: 300 }, 220)).toEqual({ width: CARD_MAX_WIDTH, height: 220 });
   });
 });
