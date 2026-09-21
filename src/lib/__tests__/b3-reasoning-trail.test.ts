@@ -30,11 +30,10 @@ describe("B3 reasoning trail", () => {
     expect(boardHasSeededStructure({ frames: [{ kind: "custom", key: "custom:1" }] })).toBe(true);
   });
 
-  it("a drawn workstream over the trail claims nothing of it", () => {
+  it("a card left in the trail is not treated as being in a workstream", () => {
     const card = { id: "n1", x: 40, y: 40, width: 200, height: 120, frame: TRAIL_FRAME_ID, workItemId: "w1" };
-    const claims = splitClaims({ x: 0, y: 0, width: 800, height: 600 }, [card] as never, {
-      isWorkstreamFrame: (id: string | null) => isWorkstreamFrameId(id),
-    } as never);
-    expect(claims.silent.length + claims.ask.length).toBe(0);
+    const claims = splitClaims({ x: 0, y: 0, width: 800, height: 600 }, [card]);
+    expect(claims.ask).toHaveLength(0);
+    expect(claims.silent).toHaveLength(1);
   });
 });
