@@ -94,10 +94,10 @@ export type LabFrame = {
   durableVersion?: number;
 };
 
-export const CARD_WIDTH = 232;
-export const CARD_HEIGHT = 112;
 export const CARD_MIN_WIDTH = 260;
 export const CARD_MIN_HEIGHT = 180;
+export const CARD_WIDTH = CARD_MIN_WIDTH;
+export const CARD_HEIGHT = CARD_MIN_HEIGHT;
 export const CARD_MAX_WIDTH = WORKBOARD_CARD_MAX_WIDTH;
 export const CARD_MAX_HEIGHT = WORKBOARD_CARD_MAX_HEIGHT;
 export const FRAME_MIN_WIDTH = 260;
