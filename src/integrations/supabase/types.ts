@@ -3349,6 +3349,7 @@ export type Database = {
           title: string
           ts_precision: Database["public"]["Enums"]["ts_precision"]
           type: Database["public"]["Enums"]["work_type"]
+          ungrouped_at: string | null
           visibility: Database["public"]["Enums"]["work_visibility"]
           work_date: string | null
         }
@@ -3373,6 +3374,7 @@ export type Database = {
           title: string
           ts_precision?: Database["public"]["Enums"]["ts_precision"]
           type: Database["public"]["Enums"]["work_type"]
+          ungrouped_at?: string | null
           visibility?: Database["public"]["Enums"]["work_visibility"]
           work_date?: string | null
         }
@@ -3397,6 +3399,7 @@ export type Database = {
           title?: string
           ts_precision?: Database["public"]["Enums"]["ts_precision"]
           type?: Database["public"]["Enums"]["work_type"]
+          ungrouped_at?: string | null
           visibility?: Database["public"]["Enums"]["work_visibility"]
           work_date?: string | null
         }

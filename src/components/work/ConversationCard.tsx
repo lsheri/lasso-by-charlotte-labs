@@ -4,6 +4,7 @@ import { CircleDashed, Lock } from "lucide-react";
 import { CardMenu } from "@/components/work/CardMenu";
 import { WorkCardPreview } from "@/components/work/WorkCardPreview";
 import { SourceMark, VendorMark } from "@/components/work/SourceMark";
+import { StandAloneAction } from "@/components/work/StandAloneAction";
 import { TypeIcon } from "@/components/work/TypeIcon";
 import { stampDate } from "@/components/work/card-stamp";
 import { attachmentKindLabel, vendorLabel } from "@/lib/conversation-shared";
@@ -118,7 +119,7 @@ export function ConversationCard({
                   aria-label="Private"
                 />
               ) : null}
-              {vendor ? vendorLabel(vendor) : "Conversation"}
+              {vendor ? `${vendorLabel(vendor)} chat` : "Conversation"}
               {" · "}
               {stampDate(effectiveWorkDate(head))}
             </span>
@@ -172,6 +173,10 @@ export function ConversationCard({
                         Open
                       </span>
                     </button>
+                    {/* W2: sometimes one of these artifacts is the work. */}
+                    <div className="flex justify-end pb-1.5 pr-1">
+                      <StandAloneAction item={piece} />
+                    </div>
                     {footerFor?.(piece) ? <div className="pb-2">{footerFor(piece)}</div> : null}
                   </li>
                 ))}
@@ -270,6 +275,10 @@ export function ConversationCard({
                   Open
                 </span>
               </button>
+              {/* W2: sometimes one of these artifacts is the work. */}
+              <div className="flex justify-end px-3 pb-2 sm:px-4">
+                <StandAloneAction item={piece} />
+              </div>
               {footerFor?.(piece) ? (
                 <div className="px-3 pb-2 sm:px-4">{footerFor(piece)}</div>
               ) : null}

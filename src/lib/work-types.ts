@@ -42,6 +42,11 @@ export type WorkItemRow = {
   content_fidelity?: string | null | undefined;
   source_vendor?: string | null | undefined;
   orig_conversation_id?: string | null | undefined;
+  /**
+   * W2: null means this piece groups with its conversation, a time means it
+   * stands on its own. Clearing it puts it back and nothing is lost.
+   */
+  ungrouped_at?: string | null | undefined;
   source_meta?: SourceMeta | null | undefined;
   meta?:
     | {
@@ -77,19 +82,23 @@ export type ConversationGroup = {
 /**
  * Items pushed together share orig_conversation_id. Anything else, and any
  * lone item that happens to carry one, stays an ordinary row.
+ *
+ * W2: a piece with ungrouped_at set has been lifted out by its owner. It reads
+ * as an ordinary row from here on, and it no longer counts towards the
+ * conversation it came from. Clearing the stamp puts it straight back.
  */
 export function groupConversations(items: WorkItemRow[]): (WorkItemRow | ConversationGroup)[] {
   const counts = new Map<string, WorkItemRow[]>();
   for (const item of items) {
     const key = item.orig_conversation_id;
-    if (!key) continue;
+    if (!key || item.ungrouped_at) continue;
     counts.set(key, [...(counts.get(key) ?? []), item]);
   }
 
   const out: (WorkItemRow | ConversationGroup)[] = [];
   const done = new Set<string>();
   for (const item of items) {
-    const key = item.orig_conversation_id;
+    const key = item.ungrouped_at ? null : item.orig_conversation_id;
     const siblings = key ? (counts.get(key) ?? []) : [];
     if (!key || siblings.length < 2) {
       out.push(item);

@@ -19,6 +19,13 @@ import {
 import { useProfile } from "@/hooks/use-profile";
 import { isBriefItem } from "@/lib/brief-shared";
 import { ownsWorkItem } from "@/lib/work-ownership";
+import {
+  PUT_BACK_LABEL,
+  STAND_ALONE_LABEL,
+  canGoBackToChat,
+  canStandAlone,
+} from "@/lib/work-standalone";
+import { useStandAlone } from "@/components/work/use-stand-alone";
 import type { WorkItemRow } from "@/lib/work-types";
 
 export type RowMenuProps = {
@@ -51,6 +58,10 @@ export function useRowMenuParts({ item, onFluency, engagementId, onRemoved }: Ro
   const readable = isThread || isDeliverable;
   // Ownership truth, not page truth: coaches never see these two.
   const owned = ownsWorkItem(profile, item);
+  // W2: the same one stamp, from the menu of a card that stands on its own.
+  const { busy: standBusy, set: setStandAlone } = useStandAlone(item);
+  const canLift = owned && canStandAlone(item);
+  const canPutBack = owned && canGoBackToChat(item);
 
   const items = (
     <>
@@ -71,6 +82,14 @@ export function useRowMenuParts({ item, onFluency, engagementId, onRemoved }: Ro
       {onFluency && (isThread || isDeliverable) ? (
         <DropdownMenuItem onSelect={() => onFluency(item)}>
           {isThread ? "Analyse this conversation" : "Analyse this work"}
+        </DropdownMenuItem>
+      ) : null}
+      {canLift || canPutBack ? (
+        <DropdownMenuItem
+          disabled={standBusy}
+          onSelect={() => void setStandAlone(canLift)}
+        >
+          {canLift ? STAND_ALONE_LABEL : PUT_BACK_LABEL}
         </DropdownMenuItem>
       ) : null}
       {owned ? <DropdownMenuSeparator /> : null}

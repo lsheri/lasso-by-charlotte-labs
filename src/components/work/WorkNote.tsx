@@ -1,5 +1,6 @@
 import { Lock } from "lucide-react";
 
+import { FromChatLine } from "@/components/work/FromChatLine";
 import { ArtifactNote, SourceMark, VendorMark } from "@/components/work/SourceMark";
 import { WorkCardPreview } from "@/components/work/WorkCardPreview";
 import { colourKey, noteHue, notePaper } from "@/components/work/note-paper";
@@ -113,6 +114,10 @@ export function WorkNote({
             {workIdentityLabel(item)}
           </p>
         ) : null}
+
+        {/* W2: where this came out of, said plainly, for a document lifted
+            out of its chat as much as for one still inside it. */}
+        <FromChatLine item={item} />
 
         {chips ? <div className="mt-1 flex flex-wrap items-center gap-1.5">{chips}</div> : null}
       </div>
