@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { snapPoint } from "@/lib/canvas-drag";
 import { TRAIL_FRAME_ID, TRAIL_SIZE, boardHasTrail, isTrailFrameId, trailRectAt } from "@/lib/reasoning-trail";
 import { isContextFrameId, isWorkstreamFrameId } from "@/lib/context-region";
 import { boardHasSeededStructure } from "@/components/canvas-lab/canvas-lab-model";
@@ -9,8 +10,8 @@ describe("B3 reasoning trail", () => {
     const rect = trailRectAt({ x: 133, y: 207 });
     expect(rect.width).toBe(TRAIL_SIZE.width);
     expect(rect.height).toBe(TRAIL_SIZE.height);
-    expect(rect.x % 4).toBe(0);
-    expect(rect.y % 4).toBe(0);
+    const snapped = snapPoint({ x: 133, y: 207 });
+    expect({ x: rect.x, y: rect.y }).toEqual(snapped);
   });
 
   it("offers the control only while the board has no trail", () => {
