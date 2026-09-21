@@ -20,7 +20,7 @@ import {
   attachmentBucket,
   type SourceMeta,
 } from "@/lib/conversation-shared";
-import { safeChatUrl } from "@/lib/chat-url";
+import { missingChatUrlNote, rawPushUrl, storedPushChatUrl } from "@/lib/mcp-push-url";
 import { isAffiliatedStrict, orgTypeOfStrict } from "@/lib/org-type.server";
 import {
   placementLine,
