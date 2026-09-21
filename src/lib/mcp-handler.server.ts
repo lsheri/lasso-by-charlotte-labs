@@ -544,6 +544,10 @@ async function pushThread(
   const title =
     supplied.length > 0 ? supplied : firstUser.trim().slice(0, 60) || "Untitled conversation";
 
+  // When the conversation itself happened, from the turns that supplied a
+  // time. Nothing is substituted when none did.
+  const threadTime = pushSourceTimeFields(null, turns.map((t) => t.ts ?? null));
+
   const { data: item, error } = await supabaseAdmin
     .from("work_items")
     .insert({
@@ -554,7 +558,9 @@ async function pushThread(
       title,
       visibility: "unmapped",
       content_fidelity: "transcribed",
-      ts_precision: "capture",
+      ts_precision: threadTime.ts_precision,
+      created_at_source: threadTime.created_at_source,
+      work_date: threadTime.work_date,
       content_hash: await sha256Hex(serialized),
       source_meta: {
         ...(storedPushChatUrl(args) ? { url: storedPushChatUrl(args)! } : {}),
@@ -574,9 +580,9 @@ async function pushThread(
       role: t.role as "user" | "assistant",
       content: t.content,
       content_hash: await sha256Hex(t.content),
-      ts: null,
-      ts_precision: "capture" as const,
-      meta: t.ts ? { claimed_ts: t.ts } : {},
+      ts: t.ts ?? null,
+      ts_precision: (t.ts ? "source" : "capture") as "source" | "capture",
+      meta: {},
     })),
   );
   const { error: turnsError } = await supabaseAdmin.from("turns").insert(rows);
