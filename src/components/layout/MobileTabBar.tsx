@@ -6,7 +6,9 @@ import { GraphiteIcon, type GraphiteIconName } from "@/components/notebook/icons
 import { FeedbackDialog } from "@/components/feedback/FeedbackWidget";
 import { useAskLassoHandler } from "@/components/reflect/ask-lasso-context";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
+import { useCoachingReach } from "@/hooks/use-coaching-reach";
 import { useEngagements } from "@/hooks/use-engagements";
+
 import { useProfile } from "@/hooks/use-profile";
 import { vocabFor } from "@/lib/edu-vocab";
 import * as roles from "@/lib/role-access";
@@ -21,7 +23,7 @@ type Dest = { label: string; to: string; icon: GraphiteIconName };
  * sidebar untouched.
  */
 export function MobileTabBar() {
-  const { data: profile } = useProfile();
+  const { data: profile, profiles } = useProfile();
   const navigate = useNavigate();
   const path = useRouterState({ select: (s) => s.location.pathname });
   const handler = useAskLassoHandler();
@@ -30,15 +32,19 @@ export function MobileTabBar() {
   const [engOpen, setEngOpen] = useState(false);
   const { data: engagements } = useEngagements(profile?.id);
 
-  const isCoach = roles.isCoach(profile);
+  const guestNav = roles.usesGuestNav(profile);
   const canManageMembers = roles.canManageMembers(profile);
   const canSeeFirmView = roles.canSeeFirmView(profile);
   const membersLabel = roles.membersLabel(profile);
   const vocab = vocabFor(profile);
+  // A coaching tab exists only where a board was shared for review. The
+  // workspace role decides the shape of the nav, never what it may reach.
+  const reach = useCoachingReach(profiles);
+  const canReview = reach.canReach;
 
-  // A coach has no work of their own, so an Ask tab would be a dead
-  // affordance the way the FAB would be. Three tabs.
-  const you: Dest[] = isCoach
+  // A guest has no work of their own, so an Ask tab over their own record
+  // would be a dead affordance the way the FAB would be.
+  const you: Dest[] = guestNav
     ? [
         { label: "1:1 prep", to: "/one-on-one", icon: "one-on-one" },
         { label: "Settings", to: "/settings", icon: "settings" },
@@ -48,6 +54,9 @@ export function MobileTabBar() {
         { label: "All conversations", to: "/ai-record", icon: "ai-record" },
         { label: "Decision log", to: "/decisions", icon: "decisions" },
         { label: "1:1 prep", to: "/one-on-one", icon: "one-on-one" },
+        ...(canReview
+          ? [{ label: "People you coach", to: "/coaching", icon: "members" as const }]
+          : []),
         ...(canSeeFirmView ? [{ label: "Firm view", to: "/firm", icon: "firm" as const }] : []),
         ...(canManageMembers
           ? [{ label: membersLabel, to: "/members", icon: "members" as const }]
@@ -56,11 +65,15 @@ export function MobileTabBar() {
         { label: "Where work lives", to: "/connectors", icon: "connectors" },
       ];
 
-  const tabs: (Dest | { label: string; icon: GraphiteIconName; action: "ask" | "coach-ask" | "you" | "engagements" })[] = isCoach
+  const tabs: (Dest | { label: string; icon: GraphiteIconName; action: "ask" | "coach-ask" | "you" | "engagements" })[] = guestNav
     ? [
-        { label: "Coaching", to: "/coaching", icon: "members" },
-        { label: "1:1 prep", to: "/one-on-one", icon: "one-on-one" },
-        { label: "Ask", icon: "ask-lasso", action: "coach-ask" },
+        ...(canReview
+          ? [
+              { label: "Coaching", to: "/coaching", icon: "members" as const },
+              { label: "1:1 prep", to: "/one-on-one", icon: "one-on-one" as const },
+              { label: "Ask", icon: "ask-lasso" as const, action: "coach-ask" as const },
+            ]
+          : [{ label: "1:1 prep", to: "/one-on-one", icon: "one-on-one" as const }]),
         { label: "You", icon: "overview", action: "you" },
       ]
     : [
@@ -69,6 +82,7 @@ export function MobileTabBar() {
         { label: "Ask", icon: "ask-lasso", action: "ask" },
         { label: "You", icon: "overview", action: "you" },
       ];
+
 
 
   function askLasso() {
