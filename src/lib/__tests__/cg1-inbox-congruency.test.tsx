@@ -125,12 +125,17 @@ function itemOfType(id: string, type: WorkItemRow["type"]): WorkItemRow {
 }
 
 function conversation(id: string, vendor: string, engagementCode?: string): WorkItemRow {
-  return {
+  const row = {
     ...item(id, engagementCode ? "mapped" : "unmapped", engagementCode),
     type: "ai_thread",
     source: vendor,
     source_vendor: vendor,
   } as WorkItemRow;
+  if (engagementCode && row.work_item_tasks[0]?.tasks?.engagements) {
+    row.work_item_tasks[0].tasks.engagement_id = `${engagementCode}-engagement`;
+    row.work_item_tasks[0].tasks.engagements.id = `${engagementCode}-engagement`;
+  }
+  return row;
 }
 
 function filesUnder(path: string): string[] {
