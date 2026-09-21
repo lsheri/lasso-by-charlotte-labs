@@ -11,14 +11,6 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import {
   createBoardShareLinkFn,
@@ -34,14 +26,15 @@ import {
   type BoardShareLinkDto,
 } from "@/lib/board-share-shared";
 
-export function ShareBoardDialog({
+export function BoardLinkSection({
   engagementId,
   profileId,
+  open,
 }: {
   engagementId: string;
   profileId: string | undefined;
+  open: boolean;
 }) {
-  const [open, setOpen] = useState(false);
   const [freshUrl, setFreshUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
@@ -89,27 +82,8 @@ export function ShareBoardDialog({
   const live = (links.data?.links ?? []).filter((link) => shareLinkLive(link));
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(next) => {
-        setOpen(next);
-        if (!next) {
-          setFreshUrl(null);
-          setCopied(false);
-          setProblem(null);
-        }
-      }}
-    >
-      <DialogTrigger asChild>
-        <Button size="sm" variant="outline">
-          Share a link
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
-          <DialogTitle>Share this board</DialogTitle>
-          <DialogDescription>{shareExposureSentence(holdsOthersWork)}</DialogDescription>
-        </DialogHeader>
+    <section className="flex flex-col gap-3">
+        <p className="text-[11.5px] text-muted">{shareExposureSentence(holdsOthersWork)}</p>
 
         <ul className="space-y-1 text-[11.5px] text-muted">
           {shareLinkNotes().map((note) => (
@@ -165,8 +139,7 @@ export function ShareBoardDialog({
             </ul>
           )}
         </div>
-      </DialogContent>
-    </Dialog>
+    </section>
   );
 }
 

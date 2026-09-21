@@ -273,7 +273,14 @@ export type TelemetryEvent =
    * about them to know. action (created | opened | revoked | refused) and,
    * on refused only, reason (expired | revoked | unknown).
    */
-  | "board.share_link";
+  | "board.share_link"
+  /**
+   * S2: someone in the workspace was given, moved between, or taken off the
+   * two things a person can have on a board. Closed dims only, no ids, no
+   * names, no counts: access (review | work | none) and result (granted |
+   * changed | removed | unchanged).
+   */
+  | "engagement.access_changed";
 
 export type TelemetryDims = Record<
   string,
