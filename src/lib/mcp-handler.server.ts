@@ -1202,11 +1202,17 @@ async function pushConversation(
   } as SourceMeta;
 
   // ---- locate the existing thread: source_url, then orig id, then continuation
-  let existingThread: { id: string; meta: unknown } | null = null;
+  const threadColumns = "id, meta, created_at_source, work_date";
+  let existingThread: {
+    id: string;
+    meta: unknown;
+    created_at_source: string | null;
+    work_date: string | null;
+  } | null = null;
   if (sourceUrl) {
     const { data } = await supabaseAdmin
       .from("work_items")
-      .select("id, meta")
+      .select(threadColumns)
       .eq("owner_id", owner.profileId)
       .eq("type", "ai_thread")
       .eq("meta->>source_url", sourceUrl)
@@ -1216,7 +1222,7 @@ async function pushConversation(
   if (!existingThread) {
     const { data } = await supabaseAdmin
       .from("work_items")
-      .select("id, meta")
+      .select(threadColumns)
       .eq("owner_id", owner.profileId)
       .eq("orig_conversation_id", origId)
       .eq("type", "ai_thread")
