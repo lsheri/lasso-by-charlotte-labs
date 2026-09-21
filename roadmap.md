@@ -71,7 +71,7 @@
 - [x] Restore the record floor while preserving the readable resize floor
 - [x] Seed new cards at or above the readable floor
 - [x] Pin the seeded, interaction, and record floor relationship
-- [ ] Run focused checks, type check, and confirm a clean preview build
+- [x] Run focused checks, type check, and confirm a clean preview build
 
 ## Landing-next Find it clip
 - [x] Save uploaded clip and poster as public/videos/find-it.mp4 and find-it-poster.png
