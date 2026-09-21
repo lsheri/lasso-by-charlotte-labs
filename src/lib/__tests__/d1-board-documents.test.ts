@@ -140,7 +140,7 @@ describe("D1 · a board document is never a source", () => {
     expect(assembled).not.toContain(PHRASE);
     expect(touched).not.toContain("board_documents");
     // The poison is real: it is in the stub the same queries ran against.
-    expect(JSON.stringify(tables.board_documents)).toContain(PHRASE);
+    expect(JSON.stringify(tables["board_documents"])).toContain(PHRASE);
   });
 
   it("leaves the document out of the engagement's contribution set", async () => {
@@ -151,7 +151,7 @@ describe("D1 · a board document is never a source", () => {
     const count = await scopeItemCount(client, "p1", { mode: "tasks", ids: ["t1"] });
 
     const ids = items.map((item) => item.id);
-    const documentIds = (tables.board_documents ?? []).map((row) => row.id as string);
+    const documentIds = (tables["board_documents"] ?? []).map((row) => row["id"] as string);
     for (const id of documentIds) expect(ids).not.toContain(id);
     expect(count).toBe(ids.length);
     expect(touched).not.toContain("board_documents");
