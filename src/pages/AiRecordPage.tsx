@@ -272,6 +272,11 @@ export function AiRecordPage() {
     return matchesTool && matchesEngagement;
   };
   const matchingCount = shown.filter(matchesChipFilters).length;
+  const countLine = needle
+    ? `Showing ${shown.length} of ${threads.length}. Nothing is deleted here.`
+    : tool !== "all" || engagement !== "all"
+      ? `${matchingCount} of ${threads.length} ${matchingCount === 1 ? "matches" : "match"} what you picked. The rest are still here.`
+      : `${threads.length} ${threads.length === 1 ? "conversation" : "conversations"}.`;
   // Search narrows deliberately. Tool and engagement chips leave those search
   // results in place, dimming the conversations outside the chosen categories.
   const groups = groupByMonth(shown);
@@ -800,10 +805,8 @@ export function AiRecordPage() {
 
       {capturedShown ? (
         <>
-          {/* Figma 27:635 closes the list by saying how much of it you are
-              looking at, and that nothing was thrown away to get there. */}
           <p className="mt-4 border-t border-[var(--nb-rule)] pt-3 text-[12px] text-muted-foreground">
-            Showing {matchingCount} of {threads.length}. Nothing is deleted here.
+            {countLine}
           </p>
           <CaptureCoverage
             profileId={profile?.id}
