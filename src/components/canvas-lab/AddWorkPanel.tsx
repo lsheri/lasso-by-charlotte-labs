@@ -83,7 +83,7 @@ export function AddWorkPanel({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl overflow-hidden">
+      <DialogContent className="max-w-2xl grid-cols-[minmax(0,1fr)] overflow-hidden">
         <DialogHeader>
           <DialogTitle>Add work</DialogTitle>
           <DialogDescription>{SHARE_LINE}</DialogDescription>
@@ -104,7 +104,6 @@ export function AddWorkPanel({
             ) : (
               <ScrollArea
                 className="h-72 rounded-md border"
-                viewportClassName="[&>div]:!w-full [&>div]:!min-w-0"
               >
                 <ul className="divide-y">
                   {inbox.map((item) => (
