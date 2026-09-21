@@ -165,14 +165,18 @@ export function NewEngagementDialog({
     const captured: { file: File; id: string }[] = [];
     for (const file of files) {
       let ids: string[] = [];
+      let reason = "";
       try {
-        ids = await capture([file]);
-      } catch {
+        const outcome = await captureWithResult([file]);
+        ids = outcome.ids;
+        reason = outcome.failures[0]?.reason ?? "";
+      } catch (e) {
         ids = [];
+        reason = (e as Error)?.message ?? "";
       }
       const id = ids[0];
       if (id) captured.push({ file, id });
-      else missing.push(file.name);
+      else missing.push(reason ? `${file.name} (${reason})` : file.name);
     }
 
     if (captured.length > 0) {
