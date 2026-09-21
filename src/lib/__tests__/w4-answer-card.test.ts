@@ -59,6 +59,18 @@ describe("an answer kept as a card", () => {
     expect(answerAsOf(other.toISOString())).not.toBe(answerAsOf(createdAt));
   });
 
+  it("carries the workstream it is kept into, and stays freeform without one", () => {
+    const placed = answerNodeInput({ clientKey: "k", at: { x: 10, y: 20 }, text: "The answer body.", frameKey: "region:abc" });
+    expect(placed.frameKey).toBe("region:abc");
+    expect(placed.kind).toBe("answer");
+    const free = answerNodeInput({ clientKey: "k", at: { x: 10, y: 20 }, text: "The answer body." });
+    expect(free.frameKey).toBeNull();
+  });
+
+  it("is never excluded from what a named region can claim", () => {
+    expect(regionClaimable("answer")).toBe(true);
+  });
+
   it("is a saved kind but never a card anyone can create", () => {
     expect(WORKBOARD_NODE_KINDS).toContain("answer");
     expect(LAB_TEMPLATE_KINDS as readonly string[]).not.toContain("answer");
