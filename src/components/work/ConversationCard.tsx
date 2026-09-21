@@ -275,6 +275,10 @@ export function ConversationCard({
                   Open
                 </span>
               </button>
+              {/* W2: sometimes one of these artifacts is the work. */}
+              <div className="flex justify-end px-3 pb-2 sm:px-4">
+                <StandAloneAction item={piece} />
+              </div>
               {footerFor?.(piece) ? (
                 <div className="px-3 pb-2 sm:px-4">{footerFor(piece)}</div>
               ) : null}
