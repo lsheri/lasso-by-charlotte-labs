@@ -1,14 +1,18 @@
 import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { emptyDocumentContent, NEW_DOCUMENT_TITLE } from "@/lib/board-documents-shared";
+import {
+  documentPlainText,
+  emptyDocumentContent,
+  NEW_DOCUMENT_TITLE,
+} from "@/lib/board-documents-shared";
 import { resolveProfile } from "@/lib/profile-resolve";
 
 export type BoardDocumentRow = {
   id: string;
   task_id: string;
   title: string;
-  content: unknown;
+  content: { text: string };
   created_at: string;
   updated_at: string;
 };
@@ -30,7 +34,8 @@ export const boardDocumentForTask = createServerFn({ method: "GET" })
       .select("id, task_id, title, content, created_at, updated_at")
       .eq("task_id", data.task_id)
       .maybeSingle();
-    return (row as BoardDocumentRow | null) ?? null;
+    if (!row) return null;
+    return { ...(row as BoardDocumentRow), content: { text: documentPlainText(row.content) } };
   });
 
 /** One empty document on a workstream that has none. The schema allows only one. */
@@ -52,5 +57,5 @@ export const createBoardDocument = createServerFn({ method: "POST" })
       .select("id, task_id, title, content, created_at, updated_at")
       .single();
     if (error) throw new Error(error.message);
-    return row as BoardDocumentRow;
+    return { ...(row as BoardDocumentRow), content: { text: documentPlainText(row.content) } };
   });
