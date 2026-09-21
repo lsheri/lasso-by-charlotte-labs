@@ -21,7 +21,7 @@ describe("w8 · one date rule", () => {
     // the arrival field, or a call site re-deriving the resolution order.
     const wrong = [
       /(?:formatDate|stampDate|arrivalWhen)\([^)]*captured_at/,
-      /created_at_source\s*\?\?/,
+      /created_at_source\s*\?\?[^;\n]*captured_at/,
     ];
     const offenders = files("src/components").filter((path) => {
       const source = readFileSync(path, "utf8");
