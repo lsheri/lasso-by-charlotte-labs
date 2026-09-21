@@ -64,7 +64,7 @@
 - [x] Archive and restore the context area without changing its cards
 - [x] Record removal through the archived board frame
 - [x] Make Fit content share the card resize floor
-- [ ] Run focused and board checks and confirm a clean preview build
+- [x] Run focused and board checks and confirm a clean preview build
 
 ## Landing-next Find it clip
 - [x] Save uploaded clip and poster as public/videos/find-it.mp4 and find-it-poster.png

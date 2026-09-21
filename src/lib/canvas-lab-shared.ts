@@ -13,8 +13,8 @@ export type WorkboardNodeKind = "brief" | "work_item" | "decision" | "judgment" 
 export type WorkboardFrameKind = "foundation" | "task" | "decisions" | "outputs" | "custom" | "context";
 export type WorkboardAnchor = "top" | "right" | "bottom" | "left";
 export type WorkboardRelation = "informed" | "produced" | "revised" | "cited" | "context";
-export const WORKBOARD_CARD_MIN_WIDTH = 180;
-export const WORKBOARD_CARD_MIN_HEIGHT = 112;
+export const WORKBOARD_CARD_MIN_WIDTH = 260;
+export const WORKBOARD_CARD_MIN_HEIGHT = 180;
 export const WORKBOARD_CARD_MAX_WIDTH = 520;
 export const WORKBOARD_CARD_MAX_HEIGHT = 520;
 
