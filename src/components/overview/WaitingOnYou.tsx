@@ -12,6 +12,7 @@ import { vendorLabel } from "@/lib/conversation-shared";
 import { formatDate } from "@/lib/work-types";
 import { useMotion } from "@/hooks/use-motion";
 import { useProfile } from "@/hooks/use-profile";
+import { workDateLabel } from "@/lib/work-date-label";
 
 /**
  * PASS B · the calls waiting on a person, as the storyboard draws them: a mono
@@ -71,7 +72,7 @@ export function WaitingOnYou() {
           const firstSrc = source?.work_item_id;
           const info = firstSrc ? sourceInfo?.[firstSrc] : null;
           const turn = source?.turn_id ? sourceTurns?.[source.turn_id] : null;
-          const srcLabel = info ? [vendorLabel(info.source_vendor) || info.title, formatDate(info.work_date ?? info.created_at_source ?? info.captured_at), turn ? `turn ${turn.turn_no}` : null].filter(Boolean).join(" · ") : "Source";
+          const srcLabel = info ? [vendorLabel(info.source_vendor) || info.title, workDateLabel(info), turn ? `turn ${turn.turn_no}` : null].filter(Boolean).join(" · ") : "Source";
           return (
             <article
               key={row.id}

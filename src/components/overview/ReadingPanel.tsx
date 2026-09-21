@@ -2,6 +2,7 @@ import { ToneCard } from "@/components/notebook/ToneCard";
 import { SectionHeader } from "@/components/notebook/SectionHeader";
 import { formatDate } from "@/lib/work-types";
 import type { WorkItemRow } from "@/lib/work-types";
+import { workDateLabel } from "@/lib/work-date-label";
 
 /**
  * Figma 21:2, "What Lasso is reading". The most recent pieces that arrived
@@ -40,7 +41,7 @@ export function ReadingPanel({ items }: { items: WorkItemRow[] }) {
                   : item.title}
               </span>
               <span className="shrink-0 font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
-                {formatDate(item.captured_at)}
+                {workDateLabel(item)}
               </span>
             </li>
           ))}

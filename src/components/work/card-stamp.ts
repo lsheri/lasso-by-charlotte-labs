@@ -1,3 +1,5 @@
+import { calendarDate } from "@/lib/work-types";
+
 /**
  * "02 SEP" — the mono date Figma 22:220 stamps on a card in a type column.
  *
@@ -7,7 +9,7 @@
  */
 export function stampDate(value: string | null | undefined): string {
   if (!value) return "";
-  const d = new Date(value);
+  const d = calendarDate(value);
   if (Number.isNaN(d.getTime())) return "";
   const day = String(d.getDate()).padStart(2, "0");
   return `${day} ${d.toLocaleString("en-US", { month: "short" }).toUpperCase()}`;

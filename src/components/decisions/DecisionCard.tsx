@@ -9,6 +9,7 @@ import { useDecisionSourceTurns } from "@/hooks/use-decisions";
 import type { ThreadFocus } from "@/components/peek/ThreadBody";
 import { vendorLabel } from "@/lib/conversation-shared";
 import { formatDate } from "@/lib/work-types";
+import { workDateLabel } from "@/lib/work-date-label";
 
 export function DecisionCard({
   decision,
@@ -48,7 +49,7 @@ export function DecisionCard({
     const source = srcs.find((entry) => entry.work_item_id === id);
     const turn = source?.turn_id ? sourceTurns?.[source.turn_id] : null;
     const vendor = vendorLabel(info?.source_vendor);
-    const date = info ? formatDate(info.work_date ?? info.created_at_source ?? info.captured_at) : null;
+    const date = info ? workDateLabel(info) : null;
     return [vendor || info?.title || "Source", date, turn ? `turn ${turn.turn_no}` : null].filter(Boolean).join(" · ");
   }
 
