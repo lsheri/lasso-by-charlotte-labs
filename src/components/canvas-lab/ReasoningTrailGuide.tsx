@@ -11,9 +11,9 @@ import { Button } from "@/components/ui/button";
  */
 export function ReasoningTrailGuide({ onAdd, rect: placed, onHandlePointerDown, onRemove }: {
   onAdd: (kind: LabTemplateKind, judgment?: LabJudgmentType) => void;
-  rect?: { x: number; y: number; width: number; height: number };
-  onHandlePointerDown?: (event: React.PointerEvent) => void;
-  onRemove?: () => void;
+  rect?: { x: number; y: number; width: number; height: number } | undefined;
+  onHandlePointerDown?: ((event: React.PointerEvent) => void) | undefined;
+  onRemove?: (() => void) | undefined;
 }) {
   const [judgmentOpen, setJudgmentOpen] = useState(false);
   const judgmentRef = useRef<HTMLDivElement | null>(null);
