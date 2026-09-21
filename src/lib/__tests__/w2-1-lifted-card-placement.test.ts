@@ -1,4 +1,8 @@
+import { readFileSync } from "node:fs";
+
 import { describe, expect, it } from "vitest";
+
+import { cameOutOfLine } from "../work-standalone";
 
 import { setWorkItemStandalone } from "../work-standalone.server";
 
@@ -159,5 +163,59 @@ describe("W2.1 — a lifted artifact lands beside its chat, in free space", () =
     const { db } = makeDb(store);
     await setWorkItemStandalone(db, profile, { workItemId: "a0", standAlone: true });
     expect(rectOf(store, "a0")).toMatchObject({ w: 260, h: 180 });
+  });
+});
+
+describe("W2.1 — the decision is on the record, both directions", () => {
+  it("carries the closed dims the event needs, on a lift and on a put back", async () => {
+    const store = boardStore();
+    store["work_items"]![1]!["source_vendor"] = "chatgpt";
+    const { db } = makeDb(store);
+
+    const lift = await setWorkItemStandalone(db, profile, { workItemId: "a0", standAlone: true });
+    expect(lift).toMatchObject({ status: "saved", pieceKind: "document", vendor: "chatgpt", linkedOnBoard: true });
+
+    const back = await setWorkItemStandalone(db, profile, { workItemId: "a0", standAlone: false });
+    expect(back).toMatchObject({ status: "saved", standsAlone: false, linkedOnBoard: false, vendor: "chatgpt" });
+  });
+
+  it("says none rather than passing an unknown vendor through", async () => {
+    const store = boardStore();
+    store["work_items"]![1]!["source_vendor"] = "some-new-tool";
+    const { db } = makeDb(store);
+    const result = await setWorkItemStandalone(db, profile, { workItemId: "a0", standAlone: true });
+    expect(result).toMatchObject({ vendor: "none" });
+  });
+
+  it("fires on every lift, not only the ones that reached a board", async () => {
+    const source = readFileSync("src/lib/work-standalone.functions.ts", "utf8");
+    const regrouped = source.indexOf('"work.piece_regrouped"');
+    const boardOnly = source.indexOf("result.linkedOnBoard) {");
+    expect(regrouped).toBeGreaterThan(-1);
+    // The named event is emitted before, and outside, the board-only branch.
+    expect(regrouped).toBeLessThan(boardOnly);
+    expect(source).toContain("on_board: result.linkedOnBoard");
+  });
+
+  it("registers the name with its closed dims", () => {
+    const registry = readFileSync("src/lib/telemetry-shared.ts", "utf8");
+    expect(registry).toContain('| "work.piece_regrouped"');
+  });
+});
+
+describe("W2.1 — where it came from is read, never parsed", () => {
+  it("takes the kind from the record and falls back to the work type", () => {
+    expect(cameOutOfLine({ type: "document", orig_conversation_id: "c1", source_vendor: "claude", source_meta: { role: "attachment", kind: "artifact_html" } })).toBe(
+      "HTML that came out of a Claude chat",
+    );
+    expect(cameOutOfLine({ type: "deck", orig_conversation_id: "c1", source_vendor: "claude", source_meta: { role: "attachment" } })).toBe(
+      "Deck that came out of a Claude chat",
+    );
+  });
+
+  it("never recovers the kind by splitting a display label", () => {
+    const source = readFileSync("src/lib/work-standalone.ts", "utf8");
+    expect(source).not.toContain("workIdentityLabel");
+    expect(source).not.toContain('split(" · ")');
   });
 });
