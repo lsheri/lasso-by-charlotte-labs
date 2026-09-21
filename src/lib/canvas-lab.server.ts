@@ -198,8 +198,13 @@ export function validNodeInput(node: WorkboardNodeInput): string | null {
   if ((node.kind === "judgment" || node.kind === "draft") && (node.workItemId || node.decisionId)) return "An authored card cannot reference a record.";
   if ((node.kind === "shape" || node.kind === "text" || node.kind === "mark") && (node.workItemId || node.decisionId)) return "A colour block cannot reference work or a decision.";
   if (node.kind === "shape" && !WORKBOARD_SHAPE_COLOURS.includes(node.body as (typeof WORKBOARD_SHAPE_COLOURS)[number])) return "Choose one of the available block colours.";
+  if (node.kind === "shape" && (node.frameKey || node.title || node.judgmentType)) return "A colour block can only carry its colour and rectangle.";
   if (node.judgmentType && !WORKBOARD_JUDGMENT_TYPES.includes(node.judgmentType)) return "Unknown judgment type.";
   return null;
+}
+
+export function validateLinkNodeKinds(kinds: string[]): string | null {
+  return kinds.some((kind) => kind === "shape") ? "A colour block cannot be connected." : null;
 }
 
 function validFrameGeometry(frame: { x?: number; y?: number; w?: number; h?: number }): boolean {
@@ -393,7 +398,8 @@ export async function applyWorkboardCommand(
     if (command.fromNodeId === command.toNodeId) return { status: "validation_error", message: "A card cannot connect to itself." };
     const endpoints = (await db.from("workboard_nodes").select("id, kind").eq("workboard_id", board.id).is("deleted_at", null).in("id", [command.fromNodeId, command.toNodeId])).data ?? [];
     if (endpoints.length !== 2) return { status: "validation_error", message: "One of those cards is not on this workboard." };
-    if (endpoints.some((endpoint) => endpoint.kind === "shape")) return { status: "validation_error", message: "A colour block cannot be connected." };
+    const invalidKinds = validateLinkNodeKinds(endpoints.map((endpoint) => endpoint.kind));
+    if (invalidKinds) return { status: "validation_error", message: invalidKinds };
     const { data, error } = await db
       .from("workboard_links")
       .insert({
