@@ -14,6 +14,8 @@ import { TRACED_LEGEND_LINE } from "@/lib/journey";
 import { hatchStrokes, wavingSwatchD } from "@/lib/journey-path";
 import { WORK_ARTIFACT_INFO, ARTIFACT_SECTION_AREAS } from "@/lib/work-artifact-shared";
 
+import { cssDurationMs } from "./helpers/css-duration";
+
 afterEach(() => cleanup());
 
 const read = (path: string) => readFileSync(path, "utf8");
