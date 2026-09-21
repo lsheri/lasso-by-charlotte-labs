@@ -37,9 +37,9 @@ export function useSharedWithMe(profiles: Profile[]) {
       const rows = (data ?? []) as unknown as RawRow[];
       const granterIds = Array.from(
         new Set(
-          rows
-            .map((row) => row.added_by)
-            .filter((id): id is string => Boolean(id) && !profileIds.includes(id)),
+          rows.flatMap((row) =>
+            row.added_by && !profileIds.includes(row.added_by) ? [row.added_by] : [],
+          ),
         ),
       );
       const engagementIds = Array.from(new Set(rows.map((row) => row.engagement_id)));
