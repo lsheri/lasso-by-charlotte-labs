@@ -143,7 +143,7 @@ import { useWorkboardFilePreviews } from "@/hooks/use-workboard-file-previews";
 import { useMotion } from "@/hooks/use-motion";
 import { useProfile } from "@/hooks/use-profile";
 import { dragTo, keyTo, type Point } from "@/lib/canvas-drag";
-import { REGION_FILLS, isRegionFrameId, newRegionFrameId, regionClaims, regionFillStyle, regionNameChange, type RegionFill } from "@/lib/board-region";
+import { REGION_FILLS, filedWorkCount, isRegionFrameId, newRegionFrameId, regionClaims, regionFillStyle, regionNameChange, type RegionFill } from "@/lib/board-region";
 import { isWorkboardDecorationKind, serializeWorkboardTextBody, type WorkboardCommand, type WorkboardNodeInput, type WorkboardRelation, type WorkboardTextBody } from "@/lib/canvas-lab-shared";
 import { noteCanvasOpenedFn } from "@/lib/canvas.functions";
 import { clampZoom, scrollableUnder, stepZoom, wheelPanVector, workboardPinchZoom, zoomAbout } from "@/lib/canvas-zoom";
