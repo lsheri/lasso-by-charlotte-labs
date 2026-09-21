@@ -1564,9 +1564,13 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
 
   function addNode(kind: LabTemplateKind, judgment?: LabJudgmentType) {
     const frameId = kind === "decision" ? "decisions" : kind === "deliverable" ? "outputs" : kind === "source" ? "foundation" : boardFrames.find((frame) => frame.id.startsWith("task:"))?.id ?? "foundation";
-    const frame = boardFrames.find((entry) => entry.id === frameId) ?? boardFrames[0];
-    if (!frame) return;
-    const node = createLocalNode(kind, frame, visibleNodes, judgment);
+    const named = boardFrames.find((entry) => entry.id === frameId) ?? null;
+    // On a blank board there is no step outline to hold the card, so it is laid
+    // out beside the trail and belongs to no outline at all.
+    const anchorFrame = named ?? trailFrame ?? boardFrames[0];
+    if (!anchorFrame) return;
+    const built = createLocalNode(kind, anchorFrame, visibleNodes, judgment);
+    const node = named ? built : { ...built, frame: null };
     setNodes((current) => current ? [...current, node] : current);
     noteWorkboardNodeCreated(orgId, kind === "judgment" ? "human_judgment" : kind, judgment);
     if (kind === "judgment") {
