@@ -14,7 +14,7 @@ export type PlacementRect = { x: number; y: number; width: number; height: numbe
 /** The clear space kept around every existing card and outline. */
 export const PLACEMENT_GAP = 24;
 
-export const PLACEMENT_CARD = { width: 232, height: 112 };
+export const PLACEMENT_CARD = { width: 260, height: 180 };
 
 /** One grid-aligned step, big enough to hold the gap on either side. */
 function gridStep(span: number, gap: number): number {
