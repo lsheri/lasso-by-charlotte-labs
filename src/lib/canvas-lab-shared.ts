@@ -13,6 +13,17 @@ export type WorkboardNodeKind = "brief" | "work_item" | "decision" | "judgment" 
 export type WorkboardFrameKind = "foundation" | "task" | "decisions" | "outputs" | "custom" | "context";
 export type WorkboardAnchor = "top" | "right" | "bottom" | "left";
 export type WorkboardRelation = "informed" | "produced" | "revised" | "cited" | "context";
+export const WORKBOARD_CARD_MIN_WIDTH = 260;
+export const WORKBOARD_CARD_MIN_HEIGHT = 180;
+export const WORKBOARD_CARD_MAX_WIDTH = 520;
+export const WORKBOARD_CARD_MAX_HEIGHT = 520;
+
+export function validWorkboardNodeGeometry(node: { x?: number; y?: number; w?: number; h?: number }): boolean {
+  const values = [node.x, node.y, node.w, node.h].filter((value): value is number => value !== undefined);
+  if (!values.every(Number.isFinite)) return false;
+  if (node.w !== undefined && (node.w < WORKBOARD_CARD_MIN_WIDTH || node.w > WORKBOARD_CARD_MAX_WIDTH)) return false;
+  return node.h === undefined || (node.h >= WORKBOARD_CARD_MIN_HEIGHT && node.h <= WORKBOARD_CARD_MAX_HEIGHT);
+}
 export type WorkboardJudgmentType =
   | "added_constraint"
   | "corrected_ai"

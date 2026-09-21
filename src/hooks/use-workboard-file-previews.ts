@@ -6,7 +6,7 @@ import { getItemTextPane } from "@/lib/item-text.functions";
 import {
   fallbackFilePreview,
   filePreviewKind,
-  firstSlideFromMap,
+  slidesFromMap,
   firstTwentyLines,
   isWorkboardFilePreviewItem,
 } from "@/lib/workboard-file-preview";
@@ -34,9 +34,10 @@ export async function loadWorkboardFilePreview(
     .order("version_no", { ascending: false });
   if (versionError) return fallbackFilePreview(item);
   const versionCount = versions?.length ?? 0;
-  const slide = item.type === "deck" ? firstSlideFromMap(versions?.[0]?.slide_map ?? null) : null;
+  const pages = item.type === "deck" ? slidesFromMap(versions?.[0]?.slide_map ?? null) : [];
+  const slide = pages[0] ?? null;
   if (slide) {
-    return { workItemId: item.id, kind: "slide", url: null, lines: slide.lines, slideTitle: slide.title, versionCount };
+    return { workItemId: item.id, kind: "slide", url: null, lines: slide.lines, slideTitle: slide.title, pages, versionCount };
   }
 
   if (filePreviewKind(item) === "pdf" && item.content_ref) {

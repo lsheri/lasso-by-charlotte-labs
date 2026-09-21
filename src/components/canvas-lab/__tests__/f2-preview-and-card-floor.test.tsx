@@ -12,6 +12,7 @@ import {
   type LabNode,
 } from "@/components/canvas-lab/canvas-lab-model";
 import type { WorkItemRow } from "@/lib/work-types";
+import { validWorkboardNodeGeometry } from "@/lib/canvas-lab-shared";
 
 const node: LabNode = {
   id: "work:one",
@@ -102,5 +103,7 @@ describe("F2 readable card floor", () => {
       width: CARD_MIN_WIDTH,
       height: CARD_MIN_HEIGHT,
     });
+    expect(validWorkboardNodeGeometry({ w: CARD_MIN_WIDTH, h: CARD_MIN_HEIGHT })).toBe(true);
+    expect(validWorkboardNodeGeometry({ w: CARD_MIN_WIDTH - 1, h: CARD_MIN_HEIGHT })).toBe(false);
   });
 });

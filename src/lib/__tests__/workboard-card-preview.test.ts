@@ -3,8 +3,15 @@ import { readFileSync } from "node:fs";
 
 import { readWorkboardCardPreviews } from "@/lib/workboard-card-preview.server";
 import { previewWheelConsumesScroll, readWorkboardDisplayMode, workboardDisplayModeKey } from "@/lib/workboard-card-preview.shared";
+import { slidesFromMap } from "@/lib/workboard-file-preview";
 
 describe("workboard card previews", () => {
+  it("keeps every mapped slide available to the shared renderer", () => {
+    expect(slidesFromMap({ slides: [{ title: "One", body: "First" }, { title: "Two", body: "Second" }] })).toEqual([
+      { title: "One", lines: ["First"] },
+      { title: "Two", lines: ["Second"] },
+    ]);
+  });
   it("defaults to Preview and scopes the choice to viewer and engagement", () => {
     expect(readWorkboardDisplayMode(null)).toBe("preview");
     expect(readWorkboardDisplayMode("pile")).toBe("preview");

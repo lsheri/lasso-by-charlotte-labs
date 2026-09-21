@@ -19,6 +19,7 @@ export type WorkboardFilePreview = {
   url: string | null;
   lines: string[];
   slideTitle: string | null;
+  pages?: { title: string | null; lines: string[] }[];
   versionCount: number;
 };
 
