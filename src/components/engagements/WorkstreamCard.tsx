@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { EditTaskDialog } from "@/components/engagements/EditTaskDialog";
+import { WorkstreamDocument } from "@/components/engagements/WorkstreamDocument";
 import { TaskWorkflow, type WorkflowElement } from "@/components/work/TaskWorkflow";
 import { closeEpisode, episodeForTask, setEpisodeObjective } from "@/lib/episodes.functions";
 import {
