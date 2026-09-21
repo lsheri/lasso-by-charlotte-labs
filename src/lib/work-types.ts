@@ -42,6 +42,11 @@ export type WorkItemRow = {
   content_fidelity?: string | null | undefined;
   source_vendor?: string | null | undefined;
   orig_conversation_id?: string | null | undefined;
+  /**
+   * W2: null means this piece groups with its conversation, a time means it
+   * stands on its own. Clearing it puts it back and nothing is lost.
+   */
+  ungrouped_at?: string | null | undefined;
   source_meta?: SourceMeta | null | undefined;
   meta?:
     | {
