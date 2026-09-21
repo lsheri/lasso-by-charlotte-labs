@@ -128,6 +128,10 @@ describe("CG1 inbox congruency", () => {
     const findIt = readFileSync("src/components/find-it/FindItResults.tsx", "utf8");
     for (const source of [inbox, findIt]) expect(source).toContain("DimmedDisabled");
     expect(findIt).toMatch(/DimmedDisabled[^>]+disabled=\{false\}/);
+    const action = vi.fn();
+    render(<DimmedDisabled dimmed disabled={false}><button onClick={action}>Reverse decision</button></DimmedDisabled>);
+    fireEvent.click(screen.getByRole("button", { name: "Reverse decision" }));
+    expect(action).toHaveBeenCalledOnce();
   });
 
   it("does not use green or lime to decide an Inbox filter match", () => {

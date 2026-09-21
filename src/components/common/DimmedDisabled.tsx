@@ -18,7 +18,7 @@ export function DimmedDisabled({
           }
         : {})}
       {...(dimmed ? { "data-testid": "dimmed-disabled" } : {})}
-      className={`${dimmed ? "opacity-50" : ""} ${disabled ? "pointer-events-none" : ""} min-w-0 w-full ${className}`}
+      className={`${dimmed ? "opacity-50" : ""} ${disabled ? "pointer-events-none" : ""} ${className}`}
     >
       {children}
     </div>

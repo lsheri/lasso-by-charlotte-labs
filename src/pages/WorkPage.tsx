@@ -1093,6 +1093,7 @@ export function WorkPage() {
                               key={key}
                               dimmed={!entryMatchesFilter(entry)}
                               disabled={!entryMatchesFilter(entry)}
+                              className="min-w-0 w-full"
                             >
                               <InboxFixedCard>
                                 {isConversationGroup(entry)
