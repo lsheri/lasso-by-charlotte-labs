@@ -31,7 +31,7 @@ describe("pass D · coaching notes", () => {
 
   it("never asks for unread notes as a coach, so the circle cannot render", () => {
     const sidebar = read("src/components/layout/SidebarNav.tsx");
-    expect(sidebar).toContain("useUnreadNotesAboutMe(isCoach ? undefined : profile?.id)");
+    expect(sidebar).toContain("useUnreadNotesAboutMe(guestNav ? undefined : profile?.id)");
 
     const ledger = read("src/components/engagements/WorkLedger.tsx");
     expect(ledger).toContain("useUnreadNotesAboutMe(isCoach ? undefined : profileId)");

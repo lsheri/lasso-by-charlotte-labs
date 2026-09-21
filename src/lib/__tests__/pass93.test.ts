@@ -86,7 +86,7 @@ describe("93.2 sidebar hierarchy", () => {
   });
 
   it("leaves the coach nav flat", () => {
-    expect(nav).toMatch(/coachNavGroups\.map/);
+    expect(nav).toMatch(/coachNavGroups\]\.map/);
     expect(nav).not.toMatch(/coachNavGroups[\s\S]{0,600}nb-nav-shelf/);
   });
 });
