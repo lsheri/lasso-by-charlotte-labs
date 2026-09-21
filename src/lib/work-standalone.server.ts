@@ -13,7 +13,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/integrations/supabase/types";
+import { WORKBOARD_CARD_DEFAULT_SIZE } from "@/lib/canvas-lab-shared";
 import { ensureWorkItemNode, isEngagementEditor } from "@/lib/canvas-lab.server";
+import { nearestFreeSlot, placementRectsForNodes } from "@/lib/workboard-placement";
 import type { ResolvedProfile } from "@/lib/profile-resolve";
 import {
   NOT_IN_A_CHAT_REFUSAL,
@@ -24,7 +26,15 @@ import {
 type Db = SupabaseClient<Database>;
 
 export type StandAloneResult =
-  | { status: "saved"; standsAlone: boolean; linkedOnBoard: boolean }
+  | {
+      status: "saved";
+      standsAlone: boolean;
+      linkedOnBoard: boolean;
+      /** Closed vocabulary for the record: the work item's own type. */
+      pieceKind: string;
+      /** claude, chatgpt, gemini, or none. Never a free string. */
+      vendor: "claude" | "chatgpt" | "gemini" | "none";
+    }
   | { status: "refused"; message: string }
   | { status: "forbidden" };
 
@@ -36,7 +46,10 @@ async function conversationNode(
   db: Db,
   origConversationId: string,
   ownerProfileId: string,
-): Promise<{ boardId: string; nodeId: string; engagementId: string } | null> {
+): Promise<
+  | { boardId: string; nodeId: string; engagementId: string; at: { x: number; y: number; w: number; h: number } }
+  | null
+> {
   const { data: transcripts } = await db
     .from("work_items")
     .select("id")
@@ -49,7 +62,7 @@ async function conversationNode(
 
   const { data: nodes } = await db
     .from("workboard_nodes")
-    .select("id, workboard_id")
+    .select("id, workboard_id, x, y, w, h")
     .in("work_item_id", ids)
     .is("deleted_at", null)
     .limit(1);
@@ -62,7 +75,17 @@ async function conversationNode(
     .eq("id", node.workboard_id)
     .maybeSingle();
   if (!board) return null;
-  return { boardId: board.id, nodeId: node.id, engagementId: board.engagement_id };
+  return {
+    boardId: board.id,
+    nodeId: node.id,
+    engagementId: board.engagement_id,
+    at: {
+      x: Number(node.x ?? 0),
+      y: Number(node.y ?? 0),
+      w: Number(node.w ?? WORKBOARD_CARD_DEFAULT_SIZE.width),
+      h: Number(node.h ?? WORKBOARD_CARD_DEFAULT_SIZE.height),
+    },
+  };
 }
 
 /**
@@ -79,7 +102,26 @@ async function linkOnBoard(
   if (!place) return false;
   if (!(await isEngagementEditor(db, place.engagementId, profile.id))) return false;
 
-  const artifactNodeId = await ensureWorkItemNode(db, place.boardId, profile.id, workItemId);
+  // Beside the conversation's own card, in free space. Without a point of its
+  // own every lifted artifact would land on the board origin, stacked on the
+  // one before it and nowhere near the chat it came out of.
+  const { data: onBoard } = await db
+    .from("workboard_nodes")
+    .select("x, y, w, h, kind")
+    .eq("workboard_id", place.boardId)
+    .is("deleted_at", null);
+  const taken = placementRectsForNodes(
+    (onBoard ?? []).map((node) => ({
+      x: Number(node.x ?? 0),
+      y: Number(node.y ?? 0),
+      width: Number(node.w ?? WORKBOARD_CARD_DEFAULT_SIZE.width),
+      height: Number(node.h ?? WORKBOARD_CARD_DEFAULT_SIZE.height),
+      kind: node.kind ?? undefined,
+    })),
+  );
+  const at = nearestFreeSlot({ x: place.at.x + place.at.w + 40, y: place.at.y }, taken);
+
+  const artifactNodeId = await ensureWorkItemNode(db, place.boardId, profile.id, workItemId, at);
   if (!artifactNodeId || artifactNodeId === place.nodeId) return false;
 
   const { error } = await db.from("workboard_links").insert({
@@ -98,6 +140,16 @@ async function linkOnBoard(
   return true;
 }
 
+const KNOWN_VENDORS = ["claude", "chatgpt", "gemini"] as const;
+
+/** Closed set only: anything else says none rather than travelling as itself. */
+function knownVendor(value: unknown): "claude" | "chatgpt" | "gemini" | "none" {
+  const name = typeof value === "string" ? value.toLowerCase() : "";
+  return (KNOWN_VENDORS as readonly string[]).includes(name)
+    ? (name as "claude" | "chatgpt" | "gemini")
+    : "none";
+}
+
 export async function setWorkItemStandalone(
   db: Db,
   profile: ResolvedProfile,
@@ -105,7 +157,7 @@ export async function setWorkItemStandalone(
 ): Promise<StandAloneResult> {
   const { data: item } = await db
     .from("work_items")
-    .select("id, type, owner_id, orig_conversation_id, source_meta, ungrouped_at")
+    .select("id, type, owner_id, orig_conversation_id, source_vendor, source_meta, ungrouped_at")
     .eq("id", input.workItemId)
     .maybeSingle();
   if (!item) return { status: "forbidden" };
@@ -130,5 +182,11 @@ export async function setWorkItemStandalone(
     ? await linkOnBoard(db, profile, item.orig_conversation_id, item.id)
     : false;
 
-  return { status: "saved", standsAlone: input.standAlone, linkedOnBoard };
+  return {
+    status: "saved",
+    standsAlone: input.standAlone,
+    linkedOnBoard,
+    pieceKind: typeof item.type === "string" ? item.type : "unknown",
+    vendor: knownVendor(item.source_vendor),
+  };
 }

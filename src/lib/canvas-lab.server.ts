@@ -22,7 +22,7 @@ import type {
   WorkboardNodeInput,
   WorkboardRowSnapshot,
 } from "@/lib/canvas-lab-shared";
-import { WORKBOARD_ANCHORS, WORKBOARD_JUDGMENT_TYPES, WORKBOARD_NODE_KINDS, WORKBOARD_RELATIONS, WORKBOARD_SHAPE_COLOURS, isWorkboardDecorationKind, parseWorkboardTextBody, validWorkboardNodeGeometry } from "@/lib/canvas-lab-shared";
+import { WORKBOARD_ANCHORS, WORKBOARD_CARD_DEFAULT_SIZE, WORKBOARD_JUDGMENT_TYPES, WORKBOARD_NODE_KINDS, WORKBOARD_RELATIONS, WORKBOARD_SHAPE_COLOURS, isWorkboardDecorationKind, parseWorkboardTextBody, validWorkboardNodeGeometry } from "@/lib/canvas-lab-shared";
 import type { ResolvedProfile } from "@/lib/profile-resolve";
 
 type Db = SupabaseClient<Database>;
@@ -553,6 +553,13 @@ export async function ensureWorkItemNode(
   boardId: string,
   profileId: string,
   workItemId: string,
+  /**
+   * Where the card should land. Left out, it sits at the board origin, which
+   * is what the highlight path has always done and still wants: that path only
+   * needs the card to exist. Any path where a person will see the card should
+   * pass a point chosen from free space.
+   */
+  position?: { x: number; y: number },
 ): Promise<string | null> {
   const { data } = await db
     .from("workboard_nodes")
@@ -567,7 +574,16 @@ export async function ensureWorkItemNode(
     db,
     boardId,
     profileId,
-    { clientKey: `work:${workItemId}`, frameKey: null, kind: "work_item", workItemId, x: 0, y: 0, w: 260, h: 160 },
+    {
+      clientKey: `work:${workItemId}`,
+      frameKey: null,
+      kind: "work_item",
+      workItemId,
+      x: position?.x ?? 0,
+      y: position?.y ?? 0,
+      w: WORKBOARD_CARD_DEFAULT_SIZE.width,
+      h: WORKBOARD_CARD_DEFAULT_SIZE.height,
+    },
     null,
   );
   return created?.id ?? null;
