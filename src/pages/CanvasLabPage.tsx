@@ -154,6 +154,7 @@ import {
   CONTEXT_FRAME_LABEL,
   contextExitPoint,
   contextRegionAround,
+  overlapsContextRegion,
   contextRegionFor,
   contextRegionRect,
   contextSlots,
