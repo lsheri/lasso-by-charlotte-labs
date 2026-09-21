@@ -20,7 +20,7 @@ import {
   attachmentBucket,
   type SourceMeta,
 } from "@/lib/conversation-shared";
-import { safeChatUrl } from "@/lib/chat-url";
+import { missingChatUrlNote, rawPushUrl, storedPushChatUrl } from "@/lib/mcp-push-url";
 import { isAffiliatedStrict, orgTypeOfStrict } from "@/lib/org-type.server";
 import {
   placementLine,
@@ -182,7 +182,7 @@ async function logPush(owner: Owner, dims: Record<string, string>): Promise<void
 const CHAT_URL_FIELD = {
   type: "string",
   description:
-    "Optional. The https URL of this conversation in the source app, if you can see it. Stored only for claude.ai, chatgpt.com, chat.openai.com and gemini.google.com; anything else is ignored.",
+    "This conversation's own https URL in the source app. You are inside the conversation you are pushing and its URL is in the address bar, so send it. It is what lets the saved work point back to this chat, and what recognises the same conversation on a later push. Leave it out only if you genuinely cannot see it, and never invent one. Kept only for claude.ai, chatgpt.com, chat.openai.com and gemini.google.com; anything else is ignored.",
 };
 
 const pushTools = (vocab: McpVocab) => [
@@ -215,12 +215,7 @@ const pushTools = (vocab: McpVocab) => [
         orig_conversation_id: {
           type: "string",
           description:
-            "Stable ID for the source thread; all pushes for the same conversation MUST reuse it. Use the source app's REAL conversation UUID when it is visible to you (it appears in the chat's URL). If you cannot see it, use any stable id — but then also pass source_url if the user can supply the conversation's URL.",
-        },
-        source_url: {
-          type: "string",
-          description:
-            "The conversation's URL in the source app, if you can see it. This is the most stable way to recognise the same conversation later.",
+            "Stable ID for the source thread; all pushes for the same conversation MUST reuse it. Use the source app's REAL conversation UUID when it is visible to you (it appears in the chat's URL). If you cannot see it, use any stable id, and send chat_url as well so the conversation can still be recognised later.",
         },
         chat_url: CHAT_URL_FIELD,
         messages: {
@@ -551,7 +546,7 @@ async function pushThread(
       ts_precision: "capture",
       content_hash: await sha256Hex(serialized),
       source_meta: {
-        ...(safeChatUrl(args["chat_url"]) ? { url: safeChatUrl(args["chat_url"])! } : {}),
+        ...(storedPushChatUrl(args) ? { url: storedPushChatUrl(args)! } : {}),
         ...(plan.sourceProject ? { source_project: plan.sourceProject } : {}),
       } as unknown as Json,
       meta: { assistant_transcribed: true },
@@ -1060,10 +1055,9 @@ async function pushConversation(
     typeof args["orig_conversation_id"] === "string" ? args["orig_conversation_id"].trim() : "";
   if (!origId) return rpcError(id, -32602, "orig_conversation_id is required");
 
-  const sourceUrl =
-    typeof args["source_url"] === "string" && args["source_url"].trim()
-      ? args["source_url"].trim()
-      : null;
+  // One value, two jobs: it is stored on the record and it is the key that
+  // recognises the same conversation on a later push.
+  const sourceUrl = rawPushUrl(args);
 
   const rawMessages = args["messages"];
   if (!Array.isArray(rawMessages) || rawMessages.length === 0) {
@@ -1153,7 +1147,7 @@ async function pushConversation(
     notes?: unknown;
   };
   const plan = parsePlacementArgs(args);
-  const chatUrl = safeChatUrl(args["chat_url"]);
+  const chatUrl = storedPushChatUrl(args);
   const sharedMeta: SourceMeta = {
     vendor,
     model,
@@ -1731,6 +1725,6 @@ async function pushConversation(
       convoPlacement.target === "workboard"
         ? ` ${convoPlacement.text}`
         : ` It stays private until the user maps it.${convoPlacement.text ? ` ${convoPlacement.text}` : ""}`
-    }${rejectedNote}${warn}${continuation}`,
+    }${rejectedNote}${warn}${continuation}${missingChatUrlNote(args)}`,
   );
 }
