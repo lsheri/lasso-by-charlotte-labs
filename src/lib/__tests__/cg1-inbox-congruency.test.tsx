@@ -346,7 +346,12 @@ describe("CG2 AI conversations congruency", () => {
     const searchResults = inboxRows.filter((row) => row.title.includes("Budget"));
     for (const row of searchResults) expect(screen.getByText(row.title)).toBeTruthy();
     expect(screen.queryByText("Planning source")).toBeNull();
-    expect(screen.getAllByTestId("dimmed-disabled")).toHaveLength(searchResults.length);
+    const dimmed = screen.getAllByTestId("dimmed-disabled");
+    expect(dimmed).toHaveLength(searchResults.length);
+    for (const wrapper of dimmed) {
+      expect(wrapper.getAttribute("aria-disabled")).toBe("true");
+      expect(wrapper.hasAttribute("inert")).toBe(true);
+    }
     expect(screen.queryByText(/No chats match/i)).toBeNull();
   });
 
