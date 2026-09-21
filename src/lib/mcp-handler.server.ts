@@ -50,6 +50,7 @@ import {
   type PlacementPlan,
 } from "@/lib/mcp-vocab";
 import { CANONICAL_ORIGIN } from "@/lib/app-host";
+import { pushSourceTimeFields } from "@/lib/push-source-time";
 
 const PROTOCOL_VERSION = "2025-11-25";
 const ACCEPTED_PROTOCOLS = new Set([
