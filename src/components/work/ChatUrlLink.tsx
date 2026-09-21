@@ -7,13 +7,25 @@ import type { WorkItemRow } from "@/lib/work-types";
  * The quiet secondary way out to the source chat. The in-app transcript stays
  * the primary destination; when no URL was stored, this renders nothing at all.
  */
-export function ChatUrlLink({ item }: { item: WorkItemRow | null | undefined }) {
+export function ChatUrlLink({
+  item,
+  showAbsence = false,
+}: {
+  item: WorkItemRow | null | undefined;
+  /** Cards say plainly when there is no way back, so nobody is surprised. */
+  showAbsence?: boolean;
+}) {
   const url = effectiveChatUrl(
     item?.source_meta?.url,
     item?.source_vendor ?? null,
     item?.orig_conversation_id ?? null,
   );
-  if (!url) return null;
+  if (!url) {
+    if (!showAbsence) return null;
+    return (
+      <span className="text-xs text-muted-foreground">{NO_SOURCE_LINK_LABEL}</span>
+    );
+  }
 
   const id = item?.id;
   const note = () => {

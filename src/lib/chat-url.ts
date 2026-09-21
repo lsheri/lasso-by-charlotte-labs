@@ -62,9 +62,9 @@ export function chatUrlLabel(url: string): string {
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
- * Vendor chat URLs are deterministic when the stored conversation id is the
- * vendor's own UUID. A model-minted slug is not a real id, so it derives
- * nothing: a fabricated link would be a dead link and a lie.
+ * Only Claude. Its stored conversation id is the vendor's own UUID, so the URL
+ * is deterministic. Elsewhere the same field holds model-minted slugs, and a
+ * fabricated link would be a dead link and a lie, so nothing is derived.
  */
 export function deriveChatUrl(
   vendor: string | null | undefined,
@@ -75,7 +75,6 @@ export function deriveChatUrl(
   if (!UUID_RE.test(id)) return null;
   const v = (vendor ?? "").trim().toLowerCase();
   if (v === "claude") return safeChatUrl(`https://claude.ai/chat/${id}`);
-  if (v === "chatgpt") return safeChatUrl(`https://chatgpt.com/c/${id}`);
   return null;
 }
 
