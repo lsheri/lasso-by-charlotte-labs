@@ -1042,7 +1042,7 @@ export function WorkPage() {
         </div>
       ) : (
         <div className="space-y-8">
-          {matchingEntryCount === 0 ? (
+          {columnFilter === "unmapped" && matchingEntryCount === 0 ? (
             <p className="rounded-[var(--radius-md)] border border-dashed border-pencil bg-card px-4 py-6 text-center text-[11.5px] text-soft">
               These landed on their own. Say whose work it is and the rest gets easier.
             </p>
