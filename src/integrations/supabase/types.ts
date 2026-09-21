@@ -4251,6 +4251,10 @@ export type Database = {
         }
         Returns: number
       }
+      set_engagement_person_access: {
+        Args: { p_access: string; p_engagement: string; p_profile: string }
+        Returns: string
+      }
       set_firm_check_active: {
         Args: { p_active: boolean; p_check: string }
         Returns: undefined
