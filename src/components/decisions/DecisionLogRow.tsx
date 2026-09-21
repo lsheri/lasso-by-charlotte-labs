@@ -44,7 +44,7 @@ export function DecisionLogRow({
     const source = srcs.find((entry) => entry.work_item_id === id);
     const turn = source?.turn_id ? sourceTurns?.[source.turn_id] : null;
     const vendor = vendorLabel(info?.source_vendor) || info?.title || "Source";
-    const date = info ? formatDate(info.work_date ?? info.created_at_source ?? info.captured_at) : null;
+    const date = info ? workDateLabel(info) : null;
     return {
       workItemId: id,
       heading: [vendor, date, turn ? `turn ${turn.turn_no}` : null, "Lasso drafted this"]

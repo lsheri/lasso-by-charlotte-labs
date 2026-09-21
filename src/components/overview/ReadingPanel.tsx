@@ -40,7 +40,7 @@ export function ReadingPanel({ items }: { items: WorkItemRow[] }) {
                   : item.title}
               </span>
               <span className="shrink-0 font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
-                {formatDate(item.captured_at)}
+                {workDateLabel(item)}
               </span>
             </li>
           ))}

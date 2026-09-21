@@ -9,11 +9,11 @@ import { formatDate, type WorkItemRow } from "@/lib/work-types";
 
 function trailStops(items: readonly WorkItemRow[]): TrailStop[] {
   return items.slice(0, 4).map((item) => {
-    const when = item.work_date ?? item.created_at_source ?? item.captured_at;
+    const when = workDateLabel(item);
     const source = vendorLabel(item.source_vendor) || item.source;
     return {
       id: item.id,
-      eyebrow: `${source} · ${when ? formatDate(when) : ""}`.trim(),
+      eyebrow: `${source} · ${when}`.trim(),
       label: item.title.length > 34 ? `${item.title.slice(0, 33)}…` : item.title,
     };
   });

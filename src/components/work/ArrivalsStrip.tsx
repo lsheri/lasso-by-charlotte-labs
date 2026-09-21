@@ -97,7 +97,7 @@ export function ArrivalsStrip({ items }: { items: WorkItemRow[] }) {
                 </span>
               ) : null}
               <span className="font-mono text-[10px] text-soft">
-                {arrivalWhen(head.captured_at)}
+                {workDateLabel(head, (iso) => arrivalWhen(iso))}
               </span>
               <span>{place.text}</span>
               {place.mapped ? (
