@@ -209,7 +209,8 @@ describe("D1 · a board document is never a source", () => {
     expect(migration).toMatch(/content jsonb/i);
     // Nothing here narrows what may reference a document.
     expect(migration).not.toMatch(/CREATE TRIGGER/i);
-    expect(migration).not.toMatch(/CHECK\s*\(/i);
+    // Policy WITH CHECK clauses are access rules, not shape rules.
+    expect(migration.replace(/WITH CHECK/gi, "")).not.toMatch(/CHECK\s*\(/i);
     // And the table itself never reaches back towards a work item, which is
     // what keeps the forbidden direction structural rather than remembered.
     expect(migration).not.toMatch(/REFERENCES\s+public\.work_items/i);
