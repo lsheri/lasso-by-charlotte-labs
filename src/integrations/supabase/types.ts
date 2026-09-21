@@ -1515,6 +1515,7 @@ export type Database = {
           dims: Json
           egress_skipped_reason: string | null
           egressed_at: string | null
+          environment: string
           event_type: string
           event_uuid: string | null
           id: number
@@ -1538,6 +1539,7 @@ export type Database = {
           dims?: Json
           egress_skipped_reason?: string | null
           egressed_at?: string | null
+          environment?: string
           event_type: string
           event_uuid?: string | null
           id?: never
@@ -1561,6 +1563,7 @@ export type Database = {
           dims?: Json
           egress_skipped_reason?: string | null
           egressed_at?: string | null
+          environment?: string
           event_type?: string
           event_uuid?: string | null
           id?: never
