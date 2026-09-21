@@ -26,14 +26,15 @@ import {
   type BoardShareLinkDto,
 } from "@/lib/board-share-shared";
 
-export function ShareBoardDialog({
+export function BoardLinkSection({
   engagementId,
   profileId,
+  open,
 }: {
   engagementId: string;
   profileId: string | undefined;
+  open: boolean;
 }) {
-  const [open, setOpen] = useState(false);
   const [freshUrl, setFreshUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
