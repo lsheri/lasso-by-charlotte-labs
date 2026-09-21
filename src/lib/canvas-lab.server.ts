@@ -204,7 +204,10 @@ export function validNodeInput(node: WorkboardNodeInput): string | null {
 }
 
 export function validateLinkNodeKinds(kinds: string[]): string | null {
-  return kinds.some((kind) => kind === "shape") ? "A colour block cannot be connected." : null;
+  if (kinds.includes("shape")) return "A colour block cannot be connected.";
+  if (kinds.includes("text")) return "A text block cannot be connected.";
+  if (kinds.includes("mark")) return "A mark cannot be connected.";
+  return null;
 }
 
 function validFrameGeometry(frame: { x?: number; y?: number; w?: number; h?: number }): boolean {
@@ -361,7 +364,7 @@ export async function applyWorkboardCommand(
     if (owner && (owner.kind === "judgment" || owner.kind === "draft") && owner.author_profile_id !== profile.id) {
       return { status: "forbidden" };
     }
-    if (!owner) return { status: "validation_error", message: "That board item is gone." };
+    if (!owner) return { status: "validation_error", message: "That card is gone." };
     if (command.type === "node_update" && !validNodeGeometry(owner.kind as WorkboardNodeDto["kind"], command.patch)) return { status: "validation_error", message: owner.kind === "shape" ? "Block dimensions are outside the supported range." : "Card dimensions are outside the supported range." };
     if (command.type === "node_update" && command.patch.frameId) {
       const target = (await db.from("workboard_frames").select("id").eq("id", command.patch.frameId).eq("workboard_id", board.id).is("deleted_at", null).maybeSingle()).data;

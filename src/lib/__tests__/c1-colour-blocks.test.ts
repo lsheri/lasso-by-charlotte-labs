@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  WORKBOARD_NODE_KINDS,
   WORKBOARD_SHAPE_COLOURS,
   validWorkboardNodeGeometry,
   type WorkboardNodeInput,
-  type WorkboardNodeKind,
 } from "@/lib/canvas-lab-shared";
 import { validateLinkNodeKinds, validNodeInput } from "@/lib/canvas-lab.server";
-import { applyDurableBoard, inboundLabNodeIds, shapePointerIntent, type LabLink, type LabNode } from "@/components/canvas-lab/canvas-lab-model";
+import { applyDurableBoard, inboundLabNodeIds, resizeLabRect, shapePointerIntent, type LabLink, type LabNode } from "@/components/canvas-lab/canvas-lab-model";
 import { placementRectsForNodes } from "@/lib/workboard-placement";
 
 function input(overrides: Partial<WorkboardNodeInput> = {}): WorkboardNodeInput {
@@ -25,9 +25,20 @@ function input(overrides: Partial<WorkboardNodeInput> = {}): WorkboardNodeInput 
 }
 
 describe("C1 colour block vocabulary and validation", () => {
-  it("keeps the client vocabulary aligned with the durable record", () => {
-    const kinds: WorkboardNodeKind[] = ["shape", "text", "mark"];
-    expect(kinds).toEqual(["shape", "text", "mark"]);
+  it("accepts every known node kind and refuses an unknown kind", () => {
+    const validByKind = {
+      brief: input({ kind: "brief", body: "", w: 260, h: 180 }),
+      work_item: input({ kind: "work_item", body: "", workItemId: "work-1", w: 260, h: 180 }),
+      decision: input({ kind: "decision", body: "", decisionId: "decision-1", w: 260, h: 180 }),
+      judgment: input({ kind: "judgment", body: "", w: 260, h: 180 }),
+      draft: input({ kind: "draft", body: "", w: 260, h: 180 }),
+      shape: input(),
+      text: input({ kind: "text", body: "", w: 260, h: 180 }),
+      mark: input({ kind: "mark", body: "", w: 260, h: 180 }),
+    } satisfies Record<(typeof WORKBOARD_NODE_KINDS)[number], WorkboardNodeInput>;
+
+    for (const kind of WORKBOARD_NODE_KINDS) expect(validNodeInput(validByKind[kind])).toBeNull();
+    expect(validNodeInput({ ...input(), kind: "unknown" as WorkboardNodeInput["kind"] })).toBe("Unknown workboard item kind.");
   });
 
   it("accepts a large colour block but keeps the card range unchanged", () => {
@@ -43,12 +54,24 @@ describe("C1 colour block vocabulary and validation", () => {
 
   it("refuses references and unknown kinds before the record does", () => {
     expect(validNodeInput(input({ workItemId: "work-1" }))).toBe("A colour block cannot reference work or a decision.");
-    expect(validNodeInput({ ...input(), kind: "unknown" as WorkboardNodeKind })).toBe("Unknown workboard item kind.");
+    expect(validNodeInput({ ...input(), kind: "unknown" as WorkboardNodeInput["kind"] })).toBe("Unknown workboard item kind.");
   });
 
-  it("refuses a relationship with a colour block at either end", () => {
+  it("refuses relationships with every decorative node kind", () => {
     expect(validateLinkNodeKinds(["shape", "work_item"])).toBe("A colour block cannot be connected.");
+    expect(validateLinkNodeKinds(["work_item", "text"])).toBe("A text block cannot be connected.");
+    expect(validateLinkNodeKinds(["mark", "decision"])).toBe("A mark cannot be connected.");
     expect(validateLinkNodeKinds(["work_item", "decision"])).toBeNull();
+  });
+
+  it("keeps large block dimensions through the resize path", () => {
+    expect(resizeLabRect(
+      { x: 0, y: 0, width: 420, height: 280 },
+      "se",
+      { x: 780, y: 620 },
+      false,
+      "shape",
+    )).toMatchObject({ width: 1200, height: 900 });
   });
 });
 

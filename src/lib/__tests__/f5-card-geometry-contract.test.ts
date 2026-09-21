@@ -5,11 +5,14 @@ import {
   CARD_MIN_HEIGHT,
   CARD_MIN_WIDTH,
   CARD_WIDTH,
+  resizeLabRect,
   seedBlankCanvas,
 } from "@/components/canvas-lab/canvas-lab-model";
 import {
   WORKBOARD_CARD_MIN_HEIGHT,
   WORKBOARD_CARD_MIN_WIDTH,
+  WORKBOARD_SHAPE_MAX_SIZE,
+  WORKBOARD_SHAPE_MIN_SIZE,
   validWorkboardNodeGeometry,
 } from "@/lib/canvas-lab-shared";
 import { PLACEMENT_CARD } from "@/lib/workboard-placement";
@@ -35,5 +38,18 @@ describe("F5 card geometry contract", () => {
     expect(PLACEMENT_CARD).toEqual({ width: CARD_WIDTH, height: CARD_HEIGHT });
     expect(CARD_MIN_WIDTH).toBeGreaterThanOrEqual(WORKBOARD_CARD_MIN_WIDTH);
     expect(CARD_MIN_HEIGHT).toBeGreaterThanOrEqual(WORKBOARD_CARD_MIN_HEIGHT);
+  });
+
+  it("keeps block resize limits within the block record limits", () => {
+    const maximum = resizeLabRect(
+      { x: 0, y: 0, width: WORKBOARD_SHAPE_MIN_SIZE, height: WORKBOARD_SHAPE_MIN_SIZE },
+      "se",
+      { x: Number.MAX_SAFE_INTEGER, y: Number.MAX_SAFE_INTEGER },
+      false,
+      "shape",
+    );
+
+    expect(maximum).toMatchObject({ width: WORKBOARD_SHAPE_MAX_SIZE, height: WORKBOARD_SHAPE_MAX_SIZE });
+    expect(validWorkboardNodeGeometry({ kind: "shape", w: maximum.width, h: maximum.height })).toBe(true);
   });
 });
