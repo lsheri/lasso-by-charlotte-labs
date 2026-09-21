@@ -631,6 +631,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     if (node.kind === "judgment" && node.local) return { ...base, kind: "judgment", title: node.title, body: node.summary, judgmentType: node.judgmentType ?? null };
     if (node.kind === "shape" && node.colour) return { ...base, frameKey: null, kind: "shape", body: node.colour };
     if (node.kind === "text") return { ...base, frameKey: null, kind: "text", body: serializeWorkboardTextBody({ text: node.summary, size: node.textSize ?? "label", weight: node.textWeight ?? "medium", colour: node.textColour ?? "ink" }) };
+    if (node.kind === "answer") return { ...base, frameKey: null, kind: "answer", title: node.title, body: node.summary };
     return null;
   }
 
