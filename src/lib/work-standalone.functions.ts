@@ -29,6 +29,28 @@ export const setWorkItemStandaloneFn = createServerFn({ method: "POST" })
       standAlone: data.stand_alone,
     });
 
+    if (result.status === "saved") {
+      try {
+        const { recordEvent } = await import("./telemetry.server");
+        // Every lift and every put back, including the inbox-only case where
+        // nothing board-shaped happened. That case is the common one.
+        await recordEvent(supabase, {
+          eventType: "work.piece_regrouped",
+          orgId: profile.org_id,
+          userId,
+          profileId: profile.id,
+          dims: {
+            action: result.standsAlone ? "stands_alone" : "put_back",
+            piece_kind: result.pieceKind,
+            vendor: result.vendor,
+            on_board: result.linkedOnBoard,
+          },
+        });
+      } catch {
+        // Reorganising work must never depend on recording this signal.
+      }
+    }
+
     if (result.status === "saved" && result.linkedOnBoard) {
       try {
         const { recordEvent } = await import("./telemetry.server");

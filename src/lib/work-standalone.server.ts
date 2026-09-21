@@ -26,7 +26,15 @@ import {
 type Db = SupabaseClient<Database>;
 
 export type StandAloneResult =
-  | { status: "saved"; standsAlone: boolean; linkedOnBoard: boolean }
+  | {
+      status: "saved";
+      standsAlone: boolean;
+      linkedOnBoard: boolean;
+      /** Closed vocabulary for the record: the work item's own type. */
+      pieceKind: string;
+      /** claude, chatgpt, gemini, or none. Never a free string. */
+      vendor: "claude" | "chatgpt" | "gemini" | "none";
+    }
   | { status: "refused"; message: string }
   | { status: "forbidden" };
 
@@ -132,6 +140,16 @@ async function linkOnBoard(
   return true;
 }
 
+const KNOWN_VENDORS = ["claude", "chatgpt", "gemini"] as const;
+
+/** Closed set only: anything else says none rather than travelling as itself. */
+function knownVendor(value: unknown): "claude" | "chatgpt" | "gemini" | "none" {
+  const name = typeof value === "string" ? value.toLowerCase() : "";
+  return (KNOWN_VENDORS as readonly string[]).includes(name)
+    ? (name as "claude" | "chatgpt" | "gemini")
+    : "none";
+}
+
 export async function setWorkItemStandalone(
   db: Db,
   profile: ResolvedProfile,
@@ -139,7 +157,7 @@ export async function setWorkItemStandalone(
 ): Promise<StandAloneResult> {
   const { data: item } = await db
     .from("work_items")
-    .select("id, type, owner_id, orig_conversation_id, source_meta, ungrouped_at")
+    .select("id, type, owner_id, orig_conversation_id, source_vendor, source_meta, ungrouped_at")
     .eq("id", input.workItemId)
     .maybeSingle();
   if (!item) return { status: "forbidden" };
@@ -164,5 +182,11 @@ export async function setWorkItemStandalone(
     ? await linkOnBoard(db, profile, item.orig_conversation_id, item.id)
     : false;
 
-  return { status: "saved", standsAlone: input.standAlone, linkedOnBoard };
+  return {
+    status: "saved",
+    standsAlone: input.standAlone,
+    linkedOnBoard,
+    pieceKind: typeof item.type === "string" ? item.type : "unknown",
+    vendor: knownVendor(item.source_vendor),
+  };
 }
