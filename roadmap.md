@@ -248,7 +248,7 @@
 - [x] Verify focused landing tests, typecheck, media metadata, and preview build
 
 ## Unit CG2: AI conversations filter congruency
-- [ ] Keep search narrowing unchanged
-- [ ] Dim and disable tool/engagement chip non-matches without removing conversations
-- [ ] Preserve genuine empty and filtered-search empty states
-- [ ] Add real-page congruency checks and verify the preview build
+- [x] Keep search narrowing unchanged
+- [x] Dim and disable tool/engagement chip non-matches without removing conversations
+- [x] Preserve genuine empty and filtered-search empty states
+- [x] Add real-page congruency checks and verify the preview build
