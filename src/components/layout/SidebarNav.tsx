@@ -163,7 +163,7 @@ export function SidebarNav({
   onNavigate?: (() => void) | undefined;
   onOpenSettings?: (() => void) | undefined;
 }) {
-  const { data: profile } = useProfile();
+  const { data: profile, profiles } = useProfile();
   // Pass 186: an affiliated workspace gets one extra item at the top of
   // "Your account", named for the institution. Nothing is inserted when
   // there is no affiliation.
@@ -227,11 +227,13 @@ export function SidebarNav({
     });
   }
 
-  // A coach gets their own short nav. Worker and admin items are unchanged.
-  if (isCoach) {
+  // A guest gets their own short nav. Worker and admin items are unchanged.
+  // The coaching destination sits on top of it only when a board was shared.
+  if (guestNav) {
     return (
       <nav className="flex flex-col gap-7">
-        {coachNavGroups.map((group) => (
+        {[...coachingGroups, ...coachNavGroups].map((group) => (
+
           <div key={group.label}>
             <div className="nb-group-header px-2">{group.label}</div>
             <div className="mt-2 flex flex-col gap-0.5">
