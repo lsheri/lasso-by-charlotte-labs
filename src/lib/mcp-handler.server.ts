@@ -649,6 +649,27 @@ async function pushDocument(owner: Owner, args: Obj, id: unknown): Promise<Respo
   if (uploadError) return rpcError(id, -32603, uploadError.message);
 
   const hint = typeof args["engagement_hint"] === "string" ? args["engagement_hint"] : null;
+
+  // A document pushed out of a conversation inherits that conversation's
+  // stored link. The stored value already passed the host allowlist and the
+  // front door rule when the conversation was pushed, so it is copied as is.
+  // A document with no conversation gets no link and no complaint, and a
+  // document never derives a link from its own id or filename.
+  const origId =
+    typeof args["orig_conversation_id"] === "string" ? args["orig_conversation_id"].trim() : "";
+  let inheritedUrl: string | null = null;
+  if (origId) {
+    const { data: thread } = await supabaseAdmin
+      .from("work_items")
+      .select("source_meta")
+      .eq("owner_id", owner.profileId)
+      .eq("org_id", owner.orgId)
+      .eq("type", "ai_thread")
+      .eq("orig_conversation_id", origId)
+      .maybeSingle();
+    inheritedUrl = inheritedConversationUrl(thread?.source_meta ?? null);
+  }
+
   const { data: doc, error } = await supabaseAdmin
     .from("work_items")
     .insert({
@@ -659,9 +680,11 @@ async function pushDocument(owner: Owner, args: Obj, id: unknown): Promise<Respo
       title,
       visibility: "unmapped",
       content_ref: path,
+      ...(origId ? { orig_conversation_id: origId } : {}),
       source_meta: {
         filename,
         mime_type: mime,
+        ...(inheritedUrl ? { url: inheritedUrl } : {}),
         ...(plan.sourceProject ? { source_project: plan.sourceProject } : {}),
       } as unknown as Json,
       content_fidelity: "verbatim",
