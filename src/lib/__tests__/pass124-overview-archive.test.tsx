@@ -30,12 +30,15 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("@/hooks/use-profile", () => ({
   isBusinessOrg: (p: { org_type: string } | null | undefined) => p?.org_type === "company",
-  useProfile: () => ({ data: mocks.profile }),
+  useProfile: () => ({ data: mocks.profile, profiles: mocks.profile ? [mocks.profile] : [] }),
 }));
 vi.mock("@/hooks/use-my-deliverables", () => ({
   useMyDeliverables: () => ({ data: mocks.deliverables }),
 }));
 vi.mock("@/hooks/use-engagements", () => ({ useEngagements: () => ({ data: [] }) }));
+vi.mock("@/hooks/use-coaching-reach", () => ({
+  useCoachingReach: () => ({ engagementIds: [], profileIds: [], canReach: false }),
+}));
 vi.mock("@/hooks/use-decisions", () => ({ useDecisions: () => ({ data: [] }) }));
 vi.mock("@/hooks/use-shipped-work", () => ({
   useShippedWork: () => ({ data: mocks.shipped, isLoading: false }),

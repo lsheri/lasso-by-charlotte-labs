@@ -15,11 +15,16 @@ const mocks = vi.hoisted(() => ({
   } | null,
   engagements: [] as unknown[],
   decisions: [] as unknown[],
+  canReach: false,
 }));
 
 vi.mock("@/hooks/use-profile", () => ({
   isBusinessOrg: (p: { org_type: string } | null | undefined) => p?.org_type === "company",
   useProfile: () => ({ data: mocks.profile, profiles: mocks.profile ? [mocks.profile] : [] }),
+}));
+
+vi.mock("@/hooks/use-coaching-reach", () => ({
+  useCoachingReach: () => ({ engagementIds: [], profileIds: [], canReach: mocks.canReach }),
 }));
 
 vi.mock("@/hooks/use-engagements", () => ({
