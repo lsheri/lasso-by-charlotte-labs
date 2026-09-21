@@ -246,3 +246,9 @@
 - [x] Create the staged Claude-to-Lasso phone clip and its final-frame poster
 - [x] Place both clips in the source-finding panel without changing its approved copy or actions
 - [x] Verify focused landing tests, typecheck, media metadata, and preview build
+
+## Unit CG2: AI conversations filter congruency
+- [x] Keep search narrowing unchanged
+- [x] Dim and disable tool/engagement chip non-matches without removing conversations
+- [x] Preserve genuine empty and filtered-search empty states
+- [x] Add real-page congruency checks and verify the preview build

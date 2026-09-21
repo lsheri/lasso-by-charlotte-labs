@@ -9,6 +9,7 @@ import { ReflectPage } from "@/pages/ReflectPage";
 import { toast } from "sonner";
 
 import { CaptureCoverage } from "@/components/common/CaptureCoverage";
+import { DimmedDisabled } from "@/components/common/DimmedDisabled";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { MarkdownMessage } from "@/components/markdown/MarkdownMessage";
 import { PeekActionBar } from "@/components/peek/PeekActionBar";
@@ -261,14 +262,19 @@ export function AiRecordPage() {
   const engagementsPresent = Array.from(engagementCounts.values()).sort(
     (a, b) => b.count - a.count || a.code.localeCompare(b.code),
   );
-  const byTool = tool === "all" ? shown : shown.filter((i) => vendorFromSource(i) === tool);
-  const visible =
-    engagement === "all"
-      ? byTool
-      : engagement === "unmapped"
-        ? byTool.filter((i) => itemEngagements(i).length === 0)
-        : byTool.filter((i) => itemEngagements(i).some((e) => e.id === engagement));
-  const groups = groupByMonth(visible);
+  const matchesChipFilters = (item: WorkItemRow) => {
+    const matchesTool = tool === "all" || vendorFromSource(item) === tool;
+    const matchesEngagement =
+      engagement === "all" ||
+      (engagement === "unmapped"
+        ? itemEngagements(item).length === 0
+        : itemEngagements(item).some((e) => e.id === engagement));
+    return matchesTool && matchesEngagement;
+  };
+  const matchingCount = shown.filter(matchesChipFilters).length;
+  // Search narrows deliberately. Tool and engagement chips leave those search
+  // results in place, dimming the conversations outside the chosen categories.
+  const groups = groupByMonth(shown);
   // Asked Lasso on its own hides the captured list; Everything shows both.
   const capturedShown = source !== "asked" && threads.length > 0;
   const selectedEngagement =
@@ -633,7 +639,7 @@ export function AiRecordPage() {
               kind: "engagement",
               id: selectedEngagement.id,
               title: selectedEngagement.title,
-              itemCount: visible.length,
+              itemCount: matchingCount,
             }}
             readsDetail="every piece of work mapped into this engagement, oldest first"
             running={analyses.running}
@@ -646,7 +652,7 @@ export function AiRecordPage() {
                   kind: "engagement",
                   id: selectedEngagement.id,
                   title: selectedEngagement.title,
-                  itemCount: visible.length,
+                  itemCount: matchingCount,
                 },
                 "every piece of work mapped into this engagement, oldest first",
                 checkId,
@@ -715,17 +721,23 @@ export function AiRecordPage() {
                     key={`cards:${view}`}
                     className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6"
                   >
-                    {group.items.map((item, index) => (
-                      <span
+                    {group.items.map((item, index) => {
+                      const matches = matchesChipFilters(item);
+                      return (
+                      <DimmedDisabled
                         key={`${group.key}:${item.id}`}
-                        className={pileMotion.className ? "block nb-sticky-wave" : "block"}
-                        style={
-                          {
-                            "--nb-wave-delay": `${Math.min(index, 23) * 26}ms`,
-                          } as React.CSSProperties
-                        }
+                        dimmed={!matches}
+                        disabled={!matches}
                       >
-                        <WorkNote
+                        <span
+                          className={pileMotion.className ? "block nb-sticky-wave" : "block"}
+                          style={
+                            {
+                              "--nb-wave-delay": `${Math.min(index, 23) * 26}ms`,
+                            } as React.CSSProperties
+                          }
+                        >
+                          <WorkNote
                           item={item}
                           dense
                           displayMode={view}
@@ -774,9 +786,11 @@ export function AiRecordPage() {
                               </button>
                             </>
                           }
-                        />
-                      </span>
-                    ))}
+                          />
+                        </span>
+                      </DimmedDisabled>
+                      );
+                    })}
                   </div>
               </section>
             );
@@ -789,7 +803,7 @@ export function AiRecordPage() {
           {/* Figma 27:635 closes the list by saying how much of it you are
               looking at, and that nothing was thrown away to get there. */}
           <p className="mt-4 border-t border-[var(--nb-rule)] pt-3 text-[12px] text-muted-foreground">
-            Showing {visible.length} of {threads.length}. Nothing is deleted here.
+            Showing {matchingCount} of {threads.length}. Nothing is deleted here.
           </p>
           <CaptureCoverage
             profileId={profile?.id}
