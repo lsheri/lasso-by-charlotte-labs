@@ -679,8 +679,6 @@ export function WorkPage() {
   // Private work only appears in the columns while the show-private box is on.
   const visible = showPrivate ? all : all.filter((item) => item.visibility !== "private");
 
-  const matching = visible.filter((item) => inboxFilterMatches(item, columnFilter));
-
   /**
    * P1: the page counts and files GROUPED entries. One pushed conversation is
    * one thing to look at, so it is grouped once here and every column, count
@@ -702,7 +700,7 @@ export function WorkPage() {
     if (next === columnFilter) return;
     setColumnFilter(next);
     if (!profile?.org_id) return;
-    const count = visible.filter((item) => inboxFilterMatches(item, next)).length;
+    const count = groupedCount(visible.filter((item) => inboxFilterMatches(item, next)));
     logEvent(
       "work.filter_changed",
       profile.org_id,

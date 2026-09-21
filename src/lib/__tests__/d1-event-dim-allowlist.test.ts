@@ -152,7 +152,7 @@ const LIVE_KEYS_BY_FAMILY: Record<string, readonly string[]> = {
     "unmatched_quotes",
   ],
   thread: ["has_revision_loop", "role_alternation", "turn_band"],
-  work: ["action", "on_board", "piece_kind", "vendor"],
+  work: ["action", "filter", "on_board", "piece_kind", "result_band", "selected", "vendor"],
   workflow: ["item_count"],
   workitem: ["channel", "source", "type"],
 };
