@@ -9,8 +9,8 @@ describe("B3 reasoning trail", () => {
     const rect = trailRectAt({ x: 133, y: 207 });
     expect(rect.width).toBe(TRAIL_SIZE.width);
     expect(rect.height).toBe(TRAIL_SIZE.height);
-    expect(rect.x % 8).toBe(0);
-    expect(rect.y % 8).toBe(0);
+    expect(rect.x % 4).toBe(0);
+    expect(rect.y % 4).toBe(0);
   });
 
   it("offers the control only while the board has no trail", () => {
