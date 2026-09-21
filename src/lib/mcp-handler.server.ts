@@ -20,7 +20,12 @@ import {
   attachmentBucket,
   type SourceMeta,
 } from "@/lib/conversation-shared";
-import { missingChatUrlNote, rawPushUrl, storedPushChatUrl } from "@/lib/mcp-push-url";
+import {
+  inheritedConversationUrl,
+  missingChatUrlNote,
+  rawPushUrl,
+  storedPushChatUrl,
+} from "@/lib/mcp-push-url";
 import { isAffiliatedStrict, orgTypeOfStrict } from "@/lib/org-type.server";
 import {
   placementLine,
@@ -338,6 +343,11 @@ const pushTools = (vocab: McpVocab) => [
         content: { type: "string" },
         mime_type: { type: "string" },
         engagement_hint: { type: "string" },
+        orig_conversation_id: {
+          type: "string",
+          description:
+            "The orig_conversation_id of the conversation this document came out of, when it has one. The document inherits that conversation's stored link back to the chat; never send a URL here.",
+        },
         ...placementInputs(vocab),
       },
       required: ["title", "filename", "content"],
