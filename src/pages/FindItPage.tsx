@@ -133,10 +133,10 @@ export function FindItPage() {
 
   // Looking back through your own conversations is the person's own business.
   // A coach never reads someone else's record this way.
-  const isCoach = usesGuestNav(profile);
+  const guest = usesGuestNav(profile);
   useEffect(() => {
-    if (isCoach) navigate({ to: "/coaching", replace: true });
-  }, [isCoach, navigate]);
+    if (guest) navigate({ to: "/coaching", replace: true });
+  }, [guest, navigate]);
 
   const [mode, setMode] = useState<Mode>("sources");
   const [query, setQuery] = useState("");
@@ -159,10 +159,10 @@ export function FindItPage() {
   const entryRef = useRef<"nav" | "peek" | "upload">(search.entry ?? "nav");
   const opened = useRef(false);
   useEffect(() => {
-    if (opened.current || !profile?.org_id || isCoach) return;
+    if (opened.current || !profile?.org_id || guest) return;
     opened.current = true;
     logEvent("findit.opened", profile.org_id, { entry: entryRef.current });
-  }, [profile?.org_id, isCoach]);
+  }, [profile?.org_id, guest]);
 
   const runFindSources = useServerFn(findSourcesFn);
   const runSearchRecord = useServerFn(searchRecordFn);

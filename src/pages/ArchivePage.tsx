@@ -23,14 +23,14 @@ export function ArchivePage() {
   const [searching, setSearching] = useState(false);
 
   // Coaches are engagement-scoped guests; the firm archive is firm-internal.
-  const isCoach = usesGuestNav(profile);
+  const guest = usesGuestNav(profile);
   useEffect(() => {
-    if (isCoach) navigate({ to: "/coaching" });
-  }, [isCoach, navigate]);
+    if (guest) navigate({ to: "/coaching" });
+  }, [guest, navigate]);
 
   const onResultsChange = useCallback((open: boolean) => setSearching(open), []);
 
-  if (!profile || isCoach) return null;
+  if (!profile || guest) return null;
 
   // Ship date is the only order the archive keeps.
   const cards = [...(data ?? [])].sort((a, b) => b.shipped_at.localeCompare(a.shipped_at));
@@ -75,7 +75,7 @@ export function ArchivePage() {
             </p>
             <PastWorkSearch />
 
-            {!isCoach && (
+            {!guest && (
               <>
                 <div className="my-4 border-t border-rule" />
                 <p className="text-[13px] text-muted-foreground">
