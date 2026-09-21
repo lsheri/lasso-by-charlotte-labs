@@ -259,6 +259,45 @@ export type Database = {
           },
         ]
       }
+      answer_cites: {
+        Row: {
+          created_at: string
+          id: string
+          node_id: string
+          ord: number
+          turn_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          node_id: string
+          ord?: number
+          turn_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          node_id?: string
+          ord?: number
+          turn_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "answer_cites_node_id_fkey"
+            columns: ["node_id"]
+            isOneToOne: false
+            referencedRelation: "workboard_nodes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "answer_cites_turn_id_fkey"
+            columns: ["turn_id"]
+            isOneToOne: false
+            referencedRelation: "turns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       board_share_links: {
         Row: {
           created_at: string
