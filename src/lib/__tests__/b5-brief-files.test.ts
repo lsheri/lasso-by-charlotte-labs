@@ -5,7 +5,17 @@ import {
   briefConfirmShape,
   pendingBriefAttachments,
 } from "@/lib/brief-files";
+import { DRAG_STEP, snapPoint } from "@/lib/canvas-drag";
 import { PLACEMENT_CARD, PLACEMENT_GAP } from "@/lib/workboard-placement";
+
+/**
+ * The column the placement code opens, derived the same way the code derives
+ * it, so a change to the card size moves these expectations with it rather
+ * than turning into a hand-calculated coordinate that goes stale.
+ */
+const columnStep = Math.ceil((PLACEMENT_CARD.height + PLACEMENT_GAP) / DRAG_STEP) * DRAG_STEP;
+const columnBase = (card: { x: number; y: number; width: number }) =>
+  snapPoint({ x: card.x + card.width + PLACEMENT_GAP, y: card.y });
 
 const brief = { x: 0, y: 0, width: 232 };
 
