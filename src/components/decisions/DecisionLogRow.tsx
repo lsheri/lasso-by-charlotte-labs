@@ -10,6 +10,7 @@ import { srcsOf, useDecisionSourceItems, useDecisionSourceTurns } from "@/hooks/
 import { vendorLabel } from "@/lib/conversation-shared";
 import { isDeliverableType } from "@/lib/lineage-shared";
 import { formatDate } from "@/lib/work-types";
+import { workDateLabel } from "@/lib/work-date-label";
 
 type SourceDetail = {
   workItemId: string;

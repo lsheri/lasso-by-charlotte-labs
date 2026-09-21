@@ -13,6 +13,7 @@ import {
   selectArrivals,
 } from "@/lib/inbox-arrivals";
 import {
+import { workDateLabel } from "@/lib/work-date-label";
   entryHead,
   entryItems,
   entryKey,
@@ -97,7 +98,7 @@ export function ArrivalsStrip({ items }: { items: WorkItemRow[] }) {
                 </span>
               ) : null}
               <span className="font-mono text-[10px] text-soft">
-                {workDateLabel(head, (iso) => arrivalWhen(iso))}
+                {workDateLabel(head, (iso) => (head.work_date ?? head.created_at_source ? formatDate(iso) : arrivalWhen(iso)))}
               </span>
               <span>{place.text}</span>
               {place.mapped ? (

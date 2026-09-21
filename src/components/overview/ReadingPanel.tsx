@@ -2,6 +2,7 @@ import { ToneCard } from "@/components/notebook/ToneCard";
 import { SectionHeader } from "@/components/notebook/SectionHeader";
 import { formatDate } from "@/lib/work-types";
 import type { WorkItemRow } from "@/lib/work-types";
+import { workDateLabel } from "@/lib/work-date-label";
 
 /**
  * Figma 21:2, "What Lasso is reading". The most recent pieces that arrived

@@ -6,6 +6,7 @@ import { notePaper } from "@/components/work/note-paper";
 import { useNotesAboutMe, useQueriesAboutMe } from "@/hooks/use-subject-coaching";
 import { vendorLabel } from "@/lib/conversation-shared";
 import { formatDate, type WorkItemRow } from "@/lib/work-types";
+import { workDateLabel } from "@/lib/work-date-label";
 
 function trailStops(items: readonly WorkItemRow[]): TrailStop[] {
   return items.slice(0, 4).map((item) => {

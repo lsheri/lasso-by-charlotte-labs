@@ -12,6 +12,7 @@ import { vendorLabel } from "@/lib/conversation-shared";
 import { formatDate } from "@/lib/work-types";
 import { useMotion } from "@/hooks/use-motion";
 import { useProfile } from "@/hooks/use-profile";
+import { workDateLabel } from "@/lib/work-date-label";
 
 /**
  * PASS B · the calls waiting on a person, as the storyboard draws them: a mono

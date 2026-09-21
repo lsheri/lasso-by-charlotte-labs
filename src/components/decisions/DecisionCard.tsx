@@ -9,6 +9,7 @@ import { useDecisionSourceTurns } from "@/hooks/use-decisions";
 import type { ThreadFocus } from "@/components/peek/ThreadBody";
 import { vendorLabel } from "@/lib/conversation-shared";
 import { formatDate } from "@/lib/work-types";
+import { workDateLabel } from "@/lib/work-date-label";
 
 export function DecisionCard({
   decision,

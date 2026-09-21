@@ -16,6 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { logEvent } from "@/lib/telemetry";
 import { cn } from "@/lib/utils";
 import { formatDate, type WorkItemRow } from "@/lib/work-types";
+import { workDateLabel } from "@/lib/work-date-label";
 
 /** Parse a `date` column value without letting the local timezone shift the day. */
 function parseDateOnly(value: string | null | undefined): Date | undefined {
