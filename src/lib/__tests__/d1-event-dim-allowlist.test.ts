@@ -152,9 +152,13 @@ const LIVE_KEYS_BY_FAMILY: Record<string, readonly string[]> = {
     "unmatched_quotes",
   ],
   thread: ["has_revision_loop", "role_alternation", "turn_band"],
-  work: ["action", "filter", "on_board", "piece_kind", "result_band", "selected", "vendor"],
+  work: ["action", "on_board", "piece_kind", "vendor"],
   workflow: ["item_count"],
   workitem: ["channel", "source", "type"],
+};
+
+const LIVE_KEYS_BY_EVENT: Record<string, readonly string[]> = {
+  "work.filter_changed": ["filter", "selected", "result_band"],
 };
 
 /** Every name in the canonical union, read as data rather than as wording. */
@@ -169,7 +173,7 @@ describe("the runtime dim allowlist", () => {
     const dropped: string[] = [];
     for (const name of Object.keys(EVENT_DIM_KEYS)) {
       const family = name.split(".")[0]!;
-      const live = LIVE_KEYS_BY_FAMILY[family];
+      const live = LIVE_KEYS_BY_EVENT[name] ?? LIVE_KEYS_BY_FAMILY[family];
       if (!live) continue;
       const dims = Object.fromEntries(live.map((key) => [key, "value"]));
       const kept = guardEventDims(name, dims).dims;

@@ -1,10 +1,15 @@
 import { linkBucket } from "./lineage-shared";
 import type { WorkItemRow } from "./work-types";
 
-export type InboxFilterKind = "placement" | "engagement";
+export type InboxFilterKind = "placement" | "engagement" | "privacy";
 export type InboxFilterSelection = "all" | "one";
 
-export function inboxFilterMatches(item: WorkItemRow, filter: string): boolean {
+export function inboxFilterMatches(
+  item: WorkItemRow,
+  filter: string,
+  includePrivate = true,
+): boolean {
+  if (!includePrivate && item.visibility === "private") return false;
   if (filter === "all") return true;
   if (filter === "unmapped") return item.visibility === "unmapped";
   if (filter === "claimed") return item.visibility === "mapped";
@@ -21,4 +26,15 @@ export function inboxFilterDims(
     selected,
     result_band: linkBucket(resultCount),
   } as const;
+}
+
+export function recordInboxFilterChange(
+  current: string | boolean,
+  next: string | boolean,
+  dims: ReturnType<typeof inboxFilterDims>,
+  emit: (dims: ReturnType<typeof inboxFilterDims>) => void,
+): boolean {
+  if (current === next) return false;
+  emit(dims);
+  return true;
 }

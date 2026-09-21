@@ -8,7 +8,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { DimmedDisabled } from "@/components/common/DimmedDisabled";
 import { InboxFixedCard } from "@/components/work/InboxFixedCard";
 import { EVENT_DIM_KEYS } from "@/lib/event-dim-allowlist";
-import { inboxFilterDims, inboxFilterMatches } from "@/lib/inbox-filter";
+import { inboxFilterDims, inboxFilterMatches, recordInboxFilterChange } from "@/lib/inbox-filter";
 import type { WorkItemRow } from "@/lib/work-types";
 
 function item(id: string, visibility: WorkItemRow["visibility"], code?: string): WorkItemRow {
@@ -98,6 +98,11 @@ describe("CG1 inbox congruency", () => {
         if (state === "one") expect(dims.result_band).toBe("0");
       }
     }
+    const emitted: ReturnType<typeof inboxFilterDims>[] = [];
+    const dims = inboxFilterDims("placement", "one", 0);
+    expect(recordInboxFilterChange("all", "unmapped", dims, (value) => emitted.push(value))).toBe(true);
+    expect(recordInboxFilterChange("unmapped", "unmapped", dims, (value) => emitted.push(value))).toBe(false);
+    expect(emitted).toEqual([dims]);
   });
 
   it("keeps filter decisions out of Inbox component styling helpers", () => {

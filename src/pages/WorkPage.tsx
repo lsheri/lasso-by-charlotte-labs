@@ -84,7 +84,7 @@ import { sourceVendorKey } from "@/components/work/SourceMark";
 import { BUCKETS, bucketKeyForEntry, type BucketKey } from "@/components/work/work-buckets";
 import { useSettingsDialog } from "@/lib/settings-dialog-context";
 import { readWorkView, writeWorkView, type WorkView } from "@/lib/work-view";
-import { inboxFilterDims, inboxFilterMatches } from "@/lib/inbox-filter";
+import { inboxFilterDims, inboxFilterMatches, recordInboxFilterChange } from "@/lib/inbox-filter";
 
 /** Each type column pages its entries five at a time, replacing not growing. */
 const COLUMN_PAGE_SIZE = 5;
@@ -676,8 +676,8 @@ export function WorkPage() {
     );
   })();
 
-  // Private work only appears in the columns while the show-private box is on.
-  const visible = showPrivate ? all : all.filter((item) => item.visibility !== "private");
+  // Every item stays in the columns. Filters only decide which cards remain active.
+  const visible = all;
 
   /**
    * P1: the page counts and files GROUPED entries. One pushed conversation is
@@ -697,25 +697,43 @@ export function WorkPage() {
   const chipOff = `${chipBase} border border-[var(--nb-pencil)] text-muted-foreground hover:border-foreground`;
 
   function changeColumnFilter(next: string) {
-    if (next === columnFilter) return;
-    setColumnFilter(next);
-    if (!profile?.org_id) return;
-    const count = groupedCount(visible.filter((item) => inboxFilterMatches(item, next)));
-    logEvent(
-      "work.filter_changed",
-      profile.org_id,
+    const count = groupedCount(
+      visible.filter((item) => inboxFilterMatches(item, next, showPrivate)),
+    );
+    const changed = recordInboxFilterChange(
+      columnFilter,
+      next,
       inboxFilterDims(
         next === "all" || next === "unmapped" || next === "claimed" ? "placement" : "engagement",
         next === "all" ? "all" : "one",
         count,
       ),
+      (dims) => {
+        if (profile?.org_id) logEvent("work.filter_changed", profile.org_id, dims);
+      },
     );
+    if (changed) setColumnFilter(next);
+  }
+
+  function changePrivate(next: boolean) {
+    const count = groupedCount(
+      visible.filter((item) => inboxFilterMatches(item, columnFilter, next)),
+    );
+    const changed = recordInboxFilterChange(
+      showPrivate,
+      next,
+      inboxFilterDims("privacy", next ? "all" : "one", count),
+      (dims) => {
+        if (profile?.org_id) logEvent("work.filter_changed", profile.org_id, dims);
+      },
+    );
+    if (changed) setShowPrivate(next);
   }
 
   function entryMatchesFilter(entry: WorkItemRow | ConversationGroup): boolean {
     return isConversationGroup(entry)
-      ? entry.items.some((item) => inboxFilterMatches(item, columnFilter))
-      : inboxFilterMatches(entry, columnFilter);
+      ? entry.items.some((item) => inboxFilterMatches(item, columnFilter, showPrivate))
+      : inboxFilterMatches(entry, columnFilter, showPrivate);
   }
 
   /** Where the work came from, counted client-side off the loaded items. */
@@ -838,7 +856,7 @@ export function WorkPage() {
             <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
               <Checkbox
                 checked={showPrivate}
-                onCheckedChange={(next) => setShowPrivate(next === true)}
+                onCheckedChange={(next) => changePrivate(next === true)}
                 aria-label="Show private work"
               />
               Show private ({priv.length})
