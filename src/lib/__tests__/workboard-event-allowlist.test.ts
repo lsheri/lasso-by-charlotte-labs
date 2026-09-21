@@ -78,6 +78,12 @@ describe("the workboard allowlist", () => {
           "action",
           "record_kind",
         ],
+        "workboard.region_named": [
+          "state",
+          "claimed",
+          "fill_family",
+          "fill_strength",
+        ],
         "workboard.relationship_changed": [
           "action",
           "relation",
