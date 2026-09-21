@@ -7,6 +7,7 @@
  * ordinary.
  */
 
+import { regionOccupies } from "@/lib/board-region";
 import { DRAG_STEP, snapPoint, type Point } from "@/lib/canvas-drag";
 import { WORKBOARD_CARD_DEFAULT_SIZE, isWorkboardDecorationKind } from "@/lib/canvas-lab-shared";
 
@@ -17,6 +18,18 @@ export type PlacementNode = PlacementRect & { kind?: string };
 export function placementRectsForNodes(nodes: PlacementNode[]): PlacementRect[] {
   return nodes
     .filter((node) => !node.kind || !isWorkboardDecorationKind(node.kind))
+    .map(({ x, y, width, height }) => ({ x, y, width, height }));
+}
+
+/**
+ * W3: an outline holds board space only once it has a name. An unnamed drawn
+ * region is paint, so a card placed for someone may land straight on it.
+ */
+export function placementRectsForFrames(
+  frames: { id: string; label?: string | null | undefined; name?: string | null | undefined; x: number; y: number; width: number; height: number }[],
+): PlacementRect[] {
+  return frames
+    .filter((frame) => regionOccupies({ id: frame.id, label: frame.label ?? frame.name ?? null }))
     .map(({ x, y, width, height }) => ({ x, y, width, height }));
 }
 

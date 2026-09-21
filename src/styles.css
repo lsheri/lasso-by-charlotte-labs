@@ -145,6 +145,32 @@
   --nb-blue: #0a628f;
   --nb-amber: #8a6d1f;
 
+  /* W3 · drawn regions. A vivid choice drives the edge and the name; the fill
+     itself stays soft so the cards sitting on it stay readable. */
+  --nb-region-green-soft: #eaf6ef;
+  --nb-region-green-soft-edge: #cfe6da;
+  --nb-region-green-vivid: #0f8a4b;
+  --nb-region-blue-soft: #e9f1f7;
+  --nb-region-blue-soft-edge: #cddde9;
+  --nb-region-blue-vivid: #0a628f;
+  --nb-region-rose-soft: #f9edee;
+  --nb-region-rose-soft-edge: #e9d2d4;
+  --nb-region-rose-vivid: #a33a45;
+  --nb-region-yellow-soft: #f8f2e2;
+  --nb-region-yellow-soft-edge: #e7dcc0;
+  --nb-region-yellow-vivid: #8a6d1f;
+  --nb-region-lavender-soft: #f0eef8;
+  --nb-region-lavender-soft-edge: #d8d4ea;
+  --nb-region-lavender-vivid: #5a4a94;
+  --nb-region-slate-soft: #eef0f0;
+  --nb-region-slate-soft-edge: #d6dada;
+  --nb-region-slate-vivid: #41504f;
+  --nb-region-paper-white: #ffffff;
+  --nb-region-paper-warm: #faf6ee;
+  --nb-region-paper-cool: #f2f5f6;
+  --nb-region-paper-sand: #f3eee2;
+  --nb-line-hairline: #dadad5;
+
   /* 03 · Library · Atoms port. Tokens the atoms board introduces that the
      design-port token list did not name. Additive: nothing above changes. */
   --nb-ink-90: #1c1e1d; /* the primary button fill, one step off --nb-ink */

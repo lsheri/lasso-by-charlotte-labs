@@ -129,6 +129,27 @@ export function noteWorkboardWorkstreamDrawn(orgId: string | undefined, claimed:
 }
 
 /**
+ * W3: a drawn region was named, which makes it a workstream, or had its name
+ * taken off, which turns it back into paint. Shape only: a band for how many
+ * cards it took in, and the colour family, never the name a person typed.
+ */
+export function noteWorkboardRegionNamed(
+  orgId: string | undefined,
+  state: "named" | "cleared",
+  claimed: number,
+  fill: string | null | undefined,
+): void {
+  if (!orgId) return;
+  const [family = "none", strength = "none"] = (fill ?? "none").split("-");
+  logEvent("workboard.region_named", orgId, {
+    state,
+    claimed: claimed <= 0 ? "0" : claimed <= 4 ? "1-4" : claimed <= 19 ? "5-19" : "20+",
+    fill_family: family,
+    fill_strength: strength,
+  });
+}
+
+/**
  * Slice 2a: a highlight or a comment was made, changed or removed. Shape only:
  * no text, no hash, no ids, no author and no role.
  */

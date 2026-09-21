@@ -58,17 +58,24 @@ export function fullyInside(rect: DrawRect, card: ClaimCandidate): boolean {
 }
 
 /** A frame that stands for a workstream of its own, not a base area. */
-function isWorkstreamFrame(frameId: string | null | undefined, defaultHomeFrameIds: readonly string[]): boolean {
-  if (!frameId || !frameId.startsWith("task:")) return false;
-  return !defaultHomeFrameIds.includes(frameId);
+function isWorkstreamFrame(
+  frameId: string | null | undefined,
+  defaultHomeFrameIds: readonly string[],
+  namedFrameIds: readonly string[],
+): boolean {
+  if (!frameId) return false;
+  if (defaultHomeFrameIds.includes(frameId)) return false;
+  // W3: a named drawn region files cards just as a task workstream does.
+  return frameId.startsWith("task:") || namedFrameIds.includes(frameId);
 }
 
 export function splitClaims(
   rect: DrawRect,
   cards: readonly ClaimCandidate[],
-  options: { defaultHomeFrameIds?: readonly string[] } = {},
+  options: { defaultHomeFrameIds?: readonly string[]; namedFrameIds?: readonly string[] } = {},
 ): ClaimSplit {
   const homes = options.defaultHomeFrameIds ?? [];
+  const named = options.namedFrameIds ?? [];
   const split: ClaimSplit = { silent: [], ask: [], frameOnly: [] };
   for (const card of cards) {
     if (!fullyInside(rect, card)) continue;
@@ -79,7 +86,7 @@ export function splitClaims(
       split.frameOnly.push(card);
       continue;
     }
-    if (isWorkstreamFrame(card.frame, homes)) split.ask.push(card);
+    if (isWorkstreamFrame(card.frame, homes, named)) split.ask.push(card);
     else split.silent.push(card);
   }
   return split;

@@ -22,6 +22,7 @@ import type {
   WorkboardNodeInput,
   WorkboardRowSnapshot,
 } from "@/lib/canvas-lab-shared";
+import { isRegionFill, isRegionFrameId } from "@/lib/board-region";
 import { WORKBOARD_ANCHORS, WORKBOARD_CARD_DEFAULT_SIZE, WORKBOARD_JUDGMENT_TYPES, WORKBOARD_NODE_KINDS, WORKBOARD_RELATIONS, WORKBOARD_SHAPE_COLOURS, isWorkboardDecorationKind, parseWorkboardTextBody, validWorkboardNodeGeometry } from "@/lib/canvas-lab-shared";
 import type { ResolvedProfile } from "@/lib/profile-resolve";
 
@@ -76,6 +77,7 @@ function frameDto(row: FrameRow): WorkboardFrameDto {
     kind: row.kind as WorkboardFrameDto["kind"],
     taskId: row.task_id,
     label: row.label,
+    fill: row.fill ?? null,
     x: row.x,
     y: row.y,
     w: row.w,
@@ -193,14 +195,13 @@ function snapshot<T extends { version: number }>(row: T): WorkboardRowSnapshot &
 export function validNodeInput(node: WorkboardNodeInput): string | null {
   if (!WORKBOARD_NODE_KINDS.includes(node.kind)) return "Unknown workboard item kind.";
   if (node.kind === "mark") return "Marks are not available yet.";
-  if (!validWorkboardNodeGeometry(node)) return node.kind === "shape" ? "Block dimensions are outside the supported range." : node.kind === "text" ? "Text block dimensions are outside the supported range." : "Card dimensions are outside the supported range.";
+  // W3: colour blocks were replaced by drawn regions, which are frames.
+  if (node.kind === "shape") return "Draw a region on the board instead of a colour block.";
+  if (!validWorkboardNodeGeometry(node)) return node.kind === "text" ? "Text block dimensions are outside the supported range." : "Card dimensions are outside the supported range.";
   if (node.kind === "work_item" && !node.workItemId) return "A work card needs its work item.";
   if (node.kind === "decision" && !node.decisionId) return "A decision card needs its decision.";
   if ((node.kind === "judgment" || node.kind === "draft") && (node.workItemId || node.decisionId)) return "An authored card cannot reference a record.";
-  if (node.kind === "shape" && (node.workItemId || node.decisionId)) return "A colour block cannot reference work or a decision.";
   if (node.kind === "text" && (node.workItemId || node.decisionId)) return "A text block cannot reference work or a decision.";
-  if (node.kind === "shape" && !WORKBOARD_SHAPE_COLOURS.includes(node.body as (typeof WORKBOARD_SHAPE_COLOURS)[number])) return "Choose one of the available block colours.";
-  if (node.kind === "shape" && (node.frameKey || node.title || node.judgmentType)) return "A colour block can only carry its colour and rectangle.";
   if (node.kind === "text" && (node.frameKey || node.title || node.judgmentType)) return "A text block can only carry its words, style and rectangle.";
   if (node.kind === "text" && !parseWorkboardTextBody(node.body)) return "Check the text block words and style choices.";
   if (node.judgmentType && !WORKBOARD_JUDGMENT_TYPES.includes(node.judgmentType)) return "Unknown judgment type.";
@@ -217,7 +218,8 @@ export function validateLinkNodeKinds(kinds: string[]): string | null {
 
 export function validNodeUpdate(kind: WorkboardNodeDto["kind"], patch: Extract<WorkboardCommand, { type: "node_update" }>["patch"]): string | null {
   if (kind === "mark") return "Marks are not available yet.";
-  if (!validNodeGeometry(kind, patch)) return kind === "shape" ? "Block dimensions are outside the supported range." : kind === "text" ? "Text block dimensions are outside the supported range." : "Card dimensions are outside the supported range.";
+  if (kind === "shape") return "Draw a region on the board instead of a colour block.";
+  if (!validNodeGeometry(kind, patch)) return kind === "text" ? "Text block dimensions are outside the supported range." : "Card dimensions are outside the supported range.";
   if (kind === "text" && patch.body !== undefined && !parseWorkboardTextBody(patch.body)) return "Check the text block words and style choices.";
   return null;
 }
@@ -229,7 +231,15 @@ function validFrameGeometry(frame: { x?: number; y?: number; w?: number; h?: num
   return frame.h === undefined || (frame.h >= 220 && frame.h <= 1800);
 }
 
-export function validateFrameLabel(kind: string, label: unknown): string | null {
+/** W3: a region keeps its colour with or without a name. */
+export function validateFrameFill(fill: unknown): string | null {
+  if (fill === null || fill === undefined) return null;
+  return isRegionFill(fill) ? null : "Choose one of the available region colours.";
+}
+
+export function validateFrameLabel(kind: string, label: unknown, options: { region?: boolean } = {}): string | null {
+  // A drawn region may have its name cleared, which turns it back into paint.
+  if (options.region && (label === null || (typeof label === "string" && label.trim().length === 0))) return null;
   if (kind !== "custom") return "Only a custom workstream can be renamed.";
   if (typeof label !== "string" || label.trim().length < 1 || label.trim().length > 60) return "A workstream name must be between 1 and 60 characters.";
   return null;
@@ -313,6 +323,8 @@ export async function applyWorkboardCommand(
   if (command.type === "frame_create") {
     if (!membership.isEditor) return { status: "forbidden" };
     if (!validFrameGeometry(command.frame)) return { status: "validation_error", message: "Workstream dimensions are outside the supported range." };
+    const badFill = validateFrameFill(command.frame.fill ?? null);
+    if (badFill) return { status: "validation_error", message: badFill };
     const { data, error } = await db
       .from("workboard_frames")
       .insert(frameInsert(board.id, profile.id, command.frame))
@@ -325,12 +337,16 @@ export async function applyWorkboardCommand(
   if (command.type === "frame_update" || command.type === "frame_archive" || command.type === "frame_restore") {
     if (!membership.isEditor) return { status: "forbidden" };
     if (command.type === "frame_update" && !validFrameGeometry(command.patch)) return { status: "validation_error", message: "Workstream dimensions are outside the supported range." };
-    const targetQuery = db.from("workboard_frames").select("id, kind").eq("id", command.frameId).eq("workboard_id", board.id);
+    const targetQuery = db.from("workboard_frames").select("id, kind, key, fill").eq("id", command.frameId).eq("workboard_id", board.id);
     const target = (await (command.type === "frame_restore" ? targetQuery.not("deleted_at", "is", null) : targetQuery.is("deleted_at", null)).maybeSingle()).data;
     if (!target) return { status: "validation_error", message: "That workstream is gone." };
     const normalizedLabel = command.type === "frame_update" && typeof command.patch.label === "string" ? command.patch.label.trim() : command.type === "frame_update" ? command.patch.label : undefined;
+    if (command.type === "frame_update" && command.patch.fill !== undefined) {
+      const invalid = validateFrameFill(command.patch.fill);
+      if (invalid) return { status: "validation_error", message: invalid };
+    }
     if (command.type === "frame_update" && command.patch.label !== undefined) {
-      const invalid = validateFrameLabel(target.kind, normalizedLabel);
+      const invalid = validateFrameLabel(target.kind, normalizedLabel, { region: isRegionFrameId((target as { key?: string }).key) });
       if (invalid) return { status: "validation_error", message: invalid };
     }
     if (command.type === "frame_archive") {
@@ -340,7 +356,7 @@ export async function applyWorkboardCommand(
     }
     const patch =
       command.type === "frame_update"
-        ? { ...definedPatch({ ...command.patch, ...(normalizedLabel !== undefined ? { label: normalizedLabel } : {}) }), ...stamp }
+        ? { ...definedPatch({ ...command.patch, taskId: undefined, ...(command.patch.taskId !== undefined ? { task_id: command.patch.taskId } : {}), ...(normalizedLabel !== undefined ? { label: normalizedLabel || null } : {}) }), ...stamp }
         : command.type === "frame_restore"
           ? { deleted_at: null, ...definedPatch(command.patch ?? {}), ...stamp }
           : { deleted_at: new Date().toISOString(), ...stamp };
@@ -487,6 +503,7 @@ function frameInsert(boardId: string, profileId: string, frame: WorkboardFrameIn
     kind: frame.kind,
     task_id: frame.taskId ?? null,
     label: frame.label ?? null,
+    fill: frame.fill ?? null,
     x: frame.x,
     y: frame.y,
     w: frame.w,

@@ -92,6 +92,8 @@ export type WorkboardFrameDto = {
   kind: WorkboardFrameKind;
   taskId: string | null;
   label: string | null;
+  /** W3: the stored fill name of a drawn region. Null on an ordinary outline. */
+  fill: string | null;
   x: number;
   y: number;
   w: number;
@@ -153,6 +155,8 @@ export type WorkboardFrameInput = {
   kind: WorkboardFrameKind;
   taskId?: string | null;
   label?: string | null;
+  /** W3: the stored fill name of a drawn region. Null on an ordinary outline. */
+  fill?: string | null;
   x: number;
   y: number;
   w: number;
@@ -180,7 +184,7 @@ export type WorkboardNodeInput = {
 export type WorkboardCommand =
   | { type: "materialize"; frames: WorkboardFrameInput[]; nodes: WorkboardNodeInput[] }
   | { type: "frame_create"; frame: WorkboardFrameInput }
-  | { type: "frame_update"; frameId: string; expectedVersion: number; patch: Partial<Pick<WorkboardFrameInput, "x" | "y" | "w" | "h" | "label" | "ord">> }
+  | { type: "frame_update"; frameId: string; expectedVersion: number; patch: Partial<Pick<WorkboardFrameInput, "x" | "y" | "w" | "h" | "label" | "ord" | "fill" | "taskId">> }
   | { type: "frame_archive"; frameId: string; expectedVersion: number }
   | { type: "frame_restore"; frameId: string; expectedVersion: number; patch?: Pick<WorkboardFrameInput, "x" | "y" | "w" | "h"> }
   | { type: "node_create"; node: WorkboardNodeInput }
@@ -215,7 +219,12 @@ export type WorkboardMutationResult =
 
 export const WORKBOARD_RELATIONS: WorkboardRelation[] = ["informed", "produced", "revised", "cited", "context"];
 export const WORKBOARD_ANCHORS: WorkboardAnchor[] = ["top", "right", "bottom", "left"];
-export const WORKBOARD_NODE_KINDS: WorkboardNodeKind[] = ["brief", "work_item", "decision", "judgment", "draft", "shape", "text", "mark"];
+/**
+ * W3: the shape node is retired. A drawn region is a frame now, so nothing
+ * writes a shape again; the kind stays in the type only so old code paths
+ * still read, and the server refuses it the way it refuses a mark.
+ */
+export const WORKBOARD_NODE_KINDS: WorkboardNodeKind[] = ["brief", "work_item", "decision", "judgment", "draft", "text", "mark"];
 export const WORKBOARD_JUDGMENT_TYPES: WorkboardJudgmentType[] = [
   "added_constraint",
   "corrected_ai",

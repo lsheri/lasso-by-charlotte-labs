@@ -4,10 +4,11 @@ import { useEffect, useRef, useState } from "react";
 import { LabFrameMenu } from "@/components/canvas-lab/LabFrameMenu";
 import type { LabFrame as LabFrameModel, LabResizeCorner } from "@/components/canvas-lab/canvas-lab-model";
 import { Button } from "@/components/ui/button";
+import { REGION_NAMING_LINE } from "@/lib/board-region";
 
 const CORNERS: LabResizeCorner[] = ["nw", "ne", "se", "sw"];
 
-export function LabFrame({ frame, count, selected, editable, custom, namedByWorkstream, removable, kind, onAddContext, onSelect, onResizeStart, onResizeKeyDown, onResizeKeyUp, onFit, onRename, onRemove, onMenuOpened, onMenuOpenChange, onAddWorkstream }: {
+export function LabFrame({ frame, count, selected, editable, custom, namedByWorkstream, removable, kind, region = false, fillStyle, onAddContext, onSelect, onResizeStart, onResizeKeyDown, onResizeKeyUp, onFit, onRename, onRemove, onMenuOpened, onMenuOpenChange, onAddWorkstream }: {
   frame: LabFrameModel;
   count: number;
   selected: boolean;
@@ -16,6 +17,9 @@ export function LabFrame({ frame, count, selected, editable, custom, namedByWork
   namedByWorkstream: boolean;
   removable: boolean;
   kind: "foundation" | "task" | "decisions" | "outputs" | "custom" | "context";
+  /** W3: a drawn region. Unnamed it is paint, named it is a workstream. */
+  region?: boolean | undefined;
+  fillStyle?: { fill: string; edge: string; name: string } | undefined;
   /** Present on the context region: brings documents into it. */
   onAddContext?: (() => void) | undefined;
   onSelect: () => void;
@@ -105,7 +109,7 @@ export function LabFrame({ frame, count, selected, editable, custom, namedByWork
   }
 
   function beginRename() {
-    if (!editable || !custom) return;
+    if (!editable || !(custom || region)) return;
     setDraftName(frame.name);
     setRenameError(false);
     setRenaming(true);
@@ -114,6 +118,8 @@ export function LabFrame({ frame, count, selected, editable, custom, namedByWork
   function commitRename() {
     const next = draftName.trim();
     if (!next) {
+      // A region may have its name taken off, which turns it back into paint.
+      if (region) { setRenameError(false); setRenaming(false); if (frame.name) onRename(""); return; }
       setRenameError(true);
       return;
     }
@@ -128,7 +134,8 @@ export function LabFrame({ frame, count, selected, editable, custom, namedByWork
       data-testid={`lab-frame-${frame.id}`}
       data-selected={selected}
       tabIndex={0}
-      style={{ left: frame.x, top: frame.y, width: frame.width, height: frame.height }}
+      style={{ left: frame.x, top: frame.y, width: frame.width, height: frame.height, ...(fillStyle ? { background: fillStyle.fill, borderColor: fillStyle.edge } : {}) }}
+      data-region={region ? (frame.name ? "workstream" : "paint") : undefined}
       className="canvas-lab-frame absolute outline-none"
       onPointerDown={(event) => { if (event.target === event.currentTarget) onSelect(); }}
       onFocus={(event) => { if (event.target === event.currentTarget) onSelect(); }}
@@ -142,7 +149,7 @@ export function LabFrame({ frame, count, selected, editable, custom, namedByWork
           <div>
             <input
               ref={inputRef}
-              aria-label="Rename workstream"
+              aria-label={region && !frame.name ? "Name this region" : "Rename workstream"}
               className="canvas-lab-frame-name-input font-hand text-[18px] leading-none text-[var(--nb-mid)]"
               value={draftName}
               maxLength={60}
@@ -156,14 +163,18 @@ export function LabFrame({ frame, count, selected, editable, custom, namedByWork
               }}
             />
             {renameError ? <span className="canvas-lab-frame-name-error font-hand">a workstream needs a name</span> : null}
+            {region && !frame.name ? <span className="canvas-lab-region-hint font-hand block text-[13px] text-[var(--nb-mid)]">{REGION_NAMING_LINE}</span> : null}
           </div>
         ) : (
           <h2
             className="font-hand text-[18px] leading-none text-[var(--nb-mid)]"
+            style={fillStyle && frame.name ? { color: fillStyle.name } : undefined}
             title={namedByWorkstream ? "Named by the workstream" : undefined}
-            onDoubleClick={custom && editable ? beginRename : undefined}
+            onDoubleClick={(custom || region) && editable ? beginRename : undefined}
           >
-            {frame.name}
+            {frame.name || (region && editable
+              ? <button type="button" className="canvas-lab-region-name" onPointerDown={(event) => event.stopPropagation()} onClick={(event) => { event.stopPropagation(); beginRename(); }}>Name this region</button>
+              : null)}
           </h2>
         )}
         <span className="flex items-center gap-2 font-mono text-[9px] uppercase tracking-[0.08em] text-soft">{onAddContext && editable ? <button type="button" className="canvas-lab-add-context" onPointerDown={(event) => event.stopPropagation()} onClick={(event) => { event.stopPropagation(); onAddContext(); }}>+ add docs</button> : null}{count} {frame.local ? "· local" : ""}</span>

@@ -78,6 +78,12 @@ describe("the workboard allowlist", () => {
           "action",
           "record_kind",
         ],
+        "workboard.region_named": [
+          "state",
+          "claimed",
+          "fill_family",
+          "fill_strength",
+        ],
         "workboard.relationship_changed": [
           "action",
           "relation",
@@ -198,6 +204,8 @@ describe("the workboard allowlist", () => {
       () => helpers.noteWorkboardWorkAdded("o", "brief", "new_engagement", 2),
       () => helpers.noteWorkboardWorkstreamDrawn("o", 3, "true"),
       () => helpers.noteWorkboardWorkstreamDrawn("o", 0, "false"),
+      () => helpers.noteWorkboardRegionNamed("o", "named", 7, "blue-vivid"),
+      () => helpers.noteWorkboardRegionNamed("o", "cleared", 0, null),
       () => helpers.noteHighlightChanged("o", "created", "engagement", 120),
       () => helpers.noteHighlightChanged("o", "archived", "just_me", 4),
       () =>
@@ -217,7 +225,7 @@ describe("the workboard allowlist", () => {
       const [name, , dims] = mocked.mock.calls[0] as [string, string, Record<string, unknown>];
       expect(guardWorkboardEvent(name, dims as never)).toEqual({ keep: true, dims });
     }
-    expect(Object.keys(WORKBOARD_EVENT_DIMS)).toHaveLength(25);
+    expect(Object.keys(WORKBOARD_EVENT_DIMS)).toHaveLength(26);
   });
 
   it("keeps the additive open path for previewed document and deck cards", () => {

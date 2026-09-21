@@ -11,6 +11,7 @@ import { LabCard } from "@/components/canvas-lab/LabCard";
 import { LabColourBlock } from "@/components/canvas-lab/LabColourBlock";
 import { LabTextBlock } from "@/components/canvas-lab/LabTextBlock";
 import { LabFrame as LabFrameElement } from "@/components/canvas-lab/LabFrame";
+
 import { LabLinkRejection } from "@/components/canvas-lab/LabLinkRejection";
 import { LabRelationshipOverlays } from "@/components/canvas-lab/LabRelationshipOverlays";
 import { LabRelationships } from "@/components/canvas-lab/LabRelationships";
@@ -121,6 +122,7 @@ import {
   noteHighlightChanged,
   noteWorkboardWorkAdded,
   noteWorkboardWorkstreamDrawn,
+  noteWorkboardRegionNamed,
   type LabNodeEventKind,
   type WorkboardOpenVia,
   type WorkboardPersistAction,
@@ -141,7 +143,8 @@ import { useWorkboardFilePreviews } from "@/hooks/use-workboard-file-previews";
 import { useMotion } from "@/hooks/use-motion";
 import { useProfile } from "@/hooks/use-profile";
 import { dragTo, keyTo, type Point } from "@/lib/canvas-drag";
-import { WORKBOARD_SHAPE_COLOURS, isWorkboardDecorationKind, serializeWorkboardTextBody, type WorkboardCommand, type WorkboardNodeInput, type WorkboardRelation, type WorkboardShapeColour, type WorkboardTextBody } from "@/lib/canvas-lab-shared";
+import { REGION_FILLS, isRegionFrameId, newRegionFrameId, regionClaims, regionFillStyle, regionNameChange, type RegionFill } from "@/lib/board-region";
+import { isWorkboardDecorationKind, serializeWorkboardTextBody, type WorkboardCommand, type WorkboardNodeInput, type WorkboardRelation, type WorkboardTextBody } from "@/lib/canvas-lab-shared";
 import { noteCanvasOpenedFn } from "@/lib/canvas.functions";
 import { clampZoom, scrollableUnder, stepZoom, wheelPanVector, workboardPinchZoom, zoomAbout } from "@/lib/canvas-zoom";
 import { needsHighlightForComment } from "@/lib/canvas-lab-annotations-shared";
@@ -153,7 +156,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { AddWorkPanel, type AddWorkSource } from "@/components/canvas-lab/AddWorkPanel";
 import { CARD_HEIGHT, CARD_WIDTH } from "@/components/canvas-lab/canvas-lab-model";
 import { placeWorkOnBoardFn } from "@/lib/workboard-add-work.functions";
-import { placeAddedCards, placementRectsForNodes, type PlacementRect } from "@/lib/workboard-placement";
+import { placeAddedCards, placementRectsForFrames, placementRectsForNodes, type PlacementRect } from "@/lib/workboard-placement";
 import { briefAttachmentPoints, pendingBriefAttachments } from "@/lib/brief-files";
 import { addBriefFiles, removeBriefFile, useBriefFiles, useInvalidateBriefFiles } from "@/hooks/use-brief-files";
 import {
@@ -281,7 +284,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   const [addWorkAnchor, setAddWorkAnchor] = useState<Point | null>(null);
   const [addWorkTarget, setAddWorkTarget] = useState<"board" | "context">("board");
   const [addWorkBusy, setAddWorkBusy] = useState(false);
-  const [blockColour, setBlockColour] = useState<WorkboardShapeColour>("green");
+  const [regionFill, setRegionFill] = useState<RegionFill>("green-faded");
   /** Right-click on empty board space. Screen coords for the menu, board coords for the drop. */
   const [boardMenu, setBoardMenu] = useState<{ screen: Point; board: Point } | null>(null);
   /** B4: the workstream tool, the box being dragged and the name still to be given. */
@@ -631,7 +634,8 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       key: frame.id,
       kind: frameKindOf(frame),
       taskId: frame.id.startsWith("task:") ? frame.id.slice(5) : null,
-      label: frameKindOf(frame) === "custom" ? frame.name : frameKindOf(frame) === "context" ? CONTEXT_FRAME_LABEL : null,
+      label: isRegionFrameId(frame.id) ? (frame.name || null) : frameKindOf(frame) === "custom" ? frame.name : frameKindOf(frame) === "context" ? CONTEXT_FRAME_LABEL : null,
+      fill: frame.fill ?? null,
       x: frame.x,
       y: frame.y,
       w: frame.width,
@@ -686,7 +690,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     }
   }
 
-  async function persistFramePatch(localId: string, patch: { x?: number; y?: number; w?: number; h?: number; label?: string }) {
+  async function persistFramePatch(localId: string, patch: { x?: number; y?: number; w?: number; h?: number; label?: string | null; taskId?: string | null }) {
     if (!(await materialize())) return;
     const frame = framesRef.current.find((entry) => entry.id === localId);
     if (!frame?.durableId) {
@@ -766,12 +770,14 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     void persistNodePatch(id, point ? { hidden, x: point.x, y: point.y } : { hidden });
   }
 
-  function applyFrameMove(nodeId: string, frameId: string) {
+  function applyFrameMove(nodeId: string, frameId: string | null) {
     void (async () => {
       if (!(await materialize())) return;
-      const durableTarget = framesRef.current.find((frame) => frame.id === frameId)?.durableId;
+      const durableTarget = frameId === null ? null : framesRef.current.find((frame) => frame.id === frameId)?.durableId;
       setNodes((current) => current?.map((entry) => entry.id === nodeId ? { ...entry, frame: frameId } : entry) ?? current);
-      if (durableTarget) await persistNodePatch(nodeId, { frameId: durableTarget });
+      // Letting a card go is a board placement, never a change to what fed it.
+      if (frameId === null) await persistNodePatch(nodeId, { frameId: null });
+      else if (durableTarget) await persistNodePatch(nodeId, { frameId: durableTarget });
     })();
   }
 
@@ -962,9 +968,8 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       setDrawing(null);
       if (!current) return;
       const rect = drawnRect(current.from, current.to);
-      if (!drawnRectUsable(rect)) { setAnnouncement("Drag a bigger box to draw a workstream."); return; }
-      setPendingWorkstream({ rect, name: defaultWorkstreamName(framesRef.current.map((frame) => frame.name)) });
-      setPendingWorkstreamError(false);
+      if (!drawnRectUsable(rect)) { setAnnouncement("Drag a bigger box to draw a region."); return; }
+      void createPaintRegion(rect);
     }
     window.addEventListener("pointermove", move);
     window.addEventListener("pointerup", up);
@@ -1239,7 +1244,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
           : null;
         const taken: PlacementRect[] = [
           ...placementRectsForNodes(visibleNodes),
-          ...boardFrames.map((frame) => ({ x: frame.x, y: frame.y, width: frame.width, height: frame.height })),
+          ...placementRectsForFrames(boardFrames.map((frame) => ({ id: frame.id, label: frame.name, x: frame.x, y: frame.y, width: frame.width, height: frame.height }))),
           ...(showGuides ? BOARD_GUIDE_RECTS.map((rect) => ({ x: rect.x, y: rect.y, width: rect.width, height: rect.height })) : []),
           ...(inlineAnchor ? [{ x: inlineAnchor.x, y: inlineAnchor.y, ...BOARD_INLINE_ADD_SIZE }] : []),
         ];
@@ -1604,8 +1609,88 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   }
 
   function renameFrame(frame: LabFrame, name: string) {
+    if (isRegionFrameId(frame.id)) { void changeRegionName(frame, name); return; }
     setFrames((current) => current?.map((entry) => entry.id === frame.id ? { ...entry, name } : entry) ?? current);
     if (frame.durableId) void persistFramePatch(frame.id, { label: name });
+  }
+
+  /** A drawn region, saved as paint: no name, no task, claiming nothing. */
+  async function createPaintRegion(rect: DrawRect) {
+    const id = newRegionFrameId(crypto.randomUUID());
+    const frame: LabFrame = {
+      id,
+      name: "",
+      fill: regionFill,
+      x: rect.x,
+      y: rect.y,
+      width: Math.max(FRAME_MIN_WIDTH, rect.width),
+      height: Math.max(FRAME_MIN_HEIGHT, rect.height),
+      local: true,
+    };
+    setFrames((current) => (current ? [...current, frame] : [frame]));
+    framesRef.current = [...framesRef.current, frame];
+    setDrawTool(false);
+    setSelectedFrameId(id);
+    const boardExisted = boardIdRef.current != null;
+    if (!(await materialize())) return;
+    if (boardExisted) {
+      const result = await lab.persist({ type: "frame_create", frame: { key: id, kind: "custom", taskId: null, label: null, fill: regionFill, x: frame.x, y: frame.y, w: frame.width, h: frame.height, ord: 0 } });
+      report(result, "frame", "create");
+      if (result.status === "saved" && result.created?.frameId) {
+        const durableId = result.created.frameId;
+        const version = result.versions[durableId] ?? 1;
+        setFrames((current) => (current ? markFrameSaved(current, id, durableId, version) : current));
+        framesRef.current = markFrameSaved(framesRef.current, id, durableId, version);
+      }
+    }
+    setAnnouncement("Region drawn. Name it to make it a workstream.");
+  }
+
+  /**
+   * W3: naming a region makes it a workstream and takes in the cards inside
+   * it. Clearing the name turns it back into paint and lets those cards go.
+   */
+  async function changeRegionName(frame: LabFrame, nameInput: string) {
+    const rect = { x: frame.x, y: frame.y, width: frame.width, height: frame.height };
+    const namedFrameIds = framesRef.current.filter((entry) => isRegionFrameId(entry.id) && entry.name.trim()).map((entry) => entry.id);
+    const change = regionNameChange({ id: frame.id, label: frame.name, fill: frame.fill }, nameInput, rect, claimCandidates(), { defaultHomeFrameIds, namedFrameIds });
+    if (change.becomes === "paint") {
+      setFrames((current) => current?.map((entry) => (entry.id === frame.id ? { ...entry, name: "" } : entry)) ?? current);
+      framesRef.current = framesRef.current.map((entry) => (entry.id === frame.id ? { ...entry, name: "" } : entry));
+      for (const cardId of change.release) applyFrameMove(cardId, null);
+      if (frame.durableId) await persistFramePatch(frame.id, { label: null, taskId: null });
+      noteWorkboardRegionNamed(orgId, "cleared", change.release.length, frame.fill);
+      setAnnouncement("Name taken off. This is a coloured region again.");
+      return;
+    }
+    const name = nameInput.trim();
+    let created: { id: string };
+    try {
+      created = await createDrawnWorkstream({ data: { engagement_id: engagementId, name, profile_id: profile?.id } });
+    } catch {
+      setAnnouncement("That name could not be saved. Nothing moved.");
+      return;
+    }
+    setFrames((current) => current?.map((entry) => (entry.id === frame.id ? { ...entry, name } : entry)) ?? current);
+    framesRef.current = framesRef.current.map((entry) => (entry.id === frame.id ? { ...entry, name } : entry));
+    if (frame.durableId) await persistFramePatch(frame.id, { label: name, taskId: created.id });
+    const split = regionClaims({ id: frame.id, label: name }, rect, claimCandidates(), { defaultHomeFrameIds, namedFrameIds });
+    let claimed = 0;
+    let refused = false;
+    for (const card of split.silent) {
+      const ok = await claimCard(card, created.id, frame.id);
+      if (ok) claimed += 1;
+      else refused = true;
+    }
+    for (const card of split.frameOnly) { applyFrameMove(card.id, frame.id); claimed += 1; }
+    if (refused) setAnnouncement("Some cards stayed where they were.");
+    if (split.ask.length > 0) {
+      setClaimPrompt({ rect, taskId: created.id, frameId: frame.id, cards: split.ask, claimed });
+      noteWorkboardRegionNamed(orgId, "named", claimed, frame.fill);
+      return;
+    }
+    noteWorkboardRegionNamed(orgId, "named", claimed, frame.fill);
+    if (!refused) setAnnouncement(`${name} now holds ${claimed} cards.`);
   }
 
   function removeFrame(frame: LabFrame) {
@@ -2061,24 +2146,8 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     setAnnouncement("Reasoning trail added.");
   }
 
-  async function addColourBlock(colour: WorkboardShapeColour, at = boardPointFromScreen(viewportCentre())) {
-    const id = `shape:${crypto.randomUUID()}`;
-    const node: LabNode = {
-      id, clientKey: id, kind: "shape", frame: null, title: "Colour block", summary: "", typeLabel: "colour block",
-      ownership: "yours", colour, local: true, x: Math.round(at.x - 210), y: Math.round(at.y - 140), width: 420, height: 280,
-    };
-    nodesRef.current = [...nodesRef.current, node];
-    setNodes((current) => [...(current ?? []), node]);
-    setKeyboardId(id);
-    if (!(await ensureNodeDurable(id))) {
-      nodesRef.current = nodesRef.current.filter((entry) => entry.id !== id);
-      setNodes((current) => current?.filter((entry) => entry.id !== id) ?? current);
-      setAnnouncement("That colour block could not be saved.");
-      return;
-    }
-    noteWorkboardNodeCreated(orgId, "shape");
-    setAnnouncement("Colour block added.");
-  }
+  // W3: the colour block is retired. A drawn region is a frame now, so this
+  // write path is closed on purpose rather than left dormant.
 
   async function addTextBlock(at = boardPointFromScreen(viewportCentre())) {
     const id = `text:${crypto.randomUUID()}`;
@@ -2147,7 +2216,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       </aside>
       {menuOpen ? <div className="fixed inset-0 z-50 flex bg-[var(--nb-scrim)]" onPointerDown={() => setMenuOpen(false)}><aside className="h-full w-[280px] overflow-y-auto border-r border-border bg-sidebar p-4 shadow-[var(--shadow-modal)]" onPointerDown={(event) => event.stopPropagation()}><div className="mb-5 flex items-center justify-between"><span className="font-serif text-xl text-foreground">Lasso</span><Button size="icon" variant="ghost" aria-label="Close workboard menu" onClick={() => setMenuOpen(false)}><X className="h-4 w-4" /></Button></div><SidebarNav onNavigate={() => setMenuOpen(false)} onOpenSettings={() => void navigate({ to: "/settings" })} /><div className="mt-6 border-t border-border pt-4"><label className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft" htmlFor="canvas-lab-new-frame">Add workstream</label><div className="mt-2 flex gap-2"><input id="canvas-lab-new-frame" maxLength={60} value={newFrameName} onChange={(event) => { setNewFrameName(event.target.value); if (event.target.value.trim()) setNewFrameError(false); }} className="min-w-0 flex-1 rounded-[var(--radius-control)] border border-input bg-background px-2 text-[12px]" placeholder="Workstream name" /><Button size="sm" variant="outline" onClick={() => { if (addWorkstream(newFrameName)) { setNewFrameName(""); setNewFrameError(false); } else setNewFrameError(true); }}>Add</Button></div>{newFrameError ? <p className="mt-1 font-hand text-[13px] text-destructive">a workstream needs a name</p> : <p className="mt-1 font-hand text-[13px] text-[var(--nb-mid)]">not saved</p>}</div></aside></div> : null}
       <main className={`relative min-w-0 flex-1 flex-col ${mobileView === "board" ? "flex" : "hidden md:flex"}`}>
-        <header className="z-20 flex h-[52px] shrink-0 items-center justify-between gap-3 border-b border-border bg-card px-4"><div className="min-w-0"><span className="block truncate text-[13px] font-medium text-foreground">{title}</span><span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">{status}</span></div><div className="flex items-center gap-1"><div className="canvas-lab-workstream-switch"><Label htmlFor="canvas-lab-show-workstreams">Show workstreams</Label><Switch id="canvas-lab-show-workstreams" checked={structureMode === "structured"} onCheckedChange={(checked) => { const next = checked ? "structured" : "freeform"; if (next === structureMode) return; setStructureMode(next); if (!checked) setSelectedFrameId(null); rememberStructureMode(next); noteWorkboardStructureToggled(orgId, next); }} /></div><div className="canvas-lab-structure-toggle" aria-label="Card display"><Button type="button" size="sm" variant={displayMode === "preview" ? "secondary" : "ghost"} aria-pressed={displayMode === "preview"} onClick={() => chooseDisplayMode("preview")}>Preview</Button><Button type="button" size="sm" variant={displayMode === "sticky" ? "secondary" : "ghost"} aria-pressed={displayMode === "sticky"} onClick={() => chooseDisplayMode("sticky")}>Sticky</Button></div><Button type="button" size="sm" variant="outline" className="md:hidden" onClick={() => { setRailOpen(true); setMobileView("rail"); }}>Working from</Button>{selectedLinkId ? <Button type="button" size="sm" variant="ghost" onClick={() => { const link = links.find((entry) => entry.id === selectedLinkId); if (link) removeRelationship(link); }}>Remove relationship</Button> : null}{selectedLinkId ? <Button type="button" size="sm" variant="ghost" onClick={() => setRelationPicker({ linkId: selectedLinkId })}>Change relation</Button> : null}{canAddWork ? <Button size="sm" variant="outline" onClick={() => openAddWork("header", null)}>Add work</Button> : null}{canAddWork ? <><select aria-label="Block colour" className="h-8 rounded-md border border-input bg-background px-2 text-xs" value={blockColour} onChange={(event) => setBlockColour(event.target.value as WorkboardShapeColour)}>{WORKBOARD_SHAPE_COLOURS.map((colour) => <option key={colour} value={colour}>{colour[0]?.toUpperCase()}{colour.slice(1)}</option>)}</select><Button size="sm" variant="outline" onClick={() => void addColourBlock(blockColour)}>Add block</Button><Button size="sm" variant="outline" onClick={() => void addTextBlock()}>Add text</Button></> : null}{canAddWork ? <Button size="sm" variant={drawTool ? "secondary" : "outline"} aria-pressed={drawTool} onClick={toggleDrawTool}>Workstream</Button> : null}{showExample ? <Button size="sm" className="bg-green text-paper hover:bg-[var(--nb-green-deep)]" onClick={openExample}>See an example board</Button> : null}{canAddWork ? <ShareDialog engagementId={engagementId} profileId={profile?.id} /> : null}<Button size="sm" variant="outline" asChild><Link to="/engagements/$id" params={{ id: engagementId }} search={{ ...DETAILS_SEARCH }}>Details</Link></Button><Button size="sm" variant="outline" onClick={() => fit(true)}>Fit</Button><Button size="icon" variant="ghost" aria-label="Zoom out" onClick={() => zoomAtCentre(stepZoom(zoomRef.current, "out"))}><Minus className="h-3.5 w-3.5" /></Button><button type="button" aria-label="Zoom to 100 percent" className="w-10 text-center font-mono text-[10px] text-soft" onClick={() => zoomAtCentre(1)}>{Math.round(zoom * 100)}%</button><Button size="icon" variant="ghost" aria-label="Zoom in" onClick={() => zoomAtCentre(stepZoom(zoomRef.current, "in"))}><Plus className="h-3.5 w-3.5" /></Button></div></header>
+        <header className="z-20 flex h-[52px] shrink-0 items-center justify-between gap-3 border-b border-border bg-card px-4"><div className="min-w-0"><span className="block truncate text-[13px] font-medium text-foreground">{title}</span><span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">{status}</span></div><div className="flex items-center gap-1"><div className="canvas-lab-workstream-switch"><Label htmlFor="canvas-lab-show-workstreams">Show workstreams</Label><Switch id="canvas-lab-show-workstreams" checked={structureMode === "structured"} onCheckedChange={(checked) => { const next = checked ? "structured" : "freeform"; if (next === structureMode) return; setStructureMode(next); if (!checked) setSelectedFrameId(null); rememberStructureMode(next); noteWorkboardStructureToggled(orgId, next); }} /></div><div className="canvas-lab-structure-toggle" aria-label="Card display"><Button type="button" size="sm" variant={displayMode === "preview" ? "secondary" : "ghost"} aria-pressed={displayMode === "preview"} onClick={() => chooseDisplayMode("preview")}>Preview</Button><Button type="button" size="sm" variant={displayMode === "sticky" ? "secondary" : "ghost"} aria-pressed={displayMode === "sticky"} onClick={() => chooseDisplayMode("sticky")}>Sticky</Button></div><Button type="button" size="sm" variant="outline" className="md:hidden" onClick={() => { setRailOpen(true); setMobileView("rail"); }}>Working from</Button>{selectedLinkId ? <Button type="button" size="sm" variant="ghost" onClick={() => { const link = links.find((entry) => entry.id === selectedLinkId); if (link) removeRelationship(link); }}>Remove relationship</Button> : null}{selectedLinkId ? <Button type="button" size="sm" variant="ghost" onClick={() => setRelationPicker({ linkId: selectedLinkId })}>Change relation</Button> : null}{canAddWork ? <Button size="sm" variant="outline" onClick={() => openAddWork("header", null)}>Add work</Button> : null}{canAddWork ? <><select aria-label="Region colour" className="h-8 rounded-md border border-input bg-background px-2 text-xs" value={regionFill} onChange={(event) => setRegionFill(event.target.value as RegionFill)}>{REGION_FILLS.map((fill) => <option key={fill} value={fill}>{fill.replace("-", " ")}</option>)}</select><Button size="sm" variant="outline" onClick={() => void addTextBlock()}>Add text</Button></> : null}{canAddWork ? <Button size="sm" variant={drawTool ? "secondary" : "outline"} aria-pressed={drawTool} onClick={toggleDrawTool}>Region</Button> : null}{showExample ? <Button size="sm" className="bg-green text-paper hover:bg-[var(--nb-green-deep)]" onClick={openExample}>See an example board</Button> : null}{canAddWork ? <ShareDialog engagementId={engagementId} profileId={profile?.id} /> : null}<Button size="sm" variant="outline" asChild><Link to="/engagements/$id" params={{ id: engagementId }} search={{ ...DETAILS_SEARCH }}>Details</Link></Button><Button size="sm" variant="outline" onClick={() => fit(true)}>Fit</Button><Button size="icon" variant="ghost" aria-label="Zoom out" onClick={() => zoomAtCentre(stepZoom(zoomRef.current, "out"))}><Minus className="h-3.5 w-3.5" /></Button><button type="button" aria-label="Zoom to 100 percent" className="w-10 text-center font-mono text-[10px] text-soft" onClick={() => zoomAtCentre(1)}>{Math.round(zoom * 100)}%</button><Button size="icon" variant="ghost" aria-label="Zoom in" onClick={() => zoomAtCentre(stepZoom(zoomRef.current, "in"))}><Plus className="h-3.5 w-3.5" /></Button></div></header>
         {lab.saveState.status === "conflict" ? <div data-testid="canvas-lab-banner" className="canvas-lab-banner" role="alert"><p className="text-[13px] text-foreground">A newer version of this record was saved.</p><div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => resolveConflict("latest")}>Load latest</Button><Button size="sm" variant="outline" onClick={() => resolveConflict("retry")}>Retry my change</Button></div></div> : null}
         {lab.saveState.status === "error" ? <div data-testid="canvas-lab-banner" className="canvas-lab-banner" role="alert"><p className="text-[13px] text-foreground">Could not save your last change. {lab.saveState.message}</p><div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => resolveSaveError("retry")}>Retry</Button><Button size="sm" variant="outline" onClick={() => resolveSaveError("discard")}>Discard</Button></div></div> : null}
         <div ref={shellRef} tabIndex={-1} onPointerDownCapture={(event) => { if (event.button === 0 && spaceRef.current) { event.preventDefault(); event.stopPropagation(); startSpacePan(event); } }} onPointerDown={(event) => { const target = event.target as HTMLElement; const empty = event.target === event.currentTarget || target.dataset["testid"] === "canvas-lab-stage"; if (event.button === 0 && empty && drawTool) { event.preventDefault(); const at = stagePoint(event.clientX, event.clientY); drawingRef.current = { from: at, to: at }; setDrawing({ from: at, to: at }); return; } if (event.button === 0 && empty) { setKeyboardId(null); setSelectedFrameId(null); setSelectedLinkId((current) => relationshipSelection(current, "deselect")); viewportChangedRef.current = true; setInteraction("pan"); panRef.current = { from: { x: event.clientX, y: event.clientY }, origin: pan }; } }} onContextMenu={(event) => { const target = event.target as HTMLElement; const empty = event.target === event.currentTarget || target.dataset["testid"] === "canvas-lab-stage"; if (!empty || !canAddWork) return; event.preventDefault(); const rect = event.currentTarget.getBoundingClientRect(); const screen = { x: event.clientX - rect.left, y: event.clientY - rect.top }; setBoardMenu({ screen, board: boardPointFromScreen(screen) }); }} data-space-pan={spaceHeld} data-drawing={drawTool ? "true" : undefined} onScroll={(event) => keepViewportUnscrolled(event.currentTarget)} className="canvas-lab-surface relative min-h-0 flex-1 overflow-hidden">
@@ -2157,7 +2226,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
             {!showGuides && trailFrame ? <ReasoningTrailGuide onAdd={addNode} rect={{ x: trailFrame.x, y: trailFrame.y, width: trailFrame.width, height: trailFrame.height }} onHandlePointerDown={canAddWork ? (event) => startTrailDrag(trailFrame, event) : undefined} onRemove={canAddWork ? () => void removeTrail() : undefined} /> : null}
             {showGuides ? <FoundationGuide brief={engagement?.brief ?? null} tasks={workstreamTasks(page?.tasks ?? []).map((task) => ({ id: task.id, name: task.name, detail: task.detail }))} work={workItems} /> : null}
             {/* The context region is not a workstream, so it is drawn whether or not the workstream outlines are showing. */}
-            {boardFrames.filter((frame) => !isTrailFrameId(frame.id) && (structureMode === "structured" || frameKindOf(frame) === "context")).map((frame) => { const kind = frameKindOf(frame); const count = visibleNodes.filter((node) => node.frame === frame.id).length; const custom = kind === "custom"; const removable = !allNodes.some((node) => node.frame === frame.id); return <LabFrameElement key={frame.id} frame={frame} count={count} selected={selectedFrameId === frame.id} editable={Boolean(lab.board?.canEditStructure)} custom={custom} kind={kind} namedByWorkstream={kind === "task"} removable={removable} onSelect={() => { setSelectedFrameId(frame.id); setKeyboardId(null); setSelectedLinkId((current) => relationshipSelection(current, "deselect")); }} onResizeStart={(corner, event) => startResize("frame", frame.id, corner, { x: frame.x, y: frame.y, width: frame.width, height: frame.height }, event)} onResizeKeyDown={(corner, event) => keyboardResize("frame", frame.id, corner, { x: frame.x, y: frame.y, width: frame.width, height: frame.height }, event)} onResizeKeyUp={finishKeyboardResize} onFit={() => fitFrame(frame)} onRename={(name) => renameFrame(frame, name)} onRemove={() => kind === "context" ? void removeContextArea(frame) : removeFrame(frame)} onMenuOpened={() => noteWorkboardCardMenuOpened(orgId, "frame", "shared")} onMenuOpenChange={setCardMenuOpen} onAddWorkstream={frame.id === "workstreams" ? addWorkstream : undefined} onAddContext={kind === "context" && canAddWork ? () => openAddWork("context_menu", null, "context") : undefined} />; })}
+            {boardFrames.filter((frame) => !isTrailFrameId(frame.id) && (structureMode === "structured" || frameKindOf(frame) === "context")).map((frame) => { const kind = frameKindOf(frame); const count = visibleNodes.filter((node) => node.frame === frame.id).length; const custom = kind === "custom"; const removable = !allNodes.some((node) => node.frame === frame.id); const region = isRegionFrameId(frame.id); return <LabFrameElement key={frame.id} frame={frame} count={count} region={region} fillStyle={region ? regionFillStyle(frame.fill) : undefined} selected={selectedFrameId === frame.id} editable={Boolean(lab.board?.canEditStructure)} custom={custom} kind={kind} namedByWorkstream={kind === "task"} removable={removable} onSelect={() => { setSelectedFrameId(frame.id); setKeyboardId(null); setSelectedLinkId((current) => relationshipSelection(current, "deselect")); }} onResizeStart={(corner, event) => startResize("frame", frame.id, corner, { x: frame.x, y: frame.y, width: frame.width, height: frame.height }, event)} onResizeKeyDown={(corner, event) => keyboardResize("frame", frame.id, corner, { x: frame.x, y: frame.y, width: frame.width, height: frame.height }, event)} onResizeKeyUp={finishKeyboardResize} onFit={() => fitFrame(frame)} onRename={(name) => renameFrame(frame, name)} onRemove={() => kind === "context" ? void removeContextArea(frame) : removeFrame(frame)} onMenuOpened={() => noteWorkboardCardMenuOpened(orgId, "frame", "shared")} onMenuOpenChange={setCardMenuOpen} onAddWorkstream={frame.id === "workstreams" ? addWorkstream : undefined} onAddContext={kind === "context" && canAddWork ? () => openAddWork("context_menu", null, "context") : undefined} />; })}
             {structureMode === "structured" && Boolean(lab.board?.canEditStructure) && !boardFrames.some((frame) => frame.id === "workstreams") ? (() => { const anchor = workstreamAddAnchor(boardFrames, visibleNodes); if (!anchor) return null; return <div className="canvas-lab-inline-add" style={{ left: anchor.x, top: anchor.y, width: BOARD_INLINE_ADD_SIZE.width, minHeight: BOARD_INLINE_ADD_SIZE.height, transform: `scale(${1 / zoom})`, transformOrigin: "top left" }}>{inlineAddOpen ? <div className="canvas-lab-inline-workstream"><input aria-label="Workstream name" ref={inlineNameRef} maxLength={60} value={inlineFrameName} onChange={(event) => { setInlineFrameName(event.target.value); if (event.target.value.trim()) setInlineFrameError(false); }} onKeyDown={(event) => { if (event.key === "Enter" && addWorkstream(inlineFrameName)) { setInlineFrameName(""); setInlineFrameError(false); setInlineAddOpen(false); } if (event.key === "Escape") { setInlineAddOpen(false); setInlineFrameError(false); } }} /><button type="button" onClick={() => { if (addWorkstream(inlineFrameName)) { setInlineFrameName(""); setInlineFrameError(false); setInlineAddOpen(false); } else setInlineFrameError(true); }}>Add</button>{inlineFrameError ? <span>a workstream needs a name</span> : null}</div> : <button type="button" className="canvas-lab-add-workstream" onClick={() => setInlineAddOpen(true)}>+ workstream</button>}</div>; })() : null}
             <svg className="canvas-lab-relationships absolute inset-0 overflow-visible" width={bounds.width} height={bounds.height} aria-label="Local workboard relationships">
               {visibleNodes.filter((node) => node.kind === "chat").flatMap((draft) => (draft.contextIds ?? []).map((contextId) => { const source = visibleNodes.find((node) => node.id === contextId); if (!source) return null; const sx = source.x + source.width; const sy = source.y + source.height / 2; const tx = draft.x; const ty = draft.y + draft.height / 2; const middle = (sx + tx) / 2; return <path key={`${draft.id}:${contextId}`} d={`M ${sx} ${sy} C ${middle} ${sy}, ${middle} ${ty}, ${tx} ${ty}`} fill="none" stroke="var(--nb-graphite)" strokeWidth="1.4" strokeDasharray="4 4" strokeLinecap="round" className="pointer-events-none" />; }))}

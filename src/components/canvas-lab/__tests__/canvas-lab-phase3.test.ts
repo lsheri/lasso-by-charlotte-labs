@@ -44,8 +44,8 @@ describe("applyDurableBoard", () => {
   it("loads a saved layout with positive frames and a negative-position card", () => {
     const saved = board({
       frames: [
-        { id: "frame-foundation", key: "foundation", kind: "foundation", taskId: null, label: null, x: 60, y: 420, w: 430, h: 520, ord: 0, version: 2 },
-        { id: "frame-discovery", key: "task:task-1", kind: "task", taskId: "task-1", label: "Discovery", x: 526, y: 420, w: 430, h: 520, ord: 1, version: 2 },
+        { id: "frame-foundation", key: "foundation", kind: "foundation", taskId: null, label: null, fill: null, x: 60, y: 420, w: 430, h: 520, ord: 0, version: 2 },
+        { id: "frame-discovery", key: "task:task-1", kind: "task", taskId: "task-1", label: "Discovery", fill: null, x: 526, y: 420, w: 430, h: 520, ord: 1, version: 2 },
       ],
       nodes: [
         { id: "node-brief", frameId: "frame-foundation", kind: "brief", workItemId: null, decisionId: null, authorProfileId: "me", authorName: "Me", title: "", body: "", judgmentType: null, x: 88, y: 484, w: 232, h: 112, hidden: false, version: 2, referenceReadable: true },
@@ -97,7 +97,7 @@ describe("applyDurableBoard", () => {
 
   it("marks the viewer's own judgment editable and adds custom frames with durable keys", () => {
     const merged = applyDurableBoard({ frames: baseFrames, nodes: baseNodes }, board({
-      frames: [{ id: "frame-9", key: "custom:risks", kind: "custom", taskId: null, label: "Risks", x: 1, y: 2, w: 300, h: 200, ord: 4, version: 1 }],
+      frames: [{ id: "frame-9", key: "custom:risks", kind: "custom", taskId: null, label: "Risks", fill: null, x: 1, y: 2, w: 300, h: 200, ord: 4, version: 1 }],
       nodes: [{
         id: "node-7", frameId: "frame-9", kind: "judgment", workItemId: null, decisionId: null,
         authorProfileId: "me", authorName: "Me", title: "Corrected AI", body: "Fixed the figure.",
@@ -184,8 +184,8 @@ describe("drop prompt on a durable board", () => {
   it("offers the workstream under the card even when the home frame overlaps it", () => {
     const merged = applyDurableBoard({ frames: baseFrames, nodes: baseNodes }, board({
       frames: [
-        { id: "frame-a", key: "task:task-1", kind: "task", taskId: "task-1", label: "Discovery", x: 60, y: 420, w: 1200, h: 900, ord: 0, version: 1 },
-        { id: "frame-b", key: "custom:readout", kind: "custom", taskId: null, label: "Readout deck", x: 900, y: 460, w: 380, h: 420, ord: 1, version: 1 },
+        { id: "frame-a", key: "task:task-1", kind: "task", taskId: "task-1", label: "Discovery", fill: null, x: 60, y: 420, w: 1200, h: 900, ord: 0, version: 1 },
+        { id: "frame-b", key: "custom:readout", kind: "custom", taskId: null, label: "Readout deck", fill: null, x: 900, y: 460, w: 380, h: 420, ord: 1, version: 1 },
       ],
       nodes: [{
         id: "node-1", frameId: "frame-a", kind: "work_item", workItemId: "work-1", decisionId: null,

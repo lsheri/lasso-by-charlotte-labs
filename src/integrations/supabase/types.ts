@@ -3662,6 +3662,7 @@ export type Database = {
           created_at: string
           created_by: string
           deleted_at: string | null
+          fill: string | null
           h: number
           id: string
           key: string
@@ -3681,6 +3682,7 @@ export type Database = {
           created_at?: string
           created_by: string
           deleted_at?: string | null
+          fill?: string | null
           h?: number
           id?: string
           key: string
@@ -3700,6 +3702,7 @@ export type Database = {
           created_at?: string
           created_by?: string
           deleted_at?: string | null
+          fill?: string | null
           h?: number
           id?: string
           key?: string
