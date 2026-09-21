@@ -550,6 +550,14 @@ export function SidebarNav({
               ) : null}
             </div>
           </div>
+          {isEngagementGroup ? (
+            <SharedWithMeGroup
+              profiles={profiles}
+              orgId={profile?.org_id}
+              onNavigate={onNavigate}
+            />
+          ) : null}
+          </Fragment>
         );
       })}
     </nav>
