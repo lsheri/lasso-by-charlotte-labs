@@ -83,6 +83,7 @@ export function useCaptureFiles() {
         .maybeSingle();
       if (insertError) {
         setError(insertError.message);
+        failures.push({ name: file.name, reason: insertError.message });
         continue;
       }
 
@@ -113,5 +114,5 @@ export function useCaptureFiles() {
     return capturedIds;
   }
 
-  return { capture, pending, progress, error, profile };
+  return { capture, captureWithResult, pending, progress, error, profile };
 }
