@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   REGION_FILLS,
+  filedWorkCount,
   filingPlan,
   isRegionFill,
   isRegionFrameId,
