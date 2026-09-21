@@ -11,6 +11,7 @@ import { dragTo, snapPoint, type Point } from "@/lib/canvas-drag";
 import type { LabNodeEventKind } from "@/components/canvas-lab/canvas-lab-telemetry";
 import type { WorkboardCommand, WorkboardDto, WorkboardNodeDto, WorkboardRelation } from "@/lib/canvas-lab-shared";
 import { clampZoom } from "@/lib/canvas-zoom";
+import { isWorkstreamFrameId } from "@/lib/context-region";
 import { placeAddedCards } from "@/lib/workboard-placement";
 
 export type LabNodeKind = "brief" | "task" | "work" | "decision" | "chat" | "source" | "ai_work" | "judgment" | "deliverable";
@@ -228,7 +229,7 @@ export const BOARD_INLINE_ADD_SIZE = { width: 220, height: 28 };
 /** Where the inline add control sits: under the workstream row, clear of spilled cards. */
 export function workstreamAddAnchor(frames: LabFrame[], nodes: LabNode[]): Point | null {
 
-  const row = frames.filter((frame) => frame.id.startsWith("task:") || frame.id.startsWith("custom:"));
+  const row = frames.filter((frame) => isWorkstreamFrameId(frame.id));
   if (row.length === 0) return null;
   const left = Math.min(...row.map((frame) => frame.x));
   const right = Math.max(...row.map((frame) => frame.x + frame.width));
@@ -241,7 +242,7 @@ export function workstreamAddAnchor(frames: LabFrame[], nodes: LabNode[]): Point
 
 /** Free space for a new workstream: under everything on the board, in the workstream column. */
 export function nextWorkstreamRect(frames: LabFrame[], nodes: LabNode[]): LabRect {
-  const workstreams = frames.filter((frame) => frame.id.startsWith("task:") || frame.id.startsWith("custom:") || frame.id === "workstreams");
+  const workstreams = frames.filter((frame) => isWorkstreamFrameId(frame.id));
   const left = workstreams.length > 0 ? Math.min(...workstreams.map((frame) => frame.x)) : 60;
   const bottoms = [
     ...frames.map((frame) => frame.y + frame.height),
@@ -608,8 +609,10 @@ export function seedCanvas(input: SeedInput, frames = createLabFrames(input.task
 }
 
 /** A board carries seeded structure when it holds saved workstream outlines. */
-export function boardHasSeededStructure(board: { frames: unknown[] } | null | undefined): boolean {
-  return (board?.frames.length ?? 0) > 0;
+export function boardHasSeededStructure(board: { frames: { kind?: string | null }[] } | null | undefined): boolean {
+  // The context region is created on demand on a blank board, so it is never
+  // seeded structure and never brings the guide panels back.
+  return (board?.frames ?? []).some((frame) => frame.kind !== "context");
 }
 
 /**

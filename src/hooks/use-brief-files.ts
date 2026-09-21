@@ -37,3 +37,28 @@ export function useInvalidateBriefFiles() {
   const queryClient = useQueryClient();
   return () => queryClient.invalidateQueries({ queryKey: ["engagement-brief-files"] });
 }
+
+/** Record documents as part of the engagement's context. Membership rules decide. */
+export async function addBriefFiles(input: { engagementId: string; workItemIds: string[]; profileId: string }): Promise<void> {
+  if (input.workItemIds.length === 0) return;
+  const rows = input.workItemIds.map((workItemId) => ({
+    engagement_id: input.engagementId,
+    work_item_id: workItemId,
+    created_by: input.profileId,
+  }));
+  const { error } = await supabase.from("engagement_brief_files").upsert(rows, { onConflict: "engagement_id,work_item_id" });
+  if (error) throw error;
+}
+
+/**
+ * Take a document out of the engagement's context. The work item itself is
+ * untouched, and its card stays on the board.
+ */
+export async function removeBriefFile(engagementId: string, workItemId: string): Promise<void> {
+  const { error } = await supabase
+    .from("engagement_brief_files")
+    .delete()
+    .eq("engagement_id", engagementId)
+    .eq("work_item_id", workItemId);
+  if (error) throw error;
+}

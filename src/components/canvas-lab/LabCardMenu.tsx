@@ -22,6 +22,7 @@ export function LabCardMenu({
   onBranch,
   onHide,
   onDelete,
+  onTakeOutOfContext,
   onFit,
   frameChoices = [],
   currentFrame,
@@ -40,6 +41,8 @@ export function LabCardMenu({
   onBranch: () => void;
   onHide: () => void;
   onDelete: () => void;
+  /** Present only on a card inside the context region. */
+  onTakeOutOfContext?: (() => void) | undefined;
   onFit?: (() => void) | undefined;
   frameChoices?: { id: string; name: string }[];
   currentFrame?: string | null | undefined;
@@ -73,6 +76,7 @@ export function LabCardMenu({
         {onFit ? <DropdownMenuItem onSelect={onFit}>Fit content</DropdownMenuItem> : null}
         {canBranch ? <DropdownMenuItem onSelect={onBranch}>Branch</DropdownMenuItem> : null}
         {onMoveToFrame && frameChoices.filter((frame) => frame.id !== currentFrame).map((frame) => <DropdownMenuItem key={frame.id} onSelect={() => onMoveToFrame(frame.id)}>Move to {frame.name}</DropdownMenuItem>)}
+        {onTakeOutOfContext ? <DropdownMenuItem onSelect={onTakeOutOfContext}>Take out of context</DropdownMenuItem> : null}
         <DropdownMenuSeparator />
         {local ? (
           <DropdownMenuItem onSelect={onDelete}>Delete local node</DropdownMenuItem>
