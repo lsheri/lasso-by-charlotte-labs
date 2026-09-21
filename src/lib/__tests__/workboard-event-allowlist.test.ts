@@ -47,6 +47,9 @@ describe("the workboard allowlist", () => {
         "workboard.display_mode_toggled": [
           "mode",
         ],
+        "workboard.document_created": [
+          "via",
+        ],
         "workboard.drop_prompt_answered": [
           "answer",
         ],
@@ -225,7 +228,7 @@ describe("the workboard allowlist", () => {
       const [name, , dims] = mocked.mock.calls[0] as [string, string, Record<string, unknown>];
       expect(guardWorkboardEvent(name, dims as never)).toEqual({ keep: true, dims });
     }
-    expect(Object.keys(WORKBOARD_EVENT_DIMS)).toHaveLength(26);
+    expect(Object.keys(WORKBOARD_EVENT_DIMS)).toHaveLength(27);
   });
 
   it("keeps the additive open path for previewed document and deck cards", () => {

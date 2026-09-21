@@ -222,6 +222,8 @@ export type TelemetryEvent =
   /** B4: a workstream was drawn on the workboard. Claimed count and whether one prompt was shown. */
   | "workboard.workstream_drawn"
   | "workboard.region_named"
+  /** D1: an empty note was started on a workstream. Entry point only, no ids and no text. */
+  | "workboard.document_created"
   /** Pass 185: a workspace was affiliated with an institution at creation. Slug only. */
   | "workspace.affiliated"
   /** Pass 186: the student opened the page describing what their school sees. */
