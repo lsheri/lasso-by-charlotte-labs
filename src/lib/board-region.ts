@@ -39,6 +39,11 @@ export const REGION_FILLS = [
 
 export type RegionFill = (typeof REGION_FILLS)[number];
 
+/** Drawing paint leaves its chosen colour armed for the next drag. */
+export function regionToolAfterDraw(fill: RegionFill): { armed: true; fill: RegionFill } {
+  return { armed: true, fill };
+}
+
 export function isRegionFill(value: unknown): value is RegionFill {
   return typeof value === "string" && (REGION_FILLS as readonly string[]).includes(value);
 }

@@ -36,6 +36,7 @@ import { LabLinkRejection } from "@/components/canvas-lab/LabLinkRejection";
 import { LabRelationshipOverlays } from "@/components/canvas-lab/LabRelationshipOverlays";
 import { LabRelationships } from "@/components/canvas-lab/LabRelationships";
 import { LabRelationPicker } from "@/components/canvas-lab/LabRelationPicker";
+import { RegionColourSwatches } from "@/components/canvas-lab/RegionColourSwatches";
 import { LabUndoToast } from "@/components/canvas-lab/LabUndoToast";
 import {
   canUndoToastEntry,
@@ -163,7 +164,7 @@ import { useWorkboardFilePreviews } from "@/hooks/use-workboard-file-previews";
 import { useMotion } from "@/hooks/use-motion";
 import { useProfile } from "@/hooks/use-profile";
 import { dragTo, keyTo, type Point } from "@/lib/canvas-drag";
-import { REGION_FILLS, filedWorkCount, isRegionFrameId, newRegionFrameId, regionClaimable, regionClaims, regionFillStyle, regionNameChange, type RegionFill } from "@/lib/board-region";
+import { filedWorkCount, isRegionFrameId, newRegionFrameId, regionClaimable, regionClaims, regionFillStyle, regionNameChange, regionToolAfterDraw, type RegionFill } from "@/lib/board-region";
 import { isWorkboardDecorationKind, serializeWorkboardTextBody, type WorkboardCommand, type WorkboardNodeInput, type WorkboardRelation, type WorkboardTextBody } from "@/lib/canvas-lab-shared";
 import { noteCanvasOpenedFn } from "@/lib/canvas.functions";
 import { clampZoom, scrollableUnder, stepZoom, wheelPanVector, workboardPinchZoom, zoomAbout } from "@/lib/canvas-zoom";
@@ -1641,11 +1642,12 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
 
   /** A drawn region, saved as paint: no name, no task, claiming nothing. */
   async function createPaintRegion(rect: DrawRect) {
+    const nextTool = regionToolAfterDraw(regionFill);
     const id = newRegionFrameId(crypto.randomUUID());
     const frame: LabFrame = {
       id,
       name: "",
-      fill: regionFill,
+      fill: nextTool.fill,
       x: rect.x,
       y: rect.y,
       width: Math.max(FRAME_MIN_WIDTH, rect.width),
@@ -1654,12 +1656,12 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     };
     setFrames((current) => (current ? [...current, frame] : [frame]));
     framesRef.current = [...framesRef.current, frame];
-    setDrawTool(false);
+    setDrawTool(nextTool.armed);
     setSelectedFrameId(id);
     const boardExisted = boardIdRef.current != null;
     if (!(await materialize())) return;
     if (boardExisted) {
-      const result = await lab.persist({ type: "frame_create", frame: { key: id, kind: "custom", taskId: null, label: null, fill: regionFill, x: frame.x, y: frame.y, w: frame.width, h: frame.height, ord: 0 } });
+      const result = await lab.persist({ type: "frame_create", frame: { key: id, kind: "custom", taskId: null, label: null, fill: nextTool.fill, x: frame.x, y: frame.y, w: frame.width, h: frame.height, ord: 0 } });
       report(result, "frame", "create");
       if (result.status === "saved" && result.created?.frameId) {
         const durableId = result.created.frameId;
@@ -2049,7 +2051,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   function toggleDrawTool() {
     if (drawTool || pendingWorkstream) {
       cancelDraw();
-      setAnnouncement("Workstream drawing off.");
+      setAnnouncement("Region drawing off.");
       return;
     }
     if (structureMode !== "structured") {
@@ -2058,7 +2060,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       noteWorkboardStructureToggled(orgId, "structured");
     }
     setDrawTool(true);
-    setAnnouncement("Drag on empty board space to draw a workstream.");
+    setAnnouncement("Drag on empty board space to draw a region.");
   }
 
   /** The outline is saved the same way every other outline is. */
@@ -2347,23 +2349,6 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       row: <Button size="sm" variant="outline" onClick={() => openAddWork("header", null)}>Add work</Button>,
     });
     toolbarItems.push({
-      spec: { id: "region-fill", width: 130, moveOrder: 3 },
-      row: (
-        <select aria-label="Region colour" className="h-8 rounded-md border border-input bg-background px-2 text-xs" value={regionFill} onChange={(event) => setRegionFill(event.target.value as RegionFill)}>
-          {REGION_FILLS.map((fill) => <option key={fill} value={fill}>{fill.replace("-", " ")}</option>)}
-        </select>
-      ),
-      menu: (
-        <>
-          <DropdownMenuLabel>Region colour</DropdownMenuLabel>
-          <DropdownMenuRadioGroup value={regionFill} onValueChange={(value) => setRegionFill(value as RegionFill)}>
-            {REGION_FILLS.map((fill) => <DropdownMenuRadioItem key={fill} value={fill}>{fill.replace("-", " ")}</DropdownMenuRadioItem>)}
-          </DropdownMenuRadioGroup>
-          <DropdownMenuSeparator />
-        </>
-      ),
-    });
-    toolbarItems.push({
       spec: { id: "add-text", width: 92, moveOrder: 4 },
       row: <Button size="sm" variant="outline" onClick={() => void addTextBlock()}>Add text</Button>,
       menu: <DropdownMenuItem onSelect={() => void addTextBlock()}>Add text</DropdownMenuItem>,
@@ -2423,7 +2408,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       </aside>
       {menuOpen ? <div className="fixed inset-0 z-50 flex bg-[var(--nb-scrim)]" onPointerDown={() => setMenuOpen(false)}><aside className="h-full w-[280px] overflow-y-auto border-r border-border bg-sidebar p-4 shadow-[var(--shadow-modal)]" onPointerDown={(event) => event.stopPropagation()}><div className="mb-5 flex items-center justify-between"><span className="font-serif text-xl text-foreground">Lasso</span><Button size="icon" variant="ghost" aria-label="Close workboard menu" onClick={() => setMenuOpen(false)}><X className="h-4 w-4" /></Button></div><SidebarNav onNavigate={() => setMenuOpen(false)} onOpenSettings={() => void navigate({ to: "/settings" })} /><div className="mt-6 border-t border-border pt-4"><label className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft" htmlFor="canvas-lab-new-frame">Add workstream</label><div className="mt-2 flex gap-2"><input id="canvas-lab-new-frame" maxLength={60} value={newFrameName} onChange={(event) => { setNewFrameName(event.target.value); if (event.target.value.trim()) setNewFrameError(false); }} className="min-w-0 flex-1 rounded-[var(--radius-control)] border border-input bg-background px-2 text-[12px]" placeholder="Workstream name" /><Button size="sm" variant="outline" onClick={() => { if (addWorkstream(newFrameName)) { setNewFrameName(""); setNewFrameError(false); } else setNewFrameError(true); }}>Add</Button></div>{newFrameError ? <p className="mt-1 font-hand text-[13px] text-destructive">a workstream needs a name</p> : <p className="mt-1 font-hand text-[13px] text-[var(--nb-mid)]">not saved</p>}</div></aside></div> : null}
       <main className={`relative min-w-0 flex-1 flex-col ${mobileView === "board" ? "flex" : "hidden md:flex"}`}>
-        <header className="z-20 flex h-[52px] shrink-0 items-center justify-between gap-3 border-b border-border bg-card px-4">
+        <header className="relative z-20 flex h-[52px] shrink-0 items-center justify-between gap-3 border-b border-border bg-card px-4">
           <div className="min-w-0 shrink"><span className="block truncate text-[13px] font-medium text-foreground">{title}</span><span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">{status}</span></div>
           <div ref={toolbarRef} className="flex min-w-0 flex-1 items-center justify-end gap-1 overflow-hidden">
             {toolbarItems.filter((item) => toolbarPlan.row.includes(item.spec.id)).map((item) => <div key={item.spec.id} className="flex shrink-0 items-center gap-1">{item.row}</div>)}
@@ -2438,6 +2423,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
               </DropdownMenu>
             ) : null}
           </div>
+          {drawTool ? <div className="canvas-lab-region-palette"><RegionColourSwatches value={regionFill} onChange={setRegionFill} /></div> : null}
         </header>
         {lab.saveState.status === "conflict" ? <div data-testid="canvas-lab-banner" className="canvas-lab-banner" role="alert"><p className="text-[13px] text-foreground">A newer version of this record was saved.</p><div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => resolveConflict("latest")}>Load latest</Button><Button size="sm" variant="outline" onClick={() => resolveConflict("retry")}>Retry my change</Button></div></div> : null}
         {lab.saveState.status === "error" ? <div data-testid="canvas-lab-banner" className="canvas-lab-banner" role="alert"><p className="text-[13px] text-foreground">Could not save your last change. {lab.saveState.message}</p><div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => resolveSaveError("retry")}>Retry</Button><Button size="sm" variant="outline" onClick={() => resolveSaveError("discard")}>Discard</Button></div></div> : null}
