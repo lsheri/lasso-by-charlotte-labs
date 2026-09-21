@@ -975,7 +975,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
         if (dropPrompt) { closeDropPrompt("dismissed"); return; }
         const resize = resizeRef.current;
         if (resize) {
-          if (resize.kind === "card") setNodes((current) => current?.map((node) => node.id === resize.id ? { ...node, ...resize.start } : node) ?? current);
+          if (resize.kind !== "frame") setNodes((current) => current?.map((node) => node.id === resize.id ? { ...node, ...resize.start } : node) ?? current);
           else setFrames((current) => current?.map((frame) => frame.id === resize.id ? { ...frame, ...resize.start } : frame) ?? current);
           resizeRef.current = null;
           setInteraction("idle");

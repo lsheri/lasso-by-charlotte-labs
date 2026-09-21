@@ -37,6 +37,7 @@ export function LabColourBlock({ node, selected, editable, onSelect, onDragStart
       tabIndex={selected ? 0 : -1}
       className="canvas-lab-colour-block absolute"
       style={style}
+      onClick={onSelect}
       onPointerDown={(event) => { if (!selected) return; onDragStart(event); }}
       onFocus={onSelect}
     >
