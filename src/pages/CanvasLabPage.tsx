@@ -296,6 +296,8 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   const [addWorkAnchor, setAddWorkAnchor] = useState<Point | null>(null);
   const [addWorkTarget, setAddWorkTarget] = useState<"board" | "context">("board");
   const [addWorkBusy, setAddWorkBusy] = useState(false);
+  const [askOpen, setAskOpen] = useState(false);
+  const [keepBusy, setKeepBusy] = useState(false);
   const [regionFill, setRegionFill] = useState<RegionFill>("green-faded");
   /** Right-click on empty board space. Screen coords for the menu, board coords for the drop. */
   const [boardMenu, setBoardMenu] = useState<{ screen: Point; board: Point } | null>(null);
@@ -618,6 +620,8 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     if (frame.id === "foundation" || frame.id === "decisions" || frame.id === "outputs") return frame.id;
     return frame.id.startsWith("task:") ? "task" : "custom";
   }
+
+  useRegisterAskLasso(() => setAskOpen(true));
 
   function nodeToInput(node: LabNode): WorkboardNodeInput | null {
     const base = { clientKey: node.clientKey ?? node.id, frameKey: node.frame ?? null, x: node.x, y: node.y, w: node.width, h: node.height, hidden: hiddenRef.current.includes(node.id) };
