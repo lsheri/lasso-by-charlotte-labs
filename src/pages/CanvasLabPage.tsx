@@ -287,6 +287,8 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
 
   const shellRef = useRef<HTMLDivElement | null>(null);
   const dragRef = useRef<{ id: string; origin: Point; from: Point } | null>(null);
+  /** B3: moving a placed trail panel, which is an outline row rather than a card. */
+  const frameDragRef = useRef<{ id: string; origin: Point; from: Point } | null>(null);
   const connectorDragRef = useRef<{ nodeId: string; anchor: LabAnchor; from: Point; moved: boolean } | null>(null);
   const cardHeightsRef = useRef(new Map<string, number>());
   const resizeRef = useRef<{ kind: "card" | "frame"; id: string; corner: LabResizeCorner; start: LabRect; pointer: Point; method: "pointer" | "keyboard" } | null>(null);
