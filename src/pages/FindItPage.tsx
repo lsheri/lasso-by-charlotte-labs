@@ -133,7 +133,7 @@ export function FindItPage() {
 
   // Looking back through your own conversations is the person's own business.
   // A coach never reads someone else's record this way.
-  const isCoach = profile?.role === "coach";
+  const isCoach = usesGuestNav(profile);
   useEffect(() => {
     if (isCoach) navigate({ to: "/coaching", replace: true });
   }, [isCoach, navigate]);

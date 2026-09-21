@@ -23,7 +23,7 @@ export function ArchivePage() {
   const [searching, setSearching] = useState(false);
 
   // Coaches are engagement-scoped guests; the firm archive is firm-internal.
-  const isCoach = profile?.role === "coach";
+  const isCoach = usesGuestNav(profile);
   useEffect(() => {
     if (isCoach) navigate({ to: "/coaching" });
   }, [isCoach, navigate]);

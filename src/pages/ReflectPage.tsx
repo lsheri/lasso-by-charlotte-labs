@@ -119,7 +119,7 @@ export function ReflectPage({
 
   // Reflect is private to the person doing the work; coach profiles never see it,
   // including by typing the URL directly.
-  const isCoach = profile?.role === "coach";
+  const isCoach = usesGuestNav(profile);
   useEffect(() => {
     if (isCoach) navigate({ to: "/coaching", replace: true });
   }, [isCoach, navigate]);
