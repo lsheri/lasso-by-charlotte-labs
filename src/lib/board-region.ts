@@ -89,6 +89,16 @@ export const REGION_NAMING_LINE = "Name this and it becomes a workstream, taking
 const EMPTY_SPLIT: ClaimSplit = { silent: [], ask: [], frameOnly: [] };
 
 /**
+ * Kinds a named region never claims. Empty today: an answer card is a card
+ * like any other, and a card inside a named region is taken in by it.
+ */
+export const REGION_UNCLAIMABLE_KINDS: readonly string[] = [];
+
+export function regionClaimable(kind: string): boolean {
+  return !REGION_UNCLAIMABLE_KINDS.includes(kind);
+}
+
+/**
  * What a region claims. Paint claims nothing at all. A named region claims
  * the cards fully inside it, and a card that already sits in another
  * workstream is asked about once, never refiled silently.

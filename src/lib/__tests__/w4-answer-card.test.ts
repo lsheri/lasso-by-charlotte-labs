@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { answerAsOf, answerCiteRows, answerNodeInput } from "@/lib/answer-card";
+import { regionClaimable } from "@/lib/board-region";
 import { WORKBOARD_NODE_KINDS } from "@/lib/canvas-lab-shared";
 import { LAB_TEMPLATE_KINDS } from "@/components/canvas-lab/canvas-lab-model";
 
@@ -56,6 +57,18 @@ describe("an answer kept as a card", () => {
 
     const other = new Date("2027-11-19T09:30:00.000Z");
     expect(answerAsOf(other.toISOString())).not.toBe(answerAsOf(createdAt));
+  });
+
+  it("carries the workstream it is kept into, and stays freeform without one", () => {
+    const placed = answerNodeInput({ clientKey: "k", at: { x: 10, y: 20 }, text: "The answer body.", frameKey: "region:abc" });
+    expect(placed.frameKey).toBe("region:abc");
+    expect(placed.kind).toBe("answer");
+    const free = answerNodeInput({ clientKey: "k", at: { x: 10, y: 20 }, text: "The answer body." });
+    expect(free.frameKey).toBeNull();
+  });
+
+  it("is never excluded from what a named region can claim", () => {
+    expect(regionClaimable("answer")).toBe(true);
   });
 
   it("is a saved kind but never a card anyone can create", () => {
