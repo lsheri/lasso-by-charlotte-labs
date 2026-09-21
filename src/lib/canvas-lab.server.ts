@@ -99,6 +99,7 @@ export async function loadWorkboard(db: Db, engagementId: string, profile: Resol
       links: [],
       viewerProfileId: profile.id,
       canEditStructure: membership.isEditor,
+      archivedContextFrame: null,
     };
   }
 
