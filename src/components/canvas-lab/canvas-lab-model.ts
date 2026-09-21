@@ -1075,6 +1075,26 @@ export function applyDurableBoard(base: { frames: LabFrame[]; nodes: LabNode[] }
         height: durable.h,
       });
     }
+    if (durable.kind === "answer") {
+      nodes.push({
+        id: localId,
+        kind: "answer",
+        frame: frameId,
+        title: durable.title || "Answer",
+        summary: durable.body,
+        typeLabel: "answer",
+        ownership: durable.authorProfileId === board.viewerProfileId ? "yours" : "teammate",
+        authorName: durable.authorName,
+        createdAt: durable.createdAt ?? null,
+        local: durable.authorProfileId === board.viewerProfileId,
+        durableId: durable.id,
+        durableVersion: durable.version,
+        x: durable.x,
+        y: durable.y,
+        width: durable.w > 0 ? durable.w : CARD_WIDTH,
+        height: durable.h > 0 ? durable.h : CARD_HEIGHT,
+      });
+    }
     // draft rows are deliberately not rehydrated in Slice 1.
   }
   for (const virtual of base.nodes) if (!matchedVirtual.has(virtual.id)) nodes.push(virtual);
