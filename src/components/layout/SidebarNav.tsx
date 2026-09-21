@@ -8,6 +8,8 @@ import { CircleMark } from "@/components/notebook/CircleMark";
 import { useAffiliation } from "@/hooks/use-affiliation";
 import { useUnreadNotesAboutMe } from "@/hooks/use-coach-note-thread";
 import { useHasLiveCoachLink } from "@/hooks/use-coaching-links";
+import { useCoachingReach } from "@/hooks/use-coaching-reach";
+
 import { useDecisions } from "@/hooks/use-decisions";
 import { useEngagements } from "@/hooks/use-engagements";
 import { useProfile } from "@/hooks/use-profile";
@@ -24,7 +26,7 @@ import {
   type NavEngagement,
 } from "@/lib/nav-groups";
 
-import { coachNavGroups, eduNavGroups, navGroups } from "./nav-config";
+import { coachNavGroups, coachingGroup, eduNavGroups, navGroups } from "./nav-config";
 import { engagementDisplayCode, engagementDisplayTitle } from "@/lib/clients";
 
 const linkClass = "nb-nav-item";
@@ -273,7 +275,7 @@ export function SidebarNav({
 
   return (
     <nav className="flex flex-col gap-7">
-      {groupsForOrg.map((group) => {
+      {[...groupsForOrg, ...coachingGroups].map((group) => {
         const isEngagementGroup = group.id === "engagements";
 
         const itemsForGroup =
