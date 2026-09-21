@@ -30,6 +30,9 @@ vi.mock("@/hooks/use-profile", () => ({
   }),
 }));
 
+vi.mock("@tanstack/react-router", () => ({
+  Link: ({ children }: { children: React.ReactNode }) => children,
+}));
 vi.mock("@/integrations/supabase/client", () => ({ supabase: {} }));
 vi.mock("@/lib/telemetry", () => ({ logEvent: () => undefined }));
 
