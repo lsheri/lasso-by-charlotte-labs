@@ -345,6 +345,8 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   const visibleNodes = useMemo(() => allNodes.filter((node) => !hiddenIds.includes(node.id)), [allNodes, hiddenIds]);
   const hiddenNodes = useMemo(() => allNodes.filter((node) => hiddenIds.includes(node.id)), [allNodes, hiddenIds]);
   const boardFrames = useMemo(() => frames ?? [], [frames]);
+  /** B3: the trail a person put on a blank board, if they have put one there. */
+  const trailFrame = useMemo(() => boardFrames.find((frame) => isTrailFrameId(frame.id)) ?? null, [boardFrames]);
   const bounds = useMemo(() => stageBounds(boardFrames, visibleNodes), [boardFrames, visibleNodes]);
   const contextNodes = visibleNodes.filter((node) => selected.includes(node.id));
   const focusNode = visibleNodes.find((node) => node.id === focusId) ?? null;
