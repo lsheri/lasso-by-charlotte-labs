@@ -8,6 +8,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -45,6 +46,7 @@ export function AddWorkPanel({
   const { capture, pending: capturing, error: captureError } = useCaptureFiles();
   const fileInput = useRef<HTMLInputElement | null>(null);
   const [picked, setPicked] = useState<Set<string>>(new Set());
+  const [activeTab, setActiveTab] = useState("inbox");
 
   const inbox = useMemo(() => {
     const items = work?.items ?? [];
@@ -81,13 +83,13 @@ export function AddWorkPanel({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl overflow-hidden">
         <DialogHeader>
           <DialogTitle>Add work</DialogTitle>
           <DialogDescription>{SHARE_LINE}</DialogDescription>
         </DialogHeader>
 
-        <Tabs defaultValue="inbox">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList>
             <TabsTrigger value="inbox">Inbox</TabsTrigger>
             <TabsTrigger value="upload">From your computer</TabsTrigger>
@@ -100,7 +102,10 @@ export function AddWorkPanel({
                 Nothing waiting in your inbox right now.
               </p>
             ) : (
-              <ScrollArea className="h-72 rounded-md border">
+              <ScrollArea
+                className="h-72 rounded-md border"
+                viewportClassName="[&>div]:!w-full [&>div]:!min-w-0"
+              >
                 <ul className="divide-y">
                   {inbox.map((item) => (
                     <li key={item.id}>
@@ -118,11 +123,6 @@ export function AddWorkPanel({
                 </ul>
               </ScrollArea>
             )}
-            <div className="flex justify-end">
-              <Button type="button" onClick={addPicked} disabled={picked.size === 0 || busy}>
-                Add to board
-              </Button>
-            </div>
           </TabsContent>
 
           <TabsContent value="upload" className="space-y-3">
@@ -191,6 +191,13 @@ export function AddWorkPanel({
             )}
           </TabsContent>
         </Tabs>
+        {activeTab === "inbox" ? (
+          <DialogFooter>
+            <Button type="button" onClick={addPicked} disabled={picked.size === 0 || busy}>
+              Add to board
+            </Button>
+          </DialogFooter>
+        ) : null}
       </DialogContent>
     </Dialog>
   );
