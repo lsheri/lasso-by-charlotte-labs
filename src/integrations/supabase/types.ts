@@ -311,6 +311,51 @@ export type Database = {
           },
         ]
       }
+      board_documents: {
+        Row: {
+          author_profile_id: string
+          content: Json
+          created_at: string
+          id: string
+          task_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          author_profile_id: string
+          content?: Json
+          created_at?: string
+          id?: string
+          task_id: string
+          title?: string
+          updated_at?: string
+        }
+        Update: {
+          author_profile_id?: string
+          content?: Json
+          created_at?: string
+          id?: string
+          task_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "board_documents_author_profile_id_fkey"
+            columns: ["author_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "board_documents_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: true
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       board_share_links: {
         Row: {
           created_at: string
