@@ -21,13 +21,8 @@ import { LabAnswerCard } from "@/components/canvas-lab/LabAnswerCard";
 import { useRegisterAskLasso } from "@/components/reflect/ask-lasso-context";
 import type { KeptAnswer } from "@/components/reflect/answer-keep-context";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  answerCiteRows,
-  answerNodeInput,
-  answerReadWorkItemIds,
-  canKeepAnswer,
-  orderedAnswerTurnIds,
-} from "@/lib/answer-card";
+import { answerCiteRows, answerNodeInput, canKeepAnswer } from "@/lib/answer-card";
+
 import { CanvasLabReview } from "@/components/canvas-lab/CanvasLabReview";
 import { CanvasLabStatusLine } from "@/components/canvas-lab/CanvasLabStatusLine";
 import { FocusOverlay } from "@/components/canvas-lab/FocusOverlay";
