@@ -363,3 +363,41 @@ describe("CG2 AI conversations congruency", () => {
     expect(offenders).toEqual([]);
   });
 });
+
+describe("CG3 AI conversation count line", () => {
+  it("counts the conversations on screen when search is active", () => {
+    inboxRows = [
+      conversation("Budget source", "chatgpt", "BETA"),
+      conversation("Budget review", "chatgpt", "BETA"),
+      conversation("Planning source", "claude", "ALPHA"),
+    ];
+    render(<AiRecordPage />);
+
+    fireEvent.change(screen.getByRole("searchbox", { name: "Search your chats" }), {
+      target: { value: "Budget" },
+    });
+    fireEvent.click(within(screen.getByRole("group", { name: "Filter by tool" })).getByRole("button", { name: /Claude/i }));
+
+    expect(screen.getByText(`Showing 2 of ${inboxRows.length}. Nothing is deleted here.`)).toBeTruthy();
+  });
+
+  it("counts chip matches when there is no search", () => {
+    inboxRows = [
+      conversation("Claude plan", "claude", "ALPHA"),
+      conversation("ChatGPT notes", "chatgpt", "BETA"),
+      conversation("Gemini notes", "gemini", "BETA"),
+    ];
+    render(<AiRecordPage />);
+
+    fireEvent.click(within(screen.getByRole("group", { name: "Filter by tool" })).getByRole("button", { name: /Claude/i }));
+
+    expect(screen.getByText(`1 of ${inboxRows.length} matches what you picked. The rest are still here.`)).toBeTruthy();
+  });
+
+  it("states the total when neither chip nor search narrows the page", () => {
+    inboxRows = [conversation("Only conversation", "claude", "ALPHA")];
+    render(<AiRecordPage />);
+
+    expect(screen.getByText(`${inboxRows.length} conversation.`)).toBeTruthy();
+  });
+});
