@@ -178,7 +178,7 @@ export function TaskWorkflow({
                 ) : null}
                 {canEdit ? (
                   <div className="flex shrink-0 items-center gap-2">
-                    {item.content_ref ? <OpenFileAction workItemId={item.id} /> : null}
+                    <OpenFileAction item={item} onOpenInApp={onOpen ? () => onOpen(item) : undefined} />
                     <DropdownMenu>
                       <DropdownMenuTrigger
                         aria-label={`Actions for ${item.title}`}
