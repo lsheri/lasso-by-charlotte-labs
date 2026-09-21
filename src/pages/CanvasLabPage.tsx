@@ -164,7 +164,7 @@ import { useWorkboardFilePreviews } from "@/hooks/use-workboard-file-previews";
 import { useMotion } from "@/hooks/use-motion";
 import { useProfile } from "@/hooks/use-profile";
 import { dragTo, keyTo, type Point } from "@/lib/canvas-drag";
-import { filedWorkCount, isRegionFrameId, newRegionFrameId, regionClaimable, regionClaims, regionFillStyle, regionNameChange, type RegionFill } from "@/lib/board-region";
+import { filedWorkCount, isRegionFrameId, newRegionFrameId, regionClaimable, regionClaims, regionFillStyle, regionNameChange, regionToolAfterDraw, type RegionFill } from "@/lib/board-region";
 import { isWorkboardDecorationKind, serializeWorkboardTextBody, type WorkboardCommand, type WorkboardNodeInput, type WorkboardRelation, type WorkboardTextBody } from "@/lib/canvas-lab-shared";
 import { noteCanvasOpenedFn } from "@/lib/canvas.functions";
 import { clampZoom, scrollableUnder, stepZoom, wheelPanVector, workboardPinchZoom, zoomAbout } from "@/lib/canvas-zoom";
@@ -1642,11 +1642,12 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
 
   /** A drawn region, saved as paint: no name, no task, claiming nothing. */
   async function createPaintRegion(rect: DrawRect) {
+    const nextTool = regionToolAfterDraw(regionFill);
     const id = newRegionFrameId(crypto.randomUUID());
     const frame: LabFrame = {
       id,
       name: "",
-      fill: regionFill,
+      fill: nextTool.fill,
       x: rect.x,
       y: rect.y,
       width: Math.max(FRAME_MIN_WIDTH, rect.width),
@@ -1655,11 +1656,12 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     };
     setFrames((current) => (current ? [...current, frame] : [frame]));
     framesRef.current = [...framesRef.current, frame];
+    setDrawTool(nextTool.armed);
     setSelectedFrameId(id);
     const boardExisted = boardIdRef.current != null;
     if (!(await materialize())) return;
     if (boardExisted) {
-      const result = await lab.persist({ type: "frame_create", frame: { key: id, kind: "custom", taskId: null, label: null, fill: regionFill, x: frame.x, y: frame.y, w: frame.width, h: frame.height, ord: 0 } });
+      const result = await lab.persist({ type: "frame_create", frame: { key: id, kind: "custom", taskId: null, label: null, fill: nextTool.fill, x: frame.x, y: frame.y, w: frame.width, h: frame.height, ord: 0 } });
       report(result, "frame", "create");
       if (result.status === "saved" && result.created?.frameId) {
         const durableId = result.created.frameId;

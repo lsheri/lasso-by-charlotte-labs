@@ -18,11 +18,9 @@ describe("R1 region tool", () => {
   });
 
   it("keeps the armed fill after one region so a second drag uses it", () => {
-    expect(regionToolAfterDraw({ fill: "rose-vivid", pan: { x: 81, y: -42 }, zoom: 0.7 })).toEqual({
+    expect(regionToolAfterDraw("rose-vivid")).toEqual({
       armed: true,
       fill: "rose-vivid",
-      pan: { x: 81, y: -42 },
-      zoom: 0.7,
     });
   });
 
