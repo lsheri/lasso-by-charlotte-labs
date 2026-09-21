@@ -55,7 +55,11 @@ describe("W1.1 — the tool contract", () => {
   });
 
   it("stops hedging in the chat_url description", () => {
+    // Pinning the exact sentence would break on any rewording, so this checks
+    // the old optional-if-visible hedge is gone and that both push tools share
+    // one description rather than drifting apart.
     expect(src).not.toContain("if you can see it. Stored only for");
-    expect(src).toContain("its URL is in the address bar");
+    const uses = src.match(/chat_url: CHAT_URL_FIELD/g) ?? [];
+    expect(uses.length).toBe(2);
   });
 });

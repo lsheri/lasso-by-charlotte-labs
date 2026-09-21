@@ -56,9 +56,13 @@ describe("chat library search — no event per keystroke", () => {
 
   it("keeps the words out of dims and in the payload", () => {
     const src = readFileSync("src/lib/chat-library.functions.ts", "utf8");
-    expect(src).toContain("chatlib.search");
-    expect(src).toContain("payload: { query:");
-    const dimsBlock = src.slice(src.lastIndexOf("dims: {"), src.indexOf("payload: { query:"));
+    // Scope to the chatlib.search record itself, so unrelated events later in
+    // the file cannot move the window this reads.
+    const start = src.indexOf('eventType: "chatlib.search"');
+    expect(start).toBeGreaterThan(-1);
+    const record = src.slice(start, src.indexOf("});", start));
+    expect(record).toContain("payload: { query:");
+    const dimsBlock = record.slice(record.indexOf("dims: {"), record.indexOf("payload: { query:"));
     expect(dimsBlock).toContain("query_len_band");
     expect(dimsBlock).not.toMatch(/\bquery:/);
   });

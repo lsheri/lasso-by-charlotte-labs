@@ -13,10 +13,15 @@ const PAGE_SRC = readFileSync(
 );
 
 describe("pass 194 — no hover preview on the canvas, Ask starts closed", () => {
-  it("hover-expand machinery is gone from CanvasNode", () => {
-    expect(CANVAS_SRC).not.toContain("onPointerEnter");
+  it("the hover preview is gone from CanvasNode", () => {
+    // What this guards is the preview that used to open on hover, not the
+    // existence of a pointer handler. Hovering may still show drag handles.
     expect(CANVAS_SRC).not.toContain("setExpanded");
     expect(CANVAS_SRC).not.toContain("touchToggleRef");
+    expect(CANVAS_SRC).not.toMatch(/\bexpanded\b/);
+    const hoverUses = CANVAS_SRC.match(/\bhovered\b/g) ?? [];
+    expect(hoverUses.length).toBeGreaterThan(0);
+    expect(CANVAS_SRC).toContain("const showHandles = (hovered || focused)");
   });
 
   it("the drag click suppression survives", () => {
