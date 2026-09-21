@@ -1810,6 +1810,11 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   letter-spacing: 0.01em;
   color: var(--nb-ink);
 }
+/* S5a · the "Shared with me" ink. Title and person names only: never a
+   control, never body text, never a border or a fill. */
+.nb-shared-ink {
+  color: var(--nb-shared);
+}
 .nb-nav-item {
   position: relative;
   display: flex;
