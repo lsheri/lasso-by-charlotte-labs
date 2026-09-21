@@ -259,6 +259,60 @@ export type Database = {
           },
         ]
       }
+      board_share_links: {
+        Row: {
+          created_at: string
+          created_by: string
+          expires_at: string
+          id: string
+          last_opened_at: string | null
+          opened_count: number
+          org_id: string
+          revoked_at: string | null
+          token_hash: string
+          workboard_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          expires_at: string
+          id?: string
+          last_opened_at?: string | null
+          opened_count?: number
+          org_id: string
+          revoked_at?: string | null
+          token_hash: string
+          workboard_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          expires_at?: string
+          id?: string
+          last_opened_at?: string | null
+          opened_count?: number
+          org_id?: string
+          revoked_at?: string | null
+          token_hash?: string
+          workboard_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "board_share_links_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "board_share_links_workboard_id_fkey"
+            columns: ["workboard_id"]
+            isOneToOne: false
+            referencedRelation: "workboards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       canvas_nodes: {
         Row: {
           engagement_id: string
