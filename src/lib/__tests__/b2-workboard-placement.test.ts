@@ -40,7 +40,7 @@ describe("workboard placement", () => {
   });
 
   it("lays several items out without any of them touching", () => {
-    const taken = [card(264, 0), card(0, 154)];
+    const taken = [card(286, 0), card(0, 220)];
     const points = placeAddedCards({ x: 0, y: 0 }, taken, 7);
     expect(points).toHaveLength(7);
     const placed = points.map((point) => ({ ...point, ...PLACEMENT_CARD }));

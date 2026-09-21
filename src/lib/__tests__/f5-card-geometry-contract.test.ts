@@ -12,6 +12,7 @@ import {
   WORKBOARD_CARD_MIN_WIDTH,
   validWorkboardNodeGeometry,
 } from "@/lib/canvas-lab-shared";
+import { PLACEMENT_CARD } from "@/lib/workboard-placement";
 
 describe("F5 card geometry contract", () => {
   it("accepts every newly seeded blank-board card through save-path geometry validation", () => {
@@ -31,6 +32,7 @@ describe("F5 card geometry contract", () => {
   it("keeps seeded defaults above the interaction floor and the interaction floor above the record floor", () => {
     expect(CARD_WIDTH).toBeGreaterThanOrEqual(CARD_MIN_WIDTH);
     expect(CARD_HEIGHT).toBeGreaterThanOrEqual(CARD_MIN_HEIGHT);
+    expect(PLACEMENT_CARD).toEqual({ width: CARD_WIDTH, height: CARD_HEIGHT });
     expect(CARD_MIN_WIDTH).toBeGreaterThanOrEqual(WORKBOARD_CARD_MIN_WIDTH);
     expect(CARD_MIN_HEIGHT).toBeGreaterThanOrEqual(WORKBOARD_CARD_MIN_HEIGHT);
   });
