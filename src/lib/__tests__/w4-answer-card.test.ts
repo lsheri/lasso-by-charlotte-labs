@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { answerAsOf, answerCiteRows, answerNodeInput } from "@/lib/answer-card";
+import { regionClaimable } from "@/lib/board-region";
 import { WORKBOARD_NODE_KINDS } from "@/lib/canvas-lab-shared";
 import { LAB_TEMPLATE_KINDS } from "@/components/canvas-lab/canvas-lab-model";
 
