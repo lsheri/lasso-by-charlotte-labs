@@ -4,7 +4,17 @@ import { useEffect, useRef, useState } from "react";
 import { BOARD_GUIDE_RECTS, REASONING_STEPS, type LabJudgmentType, type LabTemplateKind, JUDGMENT_TYPES } from "@/components/canvas-lab/canvas-lab-model";
 import { Button } from "@/components/ui/button";
 
-export function ReasoningTrailGuide({ onAdd }: { onAdd: (kind: LabTemplateKind, judgment?: LabJudgmentType) => void }) {
+/**
+ * The trail panel. On a seeded board it is the fixed guide it has always been.
+ * On a blank board a person adds it, so it is given a place of its own, a
+ * handle to move it by, and a way to take it off again.
+ */
+export function ReasoningTrailGuide({ onAdd, rect: placed, onHandlePointerDown, onRemove }: {
+  onAdd: (kind: LabTemplateKind, judgment?: LabJudgmentType) => void;
+  rect?: { x: number; y: number; width: number; height: number };
+  onHandlePointerDown?: (event: React.PointerEvent) => void;
+  onRemove?: () => void;
+}) {
   const [judgmentOpen, setJudgmentOpen] = useState(false);
   const judgmentRef = useRef<HTMLDivElement | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
