@@ -924,7 +924,10 @@ export function applyDurableBoard(base: { frames: LabFrame[]; nodes: LabNode[] }
     if (base.frames.some((frame) => frame.id === durable.key)) continue;
     // The trail keeps its own key so a reloaded board still knows the panel is
     // a trail rather than an unnamed outline.
-    const id = durable.key.startsWith("custom:") || isTrailFrameId(durable.key) ? durable.key : `durable-frame:${durable.id}`;
+    // F1: the context region keeps its own key too. Without this a reloaded
+    // board forgot the region was context, made a second local one with no
+    // durable row behind it, and every resize on it went nowhere.
+    const id = durable.key.startsWith("custom:") || isTrailFrameId(durable.key) || isContextFrameId(durable.key) ? durable.key : `durable-frame:${durable.id}`;
     frameIdByKey.set(durable.id, id);
     frames.push({ id, name: durable.label ?? "Workstream", x: durable.x, y: durable.y, width: durable.w, height: durable.h, durableId: durable.id, durableVersion: durable.version });
   }
