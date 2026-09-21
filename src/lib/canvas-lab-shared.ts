@@ -42,10 +42,10 @@ export function parseWorkboardTextBody(value: unknown): WorkboardTextBody | null
     if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return null;
     const body = parsed as Record<string, unknown>;
     if (Object.keys(body).sort().join(",") !== "colour,size,text,weight") return null;
-    if (typeof body.text !== "string" || body.text.length > WORKBOARD_TEXT_MAX_LENGTH) return null;
-    if (!WORKBOARD_TEXT_SIZES.includes(body.size as WorkboardTextSize)) return null;
-    if (!WORKBOARD_TEXT_WEIGHTS.includes(body.weight as WorkboardTextWeight)) return null;
-    if (!WORKBOARD_TEXT_COLOURS.includes(body.colour as WorkboardTextColour)) return null;
+    if (typeof body["text"] !== "string" || body["text"].length > WORKBOARD_TEXT_MAX_LENGTH) return null;
+    if (!WORKBOARD_TEXT_SIZES.includes(body["size"] as WorkboardTextSize)) return null;
+    if (!WORKBOARD_TEXT_WEIGHTS.includes(body["weight"] as WorkboardTextWeight)) return null;
+    if (!WORKBOARD_TEXT_COLOURS.includes(body["colour"] as WorkboardTextColour)) return null;
     return body as WorkboardTextBody;
   } catch {
     return null;
