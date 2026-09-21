@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 
 const CORNERS: LabResizeCorner[] = ["nw", "ne", "se", "sw"];
 
-export function LabFrame({ frame, count, selected, editable, custom, namedByWorkstream, removable, kind, onSelect, onResizeStart, onResizeKeyDown, onResizeKeyUp, onFit, onRename, onRemove, onMenuOpened, onMenuOpenChange, onAddWorkstream }: {
+export function LabFrame({ frame, count, selected, editable, custom, namedByWorkstream, removable, kind, onAddContext, onSelect, onResizeStart, onResizeKeyDown, onResizeKeyUp, onFit, onRename, onRemove, onMenuOpened, onMenuOpenChange, onAddWorkstream }: {
   frame: LabFrameModel;
   count: number;
   selected: boolean;
@@ -15,7 +15,9 @@ export function LabFrame({ frame, count, selected, editable, custom, namedByWork
   custom: boolean;
   namedByWorkstream: boolean;
   removable: boolean;
-  kind: "foundation" | "task" | "decisions" | "outputs" | "custom";
+  kind: "foundation" | "task" | "decisions" | "outputs" | "custom" | "context";
+  /** Present on the context region: brings documents into it. */
+  onAddContext?: (() => void) | undefined;
   onSelect: () => void;
   onResizeStart: (corner: LabResizeCorner, event: React.PointerEvent<HTMLButtonElement>) => void;
   onFit: () => void;
@@ -81,7 +83,9 @@ export function LabFrame({ frame, count, selected, editable, custom, namedByWork
   const [adding, setAdding] = useState(false);
   const [newName, setNewName] = useState("");
   const [addError, setAddError] = useState(false);
-  const guidance = !editable
+  const guidance = kind === "context"
+    ? (count === 0 ? "Nothing in context yet." : null)
+    : !editable
     ? "Nothing here yet."
     : kind === "decisions"
       ? "No decisions recorded on this engagement yet."
@@ -162,7 +166,7 @@ export function LabFrame({ frame, count, selected, editable, custom, namedByWork
             {frame.name}
           </h2>
         )}
-        <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">{count} {frame.local ? "· local" : ""}</span>
+        <span className="flex items-center gap-2 font-mono text-[9px] uppercase tracking-[0.08em] text-soft">{onAddContext && editable ? <button type="button" className="canvas-lab-add-context" onPointerDown={(event) => event.stopPropagation()} onClick={(event) => { event.stopPropagation(); onAddContext(); }}>+ add docs</button> : null}{count} {frame.local ? "· local" : ""}</span>
       </div>
       <LabFrameMenu open={menuOpen} onOpenChange={changeMenuOpen} restoreFocus={restoreFocus} editable={editable} custom={custom} removable={removable} onFit={onFit} onRename={renameFromMenu} onRemove={onRemove} />
       {count === 0 && guidance ? <div className="canvas-lab-frame-guidance font-hand text-[16px] text-[var(--nb-mid)]"><p>{guidance}</p>{editable && frame.id === "workstreams" && onAddWorkstream ? (adding ? <div className="canvas-lab-inline-workstream"><input aria-label="Workstream name" maxLength={60} value={newName} onChange={(event) => { setNewName(event.target.value); if (event.target.value.trim()) setAddError(false); }} onKeyDown={(event) => { if (event.key === "Enter") submitInlineWorkstream(); if (event.key === "Escape") { setAdding(false); setAddError(false); } }} /><button type="button" onClick={submitInlineWorkstream}>Add</button>{addError ? <span>a workstream needs a name</span> : null}</div> : <button type="button" className="canvas-lab-add-workstream" onClick={() => setAdding(true)}>+ workstream</button>) : null}</div> : null}

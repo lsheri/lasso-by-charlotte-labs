@@ -148,7 +148,18 @@ import { CARD_HEIGHT, CARD_WIDTH } from "@/components/canvas-lab/canvas-lab-mode
 import { placeWorkOnBoardFn } from "@/lib/workboard-add-work.functions";
 import { placeAddedCards, type PlacementRect } from "@/lib/workboard-placement";
 import { briefAttachmentPoints, pendingBriefAttachments } from "@/lib/brief-files";
-import { useBriefFiles } from "@/hooks/use-brief-files";
+import { addBriefFiles, removeBriefFile, useBriefFiles, useInvalidateBriefFiles } from "@/hooks/use-brief-files";
+import {
+  CONTEXT_FRAME_ID,
+  CONTEXT_FRAME_LABEL,
+  contextExitPoint,
+  contextRegionAround,
+  contextRegionFor,
+  contextRegionRect,
+  contextSlots,
+  isContextFrameId,
+  needsContextRegion,
+} from "@/lib/context-region";
 import { isBoardDefaultTask, workstreamTasks } from "@/lib/board-default-task";
 import { createDrawnWorkstreamFn, moveItemToWorkstreamFn } from "@/lib/workstream-draw.functions";
 import { defaultWorkstreamName, drawnRect, drawnRectUsable, movePromptText, splitClaims, type ClaimCandidate, type DrawRect } from "@/lib/workstream-draw";
@@ -428,22 +439,29 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
    * arrangement stands.
    */
   const briefFiles = useBriefFiles(engagementId);
+  const invalidateBriefFiles = useInvalidateBriefFiles();
   const briefAttachSeenRef = useRef(new Set<string>());
   const briefAttachBusyRef = useRef(false);
 
   useEffect(() => {
     if (!boardFitted || !nodes || !frames || briefAttachBusyRef.current) return;
     if (!lab.board?.canEditStructure) return;
-    const ids = (briefFiles.data ?? [])
-      .map((entry) => entry.workItemId)
-      .filter((id) => !briefAttachSeenRef.current.has(id));
-    if (ids.length === 0) return;
+    const fileIds = (briefFiles.data ?? []).map((entry) => entry.workItemId);
+    const ids = fileIds.filter((id) => !briefAttachSeenRef.current.has(id));
+    // B2: on a blank board the brief and its documents belong in the context
+    // region, so the region is made the first time either one exists.
+    const wantsRegion =
+      !boardHasSeededStructure(lab.board) &&
+      needsContextRegion({ hasBrief: Boolean(page?.engagement?.brief?.trim()), fileCount: fileIds.length });
+    const unplaced = wantsRegion && contextMemberNodeIds(fileIds).some((id) => nodesRef.current.find((node) => node.id === id)?.frame !== CONTEXT_FRAME_ID);
+    if (ids.length === 0 && !unplaced) return;
     const pending = pendingBriefAttachments(ids, nodesRef.current, linksRef.current);
     for (const id of ids) briefAttachSeenRef.current.add(id);
-    if (pending.length === 0) return;
     briefAttachBusyRef.current = true;
     void (async () => {
       try {
+        const region = wantsRegion ? await ensureContextRegion(fileIds) : null;
+        if (pending.length === 0) return;
         // The brief's place is read at compute time, and the saved row wins
         // whenever there is one: it is what the canvas draws and the record
         // holds. Outlines are not occupied space, since cards live inside
@@ -453,13 +471,14 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
         const briefNode = savedBrief
           ? { x: savedBrief.x, y: savedBrief.y, width: savedBrief.w > 0 ? savedBrief.w : (liveBrief?.width ?? 232) }
           : liveBrief;
-        if (!briefNode) return;
         const pendingIds = new Set(pending.map((card) => card.nodeId));
         const taken: PlacementRect[] = nodesRef.current
           .filter((node) => !pendingIds.has(node.id) && !hiddenIds.includes(node.id))
           .map((node) => ({ x: node.x, y: node.y, width: node.width, height: node.height }));
 
-        const points = briefAttachmentPoints(briefNode, taken, pending.length);
+        // Inside the region the cards are already placed, so only the link is
+        // still owed.
+        const points = region || !briefNode ? [] : briefAttachmentPoints(briefNode, taken, pending.length);
         for (const [index, card] of pending.entries()) {
           const at = points[index];
           if (at) {
@@ -480,7 +499,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
         briefAttachBusyRef.current = false;
       }
     })();
-  }, [boardFitted, briefFiles.data, frames, hiddenIds, lab.board?.canEditStructure, nodes]);
+  }, [boardFitted, briefFiles.data, frames, hiddenIds, lab.board, nodes, page?.engagement?.brief]);
 
   useEffect(() => {
     const shell = shellRef.current;
@@ -558,7 +577,8 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     return undoRef.current.undo[undoRef.current.undo.length - 1] ?? null;
   }
 
-  function frameKindOf(frame: LabFrame): "foundation" | "task" | "decisions" | "outputs" | "custom" {
+  function frameKindOf(frame: LabFrame): "foundation" | "task" | "decisions" | "outputs" | "custom" | "context" {
+    if (isContextFrameId(frame.id)) return "context";
     if (frame.id === "foundation" || frame.id === "decisions" || frame.id === "outputs") return frame.id;
     return frame.id.startsWith("task:") ? "task" : "custom";
   }
@@ -588,7 +608,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       key: frame.id,
       kind: frameKindOf(frame),
       taskId: frame.id.startsWith("task:") ? frame.id.slice(5) : null,
-      label: frameKindOf(frame) === "custom" ? frame.name : null,
+      label: frameKindOf(frame) === "custom" ? frame.name : frameKindOf(frame) === "context" ? CONTEXT_FRAME_LABEL : null,
       x: frame.x,
       y: frame.y,
       w: frame.width,
@@ -1021,9 +1041,124 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     return { x: (screen.x - at.x) / z, y: (screen.y - at.y) / z };
   }, []);
 
-  function openAddWork(via: "header" | "context_menu", anchor: Point | null) {
+  /** The brief and the documents that came in with it. */
+  function contextMemberNodeIds(fileIds: string[]): string[] {
+    const ids: string[] = [];
+    const brief = nodesRef.current.find((node) => node.id === "brief");
+    if (brief) ids.push(brief.id);
+    for (const fileId of fileIds) {
+      const node = nodesRef.current.find((entry) => entry.workItemId === fileId);
+      if (node && !ids.includes(node.id)) ids.push(node.id);
+    }
+    return ids;
+  }
+
+  function nodeRect(node: LabNode): PlacementRect {
+    return { x: node.x, y: node.y, width: node.width, height: node.height };
+  }
+
+  function insideRegion(node: LabNode, rect: PlacementRect): boolean {
+    return node.x >= rect.x && node.y >= rect.y && node.x + node.width <= rect.x + rect.width && node.y + node.height <= rect.y + rect.height;
+  }
+
+  /**
+   * B2: the context region, made the first time a blank board has a brief or a
+   * document. It is an ordinary outline, so it moves and resizes like the
+   * rest, and it is never a workstream.
+   */
+  async function ensureContextRegion(fileIds: string[]): Promise<LabFrame | null> {
+    if (boardHasSeededStructure(lab.board)) return null;
+    if (!needsContextRegion({ hasBrief: Boolean(page?.engagement?.brief?.trim()), fileCount: fileIds.length })) return null;
+    const memberIds = contextMemberNodeIds(fileIds);
+    if (memberIds.length === 0) return null;
+    let frame = framesRef.current.find((entry) => isContextFrameId(entry.id)) ?? null;
+    if (!frame) {
+      const brief = nodesRef.current.find((node) => node.id === "brief");
+      // The region is drawn around the brief where it already stands, so
+      // making it moves nothing.
+      const rect = brief ? contextRegionAround(brief, memberIds.length) : contextRegionRect({ x: 0, y: 0 }, memberIds.length);
+      const created: LabFrame = { id: CONTEXT_FRAME_ID, name: CONTEXT_FRAME_LABEL, x: rect.x, y: rect.y, width: rect.width, height: rect.height, local: true };
+      framesRef.current = [...framesRef.current, created];
+      setFrames((current) => (current ? [...current, created] : current));
+      const boardExisted = boardIdRef.current != null;
+      if (!(await materialize())) return null;
+      if (boardExisted) {
+        const result = await lab.persist({ type: "frame_create", frame: { key: created.id, kind: "context", taskId: null, label: CONTEXT_FRAME_LABEL, x: created.x, y: created.y, w: created.width, h: created.height, ord: 0 } });
+        report(result, "frame", "create");
+        if (result.status === "saved" && result.created?.frameId) {
+          const id = result.created.frameId;
+          const version = result.versions[id] ?? 1;
+          setFrames((current) => (current ? markFrameSaved(current, created.id, id, version) : current));
+          framesRef.current = markFrameSaved(framesRef.current, created.id, id, version);
+        }
+      }
+      frame = framesRef.current.find((entry) => isContextFrameId(entry.id)) ?? created;
+    }
+    await placeInContext(frame, memberIds);
+    return framesRef.current.find((entry) => isContextFrameId(entry.id)) ?? frame;
+  }
+
+  /** Cards already inside the region keep their place; the rest take a free slot. */
+  async function placeInContext(frame: LabFrame, nodeIds: string[]) {
+    const rect: PlacementRect = { x: frame.x, y: frame.y, width: frame.width, height: frame.height };
+    const framePatch = frame.durableId ? { frameId: frame.durableId } : {};
+    const settled = nodesRef.current.filter((node) => node.frame === CONTEXT_FRAME_ID || (nodeIds.includes(node.id) && insideRegion(node, rect)));
+    const occupied = settled.map(nodeRect);
+    const moving = nodeIds.filter((id) => !settled.some((node) => node.id === id));
+    const slots = contextSlots(rect, occupied, moving.length);
+    const held = [...occupied];
+    for (const [index, id] of moving.entries()) {
+      const at = slots[index];
+      if (!at) continue;
+      nodesRef.current = nodesRef.current.map((node) => node.id === id ? { ...node, x: at.x, y: at.y, frame: CONTEXT_FRAME_ID } : node);
+      setNodes((current) => current?.map((node) => node.id === id ? { ...node, x: at.x, y: at.y, frame: CONTEXT_FRAME_ID } : node) ?? current);
+      held.push({ x: at.x, y: at.y, width: CARD_WIDTH, height: CARD_HEIGHT });
+      await persistNodePatch(id, { x: at.x, y: at.y, ...framePatch });
+    }
+    for (const node of settled) {
+      if (node.frame === CONTEXT_FRAME_ID) continue;
+      nodesRef.current = nodesRef.current.map((entry) => entry.id === node.id ? { ...entry, frame: CONTEXT_FRAME_ID } : entry);
+      setNodes((current) => current?.map((entry) => entry.id === node.id ? { ...entry, frame: CONTEXT_FRAME_ID } : entry) ?? current);
+      if (frame.durableId) await persistNodePatch(node.id, framePatch);
+    }
+    const grown = contextRegionFor(rect, held);
+    if (grown.width !== rect.width || grown.height !== rect.height) {
+      framesRef.current = framesRef.current.map((entry) => entry.id === frame.id ? { ...entry, width: grown.width, height: grown.height } : entry);
+      setFrames((current) => current?.map((entry) => entry.id === frame.id ? { ...entry, width: grown.width, height: grown.height } : entry) ?? current);
+      await persistFramePatch(frame.id, { w: grown.width, h: grown.height });
+    }
+  }
+
+  /**
+   * Taking a document out of context leaves it on the board. It is not hiding
+   * the card, and it is not deleting the work.
+   */
+  async function takeOutOfContext(node: LabNode) {
+    const frame = framesRef.current.find((entry) => isContextFrameId(entry.id));
+    if (!node.workItemId || !frame) return;
+    try {
+      await removeBriefFile(engagementId, node.workItemId);
+    } catch {
+      setAnnouncement("That document could not be taken out of context.");
+      return;
+    }
+    briefAttachSeenRef.current.add(node.workItemId);
+    const taken = nodesRef.current
+      .filter((entry) => entry.id !== node.id && !hiddenRef.current.includes(entry.id))
+      .map(nodeRect);
+    const at = contextExitPoint({ x: frame.x, y: frame.y, width: frame.width, height: frame.height }, taken);
+    nodesRef.current = nodesRef.current.map((entry) => entry.id === node.id ? { ...entry, x: at.x, y: at.y, frame: null } : entry);
+    setNodes((current) => current?.map((entry) => entry.id === node.id ? { ...entry, x: at.x, y: at.y, frame: null } : entry) ?? current);
+    await persistNodePatch(node.id, { x: at.x, y: at.y, frameId: null });
+    await invalidateBriefFiles();
+    noteWorkboardChangeSaved(orgId, "context_doc", "removed");
+    setAnnouncement(`${node.title} taken out of context. It is still on the board.`);
+  }
+
+  function openAddWork(via: "header" | "context_menu", anchor: Point | null, target: "board" | "context" = "board") {
     setAddWorkVia(via);
     setAddWorkAnchor(anchor);
+    setAddWorkTarget(target);
     setAddWorkOpen(true);
   }
 
@@ -1083,6 +1218,18 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
         const base = virtualBaseRef.current;
         if (base) virtualBaseRef.current = { frames: base.frames, nodes: [...base.nodes, ...added] };
         for (const node of added) await ensureNodeDurable(node.id);
+      }
+      if (addWorkTarget === "context" && profile?.id) {
+        try {
+          await addBriefFiles({ engagementId, workItemIds: ids, profileId: profile.id });
+          for (const id of ids) briefAttachSeenRef.current.delete(id);
+          await invalidateBriefFiles();
+          const fileIds = [...new Set([...(briefFiles.data ?? []).map((entry) => entry.workItemId), ...ids])];
+          await ensureContextRegion(fileIds);
+          noteWorkboardChangeSaved(orgId, "context_doc", "added");
+        } catch {
+          setAnnouncement("Those documents came onto the board but not into context.");
+        }
       }
       await queryClient.invalidateQueries({ queryKey: ["work-items"] });
       await queryClient.invalidateQueries({ queryKey: ["engagement"] });
@@ -1756,14 +1903,14 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
           {boardReady ? <div data-testid="canvas-lab-stage" tabIndex={-1} className="canvas-lab-stage absolute left-0 top-0 origin-top-left" style={{ width: bounds.width, height: bounds.height, transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`, "--lab-inverse-zoom": labInverseZoom(zoom) } as CSSProperties}>
             {showGuides ? <ReasoningTrailGuide onAdd={addNode} /> : null}
             {showGuides ? <FoundationGuide brief={engagement?.brief ?? null} tasks={workstreamTasks(page?.tasks ?? []).map((task) => ({ id: task.id, name: task.name, detail: task.detail }))} work={workItems} /> : null}
-            {structureMode === "structured" ? boardFrames.map((frame) => { const kind = frameKindOf(frame); const count = visibleNodes.filter((node) => node.frame === frame.id).length; const custom = kind === "custom"; const removable = !allNodes.some((node) => node.frame === frame.id); return <LabFrameElement key={frame.id} frame={frame} count={count} selected={selectedFrameId === frame.id} editable={Boolean(lab.board?.canEditStructure)} custom={custom} kind={kind} namedByWorkstream={kind === "task"} removable={removable} onSelect={() => { setSelectedFrameId(frame.id); setKeyboardId(null); setSelectedLinkId((current) => relationshipSelection(current, "deselect")); }} onResizeStart={(corner, event) => startResize("frame", frame.id, corner, { x: frame.x, y: frame.y, width: frame.width, height: frame.height }, event)} onResizeKeyDown={(corner, event) => keyboardResize("frame", frame.id, corner, { x: frame.x, y: frame.y, width: frame.width, height: frame.height }, event)} onResizeKeyUp={finishKeyboardResize} onFit={() => fitFrame(frame)} onRename={(name) => renameFrame(frame, name)} onRemove={() => removeFrame(frame)} onMenuOpened={() => noteWorkboardCardMenuOpened(orgId, "frame", "shared")} onMenuOpenChange={setCardMenuOpen} onAddWorkstream={frame.id === "workstreams" ? addWorkstream : undefined} />; }) : null}
+            {structureMode === "structured" ? boardFrames.map((frame) => { const kind = frameKindOf(frame); const count = visibleNodes.filter((node) => node.frame === frame.id).length; const custom = kind === "custom"; const removable = !allNodes.some((node) => node.frame === frame.id); return <LabFrameElement key={frame.id} frame={frame} count={count} selected={selectedFrameId === frame.id} editable={Boolean(lab.board?.canEditStructure)} custom={custom} kind={kind} namedByWorkstream={kind === "task"} removable={removable} onSelect={() => { setSelectedFrameId(frame.id); setKeyboardId(null); setSelectedLinkId((current) => relationshipSelection(current, "deselect")); }} onResizeStart={(corner, event) => startResize("frame", frame.id, corner, { x: frame.x, y: frame.y, width: frame.width, height: frame.height }, event)} onResizeKeyDown={(corner, event) => keyboardResize("frame", frame.id, corner, { x: frame.x, y: frame.y, width: frame.width, height: frame.height }, event)} onResizeKeyUp={finishKeyboardResize} onFit={() => fitFrame(frame)} onRename={(name) => renameFrame(frame, name)} onRemove={() => removeFrame(frame)} onMenuOpened={() => noteWorkboardCardMenuOpened(orgId, "frame", "shared")} onMenuOpenChange={setCardMenuOpen} onAddWorkstream={frame.id === "workstreams" ? addWorkstream : undefined} onAddContext={kind === "context" && canAddWork ? () => openAddWork("context_menu", null, "context") : undefined} />; }) : null}
             {structureMode === "structured" && Boolean(lab.board?.canEditStructure) && !boardFrames.some((frame) => frame.id === "workstreams") ? (() => { const anchor = workstreamAddAnchor(boardFrames, visibleNodes); if (!anchor) return null; return <div className="canvas-lab-inline-add" style={{ left: anchor.x, top: anchor.y, width: BOARD_INLINE_ADD_SIZE.width, minHeight: BOARD_INLINE_ADD_SIZE.height, transform: `scale(${1 / zoom})`, transformOrigin: "top left" }}>{inlineAddOpen ? <div className="canvas-lab-inline-workstream"><input aria-label="Workstream name" ref={inlineNameRef} maxLength={60} value={inlineFrameName} onChange={(event) => { setInlineFrameName(event.target.value); if (event.target.value.trim()) setInlineFrameError(false); }} onKeyDown={(event) => { if (event.key === "Enter" && addWorkstream(inlineFrameName)) { setInlineFrameName(""); setInlineFrameError(false); setInlineAddOpen(false); } if (event.key === "Escape") { setInlineAddOpen(false); setInlineFrameError(false); } }} /><button type="button" onClick={() => { if (addWorkstream(inlineFrameName)) { setInlineFrameName(""); setInlineFrameError(false); setInlineAddOpen(false); } else setInlineFrameError(true); }}>Add</button>{inlineFrameError ? <span>a workstream needs a name</span> : null}</div> : <button type="button" className="canvas-lab-add-workstream" onClick={() => setInlineAddOpen(true)}>+ workstream</button>}</div>; })() : null}
             <svg className="canvas-lab-relationships absolute inset-0 overflow-visible" width={bounds.width} height={bounds.height} aria-label="Local workboard relationships">
               {visibleNodes.filter((node) => node.kind === "chat").flatMap((draft) => (draft.contextIds ?? []).map((contextId) => { const source = visibleNodes.find((node) => node.id === contextId); if (!source) return null; const sx = source.x + source.width; const sy = source.y + source.height / 2; const tx = draft.x; const ty = draft.y + draft.height / 2; const middle = (sx + tx) / 2; return <path key={`${draft.id}:${contextId}`} d={`M ${sx} ${sy} C ${middle} ${sy}, ${middle} ${ty}, ${tx} ${ty}`} fill="none" stroke="var(--nb-graphite)" strokeWidth="1.4" strokeDasharray="4 4" strokeLinecap="round" className="pointer-events-none" />; }))}
               <LabRelationships links={links} nodes={visibleNodes} measuredHeights={cardHeightsRef.current} selectedLinkId={selectedLinkId} inverseZoom={labInverseZoom(zoom)} onSelect={(id) => { setKeyboardId(null); setSelectedFrameId(null); setSelectedLinkId((current) => relationshipSelection(current, "select", id)); }} onHover={setHoveredLinkId} />
               {connectorPreview && connectorDragRef.current ? (() => { const source = visibleNodes.find((node) => node.id === connectorDragRef.current?.nodeId); if (!source || !connectorDragRef.current) return null; const from = labAnchorPoint(source, connectorDragRef.current.anchor, cardHeightsRef.current.get(source.id) ?? 108); return <path d={labConnectorPath(from, connectorDragRef.current.anchor, connectorPreview, connectorDragRef.current.anchor)} fill="none" stroke="var(--nb-green)" strokeWidth="2.4" strokeLinecap="round" className="pointer-events-none" />; })() : null}
             </svg>
-            {visibleNodes.map((node) => { const canResize = Boolean(lab.board?.canEditStructure) && (node.kind !== "judgment" || Boolean(node.local)); const cardItem = itemByNode(node); return <LabCard key={node.id} node={node} item={cardItem} displayMode={displayMode} preview={cardItem ? cardPreviews[cardItem.id] : undefined} filePreview={cardItem ? filePreviews[cardItem.id] : undefined} onPreviewScroll={cardItem ? (kind) => notePreviewScroll(cardItem, kind) : undefined} selected={selected.includes(node.id)} focused={keyboardId === node.id} focusOnMount={pendingJudgmentFocusId === node.id} connecting={connectSource !== null || connectorPreview !== null} connectSourceAnchor={connectSource?.nodeId === node.id ? connectSource.anchor : null} onSelect={() => { setAnnouncement(selected.includes(node.id) ? "Removed from context" : "Added to context"); setSelected((current) => toggleContext(current, node.id)); }} onOpen={() => openNode(node)} onBranch={() => branchFrom(node)} onHide={() => hideNode(node)} onDelete={() => deleteNode(node)} onEdit={(text) => setNodes((current) => current ? updateLocalNode(current, node.id, text) : current)} onEditCommitted={() => { noteWorkboardNodeEdited(orgId, eventKind(node)); const current = nodesRef.current.find((entry) => entry.id === node.id); if (current?.durableId) void persistNodePatch(current.id, { body: current.summary, title: current.title }); }} onAnchorPointerDown={(side, event) => startPointerConnect(node, side, event)} onAnchorActivate={(side) => chooseConnectAnchor(node, side)} onMenuOpened={() => { if (connectSource || connectorDragRef.current) cancelConnect(); noteWorkboardCardMenuOpened(orgId, eventKind(node), node.ownership); }} onMenuOpenChange={setCardMenuOpen} onMeasure={(height) => cardHeightsRef.current.set(node.id, height)} onPointerDown={(event) => { setFront((current) => bringToFront(current, node.id)); onCardPointerDown(node, event); }} onFocus={() => { setFront((current) => bringToFront(current, node.id)); setKeyboardId(node.id); setSelectedFrameId(null); setSelectedLinkId((current) => relationshipSelection(current, "deselect")); if (pendingJudgmentFocusId === node.id) setPendingJudgmentFocusId(null); }} onKeyDown={(event) => onCardKeyDown(node, event)} canResize={canResize} onResizeStart={(corner, event) => startResize("card", node.id, corner, { x: node.x, y: node.y, width: node.width, height: node.height }, event)} onResizeKeyDown={(corner, event) => keyboardResize("card", node.id, corner, { x: node.x, y: node.y, width: node.width, height: node.height }, event)} onResizeKeyUp={finishKeyboardResize} onFit={() => fitCard(node)} frameChoices={boardFrames.map((frame) => ({ id: frame.id, name: frame.name }))} structured={structureMode === "structured"} onMoveToFrame={(frameId) => moveToFrame(node, frameId)} stackZ={cardStackZ(front, node.id)} commentCount={node.workItemId ? commentCounts[node.workItemId] ?? 0 : 0} onOpenComments={() => { setFocusOpensComments(true); setFocusId(node.id); }} />; })}
+            {visibleNodes.map((node) => { const canResize = Boolean(lab.board?.canEditStructure) && (node.kind !== "judgment" || Boolean(node.local)); const cardItem = itemByNode(node); return <LabCard key={node.id} node={node} item={cardItem} displayMode={displayMode} preview={cardItem ? cardPreviews[cardItem.id] : undefined} filePreview={cardItem ? filePreviews[cardItem.id] : undefined} onPreviewScroll={cardItem ? (kind) => notePreviewScroll(cardItem, kind) : undefined} selected={selected.includes(node.id)} focused={keyboardId === node.id} focusOnMount={pendingJudgmentFocusId === node.id} connecting={connectSource !== null || connectorPreview !== null} connectSourceAnchor={connectSource?.nodeId === node.id ? connectSource.anchor : null} onSelect={() => { setAnnouncement(selected.includes(node.id) ? "Removed from context" : "Added to context"); setSelected((current) => toggleContext(current, node.id)); }} onOpen={() => openNode(node)} onBranch={() => branchFrom(node)} onHide={() => hideNode(node)} onDelete={() => deleteNode(node)} onTakeOutOfContext={isContextFrameId(node.frame) && node.workItemId ? () => void takeOutOfContext(node) : undefined} onEdit={(text) => setNodes((current) => current ? updateLocalNode(current, node.id, text) : current)} onEditCommitted={() => { noteWorkboardNodeEdited(orgId, eventKind(node)); const current = nodesRef.current.find((entry) => entry.id === node.id); if (current?.durableId) void persistNodePatch(current.id, { body: current.summary, title: current.title }); }} onAnchorPointerDown={(side, event) => startPointerConnect(node, side, event)} onAnchorActivate={(side) => chooseConnectAnchor(node, side)} onMenuOpened={() => { if (connectSource || connectorDragRef.current) cancelConnect(); noteWorkboardCardMenuOpened(orgId, eventKind(node), node.ownership); }} onMenuOpenChange={setCardMenuOpen} onMeasure={(height) => cardHeightsRef.current.set(node.id, height)} onPointerDown={(event) => { setFront((current) => bringToFront(current, node.id)); onCardPointerDown(node, event); }} onFocus={() => { setFront((current) => bringToFront(current, node.id)); setKeyboardId(node.id); setSelectedFrameId(null); setSelectedLinkId((current) => relationshipSelection(current, "deselect")); if (pendingJudgmentFocusId === node.id) setPendingJudgmentFocusId(null); }} onKeyDown={(event) => onCardKeyDown(node, event)} canResize={canResize} onResizeStart={(corner, event) => startResize("card", node.id, corner, { x: node.x, y: node.y, width: node.width, height: node.height }, event)} onResizeKeyDown={(corner, event) => keyboardResize("card", node.id, corner, { x: node.x, y: node.y, width: node.width, height: node.height }, event)} onResizeKeyUp={finishKeyboardResize} onFit={() => fitCard(node)} frameChoices={boardFrames.filter((frame) => !isContextFrameId(frame.id)).map((frame) => ({ id: frame.id, name: frame.name }))} structured={structureMode === "structured"} onMoveToFrame={(frameId) => moveToFrame(node, frameId)} stackZ={cardStackZ(front, node.id)} commentCount={node.workItemId ? commentCounts[node.workItemId] ?? 0 : 0} onOpenComments={() => { setFocusOpensComments(true); setFocusId(node.id); }} />; })}
             <svg className="canvas-lab-relationship-overlays absolute inset-0 overflow-visible" width={bounds.width} height={bounds.height} aria-label="Workboard relationship labels">
               <LabRelationshipOverlays links={links} nodes={visibleNodes} measuredHeights={cardHeightsRef.current} selectedLinkId={selectedLinkId} hoveredLinkId={hoveredLinkId} inverseZoom={labInverseZoom(zoom)} zoom={zoom} editable={Boolean(lab.board?.canEditStructure)} onRemove={removeRelationship} onChangeRelation={(link) => setRelationPicker({ linkId: link.id })} onHover={setHoveredLinkId} />
             </svg>

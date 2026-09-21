@@ -10,7 +10,7 @@
  */
 
 export type WorkboardNodeKind = "brief" | "work_item" | "decision" | "judgment" | "draft";
-export type WorkboardFrameKind = "foundation" | "task" | "decisions" | "outputs" | "custom";
+export type WorkboardFrameKind = "foundation" | "task" | "decisions" | "outputs" | "custom" | "context";
 export type WorkboardAnchor = "top" | "right" | "bottom" | "left";
 export type WorkboardRelation = "informed" | "produced" | "revised" | "cited" | "context";
 export type WorkboardJudgmentType =

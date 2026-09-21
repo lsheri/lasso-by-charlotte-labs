@@ -7,6 +7,8 @@
  * Pure geometry and sorting only. No React, no network.
  */
 
+import { isContextFrameId } from "@/lib/context-region";
+
 export type DrawPoint = { x: number; y: number };
 export type DrawRect = { x: number; y: number; width: number; height: number };
 
@@ -70,6 +72,9 @@ export function splitClaims(
   const split: ClaimSplit = { silent: [], ask: [], frameOnly: [] };
   for (const card of cards) {
     if (!fullyInside(rect, card)) continue;
+    // The context region is not a workstream, so a box drawn over it never
+    // claims the brief or the documents that came in with it.
+    if (isContextFrameId(card.frame)) continue;
     if (!card.workItemId) {
       split.frameOnly.push(card);
       continue;
