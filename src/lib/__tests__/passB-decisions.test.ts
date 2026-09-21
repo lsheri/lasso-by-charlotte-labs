@@ -143,14 +143,15 @@ describe("pass B: a quote only ever comes from a turn that has one", () => {
 
   it("shows the quote when the turn behind the source can be read", () => {
     turns = { t1: { turn_no: 3, content: "the sentence it came from" } };
-    renderRow();
-    expect(screen.getByText(/the sentence it came from/)).toBeTruthy();
+    const { container } = renderRow();
+    expect(container.textContent ?? "").toContain("the sentence it came from");
   });
 
   it("shows the source with no quote at all when the turn cannot be read", () => {
     turns = {};
     const { container } = renderRow();
-    expect(screen.getByText(/Some document/)).toBeTruthy();
-    expect(container.textContent ?? "").not.toContain("\u201c");
+    const text = container.textContent ?? "";
+    expect(text).toContain("Some document");
+    expect(text).not.toContain("\u201c");
   });
 });
