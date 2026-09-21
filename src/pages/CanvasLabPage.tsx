@@ -1790,6 +1790,41 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     setAnnouncement("Context area added.");
   }
 
+  /**
+   * Keep a finished answer as a card. The card holds the answer in the words
+   * it was written in, and stored references to the turns it read. The person
+   * who asked is the author of the record.
+   */
+  async function keepAnswerAsCard(answer: KeptAnswer) {
+    if (!canKeepAnswer({ onBoard: true, finished: true, canEdit: canAddWork }) || keepBusy) return;
+    setKeepBusy(true);
+    try {
+      if (!(await materialize())) return;
+      const anchor = boardPointFromScreen(viewportCentre());
+      const taken: PlacementRect[] = [
+        ...placementRectsForNodes(visibleNodes),
+        ...placementRectsForFrames(boardFrames.map((frame) => ({ id: frame.id, label: frame.name, x: frame.x, y: frame.y, width: frame.width, height: frame.height }))),
+      ];
+      const at = placeAddedCards(anchor, taken, 1)[0] ?? anchor;
+      const input = answerNodeInput({ clientKey: `answer:${crypto.randomUUID()}`, at, text: answer.text });
+      const result = await lab.persist({ type: "node_create", node: input });
+      report(result, "node", "create");
+      if (result.status !== "saved" || !result.created?.nodeId) return;
+      const nodeId = result.created.nodeId;
+      noteWorkboardNodeCreated(orgId, "answer");
+      const workItemIds = answerReadWorkItemIds(answer.reads);
+      if (workItemIds.length > 0) {
+        const { data } = await supabase.from("turns").select("id, work_item_id, turn_no").in("work_item_id", workItemIds);
+        const turnIds = orderedAnswerTurnIds(workItemIds, data ?? []);
+        if (turnIds.length > 0) await supabase.from("answer_cites").insert(answerCiteRows(nodeId, turnIds));
+      }
+      await lab.refresh();
+      setAnnouncement("Answer kept as a card.");
+    } finally {
+      setKeepBusy(false);
+    }
+  }
+
   function moveToFrame(node: LabNode, frameId: string) {
     const target = framesRef.current.find((frame) => frame.id === frameId);
     if (!target || node.frame === frameId) return;
