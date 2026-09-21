@@ -6,7 +6,7 @@ export function InboxFixedCard({ children }: { children: React.ReactNode }) {
       data-testid="inbox-fixed-card"
       draggable={false}
       onDragStart={(event) => event.preventDefault()}
-      className="relative cursor-default select-text"
+      className="relative min-w-0 w-full cursor-default select-text"
     >
       <span
         data-non-drag-affordance
