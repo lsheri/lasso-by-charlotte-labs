@@ -155,6 +155,7 @@ export async function loadWorkboard(db: Db, engagementId: string, profile: Resol
     hidden: row.hidden,
     version: row.version,
     referenceReadable: true,
+    createdAt: row.created_at ?? null,
     linkedItemRemovedAt: row.linked_item_removed_at ?? null,
   }));
   const links: WorkboardLinkDto[] = linkRows
@@ -201,6 +202,9 @@ export function validNodeInput(node: WorkboardNodeInput): string | null {
   if (node.kind === "work_item" && !node.workItemId) return "A work card needs its work item.";
   if (node.kind === "decision" && !node.decisionId) return "A decision card needs its decision.";
   if ((node.kind === "judgment" || node.kind === "draft") && (node.workItemId || node.decisionId)) return "An authored card cannot reference a record.";
+  // A kept answer holds its own words and points at turns, never at a record.
+  if (node.kind === "answer" && (node.workItemId || node.decisionId)) return "A kept answer cannot reference work or a decision.";
+  if (node.kind === "answer" && !node.body?.trim()) return "A kept answer needs the answer it keeps.";
   if (node.kind === "text" && (node.workItemId || node.decisionId)) return "A text block cannot reference work or a decision.";
   if (node.kind === "text" && (node.frameKey || node.title || node.judgmentType)) return "A text block can only carry its words, style and rectangle.";
   if (node.kind === "text" && !parseWorkboardTextBody(node.body)) return "Check the text block words and style choices.";

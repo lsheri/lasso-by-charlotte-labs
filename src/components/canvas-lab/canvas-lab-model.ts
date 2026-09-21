@@ -38,9 +38,14 @@ import { isRegionFrameId } from "@/lib/board-region";
 import { isTrailFrameId } from "@/lib/reasoning-trail";
 import { placeAddedCards } from "@/lib/workboard-placement";
 
-export type LabNodeKind = "brief" | "task" | "work" | "decision" | "chat" | "source" | "ai_work" | "judgment" | "deliverable" | "shape" | "text";
+export type LabNodeKind = "brief" | "task" | "work" | "decision" | "chat" | "source" | "ai_work" | "judgment" | "deliverable" | "shape" | "text" | "answer";
 export type LabJudgmentType = "added_constraint" | "corrected_ai" | "rejected_option" | "requested_evidence" | "changed_direction" | "accepted_but_rewrote";
 export type LabTemplateKind = "source" | "ai_work" | "judgment" | "decision" | "deliverable";
+/**
+ * The cards a person can create from the board. A kept answer is not one of
+ * them: it only ever arrives as the result of keeping an answer.
+ */
+export const LAB_TEMPLATE_KINDS: readonly LabTemplateKind[] = ["source", "ai_work", "judgment", "decision", "deliverable"];
 
 /** Who the thing belongs to, which is what decides the offered actions. */
 export type LabOwnership = "yours" | "teammate" | "draft";
@@ -93,6 +98,10 @@ export type LabNode = {
   textSize?: WorkboardTextSize;
   textWeight?: WorkboardTextWeight;
   textColour?: WorkboardTextColour;
+  /** Kept answers only: when the row was saved, and who asked. */
+  createdAt?: string | null;
+  authorName?: string;
+
 
   x: number;
   y: number;
@@ -1066,6 +1075,26 @@ export function applyDurableBoard(base: { frames: LabFrame[]; nodes: LabNode[] }
         height: durable.h,
       });
     }
+    if (durable.kind === "answer") {
+      nodes.push({
+        id: localId,
+        kind: "answer",
+        frame: frameId,
+        title: durable.title || "Answer",
+        summary: durable.body,
+        typeLabel: "answer",
+        ownership: durable.authorProfileId === board.viewerProfileId ? "yours" : "teammate",
+        authorName: durable.authorName,
+        createdAt: durable.createdAt ?? null,
+        local: durable.authorProfileId === board.viewerProfileId,
+        durableId: durable.id,
+        durableVersion: durable.version,
+        x: durable.x,
+        y: durable.y,
+        width: durable.w > 0 ? durable.w : CARD_WIDTH,
+        height: durable.h > 0 ? durable.h : CARD_HEIGHT,
+      });
+    }
     // draft rows are deliberately not rehydrated in Slice 1.
   }
   for (const virtual of base.nodes) if (!matchedVirtual.has(virtual.id)) nodes.push(virtual);
@@ -1134,6 +1163,7 @@ export function cardStackZ(front: string[], id: string): number {
 
 /** The closed event vocabulary for one card. A deliverable says so. */
 export function eventKind(node: LabNode): LabNodeEventKind {
+  if (node.kind === "answer") return "answer";
   if (node.kind === "shape") return "shape";
   if (node.kind === "text") return "text";
   if (node.kind === "chat") return "draft_thread";

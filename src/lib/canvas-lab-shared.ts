@@ -9,7 +9,7 @@
  * instructions are not part of Slice 1 and stay browser-local.
  */
 
-export type WorkboardNodeKind = "brief" | "work_item" | "decision" | "judgment" | "draft" | "shape" | "text" | "mark";
+export type WorkboardNodeKind = "brief" | "work_item" | "decision" | "judgment" | "draft" | "shape" | "text" | "mark" | "answer";
 export type WorkboardFrameKind = "foundation" | "task" | "decisions" | "outputs" | "custom" | "context";
 export type WorkboardAnchor = "top" | "right" | "bottom" | "left";
 export type WorkboardRelation = "informed" | "produced" | "revised" | "cited" | "context";
@@ -121,6 +121,8 @@ export type WorkboardNodeDto = {
   version: number;
   /** False when the referenced record exists but this caller may not read it. */
   referenceReadable: boolean;
+  /** When the row was saved. The only date an answer card shows. */
+  createdAt?: string | null;
   /** Set when the work item this card stood for was deleted from the inbox. */
   linkedItemRemovedAt?: string | null;
 };
@@ -224,7 +226,7 @@ export const WORKBOARD_ANCHORS: WorkboardAnchor[] = ["top", "right", "bottom", "
  * writes a shape again; the kind stays in the type only so old code paths
  * still read, and the server refuses it the way it refuses a mark.
  */
-export const WORKBOARD_NODE_KINDS: WorkboardNodeKind[] = ["brief", "work_item", "decision", "judgment", "draft", "text", "mark"];
+export const WORKBOARD_NODE_KINDS: WorkboardNodeKind[] = ["brief", "work_item", "decision", "judgment", "draft", "text", "mark", "answer"];
 export const WORKBOARD_JUDGMENT_TYPES: WorkboardJudgmentType[] = [
   "added_constraint",
   "corrected_ai",

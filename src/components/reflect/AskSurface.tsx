@@ -13,6 +13,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { parseManifest } from "@/lib/context-manifest";
 import { ArtifactNote, SourceMark } from "@/components/work/SourceMark";
 import { TypeBadge } from "@/components/work/TypeIcon";
+import { useAnswerKeep } from "@/components/reflect/answer-keep-context";
+import { KEEP_ANSWER_LABEL } from "@/lib/answer-card";
 import type { AskTab } from "@/components/reflect/ask-dock-state";
 import type { AskLasso } from "@/components/reflect/use-ask-lasso";
 
@@ -127,6 +129,9 @@ function WorkPicker({ ask, engagementId }: { ask: AskLasso; engagementId: string
 function MessagesTab({ ask, emptyActions }: { ask: AskLasso; emptyActions?: React.ReactNode }) {
   const messages = ask.messages ?? [];
   const viewerInitial = ask.profile?.display_name.trim().charAt(0).toUpperCase() || "Y";
+  // Only the workboard offers a place to keep an answer, and only to someone
+  // who may arrange that board.
+  const keep = useAnswerKeep();
 
   function shortTime(value: string | Date): string {
     return new Date(value).toLocaleTimeString(undefined, {
@@ -226,6 +231,24 @@ function MessagesTab({ ask, emptyActions }: { ask: AskLasso; emptyActions?: Reac
                       >
                         Save for 1:1
                       </button>
+                      {keep && !ask.pending ? (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            keep({
+                              messageId: Number(message.id),
+                              text: message.content,
+                              reads: (ask.sourcesByMessage?.[Number(message.id)] ?? []).map((source) => ({
+                                id: source.id,
+                                depth: source.depth,
+                              })),
+                            })
+                          }
+                          className="ml-3 mt-2 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+                        >
+                          {KEEP_ANSWER_LABEL}
+                        </button>
+                      ) : null}
                     </div>
                   </>
                 )}
