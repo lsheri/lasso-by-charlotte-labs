@@ -37,7 +37,7 @@ export function AppSidebar({
         <LassoLoopMark className="h-[17px] w-5 shrink-0 text-green" />
         <div className="min-w-0">
           <div className="font-serif text-lg leading-6 text-foreground">Lasso</div>
-          <div className="font-hand text-[11.5px] leading-4 text-green">by Charlotte Labs</div>
+          <div className="font-hand nb-type-small leading-4 text-green">by Charlotte Labs</div>
         </div>
       </div>
 

@@ -60,7 +60,7 @@ export function WaitingOnYou() {
         <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
           Decisions waiting on you · {drafts.length}
         </span>
-        <Link to="/decisions" className="text-[11.5px] text-accent-deep hover:underline">
+        <Link to="/decisions" className="nb-type-small text-accent-deep hover:underline">
           Review all
         </Link>
       </div>
@@ -137,7 +137,7 @@ export function WaitingOnYou() {
         })}
       </div>
 
-      <p className="mt-3 max-w-[520px] text-[11.5px] leading-[17px] text-muted-foreground">
+      <p className="mt-3 max-w-[520px] nb-type-small leading-[17px] text-muted-foreground">
         Lasso drafted these from your conversations. Nothing goes on the record until you say so.
       </p>
 

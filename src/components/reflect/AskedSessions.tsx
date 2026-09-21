@@ -86,7 +86,7 @@ export function AskedSessions({
         <span className="h-px flex-1 bg-[var(--nb-rule)]" />
       </div>
 
-      <p className="text-[11.5px] leading-[17px] text-muted-foreground">
+      <p className="nb-type-small leading-[17px] text-muted-foreground">
         Private to you. Your coach never sees this.
       </p>
 
@@ -107,7 +107,7 @@ export function AskedSessions({
                 <span className="block truncate text-sm text-foreground">
                   {session.title ?? "New session"}
                 </span>
-                <span className="block truncate text-[11.5px] text-muted-foreground">
+                <span className="block truncate nb-type-small text-muted-foreground">
                   {scopeSentence(parseScope(session.context_scope), all, engagements ?? [])}
                 </span>
                 <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">

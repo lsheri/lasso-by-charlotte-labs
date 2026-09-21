@@ -144,7 +144,7 @@ export function ConnectYourAiCard() {
             </p>
           </div>
         </div>
-        <p className="mt-1.5 max-w-2xl text-[11.5px] leading-[17px] text-muted-foreground">
+        <p className="mt-1.5 max-w-2xl nb-type-small leading-[17px] text-muted-foreground">
           Add Lasso as a custom connector in your AI once. Then, at the end of any working session,
           just say “push this conversation to Lasso.” Everything lands private and unmapped, only
           you can see it.

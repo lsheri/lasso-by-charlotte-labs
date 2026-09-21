@@ -58,7 +58,7 @@ export function ContextComposer({
           <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
             Inherited from your workspace
           </span>
-          <ul className="mt-1 flex list-disc flex-col gap-0.5 pl-4 text-[11.5px] leading-[17px] text-muted-foreground">
+          <ul className="mt-1 flex list-disc flex-col gap-0.5 pl-4 nb-type-small leading-[17px] text-muted-foreground">
             {WORKSPACE_INSTRUCTIONS.map((line) => (
               <li key={line}>{line}</li>
             ))}
@@ -66,7 +66,7 @@ export function ContextComposer({
           <span className="mt-2 block font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
             Recommended on this workboard
           </span>
-          <ul className="mt-1 flex list-disc flex-col gap-0.5 pl-4 text-[11.5px] leading-[17px] text-muted-foreground">
+          <ul className="mt-1 flex list-disc flex-col gap-0.5 pl-4 nb-type-small leading-[17px] text-muted-foreground">
             {CANVAS_INSTRUCTIONS.map((line) => <li key={line}>{line}</li>)}
           </ul>
           <span className="mt-2 block font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
@@ -110,7 +110,7 @@ export function ContextComposer({
               type="button"
               aria-label="Clear all context"
               onClick={onClearContext}
-              className="self-center text-[11.5px] text-muted-foreground hover:underline"
+              className="self-center nb-type-small text-muted-foreground hover:underline"
             >
               Clear
             </button>

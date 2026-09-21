@@ -45,7 +45,7 @@ export function ToolPicker({
                     <span className="block text-[13px] font-semibold text-foreground">
                       {meta.label}
                     </span>
-                    <span className="mt-1.5 block text-[11.5px] text-muted-foreground">
+                    <span className="mt-1.5 block nb-type-small text-muted-foreground">
                       {meta.scope ?? meta.blurb}
                     </span>
                   </span>

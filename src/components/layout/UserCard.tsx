@@ -28,7 +28,7 @@ export function UserCard({
         {initialsOf(name)}
       </span>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-[11.5px] font-medium leading-4 text-foreground">{name}</p>
+        <p className="truncate nb-type-small font-medium leading-4 text-foreground">{name}</p>
         <div className="flex items-center justify-between gap-2">
           <span className="font-mono text-[9px] uppercase leading-3 tracking-[0.08em] text-soft">
             {(role && ROLE_LABELS[role]) ?? "Engagement Mgr"}

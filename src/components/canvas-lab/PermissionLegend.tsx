@@ -17,7 +17,7 @@ export function PermissionLegend() {
             <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
               {row.label}
             </span>
-            <p className="text-[11.5px] leading-[17px] text-muted-foreground">{row.body}</p>
+            <p className="nb-type-small leading-[17px] text-muted-foreground">{row.body}</p>
           </li>
         ))}
       </ul>

@@ -284,7 +284,9 @@ export type TelemetryEvent =
   | "engagement.access_changed"
   /**
    * S5a: a board someone handed this person was opened from "Shared with me".
-   * Two dims and no others: engagement_id and granter_id.
+   * Two bucketed counts and no others: boards_band (boards in the section) and
+   * granters_band (people who have shared with this person). It deliberately
+   * carries no ids, of either the board or the person who shared it.
    */
   | "shared.board_opened";
 

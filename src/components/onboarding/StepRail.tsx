@@ -47,8 +47,8 @@ export function StepRail({ current = 0 }: { current?: number }) {
               <span
                 className={
                   active
-                    ? "ml-2.5 text-[11.5px] font-semibold text-foreground"
-                    : "ml-2.5 text-[11.5px] text-muted-foreground"
+                    ? "ml-2.5 nb-type-small font-semibold text-foreground"
+                    : "ml-2.5 nb-type-small text-muted-foreground"
                 }
               >
                 {label}

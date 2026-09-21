@@ -160,10 +160,10 @@ export function LabPaper({
             onChange={(event) => onEdit(event.target.value)}
             onBlur={onEditCommitted}
             onPointerDown={(event) => event.stopPropagation()}
-            className="canvas-lab-paper-edit min-h-0 w-full flex-1 basis-0 resize-none overflow-auto border border-[var(--nb-rule)] bg-card px-2 py-1 text-[11.5px] leading-[17px] text-foreground outline-none focus:border-[var(--nb-green)]"
+            className="canvas-lab-paper-edit min-h-0 w-full flex-1 basis-0 resize-none overflow-auto border border-[var(--nb-rule)] bg-card px-2 py-1 nb-type-small leading-[17px] text-foreground outline-none focus:border-[var(--nb-green)]"
           />
         ) : (excerptPreview ? excerpt : summary) && (!item || tier !== "compact" || excerptPreview) ? (
-          <p className={cn("canvas-lab-paper-summary text-[11.5px] leading-[17px] text-muted-foreground", excerptPreview ? "line-clamp-6" : tier === "compact" ? "line-clamp-2" : "line-clamp-3")}>{excerptPreview ? excerpt : summary}</p>
+          <p className={cn("canvas-lab-paper-summary nb-type-small leading-[17px] text-muted-foreground", excerptPreview ? "line-clamp-6" : tier === "compact" ? "line-clamp-2" : "line-clamp-3")}>{excerptPreview ? excerpt : summary}</p>
         ) : null}
 
         {chatPreview ? (
