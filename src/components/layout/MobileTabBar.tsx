@@ -137,7 +137,7 @@ export function MobileTabBar() {
         )}
       </nav>
 
-      {isCoach ? <CoachAskSheet open={coachAskOpen} onOpenChange={setCoachAskOpen} /> : null}
+      {canReview ? <CoachAskSheet open={coachAskOpen} onOpenChange={setCoachAskOpen} /> : null}
 
       <Sheet open={engOpen} onOpenChange={setEngOpen}>
         <SheetContent
