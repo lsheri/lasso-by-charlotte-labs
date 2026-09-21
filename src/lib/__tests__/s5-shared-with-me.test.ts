@@ -120,9 +120,10 @@ describe("s5 · shared with me", () => {
   });
 
   it("leaves the arbitrary small type out of the components", () => {
-    const offenders = files("src/components").filter((path) =>
-      readFileSync(path, "utf8").includes("text-[11.5px]"),
-    );
+    // The landing page is deliberately excluded: no shared class may reach it.
+    const offenders = files("src/components")
+      .filter((path) => !path.includes("marketing/"))
+      .filter((path) => readFileSync(path, "utf8").includes("text-[11.5px]"));
     expect(offenders).toEqual([]);
   });
 

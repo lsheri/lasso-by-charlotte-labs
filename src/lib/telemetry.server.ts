@@ -9,6 +9,7 @@ import {
   shouldNotePresence,
   type DataTier,
 } from "./data-consent-shared";
+import { resolveEnvironment } from "./environment.server";
 import type { TelemetryDims, TelemetryEvent } from "./telemetry-shared";
 
 
@@ -88,6 +89,7 @@ export async function recordAnonymousEvent(
       // This path has no org: an anonymous marketing view.
       workspace_type: "none",
       affiliated: null,
+      environment: resolveEnvironment(),
       event_type: eventType,
       schema_version: "v1",
       tenant_hash: tenantHash,
@@ -180,6 +182,7 @@ export async function recordEvent(
     }
     const { error } = await supabase.from("events").insert({
       ...stamp,
+      environment: resolveEnvironment(),
       event_type: input.eventType,
       schema_version: "v2",
       tenant_hash: tenantHash,
