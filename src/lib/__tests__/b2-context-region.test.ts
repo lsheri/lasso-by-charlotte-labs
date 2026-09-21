@@ -9,6 +9,7 @@ import {
   isContextFrameId,
   isWorkstreamFrameId,
   needsContextRegion,
+  overlapsContextRegion,
 } from "../context-region";
 import { splitClaims } from "../workstream-draw";
 import { nextWorkstreamRect, workstreamAddAnchor, boardHasSeededStructure } from "@/components/canvas-lab/canvas-lab-model";
@@ -89,5 +90,19 @@ describe("the context region is not a workstream", () => {
     expect(boardHasSeededStructure({ frames: [{ kind: "context" }] })).toBe(false);
     expect(boardHasSeededStructure({ frames: [{ kind: "context" }, { kind: "task" }] })).toBe(true);
     expect(boardHasSeededStructure({ frames: [] })).toBe(false);
+  });
+});
+
+describe("the region encloses context only", () => {
+  it("spots an unrelated card sitting under the region", () => {
+    const rect = contextRegionAround({ x: 0, y: 0, ...card }, 1);
+    expect(overlapsContextRegion(rect, { x: rect.x + 20, y: rect.y + 20, ...card })).toBe(true);
+    expect(overlapsContextRegion(rect, { x: rect.x, y: rect.y + rect.height + 40, ...card })).toBe(false);
+  });
+
+  it("sends that card clear of the region, below it", () => {
+    const rect = contextRegionAround({ x: 0, y: 0, ...card }, 1);
+    const at = contextExitPoint(rect, [rect]);
+    expect(overlapsContextRegion(rect, { ...at, ...card })).toBe(false);
   });
 });
