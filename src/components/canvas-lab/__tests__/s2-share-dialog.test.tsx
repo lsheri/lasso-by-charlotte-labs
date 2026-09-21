@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * S2: what the share dialog does, not how it is written.
  *
