@@ -21,7 +21,8 @@ describe("pass 194 — no hover preview on the canvas, Ask starts closed", () =>
     expect(CANVAS_SRC).not.toMatch(/\bexpanded\b/);
     const hoverUses = CANVAS_SRC.match(/\bhovered\b/g) ?? [];
     expect(hoverUses.length).toBeGreaterThan(0);
-    expect(CANVAS_SRC).toContain("const showHandles = (hovered || focused)");
+    // Hover still feeds the drag handles; how that line is written is free.
+    expect(CANVAS_SRC).toMatch(/const showHandles\s*=[^;]*\bhovered\b/);
   });
 
   it("the drag click suppression survives", () => {
