@@ -1468,6 +1468,39 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     return () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); };
   }, [lab.board?.canEditStructure, links, orgId, structureMode, visibleNodes, zoom]);
 
+  /**
+   * F1: a move or a resize made a moment before leaving the page is written
+   * out rather than lost. The card or region is read where it now stands and
+   * sent on, and the interaction is closed so nothing writes it twice.
+   */
+  useEffect(() => {
+    function flush() {
+      const drag = dragRef.current;
+      const resizing = resizeRef.current;
+      const trailDrag = frameDragRef.current;
+      dragRef.current = null;
+      resizeRef.current = null;
+      frameDragRef.current = null;
+      const nodeId = drag?.id ?? (resizing?.kind === "card" ? resizing.id : null);
+      if (nodeId) {
+        const node = nodesRef.current.find((entry) => entry.id === nodeId);
+        if (node) void persistNodePatch(node.id, { x: node.x, y: node.y, w: node.width, h: node.height });
+      }
+      const frameId = trailDrag?.id ?? (resizing?.kind === "frame" ? resizing.id : null);
+      if (frameId) {
+        const frame = framesRef.current.find((entry) => entry.id === frameId);
+        if (frame) void persistFramePatch(frame.id, { x: frame.x, y: frame.y, w: frame.width, h: frame.height });
+      }
+    }
+    function onVisibility() {
+      if (document.visibilityState === "hidden") flush();
+    }
+    window.addEventListener("pagehide", flush);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => { window.removeEventListener("pagehide", flush); document.removeEventListener("visibilitychange", onVisibility); };
+  }, []);
+
+
   function onCardKeyDown(node: LabNode, event: React.KeyboardEvent) {
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
