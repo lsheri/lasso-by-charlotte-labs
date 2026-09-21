@@ -451,7 +451,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   const invalidateBriefFiles = useInvalidateBriefFiles();
   const briefAttachSeenRef = useRef(new Set<string>());
   const briefAttachBusyRef = useRef(false);
-  const contextRemovedRef = useRef(false);
+  const removedContextRef = useRef<{ id: string; version: number } | null>(null);
 
   useEffect(() => {
     if (!boardFitted || !nodes || !frames || briefAttachBusyRef.current) return;
@@ -463,7 +463,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     const hasContextContent = needsContextRegion({ hasBrief: Boolean(page?.engagement?.brief?.trim()), fileCount: fileIds.length });
     const availability = contextAreaAvailability({
       active: framesRef.current.some((frame) => isContextFrameId(frame.id)),
-      archived: contextRemovedRef.current || Boolean(lab.board?.archivedContextFrame),
+      archived: Boolean(removedContextRef.current ?? lab.board?.archivedContextFrame),
       hasContent: hasContextContent,
     });
     const wantsRegion = !boardHasSeededStructure(lab.board) && availability.autoCreate;
@@ -1087,6 +1087,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
    */
   async function ensureContextRegion(fileIds: string[]): Promise<LabFrame | null> {
     if (boardHasSeededStructure(lab.board)) return null;
+    if (removedContextRef.current || lab.board?.archivedContextFrame) return null;
     if (!needsContextRegion({ hasBrief: Boolean(page?.engagement?.brief?.trim()), fileCount: fileIds.length })) return null;
     const memberIds = contextMemberNodeIds(fileIds);
     if (memberIds.length === 0) return null;
@@ -1627,7 +1628,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     const result = await lab.persist({ type: "frame_archive", frameId: frame.durableId, expectedVersion: frame.durableVersion ?? 1 });
     report(result, "frame", "archive");
     if (result.status !== "saved") return;
-    contextRemovedRef.current = true;
+    removedContextRef.current = { id: frame.durableId, version: result.versions[frame.durableId] ?? (frame.durableVersion ?? 1) + 1 };
     framesRef.current = framesRef.current.filter((entry) => entry.id !== frame.id);
     setFrames((entries) => entries?.filter((entry) => entry.id !== frame.id) ?? entries);
     nodesRef.current = nodesRef.current.map((node) => node.frame === frame.id ? { ...node, frame: null } : node);
@@ -1641,7 +1642,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     const fileIds = (briefFiles.data ?? []).map((entry) => entry.workItemId);
     const memberIds = contextMemberNodeIds(fileIds);
     const rect = contextRegionRect(at, memberIds.length);
-    const archived = lab.board?.archivedContextFrame;
+    const archived = removedContextRef.current ?? lab.board?.archivedContextFrame;
     let created: LabFrame = { id: CONTEXT_FRAME_ID, name: CONTEXT_FRAME_LABEL, x: rect.x, y: rect.y, width: rect.width, height: rect.height, local: true };
     if (archived) {
       const result = await lab.persist({ type: "frame_restore", frameId: archived.id, expectedVersion: archived.version, patch: { x: rect.x, y: rect.y, w: rect.width, h: rect.height } });
@@ -1664,7 +1665,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
         created = { ...created, durableId: durable.id, durableVersion: durable.version, local: false };
       }
     }
-    contextRemovedRef.current = false;
+    removedContextRef.current = null;
     framesRef.current = [...framesRef.current.filter((frame) => !isContextFrameId(frame.id)), created];
     setFrames((entries) => [...(entries ?? []).filter((frame) => !isContextFrameId(frame.id)), created]);
     await clearRegionOfStrangers(created, memberIds);
