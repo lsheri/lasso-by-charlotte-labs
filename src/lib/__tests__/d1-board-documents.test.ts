@@ -175,11 +175,12 @@ describe("D1 · a board document is never a source", () => {
     }
   });
 
-  it("cannot represent a lineage link that points at a document", () => {
-    // Lineage rows reference work_items(id). A document id lives only in
-    // board_documents, so the foreign key refuses it: proven against the live
-    // database with a rolled back insert, and kept unrepresentable here by
-    // never letting a document module reach a lineage table.
+  it("cannot make a document the source of a lineage row", () => {
+    // The source side of both lineage tables is a foreign key onto
+    // work_items(id). A document id lives only in board_documents, so the
+    // database refuses it: proven against the live database with an insert
+    // that raised a foreign key violation and was rolled back. Nothing here
+    // may quietly hand a document id to that side either.
     for (const name of DOCUMENT_MODULES) {
       const matches = [
         ...sourceFiles(join(REPO, "src/lib")),
@@ -193,4 +194,26 @@ describe("D1 · a board document is never a source", () => {
       }
     }
   });
+
+  it("leaves a document addressable as the target of a later lineage row", () => {
+    const migration = readFileSync(
+      join(REPO, "drizzle/migrations/0003_create_board_documents.sql"),
+      "utf8",
+    );
+
+    // A stable primary key is what a later table would point at, so the
+    // correct direction stays buildable without touching this table.
+    expect(migration).toMatch(/id uuid PRIMARY KEY/i);
+    // Content is JSON, so a block model can later carry what fed a passage
+    // without a schema change.
+    expect(migration).toMatch(/content jsonb/i);
+    // Nothing here narrows what may reference a document.
+    expect(migration).not.toMatch(/CREATE TRIGGER/i);
+    // Policy WITH CHECK clauses are access rules, not shape rules.
+    expect(migration.replace(/WITH CHECK/gi, "")).not.toMatch(/CHECK\s*\(/i);
+    // And the table itself never reaches back towards a work item, which is
+    // what keeps the forbidden direction structural rather than remembered.
+    expect(migration).not.toMatch(/REFERENCES\s+public\.work_items/i);
+  });
 });
+
