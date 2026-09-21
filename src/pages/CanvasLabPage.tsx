@@ -1101,9 +1101,31 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       }
       frame = framesRef.current.find((entry) => isContextFrameId(entry.id)) ?? created;
     }
+    await clearRegionOfStrangers(frame, memberIds);
     await placeInContext(frame, memberIds);
     return framesRef.current.find((entry) => isContextFrameId(entry.id)) ?? frame;
   }
+
+  /**
+   * The packed flow on a blank board starts at the origin, so an unrelated
+   * card can be sitting where the region is drawn. Those cards move clear of
+   * it, below the region, so the outline only ever encloses the brief and the
+   * documents that came with it.
+   */
+  async function clearRegionOfStrangers(frame: LabFrame, memberIds: string[]) {
+    const rect = { x: frame.x, y: frame.y, width: frame.width, height: frame.height };
+    const strangers = nodesRef.current.filter((node) => !memberIds.includes(node.id) && node.frame !== CONTEXT_FRAME_ID && overlapsContextRegion(rect, nodeRect(node)));
+    if (strangers.length === 0) return;
+    const taken: PlacementRect[] = [rect, ...nodesRef.current.filter((node) => !strangers.some((stranger) => stranger.id === node.id)).map(nodeRect)];
+    for (const node of strangers) {
+      const at = contextExitPoint(rect, taken);
+      taken.push({ x: at.x, y: at.y, width: node.width, height: node.height });
+      nodesRef.current = nodesRef.current.map((entry) => entry.id === node.id ? { ...entry, x: at.x, y: at.y } : entry);
+      setNodes((current) => current?.map((entry) => entry.id === node.id ? { ...entry, x: at.x, y: at.y } : entry) ?? current);
+      await persistNodePatch(node.id, { x: at.x, y: at.y });
+    }
+  }
+
 
   /** Cards already inside the region keep their place; the rest take a free slot. */
   async function placeInContext(frame: LabFrame, nodeIds: string[]) {
