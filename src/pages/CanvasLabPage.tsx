@@ -1904,6 +1904,63 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     return true;
   }
 
+  /**
+   * B3: a person puts the reasoning trail on a blank board, where they asked
+   * for it. It is one outline row, so its place is durable, but it is never a
+   * workstream and never the context region.
+   */
+  async function addTrail(at: Point) {
+    if (boardHasTrail(framesRef.current)) return;
+    const rect = trailRectAt(at);
+    const created: LabFrame = { id: TRAIL_FRAME_ID, name: TRAIL_FRAME_LABEL, x: rect.x, y: rect.y, width: rect.width, height: rect.height, local: true };
+    framesRef.current = [...framesRef.current, created];
+    setFrames((current) => (current ? [...current, created] : [created]));
+    const boardExisted = boardIdRef.current != null;
+    if (!(await materialize())) return;
+    if (boardExisted) {
+      const result = await lab.persist({ type: "frame_create", frame: { key: created.id, kind: "custom", taskId: null, label: TRAIL_FRAME_LABEL, x: created.x, y: created.y, w: created.width, h: created.height, ord: 0 } });
+      report(result, "frame", "create");
+      if (result.status !== "saved") return;
+      if (result.created?.frameId) {
+        const id = result.created.frameId;
+        const version = result.versions[id] ?? 1;
+        setFrames((current) => (current ? markFrameSaved(current, created.id, id, version) : current));
+        framesRef.current = markFrameSaved(framesRef.current, created.id, id, version);
+      }
+    }
+    noteWorkboardChangeSaved(orgId, "trail", "created");
+    setAnnouncement("Reasoning trail added.");
+  }
+
+  async function removeTrail() {
+    const frame = framesRef.current.find((entry) => isTrailFrameId(entry.id));
+    if (!frame) return;
+    if (!frame.durableId) {
+      setFrames((current) => current?.filter((entry) => entry.id !== frame.id) ?? current);
+      framesRef.current = framesRef.current.filter((entry) => entry.id !== frame.id);
+      noteWorkboardChangeSaved(orgId, "trail", "removed");
+      setAnnouncement("Reasoning trail removed.");
+      return;
+    }
+    const result = await lab.persist({ type: "frame_archive", frameId: frame.durableId, expectedVersion: frame.durableVersion ?? 1 });
+    report(result, "frame", "archive");
+    if (result.status !== "saved") return;
+    setFrames((current) => current?.filter((entry) => entry.id !== frame.id) ?? current);
+    framesRef.current = framesRef.current.filter((entry) => entry.id !== frame.id);
+    noteWorkboardChangeSaved(orgId, "trail", "removed");
+    setAnnouncement("Reasoning trail removed.");
+  }
+
+  function startTrailDrag(frame: LabFrame, event: React.PointerEvent) {
+    if (spaceRef.current) return;
+    if (event.button !== 0 || (event.target as Element).closest("button,textarea,input")) return;
+    event.stopPropagation();
+    setInteraction("drag");
+    frameDragRef.current = { id: frame.id, origin: { x: frame.x, y: frame.y }, from: { x: event.clientX, y: event.clientY } };
+  }
+
+
+
   const title = engagement ? engagementDisplayTitle(engagement) : "Workboard";
   const status = loadingBoard || (boardReady && opening)
     ? "Workboard · Opening"
