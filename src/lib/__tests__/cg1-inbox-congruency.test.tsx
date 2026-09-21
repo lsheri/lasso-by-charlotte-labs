@@ -14,7 +14,10 @@ import type { WorkItemRow } from "@/lib/work-types";
 let inboxRows: WorkItemRow[] = [];
 const recorded: ReturnType<typeof inboxFilterDims>[] = [];
 
-vi.mock("@tanstack/react-start", () => ({ useServerFn: () => vi.fn() }));
+vi.mock("@tanstack/react-start", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@tanstack/react-start")>()),
+  useServerFn: () => vi.fn(),
+}));
 vi.mock("@tanstack/react-query", () => ({
   useQuery: () => ({ data: {} }),
   useQueryClient: () => ({ invalidateQueries: vi.fn() }),
