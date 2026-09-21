@@ -79,9 +79,9 @@ export function LabCardMenu({
         {onTakeOutOfContext ? <DropdownMenuItem onSelect={onTakeOutOfContext}>Take out of context</DropdownMenuItem> : null}
         <DropdownMenuSeparator />
         {local ? (
-          <DropdownMenuItem onSelect={onDelete}>Delete local node</DropdownMenuItem>
+          <DropdownMenuItem onSelect={onDelete}>Delete this work</DropdownMenuItem>
         ) : removable ? (
-          <DropdownMenuItem onSelect={onHide}>Remove from board</DropdownMenuItem>
+          <DropdownMenuItem onSelect={onHide}>Hide from this board</DropdownMenuItem>
         ) : (
           <DropdownMenuItem disabled>Only the author can remove this</DropdownMenuItem>
         )}

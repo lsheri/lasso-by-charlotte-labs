@@ -59,6 +59,13 @@
 - [x] Preserve Preview defaults, fallback behavior, actions, states, and existing events
 - [x] Run focused tests and confirm a clean preview build
 
+## F4 context area removal and fit consistency
+- [x] Pin lazy recreation, removal labels, and fit width before implementation
+- [x] Archive and restore the context area without changing its cards
+- [x] Record removal through the archived board frame
+- [x] Make Fit content share the card resize floor
+- [ ] Run focused and board checks and confirm a clean preview build
+
 ## Landing-next Find it clip
 - [x] Save uploaded clip and poster as public/videos/find-it.mp4 and find-it-poster.png
 - [x] Wire the Find it ClipSlot to ClipPlayer (1440x900, 16/9) on /landing-next only

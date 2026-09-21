@@ -103,11 +103,13 @@ export async function loadWorkboard(db: Db, engagementId: string, profile: Resol
   }
 
   const [framesRes, nodesRes, linksRes] = await Promise.all([
-    db.from("workboard_frames").select("*").eq("workboard_id", board.id).is("deleted_at", null).order("ord"),
+    db.from("workboard_frames").select("*").eq("workboard_id", board.id).order("ord"),
     db.from("workboard_nodes").select("*").eq("workboard_id", board.id).is("deleted_at", null),
     db.from("workboard_links").select("*").eq("workboard_id", board.id).is("deleted_at", null),
   ]);
-  const frameRows = (framesRes.data ?? []) as FrameRow[];
+  const allFrameRows = (framesRes.data ?? []) as FrameRow[];
+  const frameRows = allFrameRows.filter((row) => row.deleted_at === null);
+  const archivedContext = allFrameRows.find((row) => row.kind === "context" && row.deleted_at !== null) ?? null;
   const nodeRows = (nodesRes.data ?? []) as NodeRow[];
   const linkRows = (linksRes.data ?? []) as LinkRow[];
 
@@ -174,6 +176,7 @@ export async function loadWorkboard(db: Db, engagementId: string, profile: Resol
     links,
     viewerProfileId: profile.id,
     canEditStructure: membership.isEditor,
+    archivedContextFrame: archivedContext ? { id: archivedContext.id, version: archivedContext.version } : null,
   };
 }
 
@@ -209,6 +212,7 @@ export function validateFrameLabel(kind: string, label: unknown): string | null 
 }
 
 export function validateFrameArchive(kind: string, liveNodeCount: number): string | null {
+  if (kind === "context") return null;
   if (kind !== "custom") return "Only a custom workstream can be removed.";
   if (liveNodeCount > 0) return "Move its cards first.";
   return null;
@@ -297,7 +301,8 @@ export async function applyWorkboardCommand(
   if (command.type === "frame_update" || command.type === "frame_archive" || command.type === "frame_restore") {
     if (!membership.isEditor) return { status: "forbidden" };
     if (command.type === "frame_update" && !validFrameGeometry(command.patch)) return { status: "validation_error", message: "Workstream dimensions are outside the supported range." };
-    const target = (await db.from("workboard_frames").select("id, kind").eq("id", command.frameId).eq("workboard_id", board.id).is("deleted_at", null).maybeSingle()).data;
+    const targetQuery = db.from("workboard_frames").select("id, kind").eq("id", command.frameId).eq("workboard_id", board.id);
+    const target = (await (command.type === "frame_restore" ? targetQuery.not("deleted_at", "is", null) : targetQuery.is("deleted_at", null)).maybeSingle()).data;
     if (!target) return { status: "validation_error", message: "That workstream is gone." };
     const normalizedLabel = command.type === "frame_update" && typeof command.patch.label === "string" ? command.patch.label.trim() : command.type === "frame_update" ? command.patch.label : undefined;
     if (command.type === "frame_update" && command.patch.label !== undefined) {
@@ -312,7 +317,9 @@ export async function applyWorkboardCommand(
     const patch =
       command.type === "frame_update"
         ? { ...definedPatch({ ...command.patch, ...(normalizedLabel !== undefined ? { label: normalizedLabel } : {}) }), ...stamp }
-        : { deleted_at: command.type === "frame_archive" ? new Date().toISOString() : null, ...stamp };
+        : command.type === "frame_restore"
+          ? { deleted_at: null, ...definedPatch(command.patch ?? {}), ...stamp }
+          : { deleted_at: new Date().toISOString(), ...stamp };
     const { data } = await db
       .from("workboard_frames")
       .update(patch)

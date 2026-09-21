@@ -21,4 +21,8 @@ describe("Canvas Lab frame server guards", () => {
     expect(validateFrameArchive("custom", 0)).toBeNull();
     expect(validateFrameArchive("task", 0)).toBe("Only a custom workstream can be removed.");
   });
+
+  it("allows a context area to be archived while its cards remain", () => {
+    expect(validateFrameArchive("context", 4)).toBeNull();
+  });
 });

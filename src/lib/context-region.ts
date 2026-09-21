@@ -44,6 +44,14 @@ export function needsContextRegion(input: { hasBrief: boolean; fileCount: number
   return input.hasBrief || input.fileCount > 0;
 }
 
+/** An archived outline is the durable board-level choice to keep context unframed. */
+export function contextAreaAvailability(input: { active: boolean; archived: boolean; hasContent: boolean }): { autoCreate: boolean; canAdd: boolean } {
+  return {
+    autoCreate: !input.active && !input.archived && input.hasContent,
+    canAdd: !input.active,
+  };
+}
+
 function stepX(): number {
   return PLACEMENT_CARD.width + PLACEMENT_GAP;
 }

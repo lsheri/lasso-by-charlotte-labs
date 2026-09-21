@@ -35,6 +35,7 @@ function board(overrides: Partial<WorkboardDto> = {}): WorkboardDto {
     links: [],
     viewerProfileId: "me",
     canEditStructure: true,
+    archivedContextFrame: null,
     ...overrides,
   };
 }
