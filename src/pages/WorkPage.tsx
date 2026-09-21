@@ -25,6 +25,7 @@ import { ReadingPanel } from "@/components/overview/ReadingPanel";
 import { NotCovered } from "@/components/overview/NotCovered";
 
 import { SuggestLegend } from "@/components/common/Suggested";
+import { DimmedDisabled } from "@/components/common/DimmedDisabled";
 import { SuggestionChip } from "@/components/work/SuggestionChip";
 import { colourKey, noteHue, notePaper } from "@/components/work/note-paper";
 import { vocabFor } from "@/lib/edu-vocab";
@@ -78,10 +79,12 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { SpiderLassoScene } from "@/components/motion/SpiderLassoScene";
 import { ToneCard } from "@/components/notebook/ToneCard";
 import { WorkSubtitle } from "@/components/work/WorkSubtitle";
+import { InboxFixedCard } from "@/components/work/InboxFixedCard";
 import { sourceVendorKey } from "@/components/work/SourceMark";
 import { BUCKETS, bucketKeyForEntry, type BucketKey } from "@/components/work/work-buckets";
 import { useSettingsDialog } from "@/lib/settings-dialog-context";
 import { readWorkView, writeWorkView, type WorkView } from "@/lib/work-view";
+import { inboxFilterDims, inboxFilterMatches } from "@/lib/inbox-filter";
 
 /** Each type column pages its entries five at a time, replacing not growing. */
 const COLUMN_PAGE_SIZE = 5;
@@ -676,25 +679,17 @@ export function WorkPage() {
   // Private work only appears in the columns while the show-private box is on.
   const visible = showPrivate ? all : all.filter((item) => item.visibility !== "private");
 
-  const filtered =
-    columnFilter === "all"
-      ? visible
-      : columnFilter === "unmapped"
-        ? visible.filter((item) => item.visibility === "unmapped")
-        : columnFilter === "claimed"
-          ? visible.filter((item) => item.visibility === "mapped")
-          : visible.filter(
-              (item) => item.work_item_tasks[0]?.tasks?.engagements?.code === columnFilter,
-            );
+  const matching = visible.filter((item) => inboxFilterMatches(item, columnFilter));
 
   /**
    * P1: the page counts and files GROUPED entries. One pushed conversation is
    * one thing to look at, so it is grouped once here and every column, count
-   * and filter reads the same list.
+   * and filter reads the same list. Filtering never removes an entry: it only
+   * decides which cards stay active.
    */
-  const filteredEntries = groupConversations(filtered);
+  const visibleEntries = groupConversations(visible);
   const unmappedCount = groupedCount(unmapped);
-  const previewHeads = filteredEntries.map((entry) => isConversationGroup(entry) ? (entry.transcript ?? entry.items[0]!) : entry);
+  const previewHeads = visibleEntries.map((entry) => isConversationGroup(entry) ? (entry.transcript ?? entry.items[0]!) : entry);
   const chatPreviews = useWorkboardCardPreviews("work", profile?.id, workView === "preview", previewHeads.filter((item) => item.type === "ai_thread").map((item) => item.id));
   const filePreviews = useWorkboardFilePreviews(profile?.id, workView === "preview", previewHeads.filter((item) => item.type !== "ai_thread"));
 
@@ -702,6 +697,28 @@ export function WorkPage() {
   const chipBase = "rounded-full px-3 py-1 text-[11.5px] transition-colors";
   const chipOn = `${chipBase} border border-graphite bg-nb-white font-medium text-foreground`;
   const chipOff = `${chipBase} border border-[var(--nb-pencil)] text-muted-foreground hover:border-foreground`;
+
+  function changeColumnFilter(next: string) {
+    if (next === columnFilter) return;
+    setColumnFilter(next);
+    if (!profile?.org_id) return;
+    const count = visible.filter((item) => inboxFilterMatches(item, next)).length;
+    logEvent(
+      "work.filter_changed",
+      profile.org_id,
+      inboxFilterDims(
+        next === "all" || next === "unmapped" || next === "claimed" ? "placement" : "engagement",
+        next === "all" ? "all" : "one",
+        count,
+      ),
+    );
+  }
+
+  function entryMatchesFilter(entry: WorkItemRow | ConversationGroup): boolean {
+    return isConversationGroup(entry)
+      ? entry.items.some((item) => inboxFilterMatches(item, columnFilter))
+      : inboxFilterMatches(entry, columnFilter);
+  }
 
   /** Where the work came from, counted client-side off the loaded items. */
   const sourceCounts = (() => {
@@ -924,14 +941,14 @@ export function WorkPage() {
           </span>
           <button
             type="button"
-            onClick={() => setColumnFilter("all")}
+            onClick={() => changeColumnFilter("all")}
             className={columnFilter === "all" ? chipOn : chipOff}
           >
             Everything
           </button>
           <button
             type="button"
-            onClick={() => setColumnFilter("unmapped")}
+            onClick={() => changeColumnFilter("unmapped")}
             className={columnFilter === "unmapped" ? chipOn : chipOff}
           >
             Unmapped
@@ -941,7 +958,7 @@ export function WorkPage() {
               so this filters on the mapped state rather than inventing one. */}
           <button
             type="button"
-            onClick={() => setColumnFilter("claimed")}
+            onClick={() => changeColumnFilter("claimed")}
             className={columnFilter === "claimed" ? chipOn : chipOff}
           >
             Claimed by you
@@ -950,7 +967,7 @@ export function WorkPage() {
             <button
               key={code}
               type="button"
-              onClick={() => setColumnFilter(code)}
+              onClick={() => changeColumnFilter(code)}
               className={columnFilter === code ? chipOn : chipOff}
             >
               {code}
@@ -1010,20 +1027,13 @@ export function WorkPage() {
         </div>
       ) : (
         <div className="space-y-8">
-          {/* I1: the sentence that used to head the unclaimed section is taught
-              here instead, where the filter has nothing to show. */}
-          {columnFilter === "unmapped" && filtered.length === 0 ? (
-            <p className="rounded-[var(--radius-md)] border border-dashed border-pencil bg-card px-4 py-6 text-center text-[11.5px] text-soft">
-              These landed on their own. Say whose work it is and the rest gets easier.
-            </p>
-          ) : null}
           <div className={suggesting ? "animate-pulse" : undefined}>
             <div className={`nb-type-columns${gusting ? " nb-gust" : ""}`}>
               {BUCKETS.map((bucket) => {
                 // P1: group beats bucket. A pushed conversation appears once,
                 // under AI conversations, whatever its artifacts are typed as,
                 // and never again on its own in another column.
-                const entries = filteredEntries.filter(
+                const entries = visibleEntries.filter(
                   (entry) => bucketKeyForEntry(entry) === bucket.key,
                 );
                 // Five entries a page; a page REPLACES the previous one so the
@@ -1056,16 +1066,23 @@ export function WorkPage() {
                           Nothing here yet.
                         </p>
                       ) : (
-                        pageEntries.map((entry) =>
-                          isConversationGroup(entry)
-                            ? renderGroup(
-                                entry,
-                                (entry.transcript ?? entry.items[0]!).visibility === "mapped"
-                                  ? "mapped"
-                                  : "unmapped",
-                              )
-                            : renderColumnItem(entry),
-                        )
+                        pageEntries.map((entry) => {
+                          const key = isConversationGroup(entry) ? entry.key : entry.id;
+                          return (
+                            <DimmedDisabled key={key} dimmed={!entryMatchesFilter(entry)}>
+                              <InboxFixedCard>
+                                {isConversationGroup(entry)
+                                  ? renderGroup(
+                                      entry,
+                                      (entry.transcript ?? entry.items[0]!).visibility === "mapped"
+                                        ? "mapped"
+                                        : "unmapped",
+                                    )
+                                  : renderColumnItem(entry)}
+                              </InboxFixedCard>
+                            </DimmedDisabled>
+                          );
+                        })
                       )}
                     </div>
                     {entries.length > COLUMN_PAGE_SIZE ? (
