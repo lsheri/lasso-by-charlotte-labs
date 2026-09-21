@@ -19,18 +19,50 @@ export const WORKBOARD_CARD_MAX_WIDTH = 520;
 export const WORKBOARD_CARD_MAX_HEIGHT = 520;
 export const WORKBOARD_SHAPE_MIN_SIZE = 80;
 export const WORKBOARD_SHAPE_MAX_SIZE = 4000;
+export const WORKBOARD_TEXT_MIN_WIDTH = 80;
+export const WORKBOARD_TEXT_MIN_HEIGHT = 24;
+export const WORKBOARD_TEXT_MAX_SIZE = 4000;
 
 /** Stored names only. The client resolves these to the Lasso paper palette. */
 export const WORKBOARD_SHAPE_COLOURS = ["green", "blue", "rose", "yellow", "lavender", "grey"] as const;
 export type WorkboardShapeColour = (typeof WORKBOARD_SHAPE_COLOURS)[number];
+export const WORKBOARD_TEXT_SIZES = ["small", "body", "label", "heading"] as const;
+export const WORKBOARD_TEXT_WEIGHTS = ["regular", "medium", "bold"] as const;
+export const WORKBOARD_TEXT_COLOURS = ["ink", "graphite", "mid", "green", "blue"] as const;
+export const WORKBOARD_TEXT_MAX_LENGTH = 500;
+export type WorkboardTextSize = (typeof WORKBOARD_TEXT_SIZES)[number];
+export type WorkboardTextWeight = (typeof WORKBOARD_TEXT_WEIGHTS)[number];
+export type WorkboardTextColour = (typeof WORKBOARD_TEXT_COLOURS)[number];
+export type WorkboardTextBody = { text: string; size: WorkboardTextSize; weight: WorkboardTextWeight; colour: WorkboardTextColour };
+
+export function parseWorkboardTextBody(value: unknown): WorkboardTextBody | null {
+  if (typeof value !== "string") return null;
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return null;
+    const body = parsed as Record<string, unknown>;
+    if (Object.keys(body).sort().join(",") !== "colour,size,text,weight") return null;
+    if (typeof body.text !== "string" || body.text.length > WORKBOARD_TEXT_MAX_LENGTH) return null;
+    if (!WORKBOARD_TEXT_SIZES.includes(body.size as WorkboardTextSize)) return null;
+    if (!WORKBOARD_TEXT_WEIGHTS.includes(body.weight as WorkboardTextWeight)) return null;
+    if (!WORKBOARD_TEXT_COLOURS.includes(body.colour as WorkboardTextColour)) return null;
+    return body as WorkboardTextBody;
+  } catch {
+    return null;
+  }
+}
+
+export function serializeWorkboardTextBody(body: WorkboardTextBody): string {
+  return JSON.stringify(body);
+}
 
 export function validWorkboardNodeGeometry(node: { kind?: WorkboardNodeKind; x?: number; y?: number; w?: number; h?: number }): boolean {
   const values = [node.x, node.y, node.w, node.h].filter((value): value is number => value !== undefined);
   if (!values.every(Number.isFinite)) return false;
-  const minWidth = node.kind === "shape" ? WORKBOARD_SHAPE_MIN_SIZE : WORKBOARD_CARD_MIN_WIDTH;
-  const minHeight = node.kind === "shape" ? WORKBOARD_SHAPE_MIN_SIZE : WORKBOARD_CARD_MIN_HEIGHT;
-  const maxWidth = node.kind === "shape" ? WORKBOARD_SHAPE_MAX_SIZE : WORKBOARD_CARD_MAX_WIDTH;
-  const maxHeight = node.kind === "shape" ? WORKBOARD_SHAPE_MAX_SIZE : WORKBOARD_CARD_MAX_HEIGHT;
+  const minWidth = node.kind === "shape" ? WORKBOARD_SHAPE_MIN_SIZE : node.kind === "text" ? WORKBOARD_TEXT_MIN_WIDTH : WORKBOARD_CARD_MIN_WIDTH;
+  const minHeight = node.kind === "shape" ? WORKBOARD_SHAPE_MIN_SIZE : node.kind === "text" ? WORKBOARD_TEXT_MIN_HEIGHT : WORKBOARD_CARD_MIN_HEIGHT;
+  const maxWidth = node.kind === "shape" ? WORKBOARD_SHAPE_MAX_SIZE : node.kind === "text" ? WORKBOARD_TEXT_MAX_SIZE : WORKBOARD_CARD_MAX_WIDTH;
+  const maxHeight = node.kind === "shape" ? WORKBOARD_SHAPE_MAX_SIZE : node.kind === "text" ? WORKBOARD_TEXT_MAX_SIZE : WORKBOARD_CARD_MAX_HEIGHT;
   if (node.w !== undefined && (node.w < minWidth || node.w > maxWidth)) return false;
   return node.h === undefined || (node.h >= minHeight && node.h <= maxHeight);
 }
