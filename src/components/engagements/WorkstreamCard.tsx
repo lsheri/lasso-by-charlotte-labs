@@ -196,6 +196,10 @@ export function WorkstreamCard({
       ) : null}
 
       <div className="mt-2">
+        <WorkstreamDocument taskId={task.id} canEdit={canEdit} profile={profile} />
+      </div>
+
+      <div className="mt-2">
         <TaskWorkflow
           taskId={task.id}
           elements={elements}
