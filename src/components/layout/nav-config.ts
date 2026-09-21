@@ -63,13 +63,24 @@ export const navGroups: NavGroup[] = [
 ];
 
 /**
- * A coach is a guest: they have no work of their own and no engagements of
- * their own, so the worker nav would be mostly dead ends. Worker and admin
- * items above are untouched. The firm archive is firm-internal, so coaches
- * do not see it in the nav and are redirected away if they hit /archive.
+ * The coaching group, shown only to someone who was given Review on at least
+ * one engagement. Both the guest nav and the worker nav draw it from here, so
+ * the destination cannot drift between them.
+ */
+export const coachingGroup: NavGroup = {
+  id: "coaching",
+  label: "Coaching",
+  items: [{ label: "People you coach", to: "/coaching", icon: "members" }],
+};
+
+/**
+ * A guest is just that: no work of their own and no engagements of their own,
+ * so the worker nav would be mostly dead ends. Worker and admin items above
+ * are untouched. The firm archive is firm-internal, so it is not here, and a
+ * guest hitting /archive is redirected away. The coaching group is added by
+ * the nav itself, only when there is something to review.
  */
 export const coachNavGroups: NavGroup[] = [
-  { label: "Coaching", items: [{ label: "People you coach", to: "/coaching", icon: "members" }] },
   {
     label: "Your account",
     items: [
@@ -78,6 +89,7 @@ export const coachNavGroups: NavGroup[] = [
     ],
   },
 ];
+
 
 /**
  * A school workspace keeps the same weekly-loop headings as every other

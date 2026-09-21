@@ -10,6 +10,19 @@ export function isCoach(profile: RoleProfile): boolean {
   return profile?.role === "coach";
 }
 
+/**
+ * S4 — which nav shell a person gets, and nothing else.
+ *
+ * A guest account has no work and no engagements of its own, so the worker
+ * nav would be mostly dead ends. This says nothing about which coaching
+ * surfaces anyone may reach: reach is decided from engagement membership in
+ * src/lib/coaching-reach.ts, and a guest with no Review grant reaches none.
+ */
+export function usesGuestNav(profile: RoleProfile): boolean {
+  return isCoach(profile);
+}
+
+
 export function canManageMembers(profile: RoleProfile): boolean {
   return profile?.role === "admin" || profile?.role === "lead";
 }
