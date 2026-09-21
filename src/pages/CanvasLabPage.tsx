@@ -1354,6 +1354,12 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
         else setFrames((current) => current?.map((frame) => frame.id === resizing.id ? { ...frame, ...containFrameMembers(rect, frame.id, nodesRef.current) } : frame) ?? current);
         return;
       }
+      const trailDrag = frameDragRef.current;
+      if (trailDrag) {
+        const to = dragTo(trailDrag.origin, { x: (event.clientX - trailDrag.from.x) / zoom, y: (event.clientY - trailDrag.from.y) / zoom });
+        setFrames((current) => current?.map((frame) => frame.id === trailDrag.id ? { ...frame, x: to.x, y: to.y } : frame) ?? current);
+        return;
+      }
       const drag = dragRef.current;
       if (drag) {
         const delta = { x: (event.clientX - drag.from.x) / zoom, y: (event.clientY - drag.from.y) / zoom };
@@ -1364,6 +1370,16 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       if (panning) setPan({ x: panning.origin.x + event.clientX - panning.from.x, y: panning.origin.y + event.clientY - panning.from.y });
     }
     function up(event: PointerEvent) {
+      const trailDrag = frameDragRef.current;
+      frameDragRef.current = null;
+      if (trailDrag) {
+        const moved = framesRef.current.find((frame) => frame.id === trailDrag.id);
+        if (moved && (moved.x !== trailDrag.origin.x || moved.y !== trailDrag.origin.y)) {
+          void persistFramePatch(moved.id, { x: moved.x, y: moved.y });
+        }
+        setInteraction("idle");
+        return;
+      }
       const connector = connectorDragRef.current;
       if (connector?.moved) finishPointerConnect(connector, event);
       connectorDragRef.current = null;
