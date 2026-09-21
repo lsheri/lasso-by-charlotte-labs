@@ -2,8 +2,8 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { DimmedDisabled } from "@/components/common/DimmedDisabled";
 import { InboxFixedCard } from "@/components/work/InboxFixedCard";
@@ -16,7 +16,7 @@ const recorded: ReturnType<typeof inboxFilterDims>[] = [];
 
 vi.mock("@tanstack/react-start", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@tanstack/react-start")>()),
-  useServerFn: () => vi.fn(),
+  useServerFn: () => vi.fn(async () => ({ ok: true })),
 }));
 vi.mock("@tanstack/react-router", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@tanstack/react-router")>()),
@@ -62,8 +62,40 @@ vi.mock("@/components/verify/ThreadAnalysisLauncher", () => ({
   ThreadAnalysisLauncher: () => null,
   isThreadReaderPreset: () => false,
 }));
+vi.mock("@/components/reflect/AskedSessions", () => ({
+  AskedSessions: () => null,
+  useAskedSessions: () => [],
+}));
+vi.mock("@/components/peek/SlideOver", () => ({ SlideOver: () => null }));
+vi.mock("@/pages/ReflectPage", () => ({ ReflectPage: () => null }));
+vi.mock("@/components/common/CaptureCoverage", () => ({ CaptureCoverage: () => null }));
+vi.mock("@/components/markdown/MarkdownMessage", () => ({ MarkdownMessage: () => null }));
+vi.mock("@/components/peek/PeekActionBar", () => ({ PeekActionBar: () => null }));
+vi.mock("@/components/peek/RenderedContent", () => ({ RenderedContent: () => null }));
+vi.mock("@/components/peek/ThreadBody", () => ({ ThreadBody: () => null }));
+vi.mock("@/components/reflect/ChatAnalyses", () => ({
+  AnalysisChips: () => null,
+  InlineAnalysisBlocks: () => null,
+  useChatAnalyses: () => ({ running: false, streamed: "", error: null, results: [], runPreset: vi.fn() }),
+}));
+vi.mock("@/components/common/Working", () => ({ ThinkingIndicator: () => null }));
+vi.mock("@/components/work/ChatUrlLink", () => ({ ChatUrlLink: () => null }));
+vi.mock("@/components/work/PasteThreadDialog", () => ({ PasteThreadDialog: () => null }));
+vi.mock("@/components/connectors/BrandLogo", () => ({ BrandLogo: () => null }));
+vi.mock("@/components/work/SubjectsPanel", () => ({ SubjectsPanel: () => null }));
+vi.mock("@/components/work/WorkNote", () => ({
+  WorkNote: ({ item }: { item: WorkItemRow }) => <article>{item.title}</article>,
+}));
+vi.mock("@/components/notebook/marks", () => ({ GraphiteSeam: () => null }));
+vi.mock("@/components/notebook/ToneCard", () => ({ ToneCard: ({ children }: { children: React.ReactNode }) => <div>{children}</div> }));
+vi.mock("@/hooks/use-chat-search-signal", () => ({
+  useChatSearchSignal: () => ({ onSubmitQuery: vi.fn(), onResultOpened: vi.fn() }),
+}));
+vi.mock("@/hooks/use-motion", () => ({ useMotion: () => ({ className: "" }) }));
+vi.mock("@/integrations/supabase/client", () => ({ supabase: {} }));
 
 import { WorkPage } from "@/pages/WorkPage";
+import { AiRecordPage } from "@/pages/AiRecordPage";
 
 function item(id: string, visibility: WorkItemRow["visibility"], code?: string): WorkItemRow {
   return {
@@ -91,6 +123,15 @@ function itemOfType(id: string, type: WorkItemRow["type"]): WorkItemRow {
   return { ...item(id, "unmapped"), type };
 }
 
+function conversation(id: string, vendor: string, engagementCode?: string): WorkItemRow {
+  return {
+    ...item(id, engagementCode ? "mapped" : "unmapped", engagementCode),
+    type: "ai_thread",
+    source: vendor,
+    source_vendor: vendor,
+  } as WorkItemRow;
+}
+
 function filesUnder(path: string): string[] {
   return readdirSync(path, { withFileTypes: true }).flatMap((entry) => {
     const full = join(path, entry.name);
@@ -101,6 +142,13 @@ function filesUnder(path: string): string[] {
 const rows = [item("mapped", "mapped", "ALPHA"), item("waiting", "unmapped"), item("other", "mapped", "BETA")];
 
 afterEach(cleanup);
+beforeEach(() => {
+  window.matchMedia = vi.fn().mockReturnValue({
+    matches: false,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+  });
+});
 
 describe("CG1 inbox congruency", () => {
   it("keeps every Inbox entry dimmed and disabled when the Unmapped filter matches nothing, and teaches about unclaimed work", () => {
@@ -229,6 +277,77 @@ describe("CG1 inbox congruency", () => {
     const offenders = filesUnder("src/components").filter((path) => {
       const source = readFileSync(path, "utf8");
       return /inbox[^\n]*(?:filter|match)[^\n]*(?:green|lime)|(?:green|lime)[^\n]*(?:filter|match)/i.test(source);
+    });
+    expect(offenders).toEqual([]);
+  });
+});
+
+describe("CG2 AI conversations congruency", () => {
+  it("keeps every conversation in place while dimming and disabling chip-filter non-matches", () => {
+    inboxRows = [
+      conversation("Claude plan", "claude", "ALPHA"),
+      conversation("ChatGPT notes", "chatgpt", "BETA"),
+      conversation("Claude review", "claude", "ALPHA"),
+    ];
+    render(<AiRecordPage />);
+
+    fireEvent.click(within(screen.getByRole("group", { name: "Filter by tool" })).getByRole("button", { name: /Claude/i }));
+
+    for (const row of inboxRows) expect(screen.getByText(row.title)).toBeTruthy();
+    const dimmed = screen.getAllByTestId("dimmed-disabled");
+    expect(dimmed).toHaveLength(inboxRows.filter((row) => row.source_vendor !== "claude").length);
+    for (const wrapper of dimmed) {
+      expect(wrapper.getAttribute("aria-disabled")).toBe("true");
+      expect(wrapper.hasAttribute("inert")).toBe(true);
+    }
+    for (const title of ["Claude plan", "Claude review"]) {
+      expect(screen.getByText(title).closest('[data-testid="dimmed-disabled"]')).toBeNull();
+    }
+  });
+
+  it("keeps the full conversation list dimmed when chip filters match nothing", () => {
+    inboxRows = [
+      conversation("Claude plan", "claude", "ALPHA"),
+      conversation("ChatGPT notes", "chatgpt", "BETA"),
+    ];
+    render(<AiRecordPage />);
+
+    fireEvent.click(within(screen.getByRole("group", { name: "Filter by tool" })).getByRole("button", { name: /Claude/i }));
+    fireEvent.click(within(screen.getByRole("group", { name: "Filter by engagement" })).getByRole("button", { name: /BETA/i }));
+
+    for (const row of inboxRows) expect(screen.getByText(row.title)).toBeTruthy();
+    expect(screen.getAllByTestId("dimmed-disabled")).toHaveLength(inboxRows.length);
+    expect(screen.queryByText(/No chats match/i)).toBeNull();
+    for (const wrapper of screen.getAllByTestId("dimmed-disabled")) {
+      expect(wrapper.getAttribute("aria-disabled")).toBe("true");
+      expect(wrapper.hasAttribute("inert")).toBe(true);
+    }
+  });
+
+  it("keeps search narrowing while chip filters dim all remaining search results", () => {
+    inboxRows = [
+      conversation("Budget source", "chatgpt", "BETA"),
+      conversation("Budget review", "chatgpt", "BETA"),
+      conversation("Planning source", "claude", "ALPHA"),
+    ];
+    render(<AiRecordPage />);
+
+    fireEvent.change(screen.getByRole("searchbox", { name: "Search your chats" }), {
+      target: { value: "Budget" },
+    });
+    fireEvent.click(within(screen.getByRole("group", { name: "Filter by tool" })).getByRole("button", { name: /Claude/i }));
+
+    const searchResults = inboxRows.filter((row) => row.title.includes("Budget"));
+    for (const row of searchResults) expect(screen.getByText(row.title)).toBeTruthy();
+    expect(screen.queryByText("Planning source")).toBeNull();
+    expect(screen.getAllByTestId("dimmed-disabled")).toHaveLength(searchResults.length);
+    expect(screen.queryByText(/No chats match/i)).toBeNull();
+  });
+
+  it("does not use green or lime to decide AI conversation filter-match styling", () => {
+    const offenders = filesUnder("src/components").concat(filesUnder("src/pages")).filter((path) => {
+      const source = readFileSync(path, "utf8");
+      return /(?:chatlib|conversation|tool|engagement)[^\n]*(?:filter|match)[^\n]*(?:green|lime)|(?:green|lime)[^\n]*(?:filter|match)[^\n]*(?:chatlib|conversation|tool|engagement)/i.test(source);
     });
     expect(offenders).toEqual([]);
   });
