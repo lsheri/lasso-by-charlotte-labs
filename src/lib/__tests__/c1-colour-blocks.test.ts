@@ -35,6 +35,7 @@ describe("C1 colour block vocabulary and validation", () => {
       shape: input(),
       text: input({ kind: "text", body: JSON.stringify({ text: "Intake", size: "label", weight: "medium", colour: "green" }), w: 260, h: 80 }),
       mark: input({ kind: "mark", body: "", w: 260, h: 180 }),
+      answer: input({ kind: "answer", body: "The answer body.", w: 320, h: 240 }),
     } satisfies Record<(typeof WORKBOARD_NODE_KINDS)[number], WorkboardNodeInput>;
 
     for (const kind of WORKBOARD_NODE_KINDS) {
