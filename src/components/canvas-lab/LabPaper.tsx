@@ -20,6 +20,7 @@ const KIND_ICON: Record<Exclude<LabNode["kind"], "work" | "task">, GraphiteIconN
   deliverable: "work",
   shape: "work",
   text: "work",
+  answer: "ask-lasso",
 };
 
 function nodeIcon(node: LabNode): GraphiteIconName {
