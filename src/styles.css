@@ -73,6 +73,7 @@
   --color-blue: var(--nb-blue);
   --shadow-card: none;
   --radius-control: 6px;
+  --radius-card: 3px;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -119,6 +120,7 @@
 :root {
   --radius: 8px;
   --radius-control: 6px;
+  --radius-card: 3px;
 
   /* Notebook palette, the single source of truth for this identity. */
   --nb-white: #ffffff;
@@ -1699,7 +1701,7 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 .canvas-lab-inline-workstream button { color: var(--nb-ink); font-family: var(--font-mono); font-size: 9px; text-transform: uppercase; }
 .canvas-lab-inline-workstream span { flex-basis: 100%; color: var(--destructive); font-family: var(--font-hand); font-size: 13px; }
 /* A kept answer: white face, lime edge, so it reads apart from work cards. */
-.canvas-lab-answer-card { display: flex; flex-direction: column; border: 1.4px solid var(--nb-lasso-green); border-radius: var(--radius-card, 8px); background: var(--nb-white); padding: 10px 12px; box-shadow: var(--shadow-card); }
+.canvas-lab-answer-card { display: flex; flex-direction: column; border: 1.4px solid var(--nb-lasso-green); border-radius: var(--radius-card); background: var(--nb-white); padding: 10px 12px; box-shadow: var(--shadow-card); }
 .canvas-lab-answer-card[data-focused="true"] { border-width: 2.4px; }
 .canvas-lab-drop-prompt { position: absolute; z-index: 20; display: flex; align-items: center; gap: 9px; border: 1px solid var(--nb-pencil); border-radius: var(--radius-control); background: var(--nb-paper); padding: 7px 9px; box-shadow: var(--shadow-modal); }
 .canvas-lab-drop-prompt span { color: var(--nb-mid); font-family: var(--font-hand); font-size: 16px; }

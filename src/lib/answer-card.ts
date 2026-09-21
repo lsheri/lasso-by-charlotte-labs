@@ -58,10 +58,12 @@ export function answerNodeInput(args: {
   clientKey: string;
   at: { x: number; y: number };
   text: string;
+  /** The workstream the card is kept into. Null keeps it freeform. */
+  frameKey?: string | null;
 }): WorkboardNodeInput {
   return {
     clientKey: args.clientKey,
-    frameKey: null,
+    frameKey: args.frameKey ?? null,
     kind: "answer",
     title: ANSWER_CARD_TITLE,
     body: args.text,
