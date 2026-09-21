@@ -34,6 +34,7 @@ import {
 import { clampZoom } from "@/lib/canvas-zoom";
 import { isWorkstreamFrameId } from "@/lib/context-region";
 import { isContextFrameId } from "@/lib/context-region";
+import { isRegionFrameId } from "@/lib/board-region";
 import { isTrailFrameId } from "@/lib/reasoning-trail";
 import { placeAddedCards } from "@/lib/workboard-placement";
 
@@ -101,7 +102,10 @@ export type LabNode = {
 
 export type LabFrame = {
   id: LabFrameId;
+  /** W3: empty on a drawn region that has not been named. */
   name: string;
+  /** W3: the stored fill name of a drawn region. */
+  fill?: string | null;
   x: number;
   y: number;
   width: number;
@@ -961,7 +965,7 @@ export function applyDurableBoard(base: { frames: LabFrame[]; nodes: LabNode[] }
       continue;
     }
     frameIdByKey.set(durable.id, baseFrame.id);
-    frames.push({ ...baseFrame, x: durable.x, y: durable.y, width: durable.w, height: durable.h, durableId: durable.id, durableVersion: durable.version });
+    frames.push({ ...baseFrame, x: durable.x, y: durable.y, width: durable.w, height: durable.h, fill: durable.fill ?? null, durableId: durable.id, durableVersion: durable.version });
   }
   for (const durable of orderedDurableFrames) {
     if (base.frames.some((frame) => frame.id === durable.key)) continue;
@@ -970,9 +974,10 @@ export function applyDurableBoard(base: { frames: LabFrame[]; nodes: LabNode[] }
     // F1: the context region keeps its own key too. Without this a reloaded
     // board forgot the region was context, made a second local one with no
     // durable row behind it, and every resize on it went nowhere.
-    const id = durable.key.startsWith("custom:") || isTrailFrameId(durable.key) || isContextFrameId(durable.key) ? durable.key : `durable-frame:${durable.id}`;
+    const id = durable.key.startsWith("custom:") || isRegionFrameId(durable.key) || isTrailFrameId(durable.key) || isContextFrameId(durable.key) ? durable.key : `durable-frame:${durable.id}`;
     frameIdByKey.set(durable.id, id);
-    frames.push({ id, name: durable.label ?? "Workstream", x: durable.x, y: durable.y, width: durable.w, height: durable.h, durableId: durable.id, durableVersion: durable.version });
+    // W3: a drawn region with no name is paint, so it keeps its empty name.
+    frames.push({ id, name: durable.label ?? (isRegionFrameId(id) ? "" : "Workstream"), fill: durable.fill ?? null, x: durable.x, y: durable.y, width: durable.w, height: durable.h, durableId: durable.id, durableVersion: durable.version });
   }
 
   const nodes: LabNode[] = [];
