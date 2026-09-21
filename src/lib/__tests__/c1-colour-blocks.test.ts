@@ -7,7 +7,7 @@ import {
   type WorkboardNodeInput,
 } from "@/lib/canvas-lab-shared";
 import { validateLinkNodeKinds, validNodeInput } from "@/lib/canvas-lab.server";
-import { applyDurableBoard, inboundLabNodeIds, resizeLabRect, shapePointerIntent, type LabLink, type LabNode } from "@/components/canvas-lab/canvas-lab-model";
+import { applyDurableBoard, decorationPointerIntent, inboundLabNodeIds, resizeLabRect, type LabLink, type LabNode } from "@/components/canvas-lab/canvas-lab-model";
 import { placementRectsForNodes } from "@/lib/workboard-placement";
 
 function input(overrides: Partial<WorkboardNodeInput> = {}): WorkboardNodeInput {
@@ -33,7 +33,7 @@ describe("C1 colour block vocabulary and validation", () => {
       judgment: input({ kind: "judgment", body: "", w: 260, h: 180 }),
       draft: input({ kind: "draft", body: "", w: 260, h: 180 }),
       shape: input(),
-      text: input({ kind: "text", body: "", w: 260, h: 180 }),
+      text: input({ kind: "text", body: JSON.stringify({ text: "Intake", size: "label", weight: "medium", colour: "green" }), w: 260, h: 80 }),
       mark: input({ kind: "mark", body: "", w: 260, h: 180 }),
     } satisfies Record<(typeof WORKBOARD_NODE_KINDS)[number], WorkboardNodeInput>;
 
@@ -97,9 +97,9 @@ describe("C1 colour block record and board behavior", () => {
   });
 
   it("routes pointer presses according to block selection and edge position", () => {
-    expect(shapePointerIntent({ selected: false, onEdge: false })).toBe("pan");
-    expect(shapePointerIntent({ selected: false, onEdge: true })).toBe("drag");
-    expect(shapePointerIntent({ selected: true, onEdge: false })).toBe("drag");
+    expect(decorationPointerIntent({ selected: false, onEdge: false })).toBe("pan");
+    expect(decorationPointerIntent({ selected: false, onEdge: true })).toBe("drag");
+    expect(decorationPointerIntent({ selected: true, onEdge: false })).toBe("drag");
   });
 
   it("does not reserve placement space for colour blocks", () => {
