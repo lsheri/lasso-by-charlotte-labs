@@ -210,7 +210,7 @@ function makeDb(store: Store) {
   return { db: { from: (table: string) => chain(table) } as never, writes, store };
 }
 
-const profile = { id: "me", org_id: "org", role: "member" as const };
+const profile = { id: "me", org_id: "org", role: "lead" as const };
 
 function baseStore(): Store {
   return {
