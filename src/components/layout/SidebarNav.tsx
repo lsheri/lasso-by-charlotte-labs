@@ -296,42 +296,48 @@ export function SidebarNav({
   // A guest gets their own short nav. Worker and admin items are unchanged.
   // The coaching destination sits on top of it only when a board was shared.
   if (guestNav) {
+    const shared = (
+      <SharedWithMeGroup profiles={profiles} orgId={profile?.org_id} onNavigate={onNavigate} />
+    );
     return (
       <nav className="flex flex-col gap-7">
+        {coachingGroups.length === 0 ? shared : null}
         {[...coachingGroups, ...coachNavGroups].map((group) => (
-
-          <div key={group.label}>
-            <div className="nb-group-header px-2">{group.label}</div>
-            <div className="mt-2 flex flex-col gap-0.5">
-              {group.items.map((item) =>
-                item.to === "/settings" ? (
-                  <button
-                    key={item.to}
-                    type="button"
-                    onClick={() => {
-                      onOpenSettings?.();
-                      onNavigate?.();
-                    }}
-                    className={`${linkClass} w-full text-left`}
-                  >
-                    <GraphiteIcon name={item.icon} size={20} />
-                    <span>{item.label}</span>
-                  </button>
-                ) : (
-                  <Link
-                    key={item.to}
-                    to={item.to}
-                    onClick={onNavigate}
-                    className={linkClass}
-                    activeProps={activeProps}
-                  >
-                    <GraphiteIcon name={item.icon} size={20} />
-                    <span>{item.label}</span>
-                  </Link>
-                ),
-              )}
+          <Fragment key={group.label}>
+            <div>
+              <div className="nb-group-header px-2">{group.label}</div>
+              <div className="mt-2 flex flex-col gap-0.5">
+                {group.items.map((item) =>
+                  item.to === "/settings" ? (
+                    <button
+                      key={item.to}
+                      type="button"
+                      onClick={() => {
+                        onOpenSettings?.();
+                        onNavigate?.();
+                      }}
+                      className={`${linkClass} w-full text-left`}
+                    >
+                      <GraphiteIcon name={item.icon} size={20} />
+                      <span>{item.label}</span>
+                    </button>
+                  ) : (
+                    <Link
+                      key={item.to}
+                      to={item.to}
+                      onClick={onNavigate}
+                      className={linkClass}
+                      activeProps={activeProps}
+                    >
+                      <GraphiteIcon name={item.icon} size={20} />
+                      <span>{item.label}</span>
+                    </Link>
+                  ),
+                )}
+              </div>
             </div>
-          </div>
+            {group.id === "coaching" ? shared : null}
+          </Fragment>
         ))}
       </nav>
     );
