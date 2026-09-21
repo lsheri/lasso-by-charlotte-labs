@@ -13,6 +13,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { parseManifest } from "@/lib/context-manifest";
 import { ArtifactNote, SourceMark } from "@/components/work/SourceMark";
 import { TypeBadge } from "@/components/work/TypeIcon";
+import { useAnswerKeep } from "@/components/reflect/answer-keep-context";
+import { KEEP_ANSWER_LABEL } from "@/lib/answer-card";
 import type { AskTab } from "@/components/reflect/ask-dock-state";
 import type { AskLasso } from "@/components/reflect/use-ask-lasso";
 
