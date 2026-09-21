@@ -35,6 +35,7 @@ export const WORKBOARD_EVENT_DIMS: Readonly<Record<string, readonly string[]>> =
   "workboard.work_added": ["source", "via", "count"],
   "workboard.workstream_drawn": ["claimed", "asked"],
   "workboard.region_named": ["state", "claimed", "fill_family", "fill_strength"],
+  "workboard.document_created": ["via"],
   "workboard.annotation_changed": [
     "kind",
     "action",
