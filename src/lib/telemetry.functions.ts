@@ -23,6 +23,9 @@ export const recordEventFn = createServerFn({ method: "POST" })
       const verdict = guardWorkboardEvent(data.event_type, dims);
       if (!verdict.keep) return { ok: true };
       dims = verdict.dims;
+    } else {
+      const { guardEventDims } = await import("./event-dim-allowlist");
+      dims = guardEventDims(data.event_type, dims).dims;
     }
     const { resolveProfile } = await import("./profile-resolve");
     const profile = await resolveProfile(context.supabase, context.userId, data.profile_id).catch(
