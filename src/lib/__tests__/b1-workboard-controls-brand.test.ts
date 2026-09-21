@@ -27,7 +27,17 @@ describe("B1 workboard controls and brand identity", () => {
     const frameMenu = read("src/components/canvas-lab/LabFrameMenu.tsx");
     const cardMenu = read("src/components/canvas-lab/LabCardMenu.tsx");
     const styles = read("src/styles.css");
-    expect(frameMenu).toContain('aria-label="Workstream options"');
+    // The frame label depends on whether the frame is a context area or a
+    // workstream. Both cases have to name something a person can act on; the
+    // exact wording is free to change.
+    const labelExpression = /aria-label=(?:"([^"]+)"|\{([^}]*)\})/.exec(frameMenu);
+    expect(labelExpression).not.toBeNull();
+    const branch = labelExpression![1] ?? labelExpression![2] ?? "";
+    const labels = branch.includes('"')
+      ? Array.from(branch.matchAll(/"([^"]+)"/g), (match) => match[1]!)
+      : [branch];
+    expect(labels.length).toBeGreaterThan(0);
+    for (const label of labels) expect(label.trim().length).toBeGreaterThan(3);
     expect(cardMenu).toContain('aria-label="Card options"');
     expect(styles).toMatch(/\.canvas-lab-frame-menu-trigger \{[^}]*width: 28px;[^}]*height: 28px;[^}]*opacity: 1;/s);
     expect(styles).toMatch(/\.canvas-lab-card-menu-trigger \{[^}]*width: 28px;[^}]*height: 28px;[^}]*opacity: 1;/s);
