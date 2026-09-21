@@ -1,22 +1,24 @@
 export function DimmedDisabled({
   dimmed,
+  disabled = false,
   children,
   className = "",
 }: {
   dimmed: boolean;
+  disabled?: boolean;
   children: React.ReactNode;
   className?: string;
 }) {
   return (
     <div
-      {...(dimmed
+      {...(disabled
         ? {
             "aria-disabled": true,
-            "data-testid": "dimmed-disabled",
             inert: true,
           }
         : {})}
-      className={`${dimmed ? "pointer-events-none opacity-50" : ""} ${className}`}
+      {...(dimmed ? { "data-testid": "dimmed-disabled" } : {})}
+      className={`${dimmed ? "opacity-50" : ""} ${disabled ? "pointer-events-none" : ""} ${className}`}
     >
       {children}
     </div>

@@ -697,12 +697,12 @@ export function WorkPage() {
   const chipOff = `${chipBase} border border-[var(--nb-pencil)] text-muted-foreground hover:border-foreground`;
 
   function changeColumnFilter(next: string) {
+    if (next === columnFilter) return;
+    setColumnFilter(next);
     const count = groupedCount(
       visible.filter((item) => inboxFilterMatches(item, next, showPrivate)),
     );
-    const changed = recordInboxFilterChange(
-      columnFilter,
-      next,
+    recordInboxFilterChange(
       inboxFilterDims(
         next === "all" || next === "unmapped" || next === "claimed" ? "placement" : "engagement",
         next === "all" ? "all" : "one",
@@ -712,22 +712,20 @@ export function WorkPage() {
         if (profile?.org_id) logEvent("work.filter_changed", profile.org_id, dims);
       },
     );
-    if (changed) setColumnFilter(next);
   }
 
   function changePrivate(next: boolean) {
+    if (next === showPrivate) return;
+    setShowPrivate(next);
     const count = groupedCount(
       visible.filter((item) => inboxFilterMatches(item, columnFilter, next)),
     );
-    const changed = recordInboxFilterChange(
-      showPrivate,
-      next,
+    recordInboxFilterChange(
       inboxFilterDims("privacy", next ? "all" : "one", count),
       (dims) => {
         if (profile?.org_id) logEvent("work.filter_changed", profile.org_id, dims);
       },
     );
-    if (changed) setShowPrivate(next);
   }
 
   function entryMatchesFilter(entry: WorkItemRow | ConversationGroup): boolean {
@@ -735,6 +733,7 @@ export function WorkPage() {
       ? entry.items.some((item) => inboxFilterMatches(item, columnFilter, showPrivate))
       : inboxFilterMatches(entry, columnFilter, showPrivate);
   }
+  const matchingEntryCount = visibleEntries.filter(entryMatchesFilter).length;
 
   /** Where the work came from, counted client-side off the loaded items. */
   const sourceCounts = (() => {
@@ -1043,6 +1042,11 @@ export function WorkPage() {
         </div>
       ) : (
         <div className="space-y-8">
+          {matchingEntryCount === 0 ? (
+            <p className="rounded-[var(--radius-md)] border border-dashed border-pencil bg-card px-4 py-6 text-center text-[11.5px] text-soft">
+              These landed on their own. Say whose work it is and the rest gets easier.
+            </p>
+          ) : null}
           <div className={suggesting ? "animate-pulse" : undefined}>
             <div className={`nb-type-columns${gusting ? " nb-gust" : ""}`}>
               {BUCKETS.map((bucket) => {
@@ -1085,7 +1089,12 @@ export function WorkPage() {
                         pageEntries.map((entry) => {
                           const key = isConversationGroup(entry) ? entry.key : entry.id;
                           return (
-                            <DimmedDisabled key={key} dimmed={!entryMatchesFilter(entry)}>
+                            <DimmedDisabled
+                              key={key}
+                              dimmed={!entryMatchesFilter(entry)}
+                              disabled={!entryMatchesFilter(entry)}
+                              className="min-w-0 w-full"
+                            >
                               <InboxFixedCard>
                                 {isConversationGroup(entry)
                                   ? renderGroup(

@@ -29,12 +29,8 @@ export function inboxFilterDims(
 }
 
 export function recordInboxFilterChange(
-  current: string | boolean,
-  next: string | boolean,
   dims: ReturnType<typeof inboxFilterDims>,
   emit: (dims: ReturnType<typeof inboxFilterDims>) => void,
-): boolean {
-  if (current === next) return false;
+): void {
   emit(dims);
-  return true;
 }
