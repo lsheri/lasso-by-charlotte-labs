@@ -10,6 +10,14 @@
 import { DRAG_STEP, snapPoint, type Point } from "@/lib/canvas-drag";
 
 export type PlacementRect = { x: number; y: number; width: number; height: number };
+export type PlacementNode = PlacementRect & { kind?: string };
+
+/** Decorative blocks never push newly placed work away from the chosen point. */
+export function placementRectsForNodes(nodes: PlacementNode[]): PlacementRect[] {
+  return nodes
+    .filter((node) => node.kind !== "shape")
+    .map(({ x, y, width, height }) => ({ x, y, width, height }));
+}
 
 /** The clear space kept around every existing card and outline. */
 export const PLACEMENT_GAP = 24;

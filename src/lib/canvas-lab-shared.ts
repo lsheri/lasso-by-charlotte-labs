@@ -9,7 +9,7 @@
  * instructions are not part of Slice 1 and stay browser-local.
  */
 
-export type WorkboardNodeKind = "brief" | "work_item" | "decision" | "judgment" | "draft";
+export type WorkboardNodeKind = "brief" | "work_item" | "decision" | "judgment" | "draft" | "shape" | "text" | "mark";
 export type WorkboardFrameKind = "foundation" | "task" | "decisions" | "outputs" | "custom" | "context";
 export type WorkboardAnchor = "top" | "right" | "bottom" | "left";
 export type WorkboardRelation = "informed" | "produced" | "revised" | "cited" | "context";
@@ -17,12 +17,22 @@ export const WORKBOARD_CARD_MIN_WIDTH = 180;
 export const WORKBOARD_CARD_MIN_HEIGHT = 112;
 export const WORKBOARD_CARD_MAX_WIDTH = 520;
 export const WORKBOARD_CARD_MAX_HEIGHT = 520;
+export const WORKBOARD_SHAPE_MIN_SIZE = 80;
+export const WORKBOARD_SHAPE_MAX_SIZE = 4000;
 
-export function validWorkboardNodeGeometry(node: { x?: number; y?: number; w?: number; h?: number }): boolean {
+/** Stored names only. The client resolves these to the Lasso paper palette. */
+export const WORKBOARD_SHAPE_COLOURS = ["green", "blue", "rose", "yellow", "lavender", "grey"] as const;
+export type WorkboardShapeColour = (typeof WORKBOARD_SHAPE_COLOURS)[number];
+
+export function validWorkboardNodeGeometry(node: { kind?: WorkboardNodeKind; x?: number; y?: number; w?: number; h?: number }): boolean {
   const values = [node.x, node.y, node.w, node.h].filter((value): value is number => value !== undefined);
   if (!values.every(Number.isFinite)) return false;
-  if (node.w !== undefined && (node.w < WORKBOARD_CARD_MIN_WIDTH || node.w > WORKBOARD_CARD_MAX_WIDTH)) return false;
-  return node.h === undefined || (node.h >= WORKBOARD_CARD_MIN_HEIGHT && node.h <= WORKBOARD_CARD_MAX_HEIGHT);
+  const minWidth = node.kind === "shape" ? WORKBOARD_SHAPE_MIN_SIZE : WORKBOARD_CARD_MIN_WIDTH;
+  const minHeight = node.kind === "shape" ? WORKBOARD_SHAPE_MIN_SIZE : WORKBOARD_CARD_MIN_HEIGHT;
+  const maxWidth = node.kind === "shape" ? WORKBOARD_SHAPE_MAX_SIZE : WORKBOARD_CARD_MAX_WIDTH;
+  const maxHeight = node.kind === "shape" ? WORKBOARD_SHAPE_MAX_SIZE : WORKBOARD_CARD_MAX_HEIGHT;
+  if (node.w !== undefined && (node.w < minWidth || node.w > maxWidth)) return false;
+  return node.h === undefined || (node.h >= minHeight && node.h <= maxHeight);
 }
 export type WorkboardJudgmentType =
   | "added_constraint"
@@ -161,6 +171,7 @@ export type WorkboardMutationResult =
 
 export const WORKBOARD_RELATIONS: WorkboardRelation[] = ["informed", "produced", "revised", "cited", "context"];
 export const WORKBOARD_ANCHORS: WorkboardAnchor[] = ["top", "right", "bottom", "left"];
+export const WORKBOARD_NODE_KINDS: WorkboardNodeKind[] = ["brief", "work_item", "decision", "judgment", "draft", "shape", "text", "mark"];
 export const WORKBOARD_JUDGMENT_TYPES: WorkboardJudgmentType[] = [
   "added_constraint",
   "corrected_ai",

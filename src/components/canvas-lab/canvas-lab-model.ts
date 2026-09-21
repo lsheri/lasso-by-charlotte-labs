@@ -18,6 +18,7 @@ import {
   type WorkboardDto,
   type WorkboardNodeDto,
   type WorkboardRelation,
+  type WorkboardShapeColour,
 } from "@/lib/canvas-lab-shared";
 import { clampZoom } from "@/lib/canvas-zoom";
 import { isWorkstreamFrameId } from "@/lib/context-region";
@@ -25,7 +26,7 @@ import { isContextFrameId } from "@/lib/context-region";
 import { isTrailFrameId } from "@/lib/reasoning-trail";
 import { placeAddedCards } from "@/lib/workboard-placement";
 
-export type LabNodeKind = "brief" | "task" | "work" | "decision" | "chat" | "source" | "ai_work" | "judgment" | "deliverable";
+export type LabNodeKind = "brief" | "task" | "work" | "decision" | "chat" | "source" | "ai_work" | "judgment" | "deliverable" | "shape";
 export type LabJudgmentType = "added_constraint" | "corrected_ai" | "rejected_option" | "requested_evidence" | "changed_direction" | "accepted_but_rewrote";
 export type LabTemplateKind = "source" | "ai_work" | "judgment" | "decision" | "deliverable";
 
@@ -75,6 +76,8 @@ export type LabNode = {
   durableVersion?: number;
   /** Set when the work item this card stood for was deleted from the inbox. */
   linkedItemRemovedAt?: string | null;
+  /** Closed palette token for a decorative colour block. */
+  colour?: WorkboardShapeColour;
 
   x: number;
   y: number;
@@ -854,11 +857,11 @@ export function fitWorkboardViewport(
   };
 }
 
-export function resizeLabRect(start: LabRect, corner: LabResizeCorner, delta: Point, preserveAspect = false, kind: "card" | "frame" = "card"): LabRect {
-  const minWidth = kind === "card" ? CARD_MIN_WIDTH : FRAME_MIN_WIDTH;
-  const minHeight = kind === "card" ? CARD_MIN_HEIGHT : FRAME_MIN_HEIGHT;
-  const maxWidth = kind === "card" ? CARD_MAX_WIDTH : 2400;
-  const maxHeight = kind === "card" ? CARD_MAX_HEIGHT : 1800;
+export function resizeLabRect(start: LabRect, corner: LabResizeCorner, delta: Point, preserveAspect = false, kind: "card" | "frame" | "shape" = "card"): LabRect {
+  const minWidth = kind === "shape" ? 80 : kind === "card" ? CARD_MIN_WIDTH : FRAME_MIN_WIDTH;
+  const minHeight = kind === "shape" ? 80 : kind === "card" ? CARD_MIN_HEIGHT : FRAME_MIN_HEIGHT;
+  const maxWidth = kind === "shape" ? 4000 : kind === "card" ? CARD_MAX_WIDTH : 2400;
+  const maxHeight = kind === "shape" ? 4000 : kind === "card" ? CARD_MAX_HEIGHT : 1800;
   const left = corner === "nw" || corner === "sw";
   const top = corner === "nw" || corner === "ne";
   let width = Math.max(minWidth, Math.min(maxWidth, start.width + (left ? -delta.x : delta.x)));
@@ -1001,11 +1004,32 @@ export function applyDurableBoard(base: { frames: LabFrame[]; nodes: LabNode[] }
         height: durable.h > 0 ? durable.h : CARD_HEIGHT,
       });
     }
+    if (durable.kind === "shape") {
+      nodes.push({
+        id: localId,
+        kind: "shape",
+        frame: null,
+        title: "Colour block",
+        summary: "",
+        typeLabel: "colour block",
+        ownership: durable.authorProfileId === board.viewerProfileId ? "yours" : "teammate",
+        colour: durable.body as WorkboardShapeColour,
+        local: false,
+        durableId: durable.id,
+        durableVersion: durable.version,
+        x: durable.x,
+        y: durable.y,
+        width: durable.w,
+        height: durable.h,
+      });
+    }
     // draft rows are deliberately not rehydrated in Slice 1.
   }
   for (const virtual of base.nodes) if (!matchedVirtual.has(virtual.id)) nodes.push(virtual);
 
+  const shapeIds = new Set(board.nodes.filter((node) => node.kind === "shape").map((node) => node.id));
   const links: LabLink[] = board.links.flatMap((link) => {
+    if (shapeIds.has(link.fromNodeId) || shapeIds.has(link.toNodeId)) return [];
     const fromId = localIdByDurable.get(link.fromNodeId);
     const toId = localIdByDurable.get(link.toNodeId);
     if (!fromId || !toId) return [];
@@ -1022,7 +1046,7 @@ export function applyDurableBoard(base: { frames: LabFrame[]; nodes: LabNode[] }
  * and node kinds contribute nothing.
  */
 export function inboundLabNodeIds(nodes: LabNode[], links: LabLink[], anchorId: string, maxDepth = 8): Set<string> {
-  const nodeIds = new Set(nodes.map((node) => node.id));
+  const nodeIds = new Set(nodes.filter((node) => node.kind !== "shape").map((node) => node.id));
   if (!nodeIds.has(anchorId)) return new Set();
   const inbound = new Map<string, string[]>();
   for (const link of links) {
@@ -1045,6 +1069,13 @@ export function inboundLabNodeIds(nodes: LabNode[], links: LabLink[], anchorId: 
   return reached;
 }
 
+export type ShapePointerIntent = "pan" | "drag";
+
+/** An unselected block yields its middle to the board and is picked up at an edge. */
+export function shapePointerIntent(input: { selected: boolean; onEdge: boolean }): ShapePointerIntent {
+  return input.selected || input.onEdge ? "drag" : "pan";
+}
+
 /** Cards recently pressed or focused render above the rest, newest last. */
 export const LAB_FRONT_LIMIT = 12;
 
@@ -1060,6 +1091,7 @@ export function cardStackZ(front: string[], id: string): number {
 
 /** The closed event vocabulary for one card. A deliverable says so. */
 export function eventKind(node: LabNode): LabNodeEventKind {
+  if (node.kind === "shape") return "shape";
   if (node.kind === "chat") return "draft_thread";
   if (node.kind === "judgment") return "human_judgment";
   if (node.kind === "ai_work") return "ai_work";
