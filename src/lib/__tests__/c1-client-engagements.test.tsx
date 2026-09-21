@@ -30,6 +30,10 @@ vi.mock("@/hooks/use-coaching-reach", () => ({
   useCoachingReach: () => ({ engagementIds: [], profileIds: [], canReach: mocks.canReach }),
 }));
 
+vi.mock("@/hooks/use-shared-with-me", () => ({
+  useSharedWithMe: () => ({ groups: [], isLoading: false, error: null }),
+}));
+
 vi.mock("@/components/engagements/NewEngagementDialog", () => ({
   NewEngagementDialog: ({
     trigger,

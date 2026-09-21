@@ -146,6 +146,10 @@
   --nb-green-deep: #0b6b3a;
   --nb-blue: #0a628f;
   --nb-amber: #8a6d1f;
+  /* S5a · the ink for what someone handed you. Contrast checked against the
+     paper ground and the dark ground at 13px. Fixed values: never lightened,
+     never harmonised, and only ever on the section title and a person's name. */
+  --nb-shared: #b3410a;
 
   /* W3 · drawn regions. A vivid choice drives the edge and the name; the fill
      itself stays soft so the cards sitting on it stay readable. */
@@ -355,6 +359,7 @@
 }
 
 .dark {
+  --nb-shared: #ff7a1a;
   --ember: #2bd97b;
   --ember-deep: #5ce89b;
   --ember-foreground: #0d211d;
@@ -1804,6 +1809,11 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   line-height: 1.2;
   letter-spacing: 0.01em;
   color: var(--nb-ink);
+}
+/* S5a · the "Shared with me" ink. Title and person names only: never a
+   control, never body text, never a border or a fill. */
+.nb-shared-ink {
+  color: var(--nb-shared);
 }
 .nb-nav-item {
   position: relative;
