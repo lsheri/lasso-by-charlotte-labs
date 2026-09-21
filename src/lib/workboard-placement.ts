@@ -8,7 +8,7 @@
  */
 
 import { DRAG_STEP, snapPoint, type Point } from "@/lib/canvas-drag";
-import { isWorkboardDecorationKind } from "@/lib/canvas-lab-shared";
+import { WORKBOARD_CARD_DEFAULT_SIZE, isWorkboardDecorationKind } from "@/lib/canvas-lab-shared";
 
 export type PlacementRect = { x: number; y: number; width: number; height: number };
 export type PlacementNode = PlacementRect & { kind?: string };
@@ -23,7 +23,10 @@ export function placementRectsForNodes(nodes: PlacementNode[]): PlacementRect[] 
 /** The clear space kept around every existing card and outline. */
 export const PLACEMENT_GAP = 24;
 
-export const PLACEMENT_CARD = { width: 260, height: 180 };
+export const PLACEMENT_CARD = {
+  width: WORKBOARD_CARD_DEFAULT_SIZE.width,
+  height: WORKBOARD_CARD_DEFAULT_SIZE.height,
+};
 
 /** One grid-aligned step, big enough to hold the gap on either side. */
 function gridStep(span: number, gap: number): number {

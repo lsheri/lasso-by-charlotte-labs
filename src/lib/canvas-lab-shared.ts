@@ -22,6 +22,12 @@ export const WORKBOARD_SHAPE_MAX_SIZE = 4000;
 export const WORKBOARD_TEXT_MIN_WIDTH = 80;
 export const WORKBOARD_TEXT_MIN_HEIGHT = 24;
 export const WORKBOARD_TEXT_MAX_SIZE = 4000;
+/**
+ * The size a card gets when it is created rather than drawn by hand: the
+ * client model, the placement grid and the server all read this one value, so
+ * a card added on the board and a card created for you are the same shape.
+ */
+export const WORKBOARD_CARD_DEFAULT_SIZE = { width: 260, height: 180 } as const;
 
 /** Stored names only. The client resolves these to the Lasso paper palette. */
 export const WORKBOARD_SHAPE_COLOURS = ["green", "blue", "rose", "yellow", "lavender", "grey"] as const;
