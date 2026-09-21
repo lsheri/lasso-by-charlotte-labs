@@ -884,7 +884,13 @@ export function containFrameMembers(rect: LabRect, frameId: string, nodes: LabNo
   const contentBottom = Math.max(...members.map((node) => node.y + node.height)) + FRAME_PADDING;
   const x = Math.min(rect.x, contentLeft);
   const y = Math.min(rect.y, contentTop);
-  return { x, y, width: Math.max(rect.x + rect.width, contentRight) - x, height: Math.max(rect.y + rect.height, contentBottom) - y };
+  // F1: never hand back a size the record would refuse.
+  return {
+    x,
+    y,
+    width: Math.max(FRAME_MIN_WIDTH, Math.max(rect.x + rect.width, contentRight) - x),
+    height: Math.max(FRAME_MIN_HEIGHT, Math.max(rect.y + rect.height, contentBottom) - y),
+  };
 }
 
 /* ------------------------------------------------------------------ */
