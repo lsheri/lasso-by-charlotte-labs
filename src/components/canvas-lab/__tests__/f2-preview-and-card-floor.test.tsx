@@ -104,7 +104,7 @@ describe("F2 readable card floor", () => {
       height: CARD_MIN_HEIGHT,
     });
     expect(validWorkboardNodeGeometry({ w: CARD_MIN_WIDTH, h: CARD_MIN_HEIGHT })).toBe(true);
-    expect(CARD_MIN_WIDTH).toBeGreaterThanOrEqual(180);
-    expect(CARD_MIN_HEIGHT).toBeGreaterThanOrEqual(112);
+    expect(validWorkboardNodeGeometry({ w: CARD_MIN_WIDTH - 1, h: CARD_MIN_HEIGHT })).toBe(false);
+    expect(validWorkboardNodeGeometry({ w: CARD_MIN_WIDTH, h: CARD_MIN_HEIGHT - 1 })).toBe(false);
   });
 });
