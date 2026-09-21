@@ -421,7 +421,8 @@ export function SidebarNav({
         if (group.id === "coach" && !canBeCoached) return null;
 
         return (
-          <div key={group.label}>
+          <Fragment key={group.label}>
+          <div>
             <div className="nb-group-header px-2">{group.label}</div>
             <div className="mt-2 flex flex-col gap-0.5">
               {/* Past work belongs under the shelves, after everything that is
