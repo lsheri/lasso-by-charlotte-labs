@@ -258,7 +258,15 @@ export type TelemetryEvent =
   /** Pass 148: one version written by a recheck. Source and reason only. */
   | "document.version_recorded"
   /** Pass 148: the earlier-versions list in the peek was expanded. Count only. */
-  | "document.versions_expanded";
+  | "document.versions_expanded"
+  /**
+   * W2.1: one piece of AI output was reorganised, either lifted so it stands
+   * on its own or put back with its chat. Closed dims only, no ids, no titles,
+   * no content: action (stands_alone | put_back), piece_kind (the work item
+   * type), vendor (claude | chatgpt | gemini | none) and on_board (whether a
+   * card and a produced link were drawn).
+   */
+  | "work.piece_regrouped";
 
 export type TelemetryDims = Record<
   string,
