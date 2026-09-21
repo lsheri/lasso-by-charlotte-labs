@@ -88,6 +88,7 @@ export async function recordAnonymousEvent(
       // This path has no org: an anonymous marketing view.
       workspace_type: "none",
       affiliated: null,
+      environment: resolveEnvironment(),
       event_type: eventType,
       schema_version: "v1",
       tenant_hash: tenantHash,
