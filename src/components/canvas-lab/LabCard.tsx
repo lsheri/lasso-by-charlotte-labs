@@ -154,6 +154,7 @@ export function LabCard({
 
   const anchors: LabAnchor[] = ["top", "right", "bottom", "left"];
   const hasPreview = displayMode === "preview" && Boolean(item) && !previewFailed && (item?.type === "ai_thread" ? Boolean(preview?.turns.length) : Boolean(filePreview && filePreview.kind !== "fallback"));
+  const stickyHasThumbnail = Boolean(item) && !previewFailed && (item?.type === "ai_thread" ? Boolean(preview?.turns.length) : Boolean(filePreview && filePreview.kind !== "fallback"));
   return (
     <div
       ref={cardRef}
@@ -179,7 +180,7 @@ export function LabCard({
       className="canvas-lab-card group absolute text-left outline-none"
     >
       <div ref={paperRef} data-selected={selected} data-focused={focused} data-connect-source={connectSourceAnchor !== null} className="canvas-lab-card-paper h-full w-full overflow-hidden">
-        {hasPreview && item ? <LabPreview item={item} preview={preview} filePreview={filePreview} focused={focused} onFailure={() => setPreviewFailed(true)} onPreviewScroll={onPreviewScroll} onOpen={onOpen} /> : <div data-drawing="sticky" className="h-full"><LabPaper node={node} item={item} selected={selected} focused={focused} displayMode="sticky" preview={preview} filePreview={filePreview} onPreviewScroll={onPreviewScroll} showOwnership={!readOnly} onEdit={onEdit} onEditCommitted={onEditCommitted} commentCount={commentCount} onOpenComments={onOpenComments} onOpenTrail={readOnly || !node.deliverable ? undefined : onOpen} /></div>}
+        {hasPreview && item ? <LabPreview item={item} preview={preview} filePreview={filePreview} focused={focused} onFailure={() => setPreviewFailed(true)} onPreviewScroll={onPreviewScroll} onOpen={onOpen} /> : <div data-drawing="sticky" className="h-full"><LabPaper node={node} item={item} selected={selected} focused={focused} displayMode={stickyHasThumbnail ? "preview" : "sticky"} preview={preview} filePreview={filePreview} onPreviewScroll={onPreviewScroll} showOwnership={!readOnly} onEdit={onEdit} onEditCommitted={onEditCommitted} commentCount={commentCount} onOpenComments={onOpenComments} onOpenTrail={readOnly || !node.deliverable ? undefined : onOpen} /></div>}
         {selected ? <Paperclip aria-hidden="true" className="canvas-lab-context-mark" /> : null}
       </div>
       {canResize && focused && !readOnly ? (["nw", "ne", "se", "sw"] as LabResizeCorner[]).map((corner) => <button key={corner} type="button" className="canvas-lab-resize-handle" data-corner={corner} aria-label={`Resize ${node.title} from ${corner}`} onDoubleClick={(event) => { event.stopPropagation(); onFit(); }} onPointerDown={(event) => onResizeStart(corner, event)} onKeyDown={(event) => onResizeKeyDown(corner, event)} onKeyUp={onResizeKeyUp} />) : null}

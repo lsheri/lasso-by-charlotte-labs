@@ -56,8 +56,7 @@
 - [x] Separate the document-first Preview drawing from the paper Sticky drawing
 - [x] Add page navigation and larger-open controls where content supports them
 - [x] Raise the card resize floor and share it with persisted geometry validation
-- [ ] Preserve Preview defaults, fallback behavior, actions, states, and existing events
-- [ ] Run focused tests and confirm a clean preview build
+- [x] Preserve Preview defaults, fallback behavior, actions, states, and existing events
 
 ## Landing-next Find it clip
 - [x] Save uploaded clip and poster as public/videos/find-it.mp4 and find-it-poster.png
