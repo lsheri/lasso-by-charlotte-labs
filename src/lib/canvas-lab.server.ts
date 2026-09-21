@@ -22,7 +22,7 @@ import type {
   WorkboardNodeInput,
   WorkboardRowSnapshot,
 } from "@/lib/canvas-lab-shared";
-import { WORKBOARD_ANCHORS, WORKBOARD_JUDGMENT_TYPES, WORKBOARD_RELATIONS, validWorkboardNodeGeometry } from "@/lib/canvas-lab-shared";
+import { WORKBOARD_ANCHORS, WORKBOARD_JUDGMENT_TYPES, WORKBOARD_NODE_KINDS, WORKBOARD_RELATIONS, WORKBOARD_SHAPE_COLOURS, validWorkboardNodeGeometry } from "@/lib/canvas-lab-shared";
 import type { ResolvedProfile } from "@/lib/profile-resolve";
 
 type Db = SupabaseClient<Database>;
@@ -190,11 +190,14 @@ function snapshot<T extends { version: number }>(row: T): WorkboardRowSnapshot &
   return JSON.parse(JSON.stringify(row)) as WorkboardRowSnapshot & { version: number };
 }
 
-function validNodeInput(node: WorkboardNodeInput): string | null {
-  if (!validWorkboardNodeGeometry(node)) return "Card dimensions are outside the supported range.";
+export function validNodeInput(node: WorkboardNodeInput): string | null {
+  if (!WORKBOARD_NODE_KINDS.includes(node.kind)) return "Unknown workboard item kind.";
+  if (!validWorkboardNodeGeometry(node)) return node.kind === "shape" ? "Block dimensions are outside the supported range." : "Card dimensions are outside the supported range.";
   if (node.kind === "work_item" && !node.workItemId) return "A work card needs its work item.";
   if (node.kind === "decision" && !node.decisionId) return "A decision card needs its decision.";
   if ((node.kind === "judgment" || node.kind === "draft") && (node.workItemId || node.decisionId)) return "An authored card cannot reference a record.";
+  if ((node.kind === "shape" || node.kind === "text" || node.kind === "mark") && (node.workItemId || node.decisionId)) return "A colour block cannot reference work or a decision.";
+  if (node.kind === "shape" && !WORKBOARD_SHAPE_COLOURS.includes(node.body as (typeof WORKBOARD_SHAPE_COLOURS)[number])) return "Choose one of the available block colours.";
   if (node.judgmentType && !WORKBOARD_JUDGMENT_TYPES.includes(node.judgmentType)) return "Unknown judgment type.";
   return null;
 }
@@ -219,8 +222,8 @@ export function validateFrameArchive(kind: string, liveNodeCount: number): strin
   return null;
 }
 
-function validNodeGeometry(node: { x?: number; y?: number; w?: number; h?: number }): boolean {
-  return validWorkboardNodeGeometry(node);
+function validNodeGeometry(kind: WorkboardNodeDto["kind"], node: { x?: number; y?: number; w?: number; h?: number }): boolean {
+  return validWorkboardNodeGeometry({ kind, ...node });
 }
 
 function nodePatchForDatabase(patch: Extract<WorkboardCommand, { type: "node_update" }>["patch"]): Record<string, unknown> {
@@ -353,7 +356,8 @@ export async function applyWorkboardCommand(
     if (owner && (owner.kind === "judgment" || owner.kind === "draft") && owner.author_profile_id !== profile.id) {
       return { status: "forbidden" };
     }
-    if (command.type === "node_update" && !validNodeGeometry(command.patch)) return { status: "validation_error", message: "Card dimensions are outside the supported range." };
+    if (!owner) return { status: "validation_error", message: "That board item is gone." };
+    if (command.type === "node_update" && !validNodeGeometry(owner.kind as WorkboardNodeDto["kind"], command.patch)) return { status: "validation_error", message: owner.kind === "shape" ? "Block dimensions are outside the supported range." : "Card dimensions are outside the supported range." };
     if (command.type === "node_update" && command.patch.frameId) {
       const target = (await db.from("workboard_frames").select("id").eq("id", command.patch.frameId).eq("workboard_id", board.id).is("deleted_at", null).maybeSingle()).data;
       if (!target) return { status: "validation_error", message: "That workstream is not on this workboard." };
@@ -387,8 +391,9 @@ export async function applyWorkboardCommand(
     }
     if (command.relation !== undefined && !WORKBOARD_RELATIONS.includes(command.relation)) return { status: "validation_error", message: "Unknown relationship." };
     if (command.fromNodeId === command.toNodeId) return { status: "validation_error", message: "A card cannot connect to itself." };
-    const endpoints = (await db.from("workboard_nodes").select("id").eq("workboard_id", board.id).is("deleted_at", null).in("id", [command.fromNodeId, command.toNodeId])).data ?? [];
+    const endpoints = (await db.from("workboard_nodes").select("id, kind").eq("workboard_id", board.id).is("deleted_at", null).in("id", [command.fromNodeId, command.toNodeId])).data ?? [];
     if (endpoints.length !== 2) return { status: "validation_error", message: "One of those cards is not on this workboard." };
+    if (endpoints.some((endpoint) => endpoint.kind === "shape")) return { status: "validation_error", message: "A colour block cannot be connected." };
     const { data, error } = await db
       .from("workboard_links")
       .insert({
