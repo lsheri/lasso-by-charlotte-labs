@@ -20,6 +20,19 @@ export function storedPushChatUrl(args: Record<string, unknown>): string | null 
 }
 
 /**
+ * W3 — the link a document inherits from the conversation it came out of.
+ *
+ * Reads only the conversation's stored source_meta: a value that already
+ * passed the allowlist and the front door rule when it was stored. A
+ * document never derives a URL from its own id or filename; it inherits
+ * one or it has none.
+ */
+export function inheritedConversationUrl(sourceMeta: unknown): string | null {
+  const url = (sourceMeta as Record<string, unknown> | null)?.["url"];
+  return typeof url === "string" && url ? url : null;
+}
+
+/**
  * What the caller is told when nothing usable arrived. It is read by a model in
  * the same turn, which is the only moment it can still fix it.
  */
