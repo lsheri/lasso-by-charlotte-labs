@@ -8,7 +8,10 @@ import {
   resizeLabRect,
   seedBlankCanvas,
 } from "@/components/canvas-lab/canvas-lab-model";
+import { readFileSync } from "node:fs";
+
 import {
+  WORKBOARD_CARD_DEFAULT_SIZE,
   WORKBOARD_CARD_MIN_HEIGHT,
   WORKBOARD_CARD_MIN_WIDTH,
   WORKBOARD_SHAPE_MAX_SIZE,
@@ -41,6 +44,17 @@ describe("F5 card geometry contract", () => {
     expect(PLACEMENT_CARD).toEqual({ width: CARD_WIDTH, height: CARD_HEIGHT });
     expect(CARD_MIN_WIDTH).toBeGreaterThanOrEqual(WORKBOARD_CARD_MIN_WIDTH);
     expect(CARD_MIN_HEIGHT).toBeGreaterThanOrEqual(WORKBOARD_CARD_MIN_HEIGHT);
+  });
+
+  it("keeps the server's created-card default equal to the seeded default, from one source", () => {
+    expect(WORKBOARD_CARD_DEFAULT_SIZE).toEqual({ width: CARD_WIDTH, height: CARD_HEIGHT });
+    expect(validWorkboardNodeGeometry({ w: WORKBOARD_CARD_DEFAULT_SIZE.width, h: WORKBOARD_CARD_DEFAULT_SIZE.height })).toBe(true);
+
+    // The server reads the shared value rather than writing the numbers again.
+    const server = readFileSync("src/lib/canvas-lab.server.ts", "utf8");
+    expect(server).toContain("w: WORKBOARD_CARD_DEFAULT_SIZE.width");
+    expect(server).toContain("h: WORKBOARD_CARD_DEFAULT_SIZE.height");
+    expect(server).not.toMatch(/\bh:\s*160\b/);
   });
 
   it("keeps block resize limits within the block record limits", () => {
