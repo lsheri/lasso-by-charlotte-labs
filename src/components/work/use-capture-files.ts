@@ -8,7 +8,7 @@ import { ensureExtractsFn } from "@/lib/extract.functions";
 import { logEvent } from "@/lib/telemetry";
 import { logV2 } from "@/lib/telemetry-v2";
 import { noteCaptureFn } from "@/lib/work-taxonomy.functions";
-import { buildUploadSourceMeta } from "@/lib/upload-payload";
+import { buildUploadSourceMeta, storageObjectKey } from "@/lib/upload-payload";
 import { workTypeForFile } from "@/lib/work-types";
 
 /**
@@ -24,7 +24,18 @@ export function useCaptureFiles() {
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  /** F1: what did not come in, and why, so the reason is never swallowed. */
+  async function captureWithResult(files: File[]): Promise<{ ids: string[]; failures: { name: string; reason: string }[] }> {
+    const failures: { name: string; reason: string }[] = [];
+    const ids = await run(files, failures);
+    return { ids, failures };
+  }
+
   async function capture(files: File[]): Promise<string[]> {
+    return run(files, []);
+  }
+
+  async function run(files: File[], failures: { name: string; reason: string }[]): Promise<string[]> {
     if (files.length === 0 || !profile) return [];
     setPending(true);
     setError(null);
