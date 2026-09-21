@@ -38,9 +38,14 @@ import { isRegionFrameId } from "@/lib/board-region";
 import { isTrailFrameId } from "@/lib/reasoning-trail";
 import { placeAddedCards } from "@/lib/workboard-placement";
 
-export type LabNodeKind = "brief" | "task" | "work" | "decision" | "chat" | "source" | "ai_work" | "judgment" | "deliverable" | "shape" | "text";
+export type LabNodeKind = "brief" | "task" | "work" | "decision" | "chat" | "source" | "ai_work" | "judgment" | "deliverable" | "shape" | "text" | "answer";
 export type LabJudgmentType = "added_constraint" | "corrected_ai" | "rejected_option" | "requested_evidence" | "changed_direction" | "accepted_but_rewrote";
 export type LabTemplateKind = "source" | "ai_work" | "judgment" | "decision" | "deliverable";
+/**
+ * The cards a person can create from the board. A kept answer is not one of
+ * them: it only ever arrives as the result of keeping an answer.
+ */
+export const LAB_TEMPLATE_KINDS: readonly LabTemplateKind[] = ["source", "ai_work", "judgment", "decision", "deliverable"];
 
 /** Who the thing belongs to, which is what decides the offered actions. */
 export type LabOwnership = "yours" | "teammate" | "draft";
@@ -93,6 +98,10 @@ export type LabNode = {
   textSize?: WorkboardTextSize;
   textWeight?: WorkboardTextWeight;
   textColour?: WorkboardTextColour;
+  /** Kept answers only: when the row was saved, and who asked. */
+  createdAt?: string | null;
+  authorName?: string;
+
 
   x: number;
   y: number;
