@@ -13,6 +13,9 @@ import {
   WORKBOARD_CARD_MIN_WIDTH,
   WORKBOARD_SHAPE_MAX_SIZE,
   WORKBOARD_SHAPE_MIN_SIZE,
+  WORKBOARD_TEXT_MAX_SIZE,
+  WORKBOARD_TEXT_MIN_HEIGHT,
+  WORKBOARD_TEXT_MIN_WIDTH,
   validWorkboardNodeGeometry,
 } from "@/lib/canvas-lab-shared";
 import { PLACEMENT_CARD } from "@/lib/workboard-placement";
@@ -51,5 +54,17 @@ describe("F5 card geometry contract", () => {
 
     expect(maximum).toMatchObject({ width: WORKBOARD_SHAPE_MAX_SIZE, height: WORKBOARD_SHAPE_MAX_SIZE });
     expect(validWorkboardNodeGeometry({ kind: "shape", w: maximum.width, h: maximum.height })).toBe(true);
+  });
+
+  it("keeps text block resize limits within the text block record limits", () => {
+    const maximum = resizeLabRect(
+      { x: 0, y: 0, width: WORKBOARD_TEXT_MIN_WIDTH, height: WORKBOARD_TEXT_MIN_HEIGHT },
+      "se",
+      { x: Number.MAX_SAFE_INTEGER, y: Number.MAX_SAFE_INTEGER },
+      false,
+      "text",
+    );
+    expect(maximum).toMatchObject({ width: WORKBOARD_TEXT_MAX_SIZE, height: WORKBOARD_TEXT_MAX_SIZE });
+    expect(validWorkboardNodeGeometry({ kind: "text", w: maximum.width, h: maximum.height })).toBe(true);
   });
 });
