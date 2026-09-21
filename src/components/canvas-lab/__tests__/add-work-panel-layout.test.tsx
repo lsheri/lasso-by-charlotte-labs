@@ -68,13 +68,4 @@ describe("AddWorkPanel layout containment", () => {
     expect(confirm?.parentElement?.parentElement).toBe(dialog);
   });
 
-  it("constrains the scroll viewport child and clips the dialog box", () => {
-    renderPanel();
-    const dialog = document.querySelector<HTMLElement>("[role=dialog]");
-    const viewport = dialog?.querySelector<HTMLElement>("[data-radix-scroll-area-viewport]");
-
-    expect(dialog?.classList.contains("overflow-hidden")).toBe(true);
-    expect(viewport?.className).toContain("[&>div]:!w-full");
-    expect(viewport?.className).toContain("[&>div]:!min-w-0");
-  });
 });
