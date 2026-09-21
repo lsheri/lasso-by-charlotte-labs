@@ -2,10 +2,12 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 
 import { supabase } from "@/integrations/supabase/client";
+import { useCoachingReach } from "@/hooks/use-coaching-reach";
 import type { Profile } from "@/hooks/use-profile";
 import type { WorkItemRow } from "@/lib/work-types";
 import { getCoachSubjects } from "@/lib/coach-subjects.functions";
 import type { CoachSubjectAcrossOrgs } from "@/lib/coach-subjects-shared";
+
 
 export type { CoachSubject, CoachSubjectAcrossOrgs } from "@/lib/coach-subjects-shared";
 
@@ -44,32 +46,19 @@ export function coachSubjectsKey(profileIdsCsv: string) {
  */
 export function useAllCoachSubjects(profiles: Profile[]) {
   const profileIds = profiles.map((p) => p.id);
-  const allCsv = profileIds.join(",");
   const fetchSubjects = useServerFn(getCoachSubjects);
 
   // Who this person coaches is an engagement level fact: a profile holds the
-  // queue for every engagement where it is a coach member, whatever its
+  // queue for every engagement where it was granted Review, whatever its
   // workspace wide role says. The same relationship the note policy checks.
-  const membership = useQuery({
-    queryKey: ["my-coach-memberships", allCsv],
-    enabled: profileIds.length > 0,
-    queryFn: async (): Promise<string[]> => {
-      const { data, error } = await supabase
-        .from("engagement_members")
-        .select("profile_id")
-        .in("profile_id", profileIds)
-        .eq("member_role", "coach");
-      if (error) throw error;
-      return Array.from(new Set((data ?? []).map((row) => row.profile_id as string)));
-    },
-  });
+  const reach = useCoachingReach(profiles);
 
-  const coachProfileIds = membership.data ?? [];
+  const coachProfileIds = reach.profileIds;
   const csv = coachProfileIds.join(",");
 
   const query = useQuery({
     queryKey: coachSubjectsKey(csv),
-    enabled: membership.isSuccess && coachProfileIds.length > 0,
+    enabled: reach.isSuccess && coachProfileIds.length > 0,
     queryFn: (): Promise<CoachSubjectAcrossOrgs[]> =>
       fetchSubjects({ data: { profile_ids: coachProfileIds } }),
     ...COACH_POLL,
@@ -79,10 +68,11 @@ export function useAllCoachSubjects(profiles: Profile[]) {
     data: query.data ?? [],
     isLoading:
       profileIds.length > 0 &&
-      (membership.isLoading || (coachProfileIds.length > 0 && query.isLoading)),
-    error: ((membership.error ?? query.error) || null) as Error | null,
+      (reach.isLoading || (coachProfileIds.length > 0 && query.isLoading)),
+    error: ((reach.error ?? query.error) || null) as Error | null,
   };
 }
+
 
 export type PacketElement = {
   step_no: number | null;

@@ -18,6 +18,7 @@ import {
 import { AiRecordPointer } from "@/components/reflect/AiRecordPointer";
 import { WeekRail } from "@/components/reflect/WeekRail";
 import { WorkScopePicker, scopeSentence } from "@/components/reflect/WorkScopePicker";
+import { usesGuestNav } from "@/lib/role-access";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -119,10 +120,10 @@ export function ReflectPage({
 
   // Reflect is private to the person doing the work; coach profiles never see it,
   // including by typing the URL directly.
-  const isCoach = profile?.role === "coach";
+  const guest = usesGuestNav(profile);
   useEffect(() => {
-    if (isCoach) navigate({ to: "/coaching", replace: true });
-  }, [isCoach, navigate]);
+    if (guest) navigate({ to: "/coaching", replace: true });
+  }, [guest, navigate]);
 
   // One load, two keys: the session list and the open thread arrive together,
   // and both key literals stay subscribed so every existing invalidation of

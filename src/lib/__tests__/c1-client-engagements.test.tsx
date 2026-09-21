@@ -14,6 +14,7 @@ const mocks = vi.hoisted(() => ({
   } as Record<string, unknown> | null,
   engagements: [] as unknown[],
   dialogs: [] as { initialClientId?: string | null; from?: string }[],
+  canReach: false,
 }));
 
 vi.mock("@/hooks/use-profile", () => ({
@@ -25,6 +26,9 @@ vi.mock("@/hooks/use-decisions", () => ({ useDecisions: () => ({ data: [] }) }))
 vi.mock("@/hooks/use-affiliation", () => ({ useAffiliation: () => ({ data: null }) }));
 vi.mock("@/hooks/use-coach-note-thread", () => ({ useUnreadNotesAboutMe: () => ({ data: [] }) }));
 vi.mock("@/hooks/use-coaching-links", () => ({ useHasLiveCoachLink: () => false }));
+vi.mock("@/hooks/use-coaching-reach", () => ({
+  useCoachingReach: () => ({ engagementIds: [], profileIds: [], canReach: mocks.canReach }),
+}));
 
 vi.mock("@/components/engagements/NewEngagementDialog", () => ({
   NewEngagementDialog: ({

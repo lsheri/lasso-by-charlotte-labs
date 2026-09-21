@@ -8,6 +8,8 @@ import { CircleMark } from "@/components/notebook/CircleMark";
 import { useAffiliation } from "@/hooks/use-affiliation";
 import { useUnreadNotesAboutMe } from "@/hooks/use-coach-note-thread";
 import { useHasLiveCoachLink } from "@/hooks/use-coaching-links";
+import { useCoachingReach } from "@/hooks/use-coaching-reach";
+
 import { useDecisions } from "@/hooks/use-decisions";
 import { useEngagements } from "@/hooks/use-engagements";
 import { useProfile } from "@/hooks/use-profile";
@@ -24,7 +26,7 @@ import {
   type NavEngagement,
 } from "@/lib/nav-groups";
 
-import { coachNavGroups, eduNavGroups, navGroups } from "./nav-config";
+import { coachNavGroups, coachingGroup, eduNavGroups, navGroups } from "./nav-config";
 import { engagementDisplayCode, engagementDisplayTitle } from "@/lib/clients";
 
 const linkClass = "nb-nav-item";
@@ -163,7 +165,7 @@ export function SidebarNav({
   onNavigate?: (() => void) | undefined;
   onOpenSettings?: (() => void) | undefined;
 }) {
-  const { data: profile } = useProfile();
+  const { data: profile, profiles } = useProfile();
   // Pass 186: an affiliated workspace gets one extra item at the top of
   // "Your account", named for the institution. Nothing is inserted when
   // there is no affiliation.
@@ -174,11 +176,15 @@ export function SidebarNav({
   // The pill counts what is WAITING on you, which is the drafts. A confirmed
   // call needs nothing, so counting it would ask for attention that is not due.
   const decisionCount = (decisions ?? []).filter((row) => row.status === "draft").length;
-  const isCoach = roles.isCoach(profile);
+  const guestNav = roles.usesGuestNav(profile);
   const canManageMembers = roles.canManageMembers(profile);
   const canSeeFirmView = roles.canSeeFirmView(profile);
   const groupsForOrg = isEduOrg(profile) ? eduNavGroups : navGroups;
   const vocab = vocabFor(profile);
+  // Whether a coaching destination exists at all is decided by what this
+  // person was given on a board, never by their workspace role.
+  const reach = useCoachingReach(profiles);
+  const coachingGroups = reach.canReach ? [coachingGroup] : [];
 
   const membersLabel = roles.membersLabel(profile);
   // "Your coach" is only a real place when someone is actually coaching you.
@@ -186,13 +192,14 @@ export function SidebarNav({
   // have a live link, so only there does the sidebar ask.
   const byArrangement = roles.hasCoachByArrangement(profile);
   const soloHasCoach = useHasLiveCoachLink(
-    !isCoach && profile?.org_type === "personal" && Boolean(profile?.id),
+    !guestNav && profile?.org_type === "personal" && Boolean(profile?.id),
   );
   const canBeCoached = byArrangement || soloHasCoach;
   // One query for the circle, shared with every other surface that draws it.
-  // A coach never asks: there are no circles on a coach's screen.
-  const { data: unreadNotes } = useUnreadNotesAboutMe(isCoach ? undefined : profile?.id);
+  // A guest never asks: there are no circles on a guest's screen.
+  const { data: unreadNotes } = useUnreadNotesAboutMe(guestNav ? undefined : profile?.id);
   const hasNewNotes = (unreadNotes ?? []).length > 0;
+
 
   const matchRoute = useMatchRoute();
   const engagementMatch = matchRoute({ to: "/engagements/$id", fuzzy: false });
@@ -222,11 +229,13 @@ export function SidebarNav({
     });
   }
 
-  // A coach gets their own short nav. Worker and admin items are unchanged.
-  if (isCoach) {
+  // A guest gets their own short nav. Worker and admin items are unchanged.
+  // The coaching destination sits on top of it only when a board was shared.
+  if (guestNav) {
     return (
       <nav className="flex flex-col gap-7">
-        {coachNavGroups.map((group) => (
+        {[...coachingGroups, ...coachNavGroups].map((group) => (
+
           <div key={group.label}>
             <div className="nb-group-header px-2">{group.label}</div>
             <div className="mt-2 flex flex-col gap-0.5">
@@ -266,7 +275,7 @@ export function SidebarNav({
 
   return (
     <nav className="flex flex-col gap-7">
-      {groupsForOrg.map((group) => {
+      {[...groupsForOrg, ...coachingGroups].map((group) => {
         const isEngagementGroup = group.id === "engagements";
 
         const itemsForGroup =

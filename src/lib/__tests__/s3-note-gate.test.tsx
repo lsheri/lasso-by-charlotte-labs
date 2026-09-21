@@ -221,7 +221,7 @@ describe("what moved and what did not", () => {
 
   it("the coach queue reads engagement membership, not the workspace role", () => {
     const hook = read("src/hooks/use-coaching.ts");
-    expect(hook).toContain('member_role", "coach"');
+    expect(hook).toContain("useCoachingReach(profiles)");
     expect(hook).not.toContain('profiles.filter((p) => p.role === "coach")');
     const fn = read("src/lib/coach-subjects.functions.ts");
     expect(fn).not.toContain('profile.role === "coach"');
