@@ -94,6 +94,15 @@ export function contextSlots(rect: ContextRect, taken: PlacementRect[], count: n
   return points;
 }
 
+/**
+ * A card that is sitting in the region's rectangle without belonging to it.
+ * The packed flow on a blank board starts at the origin, so an unrelated card
+ * can land under the region and read as context when it is not.
+ */
+export function overlapsContextRegion(rect: ContextRect, card: PlacementRect): boolean {
+  return card.x < rect.x + rect.width && card.x + card.width > rect.x && card.y < rect.y + rect.height && card.y + card.height > rect.y;
+}
+
 /** The region grows downwards to keep every one of its cards inside it. */
 export function contextRegionFor(rect: ContextRect, cards: PlacementRect[]): ContextRect {
   if (cards.length === 0) return rect;
