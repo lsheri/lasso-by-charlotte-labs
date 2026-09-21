@@ -10,7 +10,7 @@
  */
 
 import { snapPoint, type Point } from "@/lib/canvas-drag";
-import { PLACEMENT_CARD, PLACEMENT_GAP, placeAddedCards, slotIsFree, type PlacementRect } from "@/lib/workboard-placement";
+import { PLACEMENT_CARD, PLACEMENT_GAP, slotIsFree, type PlacementRect } from "@/lib/workboard-placement";
 
 export const CONTEXT_FRAME_ID = "context";
 export const CONTEXT_FRAME_LABEL = "Context";
@@ -105,8 +105,18 @@ export function contextRegionFor(rect: ContextRect, cards: PlacementRect[]): Con
   };
 }
 
-/** Where a card lands when it is taken out of context: on the board, below the region. */
+/**
+ * Where a card lands when it is taken out of context: on the board, below the
+ * region. The search only walks down and across to the right, so the card is
+ * never pushed back up inside the region it just left.
+ */
 export function contextExitPoint(rect: ContextRect, taken: PlacementRect[]): Point {
-  const anchor = snapPoint({ x: rect.x, y: rect.y + rect.height + PLACEMENT_GAP });
-  return placeAddedCards(anchor, taken, 1)[0] ?? anchor;
+  const base = snapPoint({ x: rect.x, y: rect.y + rect.height + PLACEMENT_GAP });
+  for (let row = 0; row < 40; row += 1) {
+    for (let column = 0; column < 12; column += 1) {
+      const point = snapPoint({ x: base.x + column * stepX(), y: base.y + row * stepY() });
+      if (slotIsFree({ ...point, ...PLACEMENT_CARD }, taken, PLACEMENT_GAP)) return point;
+    }
+  }
+  return base;
 }
