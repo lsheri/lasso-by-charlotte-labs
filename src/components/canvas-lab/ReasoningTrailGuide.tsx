@@ -37,16 +37,20 @@ export function ReasoningTrailGuide({ onAdd, rect: placed, onHandlePointerDown, 
   }
 
   // One source for where this panel sits, shared with anything placing cards.
-  const rect = BOARD_GUIDE_RECTS[0]!;
+  const rect = placed ?? BOARD_GUIDE_RECTS[0]!;
+  const movable = Boolean(onHandlePointerDown);
   return (
     <section
       className="canvas-lab-guide"
+      data-trail-placed={placed ? "true" : undefined}
       style={{ left: rect.x, top: rect.y, width: rect.width, minHeight: rect.height }}
       aria-labelledby="reasoning-trail-title"
+      onPointerDown={movable ? onHandlePointerDown : undefined}
     >
       <div className="flex items-baseline justify-between gap-2">
         <h2 id="reasoning-trail-title" className="font-hand text-[18px] text-[var(--nb-mid)]">Reasoning trail</h2>
         <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">Guide · no links implied</span>
+        {onRemove ? <Button type="button" variant="ghost" size="sm" className="h-6 px-1 text-[9px]" onPointerDown={(event) => event.stopPropagation()} onClick={onRemove}>Remove</Button> : null}
       </div>
       <div className="mt-2 grid grid-cols-5 gap-2">
         {REASONING_STEPS.map((step, index) => (
