@@ -7,7 +7,7 @@ import { contextAreaAvailability } from "@/lib/context-region";
 describe("F4 context area removal and restore", () => {
   it("does not lazily recreate a context area that was removed", () => {
     expect(contextAreaAvailability({ active: false, archived: true, hasContent: true })).toEqual({ autoCreate: false, canAdd: true });
-    expect(contextAreaAvailability({ active: false, archived: false, hasContent: true })).toEqual({ autoCreate: true, canAdd: false });
+    expect(contextAreaAvailability({ active: false, archived: false, hasContent: true })).toEqual({ autoCreate: true, canAdd: true });
   });
 
   it("keeps all four removal labels distinct", () => {

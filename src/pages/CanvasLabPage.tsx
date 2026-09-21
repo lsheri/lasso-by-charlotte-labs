@@ -145,7 +145,7 @@ import type { WorkItemRow } from "@/lib/work-types";
 import { readWorkboardDisplayMode, workboardDisplayModeKey, type WorkboardDisplayMode } from "@/lib/workboard-card-preview.shared";
 import { useQueryClient } from "@tanstack/react-query";
 import { AddWorkPanel, type AddWorkSource } from "@/components/canvas-lab/AddWorkPanel";
-import { CARD_HEIGHT, CARD_MAX_HEIGHT, CARD_MIN_HEIGHT, CARD_WIDTH } from "@/components/canvas-lab/canvas-lab-model";
+import { CARD_HEIGHT, CARD_WIDTH } from "@/components/canvas-lab/canvas-lab-model";
 import { placeWorkOnBoardFn } from "@/lib/workboard-add-work.functions";
 import { placeAddedCards, type PlacementRect } from "@/lib/workboard-placement";
 import { briefAttachmentPoints, pendingBriefAttachments } from "@/lib/brief-files";
@@ -1657,6 +1657,11 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
         report(result, "frame", "create");
         if (result.status !== "saved" || !result.created?.frameId) { framesRef.current = framesRef.current.filter((frame) => frame.id !== created.id); return; }
         created = { ...created, durableId: result.created.frameId, durableVersion: result.versions[result.created.frameId] ?? 1, local: false };
+      } else {
+        const fresh = await lab.refresh();
+        const durable = fresh?.frames.find((frame) => frame.key === CONTEXT_FRAME_ID);
+        if (!durable) { framesRef.current = framesRef.current.filter((frame) => frame.id !== created.id); return; }
+        created = { ...created, durableId: durable.id, durableVersion: durable.version, local: false };
       }
     }
     contextRemovedRef.current = false;
