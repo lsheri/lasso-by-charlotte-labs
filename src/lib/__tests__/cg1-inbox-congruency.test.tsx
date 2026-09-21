@@ -92,7 +92,9 @@ describe("CG1 inbox congruency", () => {
     for (const filter of filters) {
       for (const state of selected) {
         const dims = inboxFilterDims(filter, state, state === "all" ? rows.length : 0);
-        expect(Object.keys(dims).sort()).toEqual([...EVENT_DIM_KEYS["work.filter_changed"]].sort());
+        expect(Object.keys(dims).sort()).toEqual(
+          [...(EVENT_DIM_KEYS["work.filter_changed"] ?? [])].sort(),
+        );
         expect(filters).toContain(dims.filter);
         expect(selected).toContain(dims.selected);
         if (state === "one") expect(dims.result_band).toBe("0");
