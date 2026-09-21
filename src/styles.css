@@ -1227,6 +1227,24 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 [data-testid="canvas-lab-shell"][data-interaction="resize"] .canvas-lab-stage,
 [data-testid="canvas-lab-shell"][data-interaction="connect"] .canvas-lab-stage { user-select: none; }
 .canvas-lab-card { cursor: grab; }
+.canvas-lab-colour-block {
+  z-index: 0;
+  border-radius: 18px;
+  border: 1px solid color-mix(in srgb, var(--nb-pencil) 30%, transparent);
+}
+.canvas-lab-colour-block[data-selected="true"] {
+  outline: calc(2px * var(--lab-inverse-zoom, 1)) solid var(--nb-green);
+  outline-offset: calc(1px * var(--lab-inverse-zoom, 1));
+  cursor: grab;
+}
+.canvas-lab-colour-block-edge { position: absolute; pointer-events: auto; background: transparent; }
+.canvas-lab-colour-block-edge[data-edge="top"], .canvas-lab-colour-block-edge[data-edge="bottom"] { left: 0; width: 100%; height: 12px; }
+.canvas-lab-colour-block-edge[data-edge="left"], .canvas-lab-colour-block-edge[data-edge="right"] { top: 0; height: 100%; width: 12px; }
+.canvas-lab-colour-block-edge[data-edge="top"] { top: 0; }
+.canvas-lab-colour-block-edge[data-edge="right"] { right: 0; }
+.canvas-lab-colour-block-edge[data-edge="bottom"] { bottom: 0; }
+.canvas-lab-colour-block-edge[data-edge="left"] { left: 0; }
+.canvas-lab-colour-block-remove { position: absolute; right: 10px; top: 10px; z-index: 2; border-radius: 6px; background: var(--nb-paper); padding: 4px 7px; font-size: 11px; color: var(--nb-mid); }
 .canvas-lab-frame:focus-visible,
 .canvas-lab-stage path[role="button"]:focus-visible {
   outline: calc(2px * var(--lab-inverse-zoom, 1)) solid var(--nb-green);

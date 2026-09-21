@@ -857,7 +857,6 @@ export function fitWorkboardViewport(
   };
 }
 
-export function resizeLabRect(start: LabRect, corner: LabResizeCorner, delta: Point, preserveAspect = false, kind: "card" | "frame" = "card"): LabRect {
 export function resizeLabRect(start: LabRect, corner: LabResizeCorner, delta: Point, preserveAspect = false, kind: "card" | "frame" | "shape" = "card"): LabRect {
   const minWidth = kind === "shape" ? 80 : kind === "card" ? CARD_MIN_WIDTH : FRAME_MIN_WIDTH;
   const minHeight = kind === "shape" ? 80 : kind === "card" ? CARD_MIN_HEIGHT : FRAME_MIN_HEIGHT;
@@ -1028,7 +1027,9 @@ export function applyDurableBoard(base: { frames: LabFrame[]; nodes: LabNode[] }
   }
   for (const virtual of base.nodes) if (!matchedVirtual.has(virtual.id)) nodes.push(virtual);
 
+  const shapeIds = new Set(board.nodes.filter((node) => node.kind === "shape").map((node) => node.id));
   const links: LabLink[] = board.links.flatMap((link) => {
+    if (shapeIds.has(link.fromNodeId) || shapeIds.has(link.toNodeId)) return [];
     const fromId = localIdByDurable.get(link.fromNodeId);
     const toId = localIdByDurable.get(link.toNodeId);
     if (!fromId || !toId) return [];
