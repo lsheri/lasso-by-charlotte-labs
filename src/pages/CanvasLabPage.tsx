@@ -144,7 +144,7 @@ import type { WorkItemRow } from "@/lib/work-types";
 import { readWorkboardDisplayMode, workboardDisplayModeKey, type WorkboardDisplayMode } from "@/lib/workboard-card-preview.shared";
 import { useQueryClient } from "@tanstack/react-query";
 import { AddWorkPanel, type AddWorkSource } from "@/components/canvas-lab/AddWorkPanel";
-import { CARD_HEIGHT, CARD_WIDTH } from "@/components/canvas-lab/canvas-lab-model";
+import { CARD_HEIGHT, CARD_MAX_HEIGHT, CARD_MIN_HEIGHT, CARD_WIDTH } from "@/components/canvas-lab/canvas-lab-model";
 import { placeWorkOnBoardFn } from "@/lib/workboard-add-work.functions";
 import { placeAddedCards, type PlacementRect } from "@/lib/workboard-placement";
 import { briefAttachmentPoints, pendingBriefAttachments } from "@/lib/brief-files";
@@ -383,8 +383,8 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       return item && item.type !== "ai_thread" && intersects ? [item] : [];
     });
   }, [displayMode, pan.x, pan.y, viewportSize.height, viewportSize.width, visibleNodes, workItems, zoom]);
-  const cardPreviews = useWorkboardCardPreviews(engagementId, profile?.id, displayMode === "preview", onScreenChatIds);
-  const filePreviews = useWorkboardFilePreviews(profile?.id, displayMode === "preview", onScreenFileItems);
+  const cardPreviews = useWorkboardCardPreviews(engagementId, profile?.id, true, onScreenChatIds);
+  const filePreviews = useWorkboardFilePreviews(profile?.id, true, onScreenFileItems);
   const focusThreadId = focusItem && focusItem.type === "ai_thread" ? focusItem.id : null;
   const annotations = useCanvasLabAnnotations(engagementId, focusThreadId, profile?.id);
   const commentThreads = useCanvasLabComments(engagementId, focusThreadId, profile?.id);
@@ -1571,7 +1571,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   }
 
   function fitCard(node: LabNode) {
-    const height = Math.max(112, Math.min(520, cardHeightsRef.current.get(node.id) ?? node.height));
+    const height = Math.max(CARD_MIN_HEIGHT, Math.min(CARD_MAX_HEIGHT, cardHeightsRef.current.get(node.id) ?? node.height));
     if (node.width === 232 && node.height === height) return;
     setNodes((current) => current?.map((entry) => entry.id === node.id ? { ...entry, width: 232, height } : entry) ?? current);
     void persistNodePatch(node.id, { w: 232, h: height });

@@ -52,6 +52,13 @@
 - [x] Preserve mapped teammate reader access and add `via: open`
 - [x] Add focused tests and confirm a clean preview build
 
+## F2 Preview, Sticky, and card floor
+- [x] Separate the document-first Preview drawing from the paper Sticky drawing
+- [x] Add page navigation and larger-open controls where content supports them
+- [x] Raise the card resize floor and share it with persisted geometry validation
+- [x] Preserve Preview defaults, fallback behavior, actions, states, and existing events
+- [x] Run focused tests and confirm a clean preview build
+
 ## Landing-next Find it clip
 - [x] Save uploaded clip and poster as public/videos/find-it.mp4 and find-it-poster.png
 - [x] Wire the Find it ClipSlot to ClipPlayer (1440x900, 16/9) on /landing-next only

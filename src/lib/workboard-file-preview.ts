@@ -31,18 +31,23 @@ function stringsIn(value: Json, out: string[]): void {
 }
 
 export function firstSlideFromMap(value: Json | null): SlideShape | null {
-  if (!value) return null;
+  return slidesFromMap(value)[0] ?? null;
+}
+
+export function slidesFromMap(value: Json | null): SlideShape[] {
+  if (!value) return [];
   const root = value as unknown;
-  const first = Array.isArray(root)
-    ? root[0]
+  const slides = Array.isArray(root)
+    ? root
     : root && typeof root === "object" && "slides" in root && Array.isArray((root as { slides?: unknown[] }).slides)
-      ? (root as { slides: unknown[] }).slides[0]
-      : root;
-  if (!first) return null;
-  const lines: string[] = [];
-  stringsIn(first as Json, lines);
-  if (lines.length === 0) return null;
-  return { title: lines[0] ?? null, lines: lines.slice(1, 12) };
+      ? (root as { slides: unknown[] }).slides
+      : [root];
+  return slides.flatMap((slide) => {
+    if (!slide) return [];
+    const lines: string[] = [];
+    stringsIn(slide as Json, lines);
+    return lines.length > 0 ? [{ title: lines[0] ?? null, lines: lines.slice(1, 12) }] : [];
+  });
 }
 
 export function fallbackFilePreview(item: WorkItemRow, versionCount = 0): WorkboardFilePreview {

@@ -9,7 +9,16 @@
 
 import { dragTo, snapPoint, type Point } from "@/lib/canvas-drag";
 import type { LabNodeEventKind } from "@/components/canvas-lab/canvas-lab-telemetry";
-import type { WorkboardCommand, WorkboardDto, WorkboardNodeDto, WorkboardRelation } from "@/lib/canvas-lab-shared";
+import {
+  WORKBOARD_CARD_MAX_HEIGHT,
+  WORKBOARD_CARD_MAX_WIDTH,
+  WORKBOARD_CARD_MIN_HEIGHT,
+  WORKBOARD_CARD_MIN_WIDTH,
+  type WorkboardCommand,
+  type WorkboardDto,
+  type WorkboardNodeDto,
+  type WorkboardRelation,
+} from "@/lib/canvas-lab-shared";
 import { clampZoom } from "@/lib/canvas-zoom";
 import { isWorkstreamFrameId } from "@/lib/context-region";
 import { isContextFrameId } from "@/lib/context-region";
@@ -87,10 +96,10 @@ export type LabFrame = {
 
 export const CARD_WIDTH = 232;
 export const CARD_HEIGHT = 112;
-export const CARD_MIN_WIDTH = 180;
-export const CARD_MIN_HEIGHT = 112;
-export const CARD_MAX_WIDTH = 520;
-export const CARD_MAX_HEIGHT = 520;
+export const CARD_MIN_WIDTH = 260;
+export const CARD_MIN_HEIGHT = 180;
+export const CARD_MAX_WIDTH = WORKBOARD_CARD_MAX_WIDTH;
+export const CARD_MAX_HEIGHT = WORKBOARD_CARD_MAX_HEIGHT;
 export const FRAME_MIN_WIDTH = 260;
 export const FRAME_MIN_HEIGHT = 220;
 export const CARD_GAP_Y = 144;

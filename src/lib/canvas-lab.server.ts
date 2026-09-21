@@ -22,7 +22,7 @@ import type {
   WorkboardNodeInput,
   WorkboardRowSnapshot,
 } from "@/lib/canvas-lab-shared";
-import { WORKBOARD_ANCHORS, WORKBOARD_JUDGMENT_TYPES, WORKBOARD_RELATIONS } from "@/lib/canvas-lab-shared";
+import { WORKBOARD_ANCHORS, WORKBOARD_JUDGMENT_TYPES, WORKBOARD_RELATIONS, validWorkboardNodeGeometry } from "@/lib/canvas-lab-shared";
 import type { ResolvedProfile } from "@/lib/profile-resolve";
 
 type Db = SupabaseClient<Database>;
@@ -187,7 +187,7 @@ function snapshot<T extends { version: number }>(row: T): WorkboardRowSnapshot &
 }
 
 function validNodeInput(node: WorkboardNodeInput): string | null {
-  if (![node.x, node.y, node.w, node.h].every(Number.isFinite) || node.w < 180 || node.h < 112 || node.w > 520 || node.h > 520) return "Card dimensions are outside the supported range.";
+  if (!validWorkboardNodeGeometry(node)) return "Card dimensions are outside the supported range.";
   if (node.kind === "work_item" && !node.workItemId) return "A work card needs its work item.";
   if (node.kind === "decision" && !node.decisionId) return "A decision card needs its decision.";
   if ((node.kind === "judgment" || node.kind === "draft") && (node.workItemId || node.decisionId)) return "An authored card cannot reference a record.";
@@ -215,10 +215,7 @@ export function validateFrameArchive(kind: string, liveNodeCount: number): strin
 }
 
 function validNodeGeometry(node: { x?: number; y?: number; w?: number; h?: number }): boolean {
-  const values = [node.x, node.y, node.w, node.h].filter((value): value is number => value !== undefined);
-  if (!values.every(Number.isFinite)) return false;
-  if (node.w !== undefined && (node.w < 180 || node.w > 520)) return false;
-  return node.h === undefined || (node.h >= 112 && node.h <= 520);
+  return validWorkboardNodeGeometry(node);
 }
 
 function nodePatchForDatabase(patch: Extract<WorkboardCommand, { type: "node_update" }>["patch"]): Record<string, unknown> {

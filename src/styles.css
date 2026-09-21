@@ -1237,14 +1237,16 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   border-radius: var(--radius-control);
 }
 /* The note fills the card rect exactly, so the box and the paper agree. */
-.canvas-lab-card-paper > .nb-paper {
+.canvas-lab-card-paper > .nb-paper,
+.canvas-lab-card-paper > [data-drawing="sticky"] > .nb-paper {
   display: flex;
   flex-direction: column;
   width: 100%;
   height: 100%;
   overflow: hidden;
 }
-.canvas-lab-card-paper > .nb-paper > .nb-paper-body {
+.canvas-lab-card-paper > .nb-paper > .nb-paper-body,
+.canvas-lab-card-paper > [data-drawing="sticky"] > .nb-paper > .nb-paper-body {
   flex: 1 1 auto;
   min-height: 0;
   overflow: hidden;
@@ -1262,6 +1264,15 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   --canvas-vendor-other: var(--nb-mid);
   border-top: 3px solid var(--canvas-preview-vendor, var(--canvas-vendor-other));
 }
+.canvas-lab-preview-frame { display: flex; width: 100%; height: 100%; flex-direction: column; overflow: hidden; border: 1px solid var(--nb-pencil); border-radius: var(--radius-control); background: var(--nb-white); }
+.canvas-lab-preview-source { display: flex; min-height: 28px; flex: 0 0 auto; align-items: center; justify-content: space-between; gap: 6px; border-bottom: 1px solid var(--nb-rule); padding: 2px 4px 2px 8px; font-family: var(--font-mono); font-size: 9px; line-height: 12px; color: var(--nb-mid); text-transform: uppercase; letter-spacing: 0.08em; }
+.canvas-lab-preview-source > span { display: flex; min-width: 0; align-items: center; gap: 4px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.canvas-lab-preview-source button, .canvas-lab-page-controls button { width: 24px; height: 24px; min-height: 24px; flex: 0 0 auto; }
+.canvas-lab-preview-source svg, .canvas-lab-page-controls svg { width: 12px; height: 12px; }
+.canvas-lab-preview-content { padding: 9px 10px; }
+.canvas-lab-document-page { display: flex; min-height: 0; flex: 1 1 auto; flex-direction: column; }
+.canvas-lab-file-page { min-height: 0; flex: 1 1 auto; overflow: hidden; }
+.canvas-lab-page-controls { display: flex; min-height: 28px; flex: 0 0 auto; align-items: center; justify-content: center; gap: 5px; border-top: 1px solid var(--nb-rule); font-family: var(--font-mono); font-size: 9px; line-height: 12px; color: var(--nb-mid); }
 .canvas-lab-chat-preview {
   position: relative;
   min-height: 0;
@@ -1301,7 +1312,7 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   border-radius: var(--radius-control);
   background: var(--nb-white);
   color: var(--nb-ink);
-  padding: 9px 10px 18px;
+  padding: 9px 10px 0;
   -webkit-mask-image: linear-gradient(to bottom, black 82%, transparent 100%);
   mask-image: linear-gradient(to bottom, black 82%, transparent 100%);
 }
@@ -1323,8 +1334,8 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   max-width: 100%;
   flex: 1 1 auto;
   overflow: hidden;
-  border: 1px solid var(--nb-rule);
-  border-radius: var(--radius-control);
+  border: 0;
+  border-radius: 0;
   background: var(--nb-white);
   object-fit: cover;
   object-position: top;

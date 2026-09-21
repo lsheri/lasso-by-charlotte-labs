@@ -364,9 +364,9 @@ describe("canvas lab model", () => {
   });
 
   it("resizes from every corner with minimums and optional aspect ratio", () => {
-    const start = { x: 100, y: 100, width: 232, height: 116 };
-    expect(resizeLabRect(start, "se", { x: 40, y: 20 })).toEqual({ x: 100, y: 100, width: 272, height: 136 });
-    expect(resizeLabRect(start, "nw", { x: 40, y: 20 })).toEqual({ x: 140, y: 104, width: 192, height: 112 });
+    const start = { x: 100, y: 100, width: 360, height: 180 };
+    expect(resizeLabRect(start, "se", { x: 40, y: 20 })).toEqual({ x: 100, y: 100, width: 400, height: 200 });
+    expect(resizeLabRect(start, "nw", { x: 140, y: 80 })).toEqual({ x: 200, y: 100, width: 260, height: 180 });
     expect(resizeLabRect(start, "ne", { x: 40, y: 20 }, true).width / resizeLabRect(start, "ne", { x: 40, y: 20 }, true).height).toBeCloseTo(2);
   });
 
