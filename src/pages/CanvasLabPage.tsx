@@ -1664,6 +1664,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
         const durable = fresh?.frames.find((frame) => frame.key === CONTEXT_FRAME_ID);
         if (!durable) { framesRef.current = framesRef.current.filter((frame) => frame.id !== created.id); return; }
         created = { ...created, durableId: durable.id, durableVersion: durable.version, local: false };
+        noteWorkboardChangeSaved(orgId, "context_area", "created");
       }
     }
     removedContextRef.current = null;
