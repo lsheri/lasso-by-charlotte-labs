@@ -13,7 +13,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/integrations/supabase/types";
+import { WORKBOARD_CARD_DEFAULT_SIZE } from "@/lib/canvas-lab-shared";
 import { ensureWorkItemNode, isEngagementEditor } from "@/lib/canvas-lab.server";
+import { nearestFreeSlot, placementRectsForNodes } from "@/lib/workboard-placement";
 import type { ResolvedProfile } from "@/lib/profile-resolve";
 import {
   NOT_IN_A_CHAT_REFUSAL,
@@ -36,7 +38,10 @@ async function conversationNode(
   db: Db,
   origConversationId: string,
   ownerProfileId: string,
-): Promise<{ boardId: string; nodeId: string; engagementId: string } | null> {
+): Promise<
+  | { boardId: string; nodeId: string; engagementId: string; at: { x: number; y: number; w: number; h: number } }
+  | null
+> {
   const { data: transcripts } = await db
     .from("work_items")
     .select("id")
@@ -49,7 +54,7 @@ async function conversationNode(
 
   const { data: nodes } = await db
     .from("workboard_nodes")
-    .select("id, workboard_id")
+    .select("id, workboard_id, x, y, w, h")
     .in("work_item_id", ids)
     .is("deleted_at", null)
     .limit(1);
@@ -62,7 +67,17 @@ async function conversationNode(
     .eq("id", node.workboard_id)
     .maybeSingle();
   if (!board) return null;
-  return { boardId: board.id, nodeId: node.id, engagementId: board.engagement_id };
+  return {
+    boardId: board.id,
+    nodeId: node.id,
+    engagementId: board.engagement_id,
+    at: {
+      x: Number(node.x ?? 0),
+      y: Number(node.y ?? 0),
+      w: Number(node.w ?? WORKBOARD_CARD_DEFAULT_SIZE.width),
+      h: Number(node.h ?? WORKBOARD_CARD_DEFAULT_SIZE.height),
+    },
+  };
 }
 
 /**
@@ -79,7 +94,26 @@ async function linkOnBoard(
   if (!place) return false;
   if (!(await isEngagementEditor(db, place.engagementId, profile.id))) return false;
 
-  const artifactNodeId = await ensureWorkItemNode(db, place.boardId, profile.id, workItemId);
+  // Beside the conversation's own card, in free space. Without a point of its
+  // own every lifted artifact would land on the board origin, stacked on the
+  // one before it and nowhere near the chat it came out of.
+  const { data: onBoard } = await db
+    .from("workboard_nodes")
+    .select("x, y, w, h, kind")
+    .eq("workboard_id", place.boardId)
+    .is("deleted_at", null);
+  const taken = placementRectsForNodes(
+    (onBoard ?? []).map((node) => ({
+      x: Number(node.x ?? 0),
+      y: Number(node.y ?? 0),
+      width: Number(node.w ?? WORKBOARD_CARD_DEFAULT_SIZE.width),
+      height: Number(node.h ?? WORKBOARD_CARD_DEFAULT_SIZE.height),
+      kind: node.kind ?? undefined,
+    })),
+  );
+  const at = nearestFreeSlot({ x: place.at.x + place.at.w + 40, y: place.at.y }, taken);
+
+  const artifactNodeId = await ensureWorkItemNode(db, place.boardId, profile.id, workItemId, at);
   if (!artifactNodeId || artifactNodeId === place.nodeId) return false;
 
   const { error } = await db.from("workboard_links").insert({
