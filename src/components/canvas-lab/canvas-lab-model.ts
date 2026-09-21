@@ -609,10 +609,11 @@ export function seedCanvas(input: SeedInput, frames = createLabFrames(input.task
 }
 
 /** A board carries seeded structure when it holds saved workstream outlines. */
-export function boardHasSeededStructure(board: { frames: { kind?: string | null }[] } | null | undefined): boolean {
-  // The context region is created on demand on a blank board, so it is never
-  // seeded structure and never brings the guide panels back.
-  return (board?.frames ?? []).some((frame) => frame.kind !== "context");
+export function boardHasSeededStructure(board: { frames: { kind?: string | null; key?: string | null }[] } | null | undefined): boolean {
+  // The context region and a trail a person added are both made on demand on a
+  // blank board, so neither is seeded structure and neither brings the guide
+  // panels back.
+  return (board?.frames ?? []).some((frame) => frame.kind !== "context" && !isTrailFrameId(frame.key));
 }
 
 /**
