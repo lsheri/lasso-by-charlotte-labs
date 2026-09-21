@@ -13,7 +13,10 @@ describe("pass 152 · one work note", () => {
     expect(note).toContain("noteHue(colourKey(");
     expect(note).toContain("workIdentityLabel(item)");
     expect(note).not.toContain("sourceLabel(item.source)");
-    expect(note).toContain("formatDate(effectiveWorkDate(item))");
+    // The date now comes from the shared ordering rule, so the note shows the
+    // same date the list ordered by and says when it is only an arrival.
+    expect(note).toContain("resolveWorkDate(item)");
+    expect(note).toContain("formatDate(");
   });
 
   it("routes every requested surface through WorkNote", () => {

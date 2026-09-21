@@ -9,7 +9,8 @@ import { TypeIcon } from "@/components/work/TypeIcon";
 import { stampDate } from "@/components/work/card-stamp";
 import { attachmentKindLabel, vendorLabel } from "@/lib/conversation-shared";
 import { engagementHue, workIdentityLabel } from "@/lib/work-identity";
-import { effectiveWorkDate, formatDate, type ConversationGroup, type WorkItemRow } from "@/lib/work-types";
+import { resolveWorkDate } from "@/lib/work-order";
+import { formatDate, type ConversationGroup, type WorkItemRow } from "@/lib/work-types";
 import type { WorkboardCardPreview, WorkboardDisplayMode } from "@/lib/workboard-card-preview.shared";
 
 /** Pieces beyond this fold away behind a single line, so the card stays a card. */
@@ -121,7 +122,9 @@ export function ConversationCard({
               ) : null}
               {vendor ? `${vendorLabel(vendor)} chat` : "Conversation"}
               {" · "}
-              {stampDate(effectiveWorkDate(head))}
+              {resolveWorkDate(head).byArrival
+                ? `added ${stampDate(resolveWorkDate(head).iso)}`
+                : stampDate(resolveWorkDate(head).iso)}
             </span>
             <span className="flex shrink-0 items-center gap-1.5">
               <SourceMark item={head} />
@@ -249,7 +252,11 @@ export function ConversationCard({
           <span aria-hidden>·</span>
           <VendorMark item={head} />
           <span aria-hidden>·</span>
-          <span>{formatDate(effectiveWorkDate(head))}</span>
+          <span>
+            {resolveWorkDate(head).byArrival
+              ? `added ${formatDate(resolveWorkDate(head).iso)}`
+              : formatDate(resolveWorkDate(head).iso)}
+          </span>
         </p>
       </div>
 

@@ -5,6 +5,7 @@ import { ClaimToClient } from "@/components/work/ClaimToClient";
 import { ConversationCard } from "@/components/work/ConversationCard";
 import { WorkNote } from "@/components/work/WorkNote";
 import { useMappingSuggestions } from "@/hooks/use-mapping-suggestions";
+import { orderByWorkDate } from "@/lib/work-order";
 import {
   entryHead,
   entryItems,
@@ -116,9 +117,7 @@ export function ChatsToOrganise({
   const { active, taskLabels, suggesting, acceptPending, suggest, accept } =
     useMappingSuggestions();
 
-  const unmapped = items
-    .filter((item) => item.visibility === "unmapped")
-    .sort((a, b) => (b.captured_at ?? "").localeCompare(a.captured_at ?? ""));
+  const unmapped = orderByWorkDate(items.filter((item) => item.visibility === "unmapped"));
   // P1: group first, then split. A push is one entry wherever it lands.
   const entries = groupConversations(unmapped);
   const unclaimed = entries.filter((entry) => !entryHead(entry).client_id);
