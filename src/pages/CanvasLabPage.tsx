@@ -160,6 +160,7 @@ import {
   isContextFrameId,
   needsContextRegion,
 } from "@/lib/context-region";
+import { TRAIL_FRAME_ID, TRAIL_FRAME_LABEL, boardHasTrail, isTrailFrameId, trailRectAt } from "@/lib/reasoning-trail";
 import { isBoardDefaultTask, workstreamTasks } from "@/lib/board-default-task";
 import { createDrawnWorkstreamFn, moveItemToWorkstreamFn } from "@/lib/workstream-draw.functions";
 import { defaultWorkstreamName, drawnRect, drawnRectUsable, movePromptText, splitClaims, type ClaimCandidate, type DrawRect } from "@/lib/workstream-draw";
