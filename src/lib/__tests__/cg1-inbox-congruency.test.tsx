@@ -103,7 +103,33 @@ const rows = [item("mapped", "mapped", "ALPHA"), item("waiting", "unmapped"), it
 afterEach(cleanup);
 
 describe("CG1 inbox congruency", () => {
-  it("keeps every Inbox entry dimmed and disabled when its active filter matches nothing", () => {
+  it("keeps every Inbox entry dimmed and disabled when the Unmapped filter matches nothing, and teaches about unclaimed work", () => {
+    // Every entry is claimed, so the Unmapped placement filter matches zero
+    // entries. Nothing may disappear and the teaching line, which is
+    // specifically about work that arrived unclaimed, is present.
+    inboxRows = [
+      item("alpha", "mapped", "ALPHA"),
+      item("bravo", "mapped", "ALPHA"),
+      item("charlie", "mapped", "BETA"),
+      item("delta", "mapped", "BETA"),
+    ];
+    render(<WorkPage />);
+    fireEvent.click(screen.getByRole("button", { name: "Unmapped" }));
+    for (const row of inboxRows) expect(screen.getByText(row.title)).toBeTruthy();
+    const dimmed = screen.getAllByTestId("dimmed-disabled");
+    expect(dimmed).toHaveLength(inboxRows.length);
+    for (const wrapper of dimmed) {
+      expect(wrapper.getAttribute("aria-disabled")).toBe("true");
+      expect(wrapper.hasAttribute("inert")).toBe(true);
+    }
+    expect(screen.queryByText("Your work lands here.")).toBeNull();
+    expect(screen.getByText("These landed on their own. Say whose work it is and the rest gets easier.")).toBeTruthy();
+  });
+
+  it("keeps every Inbox entry dimmed and disabled when the Claimed by you filter matches nothing, with no teaching line", () => {
+    // Every entry arrived unclaimed, so the Claimed placement filter matches
+    // zero entries. The teaching line is about unclaimed work and does not
+    // fit this state, so it must be absent while nothing disappears.
     inboxRows = [
       itemOfType("thread", "ai_thread"),
       itemOfType("document", "document"),
@@ -120,7 +146,7 @@ describe("CG1 inbox congruency", () => {
       expect(wrapper.hasAttribute("inert")).toBe(true);
     }
     expect(screen.queryByText("Your work lands here.")).toBeNull();
-    expect(screen.getByText("These landed on their own. Say whose work it is and the rest gets easier.")).toBeTruthy();
+    expect(screen.queryByText("These landed on their own. Say whose work it is and the rest gets easier.")).toBeNull();
   });
 
   it("uses the shared dim component in Find it and the Inbox without disabling discarded results", () => {
