@@ -12,6 +12,7 @@ import type { LabNodeEventKind } from "@/components/canvas-lab/canvas-lab-teleme
 import type { WorkboardCommand, WorkboardDto, WorkboardNodeDto, WorkboardRelation } from "@/lib/canvas-lab-shared";
 import { clampZoom } from "@/lib/canvas-zoom";
 import { isWorkstreamFrameId } from "@/lib/context-region";
+import { isTrailFrameId } from "@/lib/reasoning-trail";
 import { placeAddedCards } from "@/lib/workboard-placement";
 
 export type LabNodeKind = "brief" | "task" | "work" | "decision" | "chat" | "source" | "ai_work" | "judgment" | "deliverable";
@@ -609,10 +610,11 @@ export function seedCanvas(input: SeedInput, frames = createLabFrames(input.task
 }
 
 /** A board carries seeded structure when it holds saved workstream outlines. */
-export function boardHasSeededStructure(board: { frames: { kind?: string | null }[] } | null | undefined): boolean {
-  // The context region is created on demand on a blank board, so it is never
-  // seeded structure and never brings the guide panels back.
-  return (board?.frames ?? []).some((frame) => frame.kind !== "context");
+export function boardHasSeededStructure(board: { frames: { kind?: string | null; key?: string | null }[] } | null | undefined): boolean {
+  // The context region and a trail a person added are both made on demand on a
+  // blank board, so neither is seeded structure and neither brings the guide
+  // panels back.
+  return (board?.frames ?? []).some((frame) => frame.kind !== "context" && !isTrailFrameId(frame.key));
 }
 
 /**
@@ -920,7 +922,9 @@ export function applyDurableBoard(base: { frames: LabFrame[]; nodes: LabNode[] }
   }
   for (const durable of orderedDurableFrames) {
     if (base.frames.some((frame) => frame.id === durable.key)) continue;
-    const id = durable.key.startsWith("custom:") ? durable.key : `durable-frame:${durable.id}`;
+    // The trail keeps its own key so a reloaded board still knows the panel is
+    // a trail rather than an unnamed outline.
+    const id = durable.key.startsWith("custom:") || isTrailFrameId(durable.key) ? durable.key : `durable-frame:${durable.id}`;
     frameIdByKey.set(durable.id, id);
     frames.push({ id, name: durable.label ?? "Workstream", x: durable.x, y: durable.y, width: durable.w, height: durable.h, durableId: durable.id, durableVersion: durable.version });
   }

@@ -10,6 +10,7 @@
  */
 
 import { snapPoint, type Point } from "@/lib/canvas-drag";
+import { isTrailFrameId } from "@/lib/reasoning-trail";
 import { PLACEMENT_CARD, PLACEMENT_GAP, slotIsFree, type PlacementRect } from "@/lib/workboard-placement";
 
 export const CONTEXT_FRAME_ID = "context";
@@ -34,7 +35,7 @@ export function isContextFrameId(id: string | null | undefined): boolean {
  * every workstream surface can ask this one question.
  */
 export function isWorkstreamFrameId(id: string | null | undefined): boolean {
-  if (!id || isContextFrameId(id)) return false;
+  if (!id || isContextFrameId(id) || isTrailFrameId(id)) return false;
   return id.startsWith("task:") || id.startsWith("custom:") || id === "workstreams";
 }
 
