@@ -11,6 +11,43 @@ import { EVENT_DIM_KEYS } from "@/lib/event-dim-allowlist";
 import { inboxFilterDims, inboxFilterMatches, recordInboxFilterChange } from "@/lib/inbox-filter";
 import type { WorkItemRow } from "@/lib/work-types";
 
+let inboxRows: WorkItemRow[] = [];
+const recorded: ReturnType<typeof inboxFilterDims>[] = [];
+
+vi.mock("@tanstack/react-start", () => ({ useServerFn: () => vi.fn() }));
+vi.mock("@tanstack/react-query", () => ({
+  useQuery: () => ({ data: {} }),
+  useQueryClient: () => ({ invalidateQueries: vi.fn() }),
+}));
+vi.mock("@/hooks/use-profile", () => ({
+  useProfile: () => ({ data: { id: "profile", org_id: "org", role: "consultant" } }),
+}));
+vi.mock("@/hooks/use-work-items", () => ({
+  useWorkItems: () => ({ data: { items: inboxRows, mappingError: null }, isLoading: false, error: null }),
+}));
+vi.mock("@/hooks/use-clients", () => ({ useClients: () => ({ data: [] }) }));
+vi.mock("@/hooks/use-workboard-card-previews", () => ({ useWorkboardCardPreviews: () => ({}) }));
+vi.mock("@/hooks/use-workboard-file-previews", () => ({ useWorkboardFilePreviews: () => ({}) }));
+vi.mock("@/lib/settings-dialog-context", () => ({ useSettingsDialog: () => ({ openSettings: vi.fn() }) }));
+vi.mock("@/lib/telemetry", () => ({
+  logEvent: (_name: string, _org: string, dims: ReturnType<typeof inboxFilterDims>) => recorded.push(dims),
+}));
+vi.mock("@/components/onboarding/checklist/GettingStartedCard", () => ({ GettingStartedCard: () => null }));
+vi.mock("@/components/coaching/CoachingLinkNotices", () => ({ CoachingLinkNotices: () => null }));
+vi.mock("@/components/motion/SpiderLassoScene", () => ({ SpiderLassoScene: () => null }));
+vi.mock("@/components/overview/ChatsToOrganise", () => ({ ChatsToOrganise: () => null }));
+vi.mock("@/components/work/ArrivalsStrip", () => ({ ArrivalsStrip: () => null }));
+vi.mock("@/components/connectors/WatchSuggestionBanner", () => ({ WatchSuggestionBanner: () => null }));
+vi.mock("@/components/work/WorkRow", () => ({
+  RowAction: () => null,
+  WorkRow: ({ item }: { item: WorkItemRow }) => <article>{item.title}</article>,
+}));
+vi.mock("@/components/work/ConversationCard", () => ({ ConversationCard: () => null }));
+vi.mock("@/components/work/WorkSubtitle", () => ({ WorkSubtitle: () => null }));
+vi.mock("@/components/work/SourceMark", () => ({ sourceVendorKey: () => null }));
+
+import { WorkPage } from "@/pages/WorkPage";
+
 function item(id: string, visibility: WorkItemRow["visibility"], code?: string): WorkItemRow {
   return {
     id,
@@ -33,6 +70,10 @@ function item(id: string, visibility: WorkItemRow["visibility"], code?: string):
   } as WorkItemRow;
 }
 
+function itemOfType(id: string, type: WorkItemRow["type"]): WorkItemRow {
+  return { ...item(id, "unmapped"), type };
+}
+
 function filesUnder(path: string): string[] {
   return readdirSync(path, { withFileTypes: true }).flatMap((entry) => {
     const full = join(path, entry.name);
@@ -45,26 +86,39 @@ const rows = [item("mapped", "mapped", "ALPHA"), item("waiting", "unmapped"), it
 afterEach(cleanup);
 
 describe("CG1 inbox congruency", () => {
-  it("keeps every item in place and dims only non-matches, including when nothing matches", () => {
-    for (const filter of ["unmapped", "MISSING"]) {
-      const matches = rows.map((row) => inboxFilterMatches(row, filter));
-      const { unmount } = render(<>{rows.map((row, index) => <DimmedDisabled key={row.id} dimmed={!matches[index]}><span>{row.title}</span></DimmedDisabled>)}</>);
-      expect(screen.getAllByText(/mapped|waiting|other/)).toHaveLength(rows.length);
-      expect(screen.getAllByTestId("dimmed-disabled")).toHaveLength(matches.filter((match) => !match).length);
-      unmount();
+  it("keeps every Inbox entry dimmed and disabled when its active filter matches nothing", () => {
+    inboxRows = [
+      itemOfType("thread", "ai_thread"),
+      itemOfType("document", "document"),
+      itemOfType("sheet", "sheet"),
+      itemOfType("call", "call_transcript"),
+    ];
+    render(<WorkPage />);
+    fireEvent.click(screen.getByRole("button", { name: "Claimed by you" }));
+    for (const row of inboxRows) expect(screen.getByText(row.title)).toBeTruthy();
+    const dimmed = screen.getAllByTestId("dimmed-disabled");
+    expect(dimmed).toHaveLength(inboxRows.length);
+    for (const wrapper of dimmed) {
+      expect(wrapper.getAttribute("aria-disabled")).toBe("true");
+      expect(wrapper.hasAttribute("inert")).toBe(true);
     }
+    expect(screen.queryByText("Your work lands here.")).toBeNull();
+    expect(screen.getByText("These landed on their own. Say whose work it is and the rest gets easier.")).toBeTruthy();
   });
 
-  it("uses the same dim-and-disable component in Find it and the Inbox", () => {
+  it("uses the shared dim component in Find it and the Inbox without disabling discarded results", () => {
     const inbox = readFileSync("src/pages/WorkPage.tsx", "utf8");
     const findIt = readFileSync("src/components/find-it/FindItResults.tsx", "utf8");
     for (const source of [inbox, findIt]) expect(source).toContain("DimmedDisabled");
+    expect(findIt).toMatch(/DimmedDisabled[^>]+disabled=\{false\}/);
   });
 
   it("does not use green or lime to decide an Inbox filter match", () => {
-    const source = readFileSync("src/pages/WorkPage.tsx", "utf8");
-    const filterPath = source.slice(source.indexOf("const chipBase"), source.indexOf("return (", source.indexOf("const chipBase")));
-    expect(filterPath).not.toMatch(/green|lime|lasso/i);
+    const offenders = filesUnder("src/components").concat(filesUnder("src/pages")).filter((path) => {
+      const source = readFileSync(path, "utf8");
+      return /(?:inbox|columnFilter|entryMatchesFilter)[^\n]*(?:green|lime)|(?:green|lime)[^\n]*(?:columnFilter|entryMatchesFilter)/i.test(source);
+    });
+    expect(offenders).toEqual([]);
   });
 
   it("keeps Ask Lasso answers visually distinct from transient filter state", () => {
@@ -102,9 +156,26 @@ describe("CG1 inbox congruency", () => {
     }
     const emitted: ReturnType<typeof inboxFilterDims>[] = [];
     const dims = inboxFilterDims("placement", "one", 0);
-    expect(recordInboxFilterChange("all", "unmapped", dims, (value) => emitted.push(value))).toBe(true);
-    expect(recordInboxFilterChange("unmapped", "unmapped", dims, (value) => emitted.push(value))).toBe(false);
+    recordInboxFilterChange(dims, (value) => emitted.push(value));
     expect(emitted).toEqual([dims]);
+  });
+
+  it("keeps column geometry and five-per-page replacement through both wrappers", () => {
+    inboxRows = Array.from({ length: 6 }, (_, index) => itemOfType(`document-${index + 1}`, "document"));
+    render(<WorkPage />);
+    const columns = document.querySelector(".nb-type-columns");
+    expect(columns).not.toBeNull();
+    expect(columns?.querySelectorAll(":scope > div")).toHaveLength(4);
+    expect(columns?.querySelectorAll(".nb-paper-wall")).toHaveLength(4);
+    const firstPage = screen.getAllByTestId("inbox-fixed-card");
+    expect(firstPage).toHaveLength(5);
+    for (const card of firstPage) {
+      expect(card.parentElement?.className).toMatch(/min-w-0/);
+      expect(card.className).toMatch(/min-w-0/);
+    }
+    fireEvent.click(screen.getByRole("button", { name: "More work in this column" }));
+    expect(screen.getAllByTestId("inbox-fixed-card")).toHaveLength(1);
+    expect(screen.getByText(inboxRows[5]?.title ?? "missing")).toBeTruthy();
   });
 
   it("keeps filter decisions out of Inbox component styling helpers", () => {
