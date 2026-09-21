@@ -67,10 +67,10 @@
 - [x] Run focused and board checks and confirm a clean preview build
 
 ## F5 card geometry compatibility
-- [ ] Reproduce seeded blank-board cards being refused by save geometry validation
-- [ ] Restore the record floor while preserving the readable resize floor
-- [ ] Seed new cards at or above the readable floor
-- [ ] Pin the seeded, interaction, and record floor relationship
+- [x] Reproduce seeded blank-board cards being refused by save geometry validation
+- [x] Restore the record floor while preserving the readable resize floor
+- [x] Seed new cards at or above the readable floor
+- [x] Pin the seeded, interaction, and record floor relationship
 - [ ] Run focused checks, type check, and confirm a clean preview build
 
 ## Landing-next Find it clip
