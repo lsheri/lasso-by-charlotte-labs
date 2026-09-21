@@ -70,11 +70,13 @@ describe("invite refusal shape", () => {
 });
 
 describe("invite trigger gates", () => {
-  it("keeps the engagement chip and its honest line admin only", () => {
-    const page = read("pages/EngagementPage.tsx");
-    expect(page).not.toContain('profile?.role === "lead"');
-    expect(page).toContain("INVITE_ADMIN_ONLY_LINE");
-  });
+  // Removed: "keeps the engagement chip and its honest line admin only". The
+  // chip was taken off the engagement page on purpose on 09-14. The part that
+  // matters, the server gate, is covered by pass143-invite-signup, "keeps
+  // invite creation admin only in the server function", and by the refusal
+  // record above.
+
+
 
   it("hides resend from leads and keeps copy link plus withdraw", () => {
     const page = read("pages/MembersPage.tsx");
