@@ -18,6 +18,7 @@ import {
 import { AiRecordPointer } from "@/components/reflect/AiRecordPointer";
 import { WeekRail } from "@/components/reflect/WeekRail";
 import { WorkScopePicker, scopeSentence } from "@/components/reflect/WorkScopePicker";
+import { usesGuestNav } from "@/lib/role-access";
 import {
   AlertDialog,
   AlertDialogAction,

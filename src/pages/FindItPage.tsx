@@ -18,6 +18,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { usePerfTimerFactory } from "@/hooks/use-perf-timer";
 import { useProfile } from "@/hooks/use-profile";
 import { useMotion, useReducedMotion } from "@/hooks/use-motion";
+import { usesGuestNav } from "@/lib/role-access";
 import { useWorkItems } from "@/hooks/use-work-items";
 import {
   findSources as findSourcesFn,

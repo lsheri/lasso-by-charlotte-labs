@@ -15,7 +15,7 @@ import { useDecisions, srcsOf } from "@/hooks/use-decisions";
 import { useWorkItems } from "@/hooks/use-work-items";
 import { useEngagements } from "@/hooks/use-engagements";
 import { useProfile } from "@/hooks/use-profile";
-import { isCoach } from "@/lib/role-access";
+import { usesGuestNav } from "@/lib/role-access";
 
 /** "2 SEP" — the mono date the cards use. */
 function shortDate(value: string | null | undefined): string {
@@ -39,7 +39,7 @@ export function OverviewPage() {
   const { data: profile } = useProfile();
   const navigate = useNavigate();
   const [prepOpen, setPrepOpen] = useState(false);
-  const coach = isCoach(profile);
+  const coach = usesGuestNav(profile);
 
   // Overview is a person's own work. A coach has none, and their home is the
   // list of people who have shared work with them, so send them there.

@@ -9,6 +9,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { ToneCard } from "@/components/notebook/ToneCard";
 import { useProfile } from "@/hooks/use-profile";
 import { useShippedWork } from "@/hooks/use-shipped-work";
+import { usesGuestNav } from "@/lib/role-access";
 
 /**
  * The learning archive. Members and admins can read it: shipped work, the
