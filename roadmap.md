@@ -80,8 +80,8 @@
 - [x] Run focused checks and type check
 
 ## F7 Fit content width preservation
-- [ ] Reproduce a widened card resetting to the default width
-- [ ] Preserve current width within the interaction and record limits
+- [x] Reproduce a widened card resetting to the default width
+- [x] Preserve current width within the interaction and record limits
 - [ ] Verify focused checks, types, and preview build
 
 ## Landing-next Find it clip

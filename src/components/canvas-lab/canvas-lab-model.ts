@@ -108,7 +108,7 @@ export const FRAME_PADDING = 24;
 /** Fit content shares the exact same floor as pointer and keyboard resizing. */
 export function fitCardRect(node: Pick<LabNode, "width" | "height">, measuredHeight: number): Pick<LabNode, "width" | "height"> {
   return {
-    width: Math.max(CARD_MIN_WIDTH, CARD_WIDTH),
+    width: Math.max(CARD_MIN_WIDTH, Math.min(CARD_MAX_WIDTH, node.width)),
     height: Math.max(CARD_MIN_HEIGHT, Math.min(CARD_MAX_HEIGHT, measuredHeight || node.height)),
   };
 }
