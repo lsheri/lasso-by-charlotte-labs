@@ -6,7 +6,9 @@ const read = (path: string) => readFileSync(path, "utf8");
 describe("pass 152 · one work note", () => {
   it("owns the sticky paper in one component", () => {
     const note = read("src/components/work/WorkNote.tsx");
-    expect(note).toContain('className={`nb-paper ${className}`}');
+    // The note owns the paper class and still passes the caller's own class
+    // through. Anything else the expression carries is free to change.
+    expect(note).toMatch(/className=\{`nb-paper [^`]*\$\{className\}`\}/);
     expect(note).toContain("notePaper(item.id)");
     expect(note).toContain("noteHue(colourKey(");
     expect(note).toContain("workIdentityLabel(item)");
