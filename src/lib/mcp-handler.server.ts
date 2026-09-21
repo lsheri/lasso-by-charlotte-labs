@@ -1267,6 +1267,14 @@ async function pushConversation(
       : null;
   const expectedTotal = win?.total ?? priorExpectedTotal;
 
+  // When the conversation itself happened. A window can only move this
+  // earlier, never later, and nothing is substituted when no message
+  // supplied a time.
+  const threadTime = pushSourceTimeFields(
+    existingThread,
+    messages.map((m) => m.timestamp ?? null),
+  );
+
   const threadFields = {
     owner_id: owner.profileId,
     org_id: owner.orgId,
@@ -1276,7 +1284,9 @@ async function pushConversation(
     orig_conversation_id: origId,
     title,
     content_fidelity: "transcribed",
-    ts_precision: "capture" as const,
+    ts_precision: threadTime.ts_precision,
+    created_at_source: threadTime.created_at_source,
+    work_date: threadTime.work_date,
     content_hash: await sha256Hex(serialized),
     source_meta: { ...sharedMeta, role: "transcript" } as unknown as Json,
     meta: {
