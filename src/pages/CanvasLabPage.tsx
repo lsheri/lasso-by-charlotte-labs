@@ -1577,7 +1577,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     }
     if (end) {
       noteWorkboardElementResized(orgId, resizing.kind, "keyboard", resizeAxis(resizing.start, end));
-      record({ action: "resize", kind: resizing.kind, targetId: resizing.id, before: resizing.start, after: end });
+      record({ action: "resize", kind: resizing.kind === "frame" ? "frame" : "card", targetId: resizing.id, before: resizing.start, after: end });
     }
     resizeRef.current = null;
     setInteraction("idle");
