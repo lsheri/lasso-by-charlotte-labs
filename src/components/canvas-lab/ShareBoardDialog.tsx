@@ -183,7 +183,9 @@ function LiveLinkRow({
     <li className="flex items-center justify-between gap-3 rounded-md border border-border p-2">
       <span className="text-[11.5px] text-muted">
         {shareTimeLeftLabel(link.expiresAt)}
-        {link.openedCount > 0 ? ` · opened ${link.openedCount} times` : " · not opened yet"}
+        {link.openedCount > 0
+          ? ` · opened ${link.openedCount} ${link.openedCount === 1 ? "time" : "times"}`
+          : " · not opened yet"}
       </span>
       <Button size="sm" variant="ghost" onClick={onExpire} disabled={busy}>
         Expire this link now
