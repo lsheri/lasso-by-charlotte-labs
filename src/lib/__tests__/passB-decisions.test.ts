@@ -71,8 +71,10 @@ describe("pass B: the surfaces keep their controls", () => {
     const src = read("src/pages/DecisionsPage.tsx");
     expect(src).toContain("Log a decision");
     expect(src).toContain("AddDecisionDialog");
-    expect(src).toContain("Save the reasoning");
-    expect(src).toContain("Why was this the right decision? A sentence is enough.");
+    // The reasoning control moved into the row; the page is composition only.
+    const row = read("src/components/decisions/DecisionLogRow.tsx");
+    expect(row).toContain("Save the reasoning");
+    expect(row).toContain("Why was this the right decision? A sentence is enough.");
     expect(src).toContain("WHY THE LOG EXISTS");
     expect(src).toContain("Everything");
     expect(src).toContain("Awaiting your review");
