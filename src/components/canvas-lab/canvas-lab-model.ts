@@ -922,7 +922,9 @@ export function applyDurableBoard(base: { frames: LabFrame[]; nodes: LabNode[] }
   }
   for (const durable of orderedDurableFrames) {
     if (base.frames.some((frame) => frame.id === durable.key)) continue;
-    const id = durable.key.startsWith("custom:") ? durable.key : `durable-frame:${durable.id}`;
+    // The trail keeps its own key so a reloaded board still knows the panel is
+    // a trail rather than an unnamed outline.
+    const id = durable.key.startsWith("custom:") || isTrailFrameId(durable.key) ? durable.key : `durable-frame:${durable.id}`;
     frameIdByKey.set(durable.id, id);
     frames.push({ id, name: durable.label ?? "Workstream", x: durable.x, y: durable.y, width: durable.w, height: durable.h, durableId: durable.id, durableVersion: durable.version });
   }
