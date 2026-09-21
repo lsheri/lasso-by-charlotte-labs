@@ -91,8 +91,43 @@ describe("pass B: the surfaces keep their controls", () => {
     expect(oneToOne).toContain("you confirm once, it travels with the work");
   });
 
-  it("never invents a quote for a source it cannot read", () => {
-    const src = read("src/components/decisions/DecisionLogRow.tsx");
-    expect(src).toContain("A quote is never invented.");
+});
+
+describe("pass B: a quote only ever comes from a turn that has one", () => {
+  const decision = {
+    id: "d1",
+    status: "awaiting",
+    call_text: "Go with option B",
+    situation: "Two options on the table",
+    why: null,
+  };
+
+  function renderRow() {
+    return render(
+      createElement(DecisionLogRow, {
+        decision: decision as never,
+        onOpenSource: () => {},
+        onSaveReasoning: () => {},
+        onDiscard: () => {},
+      }),
+    );
+  }
+
+  afterEach(() => {
+    cleanup();
+    turns = {};
+  });
+
+  it("shows the quote when the turn behind the source can be read", () => {
+    turns = { t1: { turn_no: 3, content: "the sentence it came from" } };
+    renderRow();
+    expect(screen.getByText(/the sentence it came from/)).toBeTruthy();
+  });
+
+  it("shows the source with no quote at all when the turn cannot be read", () => {
+    turns = {};
+    const { container } = renderRow();
+    expect(screen.getByText(/Some document/)).toBeTruthy();
+    expect(container.textContent ?? "").not.toContain("\u201c");
   });
 });
