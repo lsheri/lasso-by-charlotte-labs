@@ -8,7 +8,7 @@
  * card, the menu and the server all answer the same questions the same way.
  */
 
-import { attachmentKindLabel, vendorLabel } from "./conversation-shared";
+import { attachmentKindNoun, vendorLabel } from "./conversation-shared";
 import { workIdentity } from "./work-identity";
 import type { WorkItemRow } from "./work-types";
 
@@ -66,8 +66,7 @@ export function cameOutOfLine(
   if (!item.orig_conversation_id || isTranscriptPiece(item)) return null;
   // Read the fields. Parsing a display label would go quietly wrong the first
   // time somebody changes how that label is written.
-  const stored = item.source_meta?.kind;
-  const kind = stored ? attachmentKindLabel(stored) : workIdentity(item as WorkItemRow).label;
+  const kind = attachmentKindNoun(item.source_meta?.kind) ?? workIdentity(item as WorkItemRow).label;
   const vendor = options.vendorVisible === false ? "AI" : vendorLabel(item.source_vendor ?? item.source_meta?.vendor);
   return `${kind} that came out of a ${vendor} chat`;
 }

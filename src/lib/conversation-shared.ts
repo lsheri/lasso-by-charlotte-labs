@@ -38,6 +38,32 @@ export function attachmentKindLabel(kind: string | null | undefined): string {
   return KIND_LABELS[kind as AttachmentKind] ?? "Attachment";
 }
 
+/**
+ * The same kinds said as one plain noun, for a sentence rather than a chip.
+ * Written out rather than derived from the chip labels, so neither shape can
+ * quietly change the other.
+ */
+const KIND_NOUNS: Record<AttachmentKind, string> = {
+  artifact_code: "Code",
+  artifact_react: "React",
+  artifact_html: "HTML",
+  artifact_svg: "SVG",
+  artifact_mermaid: "Diagram",
+  artifact_markdown: "Markdown",
+  canvas_document: "Doc",
+  canvas_code: "Code",
+  image_description: "Image",
+  research_report: "Research report",
+  page: "Page",
+  file: "File",
+  other: "Attachment",
+};
+
+export function attachmentKindNoun(kind: string | null | undefined): string | null {
+  if (!kind) return null;
+  return KIND_NOUNS[kind as AttachmentKind] ?? null;
+}
+
 export const CONVERSATION_VENDORS = ["claude", "chatgpt", "gemini", "copilot", "other"] as const;
 export type ConversationVendor = (typeof CONVERSATION_VENDORS)[number];
 
