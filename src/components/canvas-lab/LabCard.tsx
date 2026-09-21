@@ -3,6 +3,7 @@ import { Paperclip } from "lucide-react";
 
 import { LabCardMenu } from "@/components/canvas-lab/LabCardMenu";
 import { LabPaper } from "@/components/canvas-lab/LabPaper";
+import { LabPreview } from "@/components/canvas-lab/LabPreview";
 import { cardSizeTier, type LabAnchor, type LabNode, type LabResizeCorner } from "@/components/canvas-lab/canvas-lab-model";
 import type { WorkItemRow } from "@/lib/work-types";
 import type { WorkboardCardPreview, WorkboardDisplayMode, WorkboardFilePreview } from "@/lib/workboard-card-preview.shared";
@@ -101,6 +102,7 @@ export function LabCard({
   const cardDownRef = useRef<{ x: number; y: number } | null>(null);
   const lastClickMovedRef = useRef(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [previewFailed, setPreviewFailed] = useState(false);
 
   useLayoutEffect(() => {
     if (focusOnMount) cardRef.current?.focus({ preventScroll: true });
@@ -151,6 +153,7 @@ export function LabCard({
   }
 
   const anchors: LabAnchor[] = ["top", "right", "bottom", "left"];
+  const hasPreview = displayMode === "preview" && Boolean(item) && !previewFailed && (item?.type === "ai_thread" ? Boolean(preview?.turns.length) : Boolean(filePreview && filePreview.kind !== "fallback"));
   return (
     <div
       ref={cardRef}
@@ -176,7 +179,7 @@ export function LabCard({
       className="canvas-lab-card group absolute text-left outline-none"
     >
       <div ref={paperRef} data-selected={selected} data-focused={focused} data-connect-source={connectSourceAnchor !== null} className="canvas-lab-card-paper h-full w-full overflow-hidden">
-        <LabPaper node={node} item={item} selected={selected} focused={focused} displayMode={displayMode} preview={preview} filePreview={filePreview} onPreviewScroll={onPreviewScroll} showOwnership={!readOnly} onEdit={onEdit} onEditCommitted={onEditCommitted} commentCount={commentCount} onOpenComments={onOpenComments} onOpenTrail={readOnly || !node.deliverable ? undefined : onOpen} />
+        {hasPreview && item ? <LabPreview item={item} preview={preview} filePreview={filePreview} focused={focused} onFailure={() => setPreviewFailed(true)} onPreviewScroll={onPreviewScroll} onOpen={onOpen} /> : <div data-drawing="sticky" className="h-full"><LabPaper node={node} item={item} selected={selected} focused={focused} displayMode="sticky" preview={preview} filePreview={filePreview} onPreviewScroll={onPreviewScroll} showOwnership={!readOnly} onEdit={onEdit} onEditCommitted={onEditCommitted} commentCount={commentCount} onOpenComments={onOpenComments} onOpenTrail={readOnly || !node.deliverable ? undefined : onOpen} /></div>}
         {selected ? <Paperclip aria-hidden="true" className="canvas-lab-context-mark" /> : null}
       </div>
       {canResize && focused && !readOnly ? (["nw", "ne", "se", "sw"] as LabResizeCorner[]).map((corner) => <button key={corner} type="button" className="canvas-lab-resize-handle" data-corner={corner} aria-label={`Resize ${node.title} from ${corner}`} onDoubleClick={(event) => { event.stopPropagation(); onFit(); }} onPointerDown={(event) => onResizeStart(corner, event)} onKeyDown={(event) => onResizeKeyDown(corner, event)} onKeyUp={onResizeKeyUp} />) : null}

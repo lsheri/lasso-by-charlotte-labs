@@ -35,7 +35,7 @@ export function firstSlideFromMap(value: Json | null): SlideShape | null {
 }
 
 export function slidesFromMap(value: Json | null): SlideShape[] {
-  if (!value) return null;
+  if (!value) return [];
   const root = value as unknown;
   const slides = Array.isArray(root)
     ? root

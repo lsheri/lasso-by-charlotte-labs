@@ -1,11 +1,15 @@
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
+import { Button } from "@/components/ui/button";
 import { loadPdfjs } from "@/lib/pdfjs-client";
 import type { WorkboardFilePreview as FilePreview } from "@/lib/workboard-card-preview.shared";
 
-function FirstPdfPage({ url, onFailure }: { url: string; onFailure: () => void }) {
+function PdfPages({ url, onFailure }: { url: string; onFailure: () => void }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [ready, setReady] = useState(false);
+  const [pageNumber, setPageNumber] = useState(1);
+  const [pageCount, setPageCount] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -16,7 +20,8 @@ function FirstPdfPage({ url, onFailure }: { url: string; onFailure: () => void }
         const pdfjs = await loadPdfjs();
         const pdf = await pdfjs.getDocument({ url }).promise;
         document = pdf;
-        const page = await pdf.getPage(1);
+        if (!cancelled) setPageCount(pdf.numPages);
+        const page = await pdf.getPage(pageNumber);
         const canvas = canvasRef.current;
         if (cancelled || !canvas) return;
         const base = page.getViewport({ scale: 1 });
@@ -37,17 +42,24 @@ function FirstPdfPage({ url, onFailure }: { url: string; onFailure: () => void }
       try { renderTask?.cancel(); } catch { /* cancellation is expected */ }
       void document?.destroy();
     };
-  }, [onFailure, url]);
+  }, [onFailure, pageNumber, url]);
 
-  return <canvas ref={canvasRef} data-ready={ready} className="canvas-lab-file-preview-canvas" />;
+  return <div className="canvas-lab-document-page"><canvas ref={canvasRef} data-ready={ready} className="canvas-lab-file-preview-canvas" />{pageCount > 0 ? <PageControls page={pageNumber} count={pageCount} onPage={setPageNumber} /> : null}</div>;
+}
+
+function PageControls({ page, count, onPage }: { page: number; count: number; onPage: (page: number) => void }) {
+  return <div className="canvas-lab-page-controls"><Button type="button" size="icon" variant="ghost" aria-label="Previous page" disabled={page <= 1} onPointerDown={(event) => event.stopPropagation()} onClick={(event) => { event.stopPropagation(); onPage(page - 1); }}><ChevronLeft aria-hidden="true" /></Button><span>Page {page} of {count}</span><Button type="button" size="icon" variant="ghost" aria-label="Next page" disabled={page >= count} onPointerDown={(event) => event.stopPropagation()} onClick={(event) => { event.stopPropagation(); onPage(page + 1); }}><ChevronRight aria-hidden="true" /></Button></div>;
 }
 
 export function WorkboardFilePreview({ preview, onFailure }: { preview: FilePreview; onFailure: () => void }) {
-  if (preview.kind === "pdf" && preview.url) return <FirstPdfPage url={preview.url} onFailure={onFailure} />;
+  const [slide, setSlide] = useState(1);
+  if (preview.kind === "pdf" && preview.url) return <PdfPages url={preview.url} onFailure={onFailure} />;
   if (preview.kind === "slide") {
+    const pages = preview.pages?.length ? preview.pages : [{ title: preview.slideTitle, lines: preview.lines }];
+    const page = pages[Math.min(slide - 1, pages.length - 1)] ?? pages[0];
     return <div data-testid="workboard-slide-preview" className="canvas-lab-file-preview canvas-lab-slide-preview">
-      {preview.slideTitle ? <strong>{preview.slideTitle}</strong> : null}
-      {preview.lines.map((line, index) => <p key={`${index}:${line}`}>{line}</p>)}
+      <div className="canvas-lab-file-page">{page?.title ? <strong>{page.title}</strong> : null}{(page?.lines ?? []).map((line, index) => <p key={`${index}:${line}`}>{line}</p>)}</div>
+      <PageControls page={slide} count={pages.length} onPage={setSlide} />
     </div>;
   }
   if (preview.kind === "text") {

@@ -53,9 +53,9 @@
 - [x] Add focused tests and confirm a clean preview build
 
 ## F2 Preview, Sticky, and card floor
-- [ ] Separate the document-first Preview drawing from the paper Sticky drawing
-- [ ] Add page navigation and larger-open controls where content supports them
-- [ ] Raise the card resize floor and share it with persisted geometry validation
+- [x] Separate the document-first Preview drawing from the paper Sticky drawing
+- [x] Add page navigation and larger-open controls where content supports them
+- [x] Raise the card resize floor and share it with persisted geometry validation
 - [ ] Preserve Preview defaults, fallback behavior, actions, states, and existing events
 - [ ] Run focused tests and confirm a clean preview build
 
