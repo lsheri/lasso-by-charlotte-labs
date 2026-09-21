@@ -102,7 +102,7 @@ export const CARD_MAX_WIDTH = WORKBOARD_CARD_MAX_WIDTH;
 export const CARD_MAX_HEIGHT = WORKBOARD_CARD_MAX_HEIGHT;
 export const FRAME_MIN_WIDTH = 260;
 export const FRAME_MIN_HEIGHT = 220;
-export const CARD_GAP_Y = 144;
+export const CARD_GAP_Y = CARD_HEIGHT + 32;
 export const FRAME_PADDING = 24;
 
 /** Fit content shares the exact same floor as pointer and keyboard resizing. */

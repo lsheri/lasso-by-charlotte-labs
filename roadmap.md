@@ -74,8 +74,8 @@
 - [x] Run focused checks, type check, and confirm a clean preview build
 
 ## F6 structured-board row spacing
-- [ ] Reproduce overlapping seeded rows on a structured board
-- [ ] Derive the vertical row step from card height and retained clear space
+- [x] Reproduce overlapping seeded rows on a structured board
+- [x] Derive the vertical row step from card height and retained clear space
 - [ ] Confirm horizontal spacing, Fit behavior, and standard-frame fallback geometry
 - [ ] Run focused checks, type check, and confirm a clean preview build
 
