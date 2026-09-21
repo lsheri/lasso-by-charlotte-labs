@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useProfile } from "@/hooks/use-profile";
+import { useMyMemberRole } from "@/hooks/use-member-role";
 import {
   markNoteRead,
   unreadNotesKey,
@@ -73,7 +74,13 @@ export function CoachNoteModal({
   const { data: profile } = useProfile();
   const queryClient = useQueryClient();
   const vocab = vocabFor(profile);
-  const amCoach = profile?.role === "coach";
+  // Who is reading is an engagement level question, the same one the note
+  // policy asks: a coach member of the note's engagement reads as the coach.
+  // A note with no engagement predates that relationship, so the workspace
+  // role answers there instead.
+  const { data: myRole } = useMyMemberRole(note?.engagement_id, profile?.id);
+  const amCoach = note?.engagement_id ? myRole === "coach" : profile?.role === "coach";
+  const roleKnown = !note?.engagement_id || myRole !== undefined;
   const { data: replies } = useNoteReplies(open && note ? note.id : undefined);
   const { data: pointsAt } = usePointsAt(open ? note : null);
   const send = useSendNoteReply(note?.id, profile?.id);
@@ -82,7 +89,7 @@ export function CoachNoteModal({
 
   // The read mark belongs to the subject only, and is written once.
   useEffect(() => {
-    if (!open || !note || amCoach || !profile?.org_id) return;
+    if (!open || !note || !roleKnown || amCoach || !profile?.org_id) return;
     if (markedRef.current === note.id) return;
     markedRef.current = note.id;
     void markNoteRead(note.id)
@@ -102,7 +109,7 @@ export function CoachNoteModal({
       .catch(() => {
         /* a read mark that does not land leaves the circle in place */
       });
-  }, [open, note, amCoach, profile?.org_id, profile?.id, queryClient]);
+  }, [open, note, roleKnown, amCoach, profile?.org_id, profile?.id, queryClient]);
 
   if (!note) return null;
 

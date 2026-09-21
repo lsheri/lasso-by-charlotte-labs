@@ -25,9 +25,11 @@ export const getCoachSubjects = createServerFn({ method: "POST" })
     const resolved = await Promise.all(
       data.profile_ids.map((id) => resolveProfile(supabase, userId, id)),
     );
+    // Ownership is verified; the workspace wide role is not asked. The queue
+    // itself is built only from engagements where the profile is a coach
+    // member, so a profile with no such membership simply has an empty queue.
     const mine = resolved.filter(
-      (profile): profile is NonNullable<typeof profile> =>
-        profile !== null && profile.role === "coach",
+      (profile): profile is NonNullable<typeof profile> => profile !== null,
     );
     if (mine.length === 0) return [];
 
