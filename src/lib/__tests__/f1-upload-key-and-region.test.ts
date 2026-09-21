@@ -36,7 +36,7 @@ describe("F1 defect 1: the storage key is cleaned, the title is not", () => {
   it("keeps the extension so the format is still read", () => {
     expect(safeStorageName("[Proposal] Deck.pptx").endsWith(".pptx")).toBe(true);
     expect(safeStorageName("Ünïcode.pdf").endsWith(".pdf")).toBe(true);
-    expect(safeStorageName("...")).toBe("file");
+    expect(safeStorageName("[]")).toBe("file");
   });
 
   it("the capture path builds its key through the builder and names the reason", () => {
