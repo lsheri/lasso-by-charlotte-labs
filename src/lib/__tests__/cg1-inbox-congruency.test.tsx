@@ -81,7 +81,7 @@ describe("CG1 inbox congruency", () => {
     const card = screen.getByTestId("inbox-fixed-card");
     card.addEventListener("dragstart", onDragStart);
     expect(card.getAttribute("draggable")).toBe("false");
-    expect(card.querySelector("[data-non-drag-affordance]"))not.toBeNull();
+    expect(card.querySelector("[data-non-drag-affordance]")).not.toBeNull();
     expect(fireEvent.dragStart(card)).toBe(false);
     expect(onDragStart).toHaveBeenCalledOnce();
   });
