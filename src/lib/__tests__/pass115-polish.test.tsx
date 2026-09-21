@@ -18,6 +18,23 @@ afterEach(() => cleanup());
 
 const read = (path: string) => readFileSync(path, "utf8");
 const css = read("src/styles.css");
+
+/** The animation duration a selector actually resolves to, token or literal. */
+export function cssDurationMs(source: string, selector: string): number | null {
+  const rule = source.slice(source.indexOf(`${selector} {`));
+  const animation = /animation:\s*[\w-]+\s+([^\s;]+)/.exec(rule.slice(0, rule.indexOf("}")));
+  if (!animation) return null;
+  let value = animation[1]!;
+  const token = /^var\((--[\w-]+)\)$/.exec(value);
+  if (token) {
+    const declared = new RegExp(`${token[1]}:\\s*([^;]+);`).exec(source);
+    if (!declared) return null;
+    value = declared[1]!.trim();
+  }
+  if (value.endsWith("ms")) return Number.parseFloat(value);
+  if (value.endsWith("s")) return Number.parseFloat(value) * 1000;
+  return null;
+}
 const journeyView = read("src/components/journey/JourneyView.tsx");
 const whatFed = read("src/components/engagements/WhatFedThisButton.tsx");
 const canvasActions = read("src/components/engagements/CanvasDeliverableActions.tsx");
@@ -43,7 +60,10 @@ describe("A. the yellow legend", () => {
 
   it("rests in its final state and only animates on entrance", () => {
     expect(css).toMatch(/\.nb-traced-legend \{[^}]*opacity: 1;/);
-    expect(css).toMatch(/\.nb-traced-legend\.is-arriving \{\s*animation: nb-legend-in 400ms ease-out backwards;/);
+    // Assert the timing, not the spelling: the rule may name a token, so long
+    // as the duration it resolves to is still 400ms.
+    expect(css).toMatch(/\.nb-traced-legend\.is-arriving \{\s*animation: nb-legend-in \S+ ease-out backwards;/);
+    expect(cssDurationMs(css, ".nb-traced-legend.is-arriving")).toBe(400);
   });
 
   it("draws a seeded wavering swatch", () => {
