@@ -761,7 +761,7 @@ export function AiRecordPage() {
                                   {fedPhrase(fed?.[item.id] ?? [])}
                                 </span>
                               ) : null}
-                              <ChatUrlLink item={item} />
+                              <ChatUrlLink item={item} showAbsence />
                               <button
                                 type="button"
                                 onClick={(event) => {

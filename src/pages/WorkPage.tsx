@@ -440,7 +440,7 @@ export function WorkPage() {
     if (item.visibility === "private") {
       return (
         <>
-          {item.content_ref ? <OpenFileAction workItemId={item.id} /> : null}
+          <OpenFileAction item={item} onOpenInApp={openItem(item)} />
           <RowAction onClick={() => setDateItem(item)}>Work date</RowAction>
           {claimIsPrimary ? null : <ClaimToClient item={item} surface="work" />}
           <RowAction onClick={() => void unmark(item)}>Unmark</RowAction>
@@ -459,7 +459,7 @@ export function WorkPage() {
     const groupLabel = group && group.length > 1;
     return (
       <>
-        {item.content_ref ? <OpenFileAction workItemId={item.id} /> : null}
+        <OpenFileAction item={item} onOpenInApp={openItem(item)} />
         <MapButton onClick={() => openMap(item, group)} stopPropagation>
           {variant === "mapped"
             ? groupLabel

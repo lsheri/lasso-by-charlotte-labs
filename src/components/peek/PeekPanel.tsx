@@ -206,7 +206,7 @@ export function PeekBody({
           {sourceLabel(active.source)} · {formatDate(effectiveWorkDate(active))}
         </p>
         <p className="mt-1">
-          <ChatUrlLink item={active} />
+          <ChatUrlLink item={active} showAbsence />
         </p>
         <p className="mt-1">
           {link ? (
