@@ -27,14 +27,14 @@ function input(overrides: Partial<WorkboardNodeInput> = {}): WorkboardNodeInput 
 describe("C1 colour block vocabulary and validation", () => {
   it("accepts every known node kind and refuses an unknown kind", () => {
     const validByKind = {
-      brief: input({ kind: "brief", body: undefined, w: 260, h: 180 }),
-      work_item: input({ kind: "work_item", body: undefined, workItemId: "work-1", w: 260, h: 180 }),
-      decision: input({ kind: "decision", body: undefined, decisionId: "decision-1", w: 260, h: 180 }),
-      judgment: input({ kind: "judgment", body: undefined, w: 260, h: 180 }),
-      draft: input({ kind: "draft", body: undefined, w: 260, h: 180 }),
+      brief: input({ kind: "brief", body: "", w: 260, h: 180 }),
+      work_item: input({ kind: "work_item", body: "", workItemId: "work-1", w: 260, h: 180 }),
+      decision: input({ kind: "decision", body: "", decisionId: "decision-1", w: 260, h: 180 }),
+      judgment: input({ kind: "judgment", body: "", w: 260, h: 180 }),
+      draft: input({ kind: "draft", body: "", w: 260, h: 180 }),
       shape: input(),
-      text: input({ kind: "text", body: undefined, w: 260, h: 180 }),
-      mark: input({ kind: "mark", body: undefined, w: 260, h: 180 }),
+      text: input({ kind: "text", body: "", w: 260, h: 180 }),
+      mark: input({ kind: "mark", body: "", w: 260, h: 180 }),
     } satisfies Record<(typeof WORKBOARD_NODE_KINDS)[number], WorkboardNodeInput>;
 
     for (const kind of WORKBOARD_NODE_KINDS) expect(validNodeInput(validByKind[kind])).toBeNull();
@@ -54,7 +54,7 @@ describe("C1 colour block vocabulary and validation", () => {
 
   it("refuses references and unknown kinds before the record does", () => {
     expect(validNodeInput(input({ workItemId: "work-1" }))).toBe("A colour block cannot reference work or a decision.");
-    expect(validNodeInput({ ...input(), kind: "unknown" as WorkboardNodeKind })).toBe("Unknown workboard item kind.");
+    expect(validNodeInput({ ...input(), kind: "unknown" as WorkboardNodeInput["kind"] })).toBe("Unknown workboard item kind.");
   });
 
   it("refuses relationships with every decorative node kind", () => {
