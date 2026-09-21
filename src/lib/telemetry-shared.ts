@@ -281,7 +281,12 @@ export type TelemetryEvent =
    * names, no counts: access (review | work | none) and result (granted |
    * changed | removed | unchanged).
    */
-  | "engagement.access_changed";
+  | "engagement.access_changed"
+  /**
+   * S5a: a board someone handed this person was opened from "Shared with me".
+   * Two dims and no others: engagement_id and granter_id.
+   */
+  | "shared.board_opened";
 
 export type TelemetryDims = Record<
   string,
