@@ -22,7 +22,7 @@ import type {
   WorkboardNodeInput,
   WorkboardRowSnapshot,
 } from "@/lib/canvas-lab-shared";
-import { WORKBOARD_ANCHORS, WORKBOARD_JUDGMENT_TYPES, WORKBOARD_NODE_KINDS, WORKBOARD_RELATIONS, WORKBOARD_SHAPE_COLOURS, parseWorkboardTextBody, validWorkboardNodeGeometry } from "@/lib/canvas-lab-shared";
+import { WORKBOARD_ANCHORS, WORKBOARD_JUDGMENT_TYPES, WORKBOARD_NODE_KINDS, WORKBOARD_RELATIONS, WORKBOARD_SHAPE_COLOURS, isWorkboardDecorationKind, parseWorkboardTextBody, validWorkboardNodeGeometry } from "@/lib/canvas-lab-shared";
 import type { ResolvedProfile } from "@/lib/profile-resolve";
 
 type Db = SupabaseClient<Database>;
@@ -192,13 +192,13 @@ function snapshot<T extends { version: number }>(row: T): WorkboardRowSnapshot &
 
 export function validNodeInput(node: WorkboardNodeInput): string | null {
   if (!WORKBOARD_NODE_KINDS.includes(node.kind)) return "Unknown workboard item kind.";
+  if (node.kind === "mark") return "Marks are not available yet.";
   if (!validWorkboardNodeGeometry(node)) return node.kind === "shape" ? "Block dimensions are outside the supported range." : node.kind === "text" ? "Text block dimensions are outside the supported range." : "Card dimensions are outside the supported range.";
   if (node.kind === "work_item" && !node.workItemId) return "A work card needs its work item.";
   if (node.kind === "decision" && !node.decisionId) return "A decision card needs its decision.";
   if ((node.kind === "judgment" || node.kind === "draft") && (node.workItemId || node.decisionId)) return "An authored card cannot reference a record.";
   if (node.kind === "shape" && (node.workItemId || node.decisionId)) return "A colour block cannot reference work or a decision.";
   if (node.kind === "text" && (node.workItemId || node.decisionId)) return "A text block cannot reference work or a decision.";
-  if (node.kind === "mark" && (node.workItemId || node.decisionId)) return "A mark cannot reference work or a decision.";
   if (node.kind === "shape" && !WORKBOARD_SHAPE_COLOURS.includes(node.body as (typeof WORKBOARD_SHAPE_COLOURS)[number])) return "Choose one of the available block colours.";
   if (node.kind === "shape" && (node.frameKey || node.title || node.judgmentType)) return "A colour block can only carry its colour and rectangle.";
   if (node.kind === "text" && (node.frameKey || node.title || node.judgmentType)) return "A text block can only carry its words, style and rectangle.";
@@ -208,9 +208,17 @@ export function validNodeInput(node: WorkboardNodeInput): string | null {
 }
 
 export function validateLinkNodeKinds(kinds: string[]): string | null {
-  if (kinds.includes("shape")) return "A colour block cannot be connected.";
-  if (kinds.includes("text")) return "A text block cannot be connected.";
-  if (kinds.includes("mark")) return "A mark cannot be connected.";
+  const decorationKind = kinds.find(isWorkboardDecorationKind);
+  if (decorationKind === "shape") return "A colour block cannot be connected.";
+  if (decorationKind === "text") return "A text block cannot be connected.";
+  if (decorationKind === "mark") return "A mark cannot be connected.";
+  return null;
+}
+
+export function validNodeUpdate(kind: WorkboardNodeDto["kind"], patch: Extract<WorkboardCommand, { type: "node_update" }>["patch"]): string | null {
+  if (kind === "mark") return "Marks are not available yet.";
+  if (!validNodeGeometry(kind, patch)) return kind === "shape" ? "Block dimensions are outside the supported range." : kind === "text" ? "Text block dimensions are outside the supported range." : "Card dimensions are outside the supported range.";
+  if (kind === "text" && patch.body !== undefined && !parseWorkboardTextBody(patch.body)) return "Check the text block words and style choices.";
   return null;
 }
 
@@ -369,8 +377,10 @@ export async function applyWorkboardCommand(
       return { status: "forbidden" };
     }
     if (!owner) return { status: "validation_error", message: "That card is gone." };
-    if (command.type === "node_update" && !validNodeGeometry(owner.kind as WorkboardNodeDto["kind"], command.patch)) return { status: "validation_error", message: owner.kind === "shape" ? "Block dimensions are outside the supported range." : owner.kind === "text" ? "Text block dimensions are outside the supported range." : "Card dimensions are outside the supported range." };
-    if (command.type === "node_update" && owner.kind === "text" && command.patch.body !== undefined && !parseWorkboardTextBody(command.patch.body)) return { status: "validation_error", message: "Check the text block words and style choices." };
+    if (command.type === "node_update") {
+      const invalid = validNodeUpdate(owner.kind as WorkboardNodeDto["kind"], command.patch);
+      if (invalid) return { status: "validation_error", message: invalid };
+    }
     if (command.type === "node_update" && command.patch.frameId) {
       const target = (await db.from("workboard_frames").select("id").eq("id", command.patch.frameId).eq("workboard_id", board.id).is("deleted_at", null).maybeSingle()).data;
       if (!target) return { status: "validation_error", message: "That workstream is not on this workboard." };

@@ -25,7 +25,7 @@ function input(overrides: Partial<WorkboardNodeInput> = {}): WorkboardNodeInput 
 }
 
 describe("C1 colour block vocabulary and validation", () => {
-  it("accepts every known node kind and refuses an unknown kind", () => {
+  it("accepts every implemented node kind, deliberately keeps marks closed, and refuses an unknown kind", () => {
     const validByKind = {
       brief: input({ kind: "brief", body: "", w: 260, h: 180 }),
       work_item: input({ kind: "work_item", body: "", workItemId: "work-1", w: 260, h: 180 }),
@@ -37,7 +37,9 @@ describe("C1 colour block vocabulary and validation", () => {
       mark: input({ kind: "mark", body: "", w: 260, h: 180 }),
     } satisfies Record<(typeof WORKBOARD_NODE_KINDS)[number], WorkboardNodeInput>;
 
-    for (const kind of WORKBOARD_NODE_KINDS) expect(validNodeInput(validByKind[kind])).toBeNull();
+    for (const kind of WORKBOARD_NODE_KINDS) {
+      expect(validNodeInput(validByKind[kind])).toBe(kind === "mark" ? "Marks are not available yet." : null);
+    }
     expect(validNodeInput({ ...input(), kind: "unknown" as WorkboardNodeInput["kind"] })).toBe("Unknown workboard item kind.");
   });
 

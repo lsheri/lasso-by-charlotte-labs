@@ -8,6 +8,7 @@
  */
 
 import { DRAG_STEP, snapPoint, type Point } from "@/lib/canvas-drag";
+import { isWorkboardDecorationKind } from "@/lib/canvas-lab-shared";
 
 export type PlacementRect = { x: number; y: number; width: number; height: number };
 export type PlacementNode = PlacementRect & { kind?: string };
@@ -15,7 +16,7 @@ export type PlacementNode = PlacementRect & { kind?: string };
 /** Decoration never pushes newly placed work away from the chosen point. */
 export function placementRectsForNodes(nodes: PlacementNode[]): PlacementRect[] {
   return nodes
-    .filter((node) => node.kind !== "shape" && node.kind !== "text" && node.kind !== "mark")
+    .filter((node) => !node.kind || !isWorkboardDecorationKind(node.kind))
     .map(({ x, y, width, height }) => ({ x, y, width, height }));
 }
 
