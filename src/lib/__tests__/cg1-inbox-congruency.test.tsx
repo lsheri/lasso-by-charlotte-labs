@@ -23,6 +23,7 @@ vi.mock("@tanstack/react-router", async (importOriginal) => ({
   Link: ({ children, ...props }: React.AnchorHTMLAttributes<HTMLAnchorElement>) => (
     <a {...props}>{children}</a>
   ),
+  useSearch: () => ({}),
 }));
 vi.mock("@tanstack/react-query", () => ({
   useQuery: () => ({ data: {} }),
