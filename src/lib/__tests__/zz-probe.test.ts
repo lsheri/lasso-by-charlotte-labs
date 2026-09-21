@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { createMiddleware } from "@tanstack/react-start";
+import { runWithStartContext } from "@tanstack/start-storage-context";
 
 const rows: Record<string, Record<string, unknown>[]> = {
   profiles: [{ id: "p1", org_id: "o1", role: "em", user_id: "u1", deactivated_at: null }],
@@ -31,10 +32,10 @@ import { searchRecord } from "@/lib/find-it.functions";
 
 describe("probe", () => {
   it("runs", async () => {
-    const out = await (searchRecord as unknown as { __executeServer: (o: unknown) => Promise<unknown> }).__executeServer({
+    const out = await runWithStartContext({ getRouter: () => ({}), request: new Request("http://localhost/"), startOptions: {}, contextAfterGlobalMiddlewares: {}, executedRequestMiddlewares: new Set(), handlerType: "serverFn" } as never, () => (searchRecord as unknown as { __executeServer: (o: unknown) => Promise<unknown> }).__executeServer({
       data: { query: "zarquon", mode: "thread" },
       method: "POST",
-    });
+    }));
     console.log(JSON.stringify(out), touched);
     expect(1).toBe(1);
   });
