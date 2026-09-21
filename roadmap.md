@@ -1,3 +1,9 @@
+## R1 region tool fixes
+- [ ] Replace the region colour dropdown with the existing palette as toolbar swatches
+- [ ] Keep the chosen fill armed across consecutive region drags
+- [ ] Keep saved paint regions from mounting the fixed reasoning trail
+- [ ] Run focused checks and confirm a clean preview build
+
 ## F9 Find it storyboard canvas
 - [x] Preserve controls, states, events, and persistence
 - [x] Match the reading scatter with animated tracing lines
