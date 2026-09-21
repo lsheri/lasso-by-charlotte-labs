@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { Menu, Minus, MoreHorizontal, Plus, X } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 
 import {
   DropdownMenu,
@@ -2439,7 +2439,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
                   <Button size="icon" variant="ghost" aria-label="More board controls"><MoreHorizontal className="h-4 w-4" /></Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  {toolbarOverflowItems.map((item) => <div key={item.spec.id}>{item.menu}</div>)}
+                  {toolbarOverflowItems.map((item) => <Fragment key={item.spec.id}>{item.menu}</Fragment>)}
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : null}
