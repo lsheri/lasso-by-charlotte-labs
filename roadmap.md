@@ -76,8 +76,8 @@
 ## F6 structured-board row spacing
 - [x] Reproduce overlapping seeded rows on a structured board
 - [x] Derive the vertical row step from card height and retained clear space
-- [ ] Confirm horizontal spacing, Fit behavior, and standard-frame fallback geometry
-- [ ] Run focused checks, type check, and confirm a clean preview build
+- [x] Confirm horizontal spacing, Fit behavior, and standard-frame fallback geometry
+- [x] Run focused checks and type check
 
 ## Landing-next Find it clip
 - [x] Save uploaded clip and poster as public/videos/find-it.mp4 and find-it-poster.png
