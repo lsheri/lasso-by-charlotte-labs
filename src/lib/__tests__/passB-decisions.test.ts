@@ -151,7 +151,7 @@ describe("pass B: a quote only ever comes from a turn that has one", () => {
     turns = {};
     const { container } = renderRow();
     const text = container.textContent ?? "";
-    expect(text).toContain("Some document");
+    expect(text).toContain("Lasso drafted this");
     expect(text).not.toContain("\u201c");
   });
 });
