@@ -14,6 +14,8 @@ import {
   WORKBOARD_CARD_MAX_WIDTH,
   WORKBOARD_CARD_MIN_HEIGHT,
   WORKBOARD_CARD_MIN_WIDTH,
+  WORKBOARD_SHAPE_MAX_SIZE,
+  WORKBOARD_SHAPE_MIN_SIZE,
   type WorkboardCommand,
   type WorkboardDto,
   type WorkboardNodeDto,
@@ -858,10 +860,10 @@ export function fitWorkboardViewport(
 }
 
 export function resizeLabRect(start: LabRect, corner: LabResizeCorner, delta: Point, preserveAspect = false, kind: "card" | "frame" | "shape" = "card"): LabRect {
-  const minWidth = kind === "shape" ? 80 : kind === "card" ? CARD_MIN_WIDTH : FRAME_MIN_WIDTH;
-  const minHeight = kind === "shape" ? 80 : kind === "card" ? CARD_MIN_HEIGHT : FRAME_MIN_HEIGHT;
-  const maxWidth = kind === "shape" ? 4000 : kind === "card" ? CARD_MAX_WIDTH : 2400;
-  const maxHeight = kind === "shape" ? 4000 : kind === "card" ? CARD_MAX_HEIGHT : 1800;
+  const minWidth = kind === "shape" ? WORKBOARD_SHAPE_MIN_SIZE : kind === "card" ? CARD_MIN_WIDTH : FRAME_MIN_WIDTH;
+  const minHeight = kind === "shape" ? WORKBOARD_SHAPE_MIN_SIZE : kind === "card" ? CARD_MIN_HEIGHT : FRAME_MIN_HEIGHT;
+  const maxWidth = kind === "shape" ? WORKBOARD_SHAPE_MAX_SIZE : kind === "card" ? CARD_MAX_WIDTH : 2400;
+  const maxHeight = kind === "shape" ? WORKBOARD_SHAPE_MAX_SIZE : kind === "card" ? CARD_MAX_HEIGHT : 1800;
   const left = corner === "nw" || corner === "sw";
   const top = corner === "nw" || corner === "ne";
   let width = Math.max(minWidth, Math.min(maxWidth, start.width + (left ? -delta.x : delta.x)));
