@@ -54,6 +54,14 @@ vi.mock("@/components/work/WorkRow", () => ({
 vi.mock("@/components/work/ConversationCard", () => ({ ConversationCard: () => null }));
 vi.mock("@/components/work/WorkSubtitle", () => ({ WorkSubtitle: () => null }));
 vi.mock("@/components/work/SourceMark", () => ({ sourceVendorKey: () => null }));
+vi.mock("@/components/work/MapDialog", () => ({ MapDialog: () => null }));
+vi.mock("@/components/peek/PeekPanel", () => ({ PeekPanel: () => null }));
+vi.mock("@/components/work/WorkDateDialog", () => ({ WorkDateDialog: () => null }));
+vi.mock("@/components/reflect/AnalysisLens", () => ({ AnalysisLens: () => null }));
+vi.mock("@/components/verify/ThreadAnalysisLauncher", () => ({
+  ThreadAnalysisLauncher: () => null,
+  isThreadReaderPreset: () => false,
+}));
 
 import { WorkPage } from "@/pages/WorkPage";
 
