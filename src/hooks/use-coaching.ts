@@ -43,13 +43,33 @@ export function coachSubjectsKey(profileIdsCsv: string) {
  * once with the counts already in place.
  */
 export function useAllCoachSubjects(profiles: Profile[]) {
-  const coachProfileIds = profiles.filter((p) => p.role === "coach").map((p) => p.id);
-  const csv = coachProfileIds.join(",");
+  const profileIds = profiles.map((p) => p.id);
+  const allCsv = profileIds.join(",");
   const fetchSubjects = useServerFn(getCoachSubjects);
+
+  // Who this person coaches is an engagement level fact: a profile holds the
+  // queue for every engagement where it is a coach member, whatever its
+  // workspace wide role says. The same relationship the note policy checks.
+  const membership = useQuery({
+    queryKey: ["my-coach-memberships", allCsv],
+    enabled: profileIds.length > 0,
+    queryFn: async (): Promise<string[]> => {
+      const { data, error } = await supabase
+        .from("engagement_members")
+        .select("profile_id")
+        .in("profile_id", profileIds)
+        .eq("member_role", "coach");
+      if (error) throw error;
+      return Array.from(new Set((data ?? []).map((row) => row.profile_id as string)));
+    },
+  });
+
+  const coachProfileIds = membership.data ?? [];
+  const csv = coachProfileIds.join(",");
 
   const query = useQuery({
     queryKey: coachSubjectsKey(csv),
-    enabled: coachProfileIds.length > 0,
+    enabled: membership.isSuccess && coachProfileIds.length > 0,
     queryFn: (): Promise<CoachSubjectAcrossOrgs[]> =>
       fetchSubjects({ data: { profile_ids: coachProfileIds } }),
     ...COACH_POLL,
@@ -57,8 +77,10 @@ export function useAllCoachSubjects(profiles: Profile[]) {
 
   return {
     data: query.data ?? [],
-    isLoading: coachProfileIds.length > 0 && query.isLoading,
-    error: (query.error ?? null) as Error | null,
+    isLoading:
+      profileIds.length > 0 &&
+      (membership.isLoading || (coachProfileIds.length > 0 && query.isLoading)),
+    error: ((membership.error ?? query.error) || null) as Error | null,
   };
 }
 
@@ -100,6 +122,8 @@ export type Packet = {
     clients: { id: string; name: string; quick_folder: boolean } | null;
   } | null;
   subject: { id: string; display_name: string; title_band: string | null } | null;
+  /** The subject's own member_role here; null when they are not on it. */
+  subjectMemberRole: string | null;
   tasks: PacketTask[];
   decisions: {
     id: string;
@@ -114,7 +138,8 @@ export type Packet = {
 };
 
 export async function fetchPacket(engagementId: string, subjectId: string): Promise<Packet> {
-  const [engagementRes, subjectRes, tasksRes, decisionsRes, notesRes] = await Promise.all([
+  const [engagementRes, subjectRes, subjectRoleRes, tasksRes, decisionsRes, notesRes] =
+    await Promise.all([
     supabase
       .from("engagements")
       .select("id, code, title, client_label, brief, term_label, clients(id, name, quick_folder)")
@@ -124,6 +149,12 @@ export async function fetchPacket(engagementId: string, subjectId: string): Prom
       .from("profiles")
       .select("id, display_name, title_band")
       .eq("id", subjectId)
+      .maybeSingle(),
+    supabase
+      .from("engagement_members")
+      .select("member_role")
+      .eq("engagement_id", engagementId)
+      .eq("profile_id", subjectId)
       .maybeSingle(),
     supabase
       .from("tasks")
@@ -157,6 +188,7 @@ export async function fetchPacket(engagementId: string, subjectId: string): Prom
   return {
     engagement: engagementRes.data,
     subject: subjectRes.data,
+    subjectMemberRole: (subjectRoleRes.data?.member_role as string | undefined) ?? null,
     tasks,
     decisions: decisionsRes.data ?? [],
     notes: (notesRes.data ?? []) as PacketNote[],

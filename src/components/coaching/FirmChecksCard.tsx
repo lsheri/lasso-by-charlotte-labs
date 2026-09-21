@@ -9,6 +9,7 @@ import {
   useWriteFirmCheck,
   type FirmCheck,
 } from "@/hooks/use-firm-checks";
+import { useMyMemberRole } from "@/hooks/use-member-role";
 
 /**
  * The checks a coach or the firm wrote for this work. Everyone who the checks
@@ -30,7 +31,12 @@ export function FirmChecksCard({
   subjectProfileId?: string | null;
   subjectName?: string;
 }) {
-  const canWrite = role === "coach" || role === "admin";
+  // Writing is the engagement relationship the policies check: a coach member
+  // of this engagement writes, whatever their workspace wide role says. An
+  // admin writes anywhere. With no engagement in scope there is no
+  // relationship to ask, so only the admin path remains.
+  const { data: myRole } = useMyMemberRole(engagementId, authorProfileId);
+  const canWrite = role === "admin" || (engagementId ? myRole === "coach" : false);
   const { data: checks } = useFirmChecks({ orgId, engagementId, subjectProfileId });
   const { add, deactivate } = useWriteFirmCheck();
   const [open, setOpen] = useState(false);

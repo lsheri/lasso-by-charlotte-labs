@@ -8,6 +8,7 @@ import { AnalysisLens } from "@/components/reflect/AnalysisLens";
 import { TaskWorkflow, type WorkflowElement } from "@/components/work/TaskWorkflow";
 import { usePacket, type PacketElement } from "@/hooks/use-coaching";
 import { useProfile } from "@/hooks/use-profile";
+import { useMyMemberRole } from "@/hooks/use-member-role";
 import { CoachOutcomeCard } from "@/components/coaching/CoachOutcomeCard";
 import { FirmChecksCard } from "@/components/coaching/FirmChecksCard";
 import { ToneCard } from "@/components/notebook/ToneCard";
@@ -56,6 +57,11 @@ export function PacketPage({
 }) {
   const { data: profile } = useProfile();
   const { data, isLoading, error } = usePacket(engagementId, subjectId);
+  // A note is offered only where the note policy would accept it: the reader
+  // is a coach member here and the subject is a work member here. Workspace
+  // wide roles are not asked. When everyone holds Review there is no subject,
+  // so the surface stays absent rather than appearing and failing.
+  const { data: myRole } = useMyMemberRole(engagementId, profile?.id);
   const [peekItem, setPeekItem] = useState<WorkItemRow | null>(null);
   const [lensItem, setLensItem] = useState<WorkItemRow | null>(null);
   const [openNote, setOpenNote] = useState<ModalNote | null>(null);
@@ -299,15 +305,17 @@ export function PacketPage({
             </section>
           ) : null}
 
-          <NoteComposer
-            subjectId={subjectId}
-            engagementId={engagementId}
-            citations={citations}
-            latestActivityAt={newest}
-            tasks={data.tasks.map((task) => ({ id: task.id, label: task.name }))}
-            workItems={scopeWorkItems}
-            orgType={profile?.org_type}
-          />
+          {myRole === "coach" && data.subjectMemberRole === "em" ? (
+            <NoteComposer
+              subjectId={subjectId}
+              engagementId={engagementId}
+              citations={citations}
+              latestActivityAt={newest}
+              tasks={data.tasks.map((task) => ({ id: task.id, label: task.name }))}
+              workItems={scopeWorkItems}
+              orgType={profile?.org_type}
+            />
+          ) : null}
 
 
           <CoachChat
