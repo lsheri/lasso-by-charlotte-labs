@@ -23,7 +23,7 @@ export function placementRectsForNodes(nodes: PlacementNode[]): PlacementRect[] 
 /** The clear space kept around every existing card and outline. */
 export const PLACEMENT_GAP = 24;
 
-export const PLACEMENT_CARD = {
+export const PLACEMENT_CARD: { width: number; height: number } = {
   width: WORKBOARD_CARD_DEFAULT_SIZE.width,
   height: WORKBOARD_CARD_DEFAULT_SIZE.height,
 };
