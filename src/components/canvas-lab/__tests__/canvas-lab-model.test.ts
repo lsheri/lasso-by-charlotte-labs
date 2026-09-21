@@ -122,6 +122,36 @@ describe("canvas lab model", () => {
     }
   });
 
+  it("keeps every seeded row in a structured frame clear of the row above", () => {
+    const crowded = {
+      ...SEED,
+      work: Array.from({ length: 8 }, (_, index) => ({
+        id: `row-${index}`,
+        title: `Row ${index}`,
+        typeLabel: "document",
+        source: "upload",
+        ownedByViewer: true,
+        taskIds: ["t1"],
+        deliverable: false,
+      })),
+      decisions: [],
+    };
+    const nodes = seedCanvas(crowded).filter((node) => node.frame === "task:t1");
+
+    for (let first = 0; first < nodes.length; first += 1) {
+      for (let second = first + 1; second < nodes.length; second += 1) {
+        const a = nodes[first];
+        const b = nodes[second];
+        if (!a || !b) continue;
+        const intersects = a.x < b.x + b.width
+          && b.x < a.x + a.width
+          && a.y < b.y + b.height
+          && b.y < a.y + a.height;
+        expect(intersects, `${a.id} overlaps ${b.id}`).toBe(false);
+      }
+    }
+  });
+
   it("finds a containing frame and prompts only for a different Structured workstream", () => {
     const frames = createLabFrames(SEED.tasks);
     const node = { ...seedCanvas(SEED, frames).find((entry) => entry.id === "work:w1") };

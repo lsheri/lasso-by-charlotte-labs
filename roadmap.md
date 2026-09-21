@@ -73,6 +73,12 @@
 - [x] Pin the seeded, interaction, and record floor relationship
 - [x] Run focused checks, type check, and confirm a clean preview build
 
+## F6 structured-board row spacing
+- [x] Reproduce overlapping seeded rows on a structured board
+- [x] Derive the vertical row step from card height and retained clear space
+- [x] Confirm horizontal spacing, Fit behavior, and standard-frame fallback geometry
+- [x] Run focused checks and type check
+
 ## Landing-next Find it clip
 - [x] Save uploaded clip and poster as public/videos/find-it.mp4 and find-it-poster.png
 - [x] Wire the Find it ClipSlot to ClipPlayer (1440x900, 16/9) on /landing-next only
