@@ -8,7 +8,7 @@ import { ensureExtractsFn } from "@/lib/extract.functions";
 import { logEvent } from "@/lib/telemetry";
 import { logV2 } from "@/lib/telemetry-v2";
 import { noteCaptureFn } from "@/lib/work-taxonomy.functions";
-import { buildUploadSourceMeta } from "@/lib/upload-payload";
+import { buildUploadSourceMeta, storageObjectKey } from "@/lib/upload-payload";
 import { workTypeForFile } from "@/lib/work-types";
 
 /**
@@ -24,7 +24,18 @@ export function useCaptureFiles() {
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  /** F1: what did not come in, and why, so the reason is never swallowed. */
+  async function captureWithResult(files: File[]): Promise<{ ids: string[]; failures: { name: string; reason: string }[] }> {
+    const failures: { name: string; reason: string }[] = [];
+    const ids = await run(files, failures);
+    return { ids, failures };
+  }
+
   async function capture(files: File[]): Promise<string[]> {
+    return run(files, []);
+  }
+
+  async function run(files: File[], failures: { name: string; reason: string }[]): Promise<string[]> {
     if (files.length === 0 || !profile) return [];
     setPending(true);
     setError(null);
@@ -34,6 +45,7 @@ export function useCaptureFiles() {
     const userId = userData.user?.id;
     if (!userId) {
       setError("You're signed out.");
+      for (const file of files) failures.push({ name: file.name, reason: "You're signed out." });
       setPending(false);
       setProgress(null);
       return [];
@@ -42,10 +54,11 @@ export function useCaptureFiles() {
     const capturedIds: string[] = [];
     for (const [index, file] of files.entries()) {
       setProgress({ done: index, total: files.length });
-      const path = `${userId}/${crypto.randomUUID()}-${file.name}`;
+      const path = storageObjectKey(userId, crypto.randomUUID(), file.name);
       const { error: uploadError } = await supabase.storage.from("work-files").upload(path, file);
       if (uploadError) {
         setError(uploadError.message);
+        failures.push({ name: file.name, reason: uploadError.message });
         continue;
       }
 
@@ -70,6 +83,7 @@ export function useCaptureFiles() {
         .maybeSingle();
       if (insertError) {
         setError(insertError.message);
+        failures.push({ name: file.name, reason: insertError.message });
         continue;
       }
 
@@ -100,5 +114,5 @@ export function useCaptureFiles() {
     return capturedIds;
   }
 
-  return { capture, pending, progress, error, profile };
+  return { capture, captureWithResult, pending, progress, error, profile };
 }
