@@ -7,7 +7,8 @@ import { colourKey, noteHue, notePaper } from "@/components/work/note-paper";
 import { useNoteLive } from "@/hooks/use-note-live";
 import type { WorkboardCardPreview, WorkboardDisplayMode, WorkboardFilePreview } from "@/lib/workboard-card-preview.shared";
 import { workIdentityLabel } from "@/lib/work-identity";
-import { effectiveWorkDate, formatDate, type WorkItemRow } from "@/lib/work-types";
+import { resolveWorkDate } from "@/lib/work-order";
+import { formatDate, type WorkItemRow } from "@/lib/work-types";
 
 /** The shared paper note used anywhere a single piece of work is shown. */
 export function WorkNote({
@@ -46,7 +47,10 @@ export function WorkNote({
   // work_item_tasks of their own, so the mapping is optional here.
   const mapping = item.work_item_tasks?.[0]?.tasks ?? null;
   const clientId = mapping?.engagements?.clients?.id ?? item.client_id ?? null;
-  const date = formatDate(effectiveWorkDate(item));
+  // The date the list ordered by, and which of the two it is. An arrival time
+  // is said to be an arrival, never shown as when the work happened.
+  const when = resolveWorkDate(item);
+  const date = when.byArrival ? `added ${formatDate(when.iso)}` : formatDate(when.iso);
   const hasPreview = item.type === "ai_thread"
     ? Boolean(chatPreview?.turns.length)
     : Boolean(filePreview && filePreview.kind !== "fallback");

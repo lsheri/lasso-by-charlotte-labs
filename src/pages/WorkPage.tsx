@@ -55,6 +55,7 @@ import { useMakePrivate } from "@/hooks/use-make-private";
 import { useClients } from "@/hooks/use-clients";
 import { useProfile } from "@/hooks/use-profile";
 import { useWorkItems } from "@/hooks/use-work-items";
+import { orderByWorkDate } from "@/lib/work-order";
 import { useWorkboardCardPreviews } from "@/hooks/use-workboard-card-previews";
 import { useWorkboardFilePreviews } from "@/hooks/use-workboard-file-previews";
 import { supabase } from "@/integrations/supabase/client";
@@ -289,7 +290,9 @@ export function WorkPage() {
     return () => clearTimeout(t);
   }, [gusting]);
 
-  const all = data?.items ?? [];
+  // One ordering rule for the whole page: when the work happened, falling
+  // back to when it arrived. Every column, count and filter reads this list.
+  const all = orderByWorkDate(data?.items ?? []);
   const mappingError = data?.mappingError ?? null;
   const mapped = all.filter((i) => i.visibility === "mapped");
   const unmapped = all.filter((i) => i.visibility === "unmapped");

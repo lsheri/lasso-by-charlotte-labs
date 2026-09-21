@@ -14,6 +14,7 @@ import { CoachNoteModal, type ModalNote } from "@/components/coaching/CoachNoteM
 import { useUnreadNotesAboutMe } from "@/hooks/use-coach-note-thread";
 import { newNoteLine, firstName } from "@/lib/coach-note-scope";
 import { useProfile } from "@/hooks/use-profile";
+import { orderByWorkDate } from "@/lib/work-order";
 import type { WorkItemRow } from "@/lib/work-types";
 import type { CanvasTask } from "@/components/engagements/EngagementCanvas";
 
@@ -64,8 +65,14 @@ export function WorkLedger({
   const taskNotes = notesHere.filter((note) => note.task_id === task.id);
   const notesForItem = (itemId: string) => notesHere.filter((note) => note.work_item_id === itemId);
 
-  const deliverables = useMemo(() => items.filter((item) => isDeliverableType(item.type)), [items]);
-  const sources = useMemo(() => items.filter((item) => !isDeliverableType(item.type)), [items]);
+  const deliverables = useMemo(
+    () => orderByWorkDate(items.filter((item) => isDeliverableType(item.type))),
+    [items],
+  );
+  const sources = useMemo(
+    () => orderByWorkDate(items.filter((item) => !isDeliverableType(item.type))),
+    [items],
+  );
 
   return (
     <section>
