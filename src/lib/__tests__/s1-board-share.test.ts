@@ -53,7 +53,8 @@ describe("S1 — the token", () => {
     expect(insert.replace("token_hash: await hashShareToken(token)", "")).not.toContain("token");
     // No write anywhere names a token column, in either half.
     for (const source of [SERVER, OPEN]) {
-      expect(source).not.toMatch(/\btoken:\s/);
+      // A type annotation is fine; a column named token is not.
+      expect(source).not.toMatch(/\btoken:\s(?!string)/);
       expect(source).not.toMatch(/token_raw|share_token:/);
     }
     // And the elevated half only ever hashes what it is handed.
