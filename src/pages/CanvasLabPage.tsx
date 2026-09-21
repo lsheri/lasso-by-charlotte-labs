@@ -118,6 +118,7 @@ import {
   noteWorkboardWorkstreamDrawn,
   type LabNodeEventKind,
   type WorkboardOpenVia,
+  type WorkboardPersistAction,
   type WorkboardPersistEntity,
 } from "@/components/canvas-lab/canvas-lab-telemetry";
 import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
@@ -607,7 +608,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   }
 
 
-  function report(result: { status: string }, entity: WorkboardPersistEntity, action: "create" | "update" | "archive" | "restore"): void {
+  function report(result: { status: string }, entity: WorkboardPersistEntity, action: WorkboardPersistAction): void {
     if (result.status === "saved") noteWorkboardChangeSaved(orgId, entity, action);
     else if (result.status === "conflict") noteWorkboardSaveFailed(orgId, entity, "conflict");
     else if (result.status === "forbidden") noteWorkboardSaveFailed(orgId, entity, "permission");
@@ -1626,7 +1627,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   async function removeContextArea(frame: LabFrame) {
     if (!frame.durableId) return;
     const result = await lab.persist({ type: "frame_archive", frameId: frame.durableId, expectedVersion: frame.durableVersion ?? 1 });
-    report(result, "frame", "archive");
+    report(result, "context_area", "removed");
     if (result.status !== "saved") return;
     removedContextRef.current = { id: frame.durableId, version: result.versions[frame.durableId] ?? (frame.durableVersion ?? 1) + 1 };
     framesRef.current = framesRef.current.filter((entry) => entry.id !== frame.id);
@@ -1646,7 +1647,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     let created: LabFrame = { id: CONTEXT_FRAME_ID, name: CONTEXT_FRAME_LABEL, x: rect.x, y: rect.y, width: rect.width, height: rect.height, local: true };
     if (archived) {
       const result = await lab.persist({ type: "frame_restore", frameId: archived.id, expectedVersion: archived.version, patch: { x: rect.x, y: rect.y, w: rect.width, h: rect.height } });
-      report(result, "frame", "restore");
+      report(result, "context_area", "created");
       if (result.status !== "saved") return;
       created = { ...created, durableId: archived.id, durableVersion: result.versions[archived.id] ?? archived.version + 1, local: false };
     } else {
@@ -1655,7 +1656,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       if (!(await materialize())) { framesRef.current = framesRef.current.filter((frame) => frame.id !== created.id); return; }
       if (boardExisted) {
         const result = await lab.persist({ type: "frame_create", frame: { key: created.id, kind: "context", taskId: null, label: CONTEXT_FRAME_LABEL, x: rect.x, y: rect.y, w: rect.width, h: rect.height, ord: 0 } });
-        report(result, "frame", "create");
+        report(result, "context_area", "created");
         if (result.status !== "saved" || !result.created?.frameId) { framesRef.current = framesRef.current.filter((frame) => frame.id !== created.id); return; }
         created = { ...created, durableId: result.created.frameId, durableVersion: result.versions[result.created.frameId] ?? 1, local: false };
       } else {
