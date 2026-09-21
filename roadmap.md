@@ -79,6 +79,11 @@
 - [x] Confirm horizontal spacing, Fit behavior, and standard-frame fallback geometry
 - [x] Run focused checks and type check
 
+## F7 Fit content width preservation
+- [x] Reproduce a widened card resetting to the default width
+- [x] Preserve current width within the interaction and record limits
+- [x] Verify focused checks, types, and preview build
+
 ## Landing-next Find it clip
 - [x] Save uploaded clip and poster as public/videos/find-it.mp4 and find-it-poster.png
 - [x] Wire the Find it ClipSlot to ClipPlayer (1440x900, 16/9) on /landing-next only
