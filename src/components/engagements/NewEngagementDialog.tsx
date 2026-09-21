@@ -48,7 +48,7 @@ export function NewEngagementDialog({
   const invalidateClients = useInvalidateClients();
   const navigate = useNavigate();
   const vocab = vocabFor(profile);
-  const { capture } = useCaptureFiles();
+  const { captureWithResult } = useCaptureFiles();
   const placeWork = useServerFn(placeWorkOnBoardFn);
   const fileInput = useRef<HTMLInputElement | null>(null);
   const [open, setOpen] = useState(false);
