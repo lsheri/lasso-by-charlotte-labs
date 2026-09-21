@@ -83,8 +83,8 @@ function SharedCard({
   decision,
 }: {
   node: SharedBoardNode;
-  item?: { title: string; type: string; turns: { turnNo: number; role: string; content: string }[] };
-  decision?: { call: string; situation: string; why: string };
+  item?: { title: string; type: string; turns: { turnNo: number; role: string; content: string }[] } | undefined;
+  decision?: { call: string; situation: string; why: string } | undefined;
 }) {
   return (
     <article
