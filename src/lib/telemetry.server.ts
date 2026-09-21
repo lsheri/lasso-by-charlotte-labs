@@ -181,6 +181,7 @@ export async function recordEvent(
     }
     const { error } = await supabase.from("events").insert({
       ...stamp,
+      environment: resolveEnvironment(),
       event_type: input.eventType,
       schema_version: "v2",
       tenant_hash: tenantHash,
