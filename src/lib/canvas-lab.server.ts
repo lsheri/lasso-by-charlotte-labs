@@ -215,6 +215,13 @@ export function validateLinkNodeKinds(kinds: string[]): string | null {
   return null;
 }
 
+export function validNodeUpdate(kind: WorkboardNodeDto["kind"], patch: Extract<WorkboardCommand, { type: "node_update" }>["patch"]): string | null {
+  if (kind === "mark") return "Marks are not available yet.";
+  if (!validNodeGeometry(kind, patch)) return kind === "shape" ? "Block dimensions are outside the supported range." : kind === "text" ? "Text block dimensions are outside the supported range." : "Card dimensions are outside the supported range.";
+  if (kind === "text" && patch.body !== undefined && !parseWorkboardTextBody(patch.body)) return "Check the text block words and style choices.";
+  return null;
+}
+
 function validFrameGeometry(frame: { x?: number; y?: number; w?: number; h?: number }): boolean {
   const values = [frame.x, frame.y, frame.w, frame.h].filter((value): value is number => value !== undefined);
   if (!values.every(Number.isFinite)) return false;
@@ -370,9 +377,10 @@ export async function applyWorkboardCommand(
       return { status: "forbidden" };
     }
     if (!owner) return { status: "validation_error", message: "That card is gone." };
-    if (command.type === "node_update" && owner.kind === "mark") return { status: "validation_error", message: "Marks are not available yet." };
-    if (command.type === "node_update" && !validNodeGeometry(owner.kind as WorkboardNodeDto["kind"], command.patch)) return { status: "validation_error", message: owner.kind === "shape" ? "Block dimensions are outside the supported range." : owner.kind === "text" ? "Text block dimensions are outside the supported range." : "Card dimensions are outside the supported range." };
-    if (command.type === "node_update" && owner.kind === "text" && command.patch.body !== undefined && !parseWorkboardTextBody(command.patch.body)) return { status: "validation_error", message: "Check the text block words and style choices." };
+    if (command.type === "node_update") {
+      const invalid = validNodeUpdate(owner.kind as WorkboardNodeDto["kind"], command.patch);
+      if (invalid) return { status: "validation_error", message: invalid };
+    }
     if (command.type === "node_update" && command.patch.frameId) {
       const target = (await db.from("workboard_frames").select("id").eq("id", command.patch.frameId).eq("workboard_id", board.id).is("deleted_at", null).maybeSingle()).data;
       if (!target) return { status: "validation_error", message: "That workstream is not on this workboard." };
