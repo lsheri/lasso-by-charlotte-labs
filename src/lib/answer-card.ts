@@ -11,10 +11,14 @@ import type { WorkboardNodeInput } from "@/lib/canvas-lab-shared";
 /** One read the answer made, as the answer surface already has it. */
 export type AnswerRead = { id: string; depth: string };
 
-/** One turn of a conversation the answer read. */
-export type AnswerTurn = { id: string; work_item_id: string | null; turn_no: number | null };
-
-export type AnswerCiteRow = { node_id: string; turn_id: string; ord: number };
+/** A stored reference: which source, read how deeply, and where in the answer. */
+export type AnswerCiteRow = {
+  node_id: string;
+  work_item_id: string;
+  turn_id: string | null;
+  depth: "full" | "extract";
+  ord: number;
+};
 
 /** The label on the action, kept in one place so the check never restates it. */
 export const KEEP_ANSWER_LABEL = "Keep as a card";
@@ -26,40 +30,25 @@ export const ANSWER_CARD_SIZE = { width: 320, height: 240 } as const;
 export const ANSWER_CARD_TITLE = "Answer";
 
 /**
- * The conversations the answer actually read, in the order it read them.
- * A catalogue glance is a listing, not a reading, so it cites nothing.
+ * The sources the answer actually read, in the order it read them, each with
+ * the depth it was read at. A listing is not a reading, so it cites nothing,
+ * and a source read twice is recorded once, at the first depth it was read.
+ *
+ * turn_id stays null. The answer knows which source it read, not which turn,
+ * and the record will not claim a precision the answer never earned.
  */
-export function answerReadWorkItemIds(reads: readonly AnswerRead[]): string[] {
+export function answerCiteRows(nodeId: string, reads: readonly AnswerRead[]): AnswerCiteRow[] {
   const seen = new Set<string>();
-  const ids: string[] = [];
+  const rows: AnswerCiteRow[] = [];
   for (const read of reads) {
-    if (read.depth === "catalogue" || read.depth === "unreadable") continue;
+    if (read.depth !== "full" && read.depth !== "extract") continue;
     if (seen.has(read.id)) continue;
     seen.add(read.id);
-    ids.push(read.id);
+    rows.push({ node_id: nodeId, work_item_id: read.id, turn_id: null, depth: read.depth, ord: rows.length });
   }
-  return ids;
+  return rows;
 }
 
-/** Turn ids in the order the answer used them: by conversation, then by turn. */
-export function orderedAnswerTurnIds(
-  workItemIds: readonly string[],
-  turns: readonly AnswerTurn[],
-): string[] {
-  const ids: string[] = [];
-  for (const workItemId of workItemIds) {
-    const mine = turns
-      .filter((turn) => turn.work_item_id === workItemId)
-      .sort((a, b) => (a.turn_no ?? 0) - (b.turn_no ?? 0));
-    for (const turn of mine) if (!ids.includes(turn.id)) ids.push(turn.id);
-  }
-  return ids;
-}
-
-/** Stored references only: a node, a turn, and the place it came in the answer. */
-export function answerCiteRows(nodeId: string, turnIds: readonly string[]): AnswerCiteRow[] {
-  return turnIds.map((turnId, index) => ({ node_id: nodeId, turn_id: turnId, ord: index }));
-}
 
 /**
  * The card the board saves. Never a work item and never a decision: the record

@@ -1,49 +1,49 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  answerAsOf,
-  answerCiteRows,
-  answerNodeInput,
-  answerReadWorkItemIds,
-  orderedAnswerTurnIds,
-} from "@/lib/answer-card";
+import { answerAsOf, answerCiteRows, answerNodeInput } from "@/lib/answer-card";
 import { WORKBOARD_NODE_KINDS } from "@/lib/canvas-lab-shared";
 import { LAB_TEMPLATE_KINDS } from "@/components/canvas-lab/canvas-lab-model";
 
 const READS = [
-  { id: "work-a", depth: "full", title: "Pricing thread with the client" },
+  { id: "work-a", depth: "full", title: "Cure First Problem Definition.pdf" },
   { id: "work-b", depth: "extract", title: "Margin model v3" },
-  { id: "work-a", depth: "extract", title: "Pricing thread with the client" },
-];
-
-const TURNS = [
-  { id: "turn-a2", work_item_id: "work-a", turn_no: 2 },
-  { id: "turn-b1", work_item_id: "work-b", turn_no: 1 },
-  { id: "turn-a1", work_item_id: "work-a", turn_no: 1 },
+  { id: "work-c", depth: "catalogue", title: "Board pack index" },
+  { id: "work-d", depth: "unreadable", title: "Scanned fax" },
+  { id: "work-a", depth: "extract", title: "Cure First Problem Definition.pdf" },
 ];
 
 describe("an answer kept as a card", () => {
-  it("records stored turn references and no prose about its sources", () => {
-    const workIds = answerReadWorkItemIds(READS);
-    const turnIds = orderedAnswerTurnIds(workIds, TURNS);
-    const rows = answerCiteRows("node-1", turnIds);
+  it("records the sources it read, in read order, at the depth it read them", () => {
+    const rows = answerCiteRows("node-1", READS);
+    const readable = READS.filter((read) => read.depth === "full" || read.depth === "extract");
+    const distinct = readable.filter((read, index) => readable.findIndex((other) => other.id === read.id) === index);
 
-    expect(rows.length).toBeGreaterThan(0);
-    for (const row of rows) {
-      expect(Object.keys(row).sort()).toEqual(["node_id", "ord", "turn_id"]);
-      expect(TURNS.some((turn) => turn.id === row.turn_id)).toBe(true);
-    }
+    expect(rows.map((row) => row.work_item_id)).toEqual(distinct.map((read) => read.id));
+    expect(rows.map((row) => row.depth)).toEqual(distinct.map((read) => read.depth));
     expect(rows.map((row) => row.ord)).toEqual(rows.map((_row, index) => index));
+    for (const row of rows) {
+      expect(row.turn_id).toBeNull();
+      expect(row.node_id).toBe("node-1");
+    }
+  });
 
-    const stored = JSON.stringify(rows);
-    for (const read of READS) expect(stored).not.toContain(read.title);
-
+  it("carries no source title or file name, on the rows or on the card", () => {
+    const stored = JSON.stringify(answerCiteRows("node-1", READS));
     const input = answerNodeInput({ clientKey: "k", at: { x: 10, y: 20 }, text: "The answer body." });
     const prose = JSON.stringify(input);
-    for (const read of READS) expect(prose).not.toContain(read.title);
+    for (const read of READS) {
+      expect(stored).not.toContain(read.title);
+      expect(prose).not.toContain(read.title);
+    }
     expect(input.body).toBe("The answer body.");
     expect(input.workItemId ?? null).toBeNull();
     expect(input.decisionId ?? null).toBeNull();
+  });
+
+  it("cites nothing for a listing", () => {
+    expect(answerCiteRows("node-1", [{ id: "work-c", depth: "catalogue" }])).toEqual([]);
+    expect(answerCiteRows("node-1", [{ id: "work-d", depth: "unreadable" }])).toEqual([]);
+    expect(answerCiteRows("node-1", [{ id: "work-e", depth: "skimmed" }])).toEqual([]);
   });
 
   it("shows an as-of date derived from the saved row", () => {

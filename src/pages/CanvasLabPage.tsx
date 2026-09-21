@@ -21,13 +21,8 @@ import { LabAnswerCard } from "@/components/canvas-lab/LabAnswerCard";
 import { useRegisterAskLasso } from "@/components/reflect/ask-lasso-context";
 import type { KeptAnswer } from "@/components/reflect/answer-keep-context";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  answerCiteRows,
-  answerNodeInput,
-  answerReadWorkItemIds,
-  canKeepAnswer,
-  orderedAnswerTurnIds,
-} from "@/lib/answer-card";
+import { answerCiteRows, answerNodeInput, canKeepAnswer } from "@/lib/answer-card";
+
 import { CanvasLabReview } from "@/components/canvas-lab/CanvasLabReview";
 import { CanvasLabStatusLine } from "@/components/canvas-lab/CanvasLabStatusLine";
 import { FocusOverlay } from "@/components/canvas-lab/FocusOverlay";
@@ -1825,13 +1820,12 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       if (result.status !== "saved" || !result.created?.nodeId) return;
       const nodeId = result.created.nodeId;
       noteWorkboardNodeCreated(orgId, "answer");
-      const workItemIds = answerReadWorkItemIds(answer.reads);
-      if (workItemIds.length > 0) {
-        const { data } = await supabase.from("turns").select("id, work_item_id, turn_no").in("work_item_id", workItemIds);
-        const turnIds = orderedAnswerTurnIds(workItemIds, data ?? []);
-        if (turnIds.length > 0) await supabase.from("answer_cites").insert(answerCiteRows(nodeId, turnIds));
-      }
-      await lab.refresh();
+      const cites = answerCiteRows(nodeId, answer.reads);
+      if (cites.length > 0) await supabase.from("answer_cites").insert(cites);
+      // Re-read the saved board and apply it, so the kept card is on the stage
+      // straight away rather than only after the page is opened again.
+      await reloadDurableBoard();
+
       setAnnouncement("Answer kept as a card.");
     } finally {
       setKeepBusy(false);
