@@ -1,9 +1,30 @@
+// @vitest-environment jsdom
 import { readFileSync } from "node:fs";
-import { describe, expect, it } from "vitest";
+import { createElement } from "react";
+
+import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { resolveMotion } from "@/lib/motion-registry";
 
 const read = (p: string) => readFileSync(p, "utf8");
+
+/** The turns the row is able to read, swapped per check. */
+let turns: Record<string, { turn_no: number; content: string }> = {};
+
+vi.mock("@/hooks/use-decisions", () => ({
+  srcsOf: () => [{ work_item_id: "w1", turn_id: "t1" }],
+  useDecisionSourceItems: () => ({
+    data: { w1: { title: "Some document", type: "note", work_date: "2026-04-01" } },
+  }),
+  useDecisionSourceTurns: () => ({ data: turns }),
+}));
+
+vi.mock("@/hooks/use-motion", () => ({
+  useMotion: () => ({ className: "", still: true, reduced: "" }),
+}));
+
+const { DecisionLogRow } = await import("@/components/decisions/DecisionLogRow");
 
 describe("pass B: where a call gets settled", () => {
   it("stamps the surface on confirm, discard and edit", () => {
