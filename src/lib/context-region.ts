@@ -10,6 +10,7 @@
  */
 
 import { snapPoint, type Point } from "@/lib/canvas-drag";
+import { isTrailFrameId } from "@/lib/reasoning-trail";
 import { PLACEMENT_CARD, PLACEMENT_GAP, slotIsFree, type PlacementRect } from "@/lib/workboard-placement";
 
 export const CONTEXT_FRAME_ID = "context";
