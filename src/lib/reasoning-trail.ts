@@ -13,8 +13,11 @@ import { snapPoint, type Point } from "@/lib/canvas-drag";
 export const TRAIL_FRAME_ID = "trail";
 export const TRAIL_FRAME_LABEL = "Reasoning trail";
 
-/** The panel's own footprint, matching the guide panel it draws. */
-export const TRAIL_SIZE = { width: 720, height: 150 } as const;
+/**
+ * The panel's own footprint. The height is the smallest an outline row is
+ * allowed to be, so the place a trail is put can always be saved.
+ */
+export const TRAIL_SIZE = { width: 720, height: 220 } as const;
 
 export type TrailRect = { x: number; y: number; width: number; height: number };
 

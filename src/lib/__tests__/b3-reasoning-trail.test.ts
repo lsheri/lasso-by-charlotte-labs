@@ -38,3 +38,14 @@ describe("B3 reasoning trail", () => {
     expect(claims.silent).toHaveLength(1);
   });
 });
+
+describe("the trail can actually be saved", () => {
+  it("is drawn at a size the record accepts, so adding one is never refused", () => {
+    const rect = trailRectAt({ x: 40, y: 40 });
+    // The same rule the save path applies to any outline row.
+    expect(rect.width).toBeGreaterThanOrEqual(260);
+    expect(rect.width).toBeLessThanOrEqual(2400);
+    expect(rect.height).toBeGreaterThanOrEqual(220);
+    expect(rect.height).toBeLessThanOrEqual(1800);
+  });
+});
