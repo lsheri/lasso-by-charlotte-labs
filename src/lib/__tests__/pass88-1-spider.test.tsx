@@ -27,8 +27,11 @@ describe("spider mascot beside Ask Lasso", () => {
     expect(styles.slice(reduced)).toContain("animation: none !important");
   });
 
-  it("is the Ask Lasso mark on the engagement page, with no Sparkle left", () => {
-    expect(page).toContain("<SpiderMark size={27} /> Ask Lasso");
+  it("leaves no Sparkle beside Ask Lasso on the engagement page", () => {
+    // The mark itself is no longer placed on this page: Ask Lasso is reached
+    // through the dock and the floating button. What survives, and is still
+    // worth keeping out, is the old Sparkle glyph.
     expect(page).not.toContain("Sparkle");
+    expect(page).toContain("Ask Lasso");
   });
 });

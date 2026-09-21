@@ -154,9 +154,11 @@ describe("server side gates", () => {
     // No blanket wall, no disabled submit, no validator call off the code path.
     expect(page).not.toContain("SIGNUP_NO_INVITE_LINE");
     expect(page).not.toContain('mode === "signup" && !inviteCode');
+    // Submit is held only while the request is in flight, never on the
+    // absence of an invite. The copy around it is free to be rewritten.
     expect(page).toContain("disabled={pending}");
+    expect(page).not.toMatch(/disabled=\{[^}]*invite/i);
     expect(page).toContain("if (inviteCode) {");
-    expect(page).toContain("Create your account, then set up your workspace or join your team.");
     expect(page).toContain("${window.location.origin}${onboardingPath}");
   });
 

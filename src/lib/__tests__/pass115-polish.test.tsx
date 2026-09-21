@@ -14,27 +14,13 @@ import { TRACED_LEGEND_LINE } from "@/lib/journey";
 import { hatchStrokes, wavingSwatchD } from "@/lib/journey-path";
 import { WORK_ARTIFACT_INFO, ARTIFACT_SECTION_AREAS } from "@/lib/work-artifact-shared";
 
+import { cssDurationMs } from "./helpers/css-duration";
+
 afterEach(() => cleanup());
 
 const read = (path: string) => readFileSync(path, "utf8");
 const css = read("src/styles.css");
 
-/** The animation duration a selector actually resolves to, token or literal. */
-export function cssDurationMs(source: string, selector: string): number | null {
-  const rule = source.slice(source.indexOf(`${selector} {`));
-  const animation = /animation:\s*[\w-]+\s+([^\s;]+)/.exec(rule.slice(0, rule.indexOf("}")));
-  if (!animation) return null;
-  let value = animation[1]!;
-  const token = /^var\((--[\w-]+)\)$/.exec(value);
-  if (token) {
-    const declared = new RegExp(`${token[1]}:\\s*([^;]+);`).exec(source);
-    if (!declared) return null;
-    value = declared[1]!.trim();
-  }
-  if (value.endsWith("ms")) return Number.parseFloat(value);
-  if (value.endsWith("s")) return Number.parseFloat(value) * 1000;
-  return null;
-}
 const journeyView = read("src/components/journey/JourneyView.tsx");
 const whatFed = read("src/components/engagements/WhatFedThisButton.tsx");
 const canvasActions = read("src/components/engagements/CanvasDeliverableActions.tsx");

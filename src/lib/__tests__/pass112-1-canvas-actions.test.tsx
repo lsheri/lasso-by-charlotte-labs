@@ -90,10 +90,18 @@ describe("pass 112.1 · journey and ship on the canvas", () => {
   });
 
   it("ships from Share through the existing dialog only", () => {
+    // The trigger and the dialog now live together in ShipBlock, so this reads
+    // that block rather than the page around it.
     const source = readFileSync("src/components/engagements/SharedWithSection.tsx", "utf8");
     expect(source).toContain("SEND TO THE FIRM");
-    expect(source).toContain("<ShipToFirmDialog");
-    expect(source).toContain("onClick={() => setShipOpen(true)}");
+    const block = source.slice(source.indexOf("function ShipBlock("));
+    expect(block).not.toBe("");
+    // One trigger, one dialog, and the trigger opens the dialog's own state.
+    expect(block).toMatch(/onClick=\{\(\) => onOpenChange\(true\)\}/);
+    expect(block).toContain("<ShipToFirmDialog");
+    expect(source.match(/<ShipToFirmDialog/g) ?? []).toHaveLength(1);
+    // Every Share branch drives that one block from the page's own state.
+    expect(source).toContain("onOpenChange={setShipOpen}");
   });
 
   it("states the exact hints with no deliverable", () => {

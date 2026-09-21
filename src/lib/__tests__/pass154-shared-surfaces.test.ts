@@ -24,10 +24,12 @@ describe("pass 154 shared surfaces", () => {
     expect(action).not.toContain("<SpiderDrawing");
   });
 
-  it("gives tasks their own sidebar depth", () => {
-    expect(read("src/components/layout/SidebarNav.tsx")).toContain("nb-nav-item-nested-3");
-    expect(read("src/styles.css")).toMatch(/\.nb-nav-item-nested-3 \{\s*padding-left: 52px;/);
-  });
+  // Removed: "gives tasks their own sidebar depth". The nav no longer puts a
+  // task at a third depth. A task sits at the same indent as a nested
+  // engagement, with "Everything in this engagement" one step in, so there is
+  // no behaviour left for this check to describe.
+
+
 
   it("uses paper notes for linked sources and question history", () => {
     const ledger = read("src/components/engagements/WorkLedger.tsx");

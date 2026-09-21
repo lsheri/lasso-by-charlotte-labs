@@ -1,9 +1,30 @@
+// @vitest-environment jsdom
 import { readFileSync } from "node:fs";
-import { describe, expect, it } from "vitest";
+import { createElement } from "react";
+
+import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { resolveMotion } from "@/lib/motion-registry";
 
 const read = (p: string) => readFileSync(p, "utf8");
+
+/** The turns the row is able to read, swapped per check. */
+let turns: Record<string, { turn_no: number; content: string }> = {};
+
+vi.mock("@/hooks/use-decisions", () => ({
+  srcsOf: () => [{ work_item_id: "w1", turn_id: "t1" }],
+  useDecisionSourceItems: () => ({
+    data: { w1: { title: "Some document", type: "note", work_date: "2026-04-01" } },
+  }),
+  useDecisionSourceTurns: () => ({ data: turns }),
+}));
+
+vi.mock("@/hooks/use-motion", () => ({
+  useMotion: () => ({ className: "", still: true, reduced: "" }),
+}));
+
+const { DecisionLogRow } = await import("@/components/decisions/DecisionLogRow");
 
 describe("pass B: where a call gets settled", () => {
   it("stamps the surface on confirm, discard and edit", () => {
@@ -71,9 +92,13 @@ describe("pass B: the surfaces keep their controls", () => {
     const src = read("src/pages/DecisionsPage.tsx");
     expect(src).toContain("Log a decision");
     expect(src).toContain("AddDecisionDialog");
-    expect(src).toContain("Save the reasoning");
-    expect(src).toContain("Why was this the right decision? A sentence is enough.");
-    expect(src).toContain("WHY THE LOG EXISTS");
+    // The reasoning control moved into the row; the page is composition only.
+    const row = read("src/components/decisions/DecisionLogRow.tsx");
+    expect(row).toContain("Save the reasoning");
+    expect(row).toContain("Why was this the right decision? A sentence is enough.");
+    // The "WHY THE LOG EXISTS" label is gone from the product; only the
+    // filter rail below is still a control worth keeping.
+
     expect(src).toContain("Everything");
     expect(src).toContain("Awaiting your review");
     expect(src).toContain("Needs reasoning");
@@ -89,8 +114,44 @@ describe("pass B: the surfaces keep their controls", () => {
     expect(oneToOne).toContain("you confirm once, it travels with the work");
   });
 
-  it("never invents a quote for a source it cannot read", () => {
-    const src = read("src/components/decisions/DecisionLogRow.tsx");
-    expect(src).toContain("A quote is never invented.");
+});
+
+describe("pass B: a quote only ever comes from a turn that has one", () => {
+  const decision = {
+    id: "d1",
+    status: "awaiting",
+    call_text: "Go with option B",
+    situation: "Two options on the table",
+    why: null,
+  };
+
+  function renderRow() {
+    return render(
+      createElement(DecisionLogRow, {
+        decision: decision as never,
+        onOpenSource: () => {},
+        onSaveReasoning: () => {},
+        onDiscard: () => {},
+      }),
+    );
+  }
+
+  afterEach(() => {
+    cleanup();
+    turns = {};
+  });
+
+  it("shows the quote when the turn behind the source can be read", () => {
+    turns = { t1: { turn_no: 3, content: "the sentence it came from" } };
+    const { container } = renderRow();
+    expect(container.textContent ?? "").toContain("the sentence it came from");
+  });
+
+  it("shows the source with no quote at all when the turn cannot be read", () => {
+    turns = {};
+    const { container } = renderRow();
+    const text = container.textContent ?? "";
+    expect(text).toContain("Lasso drafted this");
+    expect(text).not.toContain("\u201c");
   });
 });

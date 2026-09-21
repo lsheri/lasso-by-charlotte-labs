@@ -5,7 +5,17 @@ import {
   briefConfirmShape,
   pendingBriefAttachments,
 } from "@/lib/brief-files";
+import { DRAG_STEP, snapPoint } from "@/lib/canvas-drag";
 import { PLACEMENT_CARD, PLACEMENT_GAP } from "@/lib/workboard-placement";
+
+/**
+ * The column the placement code opens, derived the same way the code derives
+ * it, so a change to the card size moves these expectations with it rather
+ * than turning into a hand-calculated coordinate that goes stale.
+ */
+const columnStep = Math.ceil((PLACEMENT_CARD.height + PLACEMENT_GAP) / DRAG_STEP) * DRAG_STEP;
+const columnBase = (card: { x: number; y: number; width: number }) =>
+  snapPoint({ x: card.x + card.width + PLACEMENT_GAP, y: card.y });
 
 const brief = { x: 0, y: 0, width: 232 };
 
@@ -24,21 +34,28 @@ describe("where an attached file lands", () => {
     // outline is not occupied space, so the card lands one column right of
     // the brief, never up and to the left of it.
     const sitting = { x: 88, y: 484, width: 232 };
-    const points = briefAttachmentPoints(sitting, [{ x: 88, y: 484, width: 232, height: 112 }], 2);
+    const briefRect = { ...sitting, height: PLACEMENT_CARD.height };
+    const points = briefAttachmentPoints(sitting, [briefRect], 2);
     for (const point of points) {
       expect(point.x).toBeGreaterThan(sitting.x + sitting.width);
       expect(point.y).toBeGreaterThanOrEqual(sitting.y);
     }
-    expect(points[0]).toEqual({ x: 352, y: 484 });
-    expect(points[1]).toEqual({ x: 352, y: 638 });
+    const base = columnBase(sitting);
+    expect(points[0]).toEqual(base);
+    expect(points[1]).toEqual({ x: base.x, y: base.y + columnStep });
   });
 
   it("moves down, then across, when the column beside the brief is full", () => {
     const sitting = { x: 0, y: 0, width: 232 };
-    const column = Array.from({ length: 40 }, (_, row) => ({ x: 264, y: row * 154, width: 232, height: 112 }));
+    const base = columnBase(sitting);
+    const column = Array.from({ length: 40 }, (_, row) => ({
+      x: base.x,
+      y: base.y + row * columnStep,
+      ...PLACEMENT_CARD,
+    }));
     const points = briefAttachmentPoints(sitting, column, 1);
-    expect(points[0]!.x).toBeGreaterThan(264);
-    expect(points[0]!.y).toBeGreaterThanOrEqual(0);
+    expect(points[0]!.x).toBeGreaterThan(base.x);
+    expect(points[0]!.y).toBeGreaterThanOrEqual(base.y);
   });
 
   it("keeps clear of anything already on the board", () => {

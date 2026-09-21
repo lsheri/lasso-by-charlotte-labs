@@ -9,7 +9,7 @@ import type { VerifyThreadRequest } from "@/components/verify/verify-thread-stat
 type Props = { req: VerifyThreadRequest | null };
 import { RESOLVE_GRACE_MS } from "@/lib/verify-thread-shared";
 import { PAGE_FADE_MS } from "@/lib/turn-story-shared";
-import { cssDurationMs } from "./pass115-polish.test";
+import { cssDurationMs } from "./helpers/css-duration";
 
 const READER = readFileSync("src/components/verify/VerifyThreadReader.tsx", "utf8");
 const STORY = readFileSync("src/components/verify/TurnCardStory.tsx", "utf8");

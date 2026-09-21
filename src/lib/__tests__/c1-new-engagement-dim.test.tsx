@@ -96,6 +96,8 @@ describe("C1 the from dim", () => {
         brief_skipped: "false",
         has_client: "true",
         from: "client_page",
+        // Banded, never a raw count, the same convention as the other counts.
+        brief_files: "0",
       },
     });
   });
