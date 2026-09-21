@@ -6,6 +6,7 @@ import { GraphiteCheck } from "@/components/notebook/marks";
 import { NotebookSpider } from "@/components/notebook/NotebookSpider";
 import { ToneCard } from "@/components/notebook/ToneCard";
 import { Button } from "@/components/ui/button";
+import { DimmedDisabled } from "@/components/common/DimmedDisabled";
 import { SourceMark } from "@/components/work/SourceMark";
 import { WorkNote } from "@/components/work/WorkNote";
 import type { FoundSource, FindScope } from "@/lib/find-it.functions";
@@ -280,7 +281,8 @@ export function FindItNode({ candidate, selected = false, status = "draft", expa
   const { item, link } = candidate;
   const rationale = link.rationale ?? (link.quote ? "this sentence is in both" : "the work is connected");
   return (
-    <div data-testid={expanded ? "find-it-detail" : "find-it-node"} data-selected={selected ? "true" : "false"} data-strength={strength} className={`group/node relative rounded-[6px] border bg-card shadow-none ${selected ? "border-pencil shadow-[2px_2px_0_var(--nb-pencil)]" : "border-hairline"} ${status === "discarded" ? "opacity-50" : ""} ${className}`}>
+    <DimmedDisabled dimmed={status === "discarded"}>
+    <div data-testid={expanded ? "find-it-detail" : "find-it-node"} data-selected={selected ? "true" : "false"} data-strength={strength} className={`group/node relative rounded-[6px] border bg-card shadow-none ${selected ? "border-pencil shadow-[2px_2px_0_var(--nb-pencil)]" : "border-hairline"} ${className}`}>
       <Button type="button" variant="ghost" onClick={onSelect} className={`w-full justify-start whitespace-normal rounded-[6px] px-3 text-left hover:bg-card ${expanded ? "h-auto min-h-[62px] py-3" : "h-[56px] py-2"}`}>
         <span className="relative min-w-0 flex-1">
           <span className="micro-label block">CONVERSATION</span>
@@ -310,6 +312,7 @@ export function FindItNode({ candidate, selected = false, status = "draft", expa
         </div>
       ) : null}
     </div>
+    </DimmedDisabled>
   );
 }
 

@@ -157,6 +157,10 @@ const LIVE_KEYS_BY_FAMILY: Record<string, readonly string[]> = {
   workitem: ["channel", "source", "type"],
 };
 
+const LIVE_KEYS_BY_EVENT: Record<string, readonly string[]> = {
+  "work.filter_changed": ["filter", "selected", "result_band"],
+};
+
 /** Every name in the canonical union, read as data rather than as wording. */
 function unionEventNames(): string[] {
   const source = readFileSync("src/lib/telemetry-shared.ts", "utf8");
@@ -169,7 +173,7 @@ describe("the runtime dim allowlist", () => {
     const dropped: string[] = [];
     for (const name of Object.keys(EVENT_DIM_KEYS)) {
       const family = name.split(".")[0]!;
-      const live = LIVE_KEYS_BY_FAMILY[family];
+      const live = LIVE_KEYS_BY_EVENT[name] ?? LIVE_KEYS_BY_FAMILY[family];
       if (!live) continue;
       const dims = Object.fromEntries(live.map((key) => [key, "value"]));
       const kept = guardEventDims(name, dims).dims;
