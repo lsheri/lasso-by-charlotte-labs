@@ -1091,6 +1091,7 @@ export function cardStackZ(front: string[], id: string): number {
 
 /** The closed event vocabulary for one card. A deliverable says so. */
 export function eventKind(node: LabNode): LabNodeEventKind {
+  if (node.kind === "shape") return "shape";
   if (node.kind === "chat") return "draft_thread";
   if (node.kind === "judgment") return "human_judgment";
   if (node.kind === "ai_work") return "ai_work";

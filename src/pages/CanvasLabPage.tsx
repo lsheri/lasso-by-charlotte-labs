@@ -8,6 +8,7 @@ import { CanvasLabStatusLine } from "@/components/canvas-lab/CanvasLabStatusLine
 import { FocusOverlay } from "@/components/canvas-lab/FocusOverlay";
 import { FoundationGuide } from "@/components/canvas-lab/FoundationGuide";
 import { LabCard } from "@/components/canvas-lab/LabCard";
+import { LabColourBlock } from "@/components/canvas-lab/LabColourBlock";
 import { LabFrame as LabFrameElement } from "@/components/canvas-lab/LabFrame";
 import { LabLinkRejection } from "@/components/canvas-lab/LabLinkRejection";
 import { LabRelationshipOverlays } from "@/components/canvas-lab/LabRelationshipOverlays";
@@ -75,6 +76,7 @@ import {
   sizeSeedFrames,
   stageBounds,
   resizeLabRect,
+  shapePointerIntent,
   toggleContext,
   updateLocalNode,
   viewportSizeChanged,
@@ -136,7 +138,7 @@ import { useWorkboardFilePreviews } from "@/hooks/use-workboard-file-previews";
 import { useMotion } from "@/hooks/use-motion";
 import { useProfile } from "@/hooks/use-profile";
 import { dragTo, keyTo, type Point } from "@/lib/canvas-drag";
-import type { WorkboardCommand, WorkboardNodeInput, WorkboardRelation } from "@/lib/canvas-lab-shared";
+import { WORKBOARD_SHAPE_COLOURS, type WorkboardCommand, type WorkboardNodeInput, type WorkboardRelation, type WorkboardShapeColour } from "@/lib/canvas-lab-shared";
 import { noteCanvasOpenedFn } from "@/lib/canvas.functions";
 import { clampZoom, scrollableUnder, stepZoom, wheelPanVector, workboardPinchZoom, zoomAbout } from "@/lib/canvas-zoom";
 import { needsHighlightForComment } from "@/lib/canvas-lab-annotations-shared";
@@ -148,7 +150,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { AddWorkPanel, type AddWorkSource } from "@/components/canvas-lab/AddWorkPanel";
 import { CARD_HEIGHT, CARD_WIDTH } from "@/components/canvas-lab/canvas-lab-model";
 import { placeWorkOnBoardFn } from "@/lib/workboard-add-work.functions";
-import { placeAddedCards, type PlacementRect } from "@/lib/workboard-placement";
+import { placeAddedCards, placementRectsForNodes, type PlacementRect } from "@/lib/workboard-placement";
 import { briefAttachmentPoints, pendingBriefAttachments } from "@/lib/brief-files";
 import { addBriefFiles, removeBriefFile, useBriefFiles, useInvalidateBriefFiles } from "@/hooks/use-brief-files";
 import {
@@ -295,7 +297,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   const frameDragRef = useRef<{ id: string; origin: Point; from: Point } | null>(null);
   const connectorDragRef = useRef<{ nodeId: string; anchor: LabAnchor; from: Point; moved: boolean } | null>(null);
   const cardHeightsRef = useRef(new Map<string, number>());
-  const resizeRef = useRef<{ kind: "card" | "frame"; id: string; corner: LabResizeCorner; start: LabRect; pointer: Point; method: "pointer" | "keyboard" } | null>(null);
+  const resizeRef = useRef<{ kind: "card" | "frame" | "shape"; id: string; corner: LabResizeCorner; start: LabRect; pointer: Point; method: "pointer" | "keyboard" } | null>(null);
   const [pendingJudgmentFocusId, setPendingJudgmentFocusId] = useState<string | null>(null);
   const panRef = useRef<{ from: Point; origin: Point } | null>(null);
   const zoomRef = useRef(zoom);
@@ -604,6 +606,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     if (node.kind === "decision" && node.id.startsWith("decision:")) return { ...base, kind: "decision", decisionId: node.id.slice(9) };
     if (node.kind === "brief") return { ...base, kind: "brief" };
     if (node.kind === "judgment" && node.local) return { ...base, kind: "judgment", title: node.title, body: node.summary, judgmentType: node.judgmentType ?? null };
+    if (node.kind === "shape" && node.colour) return { ...base, frameKey: null, kind: "shape", body: node.colour };
     return null;
   }
 
@@ -1230,7 +1233,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
           ? workstreamAddAnchor(boardFrames, visibleNodes)
           : null;
         const taken: PlacementRect[] = [
-          ...visibleNodes.map((node) => ({ x: node.x, y: node.y, width: node.width, height: node.height })),
+          ...placementRectsForNodes(visibleNodes),
           ...boardFrames.map((frame) => ({ x: frame.x, y: frame.y, width: frame.width, height: frame.height })),
           ...(showGuides ? BOARD_GUIDE_RECTS.map((rect) => ({ x: rect.x, y: rect.y, width: rect.width, height: rect.height })) : []),
           ...(inlineAnchor ? [{ x: inlineAnchor.x, y: inlineAnchor.y, ...BOARD_INLINE_ADD_SIZE }] : []),
@@ -1387,7 +1390,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       const resizing = resizeRef.current;
       if (resizing?.method === "pointer") {
         const rect = resizeLabRect(resizing.start, resizing.corner, { x: (event.clientX - resizing.pointer.x) / zoom, y: (event.clientY - resizing.pointer.y) / zoom }, event.shiftKey, resizing.kind);
-        if (resizing.kind === "card") setNodes((current) => current?.map((node) => node.id === resizing.id ? { ...node, ...rect } : node) ?? current);
+        if (resizing.kind !== "frame") setNodes((current) => current?.map((node) => node.id === resizing.id ? { ...node, ...rect } : node) ?? current);
         else setFrames((current) => current?.map((frame) => frame.id === resizing.id ? { ...frame, ...containFrameMembers(rect, frame.id, nodesRef.current) } : frame) ?? current);
         return;
       }
@@ -1453,11 +1456,11 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       if (resizing?.method === "pointer") {
         const rect = resizeLabRect(resizing.start, resizing.corner, { x: (event.clientX - resizing.pointer.x) / zoom, y: (event.clientY - resizing.pointer.y) / zoom }, event.shiftKey, resizing.kind);
         const changed = rect.x !== resizing.start.x || rect.y !== resizing.start.y || rect.width !== resizing.start.width || rect.height !== resizing.start.height;
-        if (resizing.kind === "card") {
+        if (resizing.kind !== "frame") {
           if (changed) {
             setNodes((current) => current?.map((node) => node.id === resizing.id ? { ...node, ...rect } : node) ?? current);
             void persistNodePatch(resizing.id, { x: rect.x, y: rect.y, w: rect.width, h: rect.height });
-            noteWorkboardElementResized(orgId, "card", "pointer", resizeAxis(resizing.start, rect));
+            noteWorkboardElementResized(orgId, resizing.kind, "pointer", resizeAxis(resizing.start, rect));
             record({ action: "resize", kind: "card", targetId: resizing.id, before: resizing.start, after: rect });
           }
         } else if (changed) {
@@ -1490,7 +1493,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       dragRef.current = null;
       resizeRef.current = null;
       frameDragRef.current = null;
-      const nodeId = drag?.id ?? (resizing?.kind === "card" ? resizing.id : null);
+      const nodeId = drag?.id ?? (resizing?.kind !== "frame" ? resizing?.id ?? null : null);
       if (nodeId) {
         const node = nodesRef.current.find((entry) => entry.id === nodeId);
         if (node) void persistNodePatch(node.id, { x: node.x, y: node.y, w: node.width, h: node.height });
@@ -1529,7 +1532,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     }
   }
 
-  function startResize(kind: "card" | "frame", id: string, corner: LabResizeCorner, rect: LabRect, event: React.PointerEvent<HTMLButtonElement>) {
+  function startResize(kind: "card" | "frame" | "shape", id: string, corner: LabResizeCorner, rect: LabRect, event: React.PointerEvent<HTMLButtonElement>) {
     if (event.button !== 0) return;
     event.preventDefault();
     event.stopPropagation();
@@ -1545,7 +1548,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     return horizontal && vertical ? "both" : horizontal ? "horizontal" : "vertical";
   }
 
-  function keyboardResize(kind: "card" | "frame", id: string, corner: LabResizeCorner, rect: LabRect, event: React.KeyboardEvent<HTMLButtonElement>) {
+  function keyboardResize(kind: "card" | "frame" | "shape", id: string, corner: LabResizeCorner, rect: LabRect, event: React.KeyboardEvent<HTMLButtonElement>) {
     if (!event.key.startsWith("Arrow")) return;
     event.preventDefault();
     event.stopPropagation();
@@ -1555,7 +1558,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     setInteraction("resize");
     const resized = resizeLabRect(rect, corner, delta, event.shiftKey, kind);
     const next = kind === "frame" ? containFrameMembers(resized, id, nodesRef.current) : resized;
-    if (kind === "card") setNodes((current) => current?.map((node) => node.id === id ? { ...node, ...next } : node) ?? current);
+    if (kind !== "frame") setNodes((current) => current?.map((node) => node.id === id ? { ...node, ...next } : node) ?? current);
     else setFrames((current) => current?.map((frame) => frame.id === id ? { ...frame, ...next } : frame) ?? current);
   }
 
@@ -1564,7 +1567,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     const resizing = resizeRef.current;
     if (!resizing || resizing.method !== "keyboard") return;
     let end: LabRect | null = null;
-    if (resizing.kind === "card") {
+    if (resizing.kind !== "frame") {
       const node = nodesRef.current.find((entry) => entry.id === resizing.id);
       if (node) { end = { x: node.x, y: node.y, width: node.width, height: node.height }; void persistNodePatch(node.id, { x: node.x, y: node.y, w: node.width, h: node.height }); }
     } else {
