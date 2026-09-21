@@ -41,6 +41,7 @@ import { Route as AuthenticatedReflectRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedWorkRouteImport } from './routes/_authenticated/work'
 import { Route as JoinEduRouteImport } from './routes/join_.edu'
+import { Route as SharedBoardTokenRouteImport } from './routes/shared-board.$token'
 import { Route as AuthenticatedClientsIdRouteImport } from './routes/_authenticated/clients.$id'
 import { Route as AuthenticatedCoachingIndexRouteImport } from './routes/_authenticated/coaching.index'
 import { Route as AuthenticatedDesignIconsRouteImport } from './routes/_authenticated/design.icons'
@@ -219,6 +220,11 @@ const JoinEduRoute = JoinEduRouteImport.update({
   path: '/join/edu',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SharedBoardTokenRoute = SharedBoardTokenRouteImport.update({
+  id: '/shared-board/$token',
+  path: '/shared-board/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedClientsIdRoute = AuthenticatedClientsIdRouteImport.update({
   id: '/clients/$id',
   path: '/clients/$id',
@@ -334,6 +340,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AuthenticatedSettingsRoute
   '/work': typeof AuthenticatedWorkRoute
   '/join/edu': typeof JoinEduRoute
+  '/shared-board/$token': typeof SharedBoardTokenRoute
   '/clients/$id': typeof AuthenticatedClientsIdRoute
   '/design/icons': typeof AuthenticatedDesignIconsRoute
   '/engagements/$id': typeof AuthenticatedEngagementsIdRoute
@@ -382,6 +389,7 @@ export interface FileRoutesByTo {
   '/settings': typeof AuthenticatedSettingsRoute
   '/work': typeof AuthenticatedWorkRoute
   '/join/edu': typeof JoinEduRoute
+  '/shared-board/$token': typeof SharedBoardTokenRoute
   '/clients/$id': typeof AuthenticatedClientsIdRoute
   '/design/icons': typeof AuthenticatedDesignIconsRoute
   '/engagements/$id': typeof AuthenticatedEngagementsIdRoute
@@ -432,6 +440,7 @@ export interface FileRoutesById {
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/work': typeof AuthenticatedWorkRoute
   '/join_/edu': typeof JoinEduRoute
+  '/shared-board/$token': typeof SharedBoardTokenRoute
   '/_authenticated/clients/$id': typeof AuthenticatedClientsIdRoute
   '/_authenticated/design/icons': typeof AuthenticatedDesignIconsRoute
   '/_authenticated/engagements/$id': typeof AuthenticatedEngagementsIdRoute
@@ -482,6 +491,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/work'
     | '/join/edu'
+    | '/shared-board/$token'
     | '/clients/$id'
     | '/design/icons'
     | '/engagements/$id'
@@ -530,6 +540,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/work'
     | '/join/edu'
+    | '/shared-board/$token'
     | '/clients/$id'
     | '/design/icons'
     | '/engagements/$id'
@@ -579,6 +590,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings'
     | '/_authenticated/work'
     | '/join_/edu'
+    | '/shared-board/$token'
     | '/_authenticated/clients/$id'
     | '/_authenticated/design/icons'
     | '/_authenticated/engagements/$id'
@@ -609,6 +621,7 @@ export interface RootRouteChildren {
   TrustRoute: typeof TrustRoute
   WhyRoute: typeof WhyRoute
   JoinEduRoute: typeof JoinEduRoute
+  SharedBoardTokenRoute: typeof SharedBoardTokenRoute
   ApiAnalysisStreamRoute: typeof ApiAnalysisStreamRoute
   ApiCoachChatStreamRoute: typeof ApiCoachChatStreamRoute
   ApiMcpTokenRoute: typeof ApiMcpTokenRoute
@@ -845,6 +858,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof JoinEduRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/shared-board/$token': {
+      id: '/shared-board/$token'
+      path: '/shared-board/$token'
+      fullPath: '/shared-board/$token'
+      preLoaderRoute: typeof SharedBoardTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/clients/$id': {
       id: '/_authenticated/clients/$id'
       path: '/clients/$id'
@@ -1031,6 +1051,7 @@ const rootRouteChildren: RootRouteChildren = {
   TrustRoute: TrustRoute,
   WhyRoute: WhyRoute,
   JoinEduRoute: JoinEduRoute,
+  SharedBoardTokenRoute: SharedBoardTokenRoute,
   ApiAnalysisStreamRoute: ApiAnalysisStreamRoute,
   ApiCoachChatStreamRoute: ApiCoachChatStreamRoute,
   ApiMcpTokenRoute: ApiMcpTokenRoute,

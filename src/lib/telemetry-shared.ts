@@ -266,7 +266,14 @@ export type TelemetryEvent =
    * type), vendor (claude | chatgpt | gemini | none) and on_board (whether a
    * card and a produced link were drawn).
    */
-  | "work.piece_regrouped";
+  | "work.piece_regrouped"
+  /**
+   * S1: the expiring board link. Closed dims only, no ids, no tokens, no
+   * titles and nothing about whoever opened it, because there is nothing
+   * about them to know. action (created | opened | revoked | refused) and,
+   * on refused only, reason (expired | revoked | unknown).
+   */
+  | "board.share_link";
 
 export type TelemetryDims = Record<
   string,
