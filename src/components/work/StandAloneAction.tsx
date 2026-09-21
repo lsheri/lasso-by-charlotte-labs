@@ -1,10 +1,5 @@
-import { useQueryClient } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
-import { toast } from "sonner";
-
 import { useProfile } from "@/hooks/use-profile";
-import { setWorkItemStandaloneFn } from "@/lib/work-standalone.functions";
+import { useStandAlone } from "@/components/work/use-stand-alone";
 import { ownsWorkItem } from "@/lib/work-ownership";
 import {
   PUT_BACK_LABEL,
@@ -30,45 +25,12 @@ export function StandAloneAction({
   className?: string;
 }) {
   const profile = useProfile().data;
-  const queryClient = useQueryClient();
-  const run = useServerFn(setWorkItemStandaloneFn);
-  const [busy, setBusy] = useState(false);
+  const { busy, set } = useStandAlone(item);
 
   const owned = ownsWorkItem(profile, item);
   const lift = canStandAlone(item);
   const back = canGoBackToChat(item);
   if (!owned || (!lift && !back)) return null;
-
-  async function act() {
-    setBusy(true);
-    try {
-      const result = await run({
-        data: {
-          work_item_id: item.id,
-          stand_alone: lift,
-          ...(profile?.id ? { profile_id: profile.id } : {}),
-        },
-      });
-      if (result.status === "refused") {
-        toast.error(result.message);
-        return;
-      }
-      if (result.status === "forbidden") {
-        toast.error("That is not yours to reorganise.");
-        return;
-      }
-      await queryClient.invalidateQueries({ queryKey: ["work-items"] });
-      toast(
-        result.standsAlone
-          ? result.linkedOnBoard
-            ? "It stands on its own, and it is joined to its chat on the board."
-            : "It stands on its own. It still says which chat it came out of."
-          : "It is back with its chat.",
-      );
-    } finally {
-      setBusy(false);
-    }
-  }
 
   return (
     <button
@@ -77,7 +39,7 @@ export function StandAloneAction({
       data-testid="stand-alone-action"
       onClick={(event) => {
         event.stopPropagation();
-        void act();
+        void set(lift);
       }}
       className={`shrink-0 font-mono text-[9px] uppercase tracking-[0.08em] text-accent-deep transition-opacity hover:opacity-70 disabled:opacity-50 ${className}`}
     >
