@@ -27,14 +27,14 @@ function input(overrides: Partial<WorkboardNodeInput> = {}): WorkboardNodeInput 
 describe("C1 colour block vocabulary and validation", () => {
   it("accepts every known node kind and refuses an unknown kind", () => {
     const validByKind = {
-      brief: input({ kind: "brief", body: undefined }),
-      work_item: input({ kind: "work_item", body: undefined, workItemId: "work-1" }),
-      decision: input({ kind: "decision", body: undefined, decisionId: "decision-1" }),
-      judgment: input({ kind: "judgment", body: undefined }),
-      draft: input({ kind: "draft", body: undefined }),
+      brief: input({ kind: "brief", body: undefined, w: 260, h: 180 }),
+      work_item: input({ kind: "work_item", body: undefined, workItemId: "work-1", w: 260, h: 180 }),
+      decision: input({ kind: "decision", body: undefined, decisionId: "decision-1", w: 260, h: 180 }),
+      judgment: input({ kind: "judgment", body: undefined, w: 260, h: 180 }),
+      draft: input({ kind: "draft", body: undefined, w: 260, h: 180 }),
       shape: input(),
-      text: input({ kind: "text", body: undefined }),
-      mark: input({ kind: "mark", body: undefined }),
+      text: input({ kind: "text", body: undefined, w: 260, h: 180 }),
+      mark: input({ kind: "mark", body: undefined, w: 260, h: 180 }),
     } satisfies Record<(typeof WORKBOARD_NODE_KINDS)[number], WorkboardNodeInput>;
 
     for (const kind of WORKBOARD_NODE_KINDS) expect(validNodeInput(validByKind[kind])).toBeNull();
