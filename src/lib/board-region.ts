@@ -153,6 +153,19 @@ export function filingPlan(
 }
 
 /**
+ * W3.1: what a naming or unnaming actually filed. Only cards standing for a
+ * piece of work count, and one piece of work counts once however many cards
+ * stand for it. A brief card sitting inside the rectangle is not a claim.
+ */
+export function filedWorkCount(cards: readonly ClaimCandidate[]): number {
+  const seen = new Set<string>();
+  for (const card of cards) {
+    if (card.workItemId) seen.add(card.workItemId);
+  }
+  return seen.size;
+}
+
+/**
  * Moving a card between regions is filing, never provenance. What fed
  * something is stored, dated links, so the links come back untouched, as the
  * very same list.

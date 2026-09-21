@@ -143,7 +143,7 @@ import { useWorkboardFilePreviews } from "@/hooks/use-workboard-file-previews";
 import { useMotion } from "@/hooks/use-motion";
 import { useProfile } from "@/hooks/use-profile";
 import { dragTo, keyTo, type Point } from "@/lib/canvas-drag";
-import { REGION_FILLS, isRegionFrameId, newRegionFrameId, regionClaims, regionFillStyle, regionNameChange, type RegionFill } from "@/lib/board-region";
+import { REGION_FILLS, filedWorkCount, isRegionFrameId, newRegionFrameId, regionClaims, regionFillStyle, regionNameChange, type RegionFill } from "@/lib/board-region";
 import { isWorkboardDecorationKind, serializeWorkboardTextBody, type WorkboardCommand, type WorkboardNodeInput, type WorkboardRelation, type WorkboardTextBody } from "@/lib/canvas-lab-shared";
 import { noteCanvasOpenedFn } from "@/lib/canvas.functions";
 import { clampZoom, scrollableUnder, stepZoom, wheelPanVector, workboardPinchZoom, zoomAbout } from "@/lib/canvas-zoom";
@@ -1655,11 +1655,13 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     const namedFrameIds = framesRef.current.filter((entry) => isRegionFrameId(entry.id) && entry.name.trim()).map((entry) => entry.id);
     const change = regionNameChange({ id: frame.id, label: frame.name, fill: frame.fill }, nameInput, rect, claimCandidates(), { defaultHomeFrameIds, namedFrameIds });
     if (change.becomes === "paint") {
+      // What the name held is measured in filed work, never in covered cards.
+      const released = claimCandidates().filter((entry) => entry.frame === frame.id);
       setFrames((current) => current?.map((entry) => (entry.id === frame.id ? { ...entry, name: "" } : entry)) ?? current);
       framesRef.current = framesRef.current.map((entry) => (entry.id === frame.id ? { ...entry, name: "" } : entry));
       for (const cardId of change.release) applyFrameMove(cardId, null);
       if (frame.durableId) await persistFramePatch(frame.id, { label: null, taskId: null });
-      noteWorkboardRegionNamed(orgId, "cleared", change.release.length, frame.fill);
+      noteWorkboardRegionNamed(orgId, "cleared", filedWorkCount(released), frame.fill);
       setAnnouncement("Name taken off. This is a coloured region again.");
       return;
     }
@@ -1675,14 +1677,17 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     framesRef.current = framesRef.current.map((entry) => (entry.id === frame.id ? { ...entry, name } : entry));
     if (frame.durableId) await persistFramePatch(frame.id, { label: name, taskId: created.id });
     const split = regionClaims({ id: frame.id, label: name }, rect, claimCandidates(), { defaultHomeFrameIds, namedFrameIds });
-    let claimed = 0;
+    // What naming filed is measured in work items that moved, one each, never
+    // in the cards the rectangle happens to cover.
+    const filed = new Set<string>();
     let refused = false;
     for (const card of split.silent) {
       const ok = await claimCard(card, created.id, frame.id);
-      if (ok) claimed += 1;
+      if (ok) { if (card.workItemId) filed.add(card.workItemId); }
       else refused = true;
     }
-    for (const card of split.frameOnly) { applyFrameMove(card.id, frame.id); claimed += 1; }
+    for (const card of split.frameOnly) applyFrameMove(card.id, frame.id);
+    const claimed = filed.size;
     if (refused) setAnnouncement("Some cards stayed where they were.");
     if (split.ask.length > 0) {
       setClaimPrompt({ rect, taskId: created.id, frameId: frame.id, cards: split.ask, claimed });

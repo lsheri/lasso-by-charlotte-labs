@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   REGION_FILLS,
+  filedWorkCount,
   filingPlan,
   isRegionFill,
   isRegionFrameId,
@@ -95,5 +96,32 @@ describe("a drawn region is paint until it is named", () => {
     expect(REGION_FILLS).toHaveLength(16);
     expect(isRegionFill("green-vivid")).toBe(true);
     expect(isRegionFill("ink")).toBe(false);
+  });
+});
+
+describe("the named event reports what was filed, not what the rectangle covers", () => {
+  it("reports none claimed when the rectangle holds only a brief card", () => {
+    const brief = { id: "b1", frame: null, x: 20, y: 20, width: 100, height: 60, workItemId: null };
+    const split = regionClaims(
+      { id: newRegionFrameId("r9"), label: "Pricing" },
+      RECT,
+      [brief],
+    );
+    expect(filedWorkCount([...split.silent, ...split.frameOnly])).toBe(0);
+  });
+
+  it("reports two when the rectangle holds two work items and a brief card", () => {
+    const brief = { id: "b1", frame: null, x: 20, y: 20, width: 100, height: 60, workItemId: null };
+    const split = regionClaims(
+      { id: newRegionFrameId("r10"), label: "Pricing" },
+      RECT,
+      [brief, card("a", null), card("b", null)],
+    );
+    expect(filedWorkCount([...split.silent, ...split.frameOnly])).toBe(2);
+  });
+
+  it("counts one piece of work once however many cards stand for it", () => {
+    const shared = card("a", null);
+    expect(filedWorkCount([shared, { ...shared, id: "a-again" }])).toBe(1);
   });
 });
