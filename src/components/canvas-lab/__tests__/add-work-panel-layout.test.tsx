@@ -56,7 +56,12 @@ describe("AddWorkPanel layout containment", () => {
 
     const confirm = within(dialog as HTMLElement)
       .getAllByRole("button")
-      .find((button) => button.getAttribute("type") === "button" && button.disabled);
+      .find(
+        (button) =>
+          button instanceof HTMLButtonElement &&
+          button.getAttribute("type") === "button" &&
+          button.disabled,
+      );
 
     expect(confirm).toBeDefined();
     expect(confirm?.closest("[role=tabpanel]")).toBeNull();
