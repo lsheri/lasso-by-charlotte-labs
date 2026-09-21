@@ -34,7 +34,7 @@ export function isContextFrameId(id: string | null | undefined): boolean {
  * every workstream surface can ask this one question.
  */
 export function isWorkstreamFrameId(id: string | null | undefined): boolean {
-  if (!id || isContextFrameId(id)) return false;
+  if (!id || isContextFrameId(id) || isTrailFrameId(id)) return false;
   return id.startsWith("task:") || id.startsWith("custom:") || id === "workstreams";
 }
 
