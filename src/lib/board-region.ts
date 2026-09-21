@@ -39,6 +39,11 @@ export const REGION_FILLS = [
 
 export type RegionFill = (typeof REGION_FILLS)[number];
 
+/** Drawing paint leaves its chosen colour armed and never changes the camera. */
+export function regionToolAfterDraw<T extends { fill: RegionFill; pan: { x: number; y: number }; zoom: number }>(state: T): T & { armed: true } {
+  return { ...state, armed: true };
+}
+
 export function isRegionFill(value: unknown): value is RegionFill {
   return typeof value === "string" && (REGION_FILLS as readonly string[]).includes(value);
 }

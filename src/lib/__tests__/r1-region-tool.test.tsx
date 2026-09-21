@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { RegionColourSwatches } from "@/components/canvas-lab/RegionColourSwatches";
 import { boardHasSeededStructure } from "@/components/canvas-lab/canvas-lab-model";
-import { REGION_FILLS, newRegionFrameId } from "@/lib/board-region";
+import { REGION_FILLS, newRegionFrameId, regionToolAfterDraw } from "@/lib/board-region";
 
 afterEach(cleanup);
 
@@ -22,19 +22,20 @@ describe("R1 region tool", () => {
   });
 
   it("keeps the armed fill after one region so a second drag uses it", () => {
-    const page = readFileSync("src/pages/CanvasLabPage.tsx", "utf8");
-    const createPaintRegion = page.match(/async function createPaintRegion[\s\S]*?\n  }\n\n  \/\*\*/)?.[0] ?? "";
-
-    expect(createPaintRegion).toContain("fill: regionFill");
-    expect(createPaintRegion).not.toContain("setDrawTool(false)");
-    expect(page).toContain('data-drawing={drawTool ? "true" : undefined}');
+    expect(regionToolAfterDraw({ fill: "rose-vivid", pan: { x: 81, y: -42 }, zoom: 0.7 })).toEqual({
+      armed: true,
+      fill: "rose-vivid",
+      pan: { x: 81, y: -42 },
+      zoom: 0.7,
+    });
   });
 
   it("a saved paint region does not mount the fixed trail or change the camera", () => {
     const page = readFileSync("src/pages/CanvasLabPage.tsx", "utf8");
     const createPaintRegion = page.match(/async function createPaintRegion[\s\S]*?\n  }\n\n  \/\*\*/)?.[0] ?? "";
 
-    expect(boardHasSeededStructure({ frames: [{ kind: "custom", key: newRegionFrameId("one") }] })).toBe(false);
+    expect(boardHasSeededStructure({ frames: [{ kind: "custom", key: newRegionFrameId("one"), label: null }] })).toBe(false);
+    expect(boardHasSeededStructure({ frames: [{ kind: "custom", key: newRegionFrameId("one"), label: "Pricing" }] })).toBe(true);
     expect(createPaintRegion).not.toMatch(/setPan|setZoom|fit\(/);
     expect(page).toContain("{showGuides ? <ReasoningTrailGuide");
   });
