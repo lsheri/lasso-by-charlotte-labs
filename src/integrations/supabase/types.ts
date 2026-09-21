@@ -262,24 +262,30 @@ export type Database = {
       answer_cites: {
         Row: {
           created_at: string
+          depth: string
           id: string
           node_id: string
           ord: number
-          turn_id: string
+          turn_id: string | null
+          work_item_id: string
         }
         Insert: {
           created_at?: string
+          depth: string
           id?: string
           node_id: string
           ord?: number
-          turn_id: string
+          turn_id?: string | null
+          work_item_id: string
         }
         Update: {
           created_at?: string
+          depth?: string
           id?: string
           node_id?: string
           ord?: number
-          turn_id?: string
+          turn_id?: string | null
+          work_item_id?: string
         }
         Relationships: [
           {
@@ -290,10 +296,17 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "answer_cites_turn_id_fkey"
-            columns: ["turn_id"]
+            foreignKeyName: "answer_cites_turn_belongs"
+            columns: ["turn_id", "work_item_id"]
             isOneToOne: false
             referencedRelation: "turns"
+            referencedColumns: ["id", "work_item_id"]
+          },
+          {
+            foreignKeyName: "answer_cites_work_item_id_fkey"
+            columns: ["work_item_id"]
+            isOneToOne: false
+            referencedRelation: "work_items"
             referencedColumns: ["id"]
           },
         ]
