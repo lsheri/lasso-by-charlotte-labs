@@ -30,3 +30,8 @@
 - [x] R6: Raise required share-dialog copy to readable existing text tokens.
 - [x] R6: Let conversation previews grow from a 112px minimum and remove their fade.
 
+
+## R7 Ask Lasso thinking marks
+- [ ] Add the four exact canvas marks with lifecycle and reduced-motion safeguards.
+- [ ] Replace toolbar drift with loop and pending dots with honest-count gather.
+- [ ] Remove only superseded Ask drift CSS and verify all affected checks.
