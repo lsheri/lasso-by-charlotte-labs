@@ -24,6 +24,6 @@
 - [x] R5: Label Add work, Details, and See an example board while preserving every handler, name, tooltip, state, and event.
 - [x] R5: Increase rendered and planned toolbar spacing together and verify narrow-width overflow with the wider pinned Add work control.
 - [x] R5: Make Ask Lasso the sole lime, loop-derived, transform-only living toolbar icon with a static reduced-motion state.
-- [ ] R5.1: Restore the shared hand-drawn Ask Lasso curve and give Sticky cards its own folded-paper gesture.
-- [ ] R5.1: Restore a grouping's previous local name when workstream creation fails.
+- [x] R5.1: Restore the shared hand-drawn Ask Lasso curve and give Sticky cards its own folded-paper gesture.
+- [x] R5.1: Restore a grouping's previous local name when workstream creation fails.
 
