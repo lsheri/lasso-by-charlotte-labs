@@ -263,11 +263,12 @@ describe("canvas lab model", () => {
     expect(anchor.y).toBeGreaterThanOrEqual(frame.y);
     expect(anchor.y + CARD_HEIGHT).toBeLessThanOrEqual(frame.y + frame.height);
 
-    const first = draftAnchor(frame, []);
-    const nextColumn = draftAnchor(frame, Array.from({ length: 3 }, (_, index) => ({
+    const roomyFrame = { ...frame, width: 700, height: 800 };
+    const first = draftAnchor(roomyFrame, []);
+    const nextColumn = draftAnchor(roomyFrame, Array.from({ length: 3 }, (_, index) => ({
       ...nodes[0]!,
       id: `filled:${index}`,
-      frame: frame.id,
+      frame: roomyFrame.id,
     })));
     expect(nextColumn.x).toBeGreaterThan(first.x);
     expect(nextColumn.y).toBe(first.y);

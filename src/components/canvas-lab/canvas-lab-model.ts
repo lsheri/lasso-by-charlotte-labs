@@ -362,19 +362,30 @@ export type SeedInput = {
 
 function stack(frame: LabFrame, index: number): Point {
   const columns = Math.max(1, Math.floor((frame.width - FRAME_PADDING * 2) / (CARD_WIDTH + 18)));
-  const rows = Math.max(1, Math.floor((frame.height - 60 - CARD_HEIGHT) / CARD_GAP_Y) + 1);
-  const slot = Math.min(Math.max(0, index), columns * rows - 1);
-  const column = Math.floor(slot / rows);
-  const row = slot % rows;
+  const column = index % columns;
+  const row = Math.floor(index / columns);
   return snapPoint({
-    x: Math.min(frame.x + frame.width - CARD_WIDTH, frame.x + FRAME_PADDING + column * (CARD_WIDTH + 18)),
-    y: Math.min(frame.y + frame.height - CARD_HEIGHT, frame.y + 60 + row * CARD_GAP_Y),
+    x: frame.x + FRAME_PADDING + column * (CARD_WIDTH + 18),
+    y: frame.y + 60 + row * CARD_GAP_Y,
   });
 }
 
 /** Place a local draft in the next readable stack position in its frame. */
 export function draftAnchor(frame: LabFrame, nodes: LabNode[]): Point {
-  return stack(frame, nodes.filter((node) => node.frame === frame.id).length);
+  const rows = Math.max(1, Math.floor((frame.height - 60 - CARD_HEIGHT) / CARD_GAP_Y) + 1);
+  const columns = Math.max(1, Math.floor((frame.width - FRAME_PADDING - CARD_WIDTH) / (CARD_WIDTH + 18)) + 1);
+  const memberCount = nodes.filter((node) => node.frame === frame.id).length;
+  const slot = Math.min(memberCount, rows * columns - 1);
+  const column = Math.floor(slot / rows);
+  const row = slot % rows;
+  const candidate = snapPoint({
+    x: frame.x + FRAME_PADDING + column * (CARD_WIDTH + 18),
+    y: frame.y + 60 + row * CARD_GAP_Y,
+  });
+  return {
+    x: Math.max(frame.x, Math.min(frame.x + frame.width - CARD_WIDTH, candidate.x)),
+    y: Math.max(frame.y, Math.min(frame.y + frame.height - CARD_HEIGHT, candidate.y)),
+  };
 }
 
 export function localNodeAnchor(frame: LabFrame, nodes: LabNode[], near?: Point): Point {
