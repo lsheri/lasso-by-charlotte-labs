@@ -306,7 +306,7 @@ describe("CG1 inbox congruency", () => {
     expect(board.parentElement?.getAttribute("style")).toContain("height: 1376px");
     expect(within(board).getByText("Documents").parentElement?.parentElement?.className).toMatch(/top-0/);
     expect(within(board).getByText("1–5 OF 6").parentElement?.className).toMatch(/bottom-0/);
-    const documentLaneScroll = within(board).getByTestId("board-lane-scroll-lane:inbox-document");
+    const documentLaneScroll = board.querySelector('[data-board-lane="lane:inbox-document"] > [data-testid^="board-lane-scroll-"]');
     expect(documentLaneScroll.getAttribute("style")).toContain("top: 40px");
     expect(documentLaneScroll.getAttribute("style")).toContain("bottom: 44px");
     expect(screen.getByText(inboxRows[4]?.title ?? "missing")).toBeTruthy();
@@ -336,9 +336,9 @@ describe("CG1 inbox congruency", () => {
       expect(screen.getByTestId("board-shell-stage").style.transform).toMatch(/scale\(1\)$/);
     } finally {
       if (width) Object.defineProperty(HTMLElement.prototype, "clientWidth", width);
-      else delete (HTMLElement.prototype as Partial<HTMLElement>).clientWidth;
+      else Reflect.deleteProperty(HTMLElement.prototype, "clientWidth");
       if (height) Object.defineProperty(HTMLElement.prototype, "clientHeight", height);
-      else delete (HTMLElement.prototype as Partial<HTMLElement>).clientHeight;
+      else Reflect.deleteProperty(HTMLElement.prototype, "clientHeight");
     }
   });
 
