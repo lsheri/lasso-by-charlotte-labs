@@ -13,10 +13,25 @@ import type { WorkItemRow } from "@/lib/work-types";
 
 let inboxRows: WorkItemRow[] = [];
 const recorded: ReturnType<typeof inboxFilterDims>[] = [];
+const { filterChangedToken, recordedChatFilters } = vi.hoisted(() => ({
+  filterChangedToken: Symbol("noteFilterChangedFn"),
+  recordedChatFilters: [] as unknown[],
+}));
 
 vi.mock("@tanstack/react-start", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@tanstack/react-start")>()),
-  useServerFn: () => vi.fn(async () => ({ ok: true })),
+  useServerFn: (serverFn: unknown) =>
+    serverFn === filterChangedToken
+      ? vi.fn(async (input: unknown) => {
+          recordedChatFilters.push(input);
+          return { ok: true };
+        })
+      : vi.fn(async () => ({ ok: true })),
+}));
+vi.mock("@/lib/chat-library.functions", () => ({
+  noteChatViewChangedFn: Symbol("noteChatViewChangedFn"),
+  noteFilterChangedFn: filterChangedToken,
+  noteReaderClosedFn: Symbol("noteReaderClosedFn"),
 }));
 vi.mock("@tanstack/react-router", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@tanstack/react-router")>()),
@@ -154,6 +169,7 @@ const rows = [item("mapped", "mapped", "ALPHA"), item("waiting", "unmapped"), it
 afterEach(cleanup);
 beforeEach(() => {
   recorded.length = 0;
+  recordedChatFilters.length = 0;
   window.matchMedia = vi.fn().mockReturnValue({
     matches: false,
     addEventListener: vi.fn(),
@@ -369,6 +385,62 @@ describe("CG1 inbox congruency", () => {
 });
 
 describe("CG2 AI conversations congruency", () => {
+  it("frames the newest four months at zoom one while keeping older month lanes to the right", async () => {
+    const width = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "clientWidth");
+    const height = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "clientHeight");
+    Object.defineProperty(HTMLElement.prototype, "clientWidth", {
+      configurable: true,
+      get(this: HTMLElement) { return this.dataset["testid"] === "board-shell" ? 1094 : 0; },
+    });
+    Object.defineProperty(HTMLElement.prototype, "clientHeight", {
+      configurable: true,
+      get(this: HTMLElement) {
+        return this.dataset["testid"] === "board-shell"
+          ? Number.parseFloat(this.parentElement?.style.height ?? "0")
+          : 0;
+      },
+    });
+    try {
+      const monthlyConversations: ReadonlyArray<readonly [string, string]> = [
+        ["September conversation", "2026-09-21T10:00:00Z"],
+        ["August conversation", "2026-08-21T10:00:00Z"],
+        ["July conversation", "2026-07-21T10:00:00Z"],
+        ["June conversation", "2026-06-21T10:00:00Z"],
+        ["May conversation", "2026-05-21T10:00:00Z"],
+        ["April conversation", "2026-04-21T10:00:00Z"],
+      ];
+      inboxRows = monthlyConversations.map(([title, capturedAt]) => ({
+        ...conversation(title, "claude", "ALPHA"),
+        captured_at: capturedAt,
+      }));
+
+      render(<AiRecordPage />);
+
+      const board = screen.getByTestId("board-shell");
+      await waitFor(() => {
+        expect(screen.getByTestId("board-shell-stage").style.transform).toMatch(/scale\(1\)$/);
+      });
+      const lanes = board.querySelectorAll<HTMLElement>("[data-board-lane]");
+      expect(lanes).toHaveLength(6);
+      for (const lane of lanes) expect(lane.style.width).toBe("230.5px");
+      expect(within(lanes[0] as HTMLElement).getByText("September")).toBeTruthy();
+      expect(within(lanes[5] as HTMLElement).getByText("April")).toBeTruthy();
+      expect(Number.parseFloat(lanes[4]?.style.left ?? "0")).toBeGreaterThan(1094);
+      const firstCard = screen.getByText("September conversation").closest<HTMLElement>("[data-lane-content]");
+      expect(firstCard?.style.width).toBe("206.5px");
+      const toolbar = within(board).getByTestId("board-shell-toolbar");
+      expect(within(toolbar).getByRole("searchbox", { name: "Search your chats" })).toBeTruthy();
+      expect(within(toolbar).getByRole("group", { name: "Filter by tool" })).toBeTruthy();
+      expect(within(toolbar).getByRole("group", { name: "Filter by engagement" })).toBeTruthy();
+      expect(within(toolbar).getByText("6 conversations.")).toBeTruthy();
+    } finally {
+      if (width) Object.defineProperty(HTMLElement.prototype, "clientWidth", width);
+      else Reflect.deleteProperty(HTMLElement.prototype, "clientWidth");
+      if (height) Object.defineProperty(HTMLElement.prototype, "clientHeight", height);
+      else Reflect.deleteProperty(HTMLElement.prototype, "clientHeight");
+    }
+  });
+
   it("keeps every conversation in place while dimming and disabling chip-filter non-matches", () => {
     inboxRows = [
       conversation("Claude plan", "claude", "ALPHA"),
@@ -389,6 +461,22 @@ describe("CG2 AI conversations congruency", () => {
     for (const title of ["Claude plan", "Claude review"]) {
       expect(screen.getByText(title).closest('[data-testid="dimmed-disabled"]')).toBeNull();
     }
+  });
+
+  it("keeps the chip event name path and closed tool and engagement payloads", () => {
+    inboxRows = [
+      conversation("Claude plan", "claude", "ALPHA"),
+      conversation("ChatGPT notes", "chatgpt", "BETA"),
+    ];
+    render(<AiRecordPage />);
+
+    fireEvent.click(within(screen.getByRole("group", { name: "Filter by tool" })).getByRole("button", { name: /Claude/i }));
+    fireEvent.click(within(screen.getByRole("group", { name: "Filter by engagement" })).getByRole("button", { name: /BETA/i }));
+
+    expect(recordedChatFilters).toEqual([
+      { data: { filter: "tool", selected: "one", profile_id: "profile" } },
+      { data: { filter: "engagement", selected: "one", profile_id: "profile" } },
+    ]);
   });
 
   it("keeps the full conversation list dimmed when chip filters match nothing", () => {

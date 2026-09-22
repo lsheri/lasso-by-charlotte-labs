@@ -26,6 +26,11 @@ import { ThinkingIndicator } from "@/components/common/Working";
 import { ChatUrlLink } from "@/components/work/ChatUrlLink";
 import { PasteThreadDialog } from "@/components/work/PasteThreadDialog";
 import { Button } from "@/components/ui/button";
+import {
+  BoardShell,
+  type BoardShellFrame,
+  type BoardShellNode,
+} from "@/components/board/BoardShell";
 import { BrandLogo } from "@/components/connectors/BrandLogo";
 import { SubjectsPanel } from "@/components/work/SubjectsPanel";
 import { fedPhrase } from "@/components/work/ChatRow";
@@ -55,6 +60,18 @@ import { useWorkboardCardPreviews } from "@/hooks/use-workboard-card-previews";
 import type { WorkView } from "@/lib/work-view";
 
 type MonthGroup = { key: string; label: string; items: WorkItemRow[] };
+type ConversationMonthLane = BoardShellFrame & { label: string; itemCount: number };
+type ConversationLaneNode = BoardShellNode & { item: WorkItemRow; index: number };
+
+const CONVERSATION_LANE_WIDTH = 230.5;
+const CONVERSATION_LANE_GAP = 36;
+const CONVERSATION_LANE_LEFT = 40;
+const CONVERSATION_LANE_TOP = 120;
+const CONVERSATION_LANE_HEIGHT = 880;
+const CONVERSATION_LANE_HEADER_HEIGHT = 40;
+const CONVERSATION_CARD_HEIGHT = 220;
+const CONVERSATION_INITIAL_MONTHS = 4;
+const CONVERSATION_BOARD_HEIGHT = 1040;
 
 const MONTHS = [
   "January",
@@ -280,6 +297,31 @@ export function AiRecordPage() {
   // Search narrows deliberately. Tool and engagement chips leave those search
   // results in place, dimming the conversations outside the chosen categories.
   const groups = groupByMonth(shown);
+  const monthLanes: ConversationMonthLane[] = groups.map((group, index) => ({
+    id: `lane:chat-month-${group.key}`,
+    x: CONVERSATION_LANE_LEFT + index * (CONVERSATION_LANE_WIDTH + CONVERSATION_LANE_GAP),
+    y: CONVERSATION_LANE_TOP,
+    width: CONVERSATION_LANE_WIDTH,
+    height: CONVERSATION_LANE_HEIGHT,
+    contentInset: { top: CONVERSATION_LANE_HEADER_HEIGHT },
+    label: group.label,
+    itemCount: group.items.length,
+  }));
+  const monthNodes: ConversationLaneNode[] = groups.flatMap((group) =>
+    group.items.map((item, index) => ({
+      id: item.id,
+      item,
+      index,
+      frame: `lane:chat-month-${group.key}`,
+      x: 0,
+      y: 0,
+      width: CONVERSATION_LANE_WIDTH,
+      height: CONVERSATION_CARD_HEIGHT,
+    })),
+  );
+  const initialMonthLaneIds = monthLanes
+    .slice(0, CONVERSATION_INITIAL_MONTHS)
+    .map((lane) => lane.id);
   // Asked Lasso on its own hides the captured list; Everything shows both.
   const capturedShown = source !== "asked" && threads.length > 0;
   const selectedEngagement =
@@ -490,31 +532,35 @@ export function AiRecordPage() {
         </span>
       </div>
 
-      {capturedShown ? (
-        <div className="mb-6">
-          <label htmlFor="chat-library-search" className="sr-only">
-            Search your chats
-          </label>
-          <input
-            id="chat-library-search"
-            type="search"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") searchSignal.onSubmitQuery();
-            }}
-            placeholder="Search your chats"
-            className="w-full rounded-[var(--radius)] border border-border bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/40 sm:max-w-sm"
-          />
-        </div>
-      ) : null}
-
-      {capturedShown ? (
-        <div
-          role="group"
-          aria-label="Filter by tool"
-          className="mb-3 flex flex-wrap items-center gap-2"
-        >
+      {capturedShown && groups.length > 0 ? (
+        <div style={{ height: CONVERSATION_BOARD_HEIGHT }}>
+          <BoardShell
+            ariaLabel="AI conversations board"
+            frames={monthLanes}
+            nodes={monthNodes}
+            fitFrameIds={initialMonthLaneIds}
+            fitKey={`${groups.length}:${shown.length}`}
+            toolbar={(
+              <div className="flex w-full min-w-0 flex-col gap-2">
+                <div className="flex min-w-0 items-center gap-3 overflow-x-auto">
+                  <label htmlFor="chat-library-search" className="sr-only">
+                    Search your chats
+                  </label>
+                  <input
+                    id="chat-library-search"
+                    type="search"
+                    value={query}
+                    onChange={(event) => setQuery(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") searchSignal.onSubmitQuery();
+                    }}
+                    placeholder="Search your chats"
+                    className="w-full max-w-sm shrink-0 rounded-[var(--radius)] border border-border bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/40"
+                  />
+                  <p className="shrink-0 text-[12px] text-muted-foreground">{countLine}</p>
+                </div>
+                <div className="flex min-w-0 items-center gap-2 overflow-x-auto pb-0.5">
+                  <div role="group" aria-label="Filter by tool" className="flex shrink-0 items-center gap-2">
           {(["all", ...toolsPresent] as const).map((option) => {
             const on = tool === option;
             return (
@@ -544,6 +590,7 @@ export function AiRecordPage() {
               </button>
             );
           })}
+                  </div>
           <span
             role="group"
             aria-label="How conversations are shown"
@@ -565,15 +612,8 @@ export function AiRecordPage() {
               </button>
             ))}
           </span>
-        </div>
-      ) : null}
-
-      {capturedShown ? (
-        <div
-          role="group"
-          aria-label="Filter by engagement"
-          className="mb-6 flex flex-wrap items-center gap-2"
-        >
+                </div>
+                <div role="group" aria-label="Filter by engagement" className="flex min-w-0 items-center gap-2 overflow-x-auto pb-0.5">
           <button
             type="button"
             aria-pressed={engagement === "all"}
@@ -634,6 +674,75 @@ export function AiRecordPage() {
               {recursOpen ? "Hide analysis" : "What recurs"}
             </button>
           ) : null}
+                </div>
+              </div>
+            )}
+            renderFrame={(lane) => (
+              <div className="pointer-events-none absolute inset-x-0 top-0 flex h-10 items-center gap-3 px-3">
+                <span className="font-hand text-[19px] leading-none text-graphite">{lane.label}</span>
+                <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">
+                  {lane.itemCount}
+                </span>
+                <span className="h-px flex-1 bg-[var(--nb-rule)]" />
+              </div>
+            )}
+            renderNode={(node) => {
+              const matches = matchesChipFilters(node.item);
+              return (
+                <DimmedDisabled dimmed={!matches} disabled={!matches} className="h-full min-w-0">
+                  <span
+                    className={`${pileMotion.className ? "nb-sticky-wave " : ""}canvas-lab-card-paper block h-full min-w-0`}
+                    style={{ "--nb-wave-delay": `${Math.min(node.index, 23) * 26}ms` } as React.CSSProperties}
+                  >
+                    <WorkNote
+                      item={node.item}
+                      dense
+                      displayMode={view}
+                      chatPreview={cardPreviews[node.item.id]}
+                      onOpen={() => openItem(node.item)}
+                      chips={(
+                        <>
+                          {firstEngagement(node.item) ? (
+                            <span
+                              className="font-mono text-[9px] uppercase tracking-[0.08em]"
+                              style={{ color: `var(${engagementHue(firstEngagement(node.item)?.id ?? "")})` }}
+                            >
+                              {firstEngagement(node.item)?.code}
+                            </span>
+                          ) : (
+                            <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">UNMAPPED</span>
+                          )}
+                          {itemModel(node.item) ? (
+                            <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">{itemModel(node.item)}</span>
+                          ) : null}
+                          <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">
+                            {turnCounts?.[node.item.id] ?? 0}{" "}
+                            {(turnCounts?.[node.item.id] ?? 0) === 1 ? "turn" : "turns"}
+                          </span>
+                          {(fed?.[node.item.id] ?? []).length > 0 ? (
+                            <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-green">
+                              {fedPhrase(fed?.[node.item.id] ?? [])}
+                            </span>
+                          ) : null}
+                          <ChatUrlLink item={node.item} showAbsence />
+                          <button
+                            type="button"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              setLensItem(node.item);
+                            }}
+                            className="text-[10px] font-medium text-accent-deep"
+                          >
+                            Analyse
+                          </button>
+                        </>
+                      )}
+                    />
+                  </span>
+                </DimmedDisabled>
+              );
+            }}
+          />
         </div>
       ) : null}
 
@@ -701,113 +810,10 @@ export function AiRecordPage() {
         </div>
       ) : groups.length === 0 ? (
         <p className="text-sm text-muted-foreground">No chats match that search.</p>
-      ) : (
-
-        <div className="space-y-8">
-          {groups.map((group) => {
-            return (
-              <section key={group.key} className="space-y-3">
-                <div className="flex items-center gap-3 pb-2 pt-1">
-                  <span className="font-hand text-[19px] leading-none text-graphite">
-                    {group.label}
-                  </span>
-                  <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">
-                    {group.items.length}
-                  </span>
-                  <span className="h-px flex-1 bg-[var(--nb-rule)]" />
-                </div>
-
-
-
-                {/* Figma 27:635 draws these as a hairline-ruled list, not a
-                    stack of bordered cards. Same handlers, same actions: they
-                    move onto hover, focus and touch instead of sitting open. */}
-                  <div
-                    key={`cards:${view}`}
-                    className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6"
-                  >
-                    {group.items.map((item, index) => {
-                      const matches = matchesChipFilters(item);
-                      return (
-                      <DimmedDisabled
-                        key={`${group.key}:${item.id}`}
-                        dimmed={!matches}
-                        disabled={!matches}
-                      >
-                        <span
-                          className={pileMotion.className ? "block nb-sticky-wave" : "block"}
-                          style={
-                            {
-                              "--nb-wave-delay": `${Math.min(index, 23) * 26}ms`,
-                            } as React.CSSProperties
-                          }
-                        >
-                          <WorkNote
-                          item={item}
-                          dense
-                          displayMode={view}
-                          chatPreview={cardPreviews[item.id]}
-                          onOpen={() => openItem(item)}
-                          chips={
-                            <>
-                              {firstEngagement(item) ? (
-                                <span
-                                  className="font-mono text-[9px] uppercase tracking-[0.08em]"
-                                  style={{
-                                    color: `var(${engagementHue(firstEngagement(item)!.id)})`,
-                                  }}
-                                >
-                                  {firstEngagement(item)!.code}
-                                </span>
-                              ) : (
-                                <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">
-                                  UNMAPPED
-                                </span>
-                              )}
-                              {itemModel(item) ? (
-                                <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">
-                                  {itemModel(item)}
-                                </span>
-                              ) : null}
-                              <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">
-                                {turnCounts?.[item.id] ?? 0}{" "}
-                                {(turnCounts?.[item.id] ?? 0) === 1 ? "turn" : "turns"}
-                              </span>
-                              {(fed?.[item.id] ?? []).length > 0 ? (
-                                <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-green">
-                                  {fedPhrase(fed?.[item.id] ?? [])}
-                                </span>
-                              ) : null}
-                              <ChatUrlLink item={item} showAbsence />
-                              <button
-                                type="button"
-                                onClick={(event) => {
-                                  event.stopPropagation();
-                                  setLensItem(item);
-                                }}
-                                className="text-[10px] font-medium text-accent-deep"
-                              >
-                                Analyse
-                              </button>
-                            </>
-                          }
-                          />
-                        </span>
-                      </DimmedDisabled>
-                      );
-                    })}
-                  </div>
-              </section>
-            );
-          })}
-        </div>
-      )}
+      ) : null}
 
       {capturedShown ? (
         <>
-          <p className="mt-4 border-t border-[var(--nb-rule)] pt-3 text-[12px] text-muted-foreground">
-            {countLine}
-          </p>
           <CaptureCoverage
             profileId={profile?.id}
             itemCount={threads.length}
