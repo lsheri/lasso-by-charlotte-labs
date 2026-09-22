@@ -65,7 +65,13 @@ vi.mock("@/integrations/supabase/client", () => ({
 }));
 
 const mod = await import("@/hooks/use-profile");
-const { useProfile, setActiveProfileId, resetProfileIdentityState, ACTIVE_PROFILE_ROW_KEY } = mod;
+const {
+  useProfile,
+  setActiveProfileId,
+  resetProfileIdentityState,
+  registerProfileQueryClient,
+  ACTIVE_PROFILE_ROW_KEY,
+} = mod;
 
 function Consumer() {
   const { data } = useProfile();
@@ -76,6 +82,8 @@ let client: QueryClient;
 
 function renderMany(count: number) {
   client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  // The app root registers the same way; see src/routes/__root.tsx.
+  registerProfileQueryClient(client);
   return render(
     <QueryClientProvider client={client}>
       {Array.from({ length: count }, (_, i) => (
