@@ -42,6 +42,57 @@ function readStored(): string | null {
   }
 }
 
+/** Shared keys so every consumer waits on one request, not its own. */
+export const AUTH_USER_KEY = ["auth-user"] as const;
+export const ACTIVE_PROFILE_ROW_KEY = ["active-profile-row"] as const;
+
+/**
+ * The query client the app is already using. Registered from useProfiles so
+ * the non-React helpers below can read and invalidate the same cache instead
+ * of going straight to the network.
+ */
+let sharedQueryClient: QueryClient | null = null;
+
+export function registerProfileQueryClient(client: QueryClient): void {
+  sharedQueryClient = client;
+}
+
+/** Test seam. */
+export function resetProfileIdentityState(): void {
+  sharedQueryClient = null;
+  seededUsers.clear();
+}
+
+async function fetchAuthUser(): Promise<{ id: string } | null> {
+  const { data } = await supabase.auth.getUser();
+  return data.user ? { id: data.user.id } : null;
+}
+
+const authUserOptions = {
+  queryKey: AUTH_USER_KEY,
+  queryFn: fetchAuthUser,
+  staleTime: 60_000,
+};
+
+/**
+ * One identity read per session. Concurrent callers share the in-flight
+ * request through the query client rather than each opening their own.
+ */
+export async function ensureAuthUser(): Promise<{ id: string } | null> {
+  if (sharedQueryClient) return sharedQueryClient.ensureQueryData(authUserOptions);
+  return fetchAuthUser();
+}
+
+async function fetchStoredActiveProfileId(userId: string): Promise<string | null> {
+  const { data, error } = await supabase
+    .from("user_active_profile")
+    .select("profile_id")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return data?.profile_id ?? null;
+}
+
 /**
  * The choice of workspace has to reach the database, not just this tab: the
  * reads are scoped to it there. The local switch happens first and always, so
@@ -54,13 +105,15 @@ export async function setActiveProfileId(id: string): Promise<void> {
     /* storage is a convenience, never a requirement */
   }
   for (const listener of listeners) listener();
-  await writeActiveProfileRow(id);
+  const user = await ensureAuthUser();
+  await writeActiveProfileRow(id, user?.id ?? null);
+  // The switch is the moment the stored choice changes, so the cached copy is
+  // dropped here rather than left to expire. The next read returns the new one.
+  sharedQueryClient?.invalidateQueries({ queryKey: ACTIVE_PROFILE_ROW_KEY });
 }
 
-async function writeActiveProfileRow(id: string): Promise<void> {
+async function writeActiveProfileRow(id: string, userId: string | null): Promise<void> {
   try {
-    const { data: userData } = await supabase.auth.getUser();
-    const userId = userData.user?.id;
     if (!userId) return;
     const { error } = await supabase
       .from("user_active_profile")
@@ -93,9 +146,9 @@ export async function fetchProfiles(): Promise<Profile[]> {
 }
 
 export async function fetchProfileState(): Promise<ProfileState> {
-  const { data: userData } = await supabase.auth.getUser();
-  const user = userData.user;
+  const user = await ensureAuthUser();
   if (!user) return { profiles: [], hasDeactivated: false };
+
   const { data, error } = await supabase
     .from("profiles")
     .select(
