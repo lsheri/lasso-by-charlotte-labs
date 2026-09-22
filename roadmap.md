@@ -41,3 +41,8 @@
 - [x] Move only the Preview/Sticky control, filter chips, and count line into the shell toolbar.
 - [x] Preserve page-level teaching copy, card dimming/inert behavior, paging, and every surrounding section.
 - [x] Replace only obsolete cg1 markup selectors and mutation-check every inbox congruency behavior.
+
+## P3.2 Conversation board density
+- [x] Render missing months as narrow timeline spines without card wells.
+- [x] Derive month height from visible cards, gaps, padding, header, and overflow row.
+- [x] Mutation-check density, fit, and preserved conversation filtering behavior.
