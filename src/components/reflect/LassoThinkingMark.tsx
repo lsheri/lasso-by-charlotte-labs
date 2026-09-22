@@ -41,8 +41,9 @@ export function LassoThinkingMark({ kind, size, count = 0, className }: LassoThi
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const context = canvas.getContext("2d");
-    if (!context) return;
+    const foundContext = canvas.getContext("2d");
+    if (!foundContext) return;
+    const context: CanvasRenderingContext2D = foundContext;
 
     const width = size;
     const height = size;

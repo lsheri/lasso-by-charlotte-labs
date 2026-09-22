@@ -43,7 +43,9 @@ describe("LassoThinkingMark", () => {
   afterEach(() => vi.restoreAllMocks());
 
   it.each(["orbit", "loop", "gather", "trace"] as const)("draws %s from the token and cancels on unmount", (kind) => {
-    const { unmount } = render(<LassoThinkingMark kind={kind} size={72} count={kind === "gather" ? 3 : undefined} />);
+    const { unmount } = render(
+      <LassoThinkingMark kind={kind} size={72} {...(kind === "gather" ? { count: 3 } : {})} />,
+    );
     expect(context.setTransform).toHaveBeenCalledWith(2, 0, 0, 2, 0, 0);
     expect(context.fillStyle).toBe("token-green");
     expect(context.strokeStyle).toBe("token-green");
