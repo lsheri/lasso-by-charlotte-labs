@@ -37,7 +37,7 @@
 - [x] Remove only superseded Ask drift CSS and verify all affected checks.
 
 ## P2 Inbox board lanes
-- [ ] Render the four existing work-type columns as fixed lanes in BoardShell.
-- [ ] Move only the Preview/Sticky control, filter chips, and count line into the shell toolbar.
-- [ ] Preserve page-level teaching copy, card dimming/inert behavior, paging, and every surrounding section.
-- [ ] Replace only obsolete cg1 markup selectors and mutation-check every inbox congruency behavior.
+- [x] Render the four existing work-type columns as fixed lanes in BoardShell.
+- [x] Move only the Preview/Sticky control, filter chips, and count line into the shell toolbar.
+- [x] Preserve page-level teaching copy, card dimming/inert behavior, paging, and every surrounding section.
+- [x] Replace only obsolete cg1 markup selectors and mutation-check every inbox congruency behavior.

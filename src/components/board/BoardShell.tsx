@@ -66,6 +66,8 @@ export type BoardShellProps<F extends BoardShellFrame, N extends BoardShellNode>
   onSelectNode?: ((id: string | null) => void) | undefined;
   /** Fit again whenever this changes, the way a first load does. */
   fitKey?: string | number | undefined;
+  /** Reports this shell's own measured viewport without changing board geometry. */
+  onViewportSizeChange?: ((size: LabViewportSize) => void) | undefined;
   className?: string | undefined;
   ariaLabel?: string | undefined;
 };
@@ -83,6 +85,7 @@ export function BoardShell<F extends BoardShellFrame, N extends BoardShellNode>(
   selectedIds,
   onSelectNode,
   fitKey,
+  onViewportSizeChange,
   className,
   ariaLabel = "Board",
 }: BoardShellProps<F, N>) {
@@ -97,6 +100,8 @@ export function BoardShell<F extends BoardShellFrame, N extends BoardShellNode>(
   const panDragRef = useRef<{ pointer: Point; pan: Point } | null>(null);
   const nodeDragRef = useRef<{ id: string; pointer: Point; origin: Point } | null>(null);
   const observedSizeRef = useRef<LabViewportSize | null>(null);
+  const onViewportSizeChangeRef = useRef(onViewportSizeChange);
+  onViewportSizeChangeRef.current = onViewportSizeChange;
 
   const laneIds = useMemo(() => new Set(frames.filter((frame) => isLaneFrameId(frame.id)).map((frame) => frame.id)), [frames]);
   const inLane = useCallback((node: N) => Boolean(node.frame && laneIds.has(node.frame)), [laneIds]);
@@ -126,6 +131,11 @@ export function BoardShell<F extends BoardShellFrame, N extends BoardShellNode>(
   fitRef.current = fit;
 
   useLayoutEffect(() => {
+    const shell = shellRef.current;
+    if (shell) {
+      const size = { width: shell.clientWidth, height: shell.clientHeight };
+      if (size.width > 0 && size.height > 0) onViewportSizeChangeRef.current?.(size);
+    }
     fitRef.current();
   }, [fitKey]);
 
@@ -136,6 +146,7 @@ export function BoardShell<F extends BoardShellFrame, N extends BoardShellNode>(
       const next = { width: shell.clientWidth, height: shell.clientHeight };
       if (!viewportSizeChanged(observedSizeRef.current, next)) return;
       observedSizeRef.current = next;
+      onViewportSizeChangeRef.current?.(next);
       fitRef.current();
     });
     observer.observe(shell);
