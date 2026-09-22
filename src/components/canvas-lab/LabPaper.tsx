@@ -49,6 +49,8 @@ export function LabPaper({
   displayMode = "sticky",
   preview,
   filePreview,
+  focused: _focused = false,
+  onPreviewScroll: _onPreviewScroll,
   showOwnership = true,
   onOpenTrail,
 }: {
@@ -63,6 +65,8 @@ export function LabPaper({
   displayMode?: WorkboardDisplayMode;
   preview?: WorkboardCardPreview | undefined;
   filePreview?: FilePreview | undefined;
+  focused?: boolean;
+  onPreviewScroll?: ((kind: "chat" | "document" | "deck") => void) | undefined;
   /** The sample board has no owner, so it shows no ownership label. */
   showOwnership?: boolean;
   /** Deliverable cards only: opens the card's trail, the same path the menu uses. */
