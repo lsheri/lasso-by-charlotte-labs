@@ -24,11 +24,11 @@
 
 ## Build
 1. Add failing R3 checks first for shared graphite borders, the taller shared minimum, long-content overflow safety, fixed scrollable chat windows, all four source treatments plus unknown fallback, Ask Lasso colour exclusion, dimming inheritance, and thin document preview borders.
-2. Centralize card and sticky dimensions in the existing paper styles: change the shared border from 1px to 1.5px graphite and the shared minimum height from 180px to 220px while preserving widths and grids. Align board card geometry with the same 220px floor so fixed board frames cannot clip taller paper.
+2. Centralize card and sticky dimensions in the existing paper styles: change the shared border from 1px to 1.5px graphite, then inspect the rendered result and use 2px if 1.5px remains faint and the shared minimum height from 180px to 220px while preserving widths and grids. Align board card geometry with the same 220px floor so fixed board frames cannot clip taller paper.
 3. Add named chat-border tokens beside the existing colour tokens. Use one gradient-wrapper technique for Claude, ChatGPT, Gemini, Copilot, and the graphite fallback, all at the same border weight.
 4. Reuse `sourceVendorKey` from `SourceMark.tsx` for source identification. Introduce one presentational chat-window component shared by board and app-card previews, with fixed height, internal vertical scrolling, and wheel handoff at the top and bottom.
 5. Give document preview bodies a one-step-thinner graphite border through their shared preview styles, including the workstream document body, without changing content or controls.
-6. Re-run focused and adjacent tests, type safety, and the preview build. Compare the control, state, and event inventories above to the result before reporting.
+6. Measure inbox cards visible above the fold before and after the 220px floor, then re-run focused and adjacent tests, type safety, and the preview build. Compare the control, state, and event inventories above to the result before reporting.
 
 ## Expected files
 - `src/styles.css`

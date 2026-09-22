@@ -106,7 +106,7 @@ export function ConversationCard({
   if (dense) {
     return (
       <div
-        className={`group/card rounded-[var(--radius)] border ${shell} transition-colors hover:border-accent/40`}
+        className={`nb-card-surface group/card rounded-[var(--radius)] ${shell} transition-colors`}
         style={{ ...wash, ...spine }}
       >
         <div className="px-3 py-2.5">
@@ -205,7 +205,7 @@ export function ConversationCard({
 
   return (
     <div
-      className={`rounded-[var(--radius)] border ${shell} transition-colors hover:border-accent/40`}
+      className={`nb-card-surface rounded-[var(--radius)] ${displayMode === "preview" ? "nb-preview-card" : ""} ${shell} transition-colors`}
       style={{ ...wash, ...spine }}
     >
       <div className="px-3 pt-3 sm:px-4">

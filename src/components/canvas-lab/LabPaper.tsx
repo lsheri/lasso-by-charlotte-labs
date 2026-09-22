@@ -1,6 +1,7 @@
 import { GraphiteIcon, type GraphiteIconName } from "@/components/notebook/icons";
 import { WorkboardFilePreview } from "@/components/canvas-lab/WorkboardFilePreview";
 import { ArtifactNote, SourceMark, sourceVendorKey, VendorMark } from "@/components/work/SourceMark";
+import { ChatPreviewWindow } from "@/components/work/ChatPreviewWindow";
 import { colourKey, noteHue, notePaper } from "@/components/work/note-paper";
 import { cardSizeTier, ownerLabel, type LabNode } from "@/components/canvas-lab/canvas-lab-model";
 import { workIdentityLabel } from "@/lib/work-identity";
@@ -134,25 +135,19 @@ export function LabPaper({
         </p>
 
         {chatPreview ? (
-          <div
-            data-testid="workboard-chat-preview"
-            data-focused={focused}
-            className="canvas-lab-chat-preview"
-            onScroll={(event) => {
-              const scrollTop = event.currentTarget.scrollTop;
+          <ChatPreviewWindow
+            testId="workboard-chat-preview"
+            vendorKey={vendorKey}
+            turns={preview?.turns ?? []}
+            onScroll={(scrollTop) => {
               if (focused && scrollTop !== previewScrollTopRef.current) onPreviewScroll?.("chat");
               previewScrollTopRef.current = scrollTop;
             }}
-          >
-            {(preview?.turns ?? []).map((turn) => (
-              <div key={turn.turnNo} className="canvas-lab-preview-turn">
-                <span>{turn.role}</span>
-                <p>{turn.content}</p>
-              </div>
-            ))}
-          </div>
+          />
         ) : showFilePreview && filePreview ? (
-          <WorkboardFilePreview preview={filePreview} onFailure={() => setFilePreviewFailed(true)} />
+          <div className="nb-document-preview-body min-h-0 flex-1 overflow-hidden">
+            <WorkboardFilePreview preview={filePreview} onFailure={() => setFilePreviewFailed(true)} />
+          </div>
         ) : node.local ? (
           <textarea
             aria-label={`Edit ${node.title} note`}

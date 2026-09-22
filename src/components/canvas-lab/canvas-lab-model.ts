@@ -125,7 +125,7 @@ export type LabFrame = {
 };
 
 export const CARD_MIN_WIDTH = 260;
-export const CARD_MIN_HEIGHT = 180;
+export const CARD_MIN_HEIGHT = 220;
 export const CARD_WIDTH = WORKBOARD_CARD_DEFAULT_SIZE.width;
 export const CARD_HEIGHT = WORKBOARD_CARD_DEFAULT_SIZE.height;
 export const CARD_MAX_WIDTH = WORKBOARD_CARD_MAX_WIDTH;
@@ -1006,7 +1006,7 @@ export function applyDurableBoard(base: { frames: LabFrame[]; nodes: LabNode[] }
         x: durable.x,
         y: durable.y,
         width: durable.w > 0 ? durable.w : CARD_WIDTH,
-        height: durable.h > 0 ? durable.h : CARD_HEIGHT,
+        height: Math.max(CARD_MIN_HEIGHT, durable.h > 0 ? durable.h : CARD_HEIGHT),
         durableId: durable.id,
         durableVersion: durable.version,
         linkedItemRemovedAt: durable.linkedItemRemovedAt ?? null,
@@ -1031,7 +1031,7 @@ export function applyDurableBoard(base: { frames: LabFrame[]; nodes: LabNode[] }
         x: durable.x,
         y: durable.y,
         width: durable.w > 0 ? durable.w : CARD_WIDTH,
-        height: durable.h > 0 ? durable.h : CARD_HEIGHT,
+        height: Math.max(CARD_MIN_HEIGHT, durable.h > 0 ? durable.h : CARD_HEIGHT),
       });
     }
     if (durable.kind === "shape") {
@@ -1092,7 +1092,7 @@ export function applyDurableBoard(base: { frames: LabFrame[]; nodes: LabNode[] }
         x: durable.x,
         y: durable.y,
         width: durable.w > 0 ? durable.w : CARD_WIDTH,
-        height: durable.h > 0 ? durable.h : CARD_HEIGHT,
+        height: Math.max(CARD_MIN_HEIGHT, durable.h > 0 ? durable.h : CARD_HEIGHT),
       });
     }
     // draft rows are deliberately not rehydrated in Slice 1.
