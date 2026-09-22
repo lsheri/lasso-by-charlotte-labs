@@ -197,6 +197,40 @@ export function regionFrameMove<N extends { id: string; frame?: string | null | 
   };
 }
 
+export type GroupingDragMember = { id: string; offsetX: number; offsetY: number };
+
+/**
+ * Movement is geometric, not membership. Capture the visible cards whose
+ * centres are inside when the drag starts, whether the grouping is paint or a
+ * named workstream. The snapshot means a card can never join halfway through.
+ */
+export function groupingDragSnapshot(
+  grouping: { x: number; y: number; width: number; height: number },
+  cards: readonly { id: string; x: number; y: number; width: number; height: number }[],
+): GroupingDragMember[] {
+  const right = grouping.x + grouping.width;
+  const bottom = grouping.y + grouping.height;
+  return cards.flatMap((card) => {
+    const centreX = card.x + card.width / 2;
+    const centreY = card.y + card.height / 2;
+    if (centreX < grouping.x || centreX > right || centreY < grouping.y || centreY > bottom) return [];
+    return [{ id: card.id, offsetX: card.x - grouping.x, offsetY: card.y - grouping.y }];
+  });
+}
+
+/** Move exactly one drag-start snapshot by the grouping's new origin. */
+export function moveGroupingContents<N extends { id: string; x: number; y: number }>(
+  cards: readonly N[],
+  members: readonly GroupingDragMember[],
+  groupingAt: { x: number; y: number },
+): N[] {
+  const byId = new Map(members.map((member) => [member.id, member]));
+  return cards.map((card) => {
+    const member = byId.get(card.id);
+    return member ? { ...card, x: groupingAt.x + member.offsetX, y: groupingAt.y + member.offsetY } : card;
+  });
+}
+
 /**
  * The craft decision: a vivid fill would fight the cards sitting on it, so a
  * vivid token drives the edge and the name and the fill itself stays soft.

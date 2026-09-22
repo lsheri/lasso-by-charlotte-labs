@@ -8,7 +8,7 @@ import { REGION_NAMING_LINE } from "@/lib/board-region";
 
 const CORNERS: LabResizeCorner[] = ["nw", "ne", "se", "sw"];
 
-export function LabFrame({ frame, count, selected, editable, custom, namedByWorkstream, removable, kind, region = false, namingPrompt = false, fillStyle, onAddContext, onSelect, onResizeStart, onResizeKeyDown, onResizeKeyUp, onFit, onRename, onDismissNaming, onRemove, onMenuOpened, onMenuOpenChange, onAddWorkstream }: {
+export function LabFrame({ frame, count, selected, editable, custom, namedByWorkstream, removable, kind, region = false, namingPrompt = false, fillStyle, onAddContext, onSelect, onDragStart, onResizeStart, onResizeKeyDown, onResizeKeyUp, onFit, onRename, onDismissNaming, onRemove, onMenuOpened, onMenuOpenChange, onAddWorkstream }: {
   frame: LabFrameModel;
   count: number;
   selected: boolean;
@@ -24,6 +24,7 @@ export function LabFrame({ frame, count, selected, editable, custom, namedByWork
   /** Present on the context region: brings documents into it. */
   onAddContext?: (() => void) | undefined;
   onSelect: () => void;
+  onDragStart?: ((event: React.PointerEvent<HTMLElement>) => void) | undefined;
   onResizeStart: (corner: LabResizeCorner, event: React.PointerEvent<HTMLButtonElement>) => void;
   onFit: () => void;
   onRename: (name: string) => void;
@@ -108,7 +109,9 @@ export function LabFrame({ frame, count, selected, editable, custom, namedByWork
   const [adding, setAdding] = useState(false);
   const [newName, setNewName] = useState("");
   const [addError, setAddError] = useState(false);
-  const guidance = kind === "context"
+  const guidance = region && !frame.name.trim()
+    ? null
+    : kind === "context"
     ? (count === 0 ? "Nothing in context yet." : null)
     : !editable
     ? "Nothing here yet."
@@ -167,7 +170,11 @@ export function LabFrame({ frame, count, selected, editable, custom, namedByWork
       style={{ left: frame.x, top: frame.y, width: frame.width, height: frame.height, ...(fillStyle ? { background: fillStyle.fill, borderColor: fillStyle.edge } : {}) }}
       data-region={region ? (frame.name ? "workstream" : "paint") : undefined}
       className="canvas-lab-frame absolute outline-none"
-      onPointerDown={(event) => { if (event.target === event.currentTarget) onSelect(); }}
+      onPointerDown={(event) => {
+        if ((event.target as Element).closest("button,input")) return;
+        onSelect();
+        onDragStart?.(event);
+      }}
       onFocus={(event) => { if (event.target === event.currentTarget) onSelect(); }}
       onContextMenu={openMenu}
       onKeyDown={(event) => {
