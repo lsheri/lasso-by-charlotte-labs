@@ -27,21 +27,15 @@ describe("R5 board toolbar", () => {
     expect(toolbar).toMatch(/data-toolbar-control="example"[\s\S]*?>See an example board<\/Button>/);
   });
 
-  it("gives lime and ambient motion only to the loop-derived Ask Lasso icon", () => {
+  it("gives the canvas loop only to the Ask Lasso control", () => {
     const ask = toolbar.match(/data-toolbar-control="ask"[\s\S]*?toolbarItems\.push/s)?.[0] ?? "";
-    expect(ask).toContain('name="ask-lasso"');
-    expect(ask).toContain("canvas-lab-ask-icon");
-    expect(ask).toContain("text-green");
-    expect(toolbar.replace(ask, "")).not.toContain("text-green");
+    expect(ask).toContain('<LassoThinkingMark kind="loop" size={24} />');
+    expect(toolbar.replace(ask, "")).not.toContain("LassoThinkingMark");
     const askEntry = icons.match(/"ask-lasso": \{ d: \[(.*?)\], sig:/)?.[1] ?? "";
     expect(askEntry).toContain("M13.6 5.7C9.2 3.5 4 6.1 4.1 10.3c.1 3.6 4.4 6 8.3 4.7 3.5-1.1 4.6-5 2.3-6.6-1.5-1.1-4.1-.4-4.4 1.3");
     expect(askEntry).toMatch(/[Cc]/);
     expect(askEntry).not.toMatch(/[zZ]/);
-    expect(css).toMatch(/\.canvas-lab-ask-icon[\s\S]*animation:[\s\S]*transform/);
-    expect(css).toMatch(/prefers-reduced-motion: reduce[\s\S]*\.canvas-lab-ask-icon[\s\S]*animation: none !important/);
-    const motion = css.match(/@keyframes canvas-lab-ask-drift[\s\S]*?\n}/)?.[0] ?? "";
-    expect(motion).toContain("transform:");
-    expect(motion).not.toMatch(/(?:top|left|right|bottom|width|height):/);
+    expect(css).not.toMatch(/canvas-lab-ask-(?:drift|float|tilt)/);
   });
 
   it("uses the folded paper gesture for Sticky cards", () => {
