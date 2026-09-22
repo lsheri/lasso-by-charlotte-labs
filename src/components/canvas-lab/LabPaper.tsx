@@ -145,7 +145,9 @@ export function LabPaper({
             }}
           />
         ) : showFilePreview && filePreview ? (
-          <WorkboardFilePreview preview={filePreview} onFailure={() => setFilePreviewFailed(true)} />
+          <div className="nb-document-preview-body min-h-0 flex-1 overflow-hidden">
+            <WorkboardFilePreview preview={filePreview} onFailure={() => setFilePreviewFailed(true)} />
+          </div>
         ) : node.local ? (
           <textarea
             aria-label={`Edit ${node.title} note`}

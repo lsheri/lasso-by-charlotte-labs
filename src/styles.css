@@ -1418,6 +1418,10 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   border-radius: var(--radius-card);
 }
 .nb-document-preview-body > .canvas-lab-file-preview { border: 0; }
+.nb-card-surface {
+  border: var(--nb-card-border-width) solid var(--nb-graphite);
+}
+.nb-preview-card { min-height: var(--nb-card-min-height); }
 .canvas-lab-file-preview p {
   margin: 0 0 4px;
   font-family: var(--font-sans);
