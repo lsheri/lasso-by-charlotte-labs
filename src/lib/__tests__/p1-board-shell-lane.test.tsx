@@ -136,26 +136,33 @@ describe("a lane is furniture", () => {
 });
 
 describe("a lane lays its contents out and keeps none of it", () => {
-  const rect = { x: 40, y: 40, width: 300, height: 200 };
+  const rect = { x: 40, y: 40, width: 300, height: 190 };
+  // Deliberately unequal heights, so reordering produces different offsets and
+  // the assertion cannot hold by accident.
   const contents = [
-    { id: "a", height: 100 },
+    { id: "a", height: 60 },
     { id: "b", height: 100 },
-    { id: "c", height: 100 },
+    { id: "c", height: 140 },
   ];
 
   it("derives every position from the index and the lane's rect", () => {
     const placements = laneContentLayout(rect, contents);
     expect(placements.map((placement) => placement.y)).toEqual([
       LANE_PADDING,
-      LANE_PADDING + 100 + LANE_CONTENT_GAP,
-      LANE_PADDING + 200 + LANE_CONTENT_GAP * 2,
+      LANE_PADDING + 60 + LANE_CONTENT_GAP,
+      LANE_PADDING + 160 + LANE_CONTENT_GAP * 2,
     ]);
     expect(placements.every((placement) => placement.x === LANE_PADDING)).toBe(true);
     expect(placements.every((placement) => placement.width === rect.width - LANE_PADDING * 2)).toBe(true);
     // Reordering the same contents moves them, because index is the layout.
     const reversed = laneContentLayout(rect, [...contents].reverse());
     expect(reversed.map((placement) => placement.id)).toEqual(["c", "b", "a"]);
-    expect(reversed.map((placement) => placement.y)).toEqual(placements.map((placement) => placement.y));
+    expect(reversed.map((placement) => placement.y)).toEqual([
+      LANE_PADDING,
+      LANE_PADDING + 140 + LANE_CONTENT_GAP,
+      LANE_PADDING + 240 + LANE_CONTENT_GAP * 2,
+    ]);
+    expect(reversed.map((placement) => placement.y)).not.toEqual(placements.map((placement) => placement.y));
   });
 
   it("clips what runs past its height rather than spilling it", () => {
@@ -170,20 +177,27 @@ describe("a lane lays its contents out and keeps none of it", () => {
     const lane = read("src/lib/board-lane.ts");
     expect(lane).not.toMatch(/supabase|mutate|\.insert\(|\.update\(|localStorage/i);
     const shell = read("src/components/board/BoardShell.tsx");
-    const laneBlock = shell.slice(shell.indexOf("lanes.map("), shell.indexOf("boardNodes.map("));
+    const laneBlock = shell.slice(shell.indexOf("function BoardLane"));
     expect(laneBlock).toContain("laneContentLayout");
+    expect(laneBlock).toContain("laneVisiblePlacements");
     expect(laneBlock).not.toMatch(/onNodeMove|dragTo|persist/);
   });
 });
 
 describe("the lane inside the shell", () => {
   const laneId = newLaneFrameId("inbox");
-  const frames = [{ id: laneId, x: 0, y: 0, width: 300, height: 260 }];
-  const nodes = [
-    { id: "a", x: 0, y: 0, width: 260, height: 100, frame: laneId },
-    { id: "b", x: 0, y: 0, width: 260, height: 100, frame: laneId },
-    { id: "c", x: 0, y: 0, width: 260, height: 100, frame: laneId },
-  ];
+  // 200 tall, six contents of 100: only the first two fit, so the lane must
+  // mount a window rather than every row. This is the shipped behaviour, not
+  // the helper: 800-plus positioned nodes is the failure being prevented.
+  const frames = [{ id: laneId, x: 0, y: 0, width: 300, height: 200 }];
+  const nodes = ["a", "b", "c", "d", "e", "f"].map((id) => ({
+    id,
+    x: 0,
+    y: 0,
+    width: 260,
+    height: 100,
+    frame: laneId,
+  }));
 
   function renderShell(onNodeMove?: (id: string, to: { x: number; y: number }) => void) {
     return render(
@@ -196,13 +210,28 @@ describe("the lane inside the shell", () => {
     );
   }
 
-  it("clips its contents inside its own scrolling rect", () => {
+  const mounted = () =>
+    Array.from(document.querySelectorAll("[data-lane-content]")).map((element) =>
+      element.getAttribute("data-lane-content"),
+    );
+
+  it("mounts only what is in view plus one item of overscan, behind an honest spacer", () => {
     renderShell();
     const scroller = screen.getByTestId(`board-lane-scroll-${laneId}`);
     expect(scroller.className).toContain("overflow-y-auto");
     expect((scroller.firstElementChild as HTMLElement).style.height)
-      .toBe(`${LANE_PADDING * 2 + 300 + LANE_CONTENT_GAP * 2}px`);
-    expect(screen.getByText("C")).not.toBeNull();
+      .toBe(`${LANE_PADDING * 2 + 600 + LANE_CONTENT_GAP * 5}px`);
+    expect(mounted()).toEqual(["a", "b", "c"]);
+    expect(screen.queryByText("F")).toBeNull();
+  });
+
+  it("changes what it mounts when its own box scrolls", () => {
+    renderShell();
+    const scroller = screen.getByTestId(`board-lane-scroll-${laneId}`);
+    Object.defineProperty(scroller, "scrollTop", { value: 350, configurable: true, writable: true });
+    fireEvent.scroll(scroller);
+    expect(mounted()).toEqual(["c", "d", "e", "f"]);
+    expect(screen.queryByText("A")).toBeNull();
   });
 
   it("never offers a drag on lane contents", () => {
@@ -222,7 +251,7 @@ describe("the lane inside the shell", () => {
     const scroller = screen.getByTestId(`board-lane-scroll-${laneId}`);
     // A real lane can scroll, so the wheel belongs to it and never to the board.
     Object.defineProperty(scroller, "scrollHeight", { value: 400, configurable: true });
-    Object.defineProperty(scroller, "clientHeight", { value: 260, configurable: true });
+    Object.defineProperty(scroller, "clientHeight", { value: 200, configurable: true });
     fireEvent.wheel(scroller, { deltaX: 0, deltaY: 60 });
     expect(stage.style.transform).toBe(before);
   });
