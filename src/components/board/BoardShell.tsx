@@ -333,47 +333,16 @@ export function BoardShell<F extends BoardShellFrame, N extends BoardShellNode>(
             </div>
           ))}
 
-          {lanes.map((lane) => {
-            const contents = nodes.filter((node) => node.frame === lane.id);
-            const placements = laneContentLayout(lane, contents.map<LaneContent>((node) => ({ id: node.id, height: node.height })));
-            const extent = laneContentExtent(contents.map<LaneContent>((node) => ({ id: node.id, height: node.height })));
-            return (
-              <div
-                key={lane.id}
-                data-board-lane={lane.id}
-                className="absolute"
-                style={{ left: lane.x, top: lane.y, width: lane.width, height: lane.height }}
-              >
-                {renderFrame ? renderFrame(lane) : null}
-                <div
-                  data-testid={`board-lane-scroll-${lane.id}`}
-                  className="absolute inset-0 overflow-y-auto overflow-x-hidden"
-                  // Inline, so the lane's own scrolling is a fact of the element
-                  // rather than a stylesheet scrollableUnder may not have read.
-                  style={{ overflowY: "auto", overflowX: "hidden" }}
-                >
-                  <div className="relative w-full" style={{ height: extent }}>
-                    {placements.map((placement) => {
-                      const node = contents[placement.index];
-                      if (!node) return null;
-                      return (
-                        <div
-                          key={node.id}
-                          data-lane-content={node.id}
-                          data-board-node={node.id}
-                          data-selected={selected.has(node.id) ? "true" : "false"}
-                          className="absolute"
-                          style={{ left: placement.x, top: placement.y, width: placement.width, height: placement.height }}
-                        >
-                          {renderNode(node)}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+          {lanes.map((lane) => (
+            <BoardLane
+              key={lane.id}
+              lane={lane}
+              contents={nodes.filter((node) => node.frame === lane.id)}
+              selected={selected}
+              renderNode={renderNode}
+              {...(renderFrame ? { frameChrome: renderFrame(lane) } : {})}
+            />
+          ))}
 
           {boardNodes.map((node) => (
             <div
