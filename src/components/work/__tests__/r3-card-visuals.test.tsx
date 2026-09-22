@@ -36,9 +36,9 @@ describe("R3 card and sticky visual pass", () => {
   });
 
   it("renders a fixed, internally scrollable conversation window", () => {
-    render(<ChatPreviewWindow vendorKey="claude" turns={[{ role: "user", text: "Question" }, { role: "assistant", text: "Answer" }]} />);
+    render(<ChatPreviewWindow vendorKey="claude" turns={[{ turnNo: 1, role: "user", content: "Question" }, { turnNo: 2, role: "assistant", content: "Answer" }]} />);
     const window = screen.getByTestId("chat-preview-window");
-    expect(window).toHaveAttribute("data-chat-border", "claude");
+    expect(window.getAttribute("data-chat-border")).toBe("claude");
     expect(window.className).toContain("chat-preview-window__body");
     expect(styles).toMatch(/\.chat-preview-window__body[\s\S]*height:\s*var\(--nb-chat-preview-height\)/);
     expect(styles).toMatch(/\.chat-preview-window__body[\s\S]*overflow-y:\s*auto/);
