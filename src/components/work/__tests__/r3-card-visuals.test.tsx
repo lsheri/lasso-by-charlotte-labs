@@ -4,6 +4,7 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { ChatPreviewWindow, chatBorderTreatment } from "@/components/work/ChatPreviewWindow";
+import { FocusOverlay } from "@/components/canvas-lab/FocusOverlay";
 import { sourceVendorKey } from "@/components/work/SourceMark";
 const styles = readFileSync(resolve(process.cwd(), "src/styles.css"), "utf8");
 
@@ -61,6 +62,14 @@ describe("R4 paper preview craft pass", () => {
   it("makes only the enlarged conversation reader scrollable", () => {
     expect(styles).toMatch(/\.focus-paper-reader[^{]*\{[^}]*overflow-y:\s*auto/);
     expect(styles).toMatch(/\.focus-paper[^{]*\{[^}]*var\(--nb-paper-shadow-contact\)[^}]*var\(--nb-paper-shadow-ambient\)/);
+  });
+
+  it("keeps the card header marks and vendor border in the enlarged view", () => {
+    const item = { id: "thread", title: "Working session", type: "ai_thread", source: "claude", source_vendor: null, source_meta: {}, visibility: "mapped", captured_at: "2026-09-21T10:00:00Z", work_item_tasks: [] } as never;
+    const node = { id: "node", title: "Working session", typeLabel: "Chat", ownership: "yours", kind: "ai_work", summary: "", x: 0, y: 0, width: 220, height: 300 } as never;
+    render(<FocusOverlay node={node} item={item} onSummarize={() => undefined} onBranch={() => undefined} onClose={() => undefined} />);
+    expect(screen.getByTestId("workboard-expanded-conversation").getAttribute("data-chat-border")).toBe("claude");
+    expect(screen.getByText("Claude")).toBeTruthy();
   });
 
   it("reuses sourceVendorKey rather than detecting the vendor again", () => {
