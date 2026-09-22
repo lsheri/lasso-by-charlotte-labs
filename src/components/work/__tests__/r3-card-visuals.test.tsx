@@ -8,8 +8,8 @@ import { sourceVendorKey } from "@/components/work/SourceMark";
 const styles = readFileSync(resolve(process.cwd(), "src/styles.css"), "utf8");
 
 describe("R3 card and sticky visual pass", () => {
-  it("uses a graphite 1.5px shared edge and a 220px preview floor", () => {
-    expect(styles).toContain("--nb-card-border-width: 1.5px");
+  it("uses a graphite 2px shared edge and a 220px preview floor", () => {
+    expect(styles).toContain("--nb-card-border-width: 2px");
     expect(styles).toContain("--nb-card-min-height: 220px");
     expect(styles).toMatch(/\.nb-paper[\s\S]*border:[^;]*var\(--nb-card-border-width\)[^;]*var\(--nb-graphite\)/);
     expect(styles).toMatch(/\.nb-sticky[\s\S]*border:[^;]*var\(--nb-card-border-width\)[^;]*var\(--nb-graphite\)/);
