@@ -306,7 +306,7 @@ describe("CG1 inbox congruency", () => {
     expect(board.parentElement?.getAttribute("style")).toContain("height: 1376px");
     expect(within(board).getByText("Documents").parentElement?.parentElement?.className).toMatch(/top-0/);
     expect(within(board).getByText("1–5 OF 6").parentElement?.className).toMatch(/bottom-0/);
-    const documentLaneScroll = board.querySelector('[data-board-lane="lane:inbox-document"] > [data-testid^="board-lane-scroll-"]');
+    const documentLaneScroll = board.querySelector('[data-board-lane="lane:inbox-documents"] > [data-testid^="board-lane-scroll-"]');
     expect(documentLaneScroll).not.toBeNull();
     if (!documentLaneScroll) throw new Error("Documents lane scroll box is missing");
     expect(documentLaneScroll.getAttribute("style")).toContain("top: 40px");
