@@ -149,6 +149,7 @@ const rows = [item("mapped", "mapped", "ALPHA"), item("waiting", "unmapped"), it
 
 afterEach(cleanup);
 beforeEach(() => {
+  recorded.length = 0;
   window.matchMedia = vi.fn().mockReturnValue({
     matches: false,
     addEventListener: vi.fn(),
@@ -228,6 +229,10 @@ describe("CG1 inbox congruency", () => {
     const dimmed = readFileSync("src/components/common/DimmedDisabled.tsx", "utf8");
     expect(answer).toContain("--nb-lasso-green");
     expect(dimmed).not.toMatch(/green|lime|lasso/i);
+    inboxRows = [item("claimed", "mapped", "ALPHA")];
+    render(<WorkPage />);
+    fireEvent.click(screen.getByRole("button", { name: "Unmapped" }));
+    expect(screen.getByTestId("dimmed-disabled").className).not.toMatch(/green|lime|lasso/i);
   });
 
   it("marks Inbox cards as fixed and cancels drag", () => {
@@ -239,6 +244,10 @@ describe("CG1 inbox congruency", () => {
     expect(card.querySelector("[data-non-drag-affordance]")).not.toBeNull();
     expect(fireEvent.dragStart(card)).toBe(false);
     expect(onDragStart).toHaveBeenCalledOnce();
+    cleanup();
+    inboxRows = [itemOfType("page-card", "document")];
+    render(<WorkPage />);
+    expect(screen.getByText("page-card").closest('[data-testid="inbox-fixed-card"]')).not.toBeNull();
   });
 
   it("builds one closed event payload per change and preserves zero", () => {
@@ -259,6 +268,10 @@ describe("CG1 inbox congruency", () => {
     const dims = inboxFilterDims("placement", "one", 0);
     recordInboxFilterChange(dims, (value) => emitted.push(value));
     expect(emitted).toEqual([dims]);
+    inboxRows = [item("claimed", "mapped", "ALPHA")];
+    render(<WorkPage />);
+    fireEvent.click(screen.getByRole("button", { name: "Unmapped" }));
+    expect(recorded).toEqual([{ filter: "placement", selected: "one", result_band: "0" }]);
   });
 
   it("keeps four lanes and five-per-page replacement through both wrappers", () => {
@@ -295,6 +308,10 @@ describe("CG1 inbox congruency", () => {
       return /inbox[^\n]*(?:filter|match)[^\n]*(?:green|lime)|(?:green|lime)[^\n]*(?:filter|match)/i.test(source);
     });
     expect(offenders).toEqual([]);
+    inboxRows = [item("claimed", "mapped", "ALPHA")];
+    render(<WorkPage />);
+    fireEvent.click(screen.getByRole("button", { name: "Unmapped" }));
+    expect(screen.getByTestId("dimmed-disabled").className).not.toMatch(/green|lime/);
   });
 });
 
