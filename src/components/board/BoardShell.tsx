@@ -109,8 +109,8 @@ export function BoardShell<F extends BoardShellFrame, N extends BoardShellNode>(
     if (viewport.width <= 0 || viewport.height <= 0) return;
     const result = fitWorkboardViewport(
       viewport,
-      frames,
-      boardNodes,
+      [...frames],
+      [...boardNodes],
       measuredHeights ?? new Map<string, number>(),
       null,
     );
