@@ -38,7 +38,7 @@ describe("R1 region tool", () => {
     const page = readFileSync("src/pages/CanvasLabPage.tsx", "utf8");
 
     expect(page).toMatch(/aria-label="Add grouping"[\s\S]*?<GraphiteIcon name="grouping"/);
-    expect(page).toMatch(/aria-label="Add text"[\s\S]*?<Type/);
+    expect(page).toMatch(/aria-label="Add text"[\s\S]*?<GraphiteIcon name="text"/);
   });
 
   it("uses grouping, never region, in toolbar copy and drawing announcements", () => {

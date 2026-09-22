@@ -46,15 +46,14 @@ export function ShareDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button size="icon" variant="outline" aria-label="Share" data-toolbar-control="share">
-              <GraphiteIcon name="share" animate={false} />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Share</TooltipContent>
-        </Tooltip>
+        <Button size="icon" variant="outline" aria-label="Share" data-toolbar-control="share">
+          <GraphiteIcon name="share" animate={false} />
+        </Button>
       </DialogTrigger>
+      <Tooltip>
+        <TooltipTrigger asChild><span className="sr-only">Share</span></TooltipTrigger>
+        <TooltipContent>Share</TooltipContent>
+      </Tooltip>
       <DialogContent className="max-w-lg overflow-hidden">
         <DialogHeader>
           <DialogTitle>Share this board</DialogTitle>

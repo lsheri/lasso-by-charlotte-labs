@@ -2393,7 +2393,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     toolbarItems.push({
       spec: { id: "region", width: 84, moveOrder: 5 },
       row: <ToolbarIcon label="Add grouping"><Button size="icon" variant={drawTool ? "secondary" : "outline"} aria-label="Add grouping" aria-pressed={drawTool} data-toolbar-control="grouping" onClick={toggleDrawTool}><GraphiteIcon name="grouping" animate={false} /></Button></ToolbarIcon>,
-      menu: <DropdownMenuItem onSelect={toggleDrawTool}><GraphiteIcon name="grouping" className="mr-2" animate={false} />Add grouping</DropdownMenuItem>,
+      menu: <DropdownMenuItem onSelect={toggleDrawTool}>Add grouping</DropdownMenuItem>,
     });
   }
   if (showExample) {
@@ -2452,9 +2452,14 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
             {toolbarItems.filter((item) => toolbarPlan.row.includes(item.spec.id)).map((item) => <div key={item.spec.id} className="flex shrink-0 items-center gap-2">{item.row}</div>)}
             {toolbarOverflowItems.length > 0 ? (
               <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <ToolbarIcon label="More board controls"><Button size="icon" variant="ghost" aria-label="More board controls" data-toolbar-control="more"><GraphiteIcon name="more" animate={false} /></Button></ToolbarIcon>
-                </DropdownMenuTrigger>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <DropdownMenuTrigger asChild>
+                      <Button size="icon" variant="ghost" aria-label="More board controls" data-toolbar-control="more"><GraphiteIcon name="more" animate={false} /></Button>
+                    </DropdownMenuTrigger>
+                  </TooltipTrigger>
+                  <TooltipContent>More board controls</TooltipContent>
+                </Tooltip>
                 <DropdownMenuContent align="end">
                   {toolbarOverflowItems.map((item) => <Fragment key={item.spec.id}>{item.menu}</Fragment>)}
                 </DropdownMenuContent>

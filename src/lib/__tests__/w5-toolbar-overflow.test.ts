@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { planToolbarOverflow, type ToolbarControlSpec } from "@/lib/toolbar-overflow";
+import { TOOLBAR_GAP, planToolbarOverflow, type ToolbarControlSpec } from "@/lib/toolbar-overflow";
 
 const CONTROLS: ToolbarControlSpec[] = [
   { id: "workstreams", width: 170, moveOrder: 1 },
@@ -37,7 +37,7 @@ describe("board toolbar overflow", () => {
 
   it("moves nothing when the row fits and moves in moveOrder order when it does not", () => {
     const widths = CONTROLS.map((control) => control.width);
-    const roomy = widths.reduce((sum, width) => sum + width, 0) + 4 * (widths.length - 1);
+    const roomy = widths.reduce((sum, width) => sum + width, 0) + TOOLBAR_GAP * (widths.length - 1);
     expect(planToolbarOverflow(roomy, CONTROLS).overflow).toEqual([]);
 
     const tight = planToolbarOverflow(roomy - 200, CONTROLS);

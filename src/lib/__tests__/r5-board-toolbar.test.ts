@@ -43,7 +43,7 @@ describe("R5 board toolbar", () => {
 
   it("plans the wider labelled Add work control with the same larger gap as the row", () => {
     expect(TOOLBAR_GAP).toBe(8);
-    expect(page).toContain('className="flex min-w-0 flex-1 items-center justify-end gap-2 overflow-hidden"');
+    expect(page).toContain('className="canvas-lab-toolbar flex min-w-0 flex-1 items-center justify-end gap-2 overflow-hidden"');
     const controls: ToolbarControlSpec[] = [
       { id: "workstreams", width: 40, moveOrder: 1 },
       { id: "display", width: 76, moveOrder: 2 },
@@ -51,7 +51,7 @@ describe("R5 board toolbar", () => {
       { id: "ask", width: 40, pinned: true },
       { id: "zoom", width: 116, pinned: true },
     ];
-    const plan = planToolbarOverflow(310, controls);
+    const plan = planToolbarOverflow(390, controls);
     expect(plan.row).toContain("add-work");
     expect(plan.overflow.length).toBeGreaterThan(0);
     expect([...plan.row, ...plan.overflow].sort()).toEqual(controls.map((control) => control.id).sort());
