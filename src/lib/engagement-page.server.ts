@@ -6,6 +6,7 @@ import {
   composeMembership,
   computeStepOrder,
   type EngagementCoach,
+  type EngagementMemberName,
   type EngagementPagePayload,
   type EngagementRow,
   type EngagementTask,
@@ -41,11 +42,11 @@ export async function buildEngagementPage(
       .eq("engagement_id", engagementId)
       .order("position", { ascending: true })
       .order("created_at", { ascending: true }),
+    // Every member row the caller may see; coaches and members split below.
     supabase
       .from("engagement_members")
       .select(COACHES_SELECT)
-      .eq("engagement_id", engagementId)
-      .eq("member_role", "coach"),
+      .eq("engagement_id", engagementId),
     supabase
       .from("engagement_members")
       .select("member_role")
@@ -64,13 +65,24 @@ export async function buildEngagementPage(
   if (membershipRes.error) throw new Error(membershipRes.error.message);
 
   const tasks = (tasksRes.data ?? []) as unknown as EngagementTask[];
+  const memberRows = (coachesRes.data ?? []) as unknown as (Parameters<
+    typeof composeCoaches
+  >[0][number] & { member_role: string })[];
 
   return {
     engagement: (engagementRes.data ?? null) as unknown as EngagementRow | null,
     tasks,
     coaches: composeCoaches(
-      (coachesRes.data ?? []) as unknown as Parameters<typeof composeCoaches>[0],
+      memberRows.filter((row) => row.member_role === "coach"),
     ) as EngagementCoach[],
+    members: memberRows
+      .filter((row) => row.member_role !== "coach" && row.profiles !== null)
+      .map(
+        (row): EngagementMemberName => ({
+          id: row.profiles!.id,
+          display_name: row.profiles!.display_name,
+        }),
+      ),
     membership: composeMembership((membershipRes.data ?? []) as { member_role: string }[]),
     decisions: (decisionsRes.data ?? []) as DecisionRow[],
     stepOrder: computeStepOrder(tasks),
