@@ -58,7 +58,7 @@ export function WorkNote({
   return (
     <div
       ref={live}
-      className={`nb-paper ${displayMode === "preview" && hasPreview ? "canvas-lab-paper-preview" : ""} ${className}`}
+      className={`nb-paper ${displayMode === "preview" && hasPreview ? "canvas-lab-paper-preview nb-preview-card" : ""} ${className}`}
       data-paper-state={item.visibility}
       data-client-label={clientLabel ?? undefined}
       style={{

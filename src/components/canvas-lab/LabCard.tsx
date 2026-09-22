@@ -60,7 +60,7 @@ export function LabCard({
   focused: boolean;
   focusOnMount?: boolean;
   onSelect: () => void;
-  onOpen: () => void;
+  onOpen: (origin?: DOMRect) => void;
   onBranch: () => void;
   onHide: () => void;
   onDelete: () => void;
@@ -149,7 +149,7 @@ export function LabCard({
     if (lastClickMovedRef.current) return;
     if ((event.target as Element).closest("button,textarea")) return;
     event.stopPropagation();
-    onOpen();
+    onOpen(cardRef.current?.getBoundingClientRect());
   }
 
   const anchors: LabAnchor[] = ["top", "right", "bottom", "left"];
@@ -180,12 +180,12 @@ export function LabCard({
       className="canvas-lab-card group absolute text-left outline-none"
     >
       <div ref={paperRef} data-selected={selected} data-focused={focused} data-connect-source={connectSourceAnchor !== null} className="canvas-lab-card-paper h-full w-full overflow-hidden">
-        {hasPreview && item ? <LabPreview item={item} preview={preview} filePreview={filePreview} focused={focused} onFailure={() => setPreviewFailed(true)} onPreviewScroll={onPreviewScroll} onOpen={onOpen} /> : <div data-drawing="sticky" className="h-full"><LabPaper node={node} item={item} selected={selected} focused={focused} displayMode={stickyHasThumbnail ? "preview" : "sticky"} preview={preview} filePreview={filePreview} onPreviewScroll={onPreviewScroll} showOwnership={!readOnly} onEdit={onEdit} onEditCommitted={onEditCommitted} commentCount={commentCount} onOpenComments={onOpenComments} onOpenTrail={readOnly || !node.deliverable ? undefined : onOpen} /></div>}
+        {hasPreview && item ? <LabPreview item={item} preview={preview} filePreview={filePreview} onFailure={() => setPreviewFailed(true)} onPreviewScroll={onPreviewScroll} onOpen={() => onOpen(cardRef.current?.getBoundingClientRect())} /> : <div data-drawing="sticky" className="h-full"><LabPaper node={node} item={item} selected={selected} displayMode={stickyHasThumbnail ? "preview" : "sticky"} preview={preview} filePreview={filePreview} showOwnership={!readOnly} onEdit={onEdit} onEditCommitted={onEditCommitted} commentCount={commentCount} onOpenComments={onOpenComments} onOpenTrail={readOnly || !node.deliverable ? undefined : () => onOpen(cardRef.current?.getBoundingClientRect())} /></div>}
         {selected ? <Paperclip aria-hidden="true" className="canvas-lab-context-mark" /> : null}
       </div>
       {canResize && focused && !readOnly ? (["nw", "ne", "se", "sw"] as LabResizeCorner[]).map((corner) => <button key={corner} type="button" className="canvas-lab-resize-handle" data-corner={corner} aria-label={`Resize ${node.title} from ${corner}`} onDoubleClick={(event) => { event.stopPropagation(); onFit(); }} onPointerDown={(event) => onResizeStart(corner, event)} onKeyDown={(event) => onResizeKeyDown(corner, event)} onKeyUp={onResizeKeyUp} />) : null}
       {readOnly ? null : anchors.map((side) => <button key={side} type="button" className="canvas-lab-anchor" data-node-id={node.id} data-side={side} data-active={connectSourceAnchor === side} aria-label={`Connect from ${side}`} onPointerDown={(event) => { anchorDownRef.current = { x: event.clientX, y: event.clientY }; onAnchorPointerDown(side, event); }} onClick={(event) => { event.stopPropagation(); const down = anchorDownRef.current; anchorDownRef.current = null; if (down && Math.hypot(event.clientX - down.x, event.clientY - down.y) >= 6) return; onAnchorActivate(side); }} />)}
-      {readOnly ? null : <LabCardMenu selected={selected} canBranch={node.ownership === "teammate" || node.kind === "chat"} local={Boolean(node.local || node.kind === "chat")} removable={node.kind !== "judgment" || Boolean(node.local)} open={menuOpen} onOpenChange={changeMenuOpen} cardRef={cardRef} onSelect={onSelect} onOpen={onOpen} onBranch={onBranch} onHide={onHide} onDelete={onDelete} onTakeOutOfContext={onTakeOutOfContext} onFit={canResize ? onFit : undefined} frameChoices={structured ? frameChoices : []} currentFrame={node.frame} onMoveToFrame={structured && canResize ? onMoveToFrame : undefined} />}
+      {readOnly ? null : <LabCardMenu selected={selected} canBranch={node.ownership === "teammate" || node.kind === "chat"} local={Boolean(node.local || node.kind === "chat")} removable={node.kind !== "judgment" || Boolean(node.local)} open={menuOpen} onOpenChange={changeMenuOpen} cardRef={cardRef} onSelect={onSelect} onOpen={() => onOpen(cardRef.current?.getBoundingClientRect())} onBranch={onBranch} onHide={onHide} onDelete={onDelete} onTakeOutOfContext={onTakeOutOfContext} onFit={canResize ? onFit : undefined} frameChoices={structured ? frameChoices : []} currentFrame={node.frame} onMoveToFrame={structured && canResize ? onMoveToFrame : undefined} />}
     </div>
   );
 }
