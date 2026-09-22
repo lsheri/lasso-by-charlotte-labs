@@ -32,7 +32,7 @@ describe("R4.1 grouping name popup", () => {
     const popup = portalRoot.querySelector('[data-grouping-name-popup="true"]');
     expect(popup).not.toBeNull();
     expect(view.getByTestId("clipping-frame").contains(popup)).toBe(false);
-    expect(view.getByLabelText("Name this grouping")).toHaveFocus();
+    expect(document.activeElement).toBe(view.getByLabelText("Name this grouping"));
     expect(portalRoot.textContent).toContain(REGION_NAMING_LINE);
     fireEvent.click(view.getByLabelText("Dismiss naming"));
     fireEvent.keyDown(window, { key: "Escape" });
