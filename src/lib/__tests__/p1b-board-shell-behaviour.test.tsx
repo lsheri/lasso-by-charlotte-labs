@@ -317,3 +317,32 @@ describe("the fit", () => {
     expect(view().pan.y).toBeCloseTo(wanted.pan.y, 6);
   });
 });
+
+// ---- the fit does not run on content identity ----------------------------
+
+describe("a hand-moved board", () => {
+  it("keeps its pan through an ordinary re-render after a size change", () => {
+    // The size change first: it is what arms the refit path at all.
+    const { rerender } = mount();
+    viewport.width = 860;
+    viewport.height = 700;
+    act(() => {
+      for (const callback of resizeCallbacks) callback();
+    });
+
+    // Move the view by hand, so a refit would be visible as a snap back.
+    wheel({ deltaY: 180, deltaX: 120 });
+    const moved = view();
+
+    // An ordinary re-render: same content, fresh array identities, same size.
+    act(() => {
+      rerender(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        <BoardShell {...({ frames: [], nodes: NODES.map((node) => ({ ...node })), renderNode: (node: any) => <span>{node.id}</span> } as any)} />,
+      );
+    });
+
+    expect(view().pan).toEqual(moved.pan);
+    expect(view().zoom).toBe(moved.zoom);
+  });
+});
