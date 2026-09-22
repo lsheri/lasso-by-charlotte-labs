@@ -41,7 +41,7 @@ const read = (path: string) => readFileSync(path, "utf8");
  * of two empty lists.
  */
 function importedNames(source: string, module: string): string[] {
-  const match = source.match(new RegExp(`import\\s*\\{([\\s\\S]*?)\\}\\s*from\\s*"${module}"`));
+  const match = source.match(new RegExp(`import\\s*\\{([^}]*)\\}\\s*from\\s*"${module}"`));
   if (!match) return [];
   return (match[1] ?? "")
     .split(",")
