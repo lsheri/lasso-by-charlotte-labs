@@ -4620,6 +4620,28 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   padding: 10px 11px 11px;
 }
 
+/* The conversation board is a glance: one compact question, without changing other cards. */
+.conversation-card-compact > .nb-paper > .nb-paper-body {
+  padding: 8px 9px;
+}
+.conversation-card-compact .nb-paper-body > p:first-of-type {
+  display: -webkit-box;
+  min-height: 36px;
+  max-height: 36px;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+.conversation-card-compact .nb-preview-content[data-preview-shape="portrait"] {
+  height: 64px;
+  aspect-ratio: auto;
+  padding: 4px 0;
+}
+.conversation-card-compact .chat-preview-window,
+.conversation-card-compact .chat-preview-window__body {
+  min-height: 0;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .nb-paper,
   .nb-gust .nb-paper {

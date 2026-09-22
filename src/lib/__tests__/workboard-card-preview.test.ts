@@ -18,7 +18,7 @@ describe("workboard card previews", () => {
     expect(workboardDisplayModeKey("person", "engagement")).toContain("person:engagement");
   });
 
-  it("uses one caller-scoped read and returns only the last three turns", async () => {
+  it("uses one caller-scoped read, preserves the first user turn, and returns the last three turns", async () => {
     const rows = Array.from({ length: 5 }, (_, index) => ({
       work_item_id: "visible-chat",
       turn_no: index + 1,
@@ -35,6 +35,7 @@ describe("workboard card previews", () => {
     expect(db.from).toHaveBeenCalledTimes(1);
     expect(inFn).toHaveBeenCalledWith("work_item_id", ["visible-chat"]);
     expect(result[0]?.turns.map((turn) => turn.turnNo)).toEqual([3, 4, 5]);
+    expect(result[0]?.firstUserTurn).toEqual({ turnNo: 1, role: "user", content: "turn 1" });
     expect(result[0]?.turnCount).toBe(5);
     expect(result[0]?.turns[2]?.content).toHaveLength(400);
   });
