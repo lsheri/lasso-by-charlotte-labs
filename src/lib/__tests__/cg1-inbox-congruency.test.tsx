@@ -534,18 +534,18 @@ describe("CG2 AI conversations congruency", () => {
     fireEvent.change(search, { target: { value: "nothing here" } });
 
     expect(screen.getByText("No chats match that search.")).toBeTruthy();
-    expect(search).toBeInTheDocument();
-    expect(search).toHaveValue("nothing here");
-    expect(screen.getByRole("group", { name: "Filter by tool" })).toBeInTheDocument();
-    expect(screen.getByRole("group", { name: "Filter by engagement" })).toBeInTheDocument();
-    expect(screen.getByText(`Showing 0 of ${inboxRows.length}. Nothing is deleted here.`)).toBeInTheDocument();
+    expect(document.body.contains(search)).toBe(true);
+    expect((search as HTMLInputElement).value).toBe("nothing here");
+    expect(screen.getByRole("group", { name: "Filter by tool" })).toBeTruthy();
+    expect(screen.getByRole("group", { name: "Filter by engagement" })).toBeTruthy();
+    expect(screen.getByText(`Showing 0 of ${inboxRows.length}. Nothing is deleted here.`)).toBeTruthy();
     expect(screen.getByTestId("board-shell").querySelectorAll("[data-board-lane]")).toHaveLength(0);
 
     fireEvent.change(search, { target: { value: "" } });
 
-    expect(search).toHaveValue("");
+    expect((search as HTMLInputElement).value).toBe("");
     expect(screen.queryByText("No chats match that search.")).toBeNull();
-    for (const row of inboxRows) expect(screen.getByText(row.title)).toBeInTheDocument();
+    for (const row of inboxRows) expect(screen.getByText(row.title)).toBeTruthy();
   });
 
   it("does not use green or lime to decide AI conversation filter-match styling", () => {
