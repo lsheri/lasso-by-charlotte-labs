@@ -191,47 +191,70 @@ export async function fetchProfile(): Promise<Profile | null> {
 }
 
 export function useProfiles() {
+  const client = useQueryClient();
+  // Registering here keeps the non-React helpers on the same cache as the app.
+  registerProfileQueryClient(client);
   return useQuery({ queryKey: ["profiles"], queryFn: fetchProfiles, staleTime: 60_000 });
+}
+
+/** The signed-in user, read once per session however many consumers ask. */
+export function useAuthUser() {
+  return useQuery(authUserOptions);
+}
+
+/** The stored workspace choice, read through the cache, one request for all. */
+export function useStoredActiveProfileId(userId: string | null) {
+  return useQuery({
+    queryKey: [...ACTIVE_PROFILE_ROW_KEY, userId ?? "none"],
+    queryFn: () => fetchStoredActiveProfileId(userId as string),
+    enabled: Boolean(userId),
+    staleTime: 60_000,
+  });
 }
 
 /**
  * Someone who has never switched has no row, so the database falls back to
  * showing every workspace they belong to. Safe, but not what they expect, so
  * the first resolved choice is written once. An existing row is never
- * overwritten here: only an explicit switch does that.
+ * overwritten here: only an explicit switch does that. The guard lives at
+ * module scope, so the hundredth consumer and a remount during navigation do
+ * not repeat the first one's write.
  */
-function useSeedActiveProfile(active: Profile | null): void {
-  const seeded = useRef(false);
+function useSeedActiveProfile(
+  active: Profile | null,
+  userId: string | null,
+  storedId: string | null | undefined,
+  storedResolved: boolean,
+): void {
   useEffect(() => {
-    if (!active || seeded.current) return;
-    seeded.current = true;
-    void (async () => {
-      const { data: userData } = await supabase.auth.getUser();
-      const userId = userData.user?.id;
-      if (!userId) {
-        seeded.current = false;
-        return;
-      }
-      const { data: existing, error } = await supabase
-        .from("user_active_profile")
-        .select("user_id")
-        .eq("user_id", userId)
-        .maybeSingle();
-      if (error || existing) return;
-      await writeActiveProfileRow(active.id);
-    })();
-  }, [active]);
+    if (!active || !userId || !storedResolved) return;
+    if (storedId) return;
+    if (seededUsers.has(userId)) return;
+    seededUsers.add(userId);
+    void writeActiveProfileRow(active.id, userId).then(() => {
+      sharedQueryClient?.invalidateQueries({ queryKey: ACTIVE_PROFILE_ROW_KEY });
+    });
+  }, [active, userId, storedId, storedResolved]);
 }
 
 /** The active profile, the only one, or the most recently used. */
 export function useProfile() {
   const query = useProfiles();
   const activeId = useActiveProfileId();
+  const userQuery = useAuthUser();
+  const userId = userQuery.data?.id ?? null;
+  const storedQuery = useStoredActiveProfileId(userId);
   const profiles = query.data ?? [];
   const active = pickActive(profiles, activeId);
-  useSeedActiveProfile(active);
+  useSeedActiveProfile(
+    active,
+    userId,
+    storedQuery.data,
+    Boolean(userId) && !storedQuery.isPending && !storedQuery.isError,
+  );
   return { ...query, data: active, profiles };
 }
+
 
 export const ROLE_LABELS: Record<string, string> = {
   em: "Engagement Mgr",
