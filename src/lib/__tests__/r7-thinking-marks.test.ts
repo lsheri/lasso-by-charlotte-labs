@@ -19,10 +19,14 @@ describe("R7 Ask Lasso thinking marks", () => {
     expect(surface).toContain("<ThinkingTrail");
   });
 
-  it("places the signature beside the Lasso message name and reuses the sidebar loop for replies", () => {
+  it("places one signature in the shared panel header and reuses the sidebar loop for replies", () => {
     expect(surface).toContain('import { LassoLoopMark } from "@/components/layout/LassoLoopMark"');
-    expect(surface).toContain('kind="signature"');
-    expect(surface).toContain("size={LOOP_SIZE_CHAT}");
+    const header = surface.slice(surface.indexOf("<header"), surface.indexOf("</header>"));
+    const messages = surface.slice(surface.indexOf("function MessagesTab"), surface.indexOf("const HISTORY_DEFAULT_SHOWN"));
+    expect(header).toContain('kind="signature"');
+    expect(header).toContain("size={LOOP_SIZE_CHAT}");
+    expect(surface.match(/kind="signature"/g)).toHaveLength(1);
+    expect(messages).not.toContain('kind="signature"');
     expect(surface).toContain('<LassoLoopMark className="size-7 shrink-0 text-green" />');
     expect(surface).toContain('{assistant ? "Lasso" : "You"}');
   });

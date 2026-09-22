@@ -2,6 +2,7 @@
 
 - [x] M1: Replace the board Ask mark with the signature loop and reuse the sidebar loop for Lasso reply avatars.
 - [x] M1: Add deterministic signature-loop maths, reduced-motion behavior, and focused guards.
+- [x] M1.1: Correct signature travel, easing, continuous breath, and single panel-header placement.
 
 - [x] P3.3: Compact conversation cards to one first-user quote while preserving lane derivation and zoom-one fit.
 

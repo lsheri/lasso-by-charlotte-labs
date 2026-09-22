@@ -33,13 +33,9 @@ function easeInOutCubic(value: number): number {
   return value < 0.5 ? 4 * value * value * value : 1 - Math.pow(-2 * value + 2, 3) / 2;
 }
 
-function smoothstep(value: number): number {
-  const bounded = clamp(value, 0, 1);
-  return bounded * bounded * (3 - 2 * bounded);
-}
-
 function cyclePhase(value: number): number {
-  return ((value % 1) + 1) % 1;
+  const wrapped = ((value % 1) + 1) % 1;
+  return Math.round(wrapped * 1_000_000_000_000) / 1_000_000_000_000;
 }
 
 export function cohesionAt(phase: number): number {
@@ -48,6 +44,14 @@ export function cohesionAt(phase: number): number {
   if (p < 0.54) return easeOutCubic((p - 0.4) / 0.14);
   if (p < 0.7) return 1;
   return 1 - easeInOutCubic((p - 0.7) / 0.3);
+}
+
+export function turnFractionAt(phase: number): number {
+  const p = cyclePhase(phase);
+  if (p < 0.4) return 0.72 * (p / 0.4);
+  if (p < 0.54) return 0.72 + 0.16 * easeOutCubic((p - 0.4) / 0.14);
+  if (p < 0.7) return 0.88 + 0.02 * ((p - 0.54) / 0.16);
+  return 0.9 + 0.1 * easeInOutCubic((p - 0.7) / 0.3);
 }
 
 export function stampRadiusFor(size: number): number {
@@ -71,10 +75,10 @@ function grain(index: number, salt: number): number {
 export function loopStamps(timeSeconds: number, size: number): LoopStamp[] {
   const cycleSeconds = LOOP_CYCLE_MS / 1000;
   const elapsedCycles = timeSeconds / cycleSeconds;
-  const cycleIndex = Math.floor(elapsedCycles);
   const phase = cyclePhase(elapsedCycles);
+  const superPhase = cyclePhase(elapsedCycles / LOOP_SUPER_PERIOD);
   const cohesion = cohesionAt(phase);
-  const rotation = Math.PI * 2 * smoothstep(phase);
+  const rotation = Math.PI * 2 * turnFractionAt(phase);
   const cx = size / 2;
   const cy = size / 2;
   const rx = size * LOOP_RX_RATIO;
@@ -83,22 +87,27 @@ export function loopStamps(timeSeconds: number, size: number): LoopStamp[] {
   const alphaScale = 1 - LOOP_DOT_ALPHA_FADE * cohesion;
 
   return Array.from({ length: LOOP_STAMPS }, (_, index) => {
-    const theta = (Math.PI * 2 * index) / LOOP_STAMPS;
+    const baseTheta = (Math.PI * 2 * index) / LOOP_STAMPS;
+    const theta = baseTheta + rotation;
     const cluster = index % LOOP_DOTS;
     const clusterAngle = (Math.PI * 2 * cluster) / LOOP_DOTS + rotation;
     const angle = theta + shortestArc(theta, clusterAngle) * cohesion;
-    const breath = 0.82 + 0.18 * Math.sin((Math.PI * 2 * cycleIndex) / LOOP_SUPER_PERIOD + theta);
+    const breath =
+      0.82 +
+      0.18 * Math.sin(Math.PI * 2 * superPhase + baseTheta);
     const rxAtTheta =
       rx *
       (1 +
         breath *
-          (0.045 * Math.sin(3 * theta) +
-            0.028 * Math.sin(7 * theta + 1.7) +
-            0.017 * Math.sin(11 * theta + 4.1)));
+          (0.045 * Math.sin(3 * baseTheta) +
+            0.028 * Math.sin(7 * baseTheta + 1.7) +
+            0.017 * Math.sin(11 * baseTheta + 4.1)));
     const kyAtTheta =
       LOOP_KY *
       (1 +
-        breath * (0.06 * Math.sin(2 * theta + 0.9) + 0.035 * Math.sin(5 * theta + 2.6)));
+        breath *
+          (0.06 * Math.sin(2 * baseTheta + 0.9) +
+            0.035 * Math.sin(5 * baseTheta + 2.6)));
     const z = Math.sin(angle);
     const depth = (z + 1) / 2;
     const grainX = grain(index, 1) - 0.5;
