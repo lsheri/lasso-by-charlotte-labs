@@ -119,10 +119,10 @@ export function BoardShell<F extends BoardShellFrame, N extends BoardShellNode>(
 
   // ---- the fit, on mount and on every viewport change -------------------
 
-  const fit = useCallback(() => {
+  const fit = useCallback((reportedViewport?: LabViewportSize) => {
     const shell = shellRef.current;
     if (!shell) return;
-    const viewport = { width: shell.clientWidth, height: shell.clientHeight };
+    const viewport = reportedViewport ?? { width: shell.clientWidth, height: shell.clientHeight };
     if (viewport.width <= 0 || viewport.height <= 0) return;
     const result = fitWorkboardViewport(
       viewport,
@@ -150,12 +150,15 @@ export function BoardShell<F extends BoardShellFrame, N extends BoardShellNode>(
   useEffect(() => {
     const shell = shellRef.current;
     if (!shell || typeof ResizeObserver === "undefined") return;
-    const observer = new ResizeObserver(() => {
-      const next = { width: shell.clientWidth, height: shell.clientHeight };
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries.find((candidate) => candidate.target === shell) ?? entries[0];
+      const next = entry
+        ? { width: entry.contentRect.width, height: entry.contentRect.height }
+        : { width: shell.clientWidth, height: shell.clientHeight };
       if (!viewportSizeChanged(observedSizeRef.current, next)) return;
       observedSizeRef.current = next;
       onViewportSizeChangeRef.current?.(next);
-      fitRef.current();
+      fitRef.current(next);
     });
     observer.observe(shell);
     return () => observer.disconnect();

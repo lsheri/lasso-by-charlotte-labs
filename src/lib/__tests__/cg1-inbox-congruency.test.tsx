@@ -355,21 +355,25 @@ describe("CG1 inbox congruency", () => {
   it("recomputes the Inbox span and symmetric gaps after the shell reports a live width change", async () => {
     const width = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "clientWidth");
     const height = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "clientHeight");
-    const live = { width: 1094, height: 1376 };
+    const reported = { width: 1094, height: 1376 };
     const callbacks = new Set<ResizeObserverCallback>();
+    const entry = () => ({
+      target: screen.getByTestId("board-shell"),
+      contentRect: { width: reported.width, height: reported.height },
+    }) as unknown as ResizeObserverEntry;
     class LiveResizeObserver {
       constructor(private readonly callback: ResizeObserverCallback) {}
-      observe() { callbacks.add(this.callback); this.callback([], this as unknown as ResizeObserver); }
+      observe() { callbacks.add(this.callback); this.callback([entry()], this as unknown as ResizeObserver); }
       disconnect() { callbacks.delete(this.callback); }
       unobserve() { callbacks.delete(this.callback); }
     }
     Object.defineProperty(HTMLElement.prototype, "clientWidth", {
       configurable: true,
-      get(this: HTMLElement) { return this.dataset["testid"] === "board-shell" ? live.width : 0; },
+      get(this: HTMLElement) { return this.dataset["testid"] === "board-shell" ? 1094 : 0; },
     });
     Object.defineProperty(HTMLElement.prototype, "clientHeight", {
       configurable: true,
-      get(this: HTMLElement) { return this.dataset["testid"] === "board-shell" ? live.height : 0; },
+      get(this: HTMLElement) { return this.dataset["testid"] === "board-shell" ? 1376 : 0; },
     });
     vi.stubGlobal("ResizeObserver", LiveResizeObserver);
     const boardMetrics = () => {
@@ -382,15 +386,70 @@ describe("CG1 inbox congruency", () => {
       const left = Number.parseFloat(lanes[0]?.style.left ?? "0") * zoom + panX;
       const last = lanes[3];
       const right = last ? (Number.parseFloat(last.style.left) + Number.parseFloat(last.style.width)) * zoom + panX : 0;
-      return { span: right - left, left, right: live.width - right, zoom };
+      return { span: right - left, left, right: reported.width - right, zoom };
     };
     try {
       inboxRows = Array.from({ length: 5 }, (_, index) => itemOfType(`responsive-document-${index + 1}`, "document"));
       render(<WorkPage />);
       await waitFor(() => expect(boardMetrics()).toEqual({ span: 1030, left: 32, right: 32, zoom: 1 }));
-      live.width = 1286;
-      act(() => { for (const callback of callbacks) callback([], {} as ResizeObserver); });
+      reported.width = 1286;
+      act(() => { for (const callback of callbacks) callback([entry()], {} as ResizeObserver); });
       await waitFor(() => expect(boardMetrics()).toEqual({ span: 1222, left: 32, right: 32, zoom: 1 }));
+    } finally {
+      vi.unstubAllGlobals();
+      if (width) Object.defineProperty(HTMLElement.prototype, "clientWidth", width);
+      else Reflect.deleteProperty(HTMLElement.prototype, "clientWidth");
+      if (height) Object.defineProperty(HTMLElement.prototype, "clientHeight", height);
+      else Reflect.deleteProperty(HTMLElement.prototype, "clientHeight");
+    }
+  });
+
+  it("recentres the fixed conversation month span from the reported live width", async () => {
+    const width = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "clientWidth");
+    const height = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "clientHeight");
+    const reported = { width: 1094, height: 1376 };
+    const callbacks = new Set<ResizeObserverCallback>();
+    const entry = () => ({
+      target: screen.getByTestId("board-shell"),
+      contentRect: { width: reported.width, height: reported.height },
+    }) as unknown as ResizeObserverEntry;
+    class LiveResizeObserver {
+      constructor(private readonly callback: ResizeObserverCallback) {}
+      observe() { callbacks.add(this.callback); this.callback([entry()], this as unknown as ResizeObserver); }
+      disconnect() { callbacks.delete(this.callback); }
+      unobserve() { callbacks.delete(this.callback); }
+    }
+    Object.defineProperty(HTMLElement.prototype, "clientWidth", {
+      configurable: true,
+      get(this: HTMLElement) { return this.dataset["testid"] === "board-shell" ? 1094 : 0; },
+    });
+    Object.defineProperty(HTMLElement.prototype, "clientHeight", {
+      configurable: true,
+      get(this: HTMLElement) { return this.dataset["testid"] === "board-shell" ? 1376 : 0; },
+    });
+    vi.stubGlobal("ResizeObserver", LiveResizeObserver);
+    const boardMetrics = () => {
+      const lanes = Array.from(screen.getByTestId("board-shell").querySelectorAll<HTMLElement>("[data-board-lane]"));
+      const stage = screen.getByTestId("board-shell-stage") as HTMLElement;
+      const transform = stage.style.transform.match(/translate\((-?[\d.]+)px,\s*(-?[\d.]+)px\)\s*scale\((-?[\d.]+)\)/);
+      if (!transform || lanes.length !== 4) throw new Error("Conversation board metrics unavailable");
+      const panX = Number(transform[1]);
+      const zoom = Number(transform[3]);
+      const left = Number.parseFloat(lanes[0]?.style.left ?? "0") * zoom + panX;
+      const last = lanes[3];
+      const right = last ? (Number.parseFloat(last.style.left) + Number.parseFloat(last.style.width)) * zoom + panX : 0;
+      return { span: right - left, left, right: reported.width - right, zoom };
+    };
+    try {
+      inboxRows = ["09", "08", "07", "06"].map((month) => ({
+        ...conversation(`conversation-${month}`, "claude", "ALPHA"),
+        captured_at: `2026-${month}-10T10:00:00Z`,
+      }));
+      render(<AiRecordPage />);
+      await waitFor(() => expect(boardMetrics()).toEqual({ span: 1030, left: 32, right: 32, zoom: 1 }));
+      reported.width = 1286;
+      act(() => { for (const callback of callbacks) callback([entry()], {} as ResizeObserver); });
+      await waitFor(() => expect(boardMetrics()).toEqual({ span: 1030, left: 128, right: 128, zoom: 1 }));
     } finally {
       vi.unstubAllGlobals();
       if (width) Object.defineProperty(HTMLElement.prototype, "clientWidth", width);
