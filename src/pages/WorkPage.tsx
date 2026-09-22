@@ -104,7 +104,7 @@ type InboxLaneFrame = BoardShellFrame & { bucket: Bucket; entryCount: number };
 type InboxLaneNode = BoardShellNode & { entry: WorkItemRow | ConversationGroup };
 
 const INBOX_LANE_WIDTH = 300;
-const INBOX_LANE_HEIGHT = 560;
+const INBOX_LANE_HEIGHT = 1200;
 const INBOX_LANE_GAP = 36;
 const INBOX_LANE_TOP = 88;
 const INBOX_CARD_HEIGHT = 220;
