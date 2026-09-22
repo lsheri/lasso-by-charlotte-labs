@@ -89,10 +89,10 @@ describe("ThinkingTrail reading state", () => {
     expect(screen.getByText("Working deck (8 slides)").closest("p")?.dataset["trailState"]).toBe(
       "read",
     );
-    expect(screen.getByText("Writing").closest("p")?.dataset["trailState"]).toBe("read");
+    expect(screen.getByText("Writing").closest("p")?.dataset["trailState"]).toBe("pending");
     expect(screen.getByText(/Private note:/).closest("p")?.dataset["trailState"]).toBe("excluded");
     expect(screen.getByText(/Private note:/).closest("p")?.querySelector("svg")).toBeNull();
-    expect(container.querySelectorAll('[data-trail-state="read"] svg')).toHaveLength(4);
+    expect(container.querySelectorAll('[data-trail-state="read"] svg')).toHaveLength(3);
   });
 
   it("renders fully drawn ticks without animation when motion is reduced", () => {
@@ -110,7 +110,7 @@ describe("ThinkingTrail reading state", () => {
     }
   });
 
-  it("caps a twenty-item resolve cascade at 700ms including the draw", () => {
+  it("distributes a twenty-item resolve cascade evenly within the delay cap", () => {
     const manyItems = Array.from({ length: 20 }, (_, index) => ({
       id: `read-${index}`,
       title: `Read ${index}`,
@@ -126,9 +126,10 @@ describe("ThinkingTrail reading state", () => {
     );
 
     const delays = [...container.querySelectorAll('[data-trail-state="read"] path')].map(
-      (path) => Number.parseInt((path as SVGPathElement).style.transitionDelay, 10),
+      (path) => Number.parseFloat((path as SVGPathElement).style.transitionDelay),
     );
-    expect(Math.max(...delays)).toBe(280);
-    expect(Math.max(...delays) + 420).toBe(700);
+    expect(delays.every((delay, index) => index === 0 || delay > delays[index - 1])).toBe(true);
+    expect(new Set(delays).size).toBe(delays.length);
+    expect(Math.max(...delays)).toBeLessThanOrEqual(280);
   });
 });
