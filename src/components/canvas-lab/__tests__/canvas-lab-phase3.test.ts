@@ -89,7 +89,9 @@ describe("applyDurableBoard", () => {
       }],
     });
     const stored = applyDurableBoard({ frames: baseFrames, nodes: baseNodes }, saved).nodes.find((node) => node.id === "work:work-1");
-    const missing = applyDurableBoard({ frames: baseFrames, nodes: baseNodes }, board({ nodes: [{ ...saved.nodes[0]!, h: 0 }] })).nodes.find((node) => node.id === "work:work-1");
+    const savedNode = saved.nodes[0];
+    if (!savedNode) throw new Error("saved node fixture missing");
+    const missing = applyDurableBoard({ frames: baseFrames, nodes: baseNodes }, board({ nodes: [{ ...savedNode, h: 0 }] })).nodes.find((node) => node.id === "work:work-1");
 
     expect(stored?.height).toBe(150);
     expect(missing?.height).toBe(220);
