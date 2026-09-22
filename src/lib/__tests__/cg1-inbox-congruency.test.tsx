@@ -122,7 +122,14 @@ vi.mock("@/hooks/use-motion", () => ({ useMotion: () => ({ className: "" }) }));
 vi.mock("@/integrations/supabase/client", () => ({ supabase: {} }));
 
 import { WorkPage } from "@/pages/WorkPage";
-import { AiRecordPage } from "@/pages/AiRecordPage";
+import {
+  AiRecordPage,
+  CONVERSATION_CARD_HEIGHT,
+  CONVERSATION_CARD_LABEL_ROW_HEIGHT,
+  CONVERSATION_CARD_PADDING_HEIGHT,
+  CONVERSATION_CARD_QUOTE_HEIGHT,
+  CONVERSATION_CARD_TITLE_HEIGHT,
+} from "@/pages/AiRecordPage";
 
 function item(id: string, visibility: WorkItemRow["visibility"], code?: string): WorkItemRow {
   return {
@@ -408,22 +415,18 @@ describe("CG2 AI conversations congruency", () => {
 
     render(<AiRecordPage />);
 
-    const source = readFileSync("src/pages/AiRecordPage.tsx", "utf8");
-    const namedPart = (name: string) => Number(source.match(new RegExp(`export const ${name} = (\\d+);`))?.[1] ?? Number.NaN);
-    const cardHeight = namedPart("CONVERSATION_CARD_HEIGHT");
     const parts = [
-      "CONVERSATION_CARD_LABEL_ROW_HEIGHT",
-      "CONVERSATION_CARD_TITLE_HEIGHT",
-      "CONVERSATION_CARD_QUOTE_HEIGHT",
-      "CONVERSATION_CARD_PADDING_HEIGHT",
-    ].map(namedPart);
+      CONVERSATION_CARD_LABEL_ROW_HEIGHT,
+      CONVERSATION_CARD_TITLE_HEIGHT,
+      CONVERSATION_CARD_QUOTE_HEIGHT,
+      CONVERSATION_CARD_PADDING_HEIGHT,
+    ];
     const card = screen.getByText("Question first").closest<HTMLElement>("[data-lane-content]");
-    expect(source).toContain("export const CONVERSATION_CARD_HEIGHT =\n  CONVERSATION_CARD_LABEL_ROW_HEIGHT");
+    expect(CONVERSATION_CARD_HEIGHT).toBe(parts.reduce((sum, part) => sum + part, 0));
     expect(card?.style.height).toBe(`${parts.reduce((sum, part) => sum + part, 0)}px`);
     expect(screen.getAllByTestId("conversation-card-turn")).toHaveLength(1);
     expect(screen.getByText("user: How should I frame this?")).toBeTruthy();
     expect(screen.queryByText(/Start with the answer|Then what/)).toBeNull();
-    expect(Number.isNaN(cardHeight)).toBe(true);
   });
 
   it("keeps the four conversation vendor borders exact", () => {
