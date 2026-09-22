@@ -261,7 +261,7 @@ describe("CG1 inbox congruency", () => {
     expect(emitted).toEqual([dims]);
   });
 
-  it("keeps column geometry and five-per-page replacement through both wrappers", () => {
+  it("keeps four lanes and five-per-page replacement through both wrappers", () => {
     inboxRows = Array.from({ length: 6 }, (_, index) => itemOfType(`document-${index + 1}`, "document"));
     render(<WorkPage />);
     const board = screen.getByRole("generic", { name: "Inbox work board" });
@@ -270,9 +270,17 @@ describe("CG1 inbox congruency", () => {
     for (const label of ["AI conversations", "Documents", "Models & sheets", "Meeting transcripts"]) {
       expect(within(board).getByText(label)).toBeTruthy();
     }
-    const firstPage = screen.getAllByTestId("inbox-fixed-card");
-    expect(firstPage).toHaveLength(5);
-    for (const card of firstPage) {
+    const toolbar = within(board).getByTestId("board-shell-toolbar");
+    expect(within(toolbar).getByRole("group", { name: "How work is shown" })).toBeTruthy();
+    expect(within(toolbar).getByRole("button", { name: "Everything" })).toBeTruthy();
+    expect(within(toolbar).getByRole("button", { name: "Unmapped" })).toBeTruthy();
+    expect(within(toolbar).getByRole("button", { name: "Claimed by you" })).toBeTruthy();
+    expect(within(board).getByText("1–5 OF 6")).toBeTruthy();
+    const documentLane = within(board).getByTestId("board-lane-scroll-lane:inbox-documents");
+    documentLane.scrollTop = 500;
+    fireEvent.scroll(documentLane);
+    expect(screen.getByText(inboxRows[4]?.title ?? "missing")).toBeTruthy();
+    for (const card of screen.getAllByTestId("inbox-fixed-card")) {
       expect(card.parentElement?.className).toMatch(/min-w-0/);
       expect(card.className).toMatch(/min-w-0/);
     }
