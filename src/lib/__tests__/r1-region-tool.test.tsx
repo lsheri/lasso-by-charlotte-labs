@@ -37,7 +37,7 @@ describe("R1 region tool", () => {
   it("renders icon controls with accessible names for grouping and text", () => {
     const page = readFileSync("src/pages/CanvasLabPage.tsx", "utf8");
 
-    expect(page).toMatch(/aria-label="Add grouping"[\s\S]*?<Square/);
+    expect(page).toMatch(/aria-label="Add grouping"[\s\S]*?<GraphiteIcon name="grouping"/);
     expect(page).toMatch(/aria-label="Add text"[\s\S]*?<Type/);
   });
 
