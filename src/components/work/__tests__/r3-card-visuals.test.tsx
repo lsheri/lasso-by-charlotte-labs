@@ -1,10 +1,11 @@
 // @vitest-environment jsdom
 import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { ChatPreviewWindow, chatBorderTreatment } from "@/components/work/ChatPreviewWindow";
 import { sourceVendorKey } from "@/components/work/SourceMark";
-const styles = readFileSync(new URL("../../../styles.css", import.meta.url), "utf8");
+const styles = readFileSync(resolve(process.cwd(), "src/styles.css"), "utf8");
 
 describe("R3 card and sticky visual pass", () => {
   it("uses a graphite 1.5px shared edge and a 220px preview floor", () => {
