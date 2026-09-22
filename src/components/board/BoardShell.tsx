@@ -142,7 +142,10 @@ export function BoardShell<F extends BoardShellFrame, N extends BoardShellNode>(
   useLayoutEffect(() => {
     const shell = shellRef.current;
     if (shell) {
-      const size = { width: shell.clientWidth, height: shell.clientHeight };
+      // The last box the observer reported is the truest one; the element's own
+      // clientWidth can lag it, and reporting the lagging number would walk the
+      // page's width state backwards.
+      const size = observedSizeRef.current ?? { width: shell.clientWidth, height: shell.clientHeight };
       if (size.width > 0 && size.height > 0) onViewportSizeChangeRef.current?.(size);
     }
     fitRef.current();
