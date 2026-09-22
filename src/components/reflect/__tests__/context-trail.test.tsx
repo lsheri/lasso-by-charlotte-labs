@@ -126,7 +126,7 @@ describe("ThinkingTrail reading state", () => {
     );
 
     const delays = [...container.querySelectorAll('[data-trail-state="read"] path')].map(
-      (path) => Number.parseInt((path as SVGPathElement).style.transitionDelay, 10),
+      (path) => Number.parseFloat((path as SVGPathElement).style.transitionDelay),
     );
     expect(delays.every((delay, index) => index === 0 || delay > delays[index - 1])).toBe(true);
     expect(new Set(delays).size).toBe(delays.length);

@@ -142,6 +142,7 @@ export function ThinkingTrail({
   }, [shown, lines.length, reduced]);
 
   const visible = lines.slice(0, Math.max(shown, manifest ? lines.length : shown));
+  const resolveStep = Math.min(45, 280 / Math.max(lines.length + 1, 1));
 
   return (
     <div className={`${MONO} space-y-1 text-muted-foreground`} aria-live="polite">
@@ -160,7 +161,7 @@ export function ThinkingTrail({
             data-trail-state={manifest ? "read" : "pending"}
           >
             {manifest ? (
-              <TrailCheck delay={Math.min((index + 1) * 45, 280)} reduced={reduced} />
+              <TrailCheck delay={(index + 1) * resolveStep} reduced={reduced} />
             ) : (
               <PendingMarker />
             )}
@@ -182,13 +183,9 @@ export function ThinkingTrail({
       ))}
       <p
         className="flex items-center gap-2"
-        data-trail-state={manifest ? "read" : "pending"}
+        data-trail-state="pending"
       >
-        {manifest ? (
-          <TrailCheck delay={Math.min((lines.length + 1) * 45, 280)} reduced={reduced} />
-        ) : (
-          <PendingMarker />
-        )}
+        <PendingMarker />
         <span>{finalPhase}</span>
       </p>
     </div>
