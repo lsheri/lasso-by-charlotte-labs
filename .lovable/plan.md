@@ -1,48 +1,41 @@
-# Unit R4 plan: paper previews and card expansion
+# Unit R4.1 plan: stored card heights and grouping naming popup
 
 ## Data impact
-- Changes only visual treatment, preview proportions, and how an existing card opens.
-- No user action, route, copy, stored data, consent behavior, event name, payload, or dimension changes.
-- No SQL, table, policy, function, trigger, or data edits.
+- Restores how saved card geometry is read and repositions an existing naming surface.
+- No database work, consent behavior, visibility behavior, event name, payload, dimension, or stored value changes.
+- The existing `workboard.region_named` call remains fire-and-forget after the local naming change.
 
 ## Current contract to preserve
 ### Controls
-- Card face open, keyboard open, card menu, context selection, fit, branch, move, hide, delete, take-out-of-context, drag, resize, connect, comment-chip, and trail controls.
-- Expanded view actions: Summarize, Branch, Back to the workboard, passage selection, Highlight, Comment, Reply, Edit, Remove, visibility choice, and comment navigation.
-- Document preview actions: previous page, next page, and open larger.
+- Grouping frame: select, drag, context menu, rename, fit, resize handles, remove, add documents where applicable, and inline workstream creation where applicable.
+- Naming prompt: focused name field, Enter to name, Escape to dismiss, visible X dismissal, and click-away dismissal.
 
 ### Render states
-- Sticky and preview modes; mapped, unmapped, private, selected, focused, read-only, dimmed, failed-preview, and absent-preview states.
-- Expanded thread, document, and local-note content; loading/error/empty thread content; comments absent/present/editing/replying; highlights mine/team/stale/cross-turn; writable and read-only review.
+- Named and unnamed grouping, prompt open and dismissed, rename error, ordinary rename, selected and unselected frame, empty guidance, add-workstream input/error, and save error/conflict banners.
+- Dismissal leaves the grouping unnamed as paint and creates no workstream.
 
-### Existing event calls
-- `workboard.card_content_viewed` remains `{ kind, via }`; card-preview scrolling will no longer be a reachable `via: "scroll"` path, while document page changes and opening keep their current calls.
-- `workboard.review_opened` remains `{ format }`.
-- `workboard.card_menu_opened`, `workboard.node_created`, `workboard.annotation_changed`, and `workboard.highlight_changed` retain their current names and payloads.
-- No new event is added.
+### Existing event call
+- `workboard.region_named` remains unchanged with `{ state, claimed, fill_family, fill_strength }` and existing `named` / `cleared` values.
 
 ## Build
-1. Add R4 regression checks first for paper shadows without strokes/rings, restored clipping, no sticky height floor, unchanged flat-surface borders, still chat excerpts, portrait default previews, landscape deck previews, shared inset padding, and the enlarged paper treatment.
-2. Introduce semantic paper-shadow and preview tokens. Paper uses a tight ink-tinted contact shadow plus a softer ink-tinted ambient shadow; flat surfaces retain the 2px graphite border.
-3. Make `ChatPreviewWindow` explicitly support a clipped card excerpt and a scrolling expanded reader. Remove card scroll callbacks and wheel handling, retain the exact vendor-border wrapper, and add the bottom fade only to excerpts.
-4. Put preview content behind one shared 3:4 default aspect rule and key the 16:9 exception from `WorkboardFilePreview.kind === "slide"` through a data attribute. Use one shared inset value for conversation and document preview bodies.
-5. Restyle `FocusOverlay` as the enlarged paper object: same paper ground, layered shadow, folded corner, vendor/date/menu header order, vendor border, full-height scrolling conversation, and paper-language comments and annotations. Preserve every existing handler, branch, state, and event call.
-6. Animate the enlarged paper from the originating board card bounds using a short scale-and-settle transform. Reduced motion renders the final state immediately.
-7. Re-run focused R4 and adjacent card/workboard checks, type safety, and the preview build. Compare the controls, states, and event inventories above against the result before reporting.
+1. Add regression checks first for saved height 150, the unchanged 220px creation default, restored resize/validation floors, popup placement outside clipping ancestors, repeat appearance, dismissal paths, storage absence, and below-placement near the viewport top.
+2. Restore `WORKBOARD_CARD_MIN_HEIGHT` to 112 and `CARD_MIN_HEIGHT` to 180. Keep `WORKBOARD_CARD_DEFAULT_SIZE.height` at 220.
+3. Replace the three rehydrate clamps so a positive saved height is used exactly and only missing or zero height falls back to 220.
+4. Extract the just-drawn naming prompt from `LabFrame` into one sibling overlay mounted directly under the canvas surface, outside the clipped and transformed stage.
+5. Position the overlay from the grouping’s board coordinates plus current pan and zoom. Prefer above, flip below when needed, clamp horizontally and vertically within the canvas surface, and recompute as pan, zoom, frame geometry, or viewport size changes.
+6. Keep the exact naming copy and focus behavior. X, Escape, and surface click-away clear only the pending prompt; Enter updates local naming first and records through the unchanged existing path afterward.
+7. Run focused geometry, grouping, naming, and event checks, then type safety and preview build verification. Use browser screenshots at multiple zoom levels to confirm the overlay is outside the shape, unclipped, and on screen.
 
 ## Expected files
-- `src/styles.css`
-- `src/components/work/ChatPreviewWindow.tsx`
-- `src/components/work/WorkCardPreview.tsx`
-- `src/components/canvas-lab/LabPaper.tsx`
-- `src/components/canvas-lab/LabPreview.tsx`
-- `src/components/canvas-lab/LabCard.tsx`
-- `src/components/canvas-lab/FocusOverlay.tsx`
+- `src/lib/canvas-lab-shared.ts`
+- `src/components/canvas-lab/canvas-lab-model.ts`
+- `src/components/canvas-lab/LabFrame.tsx`
+- A focused presentational naming-popup component under `src/components/canvas-lab/`
 - `src/pages/CanvasLabPage.tsx`
-- Focused R4 tests and directly affected R3 assertions
+- `src/styles.css`
+- Focused R4.1 tests and the two reverted R3 assertions
 - `roadmap.md`
 
 ## Assumptions
-- The enlarged same-object treatment applies to the workboard expansion defect described here; existing non-board viewers keep their functionality and treatment.
-- The expanded header's menu is the existing action set represented in the same trailing position, not a new control or copied card menu.
-- No copy changes means all current labels and status text remain byte-for-byte unchanged.
+- “Portal” means a React portal into the canvas surface element, making the popup a sibling of the transformed stage. This avoids frame/stage clipping while retaining canvas-relative placement.
+- Existing menu-driven renaming remains inline in the frame; only the automatic just-drawn naming prompt moves to the popup.
