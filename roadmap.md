@@ -10,6 +10,8 @@
 - [x] P5.1: Refit Inbox and Conversations from the live box reported by ResizeObserver.
 - [x] P5.1: Guard live-width lane recomputation and symmetric pan gaps without changing board interactions.
 - [x] P5.2: Verify both boards in a real browser and refit only on a genuine size change, so a hand-moved board survives ordinary re-renders.
+- [x] P4a: Add the signed-in Home board with real engagement count, board controls, and local email composition.
+- [x] P4a: Cover the four new Home actions through the existing consent-stamped client event path.
 
 - [x] P3.3: Compact conversation cards to one first-user quote while preserving lane derivation and zoom-one fit.
 

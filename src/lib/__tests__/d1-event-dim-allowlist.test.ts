@@ -95,6 +95,7 @@ const LIVE_KEYS_BY_FAMILY: Record<string, readonly string[]> = {
   extract: ["cost_bucket", "mode", "tokens_in_bucket"],
   findit: ["considered", "entry", "found", "had_quote", "mode", "result_band", "scope"],
   handoff: ["artifact_kind", "from_tool", "to_tool"],
+  home: [],
   import: ["last_screen", "tier", "vendor"],
   invite: ["delivered", "reason", "variant"],
   link: [

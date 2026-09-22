@@ -9,6 +9,14 @@ export type TelemetryEvent =
   | "landing.see_it_work_clicked"
   /** B2B landing: a pilot request was saved. Team-size band only. */
   | "landing.pilot_requested"
+  /** P4a: the signed-in Home board was opened. Content-free. */
+  | "home.opened"
+  /** P4a: the new-engagement dialog was opened from Home. Content-free. */
+  | "home.new_engagement_started"
+  /** P4a: Past work was opened from Home. Content-free. */
+  | "home.past_work_opened"
+  /** P4a: a person chose to compose a product-idea email. Never carries their words. */
+  | "home.ideas_note_composed"
   | "workitem.captured"
   | "workitem.mapped"
   | "workitem.marked_private"
@@ -70,7 +78,7 @@ export type TelemetryEvent =
   | "coachlink.item_restored"
   /**
    * C1: on create this carries {created, brief_skipped, has_client} and one
-   * additive dim, from: "sidebar" | "sidebar_client" | "client_page".
+   * additive dim, from: "sidebar" | "sidebar_client" | "client_page" | "home".
    */
   | "engagement.updated"
   /** A person opened or collapsed the engagement Ask rail. */

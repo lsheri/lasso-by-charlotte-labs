@@ -18,7 +18,7 @@ export const Route = createFileRoute("/personal")({
   ssr: false,
   beforeLoad: async () => {
     const { data } = await supabase.auth.getUser().catch(() => ({ data: { user: null } }));
-    if (data.user) throw redirect({ to: "/overview" });
+    if (data.user) throw redirect({ to: "/home" });
   },
   head: () => ({
     meta: [
