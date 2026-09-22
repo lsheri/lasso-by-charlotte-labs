@@ -35,15 +35,26 @@ afterEach(cleanup);
 
 const read = (path: string) => readFileSync(path, "utf8");
 
+/**
+ * Named imports from one module. Tolerates a multi-line import block, because
+ * a reflow of either file must never quietly turn this guard into a comparison
+ * of two empty lists.
+ */
 function importedNames(source: string, module: string): string[] {
-  const match = source.match(new RegExp(`import \\{([^}]*)\\} from "${module}"`));
+  const match = source.match(new RegExp(`import\\s*\\{([\\s\\S]*?)\\}\\s*from\\s*"${module}"`));
   if (!match) return [];
   return (match[1] ?? "")
     .split(",")
-    .map((entry) => entry.trim().replace(/^type\s+/, ""))
+    .map((entry) => entry.replace(/\s+/g, " ").trim().replace(/^type\s+/, ""))
     .filter((entry) => entry.length > 0)
     .sort();
 }
+
+/**
+ * The primitives neither side of the board may do without. Named here so the
+ * requirement is readable rather than inferred from a diff.
+ */
+const CORE_PAN_ZOOM = ["clampZoom", "scrollableUnder", "wheelPanVector", "zoomAbout"] as const;
 
 describe("the board shell wires the shared primitives", () => {
   const shell = read("src/components/board/BoardShell.tsx");
