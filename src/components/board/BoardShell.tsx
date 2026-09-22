@@ -96,7 +96,6 @@ export function BoardShell<F extends BoardShellFrame, N extends BoardShellNode>(
   const [pan, setPan] = useState<Point>({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [interaction, setInteraction] = useState<Interaction>("idle");
-  const [viewportSize, setViewportSize] = useState<LabViewportSize | null>(null);
 
   const zoomRef = useRef(zoom);
   zoomRef.current = zoom;
@@ -120,10 +119,10 @@ export function BoardShell<F extends BoardShellFrame, N extends BoardShellNode>(
 
   // ---- the fit, on mount and on every viewport change -------------------
 
-  const fit = useCallback((reportedViewport?: LabViewportSize) => {
+  const fit = useCallback(() => {
     const shell = shellRef.current;
     if (!shell) return;
-    const viewport = reportedViewport ?? observedSizeRef.current ?? { width: shell.clientWidth, height: shell.clientHeight };
+    const viewport = { width: shell.clientWidth, height: shell.clientHeight };
     if (viewport.width <= 0 || viewport.height <= 0) return;
     const result = fitWorkboardViewport(
       viewport,
@@ -151,24 +150,16 @@ export function BoardShell<F extends BoardShellFrame, N extends BoardShellNode>(
   useEffect(() => {
     const shell = shellRef.current;
     if (!shell || typeof ResizeObserver === "undefined") return;
-    const observer = new ResizeObserver((entries) => {
-      const entry = entries?.find((candidate) => candidate.target === shell) ?? entries?.[0];
-      const next = entry
-        ? { width: entry.contentRect.width, height: entry.contentRect.height }
-        : { width: shell.clientWidth, height: shell.clientHeight };
+    const observer = new ResizeObserver(() => {
+      const next = { width: shell.clientWidth, height: shell.clientHeight };
       if (!viewportSizeChanged(observedSizeRef.current, next)) return;
       observedSizeRef.current = next;
-      setViewportSize(next);
+      onViewportSizeChangeRef.current?.(next);
+      fitRef.current();
     });
     observer.observe(shell);
     return () => observer.disconnect();
   }, []);
-
-  useLayoutEffect(() => {
-    if (!viewportSize) return;
-    onViewportSizeChangeRef.current?.(viewportSize);
-    fitRef.current(viewportSize);
-  }, [viewportSize, fitFrames, boardNodes, measuredHeights]);
 
   // ---- the wheel: zoom under the cursor, or pan, or let a lane scroll ----
 
