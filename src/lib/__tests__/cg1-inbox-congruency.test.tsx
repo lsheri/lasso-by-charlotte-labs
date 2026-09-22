@@ -385,7 +385,7 @@ describe("CG1 inbox congruency", () => {
 });
 
 describe("CG2 AI conversations congruency", () => {
-  it("frames the newest four months at zoom one while keeping older month lanes to the right", async () => {
+  it("fits a mixed month timeline at zoom one with compact empty spines and honest lane heights", async () => {
     const width = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "clientWidth");
     const height = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "clientHeight");
     Object.defineProperty(HTMLElement.prototype, "clientWidth", {
@@ -401,18 +401,18 @@ describe("CG2 AI conversations congruency", () => {
       },
     });
     try {
-      const monthlyConversations: ReadonlyArray<readonly [string, string]> = [
-        ["September conversation", "2026-09-21T10:00:00Z"],
-        ["August conversation", "2026-08-21T10:00:00Z"],
-        ["July conversation", "2026-07-21T10:00:00Z"],
-        ["June conversation", "2026-06-21T10:00:00Z"],
-        ["May conversation", "2026-05-21T10:00:00Z"],
-        ["April conversation", "2026-04-21T10:00:00Z"],
+      const inMonth = (month: string, count: number) =>
+        Array.from({ length: count }, (_, index) => ({
+          ...conversation(`${month} conversation ${index + 1}`, "claude", "ALPHA"),
+          captured_at: `2026-${month}-${String(index + 1).padStart(2, "0")}T10:00:00Z`,
+        }));
+      inboxRows = [
+        ...inMonth("09", 5),
+        ...inMonth("08", 2),
+        ...inMonth("06", 6),
+        ...inMonth("05", 1),
+        ...inMonth("04", 1),
       ];
-      inboxRows = monthlyConversations.map(([title, capturedAt]) => ({
-        ...conversation(title, "claude", "ALPHA"),
-        captured_at: capturedAt,
-      }));
 
       render(<AiRecordPage />);
 
@@ -421,18 +421,32 @@ describe("CG2 AI conversations congruency", () => {
         expect(screen.getByTestId("board-shell-stage").style.transform).toMatch(/scale\(1\)$/);
       });
       const lanes = board.querySelectorAll<HTMLElement>("[data-board-lane]");
-      expect(lanes).toHaveLength(6);
+      const spines = board.querySelectorAll<HTMLElement>("[data-board-frame]");
+      expect(lanes).toHaveLength(5);
+      expect(spines).toHaveLength(1);
       for (const lane of lanes) expect(lane.style.width).toBe("230.5px");
       expect(within(lanes[0] as HTMLElement).getByText("September")).toBeTruthy();
-      expect(within(lanes[5] as HTMLElement).getByText("April")).toBeTruthy();
+      const july = spines[0] as HTMLElement;
+      expect(july.style.width).toBe("112px");
+      expect(within(july).getByText("July")).toBeTruthy();
+      expect(within(july).getByText("0")).toBeTruthy();
+      expect(july.querySelector("[data-testid^='board-lane-scroll-']")).toBeNull();
+      expect(within(lanes[4] as HTMLElement).getByText("April")).toBeTruthy();
       expect(Number.parseFloat(lanes[4]?.style.left ?? "0")).toBeGreaterThan(1094);
-      const firstCard = screen.getByText("September conversation").closest<HTMLElement>("[data-lane-content]");
+      expect((lanes[0] as HTMLElement).style.height).toBe("1212px");
+      expect((lanes[1] as HTMLElement).style.height).toBe("516px");
+      expect(Number.parseFloat((lanes[0] as HTMLElement).style.height) - Number.parseFloat((lanes[1] as HTMLElement).style.height)).toBe(3 * 220 + 3 * 12);
+      const june = Array.from(lanes).find((lane) => within(lane).queryByText("June"));
+      expect(june?.style.height).toBe("1256px");
+      expect(june?.querySelector("[data-conversation-paging-row]")).not.toBeNull();
+      expect((lanes[0] as HTMLElement).querySelector("[data-conversation-paging-row]")).toBeNull();
+      const firstCard = within(lanes[0] as HTMLElement).getAllByRole("article")[0]?.closest<HTMLElement>("[data-lane-content]");
       expect(firstCard?.style.width).toBe("206.5px");
       const toolbar = within(board).getByTestId("board-shell-toolbar");
       expect(within(toolbar).getByRole("searchbox", { name: "Search your chats" })).toBeTruthy();
       expect(within(toolbar).getByRole("group", { name: "Filter by tool" })).toBeTruthy();
       expect(within(toolbar).getByRole("group", { name: "Filter by engagement" })).toBeTruthy();
-      expect(within(toolbar).getByText("6 conversations.")).toBeTruthy();
+      expect(within(toolbar).getByText("15 conversations.")).toBeTruthy();
     } finally {
       if (width) Object.defineProperty(HTMLElement.prototype, "clientWidth", width);
       else Reflect.deleteProperty(HTMLElement.prototype, "clientWidth");

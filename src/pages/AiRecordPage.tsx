@@ -58,20 +58,23 @@ import { getWorkFileUrl } from "@/lib/work-files.functions";
 import { formatDate } from "@/lib/work-types";
 import { useWorkboardCardPreviews } from "@/hooks/use-workboard-card-previews";
 import type { WorkView } from "@/lib/work-view";
+import { laneContentExtent } from "@/lib/board-lane";
 
 type MonthGroup = { key: string; label: string; items: WorkItemRow[] };
-type ConversationMonthLane = BoardShellFrame & { label: string; itemCount: number };
+type ConversationMonthLane = BoardShellFrame & { label: string; itemCount: number; isSpine: boolean };
 type ConversationLaneNode = BoardShellNode & { item: WorkItemRow; index: number };
 
 const CONVERSATION_LANE_WIDTH = 230.5;
+const CONVERSATION_SPINE_WIDTH = 112;
 const CONVERSATION_LANE_GAP = 36;
 const CONVERSATION_LANE_LEFT = 40;
 const CONVERSATION_LANE_TOP = 120;
-const CONVERSATION_LANE_HEIGHT = 880;
 const CONVERSATION_LANE_HEADER_HEIGHT = 40;
 const CONVERSATION_CARD_HEIGHT = 220;
+const CONVERSATION_PAGING_ROW_HEIGHT = 44;
+const COLUMN_PAGE_SIZE = 5;
 const CONVERSATION_INITIAL_MONTHS = 4;
-const CONVERSATION_BOARD_HEIGHT = 1040;
+const CONVERSATION_BOARD_HEIGHT = 1376;
 
 const MONTHS = [
   "January",
@@ -107,7 +110,31 @@ function groupByMonth(items: WorkItemRow[]): MonthGroup[] {
     bucket.items.push(item);
     buckets.set(key, bucket);
   }
-  const ordered = Array.from(buckets.values()).sort((a, b) => (a.key < b.key ? 1 : -1));
+  const dated = Array.from(buckets.values()).sort((a, b) => (a.key < b.key ? 1 : -1));
+  const ordered: MonthGroup[] = [];
+  if (dated.length > 0) {
+    const newest = dated[0];
+    const oldest = dated[dated.length - 1];
+    if (newest && oldest) {
+      const [newestYear, newestMonth] = newest.key.split("-").map(Number);
+      const [oldestYear, oldestMonth] = oldest.key.split("-").map(Number);
+      const cursor = new Date(newestYear ?? 0, newestMonth ?? 0, 1);
+      const end = new Date(oldestYear ?? 0, oldestMonth ?? 0, 1);
+      while (cursor >= end) {
+        const year = cursor.getFullYear();
+        const month = cursor.getMonth();
+        const key = `${year}-${String(month).padStart(2, "0")}`;
+        ordered.push(
+          buckets.get(key) ?? {
+            key,
+            label: year === new Date().getFullYear() ? (MONTHS[month] ?? "") : `${MONTHS[month] ?? ""} ${year}`,
+            items: [],
+          },
+        );
+        cursor.setMonth(cursor.getMonth() - 1);
+      }
+    }
+  }
   for (const bucket of ordered) {
     bucket.items.sort(
       (a, b) => new Date(effectiveWorkDate(b)).getTime() - new Date(effectiveWorkDate(a)).getTime(),
@@ -116,6 +143,21 @@ function groupByMonth(items: WorkItemRow[]): MonthGroup[] {
   if (undated.length > 0)
     ordered.push({ key: "undated", label: "No date recorded", items: undated });
   return ordered;
+}
+
+function conversationMonthFrameId(group: MonthGroup): string {
+  return `${group.items.length === 0 ? "spine" : "lane"}:chat-month-${group.key}`;
+}
+
+function conversationLaneHeight(itemCount: number): number {
+  const visibleCount = Math.min(itemCount, COLUMN_PAGE_SIZE);
+  const visible = Array.from({ length: visibleCount }, (_, index) => ({
+    id: String(index),
+    height: CONVERSATION_CARD_HEIGHT,
+  }));
+  return CONVERSATION_LANE_HEADER_HEIGHT
+    + laneContentExtent(visible)
+    + (itemCount > COLUMN_PAGE_SIZE ? CONVERSATION_PAGING_ROW_HEIGHT : 0);
 }
 
 /** The first engagement a conversation is mapped into, if any. */
@@ -297,22 +339,37 @@ export function AiRecordPage() {
   // Search narrows deliberately. Tool and engagement chips leave those search
   // results in place, dimming the conversations outside the chosen categories.
   const groups = groupByMonth(shown);
-  const monthLanes: ConversationMonthLane[] = groups.map((group, index) => ({
-    id: `lane:chat-month-${group.key}`,
-    x: CONVERSATION_LANE_LEFT + index * (CONVERSATION_LANE_WIDTH + CONVERSATION_LANE_GAP),
-    y: CONVERSATION_LANE_TOP,
-    width: CONVERSATION_LANE_WIDTH,
-    height: CONVERSATION_LANE_HEIGHT,
-    contentInset: { top: CONVERSATION_LANE_HEADER_HEIGHT },
-    label: group.label,
-    itemCount: group.items.length,
-  }));
+  let nextMonthX = CONVERSATION_LANE_LEFT;
+  const monthLanes: ConversationMonthLane[] = groups.map((group) => {
+    const isSpine = group.items.length === 0;
+    const width = isSpine ? CONVERSATION_SPINE_WIDTH : CONVERSATION_LANE_WIDTH;
+    const frame: ConversationMonthLane = {
+      id: conversationMonthFrameId(group),
+      x: nextMonthX,
+      y: CONVERSATION_LANE_TOP,
+      width,
+      height: isSpine ? CONVERSATION_LANE_HEADER_HEIGHT : conversationLaneHeight(group.items.length),
+      ...(isSpine
+        ? {}
+        : {
+            contentInset: {
+              top: CONVERSATION_LANE_HEADER_HEIGHT,
+              bottom: group.items.length > COLUMN_PAGE_SIZE ? CONVERSATION_PAGING_ROW_HEIGHT : 0,
+            },
+          }),
+      label: group.label,
+      itemCount: group.items.length,
+      isSpine,
+    };
+    nextMonthX += width + CONVERSATION_LANE_GAP;
+    return frame;
+  });
   const monthNodes: ConversationLaneNode[] = groups.flatMap((group) =>
     group.items.map((item, index) => ({
       id: item.id,
       item,
       index,
-      frame: `lane:chat-month-${group.key}`,
+      frame: conversationMonthFrameId(group),
       x: 0,
       y: 0,
       width: CONVERSATION_LANE_WIDTH,
@@ -678,13 +735,21 @@ export function AiRecordPage() {
               </div>
             )}
             renderFrame={(lane) => (
-              <div className="pointer-events-none absolute inset-x-0 top-0 flex h-10 items-center gap-3 px-3">
-                <span className="font-hand text-[19px] leading-none text-graphite">{lane.label}</span>
-                <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">
-                  {lane.itemCount}
-                </span>
-                <span className="h-px flex-1 bg-[var(--nb-rule)]" />
-              </div>
+              <>
+                <div className={`pointer-events-none absolute inset-x-0 top-0 flex h-10 items-center px-3 ${lane.isSpine ? "flex-col justify-center gap-0" : "gap-3"}`}>
+                  <span className="font-hand text-[19px] leading-none text-graphite">{lane.label}</span>
+                  <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">
+                    {lane.itemCount}
+                  </span>
+                  {lane.isSpine ? null : <span className="h-px flex-1 bg-[var(--nb-rule)]" />}
+                </div>
+                {!lane.isSpine && lane.itemCount > COLUMN_PAGE_SIZE ? (
+                  <span
+                    data-conversation-paging-row
+                    className="pointer-events-none absolute inset-x-3 bottom-0 h-11 border-t border-[var(--nb-rule)]"
+                  />
+                ) : null}
+              </>
             )}
             renderNode={(node) => {
               const matches = matchesChipFilters(node.item);
