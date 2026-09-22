@@ -10,6 +10,7 @@ import {
   cohesionAt,
   loopStamps,
   stampRadiusFor,
+  turnFractionAt,
 } from "@/lib/lasso-loop";
 
 describe("Ask Lasso signature loop maths", () => {
@@ -36,9 +37,35 @@ describe("Ask Lasso signature loop maths", () => {
     expect(stampRadiusFor(200)).toBe(1.6);
   });
 
+  it("turns monotonically, closes continuously, and moves more slowly during hold than travel", () => {
+    expect(turnFractionAt(0)).toBe(0);
+    expect(turnFractionAt(0.4)).toBeCloseTo(0.72);
+    expect(turnFractionAt(0.54)).toBeCloseTo(0.88);
+    expect(turnFractionAt(0.7)).toBeCloseTo(0.9);
+    expect(turnFractionAt(0.999999)).toBeCloseTo(1, 4);
+
+    const samples = Array.from({ length: 2000 }, (_, index) => turnFractionAt(index / 2000));
+    for (let index = 1; index < samples.length; index += 1) {
+      expect(samples[index]).toBeGreaterThanOrEqual(samples[index - 1] ?? 0);
+      expect((samples[index] ?? 0) - (samples[index - 1] ?? 0)).toBeLessThan(0.02);
+    }
+
+    const travelRate = (turnFractionAt(0.3) - turnFractionAt(0.1)) / 0.2;
+    const holdRate = (turnFractionAt(0.66) - turnFractionAt(0.58)) / 0.08;
+    expect(travelRate).toBeGreaterThan(holdRate);
+  });
+
   it("is deterministic for identical time and size inputs", () => {
     const time = 0.61;
     expect(loopStamps(time, LOOP_SIZE_TOOLBAR)).toEqual(loopStamps(time, LOOP_SIZE_TOOLBAR));
+  });
+
+  it("closes its deterministic breath after the three-cycle super-period", () => {
+    const time = (LOOP_CYCLE_MS / 1000) * 0.2;
+    const superPeriodSeconds = (LOOP_CYCLE_MS / 1000) * 3;
+    expect(loopStamps(time, LOOP_SIZE_TOOLBAR)).toEqual(
+      loopStamps(time + superPeriodSeconds, LOOP_SIZE_TOOLBAR),
+    );
   });
 
   it("returns 48 stamps and gathers them around five distinct centres", () => {

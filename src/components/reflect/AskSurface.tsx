@@ -163,13 +163,6 @@ function MessagesTab({ ask, emptyActions }: { ask: AskLasso; emptyActions?: Reac
     const dateTime = typeof time === "string" ? time : time.toISOString();
     return (
       <span className="nb-binder-line flex min-w-0 items-baseline gap-2">
-        {assistant ? (
-          <LassoThinkingMark
-            kind="signature"
-            size={LOOP_SIZE_CHAT}
-            className="self-center"
-          />
-        ) : null}
         <span className="font-sans text-[13px] font-semibold text-ink">
           {assistant ? "Lasso" : "You"}
         </span>
@@ -478,22 +471,14 @@ export function AskSurface({
   return (
     <>
       <header className="shrink-0 border-b border-border px-4 pb-2 pt-[calc(1rem+env(safe-area-inset-top))]">
-        {inline ? (
-          <AskTabs
-            tab={tab}
-            onTab={onTab}
-            onNewChat={() => {
-              ask.newSession();
-              onTab("messages");
-            }}
+        <div className="flex min-w-0 items-start gap-2">
+          <LassoThinkingMark
+            kind="signature"
+            size={LOOP_SIZE_CHAT}
+            className="shrink-0"
           />
-        ) : (
-          <>
-            <p className="micro-label micro-label-ai pr-12">Ask Lasso</p>
-            <h2 className="page-title mt-1 break-words text-[17px] leading-snug">
-              {engagementTitle}
-            </h2>
-            <div className="mt-2">
+          <div className="min-w-0 flex-1">
+            {inline ? (
               <AskTabs
                 tab={tab}
                 onTab={onTab}
@@ -502,9 +487,26 @@ export function AskSurface({
                   onTab("messages");
                 }}
               />
-            </div>
-          </>
-        )}
+            ) : (
+              <>
+                <p className="micro-label micro-label-ai pr-12">Ask Lasso</p>
+                <h2 className="page-title mt-1 break-words text-[17px] leading-snug">
+                  {engagementTitle}
+                </h2>
+                <div className="mt-2">
+                  <AskTabs
+                    tab={tab}
+                    onTab={onTab}
+                    onNewChat={() => {
+                      ask.newSession();
+                      onTab("messages");
+                    }}
+                  />
+                </div>
+              </>
+            )}
+          </div>
+        </div>
       </header>
 
       <WorkPicker ask={ask} engagementId={engagementId} />
