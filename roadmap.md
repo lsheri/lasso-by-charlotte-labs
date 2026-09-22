@@ -11,8 +11,8 @@
 - [x] R3: Add thin graphite borders to shared document preview bodies.
 - [x] R3: Compare inbox cards above the fold before and after the 220px height change.
 
-- [ ] R4: Replace paper strokes and the sticky white ring with a two-layer ink-tinted shadow; restore paper clipping and compact stickies.
-- [ ] R4: Make card previews still, faded excerpts with shared inset spacing and 3:4 default / 16:9 slide proportions.
-- [ ] R4: Restyle the workboard expanded view as the originating paper card, with full-height reader scrolling and reduced-motion handling.
-- [ ] R4: Move `workboard.card_content_viewed` `{ via: "scroll" }` to expanded conversation scrolling without changing its schema.
+- [x] R4: Replace paper strokes and the sticky white ring with a two-layer ink-tinted shadow; restore paper clipping and compact stickies.
+- [x] R4: Make card previews still, faded excerpts with shared inset spacing and 3:4 default / 16:9 slide proportions.
+- [x] R4: Restyle the workboard expanded view as the originating paper card, with full-height reader scrolling and reduced-motion handling.
+- [x] R4: Move `workboard.card_content_viewed` `{ via: "scroll" }` to expanded conversation scrolling without changing its schema.
 - [ ] R4: Verify controls, states, events, focused checks, type safety, preview build, and record remaining old-style expansion paths.
