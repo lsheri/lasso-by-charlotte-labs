@@ -182,7 +182,17 @@ export function BoardShell<F extends BoardShellFrame, N extends BoardShellNode>(
 
   useEffect(() => {
     if (!viewportSize) return;
-    fitRef.current(viewportSize);
+    // The next frame gives a consumer's viewport-size state update time to
+    // rebuild geometry before fitRef reads it. Without this, a responsive frame
+    // can be visibly correct while the fit still reflects its previous size.
+    const schedule = typeof requestAnimationFrame === "function"
+      ? requestAnimationFrame
+      : (callback: FrameRequestCallback) => window.setTimeout(callback, 0);
+    const cancel = typeof cancelAnimationFrame === "function"
+      ? cancelAnimationFrame
+      : window.clearTimeout;
+    const request = schedule(() => fitRef.current(viewportSize));
+    return () => cancel(request);
   }, [viewportSize]);
 
   // ---- the wheel: zoom under the cursor, or pan, or let a lane scroll ----
