@@ -29,7 +29,7 @@ import { placeWorkOnBoardFn } from "@/lib/workboard-add-work.functions";
 type Mode = "choose" | "engagement" | "folder";
 
 /** Where the person started from. One additive dim on engagement.updated. */
-export type NewEngagementFrom = "sidebar" | "sidebar_client" | "client_page";
+export type NewEngagementFrom = "sidebar" | "sidebar_client" | "client_page" | "home";
 
 export function NewEngagementDialog({
   trigger,

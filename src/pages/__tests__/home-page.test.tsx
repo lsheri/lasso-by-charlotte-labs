@@ -2,7 +2,7 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { HomePage, IdeasNote, ideasMailto } from "@/pages/HomePage";
+import { HomeBoard, IdeasNote, ideasMailto } from "@/components/home/HomeBoard";
 
 const mocks = vi.hoisted(() => ({
   engagements: undefined as undefined | { id: string }[],
@@ -51,20 +51,20 @@ afterEach(() => {
 
 describe("Home", () => {
   it("shows only a real engagement count and exactly one title signature", () => {
-    const first = render(<HomePage />);
+    const first = render(<HomeBoard />);
     expect(screen.getByText("HOME")).toBeTruthy();
     expect(screen.queryByText(/HOME ·/)).toBeNull();
     first.unmount();
 
     mocks.engagements = [{ id: "one" }, { id: "two" }, { id: "three" }];
-    render(<HomePage />);
+    render(<HomeBoard />);
     expect(screen.getByText("HOME · 3 ENGAGEMENTS")).toBeTruthy();
     expect(document.querySelectorAll('[data-lasso-thinking-mark="signature"]')).toHaveLength(1);
   });
 
   it("covers opening and both navigation actions without content dimensions", () => {
     mocks.engagements = [];
-    render(<HomePage />);
+    render(<HomeBoard />);
     expect(mocks.emitClientEvent).toHaveBeenCalledWith("home.opened", {});
 
     fireEvent.click(screen.getByRole("button", { name: "New engagement" }));
