@@ -40,6 +40,9 @@ export type EngagementCoach = {
 
 export type EngagementMembership = { isMember: boolean; isCoachMember: boolean };
 
+/** A member's name and nothing else: enough for a glance, not provenance. */
+export type EngagementMemberName = { id: string; display_name: string };
+
 export type DecisionRow = Database["public"]["Tables"]["decisions"]["Row"];
 
 /** One page load: everything the engagement page reads, in one payload. */
@@ -47,6 +50,8 @@ export type EngagementPagePayload = {
   engagement: EngagementRow | null;
   tasks: EngagementTask[];
   coaches: EngagementCoach[];
+  /** Non-coach members, names only, for the board's details glance. */
+  members: EngagementMemberName[];
   membership: EngagementMembership;
   decisions: DecisionRow[];
   /** work_item_id to sequence rank, lowest first. */
@@ -57,6 +62,7 @@ export const EMPTY_ENGAGEMENT_PAGE: EngagementPagePayload = {
   engagement: null,
   tasks: [],
   coaches: [],
+  members: [],
   membership: { isMember: false, isCoachMember: false },
   decisions: [],
   stepOrder: {},
