@@ -53,6 +53,10 @@ export const ACTIVE_PROFILE_ROW_KEY = ["active-profile-row"] as const;
  */
 let sharedQueryClient: QueryClient | null = null;
 
+/** Per session, not per hook instance: survives a remount during navigation. */
+const seededUsers = new Set<string>();
+
+
 export function registerProfileQueryClient(client: QueryClient): void {
   sharedQueryClient = client;
 }
