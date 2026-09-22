@@ -9,6 +9,7 @@ import { formatDate } from "@/lib/work-types";
 const mocks = vi.hoisted(() => ({
   emitClientEvent: vi.fn(),
   upsert: vi.fn(),
+  profile: { id: "p1" } as { id: string } | null,
 }));
 
 vi.mock("@tanstack/react-router", () => ({
@@ -16,6 +17,8 @@ vi.mock("@tanstack/react-router", () => ({
     <a href={`/engagements/${params.id}/canvas-lab`} onClick={onClick}>{children}</a>
   ),
 }));
+
+vi.mock("@/hooks/use-profile", () => ({ useProfile: () => ({ data: mocks.profile }) }));
 
 vi.mock("@/lib/client-telemetry", () => ({ emitClientEvent: mocks.emitClientEvent }));
 
@@ -111,5 +114,30 @@ describe("recording an open", () => {
       expect(typeof call[0].last_viewed_at).toBe("string");
       expect(call[1]).toEqual({ onConflict: "profile_id,engagement_id" });
     }
+  });
+});
+
+describe("once per board open", () => {
+  it("writes once however many times the board re-renders, and not at all without a person", async () => {
+    const { useRecordEngagementView } = await import("@/hooks/use-engagement-views");
+    mocks.upsert.mockResolvedValue({ error: null });
+    function Board({ id }: { id: string }) {
+      useRecordEngagementView(id);
+      return <span>{id}</span>;
+    }
+
+    const view = render(<Board id="e1" />);
+    view.rerender(<Board id="e1" />);
+    view.rerender(<Board id="e1" />);
+    await Promise.resolve();
+    expect(mocks.upsert).toHaveBeenCalledTimes(1);
+    view.unmount();
+
+    mocks.upsert.mockClear();
+    mocks.profile = null;
+    render(<Board id="e1" />);
+    await Promise.resolve();
+    expect(mocks.upsert).not.toHaveBeenCalled();
+    mocks.profile = { id: "p1" };
   });
 });
