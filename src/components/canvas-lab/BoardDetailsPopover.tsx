@@ -16,8 +16,9 @@ import type {
   EngagementRow,
 } from "@/lib/engagement-page-shared";
 
-/** Past a glance's worth of brief, the details page is where the rest lives. */
-const BRIEF_GLANCE_LENGTH = 220;
+/* The clamp below is the only truncation boundary; whenever a brief exists the
+   details page link is offered, so nothing can be cut with no way to read on. */
+
 
 export function BoardDetailsContent({
   engagement,
@@ -38,7 +39,7 @@ export function BoardDetailsContent({
   const code = engagementDisplayCode(engagement);
   const quiet = [engagement.term_label, code].filter(Boolean).join(" · ");
   const brief = engagement.brief?.trim() ?? "";
-  const briefTruncated = brief.length > BRIEF_GLANCE_LENGTH;
+
   // Names only. Who added them and when is provenance about people, and it
   // does not belong on a glance surface.
   const people = [
@@ -58,16 +59,15 @@ export function BoardDetailsContent({
       {brief ? (
         <div className="flex flex-col items-start gap-1">
           <p className="nb-type-small line-clamp-4 text-foreground">{brief}</p>
-          {briefTruncated ? (
-            <Link
-              to="/engagements/$id"
-              params={{ id: engagementId }}
-              search={{ ...DETAILS_SEARCH }}
-              className="nb-type-small text-foreground underline underline-offset-2"
-            >
-              Read the full brief
-            </Link>
-          ) : null}
+          <Link
+            to="/engagements/$id"
+            params={{ id: engagementId }}
+            search={{ ...DETAILS_SEARCH }}
+            className="nb-type-small text-foreground underline underline-offset-2"
+          >
+            Read the full brief
+          </Link>
+
         </div>
       ) : null}
       {people.length > 0 ? (

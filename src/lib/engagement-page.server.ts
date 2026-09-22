@@ -42,7 +42,12 @@ export async function buildEngagementPage(
       .eq("engagement_id", engagementId)
       .order("position", { ascending: true })
       .order("created_at", { ascending: true }),
-    // Every member row the caller may see; coaches and members split below.
+    // Deliberate: the page now needs the whole member list, not coaches alone,
+    // so the member_role = 'coach' filter is gone and the split happens below.
+    // Safe because RLS policy eng_members_read already gates this table on
+    // is_engagement_member(engagement_id) — a caller who can read one row of an
+    // engagement's membership can read them all.
+
     supabase
       .from("engagement_members")
       .select(COACHES_SELECT)

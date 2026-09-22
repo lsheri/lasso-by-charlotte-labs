@@ -95,7 +95,7 @@ describe("R9 board details popover", () => {
     expect(screen.queryByText(/2026-01-04/)).toBeNull();
   });
 
-  it("truncates a long brief with a handoff link and shows none for a short one", () => {
+  it("offers the full-brief link whenever a brief exists, long or short", () => {
     const longBrief = "A much longer brief. ".repeat(30);
     render(
       <BoardDetailsContent
@@ -114,8 +114,18 @@ describe("R9 board details popover", () => {
         engagementId="eng-1"
       />,
     );
-    expect(screen.queryAllByText("Read the full brief")).toHaveLength(1);
+    expect(screen.queryAllByText("Read the full brief")).toHaveLength(2);
+    render(
+      <BoardDetailsContent
+        engagement={{ ...ENGAGEMENT, brief: null } as EngagementRow}
+        coaches={COACHES}
+        members={MEMBERS}
+        engagementId="eng-1"
+      />,
+    );
+    expect(screen.queryAllByText("Read the full brief")).toHaveLength(2);
   });
+
 
   it("renders a quiet empty state when the engagement has not loaded", () => {
     render(
