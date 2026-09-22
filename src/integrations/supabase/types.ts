@@ -1368,6 +1368,39 @@ export type Database = {
           },
         ]
       }
+      engagement_views: {
+        Row: {
+          engagement_id: string
+          last_viewed_at: string
+          profile_id: string
+        }
+        Insert: {
+          engagement_id: string
+          last_viewed_at?: string
+          profile_id: string
+        }
+        Update: {
+          engagement_id?: string
+          last_viewed_at?: string
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "engagement_views_engagement_id_fkey"
+            columns: ["engagement_id"]
+            isOneToOne: false
+            referencedRelation: "engagements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "engagement_views_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       engagements: {
         Row: {
           brief: string | null
