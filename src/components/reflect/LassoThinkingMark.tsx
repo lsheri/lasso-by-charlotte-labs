@@ -146,8 +146,8 @@ export function LassoThinkingMark({ kind, size, count = 0, className }: LassoThi
     }
 
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    draw(0);
     if (reducedMotion) {
+      draw(0);
       return;
     }
 
@@ -167,6 +167,7 @@ export function LassoThinkingMark({ kind, size, count = 0, className }: LassoThi
 
     let observer: IntersectionObserver | null = null;
     if (typeof IntersectionObserver === "undefined") {
+      draw(0);
       start();
     } else {
       observer = new IntersectionObserver(([entry]) => {
