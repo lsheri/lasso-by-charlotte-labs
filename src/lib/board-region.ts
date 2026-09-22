@@ -15,6 +15,7 @@
  * already carry a label, membership, ordering, an optional task and a guard.
  */
 
+import { isLaneFrameId } from "@/lib/board-lane";
 import { splitClaims, type ClaimCandidate, type ClaimSplit, type DrawRect } from "@/lib/workstream-draw";
 
 /** The stored fill names. Sixteen, exactly as the record constrains them. */
