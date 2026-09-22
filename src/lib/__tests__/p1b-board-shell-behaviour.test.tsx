@@ -45,6 +45,9 @@ class StubResizeObserver {
   constructor(private readonly callback: () => void) {}
   observe() {
     resizeCallbacks.add(this.callback);
+    // A real ResizeObserver reports once on observe; the stub does too, or the
+    // shell's first genuine resize would look like a size change that is not.
+    this.callback();
   }
   disconnect() {
     resizeCallbacks.delete(this.callback);
