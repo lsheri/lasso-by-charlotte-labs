@@ -66,6 +66,8 @@ export type BoardShellProps<F extends BoardShellFrame, N extends BoardShellNode>
   onSelectNode?: ((id: string | null) => void) | undefined;
   /** Fit again whenever this changes, the way a first load does. */
   fitKey?: string | number | undefined;
+  /** Optional subset used only for the initial fit; every frame still renders. */
+  fitFrameIds?: readonly string[] | undefined;
   /** Reports this shell's own measured viewport without changing board geometry. */
   onViewportSizeChange?: ((size: LabViewportSize) => void) | undefined;
   className?: string | undefined;
@@ -85,6 +87,7 @@ export function BoardShell<F extends BoardShellFrame, N extends BoardShellNode>(
   selectedIds,
   onSelectNode,
   fitKey,
+  fitFrameIds,
   onViewportSizeChange,
   className,
   ariaLabel = "Board",
@@ -108,6 +111,11 @@ export function BoardShell<F extends BoardShellFrame, N extends BoardShellNode>(
 
   /** Board nodes only. A lane's contents are placed by the lane, not by x/y. */
   const boardNodes = useMemo(() => nodes.filter((node) => !inLane(node)), [nodes, inLane]);
+  const fitFrames = useMemo(() => {
+    if (!fitFrameIds) return frames;
+    const included = new Set(fitFrameIds);
+    return frames.filter((frame) => included.has(frame.id));
+  }, [fitFrameIds, frames]);
 
   // ---- the fit, on mount and on every viewport change -------------------
 
@@ -118,14 +126,14 @@ export function BoardShell<F extends BoardShellFrame, N extends BoardShellNode>(
     if (viewport.width <= 0 || viewport.height <= 0) return;
     const result = fitWorkboardViewport(
       viewport,
-      [...frames],
+      [...fitFrames],
       [...boardNodes],
       measuredHeights ?? new Map<string, number>(),
       null,
     );
     setZoom(result.zoom);
     setPan(result.pan);
-  }, [frames, boardNodes, measuredHeights]);
+  }, [fitFrames, boardNodes, measuredHeights]);
 
   const fitRef = useRef(fit);
   fitRef.current = fit;
