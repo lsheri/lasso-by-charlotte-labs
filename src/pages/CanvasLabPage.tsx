@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { Eye, FileText, Hand, Info, LayoutTemplate, Maximize2, Menu, Minus, MoreHorizontal, Plus, Sparkles, Square, StickyNote, Type, X } from "lucide-react";
+import { Eye, FileText, Info, LayoutTemplate, Maximize2, Menu, Minus, MoreHorizontal, Plus, Sparkles, Square, StickyNote, Type, X } from "lucide-react";
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 
 import {
@@ -2304,23 +2304,20 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     noteWorkboardStructureToggled(orgId, next);
   };
   toolbarItems.push({
-    spec: { id: "workstreams", width: 190, moveOrder: 1 },
+    spec: { id: "workstreams", width: 40, moveOrder: 1 },
     row: (
-      <div className="canvas-lab-workstream-switch">
-        <Label htmlFor="canvas-lab-show-workstreams">Show workstreams</Label>
-        <Switch id="canvas-lab-show-workstreams" checked={structureMode === "structured"} onCheckedChange={setStructured} />
-      </div>
+      <ToolbarIcon label="Show workstreams"><Button type="button" size="icon" variant={structureMode === "structured" ? "secondary" : "outline"} aria-label="Show workstreams" aria-pressed={structureMode === "structured"} onClick={() => setStructured(structureMode !== "structured")}><LayoutTemplate className="h-4 w-4" /></Button></ToolbarIcon>
     ),
     menu: (
       <DropdownMenuCheckboxItem checked={structureMode === "structured"} onCheckedChange={setStructured}>Show workstreams</DropdownMenuCheckboxItem>
     ),
   });
   toolbarItems.push({
-    spec: { id: "display", width: 150, moveOrder: 2 },
+    spec: { id: "display", width: 76, moveOrder: 2 },
     row: (
       <div className="canvas-lab-structure-toggle" aria-label="Card display">
-        <Button type="button" size="sm" variant={displayMode === "preview" ? "secondary" : "ghost"} aria-pressed={displayMode === "preview"} onClick={() => chooseDisplayMode("preview")}>Preview</Button>
-        <Button type="button" size="sm" variant={displayMode === "sticky" ? "secondary" : "ghost"} aria-pressed={displayMode === "sticky"} onClick={() => chooseDisplayMode("sticky")}>Sticky</Button>
+        <ToolbarIcon label="Preview cards"><Button type="button" size="icon" variant={displayMode === "preview" ? "secondary" : "ghost"} aria-label="Preview cards" aria-pressed={displayMode === "preview"} onClick={() => chooseDisplayMode("preview")}><Eye className="h-4 w-4" /></Button></ToolbarIcon>
+        <ToolbarIcon label="Sticky cards"><Button type="button" size="icon" variant={displayMode === "sticky" ? "secondary" : "ghost"} aria-label="Sticky cards" aria-pressed={displayMode === "sticky"} onClick={() => chooseDisplayMode("sticky")}><StickyNote className="h-4 w-4" /></Button></ToolbarIcon>
       </div>
     ),
     menu: (
