@@ -17,7 +17,7 @@ describe("R4 paper preview craft pass", () => {
 
   it("uses lifted paper shadows without a paper stroke or sticky ring", () => {
     const paperRules = [...styles.matchAll(/\.nb-paper\s*\{([^}]*)\}/g)].map((match) => match[1] ?? "");
-    const finalPaper = paperRules.at(-1) ?? "";
+    const finalPaper = paperRules.find((rule) => rule.includes("position: relative")) ?? "";
     const sticky = styles.match(/\.nb-sticky\s*\{([^}]*)\}/)?.[1] ?? "";
     expect(finalPaper).toContain("border: 0");
     expect(finalPaper).toContain("overflow: hidden");
