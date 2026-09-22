@@ -17,8 +17,9 @@ describe("R3 card and sticky visual pass", () => {
   });
 
   it("keeps long card content visible instead of clipping it", () => {
-    expect(styles).toMatch(/\.nb-paper[\s\S]*height:\s*auto/);
-    expect(styles).not.toMatch(/\.nb-paper\s*\{[^}]*overflow:\s*hidden/);
+    const finalPaperRule = styles.slice(styles.lastIndexOf(".nb-paper {"), styles.indexOf("}", styles.lastIndexOf(".nb-paper {")) + 1);
+    expect(finalPaperRule).toContain("height: auto");
+    expect(finalPaperRule).toContain("overflow: visible");
   });
 
   it.each([
@@ -49,7 +50,7 @@ describe("R3 card and sticky visual pass", () => {
   });
 
   it("keeps every vendor treatment away from Ask Lasso lime", () => {
-    const tokenLines = styles.split("\n").filter((line) => line.includes("--nb-chat-border-"));
+    const tokenLines = styles.split("\n").filter((line) => /^\s*--nb-chat-border-[^:]+:/.test(line));
     expect(tokenLines).toHaveLength(8);
     expect(tokenLines.join("\n")).not.toContain("#04f85b");
     expect(tokenLines.join("\n")).not.toContain("var(--nb-lasso-green)");
