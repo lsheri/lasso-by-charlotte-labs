@@ -70,10 +70,11 @@ describe("Home", () => {
     expect(screen.getByRole("heading", { name: "Welcome to Lasso" }).closest("section")?.className).toContain("w-[620px]");
   });
 
-  it("fills its available page height without imposing a minimum document height", () => {
+  it("accounts for the full page chrome without imposing extra document height", () => {
     render(<HomeBoard />);
     const viewport = screen.getByTestId("home-board-viewport");
-    expect(viewport.className).toContain("h-[calc(100vh-6rem)]");
+    expect(viewport.className).toContain("h-[calc(100vh-6.5rem)]");
+    expect(viewport.className).not.toContain("h-[calc(100vh-6rem)]");
     expect(viewport.className).not.toContain("min-h-");
   });
 

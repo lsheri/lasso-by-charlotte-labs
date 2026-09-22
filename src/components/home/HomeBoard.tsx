@@ -82,7 +82,11 @@ export function HomeBoard() {
   const countLabel = engagements ? `HOME · ${engagements.length} ENGAGEMENTS` : "HOME";
 
   return (
-    <div data-testid="home-board-viewport" className="h-[calc(100vh-6rem)] overflow-hidden">
+    <div
+      data-testid="home-board-viewport"
+      // Desktop chrome is AppShell's 48px top padding plus 56px bottom padding.
+      className="h-[calc(100vh-6.5rem)] overflow-hidden"
+    >
       <BoardShell
         ariaLabel="Home board"
         frames={[frame]}
