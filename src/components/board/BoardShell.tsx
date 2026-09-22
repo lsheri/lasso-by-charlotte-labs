@@ -96,6 +96,7 @@ export function BoardShell<F extends BoardShellFrame, N extends BoardShellNode>(
   const [pan, setPan] = useState<Point>({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [interaction, setInteraction] = useState<Interaction>("idle");
+  const [viewportSize, setViewportSize] = useState<LabViewportSize | null>(null);
 
   const zoomRef = useRef(zoom);
   zoomRef.current = zoom;
@@ -137,7 +138,6 @@ export function BoardShell<F extends BoardShellFrame, N extends BoardShellNode>(
 
   const fitRef = useRef(fit);
   fitRef.current = fit;
-  const pendingViewportRef = useRef<LabViewportSize | null>(null);
 
   useLayoutEffect(() => {
     const shell = shellRef.current;
@@ -158,20 +158,17 @@ export function BoardShell<F extends BoardShellFrame, N extends BoardShellNode>(
         : { width: shell.clientWidth, height: shell.clientHeight };
       if (!viewportSizeChanged(observedSizeRef.current, next)) return;
       observedSizeRef.current = next;
-      pendingViewportRef.current = next;
-      onViewportSizeChangeRef.current?.(next);
-      fitRef.current(next);
+      setViewportSize(next);
     });
     observer.observe(shell);
     return () => observer.disconnect();
   }, []);
 
   useLayoutEffect(() => {
-    const viewport = pendingViewportRef.current;
-    if (!viewport) return;
-    pendingViewportRef.current = null;
-    fitRef.current(viewport);
-  }, [fitFrames, boardNodes, measuredHeights]);
+    if (!viewportSize) return;
+    onViewportSizeChangeRef.current?.(viewportSize);
+    fitRef.current(viewportSize);
+  }, [viewportSize, fitFrames, boardNodes, measuredHeights]);
 
   // ---- the wheel: zoom under the cursor, or pan, or let a lane scroll ----
 
