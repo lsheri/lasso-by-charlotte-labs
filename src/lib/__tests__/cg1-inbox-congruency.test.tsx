@@ -401,15 +401,16 @@ describe("CG2 AI conversations congruency", () => {
       },
     });
     try {
-      inboxRows = [
+      const monthlyConversations: ReadonlyArray<readonly [string, string]> = [
         ["September conversation", "2026-09-21T10:00:00Z"],
         ["August conversation", "2026-08-21T10:00:00Z"],
         ["July conversation", "2026-07-21T10:00:00Z"],
         ["June conversation", "2026-06-21T10:00:00Z"],
         ["May conversation", "2026-05-21T10:00:00Z"],
         ["April conversation", "2026-04-21T10:00:00Z"],
-      ].map(([title, capturedAt], index) => ({
-        ...conversation(title ?? `conversation-${index}`, "claude", "ALPHA"),
+      ];
+      inboxRows = monthlyConversations.map(([title, capturedAt]) => ({
+        ...conversation(title, "claude", "ALPHA"),
         captured_at: capturedAt,
       }));
 
