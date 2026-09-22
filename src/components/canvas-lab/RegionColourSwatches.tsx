@@ -3,7 +3,7 @@ import { REGION_FILLS, regionFillStyle, type RegionFill } from "@/lib/board-regi
 
 export function RegionColourSwatches({ value, onChange }: { value: RegionFill; onChange: (fill: RegionFill) => void }) {
   return (
-    <div className="canvas-lab-region-swatches" aria-label="Region colour">
+    <div className="canvas-lab-region-swatches" aria-label="Grouping colour">
       {REGION_FILLS.map((fill) => {
         const colours = regionFillStyle(fill);
         return (

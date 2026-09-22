@@ -9,6 +9,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
+import { Share2 } from "lucide-react";
 
 import { BoardLinkSection } from "@/components/canvas-lab/ShareBoardDialog";
 import { Button } from "@/components/ui/button";
@@ -44,8 +45,8 @@ export function ShareDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="sm" variant="outline">
-          Share
+        <Button size="icon" variant="outline" aria-label="Share" title="Share">
+          <Share2 className="h-4 w-4" />
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-lg overflow-hidden">

@@ -1719,6 +1719,10 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 .canvas-lab-region-swatch { width: 22px; height: 22px; min-width: 22px; border: 1.4px solid; border-radius: var(--radius-control); padding: 0; box-shadow: none; }
 .canvas-lab-region-swatch:hover { box-shadow: inset 0 0 0 1px var(--nb-graphite); }
 .canvas-lab-region-swatch[aria-pressed="true"] { outline: 2px solid var(--nb-graphite); outline-offset: 2px; }
+.canvas-lab-grouping-name-bar { position: relative; width: min(320px, calc(100% - 12px)); border: 1px solid var(--nb-pencil); border-radius: var(--radius-control); background: var(--nb-paper); padding: 8px 34px 8px 9px; box-shadow: var(--shadow-modal); }
+.canvas-lab-grouping-name-bar .canvas-lab-frame-name-input { width: 100%; }
+.canvas-lab-grouping-name-dismiss { position: absolute; right: 3px; top: 3px; width: 26px; height: 26px; min-height: 26px; }
+.canvas-lab-grouping-name-bar .canvas-lab-region-hint { margin-top: 5px; line-height: 1.15; }
 .canvas-lab-add-workstream:focus-visible,
 .canvas-lab-inline-workstream button:focus-visible,
 .canvas-lab-inline-workstream input:focus-visible,

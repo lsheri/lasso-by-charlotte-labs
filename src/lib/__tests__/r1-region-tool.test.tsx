@@ -33,4 +33,44 @@ describe("R1 region tool", () => {
     expect(createPaintRegion).not.toMatch(/setPan|setZoom|fit\(/);
     expect(page).toContain("{showGuides ? <ReasoningTrailGuide");
   });
+
+  it("renders icon controls with accessible names for grouping and text", () => {
+    const page = readFileSync("src/pages/CanvasLabPage.tsx", "utf8");
+
+    expect(page).toMatch(/aria-label="Add grouping"[\s\S]*?<Square/);
+    expect(page).toMatch(/aria-label="Add text"[\s\S]*?<Type/);
+  });
+
+  it("uses grouping, never region, in toolbar copy and drawing announcements", () => {
+    const page = readFileSync("src/pages/CanvasLabPage.tsx", "utf8");
+    const toolbar = page.slice(page.indexOf("const toolbarItems"), page.indexOf("const toolbarPlan"));
+    const drawingFlow = page.slice(page.indexOf("function cancelDraw"), page.indexOf("async function persistDrawnFrame"));
+
+    const visibleCopy = `${toolbar}\n${drawingFlow}`.match(/(?:aria-label|label)=\"[^\"]*\"|setAnnouncement\(\"[^\"]*\"\)|>[^<>{}]+</g)?.join("\n") ?? "";
+    expect(visibleCopy).not.toMatch(/\bregion\b/i);
+    expect(toolbar).toContain('aria-label="Add grouping"');
+    expect(drawingFlow).toContain('"Drag on empty board space to draw a grouping."');
+  });
+
+  it("anchors the just-drawn naming bar to its grouping", () => {
+    const page = readFileSync("src/pages/CanvasLabPage.tsx", "utf8");
+    const frame = readFileSync("src/components/canvas-lab/LabFrame.tsx", "utf8");
+
+    expect(page).toContain("setPendingRegionNameId(id)");
+    expect(page).toContain("namingPrompt={pendingRegionNameId === frame.id}");
+    expect(frame).toContain('"canvas-lab-grouping-name-bar"');
+    expect(frame).not.toContain("position: fixed");
+  });
+
+  it("dismisses naming without creating a workstream and preserves the named event", () => {
+    const page = readFileSync("src/pages/CanvasLabPage.tsx", "utf8");
+    const frame = readFileSync("src/components/canvas-lab/LabFrame.tsx", "utf8");
+    const regionLogic = readFileSync("src/lib/board-region.ts", "utf8");
+
+    expect(frame).toContain("onDismissNaming");
+    expect(frame).toContain('aria-label="Dismiss naming"');
+    expect(regionLogic).toContain('REGION_NAMING_LINE = "Name this and it becomes a workstream. It claims the work inside, and you can call it with @."');
+    expect(page).toContain('noteWorkboardRegionNamed(orgId, "named", claimed, frame.fill)');
+    expect(page).toContain('noteWorkboardRegionNamed(orgId, "cleared", filedWorkCount(released), frame.fill)');
+  });
 });
