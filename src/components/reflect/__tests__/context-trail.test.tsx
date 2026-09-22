@@ -53,22 +53,12 @@ describe("ThinkingTrail reading state", () => {
 
     act(() => vi.advanceTimersByTime(400));
 
-    expect(screen.getByText("Reading the record you chose").closest("p")).toHaveAttribute(
-      "data-trail-state",
+    expect(screen.getByText("Reading the record you chose").closest("p")?.dataset["trailState"]).toBe(
       "pending",
     );
-    expect(screen.getByText("Interview notes").closest("p")).toHaveAttribute(
-      "data-trail-state",
-      "pending",
-    );
-    expect(screen.getByText("Working deck").closest("p")).toHaveAttribute(
-      "data-trail-state",
-      "pending",
-    );
-    expect(screen.getByText("Writing").closest("p")).toHaveAttribute(
-      "data-trail-state",
-      "pending",
-    );
+    expect(screen.getByText("Interview notes").closest("p")?.dataset["trailState"]).toBe("pending");
+    expect(screen.getByText("Working deck").closest("p")?.dataset["trailState"]).toBe("pending");
+    expect(screen.getByText("Writing").closest("p")?.dataset["trailState"]).toBe("pending");
     expect(container.querySelectorAll('[data-trail-state="read"]')).toHaveLength(0);
   });
 
@@ -77,23 +67,17 @@ describe("ThinkingTrail reading state", () => {
       <ThinkingTrail items={[]} finalPhase="Writing" manifest={manifest} />,
     );
 
-    expect(screen.getByText("Reading the record you chose").closest("p")).toHaveAttribute(
-      "data-trail-state",
+    expect(screen.getByText("Reading the record you chose").closest("p")?.dataset["trailState"]).toBe(
       "read",
     );
-    expect(screen.getByText("Interview notes (420 words)").closest("p")).toHaveAttribute(
-      "data-trail-state",
+    expect(screen.getByText("Interview notes (420 words)").closest("p")?.dataset["trailState"]).toBe(
       "read",
     );
-    expect(screen.getByText("Working deck (8 slides)").closest("p")).toHaveAttribute(
-      "data-trail-state",
+    expect(screen.getByText("Working deck (8 slides)").closest("p")?.dataset["trailState"]).toBe(
       "read",
     );
-    expect(screen.getByText("Writing").closest("p")).toHaveAttribute("data-trail-state", "read");
-    expect(screen.getByText(/Private note:/).closest("p")).toHaveAttribute(
-      "data-trail-state",
-      "excluded",
-    );
+    expect(screen.getByText("Writing").closest("p")?.dataset["trailState"]).toBe("read");
+    expect(screen.getByText(/Private note:/).closest("p")?.dataset["trailState"]).toBe("excluded");
     expect(screen.getByText(/Private note:/).closest("p")?.querySelector("svg")).toBeNull();
     expect(container.querySelectorAll('[data-trail-state="read"] svg')).toHaveLength(4);
   });
@@ -107,7 +91,9 @@ describe("ThinkingTrail reading state", () => {
     const paths = [...container.querySelectorAll('[data-trail-state="read"] path')];
     expect(paths.length).toBeGreaterThan(0);
     for (const path of paths) {
-      expect(path).toHaveStyle({ strokeDashoffset: "0", transition: "none" });
+      const svgPath = path as SVGPathElement;
+      expect(svgPath.style.strokeDashoffset).toBe("0");
+      expect(svgPath.style.transition).toBe("none");
     }
   });
 });

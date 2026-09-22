@@ -58,14 +58,22 @@ function TrailCheck({ delay, reduced }: { delay: number; reduced: boolean }) {
         strokeLinecap="round"
         strokeLinejoin="round"
         vectorEffect="non-scaling-stroke"
-        style={{
-          strokeDasharray: TRAIL_CHECK_LENGTH,
-          strokeDashoffset: drawn ? 0 : TRAIL_CHECK_LENGTH,
-          transition: reduced
-            ? "none"
-            : "stroke-dashoffset 420ms cubic-bezier(0.22, 0.61, 0.36, 1)",
-          transitionDelay: reduced ? "0ms" : `${delay}ms`,
-        }}
+        style={
+          reduced
+            ? {
+                strokeDasharray: TRAIL_CHECK_LENGTH,
+                strokeDashoffset: 0,
+                transition: "none",
+              }
+            : {
+                strokeDasharray: TRAIL_CHECK_LENGTH,
+                strokeDashoffset: drawn ? 0 : TRAIL_CHECK_LENGTH,
+                transitionProperty: "stroke-dashoffset",
+                transitionDuration: "420ms",
+                transitionTimingFunction: "cubic-bezier(0.22, 0.61, 0.36, 1)",
+                transitionDelay: `${delay}ms`,
+              }
+        }
       />
     </svg>
   );
