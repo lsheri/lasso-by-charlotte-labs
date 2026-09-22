@@ -523,6 +523,31 @@ describe("CG2 AI conversations congruency", () => {
     expect(screen.queryByText(/No chats match/i)).toBeNull();
   });
 
+  it("keeps the search, chips, and count available when search matches nothing, then restores conversations when cleared", () => {
+    inboxRows = [
+      conversation("Budget source", "chatgpt", "BETA"),
+      conversation("Planning source", "claude", "ALPHA"),
+    ];
+    render(<AiRecordPage />);
+
+    const search = screen.getByRole("searchbox", { name: "Search your chats" });
+    fireEvent.change(search, { target: { value: "nothing here" } });
+
+    expect(screen.getByText("No chats match that search.")).toBeTruthy();
+    expect(search).toBeInTheDocument();
+    expect(search).toHaveValue("nothing here");
+    expect(screen.getByRole("group", { name: "Filter by tool" })).toBeInTheDocument();
+    expect(screen.getByRole("group", { name: "Filter by engagement" })).toBeInTheDocument();
+    expect(screen.getByText(`Showing 0 of ${inboxRows.length}. Nothing is deleted here.`)).toBeInTheDocument();
+    expect(screen.getByTestId("board-shell").querySelectorAll("[data-board-lane]")).toHaveLength(0);
+
+    fireEvent.change(search, { target: { value: "" } });
+
+    expect(search).toHaveValue("");
+    expect(screen.queryByText("No chats match that search.")).toBeNull();
+    for (const row of inboxRows) expect(screen.getByText(row.title)).toBeInTheDocument();
+  });
+
   it("does not use green or lime to decide AI conversation filter-match styling", () => {
     const offenders = filesUnder("src/components").concat(filesUnder("src/pages")).filter((path) => {
       const source = readFileSync(path, "utf8");

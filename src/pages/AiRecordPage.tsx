@@ -532,7 +532,7 @@ export function AiRecordPage() {
         </span>
       </div>
 
-      {capturedShown && groups.length > 0 ? (
+      {capturedShown && threads.length > 0 ? (
         <div style={{ height: CONVERSATION_BOARD_HEIGHT }}>
           <BoardShell
             ariaLabel="AI conversations board"
