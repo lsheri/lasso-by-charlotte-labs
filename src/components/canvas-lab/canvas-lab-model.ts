@@ -843,8 +843,8 @@ export function viewportSizeChanged(previous: LabViewportSize | null, next: LabV
  */
 export function fitWorkboardViewport(
   viewport: { width: number; height: number },
-  frames: LabFrame[],
-  nodes: LabNode[],
+  frames: Pick<LabFrame, "x" | "y" | "width" | "height">[],
+  nodes: (Pick<LabNode, "id" | "x" | "y" | "width" | "height">)[],
   measuredHeights: ReadonlyMap<string, number>,
   guides: LabRect | null = { x: 60, y: 60, width: 896, height: 300 },
   padding = 32,

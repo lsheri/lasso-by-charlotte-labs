@@ -58,7 +58,7 @@ export function ShareDialog({
           <PeopleSection engagementId={engagementId} profileId={profileId} open={open} />
 
           <section className="flex flex-col gap-3">
-            <p className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">
+            <p className="font-mono text-[9px] uppercase tracking-[0.08em] text-foreground">
               A link that expires
             </p>
             <BoardLinkSection engagementId={engagementId} profileId={profileId} open={open} />
@@ -145,7 +145,7 @@ function PeopleSection({
         <div className="flex flex-col gap-2">
           {ACCESS_CHOICES.map((choice) => (
             <div key={choice.value} className="flex items-start justify-between gap-3">
-              <p className="nb-type-small text-muted">{choice.line}</p>
+              <p className="nb-type-small text-foreground">{choice.line}</p>
               <Button
                 size="sm"
                 variant="outline"
@@ -162,11 +162,11 @@ function PeopleSection({
       {problem ? <p className="nb-type-small text-foreground">{problem}</p> : null}
 
       <div className="flex flex-col gap-2">
-        <p className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">
+        <p className="font-mono text-[9px] uppercase tracking-[0.08em] text-foreground">
           Already on this board
         </p>
         {onBoard.length === 0 ? (
-          <p className="nb-type-small text-muted">Nobody else is on this board yet.</p>
+          <p className="nb-type-small text-muted-foreground">Nobody else is on this board yet.</p>
         ) : (
           <ul className="space-y-2">
             {onBoard.map((person) => (
@@ -174,11 +174,11 @@ function PeopleSection({
                 key={person.id}
                 className="flex items-center justify-between gap-3 rounded-md border border-border p-2"
               >
-                <span className="nb-type-small text-muted">
+                <span className="nb-type-small text-muted-foreground">
                   {person.display_name} · {accessLabel(person.access as EngagementAccessChoice)}
                 </span>
                 {person.isYou ? (
-                  <span className="nb-type-small text-muted">You</span>
+                  <span className="nb-type-small text-muted-foreground">You</span>
                 ) : (
                   <Button
                     size="sm"

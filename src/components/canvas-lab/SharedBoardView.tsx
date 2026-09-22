@@ -12,6 +12,8 @@ import {
   type SharedBoardDto,
   type SharedBoardNode,
 } from "@/lib/board-share-shared";
+import { fitWorkboardViewport } from "@/components/canvas-lab/canvas-lab-model";
+import { useLayoutEffect, useRef, useState } from "react";
 
 function itemLabel(type: string): string {
   return type.replaceAll("_", " ");
@@ -19,15 +21,46 @@ function itemLabel(type: string): string {
 
 export function SharedBoardView({ board }: { board: SharedBoardDto }) {
   const bounds = sharedBoardBounds(board.frames, board.nodes);
+  const viewportRef = useRef<HTMLDivElement | null>(null);
+  const [view, setView] = useState<{ zoom: number; pan: { x: number; y: number } } | null>(null);
   const itemsById = new Map(board.items.map((item) => [item.id, item]));
   const decisionsById = new Map(board.decisions.map((decision) => [decision.id, decision]));
   const nodesById = new Map(board.nodes.map((node) => [node.id, node]));
 
+  useLayoutEffect(() => {
+    const viewport = viewportRef.current;
+    if (!viewport) return;
+    const fit = () => {
+      const fitted = fitWorkboardViewport(
+        { width: viewport.clientWidth, height: viewport.clientHeight },
+        board.frames.map((frame) => ({ x: frame.x, y: frame.y, width: frame.w, height: frame.h })),
+        board.nodes.map((node) => ({ id: node.id, x: node.x, y: node.y, width: node.w, height: node.h })),
+        new Map(),
+        null,
+      );
+      setView({ zoom: fitted.zoom, pan: fitted.pan });
+    };
+    fit();
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(fit);
+    observer.observe(viewport);
+    return () => observer.disconnect();
+  }, [board.frames, board.nodes]);
+
   return (
-    <div className="relative overflow-auto" data-testid="shared-board-view">
-      <div className="relative" style={{ width: bounds.width, height: bounds.height }}>
+    <div ref={viewportRef} className="relative h-full overflow-hidden" data-testid="shared-board-view">
+      <div
+        className="absolute left-0 top-0"
+        style={{
+          width: bounds.width,
+          height: bounds.height,
+          visibility: view ? "visible" : "hidden",
+          transform: view ? `translate(${view.pan.x}px, ${view.pan.y}px) scale(${view.zoom})` : undefined,
+          transformOrigin: "0 0",
+        }}
+      >
         <svg
-          className="pointer-events-none absolute inset-0"
+          className="pointer-events-none absolute inset-0 overflow-visible"
           width={bounds.width}
           height={bounds.height}
           aria-hidden="true"

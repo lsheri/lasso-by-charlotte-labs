@@ -210,7 +210,8 @@ describe("S1 — the read only view", () => {
       expect(source).not.toMatch(/onDrop|onPointerDown|onDragStart|contentEditable/);
       expect(source).not.toMatch(/<Link\b|useNavigate|AppSidebar/);
     }
-    expect(VIEW).not.toContain("canvas-lab-model");
+    expect(VIEW).toContain('import { fitWorkboardViewport } from "@/components/canvas-lab/canvas-lab-model"');
+    expect(VIEW).not.toMatch(/mutateCanvasLabBoardFn|saveCanvasLab|deleteCanvasLab/);
   });
 
   it("the page revalidates rather than trusting what it loaded with", () => {
