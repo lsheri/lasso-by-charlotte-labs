@@ -51,7 +51,8 @@ describe("ThinkingTrail reading state", () => {
       />,
     );
 
-    act(() => vi.advanceTimersByTime(400));
+    act(() => vi.advanceTimersByTime(150));
+    act(() => vi.advanceTimersByTime(150));
 
     expect(screen.getByText("Reading the record you chose").closest("p")?.dataset["trailState"]).toBe(
       "pending",
