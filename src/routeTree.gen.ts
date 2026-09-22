@@ -30,6 +30,7 @@ import { Route as AuthenticatedConnectorsRouteImport } from './routes/_authentic
 import { Route as AuthenticatedDecisionsRouteImport } from './routes/_authenticated/decisions'
 import { Route as AuthenticatedFindItRouteImport } from './routes/_authenticated/find-it'
 import { Route as AuthenticatedFirmRouteImport } from './routes/_authenticated/firm'
+import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/home'
 import { Route as AuthenticatedHowLassoWorksRouteImport } from './routes/_authenticated/how-lasso-works'
 import { Route as AuthenticatedMembersRouteImport } from './routes/_authenticated/members'
 import { Route as AuthenticatedMotionRouteImport } from './routes/_authenticated/motion'
@@ -162,6 +163,11 @@ const AuthenticatedFindItRoute = AuthenticatedFindItRouteImport.update({
 const AuthenticatedFirmRoute = AuthenticatedFirmRouteImport.update({
   id: '/firm',
   path: '/firm',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedHomeRoute = AuthenticatedHomeRouteImport.update({
+  id: '/home',
+  path: '/home',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedHowLassoWorksRoute =
@@ -329,6 +335,7 @@ export interface FileRoutesByFullPath {
   '/decisions': typeof AuthenticatedDecisionsRoute
   '/find-it': typeof AuthenticatedFindItRoute
   '/firm': typeof AuthenticatedFirmRoute
+  '/home': typeof AuthenticatedHomeRoute
   '/how-lasso-works': typeof AuthenticatedHowLassoWorksRoute
   '/members': typeof AuthenticatedMembersRoute
   '/motion': typeof AuthenticatedMotionRoute
@@ -378,6 +385,7 @@ export interface FileRoutesByTo {
   '/decisions': typeof AuthenticatedDecisionsRoute
   '/find-it': typeof AuthenticatedFindItRoute
   '/firm': typeof AuthenticatedFirmRoute
+  '/home': typeof AuthenticatedHomeRoute
   '/how-lasso-works': typeof AuthenticatedHowLassoWorksRoute
   '/members': typeof AuthenticatedMembersRoute
   '/motion': typeof AuthenticatedMotionRoute
@@ -429,6 +437,7 @@ export interface FileRoutesById {
   '/_authenticated/decisions': typeof AuthenticatedDecisionsRoute
   '/_authenticated/find-it': typeof AuthenticatedFindItRoute
   '/_authenticated/firm': typeof AuthenticatedFirmRoute
+  '/_authenticated/home': typeof AuthenticatedHomeRoute
   '/_authenticated/how-lasso-works': typeof AuthenticatedHowLassoWorksRoute
   '/_authenticated/members': typeof AuthenticatedMembersRoute
   '/_authenticated/motion': typeof AuthenticatedMotionRoute
@@ -480,6 +489,7 @@ export interface FileRouteTypes {
     | '/decisions'
     | '/find-it'
     | '/firm'
+    | '/home'
     | '/how-lasso-works'
     | '/members'
     | '/motion'
@@ -529,6 +539,7 @@ export interface FileRouteTypes {
     | '/decisions'
     | '/find-it'
     | '/firm'
+    | '/home'
     | '/how-lasso-works'
     | '/members'
     | '/motion'
@@ -579,6 +590,7 @@ export interface FileRouteTypes {
     | '/_authenticated/decisions'
     | '/_authenticated/find-it'
     | '/_authenticated/firm'
+    | '/_authenticated/home'
     | '/_authenticated/how-lasso-works'
     | '/_authenticated/members'
     | '/_authenticated/motion'
@@ -779,6 +791,13 @@ declare module '@tanstack/react-router' {
       path: '/firm'
       fullPath: '/firm'
       preLoaderRoute: typeof AuthenticatedFirmRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/home': {
+      id: '/_authenticated/home'
+      path: '/home'
+      fullPath: '/home'
+      preLoaderRoute: typeof AuthenticatedHomeRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/how-lasso-works': {
@@ -984,6 +1003,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDecisionsRoute: typeof AuthenticatedDecisionsRoute
   AuthenticatedFindItRoute: typeof AuthenticatedFindItRoute
   AuthenticatedFirmRoute: typeof AuthenticatedFirmRoute
+  AuthenticatedHomeRoute: typeof AuthenticatedHomeRoute
   AuthenticatedHowLassoWorksRoute: typeof AuthenticatedHowLassoWorksRoute
   AuthenticatedMembersRoute: typeof AuthenticatedMembersRoute
   AuthenticatedMotionRoute: typeof AuthenticatedMotionRoute
@@ -1014,6 +1034,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDecisionsRoute: AuthenticatedDecisionsRoute,
   AuthenticatedFindItRoute: AuthenticatedFindItRoute,
   AuthenticatedFirmRoute: AuthenticatedFirmRoute,
+  AuthenticatedHomeRoute: AuthenticatedHomeRoute,
   AuthenticatedHowLassoWorksRoute: AuthenticatedHowLassoWorksRoute,
   AuthenticatedMembersRoute: AuthenticatedMembersRoute,
   AuthenticatedMotionRoute: AuthenticatedMotionRoute,
