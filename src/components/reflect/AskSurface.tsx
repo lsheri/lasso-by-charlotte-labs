@@ -471,7 +471,7 @@ export function AskSurface({
   return (
     <>
       <header className="shrink-0 border-b border-border px-4 pb-2 pt-[calc(1rem+env(safe-area-inset-top))]">
-        <div className="flex min-w-0 items-start gap-2">
+        <div className={`flex min-w-0 gap-2 ${inline ? "items-center" : "items-start"}`}>
           <LassoThinkingMark
             kind="signature"
             size={LOOP_SIZE_CHAT}

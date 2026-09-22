@@ -3,6 +3,9 @@
 - [x] M1: Replace the board Ask mark with the signature loop and reuse the sidebar loop for Lasso reply avatars.
 - [x] M1: Add deterministic signature-loop maths, reduced-motion behavior, and focused guards.
 - [x] M1.1: Correct signature travel, easing, continuous breath, and single panel-header placement.
+- [x] M2: Keep reading lines pending until the manifest confirms them, then draw static-record ticks.
+- [x] M2: Remove the reading spinner, cap the resolve cascade, and preserve reduced-motion meaning.
+- [x] M2: Contain the board Ask canvas and centre the inline panel mark against its tab row.
 
 - [x] P3.3: Compact conversation cards to one first-user quote while preserving lane derivation and zoom-one fit.
 
