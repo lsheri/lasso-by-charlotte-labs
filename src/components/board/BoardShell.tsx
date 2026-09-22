@@ -360,3 +360,86 @@ export function BoardShell<F extends BoardShellFrame, N extends BoardShellNode>(
     </div>
   );
 }
+
+/** How many items past each visible edge stay mounted, so a fast scroll never shows a gap. */
+const LANE_OVERSCAN = 1;
+
+type BoardLaneProps<N extends BoardShellNode> = {
+  lane: BoardShellFrame;
+  contents: readonly N[];
+  selected: ReadonlySet<string>;
+  renderNode: (node: N) => ReactNode;
+  frameChrome?: ReactNode;
+};
+
+/**
+ * A lane's scrolling box. It renders only the contents its own scrollTop puts
+ * in view, plus one item of overscan at each end, behind a full-extent spacer
+ * so the scrollbar stays honest. Clipping hides pixels; it does not save the
+ * render, and a lane may hold hundreds of items.
+ */
+function BoardLane<N extends BoardShellNode>({ lane, contents, selected, renderNode, frameChrome }: BoardLaneProps<N>) {
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const [scrollTop, setScrollTop] = useState(0);
+
+  useEffect(() => {
+    const box = scrollRef.current;
+    if (!box) return;
+    // The lane's own box, never the board: scrolling a lane does not pan.
+    const onScroll = () => setScrollTop(box.scrollTop);
+    box.addEventListener("scroll", onScroll, { passive: true });
+    return () => box.removeEventListener("scroll", onScroll);
+  }, []);
+
+  const measured = useMemo(
+    () => contents.map<LaneContent>((node) => ({ id: node.id, height: node.height })),
+    [contents],
+  );
+  const placements = useMemo(() => laneContentLayout(lane, measured), [lane, measured]);
+  const extent = useMemo(() => laneContentExtent(measured), [measured]);
+
+  const rendered = useMemo<LaneContentPlacement[]>(() => {
+    const visible = laneVisiblePlacements(lane, placements, scrollTop);
+    if (visible.length === 0) return placements.slice(0, Math.min(placements.length, LANE_OVERSCAN));
+    const first = visible[0]!.index;
+    const last = visible[visible.length - 1]!.index;
+    return placements.slice(Math.max(0, first - LANE_OVERSCAN), last + 1 + LANE_OVERSCAN);
+  }, [lane, placements, scrollTop]);
+
+  return (
+    <div
+      data-board-lane={lane.id}
+      className="absolute"
+      style={{ left: lane.x, top: lane.y, width: lane.width, height: lane.height }}
+    >
+      {frameChrome ?? null}
+      <div
+        ref={scrollRef}
+        data-testid={`board-lane-scroll-${lane.id}`}
+        className="absolute inset-0 overflow-y-auto overflow-x-hidden"
+        // Inline, so the lane's own scrolling is a fact of the element
+        // rather than a stylesheet scrollableUnder may not have read.
+        style={{ overflowY: "auto", overflowX: "hidden" }}
+      >
+        <div className="relative w-full" style={{ height: extent }}>
+          {rendered.map((placement) => {
+            const node = contents[placement.index];
+            if (!node) return null;
+            return (
+              <div
+                key={node.id}
+                data-lane-content={node.id}
+                data-board-node={node.id}
+                data-selected={selected.has(node.id) ? "true" : "false"}
+                className="absolute"
+                style={{ left: placement.x, top: placement.y, width: placement.width, height: placement.height }}
+              >
+                {renderNode(node)}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
