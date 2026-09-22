@@ -89,7 +89,7 @@ export function regionOccupies(frame: RegionFrame): boolean {
  * The sentence shown beside the name field the first time someone names a
  * region. Plain words, where they are already looking.
  */
-export const REGION_NAMING_LINE = "Name this and it becomes a workstream, taking in the cards inside it.";
+export const REGION_NAMING_LINE = "Name this and it becomes a workstream. It claims the work inside, and you can call it with @.";
 
 const EMPTY_SPLIT: ClaimSplit = { silent: [], ask: [], frameOnly: [] };
 

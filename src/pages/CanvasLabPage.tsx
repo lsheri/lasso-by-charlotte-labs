@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { Menu, Minus, MoreHorizontal, Plus, X } from "lucide-react";
+import { Eye, FileText, Hand, Info, LayoutTemplate, Maximize2, Menu, Minus, MoreHorizontal, Plus, Sparkles, Square, StickyNote, Type, X } from "lucide-react";
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 
 import {
@@ -154,6 +154,7 @@ import { SidebarNav } from "@/components/layout/SidebarNav";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { DETAILS_SEARCH } from "@/lib/engagement-default-view";
 import { useCanvasLab } from "@/hooks/use-canvas-lab";
 import { useCanvasLabAnnotations } from "@/hooks/use-canvas-lab-annotations";
@@ -205,6 +206,10 @@ import { ExampleBoardOverlay } from "@/components/canvas-lab/ExampleBoardOverlay
 export function workboardOpenVia(value: string | undefined): WorkboardOpenVia {
   if (value === "header" || value === "canvas_tab" || value === "default") return value;
   return "direct";
+}
+
+function ToolbarIcon({ label, children }: { label: string; children: ReactNode }) {
+  return <Tooltip><TooltipTrigger asChild>{children}</TooltipTrigger><TooltipContent>{label}</TooltipContent></Tooltip>;
 }
 
 export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string; entryVia?: string }) {
@@ -308,6 +313,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   const [askOpen, setAskOpen] = useState(false);
   const [keepBusy, setKeepBusy] = useState(false);
   const [regionFill, setRegionFill] = useState<RegionFill>("green-faded");
+  const [pendingRegionNameId, setPendingRegionNameId] = useState<string | null>(null);
   /** Right-click on empty board space. Screen coords for the menu, board coords for the drop. */
   const [boardMenu, setBoardMenu] = useState<{ screen: Point; board: Point } | null>(null);
   /** B4: the workstream tool, the box being dragged and the name still to be given. */
@@ -722,7 +728,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     if (!frame?.durableId) {
       // F1: a region with no durable row behind it used to swallow every
       // change. The person hears about it instead.
-      setAnnouncement("That region is not saved yet, so this change did not save.");
+      setAnnouncement("That grouping is not saved yet, so this change did not save.");
       return;
     }
     const result = await lab.persist({ type: "frame_update", frameId: frame.durableId, expectedVersion: frame.durableVersion ?? 1, patch });
@@ -994,7 +1000,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       setDrawing(null);
       if (!current) return;
       const rect = drawnRect(current.from, current.to);
-      if (!drawnRectUsable(rect)) { setAnnouncement("Drag a bigger box to draw a region."); return; }
+      if (!drawnRectUsable(rect)) { setAnnouncement("Drag a bigger box to draw a grouping."); return; }
       void createPaintRegion(rect);
     }
     window.addEventListener("pointermove", move);
@@ -1658,6 +1664,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     framesRef.current = [...framesRef.current, frame];
     setDrawTool(nextTool.armed);
     setSelectedFrameId(id);
+    setPendingRegionNameId(id);
     const boardExisted = boardIdRef.current != null;
     if (!(await materialize())) return;
     if (boardExisted) {
@@ -1670,7 +1677,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
         framesRef.current = markFrameSaved(framesRef.current, id, durableId, version);
       }
     }
-    setAnnouncement("Region drawn. Name it to make it a workstream.");
+    setAnnouncement("Grouping drawn. Name it to make it a workstream.");
   }
 
   /**
@@ -1689,7 +1696,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       for (const cardId of change.release) applyFrameMove(cardId, null);
       if (frame.durableId) await persistFramePatch(frame.id, { label: null, taskId: null });
       noteWorkboardRegionNamed(orgId, "cleared", filedWorkCount(released), frame.fill);
-      setAnnouncement("Name taken off. This is a coloured region again.");
+      setAnnouncement("Name taken off. This is a coloured grouping again.");
       return;
     }
     const name = nameInput.trim();
@@ -2051,7 +2058,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   function toggleDrawTool() {
     if (drawTool || pendingWorkstream) {
       cancelDraw();
-      setAnnouncement("Region drawing off.");
+      setAnnouncement("Grouping drawing off.");
       return;
     }
     if (structureMode !== "structured") {
@@ -2060,7 +2067,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       noteWorkboardStructureToggled(orgId, "structured");
     }
     setDrawTool(true);
-    setAnnouncement("Drag on empty board space to draw a region.");
+    setAnnouncement("Drag on empty board space to draw a grouping.");
   }
 
   /** The outline is saved the same way every other outline is. */
@@ -2329,7 +2336,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   });
   toolbarItems.push({
     spec: { id: "working-from", width: 0, pinned: true },
-    row: <Button type="button" size="sm" variant="outline" className="md:hidden" onClick={() => { setRailOpen(true); setMobileView("rail"); }}>Working from</Button>,
+      row: <ToolbarIcon label="Working from"><Button type="button" size="icon" variant="outline" className="md:hidden" aria-label="Working from" onClick={() => { setRailOpen(true); setMobileView("rail"); }}><FileText className="h-4 w-4" /></Button></ToolbarIcon>,
   });
   if (selectedLinkId) {
     toolbarItems.push({
@@ -2346,29 +2353,29 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   if (canAddWork) {
     toolbarItems.push({
       spec: { id: "add-work", width: 96, pinned: true },
-      row: <Button size="sm" variant="outline" onClick={() => openAddWork("header", null)}>Add work</Button>,
+      row: <ToolbarIcon label="Add work"><Button size="icon" variant="outline" aria-label="Add work" onClick={() => openAddWork("header", null)}><StickyNote className="h-4 w-4" /></Button></ToolbarIcon>,
     });
     toolbarItems.push({
       spec: { id: "add-text", width: 92, moveOrder: 4 },
-      row: <Button size="sm" variant="outline" onClick={() => void addTextBlock()}>Add text</Button>,
+      row: <ToolbarIcon label="Add text"><Button size="icon" variant="outline" aria-label="Add text" onClick={() => void addTextBlock()}><Type className="h-4 w-4" /></Button></ToolbarIcon>,
       menu: <DropdownMenuItem onSelect={() => void addTextBlock()}>Add text</DropdownMenuItem>,
     });
     toolbarItems.push({
       spec: { id: "region", width: 84, moveOrder: 5 },
-      row: <Button size="sm" variant={drawTool ? "secondary" : "outline"} aria-pressed={drawTool} onClick={toggleDrawTool}>Region</Button>,
-      menu: <DropdownMenuItem onSelect={toggleDrawTool}>Region</DropdownMenuItem>,
+      row: <ToolbarIcon label="Add grouping"><Button size="icon" variant={drawTool ? "secondary" : "outline"} aria-label="Add grouping" aria-pressed={drawTool} onClick={toggleDrawTool}><Square className="h-4 w-4" /></Button></ToolbarIcon>,
+      menu: <DropdownMenuItem onSelect={toggleDrawTool}><Square className="mr-2 h-4 w-4" />Add grouping</DropdownMenuItem>,
     });
   }
   if (showExample) {
     toolbarItems.push({
       spec: { id: "example", width: 180, moveOrder: 8 },
-      row: <Button size="sm" className="bg-green text-paper hover:bg-[var(--nb-green-deep)]" onClick={openExample}>See an example board</Button>,
+      row: <ToolbarIcon label="See an example board"><Button size="icon" className="bg-green text-paper hover:bg-[var(--nb-green-deep)]" aria-label="See an example board" onClick={openExample}><LayoutTemplate className="h-4 w-4" /></Button></ToolbarIcon>,
       menu: <DropdownMenuItem onSelect={openExample}>See an example board</DropdownMenuItem>,
     });
   }
   toolbarItems.push({
     spec: { id: "ask", width: 100, pinned: true },
-    row: <Button size="sm" variant={askOpen ? "secondary" : "outline"} aria-pressed={askOpen} onClick={() => setAskOpen((current) => !current)}>Ask Lasso</Button>,
+    row: <ToolbarIcon label="Ask Lasso"><Button size="icon" variant={askOpen ? "secondary" : "outline"} aria-label="Ask Lasso" aria-pressed={askOpen} onClick={() => setAskOpen((current) => !current)}><Sparkles className="h-4 w-4" /></Button></ToolbarIcon>,
   });
   if (canAddWork) {
     toolbarItems.push({
@@ -2378,12 +2385,12 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   }
   toolbarItems.push({
     spec: { id: "details", width: 80, moveOrder: 9 },
-    row: <Button size="sm" variant="outline" asChild><Link to="/engagements/$id" params={{ id: engagementId }} search={{ ...DETAILS_SEARCH }}>Details</Link></Button>,
+    row: <ToolbarIcon label="Details"><Button size="icon" variant="outline" aria-label="Details" asChild><Link to="/engagements/$id" params={{ id: engagementId }} search={{ ...DETAILS_SEARCH }}><Info className="h-4 w-4" /></Link></Button></ToolbarIcon>,
     menu: <DropdownMenuItem asChild><Link to="/engagements/$id" params={{ id: engagementId }} search={{ ...DETAILS_SEARCH }}>Details</Link></DropdownMenuItem>,
   });
   toolbarItems.push({
     spec: { id: "fit", width: 56, moveOrder: 10 },
-    row: <Button size="sm" variant="outline" onClick={() => fit(true)}>Fit</Button>,
+    row: <ToolbarIcon label="Fit"><Button size="icon" variant="outline" aria-label="Fit" onClick={() => fit(true)}><Maximize2 className="h-4 w-4" /></Button></ToolbarIcon>,
     menu: <DropdownMenuItem onSelect={() => fit(true)}>Fit</DropdownMenuItem>,
   });
   toolbarItems.push({
@@ -2400,6 +2407,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   const toolbarOverflowItems = toolbarItems.filter((item) => toolbarPlan.overflow.includes(item.spec.id));
 
   return (
+    <TooltipProvider delayDuration={250}>
     <div className="fixed inset-0 z-50 flex bg-[var(--nb-paper)]" data-testid="canvas-lab-shell" data-interaction={interaction === "idle" && connectSource ? "connect" : interaction}>
       <aside className="z-30 flex w-[52px] shrink-0 flex-col items-center border-r border-border bg-card py-3">
         <LassoLoopMark className="h-7 w-7 text-green" />
@@ -2434,7 +2442,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
             {!showGuides && trailFrame ? <ReasoningTrailGuide onAdd={addNode} rect={{ x: trailFrame.x, y: trailFrame.y, width: trailFrame.width, height: trailFrame.height }} onHandlePointerDown={canAddWork ? (event) => startTrailDrag(trailFrame, event) : undefined} onRemove={canAddWork ? () => void removeTrail() : undefined} /> : null}
             {showGuides ? <FoundationGuide brief={engagement?.brief ?? null} tasks={workstreamTasks(page?.tasks ?? []).map((task) => ({ id: task.id, name: task.name, detail: task.detail }))} work={workItems} /> : null}
             {/* The context region is not a workstream, so it is drawn whether or not the workstream outlines are showing. */}
-            {boardFrames.filter((frame) => !isTrailFrameId(frame.id) && (structureMode === "structured" || frameKindOf(frame) === "context")).map((frame) => { const kind = frameKindOf(frame); const count = visibleNodes.filter((node) => node.frame === frame.id).length; const custom = kind === "custom"; const removable = !allNodes.some((node) => node.frame === frame.id); const region = isRegionFrameId(frame.id); return <LabFrameElement key={frame.id} frame={frame} count={count} region={region} fillStyle={region ? regionFillStyle(frame.fill) : undefined} selected={selectedFrameId === frame.id} editable={Boolean(lab.board?.canEditStructure)} custom={custom} kind={kind} namedByWorkstream={kind === "task"} removable={removable} onSelect={() => { setSelectedFrameId(frame.id); setKeyboardId(null); setSelectedLinkId((current) => relationshipSelection(current, "deselect")); }} onResizeStart={(corner, event) => startResize("frame", frame.id, corner, { x: frame.x, y: frame.y, width: frame.width, height: frame.height }, event)} onResizeKeyDown={(corner, event) => keyboardResize("frame", frame.id, corner, { x: frame.x, y: frame.y, width: frame.width, height: frame.height }, event)} onResizeKeyUp={finishKeyboardResize} onFit={() => fitFrame(frame)} onRename={(name) => renameFrame(frame, name)} onRemove={() => kind === "context" ? void removeContextArea(frame) : removeFrame(frame)} onMenuOpened={() => noteWorkboardCardMenuOpened(orgId, "frame", "shared")} onMenuOpenChange={setCardMenuOpen} onAddWorkstream={frame.id === "workstreams" ? addWorkstream : undefined} onAddContext={kind === "context" && canAddWork ? () => openAddWork("context_menu", null, "context") : undefined} />; })}
+            {boardFrames.filter((frame) => !isTrailFrameId(frame.id) && (structureMode === "structured" || frameKindOf(frame) === "context")).map((frame) => { const kind = frameKindOf(frame); const count = visibleNodes.filter((node) => node.frame === frame.id).length; const custom = kind === "custom"; const removable = !allNodes.some((node) => node.frame === frame.id); const region = isRegionFrameId(frame.id); return <LabFrameElement key={frame.id} frame={frame} count={count} region={region} namingPrompt={pendingRegionNameId === frame.id} fillStyle={region ? regionFillStyle(frame.fill) : undefined} selected={selectedFrameId === frame.id} editable={Boolean(lab.board?.canEditStructure)} custom={custom} kind={kind} namedByWorkstream={kind === "task"} removable={removable} onSelect={() => { setSelectedFrameId(frame.id); setKeyboardId(null); setSelectedLinkId((current) => relationshipSelection(current, "deselect")); }} onResizeStart={(corner, event) => startResize("frame", frame.id, corner, { x: frame.x, y: frame.y, width: frame.width, height: frame.height }, event)} onResizeKeyDown={(corner, event) => keyboardResize("frame", frame.id, corner, { x: frame.x, y: frame.y, width: frame.width, height: frame.height }, event)} onResizeKeyUp={finishKeyboardResize} onFit={() => fitFrame(frame)} onRename={(name) => { setPendingRegionNameId(null); renameFrame(frame, name); }} onDismissNaming={() => setPendingRegionNameId((current) => current === frame.id ? null : current)} onRemove={() => kind === "context" ? void removeContextArea(frame) : removeFrame(frame)} onMenuOpened={() => noteWorkboardCardMenuOpened(orgId, "frame", "shared")} onMenuOpenChange={setCardMenuOpen} onAddWorkstream={frame.id === "workstreams" ? addWorkstream : undefined} onAddContext={kind === "context" && canAddWork ? () => openAddWork("context_menu", null, "context") : undefined} />; })}
             {structureMode === "structured" && Boolean(lab.board?.canEditStructure) && !boardFrames.some((frame) => frame.id === "workstreams") ? (() => { const anchor = workstreamAddAnchor(boardFrames, visibleNodes); if (!anchor) return null; return <div className="canvas-lab-inline-add" style={{ left: anchor.x, top: anchor.y, width: BOARD_INLINE_ADD_SIZE.width, minHeight: BOARD_INLINE_ADD_SIZE.height, transform: `scale(${1 / zoom})`, transformOrigin: "top left" }}>{inlineAddOpen ? <div className="canvas-lab-inline-workstream"><input aria-label="Workstream name" ref={inlineNameRef} maxLength={60} value={inlineFrameName} onChange={(event) => { setInlineFrameName(event.target.value); if (event.target.value.trim()) setInlineFrameError(false); }} onKeyDown={(event) => { if (event.key === "Enter" && addWorkstream(inlineFrameName)) { setInlineFrameName(""); setInlineFrameError(false); setInlineAddOpen(false); } if (event.key === "Escape") { setInlineAddOpen(false); setInlineFrameError(false); } }} /><button type="button" onClick={() => { if (addWorkstream(inlineFrameName)) { setInlineFrameName(""); setInlineFrameError(false); setInlineAddOpen(false); } else setInlineFrameError(true); }}>Add</button>{inlineFrameError ? <span>a workstream needs a name</span> : null}</div> : <button type="button" className="canvas-lab-add-workstream" onClick={() => setInlineAddOpen(true)}>+ workstream</button>}</div>; })() : null}
             <svg className="canvas-lab-relationships absolute inset-0 overflow-visible" width={bounds.width} height={bounds.height} aria-label="Local workboard relationships">
               {visibleNodes.filter((node) => node.kind === "chat").flatMap((draft) => (draft.contextIds ?? []).map((contextId) => { const source = visibleNodes.find((node) => node.id === contextId); if (!source) return null; const sx = source.x + source.width; const sy = source.y + source.height / 2; const tx = draft.x; const ty = draft.y + draft.height / 2; const middle = (sx + tx) / 2; return <path key={`${draft.id}:${contextId}`} d={`M ${sx} ${sy} C ${middle} ${sy}, ${middle} ${ty}, ${tx} ${ty}`} fill="none" stroke="var(--nb-graphite)" strokeWidth="1.4" strokeDasharray="4 4" strokeLinecap="round" className="pointer-events-none" />; }))}
@@ -2488,5 +2496,6 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       {focusNode ? <FocusOverlay node={focusNode} item={focusItem} onSummarize={() => { branchFrom({ ...focusNode, prompt: `Summarize: ${focusNode.title}` }); setFocusId(null); }} onBranch={() => { branchFrom(focusNode); setFocusId(null); }} onClose={() => { setFocusId(null); setFocusOpensComments(false); }} highlights={annotations.highlights} canWrite={canComment} openComments={focusOpensComments} threads={commentThreads.threads} onHighlight={focusThreadId ? (selection) => { void annotations.createHighlight({ turnNo: selection.turnNo, charStart: selection.charStart, charEnd: selection.charEnd, clientKey: crypto.randomUUID() }).then((result) => { if (result.status === "saved") noteHighlightChanged(orgId, "created", result.highlight.visibility, result.highlight.excerpt.length); }).catch(() => undefined); } : undefined} onRemoveHighlight={focusThreadId ? (highlight) => { void annotations.archiveHighlight({ id: highlight.id, expectedVersion: highlight.version }).then((result) => { if (result.status === "saved") noteHighlightChanged(orgId, "archived", highlight.visibility ?? "just_me", highlight.excerpt.length); }).catch(() => undefined); } : undefined} onSetHighlightVisibility={focusThreadId ? (highlight, visibility) => { void annotations.setHighlightVisibility({ id: highlight.id, visibility, expectedVersion: highlight.version }).then((result) => { if (result.status === "saved") noteAnnotationChanged(orgId, { kind: "highlight", action: "edited", anchorKind: "turn", visibility, length: highlight.excerpt.length, isReply: false }); }).catch(() => undefined); } : undefined} onCreateComment={focusThreadId ? (anchor, body) => { void commentThreads.createComment({ turnNo: anchor.turnNo, charStart: anchor.charStart, charEnd: anchor.charEnd, body, clientKey: crypto.randomUUID() }).then((result) => { if (result.status !== "saved") return; noteAnnotationChanged(orgId, { kind: "comment", action: "created", anchorKind: "turn", visibility: "engagement", length: body.length, isReply: false }); if (!needsHighlightForComment(annotations.highlights, anchor)) return; void annotations.createHighlight({ turnNo: anchor.turnNo, charStart: anchor.charStart, charEnd: anchor.charEnd, clientKey: crypto.randomUUID() }).then((marked) => { if (marked.status === "saved") noteHighlightChanged(orgId, "created", marked.highlight.visibility, marked.highlight.excerpt.length); }).catch(() => undefined); }).catch(() => undefined); } : undefined} onCreateReply={focusThreadId ? (parentId, body) => { void commentThreads.createReply({ parentId, body, clientKey: crypto.randomUUID() }).then((result) => { if (result.status === "saved") noteAnnotationChanged(orgId, { kind: "comment", action: "created", anchorKind: "item", visibility: "engagement", length: body.length, isReply: true }); }).catch(() => undefined); } : undefined} onEditComment={focusThreadId ? (comment, body) => { void commentThreads.editComment({ id: comment.id, body, expectedVersion: comment.version }).then((result) => { if (result.status === "saved") noteAnnotationChanged(orgId, { kind: "comment", action: "edited", anchorKind: comment.parentId ? "item" : "turn", visibility: "engagement", length: body.length, isReply: Boolean(comment.parentId) }); }).catch(() => undefined); } : undefined} onArchiveComment={focusThreadId ? (comment) => { void commentThreads.archiveComment({ id: comment.id, expectedVersion: comment.version }).then((result) => { if (result.status === "saved") noteAnnotationChanged(orgId, { kind: "comment", action: "archived", anchorKind: comment.parentId ? "item" : "turn", visibility: "engagement", length: comment.body.length, isReply: Boolean(comment.parentId) }); }).catch(() => undefined); } : undefined} /> : null}
       {reviewItem && reviewNode ? <CanvasLabReview item={reviewItem} anchorNodeId={reviewNode.id} links={links} profileId={profile?.id} decisions={page?.decisions ?? []} nodes={visibleNodes} comments={comments} onTrailSelect={(group, focus) => noteWorkboardTrailSelected(orgId, group, focus)} onClose={() => setReviewId(null)} /> : null}
     </div>
+    </TooltipProvider>
   );
 }
