@@ -1,4 +1,5 @@
 import type { WorkboardPreviewTurn } from "@/lib/workboard-card-preview.shared";
+import { previewWheelConsumesScroll } from "@/lib/workboard-card-preview.shared";
 
 export type ChatBorderTreatment = "claude" | "chatgpt" | "gemini" | "copilot" | "default";
 
@@ -21,7 +22,7 @@ export function ChatPreviewWindow({
   vendorKey: string | null;
   turns: WorkboardPreviewTurn[];
   testId?: string;
-  onScroll?: (() => void) | undefined;
+  onScroll?: ((scrollTop: number) => void) | undefined;
 }) {
   const treatment = chatBorderTreatment(vendorKey);
   return (
@@ -30,7 +31,16 @@ export function ChatPreviewWindow({
       data-chat-border={treatment}
       className="chat-preview-window"
     >
-      <div className="chat-preview-window__body" onScroll={onScroll}>
+      <div
+        className="chat-preview-window__body"
+        onScroll={(event) => onScroll?.(event.currentTarget.scrollTop)}
+        onWheel={(event) => {
+          const box = event.currentTarget;
+          if (previewWheelConsumesScroll(true, event.deltaY, box.scrollTop, box.clientHeight, box.scrollHeight)) {
+            event.stopPropagation();
+          }
+        }}
+      >
         {turns.map((turn) => (
           <div key={turn.turnNo} className="canvas-lab-preview-turn">
             <span>{turn.role}</span>

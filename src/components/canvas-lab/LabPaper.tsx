@@ -139,8 +139,7 @@ export function LabPaper({
             testId="workboard-chat-preview"
             vendorKey={vendorKey}
             turns={preview?.turns ?? []}
-            onScroll={() => {
-              const scrollTop = document.querySelector<HTMLElement>("[data-testid='workboard-chat-preview'] .chat-preview-window__body")?.scrollTop ?? 0;
+            onScroll={(scrollTop) => {
               if (focused && scrollTop !== previewScrollTopRef.current) onPreviewScroll?.("chat");
               previewScrollTopRef.current = scrollTop;
             }}
