@@ -53,7 +53,11 @@ vi.mock("@/components/work/WorkRow", () => ({
   WorkRow: ({ item }: { item: WorkItemRow }) => <article>{item.title}</article>,
 }));
 vi.mock("@/components/work/ConversationCard", () => ({ ConversationCard: () => null }));
-vi.mock("@/components/work/WorkSubtitle", () => ({ WorkSubtitle: () => null }));
+vi.mock("@/components/work/WorkSubtitle", () => ({
+  WorkSubtitle: ({ pieces, unmapped }: { pieces: number; unmapped: number }) => (
+    <span data-testid="work-subtitle">{pieces} pieces of work · {unmapped} unmapped</span>
+  ),
+}));
 vi.mock("@/components/work/SourceMark", () => ({ sourceVendorKey: () => null }));
 vi.mock("@/components/work/MapDialog", () => ({ MapDialog: () => null }));
 vi.mock("@/components/peek/PeekPanel", () => ({ PeekPanel: () => null }));
@@ -158,6 +162,13 @@ beforeEach(() => {
 });
 
 describe("CG1 inbox congruency", () => {
+  it("keeps the count line visible when the Inbox is empty", () => {
+    inboxRows = [];
+    render(<WorkPage />);
+    expect(screen.getByTestId("work-subtitle").textContent).toBe("0 pieces of work · 0 unmapped");
+    expect(screen.queryByTestId("board-shell")).toBeNull();
+  });
+
   it("keeps every Inbox entry dimmed and disabled when the Unmapped filter matches nothing, and teaches about unclaimed work", () => {
     // Every entry is claimed, so the Unmapped placement filter matches zero
     // entries. Nothing may disappear and the teaching line, which is
@@ -277,7 +288,8 @@ describe("CG1 inbox congruency", () => {
   it("keeps four lanes and five-per-page replacement through both wrappers", () => {
     inboxRows = Array.from({ length: 6 }, (_, index) => itemOfType(`document-${index + 1}`, "document"));
     render(<WorkPage />);
-    const board = screen.getByRole("generic", { name: "Inbox work board" });
+    const board = screen.getByTestId("board-shell");
+    expect(board.getAttribute("aria-label")).toBe("Inbox work board");
     expect(board).toBeTruthy();
     expect(board.querySelectorAll("[data-board-lane]")).toHaveLength(4);
     for (const label of ["AI conversations", "Documents", "Models & sheets", "Meeting transcripts"]) {
@@ -289,9 +301,10 @@ describe("CG1 inbox congruency", () => {
     expect(within(toolbar).getByRole("button", { name: "Unmapped" })).toBeTruthy();
     expect(within(toolbar).getByRole("button", { name: "Claimed by you" })).toBeTruthy();
     expect(within(board).getByText("1–5 OF 6")).toBeTruthy();
-    const documentLane = within(board).getByTestId("board-lane-scroll-lane:inbox-documents");
-    documentLane.scrollTop = 500;
-    fireEvent.scroll(documentLane);
+    const documentLaneFrame = within(board).getByText("Documents").closest("[data-board-lane]");
+    expect(documentLaneFrame?.getAttribute("style")).toContain("height: 1256px");
+    expect(within(board).getByText("Documents").parentElement?.parentElement?.className).toMatch(/top-0/);
+    expect(within(board).getByText("1–5 OF 6").parentElement?.className).toMatch(/bottom-0/);
     expect(screen.getByText(inboxRows[4]?.title ?? "missing")).toBeTruthy();
     for (const card of screen.getAllByTestId("inbox-fixed-card")) {
       expect(card.parentElement?.className).toMatch(/min-w-0/);

@@ -104,10 +104,19 @@ type InboxLaneFrame = BoardShellFrame & { bucket: Bucket; entryCount: number };
 type InboxLaneNode = BoardShellNode & { entry: WorkItemRow | ConversationGroup };
 
 const INBOX_LANE_WIDTH = 300;
-const INBOX_LANE_HEIGHT = 560;
 const INBOX_LANE_GAP = 36;
 const INBOX_LANE_TOP = 88;
 const INBOX_CARD_HEIGHT = 220;
+const INBOX_LANE_PADDING = 12;
+const INBOX_CARD_GAP = 12;
+const INBOX_LANE_HEADER_HEIGHT = 40;
+const INBOX_LANE_PAGING_HEIGHT = 44;
+const INBOX_LANE_HEIGHT =
+  INBOX_LANE_HEADER_HEIGHT +
+  INBOX_LANE_PADDING * 2 +
+  COLUMN_PAGE_SIZE * INBOX_CARD_HEIGHT +
+  (COLUMN_PAGE_SIZE - 1) * INBOX_CARD_GAP +
+  INBOX_LANE_PAGING_HEIGHT;
 
 /** The mark for stepping through a column. Hand drawn, in the pencil idiom
     the nav indent uses: a short stroke that trails off into an arrow head. */
@@ -840,9 +849,6 @@ export function WorkPage() {
 
   const inboxToolbar = (
     <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
-      <span className="mr-2 text-[11.5px] text-muted-foreground">
-        <WorkSubtitle pieces={groupedCount(all)} unmapped={groupedCount(unmapped)} />
-      </span>
       <span role="group" aria-label="How work is shown" className="mr-auto inline-flex items-center rounded-full border border-[var(--nb-rule)] bg-card p-0.5">
         {(["preview", "sticky"] as const).map((option) => (
           <Button key={option} type="button" size="sm" variant={workView === option ? "secondary" : "ghost"} aria-pressed={workView === option} onClick={() => { setWorkView(option); writeWorkView(option); }}>
@@ -879,7 +885,10 @@ export function WorkPage() {
       {/* PASS A1 — a coaching question is a decision about your own work and
           must stay reachable on the page people land on. */}
       <CoachingLinkNotices />
-      <PageHeader title="Inbox" subtitle={null} />
+      <PageHeader
+        title="Inbox"
+        subtitle={<WorkSubtitle pieces={groupedCount(all)} unmapped={groupedCount(unmapped)} />}
+      />
       <BringWorkInRow
         unmappedCount={unmappedCount}
         suggesting={suggesting}
@@ -1088,7 +1097,7 @@ export function WorkPage() {
           <div className={suggesting ? "animate-pulse" : undefined}>
             <BoardShell
               ariaLabel="Inbox work board"
-              className={`h-[720px]${gusting ? " nb-gust" : ""}`}
+              className={`h-[720px] inbox-work-board${gusting ? " nb-gust" : ""}`}
               frames={inboxLaneFrames}
               nodes={inboxLaneNodes}
               toolbar={inboxToolbar}
@@ -1100,19 +1109,19 @@ export function WorkPage() {
                   setColumnPages((prev) => ({ ...prev, [frame.bucket.key]: next }));
                 return (
                   <>
-                    <div className="pointer-events-none absolute inset-x-0 -top-9 z-10 border-b border-[var(--nb-rule)] pb-2">
+                    <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-10 border-b border-[var(--nb-rule)] px-3 py-3">
                       <h2 className="flex items-baseline justify-between gap-3 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
                         <span className="truncate">{frame.bucket.label}</span>
                         <span className="shrink-0 text-soft">{frame.entryCount}</span>
                       </h2>
                     </div>
                     {lanePage.pageEntries.length === 0 ? (
-                      <p className="pointer-events-none absolute left-3 right-3 top-3 z-10 rounded-[var(--radius-md)] border border-dashed border-pencil bg-card px-3 py-4 text-center text-[11.5px] text-soft">
+                      <p className="pointer-events-none absolute left-3 right-3 top-14 z-10 rounded-[var(--radius-md)] border border-dashed border-pencil bg-card px-3 py-4 text-center text-[11.5px] text-soft">
                         Nothing here yet.
                       </p>
                     ) : null}
                     {lanePage.entries.length > COLUMN_PAGE_SIZE ? (
-                      <div className="absolute inset-x-0 -bottom-12 z-10 flex items-center justify-center gap-3">
+                      <div className="absolute inset-x-0 bottom-0 z-10 flex h-11 items-center justify-center gap-3 border-t border-[var(--nb-rule)] bg-card">
                         {lanePage.page > 0 ? (
                           <button type="button" aria-label="Earlier work in this column" className="group inline-flex min-h-11 min-w-11 items-center justify-center md:min-h-0 md:min-w-0" onClick={() => setPage(lanePage.page - 1)}>
                             <PageMark back />
