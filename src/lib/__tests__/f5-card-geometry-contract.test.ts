@@ -43,7 +43,10 @@ describe("F5 card geometry contract", () => {
     expect(CARD_HEIGHT).toBeGreaterThanOrEqual(CARD_MIN_HEIGHT);
     expect(PLACEMENT_CARD).toEqual({ width: CARD_WIDTH, height: CARD_HEIGHT });
     expect(CARD_MIN_WIDTH).toBeGreaterThanOrEqual(WORKBOARD_CARD_MIN_WIDTH);
+    expect(CARD_MIN_HEIGHT).toBe(180);
+    expect(WORKBOARD_CARD_MIN_HEIGHT).toBe(112);
     expect(CARD_MIN_HEIGHT).toBeGreaterThanOrEqual(WORKBOARD_CARD_MIN_HEIGHT);
+    expect(WORKBOARD_CARD_DEFAULT_SIZE.height).toBe(220);
   });
 
   it("keeps the server's created-card default equal to the seeded default, from one source", () => {

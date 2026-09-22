@@ -1,14 +1,13 @@
-import { Maximize2, X } from "lucide-react";
+import { Maximize2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { LabFrameMenu } from "@/components/canvas-lab/LabFrameMenu";
 import type { LabFrame as LabFrameModel, LabResizeCorner } from "@/components/canvas-lab/canvas-lab-model";
 import { Button } from "@/components/ui/button";
-import { REGION_NAMING_LINE } from "@/lib/board-region";
 
 const CORNERS: LabResizeCorner[] = ["nw", "ne", "se", "sw"];
 
-export function LabFrame({ frame, count, selected, editable, custom, namedByWorkstream, removable, kind, region = false, namingPrompt = false, fillStyle, onAddContext, onSelect, onDragStart, onResizeStart, onResizeKeyDown, onResizeKeyUp, onFit, onRename, onDismissNaming, onRemove, onMenuOpened, onMenuOpenChange, onAddWorkstream }: {
+export function LabFrame({ frame, count, selected, editable, custom, namedByWorkstream, removable, kind, region = false, fillStyle, onAddContext, onSelect, onDragStart, onResizeStart, onResizeKeyDown, onResizeKeyUp, onFit, onRename, onRemove, onMenuOpened, onMenuOpenChange, onAddWorkstream }: {
   frame: LabFrameModel;
   count: number;
   selected: boolean;
@@ -19,7 +18,6 @@ export function LabFrame({ frame, count, selected, editable, custom, namedByWork
   kind: "foundation" | "task" | "decisions" | "outputs" | "custom" | "context";
   /** W3: a drawn region. Unnamed it is paint, named it is a workstream. */
   region?: boolean | undefined;
-  namingPrompt?: boolean | undefined;
   fillStyle?: { fill: string; edge: string; name: string } | undefined;
   /** Present on the context region: brings documents into it. */
   onAddContext?: (() => void) | undefined;
@@ -28,7 +26,6 @@ export function LabFrame({ frame, count, selected, editable, custom, namedByWork
   onResizeStart: (corner: LabResizeCorner, event: React.PointerEvent<HTMLButtonElement>) => void;
   onFit: () => void;
   onRename: (name: string) => void;
-  onDismissNaming?: (() => void) | undefined;
   onRemove: () => void;
   onMenuOpened: () => void;
   onMenuOpenChange: (open: boolean) => void;
@@ -38,8 +35,6 @@ export function LabFrame({ frame, count, selected, editable, custom, namedByWork
 }) {
   const frameRef = useRef<HTMLElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
-  const namingBarRef = useRef<HTMLDivElement | null>(null);
-  const suppressBlurCommitRef = useRef(false);
   const pendingRenameRef = useRef(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [renaming, setRenaming] = useState(false);
@@ -54,23 +49,6 @@ export function LabFrame({ frame, count, selected, editable, custom, namedByWork
     if (!renaming) return;
     focusNameInput();
   }, [renaming]);
-
-  useEffect(() => {
-    if (!namingPrompt || frame.name) return;
-    setDraftName("");
-    setRenameError(false);
-    setRenaming(true);
-  }, [frame.name, namingPrompt]);
-
-  useEffect(() => {
-    if (!namingPrompt || !renaming) return;
-    function dismissFromOutside(event: PointerEvent) {
-      if (namingBarRef.current?.contains(event.target as Node)) return;
-      dismissNaming();
-    }
-    window.addEventListener("pointerdown", dismissFromOutside);
-    return () => window.removeEventListener("pointerdown", dismissFromOutside);
-  }, [namingPrompt, renaming]);
 
   function focusNameInput() {
     inputRef.current?.focus({ preventScroll: true });
@@ -139,15 +117,6 @@ export function LabFrame({ frame, count, selected, editable, custom, namedByWork
     setRenaming(true);
   }
 
-  function dismissNaming() {
-    suppressBlurCommitRef.current = true;
-    setDraftName(frame.name);
-    setRenameError(false);
-    setRenaming(false);
-    onDismissNaming?.();
-    window.requestAnimationFrame(() => { suppressBlurCommitRef.current = false; });
-  }
-
   function commitRename() {
     const next = draftName.trim();
     if (!next) {
@@ -183,8 +152,7 @@ export function LabFrame({ frame, count, selected, editable, custom, namedByWork
     >
       <div className="absolute inset-x-3 top-2 flex items-baseline justify-between gap-2">
         {renaming ? (
-          <div ref={namingPrompt ? namingBarRef : undefined} className={namingPrompt ? "canvas-lab-grouping-name-bar" : undefined} data-grouping-name-bar={namingPrompt ? "true" : undefined}>
-            {namingPrompt ? <Button type="button" size="icon" variant="ghost" className="canvas-lab-grouping-name-dismiss" aria-label="Dismiss naming" onPointerDown={(event) => { event.preventDefault(); event.stopPropagation(); }} onClick={(event) => { event.stopPropagation(); dismissNaming(); }}><X className="h-3.5 w-3.5" /></Button> : null}
+          <div>
             <input
               ref={inputRef}
               aria-label={region && !frame.name ? "Name this grouping" : "Rename workstream"}
@@ -192,16 +160,15 @@ export function LabFrame({ frame, count, selected, editable, custom, namedByWork
               value={draftName}
               maxLength={60}
               onChange={(event) => { setDraftName(event.target.value); if (event.target.value.trim()) setRenameError(false); }}
-              onBlur={() => { if (pendingRenameRef.current || suppressBlurCommitRef.current) return; if (namingPrompt) dismissNaming(); else commitRename(); }}
+              onBlur={() => { if (pendingRenameRef.current) return; commitRename(); }}
               onPointerDown={(event) => event.stopPropagation()}
               onKeyDown={(event) => {
                 event.stopPropagation();
                 if (event.key === "Enter") { event.preventDefault(); commitRename(); }
-                if (event.key === "Escape") { event.preventDefault(); if (namingPrompt) dismissNaming(); else { setDraftName(frame.name); setRenameError(false); setRenaming(false); } }
+                if (event.key === "Escape") { event.preventDefault(); setDraftName(frame.name); setRenameError(false); setRenaming(false); }
               }}
             />
             {renameError ? <span className="canvas-lab-frame-name-error font-hand">a workstream needs a name</span> : null}
-            {region && !frame.name ? <span className="canvas-lab-region-hint font-hand block text-[13px] text-[var(--nb-mid)]">{REGION_NAMING_LINE}</span> : null}
           </div>
         ) : (
           <h2
