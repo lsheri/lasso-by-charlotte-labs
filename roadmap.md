@@ -16,3 +16,5 @@
 - [x] R4: Restyle the workboard expanded view as the originating paper card, with full-height reader scrolling and reduced-motion handling.
 - [x] R4: Move `workboard.card_content_viewed` `{ via: "scroll" }` to expanded conversation scrolling without changing its schema.
 - [x] R4: Verify controls, states, events, focused checks, type safety, preview build, and record remaining old-style expansion paths.
+
+- [ ] R4.1: Keep the grouping naming popup at a constant readable screen-pixel size while its position follows pan and zoom.
