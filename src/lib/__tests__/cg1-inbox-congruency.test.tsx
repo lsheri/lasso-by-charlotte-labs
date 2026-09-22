@@ -303,7 +303,7 @@ describe("CG1 inbox congruency", () => {
     expect(within(board).getByText("1–5 OF 6")).toBeTruthy();
     const documentLaneFrame = within(board).getByText("Documents").closest("[data-board-lane]");
     expect(documentLaneFrame?.getAttribute("style")).toContain("height: 1256px");
-    expect(within(board).getByText("Documents").parentElement?.className).toMatch(/top-0/);
+    expect(within(board).getByText("Documents").parentElement?.parentElement?.className).toMatch(/top-0/);
     expect(within(board).getByText("1–5 OF 6").parentElement?.className).toMatch(/bottom-0/);
     expect(screen.getByText(inboxRows[4]?.title ?? "missing")).toBeTruthy();
     for (const card of screen.getAllByTestId("inbox-fixed-card")) {
