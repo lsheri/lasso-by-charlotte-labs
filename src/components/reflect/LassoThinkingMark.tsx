@@ -1,6 +1,8 @@
 import { useEffect, useRef } from "react";
 
-export type LassoThinkingMarkKind = "orbit" | "loop" | "gather" | "trace";
+import { loopStamps } from "@/lib/lasso-loop";
+
+export type LassoThinkingMarkKind = "orbit" | "loop" | "gather" | "trace" | "signature";
 
 type LassoThinkingMarkProps = {
   kind: LassoThinkingMarkKind;
@@ -138,6 +140,12 @@ export function LassoThinkingMark({ kind, size, count = 0, className }: LassoThi
       }
     }
 
+    function drawSignature(t: number) {
+      for (const stamp of loopStamps(t, size)) {
+        dot(context, stamp, stamp.radius, stamp.alpha);
+      }
+    }
+
     function draw(timestamp: number) {
       const t = (timestamp - clockBase) / 1000;
       context.clearRect(0, 0, width, height);
@@ -145,7 +153,8 @@ export function LassoThinkingMark({ kind, size, count = 0, className }: LassoThi
       if (kind === "orbit") drawOrbit(t);
       else if (kind === "loop") drawLoop(t);
       else if (kind === "gather") drawGather(t);
-      else drawTrace(t);
+      else if (kind === "trace") drawTrace(t);
+      else drawSignature(t);
       context.globalAlpha = 1;
     }
 

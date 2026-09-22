@@ -5,8 +5,8 @@ export const LOOP_SUPER_PERIOD = 3;
 
 export const LOOP_RX_RATIO = 0.3;
 export const LOOP_KY = 0.3;
-export const LOOP_RADIUS_SCALE_AT_DOTS = 1.1;
-export const LOOP_ALPHA_SCALE_AT_DOTS = 0.2;
+export const LOOP_DOT_RADIUS_BOOST = 1.1;
+export const LOOP_DOT_ALPHA_FADE = 0.8;
 
 export const LOOP_SIZE_TOOLBAR = 36;
 export const LOOP_SIZE_TITLE = 48;
@@ -79,8 +79,8 @@ export function loopStamps(timeSeconds: number, size: number): LoopStamp[] {
   const cy = size / 2;
   const rx = size * LOOP_RX_RATIO;
   const baseRadius = stampRadiusFor(size);
-  const radiusScale = 1 + LOOP_RADIUS_SCALE_AT_DOTS * cohesion;
-  const alphaScale = 1 - (1 - LOOP_ALPHA_SCALE_AT_DOTS) * cohesion;
+  const radiusScale = 1 + LOOP_DOT_RADIUS_BOOST * cohesion;
+  const alphaScale = 1 - LOOP_DOT_ALPHA_FADE * cohesion;
 
   return Array.from({ length: LOOP_STAMPS }, (_, index) => {
     const theta = (Math.PI * 2 * index) / LOOP_STAMPS;

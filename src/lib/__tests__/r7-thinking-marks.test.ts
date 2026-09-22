@@ -7,9 +7,9 @@ const mark = readFileSync("src/components/reflect/LassoThinkingMark.tsx", "utf8"
 const css = readFileSync("src/styles.css", "utf8");
 
 describe("R7 Ask Lasso thinking marks", () => {
-  it("uses the loop mark in the toolbar and removes the old CSS drift", () => {
+  it("uses the signature mark in the toolbar and removes the old CSS drift", () => {
     const toolbar = page.slice(page.indexOf("const toolbarItems"), page.indexOf("const toolbarPlan"));
-    expect(toolbar).toContain('<LassoThinkingMark kind="loop" size={24} />');
+    expect(toolbar).toContain('<LassoThinkingMark kind="signature" size={LOOP_SIZE_TOOLBAR} />');
     expect(toolbar).not.toContain("canvas-lab-ask-drift");
     expect(css).not.toMatch(/canvas-lab-ask-(?:drift|float|tilt)/);
   });
