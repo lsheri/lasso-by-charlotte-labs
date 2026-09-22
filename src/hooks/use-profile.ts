@@ -1,8 +1,9 @@
-import { useQuery } from "@tanstack/react-query";
-import { useEffect, useRef, useSyncExternalStore } from "react";
+import { useQuery, type QueryClient } from "@tanstack/react-query";
+import { useEffect, useSyncExternalStore } from "react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
+
 
 export type Profile = {
   id: string;
@@ -41,6 +42,61 @@ function readStored(): string | null {
   }
 }
 
+/** Shared keys so every consumer waits on one request, not its own. */
+export const AUTH_USER_KEY = ["auth-user"] as const;
+export const ACTIVE_PROFILE_ROW_KEY = ["active-profile-row"] as const;
+
+/**
+ * The query client the app is already using. Registered from useProfiles so
+ * the non-React helpers below can read and invalidate the same cache instead
+ * of going straight to the network.
+ */
+let sharedQueryClient: QueryClient | null = null;
+
+/** Per session, not per hook instance: survives a remount during navigation. */
+const seededUsers = new Set<string>();
+
+
+export function registerProfileQueryClient(client: QueryClient): void {
+  sharedQueryClient = client;
+}
+
+/** Test seam. */
+export function resetProfileIdentityState(): void {
+  sharedQueryClient = null;
+  seededUsers.clear();
+}
+
+async function fetchAuthUser(): Promise<{ id: string } | null> {
+  const { data } = await supabase.auth.getUser();
+  return data.user ? { id: data.user.id } : null;
+}
+
+const authUserOptions = {
+  queryKey: AUTH_USER_KEY,
+  queryFn: fetchAuthUser,
+  staleTime: 60_000,
+};
+
+/**
+ * One identity read per session. Concurrent callers share the in-flight
+ * request through the query client rather than each opening their own.
+ */
+export async function ensureAuthUser(): Promise<{ id: string } | null> {
+  if (sharedQueryClient) return sharedQueryClient.ensureQueryData(authUserOptions);
+  return fetchAuthUser();
+}
+
+async function fetchStoredActiveProfileId(userId: string): Promise<string | null> {
+  const { data, error } = await supabase
+    .from("user_active_profile")
+    .select("profile_id")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return data?.profile_id ?? null;
+}
+
 /**
  * The choice of workspace has to reach the database, not just this tab: the
  * reads are scoped to it there. The local switch happens first and always, so
@@ -53,13 +109,15 @@ export async function setActiveProfileId(id: string): Promise<void> {
     /* storage is a convenience, never a requirement */
   }
   for (const listener of listeners) listener();
-  await writeActiveProfileRow(id);
+  const user = await ensureAuthUser();
+  await writeActiveProfileRow(id, user?.id ?? null);
+  // The switch is the moment the stored choice changes, so the cached copy is
+  // dropped here rather than left to expire. The next read returns the new one.
+  sharedQueryClient?.invalidateQueries({ queryKey: ACTIVE_PROFILE_ROW_KEY });
 }
 
-async function writeActiveProfileRow(id: string): Promise<void> {
+async function writeActiveProfileRow(id: string, userId: string | null): Promise<void> {
   try {
-    const { data: userData } = await supabase.auth.getUser();
-    const userId = userData.user?.id;
     if (!userId) return;
     const { error } = await supabase
       .from("user_active_profile")
@@ -92,9 +150,9 @@ export async function fetchProfiles(): Promise<Profile[]> {
 }
 
 export async function fetchProfileState(): Promise<ProfileState> {
-  const { data: userData } = await supabase.auth.getUser();
-  const user = userData.user;
+  const user = await ensureAuthUser();
   if (!user) return { profiles: [], hasDeactivated: false };
+
   const { data, error } = await supabase
     .from("profiles")
     .select(
@@ -140,44 +198,64 @@ export function useProfiles() {
   return useQuery({ queryKey: ["profiles"], queryFn: fetchProfiles, staleTime: 60_000 });
 }
 
+/** The signed-in user, read once per session however many consumers ask. */
+export function useAuthUser() {
+  return useQuery(authUserOptions);
+}
+
+/** The stored workspace choice, read through the cache, one request for all. */
+export function useStoredActiveProfileId(userId: string | null) {
+  return useQuery({
+    queryKey: [...ACTIVE_PROFILE_ROW_KEY, userId ?? "none"],
+    queryFn: () => fetchStoredActiveProfileId(userId as string),
+    enabled: Boolean(userId),
+    staleTime: 60_000,
+  });
+}
+
 /**
  * Someone who has never switched has no row, so the database falls back to
  * showing every workspace they belong to. Safe, but not what they expect, so
  * the first resolved choice is written once. An existing row is never
- * overwritten here: only an explicit switch does that.
+ * overwritten here: only an explicit switch does that. The guard lives at
+ * module scope, so the hundredth consumer and a remount during navigation do
+ * not repeat the first one's write.
  */
-function useSeedActiveProfile(active: Profile | null): void {
-  const seeded = useRef(false);
+function useSeedActiveProfile(
+  active: Profile | null,
+  userId: string | null,
+  storedId: string | null | undefined,
+  storedResolved: boolean,
+): void {
   useEffect(() => {
-    if (!active || seeded.current) return;
-    seeded.current = true;
-    void (async () => {
-      const { data: userData } = await supabase.auth.getUser();
-      const userId = userData.user?.id;
-      if (!userId) {
-        seeded.current = false;
-        return;
-      }
-      const { data: existing, error } = await supabase
-        .from("user_active_profile")
-        .select("user_id")
-        .eq("user_id", userId)
-        .maybeSingle();
-      if (error || existing) return;
-      await writeActiveProfileRow(active.id);
-    })();
-  }, [active]);
+    if (!active || !userId || !storedResolved) return;
+    if (storedId) return;
+    if (seededUsers.has(userId)) return;
+    seededUsers.add(userId);
+    void writeActiveProfileRow(active.id, userId).then(() => {
+      sharedQueryClient?.invalidateQueries({ queryKey: ACTIVE_PROFILE_ROW_KEY });
+    });
+  }, [active, userId, storedId, storedResolved]);
 }
 
 /** The active profile, the only one, or the most recently used. */
 export function useProfile() {
   const query = useProfiles();
   const activeId = useActiveProfileId();
+  const userQuery = useAuthUser();
+  const userId = userQuery.data?.id ?? null;
+  const storedQuery = useStoredActiveProfileId(userId);
   const profiles = query.data ?? [];
   const active = pickActive(profiles, activeId);
-  useSeedActiveProfile(active);
+  useSeedActiveProfile(
+    active,
+    userId,
+    storedQuery.data,
+    Boolean(userId) && !storedQuery.isPending && !storedQuery.isError,
+  );
   return { ...query, data: active, profiles };
 }
+
 
 export const ROLE_LABELS: Record<string, string> = {
   em: "Engagement Mgr",

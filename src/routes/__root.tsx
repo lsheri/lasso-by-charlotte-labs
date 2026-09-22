@@ -17,6 +17,8 @@ import { initErrorSignal, reportClientError } from "@/lib/error-signal";
 import { initPostHog } from "@/lib/posthog-client";
 import { Toaster } from "@/components/ui/sonner";
 import { CANONICAL_ORIGIN, maybeRedirectToCanonical } from "@/lib/app-host";
+import { registerProfileQueryClient } from "@/hooks/use-profile";
+
 
 function NotFoundComponent() {
   return (
@@ -153,6 +155,11 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
+
+  // The identity helpers outside React share this one cache, so concurrent
+  // callers wait on a single request instead of each opening their own.
+  registerProfileQueryClient(queryClient);
+
 
   // In-app navigations only: a hard document load records no start, so no
   // engagement.load row is written for it. That is deliberate for this pass.
