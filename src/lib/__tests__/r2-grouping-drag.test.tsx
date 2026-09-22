@@ -100,12 +100,12 @@ describe("R2 grouping movement", () => {
 
   it("shows no guidance for unnamed paint and preserves named guidance", () => {
     const unnamed = renderFrame(frame(""));
-    expect(screen.queryByText(/Nothing here yet/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Nothing here yet/)).toBeNull();
     expect(unnamed.container.textContent).not.toContain("Move to .");
     unnamed.unmount();
 
     renderFrame(frame("Pricing"));
-    expect(screen.getByText("Nothing here yet. Drag a card in and choose Move to Pricing.")).toBeInTheDocument();
+    expect(screen.getByText("Nothing here yet. Drag a card in and choose Move to Pricing.")).not.toBeNull();
   });
 
   it("leaves the paint claim rule untouched after geometric movement", () => {
