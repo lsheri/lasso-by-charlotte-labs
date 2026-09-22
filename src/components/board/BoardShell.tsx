@@ -137,6 +137,7 @@ export function BoardShell<F extends BoardShellFrame, N extends BoardShellNode>(
 
   const fitRef = useRef(fit);
   fitRef.current = fit;
+  const pendingViewportRef = useRef<LabViewportSize | null>(null);
 
   useLayoutEffect(() => {
     const shell = shellRef.current;
@@ -157,12 +158,20 @@ export function BoardShell<F extends BoardShellFrame, N extends BoardShellNode>(
         : { width: shell.clientWidth, height: shell.clientHeight };
       if (!viewportSizeChanged(observedSizeRef.current, next)) return;
       observedSizeRef.current = next;
+      pendingViewportRef.current = next;
       onViewportSizeChangeRef.current?.(next);
       fitRef.current(next);
     });
     observer.observe(shell);
     return () => observer.disconnect();
   }, []);
+
+  useLayoutEffect(() => {
+    const viewport = pendingViewportRef.current;
+    if (!viewport) return;
+    pendingViewportRef.current = null;
+    fitRef.current(viewport);
+  }, [fitFrames, boardNodes, measuredHeights]);
 
   // ---- the wheel: zoom under the cursor, or pan, or let a lane scroll ----
 
