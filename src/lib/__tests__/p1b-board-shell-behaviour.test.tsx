@@ -294,7 +294,7 @@ describe("the fit", () => {
     expect(got.pan.y).toBeCloseTo(wanted.pan.y, 6);
   });
 
-  it("runs again when the viewport really changes, and not when it reports the same size", () => {
+  it("runs again when the viewport really changes, and not when it reports the same size", async () => {
     mount();
     // Move the view by hand, so a refit is visible as the view snapping back.
     wheel({ deltaY: 200, deltaX: 150 });
@@ -311,6 +311,9 @@ describe("the fit", () => {
     act(() => {
       for (const callback of resizeCallbacks) callback();
     });
+    await act(async () => {
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    });
     const wanted = expected({ width: 620, height: 500 });
     expect(view().zoom).toBeCloseTo(wanted.zoom, 10);
     expect(view().pan.x).toBeCloseTo(wanted.pan.x, 6);
@@ -321,13 +324,16 @@ describe("the fit", () => {
 // ---- the fit does not run on content identity ----------------------------
 
 describe("a hand-moved board", () => {
-  it("keeps its pan through an ordinary re-render after a size change", () => {
+  it("keeps its pan through an ordinary re-render after a size change", async () => {
     // The size change first: it is what arms the refit path at all.
     const { rerender } = mount();
     viewport.width = 860;
     viewport.height = 700;
     act(() => {
       for (const callback of resizeCallbacks) callback();
+    });
+    await act(async () => {
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
     });
 
     // Move the view by hand, so a refit would be visible as a snap back.

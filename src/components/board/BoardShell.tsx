@@ -172,14 +172,27 @@ export function BoardShell<F extends BoardShellFrame, N extends BoardShellNode>(
     return () => observer.disconnect();
   }, []);
 
-  // A genuine size change, and nothing else, refits. The size lives in state so
-  // this effect runs after the lanes have re-rendered at the new width; keeping
-  // content identity out of the dependencies means an ordinary re-render can
-  // never snap a hand-moved board back to the fit.
+  // Report a genuine size change first so consumers can rebuild viewport-sized
+  // frames before this shell fits them. Content identity stays out of both
+  // dependencies, so an ordinary re-render cannot snap a hand-moved board.
   useLayoutEffect(() => {
     if (!viewportSize) return;
     onViewportSizeChangeRef.current?.(viewportSize);
-    fitRef.current(viewportSize);
+  }, [viewportSize]);
+
+  useEffect(() => {
+    if (!viewportSize) return;
+    // The next frame gives a consumer's viewport-size state update time to
+    // rebuild geometry before fitRef reads it. Without this, a responsive frame
+    // can be visibly correct while the fit still reflects its previous size.
+    const schedule = typeof requestAnimationFrame === "function"
+      ? requestAnimationFrame
+      : (callback: FrameRequestCallback) => window.setTimeout(callback, 0);
+    const cancel = typeof cancelAnimationFrame === "function"
+      ? cancelAnimationFrame
+      : window.clearTimeout;
+    const request = schedule(() => fitRef.current(viewportSize));
+    return () => cancel(request);
   }, [viewportSize]);
 
   // ---- the wheel: zoom under the cursor, or pan, or let a lane scroll ----

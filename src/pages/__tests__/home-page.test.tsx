@@ -2,7 +2,8 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { HomeBoard, IdeasNote, ideasMailto } from "@/components/home/HomeBoard";
+import { HomeBoard, IdeasNote, homeFrameForViewport, ideasMailto } from "@/components/home/HomeBoard";
+import { fitWorkboardViewport } from "@/components/canvas-lab/canvas-lab-model";
 
 const mocks = vi.hoisted(() => ({
   engagements: undefined as undefined | { id: string }[],
@@ -50,6 +51,32 @@ afterEach(() => {
 });
 
 describe("Home", () => {
+  it.each([
+    { width: 1094, height: 900 },
+    { width: 860, height: 640 },
+  ])("opens at zoom 1 with designed hero geometry in a $width x $height shell", (viewport) => {
+    const frame = homeFrameForViewport(viewport);
+    const fit = fitWorkboardViewport(viewport, [frame], [], new Map(), null);
+
+    expect(fit.zoom).toBe(1);
+    expect(fit.pan).toEqual({ x: 0, y: 0 });
+    expect(frame.x + frame.width / 2).toBe(viewport.width / 2);
+    expect(frame.y + (186 - 32)).toBe(186);
+  });
+
+  it("keeps the hero at its designed width and title size", () => {
+    render(<HomeBoard />);
+    expect(screen.getByRole("heading", { name: "Welcome to Lasso" }).className).toContain("text-[44px]");
+    expect(screen.getByRole("heading", { name: "Welcome to Lasso" }).closest("section")?.className).toContain("w-[620px]");
+  });
+
+  it("fills its available page height without imposing a minimum document height", () => {
+    render(<HomeBoard />);
+    const viewport = screen.getByTestId("home-board-viewport");
+    expect(viewport.className).toContain("h-[calc(100vh-6rem)]");
+    expect(viewport.className).not.toContain("min-h-");
+  });
+
   it("shows only a real engagement count and exactly one title signature", () => {
     const first = render(<HomeBoard />);
     expect(screen.getByText("HOME")).toBeTruthy();
