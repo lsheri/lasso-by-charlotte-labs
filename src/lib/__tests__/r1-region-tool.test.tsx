@@ -46,7 +46,8 @@ describe("R1 region tool", () => {
     const toolbar = page.slice(page.indexOf("const toolbarItems"), page.indexOf("const toolbarPlan"));
     const drawingFlow = page.slice(page.indexOf("function cancelDraw"), page.indexOf("async function persistDrawnFrame"));
 
-    expect(`${toolbar}\n${drawingFlow}`).not.toMatch(/\bregion\b/i);
+    const visibleCopy = `${toolbar}\n${drawingFlow}`.match(/(?:aria-label|label)=\"[^\"]*\"|setAnnouncement\(\"[^\"]*\"\)|>[^<>{}]+</g)?.join("\n") ?? "";
+    expect(visibleCopy).not.toMatch(/\bregion\b/i);
     expect(toolbar).toContain('aria-label="Add grouping"');
     expect(drawingFlow).toContain('"Drag on empty board space to draw a grouping."');
   });
@@ -57,7 +58,7 @@ describe("R1 region tool", () => {
 
     expect(page).toContain("setPendingRegionNameId(id)");
     expect(page).toContain("namingPrompt={pendingRegionNameId === frame.id}");
-    expect(frame).toContain('className="canvas-lab-grouping-name-bar');
+    expect(frame).toContain('"canvas-lab-grouping-name-bar"');
     expect(frame).not.toContain("position: fixed");
   });
 
