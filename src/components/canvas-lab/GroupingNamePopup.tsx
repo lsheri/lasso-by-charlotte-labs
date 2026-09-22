@@ -19,15 +19,16 @@ export function groupingNamePopupPosition(
   viewport: { width: number; height: number },
   popup: { width: number; height: number },
 ) {
+  const width = Math.min(popup.width, Math.max(0, viewport.width - VIEWPORT_GAP * 2));
   const anchorLeft = pan.x + (frame.x + frame.width / 2) * zoom;
   const frameTop = pan.y + frame.y * zoom;
   const frameBottom = pan.y + (frame.y + frame.height) * zoom;
   const side = frameTop - ANCHOR_GAP - popup.height >= VIEWPORT_GAP ? "above" : "below";
   const desiredTop = side === "above" ? frameTop - ANCHOR_GAP - popup.height : frameBottom + ANCHOR_GAP;
   return {
-    left: Math.max(VIEWPORT_GAP, Math.min(anchorLeft - popup.width / 2, viewport.width - popup.width - VIEWPORT_GAP)),
+    left: Math.max(VIEWPORT_GAP, Math.min(anchorLeft - width / 2, viewport.width - width - VIEWPORT_GAP)),
     top: Math.max(VIEWPORT_GAP, Math.min(desiredTop, viewport.height - popup.height - VIEWPORT_GAP)),
-    width: popup.width,
+    width,
     side,
   } as const;
 }
@@ -89,7 +90,7 @@ export function GroupingNamePopup({ frame, pan, zoom, viewport, portalRoot, onNa
       data-grouping-name-popup="true"
       data-side={position.side}
       className="canvas-lab-grouping-name-popup"
-      style={{ left: position.left, top: position.top, width: POPUP_WIDTH }}
+      style={{ left: position.left, top: position.top, width: position.width }}
       onPointerDown={(event) => event.stopPropagation()}
     >
       <Button type="button" size="icon" variant="ghost" className="canvas-lab-grouping-name-dismiss" aria-label="Dismiss naming" onClick={onDismiss}><X className="h-3.5 w-3.5" /></Button>

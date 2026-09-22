@@ -1718,6 +1718,8 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       return;
     }
     const name = nameInput.trim();
+    setFrames((current) => current?.map((entry) => (entry.id === frame.id ? { ...entry, name } : entry)) ?? current);
+    framesRef.current = framesRef.current.map((entry) => (entry.id === frame.id ? { ...entry, name } : entry));
     let created: { id: string };
     try {
       created = await createDrawnWorkstream({ data: { engagement_id: engagementId, name, profile_id: profile?.id } });
@@ -1725,8 +1727,6 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       setAnnouncement("That name could not be saved. Nothing moved.");
       return;
     }
-    setFrames((current) => current?.map((entry) => (entry.id === frame.id ? { ...entry, name } : entry)) ?? current);
-    framesRef.current = framesRef.current.map((entry) => (entry.id === frame.id ? { ...entry, name } : entry));
     if (frame.durableId) await persistFramePatch(frame.id, { label: name, taskId: created.id });
     const split = regionClaims({ id: frame.id, label: name }, rect, claimCandidates(), { defaultHomeFrameIds, namedFrameIds });
     // What naming filed is measured in work items that moved, one each, never
