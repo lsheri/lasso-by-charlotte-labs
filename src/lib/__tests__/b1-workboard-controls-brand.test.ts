@@ -6,7 +6,8 @@ const read = (path: string) => readFileSync(path, "utf8");
 describe("B1 workboard controls and brand identity", () => {
   it("uses one labelled workstream switch without changing event values", () => {
     const page = read("src/pages/CanvasLabPage.tsx");
-    expect(page).toContain(">Show workstreams</Label>");
+    expect(page).toContain('aria-label="Show workstreams"');
+    expect(page).toContain('aria-pressed={structureMode === "structured"}');
     expect(page).toContain('checked={structureMode === "structured"}');
     expect(page).toContain('checked ? "structured" : "freeform"');
     expect(page).toContain("noteWorkboardStructureToggled(orgId, next)");
