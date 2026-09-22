@@ -60,8 +60,14 @@ describe("Home", () => {
 
     expect(fit.zoom).toBe(1);
     expect(fit.pan).toEqual({ x: 0, y: 0 });
-    expect(frame.x + 620 / 2).toBe(viewport.width / 2);
+    expect(frame.x + frame.width / 2).toBe(viewport.width / 2);
     expect(frame.y + (186 - 32)).toBe(186);
+  });
+
+  it("keeps the hero at its designed width and title size", () => {
+    render(<HomeBoard />);
+    expect(screen.getByRole("heading", { name: "Welcome to Lasso" }).className).toContain("text-[44px]");
+    expect(screen.getByRole("heading", { name: "Welcome to Lasso" }).closest("section")?.className).toContain("w-[620px]");
   });
 
   it("fills its available page height without imposing a minimum document height", () => {
