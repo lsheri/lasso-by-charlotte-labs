@@ -1,13 +1,29 @@
+// @vitest-environment jsdom
 import { readFileSync } from "node:fs";
 
-import { describe, expect, it } from "vitest";
+import { cleanup, render, waitFor } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
+import { SharedBoardView } from "@/components/canvas-lab/SharedBoardView";
 import { fitWorkboardViewport } from "@/components/canvas-lab/canvas-lab-model";
+import type { SharedBoardDto } from "@/lib/board-share-shared";
 
 const SHARED_VIEW = readFileSync("src/components/canvas-lab/SharedBoardView.tsx", "utf8");
 const SHARE_DIALOG = readFileSync("src/components/canvas-lab/ShareDialog.tsx", "utf8");
 const LINK_SECTION = readFileSync("src/components/canvas-lab/ShareBoardDialog.tsx", "utf8");
 const STYLES = readFileSync("src/styles.css", "utf8");
+
+beforeEach(() => {
+  Object.defineProperty(HTMLElement.prototype, "clientWidth", { configurable: true, get: () => 1000 });
+  Object.defineProperty(HTMLElement.prototype, "clientHeight", { configurable: true, get: () => 700 });
+  globalThis.ResizeObserver = class {
+    observe() {}
+    disconnect() {}
+    unobserve() {}
+  } as typeof ResizeObserver;
+});
+
+afterEach(cleanup);
 
 describe("R6 shared board opening", () => {
   it("uses the owner board fit calculation and keeps negative content inside the padded viewport", () => {
@@ -32,6 +48,25 @@ describe("R6 shared board opening", () => {
     expect(bottom).toBeLessThanOrEqual(668.001);
     expect(SHARED_VIEW).toContain("fitWorkboardViewport");
     expect(SHARED_VIEW).toContain("ResizeObserver");
+  });
+
+  it("renders the shared stage with a fitted transform before exposing its cards", async () => {
+    const board: SharedBoardDto = {
+      frames: [],
+      nodes: [
+        { id: "left", frameId: null, kind: "text", title: "Left card", body: null, judgmentType: null, x: -240, y: -100, w: 280, h: 220, workItemId: null, decisionId: null },
+        { id: "right", frameId: null, kind: "text", title: "Right card", body: null, judgmentType: null, x: 680, y: 420, w: 280, h: 220, workItemId: null, decisionId: null },
+      ],
+      links: [],
+      items: [],
+      decisions: [],
+      expiresAt: "2026-09-23T00:00:00.000Z",
+    };
+    const rendered = render(<SharedBoardView board={board} />);
+    const stage = rendered.getByText("Left card").closest("article")?.parentElement;
+    expect(stage).toBeTruthy();
+    await waitFor(() => expect(stage?.style.visibility).toBe("visible"));
+    expect(stage?.style.transform).toMatch(/^translate\([^)]*px, [^)]*px\) scale\([^)]+\)$/);
   });
 });
 

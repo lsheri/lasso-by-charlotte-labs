@@ -26,7 +26,7 @@
 - [x] R5: Make Ask Lasso the sole lime, loop-derived, transform-only living toolbar icon with a static reduced-motion state.
 - [x] R5.1: Restore the shared hand-drawn Ask Lasso curve and give Sticky cards its own folded-paper gesture.
 - [x] R5.1: Restore a grouping's previous local name when workstream creation fails.
-- [ ] R6: Fit shared boards on open with the owner board calculation.
-- [ ] R6: Raise required share-dialog copy to readable existing text tokens.
-- [ ] R6: Let conversation previews grow from a 112px minimum and remove their fade.
+- [x] R6: Fit shared boards on open with the owner board calculation.
+- [x] R6: Raise required share-dialog copy to readable existing text tokens.
+- [x] R6: Let conversation previews grow from a 112px minimum and remove their fade.
 
