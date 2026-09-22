@@ -303,8 +303,14 @@ describe("CG1 inbox congruency", () => {
     expect(within(board).getByText("1–5 OF 6")).toBeTruthy();
     const documentLaneFrame = within(board).getByText("Documents").closest("[data-board-lane]");
     expect(documentLaneFrame?.getAttribute("style")).toContain("height: 1256px");
+    expect(board.parentElement?.getAttribute("style")).toContain("height: 1376px");
     expect(within(board).getByText("Documents").parentElement?.parentElement?.className).toMatch(/top-0/);
     expect(within(board).getByText("1–5 OF 6").parentElement?.className).toMatch(/bottom-0/);
+    const documentLaneScroll = board.querySelector('[data-board-lane="lane:inbox-documents"] > [data-testid^="board-lane-scroll-"]');
+    expect(documentLaneScroll).not.toBeNull();
+    if (!documentLaneScroll) throw new Error("Documents lane scroll box is missing");
+    expect(documentLaneScroll.getAttribute("style")).toContain("top: 40px");
+    expect(documentLaneScroll.getAttribute("style")).toContain("bottom: 44px");
     expect(screen.getByText(inboxRows[4]?.title ?? "missing")).toBeTruthy();
     for (const card of screen.getAllByTestId("inbox-fixed-card")) {
       expect(card.parentElement?.className).toMatch(/min-w-0/);
@@ -313,6 +319,33 @@ describe("CG1 inbox congruency", () => {
     fireEvent.click(screen.getByRole("button", { name: "More work in this column" }));
     expect(screen.getAllByTestId("inbox-fixed-card")).toHaveLength(1);
     expect(screen.getByText(inboxRows[5]?.title ?? "missing")).toBeTruthy();
+  });
+
+  it("fits the full Inbox board at natural card size", () => {
+    const width = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "clientWidth");
+    const height = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "clientHeight");
+    Object.defineProperty(HTMLElement.prototype, "clientWidth", {
+      configurable: true,
+      get(this: HTMLElement) { return this.dataset["testid"] === "board-shell" ? 1600 : 0; },
+    });
+    Object.defineProperty(HTMLElement.prototype, "clientHeight", {
+      configurable: true,
+      get(this: HTMLElement) {
+        return this.dataset["testid"] === "board-shell"
+          ? Number.parseFloat(this.parentElement?.style.height ?? "0")
+          : 0;
+      },
+    });
+    try {
+      inboxRows = Array.from({ length: 5 }, (_, index) => itemOfType(`document-${index + 1}`, "document"));
+      render(<WorkPage />);
+      expect(screen.getByTestId("board-shell-stage").style.transform).toMatch(/scale\(1\)$/);
+    } finally {
+      if (width) Object.defineProperty(HTMLElement.prototype, "clientWidth", width);
+      else Reflect.deleteProperty(HTMLElement.prototype, "clientWidth");
+      if (height) Object.defineProperty(HTMLElement.prototype, "clientHeight", height);
+      else Reflect.deleteProperty(HTMLElement.prototype, "clientHeight");
+    }
   });
 
   it("keeps filter decisions out of Inbox component styling helpers", () => {

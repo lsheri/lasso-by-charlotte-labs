@@ -4999,9 +4999,3 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 
 .canvas-lab-add-context { display: inline-flex; align-items: center; min-height: 20px; padding: 0 6px; color: var(--nb-green); font-family: var(--font-hand); font-size: 14px; text-transform: none; letter-spacing: normal; }
 .canvas-lab-add-context:hover { text-decoration: underline; }
-
-/* Inbox lane furniture stays inside the fitted frame; only the card well scrolls. */
-.inbox-work-board [data-board-lane] > [data-testid^="board-lane-scroll-"] {
-  top: 40px;
-  bottom: 44px;
-}

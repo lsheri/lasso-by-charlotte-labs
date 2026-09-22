@@ -111,12 +111,14 @@ const INBOX_LANE_PADDING = 12;
 const INBOX_CARD_GAP = 12;
 const INBOX_LANE_HEADER_HEIGHT = 40;
 const INBOX_LANE_PAGING_HEIGHT = 44;
+const INBOX_BOARD_BOTTOM_MARGIN = 32;
 const INBOX_LANE_HEIGHT =
   INBOX_LANE_HEADER_HEIGHT +
   INBOX_LANE_PADDING * 2 +
   COLUMN_PAGE_SIZE * INBOX_CARD_HEIGHT +
   (COLUMN_PAGE_SIZE - 1) * INBOX_CARD_GAP +
   INBOX_LANE_PAGING_HEIGHT;
+const INBOX_BOARD_HEIGHT = INBOX_LANE_TOP + INBOX_LANE_HEIGHT + INBOX_BOARD_BOTTOM_MARGIN;
 
 /** The mark for stepping through a column. Hand drawn, in the pencil idiom
     the nav indent uses: a short stroke that trails off into an arrow head. */
@@ -831,6 +833,7 @@ export function WorkPage() {
     y: INBOX_LANE_TOP,
     width: INBOX_LANE_WIDTH,
     height: INBOX_LANE_HEIGHT,
+    contentInset: { top: INBOX_LANE_HEADER_HEIGHT, bottom: INBOX_LANE_PAGING_HEIGHT },
     bucket,
     entryCount: entries.length,
   }));
@@ -1094,10 +1097,10 @@ export function WorkPage() {
               These landed on their own. Say whose work it is and the rest gets easier.
             </p>
           ) : null}
-          <div className={suggesting ? "animate-pulse" : undefined}>
+          <div className={suggesting ? "animate-pulse" : undefined} style={{ height: INBOX_BOARD_HEIGHT }}>
             <BoardShell
               ariaLabel="Inbox work board"
-              className={`h-[720px] inbox-work-board${gusting ? " nb-gust" : ""}`}
+              className={gusting ? "h-full nb-gust" : "h-full"}
               frames={inboxLaneFrames}
               nodes={inboxLaneNodes}
               toolbar={inboxToolbar}

@@ -36,6 +36,8 @@ export type BoardShellFrame = {
   y: number;
   width: number;
   height: number;
+  /** Optional furniture kept outside a lane's scrolling content well. */
+  contentInset?: { top?: number; bottom?: number } | undefined;
 };
 
 export type BoardShellNode = {
@@ -381,6 +383,8 @@ type BoardLaneProps<N extends BoardShellNode> = {
 function BoardLane<N extends BoardShellNode>({ lane, contents, selected, renderNode, frameChrome }: BoardLaneProps<N>) {
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const [scrollTop, setScrollTop] = useState(0);
+  const contentTop = lane.contentInset?.top ?? 0;
+  const contentBottom = lane.contentInset?.bottom ?? 0;
 
   useEffect(() => {
     const box = scrollRef.current;
@@ -419,7 +423,7 @@ function BoardLane<N extends BoardShellNode>({ lane, contents, selected, renderN
         className="absolute inset-0 overflow-y-auto overflow-x-hidden"
         // Inline, so the lane's own scrolling is a fact of the element
         // rather than a stylesheet scrollableUnder may not have read.
-        style={{ overflowY: "auto", overflowX: "hidden" }}
+        style={{ top: contentTop, bottom: contentBottom, overflowY: "auto", overflowX: "hidden" }}
       >
         <div className="relative w-full" style={{ height: extent }}>
           {rendered.map((placement) => {
