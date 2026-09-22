@@ -1,22 +1,29 @@
-# R7 Ask Lasso thinking marks
+# P2: Inbox columns on the board shell
 
 ## Data impact
-- Presentation only. No user action, surface, flow, consent behavior, event name, payload, or dimension changes.
-- No database work.
-
-## Current controls, states, and telemetry
-- Workboard Ask control: toggles the existing board Ask surface; accessible name and tooltip are `Ask Lasso`; states are open and closed.
-- Ask surface: empty conversation, prior messages, streamed answer, pending read/write, error, history loading/empty/populated, work picker open/closed, and composer enabled/disabled.
-- Current pending treatment is `NbDots` plus the existing `ThinkingTrail`. A real source count becomes available only when `liveManifest.items` arrives; before that, no verified count exists.
-- Existing telemetry remains exactly as implemented through the Ask Lasso hook and workboard handlers. This unit adds or changes no telemetry call.
+- Presentation-only change: the four existing work-type columns become board lanes.
+- No consent surfaces or consent stamping change.
+- No event names, payloads, or dimensions change. The existing `work.filter_changed` path remains intact.
+- No SQL, table, column, policy, or stored data change.
 
 ## Build
-1. Add one shared `LassoThinkingMark` canvas component for `orbit`, `loop`, `gather`, and `trace`, using the supplied projection and drawing formulas exactly.
-2. Read `--nb-lasso-green` from computed styles, cap the backing-store ratio at 2, pause while off screen, cancel frames on cleanup, and draw one frame only under reduced motion.
-3. Replace the toolbar’s nested CSS drift wrappers with the `loop` canvas mark. Remove the three superseded animations and reduced-motion CSS selectors.
-4. Replace the pending `NbDots` treatment in the live Ask response area with `gather`. Use `liveManifest.items.length` only when the returned manifest exists; otherwise pass zero rather than implying unread sources. Keep the existing status text and `ThinkingTrail` unchanged.
-5. Add focused checks first for all four marks, cleanup, reduced motion, zero-count gather, token-derived lime, toolbar wiring, removed CSS motion, and pending-state wiring.
+- Keep every page section outside the current four-column area exactly where it is.
+- Render the existing Preview/Sticky control, placement and engagement chips, and existing count line in `BoardShell`’s toolbar slot.
+- Represent the four existing work buckets as fixed `lane:` frames with visible labels and counts.
+- Represent each current page entry as lane content in the existing sort order. Positions remain computed by lane index and are never persisted.
+- Keep five-item replacement paging within each lane.
+- Keep `DimmedDisabled` around individual cards with the current `aria-disabled` and `inert` behavior. Never dim a lane.
+- Put `Nothing here yet.` in an empty lane. Put the existing Unmapped teaching sentence in the Unmapped lane only under its current zero-match condition.
+- Keep lanes non-draggable, non-resizable, non-nameable, and non-claiming by relying on the existing furniture-only lane behavior.
 
-## After-change parity
-- Controls, handlers, accessible names, copy, render states, source trail, and telemetry remain unchanged.
-- Only the visual mark in the toolbar and the visual pending indicator change.
+## Preserved controls, states, and events
+- Controls: all bring-work, suggestion, private-work, flagged removal, bulk selection, card actions, paging, Preview/Sticky, and filter controls remain reachable with identical labels and handlers.
+- States: loading, full-page empty, errors, empty lane, zero-match Unmapped teaching, zero-match Claimed, dimmed/inert matches, suggestion, selection, and paging states remain.
+- Telemetry: `work.filter_changed` keeps its existing exact dimensions and call path. No other telemetry call changes.
+
+## Guard and verification
+- Edit only `cg1-inbox-congruency.test.tsx` where old list/column selectors must target board lanes instead.
+- Preserve every existing congruency assertion, including full visibility, per-card dimming, `aria-disabled`, `inert`, teaching-line conditions, no green/lime matching, fixed cards, event payload closure, four areas, and five-item replacement.
+- Mutation-check each congruency behavior by making one temporary page mutation, proving its focused test fails, restoring exactly, and proving it passes.
+- Run the full test suite and confirm the preview build is healthy.
+- Confirm `CanvasLabPage.tsx`, `BoardShell.tsx`, and `board-lane.ts` remain byte-for-byte untouched.
