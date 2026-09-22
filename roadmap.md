@@ -6,7 +6,7 @@
 - [x] M2: Keep reading lines pending until the manifest confirms them, then draw static-record ticks.
 - [x] M2: Remove the reading spinner, cap the resolve cascade, and preserve reduced-motion meaning.
 - [x] M2: Contain the board Ask canvas and centre the inline panel mark against its tab row.
-- [ ] M2.1: Keep Writing pending for the trail lifetime and distribute resolve delays evenly within 280ms.
+- [x] M2.1: Keep Writing pending for the trail lifetime and distribute resolve delays evenly within 280ms.
 
 - [x] P3.3: Compact conversation cards to one first-user quote while preserving lane derivation and zoom-one fit.
 
