@@ -330,7 +330,11 @@ describe("CG1 inbox congruency", () => {
     });
     Object.defineProperty(HTMLElement.prototype, "clientHeight", {
       configurable: true,
-      get(this: HTMLElement) { return this.dataset["testid"] === "board-shell" ? 1376 : 0; },
+      get(this: HTMLElement) {
+        return this.dataset["testid"] === "board-shell"
+          ? Number.parseFloat(this.parentElement?.style.height ?? "0")
+          : 0;
+      },
     });
     try {
       inboxRows = Array.from({ length: 5 }, (_, index) => itemOfType(`document-${index + 1}`, "document"));
