@@ -103,8 +103,11 @@ const COLUMN_PAGE_SIZE = 5;
 type InboxLaneFrame = BoardShellFrame & { bucket: Bucket; entryCount: number };
 type InboxLaneNode = BoardShellNode & { entry: WorkItemRow | ConversationGroup };
 
-const INBOX_LANE_WIDTH = 300;
+const INBOX_LANE_COUNT = 4;
+const INBOX_LANE_MIN_WIDTH = 220;
 const INBOX_LANE_GAP = 36;
+const INBOX_BOARD_SIDE_MARGIN = 32;
+const INBOX_LANE_LEFT = 40;
 const INBOX_LANE_TOP = 88;
 const INBOX_CARD_HEIGHT = 220;
 const INBOX_LANE_PADDING = 12;
@@ -119,6 +122,13 @@ const INBOX_LANE_HEIGHT =
   (COLUMN_PAGE_SIZE - 1) * INBOX_CARD_GAP +
   INBOX_LANE_PAGING_HEIGHT;
 const INBOX_BOARD_HEIGHT = INBOX_LANE_TOP + INBOX_LANE_HEIGHT + INBOX_BOARD_BOTTOM_MARGIN;
+
+export function inboxLaneWidth(viewportWidth: number): number {
+  const dividedWidth =
+    (viewportWidth - INBOX_BOARD_SIDE_MARGIN * 2 - INBOX_LANE_GAP * (INBOX_LANE_COUNT - 1)) /
+    INBOX_LANE_COUNT;
+  return Math.max(INBOX_LANE_MIN_WIDTH, dividedWidth);
+}
 
 /** The mark for stepping through a column. Hand drawn, in the pencil idiom
     the nav indent uses: a short stroke that trails off into an arrow head. */
@@ -299,6 +309,7 @@ export function WorkPage() {
   // Presentation-only filter for the type columns. Local state, no query.
   const [columnFilter, setColumnFilter] = useState<string>("all");
   const [workView, setWorkView] = useState<WorkView>(() => readWorkView());
+  const [inboxViewportWidth, setInboxViewportWidth] = useState(0);
   // Which page each type column is on. Presentation-only local state, exactly
   // like columnFilter above: no query behind it and nothing to record.
   const [columnPages, setColumnPages] = useState<Record<BucketKey, number>>({
@@ -827,11 +838,13 @@ export function WorkPage() {
     };
   });
 
+  const currentInboxLaneWidth = inboxLaneWidth(inboxViewportWidth);
+
   const inboxLaneFrames: InboxLaneFrame[] = lanePages.map(({ bucket, entries }, index) => ({
     id: newLaneFrameId(`inbox-${bucket.key}`),
-    x: 40 + index * (INBOX_LANE_WIDTH + INBOX_LANE_GAP),
+    x: INBOX_LANE_LEFT + index * (currentInboxLaneWidth + INBOX_LANE_GAP),
     y: INBOX_LANE_TOP,
-    width: INBOX_LANE_WIDTH,
+    width: currentInboxLaneWidth,
     height: INBOX_LANE_HEIGHT,
     contentInset: { top: INBOX_LANE_HEADER_HEIGHT, bottom: INBOX_LANE_PAGING_HEIGHT },
     bucket,
@@ -843,7 +856,7 @@ export function WorkPage() {
       id: isConversationGroup(entry) ? entry.key : entry.id,
       x: 0,
       y: 0,
-      width: INBOX_LANE_WIDTH,
+      width: currentInboxLaneWidth,
       height: INBOX_CARD_HEIGHT,
       frame: newLaneFrameId(`inbox-${bucket.key}`),
       entry,
@@ -1104,7 +1117,10 @@ export function WorkPage() {
               frames={inboxLaneFrames}
               nodes={inboxLaneNodes}
               toolbar={inboxToolbar}
-              fitKey={`${workView}:${visibleEntries.length}`}
+              fitKey={`${workView}:${visibleEntries.length}:${currentInboxLaneWidth}`}
+              onViewportSizeChange={({ width }) => {
+                setInboxViewportWidth((current) => (current === width ? current : width));
+              }}
               renderFrame={(frame) => {
                 const lanePage = lanePages.find((entry) => entry.bucket.key === frame.bucket.key);
                 if (!lanePage) return null;

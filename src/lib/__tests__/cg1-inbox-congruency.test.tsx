@@ -2,7 +2,7 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { DimmedDisabled } from "@/components/common/DimmedDisabled";
@@ -321,12 +321,12 @@ describe("CG1 inbox congruency", () => {
     expect(screen.getByText(inboxRows[5]?.title ?? "missing")).toBeTruthy();
   });
 
-  it("fits the full Inbox board at natural card size", () => {
+  it("resizes four lanes to a narrow live-width shell and fits at natural card size", async () => {
     const width = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "clientWidth");
     const height = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "clientHeight");
     Object.defineProperty(HTMLElement.prototype, "clientWidth", {
       configurable: true,
-      get(this: HTMLElement) { return this.dataset["testid"] === "board-shell" ? 1600 : 0; },
+      get(this: HTMLElement) { return this.dataset["testid"] === "board-shell" ? 1094 : 0; },
     });
     Object.defineProperty(HTMLElement.prototype, "clientHeight", {
       configurable: true,
@@ -339,7 +339,14 @@ describe("CG1 inbox congruency", () => {
     try {
       inboxRows = Array.from({ length: 5 }, (_, index) => itemOfType(`document-${index + 1}`, "document"));
       render(<WorkPage />);
-      expect(screen.getByTestId("board-shell-stage").style.transform).toMatch(/scale\(1\)$/);
+      await waitFor(() => {
+        expect(screen.getByTestId("board-shell-stage").style.transform).toMatch(/scale\(1\)$/);
+      });
+      const lanes = screen.getByTestId("board-shell").querySelectorAll<HTMLElement>("[data-board-lane]");
+      expect(lanes).toHaveLength(4);
+      for (const lane of lanes) expect(lane.style.width).toBe("230.5px");
+      const cardPlacement = screen.getByText("document-1").closest<HTMLElement>("[data-lane-content]");
+      expect(cardPlacement?.style.width).toBe("206.5px");
     } finally {
       if (width) Object.defineProperty(HTMLElement.prototype, "clientWidth", width);
       else Reflect.deleteProperty(HTMLElement.prototype, "clientWidth");
