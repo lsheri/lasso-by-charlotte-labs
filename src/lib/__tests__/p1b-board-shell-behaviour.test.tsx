@@ -282,7 +282,11 @@ describe("the fit", () => {
     fitWorkboardViewport(size, [], [...NODES], new Map(), null);
 
   it("runs on mount, against the shell's own viewport", () => {
+    // With no ResizeObserver at all, the mount fit is the only path left, so
+    // this cannot pass on the back of the observer's first report.
+    vi.stubGlobal("ResizeObserver", undefined);
     mount();
+    vi.stubGlobal("ResizeObserver", StubResizeObserver);
     const wanted = expected({ width: 1000, height: 800 });
     const got = view();
     expect(got.zoom).toBeCloseTo(wanted.zoom, 10);
