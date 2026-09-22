@@ -1097,11 +1097,10 @@ export function WorkPage() {
               These landed on their own. Say whose work it is and the rest gets easier.
             </p>
           ) : null}
-          <div className={suggesting ? "animate-pulse" : undefined}>
+          <div className={suggesting ? "animate-pulse" : undefined} style={{ height: INBOX_BOARD_HEIGHT }}>
             <BoardShell
               ariaLabel="Inbox work board"
-              className={gusting ? "nb-gust" : undefined}
-              style={{ height: INBOX_BOARD_HEIGHT }}
+              className={gusting ? "h-full nb-gust" : "h-full"}
               frames={inboxLaneFrames}
               nodes={inboxLaneNodes}
               toolbar={inboxToolbar}
