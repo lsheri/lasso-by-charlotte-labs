@@ -352,6 +352,54 @@ describe("CG1 inbox congruency", () => {
     expect(screen.getByText(inboxRows[5]?.title ?? "missing")).toBeTruthy();
   });
 
+  it("recomputes the Inbox span and symmetric gaps after the shell reports a live width change", async () => {
+    const width = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "clientWidth");
+    const height = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "clientHeight");
+    const live = { width: 1094, height: 1376 };
+    const callbacks = new Set<ResizeObserverCallback>();
+    class LiveResizeObserver {
+      constructor(private readonly callback: ResizeObserverCallback) {}
+      observe() { callbacks.add(this.callback); this.callback([], this as unknown as ResizeObserver); }
+      disconnect() { callbacks.delete(this.callback); }
+      unobserve() { callbacks.delete(this.callback); }
+    }
+    Object.defineProperty(HTMLElement.prototype, "clientWidth", {
+      configurable: true,
+      get(this: HTMLElement) { return this.dataset["testid"] === "board-shell" ? live.width : 0; },
+    });
+    Object.defineProperty(HTMLElement.prototype, "clientHeight", {
+      configurable: true,
+      get(this: HTMLElement) { return this.dataset["testid"] === "board-shell" ? live.height : 0; },
+    });
+    vi.stubGlobal("ResizeObserver", LiveResizeObserver);
+    const boardMetrics = () => {
+      const lanes = Array.from(screen.getByTestId("board-shell").querySelectorAll<HTMLElement>("[data-board-lane]"));
+      const stage = screen.getByTestId("board-shell-stage") as HTMLElement;
+      const transform = stage.style.transform.match(/translate\((-?[\d.]+)px,\s*(-?[\d.]+)px\)\s*scale\((-?[\d.]+)\)/);
+      if (!transform || lanes.length !== 4) throw new Error("Inbox board metrics unavailable");
+      const panX = Number(transform[1]);
+      const zoom = Number(transform[3]);
+      const left = Number.parseFloat(lanes[0]?.style.left ?? "0") * zoom + panX;
+      const last = lanes[3];
+      const right = last ? (Number.parseFloat(last.style.left) + Number.parseFloat(last.style.width)) * zoom + panX : 0;
+      return { span: right - left, left, right: live.width - right, zoom };
+    };
+    try {
+      inboxRows = Array.from({ length: 5 }, (_, index) => itemOfType(`responsive-document-${index + 1}`, "document"));
+      render(<WorkPage />);
+      await waitFor(() => expect(boardMetrics()).toEqual({ span: 1030, left: 32, right: 32, zoom: 1 }));
+      live.width = 1286;
+      act(() => { for (const callback of callbacks) callback([], {} as ResizeObserver); });
+      await waitFor(() => expect(boardMetrics()).toEqual({ span: 1222, left: 32, right: 32, zoom: 1 }));
+    } finally {
+      vi.unstubAllGlobals();
+      if (width) Object.defineProperty(HTMLElement.prototype, "clientWidth", width);
+      else Reflect.deleteProperty(HTMLElement.prototype, "clientWidth");
+      if (height) Object.defineProperty(HTMLElement.prototype, "clientHeight", height);
+      else Reflect.deleteProperty(HTMLElement.prototype, "clientHeight");
+    }
+  });
+
   it("resizes four lanes to a narrow live-width shell and fits at natural card size", async () => {
     const width = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "clientWidth");
     const height = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "clientHeight");
