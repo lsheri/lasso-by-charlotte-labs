@@ -20,3 +20,8 @@
 - [x] R4.1: Restore 112/180 card floors, preserve the 220 creation default, and rehydrate positive saved heights exactly.
 - [x] R4.1: Portal the grouping naming popup to the canvas surface with viewport flip/clamping and no storage.
 - [x] R4.1: Keep the grouping naming popup at a constant readable screen-pixel size while its position follows pan and zoom.
+- [x] R5: Extend GraphiteIcon for every board-toolbar glyph, reusing existing Lasso gestures where suitable.
+- [x] R5: Label Add work, Details, and See an example board while preserving every handler, name, tooltip, state, and event.
+- [x] R5: Increase rendered and planned toolbar spacing together and verify narrow-width overflow with the wider pinned Add work control.
+- [x] R5: Make Ask Lasso the sole lime, loop-derived, transform-only living toolbar icon with a static reduced-motion state.
+
