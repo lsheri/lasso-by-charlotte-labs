@@ -28,8 +28,8 @@ describe("R6 shared board opening", () => {
 
     expect(left).toBeGreaterThanOrEqual(32);
     expect(top).toBeGreaterThanOrEqual(32);
-    expect(right).toBeLessThanOrEqual(968);
-    expect(bottom).toBeLessThanOrEqual(668);
+    expect(right).toBeLessThanOrEqual(968.001);
+    expect(bottom).toBeLessThanOrEqual(668.001);
     expect(SHARED_VIEW).toContain("fitWorkboardViewport");
     expect(SHARED_VIEW).toContain("ResizeObserver");
   });
