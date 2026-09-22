@@ -122,7 +122,7 @@ export function BoardShell<F extends BoardShellFrame, N extends BoardShellNode>(
   const fit = useCallback((reportedViewport?: LabViewportSize) => {
     const shell = shellRef.current;
     if (!shell) return;
-    const viewport = reportedViewport ?? { width: shell.clientWidth, height: shell.clientHeight };
+    const viewport = reportedViewport ?? observedSizeRef.current ?? { width: shell.clientWidth, height: shell.clientHeight };
     if (viewport.width <= 0 || viewport.height <= 0) return;
     const result = fitWorkboardViewport(
       viewport,
@@ -151,7 +151,7 @@ export function BoardShell<F extends BoardShellFrame, N extends BoardShellNode>(
     const shell = shellRef.current;
     if (!shell || typeof ResizeObserver === "undefined") return;
     const observer = new ResizeObserver((entries) => {
-      const entry = entries.find((candidate) => candidate.target === shell) ?? entries[0];
+      const entry = entries?.find((candidate) => candidate.target === shell) ?? entries?.[0];
       const next = entry
         ? { width: entry.contentRect.width, height: entry.contentRect.height }
         : { width: shell.clientWidth, height: shell.clientHeight };
