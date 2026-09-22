@@ -3,11 +3,15 @@ import { useEffect, useState, type FormEvent } from "react";
 
 import { BoardShell, type BoardShellFrame } from "@/components/board/BoardShell";
 import { NewEngagementDialog } from "@/components/engagements/NewEngagementDialog";
+import { HomeEngagementGrid } from "@/components/home/HomeEngagementGrid";
 import { LassoThinkingMark } from "@/components/reflect/LassoThinkingMark";
 import { Button } from "@/components/ui/button";
 import { useEngagements } from "@/hooks/use-engagements";
+import { useEngagementViews } from "@/hooks/use-engagement-views";
+import { useEngagementWorkCounts } from "@/hooks/use-engagement-work-counts";
 import { useProfile } from "@/hooks/use-profile";
 import { emitClientEvent } from "@/lib/client-telemetry";
+import type { HomeGridEngagement } from "@/lib/home-grid";
 import { LOOP_SIZE_TITLE } from "@/lib/lasso-loop";
 
 const HOME_VIEWPORT_SEED = { width: 980, height: 720 };
