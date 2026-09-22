@@ -3,11 +3,15 @@ import { useEffect, useState, type FormEvent } from "react";
 
 import { BoardShell, type BoardShellFrame } from "@/components/board/BoardShell";
 import { NewEngagementDialog } from "@/components/engagements/NewEngagementDialog";
+import { HomeEngagementGrid } from "@/components/home/HomeEngagementGrid";
 import { LassoThinkingMark } from "@/components/reflect/LassoThinkingMark";
 import { Button } from "@/components/ui/button";
 import { useEngagements } from "@/hooks/use-engagements";
+import { useEngagementViews } from "@/hooks/use-engagement-views";
+import { useEngagementWorkCounts } from "@/hooks/use-engagement-work-counts";
 import { useProfile } from "@/hooks/use-profile";
 import { emitClientEvent } from "@/lib/client-telemetry";
+import type { HomeGridEngagement } from "@/lib/home-grid";
 import { LOOP_SIZE_TITLE } from "@/lib/lasso-loop";
 
 const HOME_VIEWPORT_SEED = { width: 980, height: 720 };
@@ -80,6 +84,17 @@ export function HomeBoard() {
 
   const frame = homeFrameForViewport(viewport);
   const countLabel = engagements ? `HOME · ${engagements.length} ENGAGEMENTS` : "HOME";
+  const { data: views } = useEngagementViews(profile?.id);
+  const { data: workCounts } = useEngagementWorkCounts(engagements?.map((e) => e.id));
+  const viewedAt = new Map((views ?? []).map((row) => [row.engagement_id, row.last_viewed_at]));
+  const cards: HomeGridEngagement[] = (engagements ?? []).map((engagement) => ({
+    id: engagement.id,
+    code: engagement.code,
+    title: engagement.title,
+    clientLabel: engagement.clients?.name ?? engagement.client_label,
+    lastViewedAt: viewedAt.get(engagement.id) ?? null,
+    workCount: workCounts ? workCounts.get(engagement.id) ?? 0 : null,
+  }));
 
   return (
     <div
@@ -130,6 +145,7 @@ export function HomeBoard() {
             </p>
             <div className="mx-auto mt-3" style={{ maxWidth: HOME_CONTENT_WIDTH }}>
               <IdeasNote />
+              <HomeEngagementGrid cards={cards} />
             </div>
           </section>
         )}

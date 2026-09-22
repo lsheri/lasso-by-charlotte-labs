@@ -24,6 +24,14 @@ vi.mock("@/hooks/use-engagements", () => ({
   useEngagements: () => ({ data: mocks.engagements }),
 }));
 
+vi.mock("@/hooks/use-engagement-views", () => ({
+  useEngagementViews: () => ({ data: [] }),
+}));
+
+vi.mock("@/hooks/use-engagement-work-counts", () => ({
+  useEngagementWorkCounts: () => ({ data: undefined }),
+}));
+
 vi.mock("@/lib/client-telemetry", () => ({
   emitClientEvent: mocks.emitClientEvent,
 }));

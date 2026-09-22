@@ -17,6 +17,8 @@ export type TelemetryEvent =
   | "home.past_work_opened"
   /** P4a: a person chose to compose a product-idea email. Never carries their words. */
   | "home.ideas_note_composed"
+  /** P4b: an engagement was opened from the Home grid. Content-free. */
+  | "home.engagement_opened"
   | "workitem.captured"
   | "workitem.mapped"
   | "workitem.marked_private"

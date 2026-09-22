@@ -94,6 +94,7 @@ export const EVENT_DIM_KEYS: Readonly<Record<string, readonly string[]>> = {
   "findit.searched": ["considered", "entry", "found", "had_quote", "mode", "result_band", "scope"],
   "firm.work_shipped": ["coach_count", "has_artifact"],
   "handoff.observed": ["artifact_kind", "from_tool", "to_tool"],
+  "home.engagement_opened": [],
   "home.ideas_note_composed": [],
   "home.new_engagement_started": [],
   "home.opened": [],
