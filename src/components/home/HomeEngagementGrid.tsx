@@ -34,7 +34,7 @@ export function HomeEngagementGrid({ cards }: { cards: readonly HomeGridEngageme
                 {card.clientLabel ?? card.code}
               </p>
               <p className="mt-1 truncate text-[14px] leading-[1.4] text-foreground">{card.title}</p>
-              <p className="mt-1 text-[11.5px] leading-[1.5] text-muted-foreground">
+              <p className="mt-1 text-xs leading-[1.5] text-muted-foreground">
                 <span data-testid={`home-card-when-${card.id}`}>{lastOpenedLabel(card.lastViewedAt)}</span>
                 {card.workCount === null ? null : (
                   <span>
