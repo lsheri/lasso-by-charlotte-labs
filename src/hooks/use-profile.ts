@@ -1,4 +1,4 @@
-import { useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
+import { useQuery, type QueryClient } from "@tanstack/react-query";
 import { useEffect, useSyncExternalStore } from "react";
 import { toast } from "sonner";
 
@@ -195,9 +195,6 @@ export async function fetchProfile(): Promise<Profile | null> {
 }
 
 export function useProfiles() {
-  const client = useQueryClient();
-  // Registering here keeps the non-React helpers on the same cache as the app.
-  registerProfileQueryClient(client);
   return useQuery({ queryKey: ["profiles"], queryFn: fetchProfiles, staleTime: 60_000 });
 }
 
