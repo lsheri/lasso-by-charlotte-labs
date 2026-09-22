@@ -1554,6 +1554,12 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
         const frame = framesRef.current.find((entry) => entry.id === frameId);
         if (frame) void persistFramePatch(frame.id, { x: frame.x, y: frame.y, w: frame.width, h: frame.height });
       }
+      if (trailDrag) {
+        for (const member of trailDrag.members) {
+          const node = nodesRef.current.find((entry) => entry.id === member.id);
+          if (node) void persistNodePatch(node.id, { x: node.x, y: node.y });
+        }
+      }
     }
     function onVisibility() {
       if (document.visibilityState === "hidden") flush();

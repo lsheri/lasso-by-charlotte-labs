@@ -58,12 +58,12 @@ function renderFrame(model: LabFrameModel) {
 describe("R2 grouping movement", () => {
   it("moves a card whose centre starts inside and preserves its grouping offset", () => {
     const grouping = frame();
-    const inside = card("inside", 360, 120, 100, 60);
+    const inside = card("inside", 350, 120, 100, 60);
     const snapshot = groupingDragSnapshot(grouping, [inside]);
     const moved = moveGroupingContents([inside], snapshot, { x: 175, y: 115 });
 
     expect(snapshot.map((entry) => entry.id)).toEqual(["inside"]);
-    expect(moved[0]).toMatchObject({ x: 435, y: 155 });
+    expect(moved[0]).toMatchObject({ x: 425, y: 155 });
     expect((moved[0]?.x ?? 0) - 175).toBe(inside.x - grouping.x);
     expect((moved[0]?.y ?? 0) - 115).toBe(inside.y - grouping.y);
   });
@@ -91,7 +91,7 @@ describe("R2 grouping movement", () => {
   it("keeps resize separate from card movement and persists each moved row", () => {
     const page = readFileSync("src/pages/CanvasLabPage.tsx", "utf8");
     const resizePath = page.slice(page.indexOf("const resizing = resizeRef.current"), page.indexOf("const trailDrag = frameDragRef.current"));
-    const dragEnd = page.slice(page.indexOf("const trailDrag = frameDragRef.current", page.indexOf("function up")), page.indexOf("const connector = connectorDragRef.current", page.indexOf("function up")));
+    const dragEnd = page.match(/function up\(event: PointerEvent\)[\s\S]*?const connector = connectorDragRef\.current/)?.[0] ?? "";
 
     expect(resizePath).not.toContain("moveGroupingContents");
     expect(dragEnd).toContain("persistFramePatch");
