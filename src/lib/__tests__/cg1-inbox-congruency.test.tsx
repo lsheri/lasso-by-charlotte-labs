@@ -149,6 +149,7 @@ const rows = [item("mapped", "mapped", "ALPHA"), item("waiting", "unmapped"), it
 
 afterEach(cleanup);
 beforeEach(() => {
+  recorded.length = 0;
   window.matchMedia = vi.fn().mockReturnValue({
     matches: false,
     addEventListener: vi.fn(),
@@ -228,6 +229,10 @@ describe("CG1 inbox congruency", () => {
     const dimmed = readFileSync("src/components/common/DimmedDisabled.tsx", "utf8");
     expect(answer).toContain("--nb-lasso-green");
     expect(dimmed).not.toMatch(/green|lime|lasso/i);
+    inboxRows = [item("claimed", "mapped", "ALPHA")];
+    render(<WorkPage />);
+    fireEvent.click(screen.getByRole("button", { name: "Unmapped" }));
+    expect(screen.getByTestId("dimmed-disabled").className).not.toMatch(/green|lime|lasso/i);
   });
 
   it("marks Inbox cards as fixed and cancels drag", () => {
@@ -239,6 +244,10 @@ describe("CG1 inbox congruency", () => {
     expect(card.querySelector("[data-non-drag-affordance]")).not.toBeNull();
     expect(fireEvent.dragStart(card)).toBe(false);
     expect(onDragStart).toHaveBeenCalledOnce();
+    cleanup();
+    inboxRows = [itemOfType("page-card", "document")];
+    render(<WorkPage />);
+    expect(screen.getByText("page-card").closest('[data-testid="inbox-fixed-card"]')).not.toBeNull();
   });
 
   it("builds one closed event payload per change and preserves zero", () => {
@@ -259,18 +268,32 @@ describe("CG1 inbox congruency", () => {
     const dims = inboxFilterDims("placement", "one", 0);
     recordInboxFilterChange(dims, (value) => emitted.push(value));
     expect(emitted).toEqual([dims]);
+    inboxRows = [item("claimed", "mapped", "ALPHA")];
+    render(<WorkPage />);
+    fireEvent.click(screen.getByRole("button", { name: "Unmapped" }));
+    expect(recorded).toEqual([{ filter: "placement", selected: "one", result_band: "0" }]);
   });
 
-  it("keeps column geometry and five-per-page replacement through both wrappers", () => {
+  it("keeps four lanes and five-per-page replacement through both wrappers", () => {
     inboxRows = Array.from({ length: 6 }, (_, index) => itemOfType(`document-${index + 1}`, "document"));
     render(<WorkPage />);
-    const columns = document.querySelector(".nb-type-columns");
-    expect(columns).not.toBeNull();
-    expect(columns?.querySelectorAll(":scope > div")).toHaveLength(4);
-    expect(columns?.querySelectorAll(".nb-paper-wall")).toHaveLength(4);
-    const firstPage = screen.getAllByTestId("inbox-fixed-card");
-    expect(firstPage).toHaveLength(5);
-    for (const card of firstPage) {
+    const board = screen.getByRole("generic", { name: "Inbox work board" });
+    expect(board).toBeTruthy();
+    expect(board.querySelectorAll("[data-board-lane]")).toHaveLength(4);
+    for (const label of ["AI conversations", "Documents", "Models & sheets", "Meeting transcripts"]) {
+      expect(within(board).getByText(label)).toBeTruthy();
+    }
+    const toolbar = within(board).getByTestId("board-shell-toolbar");
+    expect(within(toolbar).getByRole("group", { name: "How work is shown" })).toBeTruthy();
+    expect(within(toolbar).getByRole("button", { name: "Everything" })).toBeTruthy();
+    expect(within(toolbar).getByRole("button", { name: "Unmapped" })).toBeTruthy();
+    expect(within(toolbar).getByRole("button", { name: "Claimed by you" })).toBeTruthy();
+    expect(within(board).getByText("1–5 OF 6")).toBeTruthy();
+    const documentLane = within(board).getByTestId("board-lane-scroll-lane:inbox-documents");
+    documentLane.scrollTop = 500;
+    fireEvent.scroll(documentLane);
+    expect(screen.getByText(inboxRows[4]?.title ?? "missing")).toBeTruthy();
+    for (const card of screen.getAllByTestId("inbox-fixed-card")) {
       expect(card.parentElement?.className).toMatch(/min-w-0/);
       expect(card.className).toMatch(/min-w-0/);
     }
@@ -285,6 +308,10 @@ describe("CG1 inbox congruency", () => {
       return /inbox[^\n]*(?:filter|match)[^\n]*(?:green|lime)|(?:green|lime)[^\n]*(?:filter|match)/i.test(source);
     });
     expect(offenders).toEqual([]);
+    inboxRows = [item("claimed", "mapped", "ALPHA")];
+    render(<WorkPage />);
+    fireEvent.click(screen.getByRole("button", { name: "Unmapped" }));
+    expect(screen.getByTestId("dimmed-disabled").className).not.toMatch(/green|lime/);
   });
 });
 

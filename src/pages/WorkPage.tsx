@@ -80,14 +80,34 @@ import { SpiderLassoScene } from "@/components/motion/SpiderLassoScene";
 import { ToneCard } from "@/components/notebook/ToneCard";
 import { WorkSubtitle } from "@/components/work/WorkSubtitle";
 import { InboxFixedCard } from "@/components/work/InboxFixedCard";
+import {
+  BoardShell,
+  type BoardShellFrame,
+  type BoardShellNode,
+} from "@/components/board/BoardShell";
 import { sourceVendorKey } from "@/components/work/SourceMark";
-import { BUCKETS, bucketKeyForEntry, type BucketKey } from "@/components/work/work-buckets";
+import {
+  BUCKETS,
+  bucketKeyForEntry,
+  type Bucket,
+  type BucketKey,
+} from "@/components/work/work-buckets";
 import { useSettingsDialog } from "@/lib/settings-dialog-context";
 import { readWorkView, writeWorkView, type WorkView } from "@/lib/work-view";
 import { inboxFilterDims, inboxFilterMatches, recordInboxFilterChange } from "@/lib/inbox-filter";
+import { newLaneFrameId } from "@/lib/board-lane";
 
 /** Each type column pages its entries five at a time, replacing not growing. */
 const COLUMN_PAGE_SIZE = 5;
+
+type InboxLaneFrame = BoardShellFrame & { bucket: Bucket; entryCount: number };
+type InboxLaneNode = BoardShellNode & { entry: WorkItemRow | ConversationGroup };
+
+const INBOX_LANE_WIDTH = 300;
+const INBOX_LANE_HEIGHT = 560;
+const INBOX_LANE_GAP = 36;
+const INBOX_LANE_TOP = 88;
+const INBOX_CARD_HEIGHT = 220;
 
 /** The mark for stepping through a column. Hand drawn, in the pencil idiom
     the nav indent uses: a short stroke that trails off into an arrow head. */
@@ -640,9 +660,6 @@ export function WorkPage() {
     }
   }
 
-  // P1: a pushed conversation counts as one thing, here and everywhere below.
-  const subtitle = <WorkSubtitle pieces={groupedCount(all)} unmapped={groupedCount(unmapped)} />;
-
   const engagementCodes = Array.from(
     new Set(
       mapped
@@ -783,6 +800,73 @@ export function WorkPage() {
     );
   }
 
+  const lanePages = BUCKETS.map((bucket) => {
+    const entries = visibleEntries.filter((entry) => bucketKeyForEntry(entry) === bucket.key);
+    const lastPage = Math.max(0, Math.ceil(entries.length / COLUMN_PAGE_SIZE) - 1);
+    const page = Math.min(columnPages[bucket.key], lastPage);
+    return {
+      bucket,
+      entries,
+      lastPage,
+      page,
+      pageEntries: entries.slice(
+        page * COLUMN_PAGE_SIZE,
+        page * COLUMN_PAGE_SIZE + COLUMN_PAGE_SIZE,
+      ),
+    };
+  });
+
+  const inboxLaneFrames: InboxLaneFrame[] = lanePages.map(({ bucket, entries }, index) => ({
+    id: newLaneFrameId(`inbox-${bucket.key}`),
+    x: 40 + index * (INBOX_LANE_WIDTH + INBOX_LANE_GAP),
+    y: INBOX_LANE_TOP,
+    width: INBOX_LANE_WIDTH,
+    height: INBOX_LANE_HEIGHT,
+    bucket,
+    entryCount: entries.length,
+  }));
+
+  const inboxLaneNodes: InboxLaneNode[] = lanePages.flatMap(({ bucket, pageEntries }) =>
+    pageEntries.map((entry) => ({
+      id: isConversationGroup(entry) ? entry.key : entry.id,
+      x: 0,
+      y: 0,
+      width: INBOX_LANE_WIDTH,
+      height: INBOX_CARD_HEIGHT,
+      frame: newLaneFrameId(`inbox-${bucket.key}`),
+      entry,
+    })),
+  );
+
+  const inboxToolbar = (
+    <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+      <span className="mr-2 text-[11.5px] text-muted-foreground">
+        <WorkSubtitle pieces={groupedCount(all)} unmapped={groupedCount(unmapped)} />
+      </span>
+      <span role="group" aria-label="How work is shown" className="mr-auto inline-flex items-center rounded-full border border-[var(--nb-rule)] bg-card p-0.5">
+        {(["preview", "sticky"] as const).map((option) => (
+          <Button key={option} type="button" size="sm" variant={workView === option ? "secondary" : "ghost"} aria-pressed={workView === option} onClick={() => { setWorkView(option); writeWorkView(option); }}>
+            {option === "preview" ? "Preview" : "Sticky"}
+          </Button>
+        ))}
+      </span>
+      <button type="button" onClick={() => changeColumnFilter("all")} className={columnFilter === "all" ? chipOn : chipOff}>
+        Everything
+      </button>
+      <button type="button" onClick={() => changeColumnFilter("unmapped")} className={columnFilter === "unmapped" ? chipOn : chipOff}>
+        Unmapped
+      </button>
+      <button type="button" onClick={() => changeColumnFilter("claimed")} className={columnFilter === "claimed" ? chipOn : chipOff}>
+        Claimed by you
+      </button>
+      {engagementCodes.map((code) => (
+        <button key={code} type="button" onClick={() => changeColumnFilter(code)} className={columnFilter === code ? chipOn : chipOff}>
+          {code}
+        </button>
+      ))}
+    </div>
+  );
+
   return (
     <div className="relative overflow-hidden">
       <SpiderLassoScene
@@ -795,7 +879,7 @@ export function WorkPage() {
       {/* PASS A1 — a coaching question is a decision about your own work and
           must stay reachable on the page people land on. */}
       <CoachingLinkNotices />
-      <PageHeader title="Inbox" subtitle={subtitle} />
+      <PageHeader title="Inbox" subtitle={null} />
       <BringWorkInRow
         unmappedCount={unmappedCount}
         suggesting={suggesting}
@@ -945,52 +1029,6 @@ export function WorkPage() {
         </p>
       ) : null}
 
-      {all.length > 0 ? (
-        <div className="mb-6 flex flex-wrap items-center gap-2">
-          <span role="group" aria-label="How work is shown" className="mr-auto inline-flex items-center rounded-full border border-[var(--nb-rule)] bg-card p-0.5">
-            {(["preview", "sticky"] as const).map((option) => (
-              <Button key={option} type="button" size="sm" variant={workView === option ? "secondary" : "ghost"} aria-pressed={workView === option} onClick={() => { setWorkView(option); writeWorkView(option); }}>
-                {option === "preview" ? "Preview" : "Sticky"}
-              </Button>
-            ))}
-          </span>
-          <button
-            type="button"
-            onClick={() => changeColumnFilter("all")}
-            className={columnFilter === "all" ? chipOn : chipOff}
-          >
-            Everything
-          </button>
-          <button
-            type="button"
-            onClick={() => changeColumnFilter("unmapped")}
-            className={columnFilter === "unmapped" ? chipOn : chipOff}
-          >
-            Unmapped
-          </button>
-          {/* Figma 22:220 sits "Claimed by you" third. Claiming IS mapping from
-              the person's side — there is no separate claim flag in the record —
-              so this filters on the mapped state rather than inventing one. */}
-          <button
-            type="button"
-            onClick={() => changeColumnFilter("claimed")}
-            className={columnFilter === "claimed" ? chipOn : chipOff}
-          >
-            Claimed by you
-          </button>
-          {engagementCodes.map((code) => (
-            <button
-              key={code}
-              type="button"
-              onClick={() => changeColumnFilter(code)}
-              className={columnFilter === code ? chipOn : chipOff}
-            >
-              {code}
-            </button>
-          ))}
-        </div>
-      ) : null}
-
       {/* PASS A1 - lifted off the retired Overview: the chats to put away sit
           with the pile. Decisions live on their own page. */}
       <ArrivalsStrip items={all} />
@@ -1048,100 +1086,71 @@ export function WorkPage() {
             </p>
           ) : null}
           <div className={suggesting ? "animate-pulse" : undefined}>
-            <div className={`nb-type-columns${gusting ? " nb-gust" : ""}`}>
-              {BUCKETS.map((bucket) => {
-                // P1: group beats bucket. A pushed conversation appears once,
-                // under AI conversations, whatever its artifacts are typed as,
-                // and never again on its own in another column.
-                const entries = visibleEntries.filter(
-                  (entry) => bucketKeyForEntry(entry) === bucket.key,
-                );
-                // Five entries a page; a page REPLACES the previous one so the
-                // four columns stay aligned. The effect above resets every
-                // column when the set changes; this clamp is the belt to those
-                // braces, so a stale index can never render an empty column.
-                const lastPage = Math.max(0, Math.ceil(entries.length / COLUMN_PAGE_SIZE) - 1);
-                const page = Math.min(columnPages[bucket.key], lastPage);
-                const pageEntries = entries.slice(
-                  page * COLUMN_PAGE_SIZE,
-                  page * COLUMN_PAGE_SIZE + COLUMN_PAGE_SIZE,
-                );
+            <BoardShell
+              ariaLabel="Inbox work board"
+              className={`h-[720px]${gusting ? " nb-gust" : ""}`}
+              frames={inboxLaneFrames}
+              nodes={inboxLaneNodes}
+              toolbar={inboxToolbar}
+              fitKey={`${workView}:${visibleEntries.length}`}
+              renderFrame={(frame) => {
+                const lanePage = lanePages.find((entry) => entry.bucket.key === frame.bucket.key);
+                if (!lanePage) return null;
                 const setPage = (next: number) =>
-                  setColumnPages((prev) => ({ ...prev, [bucket.key]: next }));
+                  setColumnPages((prev) => ({ ...prev, [frame.bucket.key]: next }));
                 return (
-                  <div key={bucket.key}>
-                    {/* Figma 22:220 heads each column with a mono stamp and a
-                        hairline that runs the column's full width, not with the
-                        handwritten `SectionHeader` used elsewhere. The count sits
-                        on the same baseline at the far edge. */}
-                    <div className="mb-3 border-b border-[var(--nb-rule)] pb-2">
+                  <>
+                    <div className="pointer-events-none absolute inset-x-0 -top-9 z-10 border-b border-[var(--nb-rule)] pb-2">
                       <h2 className="flex items-baseline justify-between gap-3 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
-                        <span className="truncate">{bucket.label}</span>
-                        <span className="shrink-0 text-soft">{entries.length}</span>
+                        <span className="truncate">{frame.bucket.label}</span>
+                        <span className="shrink-0 text-soft">{frame.entryCount}</span>
                       </h2>
                     </div>
-                    <div className="nb-paper-wall">
-                      {pageEntries.length === 0 ? (
-                        <p className="w-full rounded-[var(--radius-md)] border border-dashed border-pencil bg-card px-3 py-4 text-center text-[11.5px] text-soft">
-                          Nothing here yet.
-                        </p>
-                      ) : (
-                        pageEntries.map((entry) => {
-                          const key = isConversationGroup(entry) ? entry.key : entry.id;
-                          return (
-                            <DimmedDisabled
-                              key={key}
-                              dimmed={!entryMatchesFilter(entry)}
-                              disabled={!entryMatchesFilter(entry)}
-                              className="min-w-0 w-full"
-                            >
-                              <InboxFixedCard>
-                                {isConversationGroup(entry)
-                                  ? renderGroup(
-                                      entry,
-                                      (entry.transcript ?? entry.items[0]!).visibility === "mapped"
-                                        ? "mapped"
-                                        : "unmapped",
-                                    )
-                                  : renderColumnItem(entry)}
-                              </InboxFixedCard>
-                            </DimmedDisabled>
-                          );
-                        })
-                      )}
-                    </div>
-                    {entries.length > COLUMN_PAGE_SIZE ? (
-                      <div className="mt-3 flex items-center justify-center gap-3">
-                        {page > 0 ? (
-                          <button
-                            type="button"
-                            aria-label="Earlier work in this column"
-                            className="group inline-flex min-h-11 min-w-11 items-center justify-center md:min-h-0 md:min-w-0"
-                            onClick={() => setPage(page - 1)}
-                          >
+                    {lanePage.pageEntries.length === 0 ? (
+                      <p className="pointer-events-none absolute left-3 right-3 top-3 z-10 rounded-[var(--radius-md)] border border-dashed border-pencil bg-card px-3 py-4 text-center text-[11.5px] text-soft">
+                        Nothing here yet.
+                      </p>
+                    ) : null}
+                    {lanePage.entries.length > COLUMN_PAGE_SIZE ? (
+                      <div className="absolute inset-x-0 -bottom-12 z-10 flex items-center justify-center gap-3">
+                        {lanePage.page > 0 ? (
+                          <button type="button" aria-label="Earlier work in this column" className="group inline-flex min-h-11 min-w-11 items-center justify-center md:min-h-0 md:min-w-0" onClick={() => setPage(lanePage.page - 1)}>
                             <PageMark back />
                           </button>
                         ) : null}
                         <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
-                          {page * COLUMN_PAGE_SIZE + 1}–
-                          {page * COLUMN_PAGE_SIZE + pageEntries.length} OF {entries.length}
+                          {lanePage.page * COLUMN_PAGE_SIZE + 1}–
+                          {lanePage.page * COLUMN_PAGE_SIZE + lanePage.pageEntries.length} OF {lanePage.entries.length}
                         </span>
-                        {page < lastPage ? (
-                          <button
-                            type="button"
-                            aria-label="More work in this column"
-                            className="group inline-flex min-h-11 min-w-11 items-center justify-center md:min-h-0 md:min-w-0"
-                            onClick={() => setPage(page + 1)}
-                          >
+                        {lanePage.page < lanePage.lastPage ? (
+                          <button type="button" aria-label="More work in this column" className="group inline-flex min-h-11 min-w-11 items-center justify-center md:min-h-0 md:min-w-0" onClick={() => setPage(lanePage.page + 1)}>
                             <PageMark />
                           </button>
                         ) : null}
                       </div>
                     ) : null}
-                  </div>
+                  </>
                 );
-              })}
-            </div>
+              }}
+              renderNode={(node) => (
+                <DimmedDisabled
+                  dimmed={!entryMatchesFilter(node.entry)}
+                  disabled={!entryMatchesFilter(node.entry)}
+                  className="min-w-0 w-full"
+                >
+                  <InboxFixedCard>
+                    {isConversationGroup(node.entry)
+                      ? renderGroup(
+                          node.entry,
+                          (node.entry.transcript ?? node.entry.items[0]!).visibility === "mapped"
+                            ? "mapped"
+                            : "unmapped",
+                        )
+                      : renderColumnItem(node.entry)}
+                  </InboxFixedCard>
+                </DimmedDisabled>
+              )}
+            />
           </div>
 
           <WatchSuggestionBanner />
