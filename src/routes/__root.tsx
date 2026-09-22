@@ -17,6 +17,8 @@ import { initErrorSignal, reportClientError } from "@/lib/error-signal";
 import { initPostHog } from "@/lib/posthog-client";
 import { Toaster } from "@/components/ui/sonner";
 import { CANONICAL_ORIGIN, maybeRedirectToCanonical } from "@/lib/app-host";
+import { registerProfileQueryClient } from "@/hooks/use-profile";
+
 
 function NotFoundComponent() {
   return (
