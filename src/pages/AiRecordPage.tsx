@@ -58,6 +58,7 @@ import { getWorkFileUrl } from "@/lib/work-files.functions";
 import { formatDate } from "@/lib/work-types";
 import { useWorkboardCardPreviews } from "@/hooks/use-workboard-card-previews";
 import type { WorkView } from "@/lib/work-view";
+import type { WorkboardCardPreview } from "@/lib/workboard-card-preview.shared";
 import { laneContentExtent } from "@/lib/board-lane";
 
 type MonthGroup = { key: string; label: string; items: WorkItemRow[] };
@@ -70,7 +71,15 @@ const CONVERSATION_LANE_GAP = 36;
 const CONVERSATION_LANE_LEFT = 40;
 const CONVERSATION_LANE_TOP = 120;
 const CONVERSATION_LANE_HEADER_HEIGHT = 40;
-const CONVERSATION_CARD_HEIGHT = 220;
+export const CONVERSATION_CARD_LABEL_ROW_HEIGHT = 18;
+export const CONVERSATION_CARD_TITLE_HEIGHT = 36;
+export const CONVERSATION_CARD_QUOTE_HEIGHT = 64;
+export const CONVERSATION_CARD_PADDING_HEIGHT = 32;
+export const CONVERSATION_CARD_HEIGHT =
+  CONVERSATION_CARD_LABEL_ROW_HEIGHT
+  + CONVERSATION_CARD_TITLE_HEIGHT
+  + CONVERSATION_CARD_QUOTE_HEIGHT
+  + CONVERSATION_CARD_PADDING_HEIGHT;
 const CONVERSATION_PAGING_ROW_HEIGHT = 44;
 const COLUMN_PAGE_SIZE = 5;
 const CONVERSATION_INITIAL_MONTHS = 4;
@@ -158,6 +167,16 @@ function conversationLaneHeight(itemCount: number): number {
   return CONVERSATION_LANE_HEADER_HEIGHT
     + laneContentExtent(visible)
     + (itemCount > COLUMN_PAGE_SIZE ? CONVERSATION_PAGING_ROW_HEIGHT : 0);
+}
+
+/** A board glance starts with what the person asked; the reader keeps every turn. */
+export function conversationCardPreview(
+  preview: WorkboardCardPreview | undefined,
+): WorkboardCardPreview | undefined {
+  if (!preview) return undefined;
+  const firstUserTurn = preview.firstUserTurn
+    ?? preview.turns.find((turn) => turn.role.trim().toLowerCase() === "user");
+  return { ...preview, turns: firstUserTurn ? [firstUserTurn] : [] };
 }
 
 /** The first engagement a conversation is mapped into, if any. */
@@ -756,14 +775,14 @@ export function AiRecordPage() {
               return (
                 <DimmedDisabled dimmed={!matches} disabled={!matches} className="h-full min-w-0">
                   <span
-                    className={`${pileMotion.className ? "nb-sticky-wave " : ""}canvas-lab-card-paper block h-full min-w-0`}
+                    className={`${pileMotion.className ? "nb-sticky-wave " : ""}conversation-card-compact canvas-lab-card-paper block h-full min-w-0`}
                     style={{ "--nb-wave-delay": `${Math.min(node.index, 23) * 26}ms` } as React.CSSProperties}
                   >
                     <WorkNote
                       item={node.item}
                       dense
                       displayMode={view}
-                      chatPreview={cardPreviews[node.item.id]}
+                      chatPreview={conversationCardPreview(cardPreviews[node.item.id])}
                       onOpen={() => openItem(node.item)}
                       chips={(
                         <>

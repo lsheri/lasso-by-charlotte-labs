@@ -9,6 +9,7 @@ export type WorkboardPreviewTurn = {
 export type WorkboardCardPreview = {
   workItemId: string;
   turns: WorkboardPreviewTurn[];
+  firstUserTurn?: WorkboardPreviewTurn | null;
   turnCount: number;
   model: string | null;
 };

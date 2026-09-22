@@ -10,12 +10,14 @@ import { InboxFixedCard } from "@/components/work/InboxFixedCard";
 import { EVENT_DIM_KEYS } from "@/lib/event-dim-allowlist";
 import { inboxFilterDims, inboxFilterMatches, recordInboxFilterChange } from "@/lib/inbox-filter";
 import type { WorkItemRow } from "@/lib/work-types";
+import type { WorkboardCardPreview } from "@/lib/workboard-card-preview.shared";
 
 let inboxRows: WorkItemRow[] = [];
 const recorded: ReturnType<typeof inboxFilterDims>[] = [];
-const { filterChangedToken, recordedChatFilters } = vi.hoisted(() => ({
+const { filterChangedToken, recordedChatFilters, cardPreviews } = vi.hoisted(() => ({
   filterChangedToken: Symbol("noteFilterChangedFn"),
   recordedChatFilters: [] as unknown[],
+  cardPreviews: {} as Record<string, WorkboardCardPreview>,
 }));
 
 vi.mock("@tanstack/react-start", async (importOriginal) => ({
@@ -51,7 +53,7 @@ vi.mock("@/hooks/use-work-items", () => ({
   useWorkItems: () => ({ data: { items: inboxRows, mappingError: null }, isLoading: false, error: null }),
 }));
 vi.mock("@/hooks/use-clients", () => ({ useClients: () => ({ data: [] }) }));
-vi.mock("@/hooks/use-workboard-card-previews", () => ({ useWorkboardCardPreviews: () => ({}) }));
+vi.mock("@/hooks/use-workboard-card-previews", () => ({ useWorkboardCardPreviews: () => cardPreviews }));
 vi.mock("@/hooks/use-workboard-file-previews", () => ({ useWorkboardFilePreviews: () => ({}) }));
 vi.mock("@/lib/settings-dialog-context", () => ({ useSettingsDialog: () => ({ openSettings: vi.fn() }) }));
 vi.mock("@/lib/telemetry", () => ({
@@ -104,7 +106,12 @@ vi.mock("@/components/work/PasteThreadDialog", () => ({ PasteThreadDialog: () =>
 vi.mock("@/components/connectors/BrandLogo", () => ({ BrandLogo: () => null }));
 vi.mock("@/components/work/SubjectsPanel", () => ({ SubjectsPanel: () => null }));
 vi.mock("@/components/work/WorkNote", () => ({
-  WorkNote: ({ item }: { item: WorkItemRow }) => <article>{item.title}</article>,
+  WorkNote: ({ item, chatPreview }: { item: WorkItemRow; chatPreview?: WorkboardCardPreview }) => (
+    <article>
+      {item.title}
+      {chatPreview?.turns.map((turn) => <p data-testid="conversation-card-turn" key={turn.turnNo}>{turn.role}: {turn.content}</p>)}
+    </article>
+  ),
 }));
 vi.mock("@/components/notebook/marks", () => ({ GraphiteSeam: () => null }));
 vi.mock("@/components/notebook/ToneCard", () => ({ ToneCard: ({ children }: { children: React.ReactNode }) => <div>{children}</div> }));
@@ -115,7 +122,14 @@ vi.mock("@/hooks/use-motion", () => ({ useMotion: () => ({ className: "" }) }));
 vi.mock("@/integrations/supabase/client", () => ({ supabase: {} }));
 
 import { WorkPage } from "@/pages/WorkPage";
-import { AiRecordPage } from "@/pages/AiRecordPage";
+import {
+  AiRecordPage,
+  CONVERSATION_CARD_HEIGHT,
+  CONVERSATION_CARD_LABEL_ROW_HEIGHT,
+  CONVERSATION_CARD_PADDING_HEIGHT,
+  CONVERSATION_CARD_QUOTE_HEIGHT,
+  CONVERSATION_CARD_TITLE_HEIGHT,
+} from "@/pages/AiRecordPage";
 
 function item(id: string, visibility: WorkItemRow["visibility"], code?: string): WorkItemRow {
   return {
@@ -170,6 +184,7 @@ afterEach(cleanup);
 beforeEach(() => {
   recorded.length = 0;
   recordedChatFilters.length = 0;
+  for (const key of Object.keys(cardPreviews)) delete cardPreviews[key];
   window.matchMedia = vi.fn().mockReturnValue({
     matches: false,
     addEventListener: vi.fn(),
@@ -385,6 +400,43 @@ describe("CG1 inbox congruency", () => {
 });
 
 describe("CG2 AI conversations congruency", () => {
+  it("derives the compact card height from named content parts and shows only the first user turn", () => {
+    inboxRows = [conversation("Question first", "claude", "ALPHA")];
+    cardPreviews["Question first"] = {
+      workItemId: "Question first",
+      turnCount: 3,
+      model: "model",
+      firstUserTurn: { turnNo: 1, role: "user", content: "How should I frame this?" },
+      turns: [
+        { turnNo: 2, role: "assistant", content: "Start with the answer." },
+        { turnNo: 3, role: "user", content: "Then what?" },
+      ],
+    };
+
+    render(<AiRecordPage />);
+
+    const parts = [
+      CONVERSATION_CARD_LABEL_ROW_HEIGHT,
+      CONVERSATION_CARD_TITLE_HEIGHT,
+      CONVERSATION_CARD_QUOTE_HEIGHT,
+      CONVERSATION_CARD_PADDING_HEIGHT,
+    ];
+    const card = screen.getByText("Question first").closest<HTMLElement>("[data-lane-content]");
+    expect(CONVERSATION_CARD_HEIGHT).toBe(parts.reduce((sum, part) => sum + part, 0));
+    expect(card?.style.height).toBe(`${parts.reduce((sum, part) => sum + part, 0)}px`);
+    expect(screen.getAllByTestId("conversation-card-turn")).toHaveLength(1);
+    expect(screen.getByText("user: How should I frame this?")).toBeTruthy();
+    expect(screen.queryByText(/Start with the answer|Then what/)).toBeNull();
+  });
+
+  it("keeps the four conversation vendor borders exact", () => {
+    const styles = readFileSync("src/styles.css", "utf8");
+    expect(styles).toContain("--nb-chat-border-claude: linear-gradient(135deg, #c65d26, #c65d26);");
+    expect(styles).toContain("--nb-chat-border-chatgpt: linear-gradient(135deg, #111315, #777b7e);");
+    expect(styles).toContain("--nb-chat-border-gemini: linear-gradient(135deg, #2d6ecf, #b8c3cf);");
+    expect(styles).toContain("--nb-chat-border-copilot: linear-gradient(135deg, #6d3bb8, #17151b);");
+  });
+
   it("fits a mixed month timeline at zoom one with compact empty spines and honest lane heights", async () => {
     const width = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "clientWidth");
     const height = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "clientHeight");
@@ -433,11 +485,12 @@ describe("CG2 AI conversations congruency", () => {
       expect(july.querySelector("[data-testid^='board-lane-scroll-']")).toBeNull();
       expect(within(lanes[4] as HTMLElement).getByText("April")).toBeTruthy();
       expect(Number.parseFloat(lanes[4]?.style.left ?? "0")).toBeGreaterThan(1094);
-      expect((lanes[0] as HTMLElement).style.height).toBe("1212px");
-      expect((lanes[1] as HTMLElement).style.height).toBe("516px");
-      expect(Number.parseFloat((lanes[0] as HTMLElement).style.height) - Number.parseFloat((lanes[1] as HTMLElement).style.height)).toBe(3 * 220 + 3 * 12);
+      expect((lanes[0] as HTMLElement).style.height).toBe("862px");
+      expect((lanes[1] as HTMLElement).style.height).toBe("376px");
+      expect(1212 - Number.parseFloat((lanes[0] as HTMLElement).style.height)).toBe(5 * (220 - 150));
+      expect(Number.parseFloat((lanes[0] as HTMLElement).style.height) - Number.parseFloat((lanes[1] as HTMLElement).style.height)).toBe(3 * 150 + 3 * 12);
       const june = Array.from(lanes).find((lane) => within(lane).queryByText("June"));
-      expect(june?.style.height).toBe("1256px");
+      expect(june?.style.height).toBe("906px");
       expect(june?.querySelector("[data-conversation-paging-row]")).not.toBeNull();
       expect((lanes[0] as HTMLElement).querySelector("[data-conversation-paging-row]")).toBeNull();
       const firstCard = within(lanes[0] as HTMLElement).getAllByRole("article")[0]?.closest<HTMLElement>("[data-lane-content]");

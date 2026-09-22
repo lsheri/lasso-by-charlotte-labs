@@ -35,6 +35,12 @@ export async function readWorkboardCardPreviews(db: Db, workItemIds: string[]): 
       workItemId,
       turnCount: turns.length,
       model: [...turns].reverse().find((turn) => turn.model)?.model ?? null,
+      firstUserTurn: (() => {
+        const turn = turns.find((candidate) => candidate.role.trim().toLowerCase() === "user");
+        return turn
+          ? { turnNo: turn.turn_no, role: turn.role, content: turn.content.slice(0, 400) }
+          : null;
+      })(),
       turns: last.map((turn) => ({ turnNo: turn.turn_no, role: turn.role, content: turn.content.slice(0, 400) })),
     };
   });

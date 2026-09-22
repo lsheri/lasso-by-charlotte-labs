@@ -1,5 +1,7 @@
 # Roadmap
 
+- [x] P3.3: Compact conversation cards to one first-user quote while preserving lane derivation and zoom-one fit.
+
 - [x] R2: Move a dragged grouping with the cards whose centres were inside at drag start.
 - [x] R2: Persist the grouping and each moved card through existing per-row save paths.
 - [x] R2: Hide guidance for unnamed groupings while preserving named guidance and claim behavior.
