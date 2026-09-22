@@ -34,7 +34,8 @@ function easeInOutCubic(value: number): number {
 }
 
 function cyclePhase(value: number): number {
-  return ((value % 1) + 1) % 1;
+  const wrapped = ((value % 1) + 1) % 1;
+  return Math.round(wrapped * 1_000_000_000_000) / 1_000_000_000_000;
 }
 
 export function cohesionAt(phase: number): number {
@@ -75,6 +76,7 @@ export function loopStamps(timeSeconds: number, size: number): LoopStamp[] {
   const cycleSeconds = LOOP_CYCLE_MS / 1000;
   const elapsedCycles = timeSeconds / cycleSeconds;
   const phase = cyclePhase(elapsedCycles);
+  const superPhase = cyclePhase(elapsedCycles / LOOP_SUPER_PERIOD);
   const cohesion = cohesionAt(phase);
   const rotation = Math.PI * 2 * turnFractionAt(phase);
   const cx = size / 2;
@@ -92,7 +94,7 @@ export function loopStamps(timeSeconds: number, size: number): LoopStamp[] {
     const angle = theta + shortestArc(theta, clusterAngle) * cohesion;
     const breath =
       0.82 +
-      0.18 * Math.sin((Math.PI * 2 * elapsedCycles) / LOOP_SUPER_PERIOD + baseTheta);
+      0.18 * Math.sin(Math.PI * 2 * superPhase + baseTheta);
     const rxAtTheta =
       rx *
       (1 +

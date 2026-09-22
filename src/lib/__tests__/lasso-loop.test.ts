@@ -60,6 +60,15 @@ describe("Ask Lasso signature loop maths", () => {
     expect(loopStamps(time, LOOP_SIZE_TOOLBAR)).toEqual(loopStamps(time, LOOP_SIZE_TOOLBAR));
   });
 
+  it("moves the continuous stroke during travel", () => {
+    const cycleSeconds = LOOP_CYCLE_MS / 1000;
+    const earlier = loopStamps(cycleSeconds * 0.1, LOOP_SIZE_TOOLBAR);
+    const later = loopStamps(cycleSeconds * 0.2, LOOP_SIZE_TOOLBAR);
+    expect(cohesionAt(0.1)).toBe(0);
+    expect(cohesionAt(0.2)).toBe(0);
+    expect(later.map(({ x, y }) => [x, y])).not.toEqual(earlier.map(({ x, y }) => [x, y]));
+  });
+
   it("closes its deterministic breath after the three-cycle super-period", () => {
     const time = (LOOP_CYCLE_MS / 1000) * 0.2;
     const superPeriodSeconds = (LOOP_CYCLE_MS / 1000) * 3;
