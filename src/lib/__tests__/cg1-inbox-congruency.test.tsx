@@ -264,10 +264,12 @@ describe("CG1 inbox congruency", () => {
   it("keeps column geometry and five-per-page replacement through both wrappers", () => {
     inboxRows = Array.from({ length: 6 }, (_, index) => itemOfType(`document-${index + 1}`, "document"));
     render(<WorkPage />);
-    const columns = document.querySelector(".nb-type-columns");
-    expect(columns).not.toBeNull();
-    expect(columns?.querySelectorAll(":scope > div")).toHaveLength(4);
-    expect(columns?.querySelectorAll(".nb-paper-wall")).toHaveLength(4);
+    const board = screen.getByRole("generic", { name: "Inbox work board" });
+    expect(board).toBeTruthy();
+    expect(board.querySelectorAll("[data-board-lane]")).toHaveLength(4);
+    for (const label of ["AI conversations", "Documents", "Models & sheets", "Meeting transcripts"]) {
+      expect(within(board).getByText(label)).toBeTruthy();
+    }
     const firstPage = screen.getAllByTestId("inbox-fixed-card");
     expect(firstPage).toHaveLength(5);
     for (const card of firstPage) {

@@ -660,9 +660,6 @@ export function WorkPage() {
     }
   }
 
-  // P1: a pushed conversation counts as one thing, here and everywhere below.
-  const subtitle = <WorkSubtitle pieces={groupedCount(all)} unmapped={groupedCount(unmapped)} />;
-
   const engagementCodes = Array.from(
     new Set(
       mapped
