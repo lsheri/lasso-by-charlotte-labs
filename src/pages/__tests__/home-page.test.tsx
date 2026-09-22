@@ -94,7 +94,7 @@ describe("the ideas note", () => {
     expect(mocks.emitClientEvent).toHaveBeenCalledWith("home.ideas_note_composed", {});
   });
 
-  it("does not write the note to storage or call the network", () => {
+  it("does not write the note to storage, call fetch, or pass the words into the event helper", () => {
     const openMailClient = vi.fn();
     const fetchSpy = vi.spyOn(globalThis, "fetch");
     const localWrite = vi.spyOn(Storage.prototype, "setItem");

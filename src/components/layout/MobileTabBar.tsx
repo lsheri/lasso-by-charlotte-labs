@@ -50,6 +50,7 @@ export function MobileTabBar() {
         { label: "Settings", to: "/settings", icon: "settings" },
       ]
     : [
+        { label: "Home", to: "/home", icon: "overview" },
         { label: "Inbox", to: "/work", icon: "work" },
         { label: "All conversations", to: "/ai-record", icon: "ai-record" },
         { label: "Decision log", to: "/decisions", icon: "decisions" },
