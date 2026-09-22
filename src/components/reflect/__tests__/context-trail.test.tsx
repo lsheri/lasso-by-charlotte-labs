@@ -41,7 +41,7 @@ describe("ThinkingTrail reading state", () => {
   });
 
   it("keeps the lead and every revealed item pending until a manifest arrives", () => {
-    const { container } = render(
+    const { container, rerender } = render(
       <ThinkingTrail
         items={[
           { id: "selected-1", title: "Interview notes" },
@@ -60,6 +60,18 @@ describe("ThinkingTrail reading state", () => {
     expect(screen.getByText("Interview notes").closest("p")?.dataset["trailState"]).toBe("pending");
     expect(screen.getByText("Working deck").closest("p")?.dataset["trailState"]).toBe("pending");
     expect(screen.getByText("Writing").closest("p")?.dataset["trailState"]).toBe("pending");
+    expect(container.querySelectorAll('[data-trail-state="read"]')).toHaveLength(0);
+
+    rerender(
+      <ThinkingTrail
+        items={[
+          { id: "selected-1", title: "Interview notes" },
+          { id: "selected-2", title: "Working deck" },
+        ]}
+        finalPhase="Writing"
+        manifest={null}
+      />,
+    );
     expect(container.querySelectorAll('[data-trail-state="read"]')).toHaveLength(0);
   });
 
@@ -96,5 +108,27 @@ describe("ThinkingTrail reading state", () => {
       expect(svgPath.style.strokeDashoffset).toBe("0");
       expect(svgPath.style.transition).toBe("none");
     }
+  });
+
+  it("caps a twenty-item resolve cascade at 700ms including the draw", () => {
+    const manyItems = Array.from({ length: 20 }, (_, index) => ({
+      id: `read-${index}`,
+      title: `Read ${index}`,
+      kind: "item" as const,
+      detail: "",
+    }));
+    const { container } = render(
+      <ThinkingTrail
+        items={[]}
+        finalPhase="Writing"
+        manifest={{ ...manifest, items: manyItems, excluded: [] }}
+      />,
+    );
+
+    const delays = [...container.querySelectorAll('[data-trail-state="read"] path')].map(
+      (path) => Number.parseInt((path as SVGPathElement).style.transitionDelay, 10),
+    );
+    expect(Math.max(...delays)).toBe(280);
+    expect(Math.max(...delays) + 420).toBe(700);
   });
 });
