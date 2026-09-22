@@ -7,18 +7,25 @@ import { ChatPreviewWindow, chatBorderTreatment } from "@/components/work/ChatPr
 import { sourceVendorKey } from "@/components/work/SourceMark";
 const styles = readFileSync(resolve(process.cwd(), "src/styles.css"), "utf8");
 
-describe("R3 card and sticky visual pass", () => {
-  it("uses a graphite 2px shared edge and a 220px preview floor", () => {
+describe("R4 paper preview craft pass", () => {
+  it("keeps the 2px graphite edge on flat cards and the 220px preview floor", () => {
     expect(styles).toContain("--nb-card-border-width: 2px");
     expect(styles).toContain("--nb-card-min-height: 220px");
-    expect(styles).toMatch(/\.nb-paper[\s\S]*border:[^;]*var\(--nb-card-border-width\)[^;]*var\(--nb-graphite\)/);
-    expect(styles).toMatch(/\.nb-sticky[\s\S]*border:[^;]*var\(--nb-card-border-width\)[^;]*var\(--nb-graphite\)/);
-    expect(styles).toMatch(/\.nb-paper[\s\S]*min-height:\s*var\(--nb-card-min-height\)/);
+    expect(styles).toMatch(/\.nb-card-surface\s*\{[^}]*border:\s*var\(--nb-card-border-width\) solid var\(--nb-graphite\)/);
+    expect(styles).toMatch(/\.nb-preview-card\s*\{[^}]*min-height:\s*var\(--nb-card-min-height\)/);
   });
 
-  it("keeps long card content visible instead of clipping it", () => {
+  it("uses lifted paper shadows without a paper stroke or sticky ring", () => {
     const paperRules = [...styles.matchAll(/\.nb-paper\s*\{([^}]*)\}/g)].map((match) => match[1] ?? "");
-    expect(paperRules.some((rule) => rule.includes("height: auto") && rule.includes("overflow: visible"))).toBe(true);
+    const finalPaper = paperRules.at(-1) ?? "";
+    const sticky = styles.match(/\.nb-sticky\s*\{([^}]*)\}/)?.[1] ?? "";
+    expect(finalPaper).toContain("border: 0");
+    expect(finalPaper).toContain("overflow: hidden");
+    expect(finalPaper).toContain("var(--nb-paper-shadow-contact)");
+    expect(finalPaper).toContain("var(--nb-paper-shadow-ambient)");
+    expect(sticky).toContain("border: 0");
+    expect(sticky).not.toContain("0 0 0 4px var(--nb-white)");
+    expect(sticky).not.toContain("min-height: var(--nb-card-min-height)");
   });
 
   it.each([
@@ -35,13 +42,25 @@ describe("R3 card and sticky visual pass", () => {
     expect(chatBorderTreatment(vendor)).toBe(expected);
   });
 
-  it("renders a fixed, internally scrollable conversation window", () => {
+  it("renders a clipped conversation excerpt without scroll handlers", () => {
     render(<ChatPreviewWindow vendorKey="claude" turns={[{ turnNo: 1, role: "user", content: "Question" }, { turnNo: 2, role: "assistant", content: "Answer" }]} />);
     const window = screen.getByTestId("chat-preview-window");
     expect(window.getAttribute("data-chat-border")).toBe("claude");
     expect(window.className).toContain("chat-preview-window__body");
-    expect(styles).toMatch(/\.chat-preview-window__body[\s\S]*height:\s*var\(--nb-chat-preview-height\)/);
-    expect(styles).toMatch(/\.chat-preview-window__body[\s\S]*overflow-y:\s*auto/);
+    expect(window.getAttribute("data-preview-mode")).toBe("excerpt");
+    expect(styles).toMatch(/\.chat-preview-window__body\[data-preview-mode="excerpt"\][^{]*\{[^}]*overflow:\s*hidden/);
+    expect(styles).not.toMatch(/\.chat-preview-window__body\s*\{[^}]*overflow-y:\s*auto/);
+  });
+
+  it("uses one inset and portrait default with a landscape slide exception", () => {
+    expect(styles).toContain("--nb-preview-inset: 10px");
+    expect(styles).toMatch(/\[data-preview-shape="portrait"\][^{]*\{[^}]*aspect-ratio:\s*3\s*\/\s*4/);
+    expect(styles).toMatch(/\[data-preview-shape="slide"\][^{]*\{[^}]*aspect-ratio:\s*16\s*\/\s*9/);
+  });
+
+  it("makes only the enlarged conversation reader scrollable", () => {
+    expect(styles).toMatch(/\.focus-paper-reader[^{]*\{[^}]*overflow-y:\s*auto/);
+    expect(styles).toMatch(/\.focus-paper[^{]*\{[^}]*var\(--nb-paper-shadow-contact\)[^}]*var\(--nb-paper-shadow-ambient\)/);
   });
 
   it("reuses sourceVendorKey rather than detecting the vendor again", () => {
