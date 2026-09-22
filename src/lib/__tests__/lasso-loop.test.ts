@@ -66,7 +66,11 @@ describe("Ask Lasso signature loop maths", () => {
     const later = loopStamps(cycleSeconds * 0.2, LOOP_SIZE_TOOLBAR);
     expect(cohesionAt(0.1)).toBe(0);
     expect(cohesionAt(0.2)).toBe(0);
-    expect(later.map(({ x, y }) => [x, y])).not.toEqual(earlier.map(({ x, y }) => [x, y]));
+    const travelDistances = earlier.map((stamp, index) => {
+      const next = later[index];
+      return next ? Math.hypot(next.x - stamp.x, next.y - stamp.y) : 0;
+    });
+    expect(Math.max(...travelDistances)).toBeGreaterThan(5);
   });
 
   it("closes its deterministic breath after the three-cycle super-period", () => {
