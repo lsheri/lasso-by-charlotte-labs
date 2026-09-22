@@ -7,9 +7,9 @@ const mark = readFileSync("src/components/reflect/LassoThinkingMark.tsx", "utf8"
 const css = readFileSync("src/styles.css", "utf8");
 
 describe("R7 Ask Lasso thinking marks", () => {
-  it("uses the loop mark in the toolbar and removes the old CSS drift", () => {
+  it("uses the signature mark in the toolbar and removes the old CSS drift", () => {
     const toolbar = page.slice(page.indexOf("const toolbarItems"), page.indexOf("const toolbarPlan"));
-    expect(toolbar).toContain('<LassoThinkingMark kind="loop" size={24} />');
+    expect(toolbar).toContain('<LassoThinkingMark kind="signature" size={LOOP_SIZE_TOOLBAR} />');
     expect(toolbar).not.toContain("canvas-lab-ask-drift");
     expect(css).not.toMatch(/canvas-lab-ask-(?:drift|float|tilt)/);
   });
@@ -17,6 +17,14 @@ describe("R7 Ask Lasso thinking marks", () => {
   it("uses gather in the real pending state with only a verified manifest count", () => {
     expect(surface).toContain('<LassoThinkingMark kind="gather" size={56} count={ask.liveManifest?.items.length ?? 0} />');
     expect(surface).toContain("<ThinkingTrail");
+  });
+
+  it("places the signature beside the Lasso message name and reuses the sidebar loop for replies", () => {
+    expect(surface).toContain('import { LassoLoopMark } from "@/components/layout/LassoLoopMark"');
+    expect(surface).toContain('kind="signature"');
+    expect(surface).toContain("size={LOOP_SIZE_CHAT}");
+    expect(surface).toContain('<LassoLoopMark className="size-7 shrink-0 text-green" />');
+    expect(surface).toContain('{assistant ? "Lasso" : "You"}');
   });
 
   it("reads Lasso lime from its existing token rather than a literal", () => {

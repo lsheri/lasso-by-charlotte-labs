@@ -42,7 +42,7 @@ describe("LassoThinkingMark", () => {
 
   afterEach(() => vi.restoreAllMocks());
 
-  it.each(["orbit", "loop", "gather", "trace"] as const)("draws %s from the token and cancels on unmount", (kind) => {
+  it.each(["orbit", "loop", "gather", "trace", "signature"] as const)("draws %s from the token and cancels on unmount", (kind) => {
     const { unmount } = render(
       <LassoThinkingMark kind={kind} size={72} {...(kind === "gather" ? { count: 3 } : {})} />,
     );

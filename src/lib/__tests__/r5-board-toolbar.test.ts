@@ -19,7 +19,7 @@ describe("R5 board toolbar", () => {
     const iconNames = mappings.map((match) => match[2]);
     expect(mappings.length).toBeGreaterThanOrEqual(12);
     expect(new Set(iconNames).size).toBe(iconNames.length);
-    expect(toolbar).toContain('<LassoThinkingMark kind="loop" size={24} />');
+    expect(toolbar).toContain('<LassoThinkingMark kind="signature" size={LOOP_SIZE_TOOLBAR} />');
   });
 
   it("keeps Add work visible and labels only the unclear controls", () => {
@@ -31,7 +31,7 @@ describe("R5 board toolbar", () => {
 
   it("gives the canvas loop only to the Ask Lasso control", () => {
     const ask = toolbar.match(/data-toolbar-control="ask"[\s\S]*?toolbarItems\.push/s)?.[0] ?? "";
-    expect(ask).toContain('<LassoThinkingMark kind="loop" size={24} />');
+    expect(ask).toContain('<LassoThinkingMark kind="signature" size={LOOP_SIZE_TOOLBAR} />');
     expect(toolbar.replace(ask, "")).not.toContain("LassoThinkingMark");
     expect(toolbar.replace(ask, "")).not.toContain("text-green");
     const askEntry = icons.match(/"ask-lasso": \{ d: \[(.*?)\], sig:/)?.[1] ?? "";

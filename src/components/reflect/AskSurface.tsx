@@ -18,6 +18,8 @@ import { KEEP_ANSWER_LABEL } from "@/lib/answer-card";
 import type { AskTab } from "@/components/reflect/ask-dock-state";
 import type { AskLasso } from "@/components/reflect/use-ask-lasso";
 import { LassoThinkingMark } from "@/components/reflect/LassoThinkingMark";
+import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
+import { LOOP_SIZE_CHAT } from "@/lib/lasso-loop";
 
 /** Three grey dots used by compact loading and sending states inside Ask Lasso. */
 export function NbDots({ label = "Thinking" }: { label?: string }) {
@@ -143,14 +145,15 @@ function MessagesTab({ ask, emptyActions }: { ask: AskLasso; emptyActions?: Reac
 
   function speakerAvatar(role: "user" | "assistant") {
     const assistant = role === "assistant";
+    if (assistant) {
+      return <LassoLoopMark className="size-7 shrink-0 text-green" />;
+    }
     return (
       <span
         aria-hidden
-        className={`grid size-7 shrink-0 place-items-center rounded-full text-[11px] font-semibold ${
-          assistant ? "bg-green text-nb-white" : "border border-mid bg-grey-1 text-mid"
-        }`}
+        className="grid size-7 shrink-0 place-items-center rounded-full border border-mid bg-grey-1 text-[11px] font-semibold text-mid"
       >
-        {assistant ? "L" : viewerInitial}
+        {viewerInitial}
       </span>
     );
   }
@@ -160,6 +163,13 @@ function MessagesTab({ ask, emptyActions }: { ask: AskLasso; emptyActions?: Reac
     const dateTime = typeof time === "string" ? time : time.toISOString();
     return (
       <span className="nb-binder-line flex min-w-0 items-baseline gap-2">
+        {assistant ? (
+          <LassoThinkingMark
+            kind="signature"
+            size={LOOP_SIZE_CHAT}
+            className="self-center"
+          />
+        ) : null}
         <span className="font-sans text-[13px] font-semibold text-ink">
           {assistant ? "Lasso" : "You"}
         </span>
