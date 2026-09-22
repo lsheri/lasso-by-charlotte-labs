@@ -3,6 +3,7 @@ import { fallback, zodValidator } from "@tanstack/zod-adapter";
 import { useEffect } from "react";
 import { z } from "zod";
 
+import { useRecordEngagementView } from "@/hooks/use-engagement-views";
 import { CanvasLabPage } from "@/pages/CanvasLabPage";
 
 const canvasLabSearchSchema = z.object({
@@ -35,6 +36,9 @@ function CanvasLabRoute() {
   const { id } = Route.useParams();
   const { from } = Route.useSearch();
   const navigate = Route.useNavigate();
+
+  // Opening the board records that this person opened it, once per open.
+  useRecordEngagementView(id);
 
   useEffect(() => {
     if (!from) return;
