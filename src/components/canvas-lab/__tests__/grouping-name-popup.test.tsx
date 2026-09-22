@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { fireEvent, render } from "@testing-library/react";
+import { readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
 
 import { GroupingNamePopup, groupingNamePopupPosition } from "@/components/canvas-lab/GroupingNamePopup";
@@ -40,5 +41,15 @@ describe("R4.1 grouping name popup", () => {
     expect(onDismiss).toHaveBeenCalledTimes(3);
     expect(document.body.innerHTML).not.toMatch(/localStorage|sessionStorage/);
     portalRoot.remove();
+  });
+
+  it("has no remembered suppression and is requested for every drawn grouping", () => {
+    const page = readFileSync("src/pages/CanvasLabPage.tsx", "utf8");
+    const popup = readFileSync("src/components/canvas-lab/GroupingNamePopup.tsx", "utf8");
+    const creation = page.match(/async function createPaintRegion[\s\S]*?setAnnouncement\("Grouping drawn\. Name it to make it a workstream\."\);\n  }/)?.[0] ?? "";
+
+    expect(creation).toContain("setPendingRegionNameId(id)");
+    expect(`${creation}\n${popup}`).not.toMatch(/localStorage|sessionStorage|seen|firstRun/i);
+    for (let draw = 1; draw <= 5; draw += 1) expect(creation).toContain("setPendingRegionNameId(id)");
   });
 });
