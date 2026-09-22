@@ -145,6 +145,7 @@ export function HomeBoard() {
             </p>
             <div className="mx-auto mt-3" style={{ maxWidth: HOME_CONTENT_WIDTH }}>
               <IdeasNote />
+              <HomeEngagementGrid cards={cards} />
             </div>
           </section>
         )}
