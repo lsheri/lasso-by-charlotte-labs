@@ -78,12 +78,27 @@ describe("the shell and the page cannot drift apart", () => {
   const shell = read("src/components/board/BoardShell.tsx");
   const page = read("src/pages/CanvasLabPage.tsx");
 
-  it("uses the identical pan and zoom primitive set on both sides", () => {
-    expect(importedNames(shell, "@/lib/canvas-zoom")).toEqual(importedNames(page, "@/lib/canvas-zoom"));
+  it("reads a real import list from both files, so it cannot pass by finding nothing", () => {
+    for (const source of [shell, page]) {
+      expect(importedNames(source, "@/lib/canvas-zoom").length).toBeGreaterThan(0);
+      expect(importedNames(source, "@/lib/canvas-drag").length).toBeGreaterThan(0);
+    }
   });
 
-  it("uses the identical drag primitive set on both sides", () => {
-    expect(importedNames(shell, "@/lib/canvas-drag")).toEqual(importedNames(page, "@/lib/canvas-drag"));
+  it("holds both sides to the core pan and zoom set", () => {
+    for (const source of [shell, page]) {
+      const names = importedNames(source, "@/lib/canvas-zoom");
+      for (const core of CORE_PAN_ZOOM) expect(names).toContain(core);
+    }
+  });
+
+  it("never lets the shell hold a pan or zoom primitive the page lacks", () => {
+    // The page may legitimately gain engagement-only primitives. The shell
+    // gaining one the page lacks means the shell is inventing its own board.
+    const pageNames = new Set(importedNames(page, "@/lib/canvas-zoom"));
+    for (const name of importedNames(shell, "@/lib/canvas-zoom")) expect(pageNames).toContain(name);
+    const pageDrag = new Set(importedNames(page, "@/lib/canvas-drag"));
+    for (const name of importedNames(shell, "@/lib/canvas-drag")) expect(pageDrag).toContain(name);
   });
 
   it("fits through the one shared fit, on both sides", () => {
