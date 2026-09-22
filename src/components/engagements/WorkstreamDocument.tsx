@@ -55,7 +55,7 @@ export function WorkstreamDocument({
   const text = documentPlainText(document.content);
 
   return (
-    <div className="rounded-[var(--radius-card)] border border-border bg-background px-3 py-2">
+    <div className="nb-document-preview-body rounded-[var(--radius-card)] bg-background px-3 py-2">
       <p className="nb-type-small font-medium text-foreground">{document.title}</p>
       {text ? (
         <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{text}</p>

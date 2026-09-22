@@ -1,6 +1,8 @@
 import { useState } from "react";
 
 import { WorkboardFilePreview } from "@/components/canvas-lab/WorkboardFilePreview";
+import { ChatPreviewWindow } from "@/components/work/ChatPreviewWindow";
+import { sourceVendorKey } from "@/components/work/SourceMark";
 import type {
   WorkboardCardPreview,
   WorkboardFilePreview as FilePreview,
@@ -22,20 +24,17 @@ export function WorkCardPreview({
   if (item.type === "ai_thread") {
     if (!chatPreview || chatPreview.turns.length === 0) return null;
     return (
-      <div data-testid="work-card-chat-preview" className="canvas-lab-chat-preview mt-2">
-        {chatPreview.turns.map((turn) => (
-          <div key={turn.turnNo} className="canvas-lab-preview-turn">
-            <span>{turn.role}</span>
-            <p>{turn.content}</p>
-          </div>
-        ))}
-      </div>
+      <ChatPreviewWindow
+        testId="work-card-chat-preview"
+        vendorKey={sourceVendorKey(item)}
+        turns={chatPreview.turns}
+      />
     );
   }
 
   if (!filePreview || filePreview.kind === "fallback" || fileFailed) return null;
   return (
-    <div className="mt-2 min-h-0 flex-1 overflow-hidden">
+    <div className="nb-document-preview-body mt-2 min-h-0 flex-1 overflow-hidden">
       <WorkboardFilePreview preview={filePreview} onFailure={() => setFileFailed(true)} />
     </div>
   );

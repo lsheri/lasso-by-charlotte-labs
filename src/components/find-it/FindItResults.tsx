@@ -282,7 +282,7 @@ export function FindItNode({ candidate, selected = false, status = "draft", expa
   const rationale = link.rationale ?? (link.quote ? "this sentence is in both" : "the work is connected");
   return (
     <DimmedDisabled dimmed={status === "discarded"} disabled={false}>
-    <div data-testid={expanded ? "find-it-detail" : "find-it-node"} data-selected={selected ? "true" : "false"} data-strength={strength} className={`group/node relative rounded-[6px] border bg-card shadow-none ${selected ? "border-pencil shadow-[2px_2px_0_var(--nb-pencil)]" : "border-hairline"} ${className}`}>
+    <div data-testid={expanded ? "find-it-detail" : "find-it-node"} data-selected={selected ? "true" : "false"} data-strength={strength} className={`nb-card-surface group/node relative rounded-[6px] bg-card shadow-none ${selected ? "shadow-[2px_2px_0_var(--nb-pencil)]" : ""} ${className}`}>
       <Button type="button" variant="ghost" onClick={onSelect} className={`w-full justify-start whitespace-normal rounded-[6px] px-3 text-left hover:bg-card ${expanded ? "h-auto min-h-[62px] py-3" : "h-[56px] py-2"}`}>
         <span className="relative min-w-0 flex-1">
           <span className="micro-label block">CONVERSATION</span>

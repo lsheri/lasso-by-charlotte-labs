@@ -47,7 +47,7 @@ export function ToneCard({
 }) {
   return (
     <div
-      className={`flex flex-col gap-1 rounded-[var(--radius-control)] border px-3 py-2.5 ${TONE[tone]} ${className}`}
+      className={`nb-card-surface flex flex-col gap-1 rounded-[var(--radius-control)] px-3 py-2.5 ${TONE[tone]} ${className}`}
     >
       {label || mark ? (
         <div className="flex items-center justify-between gap-2">
