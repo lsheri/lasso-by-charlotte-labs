@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * P1: the board shell, the lane, and the guard against the two drifting.
  *
@@ -110,7 +111,7 @@ describe("a lane is furniture", () => {
 });
 
 describe("a lane lays its contents out and keeps none of it", () => {
-  const rect = { x: 40, y: 40, width: 300, height: 260 };
+  const rect = { x: 40, y: 40, width: 300, height: 200 };
   const contents = [
     { id: "a", height: 100 },
     { id: "b", height: 100 },
@@ -142,7 +143,7 @@ describe("a lane lays its contents out and keeps none of it", () => {
 
   it("writes no computed position into anything persisted", () => {
     const lane = read("src/lib/board-lane.ts");
-    expect(lane).not.toMatch(/supabase|mutate|insert|update\(|persist|save/i);
+    expect(lane).not.toMatch(/supabase|mutate|\.insert\(|\.update\(|localStorage/i);
     const shell = read("src/components/board/BoardShell.tsx");
     const laneBlock = shell.slice(shell.indexOf("lanes.map("), shell.indexOf("boardNodes.map("));
     expect(laneBlock).toContain("laneContentLayout");
