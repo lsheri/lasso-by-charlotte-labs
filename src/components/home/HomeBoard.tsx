@@ -10,11 +10,23 @@ import { useProfile } from "@/hooks/use-profile";
 import { emitClientEvent } from "@/lib/client-telemetry";
 import { LOOP_SIZE_TITLE } from "@/lib/lasso-loop";
 
-const HOME_BOARD_HEIGHT = 900;
+const HOME_VIEWPORT_SEED = { width: 980, height: 720 };
+const BOARD_FIT_PADDING = 32;
 const HOME_CONTENT_WIDTH = 620;
 const HOME_CONTENT_TOP = 186;
 
 type HomeFrame = BoardShellFrame & { kind: "home" };
+
+export function homeFrameForViewport(viewport: { width: number; height: number }): HomeFrame {
+  return {
+    id: "home-surface",
+    kind: "home",
+    x: BOARD_FIT_PADDING,
+    y: BOARD_FIT_PADDING,
+    width: Math.max(1, viewport.width - BOARD_FIT_PADDING * 2),
+    height: Math.max(1, viewport.height - BOARD_FIT_PADDING * 2),
+  };
+}
 
 export function ideasMailto(idea: string): string {
   const params = new URLSearchParams({ subject: "Lasso product idea", body: idea });
@@ -60,29 +72,21 @@ export function IdeasNote({ openMailClient = openIdeasMailClient }: { openMailCl
 export function HomeBoard() {
   const { data: profile } = useProfile();
   const { data: engagements } = useEngagements(profile?.id);
-  const [viewport, setViewport] = useState({ width: 980, height: HOME_BOARD_HEIGHT });
+  const [viewport, setViewport] = useState(HOME_VIEWPORT_SEED);
 
   useEffect(() => {
     emitClientEvent("home.opened", {});
   }, []);
 
-  const frame: HomeFrame = {
-    id: "home-surface",
-    kind: "home",
-    x: 0,
-    y: 0,
-    width: viewport.width,
-    height: viewport.height,
-  };
+  const frame = homeFrameForViewport(viewport);
   const countLabel = engagements ? `HOME · ${engagements.length} ENGAGEMENTS` : "HOME";
 
   return (
-    <div className="h-[calc(100vh-6rem)] min-h-[900px] overflow-hidden">
+    <div data-testid="home-board-viewport" className="h-[calc(100vh-6rem)] overflow-hidden">
       <BoardShell
         ariaLabel="Home board"
         frames={[frame]}
         nodes={[]}
-        fitKey={`${viewport.width}:${viewport.height}`}
         showViewControls
         onViewportSizeChange={(size) => {
           setViewport((current) => current.width === size.width && current.height === size.height ? current : size);
@@ -109,7 +113,7 @@ export function HomeBoard() {
           <section
             aria-labelledby="home-title"
             className="absolute left-1/2 w-[620px] max-w-[calc(100%-32px)] -translate-x-1/2 text-center"
-            style={{ top: HOME_CONTENT_TOP }}
+            style={{ top: HOME_CONTENT_TOP - BOARD_FIT_PADDING }}
           >
             <div className="flex items-center justify-center gap-3">
               <LassoThinkingMark kind="signature" size={LOOP_SIZE_TITLE} />
