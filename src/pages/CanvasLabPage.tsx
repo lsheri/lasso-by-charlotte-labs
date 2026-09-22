@@ -19,6 +19,7 @@ import { planToolbarOverflow, type ToolbarControlSpec } from "@/lib/toolbar-over
 import { BoardAsk } from "@/components/canvas-lab/BoardAsk";
 import { LabAnswerCard } from "@/components/canvas-lab/LabAnswerCard";
 import { useRegisterAskLasso } from "@/components/reflect/ask-lasso-context";
+import { LassoThinkingMark } from "@/components/reflect/LassoThinkingMark";
 import type { KeptAnswer } from "@/components/reflect/answer-keep-context";
 import { supabase } from "@/integrations/supabase/client";
 import { answerCiteRows, answerNodeInput, canKeepAnswer } from "@/lib/answer-card";
@@ -2407,7 +2408,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   }
   toolbarItems.push({
     spec: { id: "ask", width: 40, pinned: true },
-    row: <ToolbarIcon label="Ask Lasso"><Button size="icon" variant={askOpen ? "secondary" : "outline"} aria-label="Ask Lasso" aria-pressed={askOpen} data-toolbar-control="ask" onClick={() => setAskOpen((current) => !current)}><span className="canvas-lab-ask-drift text-green"><span className="canvas-lab-ask-float"><GraphiteIcon name="ask-lasso" className="canvas-lab-ask-icon" animate={false} /></span></span></Button></ToolbarIcon>,
+    row: <ToolbarIcon label="Ask Lasso"><Button size="icon" variant={askOpen ? "secondary" : "outline"} aria-label="Ask Lasso" aria-pressed={askOpen} data-toolbar-control="ask" onClick={() => setAskOpen((current) => !current)}><LassoThinkingMark kind="loop" size={24} /></Button></ToolbarIcon>,
   });
   if (canAddWork) {
     toolbarItems.push({
