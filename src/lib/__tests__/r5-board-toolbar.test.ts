@@ -17,8 +17,9 @@ describe("R5 board toolbar", () => {
 
     const mappings = [...toolbar.matchAll(/data-toolbar-control="([^"]+)"[\s\S]*?<GraphiteIcon name="([^"]+)"/g)];
     const iconNames = mappings.map((match) => match[2]);
-    expect(mappings.length).toBeGreaterThanOrEqual(13);
+    expect(mappings.length).toBeGreaterThanOrEqual(12);
     expect(new Set(iconNames).size).toBe(iconNames.length);
+    expect(toolbar).toContain('<LassoThinkingMark kind="loop" size={24} />');
   });
 
   it("keeps Add work visible and labels only the unclear controls", () => {

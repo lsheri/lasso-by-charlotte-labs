@@ -1,3 +1,5 @@
+// @vitest-environment jsdom
+
 import { act, render } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -21,6 +23,9 @@ const context = {
 
 describe("LassoThinkingMark", () => {
   beforeEach(() => {
+    for (const value of Object.values(context)) {
+      if (typeof value === "function" && "mockClear" in value) value.mockClear();
+    }
     vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(context as unknown as CanvasRenderingContext2D);
     vi.spyOn(window, "getComputedStyle").mockReturnValue({
       getPropertyValue: (name: string) => (name === "--nb-lasso-green" ? "token-green" : ""),
@@ -40,7 +45,8 @@ describe("LassoThinkingMark", () => {
   it.each(["orbit", "loop", "gather", "trace"] as const)("draws %s from the token and cancels on unmount", (kind) => {
     const { unmount } = render(<LassoThinkingMark kind={kind} size={72} count={kind === "gather" ? 3 : undefined} />);
     expect(context.setTransform).toHaveBeenCalledWith(2, 0, 0, 2, 0, 0);
-    expect(context.fillStyle === "token-green" || context.strokeStyle === "token-green").toBe(true);
+    expect(context.fillStyle).toBe("token-green");
+    expect(context.strokeStyle).toBe("token-green");
     expect(requestAnimationFrame).toHaveBeenCalled();
     unmount();
     expect(cancelAnimationFrame).toHaveBeenCalledWith(17);
