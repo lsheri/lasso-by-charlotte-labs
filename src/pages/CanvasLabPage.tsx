@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { Eye, FileText, Info, LayoutTemplate, Maximize2, Menu, Minus, MoreHorizontal, Plus, Sparkles, Square, StickyNote, Type, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 
 import {
@@ -151,6 +151,7 @@ import {
   type WorkboardPersistEntity,
 } from "@/components/canvas-lab/canvas-lab-telemetry";
 import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
+import { GraphiteIcon } from "@/components/notebook/icons";
 import { SidebarNav } from "@/components/layout/SidebarNav";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -2338,7 +2339,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   toolbarItems.push({
     spec: { id: "workstreams", width: 40, moveOrder: 1 },
     row: (
-      <ToolbarIcon label="Show workstreams"><Button type="button" size="icon" variant={structureMode === "structured" ? "secondary" : "outline"} aria-label="Show workstreams" aria-pressed={structureMode === "structured"} onClick={() => setStructured(structureMode !== "structured")}><LayoutTemplate className="h-4 w-4" /></Button></ToolbarIcon>
+      <ToolbarIcon label="Show workstreams"><Button type="button" size="icon" variant={structureMode === "structured" ? "secondary" : "outline"} aria-label="Show workstreams" aria-pressed={structureMode === "structured"} data-toolbar-control="workstreams" onClick={() => setStructured(structureMode !== "structured")}><GraphiteIcon name="workstreams" animate={false} /></Button></ToolbarIcon>
     ),
     menu: (
       <DropdownMenuCheckboxItem checked={structureMode === "structured"} onCheckedChange={setStructured}>Show workstreams</DropdownMenuCheckboxItem>
@@ -2348,8 +2349,8 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     spec: { id: "display", width: 76, moveOrder: 2 },
     row: (
       <div className="canvas-lab-structure-toggle" aria-label="Card display">
-        <ToolbarIcon label="Preview cards"><Button type="button" size="icon" variant={displayMode === "preview" ? "secondary" : "ghost"} aria-label="Preview cards" aria-pressed={displayMode === "preview"} onClick={() => chooseDisplayMode("preview")}><Eye className="h-4 w-4" /></Button></ToolbarIcon>
-        <ToolbarIcon label="Sticky cards"><Button type="button" size="icon" variant={displayMode === "sticky" ? "secondary" : "ghost"} aria-label="Sticky cards" aria-pressed={displayMode === "sticky"} onClick={() => chooseDisplayMode("sticky")}><StickyNote className="h-4 w-4" /></Button></ToolbarIcon>
+        <ToolbarIcon label="Preview cards"><Button type="button" size="icon" variant={displayMode === "preview" ? "secondary" : "ghost"} aria-label="Preview cards" aria-pressed={displayMode === "preview"} data-toolbar-control="preview" onClick={() => chooseDisplayMode("preview")}><GraphiteIcon name="preview-cards" animate={false} /></Button></ToolbarIcon>
+        <ToolbarIcon label="Sticky cards"><Button type="button" size="icon" variant={displayMode === "sticky" ? "secondary" : "ghost"} aria-label="Sticky cards" aria-pressed={displayMode === "sticky"} data-toolbar-control="sticky" onClick={() => chooseDisplayMode("sticky")}><GraphiteIcon name="messages" animate={false} /></Button></ToolbarIcon>
       </div>
     ),
     menu: (
@@ -2365,7 +2366,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   });
   toolbarItems.push({
     spec: { id: "working-from", width: 0, pinned: true },
-      row: <ToolbarIcon label="Working from"><Button type="button" size="icon" variant="outline" className="md:hidden" aria-label="Working from" onClick={() => { setRailOpen(true); setMobileView("rail"); }}><FileText className="h-4 w-4" /></Button></ToolbarIcon>,
+      row: <ToolbarIcon label="Working from"><Button type="button" size="icon" variant="outline" className="md:hidden" aria-label="Working from" data-toolbar-control="working-from" onClick={() => { setRailOpen(true); setMobileView("rail"); }}><GraphiteIcon name="working-from" animate={false} /></Button></ToolbarIcon>,
   });
   if (selectedLinkId) {
     toolbarItems.push({
@@ -2381,30 +2382,30 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   }
   if (canAddWork) {
     toolbarItems.push({
-      spec: { id: "add-work", width: 96, pinned: true },
-      row: <ToolbarIcon label="Add work"><Button size="icon" variant="outline" aria-label="Add work" onClick={() => openAddWork("header", null)}><StickyNote className="h-4 w-4" /></Button></ToolbarIcon>,
+      spec: { id: "add-work", width: 112, pinned: true },
+      row: <ToolbarIcon label="Add work"><Button size="sm" variant="outline" aria-label="Add work" data-toolbar-control="add-work" onClick={() => openAddWork("header", null)}><GraphiteIcon name="work" animate={false} />Add work</Button></ToolbarIcon>,
     });
     toolbarItems.push({
       spec: { id: "add-text", width: 92, moveOrder: 4 },
-      row: <ToolbarIcon label="Add text"><Button size="icon" variant="outline" aria-label="Add text" onClick={() => void addTextBlock()}><Type className="h-4 w-4" /></Button></ToolbarIcon>,
+      row: <ToolbarIcon label="Add text"><Button size="icon" variant="outline" aria-label="Add text" data-toolbar-control="add-text" onClick={() => void addTextBlock()}><GraphiteIcon name="text" animate={false} /></Button></ToolbarIcon>,
       menu: <DropdownMenuItem onSelect={() => void addTextBlock()}>Add text</DropdownMenuItem>,
     });
     toolbarItems.push({
       spec: { id: "region", width: 84, moveOrder: 5 },
-      row: <ToolbarIcon label="Add grouping"><Button size="icon" variant={drawTool ? "secondary" : "outline"} aria-label="Add grouping" aria-pressed={drawTool} onClick={toggleDrawTool}><Square className="h-4 w-4" /></Button></ToolbarIcon>,
-      menu: <DropdownMenuItem onSelect={toggleDrawTool}><Square className="mr-2 h-4 w-4" />Add grouping</DropdownMenuItem>,
+      row: <ToolbarIcon label="Add grouping"><Button size="icon" variant={drawTool ? "secondary" : "outline"} aria-label="Add grouping" aria-pressed={drawTool} data-toolbar-control="grouping" onClick={toggleDrawTool}><GraphiteIcon name="grouping" animate={false} /></Button></ToolbarIcon>,
+      menu: <DropdownMenuItem onSelect={toggleDrawTool}><GraphiteIcon name="grouping" className="mr-2" animate={false} />Add grouping</DropdownMenuItem>,
     });
   }
   if (showExample) {
     toolbarItems.push({
-      spec: { id: "example", width: 180, moveOrder: 8 },
-      row: <ToolbarIcon label="See an example board"><Button size="icon" className="bg-green text-paper hover:bg-[var(--nb-green-deep)]" aria-label="See an example board" onClick={openExample}><LayoutTemplate className="h-4 w-4" /></Button></ToolbarIcon>,
+      spec: { id: "example", width: 174, moveOrder: 8 },
+      row: <ToolbarIcon label="See an example board"><Button size="sm" variant="outline" aria-label="See an example board" data-toolbar-control="example" onClick={openExample}><GraphiteIcon name="example-board" animate={false} />See an example board</Button></ToolbarIcon>,
       menu: <DropdownMenuItem onSelect={openExample}>See an example board</DropdownMenuItem>,
     });
   }
   toolbarItems.push({
-    spec: { id: "ask", width: 100, pinned: true },
-    row: <ToolbarIcon label="Ask Lasso"><Button size="icon" variant={askOpen ? "secondary" : "outline"} aria-label="Ask Lasso" aria-pressed={askOpen} onClick={() => setAskOpen((current) => !current)}><Sparkles className="h-4 w-4" /></Button></ToolbarIcon>,
+    spec: { id: "ask", width: 40, pinned: true },
+    row: <ToolbarIcon label="Ask Lasso"><Button size="icon" variant={askOpen ? "secondary" : "outline"} aria-label="Ask Lasso" aria-pressed={askOpen} data-toolbar-control="ask" onClick={() => setAskOpen((current) => !current)}><span className="canvas-lab-ask-drift text-green"><span className="canvas-lab-ask-float"><GraphiteIcon name="ask-lasso" className="canvas-lab-ask-icon" animate={false} /></span></span></Button></ToolbarIcon>,
   });
   if (canAddWork) {
     toolbarItems.push({
@@ -2413,22 +2414,22 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     });
   }
   toolbarItems.push({
-    spec: { id: "details", width: 80, moveOrder: 9 },
-    row: <ToolbarIcon label="Details"><Button size="icon" variant="outline" aria-label="Details" asChild><Link to="/engagements/$id" params={{ id: engagementId }} search={{ ...DETAILS_SEARCH }}><Info className="h-4 w-4" /></Link></Button></ToolbarIcon>,
+    spec: { id: "details", width: 86, moveOrder: 9 },
+    row: <ToolbarIcon label="Details"><Button size="sm" variant="outline" aria-label="Details" data-toolbar-control="details" asChild><Link to="/engagements/$id" params={{ id: engagementId }} search={{ ...DETAILS_SEARCH }}><GraphiteIcon name="analyses" animate={false} />Details</Link></Button></ToolbarIcon>,
     menu: <DropdownMenuItem asChild><Link to="/engagements/$id" params={{ id: engagementId }} search={{ ...DETAILS_SEARCH }}>Details</Link></DropdownMenuItem>,
   });
   toolbarItems.push({
     spec: { id: "fit", width: 56, moveOrder: 10 },
-    row: <ToolbarIcon label="Fit"><Button size="icon" variant="outline" aria-label="Fit" onClick={() => fit(true)}><Maximize2 className="h-4 w-4" /></Button></ToolbarIcon>,
+    row: <ToolbarIcon label="Fit"><Button size="icon" variant="outline" aria-label="Fit" data-toolbar-control="fit" onClick={() => fit(true)}><GraphiteIcon name="fit" animate={false} /></Button></ToolbarIcon>,
     menu: <DropdownMenuItem onSelect={() => fit(true)}>Fit</DropdownMenuItem>,
   });
   toolbarItems.push({
     spec: { id: "zoom", width: 116, pinned: true },
     row: (
       <>
-        <Button size="icon" variant="ghost" aria-label="Zoom out" onClick={() => zoomAtCentre(stepZoom(zoomRef.current, "out"))}><Minus className="h-3.5 w-3.5" /></Button>
+        <ToolbarIcon label="Zoom out"><Button size="icon" variant="ghost" aria-label="Zoom out" data-toolbar-control="zoom-out" onClick={() => zoomAtCentre(stepZoom(zoomRef.current, "out"))}><GraphiteIcon name="minus" size={14} animate={false} /></Button></ToolbarIcon>
         <button type="button" aria-label="Zoom to 100 percent" className="w-10 text-center font-mono text-[10px] text-soft" onClick={() => zoomAtCentre(1)}>{Math.round(zoom * 100)}%</button>
-        <Button size="icon" variant="ghost" aria-label="Zoom in" onClick={() => zoomAtCentre(stepZoom(zoomRef.current, "in"))}><Plus className="h-3.5 w-3.5" /></Button>
+        <ToolbarIcon label="Zoom in"><Button size="icon" variant="ghost" aria-label="Zoom in" data-toolbar-control="zoom-in" onClick={() => zoomAtCentre(stepZoom(zoomRef.current, "in"))}><GraphiteIcon name="plus" size={14} animate={false} /></Button></ToolbarIcon>
       </>
     ),
   });
@@ -2447,12 +2448,12 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       <main className={`relative min-w-0 flex-1 flex-col ${mobileView === "board" ? "flex" : "hidden md:flex"}`}>
         <header className="relative z-20 flex h-[52px] shrink-0 items-center justify-between gap-3 border-b border-border bg-card px-4">
           <div className="min-w-0 shrink"><span className="block truncate text-[13px] font-medium text-foreground">{title}</span><span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">{status}</span></div>
-          <div ref={toolbarRef} className="flex min-w-0 flex-1 items-center justify-end gap-1 overflow-hidden">
-            {toolbarItems.filter((item) => toolbarPlan.row.includes(item.spec.id)).map((item) => <div key={item.spec.id} className="flex shrink-0 items-center gap-1">{item.row}</div>)}
+          <div ref={toolbarRef} className="canvas-lab-toolbar flex min-w-0 flex-1 items-center justify-end gap-2 overflow-hidden">
+            {toolbarItems.filter((item) => toolbarPlan.row.includes(item.spec.id)).map((item) => <div key={item.spec.id} className="flex shrink-0 items-center gap-2">{item.row}</div>)}
             {toolbarOverflowItems.length > 0 ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button size="icon" variant="ghost" aria-label="More board controls"><MoreHorizontal className="h-4 w-4" /></Button>
+                  <ToolbarIcon label="More board controls"><Button size="icon" variant="ghost" aria-label="More board controls" data-toolbar-control="more"><GraphiteIcon name="more" animate={false} /></Button></ToolbarIcon>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   {toolbarOverflowItems.map((item) => <Fragment key={item.spec.id}>{item.menu}</Fragment>)}

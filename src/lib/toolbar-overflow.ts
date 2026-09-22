@@ -27,7 +27,7 @@ export type ToolbarPlan = {
 };
 
 export const TOOLBAR_OVERFLOW_BUTTON_WIDTH = 36;
-export const TOOLBAR_GAP = 4;
+export const TOOLBAR_GAP = 8;
 
 function measure(widths: number[], gap: number): number {
   if (widths.length === 0) return 0;

@@ -920,6 +920,44 @@ button:focus-visible .nb-ico[data-anim="1"] .nb-sig,
 .nb-ico[data-play="1"] .nb-sig {
   animation: var(--nb-sig) 900ms var(--nb-ease) var(--nb-stagger-loose) both;
 }
+
+/* R5: the toolbar is still pencilwork. Only the Lasso loop is alive. */
+.canvas-lab-toolbar .nb-ico path {
+  animation: none;
+  stroke-dasharray: none;
+}
+.canvas-lab-ask-drift,
+.canvas-lab-ask-float {
+  display: inline-flex;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+.canvas-lab-ask-drift {
+  animation: canvas-lab-ask-drift 17s ease-in-out infinite alternate;
+}
+.canvas-lab-ask-float {
+  animation: canvas-lab-ask-float 23s ease-in-out infinite alternate-reverse;
+}
+.canvas-lab-ask-icon {
+  animation: canvas-lab-ask-tilt 29s ease-in-out infinite alternate;
+  transform-origin: center;
+  will-change: transform;
+}
+@keyframes canvas-lab-ask-drift {
+  0% { transform: perspective(80px) translate3d(-0.6px, 0.4px, 0) rotateX(-4deg); }
+  43% { transform: perspective(80px) translate3d(0.8px, -0.7px, 1px) rotateX(5deg); }
+  100% { transform: perspective(80px) translate3d(-0.2px, 0.8px, -1px) rotateX(-2deg); }
+}
+@keyframes canvas-lab-ask-float {
+  0% { transform: rotateY(-6deg) translate3d(0, -0.3px, 0); }
+  57% { transform: rotateY(7deg) translate3d(0.5px, 0.5px, 1px); }
+  100% { transform: rotateY(-3deg) translate3d(-0.4px, -0.1px, 0); }
+}
+@keyframes canvas-lab-ask-tilt {
+  0% { transform: rotateZ(-1.5deg); }
+  38% { transform: rotateZ(2deg); }
+  100% { transform: rotateZ(-0.5deg); }
+}
 a:hover .nb-ico[data-icon="drag-handle"] .nb-sig:nth-of-type(2),
 button:hover .nb-ico[data-icon="drag-handle"] .nb-sig:nth-of-type(2),
 .nb-nav-shelf:hover .nb-ico[data-icon="drag-handle"] .nb-sig:nth-of-type(2),
@@ -1218,6 +1256,12 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   .nb-mark path {
     stroke-dasharray: none;
     animation: none !important;
+  }
+  .canvas-lab-ask-drift,
+  .canvas-lab-ask-float,
+  .canvas-lab-ask-icon {
+    animation: none !important;
+    transform: none !important;
   }
 }
 
