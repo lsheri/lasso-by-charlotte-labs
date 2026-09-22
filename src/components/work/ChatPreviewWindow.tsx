@@ -27,11 +27,12 @@ export function ChatPreviewWindow({
   const treatment = chatBorderTreatment(vendorKey);
   return (
     <div
-      data-testid={testId}
       data-chat-border={treatment}
       className="chat-preview-window"
     >
       <div
+        data-testid={testId}
+        data-chat-border={treatment}
         className="chat-preview-window__body"
         onScroll={(event) => onScroll?.(event.currentTarget.scrollTop)}
         onWheel={(event) => {

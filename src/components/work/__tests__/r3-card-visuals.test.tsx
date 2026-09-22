@@ -1,8 +1,10 @@
+// @vitest-environment jsdom
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { ChatPreviewWindow, chatBorderTreatment } from "@/components/work/ChatPreviewWindow";
 import { sourceVendorKey } from "@/components/work/SourceMark";
-import styles from "@/styles.css?raw";
+const styles = readFileSync(new URL("../../../styles.css", import.meta.url), "utf8");
 
 describe("R3 card and sticky visual pass", () => {
   it("uses a graphite 1.5px shared edge and a 220px preview floor", () => {
@@ -36,7 +38,7 @@ describe("R3 card and sticky visual pass", () => {
     render(<ChatPreviewWindow vendorKey="claude" turns={[{ role: "user", text: "Question" }, { role: "assistant", text: "Answer" }]} />);
     const window = screen.getByTestId("chat-preview-window");
     expect(window).toHaveAttribute("data-chat-border", "claude");
-    expect(window.className).toContain("chat-preview-window");
+    expect(window.className).toContain("chat-preview-window__body");
     expect(styles).toMatch(/\.chat-preview-window__body[\s\S]*height:\s*var\(--nb-chat-preview-height\)/);
     expect(styles).toMatch(/\.chat-preview-window__body[\s\S]*overflow-y:\s*auto/);
   });
