@@ -1,0 +1,26 @@
+import { readFileSync } from "node:fs";
+import { describe, expect, it } from "vitest";
+
+const page = readFileSync("src/pages/CanvasLabPage.tsx", "utf8");
+const surface = readFileSync("src/components/reflect/AskSurface.tsx", "utf8");
+const mark = readFileSync("src/components/reflect/LassoThinkingMark.tsx", "utf8");
+const css = readFileSync("src/styles.css", "utf8");
+
+describe("R7 Ask Lasso thinking marks", () => {
+  it("uses the loop mark in the toolbar and removes the old CSS drift", () => {
+    const toolbar = page.slice(page.indexOf("const toolbarItems"), page.indexOf("const toolbarPlan"));
+    expect(toolbar).toContain('<LassoThinkingMark kind="loop" size={24} />');
+    expect(toolbar).not.toContain("canvas-lab-ask-drift");
+    expect(css).not.toMatch(/canvas-lab-ask-(?:drift|float|tilt)/);
+  });
+
+  it("uses gather in the real pending state with only a verified manifest count", () => {
+    expect(surface).toContain('<LassoThinkingMark kind="gather" size={72} count={ask.liveManifest?.items.length ?? 0} />');
+    expect(surface).toContain("<ThinkingTrail");
+  });
+
+  it("reads Lasso lime from its existing token rather than a literal", () => {
+    expect(mark).toContain('getPropertyValue("--nb-lasso-green")');
+    expect(mark).not.toContain("#04f85b");
+  });
+});

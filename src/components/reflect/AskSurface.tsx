@@ -17,6 +17,7 @@ import { useAnswerKeep } from "@/components/reflect/answer-keep-context";
 import { KEEP_ANSWER_LABEL } from "@/lib/answer-card";
 import type { AskTab } from "@/components/reflect/ask-dock-state";
 import type { AskLasso } from "@/components/reflect/use-ask-lasso";
+import { LassoThinkingMark } from "@/components/reflect/LassoThinkingMark";
 
 /** Three grey dots. The only thinking treatment inside Ask Lasso. */
 export function NbDots({ label = "Thinking" }: { label?: string }) {
@@ -269,7 +270,7 @@ function MessagesTab({ ask, emptyActions }: { ask: AskLasso; emptyActions?: Reac
 
         {ask.pending ? (
           <div className="nb-binder-line flex items-center gap-2">
-            <NbDots />
+            <LassoThinkingMark kind="gather" size={72} count={ask.liveManifest?.items.length ?? 0} />
             <span className="text-sm text-muted-foreground">
               {ask.streamed ? "Writing" : "Reading your work"}
             </span>
