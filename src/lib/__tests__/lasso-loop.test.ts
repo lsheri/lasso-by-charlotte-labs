@@ -44,7 +44,8 @@ describe("Ask Lasso signature loop maths", () => {
   it("returns 48 stamps and gathers them around five distinct centres", () => {
     const holdTime = (LOOP_CYCLE_MS / 1000) * 0.62;
     const stamps = loopStamps(holdTime, LOOP_SIZE_TOOLBAR);
-    expect(stamps).toHaveLength(LOOP_STAMPS);
+    expect(LOOP_STAMPS).toBe(48);
+    expect(stamps).toHaveLength(48);
 
     const centres = Array.from({ length: LOOP_DOTS }, (_, cluster) => {
       const members = stamps.filter((stamp) => stamp.cluster === cluster);
