@@ -86,7 +86,7 @@ describe("F2 Preview and Sticky are different drawings", () => {
       />,
     );
     expect(preview.container.querySelector('[data-drawing="preview"]')).not.toBeNull();
-    expect(preview.container.querySelector(".nb-paper")).toBeNull();
+    expect(preview.container.querySelector('[data-drawing="preview"].nb-paper')).not.toBeNull();
     expect(preview.getByRole("button", { name: "Open Proposal larger" })).not.toBeNull();
     preview.unmount();
 

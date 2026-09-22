@@ -1,5 +1,5 @@
+import type { ReactNode, Ref } from "react";
 import type { WorkboardPreviewTurn } from "@/lib/workboard-card-preview.shared";
-import { previewWheelConsumesScroll } from "@/lib/workboard-card-preview.shared";
 
 export type ChatBorderTreatment = "claude" | "chatgpt" | "gemini" | "copilot" | "default";
 
@@ -17,37 +17,56 @@ export function ChatPreviewWindow({
   vendorKey,
   turns,
   testId = "chat-preview-window",
-  onScroll,
 }: {
   vendorKey: string | null;
   turns: WorkboardPreviewTurn[];
   testId?: string;
-  onScroll?: ((scrollTop: number) => void) | undefined;
 }) {
-  const treatment = chatBorderTreatment(vendorKey);
   return (
-    <div
-      data-chat-border={treatment}
-      className="chat-preview-window"
-    >
-      <div
-        data-testid={testId}
-        data-chat-border={treatment}
-        className="chat-preview-window__body"
-        onScroll={(event) => onScroll?.(event.currentTarget.scrollTop)}
-        onWheel={(event) => {
-          const box = event.currentTarget;
-          if (previewWheelConsumesScroll(true, event.deltaY, box.scrollTop, box.clientHeight, box.scrollHeight)) {
-            event.stopPropagation();
-          }
-        }}
-      >
+    <ChatBorderFrame vendorKey={vendorKey} mode="excerpt" testId={testId}>
         {turns.map((turn) => (
           <div key={turn.turnNo} className="canvas-lab-preview-turn">
             <span>{turn.role}</span>
             <p>{turn.content}</p>
           </div>
         ))}
+    </ChatBorderFrame>
+  );
+}
+
+export function ChatBorderFrame({
+  vendorKey,
+  mode,
+  testId,
+  bodyRef,
+  onScroll,
+  onMouseUp,
+  onKeyUp,
+  children,
+}: {
+  vendorKey: string | null;
+  mode: "excerpt" | "expanded";
+  testId?: string;
+  bodyRef?: Ref<HTMLDivElement> | undefined;
+  onScroll?: (() => void) | undefined;
+  onMouseUp?: (() => void) | undefined;
+  onKeyUp?: (() => void) | undefined;
+  children: ReactNode;
+}) {
+  const treatment = chatBorderTreatment(vendorKey);
+  return (
+    <div data-chat-border={treatment} data-preview-mode={mode} className="chat-preview-window">
+      <div
+        ref={bodyRef}
+        data-testid={testId}
+        data-chat-border={treatment}
+        data-preview-mode={mode}
+        className="chat-preview-window__body"
+        onScroll={onScroll}
+        onMouseUp={onMouseUp}
+        onKeyUp={onKeyUp}
+      >
+        {children}
       </div>
     </div>
   );

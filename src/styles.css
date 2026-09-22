@@ -180,6 +180,9 @@
   --nb-card-min-height: 220px;
   --nb-document-border-width: 1px;
   --nb-chat-preview-height: 112px;
+  --nb-preview-inset: 10px;
+  --nb-paper-shadow-contact: 1px 2px 3px color-mix(in oklab, var(--nb-ink) 18%, transparent);
+  --nb-paper-shadow-ambient: 0 10px 24px -12px color-mix(in oklab, var(--nb-ink) 28%, transparent);
 
   /* 03 · Library · Atoms port. Tokens the atoms board introduces that the
      design-port token list did not name. Additive: nothing above changes. */
@@ -1352,7 +1355,7 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   --canvas-vendor-other: var(--nb-mid);
   border-top: 3px solid var(--canvas-preview-vendor, var(--canvas-vendor-other));
 }
-.canvas-lab-preview-frame { display: flex; width: 100%; height: 100%; flex-direction: column; overflow: hidden; border: 1px solid var(--nb-pencil); border-radius: var(--radius-control); background: var(--nb-white); }
+.canvas-lab-preview-frame { display: flex; width: 100%; height: 100%; flex-direction: column; overflow: hidden; border: 0; border-radius: var(--radius-card); background: var(--nb-paper-fill, var(--nb-white)); }
 .canvas-lab-preview-source { display: flex; min-height: 28px; flex: 0 0 auto; align-items: center; justify-content: space-between; gap: 6px; border-bottom: 1px solid var(--nb-rule); padding: 2px 4px 2px 8px; font-family: var(--font-mono); font-size: 9px; line-height: 12px; color: var(--nb-mid); text-transform: uppercase; letter-spacing: 0.08em; }
 .canvas-lab-preview-source > span { display: flex; min-width: 0; align-items: center; gap: 4px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .canvas-lab-preview-source button, .canvas-lab-page-controls button { width: 24px; height: 24px; min-height: 24px; flex: 0 0 auto; }
@@ -1363,23 +1366,44 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 .canvas-lab-page-controls { display: flex; min-height: 28px; flex: 0 0 auto; align-items: center; justify-content: center; gap: 5px; border-top: 1px solid var(--nb-rule); font-family: var(--font-mono); font-size: 9px; line-height: 12px; color: var(--nb-mid); }
 .chat-preview-window {
   flex: 0 0 auto;
-  margin-top: 8px;
   padding: var(--nb-card-border-width);
   border-radius: var(--radius-card);
   background: var(--nb-graphite);
 }
+.chat-preview-window[data-preview-mode="expanded"] { display: flex; height: 100%; min-height: 0; margin-top: 0; }
 .chat-preview-window[data-chat-border="claude"] { background: var(--nb-chat-border-claude); }
 .chat-preview-window[data-chat-border="chatgpt"] { background: var(--nb-chat-border-chatgpt); }
 .chat-preview-window[data-chat-border="gemini"] { background: var(--nb-chat-border-gemini); }
 .chat-preview-window[data-chat-border="copilot"] { background: var(--nb-chat-border-copilot); }
 .chat-preview-window__body {
   height: var(--nb-chat-preview-height);
-  overflow-y: auto;
-  overscroll-behavior: auto;
   border-radius: calc(var(--radius-card) - 1px);
   background: var(--nb-paper-fill, var(--card));
   padding: 8px 9px;
 }
+.chat-preview-window__body[data-preview-mode="excerpt"] {
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to bottom, var(--nb-ink) 72%, transparent 100%);
+  mask-image: linear-gradient(to bottom, var(--nb-ink) 72%, transparent 100%);
+}
+.chat-preview-window__body[data-preview-mode="expanded"] {
+  height: auto;
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow-y: auto;
+}
+.nb-preview-content {
+  width: 100%;
+  min-height: 0;
+  padding: var(--nb-preview-inset);
+  overflow: hidden;
+}
+.nb-preview-content[data-preview-shape="portrait"],
+.canvas-lab-preview-frame[data-preview-shape="portrait"] { aspect-ratio: 3 / 4; }
+.nb-preview-content[data-preview-shape="slide"],
+.canvas-lab-preview-frame[data-preview-shape="slide"] { aspect-ratio: 16 / 9; }
+.nb-preview-content > :is(.chat-preview-window, .nb-document-preview-body) { height: 100%; }
+.nb-preview-content .chat-preview-window__body { height: 100%; }
 .canvas-lab-preview-turn { margin-bottom: 7px; }
 .canvas-lab-preview-turn > span {
   display: block;
@@ -1946,13 +1970,12 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   display: flex;
   flex-direction: column;
   gap: 8px;
-  min-height: var(--nb-card-min-height);
   padding: 10px;
   text-align: left;
-  border: var(--nb-card-border-width) solid var(--nb-graphite);
+  border: 0;
   border-radius: var(--radius);
   background: var(--nb-white);
-  box-shadow: 0 1px 0 0 var(--nb-grey-2);
+  box-shadow: var(--nb-paper-shadow-contact), var(--nb-paper-shadow-ambient);
   transition:
     transform var(--nb-dur-enter) var(--nb-ease),
     box-shadow var(--nb-dur-enter) var(--nb-ease);
@@ -2229,10 +2252,9 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 .nb-sticky {
   display: block;
   background: #fdf6c9;
-  min-height: var(--nb-card-min-height);
-  border: var(--nb-card-border-width) solid var(--nb-graphite);
+  border: 0;
   border-radius: 6px;
-  box-shadow: 0 0 0 4px var(--nb-white);
+  box-shadow: var(--nb-paper-shadow-contact), var(--nb-paper-shadow-ambient);
   color: var(--nb-ink);
   padding: calc(var(--nb-baseline) / 2 - 1px) 10px;
   margin-top: var(--nb-baseline);
@@ -4403,25 +4425,22 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   position: relative;
   display: block;
   width: clamp(150px, 100%, 196px);
-  min-height: var(--nb-card-min-height);
   height: auto;
-  overflow: visible;
+  overflow: hidden;
   text-align: left;
   /* One uneven corner: cut paper is never square on all four. */
   border-radius: 3px 3px 4px 3px;
-  border: var(--nb-card-border-width) solid var(--nb-graphite);
+  border: 0;
   background: var(--nb-paper-fill, var(--nb-white));
   /* Contact, then ambient. Blur stays under twice the y-offset or the lift
      reads as a CSS card floating rather than paper resting. Tinted with ink,
      never black, which goes blue-grey against this paper. */
-  box-shadow:
-    0 1px 2px -1px rgb(22 24 26 / 0.16),
-    0 6px 12px -6px rgb(22 24 26 / 0.2);
+  box-shadow: var(--nb-paper-shadow-contact), var(--nb-paper-shadow-ambient);
   transform: rotate(calc(var(--nb-rot, 0deg) + var(--nb-sway, 0deg)));
   transition:
     transform 160ms cubic-bezier(0.34, 1.36, 0.64, 1),
     box-shadow 160ms var(--nb-ease),
-    border-color 160ms var(--nb-ease);
+    opacity 160ms var(--nb-ease);
 }
 
 /* The corner lifts. A sticky note never lies perfectly flat, and the shadow
@@ -4448,7 +4467,6 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 .nb-paper[data-paper-state="unmapped"] {
   --nb-paper-fill: var(--nb-white);
   --nb-paper-edge: var(--nb-pencil);
-  border-style: dashed;
 }
 
 .nb-paper[data-paper-state="private"] {
@@ -4475,9 +4493,59 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 .nb-paper:hover,
 .nb-paper:focus-visible {
   box-shadow:
-    0 2px 3px -1px rgb(22 24 26 / 0.18),
-    0 14px 24px -10px rgb(22 24 26 / 0.26);
+    1px 3px 4px color-mix(in oklab, var(--nb-ink) 20%, transparent),
+    0 16px 28px -14px color-mix(in oklab, var(--nb-ink) 34%, transparent);
 }
+
+.focus-paper-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  padding: 16px;
+  background: var(--nb-scrim);
+}
+.focus-paper {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  width: min(1200px, 100%);
+  height: 100%;
+  margin: auto;
+  overflow: hidden;
+  flex-direction: column;
+  border: 0;
+  border-radius: var(--radius-card);
+  background: var(--nb-paper-fill, var(--nb-white));
+  box-shadow: var(--nb-paper-shadow-contact), var(--nb-paper-shadow-ambient);
+  transform-origin: center;
+  animation: focus-paper-lift 180ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.focus-paper::before {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  z-index: 3;
+  width: 32px;
+  height: 32px;
+  pointer-events: none;
+  border-bottom-right-radius: var(--radius-card);
+  background: linear-gradient(135deg, transparent 0 48%, color-mix(in oklab, var(--nb-ink) 13%, var(--nb-paper-fill, var(--nb-white))) 48% 100%);
+  box-shadow: -3px -3px 6px -2px color-mix(in oklab, var(--nb-ink) 22%, transparent);
+}
+.focus-paper-reader,
+.chat-preview-window__body[data-preview-mode="expanded"] {
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow-y: auto;
+}
+.focus-paper-aside { background: var(--nb-paper-fill, var(--nb-paper)); }
+@keyframes focus-paper-lift {
+  from { opacity: 0.72; transform: translate(var(--focus-from-x, 0), var(--focus-from-y, 0)) scale(var(--focus-from-scale, 0.72)); }
+  to { opacity: 1; transform: translate(0, 0) scale(1); }
+}
+@media (min-width: 768px) { .focus-paper-backdrop { padding: 32px; } }
 
 /* The tilt. Perspective only exists inside this rule, so a card at rest is a
    flat 2D layer and its type renders like every other glyph on the page. */
@@ -4552,6 +4620,7 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   .nb-paper:focus-visible {
     transform: rotate(var(--nb-rot, 0deg)) !important;
   }
+  .focus-paper { animation: none !important; }
 }
 
 }

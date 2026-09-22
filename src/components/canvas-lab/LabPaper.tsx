@@ -7,7 +7,7 @@ import { cardSizeTier, ownerLabel, type LabNode } from "@/components/canvas-lab/
 import { workIdentityLabel } from "@/lib/work-identity";
 import { effectiveWorkDate, formatDate, type WorkItemRow } from "@/lib/work-types";
 import { cn } from "@/lib/utils";
-import { useRef, useState } from "react";
+import { useState } from "react";
 
 import type { WorkboardCardPreview, WorkboardDisplayMode, WorkboardFilePreview as FilePreview } from "@/lib/workboard-card-preview.shared";
 
@@ -49,8 +49,8 @@ export function LabPaper({
   displayMode = "sticky",
   preview,
   filePreview,
-  focused = false,
-  onPreviewScroll,
+  focused: _focused = false,
+  onPreviewScroll: _onPreviewScroll,
   showOwnership = true,
   onOpenTrail,
 }: {
@@ -85,7 +85,6 @@ export function LabPaper({
   const excerpt = item?.work_item_extracts?.find((extract) => extract.summary)?.summary ?? summary;
   const vendorKey = item ? sourceVendorKey(item) : null;
   const vendorTone = vendorKey === "claude" || vendorKey === "chatgpt" || vendorKey === "gemini" ? vendorKey : "other";
-  const previewScrollTopRef = useRef(0);
 
   return (
     <div
@@ -135,18 +134,14 @@ export function LabPaper({
         </p>
 
         {chatPreview ? (
-          <ChatPreviewWindow
-            testId="workboard-chat-preview"
-            vendorKey={vendorKey}
-            turns={preview?.turns ?? []}
-            onScroll={(scrollTop) => {
-              if (focused && scrollTop !== previewScrollTopRef.current) onPreviewScroll?.("chat");
-              previewScrollTopRef.current = scrollTop;
-            }}
-          />
+          <div className="nb-preview-content min-h-0 flex-1" data-preview-shape="portrait">
+            <ChatPreviewWindow testId="workboard-chat-preview" vendorKey={vendorKey} turns={preview?.turns ?? []} />
+          </div>
         ) : showFilePreview && filePreview ? (
-          <div className="nb-document-preview-body min-h-0 flex-1 overflow-hidden">
-            <WorkboardFilePreview preview={filePreview} onFailure={() => setFilePreviewFailed(true)} />
+          <div className="nb-preview-content min-h-0 flex-1" data-preview-shape={filePreview.kind === "slide" ? "slide" : "portrait"}>
+            <div className="nb-document-preview-body min-h-0 flex-1 overflow-hidden">
+              <WorkboardFilePreview preview={filePreview} onFailure={() => setFilePreviewFailed(true)} />
+            </div>
           </div>
         ) : node.local ? (
           <textarea

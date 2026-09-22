@@ -67,7 +67,7 @@ describe("Canvas Lab paper", () => {
     expect(screen.getByText("Last visible turn")).not.toBeNull();
   });
 
-  it("reports a focused chat preview only after its scroll position changes", () => {
+  it("keeps a focused chat preview still when its clipped excerpt receives scroll input", () => {
     const onPreviewScroll = vi.fn();
     render(
       <LabPaper
@@ -87,7 +87,7 @@ describe("Canvas Lab paper", () => {
     expect(onPreviewScroll).not.toHaveBeenCalled();
     Object.defineProperty(preview, "scrollTop", { configurable: true, value: 24 });
     fireEvent.scroll(preview);
-    expect(onPreviewScroll).toHaveBeenCalledWith("chat");
+    expect(onPreviewScroll).not.toHaveBeenCalled();
   });
 
   it("does not report wheel movement over a document excerpt", () => {

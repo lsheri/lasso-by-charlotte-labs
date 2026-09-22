@@ -24,18 +24,22 @@ export function WorkCardPreview({
   if (item.type === "ai_thread") {
     if (!chatPreview || chatPreview.turns.length === 0) return null;
     return (
-      <ChatPreviewWindow
-        testId="work-card-chat-preview"
-        vendorKey={sourceVendorKey(item)}
-        turns={chatPreview.turns}
-      />
+      <div className="nb-preview-content" data-preview-shape="portrait">
+        <ChatPreviewWindow
+          testId="work-card-chat-preview"
+          vendorKey={sourceVendorKey(item)}
+          turns={chatPreview.turns}
+        />
+      </div>
     );
   }
 
   if (!filePreview || filePreview.kind === "fallback" || fileFailed) return null;
   return (
-    <div className="nb-document-preview-body mt-2 min-h-0 flex-1 overflow-hidden">
-      <WorkboardFilePreview preview={filePreview} onFailure={() => setFileFailed(true)} />
+    <div className="nb-preview-content" data-preview-shape={filePreview.kind === "slide" ? "slide" : "portrait"}>
+      <div className="nb-document-preview-body min-h-0 flex-1 overflow-hidden">
+        <WorkboardFilePreview preview={filePreview} onFailure={() => setFileFailed(true)} />
+      </div>
     </div>
   );
 }
