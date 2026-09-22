@@ -1,13 +1,15 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 
 import { actionsFor, type LabNode } from "@/components/canvas-lab/canvas-lab-model";
 import { RenderedContent } from "@/components/peek/RenderedContent";
 import { ThreadBody } from "@/components/peek/ThreadBody";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { ChatBorderFrame } from "@/components/work/ChatPreviewWindow";
+import { SourceMark, sourceVendorKey, VendorMark } from "@/components/work/SourceMark";
 import type { CommentDto, CommentThreadDto } from "@/lib/canvas-lab-annotations-shared";
 import { resolveTurnSelection, type TurnSelection } from "@/lib/turn-selection";
-import type { WorkItemRow } from "@/lib/work-types";
+import { effectiveWorkDate, formatDate, type WorkItemRow } from "@/lib/work-types";
 
 /** One saved highlight, already told whether its turn has moved on. */
 export type OverlayHighlight = {
@@ -132,6 +134,8 @@ export function FocusOverlay({
   onEditComment,
   onArchiveComment,
   openComments = false,
+  origin,
+  onContentScroll,
 }: {
   node: LabNode;
   item: WorkItemRow | null;
@@ -157,6 +161,8 @@ export function FocusOverlay({
   onArchiveComment?: ((comment: CommentDto) => void) | undefined;
   /** Opened from a card's chip, so the panel starts at the comments. */
   openComments?: boolean;
+  origin?: { left: number; top: number; width: number; height: number } | null;
+  onContentScroll?: (() => void) | undefined;
 }) {
   const [quote, setQuote] = useState("");
   const [turnSelection, setTurnSelection] = useState<TurnSelection | null>(null);
@@ -168,6 +174,12 @@ export function FocusOverlay({
   const commentsRef = useRef<HTMLDivElement | null>(null);
   const actions = actionsFor(node.ownership);
   const isThread = item?.type === "ai_thread";
+  const scrollNotedRef = useRef(false);
+  const originStyle = origin && typeof window !== "undefined" ? {
+    "--focus-from-x": `${origin.left + origin.width / 2 - window.innerWidth / 2}px`,
+    "--focus-from-y": `${origin.top + origin.height / 2 - window.innerHeight / 2}px`,
+    "--focus-from-scale": String(Math.max(0.18, Math.min(0.72, origin.width / Math.min(1200, window.innerWidth - 64)))),
+  } as CSSProperties : undefined;
 
   useEffect(() => {
     return () => {
@@ -223,12 +235,14 @@ export function FocusOverlay({
 
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-[var(--nb-scrim)] p-4 md:p-8">
-      <div className="mx-auto flex h-full w-full max-w-[1200px] flex-col overflow-hidden rounded-[var(--radius)] border border-[var(--nb-graphite)] bg-card shadow-[var(--shadow-modal)]">
+    <div className="focus-paper-backdrop">
+      <div className="focus-paper" style={originStyle}>
         <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-3">
           <div className="min-w-0">
-            <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
-              {node.typeLabel} · {node.ownership === "teammate" ? "a teammate's work" : "yours"}
+            <span className="flex min-w-0 items-center gap-1.5 font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
+              {item ? <SourceMark item={item} size={14} disc /> : null}
+              {item ? <VendorMark item={item} /> : node.typeLabel}
+              {item ? <> · {formatDate(effectiveWorkDate(item))}</> : null}
             </span>
             <h1 className="page-title truncate">{node.title}</h1>
           </div>
@@ -250,18 +264,27 @@ export function FocusOverlay({
         </header>
 
         <div className="flex min-h-0 flex-1 flex-col gap-0 overflow-hidden lg:flex-row">
-          <div
-            ref={readerRef}
-            className="min-h-0 flex-1 overflow-y-auto px-5 py-4"
-            onMouseUp={captureSelection}
-            onKeyUp={captureSelection}
-          >
-            {item && item.type === "ai_thread" ? (
+          <div className="min-h-0 flex-1 p-[var(--nb-preview-inset)]">
+            {item && item.type === "ai_thread" ? <ChatBorderFrame
+              vendorKey={sourceVendorKey(item)}
+              mode="expanded"
+              testId="workboard-expanded-conversation"
+              bodyRef={readerRef}
+              onScroll={() => {
+                if (scrollNotedRef.current) return;
+                scrollNotedRef.current = true;
+                onContentScroll?.();
+              }}
+              onMouseUp={captureSelection}
+              onKeyUp={captureSelection}
+            >
               <ThreadBody item={item} enabled highlights={myHighlights} commentMarks={commentMarks} />
-            ) : item ? (
+            </ChatBorderFrame> : item ? (
+              <div ref={readerRef} className="focus-paper-reader h-full px-5 py-4" onMouseUp={captureSelection} onKeyUp={captureSelection}>
               <RenderedContent item={item} onDownload={() => undefined} canEdit={false} />
+              </div>
             ) : (
-              <div className="flex flex-col gap-2">
+              <div ref={readerRef} className="focus-paper-reader flex h-full flex-col gap-2 px-5 py-4" onMouseUp={captureSelection} onKeyUp={captureSelection}>
                 <p className="text-[13px] leading-[20px] text-foreground">{node.summary}</p>
                 {node.prompt ? (
                   <p className="text-[13px] leading-[20px] text-foreground">{node.prompt}</p>
@@ -273,7 +296,7 @@ export function FocusOverlay({
             )}
           </div>
 
-          <aside className="w-full shrink-0 overflow-y-auto border-t border-border bg-[var(--nb-paper)] px-4 py-4 lg:w-[320px] lg:border-l lg:border-t-0">
+          <aside className="focus-paper-aside w-full shrink-0 overflow-y-auto border-t border-border px-4 py-4 lg:w-[320px] lg:border-l lg:border-t-0">
             {isThread ? (
               <section ref={commentsRef} className="mb-5 border-b border-border pb-4">
                 <h2 className="section-title mb-2">comments</h2>

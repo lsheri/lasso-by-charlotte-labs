@@ -1370,6 +1370,7 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   border-radius: var(--radius-card);
   background: var(--nb-graphite);
 }
+.chat-preview-window[data-preview-mode="expanded"] { display: flex; height: 100%; min-height: 0; margin-top: 0; }
 .chat-preview-window[data-chat-border="claude"] { background: var(--nb-chat-border-claude); }
 .chat-preview-window[data-chat-border="chatgpt"] { background: var(--nb-chat-border-chatgpt); }
 .chat-preview-window[data-chat-border="gemini"] { background: var(--nb-chat-border-gemini); }
@@ -1384,6 +1385,12 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   overflow: hidden;
   -webkit-mask-image: linear-gradient(to bottom, var(--nb-ink) 72%, transparent 100%);
   mask-image: linear-gradient(to bottom, var(--nb-ink) 72%, transparent 100%);
+}
+.chat-preview-window__body[data-preview-mode="expanded"] {
+  height: auto;
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow-y: auto;
 }
 .nb-preview-content {
   width: 100%;
@@ -4527,22 +4534,12 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   background: linear-gradient(135deg, transparent 0 48%, color-mix(in oklab, var(--nb-ink) 13%, var(--nb-paper-fill, var(--nb-white))) 48% 100%);
   box-shadow: -3px -3px 6px -2px color-mix(in oklab, var(--nb-ink) 22%, transparent);
 }
-.focus-paper-reader {
+.focus-paper-reader,
+.chat-preview-window__body[data-preview-mode="expanded"] {
   min-height: 0;
   flex: 1 1 auto;
   overflow-y: auto;
 }
-.focus-paper-chat {
-  min-height: 100%;
-  padding: var(--nb-card-border-width);
-  border-radius: var(--radius-card);
-  background: var(--nb-graphite);
-}
-.focus-paper-chat[data-chat-border="claude"] { background: var(--nb-chat-border-claude); }
-.focus-paper-chat[data-chat-border="chatgpt"] { background: var(--nb-chat-border-chatgpt); }
-.focus-paper-chat[data-chat-border="gemini"] { background: var(--nb-chat-border-gemini); }
-.focus-paper-chat[data-chat-border="copilot"] { background: var(--nb-chat-border-copilot); }
-.focus-paper-chat__body { min-height: 100%; background: var(--nb-paper-fill, var(--card)); }
 .focus-paper-aside { background: var(--nb-paper-fill, var(--nb-paper)); }
 @keyframes focus-paper-lift {
   from { opacity: 0.72; transform: translate(var(--focus-from-x, 0), var(--focus-from-y, 0)) scale(var(--focus-from-scale, 0.72)); }
