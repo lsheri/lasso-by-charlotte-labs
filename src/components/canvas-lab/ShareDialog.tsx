@@ -20,7 +20,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   ACCESS_CHOICES,
   COMING_LINE,
@@ -46,14 +45,10 @@ export function ShareDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="icon" variant="outline" aria-label="Share" data-toolbar-control="share">
+        <Button size="icon" variant="outline" aria-label="Share" title="Share" data-toolbar-control="share">
           <GraphiteIcon name="share" animate={false} />
         </Button>
       </DialogTrigger>
-      <Tooltip>
-        <TooltipTrigger asChild><span className="sr-only">Share</span></TooltipTrigger>
-        <TooltipContent>Share</TooltipContent>
-      </Tooltip>
       <DialogContent className="max-w-lg overflow-hidden">
         <DialogHeader>
           <DialogTitle>Share this board</DialogTitle>
