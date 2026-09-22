@@ -19,7 +19,7 @@ import type { AskTab } from "@/components/reflect/ask-dock-state";
 import type { AskLasso } from "@/components/reflect/use-ask-lasso";
 import { LassoThinkingMark } from "@/components/reflect/LassoThinkingMark";
 
-/** Three grey dots. The only thinking treatment inside Ask Lasso. */
+/** Three grey dots used by compact loading and sending states inside Ask Lasso. */
 export function NbDots({ label = "Thinking" }: { label?: string }) {
   return (
     <span className="nb-dots" role="status" aria-label={label}>
@@ -270,7 +270,7 @@ function MessagesTab({ ask, emptyActions }: { ask: AskLasso; emptyActions?: Reac
 
         {ask.pending ? (
           <div className="nb-binder-line flex items-center gap-2">
-            <LassoThinkingMark kind="gather" size={72} count={ask.liveManifest?.items.length ?? 0} />
+            <LassoThinkingMark kind="gather" size={56} count={ask.liveManifest?.items.length ?? 0} />
             <span className="text-sm text-muted-foreground">
               {ask.streamed ? "Writing" : "Reading your work"}
             </span>

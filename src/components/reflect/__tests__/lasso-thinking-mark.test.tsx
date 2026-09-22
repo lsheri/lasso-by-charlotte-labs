@@ -65,10 +65,29 @@ describe("LassoThinkingMark", () => {
     expect(requestAnimationFrame).not.toHaveBeenCalled();
   });
 
-  it("draws the zero-source gather centre dot without error", () => {
-    expect(() => render(<LassoThinkingMark kind="gather" size={72} count={0} />)).not.toThrow();
-    expect(context.arc).toHaveBeenCalled();
+  it("breathes the zero-source gather centre dot without inventing points", () => {
+    vi.spyOn(performance, "now").mockReturnValue(1_000);
+    let nextFrame: FrameRequestCallback | undefined;
+    vi.mocked(requestAnimationFrame).mockImplementation((callback) => {
+      nextFrame = callback;
+      return 17;
+    });
+    render(<LassoThinkingMark kind="gather" size={56} count={0} />);
+    const firstRadius = context.arc.mock.calls.at(-1)?.[2];
+    act(() => nextFrame?.(2_000));
+    const breathedRadius = context.arc.mock.calls.at(-1)?.[2];
+    expect(firstRadius).toBeCloseTo(2.55);
+    expect(breathedRadius).not.toBe(firstRadius);
     expect(context.globalAlpha).toBe(1);
+  });
+
+  it("keeps gather arrival times comparable when count changes", () => {
+    vi.spyOn(performance, "now").mockReturnValueOnce(1_000).mockReturnValueOnce(6_000);
+    const { rerender } = render(<LassoThinkingMark kind="gather" size={56} count={1} />);
+    context.arc.mockClear();
+    rerender(<LassoThinkingMark kind="gather" size={56} count={2} />);
+    expect(context.arc.mock.calls[0]?.[2]).toBeGreaterThan(0);
+    expect(context.arc.mock.calls[1]?.[2]).toBe(0);
   });
 
   it("stops scheduling while outside the viewport", () => {
@@ -80,6 +99,7 @@ describe("LassoThinkingMark", () => {
     }
     vi.stubGlobal("IntersectionObserver", TestObserver);
     render(<LassoThinkingMark kind="orbit" size={72} />);
+    expect(context.clearRect).toHaveBeenCalledTimes(1);
     expect(requestAnimationFrame).not.toHaveBeenCalled();
     act(() => observerCallback?.([{ isIntersecting: true } as IntersectionObserverEntry], {} as IntersectionObserver));
     expect(requestAnimationFrame).toHaveBeenCalled();
