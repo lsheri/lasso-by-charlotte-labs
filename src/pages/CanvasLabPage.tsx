@@ -1725,6 +1725,8 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     try {
       created = await createDrawnWorkstream({ data: { engagement_id: engagementId, name, profile_id: profile?.id } });
     } catch {
+      setFrames((current) => current?.map((entry) => (entry.id === frame.id ? { ...entry, name: frame.name } : entry)) ?? current);
+      framesRef.current = framesRef.current.map((entry) => (entry.id === frame.id ? { ...entry, name: frame.name } : entry));
       setAnnouncement("That name could not be saved. Nothing moved.");
       return;
     }
@@ -2350,7 +2352,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     row: (
       <div className="canvas-lab-structure-toggle" aria-label="Card display">
         <ToolbarIcon label="Preview cards"><Button type="button" size="icon" variant={displayMode === "preview" ? "secondary" : "ghost"} aria-label="Preview cards" aria-pressed={displayMode === "preview"} data-toolbar-control="preview" onClick={() => chooseDisplayMode("preview")}><GraphiteIcon name="preview-cards" animate={false} /></Button></ToolbarIcon>
-        <ToolbarIcon label="Sticky cards"><Button type="button" size="icon" variant={displayMode === "sticky" ? "secondary" : "ghost"} aria-label="Sticky cards" aria-pressed={displayMode === "sticky"} data-toolbar-control="sticky" onClick={() => chooseDisplayMode("sticky")}><GraphiteIcon name="messages" animate={false} /></Button></ToolbarIcon>
+        <ToolbarIcon label="Sticky cards"><Button type="button" size="icon" variant={displayMode === "sticky" ? "secondary" : "ghost"} aria-label="Sticky cards" aria-pressed={displayMode === "sticky"} data-toolbar-control="sticky" onClick={() => chooseDisplayMode("sticky")}><GraphiteIcon name="sticky" animate={false} /></Button></ToolbarIcon>
       </div>
     ),
     menu: (

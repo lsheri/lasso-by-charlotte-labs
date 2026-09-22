@@ -1,6 +1,6 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
-export type GraphiteIconName = "connectors" | "work" | "engagement" | "overview" | "reflect" | "ai-record" | "one-on-one" | "decisions" | "firm" | "members" | "settings" | "ask-lasso" | "messages" | "history" | "analyses" | "send" | "attach" | "search" | "plus" | "close" | "chevron-right" | "drag-handle" | "check" | "external-link" | "workstreams" | "preview-cards" | "working-from" | "text" | "grouping" | "example-board" | "share" | "fit" | "minus" | "more";
+export type GraphiteIconName = "connectors" | "work" | "engagement" | "overview" | "reflect" | "ai-record" | "one-on-one" | "decisions" | "firm" | "members" | "settings" | "ask-lasso" | "messages" | "history" | "analyses" | "send" | "attach" | "search" | "plus" | "close" | "chevron-right" | "drag-handle" | "check" | "external-link" | "workstreams" | "preview-cards" | "sticky" | "working-from" | "text" | "grouping" | "example-board" | "share" | "fit" | "minus" | "more";
 type IconDef = { d: string[]; sig: string; sigIndex?: number; origin?: string };
 const ICONS: Record<GraphiteIconName, IconDef> = {
   connectors: { d: ["M7.2 3.8v3.3M12.8 3.7v3.5", "M4.8 7.3h10.5v2.5a5.2 5.2 0 01-5.3 5.2 5.2 5.2 0 01-5.2-5.3V7.3zM10 15.1c.1 1.2-.5 1.7-.4 3.1"], sig: "nb-sig-seat", sigIndex: 1 },
@@ -14,7 +14,7 @@ const ICONS: Record<GraphiteIconName, IconDef> = {
   firm: { d: ["M4.2 16.8V5.2h11.6v11.6M2.9 16.8h14.2", "M7.1 8.5h1.9M11 8.5h1.9", "M8.4 16.7v-4.3h3.2v4.3"], sig: "nb-sig-nudge" },
   members: { d: ["M3 16.3c.3-2.7 1.8-4 3.9-4s3.6 1.3 3.9 4M6.9 4.3a2.5 2.5 0 11-.1 5.1 2.5 2.5 0 01.1-5.1", "M13.6 5.5a2.1 2.1 0 11.2 4.3M14.1 12.5c1.8.1 2.9 1.4 3.2 3.8"], sig: "nb-sig-lean-in", sigIndex: 1, origin: "13px 16px" },
   settings: { d: ["M3.3 7.1h11.4M16.7 7.1h-.5M3.3 13h4.9M10.9 13h5.8", "M12.4 7.1a1.9 1.9 0 11-3.9 0 1.9 1.9 0 013.9 0", "M10.8 13a1.9 1.9 0 11-3.8 0 1.9 1.9 0 013.8 0"], sig: "nb-sig-slide", sigIndex: 2, origin: "10px 13px" },
-  "ask-lasso": { d: ["M10 3C6.15 3 3 6.15 3 10s3.15 7 7 7 7-3.15 7-7-3.15-7-7-7z", "M10 3c2.75 0 4.5 2.25 4.5 7s-1.75 7-4.5 7", "M14.5 10l3.5 3.5"], sig: "nb-sig-flick", sigIndex: 2, origin: "14.5px 10px" },
+  "ask-lasso": { d: ["M13.6 5.7C9.2 3.5 4 6.1 4.1 10.3c.1 3.6 4.4 6 8.3 4.7 3.5-1.1 4.6-5 2.3-6.6-1.5-1.1-4.1-.4-4.4 1.3", "M13.6 5.7c1.2-.6 1.5-1.6 1-2.7"], sig: "nb-sig-flick", sigIndex: 1, origin: "14px 5px" },
   messages: { d: ["M3.6 5.1h12.9v8.4H9L5.4 16.6v-3.1H3.6V5.1z"], sig: "nb-sig-pop", origin: "10px 11px" },
   history: { d: ["M5.1 5.4A6.9 6.9 0 113.1 10.3", "M2.6 4.9l2.5.5-.4 2.6", "M10 6.2v4.1h3.3"], sig: "nb-sig-sweep", sigIndex: 2, origin: "10px 10.3px" },
   analyses: { d: ["M11.7 5h5.5M11.7 8.2h3.6M13.4 11.6h3.8", "M9.4 7.4a3.2 3.2 0 11-6.4 0 3.2 3.2 0 016.4 0M8.6 9.8l2.3 2.3"], sig: "nb-sig-lens", sigIndex: 1 },
@@ -29,6 +29,7 @@ const ICONS: Record<GraphiteIconName, IconDef> = {
   "external-link": { d: ["M10.6 3.4H3.4v13.2h13.2V9.4", "M8.6 11.4L17.2 2.8M13.4 2.6h4.2v4.2"], sig: "nb-sig-leap", sigIndex: 1 },
   workstreams: { d: ["M3.1 4.1l6.8-.5 6.9.6-.2 11.7-6.7.4-6.9-.5.2-11.7z", "M9.9 3.8l-.2 12.3M3.2 9.7l13.4.2"], sig: "nb-sig-flap", sigIndex: 1 },
   "preview-cards": { d: ["M2.6 10.2c2.1-3.7 4.5-5.5 7.4-5.4 2.9.1 5.4 1.8 7.4 5.2-2 3.4-4.5 5.2-7.5 5.2-2.8 0-5.3-1.7-7.3-5z", "M12.4 10a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"], sig: "nb-sig-lens", sigIndex: 1 },
+  sticky: { d: ["M4.1 3.6l11.8.2-.2 8.5-3.8 3.9-7.9-.2.1-12.4", "M11.9 16.1l.1-3.9 3.7.1"], sig: "nb-sig-flap", sigIndex: 1, origin: "12px 12px" },
   "working-from": { d: ["M5 2.9l9.8.3-.2 14-9.7-.3L5 2.9z", "M7.4 6.3l5.1.1M7.3 9.4l4.2.1M7.2 12.6l5 .1"], sig: "nb-sig-rise", sigIndex: 1 },
   text: { d: ["M4 4.2l12-.2M10 4.2l-.2 11.9", "M6.8 16.2l6-.1"], sig: "nb-sig-nudge", sigIndex: 1 },
   grouping: { d: ["M3.1 4.2l13.5-.4.3 12.1-13.6.4-.2-12.1z", "M5.4 4l-.6 1.7M16.7 13.8l-1.5 2.2"], sig: "nb-sig-scuff", sigIndex: 1 },
