@@ -346,6 +346,9 @@ export function BoardShell<F extends BoardShellFrame, N extends BoardShellNode>(
                 <div
                   data-testid={`board-lane-scroll-${lane.id}`}
                   className="absolute inset-0 overflow-y-auto overflow-x-hidden"
+                  // Inline, so the lane's own scrolling is a fact of the element
+                  // rather than a stylesheet scrollableUnder may not have read.
+                  style={{ overflowY: "auto", overflowX: "hidden" }}
                 >
                   <div className="relative w-full" style={{ height: extent }}>
                     {placements.map((placement) => {
