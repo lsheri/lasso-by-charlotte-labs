@@ -18,6 +18,7 @@ export const navGroups: NavGroup[] = [
     id: "landed",
     label: "What landed",
     items: [
+      { label: "Home", to: "/home", icon: "overview" },
       { label: "Inbox", to: "/work", icon: "work" },
       { label: "All conversations", to: "/ai-record", icon: "ai-record" },
       { label: "Where work comes from", to: "/connectors", icon: "connectors" },
