@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import {
   actionsFor,
+  CARD_HEIGHT,
+  CARD_WIDTH,
   branchChatNode,
   addLabLink,
   addLocalFrame,
@@ -256,10 +258,28 @@ describe("canvas lab model", () => {
     expect(frame).toBeDefined();
     if (!frame) return;
     const anchor = draftAnchor(frame, nodes);
-    expect(anchor.x).toBeGreaterThan(frame.x);
-    expect(anchor.x).toBeLessThan(frame.x + frame.width);
-    expect(anchor.y).toBeGreaterThan(frame.y);
-    expect(anchor.y).toBeLessThan(frame.y + frame.height);
+    expect(anchor.x).toBeGreaterThanOrEqual(frame.x);
+    expect(anchor.x + CARD_WIDTH).toBeLessThanOrEqual(frame.x + frame.width);
+    expect(anchor.y).toBeGreaterThanOrEqual(frame.y);
+    expect(anchor.y + CARD_HEIGHT).toBeLessThanOrEqual(frame.y + frame.height);
+
+    const roomyFrame = { ...frame, width: 700, height: 800 };
+    const first = draftAnchor(roomyFrame, []);
+    const nextColumn = draftAnchor(roomyFrame, Array.from({ length: 3 }, (_, index) => ({
+      ...nodes[0]!,
+      id: `filled:${index}`,
+      frame: roomyFrame.id,
+    })));
+    expect(nextColumn.x).toBeGreaterThan(first.x);
+    expect(nextColumn.y).toBe(first.y);
+
+    const lastFitting = draftAnchor(frame, Array.from({ length: 99 }, (_, index) => ({
+      ...nodes[0]!,
+      id: `full:${index}`,
+      frame: frame.id,
+    })));
+    expect(lastFitting.x + CARD_WIDTH).toBeLessThanOrEqual(frame.x + frame.width);
+    expect(lastFitting.y + CARD_HEIGHT).toBeLessThanOrEqual(frame.y + frame.height);
   });
 
   it("arranges seven pilot frames across two rows", () => {
