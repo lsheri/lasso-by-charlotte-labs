@@ -32,6 +32,7 @@ describe("R5 board toolbar", () => {
     const ask = toolbar.match(/data-toolbar-control="ask"[\s\S]*?toolbarItems\.push/s)?.[0] ?? "";
     expect(ask).toContain('<LassoThinkingMark kind="loop" size={24} />');
     expect(toolbar.replace(ask, "")).not.toContain("LassoThinkingMark");
+    expect(toolbar.replace(ask, "")).not.toContain("text-green");
     const askEntry = icons.match(/"ask-lasso": \{ d: \[(.*?)\], sig:/)?.[1] ?? "";
     expect(askEntry).toContain("M13.6 5.7C9.2 3.5 4 6.1 4.1 10.3c.1 3.6 4.4 6 8.3 4.7 3.5-1.1 4.6-5 2.3-6.6-1.5-1.1-4.1-.4-4.4 1.3");
     expect(askEntry).toMatch(/[Cc]/);

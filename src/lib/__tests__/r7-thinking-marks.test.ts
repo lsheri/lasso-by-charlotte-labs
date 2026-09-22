@@ -15,7 +15,7 @@ describe("R7 Ask Lasso thinking marks", () => {
   });
 
   it("uses gather in the real pending state with only a verified manifest count", () => {
-    expect(surface).toContain('<LassoThinkingMark kind="gather" size={72} count={ask.liveManifest?.items.length ?? 0} />');
+    expect(surface).toContain('<LassoThinkingMark kind="gather" size={56} count={ask.liveManifest?.items.length ?? 0} />');
     expect(surface).toContain("<ThinkingTrail");
   });
 

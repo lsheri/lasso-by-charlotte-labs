@@ -37,6 +37,7 @@ function dot(
 export function LassoThinkingMark({ kind, size, count = 0, className }: LassoThinkingMarkProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const arrivalsRef = useRef<GatherArrival[]>([]);
+  const clockBaseRef = useRef<number | null>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -64,7 +65,9 @@ export function LassoThinkingMark({ kind, size, count = 0, className }: LassoThi
     const radius = Math.min(width * 0.22, 34);
     let frameId: number | null = null;
     let visible = typeof IntersectionObserver === "undefined";
-    let startTime: number | null = null;
+    const mountedAt = performance.now();
+    if (clockBaseRef.current === null) clockBaseRef.current = mountedAt;
+    const clockBase = clockBaseRef.current;
 
     function syncArrivals(t: number) {
       const n = Math.max(0, Math.floor(count));
@@ -100,12 +103,14 @@ export function LassoThinkingMark({ kind, size, count = 0, className }: LassoThi
     function drawGather(t: number) {
       const n = syncArrivals(t);
       if (n === 0) {
-        dot(context, { x: cx, y: cy }, 2.1, 0.28);
+        const breath = 0.5 + 0.5 * Math.sin(t * 1.6);
+        dot(context, { x: cx, y: cy }, 2.1 + 0.9 * breath, 0.28 + 0.22 * breath);
         return;
       }
       for (const arrival of arrivalsRef.current) {
         const home = ring(cx, cy, radius, t * 1.1 + arrival.slot * ((2 * Math.PI) / n));
-        const ease = 1 - Math.pow(1 - Math.min((t - arrival.born) / 0.62, 1), 3);
+        const progress = Math.max(0, Math.min((t - arrival.born) / 0.62, 1));
+        const ease = 1 - Math.pow(1 - progress, 3);
         const fromX = home.x + arrival.side * width * 0.42;
         const fromY = home.y + arrival.side * 9;
         const point = {
@@ -134,8 +139,7 @@ export function LassoThinkingMark({ kind, size, count = 0, className }: LassoThi
     }
 
     function draw(timestamp: number) {
-      if (startTime === null) startTime = timestamp;
-      const t = (timestamp - startTime) / 1000;
+      const t = (timestamp - clockBase) / 1000;
       context.clearRect(0, 0, width, height);
       context.globalAlpha = 1;
       if (kind === "orbit") drawOrbit(t);
@@ -147,7 +151,7 @@ export function LassoThinkingMark({ kind, size, count = 0, className }: LassoThi
 
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reducedMotion) {
-      draw(0);
+      draw(mountedAt);
       return;
     }
 
@@ -166,8 +170,8 @@ export function LassoThinkingMark({ kind, size, count = 0, className }: LassoThi
     };
 
     let observer: IntersectionObserver | null = null;
+    draw(mountedAt);
     if (typeof IntersectionObserver === "undefined") {
-      draw(0);
       start();
     } else {
       observer = new IntersectionObserver(([entry]) => {
