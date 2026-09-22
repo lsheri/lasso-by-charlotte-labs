@@ -2,7 +2,7 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { HomeEngagementGrid } from "@/components/home/HomeEngagementGrid";
+import { HomeEngagementGrid, homeGridColumnCount } from "@/components/home/HomeEngagementGrid";
 import { NEVER_OPENED_LABEL, lastOpenedLabel, orderHomeGrid, countsByEngagement } from "@/lib/home-grid";
 import { formatDate } from "@/lib/work-types";
 
@@ -53,10 +53,25 @@ describe("the Home grid order", () => {
   });
 });
 
+describe("the Home grid layout", () => {
+  it.each([
+    { width: 1030, columns: 4 },
+    { width: 796, columns: 3 },
+    { width: 496, columns: 2 },
+    { width: 219, columns: 1 },
+  ])("uses $columns columns in $width pixels", ({ width, columns }) => {
+    expect(homeGridColumnCount(width)).toBe(columns);
+    render(<HomeEngagementGrid cards={[card("one", null)]} availableWidth={width} />);
+    expect(screen.getByTestId("home-engagement-grid").style.gridTemplateColumns).toBe(
+      `repeat(${columns}, minmax(0, 1fr))`,
+    );
+  });
+});
+
 describe("a Home card", () => {
   it("shows the date and time it was last opened, and a real count", () => {
     const iso = "2026-09-21T09:30:00.000Z";
-    render(<HomeEngagementGrid cards={[card("one", iso, 3)]} />);
+    render(<HomeEngagementGrid cards={[card("one", iso, 3)]} availableWidth={1030} />);
     expect(screen.getByTestId("home-card-when-one").textContent).toBe(lastOpenedLabel(iso));
     expect(screen.getByTestId("home-card-when-one").textContent).toContain(formatDate(iso));
     expect(screen.getByText(/3 pieces of work/)).toBeTruthy();
@@ -64,20 +79,20 @@ describe("a Home card", () => {
 
   it("says a never-opened engagement is not opened yet, and never borrows another date", () => {
     const updatedAt = "2026-08-04T12:00:00.000Z";
-    render(<HomeEngagementGrid cards={[card("two", null, 1)]} />);
+    render(<HomeEngagementGrid cards={[card("two", null, 1)]} availableWidth={1030} />);
     const when = screen.getByTestId("home-card-when-two");
     expect(when.textContent).toBe(NEVER_OPENED_LABEL);
     expect(document.body.textContent).not.toContain(formatDate(updatedAt));
   });
 
   it("leaves the count out entirely rather than showing a placeholder", () => {
-    render(<HomeEngagementGrid cards={[card("three", null, null)]} />);
+    render(<HomeEngagementGrid cards={[card("three", null, null)]} availableWidth={1030} />);
     expect(document.body.textContent).not.toMatch(/piece/);
     expect(document.body.textContent).not.toMatch(/—|--|\?\?/);
   });
 
   it("opens the board and records the content-free event", () => {
-    render(<HomeEngagementGrid cards={[card("four", null)]} />);
+    render(<HomeEngagementGrid cards={[card("four", null)]} availableWidth={1030} />);
     const link = screen.getByRole("link") as HTMLAnchorElement;
     expect(link.getAttribute("href")).toBe("/engagements/four/canvas-lab");
     fireEvent.click(link);
