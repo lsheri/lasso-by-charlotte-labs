@@ -152,8 +152,6 @@ import {
 import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
 import { SidebarNav } from "@/components/layout/SidebarNav";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { DETAILS_SEARCH } from "@/lib/engagement-default-view";
 import { useCanvasLab } from "@/hooks/use-canvas-lab";

@@ -13,6 +13,7 @@ import { Share2 } from "lucide-react";
 
 import { BoardLinkSection } from "@/components/canvas-lab/ShareBoardDialog";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   Dialog,
   DialogContent,
@@ -44,11 +45,16 @@ export function ShareDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button size="icon" variant="outline" aria-label="Share" title="Share">
-          <Share2 className="h-4 w-4" />
-        </Button>
-      </DialogTrigger>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <DialogTrigger asChild>
+            <Button size="icon" variant="outline" aria-label="Share">
+              <Share2 className="h-4 w-4" />
+            </Button>
+          </DialogTrigger>
+        </TooltipTrigger>
+        <TooltipContent>Share</TooltipContent>
+      </Tooltip>
       <DialogContent className="max-w-lg overflow-hidden">
         <DialogHeader>
           <DialogTitle>Share this board</DialogTitle>

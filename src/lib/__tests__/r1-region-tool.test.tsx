@@ -64,10 +64,11 @@ describe("R1 region tool", () => {
   it("dismisses naming without creating a workstream and preserves the named event", () => {
     const page = readFileSync("src/pages/CanvasLabPage.tsx", "utf8");
     const frame = readFileSync("src/components/canvas-lab/LabFrame.tsx", "utf8");
+    const regionLogic = readFileSync("src/lib/board-region.ts", "utf8");
 
     expect(frame).toContain("onDismissNaming");
     expect(frame).toContain('aria-label="Dismiss naming"');
-    expect(frame).toContain("Name this and it becomes a workstream. It claims the work inside, and you can call it with @.");
+    expect(regionLogic).toContain('REGION_NAMING_LINE = "Name this and it becomes a workstream. It claims the work inside, and you can call it with @."');
     expect(page).toContain('noteWorkboardRegionNamed(orgId, "named", claimed, frame.fill)');
     expect(page).toContain('noteWorkboardRegionNamed(orgId, "cleared", filedWorkCount(released), frame.fill)');
   });
