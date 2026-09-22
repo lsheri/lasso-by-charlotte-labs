@@ -14,7 +14,7 @@ export type WorkboardFrameKind = "foundation" | "task" | "decisions" | "outputs"
 export type WorkboardAnchor = "top" | "right" | "bottom" | "left";
 export type WorkboardRelation = "informed" | "produced" | "revised" | "cited" | "context";
 export const WORKBOARD_CARD_MIN_WIDTH = 180;
-export const WORKBOARD_CARD_MIN_HEIGHT = 112;
+export const WORKBOARD_CARD_MIN_HEIGHT = 220;
 export const WORKBOARD_CARD_MAX_WIDTH = 520;
 export const WORKBOARD_CARD_MAX_HEIGHT = 520;
 export const WORKBOARD_SHAPE_MIN_SIZE = 80;
@@ -27,7 +27,7 @@ export const WORKBOARD_TEXT_MAX_SIZE = 4000;
  * client model, the placement grid and the server all read this one value, so
  * a card added on the board and a card created for you are the same shape.
  */
-export const WORKBOARD_CARD_DEFAULT_SIZE = { width: 260, height: 180 } as const;
+export const WORKBOARD_CARD_DEFAULT_SIZE = { width: 260, height: 220 } as const;
 
 /** Stored names only. The client resolves these to the Lasso paper palette. */
 export const WORKBOARD_SHAPE_COLOURS = ["green", "blue", "rose", "yellow", "lavender", "grey"] as const;

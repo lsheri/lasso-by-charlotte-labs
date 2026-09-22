@@ -98,7 +98,7 @@ describe("F2 Preview and Sticky are different drawings", () => {
 describe("F2 readable card floor", () => {
   it("does not let resize make a card smaller than a readable document frame", () => {
     expect(CARD_MIN_WIDTH).toBeGreaterThanOrEqual(260);
-    expect(CARD_MIN_HEIGHT).toBeGreaterThanOrEqual(180);
+    expect(CARD_MIN_HEIGHT).toBeGreaterThanOrEqual(220);
     expect(resizeLabRect(node, "se", { x: -1000, y: -1000 }, false, "card")).toMatchObject({
       width: CARD_MIN_WIDTH,
       height: CARD_MIN_HEIGHT,
