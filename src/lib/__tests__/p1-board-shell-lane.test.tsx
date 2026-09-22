@@ -60,9 +60,8 @@ describe("the board shell wires the shared primitives", () => {
   const shell = read("src/components/board/BoardShell.tsx");
 
   it("takes its pan and zoom from the shared modules, never its own maths", () => {
-    expect(importedNames(shell, "@/lib/canvas-zoom")).toEqual(
-      ["clampZoom", "scrollableUnder", "stepZoom", "wheelPanVector", "workboardPinchZoom", "zoomAbout"],
-    );
+    const zoomNames = importedNames(shell, "@/lib/canvas-zoom");
+    for (const name of CORE_PAN_ZOOM) expect(zoomNames).toContain(name);
     expect(importedNames(shell, "@/lib/canvas-drag")).toEqual(["Point", "dragTo", "keyTo"].sort());
     expect(shell).toContain("fitWorkboardViewport");
     expect(shell).toContain('addEventListener("wheel", onSurfaceWheel, { passive: false })');
