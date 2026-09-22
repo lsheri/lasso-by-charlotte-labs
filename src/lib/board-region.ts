@@ -75,8 +75,13 @@ export function regionIsPaint(frame: RegionFrame): boolean {
   return isRegionFrameId(frame.id) && regionName(frame.label) === null;
 }
 
-/** A workstream: anything with a name, region or not. */
+/**
+ * A workstream: anything with a name, region or not. A lane is the one
+ * exception, because a lane is furniture: it carries a name for the reader
+ * and still claims nothing, maps to no task and is never @-mentionable.
+ */
 export function regionIsWorkstream(frame: RegionFrame): boolean {
+  if (isLaneFrameId(frame.id)) return false;
   return regionName(frame.label) !== null;
 }
 
