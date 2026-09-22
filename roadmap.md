@@ -32,6 +32,6 @@
 
 
 ## R7 Ask Lasso thinking marks
-- [ ] Add the four exact canvas marks with lifecycle and reduced-motion safeguards.
-- [ ] Replace toolbar drift with loop and pending dots with honest-count gather.
-- [ ] Remove only superseded Ask drift CSS and verify all affected checks.
+- [x] Add the four exact canvas marks with lifecycle and reduced-motion safeguards.
+- [x] Replace toolbar drift with loop and pending dots with honest-count gather.
+- [x] Remove only superseded Ask drift CSS and verify all affected checks.
