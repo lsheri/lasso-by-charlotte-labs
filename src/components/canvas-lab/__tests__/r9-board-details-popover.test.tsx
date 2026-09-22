@@ -15,6 +15,8 @@ vi.mock("@tanstack/react-router", () => ({
 
 const toolbarSource = readFileSync("src/pages/CanvasLabPage.tsx", "utf8");
 
+afterEach(cleanup);
+
 const ENGAGEMENT = {
   id: "eng-1",
   code: "ACME-24",
