@@ -879,7 +879,7 @@ export function WorkPage() {
       {/* PASS A1 — a coaching question is a decision about your own work and
           must stay reachable on the page people land on. */}
       <CoachingLinkNotices />
-      <PageHeader title="Inbox" />
+      <PageHeader title="Inbox" subtitle={null} />
       <BringWorkInRow
         unmappedCount={unmappedCount}
         suggesting={suggesting}
