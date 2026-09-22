@@ -256,10 +256,27 @@ describe("canvas lab model", () => {
     expect(frame).toBeDefined();
     if (!frame) return;
     const anchor = draftAnchor(frame, nodes);
-    expect(anchor.x).toBeGreaterThan(frame.x);
-    expect(anchor.x).toBeLessThan(frame.x + frame.width);
-    expect(anchor.y).toBeGreaterThan(frame.y);
-    expect(anchor.y).toBeLessThan(frame.y + frame.height);
+    expect(anchor.x).toBeGreaterThanOrEqual(frame.x);
+    expect(anchor.x + 260).toBeLessThanOrEqual(frame.x + frame.width);
+    expect(anchor.y).toBeGreaterThanOrEqual(frame.y);
+    expect(anchor.y + 220).toBeLessThanOrEqual(frame.y + frame.height);
+
+    const first = draftAnchor(frame, []);
+    const nextColumn = draftAnchor(frame, Array.from({ length: 3 }, (_, index) => ({
+      ...nodes[0]!,
+      id: `filled:${index}`,
+      frame: frame.id,
+    })));
+    expect(nextColumn.x).toBeGreaterThan(first.x);
+    expect(nextColumn.y).toBe(first.y);
+
+    const lastFitting = draftAnchor(frame, Array.from({ length: 99 }, (_, index) => ({
+      ...nodes[0]!,
+      id: `full:${index}`,
+      frame: frame.id,
+    })));
+    expect(lastFitting.x + 260).toBeLessThanOrEqual(frame.x + frame.width);
+    expect(lastFitting.y + 220).toBeLessThanOrEqual(frame.y + frame.height);
   });
 
   it("arranges seven pilot frames across two rows", () => {

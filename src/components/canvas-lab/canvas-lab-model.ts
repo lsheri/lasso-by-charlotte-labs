@@ -362,11 +362,13 @@ export type SeedInput = {
 
 function stack(frame: LabFrame, index: number): Point {
   const columns = Math.max(1, Math.floor((frame.width - FRAME_PADDING * 2) / (CARD_WIDTH + 18)));
-  const column = index % columns;
-  const row = Math.floor(index / columns);
+  const rows = Math.max(1, Math.floor((frame.height - 60 - CARD_HEIGHT) / CARD_GAP_Y) + 1);
+  const slot = Math.min(Math.max(0, index), columns * rows - 1);
+  const column = Math.floor(slot / rows);
+  const row = slot % rows;
   return snapPoint({
-    x: frame.x + FRAME_PADDING + column * (CARD_WIDTH + 18),
-    y: frame.y + 60 + row * CARD_GAP_Y,
+    x: Math.min(frame.x + frame.width - CARD_WIDTH, frame.x + FRAME_PADDING + column * (CARD_WIDTH + 18)),
+    y: Math.min(frame.y + frame.height - CARD_HEIGHT, frame.y + 60 + row * CARD_GAP_Y),
   });
 }
 

@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 
 import { describe, expect, it } from "vitest";
 
+import { WORKBOARD_CARD_DEFAULT_SIZE } from "../canvas-lab-shared";
 import { cameOutOfLine } from "../work-standalone";
 
 import { setWorkItemStandalone } from "../work-standalone.server";
@@ -162,7 +163,10 @@ describe("W2.1 — a lifted artifact lands beside its chat, in free space", () =
     const store = boardStore();
     const { db } = makeDb(store);
     await setWorkItemStandalone(db, profile, { workItemId: "a0", standAlone: true });
-    expect(rectOf(store, "a0")).toMatchObject({ w: 260, h: 180 });
+    expect(rectOf(store, "a0")).toMatchObject({
+      w: WORKBOARD_CARD_DEFAULT_SIZE.width,
+      h: WORKBOARD_CARD_DEFAULT_SIZE.height,
+    });
   });
 });
 
