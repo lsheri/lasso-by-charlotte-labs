@@ -33,12 +33,21 @@ describe("R5 board toolbar", () => {
     expect(ask).toContain("canvas-lab-ask-icon");
     expect(ask).toContain("text-green");
     expect(toolbar.replace(ask, "")).not.toContain("text-green");
-    expect(icons).toMatch(/"ask-lasso": \{ d: \["M10 3/);
+    const askEntry = icons.match(/"ask-lasso": \{ d: \[(.*?)\], sig:/)?.[1] ?? "";
+    expect(askEntry).toContain("M13.6 5.7C9.2 3.5 4 6.1 4.1 10.3c.1 3.6 4.4 6 8.3 4.7 3.5-1.1 4.6-5 2.3-6.6-1.5-1.1-4.1-.4-4.4 1.3");
+    expect(askEntry).toMatch(/[Cc]/);
+    expect(askEntry).not.toMatch(/[zZ]/);
     expect(css).toMatch(/\.canvas-lab-ask-icon[\s\S]*animation:[\s\S]*transform/);
     expect(css).toMatch(/prefers-reduced-motion: reduce[\s\S]*\.canvas-lab-ask-icon[\s\S]*animation: none !important/);
     const motion = css.match(/@keyframes canvas-lab-ask-drift[\s\S]*?\n}/)?.[0] ?? "";
     expect(motion).toContain("transform:");
     expect(motion).not.toMatch(/(?:top|left|right|bottom|width|height):/);
+  });
+
+  it("uses the folded paper gesture for Sticky cards", () => {
+    expect(icons).toMatch(/sticky: \{ d: \[[^\]]+\]/);
+    expect(toolbar).toMatch(/data-toolbar-control="sticky"[\s\S]*?<GraphiteIcon name="sticky"/);
+    expect(toolbar).not.toMatch(/data-toolbar-control="sticky"[\s\S]*?<GraphiteIcon name="messages"/);
   });
 
   it("plans the wider labelled Add work control with the same larger gap as the row", () => {

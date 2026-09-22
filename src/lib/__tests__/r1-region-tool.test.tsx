@@ -72,4 +72,15 @@ describe("R1 region tool", () => {
     expect(page).toContain('noteWorkboardRegionNamed(orgId, "named", claimed, frame.fill)');
     expect(page).toContain('noteWorkboardRegionNamed(orgId, "cleared", filedWorkCount(released), frame.fill)');
   });
+
+  it("restores the previous paint name when workstream creation fails", () => {
+    const page = readFileSync("src/pages/CanvasLabPage.tsx", "utf8");
+    const naming = page.slice(page.indexOf("async function changeRegionName"), page.indexOf("async function persistDrawnFrame"));
+    const failure = naming.match(/catch \{[\s\S]*?return;\n    \}/)?.[0] ?? "";
+
+    expect(failure).toContain("name: frame.name");
+    expect(failure).toContain("setFrames");
+    expect(failure).toContain("framesRef.current");
+    expect(failure).toContain('setAnnouncement("That name could not be saved. Nothing moved.")');
+  });
 });
