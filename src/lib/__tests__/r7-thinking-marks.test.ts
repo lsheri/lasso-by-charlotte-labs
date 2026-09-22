@@ -19,6 +19,14 @@ describe("R7 Ask Lasso thinking marks", () => {
     expect(surface).toContain("<ThinkingTrail");
   });
 
+  it("places the signature beside the Lasso message name and reuses the sidebar loop for replies", () => {
+    expect(surface).toContain('import { LassoLoopMark } from "@/components/layout/LassoLoopMark"');
+    expect(surface).toContain('kind="signature"');
+    expect(surface).toContain("size={LOOP_SIZE_CHAT}");
+    expect(surface).toContain('<LassoLoopMark className="size-7 shrink-0 text-green" />');
+    expect(surface).toContain('{assistant ? "Lasso" : "You"}');
+  });
+
   it("reads Lasso lime from its existing token rather than a literal", () => {
     expect(mark).toContain('getPropertyValue("--nb-lasso-green")');
     expect(mark).not.toContain("#04f85b");
