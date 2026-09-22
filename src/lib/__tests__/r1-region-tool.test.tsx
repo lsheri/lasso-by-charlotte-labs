@@ -57,9 +57,9 @@ describe("R1 region tool", () => {
     const frame = readFileSync("src/components/canvas-lab/LabFrame.tsx", "utf8");
 
     expect(page).toContain("setPendingRegionNameId(id)");
-    expect(page).toContain("namingPrompt={pendingRegionNameId === frame.id}");
-    expect(frame).toContain('"canvas-lab-grouping-name-bar"');
-    expect(frame).not.toContain("position: fixed");
+    expect(page).toContain("<GroupingNamePopup");
+    expect(page).not.toContain("namingPrompt={pendingRegionNameId === frame.id}");
+    expect(frame).not.toContain('"canvas-lab-grouping-name-bar"');
   });
 
   it("dismisses naming without creating a workstream and preserves the named event", () => {
@@ -67,8 +67,7 @@ describe("R1 region tool", () => {
     const frame = readFileSync("src/components/canvas-lab/LabFrame.tsx", "utf8");
     const regionLogic = readFileSync("src/lib/board-region.ts", "utf8");
 
-    expect(frame).toContain("onDismissNaming");
-    expect(frame).toContain('aria-label="Dismiss naming"');
+    expect(page).toContain("onDismiss={() => setPendingRegionNameId(null)}");
     expect(regionLogic).toContain('REGION_NAMING_LINE = "Name this and it becomes a workstream. It claims the work inside, and you can call it with @."');
     expect(page).toContain('noteWorkboardRegionNamed(orgId, "named", claimed, frame.fill)');
     expect(page).toContain('noteWorkboardRegionNamed(orgId, "cleared", filedWorkCount(released), frame.fill)');

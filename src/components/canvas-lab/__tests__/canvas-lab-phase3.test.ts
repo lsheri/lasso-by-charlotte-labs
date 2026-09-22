@@ -80,6 +80,21 @@ describe("applyDurableBoard", () => {
     expect(merged.hiddenIds).toEqual(["work:work-1"]);
   });
 
+  it("uses a positive saved card height exactly and falls back only when it is absent", () => {
+    const saved = board({
+      nodes: [{
+        id: "node-1", frameId: null, kind: "work_item", workItemId: "work-1", decisionId: null,
+        authorProfileId: "me", authorName: "Me", title: "", body: "", judgmentType: null,
+        x: 10, y: 20, w: 260, h: 150, hidden: false, version: 1, referenceReadable: true,
+      }],
+    });
+    const stored = applyDurableBoard({ frames: baseFrames, nodes: baseNodes }, saved).nodes.find((node) => node.id === "work:work-1");
+    const missing = applyDurableBoard({ frames: baseFrames, nodes: baseNodes }, board({ nodes: [{ ...saved.nodes[0]!, h: 0 }] })).nodes.find((node) => node.id === "work:work-1");
+
+    expect(stored?.height).toBe(150);
+    expect(missing?.height).toBe(220);
+  });
+
   it("rehydrates authored judgment cards and keeps teammate authorship", () => {
     const merged = applyDurableBoard({ frames: baseFrames, nodes: baseNodes }, board({
       nodes: [{
