@@ -13,6 +13,8 @@
 - [x] P4a: Add the signed-in Home board with real engagement count, board controls, and local email composition.
 - [x] P4a: Cover the four new Home actions through the existing consent-stamped client event path.
 - [x] P4a.1: Open Home at 100% from reported shell geometry without forcing document scroll or duplicate refits.
+- [x] P4b.1: Move the Home grid into its own full-width board frame and fit only the hero.
+- [x] P4b.1: Preserve Home geometry and prove every engagement remains reachable by panning.
 
 - [x] P3.3: Compact conversation cards to one first-user quote while preserving lane derivation and zoom-one fit.
 

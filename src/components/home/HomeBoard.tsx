@@ -3,7 +3,7 @@ import { useEffect, useState, type FormEvent } from "react";
 
 import { BoardShell, type BoardShellFrame } from "@/components/board/BoardShell";
 import { NewEngagementDialog } from "@/components/engagements/NewEngagementDialog";
-import { HomeEngagementGrid } from "@/components/home/HomeEngagementGrid";
+import { HomeEngagementGrid, homeGridHeight } from "@/components/home/HomeEngagementGrid";
 import { LassoThinkingMark } from "@/components/reflect/LassoThinkingMark";
 import { Button } from "@/components/ui/button";
 import { useEngagements } from "@/hooks/use-engagements";
@@ -18,18 +18,33 @@ const HOME_VIEWPORT_SEED = { width: 980, height: 720 };
 const BOARD_FIT_PADDING = 32;
 const HOME_CONTENT_WIDTH = 620;
 const HOME_CONTENT_TOP = 186;
+const HOME_FRAME_GAP = 24;
 
-type HomeFrame = BoardShellFrame & { kind: "home" };
+type HomeFrame = BoardShellFrame & { kind: "hero" | "grid" };
 
-export function homeFrameForViewport(viewport: { width: number; height: number }): HomeFrame {
-  return {
-    id: "home-surface",
-    kind: "home",
+export function homeFramesForViewport(
+  viewport: { width: number; height: number },
+  cardCount: number,
+): HomeFrame[] {
+  const width = Math.max(1, viewport.width - BOARD_FIT_PADDING * 2);
+  const heroHeight = Math.max(1, viewport.height - BOARD_FIT_PADDING * 2);
+  const hero: HomeFrame = {
+    id: "home-hero",
+    kind: "hero",
     x: BOARD_FIT_PADDING,
     y: BOARD_FIT_PADDING,
-    width: Math.max(1, viewport.width - BOARD_FIT_PADDING * 2),
-    height: Math.max(1, viewport.height - BOARD_FIT_PADDING * 2),
+    width,
+    height: heroHeight,
   };
+  const grid: HomeFrame = {
+    id: "home-grid",
+    kind: "grid",
+    x: BOARD_FIT_PADDING,
+    y: hero.y + hero.height + HOME_FRAME_GAP,
+    width,
+    height: homeGridHeight(cardCount, width),
+  };
+  return [hero, grid];
 }
 
 export function ideasMailto(idea: string): string {
@@ -82,7 +97,6 @@ export function HomeBoard() {
     emitClientEvent("home.opened", {});
   }, []);
 
-  const frame = homeFrameForViewport(viewport);
   const countLabel = engagements ? `HOME · ${engagements.length} ENGAGEMENTS` : "HOME";
   const { data: views } = useEngagementViews(profile?.id);
   const { data: workCounts } = useEngagementWorkCounts(engagements?.map((e) => e.id));
@@ -95,6 +109,7 @@ export function HomeBoard() {
     lastViewedAt: viewedAt.get(engagement.id) ?? null,
     workCount: workCounts ? workCounts.get(engagement.id) ?? 0 : null,
   }));
+  const frames = homeFramesForViewport(viewport, cards.length);
 
   return (
     <div
@@ -104,7 +119,8 @@ export function HomeBoard() {
     >
       <BoardShell
         ariaLabel="Home board"
-        frames={[frame]}
+        frames={frames}
+        fitFrameIds={["home-hero"]}
         nodes={[]}
         showViewControls
         onViewportSizeChange={(size) => {
@@ -128,8 +144,9 @@ export function HomeBoard() {
             </Button>
           </div>
         )}
-        renderFrame={() => (
+        renderFrame={(currentFrame) => currentFrame.kind === "hero" ? (
           <section
+            data-testid="home-hero-content"
             aria-labelledby="home-title"
             className="absolute left-1/2 w-[620px] max-w-[calc(100%-32px)] -translate-x-1/2 text-center"
             style={{ top: HOME_CONTENT_TOP - BOARD_FIT_PADDING }}
@@ -145,9 +162,10 @@ export function HomeBoard() {
             </p>
             <div className="mx-auto mt-3" style={{ maxWidth: HOME_CONTENT_WIDTH }}>
               <IdeasNote />
-              <HomeEngagementGrid cards={cards} />
             </div>
           </section>
+        ) : (
+          <HomeEngagementGrid cards={cards} availableWidth={currentFrame.width} />
         )}
         renderNode={() => null}
       />

@@ -2,7 +2,7 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { HomeBoard, IdeasNote, homeFrameForViewport, ideasMailto } from "@/components/home/HomeBoard";
+import { HomeBoard, IdeasNote, homeFramesForViewport, ideasMailto } from "@/components/home/HomeBoard";
 import { fitWorkboardViewport } from "@/components/canvas-lab/canvas-lab-model";
 
 const mocks = vi.hoisted(() => ({
@@ -41,8 +41,16 @@ vi.mock("@/components/engagements/NewEngagementDialog", () => ({
 }));
 
 vi.mock("@/components/board/BoardShell", () => ({
-  BoardShell: ({ toolbar, renderFrame }: { toolbar?: React.ReactNode; renderFrame?: () => React.ReactNode }) => (
-    <div>{toolbar}{renderFrame?.()}</div>
+  BoardShell: ({ frames, fitFrameIds, toolbar, renderFrame }: {
+    frames: { id: string }[];
+    fitFrameIds?: readonly string[];
+    toolbar?: React.ReactNode;
+    renderFrame?: (frame: { id: string }) => React.ReactNode;
+  }) => (
+    <div data-fit-frame-ids={fitFrameIds?.join(",") ?? ""}>
+      {toolbar}
+      {frames.map((frame) => <div key={frame.id} data-mocked-frame={frame.id}>{renderFrame?.(frame)}</div>)}
+    </div>
   ),
 }));
 
@@ -63,13 +71,31 @@ describe("Home", () => {
     { width: 1094, height: 900 },
     { width: 860, height: 640 },
   ])("opens at zoom 1 with designed hero geometry in a $width x $height shell", (viewport) => {
-    const frame = homeFrameForViewport(viewport);
-    const fit = fitWorkboardViewport(viewport, [frame], [], new Map(), null);
+    const [hero, grid] = homeFramesForViewport(viewport, 11);
+    expect(hero).toBeDefined();
+    expect(grid).toBeDefined();
+    if (!hero || !grid) throw new Error("Home frames are required");
+    const fit = fitWorkboardViewport(viewport, hero ? [hero] : [], [], new Map(), null);
 
     expect(fit.zoom).toBe(1);
     expect(fit.pan).toEqual({ x: 0, y: 0 });
-    expect(frame.x + frame.width / 2).toBe(viewport.width / 2);
-    expect(frame.y + (186 - 32)).toBe(186);
+    expect(hero.id).toBe("home-hero");
+    expect(hero.x + hero.width / 2).toBe(viewport.width / 2);
+    expect(hero.y + (186 - 32)).toBe(186);
+    expect(grid.id).toBe("home-grid");
+    expect(grid.y).toBe(hero.y + hero.height + 24);
+  });
+
+  it("renders the grid in its own frame and fits only the hero", () => {
+    mocks.engagements = Array.from({ length: 11 }, (_, index) => ({ id: `engagement-${index}` }));
+    render(<HomeBoard />);
+
+    const hero = screen.getByTestId("home-hero-content");
+    const grid = screen.getByTestId("home-engagement-grid");
+    expect(hero.contains(grid)).toBe(false);
+    expect(hero.closest("[data-mocked-frame]")?.getAttribute("data-mocked-frame")).toBe("home-hero");
+    expect(grid.closest("[data-mocked-frame]")?.getAttribute("data-mocked-frame")).toBe("home-grid");
+    expect(document.querySelector("[data-fit-frame-ids]")?.getAttribute("data-fit-frame-ids")).toBe("home-hero");
   });
 
   it("keeps the hero at its designed width and title size", () => {
