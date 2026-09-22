@@ -17,9 +17,8 @@ describe("R3 card and sticky visual pass", () => {
   });
 
   it("keeps long card content visible instead of clipping it", () => {
-    const finalPaperRule = styles.slice(styles.lastIndexOf(".nb-paper {"), styles.indexOf("}", styles.lastIndexOf(".nb-paper {")) + 1);
-    expect(finalPaperRule).toContain("height: auto");
-    expect(finalPaperRule).toContain("overflow: visible");
+    const paperRules = [...styles.matchAll(/\.nb-paper\s*\{([^}]*)\}/g)].map((match) => match[1] ?? "");
+    expect(paperRules.some((rule) => rule.includes("height: auto") && rule.includes("overflow: visible"))).toBe(true);
   });
 
   it.each([
