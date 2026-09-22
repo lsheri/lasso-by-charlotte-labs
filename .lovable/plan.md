@@ -1,47 +1,48 @@
-# Unit R3 plan: card and sticky visual pass
+# Unit R4 plan: paper previews and card expansion
 
 ## Data impact
-- Changes visual treatment and scroll containment for existing cards, stickies, chat previews, and document previews.
-- No user action, route, copy, data visibility, consent behavior, event name, payload, or dimension changes.
-- Existing preview scrolling continues through its current callback. No new event is needed.
+- Changes only visual treatment, preview proportions, and how an existing card opens.
+- No user action, route, copy, stored data, consent behavior, event name, payload, or dimension changes.
 - No SQL, table, policy, function, trigger, or data edits.
 
 ## Current contract to preserve
 ### Controls
-- Card open, menu, select, drag, resize, connect, comment, trail, branch, hide, delete, and move controls.
-- Chat attachment open and expansion controls.
-- Document page previous, next, open-larger, and start-note controls.
+- Card face open, keyboard open, card menu, context selection, fit, branch, move, hide, delete, take-out-of-context, drag, resize, connect, comment-chip, and trail controls.
+- Expanded view actions: Summarize, Branch, Back to the workboard, passage selection, Highlight, Comment, Reply, Edit, Remove, visibility choice, and comment navigation.
+- Document preview actions: previous page, next page, and open larger.
 
 ### Render states
-- Sticky and preview modes; compact and expanded sizes; mapped, unmapped, private, selected, focused, read-only, and dimmed states.
-- Chat previews with turns, absent turns, focused scrolling, and unknown sources.
-- Document previews for text, slide, PDF, fallback, loading, empty, and failed rendering.
+- Sticky and preview modes; mapped, unmapped, private, selected, focused, read-only, dimmed, failed-preview, and absent-preview states.
+- Expanded thread, document, and local-note content; loading/error/empty thread content; comments absent/present/editing/replying; highlights mine/team/stale/cross-turn; writable and read-only review.
 
 ### Existing event calls
-- `workboard.document_created` with `{ via: "workstream" }` remains unchanged.
-- Existing board preview-read callbacks and their upstream event calls remain unchanged.
-- No event originates from the shared card-border or size styles.
+- `workboard.card_content_viewed` remains `{ kind, via }`; card-preview scrolling will no longer be a reachable `via: "scroll"` path, while document page changes and opening keep their current calls.
+- `workboard.review_opened` remains `{ format }`.
+- `workboard.card_menu_opened`, `workboard.node_created`, `workboard.annotation_changed`, and `workboard.highlight_changed` retain their current names and payloads.
+- No new event is added.
 
 ## Build
-1. Add failing R3 checks first for shared graphite borders, the taller shared minimum, long-content overflow safety, fixed scrollable chat windows, all four source treatments plus unknown fallback, Ask Lasso colour exclusion, dimming inheritance, and thin document preview borders.
-2. Centralize card and sticky dimensions in the existing paper styles: change the shared border from 1px to 1.5px graphite, then inspect the rendered result and use 2px if 1.5px remains faint and the shared minimum height from 180px to 220px while preserving widths and grids. Align board card geometry with the same 220px floor so fixed board frames cannot clip taller paper.
-3. Add named chat-border tokens beside the existing colour tokens. Use one gradient-wrapper technique for Claude, ChatGPT, Gemini, Copilot, and the graphite fallback, all at the same border weight.
-4. Reuse `sourceVendorKey` from `SourceMark.tsx` for source identification. Introduce one presentational chat-window component shared by board and app-card previews, with fixed height, internal vertical scrolling, and wheel handoff at the top and bottom.
-5. Give document preview bodies a one-step-thinner graphite border through their shared preview styles, including the workstream document body, without changing content or controls.
-6. Measure inbox cards visible above the fold before and after the 220px floor, then re-run focused and adjacent tests, type safety, and the preview build. Compare the control, state, and event inventories above to the result before reporting.
+1. Add R4 regression checks first for paper shadows without strokes/rings, restored clipping, no sticky height floor, unchanged flat-surface borders, still chat excerpts, portrait default previews, landscape deck previews, shared inset padding, and the enlarged paper treatment.
+2. Introduce semantic paper-shadow and preview tokens. Paper uses a tight ink-tinted contact shadow plus a softer ink-tinted ambient shadow; flat surfaces retain the 2px graphite border.
+3. Make `ChatPreviewWindow` explicitly support a clipped card excerpt and a scrolling expanded reader. Remove card scroll callbacks and wheel handling, retain the exact vendor-border wrapper, and add the bottom fade only to excerpts.
+4. Put preview content behind one shared 3:4 default aspect rule and key the 16:9 exception from `WorkboardFilePreview.kind === "slide"` through a data attribute. Use one shared inset value for conversation and document preview bodies.
+5. Restyle `FocusOverlay` as the enlarged paper object: same paper ground, layered shadow, folded corner, vendor/date/menu header order, vendor border, full-height scrolling conversation, and paper-language comments and annotations. Preserve every existing handler, branch, state, and event call.
+6. Animate the enlarged paper from the originating board card bounds using a short scale-and-settle transform. Reduced motion renders the final state immediately.
+7. Re-run focused R4 and adjacent card/workboard checks, type safety, and the preview build. Compare the controls, states, and event inventories above against the result before reporting.
 
 ## Expected files
 - `src/styles.css`
-- `src/lib/canvas-lab-shared.ts`
-- `src/components/canvas-lab/canvas-lab-model.ts`
-- `src/components/work/ChatPreviewWindow.tsx` (new presentational component)
+- `src/components/work/ChatPreviewWindow.tsx`
 - `src/components/work/WorkCardPreview.tsx`
 - `src/components/canvas-lab/LabPaper.tsx`
 - `src/components/canvas-lab/LabPreview.tsx`
-- `src/components/engagements/WorkstreamDocument.tsx`
-- Focused R3 tests and directly affected existing size assertions
+- `src/components/canvas-lab/LabCard.tsx`
+- `src/components/canvas-lab/FocusOverlay.tsx`
+- `src/pages/CanvasLabPage.tsx`
+- Focused R4 tests and directly affected R3 assertions
+- `roadmap.md`
 
 ## Assumptions
-- “Noticeably taller” means 180px to 220px for preview cards and stickies.
-- “Visibly thicker” means 1px to 1.5px for card/sticky borders; document preview bodies remain 1px.
-- Existing non-card controls, layout widths, columns, and grids stay unchanged.
+- The enlarged same-object treatment applies to the workboard expansion defect described here; existing non-board viewers keep their functionality and treatment.
+- The expanded header's menu is the existing action set represented in the same trailing position, not a new control or copied card menu.
+- No copy changes means all current labels and status text remain byte-for-byte unchanged.
