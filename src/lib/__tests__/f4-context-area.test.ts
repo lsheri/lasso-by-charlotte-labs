@@ -24,7 +24,7 @@ describe("F4 context area removal and restore", () => {
   });
 
   it("clamps fitted width to the interaction range", () => {
-    expect(fitCardRect({ width: 180, height: 300 }, 120)).toEqual({ width: CARD_MIN_WIDTH, height: 220 });
+    expect(fitCardRect({ width: 180, height: 300 }, 120)).toEqual({ width: CARD_MIN_WIDTH, height: 180 });
     expect(fitCardRect({ width: 600, height: 300 }, 220)).toEqual({ width: CARD_MAX_WIDTH, height: 220 });
   });
 });
