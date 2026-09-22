@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import {
   actionsFor,
+  CARD_HEIGHT,
+  CARD_WIDTH,
   branchChatNode,
   addLabLink,
   addLocalFrame,
@@ -257,9 +259,9 @@ describe("canvas lab model", () => {
     if (!frame) return;
     const anchor = draftAnchor(frame, nodes);
     expect(anchor.x).toBeGreaterThanOrEqual(frame.x);
-    expect(anchor.x + 260).toBeLessThanOrEqual(frame.x + frame.width);
+    expect(anchor.x + CARD_WIDTH).toBeLessThanOrEqual(frame.x + frame.width);
     expect(anchor.y).toBeGreaterThanOrEqual(frame.y);
-    expect(anchor.y + 220).toBeLessThanOrEqual(frame.y + frame.height);
+    expect(anchor.y + CARD_HEIGHT).toBeLessThanOrEqual(frame.y + frame.height);
 
     const first = draftAnchor(frame, []);
     const nextColumn = draftAnchor(frame, Array.from({ length: 3 }, (_, index) => ({
@@ -275,8 +277,8 @@ describe("canvas lab model", () => {
       id: `full:${index}`,
       frame: frame.id,
     })));
-    expect(lastFitting.x + 260).toBeLessThanOrEqual(frame.x + frame.width);
-    expect(lastFitting.y + 220).toBeLessThanOrEqual(frame.y + frame.height);
+    expect(lastFitting.x + CARD_WIDTH).toBeLessThanOrEqual(frame.x + frame.width);
+    expect(lastFitting.y + CARD_HEIGHT).toBeLessThanOrEqual(frame.y + frame.height);
   });
 
   it("arranges seven pilot frames across two rows", () => {
