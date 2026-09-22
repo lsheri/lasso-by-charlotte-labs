@@ -2425,7 +2425,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   }
   toolbarItems.push({
     spec: { id: "ask", width: 40, pinned: true },
-    row: <ToolbarIcon label="Ask Lasso"><Button size="icon" variant={askOpen ? "secondary" : "outline"} aria-label="Ask Lasso" aria-pressed={askOpen} data-toolbar-control="ask" onClick={() => setAskOpen((current) => !current)}><LassoThinkingMark kind="signature" size={LOOP_SIZE_TOOLBAR} /></Button></ToolbarIcon>,
+    row: <ToolbarIcon label="Ask Lasso"><Button size="icon" variant={askOpen ? "secondary" : "outline"} aria-label="Ask Lasso" aria-pressed={askOpen} data-toolbar-control="ask" className="[&_canvas]:max-h-full [&_canvas]:max-w-full" onClick={() => setAskOpen((current) => !current)}><LassoThinkingMark kind="signature" size={LOOP_SIZE_TOOLBAR} /></Button></ToolbarIcon>,
   });
   if (canAddWork) {
     toolbarItems.push({

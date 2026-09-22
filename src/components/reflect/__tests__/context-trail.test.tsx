@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
-import { act, render, screen } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { act, cleanup, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ThinkingTrail } from "@/components/reflect/ContextTrail";
 import type { ContextManifest } from "@/lib/context-manifest";
@@ -33,6 +33,11 @@ describe("ThinkingTrail reading state", () => {
   beforeEach(() => {
     vi.useFakeTimers();
     setReducedMotion(false);
+  });
+
+  afterEach(() => {
+    cleanup();
+    vi.useRealTimers();
   });
 
   it("keeps the lead and every revealed item pending until a manifest arrives", () => {

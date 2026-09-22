@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { manifestChips, type ContextManifest } from "@/lib/context-manifest";
 
@@ -17,20 +17,57 @@ function useReducedMotion(): boolean {
 
 const MONO = "font-mono text-[11px] leading-relaxed tracking-[0.02em]";
 
-function Tick() {
-  return (
-    <span aria-hidden className="text-accent-deep">
-      {"\u2713"}
-    </span>
-  );
-}
+const TRAIL_CHECK_LENGTH = 11.35;
 
-function Spinner() {
+function PendingMarker() {
   return (
     <span
       aria-hidden
-      className="inline-block h-2.5 w-2.5 shrink-0 animate-spin rounded-full border border-muted-foreground border-t-transparent motion-reduce:animate-none"
+      className="inline-block h-2.5 w-2.5 shrink-0 rounded-full border border-muted-foreground"
     />
+  );
+}
+
+function TrailCheck({ delay, reduced }: { delay: number; reduced: boolean }) {
+  const [drawn, setDrawn] = useState(reduced);
+  const started = useRef(false);
+
+  useEffect(() => {
+    if (reduced) {
+      setDrawn(true);
+      return;
+    }
+    if (started.current) return;
+    started.current = true;
+    const frame = window.requestAnimationFrame(() => setDrawn(true));
+    return () => window.cancelAnimationFrame(frame);
+  }, [reduced]);
+
+  return (
+    <svg
+      aria-hidden
+      viewBox="0 0 10 10"
+      className="h-2.5 w-2.5 shrink-0 text-accent-deep"
+      data-trail-check
+    >
+      <path
+        d="M 1.7 5.5 L 4.0 8.1 L 8.7 1.8"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        vectorEffect="non-scaling-stroke"
+        style={{
+          strokeDasharray: TRAIL_CHECK_LENGTH,
+          strokeDashoffset: drawn ? 0 : TRAIL_CHECK_LENGTH,
+          transition: reduced
+            ? "none"
+            : "stroke-dashoffset 420ms cubic-bezier(0.22, 0.61, 0.36, 1)",
+          transitionDelay: reduced ? "0ms" : `${delay}ms`,
+        }}
+      />
+    </svg>
   );
 }
 
@@ -100,32 +137,50 @@ export function ThinkingTrail({
 
   return (
     <div className={`${MONO} space-y-1 text-muted-foreground`} aria-live="polite">
-      <p className="flex items-center gap-2">
-        <Tick />
+      <p
+        className="flex items-center gap-2"
+        data-trail-state={manifest ? "read" : "pending"}
+      >
+        {manifest ? <TrailCheck delay={0} reduced={reduced} /> : <PendingMarker />}
         <span>{lead ?? "Reading the record you chose"}</span>
       </p>
       {visible.map((line, index) => {
-        const done = manifest ? true : index < visible.length - 1;
         return (
           <p
             key={line.key}
             className={`flex items-start gap-2 ${reduced ? "" : "animate-in fade-in duration-200"}`}
+            data-trail-state={manifest ? "read" : "pending"}
           >
-            {done ? <Tick /> : <Spinner />}
+            {manifest ? (
+              <TrailCheck delay={Math.min((index + 1) * 45, 280)} reduced={reduced} />
+            ) : (
+              <PendingMarker />
+            )}
             <span className="min-w-0 break-words">{line.text}</span>
           </p>
         );
       })}
       {manifest?.excluded.map((entry) => (
-        <p key={`x-${entry.title}`} className="flex items-start gap-2 opacity-60">
+        <p
+          key={`x-${entry.title}`}
+          className="flex items-start gap-2 opacity-60"
+          data-trail-state="excluded"
+        >
           <span aria-hidden>{"\u00b7"}</span>
           <span className="min-w-0 break-words">
             {entry.title}: {entry.reason}
           </span>
         </p>
       ))}
-      <p className="flex items-center gap-2">
-        <Spinner />
+      <p
+        className="flex items-center gap-2"
+        data-trail-state={manifest ? "read" : "pending"}
+      >
+        {manifest ? (
+          <TrailCheck delay={Math.min((lines.length + 1) * 45, 280)} reduced={reduced} />
+        ) : (
+          <PendingMarker />
+        )}
         <span>{finalPhase}</span>
       </p>
     </div>
