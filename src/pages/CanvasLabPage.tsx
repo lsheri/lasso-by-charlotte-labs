@@ -2485,6 +2485,17 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
               </DropdownMenu>
             ) : null}
           </div>
+          <Popover open={detailsOpen} onOpenChange={setDetailsOpen}>
+            <PopoverAnchor virtualRef={detailsAnchorVirtualRef} />
+            <PopoverContent align="end" className="w-80" data-testid="board-details-popover">
+              <BoardDetailsContent
+                engagement={engagement}
+                coaches={page?.coaches ?? []}
+                members={page?.members ?? []}
+                engagementId={engagementId}
+              />
+            </PopoverContent>
+          </Popover>
           {drawTool ? <div className="canvas-lab-region-palette"><RegionColourSwatches value={regionFill} onChange={setRegionFill} /></div> : null}
         </header>
         {lab.saveState.status === "conflict" ? <div data-testid="canvas-lab-banner" className="canvas-lab-banner" role="alert"><p className="text-[13px] text-foreground">A newer version of this record was saved.</p><div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => resolveConflict("latest")}>Load latest</Button><Button size="sm" variant="outline" onClick={() => resolveConflict("retry")}>Retry my change</Button></div></div> : null}
