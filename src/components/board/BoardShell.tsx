@@ -24,7 +24,9 @@ import {
   isLaneFrameId,
   laneContentExtent,
   laneContentLayout,
+  laneVisiblePlacements,
   type LaneContent,
+  type LaneContentPlacement,
 } from "@/lib/board-lane";
 import { cn } from "@/lib/utils";
 
