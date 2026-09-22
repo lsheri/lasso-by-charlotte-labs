@@ -28,7 +28,7 @@
  *   make an assertion pass.
  */
 
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { BoardShell } from "@/components/board/BoardShell";
@@ -131,7 +131,9 @@ function mount(props: Partial<React.ComponentProps<typeof BoardShell>> = {}) {
 
 function wheel(init: WheelEventInit): WheelEvent {
   const event = new WheelEvent("wheel", { bubbles: true, cancelable: true, deltaX: 0, deltaY: 0, ...init });
-  shell().dispatchEvent(event);
+  act(() => {
+    shell().dispatchEvent(event);
+  });
   return event;
 }
 
@@ -292,12 +294,16 @@ describe("the fit", () => {
     const moved = view();
     expect(moved.pan).not.toEqual(expected({ width: 1000, height: 800 }).pan);
 
-    for (const callback of resizeCallbacks) callback();
+    act(() => {
+      for (const callback of resizeCallbacks) callback();
+    });
     expect(view().pan).toEqual(moved.pan);
 
     viewport.width = 620;
     viewport.height = 500;
-    for (const callback of resizeCallbacks) callback();
+    act(() => {
+      for (const callback of resizeCallbacks) callback();
+    });
     const wanted = expected({ width: 620, height: 500 });
     expect(view().zoom).toBeCloseTo(wanted.zoom, 10);
     expect(view().pan.x).toBeCloseTo(wanted.pan.x, 6);
