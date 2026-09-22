@@ -84,6 +84,17 @@ export function HomeBoard() {
 
   const frame = homeFrameForViewport(viewport);
   const countLabel = engagements ? `HOME · ${engagements.length} ENGAGEMENTS` : "HOME";
+  const { data: views } = useEngagementViews(profile?.id);
+  const { data: workCounts } = useEngagementWorkCounts(engagements?.map((e) => e.id));
+  const viewedAt = new Map((views ?? []).map((row) => [row.engagement_id, row.last_viewed_at]));
+  const cards: HomeGridEngagement[] = (engagements ?? []).map((engagement) => ({
+    id: engagement.id,
+    code: engagement.code,
+    title: engagement.title,
+    clientLabel: engagement.clients?.name ?? engagement.client_label,
+    lastViewedAt: viewedAt.get(engagement.id) ?? null,
+    workCount: workCounts ? workCounts.get(engagement.id) ?? 0 : null,
+  }));
 
   return (
     <div
