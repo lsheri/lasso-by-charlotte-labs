@@ -153,6 +153,8 @@ import {
 } from "@/components/canvas-lab/canvas-lab-telemetry";
 import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
 import { GraphiteIcon } from "@/components/notebook/icons";
+import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
+import { BoardDetailsContent } from "@/components/canvas-lab/BoardDetailsPopover";
 import { SidebarNav } from "@/components/layout/SidebarNav";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -276,6 +278,20 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   const [cardMenuOpen, setCardMenuOpen] = useState(false);
   const [announcement, setAnnouncement] = useState("");
   const [zoom, setZoom] = useState(0.72);
+  // R9: Details is a glance popover, not a navigation. It anchors to the
+  // toolbar button when that is in the row and to the overflow trigger when
+  // the control has collapsed into the menu.
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const detailsAnchorRef = useRef<HTMLElement | null>(null);
+  const detailsAnchorVirtualRef = useRef({
+    getBoundingClientRect: () =>
+      detailsAnchorRef.current?.getBoundingClientRect() ?? new DOMRect(0, 0, 0, 0),
+  });
+  const moreButtonRef = useRef<HTMLButtonElement | null>(null);
+  const openDetails = (anchor: HTMLElement) => {
+    detailsAnchorRef.current = anchor;
+    setDetailsOpen(true);
+  };
   const [pan, setPan] = useState<Point>({ x: 0, y: 0 });
   const [menuOpen, setMenuOpen] = useState(false);
   const [railOpen, setRailOpen] = useState(true);
@@ -2418,8 +2434,8 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   }
   toolbarItems.push({
     spec: { id: "details", width: 86, moveOrder: 9 },
-    row: <ToolbarIcon label="Details"><Button size="sm" variant="outline" aria-label="Details" data-toolbar-control="details" asChild><Link to="/engagements/$id" params={{ id: engagementId }} search={{ ...DETAILS_SEARCH }}><GraphiteIcon name="analyses" animate={false} />Details</Link></Button></ToolbarIcon>,
-    menu: <DropdownMenuItem asChild><Link to="/engagements/$id" params={{ id: engagementId }} search={{ ...DETAILS_SEARCH }}>Details</Link></DropdownMenuItem>,
+    row: <ToolbarIcon label="Details"><Button size="sm" variant="outline" aria-label="Details" data-toolbar-control="details" aria-expanded={detailsOpen} onClick={(event) => openDetails(event.currentTarget)}><GraphiteIcon name="analyses" animate={false} />Details</Button></ToolbarIcon>,
+    menu: <DropdownMenuItem onSelect={() => { if (moreButtonRef.current) openDetails(moreButtonRef.current); }}>Details</DropdownMenuItem>,
   });
   toolbarItems.push({
     spec: { id: "fit", width: 56, moveOrder: 10 },
@@ -2458,7 +2474,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <DropdownMenuTrigger asChild>
-                      <Button size="icon" variant="ghost" aria-label="More board controls" data-toolbar-control="more"><GraphiteIcon name="more" animate={false} /></Button>
+                      <Button ref={moreButtonRef} size="icon" variant="ghost" aria-label="More board controls" data-toolbar-control="more"><GraphiteIcon name="more" animate={false} /></Button>
                     </DropdownMenuTrigger>
                   </TooltipTrigger>
                   <TooltipContent>More board controls</TooltipContent>
