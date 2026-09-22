@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 
-import { render, screen } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import { readFileSync } from "fs";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { BoardDetailsContent } from "@/components/canvas-lab/BoardDetailsPopover";
 import type { EngagementRow } from "@/lib/engagement-page-shared";
