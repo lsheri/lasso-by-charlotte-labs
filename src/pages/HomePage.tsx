@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 
 import { BoardShell, type BoardShellFrame } from "@/components/board/BoardShell";
 import { NewEngagementDialog } from "@/components/engagements/NewEngagementDialog";
@@ -29,7 +29,7 @@ export function IdeasNote({ openMailClient = openIdeasMailClient }: { openMailCl
   const [idea, setIdea] = useState("");
   const canSend = idea.trim().length > 0;
 
-  function compose(event: React.FormEvent<HTMLFormElement>) {
+  function compose(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!canSend) return;
     emitClientEvent("home.ideas_note_composed", {});

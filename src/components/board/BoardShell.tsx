@@ -30,6 +30,8 @@ import {
 } from "@/lib/board-lane";
 import { cn } from "@/lib/utils";
 
+import { BoardViewControls } from "./BoardViewControls";
+
 export type BoardShellFrame = {
   id: string;
   x: number;
@@ -60,6 +62,8 @@ export type BoardShellProps<F extends BoardShellFrame, N extends BoardShellNode>
   measuredHeights?: ReadonlyMap<string, number> | undefined;
   /** Sits above the surface, unstyled by the shell beyond its row. */
   toolbar?: ReactNode;
+  /** Shows the shared Fit and zoom controls in the toolbar row. */
+  showViewControls?: boolean | undefined;
   /** Given only when nodes may be moved. Lane contents are never offered it. */
   onNodeMove?: ((id: string, to: Point) => void) | undefined;
   selectedIds?: readonly string[] | undefined;
@@ -83,6 +87,7 @@ export function BoardShell<F extends BoardShellFrame, N extends BoardShellNode>(
   renderNode,
   measuredHeights,
   toolbar,
+  showViewControls = false,
   onNodeMove,
   selectedIds,
   onSelectNode,
@@ -342,9 +347,18 @@ export function BoardShell<F extends BoardShellFrame, N extends BoardShellNode>(
       aria-label={ariaLabel}
       className={cn("relative h-full w-full overflow-hidden", className)}
     >
-      {toolbar ? (
+      {toolbar || showViewControls ? (
         <div data-testid="board-shell-toolbar" className="absolute inset-x-0 top-0 z-20 flex min-w-0 items-center gap-2 overflow-hidden px-3 py-2">
           {toolbar}
+          {showViewControls ? (
+            <BoardViewControls
+              zoom={zoom}
+              onFit={() => fitRef.current()}
+              onZoomOut={() => zoomAtCentre("out")}
+              onResetZoom={() => zoomAtCentre(1)}
+              onZoomIn={() => zoomAtCentre("in")}
+            />
+          ) : null}
         </div>
       ) : null}
       <div
