@@ -16,24 +16,17 @@ const link: LabLink = { id: "link", fromId: "a", fromAnchor: "right", toId: "b",
 afterEach(cleanup);
 
 describe("what a link means", () => {
-  it("writes the word at the midpoint when the board is readable", () => {
-    const { container } = render(<svg><LabRelationshipOverlays links={[link]} nodes={nodes} measuredHeights={new Map()} selectedLinkId={null} hoveredLinkId={null} inverseZoom={1} zoom={1} editable onRemove={() => undefined} onChangeRelation={() => undefined} /></svg>);
-    expect(container.querySelector("[data-testid='lab-relationship-label-link']")?.textContent).toBe("informed");
+  it("draws every link the same way, with no word on the line", () => {
+    for (const relation of ["informed", "context"] as const) {
+      const { container } = render(<svg><LabRelationshipOverlays links={[{ ...link, relation }]} nodes={nodes} measuredHeights={new Map()} selectedLinkId={null} hoveredLinkId={null} inverseZoom={1} zoom={1} editable onRemove={() => undefined} /></svg>);
+      expect(container.querySelector("[data-testid='lab-relationship-label-link']")).toBeNull();
+      cleanup();
+    }
   });
 
-  it("stays quiet below 0.6 and for context", () => {
-    const small = render(<svg><LabRelationshipOverlays links={[link]} nodes={nodes} measuredHeights={new Map()} selectedLinkId={null} hoveredLinkId={null} inverseZoom={2} zoom={0.5} editable onRemove={() => undefined} onChangeRelation={() => undefined} /></svg>);
-    expect(small.container.querySelector("[data-testid='lab-relationship-label-link']")).toBeNull();
-    cleanup();
-    const plain = render(<svg><LabRelationshipOverlays links={[{ ...link, relation: "context" }]} nodes={nodes} measuredHeights={new Map()} selectedLinkId={null} hoveredLinkId={null} inverseZoom={1} zoom={1} editable onRemove={() => undefined} onChangeRelation={() => undefined} /></svg>);
-    expect(plain.container.querySelector("[data-testid='lab-relationship-label-link']")).toBeNull();
-  });
-
-  it("offers a change control beside the remove control when selected", () => {
-    const change = vi.fn();
-    render(<svg><LabRelationshipOverlays links={[link]} nodes={nodes} measuredHeights={new Map()} selectedLinkId="link" hoveredLinkId={null} inverseZoom={1} zoom={1} editable onRemove={() => undefined} onChangeRelation={change} /></svg>);
-    fireEvent.click(screen.getByRole("button", { name: "Change relation from Source to Target" }));
-    expect(change).toHaveBeenCalledWith(link);
+  it("offers only the remove control when selected", () => {
+    render(<svg><LabRelationshipOverlays links={[link]} nodes={nodes} measuredHeights={new Map()} selectedLinkId="link" hoveredLinkId={null} inverseZoom={1} zoom={1} editable onRemove={() => undefined} /></svg>);
+    expect(screen.queryByRole("button", { name: /Change relation/ })).toBeNull();
     expect(screen.getByRole("button", { name: "Remove relationship from Source to Target" })).toBeTruthy();
   });
 
