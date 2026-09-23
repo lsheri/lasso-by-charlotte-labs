@@ -288,8 +288,14 @@ describe("an opt-in zoom lock", () => {
   it("holds wheel, touch pinch and keyboard zoom at one while an ordinary board still responds", () => {
     const locked = mount({ lockZoom: true });
     wheel({ deltaY: -120, ctrlKey: true, clientX: 500, clientY: 400 });
+    expect(view().zoom).toBe(1);
     touchPinch(100, 150);
+    expect(view().zoom).toBe(1);
     fireEvent.keyDown(window, { key: "=", metaKey: true });
+    expect(view().zoom).toBe(1);
+    fireEvent.keyDown(window, { key: "-", ctrlKey: true });
+    expect(view().zoom).toBe(1);
+    fireEvent.keyDown(window, { key: "0", metaKey: true });
     expect(view().zoom).toBe(1);
     locked.unmount();
 
@@ -297,11 +303,12 @@ describe("an opt-in zoom lock", () => {
     wheel({ deltaY: -120, ctrlKey: true, clientX: 500, clientY: 400 });
     const afterWheel = view().zoom;
     expect(afterWheel).toBeGreaterThan(1);
+    touchPinch(100, 150);
+    const afterPinch = view().zoom;
+    expect(afterPinch).toBeGreaterThan(afterWheel);
     fireEvent.keyDown(window, { key: "-", ctrlKey: true });
     const afterKeyboard = view().zoom;
-    expect(afterKeyboard).toBeLessThan(afterWheel);
-    touchPinch(100, 150);
-    expect(view().zoom).toBeGreaterThan(afterKeyboard);
+    expect(afterKeyboard).toBeLessThan(afterPinch);
   });
 
   it("shows Fit without zoom controls only when requested", () => {
