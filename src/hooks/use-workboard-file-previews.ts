@@ -35,8 +35,7 @@ export async function loadWorkboardFilePreview(
     .select("slide_map, version_no")
     .eq("work_item_id", item.id)
     .order("version_no", { ascending: false });
-  if (versionError) return fallbackFilePreview(item);
-  const versionCount = versions?.length ?? 0;
+  const versionCount = versionError ? 0 : versions?.length ?? 0;
   if (artifactPreviewKind(item) && item.content_ref && readArtifact) {
     try {
       const artifact = await readArtifact({ data: { work_item_id: item.id } });
@@ -47,6 +46,7 @@ export async function loadWorkboardFilePreview(
       // The existing extracted-text preview remains the fallback.
     }
   }
+  if (versionError) return fallbackFilePreview(item);
   const pages = item.type === "deck" ? slidesFromMap(versions?.[0]?.slide_map ?? null) : [];
   const slide = pages[0] ?? null;
   if (slide) {
