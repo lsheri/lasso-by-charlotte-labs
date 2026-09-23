@@ -38,12 +38,20 @@ describe("C1 cleanup", () => {
 
   it("builds the sidebar shelf label from workspace vocabulary", () => {
     const source = read("src/components/layout/SidebarNav.tsx");
-    expect(source).toContain("mcpVocabFor(profile?.org_type).container");
-    expect(source).toContain('`No ${containerWord}`');
+    expect(source).toContain("vocab.client.toLowerCase()");
+    expect(source).toContain("`No ${vocab.client.toLowerCase()}`");
+    expect(source).not.toContain("mcpVocabFor");
     expect(source).not.toContain('>Unmapped<');
-    expect(mcpVocabFor("company").container).toBe("client");
-    expect(mcpVocabFor("personal").container).toBe("folder");
-    expect(mcpVocabFor("edu").container).toBe("class");
+    expect(DEFAULT_VOCAB.client).toBe("Client");
+    expect(EDU_VOCAB.client).toBe("Term");
+  });
+
+  it("renders Mermaid once per work item, not on every board re-render", () => {
+    const source = read("src/components/canvas-lab/WorkboardFilePreview.tsx");
+    expect(source).toContain("onFailureRef");
+    expect(source).toContain("}, [source, id]);");
+    expect(source).not.toContain("[onFailure, source");
+    expect(source).toContain("id={preview.workItemId}");
   });
 
   it("keeps preview mode dims and strips unknown keys", () => {
