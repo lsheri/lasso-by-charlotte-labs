@@ -160,7 +160,14 @@ export function receiptLine(
 export type AttachmentOutcome = {
   title: string;
   source_artifact_id: string;
-  outcome: "new" | "unchanged" | "new_version" | "kept_stored" | "rejected" | "failed";
+  outcome:
+    | "new"
+    | "unchanged"
+    | "new_version"
+    | "kept_stored"
+    | "rejected"
+    | "failed"
+    | "reference_created";
   chars: number;
   version_no?: number;
   reason?: string;
@@ -177,6 +184,7 @@ export function attachmentSummaryLine(outcomes: readonly AttachmentOutcome[]): s
     kept_stored: ["kept as stored", "kept as stored"],
     rejected: ["not taken", "not taken"],
     failed: ["failed", "failed"],
+    reference_created: ["file placeholder", "file placeholders"],
   };
   const versions = outcomes
     .filter((one) => one.outcome === "new_version" && one.version_no)
@@ -189,6 +197,75 @@ export function attachmentSummaryLine(outcomes: readonly AttachmentOutcome[]): s
     });
   const detail = versions.length > 0 ? ` (${versions.join(", ")})` : "";
   return ` Attachments: ${parts.join(", ")}${detail}.`;
+}
+
+/** P1b. A file the chat generated whose bytes cannot travel through MCP. */
+export type FileRef = {
+  filename: string;
+  mime_type?: string;
+  bytes?: number;
+  sha256?: string;
+  download_url?: string;
+};
+
+export type ParsedAttachment = {
+  kind: string;
+  title: string;
+  content: string;
+  sourceArtifactId: string;
+  language?: string;
+  fileRef?: FileRef;
+};
+
+/** P1b item 1. Validates one incoming attachment; file_ref carries no content. */
+export function parseIncomingAttachment(
+  raw: unknown,
+  kinds: readonly string[],
+): { ok: true; attachment: ParsedAttachment } | { ok: false; message: string } {
+  const a = (raw ?? {}) as Record<string, unknown>;
+  const title = typeof a["title"] === "string" ? a["title"].trim() : "";
+  if (!title) {
+    return { ok: false, message: "Each attachment needs kind, verbatim title, and content" };
+  }
+  const kind = kinds.includes(String(a["kind"])) ? String(a["kind"]) : "other";
+  const sourceArtifactId =
+    typeof a["source_artifact_id"] === "string" ? a["source_artifact_id"].trim() : "";
+  const language = typeof a["language"] === "string" ? { language: a["language"] } : {};
+  if (kind === "file_ref") {
+    if (a["content"] !== undefined && a["content"] !== null && a["content"] !== "") {
+      return { ok: false, message: "file_ref carries no content; send filename and sha256 in file_ref" };
+    }
+    const ref = a["file_ref"] as Record<string, unknown> | undefined;
+    const filename = ref && typeof ref["filename"] === "string" ? ref["filename"].trim() : "";
+    if (!ref || !filename) {
+      return { ok: false, message: "A file_ref attachment needs file_ref.filename" };
+    }
+    const sha = typeof ref["sha256"] === "string" ? ref["sha256"].trim().toLowerCase() : "";
+    if (sha && !/^[0-9a-f]{64}$/.test(sha)) {
+      return { ok: false, message: "file_ref.sha256 must be 64 hex characters" };
+    }
+    const bytes = ref["bytes"];
+    const mime = typeof ref["mime_type"] === "string" ? ref["mime_type"].trim() : "";
+    const url = typeof ref["download_url"] === "string" ? ref["download_url"].trim() : "";
+    const fileRef: FileRef = {
+      filename,
+      ...(mime ? { mime_type: mime } : {}),
+      ...(typeof bytes === "number" && Number.isInteger(bytes) && bytes >= 0 ? { bytes } : {}),
+      ...(sha ? { sha256: sha } : {}),
+      ...(url ? { download_url: url } : {}),
+    };
+    return { ok: true, attachment: { kind, title, content: "", sourceArtifactId, fileRef, ...language } };
+  }
+  if (typeof a["content"] !== "string") {
+    return { ok: false, message: "Each attachment needs kind, verbatim title, and content" };
+  }
+  return { ok: true, attachment: { kind, title, content: a["content"], sourceArtifactId, ...language } };
+}
+
+/** P1b item 1. The note when this push created file placeholders. */
+export function fileRefNote(created: number): string {
+  if (created <= 0) return "";
+  return ` ${created} file placeholder${created === 1 ? "" : "s"} on the board; add the file to complete each one.`;
 }
 
 function looksCondensed(incomingChars: number, storedChars: number): boolean {
