@@ -42,6 +42,7 @@ import {
   renderUnknownRef,
   renderBoardResult,
   renderContainerResult,
+  sharedCodeNote,
   type BoardResult,
   type ContainerResult,
   type McpPlace,
@@ -80,6 +81,58 @@ export function decideAttachmentWrite(
 export function versionRowsBucket(n: number): "0" | "1" | "2+" {
   if (n <= 0) return "0";
   return n === 1 ? "1" : "2+";
+}
+
+/** P0 item 4. The first 40 characters of a stored message, on one line. */
+export function receiptHead(content: string): string {
+  const flat = content.replace(/\s+/g, " ").trim();
+  return flat.length > 40 ? `${flat.slice(0, 40)}…` : flat;
+}
+
+/** P0 item 4. The compact receipt a caller reads, capped at 12 positions. */
+export function receiptLine(
+  receipts: readonly { pos: number; role: string; chars: number; head: string }[],
+): string {
+  if (receipts.length === 0) return "";
+  const shown = receipts.slice(0, 12);
+  const parts = shown.map((r) => `${r.pos} ${r.role} ${r.chars} '${r.head}'`);
+  const more = receipts.length > shown.length ? ` · and ${receipts.length - shown.length} more` : "";
+  return ` Stored ${parts.join(" · ")}${more}.`;
+}
+
+/** P0 item 2. The one-line summary of what happened to each attachment. */
+export type AttachmentOutcome = {
+  title: string;
+  source_artifact_id: string;
+  outcome: "new" | "unchanged" | "new_version" | "kept_stored" | "rejected" | "failed";
+  chars: number;
+  version_no?: number;
+  reason?: string;
+};
+
+export function attachmentSummaryLine(outcomes: readonly AttachmentOutcome[]): string {
+  if (outcomes.length === 0) return "";
+  const counts = new Map<string, number>();
+  for (const one of outcomes) counts.set(one.outcome, (counts.get(one.outcome) ?? 0) + 1);
+  const words: Record<AttachmentOutcome["outcome"], [string, string]> = {
+    new: ["new", "new"],
+    unchanged: ["unchanged", "unchanged"],
+    new_version: ["new version", "new versions"],
+    kept_stored: ["kept as stored", "kept as stored"],
+    rejected: ["not taken", "not taken"],
+    failed: ["failed", "failed"],
+  };
+  const versions = outcomes
+    .filter((one) => one.outcome === "new_version" && one.version_no)
+    .map((one) => `${one.title} v${one.version_no}`);
+  const parts = (Object.keys(words) as AttachmentOutcome["outcome"][])
+    .filter((key) => (counts.get(key) ?? 0) > 0)
+    .map((key) => {
+      const n = counts.get(key)!;
+      return `${n} ${n === 1 ? words[key][0] : words[key][1]}`;
+    });
+  const detail = versions.length > 0 ? ` (${versions.join(", ")})` : "";
+  return ` Attachments: ${parts.join(", ")}${detail}.`;
 }
 
 function looksCondensed(incomingChars: number, storedChars: number): boolean {
@@ -197,7 +250,7 @@ const pushTools = (vocab: McpVocab) => [
     title: "Push a conversation",
     icons: ICONS,
     description:
-      `When the user says 'Push to Lasso', 'send to Lasso', or similar: call push_conversation with the ENTIRE conversation, every message, verbatim, unabridged, plus any artifact, canvas or file that already existed as its own object in this app, as attachments. Never summarize the transcript. Never compose new summaries, recaps or section write-ups and send them as attachments. Never use push_document for conversation artifacts. Verbatim is non-negotiable: never substitute a summary, paraphrase, or shortened version of a message at any position, the server rejects shrunken overwrites. Before pushing, assess how many messages you can reproduce word-for-word in a single call given their actual lengths. If the whole conversation fits, push it whole. If not, push it in consecutive windows using window {from, to, total}: start with the first window sized to what you can reproduce verbatim, then follow the server's response, which tells you the next starting position, until all messages are stored. When re-pushing a conversation that grew, push only the new messages as a window, never re-send earlier messages unless correcting them. A smaller window is always the answer; a shorter message never is. ${placementLine(vocab)}`,
+      `When the user says 'Push to Lasso', 'send to Lasso', or similar: call push_conversation with the ENTIRE conversation, every message, verbatim, unabridged, plus any artifact, canvas or file that already existed as its own object in this app, as attachments. Never summarize the transcript. Never compose new summaries, recaps or section write-ups and send them as attachments. Never use push_document for conversation artifacts. Verbatim is non-negotiable: never substitute a summary, paraphrase, or shortened version of a message at any position, the server rejects shrunken overwrites. Before pushing, assess how many messages you can reproduce word-for-word in a single call given their actual lengths. If the whole conversation fits, push it whole. If not, push it in consecutive windows using window {from, to, total}: start with the first window sized to what you can reproduce verbatim, then follow the server's response, which tells you the next starting position, until all messages are stored. When re-pushing a conversation that grew, push only the new messages as a window, never re-send earlier messages unless correcting them. A smaller window is always the answer; a shorter message never is. Push at natural checkpoints during long work rather than only at the end, so nothing is lost if your context is compacted; re-pushing is safe and only sends what changed. For assistant turns that ran tools or wrote files, include what was done as a role: 'tool' message at that position, plainly, rather than omitting it. A binary file this chat generated (pptx, docx, xlsx, pdf, png) cannot be sent as content; say so to the user and tell them to add the file to the board from their download or Drive. Never send binary content as text or base64. ${placementLine(vocab)}`,
     // Windowing is the only sanctioned way to split a push, and only because
     // the alternative the model reaches for otherwise is shortening messages.
     inputSchema: {
@@ -206,7 +259,7 @@ const pushTools = (vocab: McpVocab) => [
         title: {
           type: "string",
           description:
-            "The conversation title EXACTLY as shown in the source app, verbatim. Never invent or rephrase.",
+            "The conversation title exactly as the source app shows it. Omit it if you cannot see one; never invent or rephrase one.",
         },
         vendor: {
           type: "string",
@@ -276,20 +329,24 @@ const pushTools = (vocab: McpVocab) => [
         window: {
           type: "object",
           description:
-            "Use for long conversations you cannot reproduce verbatim in one call. 1-indexed and inclusive: messages[i] is conversation position from+i. Windows must be consecutive with no gaps; the server tells you the next starting position.",
+            "Use for long conversations you cannot reproduce verbatim in one call. 1-indexed and inclusive: messages[i] is conversation position from+i. Windows must be consecutive with no gaps; the server tells you the next starting position. to is optional and derived from the message count, so from and total are all you need.",
           properties: {
             from: { type: "integer", description: "Position of the first message in this call." },
-            to: { type: "integer", description: "Position of the last message in this call." },
+            to: {
+              type: "integer",
+              description:
+                "Optional. Position of the last message in this call; derived from the number of messages sent when left out.",
+            },
             total: {
               type: "integer",
               description: "Total number of messages in the whole conversation. Required.",
             },
           },
-          required: ["from", "to", "total"],
+          required: ["from", "total"],
         },
         ...placementInputs(vocab),
       },
-      required: ["title", "vendor", "orig_conversation_id", "messages"],
+      required: ["vendor", "orig_conversation_id", "messages"],
     },
   },
   {
@@ -457,19 +514,30 @@ export async function handleMcpRequest(request: Request, token: string): Promise
  * Unit M2b. A pushed item lands on a board only when the user named one.
  * The database function decides what is allowed; nothing here writes a mapping.
  */
-async function applyDestination(
+/**
+ * P0 item 6. Exact ref first; then the short form when it names exactly one
+ * place. A short form two boards share is never guessed at.
+ */
+export function matchPlace<T extends { ref: string; shortRef: string }>(
+  places: readonly T[],
+  destination: string,
+): { place: T | null; colliding: T[] } {
+  const wanted = destination.trim().toLowerCase();
+  const exact = places.find((one) => one.ref.toLowerCase() === wanted);
+  if (exact) return { place: exact, colliding: [] };
+  const short = places.filter((one) => one.shortRef.toLowerCase() === wanted);
+  if (short.length === 1) return { place: short[0]!, colliding: [] };
+  return { place: null, colliding: short };
+}
+
+/** One RPC call for one item, in the workspace's words. */
+async function placeOneItem(
   owner: Owner,
   vocab: McpVocab,
   itemId: string,
-  plan: PlacementPlan,
-): Promise<{ text: string; target: "inbox" | "workboard" }> {
-  if (!plan.destination) return { text: "", target: "inbox" };
-  const { places } = await readPlaces(owner);
-  const wanted = plan.destination.toLowerCase();
-  const place = places.find((one) => one.ref.toLowerCase() === wanted);
-  if (!place) {
-    return { text: renderUnknownRef(vocab, places.map((one) => one.ref)), target: "inbox" };
-  }
+  place: PlaceRow,
+  plan: { move: boolean },
+): Promise<{ text: string; target: "inbox" | "workboard"; status: string }> {
   const { data, error } = await supabaseAdmin.rpc("mcp_place_item", {
     p_actor: owner.profileId,
     p_work_item: itemId,
@@ -477,7 +545,7 @@ async function applyDestination(
     p_move: plan.move,
   });
   if (error) {
-    return { text: "Saved to your inbox only; placing it did not work.", target: "inbox" };
+    return { text: "Saved to your inbox only; placing it did not work.", target: "inbox", status: "error" };
   }
   const result = (data ?? {}) as {
     status?: string;
@@ -496,7 +564,37 @@ async function applyDestination(
   return {
     text: renderPlacement(vocab, status, place.ref, otherRef),
     target: placementTarget(status),
+    status,
   };
+}
+
+async function applyDestination(
+  owner: Owner,
+  vocab: McpVocab,
+  itemId: string,
+  plan: PlacementPlan,
+  /** P0 item 1: the caller may supply places already read, so one push reads once. */
+  knownPlaces?: PlaceRow[],
+): Promise<{ text: string; target: "inbox" | "workboard"; place: PlaceRow | null }> {
+  if (!plan.destination) return { text: "", target: "inbox", place: null };
+  const places = knownPlaces ?? (await readPlaces(owner)).places;
+  const { place, colliding } = matchPlace(places, plan.destination);
+  if (!place) {
+    if (colliding.length > 1) {
+      return {
+        text: renderUnknownRef(vocab, colliding.map((one) => one.ref), sharedCodeNote(vocab)),
+        target: "inbox",
+        place: null,
+      };
+    }
+    return {
+      text: renderUnknownRef(vocab, places.map((one) => one.ref)),
+      target: "inbox",
+      place: null,
+    };
+  }
+  const placed = await placeOneItem(owner, vocab, itemId, place, plan);
+  return { text: placed.text, target: placed.target, place };
 }
 
 /** The workspace's words, read once for a push that may place something. */
@@ -737,7 +835,7 @@ async function workspaceTypeOf(owner: Owner): Promise<McpWorkspaceType> {
   return mcpWorkspaceType(type, affiliated);
 }
 
-type PlaceRow = McpPlace & { taskId: string; engagementId: string };
+type PlaceRow = McpPlace & { taskId: string; engagementId: string; shortRef: string };
 
 /** Every board the owner is a non-coach member of, and its workstreams. */
 async function readPlaces(owner: Owner): Promise<{ places: PlaceRow[]; boards: { code: string; title: string; containerName: string | null; workstreams: string[] }[] }> {
@@ -761,6 +859,15 @@ async function readPlaces(owner: Owner): Promise<{ places: PlaceRow[]; boards: {
 
   const places: PlaceRow[] = [];
   const boards: { code: string; title: string; containerName: string | null; workstreams: string[] }[] = [];
+  // P0 item 6. A code shared by two boards cannot name one place on its own,
+  // so those boards, and only those, carry their title in the ref.
+  const byCode = new Map<string, Set<string>>();
+  for (const row of engagements ?? []) {
+    const e = row as unknown as { id: string; code: string };
+    const seen = byCode.get(e.code) ?? new Set<string>();
+    seen.add(e.id);
+    byCode.set(e.code, seen);
+  }
   for (const row of engagements ?? []) {
     const e = row as unknown as {
       id: string;
@@ -771,10 +878,12 @@ async function readPlaces(owner: Owner): Promise<{ places: PlaceRow[]; boards: {
     };
     const containerName = clientDisplayName(e) || e.client_label || null;
     const own = (tasks ?? []).filter((t) => t.engagement_id === e.id);
+    const collides = (byCode.get(e.code)?.size ?? 1) > 1;
     boards.push({ code: e.code, title: e.title, containerName, workstreams: own.map((t) => t.name) });
     for (const task of own) {
       places.push({
-        ref: placeRef(e.code, task.name),
+        ref: collides ? placeRef(e.code, task.name, e.title) : placeRef(e.code, task.name),
+        shortRef: placeRef(e.code, task.name),
         containerName,
         code: e.code,
         boardTitle: e.title,
@@ -815,14 +924,23 @@ function sourceProjectName(meta: unknown): string | null {
   return typeof name === "string" ? name : null;
 }
 
+/**
+ * The ref of the first item in the given order that sits on a known place.
+ * The caller orders the ids, so "most recent" stays the caller's decision.
+ */
 async function refsForItems(itemIds: string[], byTask: Map<string, string>): Promise<string | null> {
   if (itemIds.length === 0) return null;
   const { data } = await supabaseAdmin
     .from("work_item_tasks")
-    .select("task_id")
+    .select("work_item_id, task_id")
     .in("work_item_id", itemIds);
+  const byItem = new Map<string, string>();
   for (const row of data ?? []) {
     const ref = byTask.get(row.task_id);
+    if (ref && !byItem.has(row.work_item_id)) byItem.set(row.work_item_id, ref);
+  }
+  for (const itemId of itemIds) {
+    const ref = byItem.get(itemId);
     if (ref) return ref;
   }
   return null;
@@ -851,11 +969,14 @@ async function pushOptions(owner: Owner, args: Obj, id: unknown): Promise<Respon
   const projectName = typeof project?.name === "string" ? project.name : null;
   let projectRef: string | null = null;
   if (!conversationRef && projectName) {
+    // P0 item 7: newest first, so the answer is where this project's work went
+    // most recently rather than wherever the first row happened to sit.
     const { data } = await supabaseAdmin
       .from("work_items")
       .select("id, source_meta")
       .eq("org_id", owner.orgId)
       .eq("owner_id", owner.profileId)
+      .order("captured_at", { ascending: false })
       .limit(200);
     const matching = (data ?? [])
       .filter((row) => (sourceProjectName(row.source_meta) ?? "").toLowerCase() === projectName.toLowerCase())
@@ -879,11 +1000,23 @@ async function pushOptions(owner: Owner, args: Obj, id: unknown): Promise<Respon
     dims: { has_suggestion: suggested ? "true" : "false" },
   });
 
+  // P0 item 8. With a suggestion, the list a model reads is the container it
+  // suggested; the complete list stays in structuredContent.
+  const suggestedContainer = suggested
+    ? (places.find((place) => place.ref === suggested.ref)?.containerName ?? null)
+    : null;
+  const shown = suggested
+    ? places.filter((place) => place.containerName === suggestedContainer)
+    : places;
+  const othersExist = shown.length < places.length;
   const lines = [
     suggested
       ? `Suggested place: ${suggested.ref}. ${suggested.reason}`
       : `No suggested place. Ask the user: inbox only, or a place they name?`,
-    ...places.map((place) => `- ${place.ref}`),
+    ...shown.map((place) => `- ${place.ref}`),
+    ...(othersExist
+      ? [`Other ${vocab.containers} exist; call lasso_list_places to see them all.`]
+      : []),
   ];
   return rpcResult(id, {
     content: [{ type: "text", text: lines.join("\n") }],
@@ -1084,8 +1217,7 @@ async function pushConversation(
   id: unknown,
   client: ClientIdentity = { name: "unknown", version: "unknown", protocol: "unknown" },
 ): Promise<Response> {
-  const title = typeof args["title"] === "string" ? args["title"].trim() : "";
-  if (!title) return rpcError(id, -32602, "title is required, verbatim from the source app");
+  const suppliedTitle = typeof args["title"] === "string" ? args["title"].trim() : "";
 
   const vendor = CONVERSATION_VENDORS.includes(String(args["vendor"]) as never)
     ? String(args["vendor"])
@@ -1121,6 +1253,14 @@ async function pushConversation(
     });
   }
 
+  // P0 item 9. A title the app does not show is not invented here either: the
+  // first user message stands in, exactly as push_thread already does.
+  const firstUserMessage = messages.find((m) => m.role === "user")?.content ?? "";
+  const title =
+    suppliedTitle.length > 0
+      ? suppliedTitle
+      : firstUserMessage.trim().slice(0, 60) || "Untitled conversation";
+
   const serialized = JSON.stringify(messages.map((m) => ({ role: m.role, content: m.content })));
   if (new TextEncoder().encode(serialized).byteLength > MAX_THREAD_BYTES) {
     return rpcError(id, -32602, "Conversation is larger than the 2MB limit. Push it in parts.");
@@ -1129,10 +1269,11 @@ async function pushConversation(
   // ---- optional window: this call covers positions from..to of the whole thread
   const rawWindow = args["window"];
   let win: { from: number; to: number; total: number } | null = null;
+  /** P0 item 3: what the caller said window.to was, when it disagreed. */
+  let statedTo: number | null = null;
   if (rawWindow && typeof rawWindow === "object" && !Array.isArray(rawWindow)) {
     const w = rawWindow as { from?: unknown; to?: unknown; total?: unknown };
     const from = Number(w.from);
-    const to = Number(w.to);
     const total = Number(w.total);
     if (!Number.isInteger(total) || total < 1) {
       return rpcError(id, -32602, "window.total is required: the full conversation length.");
@@ -1140,17 +1281,12 @@ async function pushConversation(
     if (!Number.isInteger(from) || from < 1) {
       return rpcError(id, -32602, "window.from must be an integer of at least 1.");
     }
-    if (!Number.isInteger(to) || to < from) {
-      return rpcError(id, -32602, "window.to must be an integer greater than or equal to from.");
-    }
-    if (messages.length !== to - from + 1) {
-      return rpcError(
-        id,
-        -32602,
-        `window covers ${to - from + 1} positions but ${messages.length} messages were sent. Send exactly the messages for positions ${from} to ${to}.`,
-      );
-    }
-    win = { from, to, total };
+    // The messages sent are the truth about how many positions this call
+    // covers. An off-by-one in window.to is noted, never a rejection.
+    const computed = from + messages.length - 1;
+    const given = w.to === undefined || w.to === null ? null : Number(w.to);
+    if (given !== null && Number.isInteger(given) && given !== computed) statedTo = given;
+    win = { from, to: computed, total };
   }
 
   const rawAttachments = Array.isArray(args["attachments"])
@@ -1345,6 +1481,8 @@ async function pushConversation(
   let changedCount = 0;
   const newRows: Record<string, unknown>[] = [];
   const degradedTurns: { turn_no: number; stored_chars: number; incoming_chars: number }[] = [];
+  /** P0 item 4: one line per position this call inserted or changed. */
+  const receipts: { pos: number; role: string; chars: number; head: string }[] = [];
 
   for (let i = 0; i < messages.length; i += 1) {
     const m = messages[i]!;
@@ -1352,6 +1490,12 @@ async function pushConversation(
     const hash = await sha256Hex(m.content);
     const prior = stored.get(turnNo);
     if (!prior) {
+      receipts.push({
+        pos: turnNo,
+        role: m.role,
+        chars: m.content.length,
+        head: receiptHead(m.content),
+      });
       newRows.push({
         work_item_id: threadId,
         turn_no: turnNo,
@@ -1421,7 +1565,14 @@ async function pushConversation(
       .eq("id", prior.id);
     if (updError) return rpcError(id, -32603, updError.message);
     changedCount += 1;
+    receipts.push({
+      pos: turnNo,
+      role: m.role,
+      chars: m.content.length,
+      head: receiptHead(m.content),
+    });
   }
+  receipts.sort((a, b) => a.pos - b.pos);
 
   if (newRows.length > 0) {
     const { error: turnsError } = await supabaseAdmin.from("turns").insert(newRows as never);
@@ -1443,6 +1594,10 @@ async function pushConversation(
   const degradedAttachments: { title: string; stored_chars: number; incoming_chars: number }[] = [];
   /** document_versions rows written by this call, including v1 backfills. */
   let attachmentVersionRows = 0;
+  /** P0 item 2: what happened to each attachment, one entry per attachment. */
+  const attachmentOutcomes: AttachmentOutcome[] = [];
+  /** P0 item 1: the attachment rows this push touched, for placing them. */
+  const attachmentIds: string[] = [];
   const transcriptText = messages.map((m) => m.content).join("\n\n");
   const messageTexts = messages.map((m) => m.content);
   if (attachments.length > 0 && !owner.userId) {
@@ -1468,11 +1623,25 @@ async function pushConversation(
           chars: attachment.content.length,
           source_artifact_id: attachment.sourceArtifactId,
         });
+        attachmentOutcomes.push({
+          title: attachment.title,
+          source_artifact_id: attachment.sourceArtifactId,
+          outcome: "rejected",
+          chars: attachment.content.length,
+          reason: REJECTION_WORDS[reason],
+        });
         continue;
       }
       const encoded = new TextEncoder().encode(attachment.content);
       if (encoded.byteLength > MAX_DOC_BYTES) {
         problems.push(`'${attachment.title}' is over the 5MB limit`);
+        attachmentOutcomes.push({
+          title: attachment.title,
+          source_artifact_id: attachment.sourceArtifactId,
+          outcome: "failed",
+          chars: attachment.content.length,
+          reason: "over the 5MB limit",
+        });
         continue;
       }
       // Match on the artifact's own id first, so a rename in the source app
@@ -1493,6 +1662,12 @@ async function pushConversation(
             stored_chars: storedChars,
             incoming_chars: attachment.content.length,
           });
+          attachmentOutcomes.push({
+            title: attachment.title,
+            source_artifact_id: attachment.sourceArtifactId,
+            outcome: "kept_stored",
+            chars: attachment.content.length,
+          });
           continue;
         }
       }
@@ -1502,7 +1677,16 @@ async function pushConversation(
       // Same bytes as the stored version: nothing to write, nothing lost.
       if (decision === "unchanged") {
         saved += 1;
-        if (match?.id) capturedIds.push(match.id);
+        if (match?.id) {
+          capturedIds.push(match.id);
+          attachmentIds.push(match.id);
+        }
+        attachmentOutcomes.push({
+          title: attachment.title,
+          source_artifact_id: attachment.sourceArtifactId,
+          outcome: "unchanged",
+          chars: attachment.content.length,
+        });
         continue;
       }
 
@@ -1516,9 +1700,17 @@ async function pushConversation(
         .upload(path, encoded, { contentType: "text/plain; charset=utf-8", upsert: false });
       if (upload.error) {
         problems.push(`'${attachment.title}': ${upload.error.message}`);
+        attachmentOutcomes.push({
+          title: attachment.title,
+          source_artifact_id: attachment.sourceArtifactId,
+          outcome: "failed",
+          chars: attachment.content.length,
+          reason: upload.error.message,
+        });
         continue;
       }
 
+      let newVersionNo: number | null = null;
       if (decision === "new_version" && match) {
         try {
           // When the item already has a version row, recordNewVersion writes
@@ -1529,7 +1721,7 @@ async function pushConversation(
             .eq("work_item_id", match.id)
             .limit(1)
             .maybeSingle();
-          await recordNewVersion(supabaseAdmin, {
+          newVersionNo = await recordNewVersion(supabaseAdmin, {
             workItemId: match.id,
             previousRef: match.content_ref,
             previousHash: match.content_hash,
@@ -1542,6 +1734,13 @@ async function pushConversation(
           attachmentVersionRows += existingVersion ? 1 : 2;
         } catch (err) {
           problems.push(`'${attachment.title}': ${err instanceof Error ? err.message : "version"}`);
+          attachmentOutcomes.push({
+            title: attachment.title,
+            source_artifact_id: attachment.sourceArtifactId,
+            outcome: "failed",
+            chars: attachment.content.length,
+            reason: err instanceof Error ? err.message : "version",
+          });
           continue;
         }
       }
@@ -1583,12 +1782,30 @@ async function pushConversation(
             .insert({ ...fields, visibility: "unmapped" })
             .select("id")
             .maybeSingle();
-      if (result.error) problems.push(`'${attachment.title}': ${result.error.message}`);
-      else {
+      if (result.error) {
+        problems.push(`'${attachment.title}': ${result.error.message}`);
+        attachmentOutcomes.push({
+          title: attachment.title,
+          source_artifact_id: attachment.sourceArtifactId,
+          outcome: "failed",
+          chars: attachment.content.length,
+          reason: result.error.message,
+        });
+      } else {
         saved += 1;
-        if (match?.id) capturedIds.push(match.id);
-        else if (result.data?.id) {
+        attachmentOutcomes.push({
+          title: attachment.title,
+          source_artifact_id: attachment.sourceArtifactId,
+          outcome: match ? "new_version" : "new",
+          chars: attachment.content.length,
+          ...(match && newVersionNo ? { version_no: newVersionNo } : {}),
+        });
+        if (match?.id) {
+          capturedIds.push(match.id);
+          attachmentIds.push(match.id);
+        } else if (result.data?.id) {
           capturedIds.push(result.data.id);
+          attachmentIds.push(result.data.id);
           createdAttachmentTypes.push(String(fields.type));
           // The first stored version, so later pushes have a parent to point at.
           const v1 = await supabaseAdmin.from("document_versions").insert({
@@ -1628,7 +1845,27 @@ async function pushConversation(
       : "unchanged";
 
   const convoVocab = await placementVocab(owner);
-  const convoPlacement = await applyDestination(owner, convoVocab, threadId, plan);
+  const knownPlaces = plan.destination ? (await readPlaces(owner)).places : undefined;
+  const convoPlacement = await applyDestination(owner, convoVocab, threadId, plan, knownPlaces);
+
+  // P0 item 1. An attachment belongs where its conversation went. The place is
+  // already resolved, so each one is a single call with the same task.
+  let attachmentsPlaced = 0;
+  let attachmentPlaceNote = "";
+  const placeTargets = attachmentIds.filter((itemId) => itemId !== threadId);
+  if (convoPlacement.target === "workboard" && convoPlacement.place && placeTargets.length > 0) {
+    const place = convoPlacement.place;
+    for (const itemId of placeTargets) {
+      const one = await placeOneItem(owner, convoVocab, itemId, place, plan);
+      if (one.status === "placed" || one.status === "moved" || one.status === "already_here") {
+        attachmentsPlaced += 1;
+      }
+    }
+    attachmentPlaceNote =
+      attachmentsPlaced === placeTargets.length
+        ? ` ${attachmentsPlaced} attachment${attachmentsPlaced === 1 ? "" : "s"} placed on ${place.ref}.`
+        : ` ${attachmentsPlaced} of ${placeTargets.length} attachments placed on ${place.ref}; the rest stayed in the inbox.`;
+  }
 
   await recordEvent(supabaseAdmin, {
     eventType: "mcp.push",
@@ -1644,6 +1881,7 @@ async function pushConversation(
       windowed: win ? "yes" : "no",
       degraded_refusals: flaggedBucket(degradedTurns.length + degradedAttachments.length),
       attachment_versions: versionRowsBucket(attachmentVersionRows),
+      attachments_placed: versionRowsBucket(attachmentsPlaced),
     },
   });
   await recordEvent(supabaseAdmin, {
@@ -1735,7 +1973,8 @@ async function pushConversation(
   }
 
   const verb = existingThread ? "Updated" : "Saved";
-  const tail = saved > 0 ? ` with ${saved} attachment${saved === 1 ? "" : "s"}` : "";
+  // P0 item 2. The per-attachment line replaces the old bare count.
+  const attachmentLine = attachmentSummaryLine(attachmentOutcomes);
   const warn = problems.length > 0 ? ` Some attachments didn't save: ${problems.join("; ")}.` : "";
   const rejectedNote =
     rejected.length > 0
@@ -1775,12 +2014,31 @@ async function pushConversation(
   const continuation = continuationOrigId
     ? ` This looks like a continuation of an existing conversation in Lasso. To keep them together next time, reuse orig_conversation_id '${continuationOrigId}'.`
     : "";
-  return textResult(
-    id,
-    `${verb} '${title}' in Lasso${tail}.${counts}${shortNote}${degradedNote}${degradedAttachmentNote}${cursor}${
-      convoPlacement.target === "workboard"
-        ? ` ${convoPlacement.text}`
-        : ` It stays private until the user maps it.${convoPlacement.text ? ` ${convoPlacement.text}` : ""}`
-    }${rejectedNote}${warn}${continuation}${missingChatUrlNote(args)}`,
-  );
+  // P0 item 3. An off-by-one is reported, never a rejection.
+  const windowNote =
+    statedTo !== null
+      ? ` window.to said ${statedTo} but ${messages.length} messages were sent; stored them as positions ${win!.from} to ${win!.to}.`
+      : "";
+  // P0 item 5. A conversation that grew says so.
+  const totalNote =
+    win && priorExpectedTotal && priorExpectedTotal !== win.total
+      ? ` Conversation length updated from ${priorExpectedTotal} to ${win.total}.`
+      : "";
+  // P0 item 4. The receipt is for a windowed call or one that changed anything.
+  const receiptNote = win || receipts.length > 0 ? receiptLine(receipts) : "";
+  // P0 item 10. Asked for once, on the first push of this conversation.
+  const urlNote = pushMode === "created" ? missingChatUrlNote(args) : "";
+  return rpcResult(id, {
+    content: [
+      {
+        type: "text",
+        text: `${verb} '${title}' in Lasso.${counts}${attachmentLine}${attachmentPlaceNote}${shortNote}${windowNote}${totalNote}${receiptNote}${degradedNote}${degradedAttachmentNote}${cursor}${
+          convoPlacement.target === "workboard"
+            ? ` ${convoPlacement.text}`
+            : ` It stays private until the user maps it.${convoPlacement.text ? ` ${convoPlacement.text}` : ""}`
+        }${rejectedNote}${warn}${continuation}${urlNote}`,
+      },
+    ],
+    structuredContent: { attachments: attachmentOutcomes, stored: receipts },
+  });
 }
