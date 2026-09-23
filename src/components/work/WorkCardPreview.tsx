@@ -38,7 +38,7 @@ export function WorkCardPreview({
   return (
     <div className="nb-preview-content" data-preview-shape={filePreview.kind === "slide" ? "slide" : "portrait"}>
       <div className="nb-document-preview-body min-h-0 flex-1 overflow-hidden">
-        <WorkboardFilePreview preview={filePreview} onFailure={() => setFileFailed(true)} />
+        <WorkboardFilePreview preview={filePreview} title={item.title} onFailure={() => setFileFailed(true)} />
       </div>
     </div>
   );

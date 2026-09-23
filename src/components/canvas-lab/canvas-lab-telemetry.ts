@@ -10,7 +10,7 @@ export type LabCardMenuEventKind = LabNodeEventKind | "frame";
 export type LabCardMenuOwnershipEvent = LabOwnershipEvent | "shared";
 export type WorkboardOpenVia = "header" | "canvas_tab" | "default" | "direct";
 export type WorkboardDisplayMode = "sticky" | "preview";
-export type WorkboardPreviewKind = "chat" | "document" | "deck";
+export type WorkboardPreviewKind = "chat" | "document" | "deck" | "html";
 
 export function noteWorkboardOpened(orgId: string | undefined, via: WorkboardOpenVia): void {
   if (orgId) logEvent("workboard.opened", orgId, { via });

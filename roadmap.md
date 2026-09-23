@@ -69,6 +69,6 @@
 - [x] P4c: Render real, text-free workboard geometry in Home card previews from one bounded read.
 - [ ] P4c: Verify preview geometry, empty/loading paper states, and the Home grid in a real browser.
 ## P2 HTML and SVG board previews
-- [ ] Read stored HTML/SVG artifacts safely and shape them as HTML previews.
-- [ ] Render sandboxed previews without breaking board interactions or enlarged viewing.
-- [ ] Verify CSP injection, fallback behavior, event kind reuse, and preserved controls/states.
+- [x] Read stored HTML/SVG artifacts safely and shape them as HTML previews.
+- [x] Render sandboxed previews without breaking board interactions.
+- [x] Verify CSP injection, fallback behavior, event kind reuse, and preserved controls/states.

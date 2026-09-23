@@ -94,7 +94,7 @@ export function LabCard({
   displayMode?: WorkboardDisplayMode;
   preview?: WorkboardCardPreview | undefined;
   filePreview?: WorkboardFilePreview | undefined;
-  onPreviewScroll?: ((kind: "chat" | "document" | "deck") => void) | undefined;
+  onPreviewScroll?: ((kind: "chat" | "document" | "deck" | "html") => void) | undefined;
   /** Sample board only: no drag, no menu, no anchors, no handles. */
   readOnly?: boolean;
 }) {
@@ -183,7 +183,7 @@ export function LabCard({
       className="canvas-lab-card group absolute text-left outline-none"
     >
       <div ref={paperRef} data-selected={selected} data-focused={focused} data-connect-source={connectSourceAnchor !== null} className="canvas-lab-card-paper h-full w-full overflow-hidden">
-        {item && isReferenceItem(item) ? <ReferenceFileCard item={item} /> : hasPreview && item ? <LabPreview item={item} preview={preview} filePreview={filePreview} onFailure={() => setPreviewFailed(true)} onPreviewScroll={onPreviewScroll} onOpen={() => onOpen(cardRef.current?.getBoundingClientRect())} /> : <div data-drawing="sticky" className="h-full"><LabPaper node={node} item={item} selected={selected} displayMode={stickyHasThumbnail ? "preview" : "sticky"} preview={preview} filePreview={filePreview} showOwnership={!readOnly} onEdit={onEdit} onEditCommitted={onEditCommitted} commentCount={commentCount} onOpenComments={onOpenComments} onOpenTrail={readOnly || !node.deliverable ? undefined : () => onOpen(cardRef.current?.getBoundingClientRect())} /></div>}
+        {item && isReferenceItem(item) ? <ReferenceFileCard item={item} /> : hasPreview && item ? <LabPreview item={item} preview={preview} filePreview={filePreview} focused={focused} onFailure={() => setPreviewFailed(true)} onPreviewScroll={onPreviewScroll} onOpen={() => onOpen(cardRef.current?.getBoundingClientRect())} /> : <div data-drawing="sticky" className="h-full"><LabPaper node={node} item={item} selected={selected} focused={focused} displayMode={stickyHasThumbnail ? "preview" : "sticky"} preview={preview} filePreview={filePreview} showOwnership={!readOnly} onEdit={onEdit} onEditCommitted={onEditCommitted} commentCount={commentCount} onOpenComments={onOpenComments} onOpenTrail={readOnly || !node.deliverable ? undefined : () => onOpen(cardRef.current?.getBoundingClientRect())} /></div>}
         {matchLine ? <span data-testid="reference-match-line" className="absolute bottom-1 left-2 text-xs text-muted-foreground">{matchLine}</span> : null}
         {selected ? <Paperclip aria-hidden="true" className="canvas-lab-context-mark" /> : null}
       </div>

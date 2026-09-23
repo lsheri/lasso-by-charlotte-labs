@@ -203,6 +203,7 @@ describe("the workboard allowlist", () => {
       () => helpers.noteWorkboardDisplayModeToggled("o", "preview"),
       () => helpers.noteWorkboardCardContentViewed("o", "chat"),
       () => helpers.noteWorkboardCardContentViewed("o", "document", "open"),
+      () => helpers.noteWorkboardCardContentViewed("o", "html", "open"),
       () => helpers.noteWorkboardSaveErrorResolved("o", "board", "retry"),
       () => helpers.noteWorkboardContextChanged("o", "cleared"),
       () => helpers.noteWorkboardUndoUsed("o", "move", "undo"),
@@ -240,6 +241,15 @@ describe("the workboard allowlist", () => {
     helpers.noteWorkboardCardContentViewed("o", "deck", "open");
     expect(mocked).toHaveBeenLastCalledWith("workboard.card_content_viewed", "o", {
       kind: "deck",
+      via: "open",
+    });
+  });
+
+  it("keeps html on the existing preview-kind path", () => {
+    const mocked = vi.mocked(logEvent);
+    helpers.noteWorkboardCardContentViewed("o", "html", "open");
+    expect(mocked).toHaveBeenLastCalledWith("workboard.card_content_viewed", "o", {
+      kind: "html",
       via: "open",
     });
   });

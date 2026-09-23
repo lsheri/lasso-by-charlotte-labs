@@ -1444,6 +1444,8 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   -webkit-mask-image: linear-gradient(to bottom, black 82%, transparent 100%);
   mask-image: linear-gradient(to bottom, black 82%, transparent 100%);
 }
+.canvas-lab-html-preview { position: relative; height: 100%; min-height: 0; width: 100%; overflow: hidden; background: var(--nb-white); }
+.canvas-lab-html-preview iframe { display: block; height: 100%; width: 100%; border: 0; background: var(--nb-white); }
 .nb-document-preview-body {
   border: var(--nb-document-border-width) solid var(--nb-graphite);
   border-radius: var(--radius-card);

@@ -49,7 +49,7 @@ export function LabPaper({
   displayMode = "sticky",
   preview,
   filePreview,
-  focused: _focused = false,
+  focused = false,
   onPreviewScroll: _onPreviewScroll,
   showOwnership = true,
   onOpenTrail,
@@ -66,7 +66,7 @@ export function LabPaper({
   preview?: WorkboardCardPreview | undefined;
   filePreview?: FilePreview | undefined;
   focused?: boolean;
-  onPreviewScroll?: ((kind: "chat" | "document" | "deck") => void) | undefined;
+  onPreviewScroll?: ((kind: "chat" | "document" | "deck" | "html") => void) | undefined;
   /** The sample board has no owner, so it shows no ownership label. */
   showOwnership?: boolean;
   /** Deliverable cards only: opens the card's trail, the same path the menu uses. */
@@ -140,7 +140,7 @@ export function LabPaper({
         ) : showFilePreview && filePreview ? (
           <div className="nb-preview-content min-h-0 flex-1" data-preview-shape={filePreview.kind === "slide" ? "slide" : "portrait"}>
             <div className="nb-document-preview-body min-h-0 flex-1 overflow-hidden">
-              <WorkboardFilePreview preview={filePreview} onFailure={() => setFilePreviewFailed(true)} />
+              <WorkboardFilePreview preview={filePreview} title={item?.title ?? node.title} focused={focused} onFailure={() => setFilePreviewFailed(true)} />
             </div>
           </div>
         ) : node.local ? (
