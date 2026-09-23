@@ -330,6 +330,21 @@ const pushTools = (vocab: McpVocab) => [
               role: { type: "string", enum: ["user", "assistant", "tool"] },
               content: { type: "string", description: "VERBATIM, unabridged message content." },
               timestamp: { type: "string", description: "ISO 8601, only if actually known." },
+              fidelity: {
+                type: "string",
+                enum: ["verbatim", "summary"],
+                description:
+                  "verbatim by default. Send summary only for a span whose original messages are no longer in your context (for example after compaction); then this message stands for that span and covers says which positions it stands for. Never send a summary as verbatim.",
+              },
+              covers: {
+                type: "object",
+                properties: {
+                  from: { type: "integer" },
+                  to: { type: "integer" },
+                },
+                description:
+                  "Only with fidelity: summary. The 1-indexed positions this summary stands for.",
+              },
             },
             required: ["role", "content"],
           },
