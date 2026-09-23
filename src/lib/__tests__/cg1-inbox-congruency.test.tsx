@@ -195,7 +195,7 @@ beforeEach(() => {
 describe("CG1 inbox congruency", () => {
   // The Inbox lanes size from the shell's reported box, so every render gets a
   // real desktop shell (1094 x 1376) unless a test installs its own.
-  const shellSize: { width?: PropertyDescriptor; height?: PropertyDescriptor } = {};
+  const shellSize: { width: PropertyDescriptor | undefined; height: PropertyDescriptor | undefined } = { width: undefined, height: undefined };
   beforeEach(() => {
     shellSize.width = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "clientWidth");
     shellSize.height = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "clientHeight");
