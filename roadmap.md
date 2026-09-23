@@ -15,6 +15,8 @@
 - [x] P4a.1: Open Home at 100% from reported shell geometry without forcing document scroll or duplicate refits.
 - [x] P4b.1: Move the Home grid into its own full-width board frame and fit only the hero.
 - [x] P4b.1: Preserve Home geometry and prove every engagement remains reachable by panning.
+- [ ] P4d: Scale the Home welcome area to 150%, hold Home at 100%, and close the accidental frame gap.
+- [ ] P4d: Keep every pan path and every other board's zoom behavior unchanged.
 
 - [x] P3.3: Compact conversation cards to one first-user quote while preserving lane derivation and zoom-one fit.
 

@@ -16,9 +16,12 @@ import { LOOP_SIZE_TITLE } from "@/lib/lasso-loop";
 
 const HOME_VIEWPORT_SEED = { width: 980, height: 720 };
 const BOARD_FIT_PADDING = 32;
-const HOME_CONTENT_WIDTH = 620;
+export const HOME_CONTENT_WIDTH = 930;
 const HOME_CONTENT_TOP = 186;
 const HOME_FRAME_GAP = 24;
+export const HOME_HERO_CONTENT_HEIGHT = 276;
+export const HOME_HERO_BOTTOM_MARGIN = 48;
+export const HOME_HERO_FRAME_HEIGHT = HOME_CONTENT_TOP - BOARD_FIT_PADDING + HOME_HERO_CONTENT_HEIGHT + HOME_HERO_BOTTOM_MARGIN;
 
 type HomeFrame = BoardShellFrame & { kind: "hero" | "grid" };
 
@@ -27,14 +30,13 @@ export function homeFramesForViewport(
   cardCount: number,
 ): HomeFrame[] {
   const width = Math.max(1, viewport.width - BOARD_FIT_PADDING * 2);
-  const heroHeight = Math.max(1, viewport.height - BOARD_FIT_PADDING * 2);
   const hero: HomeFrame = {
     id: "home-hero",
     kind: "hero",
     x: BOARD_FIT_PADDING,
     y: BOARD_FIT_PADDING,
     width,
-    height: heroHeight,
+    height: HOME_HERO_FRAME_HEIGHT,
   };
   const grid: HomeFrame = {
     id: "home-grid",
@@ -69,18 +71,18 @@ export function IdeasNote({ openMailClient = openIdeasMailClient }: { openMailCl
 
   return (
     <form onSubmit={compose} className="mt-3 w-full text-left">
-      <label htmlFor="home-product-idea" className="font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
+      <label htmlFor="home-product-idea" className="font-mono text-[13.5px] uppercase tracking-[0.08em] text-muted-foreground">
         Have product ideas? Drop us a note
       </label>
-      <div className="mt-2 grid grid-cols-[minmax(0,1fr)_auto] gap-2">
+      <div className="mt-3 grid grid-cols-[minmax(0,1fr)_auto] gap-3">
         <input
           id="home-product-idea"
           value={idea}
           onChange={(event) => setIdea(event.target.value)}
           placeholder="What would make this better?"
-          className="h-11 min-w-0 rounded-[var(--radius-control)] border border-input bg-card px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+          className="h-[66px] min-w-0 rounded-[var(--radius-control)] border border-input bg-card px-[18px] text-[21.75px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
         />
-        <Button type="submit" variant="ink" className="h-11 px-5" disabled={!canSend}>
+        <Button type="submit" variant="ink" className="h-[66px] px-[30px] text-[19.5px]" disabled={!canSend}>
           Send
         </Button>
       </div>
@@ -120,9 +122,10 @@ export function HomeBoard() {
       <BoardShell
         ariaLabel="Home board"
         frames={frames}
-        fitFrameIds={["home-hero"]}
         nodes={[]}
         showViewControls
+        showZoomControls={false}
+        lockZoom
         onViewportSizeChange={(size) => {
           setViewport((current) => current.width === size.width && current.height === size.height ? current : size);
         }}
@@ -148,19 +151,19 @@ export function HomeBoard() {
           <section
             data-testid="home-hero-content"
             aria-labelledby="home-title"
-            className="absolute left-1/2 w-[620px] max-w-[calc(100%-32px)] -translate-x-1/2 text-center"
+            className="absolute left-1/2 w-[930px] max-w-[calc(100%-32px)] -translate-x-1/2 text-center"
             style={{ top: HOME_CONTENT_TOP - BOARD_FIT_PADDING }}
           >
             <div className="flex items-center justify-center gap-3">
               <LassoThinkingMark kind="signature" size={LOOP_SIZE_TITLE} />
-              <h1 id="home-title" className="font-serif text-[44px] font-normal leading-[1.05] text-foreground">
+              <h1 id="home-title" className="font-serif text-[66px] font-normal leading-[1.05] text-foreground">
                 Welcome to Lasso
               </h1>
             </div>
-            <p className="mx-auto mt-4 max-w-[520px] text-[14.5px] leading-[1.6] text-muted-foreground">
+            <p className="mx-auto mt-6 max-w-[780px] text-[21.75px] leading-[1.6] text-muted-foreground">
               Every AI conversation, document and decision from your work, kept in one place that belongs to you. Nothing here was written by Lasso.
             </p>
-            <div className="mx-auto mt-3" style={{ maxWidth: HOME_CONTENT_WIDTH }}>
+            <div className="mx-auto mt-[18px]" style={{ maxWidth: HOME_CONTENT_WIDTH }}>
               <IdeasNote />
             </div>
           </section>

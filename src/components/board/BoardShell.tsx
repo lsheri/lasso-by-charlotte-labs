@@ -64,6 +64,10 @@ export type BoardShellProps<F extends BoardShellFrame, N extends BoardShellNode>
   toolbar?: ReactNode;
   /** Shows the shared Fit and zoom controls in the toolbar row. */
   showViewControls?: boolean | undefined;
+  /** Keeps Fit visible while omitting the zoom cluster. */
+  showZoomControls?: boolean | undefined;
+  /** Holds this board at 100% while leaving every pan path available. */
+  lockZoom?: boolean | undefined;
   /** Given only when nodes may be moved. Lane contents are never offered it. */
   onNodeMove?: ((id: string, to: Point) => void) | undefined;
   selectedIds?: readonly string[] | undefined;
@@ -88,6 +92,8 @@ export function BoardShell<F extends BoardShellFrame, N extends BoardShellNode>(
   measuredHeights,
   toolbar,
   showViewControls = false,
+  showZoomControls = true,
+  lockZoom = false,
   onNodeMove,
   selectedIds,
   onSelectNode,
@@ -105,6 +111,8 @@ export function BoardShell<F extends BoardShellFrame, N extends BoardShellNode>(
 
   const zoomRef = useRef(zoom);
   zoomRef.current = zoom;
+  const lockZoomRef = useRef(lockZoom);
+  lockZoomRef.current = lockZoom;
   const spaceRef = useRef(false);
   const panDragRef = useRef<{ pointer: Point; pan: Point } | null>(null);
   const nodeDragRef = useRef<{ id: string; pointer: Point; origin: Point } | null>(null);
@@ -126,6 +134,11 @@ export function BoardShell<F extends BoardShellFrame, N extends BoardShellNode>(
   // ---- the fit, on mount and on every viewport change -------------------
 
   const fit = useCallback((reportedViewport?: LabViewportSize) => {
+    if (lockZoomRef.current) {
+      setZoom(1);
+      setPan({ x: 0, y: 0 });
+      return;
+    }
     const shell = shellRef.current;
     if (!shell) return;
     const viewport = reportedViewport ?? observedSizeRef.current ?? { width: shell.clientWidth, height: shell.clientHeight };
@@ -207,6 +220,7 @@ export function BoardShell<F extends BoardShellFrame, N extends BoardShellNode>(
       if (!event.ctrlKey && !event.metaKey && scrollableUnder(target, shell, delta)) return;
       event.preventDefault();
       if (event.ctrlKey || event.metaKey) {
+        if (lockZoomRef.current) return;
         const rect = shell.getBoundingClientRect();
         const cursor = { x: event.clientX - rect.left, y: event.clientY - rect.top };
         const current = zoomRef.current;
@@ -224,6 +238,7 @@ export function BoardShell<F extends BoardShellFrame, N extends BoardShellNode>(
   // ---- keyboard: space pans, arrows nudge, +/- zoom ----------------------
 
   const zoomAtCentre = useCallback((direction: "in" | "out" | 1) => {
+    if (lockZoomRef.current) return;
     const shell = shellRef.current;
     const current = zoomRef.current;
     const next = direction === 1 ? clampZoom(1) : stepZoom(current, direction);
@@ -235,6 +250,12 @@ export function BoardShell<F extends BoardShellFrame, N extends BoardShellNode>(
     setPan((pan) => zoomAbout(pan, current, next, centre));
     setZoom(next);
   }, []);
+
+  useLayoutEffect(() => {
+    if (!lockZoom) return;
+    setZoom(1);
+    setPan({ x: 0, y: 0 });
+  }, [lockZoom]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -366,6 +387,7 @@ export function BoardShell<F extends BoardShellFrame, N extends BoardShellNode>(
           {showViewControls ? (
             <BoardViewControls
               zoom={zoom}
+              showZoomControls={showZoomControls && !lockZoom}
               onFit={() => fitRef.current()}
               onZoomOut={() => zoomAtCentre("out")}
               onResetZoom={() => zoomAtCentre(1)}
