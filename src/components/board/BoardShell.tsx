@@ -116,8 +116,6 @@ export function BoardShell<F extends BoardShellFrame, N extends BoardShellNode>(
   const spaceRef = useRef(false);
   const panDragRef = useRef<{ pointer: Point; pan: Point } | null>(null);
   const nodeDragRef = useRef<{ id: string; pointer: Point; origin: Point } | null>(null);
-  const touchPointersRef = useRef(new Map<number, Point>());
-  const pinchRef = useRef<{ distance: number; centre: Point; pan: Point; zoom: number } | null>(null);
   const observedSizeRef = useRef<LabViewportSize | null>(null);
   const onViewportSizeChangeRef = useRef(onViewportSizeChange);
   onViewportSizeChangeRef.current = onViewportSizeChange;
@@ -311,27 +309,6 @@ export function BoardShell<F extends BoardShellFrame, N extends BoardShellNode>(
 
   const beginPointer = useCallback(
     (event: React.PointerEvent<HTMLDivElement>) => {
-      if (event.pointerType === "touch") {
-        touchPointersRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
-        if (touchPointersRef.current.size >= 2) {
-          const [first, second] = [...touchPointersRef.current.values()];
-          if (!first || !second) return;
-          panDragRef.current = null;
-          const rect = shellRef.current?.getBoundingClientRect();
-          pinchRef.current = {
-            distance: Math.hypot(second.x - first.x, second.y - first.y),
-            centre: {
-              x: (first.x + second.x) / 2 - (rect?.left ?? 0),
-              y: (first.y + second.y) / 2 - (rect?.top ?? 0),
-            },
-            pan,
-            zoom: zoomRef.current,
-          };
-          setInteraction("pan");
-          event.currentTarget.setPointerCapture(event.pointerId);
-          return;
-        }
-      }
       if (event.button !== 0 && event.button !== 1) return;
       const target = event.target instanceof HTMLElement ? event.target : null;
       const nodeEl = target?.closest<HTMLElement>("[data-board-node]");
@@ -366,19 +343,6 @@ export function BoardShell<F extends BoardShellFrame, N extends BoardShellNode>(
 
   const movePointer = useCallback(
     (event: React.PointerEvent<HTMLDivElement>) => {
-      if (event.pointerType === "touch" && touchPointersRef.current.has(event.pointerId)) {
-        touchPointersRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
-        const pinch = pinchRef.current;
-        if (pinch && touchPointersRef.current.size >= 2) {
-          if (lockZoomRef.current) return;
-          const [first, second] = [...touchPointersRef.current.values()];
-          if (!first || !second || pinch.distance <= 0) return;
-          const next = clampZoom(pinch.zoom * Math.hypot(second.x - first.x, second.y - first.y) / pinch.distance);
-          setPan(zoomAbout(pinch.pan, pinch.zoom, next, pinch.centre));
-          setZoom(next);
-          return;
-        }
-      }
       const panning = panDragRef.current;
       if (panning) {
         setPan({
@@ -396,9 +360,7 @@ export function BoardShell<F extends BoardShellFrame, N extends BoardShellNode>(
     [onNodeMove],
   );
 
-  const endPointer = useCallback((event?: React.PointerEvent<HTMLDivElement>) => {
-    if (event?.pointerType === "touch") touchPointersRef.current.delete(event.pointerId);
-    if (touchPointersRef.current.size < 2) pinchRef.current = null;
+  const endPointer = useCallback(() => {
     panDragRef.current = null;
     nodeDragRef.current = null;
     setInteraction("idle");

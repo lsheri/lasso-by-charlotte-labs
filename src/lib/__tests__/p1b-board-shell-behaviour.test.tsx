@@ -140,15 +140,6 @@ function wheel(init: WheelEventInit): WheelEvent {
   return event;
 }
 
-function touchPinch(from: number, to: number) {
-  const surface = shell().querySelector(".canvas-lab-surface") as HTMLElement;
-  fireEvent.pointerDown(surface, { button: 0, pointerId: 11, pointerType: "touch", clientX: 400, clientY: 400 });
-  fireEvent.pointerDown(surface, { button: 0, pointerId: 12, pointerType: "touch", clientX: 400 + from, clientY: 400 });
-  fireEvent.pointerMove(surface, { pointerId: 12, pointerType: "touch", clientX: 400 + to, clientY: 400 });
-  fireEvent.pointerUp(surface, { pointerId: 12, pointerType: "touch", clientX: 400 + to, clientY: 400 });
-  fireEvent.pointerUp(surface, { pointerId: 11, pointerType: "touch", clientX: 400, clientY: 400 });
-}
-
 // ---- the wheel -----------------------------------------------------------
 
 describe("the wheel", () => {
@@ -289,7 +280,7 @@ describe("an opt-in zoom lock", () => {
     const locked = mount({ lockZoom: true });
     wheel({ deltaY: -120, ctrlKey: true, clientX: 500, clientY: 400 });
     expect(view().zoom).toBe(1);
-    touchPinch(100, 150);
+    wheel({ deltaY: -5, metaKey: true, clientX: 500, clientY: 400 });
     expect(view().zoom).toBe(1);
     fireEvent.keyDown(window, { key: "=", metaKey: true });
     expect(view().zoom).toBe(1);
@@ -303,7 +294,7 @@ describe("an opt-in zoom lock", () => {
     wheel({ deltaY: -120, ctrlKey: true, clientX: 500, clientY: 400 });
     const afterWheel = view().zoom;
     expect(afterWheel).toBeGreaterThan(1);
-    touchPinch(100, 150);
+    wheel({ deltaY: -5, metaKey: true, clientX: 500, clientY: 400 });
     const afterPinch = view().zoom;
     expect(afterPinch).toBeGreaterThan(afterWheel);
     fireEvent.keyDown(window, { key: "-", ctrlKey: true });
