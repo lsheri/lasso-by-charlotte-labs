@@ -259,7 +259,7 @@ function ArtifactRenderedContent({ item, kind, canEdit, onDownload }: { item: Wo
   );
 }
 
-export function RenderedContent({
+function StandardRenderedContent({
   item,
   format,
   onDownload,
@@ -271,7 +271,6 @@ export function RenderedContent({
   canEdit?: boolean | undefined;
 }) {
   const shape = format ?? peekFormat(item);
-  const artifactKind = artifactPreviewKind(item);
   const wantsText = needsTextFetch(shape);
   const driveFileId = item.meta?.drive_file_id ?? null;
   // A Drive file is shown by Drive itself, so no signed storage URL is minted.
@@ -288,10 +287,6 @@ export function RenderedContent({
 
   const url = urlQuery.data ?? null;
   const readStatus = textStatusOf(item.meta as never);
-
-  if (artifactKind) {
-    return <ArtifactRenderedContent item={item} kind={artifactKind} canEdit={canEdit} onDownload={onDownload} />;
-  }
 
   useEffect(() => {
     if (!wantsText || !url) return;
@@ -372,6 +367,19 @@ export function RenderedContent({
   }
 
   return <div className="peek-prose" dangerouslySetInnerHTML={{ __html: rendered }} />;
+}
+
+export function RenderedContent(props: {
+  item: WorkItemRow;
+  format?: PeekFormat;
+  onDownload: () => void;
+  canEdit?: boolean | undefined;
+}) {
+  const artifactKind = artifactPreviewKind(props.item);
+  if (artifactKind) {
+    return <ArtifactRenderedContent item={props.item} kind={artifactKind} canEdit={props.canEdit} onDownload={props.onDownload} />;
+  }
+  return <StandardRenderedContent {...props} />;
 }
 
 export { fileNameFor };
