@@ -193,6 +193,22 @@ beforeEach(() => {
 });
 
 describe("CG1 inbox congruency", () => {
+  // The Inbox lanes size from the shell's reported box, so every render gets a
+  // real desktop shell (1094 x 1376) unless a test installs its own.
+  const shellSize: { width?: PropertyDescriptor; height?: PropertyDescriptor } = {};
+  beforeEach(() => {
+    shellSize.width = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "clientWidth");
+    shellSize.height = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "clientHeight");
+    Object.defineProperty(HTMLElement.prototype, "clientWidth", { configurable: true, get(this: HTMLElement) { return this.dataset["testid"] === "board-shell" ? 1094 : 0; } });
+    Object.defineProperty(HTMLElement.prototype, "clientHeight", { configurable: true, get(this: HTMLElement) { return this.dataset["testid"] === "board-shell" ? 1376 : 0; } });
+  });
+  afterEach(() => {
+    if (shellSize.width) Object.defineProperty(HTMLElement.prototype, "clientWidth", shellSize.width);
+    else Reflect.deleteProperty(HTMLElement.prototype, "clientWidth");
+    if (shellSize.height) Object.defineProperty(HTMLElement.prototype, "clientHeight", shellSize.height);
+    else Reflect.deleteProperty(HTMLElement.prototype, "clientHeight");
+  });
+
   it("keeps the count line visible when the Inbox is empty", () => {
     inboxRows = [];
     render(<WorkPage />);
