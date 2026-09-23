@@ -76,14 +76,20 @@ export function AskTabs({
   );
 }
 
+/** True when the chat's scope was narrowed by cards picked on the board. */
+export const AskBoardPickedContext = createContext(false);
+
 /** The scope chip: what Lasso will read on the next message. */
 export function AskScopeChip({ ask, block }: { ask: AskLasso; block?: boolean }) {
+  const boardPicked = useContext(AskBoardPickedContext);
   const label =
     ask.draftPointed.length > 0
       ? `Pointed at: ${ask.draftPointed.length} ${ask.draftPointed.length === 1 ? "item" : "items"}`
       : ask.selectedItems.length === ask.mapped.length
         ? "All work in this engagement"
-        : ask.selectedItems.length === 1
+        : boardPicked
+          ? `${ask.selectedItems.length} picked on the board`
+          : ask.selectedItems.length === 1
           ? "1 piece of work selected"
           : `${ask.selectedItems.length} pieces of work selected`;
   return (
