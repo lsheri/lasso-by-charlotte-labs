@@ -16,7 +16,7 @@ export type WorkboardCardPreview = {
 
 export type WorkboardFilePreview = {
   workItemId: string;
-  kind: "pdf" | "slide" | "text" | "html" | "fallback";
+  kind: "pdf" | "slide" | "text" | "html" | "mermaid" | "fallback";
   url: string | null;
   lines: string[];
   slideTitle: string | null;

@@ -219,6 +219,8 @@ export type TelemetryEvent =
   | "workboard.example_viewed"
   | "workboard.display_mode_toggled"
   | "workboard.card_content_viewed"
+  /** C1: a person chose rendered output or stored source in the enlarged preview. */
+  | "work.preview_mode_changed"
   /** Canvas Lab polish: a save error was settled. Entity and choice only. */
   | "workboard.save_error_resolved"
   /** Canvas Lab polish: the local context selection changed. Action only. */

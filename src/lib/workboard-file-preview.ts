@@ -65,12 +65,13 @@ export function filePreviewKind(item: WorkItemRow): "pdf" | "text" {
   return peekFormat(item).kind === "pdf" ? "pdf" : "text";
 }
 
-export function artifactPreviewKind(item: { source_meta?: unknown }): "html" | "svg" | null {
+export function artifactPreviewKind(item: { source_meta?: unknown }): "html" | "svg" | "mermaid" | null {
   const meta = item.source_meta;
   if (!meta || typeof meta !== "object" || Array.isArray(meta)) return null;
   const kind = (meta as Record<string, unknown>)["kind"];
   if (kind === "artifact_html") return "html";
   if (kind === "artifact_svg") return "svg";
+  if (kind === "artifact_mermaid") return "mermaid";
   return null;
 }
 

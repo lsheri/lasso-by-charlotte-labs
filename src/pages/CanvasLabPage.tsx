@@ -623,7 +623,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     noteWorkboardDisplayModeToggled(orgId, mode);
   }
 
-  function notePreviewScroll(item: WorkItemRow, kind: "chat" | "document" | "deck" | "html") {
+  function notePreviewScroll(item: WorkItemRow, kind: "chat" | "document" | "deck" | "html" | "mermaid") {
     if (viewedPreviewIdsRef.current.has(item.id)) return;
     viewedPreviewIdsRef.current.add(item.id);
     noteWorkboardCardContentViewed(orgId, kind);
@@ -2150,7 +2150,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     const openedPreview = item ? filePreviews[item.id] : undefined;
     if (displayMode === "preview" && item && openedPreview && openedPreview.kind !== "fallback" && (item.type === "document" || item.type === "deck" || item.type === "sheet") && !viewedPreviewIdsRef.current.has(item.id)) {
       viewedPreviewIdsRef.current.add(item.id);
-      noteWorkboardCardContentViewed(orgId, openedPreview.kind === "html" ? "html" : item.type === "deck" ? "deck" : "document", "open");
+      noteWorkboardCardContentViewed(orgId, openedPreview.kind === "html" ? "html" : openedPreview.kind === "mermaid" ? "mermaid" : item.type === "deck" ? "deck" : "document", "open");
     }
     if (item && isDeliverableType(item.type)) {
       setReviewId(node.id);
