@@ -81,7 +81,7 @@ describe("C2 card and picker", () => {
       via: "drive",
       text: "x",
     });
-    expect(out).toMatchObject({ matched: "unknown", via: "drive" });
+    expect(out).toMatchObject({ keep: true, dims: { matched: "unknown", via: "drive" } });
     expect(JSON.stringify(out)).not.toContain('"text"');
   });
 });
