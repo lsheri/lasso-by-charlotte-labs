@@ -140,6 +140,15 @@ function wheel(init: WheelEventInit): WheelEvent {
   return event;
 }
 
+function touchPinch(from: number, to: number) {
+  const surface = shell().querySelector(".canvas-lab-surface") as HTMLElement;
+  fireEvent.pointerDown(surface, { button: 0, pointerId: 11, pointerType: "touch", clientX: 400, clientY: 400 });
+  fireEvent.pointerDown(surface, { button: 0, pointerId: 12, pointerType: "touch", clientX: 400 + from, clientY: 400 });
+  fireEvent.pointerMove(surface, { pointerId: 12, pointerType: "touch", clientX: 400 + to, clientY: 400 });
+  fireEvent.pointerUp(surface, { pointerId: 12, pointerType: "touch", clientX: 400 + to, clientY: 400 });
+  fireEvent.pointerUp(surface, { pointerId: 11, pointerType: "touch", clientX: 400, clientY: 400 });
+}
+
 // ---- the wheel -----------------------------------------------------------
 
 describe("the wheel", () => {
@@ -272,6 +281,38 @@ describe("the keyboard", () => {
     mount({ onSelectNode, selectedIds: ["n1"] });
     fireEvent.keyDown(window, { key: "Escape" });
     expect(onSelectNode).toHaveBeenCalledWith(null);
+  });
+});
+
+describe("an opt-in zoom lock", () => {
+  it("holds wheel, touch pinch and keyboard zoom at one while an ordinary board still responds", () => {
+    const locked = mount({ lockZoom: true });
+    wheel({ deltaY: -120, ctrlKey: true, clientX: 500, clientY: 400 });
+    touchPinch(100, 150);
+    fireEvent.keyDown(window, { key: "=", metaKey: true });
+    expect(view().zoom).toBe(1);
+    locked.unmount();
+
+    mount();
+    wheel({ deltaY: -120, ctrlKey: true, clientX: 500, clientY: 400 });
+    const afterWheel = view().zoom;
+    expect(afterWheel).toBeGreaterThan(1);
+    fireEvent.keyDown(window, { key: "-", ctrlKey: true });
+    const afterKeyboard = view().zoom;
+    expect(afterKeyboard).toBeLessThan(afterWheel);
+    touchPinch(100, 150);
+    expect(view().zoom).toBeGreaterThan(afterKeyboard);
+  });
+
+  it("shows Fit without zoom controls only when requested", () => {
+    const locked = mount({ showViewControls: true, showZoomControls: false, lockZoom: true });
+    expect(screen.getByRole("button", { name: "Fit" })).toBeTruthy();
+    expect(screen.queryByRole("group", { name: "Board zoom" })).toBeNull();
+    locked.unmount();
+
+    mount({ showViewControls: true });
+    expect(screen.getByRole("button", { name: "Fit" })).toBeTruthy();
+    expect(screen.getByRole("group", { name: "Board zoom" })).toBeTruthy();
   });
 });
 

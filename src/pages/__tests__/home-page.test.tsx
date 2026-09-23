@@ -2,7 +2,7 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { HomeBoard, IdeasNote, homeFramesForViewport, ideasMailto } from "@/components/home/HomeBoard";
+import { HOME_HERO_CONTENT_HEIGHT, HOME_HERO_FRAME_HEIGHT, HomeBoard, IdeasNote, homeFramesForViewport, ideasMailto } from "@/components/home/HomeBoard";
 import { fitWorkboardViewport } from "@/components/canvas-lab/canvas-lab-model";
 
 const mocks = vi.hoisted(() => ({
@@ -41,13 +41,21 @@ vi.mock("@/components/engagements/NewEngagementDialog", () => ({
 }));
 
 vi.mock("@/components/board/BoardShell", () => ({
-  BoardShell: ({ frames, fitFrameIds, toolbar, renderFrame }: {
+  BoardShell: ({ frames, fitFrameIds, toolbar, renderFrame, lockZoom, showViewControls, showZoomControls }: {
     frames: { id: string }[];
     fitFrameIds?: readonly string[];
     toolbar?: React.ReactNode;
     renderFrame?: (frame: { id: string }) => React.ReactNode;
+    lockZoom?: boolean;
+    showViewControls?: boolean;
+    showZoomControls?: boolean;
   }) => (
-    <div data-fit-frame-ids={fitFrameIds?.join(",") ?? ""}>
+    <div
+      data-fit-frame-ids={fitFrameIds?.join(",") ?? ""}
+      data-lock-zoom={lockZoom ? "true" : "false"}
+      data-show-view-controls={showViewControls ? "true" : "false"}
+      data-show-zoom-controls={showZoomControls === false ? "false" : "true"}
+    >
       {toolbar}
       {frames.map((frame) => <div key={frame.id} data-mocked-frame={frame.id}>{renderFrame?.(frame)}</div>)}
     </div>
@@ -80,13 +88,15 @@ describe("Home", () => {
     expect(fit.zoom).toBe(1);
     expect(fit.pan).toEqual({ x: 0, y: 0 });
     expect(hero.id).toBe("home-hero");
+    expect(hero.height).toBe(HOME_HERO_FRAME_HEIGHT);
+    expect(HOME_HERO_CONTENT_HEIGHT).toBe(286);
     expect(hero.x + hero.width / 2).toBe(viewport.width / 2);
     expect(hero.y + (186 - 32)).toBe(186);
     expect(grid.id).toBe("home-grid");
     expect(grid.y).toBe(hero.y + hero.height + 24);
   });
 
-  it("renders the grid in its own frame and fits only the hero", () => {
+  it("renders the grid in its own frame without fitting either frame", () => {
     mocks.engagements = Array.from({ length: 11 }, (_, index) => ({ id: `engagement-${index}` }));
     render(<HomeBoard />);
 
@@ -95,13 +105,21 @@ describe("Home", () => {
     expect(hero.contains(grid)).toBe(false);
     expect(hero.closest("[data-mocked-frame]")?.getAttribute("data-mocked-frame")).toBe("home-hero");
     expect(grid.closest("[data-mocked-frame]")?.getAttribute("data-mocked-frame")).toBe("home-grid");
-    expect(document.querySelector("[data-fit-frame-ids]")?.getAttribute("data-fit-frame-ids")).toBe("home-hero");
+    expect(document.querySelector("[data-fit-frame-ids]")?.getAttribute("data-fit-frame-ids")).toBe("");
   });
 
   it("keeps the hero at its designed width and title size", () => {
     render(<HomeBoard />);
-    expect(screen.getByRole("heading", { name: "Welcome to Lasso" }).className).toContain("text-[44px]");
-    expect(screen.getByRole("heading", { name: "Welcome to Lasso" }).closest("section")?.className).toContain("w-[620px]");
+    expect(screen.getByRole("heading", { name: "Welcome to Lasso" }).className).toContain("text-[66px]");
+    expect(screen.getByRole("heading", { name: "Welcome to Lasso" }).closest("section")?.className).toContain("w-[930px]");
+  });
+
+  it("locks Home at 100 percent and keeps Fit without the zoom cluster", () => {
+    render(<HomeBoard />);
+    const shell = document.querySelector("[data-lock-zoom]");
+    expect(shell?.getAttribute("data-lock-zoom")).toBe("true");
+    expect(shell?.getAttribute("data-show-view-controls")).toBe("true");
+    expect(shell?.getAttribute("data-show-zoom-controls")).toBe("false");
   });
 
   it("accounts for the full page chrome without imposing extra document height", () => {

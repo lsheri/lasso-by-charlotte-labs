@@ -19,7 +19,8 @@ const BOARD_FIT_PADDING = 32;
 export const HOME_CONTENT_WIDTH = 930;
 const HOME_CONTENT_TOP = 186;
 const HOME_FRAME_GAP = 24;
-export const HOME_HERO_CONTENT_HEIGHT = 276;
+// Measured in Chromium at the 150% type and control sizes below.
+export const HOME_HERO_CONTENT_HEIGHT = 286;
 export const HOME_HERO_BOTTOM_MARGIN = 48;
 export const HOME_HERO_FRAME_HEIGHT = HOME_CONTENT_TOP - BOARD_FIT_PADDING + HOME_HERO_CONTENT_HEIGHT + HOME_HERO_BOTTOM_MARGIN;
 
