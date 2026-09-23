@@ -46,6 +46,14 @@ describe("B4 put on board", () => {
     expect(logEvent).toHaveBeenLastCalledWith("workboard.node_created", "org", { kind: "answer", judgment_type: "none", via: "drag" });
   });
 
+  it("the server guard keeps via on node_created and strips unknown keys", async () => {
+    const { guardWorkboardEvent } = await import("@/lib/workboard-event-allowlist");
+    const kept = guardWorkboardEvent("workboard.node_created", { kind: "answer", judgment_type: "none", via: "drag" });
+    expect(kept).toEqual({ keep: true, dims: { kind: "answer", judgment_type: "none", via: "drag" } });
+    const stripped = guardWorkboardEvent("workboard.node_created", { kind: "answer", judgment_type: "none", via: "drag", text: "hello" });
+    expect(stripped).toEqual({ keep: true, dims: { kind: "answer", judgment_type: "none", via: "drag" } });
+  });
+
   it("shows the grip only where the keep action exists", () => {
     expect(surface).toContain("const canDragAnswer = !!keep && !isMobile && !coarse;");
     expect(surface).toContain('aria-label="Drag onto the board"');
