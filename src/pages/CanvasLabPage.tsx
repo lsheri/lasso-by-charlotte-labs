@@ -2059,7 +2059,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     connectorDragRef.current = { nodeId: node.id, anchor, from: { x: event.clientX, y: event.clientY }, moved: false };
   }
 
-  function finishPointerConnect(source: { nodeId: string; anchor: LabAnchor }, event: PointerEvent) {
+  function finishPointerConnect(source: { nodeId: string; anchor: LabAnchor }, event: { clientX: number; clientY: number }) {
     const element = document.elementFromPoint(event.clientX, event.clientY) as HTMLElement | null;
     const anchorElement = element?.closest<HTMLElement>("[data-side][data-node-id]");
     const cardElement = element?.closest<HTMLElement>("[data-testid^='lab-card-']");
