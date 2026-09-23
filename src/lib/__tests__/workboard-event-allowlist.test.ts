@@ -205,6 +205,7 @@ describe("the workboard allowlist", () => {
       () => helpers.noteWorkboardCardContentViewed("o", "chat"),
       () => helpers.noteWorkboardCardContentViewed("o", "document", "open"),
       () => helpers.noteWorkboardCardContentViewed("o", "html", "open"),
+      () => helpers.noteWorkboardCardContentViewed("o", "mermaid", "open"),
       () => helpers.noteWorkboardSaveErrorResolved("o", "board", "retry"),
       () => helpers.noteWorkboardContextChanged("o", "cleared"),
       () => helpers.noteWorkboardUndoUsed("o", "move", "undo"),
@@ -251,6 +252,15 @@ describe("the workboard allowlist", () => {
     helpers.noteWorkboardCardContentViewed("o", "html", "open");
     expect(mocked).toHaveBeenLastCalledWith("workboard.card_content_viewed", "o", {
       kind: "html",
+      via: "open",
+    });
+  });
+
+  it("keeps mermaid on the existing preview-kind path", () => {
+    const mocked = vi.mocked(logEvent);
+    helpers.noteWorkboardCardContentViewed("o", "mermaid", "open");
+    expect(mocked).toHaveBeenLastCalledWith("workboard.card_content_viewed", "o", {
+      kind: "mermaid",
       via: "open",
     });
   });

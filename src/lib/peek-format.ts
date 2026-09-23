@@ -8,6 +8,7 @@ export type PeekFormat =
   | { kind: "text" }
   | { kind: "html" }
   | { kind: "svg" }
+  | { kind: "mermaid" }
   | { kind: "image" }
   | { kind: "pdf" }
   | { kind: "none" }
@@ -91,6 +92,8 @@ export function peekFormat(item: WorkItemRow): PeekFormat {
       return { kind: "html" };
     case "artifact_svg":
       return { kind: "svg" };
+    case "artifact_mermaid":
+      return { kind: "mermaid" };
     case "artifact_code":
     case "artifact_react":
     case "canvas_code":
@@ -131,5 +134,5 @@ export function peekFormat(item: WorkItemRow): PeekFormat {
 
 /** True when the panel needs to download the bytes to render them. */
 export function needsTextFetch(format: PeekFormat): boolean {
-  return ["markdown", "code", "text", "html", "svg"].includes(format.kind);
+  return ["markdown", "code", "text", "html", "svg", "mermaid"].includes(format.kind);
 }

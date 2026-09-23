@@ -147,6 +147,7 @@ export const EVENT_DIM_KEYS: Readonly<Record<string, readonly string[]>> = {
   "walkthrough.section_viewed": ["position", "section", "variant"],
   "work.piece_regrouped": ["action", "on_board", "piece_kind", "vendor"],
   "work.filter_changed": ["filter", "selected", "result_band"],
+  "work.preview_mode_changed": ["mode", "kind"],
   "workflow.declared": ["item_count", "process_steps", "step_count", "task_class"],
   "workflow.reordered": ["item_count"],
   "workflow.reset": ["item_count"],

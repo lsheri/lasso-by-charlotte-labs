@@ -94,7 +94,7 @@ export function LabCard({
   displayMode?: WorkboardDisplayMode;
   preview?: WorkboardCardPreview | undefined;
   filePreview?: WorkboardFilePreview | undefined;
-  onPreviewScroll?: ((kind: "chat" | "document" | "deck" | "html") => void) | undefined;
+  onPreviewScroll?: ((kind: "chat" | "document" | "deck" | "html" | "mermaid") => void) | undefined;
   /** Sample board only: no drag, no menu, no anchors, no handles. */
   readOnly?: boolean;
 }) {

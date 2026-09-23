@@ -41,11 +41,12 @@ export async function loadWorkboardFilePreview(
     .eq("work_item_id", item.id)
     .order("version_no", { ascending: false });
   const versionCount = versionError ? 0 : versions?.length ?? 0;
-  if (artifactPreviewKind(item) && item.content_ref && readArtifact) {
+  const artifactKind = artifactPreviewKind(item);
+  if (artifactKind && item.content_ref && readArtifact) {
     try {
       const artifact = await readArtifact({ data: { work_item_id: item.id } });
       if (artifact.html !== null) {
-        return { workItemId: item.id, kind: "html", url: null, html: artifact.html, lines: [], slideTitle: null, versionCount };
+        return { workItemId: item.id, kind: artifactKind === "mermaid" ? "mermaid" : "html", url: null, html: artifact.html, lines: [], slideTitle: null, versionCount };
       }
     } catch {
       // The existing extracted-text preview remains the fallback.
