@@ -234,6 +234,8 @@ export type TelemetryEvent =
   | "workboard.region_named"
   /** D1: an empty note was started on a workstream. Entry point only, no ids and no text. */
   | "workboard.document_created"
+  /** P1b: the person added the file to a placeholder the chat created. Match and entry only. */
+  | "workboard.reference_file_added"
   /** Pass 185: a workspace was affiliated with an institution at creation. Slug only. */
   | "workspace.affiliated"
   /** Pass 186: the student opened the page describing what their school sees. */
