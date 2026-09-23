@@ -64,16 +64,14 @@ describe("pass 190 motion", () => {
     expect(read("src/lib/motion-registry.ts")).not.toContain("MOTION_SCENES");
   });
 
-  it("places the colour legend after the source card and before the explanatory line", () => {
+  it("keeps the source card while retiring the colour legend and explanatory line", () => {
     const source = read("src/pages/WorkPage.tsx");
     const where = source.indexOf("WHERE THIS CAME FROM");
     const legend = source.indexOf("ONE COLOUR PER");
     const line = source.indexOf("the columns are what it is");
     expect(where).toBeGreaterThan(-1);
-    expect(legend).toBeGreaterThan(-1);
-    expect(line).toBeGreaterThan(-1);
-    expect(where).toBeLessThan(legend);
-    expect(legend).toBeLessThan(line);
+    expect(legend).toBe(-1);
+    expect(line).toBe(-1);
   });
 
   it("caps the bring-work-in button row so it clears the background drawing", () => {

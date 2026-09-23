@@ -19,6 +19,10 @@ export type TelemetryEvent =
   | "home.ideas_note_composed"
   /** P4b: an engagement was opened from the Home grid. Content-free. */
   | "home.engagement_opened"
+  /** Inbox: the bring-work menu was opened. Content-free. */
+  | "work.import_menu_opened"
+  /** Inbox: an arrivals or reading panel was opened. Closed panel word only. */
+  | "work.panel_opened"
   | "workitem.captured"
   | "workitem.mapped"
   | "workitem.marked_private"

@@ -19,7 +19,6 @@ import { OpenFileAction } from "@/components/work/OpenFileAction";
 import { ConnectorBrowseActions } from "@/components/connectors/ConnectorBrowseActions";
 import { WatchSuggestionBanner } from "@/components/connectors/WatchSuggestionBanner";
 import { CoachingLinkNotices } from "@/components/coaching/CoachingLinkNotices";
-import { ChatsToOrganise } from "@/components/overview/ChatsToOrganise";
 import { ArrivalsStrip } from "@/components/work/ArrivalsStrip";
 import { ReadingPanel } from "@/components/overview/ReadingPanel";
 import { NotCovered } from "@/components/overview/NotCovered";
@@ -27,8 +26,6 @@ import { NotCovered } from "@/components/overview/NotCovered";
 import { SuggestLegend } from "@/components/common/Suggested";
 import { DimmedDisabled } from "@/components/common/DimmedDisabled";
 import { SuggestionChip } from "@/components/work/SuggestionChip";
-import { colourKey, noteHue, notePaper } from "@/components/work/note-paper";
-import { vocabFor } from "@/lib/edu-vocab";
 import { PeekPanel, type PeekEntry } from "@/components/peek/PeekPanel";
 import type { PeekAnalysisPreset } from "@/components/peek/PeekActionBar";
 import { UploadFilesButton } from "@/components/work/UploadFilesButton";
@@ -75,8 +72,6 @@ import {
   type ConversationGroup,
   type WorkItemRow,
 } from "@/lib/work-types";
-import { PageHeader } from "@/components/layout/PageHeader";
-import { SpiderLassoScene } from "@/components/motion/SpiderLassoScene";
 import { ToneCard } from "@/components/notebook/ToneCard";
 import { WorkSubtitle } from "@/components/work/WorkSubtitle";
 import { InboxFixedCard } from "@/components/work/InboxFixedCard";
@@ -96,11 +91,20 @@ import { useSettingsDialog } from "@/lib/settings-dialog-context";
 import { readWorkView, writeWorkView, type WorkView } from "@/lib/work-view";
 import { inboxFilterDims, inboxFilterMatches, recordInboxFilterChange } from "@/lib/inbox-filter";
 import { newLaneFrameId } from "@/lib/board-lane";
+import { selectArrivals } from "@/lib/inbox-arrivals";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 /** Each type column pages its entries five at a time, replacing not growing. */
 const COLUMN_PAGE_SIZE = 5;
 
-type InboxLaneFrame = BoardShellFrame & { bucket: Bucket; entryCount: number };
+type InboxLaneFrame = BoardShellFrame & { kind: "lane"; bucket: Bucket; entryCount: number };
+type InboxSourceFrame = BoardShellFrame & { kind: "sources" };
+type InboxFrame = InboxLaneFrame | InboxSourceFrame;
 type InboxLaneNode = BoardShellNode & { entry: WorkItemRow | ConversationGroup };
 
 const INBOX_LANE_COUNT = 4;
@@ -114,14 +118,12 @@ const INBOX_LANE_PADDING = 12;
 const INBOX_CARD_GAP = 12;
 const INBOX_LANE_HEADER_HEIGHT = 40;
 const INBOX_LANE_PAGING_HEIGHT = 44;
-const INBOX_BOARD_BOTTOM_MARGIN = 32;
 const INBOX_LANE_HEIGHT =
   INBOX_LANE_HEADER_HEIGHT +
   INBOX_LANE_PADDING * 2 +
   COLUMN_PAGE_SIZE * INBOX_CARD_HEIGHT +
   (COLUMN_PAGE_SIZE - 1) * INBOX_CARD_GAP +
   INBOX_LANE_PAGING_HEIGHT;
-const INBOX_BOARD_HEIGHT = INBOX_LANE_TOP + INBOX_LANE_HEIGHT + INBOX_BOARD_BOTTOM_MARGIN;
 
 export function inboxLaneWidth(viewportWidth: number): number {
   const dividedWidth =
@@ -276,7 +278,7 @@ function BringWorkInRow({
 
 export function WorkPage() {
   const { data: profile } = useProfile();
-  const vocab = vocabFor(profile);
+  const { openSettings } = useSettingsDialog();
   const { data, isLoading, error } = useWorkItems();
   const queryClient = useQueryClient();
   const runSuggest = useServerFn(suggestMappings);
@@ -690,31 +692,6 @@ export function WorkPage() {
     ),
   ).sort((a, b) => a.localeCompare(b));
 
-  /**
-   * The legend answers "who is this for": one entry per distinct colour key,
-   * which is the client where the engagement has one and the engagement's own
-   * id (shown under its code) where it does not. No new read: every value is
-   * already on the mapped rows. The legend must never show a colour for a
-   * client that is not on this page.
-   */
-  const legendClients = (() => {
-    const byKey = new Map<string, string>();
-    for (const item of mapped) {
-      const task = item.work_item_tasks[0]?.tasks;
-      const engagement = task?.engagements;
-      const key = colourKey({
-        clientId: engagement?.clients?.id ?? null,
-        engagementId: task?.engagement_id ?? null,
-      });
-      if (!key || byKey.has(key)) continue;
-      const label = engagement?.clients?.name ?? engagement?.code;
-      if (label) byKey.set(key, label);
-    }
-    return Array.from(byKey, ([key, label]) => ({ key, label })).sort((a, b) =>
-      a.label.localeCompare(b.label),
-    );
-  })();
-
   // Every item stays in the columns. Filters only decide which cards remain active.
   const visible = all;
 
@@ -847,6 +824,7 @@ export function WorkPage() {
     width: currentInboxLaneWidth,
     height: INBOX_LANE_HEIGHT,
     contentInset: { top: INBOX_LANE_HEADER_HEIGHT, bottom: INBOX_LANE_PAGING_HEIGHT },
+    kind: "lane",
     bucket,
     entryCount: entries.length,
   }));
@@ -863,373 +841,206 @@ export function WorkPage() {
     })),
   );
 
-  const inboxToolbar = (
-    <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
-      <span role="group" aria-label="How work is shown" className="mr-auto inline-flex items-center rounded-full border border-[var(--nb-rule)] bg-card p-0.5">
-        {(["preview", "sticky"] as const).map((option) => (
-          <Button key={option} type="button" size="sm" variant={workView === option ? "secondary" : "ghost"} aria-pressed={workView === option} onClick={() => { setWorkView(option); writeWorkView(option); }}>
-            {option === "preview" ? "Preview" : "Sticky"}
-          </Button>
-        ))}
-      </span>
-      <button type="button" onClick={() => changeColumnFilter("all")} className={columnFilter === "all" ? chipOn : chipOff}>
-        Everything
-      </button>
-      <button type="button" onClick={() => changeColumnFilter("unmapped")} className={columnFilter === "unmapped" ? chipOn : chipOff}>
-        Unmapped
-      </button>
-      <button type="button" onClick={() => changeColumnFilter("claimed")} className={columnFilter === "claimed" ? chipOn : chipOff}>
-        Claimed by you
-      </button>
-      {engagementCodes.map((code) => (
-        <button key={code} type="button" onClick={() => changeColumnFilter(code)} className={columnFilter === code ? chipOn : chipOff}>
-          {code}
-        </button>
-      ))}
-    </div>
-  );
+  const arrivalCount = groupConversations(selectArrivals(all, profile?.id)).length;
+  const inboxFrames: InboxFrame[] = [
+    ...inboxLaneFrames,
+    ...(all.length > 0
+      ? [{
+          id: "inbox-sources",
+          kind: "sources" as const,
+          x: INBOX_LANE_LEFT,
+          y: INBOX_LANE_TOP + INBOX_LANE_HEIGHT + 24,
+          width: 320,
+          height: 28 + sourceCounts.length * 22,
+        }]
+      : []),
+  ];
+
+  function recordPanelOpen(panel: "arrived" | "reading") {
+    if (profile?.org_id) logEvent("work.panel_opened", profile.org_id, { panel });
+  }
+
+  function bulkMapChosen() {
+    const picked = all.filter((item) => chosen.has(item.id));
+    const head = picked[0];
+    if (!head) return;
+    setMapBulk(true);
+    setMapGroup(picked);
+    setMapItem(head);
+  }
 
   return (
-    <div className="relative overflow-hidden">
-      <SpiderLassoScene
-        caption={false}
-        className="pointer-events-none absolute right-8 top-0 z-0 hidden origin-top-right scale-90 opacity-50 lg:block"
-        aria-hidden="true"
-      />
-      <div className="relative z-10">
-      <GettingStartedCard />
-      {/* PASS A1 — a coaching question is a decision about your own work and
-          must stay reachable on the page people land on. */}
-      <CoachingLinkNotices />
-      <PageHeader
-        title="Inbox"
-        subtitle={<WorkSubtitle pieces={groupedCount(all)} unmapped={groupedCount(unmapped)} />}
-      />
-      <BringWorkInRow
-        unmappedCount={unmappedCount}
-        suggesting={suggesting}
-        onSuggest={() => void handleSuggest()}
-        isCoach={isCoach}
-        selectableCount={selectable.length}
-        selectMode={selectMode}
-        allChosen={allChosen}
-        chosenCount={chosen.size}
-        onToggleSelectAll={() => setChosen(allChosen ? new Set() : new Set(selectable))}
-        onBulkMap={() => {
-          const picked = all.filter((i) => chosen.has(i.id));
-          const head = picked[0];
-          if (!head) return;
-          setMapBulk(true);
-          setMapGroup(picked);
-          setMapItem(head);
-        }}
-        onRemove={() => setConfirmRemove(true)}
-        onDoneSelect={leaveSelectMode}
-        onEnterSelect={() => setSelectMode(true)}
-      />
-
-      {/* The section accessories, lifted into one toolbar above the chips. */}
-      {all.length > 0 ? (
-        <div className="mb-4 flex flex-wrap items-center gap-3">
-          {active.length > 0 ? <SuggestLegend /> : null}
-          {active.length > 0 && highConfidence.length >= 3 ? (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={acceptPending}
-              onClick={() => {
-                void (async () => {
-                  for (const suggestion of highConfidence) {
-                    await acceptSuggestion(suggestion);
-                  }
-                })();
-              }}
-            >
-              Accept all high-confidence ({highConfidence.length})
-            </Button>
-          ) : null}
-          {!isCoach && flagged.length > 0 ? (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={removingFlagged}
-              onClick={() => void removeAllFlagged()}
-            >
+    <div className="flex h-[calc(100vh-6.5rem)] flex-col overflow-hidden">
+      <div className="shrink-0">
+        <GettingStartedCard />
+        <CoachingLinkNotices />
+        <WatchSuggestionBanner />
+        {!isCoach && flagged.length > 0 ? (
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--nb-rule)] bg-secondary/50 px-5 py-3">
+            <p className="min-w-0 text-sm text-foreground">
+              {flagged.length} item{flagged.length === 1 ? "" : "s"} look like part of a
+              conversation rather than separate artifacts. You decide whether they stay.
+            </p>
+            <Button type="button" variant="outline" size="sm" disabled={removingFlagged} onClick={() => void removeAllFlagged()}>
               {removingFlagged ? "Removing…" : `Remove all ${flagged.length} flagged`}
             </Button>
-          ) : null}
-          {priv.length > 0 ? (
+          </div>
+        ) : null}
+        {error ? <p className="px-5 py-2 text-sm text-destructive">{(error as Error).message}</p> : null}
+        {actionError ? <p className="px-5 py-2 text-sm text-destructive">{actionError}</p> : null}
+        {mappingError ? <p className="px-5 py-2 text-sm text-destructive">Mapping details couldn't load: {mappingError}</p> : null}
+      </div>
+
+      <header className="box-border flex h-16 shrink-0 flex-wrap items-center gap-4 border-b border-[var(--nb-rule)] px-5 md:flex-nowrap">
+        <div className="mr-auto min-w-0">
+          <h1 className="font-serif text-[19px] leading-none">Inbox</h1>
+          <p className="mt-1 truncate font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
+            <WorkSubtitle pieces={groupedCount(all)} unmapped={groupedCount(unmapped)} />
+          </p>
+        </div>
+        <span role="group" aria-label="How work is shown" className="inline-flex shrink-0 items-center rounded-full border border-[var(--nb-rule)] bg-card p-0.5">
+          {(["preview", "sticky"] as const).map((option) => (
+            <Button key={option} type="button" size="sm" variant={workView === option ? "secondary" : "ghost"} aria-pressed={workView === option} onClick={() => { setWorkView(option); writeWorkView(option); }}>
+              {option === "preview" ? "Preview" : "Sticky"}
+            </Button>
+          ))}
+        </span>
+        <DropdownMenu onOpenChange={(open) => { if (open && profile?.org_id) logEvent("work.import_menu_opened", profile.org_id, {}); }}>
+          <DropdownMenuTrigger asChild><Button type="button" variant="outline" className="h-9">Bring work in</Button></DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="flex w-64 flex-col items-stretch gap-1 p-2 [&_button]:w-full [&_button]:justify-start">
+            <ConnectorBrowseActions />
+            <PasteThreadDialog trigger={<Button type="button" variant="outline">Paste a thread</Button>} />
+            <UploadFilesButton />
+            <Button type="button" variant="outline" onClick={() => openSettings("connectors", "inbox")}>Connected apps</Button>
+            <TranscriptsAction />
+            <ImportFlowDialog trigger={<Button type="button" variant="outline">Import AI history</Button>} />
+          </DropdownMenuContent>
+        </DropdownMenu>
+        {unmappedCount > 0 ? (
+          <Button type="button" variant="ink" className="h-9" disabled={suggesting} onClick={() => void handleSuggest()}>
+            {suggesting ? "Thinking…" : "Suggest mapping"}
+          </Button>
+        ) : null}
+        {!isCoach && selectable.length > 0 && !selectMode ? (
+          <Button type="button" variant="ghost" className="h-9" onClick={() => setSelectMode(true)}>Select</Button>
+        ) : null}
+      </header>
+
+      <div className="flex h-[46px] shrink-0 items-center gap-2 overflow-x-auto border-b border-[var(--nb-rule)] px-5 whitespace-nowrap">
+        <button type="button" onClick={() => changeColumnFilter("all")} className={columnFilter === "all" ? chipOn : chipOff}>Everything</button>
+        <button type="button" title="Unmapped work is private and belongs to no engagement. It is not in any receipt, no coach can see it, and it will not appear in the firm view until you map it." onClick={() => changeColumnFilter("unmapped")} className={columnFilter === "unmapped" ? chipOn : chipOff}>Unmapped</button>
+        <button type="button" onClick={() => changeColumnFilter("claimed")} className={columnFilter === "claimed" ? chipOn : chipOff}>Claimed by you</button>
+        {engagementCodes.map((code) => <button key={code} type="button" onClick={() => changeColumnFilter(code)} className={columnFilter === code ? chipOn : chipOff}>{code}</button>)}
+        {priv.length > 0 ? (
+          <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
+            <Checkbox checked={showPrivate} onCheckedChange={(next) => changePrivate(next === true)} aria-label="Show private work" />
+            Show private ({priv.length})
+          </label>
+        ) : null}
+        {selectMode && !isCoach ? (
+          <>
             <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
-              <Checkbox
-                checked={showPrivate}
-                onCheckedChange={(next) => changePrivate(next === true)}
-                aria-label="Show private work"
-              />
-              Show private ({priv.length})
+              <Checkbox checked={allChosen} onCheckedChange={() => setChosen(allChosen ? new Set() : new Set(selectable))} aria-label="Select all visible unmapped items" />
+              Select all
             </label>
+            <MapButton disabled={chosen.size === 0} onClick={bulkMapChosen}>Map to a workstream{chosen.size ? ` (${chosen.size})` : ""}</MapButton>
+            <Button type="button" variant="ghost" disabled={chosen.size === 0} onClick={() => setConfirmRemove(true)}>Remove{chosen.size ? ` (${chosen.size})` : ""}</Button>
+            <Button type="button" variant="ghost" onClick={leaveSelectMode}>Done</Button>
+          </>
+        ) : null}
+        {active.length > 0 ? <SuggestLegend /> : null}
+        {active.length > 0 && highConfidence.length >= 3 ? (
+          <Button type="button" variant="outline" size="sm" disabled={acceptPending} onClick={() => { void (async () => { for (const suggestion of highConfidence) await acceptSuggestion(suggestion); })(); }}>
+            Accept all high-confidence ({highConfidence.length})
+          </Button>
+        ) : null}
+        <div className="ml-auto flex shrink-0 items-center gap-2">
+          {arrivalCount > 0 ? (
+            <Popover onOpenChange={(open) => { if (open) recordPanelOpen("arrived"); }}>
+              <PopoverTrigger asChild><button type="button" className={chipOff}>Arrived · {arrivalCount}</button></PopoverTrigger>
+              <PopoverContent align="end" className="w-[min(720px,calc(100vw-2rem))]"><ArrivalsStrip items={all} /></PopoverContent>
+            </Popover>
+          ) : null}
+          {all.length > 0 ? (
+            <Popover onOpenChange={(open) => { if (open) recordPanelOpen("reading"); }}>
+              <PopoverTrigger asChild><Button type="button" variant="ghost" className="h-9 text-[13px] text-muted-foreground">{groupedCount(all)} pieces of work. Nothing is hidden.</Button></PopoverTrigger>
+              <PopoverContent align="end" className="max-h-[70vh] w-[min(720px,calc(100vw-2rem))] overflow-y-auto"><ReadingPanel items={reading} /><NotCovered /></PopoverContent>
+            </Popover>
           ) : null}
         </div>
-      ) : null}
+      </div>
 
-      {/*
-        The origins tally and the handwritten line now lead the pile rather than
-        foot it. Both describe the WHOLE pile, so they belong above the filter
-        that narrows it: read where it came from, read what the columns mean,
-        then choose what to look at.
-      */}
-      {all.length > 0 ? (
-        <div className="mb-4">
-          <div className="w-[560px] max-w-full">
-            <ToneCard tone="paper" label="WHERE THIS CAME FROM">
-              {/* Name, bar and count on ONE line, so the panel reads as a tally
-                rather than a stack of stacked rows. */}
-              <ul className="mt-1 space-y-2">
-                {sourceCounts.map((row) => (
-                  <li key={row.label} className="flex items-center gap-3">
-                    <span className="min-w-0 flex-1 truncate">{row.label}</span>
-                    <span
-                      aria-hidden
-                      className="h-1.5 w-20 shrink-0 rounded-full bg-[var(--nb-pencil)]"
-                    >
-                      <span
-                        className="block h-1.5 rounded-full bg-foreground"
-                        style={{
-                          width: `${sourceMax > 0 ? Math.round((row.count / sourceMax) * 100) : 0}%`,
-                        }}
-                      />
-                    </span>
-                    <span className="w-5 shrink-0 text-right font-mono text-[10px] text-soft">
-                      {row.count}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </ToneCard>
+      <main className="relative min-h-0 flex-1">
+        {isLoading ? (
+          <p className="p-5 text-sm text-muted-foreground">Loading your work…</p>
+        ) : all.length === 0 ? (
+          <div className="mx-auto mt-8 max-w-lg rounded-[var(--radius)] border border-border bg-card px-8 py-12 text-center shadow-card">
+            <p className="text-sm text-foreground">Your work lands here.</p>
+            <div className="mt-6 inline-block text-left">
+              <BringWorkInRow unmappedCount={unmappedCount} suggesting={suggesting} onSuggest={() => void handleSuggest()} isCoach={isCoach} selectableCount={selectable.length} selectMode={selectMode} allChosen={allChosen} chosenCount={chosen.size} onToggleSelectAll={() => setChosen(allChosen ? new Set() : new Set(selectable))} onBulkMap={bulkMapChosen} onRemove={() => setConfirmRemove(true)} onDoneSelect={leaveSelectMode} onEnterSelect={() => setSelectMode(true)} />
+            </div>
           </div>
-        </div>
-      ) : null}
-
-      {/* What the note colours mean, for the clients actually on this
-        page. Eight swatches when four clients are on screen would be a lie
-        about the data, so this reads the same mapped rows the board does. */}
-      {legendClients.length > 0 ? (
-        <div className="flex max-w-[520px] flex-col items-start gap-2">
-          <div>
-            <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-soft">
-              ONE COLOUR PER {vocab.client.toUpperCase()}
-            </p>
-            <ul className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2">
-              {legendClients.map((entry) => (
-                <li key={entry.key} className="flex items-center gap-2">
-                  <span
-                    aria-hidden
-                    className="block shrink-0"
-                    style={{
-                      width: 20,
-                      height: 15,
-                      borderRadius: "3px 3px 4px 3px",
-                      background: "var(--nb-paper-fill)",
-                      border: "1px solid var(--nb-paper-edge)",
-                      boxShadow: "0 1.5px 2px -1px rgb(22 24 26 / 0.18)",
-                      transform: "rotate(var(--nb-rot, 0deg))",
-                      ...notePaper(entry.key),
-                      ...noteHue(entry.key),
-                    }}
-                  />
-                  <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
-                    {entry.label}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      ) : null}
-
-      {all.length > 0 ? (
-        <p className="font-hand mb-4 text-[16px] text-green">
-          the columns are what it is. the colours are who it is for.
-        </p>
-      ) : null}
-
-      {/* PASS A1 - lifted off the retired Overview: the chats to put away sit
-          with the pile. Decisions live on their own page. */}
-      <ArrivalsStrip items={all} />
-      <ChatsToOrganise
-        items={all}
-        onOpen={(item, entry) => {
-          markOpenStart("peek.open");
-          setPeek({ entry: entry as PeekEntry, focusId: item.id });
-        }}
-      />
-
-      {error ? <p className="mb-6 text-sm text-destructive">{(error as Error).message}</p> : null}
-      {actionError ? <p className="mb-6 text-sm text-destructive">{actionError}</p> : null}
-      {mappingError ? (
-        <p className="mb-6 text-sm text-destructive">
-          Mapping details couldn't load: {mappingError}
-        </p>
-      ) : null}
-
-      {isLoading ? (
-        <p className="text-sm text-muted-foreground">Loading your work…</p>
-      ) : all.length === 0 ? (
-        <div className="mx-auto max-w-lg rounded-[var(--radius)] border border-border bg-card px-8 py-12 text-center shadow-card">
-          <p className="text-sm text-foreground">Your work lands here.</p>
-          <div className="mt-6 inline-block text-left">
-            <BringWorkInRow
-              unmappedCount={unmappedCount}
-              suggesting={suggesting}
-              onSuggest={() => void handleSuggest()}
-              isCoach={isCoach}
-              selectableCount={selectable.length}
-              selectMode={selectMode}
-              allChosen={allChosen}
-              chosenCount={chosen.size}
-              onToggleSelectAll={() => setChosen(allChosen ? new Set() : new Set(selectable))}
-              onBulkMap={() => {
-                const picked = all.filter((i) => chosen.has(i.id));
-                const head = picked[0];
-                if (!head) return;
-                setMapBulk(true);
-                setMapGroup(picked);
-                setMapItem(head);
-              }}
-              onRemove={() => setConfirmRemove(true)}
-              onDoneSelect={leaveSelectMode}
-              onEnterSelect={() => setSelectMode(true)}
-            />
-          </div>
-        </div>
-      ) : (
-        <div className="space-y-8">
-          {columnFilter === "unmapped" && matchingEntryCount === 0 ? (
-            <p className="rounded-[var(--radius-md)] border border-dashed border-pencil bg-card px-4 py-6 text-center text-[11.5px] text-soft">
-              These landed on their own. Say whose work it is and the rest gets easier.
-            </p>
-          ) : null}
-          <div className={suggesting ? "animate-pulse" : undefined} style={{ height: INBOX_BOARD_HEIGHT }}>
+        ) : (
+          <>
+            {columnFilter === "unmapped" && matchingEntryCount === 0 ? (
+              <p className="absolute inset-x-5 top-3 z-20 rounded-[var(--radius-md)] border border-dashed border-pencil bg-card px-4 py-3 text-center text-[11.5px] text-soft">
+                These landed on their own. Say whose work it is and the rest gets easier. Unmapped work is private and belongs to no engagement. It is not in any receipt, no coach can see it, and it will not appear in the firm view until you map it.
+              </p>
+            ) : null}
             <BoardShell
               ariaLabel="Inbox work board"
               className={gusting ? "h-full nb-gust" : "h-full"}
-              frames={inboxLaneFrames}
+              frames={inboxFrames}
               nodes={inboxLaneNodes}
-              toolbar={inboxToolbar}
+              showViewControls
               fitKey={`${workView}:${visibleEntries.length}:${currentInboxLaneWidth}`}
-              onViewportSizeChange={({ width }) => {
-                setInboxViewportWidth((current) => (current === width ? current : width));
-              }}
+              onViewportSizeChange={({ width }) => setInboxViewportWidth((current) => current === width ? current : width)}
               renderFrame={(frame) => {
+                if (frame.kind === "sources") {
+                  return (
+                    <ToneCard tone="paper" label="WHERE THIS CAME FROM">
+                      <ul className="mt-1 space-y-2">
+                        {sourceCounts.map((row) => (
+                          <li key={row.label} className="flex items-center gap-3">
+                            <span className="min-w-0 flex-1 truncate">{row.label}</span>
+                            <span aria-hidden className="h-1.5 w-20 shrink-0 rounded-full bg-[var(--nb-pencil)]">
+                              <span className="block h-1.5 rounded-full bg-foreground" style={{ width: `${sourceMax > 0 ? Math.round((row.count / sourceMax) * 100) : 0}%` }} />
+                            </span>
+                            <span className="w-5 shrink-0 text-right font-mono text-[10px] text-soft">{row.count}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </ToneCard>
+                  );
+                }
                 const lanePage = lanePages.find((entry) => entry.bucket.key === frame.bucket.key);
                 if (!lanePage) return null;
-                const setPage = (next: number) =>
-                  setColumnPages((prev) => ({ ...prev, [frame.bucket.key]: next }));
+                const setPage = (next: number) => setColumnPages((prev) => ({ ...prev, [frame.bucket.key]: next }));
                 return (
                   <>
                     <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-10 border-b border-[var(--nb-rule)] px-3 py-3">
-                      <h2 className="flex items-baseline justify-between gap-3 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
-                        <span className="truncate">{frame.bucket.label}</span>
-                        <span className="shrink-0 text-soft">{frame.entryCount}</span>
-                      </h2>
+                      <h2 className="flex items-baseline justify-between gap-3 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground"><span className="truncate">{frame.bucket.label}</span><span className="shrink-0 text-soft">{frame.entryCount}</span></h2>
                     </div>
-                    {lanePage.pageEntries.length === 0 ? (
-                      <p className="pointer-events-none absolute left-3 right-3 top-14 z-10 rounded-[var(--radius-md)] border border-dashed border-pencil bg-card px-3 py-4 text-center text-[11.5px] text-soft">
-                        Nothing here yet.
-                      </p>
-                    ) : null}
+                    {lanePage.pageEntries.length === 0 ? <p className="pointer-events-none absolute left-3 right-3 top-14 z-10 rounded-[var(--radius-md)] border border-dashed border-pencil bg-card px-3 py-4 text-center text-[11.5px] text-soft">Nothing here yet.</p> : null}
                     {lanePage.entries.length > COLUMN_PAGE_SIZE ? (
                       <div className="absolute inset-x-0 bottom-0 z-10 flex h-11 items-center justify-center gap-3 border-t border-[var(--nb-rule)] bg-card">
-                        {lanePage.page > 0 ? (
-                          <button type="button" aria-label="Earlier work in this column" className="group inline-flex min-h-11 min-w-11 items-center justify-center md:min-h-0 md:min-w-0" onClick={() => setPage(lanePage.page - 1)}>
-                            <PageMark back />
-                          </button>
-                        ) : null}
-                        <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">
-                          {lanePage.page * COLUMN_PAGE_SIZE + 1}–
-                          {lanePage.page * COLUMN_PAGE_SIZE + lanePage.pageEntries.length} OF {lanePage.entries.length}
-                        </span>
-                        {lanePage.page < lanePage.lastPage ? (
-                          <button type="button" aria-label="More work in this column" className="group inline-flex min-h-11 min-w-11 items-center justify-center md:min-h-0 md:min-w-0" onClick={() => setPage(lanePage.page + 1)}>
-                            <PageMark />
-                          </button>
-                        ) : null}
+                        {lanePage.page > 0 ? <button type="button" aria-label="Earlier work in this column" className="group inline-flex min-h-11 min-w-11 items-center justify-center md:min-h-0 md:min-w-0" onClick={() => setPage(lanePage.page - 1)}><PageMark back /></button> : null}
+                        <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-soft">{lanePage.page * COLUMN_PAGE_SIZE + 1}–{lanePage.page * COLUMN_PAGE_SIZE + lanePage.pageEntries.length} OF {lanePage.entries.length}</span>
+                        {lanePage.page < lanePage.lastPage ? <button type="button" aria-label="More work in this column" className="group inline-flex min-h-11 min-w-11 items-center justify-center md:min-h-0 md:min-w-0" onClick={() => setPage(lanePage.page + 1)}><PageMark /></button> : null}
                       </div>
                     ) : null}
                   </>
                 );
               }}
               renderNode={(node) => (
-                <DimmedDisabled
-                  dimmed={!entryMatchesFilter(node.entry)}
-                  disabled={!entryMatchesFilter(node.entry)}
-                  className="min-w-0 w-full"
-                >
-                  <InboxFixedCard>
-                    {isConversationGroup(node.entry)
-                      ? renderGroup(
-                          node.entry,
-                          (node.entry.transcript ?? node.entry.items[0]!).visibility === "mapped"
-                            ? "mapped"
-                            : "unmapped",
-                        )
-                      : renderColumnItem(node.entry)}
-                  </InboxFixedCard>
+                <DimmedDisabled dimmed={!entryMatchesFilter(node.entry)} disabled={!entryMatchesFilter(node.entry)} className="min-w-0 w-full">
+                  <InboxFixedCard>{isConversationGroup(node.entry) ? renderGroup(node.entry, (node.entry.transcript ?? node.entry.items[0]!).visibility === "mapped" ? "mapped" : "unmapped") : renderColumnItem(node.entry)}</InboxFixedCard>
                 </DimmedDisabled>
               )}
             />
-          </div>
-
-          <WatchSuggestionBanner />
-          {!isCoach && flagged.length > 0 ? (
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius)] border border-dashed border-border bg-secondary/50 px-4 py-3">
-              <p className="min-w-0 text-sm text-foreground">
-                {flagged.length} item{flagged.length === 1 ? "" : "s"} look like part of a
-                conversation rather than separate artifacts. You decide whether they stay.
-              </p>
-            </div>
-          ) : null}
-
-          {/* "Where this came from" used to sit here beside this callout. It has
-              moved above the filter chips, because it always counted the WHOLE
-              pile rather than the filtered view — reading it under a filtered
-              set implied otherwise. What is left here is the one decision the
-              foot of this page is for. */}
-          <div className="max-w-[760px]">
-            {unmapped.length > 0 ? (
-              <ToneCard tone="attention" label={`${unmappedCount} UNMAPPED`}>
-                <p className="leading-[19px]">
-                  Unmapped work is private and belongs to no engagement. It is not in any receipt,
-                  no coach can see it, and it will not appear in the firm view until you map it.
-                </p>
-                <div className="mt-3 flex flex-wrap items-center gap-3">
-                  {/* The frame's primary. Mapping starts by choosing which pieces
-                      you mean, which is exactly what select mode is for. */}
-                  <Button type="button" size="sm" onClick={() => setSelectMode(true)}>
-                    Map them
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    disabled={suggesting}
-                    onClick={() => void handleSuggest()}
-                  >
-                    {suggesting ? "Thinking…" : "Suggest where these go"}
-                  </Button>
-                  <span className="font-hand text-[16px] text-green">leave them private</span>
-                </div>
-              </ToneCard>
-            ) : null}
-          </div>
-        </div>
-      )}
-
-      {/* PASS A1 — what Lasso has read, and the honest counterpart naming what
-          it cannot see. Both follow the pile, as they did on Overview. */}
-      <ReadingPanel items={reading} />
-      <NotCovered />
+          </>
+        )}
+      </main>
 
       {!isCoach && all.length > 0 ? <div aria-hidden className="h-16 md:hidden" /> : null}
 
@@ -1360,7 +1171,6 @@ export function WorkPage() {
           orgId={profile.org_id}
         />
       ) : null}
-      </div>
     </div>
   );
 }
