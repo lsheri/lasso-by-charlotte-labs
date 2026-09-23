@@ -271,6 +271,7 @@ function BringWorkInRow({
             </Button>
           }
         />
+      </div>
     </div>
   );
 }
