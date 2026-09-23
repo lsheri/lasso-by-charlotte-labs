@@ -2058,7 +2058,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   function stagePoint(clientX: number, clientY: number): Point {
     const rect = shellRef.current?.getBoundingClientRect();
     if (!rect) return { x: 0, y: 0 };
-    return { x: (clientX - rect.left - pan.x) / zoom, y: (clientY - rect.top - pan.y) / zoom };
+    return { x: (clientX - rect.left - panStateRef.current.x) / zoomRef.current, y: (clientY - rect.top - panStateRef.current.y) / zoomRef.current };
   }
 
   function createConnection(sourceId: string, sourceAnchor: LabAnchor, targetId: string, targetAnchor: LabAnchor) {
