@@ -33,6 +33,8 @@ async function measure(page: Page, label: string) {
       scrollHeight: document.scrollingElement?.scrollHeight ?? -1,
       innerHeight: window.innerHeight,
       header: r(header)?.height ?? null,
+      headerTagCount: document.querySelectorAll("header").length,
+      inboxHeaderH16: r(Array.from(document.querySelectorAll(".h-16")).find((e) => e.textContent?.includes("Inbox")) ?? null)?.height ?? null,
       chipRow: r(chipRow)?.height ?? null,
       shell: shr,
       transform: tf, scale, tx, ty,
@@ -82,14 +84,14 @@ test("unit1 inbox shell", async ({ page }) => {
     return `${items.length ? "PASS" : "FAIL"} ${JSON.stringify(items.map((t) => t.trim()).filter(Boolean))}`;
   });
   await result("Paste a thread", async () => {
-    await page.getByRole("menuitem", { name: /Paste a thread/ }).first().click();
+    await page.locator('[role="menu"]').getByText(/Paste a thread/).first().click({ timeout: 5000 });
     await page.waitForTimeout(500);
     const v = await dialogVisible(page); await page.keyboard.press("Escape"); await page.waitForTimeout(300);
     return `${v ? "PASS" : "FAIL"} dialog visible=${v}`;
   });
   await result("Import AI history", async () => {
     await openMenu(page);
-    await page.getByRole("menuitem", { name: /Import AI history/ }).first().click();
+    await page.locator('[role="menu"]').getByText(/Import AI history/).first().click({ timeout: 5000 });
     await page.waitForTimeout(500);
     const v = await dialogVisible(page); await page.keyboard.press("Escape"); await page.waitForTimeout(300);
     return `${v ? "PASS" : "FAIL"} dialog visible=${v}`;
@@ -97,14 +99,14 @@ test("unit1 inbox shell", async ({ page }) => {
   await result("Upload files", async () => {
     await openMenu(page);
     const chooser = page.waitForEvent("filechooser", { timeout: 1500 }).then(() => true).catch(() => false);
-    await page.getByRole("menuitem", { name: /Upload files/ }).first().click();
+    await page.locator('[role="menu"]').getByText(/Upload files/).first().click({ timeout: 5000 });
     const fc = await chooser; const d = await dialogVisible(page);
     await page.keyboard.press("Escape"); await page.waitForTimeout(300);
     return `${fc || d ? "PASS" : "FAIL"} filechooser=${fc} dialog=${d}`;
   });
   await result("Connected apps", async () => {
     await openMenu(page);
-    await page.getByRole("menuitem", { name: /Connected apps/ }).first().click();
+    await page.locator('[role="menu"]').getByText(/Connected apps/).first().click({ timeout: 5000 });
     await page.waitForTimeout(500);
     const v = await dialogVisible(page); await page.keyboard.press("Escape"); await page.waitForTimeout(300);
     return `${v ? "PASS" : "FAIL"} settings dialog visible=${v} url=${page.url()}`;
