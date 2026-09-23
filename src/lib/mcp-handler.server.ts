@@ -11,6 +11,7 @@ import {
 import { workTypeForFile } from "@/lib/work-types";
 import { recordEvent } from "@/lib/telemetry.server";
 import { dateLabel } from "@/lib/decisions-shared";
+import { coercePushArgs } from "@/lib/mcp-args";
 import {
   DECISION_HELD_REASON,
   DECISION_SKIPPED_REASON,
@@ -680,7 +681,8 @@ export async function handleMcpRequest(request: Request, token: string): Promise
 
   if (method === "tools/call") {
     const name = String(params["name"] ?? "");
-    const args = (params["arguments"] ?? {}) as Obj;
+    // Stale-schema tolerance: stringified arrays and objects are parsed first.
+    const args = coercePushArgs((params["arguments"] ?? {}) as Obj);
     const client = clientIdentity(
       owner.tokenId,
       machineLabel(request.headers.get("mcp-protocol-version")) === "unknown"
@@ -1222,7 +1224,12 @@ async function pushOptions(owner: Owner, args: Obj, id: unknown): Promise<Respon
     ? places.filter((place) => place.containerName === suggestedContainer)
     : places;
   const othersExist = shown.length < places.length;
+  const caution = suggestionCaution(
+    { places, conversationRef, projectRef, projectName },
+    suggested,
+  );
   const lines = [
+    ...(caution ? [SUGGESTION_CAUTION_TEXT] : []),
     suggested
       ? `Suggested place: ${suggested.ref}. ${suggested.reason}`
       : `No suggested place. Ask the user: inbox only, or a place they name?`,
@@ -1236,7 +1243,7 @@ async function pushOptions(owner: Owner, args: Obj, id: unknown): Promise<Respon
     content: [{ type: "text", text: optionsText }],
     structuredContent: {
       summary: optionsText,
-      suggested,
+      suggested: suggested ? { ...suggested, caution } : null,
       places: places.map((place) => ({
         ref: place.ref,
         container: place.containerName,
@@ -2003,6 +2010,8 @@ async function pushConversation(
             outcome: "kept_stored",
             chars: attachment.content.length,
           });
+          // Kept as stored, but still placed with the thread like an unchanged one.
+          attachmentIds.push(match.id);
           continue;
         }
       }

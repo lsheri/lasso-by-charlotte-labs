@@ -276,6 +276,23 @@ export function chooseSuggestion(vocab: McpVocab, signals: SuggestionSignals): P
   return null;
 }
 
+export const SUGGESTION_CAUTION_TEXT =
+  "This chat's project is not this board's client. Placing it shares the chat's reasoning with the whole engagement; the inbox keeps it private until you place it yourself.";
+
+/**
+ * Founder decision, 23 Sep. A suggestion that came from precedent, for a chat
+ * whose project name matches nothing about that place, carries a caution.
+ */
+export function suggestionCaution(signals: SuggestionSignals, suggestion: PushSuggestion): boolean {
+  if (!suggestion || !signals.projectName || !signals.projectName.trim()) return false;
+  const fromPrecedent =
+    suggestion.ref === signals.conversationRef || suggestion.ref === signals.projectRef;
+  if (!fromPrecedent) return false;
+  const place = signals.places.find((one) => one.ref === suggestion.ref);
+  if (!place) return false;
+  return !nameMatch(place, signals.projectName);
+}
+
 /* ------------------------------------------------------------------ *
  * Unit M2b: where a pushed item lands, and the words for what happened.
  * ------------------------------------------------------------------ */
@@ -289,7 +306,10 @@ export function placementLine(vocab: McpVocab): string {
   const sharing = vocab.shared
     ? "Placing work on a board makes it visible to everyone on that engagement, so only pass destination after the user says yes."
     : `Placing work files it under that ${vocab.board}; nothing is shared with anyone. Only pass destination after the user says yes.`;
-  return `Before pushing, call lasso_push_options and ask the user: inbox only, or the suggested place? ${sharing}`;
+  const caution = vocab.shared
+    ? " If the chat's project is not this board's client, default to the inbox unless the user says otherwise."
+    : "";
+  return `Before pushing, call lasso_push_options and ask the user: inbox only, or the suggested place? ${sharing}${caution}`;
 }
 
 export type SuggestionOutcome = "accepted" | "changed" | "declined" | "none";
