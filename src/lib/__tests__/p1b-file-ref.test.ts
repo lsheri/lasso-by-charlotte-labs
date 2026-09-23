@@ -84,3 +84,11 @@ describe("P1b wiring", () => {
     expect(kept).toEqual({ keep: true, dims: { matched: "yes", via: "drop" } });
   });
 });
+
+describe("P1b fix pass: open larger wording", () => {
+  it("tells the reader a reference file has not been added yet", () => {
+    const src = readFileSync("src/components/peek/RenderedContent.tsx", "utf8");
+    expect(src).toContain('item.content_fidelity === "reference"');
+    expect(src).toContain("This file was made in a chat and has not been added yet. Add it from the card on the board.");
+  });
+});

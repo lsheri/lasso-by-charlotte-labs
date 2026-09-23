@@ -264,6 +264,11 @@ export function RenderedContent({
   }, [url, wantsText, shape.kind, shape.kind === "code" ? shape.language : null]);
 
   if (shape.kind === "none") {
+    if (item.content_fidelity === "reference") {
+      return (
+        <Notice>This file was made in a chat and has not been added yet. Add it from the card on the board.</Notice>
+      );
+    }
     return (
       <Notice>Nothing is stored for this item, it&apos;s a record of work, not a file.</Notice>
     );

@@ -75,3 +75,15 @@ describe("P2 HTML and SVG workboard previews", () => {
     expect(() => noteWorkboardCardContentViewed(undefined, "html", "open")).not.toThrow();
   });
 });
+describe("P2 fix pass: artifact reader access", () => {
+  it("checks the row under the caller's session, then downloads with the server client", () => {
+    const src = readFileSync("src/lib/workboard-artifact-preview.functions.ts", "utf8");
+    const rowCheck = src.indexOf('context.supabase\n      .from("work_items")');
+    const adminRead = src.indexOf('supabaseAdmin.storage.from("work-files").download');
+    expect(rowCheck).toBeGreaterThan(-1);
+    expect(adminRead).toBeGreaterThan(rowCheck);
+    expect(src).not.toContain("context.supabase.storage");
+    expect(src).toContain('await import("@/integrations/supabase/client.server")');
+    expect(src).toContain("MAX_ARTIFACT_PREVIEW_BYTES = 1024 * 1024");
+  });
+});
