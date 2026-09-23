@@ -155,7 +155,7 @@ export function ExampleBoardOverlay({ onClose }: { onClose: () => void }) {
             </>
           ) : null}
           <svg className="canvas-lab-relationship-overlays absolute inset-0 overflow-visible" width={EXAMPLE_BOARD_SIZE.width} height={EXAMPLE_BOARD_SIZE.height} aria-label="Example board relationship labels">
-            <LabRelationshipOverlays links={EXAMPLE_LINKS} nodes={EXAMPLE_NODES} measuredHeights={HEIGHTS} selectedLinkId={null} hoveredLinkId={null} inverseZoom={labInverseZoom(view.zoom)} zoom={view.zoom} editable={false} onRemove={noop} onChangeRelation={noop} />
+            <LabRelationshipOverlays links={EXAMPLE_LINKS} nodes={EXAMPLE_NODES} measuredHeights={HEIGHTS} selectedLinkId={null} hoveredLinkId={null} inverseZoom={labInverseZoom(view.zoom)} zoom={view.zoom} editable={false} onRemove={noop} />
           </svg>
         </div>
       </div>

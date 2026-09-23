@@ -91,7 +91,7 @@ describe("R2 grouping movement", () => {
   it("keeps resize separate from card movement and persists each moved row", () => {
     const page = readFileSync("src/pages/CanvasLabPage.tsx", "utf8");
     const resizePath = page.slice(page.indexOf("const resizing = resizeRef.current"), page.indexOf("const trailDrag = frameDragRef.current"));
-    const dragEnd = page.match(/function up\(event: PointerEvent\)[\s\S]*?const connector = connectorDragRef\.current/)?.[0] ?? "";
+    const dragEnd = page.match(/function endInteraction\(event[^)]*\)[\s\S]*?const connector = connectorDragRef\.current/)?.[0] ?? "";
 
     expect(resizePath).not.toContain("moveGroupingContents");
     expect(dragEnd).toContain("persistFramePatch");
