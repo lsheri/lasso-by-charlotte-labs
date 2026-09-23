@@ -193,6 +193,22 @@ beforeEach(() => {
 });
 
 describe("CG1 inbox congruency", () => {
+  // The Inbox lanes size from the shell's reported box, so every render gets a
+  // real desktop shell (1094 x 1376) unless a test installs its own.
+  const shellSize: { width: PropertyDescriptor | undefined; height: PropertyDescriptor | undefined } = { width: undefined, height: undefined };
+  beforeEach(() => {
+    shellSize.width = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "clientWidth");
+    shellSize.height = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "clientHeight");
+    Object.defineProperty(HTMLElement.prototype, "clientWidth", { configurable: true, get(this: HTMLElement) { return this.dataset["testid"] === "board-shell" ? 1094 : 0; } });
+    Object.defineProperty(HTMLElement.prototype, "clientHeight", { configurable: true, get(this: HTMLElement) { return this.dataset["testid"] === "board-shell" ? 1376 : 0; } });
+  });
+  afterEach(() => {
+    if (shellSize.width) Object.defineProperty(HTMLElement.prototype, "clientWidth", shellSize.width);
+    else Reflect.deleteProperty(HTMLElement.prototype, "clientWidth");
+    if (shellSize.height) Object.defineProperty(HTMLElement.prototype, "clientHeight", shellSize.height);
+    else Reflect.deleteProperty(HTMLElement.prototype, "clientHeight");
+  });
+
   it("keeps the count line visible when the Inbox is empty", () => {
     inboxRows = [];
     render(<WorkPage />);
@@ -332,7 +348,7 @@ describe("CG1 inbox congruency", () => {
     expect(screen.getByRole("button", { name: "Claimed by you" })).toBeTruthy();
     expect(within(board).getByText("1–5 OF 6")).toBeTruthy();
     const documentLaneFrame = within(board).getByText("Documents").closest("[data-board-lane]");
-    expect(documentLaneFrame?.getAttribute("style")).toContain("height: 1256px");
+    expect(documentLaneFrame?.getAttribute("style")).toContain("height: 1268px");
     expect(board.parentElement?.className).toContain("min-h-0");
     expect(within(board).getByText("Documents").parentElement?.parentElement?.className).toMatch(/top-0/);
     expect(within(board).getByText("1–5 OF 6").parentElement?.className).toMatch(/bottom-0/);
@@ -351,13 +367,14 @@ describe("CG1 inbox congruency", () => {
     expect(screen.getByText(inboxRows[5]?.title ?? "missing")).toBeTruthy();
   });
 
-  it("uses the fixed Inbox shell and puts the source tally on the paper", () => {
+  it("uses the fixed Inbox shell and puts the source tally in the board's top row", () => {
     inboxRows = [itemOfType("document-1", "document")];
     const { container } = render(<WorkPage />);
     expect(container.firstElementChild?.className).toContain("h-[calc(100vh-6.5rem)]");
     expect(container.querySelector("header")?.className).toContain("h-16");
     expect(screen.getByRole("button", { name: "Everything" }).parentElement?.className).toContain("h-[46px]");
-    expect(container.querySelector('[data-board-frame="inbox-sources"]')).not.toBeNull();
+    expect(container.querySelector('[data-board-frame="inbox-sources"]')).toBeNull();
+    expect(within(screen.getByTestId("board-shell-toolbar")).getByText(/^WHERE THIS CAME FROM · /)).toBeTruthy();
   });
 
   it("recomputes the Inbox span and symmetric gaps after the shell reports a live width change", async () => {
@@ -399,10 +416,10 @@ describe("CG1 inbox congruency", () => {
     try {
       inboxRows = Array.from({ length: 5 }, (_, index) => itemOfType(`responsive-document-${index + 1}`, "document"));
       render(<WorkPage />);
-      await waitFor(() => expect(boardMetrics().span).toBeGreaterThan(1000));
+      await waitFor(() => expect(boardMetrics()).toEqual({ span: 1030, left: 32, right: 32, zoom: 1 }));
       reported.width = 1286;
       act(() => { for (const callback of callbacks) callback([entry()], {} as ResizeObserver); });
-      await waitFor(() => expect(boardMetrics().span).toBeGreaterThan(1100));
+      await waitFor(() => expect(boardMetrics()).toEqual({ span: 1222, left: 32, right: 32, zoom: 1 }));
     } finally {
       vi.unstubAllGlobals();
       if (width) Object.defineProperty(HTMLElement.prototype, "clientWidth", width);
@@ -477,9 +494,7 @@ describe("CG1 inbox congruency", () => {
     Object.defineProperty(HTMLElement.prototype, "clientHeight", {
       configurable: true,
       get(this: HTMLElement) {
-        return this.dataset["testid"] === "board-shell"
-          ? Number.parseFloat(this.parentElement?.style.height ?? "0")
-          : 0;
+        return this.dataset["testid"] === "board-shell" ? 1376 : 0;
       },
     });
     try {
@@ -490,9 +505,9 @@ describe("CG1 inbox congruency", () => {
       });
       const lanes = screen.getByTestId("board-shell").querySelectorAll<HTMLElement>("[data-board-lane]");
       expect(lanes).toHaveLength(4);
-      for (const lane of lanes) expect(Number.parseFloat(lane.style.width)).toBeGreaterThanOrEqual(220);
+      for (const lane of lanes) expect(lane.style.width).toBe("230.5px");
       const cardPlacement = screen.getByText("document-1").closest<HTMLElement>("[data-lane-content]");
-      expect(Number.parseFloat(cardPlacement?.style.width ?? "0")).toBeGreaterThan(0);
+      expect(cardPlacement?.style.width).toBe("206.5px");
     } finally {
       if (width) Object.defineProperty(HTMLElement.prototype, "clientWidth", width);
       else Reflect.deleteProperty(HTMLElement.prototype, "clientWidth");
@@ -562,9 +577,7 @@ describe("CG2 AI conversations congruency", () => {
     Object.defineProperty(HTMLElement.prototype, "clientHeight", {
       configurable: true,
       get(this: HTMLElement) {
-        return this.dataset["testid"] === "board-shell"
-          ? Number.parseFloat(this.parentElement?.style.height ?? "0")
-          : 0;
+        return this.dataset["testid"] === "board-shell" ? 1376 : 0;
       },
     });
     try {

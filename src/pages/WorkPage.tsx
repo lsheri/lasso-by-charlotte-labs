@@ -72,7 +72,6 @@ import {
   type ConversationGroup,
   type WorkItemRow,
 } from "@/lib/work-types";
-import { ToneCard } from "@/components/notebook/ToneCard";
 import { WorkSubtitle } from "@/components/work/WorkSubtitle";
 import { InboxFixedCard } from "@/components/work/InboxFixedCard";
 import {
@@ -102,28 +101,47 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 /** Each type column pages its entries five at a time, replacing not growing. */
 const COLUMN_PAGE_SIZE = 5;
 
-type InboxLaneFrame = BoardShellFrame & { kind: "lane"; bucket: Bucket; entryCount: number };
-type InboxSourceFrame = BoardShellFrame & { kind: "sources" };
-type InboxFrame = InboxLaneFrame | InboxSourceFrame;
+type InboxLaneFrame = BoardShellFrame & { bucket: Bucket; entryCount: number };
 type InboxLaneNode = BoardShellNode & { entry: WorkItemRow | ConversationGroup };
 
 const INBOX_LANE_COUNT = 4;
 const INBOX_LANE_MIN_WIDTH = 220;
 const INBOX_LANE_GAP = 36;
+/** Matches fitWorkboardViewport's own 32px padding, so a fitted board sits 32px in from each side. */
 const INBOX_BOARD_SIDE_MARGIN = 32;
 const INBOX_LANE_LEFT = 40;
-const INBOX_LANE_TOP = 88;
+/**
+ * The board's top row (WHERE THIS CAME FROM, Fit and zoom) is 54px tall.
+ * The fit centres the lanes vertically, so a lane's visible top is
+ * (INBOX_LANE_TOP + INBOX_BOARD_SIDE_MARGIN) / 2 = (76 + 32) / 2 = 54,
+ * exactly the bottom of that row, and the visible bottom gap is also 54.
+ */
+const INBOX_LANE_TOP = 76;
 const INBOX_CARD_HEIGHT = 220;
 const INBOX_LANE_PADDING = 12;
 const INBOX_CARD_GAP = 12;
 const INBOX_LANE_HEADER_HEIGHT = 40;
 const INBOX_LANE_PAGING_HEIGHT = 44;
-const INBOX_LANE_HEIGHT =
-  INBOX_LANE_HEADER_HEIGHT +
-  INBOX_LANE_PADDING * 2 +
-  COLUMN_PAGE_SIZE * INBOX_CARD_HEIGHT +
-  (COLUMN_PAGE_SIZE - 1) * INBOX_CARD_GAP +
-  INBOX_LANE_PAGING_HEIGHT;
+/** Header 40 + padding 12 * 2 + one card 220 + paging 44 = 328: one card is always visible. */
+const INBOX_LANE_MIN_HEIGHT =
+  INBOX_LANE_HEADER_HEIGHT + INBOX_LANE_PADDING * 2 + INBOX_CARD_HEIGHT + INBOX_LANE_PAGING_HEIGHT;
+
+/** Shell height minus the top clearance (76) and the bottom fit margin (32), never below one card. */
+export function inboxLaneHeight(viewportHeight: number): number {
+  return Math.max(INBOX_LANE_MIN_HEIGHT, viewportHeight - INBOX_LANE_TOP - INBOX_BOARD_SIDE_MARGIN);
+}
+
+/** The four lane rectangles for a shell of this size. The fit of these is a no-op (zoom 1). */
+export function inboxLaneRects(viewport: { width: number; height: number }): { x: number; y: number; width: number; height: number }[] {
+  const width = inboxLaneWidth(viewport.width);
+  const height = inboxLaneHeight(viewport.height);
+  return Array.from({ length: INBOX_LANE_COUNT }, (_, index) => ({
+    x: INBOX_LANE_LEFT + index * (width + INBOX_LANE_GAP),
+    y: INBOX_LANE_TOP,
+    width,
+    height,
+  }));
+}
 
 export function inboxLaneWidth(viewportWidth: number): number {
   const dividedWidth =
@@ -312,6 +330,7 @@ export function WorkPage() {
   const [columnFilter, setColumnFilter] = useState<string>("all");
   const [workView, setWorkView] = useState<WorkView>(() => readWorkView());
   const [inboxViewportWidth, setInboxViewportWidth] = useState(0);
+  const [inboxViewportHeight, setInboxViewportHeight] = useState(0);
   // Which page each type column is on. Presentation-only local state, exactly
   // like columnFilter above: no query behind it and nothing to record.
   const [columnPages, setColumnPages] = useState<Record<BucketKey, number>>({
@@ -762,7 +781,6 @@ export function WorkPage() {
     }
     return Array.from(counts.values()).sort((a, b) => b.count - a.count);
   })();
-  const sourceMax = sourceCounts.reduce((max, row) => Math.max(max, row.count), 0);
 
   /** One item as it renders inside a type column: same props the sections passed. */
   function renderColumnItem(entry: WorkItemRow) {
@@ -816,15 +834,12 @@ export function WorkPage() {
   });
 
   const currentInboxLaneWidth = inboxLaneWidth(inboxViewportWidth);
+  const currentInboxLaneHeight = inboxLaneHeight(inboxViewportHeight);
 
   const inboxLaneFrames: InboxLaneFrame[] = lanePages.map(({ bucket, entries }, index) => ({
     id: newLaneFrameId(`inbox-${bucket.key}`),
-    x: INBOX_LANE_LEFT + index * (currentInboxLaneWidth + INBOX_LANE_GAP),
-    y: INBOX_LANE_TOP,
-    width: currentInboxLaneWidth,
-    height: INBOX_LANE_HEIGHT,
+    ...inboxLaneRects({ width: inboxViewportWidth, height: inboxViewportHeight })[index]!,
     contentInset: { top: INBOX_LANE_HEADER_HEIGHT, bottom: INBOX_LANE_PAGING_HEIGHT },
-    kind: "lane",
     bucket,
     entryCount: entries.length,
   }));
@@ -842,19 +857,7 @@ export function WorkPage() {
   );
 
   const arrivalCount = groupConversations(selectArrivals(all, profile?.id)).length;
-  const inboxFrames: InboxFrame[] = [
-    ...inboxLaneFrames,
-    ...(all.length > 0
-      ? [{
-          id: "inbox-sources",
-          kind: "sources" as const,
-          x: INBOX_LANE_LEFT,
-          y: INBOX_LANE_TOP + INBOX_LANE_HEIGHT + 24,
-          width: 320,
-          height: 28 + sourceCounts.length * 22,
-        }]
-      : []),
-  ];
+  const inboxFrames: InboxLaneFrame[] = inboxLaneFrames;
 
   function recordPanelOpen(panel: "arrived" | "reading") {
     if (profile?.org_id) logEvent("work.panel_opened", profile.org_id, { panel });
@@ -970,7 +973,7 @@ export function WorkPage() {
         </div>
       </div>
 
-      <main className="relative min-h-0 flex-1">
+      <div className={suggesting ? "relative min-h-0 flex-1 animate-pulse" : "relative min-h-0 flex-1"}>
         {isLoading ? (
           <p className="p-5 text-sm text-muted-foreground">Loading your work…</p>
         ) : all.length === 0 ? (
@@ -993,26 +996,17 @@ export function WorkPage() {
               frames={inboxFrames}
               nodes={inboxLaneNodes}
               showViewControls
-              fitKey={`${workView}:${visibleEntries.length}:${currentInboxLaneWidth}`}
-              onViewportSizeChange={({ width }) => setInboxViewportWidth((current) => current === width ? current : width)}
+              toolbar={all.length > 0 ? (
+                <p className="min-w-0 flex-1 truncate font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
+                  {["WHERE THIS CAME FROM", ...sourceCounts.map((row) => `${row.label} ${row.count}`)].join(" · ")}
+                </p>
+              ) : undefined}
+              fitKey={`${workView}:${visibleEntries.length}:${currentInboxLaneWidth}:${currentInboxLaneHeight}`}
+              onViewportSizeChange={({ width, height }) => {
+                setInboxViewportWidth((current) => current === width ? current : width);
+                setInboxViewportHeight((current) => current === height ? current : height);
+              }}
               renderFrame={(frame) => {
-                if (frame.kind === "sources") {
-                  return (
-                    <ToneCard tone="paper" label="WHERE THIS CAME FROM">
-                      <ul className="mt-1 space-y-2">
-                        {sourceCounts.map((row) => (
-                          <li key={row.label} className="flex items-center gap-3">
-                            <span className="min-w-0 flex-1 truncate">{row.label}</span>
-                            <span aria-hidden className="h-1.5 w-20 shrink-0 rounded-full bg-[var(--nb-pencil)]">
-                              <span className="block h-1.5 rounded-full bg-foreground" style={{ width: `${sourceMax > 0 ? Math.round((row.count / sourceMax) * 100) : 0}%` }} />
-                            </span>
-                            <span className="w-5 shrink-0 text-right font-mono text-[10px] text-soft">{row.count}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </ToneCard>
-                  );
-                }
                 const lanePage = lanePages.find((entry) => entry.bucket.key === frame.bucket.key);
                 if (!lanePage) return null;
                 const setPage = (next: number) => setColumnPages((prev) => ({ ...prev, [frame.bucket.key]: next }));
@@ -1040,7 +1034,7 @@ export function WorkPage() {
             />
           </>
         )}
-      </main>
+      </div>
 
       {!isCoach && all.length > 0 ? <div aria-hidden className="h-16 md:hidden" /> : null}
 

@@ -43,6 +43,22 @@ async function measure(page: Page, label: string) {
       sources: sr, sourcesInside: inside,
       toolbar: r(document.querySelector('[data-testid="board-shell-toolbar"]')),
       mains: document.querySelectorAll("main").length,
+      firstLaneRect: r(lanes[0] ?? null),
+      firstLaneInside: (() => { const l = r(lanes[0] ?? null); return l && shr ? l.top >= shr.top && l.left >= shr.left && l.top + l.height <= shr.top + shr.height && l.left + l.width <= shr.left + shr.width : null; })(),
+      cardsVisibleInFirstLane: (() => {
+        const lane = lanes[0]; if (!lane) return null;
+        const lb = lane.getBoundingClientRect();
+        return Array.from(lane.querySelectorAll('[data-testid="inbox-fixed-card"]')).filter((c) => { const b = c.getBoundingClientRect(); return b.height > 0 && b.top < lb.bottom && b.bottom > lb.top; }).length;
+      })(),
+      noticeSlot: (() => {
+        const h1 = Array.from(document.querySelectorAll("h1")).find((e) => e.textContent?.trim() === "Inbox");
+        const pageHeader = h1?.closest("header");
+        const slot = pageHeader?.previousElementSibling as HTMLElement | null;
+        if (!slot) return null;
+        return { height: r(slot)?.height ?? null, children: Array.from(slot.children).map((c) => (c.getAttribute("data-testid") || c.getAttribute("aria-label") || (c.textContent ?? "").trim().slice(0, 50))) };
+      })(),
+      pageHeaderH: r(Array.from(document.querySelectorAll("h1")).find((e) => e.textContent?.trim() === "Inbox")?.closest("header") ?? null)?.height ?? null,
+      toolbarText: (document.querySelector('[data-testid="board-shell-toolbar"] p')?.textContent ?? "").slice(0, 80),
     };
   });
   console.log(`MEASURE ${label} ${JSON.stringify(m)}`);
