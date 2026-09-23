@@ -91,8 +91,13 @@ export type McpPlace = {
   workstreamName: string;
 };
 
-export function placeRef(code: string, workstreamName: string): string {
-  return `${code} · ${workstreamName}`;
+/**
+ * P0 item 6. Two boards can carry the same code. When they do, and only then,
+ * the board title is added so one ref means one place.
+ */
+export function placeRef(code: string, workstreamName: string, boardTitle?: string): string {
+  const short = `${code} · ${workstreamName}`;
+  return boardTitle ? `${short} (${boardTitle})` : short;
 }
 
 /** The two create tools this workspace is offered, and nothing else. */
@@ -247,8 +252,15 @@ function nameMatch(place: McpPlace, needle: string): boolean {
  * The server decides where something could go. The model is never asked to
  * guess, and a weak signal answers null rather than a shrug dressed as advice.
  */
+/** A scratch board is a real place, but never one Lasso puts forward itself. */
+export function isScratchBoard(boardTitle: string | null | undefined): boolean {
+  return /test|sandbox/i.test(boardTitle ?? "");
+}
+
 export function chooseSuggestion(vocab: McpVocab, signals: SuggestionSignals): PushSuggestion {
-  const known = new Set(signals.places.map((place) => place.ref));
+  // Scratch boards stay in the places list; they are simply never suggested.
+  const places = signals.places.filter((place) => !isScratchBoard(place.boardTitle));
+  const known = new Set(places.map((place) => place.ref));
 
   if (signals.conversationRef && known.has(signals.conversationRef)) {
     return { ref: signals.conversationRef, reason: "This conversation is already on that board." };
@@ -258,7 +270,7 @@ export function chooseSuggestion(vocab: McpVocab, signals: SuggestionSignals): P
   }
   for (const needle of [signals.projectName, signals.title]) {
     if (!needle || needle.trim().length < 3) continue;
-    const hit = signals.places.find((place) => nameMatch(place, needle));
+    const hit = places.find((place) => nameMatch(place, needle));
     if (hit) return { ref: hit.ref, reason: `The name matches that ${vocab.board}.` };
   }
   return null;
@@ -357,9 +369,17 @@ export function renderPlacement(
 }
 
 /** An unknown ref never guesses. The item stays in the inbox and says so. */
-export function renderUnknownRef(vocab: McpVocab, refs: readonly string[]): string {
+export function renderUnknownRef(vocab: McpVocab, refs: readonly string[], note?: string): string {
   if (refs.length === 0) return `Saved to your inbox only; that place is not one of yours, and you have no ${vocab.boards} yet.`;
-  return `Saved to your inbox only; that place is not one of yours. Valid places: ${refs.join(", ")}.`;
+  const head = note
+    ? `Saved to your inbox only; ${note}`
+    : "Saved to your inbox only; that place is not one of yours.";
+  return `${head} Valid places: ${refs.join(", ")}.`;
+}
+
+/** Two boards share a code, so the short form cannot pick one. */
+export function sharedCodeNote(vocab: McpVocab): string {
+  return `Two ${vocab.boards} share that code; use the full ref.`;
 }
 
 /** Only a real landing counts as a board target. */
