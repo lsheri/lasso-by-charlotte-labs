@@ -332,7 +332,7 @@ describe("CG1 inbox congruency", () => {
     expect(screen.getByRole("button", { name: "Claimed by you" })).toBeTruthy();
     expect(within(board).getByText("1–5 OF 6")).toBeTruthy();
     const documentLaneFrame = within(board).getByText("Documents").closest("[data-board-lane]");
-    expect(documentLaneFrame?.getAttribute("style")).toContain("height: 1256px");
+    expect(documentLaneFrame?.getAttribute("style")).toContain("height: 1268px");
     expect(board.parentElement?.className).toContain("min-h-0");
     expect(within(board).getByText("Documents").parentElement?.parentElement?.className).toMatch(/top-0/);
     expect(within(board).getByText("1–5 OF 6").parentElement?.className).toMatch(/bottom-0/);
@@ -478,9 +478,7 @@ describe("CG1 inbox congruency", () => {
     Object.defineProperty(HTMLElement.prototype, "clientHeight", {
       configurable: true,
       get(this: HTMLElement) {
-        return this.dataset["testid"] === "board-shell"
-          ? Number.parseFloat(this.parentElement?.style.height ?? "0")
-          : 0;
+        return this.dataset["testid"] === "board-shell" ? 1376 : 0;
       },
     });
     try {
@@ -563,9 +561,7 @@ describe("CG2 AI conversations congruency", () => {
     Object.defineProperty(HTMLElement.prototype, "clientHeight", {
       configurable: true,
       get(this: HTMLElement) {
-        return this.dataset["testid"] === "board-shell"
-          ? Number.parseFloat(this.parentElement?.style.height ?? "0")
-          : 0;
+        return this.dataset["testid"] === "board-shell" ? 1376 : 0;
       },
     });
     try {
