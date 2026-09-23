@@ -21,7 +21,33 @@ export type AnswerCiteRow = {
 };
 
 /** The label on the action, kept in one place so the check never restates it. */
-export const KEEP_ANSWER_LABEL = "Keep as a card";
+export const KEEP_ANSWER_LABEL = "Put on board";
+
+/** Read out after an answer lands on the board. */
+export const KEEP_ANSWER_ANNOUNCEMENT = "Put on the board.";
+
+/** The drag type an answer carries from the chat to the board. */
+export const ANSWER_DRAG_MIME = "application/x-lasso-answer";
+
+/** True only when a drag carries an answer from the chat. */
+export function isAnswerDrag(types: readonly string[] | DOMStringList | null | undefined): boolean {
+  if (!types) return false;
+  return Array.from(types as ArrayLike<string>).includes(ANSWER_DRAG_MIME);
+}
+
+/** Read a dropped answer, or null when the payload is not one. */
+export function parseAnswerDrop(raw: string): { messageId: number; text: string; reads: AnswerRead[] } | null {
+  try {
+    const value = JSON.parse(raw) as { messageId?: unknown; text?: unknown; reads?: unknown };
+    if (typeof value.text !== "string" || !value.text.trim()) return null;
+    const reads = Array.isArray(value.reads)
+      ? value.reads.filter((r): r is AnswerRead => !!r && typeof r.id === "string" && typeof r.depth === "string")
+      : [];
+    return { messageId: Number(value.messageId), text: value.text, reads };
+  } catch {
+    return null;
+  }
+}
 
 /** An answer card is wider than a work card so the text has somewhere to sit. */
 export const ANSWER_CARD_SIZE = { width: 320, height: 240 } as const;

@@ -19,8 +19,10 @@ export function noteWorkboardOpened(orgId: string | undefined, via: WorkboardOpe
 export function noteWorkboardRail(orgId: string | undefined, state: "collapsed" | "reopened"): void {
   if (orgId) logEvent("workboard.rail_toggled", orgId, { state });
 }
-export function noteWorkboardNodeCreated(orgId: string | undefined, kind: LabNodeEventKind, judgmentType?: LabJudgmentEventType): void {
-  if (orgId) logEvent("workboard.node_created", orgId, { kind, judgment_type: judgmentType ?? "none" });
+export function noteWorkboardNodeCreated(orgId: string | undefined, kind: LabNodeEventKind, judgmentType?: LabJudgmentEventType, via?: "button" | "drag"): void {
+  if (!orgId) return;
+  const dims = { kind, judgment_type: judgmentType ?? "none" };
+  logEvent("workboard.node_created", orgId, via ? { ...dims, via } : dims);
 }
 export function noteWorkboardNodeDeleted(orgId: string | undefined, kind: LabNodeEventKind): void {
   if (orgId) logEvent("workboard.node_deleted", orgId, { kind });

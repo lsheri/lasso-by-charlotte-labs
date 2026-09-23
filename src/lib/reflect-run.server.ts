@@ -84,7 +84,7 @@ export async function runReflectTurn(
     throw new Response("Forbidden", { status: 403 });
   }
 
-  const { parseScope, titleFromMessage, REFLECT_SYSTEM_PROMPT } = await import("./reflect-shared");
+  const { parseScope, titleFromMessage, REFLECT_SYSTEM_PROMPT, ASK_LASSO_MAKING_RULES } = await import("./reflect-shared");
   const { analysisPreset } = await import("./analysis-presets");
   const sessionScope = parseScope(session.context_scope);
   let scope = sessionScope;
@@ -116,6 +116,7 @@ export async function runReflectTurn(
   const prompts = [
     { role: "system" as const, content: REFLECT_SYSTEM_PROMPT },
     ...(preset ? [{ role: "system" as const, content: preset.systemPrompt }] : []),
+    ...(surface === "ask_lasso" ? [{ role: "system" as const, content: ASK_LASSO_MAKING_RULES }] : []),
   ];
 
   const { chatComplete, streamChat, resolveAiMeta } = await import("./ai.server");
