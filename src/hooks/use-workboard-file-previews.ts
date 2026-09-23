@@ -3,7 +3,9 @@ import { useEffect, useMemo, useState } from "react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { getItemTextPane } from "@/lib/item-text.functions";
+import { getWorkboardArtifactPreview } from "@/lib/workboard-artifact-preview.functions";
 import {
+  artifactPreviewKind,
   fallbackFilePreview,
   filePreviewKind,
   slidesFromMap,
@@ -26,6 +28,7 @@ export async function loadWorkboardFilePreview(
   item: WorkItemRow,
   profileId: string,
   readText: (input: { data: { work_item_id: string; profile_id?: string } }) => Promise<{ text: string | null }>,
+  readArtifact?: (input: { data: { work_item_id: string } }) => Promise<{ html: string | null }>,
 ): Promise<WorkboardFilePreview> {
   const { data: versions, error: versionError } = await supabase
     .from("document_versions")
@@ -34,6 +37,16 @@ export async function loadWorkboardFilePreview(
     .order("version_no", { ascending: false });
   if (versionError) return fallbackFilePreview(item);
   const versionCount = versions?.length ?? 0;
+  if (artifactPreviewKind(item) && item.content_ref && readArtifact) {
+    try {
+      const artifact = await readArtifact({ data: { work_item_id: item.id } });
+      if (artifact.html !== null) {
+        return { workItemId: item.id, kind: "html", url: null, html: artifact.html, lines: [], slideTitle: null, versionCount };
+      }
+    } catch {
+      // The existing extracted-text preview remains the fallback.
+    }
+  }
   const pages = item.type === "deck" ? slidesFromMap(versions?.[0]?.slide_map ?? null) : [];
   const slide = pages[0] ?? null;
   if (slide) {
@@ -64,6 +77,7 @@ export function useWorkboardFilePreviews(
   visibleItems: readonly WorkItemRow[],
 ): WorkboardFilePreviewMap {
   const readText = useServerFn(getItemTextPane);
+  const readArtifact = useServerFn(getWorkboardArtifactPreview);
   const [previews, setPreviews] = useState<WorkboardFilePreviewMap>(() => Object.fromEntries(sessionCache));
   const items = useMemo(
     () => visibleItems.filter(isWorkboardFilePreviewItem),
@@ -76,13 +90,13 @@ export function useWorkboardFilePreviews(
     let cancelled = false;
     for (const item of items) {
       if (sessionCache.has(item.id)) continue;
-      void enqueue(() => loadWorkboardFilePreview(item, profileId, readText)).then((preview) => {
+      void enqueue(() => loadWorkboardFilePreview(item, profileId, readText, readArtifact)).then((preview) => {
         sessionCache.set(item.id, preview);
         if (!cancelled) setPreviews(Object.fromEntries(sessionCache));
       });
     }
     return () => { cancelled = true; };
-  }, [enabled, key, profileId, readText]);
+  }, [enabled, key, profileId, readArtifact, readText]);
 
   return previews;
 }
