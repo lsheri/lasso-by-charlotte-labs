@@ -1303,16 +1303,24 @@ async function pushConversation(
   }
 
   const messages: IncomingMessage[] = [];
-  for (const m of rawMessages as IncomingMessage[]) {
+  for (const [index, m] of (rawMessages as IncomingMessage[]).entries()) {
     const role =
       m?.role === "assistant" || m?.role === "tool" || m?.role === "user" ? m.role : null;
     if (!role || typeof m.content !== "string") {
       return rpcError(id, -32602, "Each message needs role (user|assistant|tool) and content");
     }
+    const fidelity = parseMessageFidelity(m as never, index + 1);
+    if ("error" in fidelity) return rpcError(id, -32602, fidelity.error);
     messages.push({
       role,
       content: m.content,
       ...(typeof m.timestamp === "string" && m.timestamp ? { timestamp: m.timestamp } : {}),
+      ...(fidelity.fidelity === "summary"
+        ? {
+            fidelity: "summary" as const,
+            covers: { from: fidelity.covers_from, to: fidelity.covers_to },
+          }
+        : {}),
     });
   }
 
