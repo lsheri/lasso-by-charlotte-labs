@@ -83,6 +83,48 @@ export function versionRowsBucket(n: number): "0" | "1" | "2+" {
   return n === 1 ? "1" : "2+";
 }
 
+/**
+ * P1 item 1. A message is verbatim unless the caller says it stands for a span
+ * its context no longer holds word for word. A summary must say which
+ * positions it stands for; nothing is guessed on its behalf.
+ */
+export type MessageFidelity =
+  | { fidelity: "verbatim" }
+  | { fidelity: "summary"; covers_from: number; covers_to: number };
+
+export function parseMessageFidelity(
+  raw: { fidelity?: unknown; covers?: unknown },
+  position: number,
+): MessageFidelity | { error: string } {
+  const flag = raw?.fidelity;
+  if (flag === undefined || flag === null || flag === "verbatim") return { fidelity: "verbatim" };
+  if (flag !== "summary") {
+    return { error: `Message ${position}: fidelity must be 'verbatim' or 'summary'.` };
+  }
+  const covers = raw?.covers;
+  if (!covers || typeof covers !== "object" || Array.isArray(covers)) {
+    return {
+      error: `Message ${position}: a summary needs covers {from, to}, the positions it stands for.`,
+    };
+  }
+  const from = Number((covers as { from?: unknown }).from);
+  const to = Number((covers as { to?: unknown }).to);
+  if (!Number.isInteger(from) || !Number.isInteger(to) || from < 1 || to < from) {
+    return {
+      error: `Message ${position}: covers.from and covers.to must be whole positions with from at or before to.`,
+    };
+  }
+  return { fidelity: "summary", covers_from: from, covers_to: to };
+}
+
+/** A stored turn is verbatim unless its meta says otherwise. */
+export function turnFidelity(meta: unknown): "verbatim" | "summary" {
+  const bag = meta && typeof meta === "object" && !Array.isArray(meta) ? (meta as Record<string, unknown>) : null;
+  return bag?.["fidelity"] === "summary" ? "summary" : "verbatim";
+}
+
+
+
 /** P0 item 4. The first 40 characters of a stored message, on one line. */
 export function receiptHead(content: string): string {
   const flat = content.replace(/\s+/g, " ").trim();
