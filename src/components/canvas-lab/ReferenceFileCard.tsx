@@ -51,9 +51,9 @@ export function ReferenceFileCard({ item }: { item: WorkItemRow }) {
   }
 
   return (
-    <div data-testid="reference-file-card" className="flex h-full flex-col gap-2 p-3 font-[Archivo] text-[13px] text-foreground">
+    <div data-testid="reference-file-card" className="flex h-full flex-col gap-2 p-3 font-sans text-[13px] text-foreground">
       <div className="flex items-center gap-2">
-        <FileFormatIcon filename={filename} size={20} />
+        <FileFormatIcon item={item} size={20} />
         <span className="min-w-0 truncate font-medium">{filename}</span>
       </div>
       <span className="text-[11.5px] text-muted-foreground">{REFERENCE_MADE_IN_CHAT}</span>

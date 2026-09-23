@@ -4,6 +4,8 @@ import { Paperclip } from "lucide-react";
 import { LabCardMenu } from "@/components/canvas-lab/LabCardMenu";
 import { LabPaper } from "@/components/canvas-lab/LabPaper";
 import { LabPreview } from "@/components/canvas-lab/LabPreview";
+import { ReferenceFileCard, referenceMatchLine } from "@/components/canvas-lab/ReferenceFileCard";
+import { isReferenceItem } from "@/lib/reference-file-shared";
 import { cardSizeTier, type LabAnchor, type LabNode, type LabResizeCorner } from "@/components/canvas-lab/canvas-lab-model";
 import type { WorkItemRow } from "@/lib/work-types";
 import type { WorkboardCardPreview, WorkboardDisplayMode, WorkboardFilePreview } from "@/lib/workboard-card-preview.shared";
@@ -152,6 +154,7 @@ export function LabCard({
     onOpen(cardRef.current?.getBoundingClientRect());
   }
 
+  const matchLine = item && !isReferenceItem(item) ? referenceMatchLine(item) : null;
   const anchors: LabAnchor[] = ["top", "right", "bottom", "left"];
   const hasPreview = displayMode === "preview" && Boolean(item) && !previewFailed && (item?.type === "ai_thread" ? Boolean(preview?.turns.length) : Boolean(filePreview && filePreview.kind !== "fallback"));
   const stickyHasThumbnail = Boolean(item) && !previewFailed && (item?.type === "ai_thread" ? Boolean(preview?.turns.length) : Boolean(filePreview && filePreview.kind !== "fallback"));
@@ -180,7 +183,8 @@ export function LabCard({
       className="canvas-lab-card group absolute text-left outline-none"
     >
       <div ref={paperRef} data-selected={selected} data-focused={focused} data-connect-source={connectSourceAnchor !== null} className="canvas-lab-card-paper h-full w-full overflow-hidden">
-        {hasPreview && item ? <LabPreview item={item} preview={preview} filePreview={filePreview} onFailure={() => setPreviewFailed(true)} onPreviewScroll={onPreviewScroll} onOpen={() => onOpen(cardRef.current?.getBoundingClientRect())} /> : <div data-drawing="sticky" className="h-full"><LabPaper node={node} item={item} selected={selected} displayMode={stickyHasThumbnail ? "preview" : "sticky"} preview={preview} filePreview={filePreview} showOwnership={!readOnly} onEdit={onEdit} onEditCommitted={onEditCommitted} commentCount={commentCount} onOpenComments={onOpenComments} onOpenTrail={readOnly || !node.deliverable ? undefined : () => onOpen(cardRef.current?.getBoundingClientRect())} /></div>}
+        {item && isReferenceItem(item) ? <ReferenceFileCard item={item} /> : hasPreview && item ? <LabPreview item={item} preview={preview} filePreview={filePreview} onFailure={() => setPreviewFailed(true)} onPreviewScroll={onPreviewScroll} onOpen={() => onOpen(cardRef.current?.getBoundingClientRect())} /> : <div data-drawing="sticky" className="h-full"><LabPaper node={node} item={item} selected={selected} displayMode={stickyHasThumbnail ? "preview" : "sticky"} preview={preview} filePreview={filePreview} showOwnership={!readOnly} onEdit={onEdit} onEditCommitted={onEditCommitted} commentCount={commentCount} onOpenComments={onOpenComments} onOpenTrail={readOnly || !node.deliverable ? undefined : () => onOpen(cardRef.current?.getBoundingClientRect())} /></div>}
+        {matchLine ? <span data-testid="reference-match-line" className="absolute bottom-1 left-2 text-[11.5px] text-muted-foreground">{matchLine}</span> : null}
         {selected ? <Paperclip aria-hidden="true" className="canvas-lab-context-mark" /> : null}
       </div>
       {canResize && focused && !readOnly ? (["nw", "ne", "se", "sw"] as LabResizeCorner[]).map((corner) => <button key={corner} type="button" className="canvas-lab-resize-handle" data-corner={corner} aria-label={`Resize ${node.title} from ${corner}`} onDoubleClick={(event) => { event.stopPropagation(); onFit(); }} onPointerDown={(event) => onResizeStart(corner, event)} onKeyDown={(event) => onResizeKeyDown(corner, event)} onKeyUp={onResizeKeyUp} />) : null}

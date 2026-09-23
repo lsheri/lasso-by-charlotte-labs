@@ -1,5 +1,6 @@
 import { CircleDashed, Lock } from "lucide-react";
 
+import { REFERENCE_INBOX_STATUS } from "@/lib/reference-file-shared";
 import { CardMenu } from "@/components/work/CardMenu";
 import { EngagementChip, TypeBadge, TypeIcon } from "@/components/work/TypeIcon";
 import { ArtifactNote, SourceMark, VendorMark } from "@/components/work/SourceMark";
@@ -192,6 +193,11 @@ export function WorkRow({
             ) : null}
             {chips}
           </div>
+          {item.content_fidelity === "reference" ? (
+            <p data-testid="reference-inbox-status" className="mt-1 text-xs text-muted-foreground">
+              {REFERENCE_INBOX_STATUS}
+            </p>
+          ) : null}
           {contentsUnread(item.meta as never) ? (
             <p className="mt-1 text-xs text-muted-foreground">
               {UNREAD_MARKER_LINE}
