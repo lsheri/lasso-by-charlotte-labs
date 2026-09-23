@@ -23,7 +23,7 @@ import { LassoThinkingMark } from "@/components/reflect/LassoThinkingMark";
 import { LOOP_SIZE_TOOLBAR } from "@/lib/lasso-loop";
 import type { KeptAnswer } from "@/components/reflect/answer-keep-context";
 import { supabase } from "@/integrations/supabase/client";
-import { answerCiteRows, answerNodeInput, canKeepAnswer } from "@/lib/answer-card";
+import { ANSWER_DRAG_MIME, KEEP_ANSWER_ANNOUNCEMENT, answerCiteRows, answerNodeInput, canKeepAnswer, isAnswerDrag, parseAnswerDrop } from "@/lib/answer-card";
 
 import { CanvasLabReview } from "@/components/canvas-lab/CanvasLabReview";
 import { CanvasLabStatusLine } from "@/components/canvas-lab/CanvasLabStatusLine";

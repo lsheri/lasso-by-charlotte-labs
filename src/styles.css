@@ -5035,3 +5035,10 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   border: calc(1.4px * var(--lab-inverse-zoom, 1)) dashed color-mix(in srgb, var(--nb-graphite) 60%, transparent);
   background: color-mix(in srgb, var(--nb-green) 6%, transparent);
 }
+
+/* B4: an answer dragged from the chat reaches the board, not a preview. */
+body[data-answer-drag="true"] .canvas-lab-surface iframe { pointer-events: none; }
+body[data-answer-drag="true"] .canvas-lab-surface {
+  outline: 1.4px dashed color-mix(in oklab, var(--nb-green) 55%, transparent);
+  outline-offset: -6px;
+}
