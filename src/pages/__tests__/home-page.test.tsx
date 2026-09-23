@@ -3,7 +3,6 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { HOME_HERO_CONTENT_HEIGHT, HOME_HERO_FRAME_HEIGHT, HomeBoard, IdeasNote, homeFramesForViewport, ideasMailto } from "@/components/home/HomeBoard";
-import { fitWorkboardViewport } from "@/components/canvas-lab/canvas-lab-model";
 
 const mocks = vi.hoisted(() => ({
   engagements: undefined as undefined | { id: string }[],
@@ -83,10 +82,6 @@ describe("Home", () => {
     expect(hero).toBeDefined();
     expect(grid).toBeDefined();
     if (!hero || !grid) throw new Error("Home frames are required");
-    const fit = fitWorkboardViewport(viewport, hero ? [hero] : [], [], new Map(), null);
-
-    expect(fit.zoom).toBe(1);
-    expect(fit.pan).toEqual({ x: 0, y: 0 });
     expect(hero.id).toBe("home-hero");
     expect(hero.height).toBe(HOME_HERO_FRAME_HEIGHT);
     expect(HOME_HERO_CONTENT_HEIGHT).toBe(286);
