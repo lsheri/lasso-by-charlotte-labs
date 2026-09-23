@@ -117,6 +117,20 @@ export function parseMessageFidelity(
   return { fidelity: "summary", covers_from: from, covers_to: to };
 }
 
+/**
+ * P1 item 0. Where a caller stands: the next position to send, and whether
+ * the whole conversation is stored. Null total means the caller never said.
+ */
+export function pushProgress(
+  storedCount: number,
+  total: number | null,
+): { next_from: number | null; complete: boolean } {
+  if (!total) return { next_from: null, complete: false };
+  return storedCount >= total
+    ? { next_from: null, complete: true }
+    : { next_from: storedCount + 1, complete: false };
+}
+
 /** A stored turn is verbatim unless its meta says otherwise. */
 export function turnFidelity(meta: unknown): "verbatim" | "summary" {
   const bag = meta && typeof meta === "object" && !Array.isArray(meta) ? (meta as Record<string, unknown>) : null;
@@ -963,7 +977,11 @@ async function readPlaces(owner: Owner): Promise<{ places: PlaceRow[]; boards: {
 async function listPlaces(owner: Owner, id: unknown): Promise<Response> {
   const type = await workspaceTypeOf(owner);
   const vocab = mcpVocabFor(type);
-  const { boards } = await readPlaces(owner);
+  const { boards, places } = await readPlaces(owner);
+  // P1 item 4. The unique ref, so two boards sharing a code stay distinct.
+  const refByBoardWorkstream = new Map(
+    places.map((place) => [`${place.code}\u0000${place.workstreamName}`, place.ref]),
+  );
   await logPush(owner, { tool: "list_places" });
   if (boards.length === 0) return textResult(id, `No ${vocab.boards} yet.`);
 
@@ -973,7 +991,11 @@ async function listPlaces(owner: Owner, id: unknown): Promise<Response> {
     const lines = byContainer.get(key) ?? [];
     lines.push(`  ${board.code} · ${board.title}`);
     if (board.workstreams.length === 0) lines.push(`    (no ${vocab.workstream}s yet)`);
-    for (const name of board.workstreams) lines.push(`    ${placeRef(board.code, name)}`);
+    for (const name of board.workstreams) {
+      lines.push(
+        `    ${refByBoardWorkstream.get(`${board.code}\u0000${name}`) ?? placeRef(board.code, name)}`,
+      );
+    }
     byContainer.set(key, lines);
   }
   const text = [...byContainer.entries()].map(([name, lines]) => [name, ...lines].join("\n")).join("\n\n");
@@ -1082,9 +1104,11 @@ async function pushOptions(owner: Owner, args: Obj, id: unknown): Promise<Respon
       ? [`Other ${vocab.containers} exist; call lasso_list_places to see them all.`]
       : []),
   ];
+  const optionsText = lines.join("\n");
   return rpcResult(id, {
-    content: [{ type: "text", text: lines.join("\n") }],
+    content: [{ type: "text", text: optionsText }],
     structuredContent: {
+      summary: optionsText,
       suggested,
       places: places.map((place) => ({
         ref: place.ref,
