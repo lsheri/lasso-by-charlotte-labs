@@ -8,7 +8,7 @@ export type KeptAnswer = {
   reads: { id: string; depth: string }[];
 };
 
-type Keep = (answer: KeptAnswer) => void;
+type Keep = (answer: KeptAnswer, via?: "button" | "drag") => void;
 
 const AnswerKeepContext = createContext<Keep | null>(null);
 

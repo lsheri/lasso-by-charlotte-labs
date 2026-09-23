@@ -23,7 +23,7 @@ import { LassoThinkingMark } from "@/components/reflect/LassoThinkingMark";
 import { LOOP_SIZE_TOOLBAR } from "@/lib/lasso-loop";
 import type { KeptAnswer } from "@/components/reflect/answer-keep-context";
 import { supabase } from "@/integrations/supabase/client";
-import { answerCiteRows, answerNodeInput, canKeepAnswer } from "@/lib/answer-card";
+import { ANSWER_DRAG_MIME, KEEP_ANSWER_ANNOUNCEMENT, answerCiteRows, answerNodeInput, canKeepAnswer, isAnswerDrag, parseAnswerDrop } from "@/lib/answer-card";
 
 import { CanvasLabReview } from "@/components/canvas-lab/CanvasLabReview";
 import { CanvasLabStatusLine } from "@/components/canvas-lab/CanvasLabStatusLine";
@@ -1927,30 +1927,36 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
    * it was written in, and stored references to the turns it read. The person
    * who asked is the author of the record.
    */
-  async function keepAnswerAsCard(answer: KeptAnswer) {
+  async function keepAnswerAsCard(answer: KeptAnswer, options?: { at?: Point; via?: "button" | "drag" }) {
     if (!canKeepAnswer({ onBoard: true, finished: true, canEdit: canAddWork }) || keepBusy) return;
     setKeepBusy(true);
     try {
       if (!(await materialize())) return;
-      const anchor = boardPointFromScreen(viewportCentre());
-      const taken: PlacementRect[] = [
-        ...placementRectsForNodes(visibleNodes),
-        ...placementRectsForFrames(boardFrames.map((frame) => ({ id: frame.id, label: frame.name, x: frame.x, y: frame.y, width: frame.width, height: frame.height }))),
-      ];
-      const at = placeAddedCards(anchor, taken, 1)[0] ?? anchor;
+      let at: Point;
+      if (options?.at) {
+        // A drop places the card's top-left exactly where it was let go.
+        at = options.at;
+      } else {
+        const anchor = boardPointFromScreen(viewportCentre());
+        const taken: PlacementRect[] = [
+          ...placementRectsForNodes(visibleNodes),
+          ...placementRectsForFrames(boardFrames.map((frame) => ({ id: frame.id, label: frame.name, x: frame.x, y: frame.y, width: frame.width, height: frame.height }))),
+        ];
+        at = placeAddedCards(anchor, taken, 1)[0] ?? anchor;
+      }
       const input = answerNodeInput({ clientKey: `answer:${crypto.randomUUID()}`, at, text: answer.text });
       const result = await lab.persist({ type: "node_create", node: input });
       report(result, "node", "create");
       if (result.status !== "saved" || !result.created?.nodeId) return;
       const nodeId = result.created.nodeId;
-      noteWorkboardNodeCreated(orgId, "answer");
+      noteWorkboardNodeCreated(orgId, "answer", undefined, options?.via);
       const cites = answerCiteRows(nodeId, answer.reads);
       if (cites.length > 0) await supabase.from("answer_cites").insert(cites);
       // Re-read the saved board and apply it, so the kept card is on the stage
       // straight away rather than only after the page is opened again.
       await reloadDurableBoard();
 
-      setAnnouncement("Answer kept as a card.");
+      setAnnouncement(KEEP_ANSWER_ANNOUNCEMENT);
     } finally {
       setKeepBusy(false);
     }
@@ -2581,7 +2587,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
         </header>
         {lab.saveState.status === "conflict" ? <div data-testid="canvas-lab-banner" className="canvas-lab-banner" role="alert"><p className="text-[13px] text-foreground">A newer version of this record was saved.</p><div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => resolveConflict("latest")}>Load latest</Button><Button size="sm" variant="outline" onClick={() => resolveConflict("retry")}>Retry my change</Button></div></div> : null}
         {lab.saveState.status === "error" ? <div data-testid="canvas-lab-banner" className="canvas-lab-banner" role="alert"><p className="text-[13px] text-foreground">Could not save your last change. {lab.saveState.message}</p><div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => resolveSaveError("retry")}>Retry</Button><Button size="sm" variant="outline" onClick={() => resolveSaveError("discard")}>Discard</Button></div></div> : null}
-        <div ref={shellRef} tabIndex={-1} onPointerDownCapture={(event) => { if (event.button === 0 && spaceRef.current) { event.preventDefault(); event.stopPropagation(); startSpacePan(event); } }} onPointerDown={(event) => { const target = event.target as HTMLElement; const empty = event.target === event.currentTarget || target.dataset["testid"] === "canvas-lab-stage"; if (event.button === 0 && empty && drawTool) { event.preventDefault(); const at = stagePoint(event.clientX, event.clientY); drawingRef.current = { from: at, to: at }; setDrawing({ from: at, to: at }); return; } if (event.button === 1 && empty) { event.preventDefault(); startSpacePan(event); return; } if (event.button === 0 && empty) { setKeyboardId(null); setSelectedFrameId(null); setSelectedLinkId((current) => relationshipSelection(current, "deselect")); if (event.pointerType === "touch") { startSpacePan(event); return; } const at = stagePoint(event.clientX, event.clientY); const screen = { x: event.clientX, y: event.clientY }; marqueeRef.current = { fromScreen: screen, fromBoard: at, toScreen: screen, toBoard: at }; setInteraction("marquee"); } }} onContextMenu={(event) => { const target = event.target as HTMLElement; const empty = event.target === event.currentTarget || target.dataset["testid"] === "canvas-lab-stage"; if (!empty || !canAddWork) return; event.preventDefault(); const rect = event.currentTarget.getBoundingClientRect(); const screen = { x: event.clientX - rect.left, y: event.clientY - rect.top }; setBoardMenu({ screen, board: boardPointFromScreen(screen) }); }} data-space-pan={spaceHeld} data-drawing={drawTool ? "true" : undefined} onScroll={(event) => keepViewportUnscrolled(event.currentTarget)} data-interacting={interaction !== "idle" || drawing !== null ? "true" : undefined} className="canvas-lab-surface relative min-h-0 flex-1 overflow-hidden">
+        <div ref={shellRef} tabIndex={-1} onDragOver={(event) => { if (!canAddWork || !isAnswerDrag(event.dataTransfer.types)) return; event.preventDefault(); event.dataTransfer.dropEffect = "copy"; }} onDrop={(event) => { if (!isAnswerDrag(event.dataTransfer.types)) return; event.preventDefault(); delete document.body.dataset["answerDrag"]; const answer = parseAnswerDrop(event.dataTransfer.getData(ANSWER_DRAG_MIME)); if (!answer) return; void keepAnswerAsCard(answer, { at: stagePoint(event.clientX, event.clientY), via: "drag" }); }} onPointerDownCapture={(event) => { if (event.button === 0 && spaceRef.current) { event.preventDefault(); event.stopPropagation(); startSpacePan(event); } }} onPointerDown={(event) => { const target = event.target as HTMLElement; const empty = event.target === event.currentTarget || target.dataset["testid"] === "canvas-lab-stage"; if (event.button === 0 && empty && drawTool) { event.preventDefault(); const at = stagePoint(event.clientX, event.clientY); drawingRef.current = { from: at, to: at }; setDrawing({ from: at, to: at }); return; } if (event.button === 1 && empty) { event.preventDefault(); startSpacePan(event); return; } if (event.button === 0 && empty) { setKeyboardId(null); setSelectedFrameId(null); setSelectedLinkId((current) => relationshipSelection(current, "deselect")); if (event.pointerType === "touch") { startSpacePan(event); return; } const at = stagePoint(event.clientX, event.clientY); const screen = { x: event.clientX, y: event.clientY }; marqueeRef.current = { fromScreen: screen, fromBoard: at, toScreen: screen, toBoard: at }; setInteraction("marquee"); } }} onContextMenu={(event) => { const target = event.target as HTMLElement; const empty = event.target === event.currentTarget || target.dataset["testid"] === "canvas-lab-stage"; if (!empty || !canAddWork) return; event.preventDefault(); const rect = event.currentTarget.getBoundingClientRect(); const screen = { x: event.clientX - rect.left, y: event.clientY - rect.top }; setBoardMenu({ screen, board: boardPointFromScreen(screen) }); }} data-space-pan={spaceHeld} data-drawing={drawTool ? "true" : undefined} onScroll={(event) => keepViewportUnscrolled(event.currentTarget)} data-interacting={interaction !== "idle" || drawing !== null ? "true" : undefined} className="canvas-lab-surface relative min-h-0 flex-1 overflow-hidden">
           {boardReady ? <div data-testid="canvas-lab-stage" tabIndex={-1} className="canvas-lab-stage absolute left-0 top-0 origin-top-left" style={{ width: bounds.width, height: bounds.height, transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`, "--lab-inverse-zoom": labInverseZoom(zoom) } as CSSProperties}>
             {visibleNodes.filter((node) => node.kind === "shape").map((node) => <LabColourBlock key={node.id} node={node} selected={keyboardId === node.id} editable={Boolean(lab.board?.canEditStructure)} onSelect={() => { setKeyboardId(node.id); setSelectedFrameId(null); setSelectedLinkId(null); }} onDragStart={(event) => { if (decorationPointerIntent({ selected: keyboardId === node.id, onEdge: Boolean((event.target as HTMLElement).dataset["edge"]) }) === "drag") onCardPointerDown(node, event); }} onResizeStart={(corner, event) => startResize("shape", node.id, corner, node, event)} onResizeKeyDown={(corner, event) => keyboardResize("shape", node.id, corner, node, event)} onResizeKeyUp={finishKeyboardResize} onRemove={() => deleteNode(node)} />)}
             {marquee ? <div className="canvas-lab-marquee" aria-hidden="true" style={{ left: marquee.x, top: marquee.y, width: marquee.width, height: marquee.height }} /> : null}
@@ -2626,7 +2632,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
         </div>
         {boardReady && opening ? <div className={`pointer-events-none absolute inset-0 z-40 flex ${unfold.className}`} aria-hidden={!unfold.still}>{unfold.still ? <span className="sr-only">{unfold.reduced}</span> : null}<span className="canvas-lab-unfold-panel" /><span className="canvas-lab-unfold-panel" /><span className="canvas-lab-unfold-panel" /></div> : null}
       </main>
-      {profile?.id && orgId ? <BoardAsk open={askOpen} onOpenChange={setAskOpen} engagementId={engagementId} engagementTitle={title} profileId={profile.id} orgId={orgId} canKeep={canAddWork} onKeep={(answer) => void keepAnswerAsCard(answer)} boardContextItemIds={contextNodes.flatMap((node) => { const item = itemByNode(node); return item ? [item.id] : []; })} /> : null}
+      {profile?.id && orgId ? <BoardAsk open={askOpen} onOpenChange={setAskOpen} engagementId={engagementId} engagementTitle={title} profileId={profile.id} orgId={orgId} canKeep={canAddWork} onKeep={(answer, via) => void keepAnswerAsCard(answer, { via: via ?? "button" })} boardContextItemIds={contextNodes.flatMap((node) => { const item = itemByNode(node); return item ? [item.id] : []; })} /> : null}
       <p className="sr-only" aria-live="polite">{announcement}</p>
       {exampleOpen ? <ExampleBoardOverlay onClose={() => setExampleOpen(false)} /> : null}
       {canAddWork ? <AddWorkPanel open={addWorkOpen} onOpenChange={(next) => { setAddWorkOpen(next); if (!next) { setAddWorkAnchor(null); setAddWorkTarget("board"); } }} onPlace={addWorkToBoard} busy={addWorkBusy} /> : null}
