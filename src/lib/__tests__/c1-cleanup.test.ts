@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { guardEventDims } from "@/lib/event-dim-allowlist";
-import { mcpVocabFor } from "@/lib/mcp-vocab";
+import { DEFAULT_VOCAB, EDU_VOCAB } from "@/lib/edu-vocab";
 import { artifactPreviewKind } from "@/lib/workboard-file-preview";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");

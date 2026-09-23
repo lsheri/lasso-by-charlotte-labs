@@ -238,7 +238,7 @@ function ArtifactRenderedContent({ item, kind, canEdit, onDownload }: { item: Wo
   const source = <TextPane item={item} canEdit={canEdit} onDownload={onDownload} />;
   return (
     <div>
-      <div className="mb-3 inline-flex rounded-[var(--radius)] border border-border bg-secondary p-0.5" aria-label="Preview mode">
+      <div className="mb-3 inline-flex rounded-[var(--radius)] border border-border bg-secondary p-0.5" role="group" aria-label="Preview mode">
         {(["rendered", "source"] as const).map((value) => (
           <Button key={value} type="button" size="sm" variant={mode === value ? "secondary" : "ghost"} aria-pressed={mode === value} onClick={() => chooseMode(value)} className="h-7 px-3">
             {value === "rendered" ? "Rendered" : "Source"}
