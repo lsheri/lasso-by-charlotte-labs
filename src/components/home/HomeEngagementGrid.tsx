@@ -1,6 +1,14 @@
 import { Link } from "@tanstack/react-router";
+import { useEffect, useRef, useState } from "react";
 
 import { emitClientEvent } from "@/lib/client-telemetry";
+import { regionFillStyle } from "@/lib/board-region";
+import {
+  HOME_PREVIEW_HEIGHT,
+  previewTransform,
+  type HomePreviewState,
+  type PreviewRect,
+} from "@/lib/home-board-preview";
 import { lastOpenedLabel, orderHomeGrid, type HomeGridEngagement } from "@/lib/home-grid";
 
 export const HOME_GRID_GAP = 24;
@@ -17,6 +25,78 @@ export function homeGridHeight(cardCount: number, availableWidth: number): numbe
   return rows * HOME_GRID_CARD_HEIGHT + (rows - 1) * HOME_GRID_GAP;
 }
 
+function projectedRect(rect: PreviewRect, transform: ReturnType<typeof previewTransform>) {
+  return {
+    x: rect.x * transform.scale + transform.offsetX,
+    y: rect.y * transform.scale + transform.offsetY,
+    width: Math.max(0, rect.w * transform.scale),
+    height: Math.max(0, rect.h * transform.scale),
+  };
+}
+
+export function HomeBoardPreview({ state }: { state: HomePreviewState }) {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const [width, setWidth] = useState(220);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    const measure = () => setWidth(container.clientWidth);
+    measure();
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, []);
+
+  const board = state.status === "ready" ? state.board : null;
+  const rects = board ? [...board.frames, ...board.nodes] : [];
+  const transform = previewTransform(rects, { width, height: HOME_PREVIEW_HEIGHT });
+
+  return (
+    <div
+      ref={containerRef}
+      data-testid="home-board-preview"
+      data-preview-state={state.status === "loading" ? "loading" : rects.length === 0 ? "empty" : "populated"}
+      className="h-[132px] overflow-hidden rounded-[var(--radius-control)] border border-dashed border-border bg-[var(--nb-paper,transparent)]"
+      aria-hidden
+    >
+      {board && rects.length > 0 ? (
+        <svg className="block h-full w-full" viewBox={`0 0 ${width} ${HOME_PREVIEW_HEIGHT}`} preserveAspectRatio="xMidYMid meet">
+          {board.frames.map((frame, index) => {
+            const projected = projectedRect(frame, transform);
+            const colours = regionFillStyle(frame.fill);
+            return (
+              <rect
+                key={`frame-${index}`}
+                data-preview-frame="true"
+                {...projected}
+                rx="4"
+                fill={colours.fill}
+                stroke={colours.edge}
+                strokeWidth="1"
+                strokeDasharray="3 2"
+                vectorEffect="non-scaling-stroke"
+              />
+            );
+          })}
+          {board.nodes.map((node, index) => (
+            <rect
+              key={`node-${index}`}
+              data-preview-node="true"
+              {...projectedRect(node, transform)}
+              rx="2"
+              className="fill-card stroke-border"
+              strokeWidth="1"
+              vectorEffect="non-scaling-stroke"
+            />
+          ))}
+        </svg>
+      ) : null}
+    </div>
+  );
+}
+
 /**
  * P4b: the Home grid.
  *
@@ -27,9 +107,11 @@ export function homeGridHeight(cardCount: number, availableWidth: number): numbe
 export function HomeEngagementGrid({
   cards,
   availableWidth,
+  previews,
 }: {
   cards: readonly HomeGridEngagement[];
   availableWidth: number;
+  previews?: ReadonlyMap<string, HomePreviewState>;
 }) {
   if (cards.length === 0) return null;
   const ordered = orderHomeGrid(cards);
@@ -51,10 +133,7 @@ export function HomeEngagementGrid({
               onClick={() => emitClientEvent("home.engagement_opened", {})}
               className="block h-full rounded-[var(--radius-control)] border border-border bg-card p-3 transition-colors hover:border-foreground/40 focus:outline-none focus:ring-2 focus:ring-ring"
             >
-              <div
-                aria-hidden
-                className="h-[132px] rounded-[var(--radius-control)] border border-dashed border-border bg-[var(--nb-paper,transparent)]"
-              />
+              <HomeBoardPreview state={previews?.get(card.id) ?? { status: "loading" }} />
               <p className="mt-3 font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
                 {card.clientLabel ?? card.code}
               </p>

@@ -66,3 +66,5 @@
 - [x] Render missing months as narrow timeline spines without card wells.
 - [x] Derive month height from visible cards, gaps, padding, header, and overflow row.
 - [x] Mutation-check density, fit, and preserved conversation filtering behavior.
+- [x] P4c: Render real, text-free workboard geometry in Home card previews from one bounded read.
+- [ ] P4c: Verify preview geometry, empty/loading paper states, and the Home grid in a real browser.

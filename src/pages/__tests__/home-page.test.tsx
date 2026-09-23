@@ -31,6 +31,10 @@ vi.mock("@/hooks/use-engagement-work-counts", () => ({
   useEngagementWorkCounts: () => ({ data: undefined }),
 }));
 
+vi.mock("@/hooks/use-engagement-board-previews", () => ({
+  useEngagementBoardPreviews: () => ({ previews: new Map() }),
+}));
+
 vi.mock("@/lib/client-telemetry", () => ({
   emitClientEvent: mocks.emitClientEvent,
 }));
