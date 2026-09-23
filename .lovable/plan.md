@@ -1,29 +1,32 @@
-# P2: Inbox columns on the board shell
+# P2: Render HTML and SVG artifacts on the board
 
 ## Data impact
-- Presentation-only change: the four existing work-type columns become board lanes.
-- No consent surfaces or consent stamping change.
-- No event names, payloads, or dimensions change. The existing `work.filter_changed` path remains intact.
-- No SQL, table, column, policy, or stored data change.
+- Add one render state to the existing card preview. No new action or surface.
+- Reuse `workboard.card_content_viewed` and its existing `kind` dimension with the additive value `html`; add no event or dimension.
+- No consent, database, schema, or write-path changes.
 
 ## Build
-- Keep every page section outside the current four-column area exactly where it is.
-- Render the existing Preview/Sticky control, placement and engagement chips, and existing count line in `BoardShell`’s toolbar slot.
-- Represent the four existing work buckets as fixed `lane:` frames with visible labels and counts.
-- Represent each current page entry as lane content in the existing sort order. Positions remain computed by lane index and are never persisted.
-- Keep five-item replacement paging within each lane.
-- Keep `DimmedDisabled` around individual cards with the current `aria-disabled` and `inert` behavior. Never dim a lane.
-- Put `Nothing here yet.` in an empty lane. Put the existing Unmapped teaching sentence in the Unmapped lane only under its current zero-match condition.
-- Keep lanes non-draggable, non-resizable, non-nameable, and non-claiming by relying on the existing furniture-only lane behavior.
+1. Extend `WorkboardFilePreview` with `kind: "html"` and optional full-document `html`.
+2. Add an authenticated server read for artifact bytes. It will decide only from `source_meta.kind`, read `content_ref` from `work-files`, reject payloads above 1 MB, and return HTML or an SVG wrapped in a minimal HTML document. The existing text path remains the fallback for size and read failures.
+3. Add and test `withPreviewCsp`, injecting exactly one CSP meta as the first child of an existing or created head, including bare fragments.
+4. Render HTML previews in a sandboxed, no-referrer iframe. Pass the item title into the renderer.
+5. Pass card focus into the preview and place a transparent interaction layer above the iframe only while unfocused, preserving board drag, selection, and wheel panning.
+6. Reuse the HTML preview in the enlarged board view if its data path supports it. Leave unrelated Peek rendering unchanged if it uses a separate reader.
+7. Route HTML scroll/open reporting through the existing `workboard.card_content_viewed` event with `kind: "html"`.
 
-## Preserved controls, states, and events
-- Controls: all bring-work, suggestion, private-work, flagged removal, bulk selection, card actions, paging, Preview/Sticky, and filter controls remain reachable with identical labels and handlers.
-- States: loading, full-page empty, errors, empty lane, zero-match Unmapped teaching, zero-match Claimed, dimmed/inert matches, suggestion, selection, and paging states remain.
-- Telemetry: `work.filter_changed` keeps its existing exact dimensions and call path. No other telemetry call changes.
+## Rule 8 preservation
+### Before
+- `WorkboardFilePreview` controls: previous page and next page.
+- `WorkboardFilePreview` states: PDF loading/ready/failure, PDF page/count, slide page/count, text, fallback/null.
+- `LabPreview` controls: Open larger.
+- `LabPreview` states: chat preview, document/deck preview, absent preview; portrait or slide shape.
+- Event reachability: page changes report existing document/deck viewing; Open larger reports the existing preview kind.
 
-## Guard and verification
-- Edit only `cg1-inbox-congruency.test.tsx` where old list/column selectors must target board lanes instead.
-- Preserve every existing congruency assertion, including full visibility, per-card dimming, `aria-disabled`, `inert`, teaching-line conditions, no green/lime matching, fixed cards, event payload closure, four areas, and five-item replacement.
-- Mutation-check each congruency behavior by making one temporary page mutation, proving its focused test fails, restoring exactly, and proving it passes.
-- Run the full test suite and confirm the preview build is healthy.
-- Confirm `CanvasLabPage.tsx`, `BoardShell.tsx`, and `board-lane.ts` remain byte-for-byte untouched.
+### After
+- Every control and state above remains.
+- Added state only: HTML/SVG iframe preview, with an unfocused interaction layer that is inactive when focused.
+- Existing event path additionally receives `kind: "html"`; no event name or dimension changes.
+
+## Verification
+- Add `src/lib/__tests__/p2-html-preview.test.ts` for all three CSP document shapes, exact iframe restrictions, shared type acceptance, SVG wrapping, builder wiring, and focus overlay wiring.
+- Run focused tests, `tsgo`, and the full suite; check the preview build log.
