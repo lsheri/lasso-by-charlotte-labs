@@ -1215,7 +1215,13 @@ async function listEngagements(owner: Owner, id: unknown): Promise<Response> {
   return textResult(id, lines.join("\n\n"));
 }
 
-type IncomingMessage = { role: string; content: string; timestamp?: string };
+type IncomingMessage = {
+  role: string;
+  content: string;
+  timestamp?: string;
+  fidelity?: "verbatim" | "summary";
+  covers?: { from: number; to: number };
+};
 type IncomingAttachment = {
   kind: string;
   title: string;
