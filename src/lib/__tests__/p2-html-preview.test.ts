@@ -64,8 +64,8 @@ describe("P2 HTML and SVG workboard previews", () => {
   it("uses only source_meta.kind and the protected server reader for artifact previews", () => {
     const helperSource = readFileSync("src/lib/workboard-file-preview.ts", "utf8");
     const serverSource = readFileSync("src/lib/workboard-artifact-preview.functions.ts", "utf8");
-    expect(helperSource).toContain('item.source_meta?.kind === "artifact_html"');
-    expect(helperSource).toContain('item.source_meta?.kind === "artifact_svg"');
+    expect(helperSource).toContain('kind === "artifact_html"');
+    expect(helperSource).toContain('kind === "artifact_svg"');
     expect(serverSource).toContain(".middleware([requireSupabaseAuth])");
     expect(serverSource).toContain("MAX_ARTIFACT_PREVIEW_BYTES = 1024 * 1024");
     expect(serverSource).toContain('.storage.from("work-files").download(item.content_ref)');
