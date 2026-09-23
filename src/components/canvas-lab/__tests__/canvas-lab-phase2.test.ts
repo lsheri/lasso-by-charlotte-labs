@@ -47,13 +47,11 @@ describe("Canvas Lab Phase 2", () => {
     for (const entry of recorded) expect(catalog).toContain(`| "${entry.event}"`);
   });
 
-  it("keeps the rail beside the board and provides a narrow-screen switch", () => {
+  it("keeps Ask Lasso beside the board and the narrow-screen switch opens it (B2)", () => {
     const page = read("src/pages/CanvasLabPage.tsx");
-    const rail = read("src/components/canvas-lab/WorkRail.tsx");
     expect(page).not.toContain("absolute inset-x-0 bottom-3");
-    expect(page).toContain("<WorkRail");
-    expect(rail).toContain("Open working from rail");
-    expect(rail).toContain("Show board");
+    expect(page).not.toContain("<WorkRail");
+    expect(page).toContain('data-toolbar-control="working-from" onClick={() => setAskOpen(true)}');
   });
 
   it("opens the Lab-only review without the production confirmation flow", () => {
