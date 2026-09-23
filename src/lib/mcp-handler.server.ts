@@ -980,7 +980,7 @@ async function listPlaces(owner: Owner, id: unknown): Promise<Response> {
   const { boards, places } = await readPlaces(owner);
   // P1 item 4. The unique ref, so two boards sharing a code stay distinct.
   const refByBoardWorkstream = new Map(
-    places.map((place) => [`${place.code}\u0000${place.workstreamName}`, place.ref]),
+    places.map((place) => [`${place.code}\u0000${place.boardTitle}\u0000${place.workstreamName}`, place.ref]),
   );
   await logPush(owner, { tool: "list_places" });
   if (boards.length === 0) return textResult(id, `No ${vocab.boards} yet.`);
@@ -993,7 +993,7 @@ async function listPlaces(owner: Owner, id: unknown): Promise<Response> {
     if (board.workstreams.length === 0) lines.push(`    (no ${vocab.workstream}s yet)`);
     for (const name of board.workstreams) {
       lines.push(
-        `    ${refByBoardWorkstream.get(`${board.code}\u0000${name}`) ?? placeRef(board.code, name)}`,
+        `    ${refByBoardWorkstream.get(`${board.code}\u0000${board.title}\u0000${name}`) ?? placeRef(board.code, name)}`,
       );
     }
     byContainer.set(key, lines);
