@@ -131,6 +131,18 @@ export function inboxLaneHeight(viewportHeight: number): number {
   return Math.max(INBOX_LANE_MIN_HEIGHT, viewportHeight - INBOX_LANE_TOP - INBOX_BOARD_SIDE_MARGIN);
 }
 
+/** The four lane rectangles for a shell of this size. The fit of these is a no-op (zoom 1). */
+export function inboxLaneRects(viewport: { width: number; height: number }): { x: number; y: number; width: number; height: number }[] {
+  const width = inboxLaneWidth(viewport.width);
+  const height = inboxLaneHeight(viewport.height);
+  return Array.from({ length: INBOX_LANE_COUNT }, (_, index) => ({
+    x: INBOX_LANE_LEFT + index * (width + INBOX_LANE_GAP),
+    y: INBOX_LANE_TOP,
+    width,
+    height,
+  }));
+}
+
 export function inboxLaneWidth(viewportWidth: number): number {
   const dividedWidth =
     (viewportWidth - INBOX_BOARD_SIDE_MARGIN * 2 - INBOX_LANE_GAP * (INBOX_LANE_COUNT - 1)) /
@@ -826,10 +838,7 @@ export function WorkPage() {
 
   const inboxLaneFrames: InboxLaneFrame[] = lanePages.map(({ bucket, entries }, index) => ({
     id: newLaneFrameId(`inbox-${bucket.key}`),
-    x: INBOX_LANE_LEFT + index * (currentInboxLaneWidth + INBOX_LANE_GAP),
-    y: INBOX_LANE_TOP,
-    width: currentInboxLaneWidth,
-    height: currentInboxLaneHeight,
+    ...inboxLaneRects({ width: inboxViewportWidth, height: inboxViewportHeight })[index]!,
     contentInset: { top: INBOX_LANE_HEADER_HEIGHT, bottom: INBOX_LANE_PAGING_HEIGHT },
     bucket,
     entryCount: entries.length,
