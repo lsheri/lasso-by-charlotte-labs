@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 import { noteWorkboardContextChanged } from "@/components/canvas-lab/canvas-lab-telemetry";
 import { useSlashMenu } from "./use-slash-menu";
@@ -17,7 +18,7 @@ import { parseManifest } from "@/lib/context-manifest";
 import { ArtifactNote, SourceMark } from "@/components/work/SourceMark";
 import { TypeBadge } from "@/components/work/TypeIcon";
 import { useAnswerKeep } from "@/components/reflect/answer-keep-context";
-import { KEEP_ANSWER_LABEL } from "@/lib/answer-card";
+import { ANSWER_DRAG_MIME, KEEP_ANSWER_LABEL } from "@/lib/answer-card";
 import type { AskTab } from "@/components/reflect/ask-dock-state";
 import type { AskLasso } from "@/components/reflect/use-ask-lasso";
 import { LassoThinkingMark } from "@/components/reflect/LassoThinkingMark";
@@ -150,6 +151,18 @@ function MessagesTab({ ask, emptyActions }: { ask: AskLasso; emptyActions?: Reac
   // Only the workboard offers a place to keep an answer, and only to someone
   // who may arrange that board.
   const keep = useAnswerKeep();
+  // Dragging an answer onto the board is for a fine pointer on a wide screen.
+  const isMobile = useIsMobile();
+  const [coarse, setCoarse] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return;
+    const query = window.matchMedia("(pointer: coarse)");
+    setCoarse(query.matches);
+    const onChange = () => setCoarse(query.matches);
+    query.addEventListener?.("change", onChange);
+    return () => query.removeEventListener?.("change", onChange);
+  }, []);
+  const canDragAnswer = !!keep && !isMobile && !coarse;
 
   function shortTime(value: string | Date): string {
     return new Date(value).toLocaleTimeString(undefined, {
@@ -251,22 +264,56 @@ function MessagesTab({ ask, emptyActions }: { ask: AskLasso; emptyActions?: Reac
                         Save for 1:1
                       </button>
                       {keep && !ask.pending ? (
+<>
                         <button
                           type="button"
                           onClick={() =>
-                            keep({
-                              messageId: Number(message.id),
-                              text: message.content,
-                              reads: (ask.sourcesByMessage?.[Number(message.id)] ?? []).map((source) => ({
-                                id: source.id,
-                                depth: source.depth,
-                              })),
-                            })
+                            keep(
+                              {
+                                messageId: Number(message.id),
+                                text: message.content,
+                                reads: (ask.sourcesByMessage?.[Number(message.id)] ?? []).map((source) => ({
+                                  id: source.id,
+                                  depth: source.depth,
+                                })),
+                              },
+                              "button",
+                            )
                           }
                           className="ml-3 mt-2 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
                         >
                           {KEEP_ANSWER_LABEL}
                         </button>
+                        {canDragAnswer ? (
+                          <span
+                            role="button"
+                            tabIndex={-1}
+                            draggable
+                            aria-label="Drag onto the board"
+                            title="Drag onto the board"
+                            data-testid="answer-drag-grip"
+                            onDragStart={(event) => {
+                              const payload = {
+                                messageId: Number(message.id),
+                                text: message.content,
+                                reads: (ask.sourcesByMessage?.[Number(message.id)] ?? []).map((source) => ({
+                                  id: source.id,
+                                  depth: source.depth,
+                                })),
+                              };
+                              event.dataTransfer.setData(ANSWER_DRAG_MIME, JSON.stringify(payload));
+                              event.dataTransfer.effectAllowed = "copy";
+                              document.body.dataset["answerDrag"] = "true";
+                            }}
+                            onDragEnd={() => {
+                              delete document.body.dataset["answerDrag"];
+                            }}
+                            className="ml-1 inline-flex cursor-grab items-center align-middle text-muted-foreground transition-colors hover:text-foreground active:cursor-grabbing"
+                          >
+                            <GraphiteIcon name="drag-handle" size={14} />
+                          </span>
+                        ) : null}
+                        </>
                       ) : null}
                     </div>
                   </>
