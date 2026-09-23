@@ -4,8 +4,14 @@ import { Download, ExternalLink } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { ReextractAction } from "@/components/peek/ReextractAction";
+import { Button } from "@/components/ui/button";
 import { useProfile } from "@/hooks/use-profile";
 import { highlight, toSafeHtml } from "@/lib/markdown";
+import { renderMermaidPreview } from "@/lib/mermaid-preview";
+import { logEvent } from "@/lib/telemetry";
+import { getWorkboardArtifactPreview } from "@/lib/workboard-artifact-preview.functions";
+import { artifactPreviewKind } from "@/lib/workboard-file-preview";
+import { withPreviewCsp } from "@/lib/workboard-card-preview.shared";
 import { getWorkFileUrl } from "@/lib/work-files.functions";
 import { getItemTextPane } from "@/lib/item-text.functions";
 import {
@@ -207,6 +213,52 @@ function TextOrFallback({
   return <FallbackCard item={item} label={label ?? ""} onDownload={onDownload} canEdit={canEdit} />;
 }
 
+type ArtifactKind = "html" | "svg" | "mermaid";
+
+function ArtifactRenderedContent({ item, kind, canEdit, onDownload }: { item: WorkItemRow; kind: ArtifactKind; canEdit?: boolean | undefined; onDownload: () => void }) {
+  const { data: profile } = useProfile();
+  const readArtifact = useServerFn(getWorkboardArtifactPreview);
+  const [mode, setMode] = useState<"rendered" | "source">("rendered");
+  const query = useQuery({
+    queryKey: ["workboard-artifact-preview", item.id, kind],
+    queryFn: async () => {
+      const result = await readArtifact({ data: { work_item_id: item.id } });
+      if (!result.html) throw new Error("Artifact preview unavailable");
+      return kind === "mermaid" ? await renderMermaidPreview(result.html, item.id) : result.html;
+    },
+    retry: false,
+  });
+
+  function chooseMode(next: "rendered" | "source") {
+    if (next === mode) return;
+    setMode(next);
+    if (profile?.org_id) logEvent("work.preview_mode_changed", profile.org_id, { mode: next, kind });
+  }
+
+  const source = <TextPane item={item} canEdit={canEdit} onDownload={onDownload} />;
+  return (
+    <div>
+      <div className="mb-3 inline-flex rounded-[var(--radius)] border border-border bg-secondary p-0.5" aria-label="Preview mode">
+        {(["rendered", "source"] as const).map((value) => (
+          <Button key={value} type="button" size="sm" variant={mode === value ? "secondary" : "ghost"} aria-pressed={mode === value} onClick={() => chooseMode(value)} className="h-7 px-3">
+            {value === "rendered" ? "Rendered" : "Source"}
+          </Button>
+        ))}
+      </div>
+      {mode === "source" || query.isError ? source : query.isPending ? <Notice>Loading preview…</Notice> : (
+        <iframe
+          sandbox="allow-scripts"
+          referrerPolicy="no-referrer"
+          srcDoc={withPreviewCsp(query.data)}
+          title={item.title}
+          className="min-h-[65vh] w-full rounded-[var(--radius)] border border-border bg-card"
+          data-testid="peek-artifact-preview"
+        />
+      )}
+    </div>
+  );
+}
+
 export function RenderedContent({
   item,
   format,
@@ -219,6 +271,7 @@ export function RenderedContent({
   canEdit?: boolean | undefined;
 }) {
   const shape = format ?? peekFormat(item);
+  const artifactKind = artifactPreviewKind(item);
   const wantsText = needsTextFetch(shape);
   const driveFileId = item.meta?.drive_file_id ?? null;
   // A Drive file is shown by Drive itself, so no signed storage URL is minted.
@@ -235,6 +288,10 @@ export function RenderedContent({
 
   const url = urlQuery.data ?? null;
   const readStatus = textStatusOf(item.meta as never);
+
+  if (artifactKind) {
+    return <ArtifactRenderedContent item={item} kind={artifactKind} canEdit={canEdit} onDownload={onDownload} />;
+  }
 
   useEffect(() => {
     if (!wantsText || !url) return;
