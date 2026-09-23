@@ -52,17 +52,19 @@ function PageControls({ page, count, onPage }: { page: number; count: number; on
   return <div className="canvas-lab-page-controls"><Button type="button" size="icon" variant="ghost" aria-label="Previous page" disabled={page <= 1} onPointerDown={(event) => event.stopPropagation()} onClick={(event) => { event.stopPropagation(); onPage(page - 1); }}><ChevronLeft aria-hidden="true" /></Button><span>Page {page} of {count}</span><Button type="button" size="icon" variant="ghost" aria-label="Next page" disabled={page >= count} onPointerDown={(event) => event.stopPropagation()} onClick={(event) => { event.stopPropagation(); onPage(page + 1); }}><ChevronRight aria-hidden="true" /></Button></div>;
 }
 
-function MermaidPreview({ source, title, focused, onFailure }: { source: string; title: string; focused: boolean; onFailure: () => void }) {
+function MermaidPreview({ source, id, title, focused, onFailure }: { source: string; id: string; title: string; focused: boolean; onFailure: () => void }) {
   const [html, setHtml] = useState<string | null>(null);
+  const onFailureRef = useRef(onFailure);
+  onFailureRef.current = onFailure;
   useEffect(() => {
     let cancelled = false;
-    void renderMermaidPreview(source, title).then((next) => {
+    void renderMermaidPreview(source, id).then((next) => {
       if (!cancelled) setHtml(next);
     }).catch(() => {
-      if (!cancelled) onFailure();
+      if (!cancelled) onFailureRef.current();
     });
     return () => { cancelled = true; };
-  }, [onFailure, source, title]);
+  }, [source, id]);
   if (!html) return null;
   return <div className="canvas-lab-html-preview">
     <iframe sandbox="allow-scripts" referrerPolicy="no-referrer" srcDoc={withPreviewCsp(html)} title={title} loading="lazy" data-testid="workboard-mermaid-preview" />
@@ -79,7 +81,7 @@ export function WorkboardFilePreview({ preview, title, focused = true, onFailure
       <div aria-hidden="true" data-testid="workboard-html-preview-overlay" data-focused={focused} className={focused ? "pointer-events-none absolute inset-0" : "absolute inset-0"} />
     </div>;
   }
-  if (preview.kind === "mermaid" && preview.html) return <MermaidPreview source={preview.html} title={title} focused={focused} onFailure={onFailure} />;
+  if (preview.kind === "mermaid" && preview.html) return <MermaidPreview source={preview.html} id={preview.workItemId} title={title} focused={focused} onFailure={onFailure} />;
   if (preview.kind === "slide") {
     const pages = preview.pages?.length ? preview.pages : [{ title: preview.slideTitle, lines: preview.lines }];
     const page = pages[Math.min(slide - 1, pages.length - 1)] ?? pages[0];
