@@ -1993,6 +1993,7 @@ async function pushConversation(
       degraded_refusals: flaggedBucket(degradedTurns.length + degradedAttachments.length),
       attachment_versions: versionRowsBucket(attachmentVersionRows),
       attachments_placed: versionRowsBucket(attachmentsPlaced),
+      summary_spans: versionRowsBucket(summarySpans),
     },
   });
   await recordEvent(supabaseAdmin, {
