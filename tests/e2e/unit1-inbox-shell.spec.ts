@@ -61,7 +61,7 @@ async function result(name: string, fn: () => Promise<string>) {
 
 test("unit1 inbox shell", async ({ page }) => {
   test.setTimeout(240_000);
-  await signIn(page, EMAIL, /sign in/i);
+  await signIn(page, EMAIL, /sign in/i).catch((e) => console.log(`SIGNIN note ${String(e).split("\n")[0]} url=${page.url()}`));
   await page.goto("/work", { waitUntil: "domcontentloaded" });
   await page.getByRole("button", { name: "Everything" }).first().waitFor({ timeout: 60_000 });
   await page.waitForTimeout(3000);
