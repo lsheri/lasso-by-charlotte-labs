@@ -16,7 +16,7 @@ type Props = {
   profileId: string;
   orgId: string;
   canKeep: boolean;
-  onKeep: (answer: KeptAnswer) => void;
+  onKeep: (answer: KeptAnswer, via?: "button" | "drag") => void;
   /** Work item ids of the cards picked "in context" on the board. */
   boardContextItemIds: string[];
 };
