@@ -6,6 +6,7 @@ import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { FileFormatIcon } from "@/components/work/FileFormatIcon";
 import { SourceMark, VendorMark } from "@/components/work/SourceMark";
+import { forgetWorkboardFilePreview } from "@/hooks/use-workboard-file-previews";
 import { supabase } from "@/integrations/supabase/client";
 import { completeReferenceFileFn } from "@/lib/reference-file.functions";
 import {
@@ -26,12 +27,28 @@ export function ReferenceFileCard({ item, onOpen }: { item: WorkItemRow; onOpen:
   const [over, setOver] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [added, setAdded] = useState(false);
   const meta = (item.source_meta ?? {}) as { filename?: string };
   const filename = meta.filename ?? item.title;
+
+  async function refresh() {
+    setAdded(true);
+    forgetWorkboardFilePreview(item.id);
+    // The board reads items from the engagement page payload, keyed ["engagement", id, profile].
+    await queryClient.invalidateQueries({ queryKey: ["engagement"] });
+    await queryClient.invalidateQueries({ queryKey: ["document-versions", item.id] });
+    await queryClient.invalidateQueries({ queryKey: ["work-items"] });
+  }
 
   async function add(file: File) {
     setBusy(true);
     setError(null);
+    // A stale card whose file is already added: skip the upload, just refresh.
+    if (item.content_fidelity !== "reference") {
+      await refresh();
+      setBusy(false);
+      return;
+    }
     const { data: userData } = await supabase.auth.getUser();
     const userId = userData.user?.id;
     if (!userId) {
@@ -49,8 +66,14 @@ export function ReferenceFileCard({ item, onOpen }: { item: WorkItemRow; onOpen:
     const answer = await complete({
       data: { work_item_id: item.id, path, via: "drop", mime_type: file.type },
     }).catch(() => ({ status: "refused" as const, reason: "error" }));
-    if (answer.status !== "done") setError("That file could not be added. Try again.");
-    await queryClient.invalidateQueries({ queryKey: ["work-items"] });
+    // "not_reference" means an earlier add already completed this card.
+    const alreadyDone = answer.status === "refused" && answer.reason === "not_reference";
+    if (answer.status === "done" || alreadyDone) {
+      await refresh();
+    } else {
+      setError("That file could not be added. Try again.");
+      await queryClient.invalidateQueries({ queryKey: ["work-items"] });
+    }
     setBusy(false);
   }
 
@@ -97,14 +120,14 @@ export function ReferenceFileCard({ item, onOpen }: { item: WorkItemRow; onOpen:
             type="button"
             variant="ghost"
             size="sm"
-            disabled={busy}
+            disabled={busy || added}
             onClick={(event) => {
               event.preventDefault();
               event.stopPropagation();
               inputRef.current?.click();
             }}
           >
-            {busy ? "Adding..." : REFERENCE_ADD_LABEL}
+            {added ? "Added. Loading the file..." : busy ? "Adding..." : REFERENCE_ADD_LABEL}
           </Button>
         </div>
         {error ? <span role="alert" className="text-xs text-muted-foreground">{error}</span> : null}

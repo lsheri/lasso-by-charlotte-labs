@@ -24,6 +24,11 @@ function enqueue<T>(work: () => Promise<T>): Promise<T> {
   return next;
 }
 
+/** P1b: drop one item's cached preview so it is computed again after its file is added. */
+export function forgetWorkboardFilePreview(workItemId: string): void {
+  sessionCache.delete(workItemId);
+}
+
 export async function loadWorkboardFilePreview(
   item: WorkItemRow,
   profileId: string,
@@ -83,7 +88,7 @@ export function useWorkboardFilePreviews(
     () => visibleItems.filter(isWorkboardFilePreviewItem),
     [visibleItems],
   );
-  const key = items.map((item) => item.id).sort().join(":");
+  const key = items.map((item) => `${item.id}/${item.content_fidelity ?? ""}`).sort().join(":");
 
   useEffect(() => {
     if (!enabled || !profileId) return;

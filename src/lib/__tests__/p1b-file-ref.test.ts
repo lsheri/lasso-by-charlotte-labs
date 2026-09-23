@@ -115,3 +115,15 @@ describe("P1b placeholder card interaction and frame", () => {
     expect(source).toContain("nb-preview-content flex min-h-0 flex-1 flex-col");
   });
 });
+
+describe("P1b refresh after add", () => {
+  const source = readFileSync("src/components/canvas-lab/ReferenceFileCard.tsx", "utf8");
+  it("treats not_reference as already done and refreshes the engagement page", () => {
+    expect(source).toContain('answer.reason === "not_reference"');
+    expect(source).toContain('if (answer.status === "done" || alreadyDone) {\n      await refresh();');
+    expect(source).toContain('invalidateQueries({ queryKey: ["engagement"] })');
+    expect(source).toContain("forgetWorkboardFilePreview(item.id)");
+    expect(source).toContain('item.content_fidelity !== "reference"');
+    expect(source).toContain("Added. Loading the file...");
+  });
+});
