@@ -43,6 +43,8 @@ import { isAffiliatedStrict, orgTypeOfStrict } from "@/lib/org-type.server";
 import {
   placementLine,
   chooseSuggestion,
+  suggestionCaution,
+  SUGGESTION_CAUTION_TEXT,
   createToolsFor,
   mcpVocabFor,
   mcpWorkspaceType,
