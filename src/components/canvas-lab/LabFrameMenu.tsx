@@ -19,6 +19,7 @@ export function LabFrameMenu({
   onFit,
   onRename,
   onRemove,
+  onUseAsContext,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -30,6 +31,7 @@ export function LabFrameMenu({
   onFit: () => void;
   onRename: () => void;
   onRemove: () => void;
+  onUseAsContext?: (() => void) | undefined;
 }) {
   if (!editable) return null;
   return (
@@ -54,6 +56,7 @@ export function LabFrameMenu({
           restoreFocus();
         }}
       >
+        {onUseAsContext ? <DropdownMenuItem onSelect={onUseAsContext}>Use as context</DropdownMenuItem> : null}
         <DropdownMenuItem onSelect={onFit}>Fit contents</DropdownMenuItem>
         {editable && custom ? <DropdownMenuItem onSelect={(event) => { event.preventDefault(); onRename(); }}>Rename</DropdownMenuItem> : null}
         {editable && custom ? (

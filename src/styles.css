@@ -5026,3 +5026,12 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 
 /* B1: while a drag, pan, resize or connect is live, embedded previews let the release reach the board. */
 .canvas-lab-surface[data-interacting="true"] iframe { pointer-events: none; }
+
+/* B3: the box dragged out on empty board to pick cards as context. */
+.canvas-lab-marquee {
+  position: absolute;
+  pointer-events: none;
+  z-index: 30;
+  border: calc(1.4px * var(--lab-inverse-zoom, 1)) dashed color-mix(in srgb, var(--nb-graphite) 60%, transparent);
+  background: color-mix(in srgb, var(--nb-green) 6%, transparent);
+}

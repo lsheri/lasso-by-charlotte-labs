@@ -1,6 +1,9 @@
 import { Link } from "@tanstack/react-router";
 import { createContext, useContext, useState } from "react";
 
+import { noteWorkboardContextChanged } from "@/components/canvas-lab/canvas-lab-telemetry";
+import { useSlashMenu } from "./use-slash-menu";
+
 import { AnswerSources } from "@/components/reflect/AnswerSources";
 import { CoverageNote } from "@/components/reflect/CoverageNote";
 import { GraphiteIcon, type GraphiteIconName } from "@/components/notebook/icons";
@@ -80,12 +83,18 @@ export function AskTabs({
 export const AskBoardPickedContext = createContext(false);
 
 /** The scope chip: what Lasso will read on the next message. */
-export function AskScopeChip({ ask, block }: { ask: AskLasso; block?: boolean }) {
+export function AskScopeChip({ ask, block, workstream }: { ask: AskLasso; block?: boolean; workstream?: { name: string; ids: string[] } | null }) {
   const boardPicked = useContext(AskBoardPickedContext);
+  const onWorkstream =
+    workstream != null &&
+    ask.selectedItems.length === workstream.ids.length &&
+    ask.selectedItems.every((i) => workstream.ids.includes(i.id));
   const label =
     ask.draftPointed.length > 0
       ? `Pointed at: ${ask.draftPointed.length} ${ask.draftPointed.length === 1 ? "item" : "items"}`
-      : ask.selectedItems.length === ask.mapped.length
+      : onWorkstream
+        ? `Workstream: ${workstream.name}`
+        : ask.selectedItems.length === ask.mapped.length
         ? "All work in this engagement"
         : boardPicked
           ? `${ask.selectedItems.length} picked on the board`
@@ -373,11 +382,34 @@ function HistoryTab({ ask }: { ask: AskLasso }) {
 }
 
 /** The composer, scope chip and send. Send is the one filled green here. */
-export function AskComposer({ ask, mobile }: { ask: AskLasso; mobile?: boolean }) {
+export function AskComposer({ ask, mobile, engagementId, orgId }: { ask: AskLasso; mobile?: boolean; engagementId: string; orgId?: string }) {
+  const slash = useSlashMenu(ask, engagementId, () => noteWorkboardContextChanged(orgId, "workstream"));
   return (
     <footer className="shrink-0 border-t border-border bg-card">
-      {mobile ? <AskScopeChip ask={ask} block /> : null}
+      {mobile ? <AskScopeChip ask={ask} block workstream={slash.chosen} /> : null}
       <div className="px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3">
+        {slash.open ? (
+          <div role="listbox" aria-label="Workstreams" className="mb-2 max-h-52 w-full max-w-full overflow-y-auto overscroll-contain rounded-[var(--radius-md)] border border-border bg-card">
+            {slash.matches.map((task, index) => (
+              <button
+                key={task.id}
+                type="button"
+                role="option"
+                aria-selected={index === slash.index}
+                onMouseDown={(event) => {
+                  event.preventDefault();
+                  slash.choose(task);
+                }}
+                className={`block min-h-11 w-full px-3 py-2 text-left text-sm ${
+                  index === slash.index ? "bg-secondary text-foreground" : "text-muted-foreground"
+                }`}
+              >
+                <span className="mr-1.5 font-mono text-[11px] text-muted-foreground">/</span>
+                <span className="break-words">{task.name}</span>
+              </button>
+            ))}
+          </div>
+        ) : null}
         {ask.mention && ask.mentionMatches.length > 0 ? (
           <div className="mb-2 max-h-52 w-full max-w-full overflow-y-auto overscroll-contain rounded-[var(--radius-md)] border border-border bg-card">
             {ask.mentionMatches.map((item, index) => (
@@ -403,7 +435,7 @@ export function AskComposer({ ask, mobile }: { ask: AskLasso; mobile?: boolean }
         ) : null}
         {!mobile ? (
           <div className="mb-2">
-            <AskScopeChip ask={ask} />
+            <AskScopeChip ask={ask} workstream={slash.chosen} />
           </div>
         ) : null}
         <div className="flex items-end gap-2">
@@ -412,10 +444,27 @@ export function AskComposer({ ask, mobile }: { ask: AskLasso; mobile?: boolean }
             value={ask.draft}
             enterKeyHint="send"
             inputMode="text"
-            onChange={(event) =>
-              ask.onDraftChange(event.target.value, event.target.selectionStart ?? 0)
-            }
+            onChange={(event) => {
+              ask.onDraftChange(event.target.value, event.target.selectionStart ?? 0);
+              slash.onChange(event.target.value, event.target.selectionStart ?? 0);
+            }}
             onKeyDown={(event) => {
+              if (slash.open) {
+                if (event.key === "ArrowDown") {
+                  event.preventDefault();
+                  slash.setIndex((i) => (i + 1) % slash.matches.length);
+                } else if (event.key === "ArrowUp") {
+                  event.preventDefault();
+                  slash.setIndex((i) => (i - 1 + slash.matches.length) % slash.matches.length);
+                } else if (event.key === "Enter") {
+                  event.preventDefault();
+                  const pick = slash.matches[slash.index];
+                  if (pick) slash.choose(pick);
+                } else if (event.key === "Escape") {
+                  slash.close();
+                }
+                return;
+              }
               if (!ask.mention || ask.mentionMatches.length === 0) return;
               if (event.key === "ArrowDown") {
                 event.preventDefault();
@@ -433,7 +482,7 @@ export function AskComposer({ ask, mobile }: { ask: AskLasso; mobile?: boolean }
                 ask.setMention(null);
               }
             }}
-            placeholder="What do you want to think through? Type @ to point at a piece of work."
+            placeholder="What do you want to think through? Type @ to point at a piece of work. Type / for a workstream."
             rows={mobile ? 2 : 3}
             className="min-h-[64px] resize-none"
           />
@@ -523,7 +572,7 @@ export function AskSurface({
       {ask.error ? <p className="px-4 pb-2 text-sm text-destructive">{ask.error}</p> : null}
 
       <div className={inline ? "sticky bottom-0 z-10" : undefined}>
-        {tab === "messages" ? <AskComposer ask={ask} mobile={mobile ?? false} /> : null}
+        {tab === "messages" ? <AskComposer ask={ask} mobile={mobile ?? false} engagementId={engagementId} orgId={orgId} /> : null}
       </div>
 
       {!mobile ? (
