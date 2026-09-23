@@ -7,7 +7,6 @@ import type { WorkItemRow } from "@/lib/work-types";
 import { filterWorkstreams, insertWorkstream, slashQuery, type SlashState } from "./slash-menu";
 
 type AskForSlash = {
-  engagementId: string | null | undefined;
   mapped: WorkItemRow[];
   draft: string;
   composerRef: React.RefObject<HTMLTextAreaElement | null>;
@@ -16,8 +15,8 @@ type AskForSlash = {
 };
 
 /** B3: "/" names a workstream; choosing one narrows the chat to its work. */
-export function useSlashMenu(ask: AskForSlash, onChosen?: () => void) {
-  const page = useEngagementPage(ask.engagementId ?? "");
+export function useSlashMenu(ask: AskForSlash, engagementId: string, onChosen?: () => void) {
+  const page = useEngagementPage(engagementId);
   const tasks = workstreamTasks(page.data?.tasks ?? []).map((task) => ({ id: task.id, name: task.name }));
   const [slash, setSlash] = useState<SlashState | null>(null);
   const [index, setIndex] = useState(0);

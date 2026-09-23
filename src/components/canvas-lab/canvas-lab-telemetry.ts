@@ -99,7 +99,8 @@ export function noteWorkboardSaveErrorResolved(orgId: string | undefined, entity
 }
 
 /** Closed union so later actions can be added without repurposing a field. */
-export type WorkboardContextAction = "cleared";
+/** B3 adds "marquee" (box-select) and "workstream" (a workstream chosen as context). Additive values only. */
+export type WorkboardContextAction = "cleared" | "marquee" | "workstream";
 
 /** Canvas Lab polish 2c-iv: the local context selection changed. Action only. */
 export function noteWorkboardContextChanged(orgId: string | undefined, action: WorkboardContextAction): void {
