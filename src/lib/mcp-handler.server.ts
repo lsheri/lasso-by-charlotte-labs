@@ -83,6 +83,62 @@ export function versionRowsBucket(n: number): "0" | "1" | "2+" {
   return n === 1 ? "1" : "2+";
 }
 
+/**
+ * P1 item 1. A message is verbatim unless the caller says it stands for a span
+ * its context no longer holds word for word. A summary must say which
+ * positions it stands for; nothing is guessed on its behalf.
+ */
+export type MessageFidelity =
+  | { fidelity: "verbatim" }
+  | { fidelity: "summary"; covers_from: number; covers_to: number };
+
+export function parseMessageFidelity(
+  raw: { fidelity?: unknown; covers?: unknown },
+  position: number,
+): MessageFidelity | { error: string } {
+  const flag = raw?.fidelity;
+  if (flag === undefined || flag === null || flag === "verbatim") return { fidelity: "verbatim" };
+  if (flag !== "summary") {
+    return { error: `Message ${position}: fidelity must be 'verbatim' or 'summary'.` };
+  }
+  const covers = raw?.covers;
+  if (!covers || typeof covers !== "object" || Array.isArray(covers)) {
+    return {
+      error: `Message ${position}: a summary needs covers {from, to}, the positions it stands for.`,
+    };
+  }
+  const from = Number((covers as { from?: unknown }).from);
+  const to = Number((covers as { to?: unknown }).to);
+  if (!Number.isInteger(from) || !Number.isInteger(to) || from < 1 || to < from) {
+    return {
+      error: `Message ${position}: covers.from and covers.to must be whole positions with from at or before to.`,
+    };
+  }
+  return { fidelity: "summary", covers_from: from, covers_to: to };
+}
+
+/**
+ * P1 item 0. Where a caller stands: the next position to send, and whether
+ * the whole conversation is stored. Null total means the caller never said.
+ */
+export function pushProgress(
+  storedCount: number,
+  total: number | null,
+): { next_from: number | null; complete: boolean } {
+  if (!total) return { next_from: null, complete: false };
+  return storedCount >= total
+    ? { next_from: null, complete: true }
+    : { next_from: storedCount + 1, complete: false };
+}
+
+/** A stored turn is verbatim unless its meta says otherwise. */
+export function turnFidelity(meta: unknown): "verbatim" | "summary" {
+  const bag = meta && typeof meta === "object" && !Array.isArray(meta) ? (meta as Record<string, unknown>) : null;
+  return bag?.["fidelity"] === "summary" ? "summary" : "verbatim";
+}
+
+
+
 /** P0 item 4. The first 40 characters of a stored message, on one line. */
 export function receiptHead(content: string): string {
   const flat = content.replace(/\s+/g, " ").trim();
@@ -250,7 +306,7 @@ const pushTools = (vocab: McpVocab) => [
     title: "Push a conversation",
     icons: ICONS,
     description:
-      `When the user says 'Push to Lasso', 'send to Lasso', or similar: call push_conversation with the ENTIRE conversation, every message, verbatim, unabridged, plus any artifact, canvas or file that already existed as its own object in this app, as attachments. Never summarize the transcript. Never compose new summaries, recaps or section write-ups and send them as attachments. Never use push_document for conversation artifacts. Verbatim is non-negotiable: never substitute a summary, paraphrase, or shortened version of a message at any position, the server rejects shrunken overwrites. Before pushing, assess how many messages you can reproduce word-for-word in a single call given their actual lengths. If the whole conversation fits, push it whole. If not, push it in consecutive windows using window {from, to, total}: start with the first window sized to what you can reproduce verbatim, then follow the server's response, which tells you the next starting position, until all messages are stored. When re-pushing a conversation that grew, push only the new messages as a window, never re-send earlier messages unless correcting them. A smaller window is always the answer; a shorter message never is. Push at natural checkpoints during long work rather than only at the end, so nothing is lost if your context is compacted; re-pushing is safe and only sends what changed. For assistant turns that ran tools or wrote files, include what was done as a role: 'tool' message at that position, plainly, rather than omitting it. A binary file this chat generated (pptx, docx, xlsx, pdf, png) cannot be sent as content; say so to the user and tell them to add the file to the board from their download or Drive. Never send binary content as text or base64. ${placementLine(vocab)}`,
+      `When the user says 'Push to Lasso', 'send to Lasso', or similar: call push_conversation with the ENTIRE conversation, every message, verbatim, unabridged, plus any artifact, canvas or file that already existed as its own object in this app, as attachments. Never summarize the transcript. Never compose new summaries, recaps or section write-ups and send them as attachments. Never use push_document for conversation artifacts. Verbatim is non-negotiable: never substitute a summary, paraphrase, or shortened version of a message at any position, the server rejects shrunken overwrites. Before pushing, assess how many messages you can reproduce word-for-word in a single call given their actual lengths. If the whole conversation fits, push it whole. If not, push it in consecutive windows using window {from, to, total}: start with the first window sized to what you can reproduce verbatim, then follow the server's response, which tells you the next starting position, until all messages are stored. When re-pushing a conversation that grew, push only the new messages as a window, never re-send earlier messages unless correcting them. A smaller window is always the answer; a shorter message never is. Push at natural checkpoints during long work rather than only at the end, so nothing is lost if your context is compacted; re-pushing is safe and only sends what changed. For assistant turns that ran tools or wrote files, include what was done as a role: 'tool' message at that position, plainly, rather than omitting it. A binary file this chat generated (pptx, docx, xlsx, pdf, png) cannot be sent as content; say so to the user and tell them to add the file to the board from their download or Drive. Never send binary content as text or base64. If part of the conversation is no longer in your context word for word, send that span as ONE message with fidelity: summary and covers: {from, to}; never send a summary as verbatim and never leave the span out. ${placementLine(vocab)}`,
     // Windowing is the only sanctioned way to split a push, and only because
     // the alternative the model reaches for otherwise is shortening messages.
     inputSchema: {
@@ -288,6 +344,21 @@ const pushTools = (vocab: McpVocab) => [
               role: { type: "string", enum: ["user", "assistant", "tool"] },
               content: { type: "string", description: "VERBATIM, unabridged message content." },
               timestamp: { type: "string", description: "ISO 8601, only if actually known." },
+              fidelity: {
+                type: "string",
+                enum: ["verbatim", "summary"],
+                description:
+                  "verbatim by default. Send summary only for a span whose original messages are no longer in your context (for example after compaction); then this message stands for that span and covers says which positions it stands for. Never send a summary as verbatim.",
+              },
+              covers: {
+                type: "object",
+                properties: {
+                  from: { type: "integer" },
+                  to: { type: "integer" },
+                },
+                description:
+                  "Only with fidelity: summary. The 1-indexed positions this summary stands for.",
+              },
             },
             required: ["role", "content"],
           },
@@ -575,8 +646,13 @@ async function applyDestination(
   plan: PlacementPlan,
   /** P0 item 1: the caller may supply places already read, so one push reads once. */
   knownPlaces?: PlaceRow[],
-): Promise<{ text: string; target: "inbox" | "workboard"; place: PlaceRow | null }> {
-  if (!plan.destination) return { text: "", target: "inbox", place: null };
+): Promise<{
+  text: string;
+  target: "inbox" | "workboard";
+  place: PlaceRow | null;
+  status: string | null;
+}> {
+  if (!plan.destination) return { text: "", target: "inbox", place: null, status: null };
   const places = knownPlaces ?? (await readPlaces(owner)).places;
   const { place, colliding } = matchPlace(places, plan.destination);
   if (!place) {
@@ -585,16 +661,18 @@ async function applyDestination(
         text: renderUnknownRef(vocab, colliding.map((one) => one.ref), sharedCodeNote(vocab)),
         target: "inbox",
         place: null,
+        status: "unknown_ref",
       };
     }
     return {
       text: renderUnknownRef(vocab, places.map((one) => one.ref)),
       target: "inbox",
       place: null,
+      status: "unknown_ref",
     };
   }
   const placed = await placeOneItem(owner, vocab, itemId, place, plan);
-  return { text: placed.text, target: placed.target, place };
+  return { text: placed.text, target: placed.target, place, status: placed.status };
 }
 
 /** The workspace's words, read once for a push that may place something. */
@@ -899,7 +977,11 @@ async function readPlaces(owner: Owner): Promise<{ places: PlaceRow[]; boards: {
 async function listPlaces(owner: Owner, id: unknown): Promise<Response> {
   const type = await workspaceTypeOf(owner);
   const vocab = mcpVocabFor(type);
-  const { boards } = await readPlaces(owner);
+  const { boards, places } = await readPlaces(owner);
+  // P1 item 4. The unique ref, so two boards sharing a code stay distinct.
+  const refByBoardWorkstream = new Map(
+    places.map((place) => [`${place.code}\u0000${place.boardTitle}\u0000${place.workstreamName}`, place.ref]),
+  );
   await logPush(owner, { tool: "list_places" });
   if (boards.length === 0) return textResult(id, `No ${vocab.boards} yet.`);
 
@@ -909,7 +991,11 @@ async function listPlaces(owner: Owner, id: unknown): Promise<Response> {
     const lines = byContainer.get(key) ?? [];
     lines.push(`  ${board.code} · ${board.title}`);
     if (board.workstreams.length === 0) lines.push(`    (no ${vocab.workstream}s yet)`);
-    for (const name of board.workstreams) lines.push(`    ${placeRef(board.code, name)}`);
+    for (const name of board.workstreams) {
+      lines.push(
+        `    ${refByBoardWorkstream.get(`${board.code}\u0000${board.title}\u0000${name}`) ?? placeRef(board.code, name)}`,
+      );
+    }
     byContainer.set(key, lines);
   }
   const text = [...byContainer.entries()].map(([name, lines]) => [name, ...lines].join("\n")).join("\n\n");
@@ -1018,9 +1104,11 @@ async function pushOptions(owner: Owner, args: Obj, id: unknown): Promise<Respon
       ? [`Other ${vocab.containers} exist; call lasso_list_places to see them all.`]
       : []),
   ];
+  const optionsText = lines.join("\n");
   return rpcResult(id, {
-    content: [{ type: "text", text: lines.join("\n") }],
+    content: [{ type: "text", text: optionsText }],
     structuredContent: {
+      summary: optionsText,
       suggested,
       places: places.map((place) => ({
         ref: place.ref,
@@ -1158,7 +1246,13 @@ async function listEngagements(owner: Owner, id: unknown): Promise<Response> {
   return textResult(id, lines.join("\n\n"));
 }
 
-type IncomingMessage = { role: string; content: string; timestamp?: string };
+type IncomingMessage = {
+  role: string;
+  content: string;
+  timestamp?: string;
+  fidelity?: "verbatim" | "summary";
+  covers?: { from: number; to: number };
+};
 type IncomingAttachment = {
   kind: string;
   title: string;
@@ -1240,16 +1334,24 @@ async function pushConversation(
   }
 
   const messages: IncomingMessage[] = [];
-  for (const m of rawMessages as IncomingMessage[]) {
+  for (const [index, m] of (rawMessages as IncomingMessage[]).entries()) {
     const role =
       m?.role === "assistant" || m?.role === "tool" || m?.role === "user" ? m.role : null;
     if (!role || typeof m.content !== "string") {
       return rpcError(id, -32602, "Each message needs role (user|assistant|tool) and content");
     }
+    const fidelity = parseMessageFidelity(m as never, index + 1);
+    if ("error" in fidelity) return rpcError(id, -32602, fidelity.error);
     messages.push({
       role,
       content: m.content,
       ...(typeof m.timestamp === "string" && m.timestamp ? { timestamp: m.timestamp } : {}),
+      ...(fidelity.fidelity === "summary"
+        ? {
+            fidelity: "summary" as const,
+            covers: { from: fidelity.covers_from, to: fidelity.covers_to },
+          }
+        : {}),
     });
   }
 
@@ -1482,20 +1584,40 @@ async function pushConversation(
   const newRows: Record<string, unknown>[] = [];
   const degradedTurns: { turn_no: number; stored_chars: number; incoming_chars: number }[] = [];
   /** P0 item 4: one line per position this call inserted or changed. */
-  const receipts: { pos: number; role: string; chars: number; head: string }[] = [];
+  const receipts: {
+    pos: number;
+    role: string;
+    chars: number;
+    head: string;
+    fidelity: "verbatim" | "summary";
+    covers?: { from: number; to: number };
+  }[] = [];
+  /** P1 item 1: positions where a summary arrived over a verbatim turn. */
+  const summaryRefused: number[] = [];
+  /** P1 item 1: summary spans this call stored. */
+  let summarySpans = 0;
 
   for (let i = 0; i < messages.length; i += 1) {
     const m = messages[i]!;
     const turnNo = offset + i + 1;
     const hash = await sha256Hex(m.content);
     const prior = stored.get(turnNo);
+    const isSummary = m.fidelity === "summary";
+    const summaryMeta =
+      isSummary && m.covers
+        ? { fidelity: "summary", covers_from: m.covers.from, covers_to: m.covers.to }
+        : null;
+    const receiptOf = () => ({
+      pos: turnNo,
+      role: m.role,
+      chars: m.content.length,
+      head: receiptHead(m.content),
+      fidelity: (isSummary ? "summary" : "verbatim") as "verbatim" | "summary",
+      ...(isSummary && m.covers ? { covers: m.covers } : {}),
+    });
     if (!prior) {
-      receipts.push({
-        pos: turnNo,
-        role: m.role,
-        chars: m.content.length,
-        head: receiptHead(m.content),
-      });
+      if (isSummary) summarySpans += 1;
+      receipts.push(receiptOf());
       newRows.push({
         work_item_id: threadId,
         turn_no: turnNo,
@@ -1505,8 +1627,15 @@ async function pushConversation(
         ts: m.timestamp ?? null,
         ts_precision: (m.timestamp ? "source" : "capture") as "source" | "capture",
         ...(model ? { model } : {}),
-        meta: {},
+        meta: summaryMeta ?? {},
       });
+      continue;
+    }
+    const priorFidelity = turnFidelity(prior.meta);
+    // P1 item 1. A summary never stands in for a turn already held word for
+    // word. The stored turn stays and the caller is told which position.
+    if (isSummary && priorFidelity === "verbatim") {
+      summaryRefused.push(turnNo);
       continue;
     }
     if (prior.content_hash === hash) {
@@ -1514,9 +1643,12 @@ async function pushConversation(
       continue;
     }
     // A re-push may improve a turn; it may not quietly replace verbatim with
-    // a condensed retelling. We keep what we have and say so.
+    // a condensed retelling. We keep what we have and say so. A verbatim
+    // message arriving over a stored summary is the record improving, so the
+    // length guard does not apply to it.
     const storedChars = (prior.content ?? "").length;
-    if (looksCondensed(m.content.length, storedChars)) {
+    const replacingSummary = !isSummary && priorFidelity === "summary";
+    if (!replacingSummary && looksCondensed(m.content.length, storedChars)) {
       degradedTurns.push({
         turn_no: turnNo,
         stored_chars: storedChars,
@@ -1525,10 +1657,16 @@ async function pushConversation(
       continue;
     }
     // Edited or branched upstream: update in place so the turn id survives.
-    const priorMeta =
+    const priorMetaRaw =
       prior.meta && typeof prior.meta === "object" && !Array.isArray(prior.meta)
         ? (prior.meta as Record<string, unknown>)
         : {};
+    const priorMeta = { ...priorMetaRaw };
+    if (replacingSummary) {
+      delete priorMeta["fidelity"];
+      delete priorMeta["covers_from"];
+      delete priorMeta["covers_to"];
+    }
     // Preserve the prior version before overwriting it. If that fails, the
     // overwrite does not happen: no version is lost without a copy first.
     const { error: revError } = await supabaseAdmin.from("turn_revisions").insert({
@@ -1558,19 +1696,16 @@ async function pushConversation(
         ...(model ? { model } : {}),
         meta: {
           ...priorMeta,
+          ...(summaryMeta ?? {}),
           revised_at: new Date().toISOString(),
           previous_content_hash: prior.content_hash,
         } as unknown as Json,
       })
       .eq("id", prior.id);
     if (updError) return rpcError(id, -32603, updError.message);
+    if (isSummary) summarySpans += 1;
     changedCount += 1;
-    receipts.push({
-      pos: turnNo,
-      role: m.role,
-      chars: m.content.length,
-      head: receiptHead(m.content),
-    });
+    receipts.push(receiptOf());
   }
   receipts.sort((a, b) => a.pos - b.pos);
 
@@ -1882,6 +2017,7 @@ async function pushConversation(
       degraded_refusals: flaggedBucket(degradedTurns.length + degradedAttachments.length),
       attachment_versions: versionRowsBucket(attachmentVersionRows),
       attachments_placed: versionRowsBucket(attachmentsPlaced),
+      summary_spans: versionRowsBucket(summarySpans),
     },
   });
   await recordEvent(supabaseAdmin, {
@@ -2028,17 +2164,53 @@ async function pushConversation(
   const receiptNote = win || receipts.length > 0 ? receiptLine(receipts) : "";
   // P0 item 10. Asked for once, on the first push of this conversation.
   const urlNote = pushMode === "created" ? missingChatUrlNote(args) : "";
+  // P1 item 1. A summary never replaces a turn already held word for word.
+  const summaryRefusedNote =
+    summaryRefused.length > 0
+      ? ` ${summaryRefused
+          .map((pos) => `position ${pos} is verbatim in Lasso; a summary never replaces it`)
+          .join("; ")}.`
+      : "";
+  const placementText =
+    convoPlacement.target === "workboard"
+      ? ` ${convoPlacement.text}`
+      : ` It stays private until the user maps it.${convoPlacement.text ? ` ${convoPlacement.text}` : ""}`;
+  const summary = `${verb} '${title}' in Lasso.${counts}${attachmentLine}${attachmentPlaceNote}${shortNote}${windowNote}${totalNote}${receiptNote}${degradedNote}${summaryRefusedNote}${degradedAttachmentNote}${cursor}${placementText}${rejectedNote}${warn}${continuation}${urlNote}`;
+  // P1 item 0. Clients that read only structuredContent must still see
+  // everything the text says, as fields rather than prose.
+  const progress = pushProgress(storedCount, total ?? null);
+  const notes = [
+    windowNote,
+    totalNote,
+    degradedNote,
+    summaryRefusedNote,
+    degradedAttachmentNote,
+    rejectedNote,
+    warn,
+    continuation,
+    urlNote,
+  ]
+    .map((one) => one.trim())
+    .filter((one) => one.length > 0);
   return rpcResult(id, {
-    content: [
-      {
-        type: "text",
-        text: `${verb} '${title}' in Lasso.${counts}${attachmentLine}${attachmentPlaceNote}${shortNote}${windowNote}${totalNote}${receiptNote}${degradedNote}${degradedAttachmentNote}${cursor}${
-          convoPlacement.target === "workboard"
-            ? ` ${convoPlacement.text}`
-            : ` It stays private until the user maps it.${convoPlacement.text ? ` ${convoPlacement.text}` : ""}`
-        }${rejectedNote}${warn}${continuation}${urlNote}`,
+    content: [{ type: "text", text: summary }],
+    structuredContent: {
+      summary,
+      stored_count: storedCount,
+      total: total ?? null,
+      next_from: progress.next_from,
+      complete: progress.complete,
+      placement: {
+        target: convoPlacement.target,
+        ref: convoPlacement.place?.ref ?? null,
+        status: convoPlacement.status,
+        note: placementText.trim(),
       },
-    ],
-    structuredContent: { attachments: attachmentOutcomes, stored: receipts },
+      attachments_placed: attachmentsPlaced,
+      attachments_total: placeTargets.length,
+      notes,
+      attachments: attachmentOutcomes,
+      stored: receipts,
+    },
   });
 }

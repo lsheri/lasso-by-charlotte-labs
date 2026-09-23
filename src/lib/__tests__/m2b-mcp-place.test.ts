@@ -157,8 +157,10 @@ describe("M2b — what the event records", () => {
   });
 
   it("all three push events carry target and suggestion_outcome", () => {
+    // P1 item 0 added a fourth occurrence: the structured placement field the
+    // caller reads back, alongside the three event dims.
     expect(handler.match(/target: \w+Placement\.target|target: convoPlacement\.target/g) ?? [])
-      .toHaveLength(3);
+      .toHaveLength(4);
     expect(handler.match(/suggestion_outcome: plan\.suggestionOutcome/g) ?? []).toHaveLength(3);
   });
 });
