@@ -92,3 +92,26 @@ describe("P1b fix pass: open larger wording", () => {
     expect(src).toContain("This file was made in a chat and has not been added yet. Add it from the card on the board.");
   });
 });
+
+describe("P1b placeholder card interaction and frame", () => {
+  const source = readFileSync("src/components/canvas-lab/ReferenceFileCard.tsx", "utf8");
+
+  it("opens the hidden picker from a button rather than a label", () => {
+    expect(source).not.toContain("<label");
+    expect(source).toContain('<Button\n            type="button"');
+    expect(source).toContain("REFERENCE_ADD_LABEL");
+    expect(source).toContain("inputRef.current?.click()");
+  });
+
+  it("keeps pointerdown inside the body from arming a board drag", () => {
+    expect(source).toContain("onPointerDown={(event) => {");
+    expect(source).toContain('closest("[data-reference-drag-strip]")');
+    expect(source).toContain("event.stopPropagation()");
+  });
+
+  it("uses the standard preview paper frame", () => {
+    expect(source).toContain('className="nb-paper canvas-lab-preview-frame h-full min-h-0"');
+    expect(source).toContain("canvas-lab-preview-source");
+    expect(source).toContain("nb-preview-content flex min-h-0 flex-1 flex-col");
+  });
+});
