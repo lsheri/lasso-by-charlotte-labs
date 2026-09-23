@@ -5023,3 +5023,6 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 
 .canvas-lab-add-context { display: inline-flex; align-items: center; min-height: 20px; padding: 0 6px; color: var(--nb-green); font-family: var(--font-hand); font-size: 14px; text-transform: none; letter-spacing: normal; }
 .canvas-lab-add-context:hover { text-decoration: underline; }
+
+/* B1: while a drag, pan, resize or connect is live, embedded previews let the release reach the board. */
+.canvas-lab-surface[data-interacting="true"] iframe { pointer-events: none; }
