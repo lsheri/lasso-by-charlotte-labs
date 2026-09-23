@@ -507,7 +507,7 @@ describe("CG1 inbox congruency", () => {
       expect(lanes).toHaveLength(4);
       for (const lane of lanes) expect(lane.style.width).toBe("230.5px");
       const cardPlacement = screen.getByText("document-1").closest<HTMLElement>("[data-lane-content]");
-      expect(cardPlacement?.style.width).toBe("CARDW");
+      expect(cardPlacement?.style.width).toBe("206.5px");
     } finally {
       if (width) Object.defineProperty(HTMLElement.prototype, "clientWidth", width);
       else Reflect.deleteProperty(HTMLElement.prototype, "clientWidth");
