@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { usePerfTimerFactory } from "@/hooks/use-perf-timer";
 import { useProfile } from "@/hooks/use-profile";
 import type { PickerItem, PickerPage } from "@/lib/connector-picker-shared";
+import { nextPickSelection, REFERENCE_DRIVE_CONFIRM } from "@/lib/reference-file-shared";
 import type { BrowsableToolkit } from "@/lib/connector-toolkits";
 import {
   browseConnectorItems,
@@ -131,6 +132,7 @@ export function ConnectorPicker({
   initialFolder,
   highlightIds,
   onImported,
+  onPickFile,
 }: {
   kind: PickerKind;
   trigger?: React.ReactNode;
@@ -143,7 +145,13 @@ export function ConnectorPicker({
   highlightIds?: string[];
   /** Additive: the work item ids this import created or refreshed. */
   onImported?: (ids: string[]) => void;
+  /**
+   * C2: single-pick mode. One file, folders open but can't be picked, nothing
+   * is imported; the chosen file is handed back. Unset means import mode.
+   */
+  onPickFile?: (file: { id: string; mimeType: string | null }) => Promise<void>;
 }) {
+  const singlePick = Boolean(onPickFile);
   const isTranscripts = kind === "transcripts";
   const isWispr = kind === "wispr";
   const isFolderBrowser =
@@ -291,12 +299,7 @@ export function ConnectorPicker({
   }, [open, load]);
 
   function toggle(id: string) {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+    setSelected((prev) => nextPickSelection(prev, id, singlePick));
   }
 
   /** Every navigation clears the search box, so the trail always matches the list. */
@@ -421,6 +424,23 @@ export function ConnectorPicker({
     }
   }
 
+  async function handlePick() {
+    const id = Array.from(selected)[0];
+    const row = rows.find((r) => r.id === id && !r.isFolder);
+    if (!onPickFile || !row || selected.size !== 1) return;
+    setImporting(true);
+    setError(null);
+    try {
+      await onPickFile({ id: row.id, mimeType: row.subtitle });
+      setOpen(false);
+      setSelected(new Set());
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setImporting(false);
+    }
+  }
+
   async function showMore() {
     const token = page?.nextPageToken;
     if (!token || loadingMore) return;
@@ -491,7 +511,11 @@ export function ConnectorPicker({
           <DialogTitle className="page-title">{copy.title}</DialogTitle>
         </DialogHeader>
 
-        <p className="text-sm text-muted-foreground">Nothing is imported unless you select it.</p>
+        <p className="text-sm text-muted-foreground">
+          {singlePick
+            ? "Choose one file. Nothing is fetched unless you choose it."
+            : "Nothing is imported unless you select it."}
+        </p>
 
         {isDrive ? (
           <div className="space-y-3">
@@ -697,7 +721,7 @@ export function ConnectorPicker({
                             Open
                           </span>
                         </button>
-                        <button
+                        {singlePick ? null : <button
                           type="button"
                           disabled={watchBusy === item.id}
                           onClick={() => void handleWatch(item)}
@@ -722,7 +746,7 @@ export function ConnectorPicker({
                             <Eye aria-hidden className="size-3" />
                           )}
                           {item.isWatched ? "Watching" : "Watch"}
-                        </button>
+                        </button>}
                       </div>
                     </li>
                   ))}
@@ -749,7 +773,7 @@ export function ConnectorPicker({
                     >
                       <Checkbox
                         checked={selected.has(item.id)}
-                        disabled={item.alreadyInLasso}
+                        disabled={singlePick ? false : item.alreadyInLasso}
                         onCheckedChange={() => toggle(item.id)}
                         aria-label={`Select ${item.title}`}
                       />
@@ -807,6 +831,15 @@ export function ConnectorPicker({
         ) : null}
 
         <div className="flex justify-end">
+          {singlePick ? (
+            <Button
+              type="button"
+              disabled={selected.size !== 1 || importing}
+              onClick={() => void handlePick()}
+            >
+              {importing ? <WorkingLabel>Adding the file</WorkingLabel> : REFERENCE_DRIVE_CONFIRM}
+            </Button>
+          ) : (
           <Button
             type="button"
             disabled={selected.size === 0 || importing}
@@ -816,6 +849,7 @@ export function ConnectorPicker({
               ? <WorkingLabel>{`Bringing in ${selected.size} item${selected.size === 1 ? "" : "s"}`}</WorkingLabel>
               : `${copy.action}${selected.size ? ` (${selected.size})` : ""}`}
           </Button>
+          )}
         </div>
       </DialogContent>
     </Dialog>

@@ -8,9 +8,12 @@ import { FileFormatIcon } from "@/components/work/FileFormatIcon";
 import { SourceMark, VendorMark } from "@/components/work/SourceMark";
 import { forgetWorkboardFilePreview } from "@/hooks/use-workboard-file-previews";
 import { supabase } from "@/integrations/supabase/client";
-import { completeReferenceFileFn } from "@/lib/reference-file.functions";
+import { ConnectorPicker } from "@/components/connectors/ConnectorPicker";
+import { useConnectorAccounts } from "@/hooks/use-connector-accounts";
+import { completeReferenceFileFn, completeReferenceFromDriveFn } from "@/lib/reference-file.functions";
 import {
   REFERENCE_ADD_LABEL,
+  REFERENCE_DRIVE_LABEL,
   REFERENCE_MADE_IN_CHAT,
 } from "@/lib/reference-file-shared";
 import { storageObjectKey } from "@/lib/upload-payload";
@@ -22,6 +25,10 @@ import { effectiveWorkDate, formatDate, type WorkItemRow } from "@/lib/work-type
  */
 export function ReferenceFileCard({ item, onOpen }: { item: WorkItemRow; onOpen: () => void }) {
   const complete = useServerFn(completeReferenceFileFn);
+  const completeFromDrive = useServerFn(completeReferenceFromDriveFn);
+  const { data: accounts } = useConnectorAccounts();
+  const driveConnected = accounts?.["googledrive"]?.status === "connected";
+  const [driveOpen, setDriveOpen] = useState(false);
   const queryClient = useQueryClient();
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [over, setOver] = useState(false);
@@ -67,6 +74,23 @@ export function ReferenceFileCard({ item, onOpen }: { item: WorkItemRow; onOpen:
       data: { work_item_id: item.id, path, via: "drop", mime_type: file.type },
     }).catch(() => ({ status: "refused" as const, reason: "error" }));
     // "not_reference" means an earlier add already completed this card.
+    const alreadyDone = answer.status === "refused" && answer.reason === "not_reference";
+    if (answer.status === "done" || alreadyDone) {
+      await refresh();
+    } else {
+      setError("That file could not be added. Try again.");
+      await queryClient.invalidateQueries({ queryKey: ["work-items"] });
+    }
+    setBusy(false);
+  }
+
+  /** C2: the person chose one Drive file; the server fetches and attaches it. */
+  async function addFromDrive(file: { id: string; mimeType: string | null }) {
+    setBusy(true);
+    setError(null);
+    const answer = await completeFromDrive({
+      data: { work_item_id: item.id, drive_file_id: file.id, mime_type: file.mimeType ?? "" },
+    }).catch(() => ({ status: "refused" as const, reason: "error" }));
     const alreadyDone = answer.status === "refused" && answer.reason === "not_reference";
     if (answer.status === "done" || alreadyDone) {
       await refresh();
@@ -129,9 +153,33 @@ export function ReferenceFileCard({ item, onOpen }: { item: WorkItemRow; onOpen:
           >
             {added ? "Added. Loading the file..." : busy ? "Adding..." : REFERENCE_ADD_LABEL}
           </Button>
+          {driveConnected && !added ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              disabled={busy}
+              onPointerDown={(event) => event.stopPropagation()}
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                setDriveOpen(true);
+              }}
+            >
+              {REFERENCE_DRIVE_LABEL}
+            </Button>
+          ) : null}
         </div>
         {error ? <span role="alert" className="text-xs text-muted-foreground">{error}</span> : null}
       </div>
+      {driveConnected ? (
+        <ConnectorPicker
+          kind="googledrive"
+          open={driveOpen}
+          onOpenChange={setDriveOpen}
+          onPickFile={addFromDrive}
+        />
+      ) : null}
       <input
         ref={inputRef}
         type="file"
