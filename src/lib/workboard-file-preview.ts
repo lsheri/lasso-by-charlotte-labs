@@ -65,9 +65,12 @@ export function filePreviewKind(item: WorkItemRow): "pdf" | "text" {
   return peekFormat(item).kind === "pdf" ? "pdf" : "text";
 }
 
-export function artifactPreviewKind(item: Pick<WorkItemRow, "source_meta">): "html" | "svg" | null {
-  if (item.source_meta?.kind === "artifact_html") return "html";
-  if (item.source_meta?.kind === "artifact_svg") return "svg";
+export function artifactPreviewKind(item: { source_meta?: unknown }): "html" | "svg" | null {
+  const meta = item.source_meta;
+  if (!meta || typeof meta !== "object" || Array.isArray(meta)) return null;
+  const kind = (meta as Record<string, unknown>)["kind"];
+  if (kind === "artifact_html") return "html";
+  if (kind === "artifact_svg") return "svg";
   return null;
 }
 
