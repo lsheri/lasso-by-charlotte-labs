@@ -11,7 +11,7 @@ describe("B2 one chat on the board", () => {
     expect(page).not.toMatch(/<WorkRail\b/);
     expect(page).not.toMatch(/<ContextComposer\b/);
     expect(page).not.toMatch(/import \{ WorkRail \}/);
-    expect(page).not.toContain("draft_thread");
+    expect(page).not.toContain("createChatNode(");
     expect(page).not.toContain("canvasInstructions");
   });
 
