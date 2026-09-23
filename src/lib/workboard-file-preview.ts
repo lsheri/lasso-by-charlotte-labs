@@ -64,3 +64,13 @@ export function fallbackFilePreview(item: WorkItemRow, versionCount = 0): Workbo
 export function filePreviewKind(item: WorkItemRow): "pdf" | "text" {
   return peekFormat(item).kind === "pdf" ? "pdf" : "text";
 }
+
+export function artifactPreviewKind(item: Pick<WorkItemRow, "source_meta">): "html" | "svg" | null {
+  if (item.source_meta?.kind === "artifact_html") return "html";
+  if (item.source_meta?.kind === "artifact_svg") return "svg";
+  return null;
+}
+
+export function wrapSvgArtifact(svg: string): string {
+  return `<!doctype html><html><head><style>svg { max-width: 100%; height: auto; }</style></head><body>${svg}</body></html>`;
+}
