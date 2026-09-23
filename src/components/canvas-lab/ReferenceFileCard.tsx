@@ -51,12 +51,12 @@ export function ReferenceFileCard({ item }: { item: WorkItemRow }) {
   }
 
   return (
-    <div data-testid="reference-file-card" className="flex h-full flex-col gap-2 p-3 font-sans text-[13px] text-foreground">
+    <div data-testid="reference-file-card" className="flex h-full flex-col gap-2 p-3 font-sans text-sm text-foreground">
       <div className="flex items-center gap-2">
         <FileFormatIcon item={item} size={20} />
         <span className="min-w-0 truncate font-medium">{filename}</span>
       </div>
-      <span className="text-[11.5px] text-muted-foreground">{REFERENCE_MADE_IN_CHAT}</span>
+      <span className="text-xs text-muted-foreground">{REFERENCE_MADE_IN_CHAT}</span>
       <label
         data-testid="reference-file-drop"
         data-over={over}
@@ -74,7 +74,7 @@ export function ReferenceFileCard({ item }: { item: WorkItemRow }) {
           if (file) void add(file);
         }}
         onPointerDown={(event) => event.stopPropagation()}
-        className={`mt-auto flex cursor-pointer items-center justify-center rounded-[6px] border border-dashed px-2 py-3 text-[11.5px] ${over ? "border-foreground bg-secondary" : "border-border"}`}
+        className={`mt-auto flex cursor-pointer items-center justify-center rounded-[6px] border border-dashed px-2 py-3 text-xs ${over ? "border-foreground bg-secondary" : "border-border"}`}
       >
         <input
           type="file"
@@ -87,7 +87,7 @@ export function ReferenceFileCard({ item }: { item: WorkItemRow }) {
         />
         {busy ? "Adding..." : REFERENCE_ADD_LABEL}
       </label>
-      {error ? <span role="alert" className="text-[11.5px] text-muted-foreground">{error}</span> : null}
+      {error ? <span role="alert" className="text-xs text-muted-foreground">{error}</span> : null}
     </div>
   );
 }
