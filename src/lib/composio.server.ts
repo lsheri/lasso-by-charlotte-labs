@@ -246,8 +246,9 @@ async function exportGoogleDoc(
   fileId: string,
   sourceMime: string,
   name: string,
+  targets: { mime: string; ext: string }[] = GOOGLE_EXPORTS[sourceMime] ?? [],
 ): Promise<{ bytes: Uint8Array; mimeType: string; name: string } | null> {
-  for (const target of GOOGLE_EXPORTS[sourceMime] ?? []) {
+  for (const target of targets) {
     try {
       const data = await run("GOOGLEDRIVE_DOWNLOAD_FILE", entityId, {
         file_id: fileId,
@@ -315,6 +316,8 @@ export async function fetchDriveFileBytes(
   entityId: string,
   fileId: string,
   sourceMime?: string | null,
+  /** C2: a placeholder asks for its own format (docx, xlsx, pptx, pdf). Import leaves this unset. */
+  exportFor?: (nativeMime: string) => { mime: string; ext: string }[],
 ): Promise<DriveFetch | null> {
   const data = await run("GOOGLEDRIVE_PARSE_FILE", entityId, { file_id: fileId });
   const file = data["file"] as { s3url?: string; mimetype?: string; name?: string } | undefined;
@@ -335,8 +338,9 @@ export async function fetchDriveFileBytes(
     createdTime: times.createdTime,
     modifiedTime: times.modifiedTime,
   };
-  if (native && GOOGLE_EXPORTS[native]) {
-    const exported = await exportGoogleDoc(entityId, fileId, native, name);
+  const targets = native ? (exportFor ? exportFor(native) : GOOGLE_EXPORTS[native]) : undefined;
+  if (native && targets && targets.length > 0) {
+    const exported = await exportGoogleDoc(entityId, fileId, native, name, targets);
     if (exported) {
       console.log(`[drive] ${fileId} exported as ${exported.mimeType} from ${native}`);
       return { ...exported, webViewLink, ...dates, exportMime: exported.mimeType };
