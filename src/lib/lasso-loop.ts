@@ -9,7 +9,7 @@ export const LOOP_DOT_RADIUS_BOOST = 1.1;
 export const LOOP_DOT_ALPHA_FADE = 0.8;
 
 export const LOOP_SIZE_TOOLBAR = 36;
-export const LOOP_SIZE_TITLE = 48;
+export const LOOP_SIZE_TITLE = 72;
 export const LOOP_SIZE_CHAT = 28;
 
 export type LoopStamp = {

@@ -275,6 +275,45 @@ describe("the keyboard", () => {
   });
 });
 
+describe("an opt-in zoom lock", () => {
+  it("holds wheel, touch pinch and keyboard zoom at one while an ordinary board still responds", () => {
+    const locked = mount({ lockZoom: true });
+    wheel({ deltaY: -120, ctrlKey: true, clientX: 500, clientY: 400 });
+    expect(view().zoom).toBe(1);
+    wheel({ deltaY: -5, metaKey: true, clientX: 500, clientY: 400 });
+    expect(view().zoom).toBe(1);
+    fireEvent.keyDown(window, { key: "=", metaKey: true });
+    expect(view().zoom).toBe(1);
+    fireEvent.keyDown(window, { key: "-", ctrlKey: true });
+    expect(view().zoom).toBe(1);
+    fireEvent.keyDown(window, { key: "0", metaKey: true });
+    expect(view().zoom).toBe(1);
+    locked.unmount();
+
+    mount();
+    wheel({ deltaY: -120, ctrlKey: true, clientX: 500, clientY: 400 });
+    const afterWheel = view().zoom;
+    expect(afterWheel).toBeGreaterThan(1);
+    wheel({ deltaY: -5, metaKey: true, clientX: 500, clientY: 400 });
+    const afterPinch = view().zoom;
+    expect(afterPinch).toBeGreaterThan(afterWheel);
+    fireEvent.keyDown(window, { key: "-", ctrlKey: true });
+    const afterKeyboard = view().zoom;
+    expect(afterKeyboard).toBeLessThan(afterPinch);
+  });
+
+  it("shows Fit without zoom controls only when requested", () => {
+    const locked = mount({ showViewControls: true, showZoomControls: false, lockZoom: true });
+    expect(screen.getByRole("button", { name: "Fit" })).toBeTruthy();
+    expect(screen.queryByRole("group", { name: "Board zoom" })).toBeNull();
+    locked.unmount();
+
+    mount({ showViewControls: true });
+    expect(screen.getByRole("button", { name: "Fit" })).toBeTruthy();
+    expect(screen.getByRole("group", { name: "Board zoom" })).toBeTruthy();
+  });
+});
+
 // ---- the fit -------------------------------------------------------------
 
 describe("the fit", () => {
