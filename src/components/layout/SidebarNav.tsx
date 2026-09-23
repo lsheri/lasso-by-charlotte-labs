@@ -16,7 +16,6 @@ import { useEngagements } from "@/hooks/use-engagements";
 import { useProfile } from "@/hooks/use-profile";
 import * as roles from "@/lib/role-access";
 import { isEduOrg, vocabFor } from "@/lib/edu-vocab";
-import { mcpVocabFor } from "@/lib/mcp-vocab";
 import { bucket, logEvent } from "@/lib/telemetry";
 
 
@@ -251,7 +250,6 @@ export function SidebarNav({
   const canSeeFirmView = roles.canSeeFirmView(profile);
   const groupsForOrg = isEduOrg(profile) ? eduNavGroups : navGroups;
   const vocab = vocabFor(profile);
-  const containerWord = mcpVocabFor(profile?.org_type).container;
   // Whether a coaching destination exists at all is decided by what this
   // person was given on a board, never by their workspace role.
   const reach = useCoachingReach(profiles);
@@ -463,7 +461,7 @@ export function SidebarNav({
                           >
                             <GraphiteIcon name="engagement" size={20} />
                             <span className="flex min-w-0 flex-1 items-center gap-1.5">
-                              <span className="truncate">{shelf.clientId === UNMAPPED_SHELF_ID ? `No ${containerWord}` : shelf.name}</span>
+                              <span className="truncate">{shelf.clientId === UNMAPPED_SHELF_ID ? `No ${vocab.client.toLowerCase()}` : shelf.name}</span>
                               <span className="font-mono text-[10px] text-muted-foreground">
                                 · {shelf.engagements.length}
                               </span>
