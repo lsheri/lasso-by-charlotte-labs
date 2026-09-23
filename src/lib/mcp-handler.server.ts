@@ -10,6 +10,18 @@ import {
 } from "@/lib/attachment-guard";
 import { workTypeForFile } from "@/lib/work-types";
 import { recordEvent } from "@/lib/telemetry.server";
+import { dateLabel } from "@/lib/decisions-shared";
+import {
+  DECISION_HELD_REASON,
+  DECISION_SKIPPED_REASON,
+  MAX_PUSH_DECISIONS,
+  decisionsLine,
+  decisionsWritable,
+  isDuplicateDecision,
+  parsePushDecisions,
+  resolveCitedTurns,
+  type DecisionReceipt,
+} from "@/lib/mcp-decisions";
 import { recordNewVersion } from "@/lib/connector-import.server";
 import { noteModelUsed, noteThreadShape } from "@/lib/work-taxonomy.server";
 import { machineLabel } from "@/lib/capture-census";
@@ -383,7 +395,7 @@ const pushTools = (vocab: McpVocab) => [
     title: "Push a conversation",
     icons: ICONS,
     description:
-      `When the user says 'Push to Lasso', 'send to Lasso', or similar: call push_conversation with the ENTIRE conversation, every message, verbatim, unabridged, plus any artifact, canvas or file that already existed as its own object in this app, as attachments. Never summarize the transcript. Never compose new summaries, recaps or section write-ups and send them as attachments. Never use push_document for conversation artifacts. Verbatim is non-negotiable: never substitute a summary, paraphrase, or shortened version of a message at any position, the server rejects shrunken overwrites. Before pushing, assess how many messages you can reproduce word-for-word in a single call given their actual lengths. If the whole conversation fits, push it whole. If not, push it in consecutive windows using window {from, to, total}: start with the first window sized to what you can reproduce verbatim, then follow the server's response, which tells you the next starting position, until all messages are stored. When re-pushing a conversation that grew, push only the new messages as a window, never re-send earlier messages unless correcting them. A smaller window is always the answer; a shorter message never is. Push at natural checkpoints during long work rather than only at the end, so nothing is lost if your context is compacted; re-pushing is safe and only sends what changed. For assistant turns that ran tools or wrote files, include what was done as a role: 'tool' message at that position, plainly, rather than omitting it. A binary file this chat generated (pptx, docx, xlsx, pdf, png) is sent as an attachment of kind file_ref with its filename and, when you can compute it, its sha256; never as content and never as base64. Lasso makes a card for it and the person adds the file. If part of the conversation is no longer in your context word for word, send that span as ONE message with fidelity: summary and covers: {from, to}; never send a summary as verbatim and never leave the span out. ${placementLine(vocab)}`,
+      `When the user says 'Push to Lasso', 'send to Lasso', or similar: call push_conversation with the ENTIRE conversation, every message, verbatim, unabridged, plus any artifact, canvas or file that already existed as its own object in this app, as attachments. Never summarize the transcript. Never compose new summaries, recaps or section write-ups and send them as attachments. Never use push_document for conversation artifacts. Verbatim is non-negotiable: never substitute a summary, paraphrase, or shortened version of a message at any position, the server rejects shrunken overwrites. Before pushing, assess how many messages you can reproduce word-for-word in a single call given their actual lengths. If the whole conversation fits, push it whole. If not, push it in consecutive windows using window {from, to, total}: start with the first window sized to what you can reproduce verbatim, then follow the server's response, which tells you the next starting position, until all messages are stored. When re-pushing a conversation that grew, push only the new messages as a window, never re-send earlier messages unless correcting them. A smaller window is always the answer; a shorter message never is. Push at natural checkpoints during long work rather than only at the end, so nothing is lost if your context is compacted; re-pushing is safe and only sends what changed. For assistant turns that ran tools or wrote files, include what was done as a role: 'tool' message at that position, plainly, rather than omitting it. A binary file this chat generated (pptx, docx, xlsx, pdf, png) is sent as an attachment of kind file_ref with its filename and, when you can compute it, its sha256; never as content and never as base64. Lasso makes a card for it and the person adds the file. If part of the conversation is no longer in your context word for word, send that span as ONE message with fidelity: summary and covers: {from, to}; never send a summary as verbatim and never leave the span out. If the conversation made decisions, send each as a draft in decisions[] citing the message positions where it was made; never send a decision the chat did not make. ${placementLine(vocab)}`,
     // Windowing is the only sanctioned way to split a push, and only because
     // the alternative the model reaches for otherwise is shortening messages.
     inputSchema: {
@@ -479,6 +491,28 @@ const pushTools = (vocab: McpVocab) => [
               },
             },
             required: ["kind", "title", "source_artifact_id"],
+          },
+        },
+        decisions: {
+          type: "array",
+          maxItems: MAX_PUSH_DECISIONS,
+          items: {
+            type: "object",
+            properties: {
+              situation: {
+                type: "string",
+                description: "What was being decided, in the words used in the chat.",
+              },
+              call_text: { type: "string", description: "The decision as made, not a recommendation." },
+              why: { type: "string", description: "The reasoning given, if any." },
+              cites: {
+                type: "array",
+                items: { type: "integer" },
+                description:
+                  "1-indexed message positions in THIS conversation where the decision was made or stated. Required, at least one. A decision with no position is not sent.",
+              },
+            },
+            required: ["situation", "call_text", "cites"],
           },
         },
         meta: {
@@ -1419,6 +1453,10 @@ async function pushConversation(
   if (rawMessages.length > MAX_TURNS) {
     return rpcError(id, -32602, `Too many messages (${rawMessages.length}). Max is ${MAX_TURNS}.`);
   }
+  // P4 item 2. Any malformed decision rejects the whole call.
+  const parsedDecisions = parsePushDecisions(args["decisions"]);
+  if (!parsedDecisions.ok) return rpcError(id, -32602, parsedDecisions.error);
+  const incomingDecisions = parsedDecisions.decisions;
 
   const messages: IncomingMessage[] = [];
   for (const [index, m] of (rawMessages as IncomingMessage[]).entries()) {
@@ -2164,6 +2202,75 @@ async function pushConversation(
         : ` ${attachmentsPlaced} of ${placeTargets.length} attachments placed on ${place.ref}; the rest stayed in the inbox.`;
   }
 
+  // P4 item 3. Decisions become drafts citing their turns, only on a board.
+  const decisionReceipts: DecisionReceipt[] = [];
+  if (incomingDecisions.length > 0) {
+    const place = convoPlacement.place;
+    if (!decisionsWritable(convoPlacement.target, Boolean(place)) || !place) {
+      for (const d of incomingDecisions) {
+        decisionReceipts.push({ situation: d.situation, call_text: d.call_text, outcome: "held", reason: DECISION_HELD_REASON, cites: d.cites });
+      }
+    } else {
+      const { data: turnRows } = await supabaseAdmin
+        .from("turns")
+        .select("id, turn_no")
+        .eq("work_item_id", threadId);
+      const turnIdByPosition = new Map((turnRows ?? []).map((t) => [t.turn_no, t.id]));
+      const { data: existingDecisions } = await supabaseAdmin
+        .from("decisions")
+        .select("call_text, srcs, status")
+        .eq("engagement_id", place.engagementId)
+        .in("status", ["draft", "confirmed"]);
+      const known = [...(existingDecisions ?? [])] as { call_text: string; srcs: unknown; status: string }[];
+      const label = threadTime.work_date ? dateLabel(new Date(threadTime.work_date)) : null;
+      const rows = [];
+      for (const d of incomingDecisions) {
+        const turnIds = resolveCitedTurns(d.cites, turnIdByPosition);
+        if (!turnIds) {
+          decisionReceipts.push({ situation: d.situation, call_text: d.call_text, outcome: "skipped", reason: DECISION_SKIPPED_REASON, cites: d.cites });
+          continue;
+        }
+        const srcs = turnIds.map((turn_id) => ({ turn_id, work_item_id: threadId }));
+        if (isDuplicateDecision({ call_text: d.call_text, srcs }, known)) {
+          decisionReceipts.push({ situation: d.situation, call_text: d.call_text, outcome: "unchanged", cites: d.cites });
+          continue;
+        }
+        known.push({ call_text: d.call_text, srcs, status: "draft" });
+        rows.push({
+          engagement_id: place.engagementId,
+          owner_id: owner.profileId,
+          situation: d.situation,
+          call_text: d.call_text,
+          why: d.why,
+          status: "draft" as const,
+          author: "ai_draft" as const,
+          srcs: srcs as unknown as Json,
+          date_label: label,
+        });
+        decisionReceipts.push({ situation: d.situation, call_text: d.call_text, outcome: "drafted", cites: d.cites });
+      }
+      if (rows.length > 0) {
+        const { error: decisionError } = await supabaseAdmin.from("decisions").insert(rows as never);
+        if (decisionError) {
+          for (const r of decisionReceipts) {
+            if (r.outcome === "drafted") {
+              r.outcome = "skipped";
+              r.reason = "could not be saved";
+            }
+          }
+        } else {
+          await recordEvent(supabaseAdmin, {
+            eventType: "decision.drafted",
+            orgId: owner.orgId,
+            userId: owner.userId,
+            dims: { count: rows.length, type: "thread" },
+          });
+        }
+      }
+    }
+  }
+  const decisionsDrafted = decisionReceipts.filter((r) => r.outcome === "drafted").length;
+
   await recordEvent(supabaseAdmin, {
     eventType: "mcp.push",
     orgId: owner.orgId,
@@ -2181,6 +2288,7 @@ async function pushConversation(
       attachments_placed: versionRowsBucket(attachmentsPlaced),
       summary_spans: versionRowsBucket(summarySpans),
       file_refs: versionRowsBucket(fileRefCount),
+      decisions: versionRowsBucket(decisionsDrafted),
     },
   });
   await recordEvent(supabaseAdmin, {
@@ -2340,7 +2448,10 @@ async function pushConversation(
     convoPlacement.target === "workboard"
       ? ` ${convoPlacement.text}`
       : ` It stays private until the user maps it.${convoPlacement.text ? ` ${convoPlacement.text}` : ""}`;
-  const summary = `${verb} '${title}' in Lasso.${counts}${attachmentLine}${attachmentPlaceNote}${placeholderNote}${shortNote}${windowNote}${totalNote}${receiptNote}${degradedNote}${summaryRefusedNote}${degradedAttachmentNote}${cursor}${placementText}${rejectedNote}${warn}${continuation}${urlNote}`;
+  const decisionText = decisionsLine(decisionReceipts);
+  const decisionNote = decisionText ? ` ${decisionText}` : "";
+  const decisionNeedsNote = decisionReceipts.some((r) => r.outcome === "held" || r.outcome === "skipped");
+  const summary = `${verb} '${title}' in Lasso.${counts}${attachmentLine}${attachmentPlaceNote}${placeholderNote}${shortNote}${windowNote}${totalNote}${receiptNote}${degradedNote}${summaryRefusedNote}${degradedAttachmentNote}${cursor}${placementText}${rejectedNote}${warn}${continuation}${urlNote}${decisionNote}`;
   // P1 item 0. Clients that read only structuredContent must still see
   // everything the text says, as fields rather than prose.
   const progress = pushProgress(storedCount, total ?? null);
@@ -2355,6 +2466,7 @@ async function pushConversation(
     warn,
     continuation,
     urlNote,
+    decisionNeedsNote ? decisionNote : "",
   ]
     .map((one) => one.trim())
     .filter((one) => one.length > 0);
@@ -2377,6 +2489,7 @@ async function pushConversation(
       notes,
       attachments: attachmentOutcomes,
       stored: receipts,
+      decisions: decisionReceipts,
     },
   });
 }
