@@ -64,6 +64,7 @@ describe("the workboard allowlist", () => {
         "workboard.node_created": [
           "kind",
           "judgment_type",
+          "via",
         ],
         "workboard.node_deleted": [
           "kind",
