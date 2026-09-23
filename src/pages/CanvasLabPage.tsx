@@ -56,7 +56,6 @@ import {
 } from "@/components/canvas-lab/canvas-lab-undo";
 import { ShareDialog } from "@/components/canvas-lab/ShareDialog";
 import { ReasoningTrailGuide } from "@/components/canvas-lab/ReasoningTrailGuide";
-import { WorkRail } from "@/components/canvas-lab/WorkRail";
 import {
   addLabLink,
   bringToFront,
@@ -262,7 +261,6 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   const [hiddenIds, setHiddenIds] = useState<string[]>([]);
   const [selected, setSelected] = useState<string[]>([]);
   const [comments] = useState<LabComment[]>([]);
-  const [canvasInstructions, setCanvasInstructions] = useState("");
   const [focusId, setFocusId] = useState<string | null>(null);
   const [focusOrigin, setFocusOrigin] = useState<{ left: number; top: number; width: number; height: number } | null>(null);
   /** A card's chip opens the reader already at the comments. */
@@ -655,6 +653,8 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   }
 
   useRegisterAskLasso(() => setAskOpen(true));
+  // Ask Lasso is the board's one side panel and opens by default on desktop.
+  useEffect(() => { if (typeof window !== "undefined" && window.matchMedia("(min-width: 768px)").matches) setAskOpen(true); }, []);
 
   function nodeToInput(node: LabNode): WorkboardNodeInput | null {
     const base = { clientKey: node.clientKey ?? node.id, frameKey: node.frame ?? null, x: node.x, y: node.y, w: node.width, h: node.height, hidden: hiddenRef.current.includes(node.id) };
@@ -2420,7 +2420,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   });
   toolbarItems.push({
     spec: { id: "working-from", width: 0, pinned: true },
-      row: <ToolbarIcon label="Working from"><Button type="button" size="icon" variant="outline" className="md:hidden" aria-label="Working from" data-toolbar-control="working-from" onClick={() => { setRailOpen(true); setMobileView("rail"); }}><GraphiteIcon name="working-from" animate={false} /></Button></ToolbarIcon>,
+      row: <ToolbarIcon label="Working from"><Button type="button" size="icon" variant="outline" className="md:hidden" aria-label="Working from" data-toolbar-control="working-from" onClick={() => setAskOpen(true)}><GraphiteIcon name="working-from" animate={false} /></Button></ToolbarIcon>,
   });
   if (selectedLinkId) {
     toolbarItems.push({
@@ -2563,6 +2563,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
               <div className="fixed inset-0 z-40" onPointerDown={() => setBoardMenu(null)} onContextMenu={(event) => { event.preventDefault(); setBoardMenu(null); }} />
               <div role="menu" className="absolute z-50 min-w-[180px] rounded-md border border-border bg-card p-1 shadow-md" style={{ left: boardMenu.screen.x, top: boardMenu.screen.y }}>
                 <button type="button" role="menuitem" className="w-full rounded-[6px] px-2 py-1.5 text-left text-[13px] text-foreground hover:bg-muted" onClick={() => { const at = boardMenu.board; setBoardMenu(null); openAddWork("context_menu", at); }}>Bring in work here</button>
+                {hiddenNodes.length > 0 ? <div role="group" aria-label={`Put back on the board (${hiddenNodes.length})`} className="mt-1 border-t border-border pt-1"><p className="px-2 py-1 font-mono text-[9px] uppercase tracking-[0.08em] text-soft">Put back on the board ({hiddenNodes.length})</p>{hiddenNodes.map((node) => <button key={node.id} type="button" role="menuitem" className="w-full truncate rounded-[6px] px-2 py-1.5 text-left text-[13px] text-foreground hover:bg-muted" onClick={() => { setBoardMenu(null); restoreNode(node.id); }}>{node.title}</button>)}</div> : null}
                 {!boardFrames.some((frame) => isContextFrameId(frame.id)) ? <button type="button" role="menuitem" className="w-full rounded-[6px] px-2 py-1.5 text-left text-[13px] text-foreground hover:bg-muted" onClick={() => { const at = boardMenu.board; setBoardMenu(null); void addContextArea(at); }}>Add a context area</button> : null}
                 {!showGuides && !trailFrame ? <button type="button" role="menuitem" className="w-full rounded-[6px] px-2 py-1.5 text-left text-[13px] text-foreground hover:bg-muted" onClick={() => { const at = boardMenu.board; setBoardMenu(null); void addTrail(at); }}>Add a reasoning trail</button> : null}
               </div>
@@ -2573,8 +2574,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
         </div>
         {boardReady && opening ? <div className={`pointer-events-none absolute inset-0 z-40 flex ${unfold.className}`} aria-hidden={!unfold.still}>{unfold.still ? <span className="sr-only">{unfold.reduced}</span> : null}<span className="canvas-lab-unfold-panel" /><span className="canvas-lab-unfold-panel" /><span className="canvas-lab-unfold-panel" /></div> : null}
       </main>
-      {profile?.id && orgId ? <BoardAsk open={askOpen} onOpenChange={setAskOpen} engagementId={engagementId} engagementTitle={title} profileId={profile.id} orgId={orgId} canKeep={canAddWork} onKeep={(answer) => void keepAnswerAsCard(answer)} /> : null}
-      <WorkRail open={railOpen} mobileVisible={mobileView === "rail"} context={contextNodes} hidden={hiddenNodes} canvasInstructions={canvasInstructions} onToggle={() => { const next = !railOpen; setRailOpen(next); noteWorkboardRail(orgId, next ? "reopened" : "collapsed"); }} onRemoveContext={(id) => setSelected((current) => removeContext(current, id))} onClearContext={() => { setSelected([]); noteWorkboardContextChanged(orgId, "cleared"); setAnnouncement("Cleared context."); }} onSubmit={(prompt) => { setNodes((current) => { if (!current) return current; const contextNode = current.find((node) => node.id === selected[0]); const frame = boardFrames.find((entry) => entry.id === (contextNode?.frame ?? "foundation")) ?? boardFrames[0]; if (!frame) return current; return [...current, createChatNode(prompt, selected, draftAnchor(frame, current), frame.id)]; }); noteWorkboardNodeCreated(orgId, "draft_thread"); }} onCanvasInstructions={setCanvasInstructions} onRestore={restoreNode} onShowBoard={() => setMobileView("board")} />
+      {profile?.id && orgId ? <BoardAsk open={askOpen} onOpenChange={setAskOpen} engagementId={engagementId} engagementTitle={title} profileId={profile.id} orgId={orgId} canKeep={canAddWork} onKeep={(answer) => void keepAnswerAsCard(answer)} boardContextItemIds={contextNodes.flatMap((node) => { const item = itemByNode(node); return item ? [item.id] : []; })} /> : null}
       <p className="sr-only" aria-live="polite">{announcement}</p>
       {exampleOpen ? <ExampleBoardOverlay onClose={() => setExampleOpen(false)} /> : null}
       {canAddWork ? <AddWorkPanel open={addWorkOpen} onOpenChange={(next) => { setAddWorkOpen(next); if (!next) { setAddWorkAnchor(null); setAddWorkTarget("board"); } }} onPlace={addWorkToBoard} busy={addWorkBusy} /> : null}
