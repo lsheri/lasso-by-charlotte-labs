@@ -12,6 +12,7 @@ export const ATTACHMENT_KINDS = [
   "research_report",
   "page",
   "file",
+  "file_ref",
   "other",
 ] as const;
 
@@ -30,6 +31,7 @@ const KIND_LABELS: Record<AttachmentKind, string> = {
   research_report: "Research report",
   page: "Page",
   file: "File",
+  file_ref: "File",
   other: "Attachment",
 };
 
@@ -56,6 +58,7 @@ const KIND_NOUNS: Record<AttachmentKind, string> = {
   research_report: "Research report",
   page: "Page",
   file: "File",
+  file_ref: "File",
   other: "Attachment",
 };
 

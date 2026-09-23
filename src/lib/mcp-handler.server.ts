@@ -383,7 +383,7 @@ const pushTools = (vocab: McpVocab) => [
     title: "Push a conversation",
     icons: ICONS,
     description:
-      `When the user says 'Push to Lasso', 'send to Lasso', or similar: call push_conversation with the ENTIRE conversation, every message, verbatim, unabridged, plus any artifact, canvas or file that already existed as its own object in this app, as attachments. Never summarize the transcript. Never compose new summaries, recaps or section write-ups and send them as attachments. Never use push_document for conversation artifacts. Verbatim is non-negotiable: never substitute a summary, paraphrase, or shortened version of a message at any position, the server rejects shrunken overwrites. Before pushing, assess how many messages you can reproduce word-for-word in a single call given their actual lengths. If the whole conversation fits, push it whole. If not, push it in consecutive windows using window {from, to, total}: start with the first window sized to what you can reproduce verbatim, then follow the server's response, which tells you the next starting position, until all messages are stored. When re-pushing a conversation that grew, push only the new messages as a window, never re-send earlier messages unless correcting them. A smaller window is always the answer; a shorter message never is. Push at natural checkpoints during long work rather than only at the end, so nothing is lost if your context is compacted; re-pushing is safe and only sends what changed. For assistant turns that ran tools or wrote files, include what was done as a role: 'tool' message at that position, plainly, rather than omitting it. A binary file this chat generated (pptx, docx, xlsx, pdf, png) cannot be sent as content; say so to the user and tell them to add the file to the board from their download or Drive. Never send binary content as text or base64. If part of the conversation is no longer in your context word for word, send that span as ONE message with fidelity: summary and covers: {from, to}; never send a summary as verbatim and never leave the span out. ${placementLine(vocab)}`,
+      `When the user says 'Push to Lasso', 'send to Lasso', or similar: call push_conversation with the ENTIRE conversation, every message, verbatim, unabridged, plus any artifact, canvas or file that already existed as its own object in this app, as attachments. Never summarize the transcript. Never compose new summaries, recaps or section write-ups and send them as attachments. Never use push_document for conversation artifacts. Verbatim is non-negotiable: never substitute a summary, paraphrase, or shortened version of a message at any position, the server rejects shrunken overwrites. Before pushing, assess how many messages you can reproduce word-for-word in a single call given their actual lengths. If the whole conversation fits, push it whole. If not, push it in consecutive windows using window {from, to, total}: start with the first window sized to what you can reproduce verbatim, then follow the server's response, which tells you the next starting position, until all messages are stored. When re-pushing a conversation that grew, push only the new messages as a window, never re-send earlier messages unless correcting them. A smaller window is always the answer; a shorter message never is. Push at natural checkpoints during long work rather than only at the end, so nothing is lost if your context is compacted; re-pushing is safe and only sends what changed. For assistant turns that ran tools or wrote files, include what was done as a role: 'tool' message at that position, plainly, rather than omitting it. A binary file this chat generated (pptx, docx, xlsx, pdf, png) is sent as an attachment of kind file_ref with its filename and, when you can compute it, its sha256; never as content and never as base64. Lasso makes a card for it and the person adds the file. If part of the conversation is no longer in your context word for word, send that span as ONE message with fidelity: summary and covers: {from, to}; never send a summary as verbatim and never leave the span out. ${placementLine(vocab)}`,
     // Windowing is the only sanctioned way to split a push, and only because
     // the alternative the model reaches for otherwise is shortening messages.
     inputSchema: {
@@ -459,10 +459,26 @@ const pushTools = (vocab: McpVocab) => [
                 description:
                   "The artifact's own identifier in the source app, exactly as the app knows it. In Claude this is the artifact's identifier. In ChatGPT it is the canvas or textdoc id. For a generated file it is the filename the app gave it. This is not a description and not a slug you invent. If the object does not have an identifier of its own in the app, it is not an artifact and must not be sent as an attachment.",
               },
-              content: { type: "string", description: "Verbatim source or text." },
+              content: {
+                type: "string",
+                description: "Verbatim source or text. Required for every kind except file_ref.",
+              },
               language: { type: "string" },
+              file_ref: {
+                type: "object",
+                description:
+                  "For a file this chat generated that is not plain text (pptx, docx, xlsx, pdf, png): send kind file_ref with its filename and, when you can compute it, its sha256 and size. Never send binary content as text or base64. Lasso creates a card on the board; the person adds the file to it.",
+                properties: {
+                  filename: { type: "string" },
+                  mime_type: { type: "string" },
+                  bytes: { type: "integer" },
+                  sha256: { type: "string", description: "64 hex characters." },
+                  download_url: { type: "string" },
+                },
+                required: ["filename"],
+              },
             },
-            required: ["kind", "title", "content", "source_artifact_id"],
+            required: ["kind", "title", "source_artifact_id"],
           },
         },
         meta: {
@@ -1330,13 +1346,7 @@ type IncomingMessage = {
   fidelity?: "verbatim" | "summary";
   covers?: { from: number; to: number };
 };
-type IncomingAttachment = {
-  kind: string;
-  title: string;
-  content: string;
-  sourceArtifactId: string;
-  language?: string;
-};
+type IncomingAttachment = ParsedAttachment;
 
 type RejectedAttachment = {
   title: string;
@@ -1480,17 +1490,9 @@ async function pushConversation(
   }
   const attachments: IncomingAttachment[] = [];
   for (const a of rawAttachments) {
-    if (!a || typeof a.title !== "string" || typeof a.content !== "string" || !a.title.trim()) {
-      return rpcError(id, -32602, "Each attachment needs kind, verbatim title, and content");
-    }
-    attachments.push({
-      kind: ATTACHMENT_KINDS.includes(String(a.kind) as never) ? String(a.kind) : "other",
-      title: a.title.trim(),
-      content: a.content,
-      sourceArtifactId:
-        typeof a.source_artifact_id === "string" ? a.source_artifact_id.trim() : "",
-      ...(typeof a.language === "string" ? { language: a.language } : {}),
-    });
+    const parsed = parseIncomingAttachment(a, ATTACHMENT_KINDS);
+    if (!parsed.ok) return rpcError(id, -32602, parsed.message);
+    attachments.push(parsed.attachment);
   }
 
   const model =
@@ -1810,6 +1812,9 @@ async function pushConversation(
   const attachmentOutcomes: AttachmentOutcome[] = [];
   /** P0 item 1: the attachment rows this push touched, for placing them. */
   const attachmentIds: string[] = [];
+  /** P1b: file_ref attachments in this call, and the placeholders created. */
+  let fileRefCount = 0;
+  let fileRefsCreated = 0;
   const transcriptText = messages.map((m) => m.content).join("\n\n");
   const messageTexts = messages.map((m) => m.content);
   if (attachments.length > 0 && !owner.userId) {
@@ -1823,6 +1828,86 @@ async function pushConversation(
       .neq("type", "ai_thread");
 
     for (const attachment of attachments) {
+      // P1b item 1. A generated binary file: a card without bytes, matched
+      // like any attachment, placed with the thread, completed by the person.
+      if (attachment.kind === "file_ref" && attachment.fileRef) {
+        fileRefCount += 1;
+        const ref = attachment.fileRef;
+        const refMatch =
+          (existingAttachments ?? []).find(
+            (row) =>
+              ((row.source_meta as { source_artifact_id?: string } | null)?.source_artifact_id ??
+                "") === attachment.sourceArtifactId,
+          ) ?? (existingAttachments ?? []).find((row) => row.title === attachment.title);
+        if (refMatch) {
+          saved += 1;
+          capturedIds.push(refMatch.id);
+          attachmentIds.push(refMatch.id);
+          attachmentOutcomes.push({
+            title: attachment.title,
+            source_artifact_id: attachment.sourceArtifactId,
+            outcome: "unchanged",
+            chars: 0,
+          });
+          continue;
+        }
+        const refType = workTypeForFile(ref.filename);
+        const refResult = await supabaseAdmin
+          .from("work_items")
+          .insert({
+            owner_id: owner.profileId,
+            org_id: owner.orgId,
+            type: refType,
+            source: `mcp:${vendor}`,
+            source_vendor: vendor,
+            orig_conversation_id: origId,
+            title: attachment.title,
+            content_ref: null,
+            content_hash: null,
+            content_fidelity: "reference",
+            ts_precision: "capture" as const,
+            visibility: "unmapped",
+            source_meta: {
+              ...sharedMeta,
+              role: "attachment",
+              kind: "file_ref",
+              filename: ref.filename,
+              mime_type: ref.mime_type ?? null,
+              bytes: ref.bytes ?? null,
+              sha256: ref.sha256 ?? null,
+              download_url: ref.download_url ?? null,
+              source_artifact_id: attachment.sourceArtifactId,
+              produced_at_turn: null,
+            } as unknown as Json,
+            meta: { assistant_transcribed: true },
+          })
+          .select("id")
+          .maybeSingle();
+        if (refResult.error || !refResult.data?.id) {
+          const reason = refResult.error?.message ?? "not created";
+          problems.push(`'${attachment.title}': ${reason}`);
+          attachmentOutcomes.push({
+            title: attachment.title,
+            source_artifact_id: attachment.sourceArtifactId,
+            outcome: "failed",
+            chars: 0,
+            reason,
+          });
+          continue;
+        }
+        saved += 1;
+        fileRefsCreated += 1;
+        capturedIds.push(refResult.data.id);
+        attachmentIds.push(refResult.data.id);
+        createdAttachmentTypes.push(String(refType));
+        attachmentOutcomes.push({
+          title: attachment.title,
+          source_artifact_id: attachment.sourceArtifactId,
+          outcome: "reference_created",
+          chars: 0,
+        });
+        continue;
+      }
       // The server decides what an artifact is. Every rejected attachment's
       // content is already stored verbatim in the transcript, so rejecting it
       // removes a duplicate row, not information.
@@ -2095,6 +2180,7 @@ async function pushConversation(
       attachment_versions: versionRowsBucket(attachmentVersionRows),
       attachments_placed: versionRowsBucket(attachmentsPlaced),
       summary_spans: versionRowsBucket(summarySpans),
+      file_refs: versionRowsBucket(fileRefCount),
     },
   });
   await recordEvent(supabaseAdmin, {
@@ -2248,15 +2334,18 @@ async function pushConversation(
           .map((pos) => `position ${pos} is verbatim in Lasso; a summary never replaces it`)
           .join("; ")}.`
       : "";
+  // P1b item 1. Placeholders ask the person for the file.
+  const placeholderNote = fileRefNote(fileRefsCreated);
   const placementText =
     convoPlacement.target === "workboard"
       ? ` ${convoPlacement.text}`
       : ` It stays private until the user maps it.${convoPlacement.text ? ` ${convoPlacement.text}` : ""}`;
-  const summary = `${verb} '${title}' in Lasso.${counts}${attachmentLine}${attachmentPlaceNote}${shortNote}${windowNote}${totalNote}${receiptNote}${degradedNote}${summaryRefusedNote}${degradedAttachmentNote}${cursor}${placementText}${rejectedNote}${warn}${continuation}${urlNote}`;
+  const summary = `${verb} '${title}' in Lasso.${counts}${attachmentLine}${attachmentPlaceNote}${placeholderNote}${shortNote}${windowNote}${totalNote}${receiptNote}${degradedNote}${summaryRefusedNote}${degradedAttachmentNote}${cursor}${placementText}${rejectedNote}${warn}${continuation}${urlNote}`;
   // P1 item 0. Clients that read only structuredContent must still see
   // everything the text says, as fields rather than prose.
   const progress = pushProgress(storedCount, total ?? null);
   const notes = [
+    placeholderNote,
     windowNote,
     totalNote,
     degradedNote,
