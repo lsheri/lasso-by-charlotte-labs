@@ -326,15 +326,14 @@ describe("CG1 inbox congruency", () => {
     for (const label of ["AI conversations", "Documents", "Models & sheets", "Meeting transcripts"]) {
       expect(within(board).getByText(label)).toBeTruthy();
     }
-    const toolbar = within(board).getByTestId("board-shell-toolbar");
-    expect(within(toolbar).getByRole("group", { name: "How work is shown" })).toBeTruthy();
-    expect(within(toolbar).getByRole("button", { name: "Everything" })).toBeTruthy();
-    expect(within(toolbar).getByRole("button", { name: "Unmapped" })).toBeTruthy();
-    expect(within(toolbar).getByRole("button", { name: "Claimed by you" })).toBeTruthy();
+    expect(screen.getByRole("group", { name: "How work is shown" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Everything" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Unmapped" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Claimed by you" })).toBeTruthy();
     expect(within(board).getByText("1–5 OF 6")).toBeTruthy();
     const documentLaneFrame = within(board).getByText("Documents").closest("[data-board-lane]");
     expect(documentLaneFrame?.getAttribute("style")).toContain("height: 1256px");
-    expect(board.parentElement?.getAttribute("style")).toContain("height: 1376px");
+    expect(board.parentElement?.className).toContain("min-h-0");
     expect(within(board).getByText("Documents").parentElement?.parentElement?.className).toMatch(/top-0/);
     expect(within(board).getByText("1–5 OF 6").parentElement?.className).toMatch(/bottom-0/);
     const documentLaneScroll = board.querySelector('[data-board-lane="lane:inbox-documents"] > [data-testid^="board-lane-scroll-"]');
@@ -350,6 +349,16 @@ describe("CG1 inbox congruency", () => {
     fireEvent.click(screen.getByRole("button", { name: "More work in this column" }));
     expect(screen.getAllByTestId("inbox-fixed-card")).toHaveLength(1);
     expect(screen.getByText(inboxRows[5]?.title ?? "missing")).toBeTruthy();
+  });
+
+  it("uses the fixed Inbox shell and puts the source tally on the paper", () => {
+    inboxRows = [itemOfType("document-1", "document")];
+    const { container } = render(<WorkPage />);
+    expect(container.firstElementChild?.className).toContain("h-[calc(100vh-6.5rem)]");
+    expect(container.querySelector("header")?.className).toContain("h-16");
+    expect(screen.getByRole("button", { name: "Everything" }).parentElement?.className).toContain("h-[46px]");
+    expect(container.innerHTML).toContain("inbox-sources");
+    expect(screen.getByText("WHERE THIS CAME FROM")).toBeTruthy();
   });
 
   it("recomputes the Inbox span and symmetric gaps after the shell reports a live width change", async () => {
