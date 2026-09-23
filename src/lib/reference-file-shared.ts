@@ -19,6 +19,6 @@ export const REFERENCE_ADD_LABEL = "Add the file";
 export const REFERENCE_MATCH_YES = "Verified against the chat";
 export const REFERENCE_MATCH_NO = "Different from the version the chat produced";
 
-export function isReferenceItem(item: { content_fidelity?: string | null } | null | undefined): boolean {
+export function isReferenceItem(item: { content_fidelity?: string | null | undefined } | null | undefined): boolean {
   return item?.content_fidelity === "reference";
 }
