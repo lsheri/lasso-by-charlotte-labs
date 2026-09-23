@@ -116,7 +116,7 @@ export const EVENT_DIM_KEYS: Readonly<Record<string, readonly string[]>> = {
   "link.drawn": ["action", "considered", "cost_bucket", "count", "relation", "scope", "source", "surface", "tokens_in_bucket"],
   "link.reviewed": ["action", "considered", "cost_bucket", "count", "relation", "scope", "source", "surface", "tokens_in_bucket"],
   "mcp.container_created": ["attachment_count", "attachment_versions", "degraded_refusals", "has_suggestion", "mode", "rejected_attachments", "suggestion_outcome", "target", "tool", "vendor", "windowed", "workspace_type"],
-  "mcp.push": ["attachment_count", "attachment_versions", "attachments_placed", "channel", "degraded_refusals", "entry", "has_suggestion", "mode", "rejected_attachments", "source", "suggestion_outcome", "summary_spans", "target", "tool", "vendor", "windowed"],
+  "mcp.push": ["attachment_count", "attachment_versions", "attachments_placed", "channel", "degraded_refusals", "entry", "has_suggestion", "mode", "rejected_attachments", "source", "suggestion_outcome", "file_refs", "summary_spans", "target", "tool", "vendor", "windowed"],
   "mcp.push_options_requested": ["attachment_count", "attachment_versions", "degraded_refusals", "has_suggestion", "mode", "rejected_attachments", "suggestion_outcome", "target", "tool", "vendor", "windowed"],
   "member.deactivated": [],
   "member.reactivated": [],
