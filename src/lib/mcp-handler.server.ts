@@ -1553,20 +1553,40 @@ async function pushConversation(
   const newRows: Record<string, unknown>[] = [];
   const degradedTurns: { turn_no: number; stored_chars: number; incoming_chars: number }[] = [];
   /** P0 item 4: one line per position this call inserted or changed. */
-  const receipts: { pos: number; role: string; chars: number; head: string }[] = [];
+  const receipts: {
+    pos: number;
+    role: string;
+    chars: number;
+    head: string;
+    fidelity: "verbatim" | "summary";
+    covers?: { from: number; to: number };
+  }[] = [];
+  /** P1 item 1: positions where a summary arrived over a verbatim turn. */
+  const summaryRefused: number[] = [];
+  /** P1 item 1: summary spans this call stored. */
+  let summarySpans = 0;
 
   for (let i = 0; i < messages.length; i += 1) {
     const m = messages[i]!;
     const turnNo = offset + i + 1;
     const hash = await sha256Hex(m.content);
     const prior = stored.get(turnNo);
+    const isSummary = m.fidelity === "summary";
+    const summaryMeta =
+      isSummary && m.covers
+        ? { fidelity: "summary", covers_from: m.covers.from, covers_to: m.covers.to }
+        : null;
+    const receiptOf = () => ({
+      pos: turnNo,
+      role: m.role,
+      chars: m.content.length,
+      head: receiptHead(m.content),
+      fidelity: (isSummary ? "summary" : "verbatim") as "verbatim" | "summary",
+      ...(isSummary && m.covers ? { covers: m.covers } : {}),
+    });
     if (!prior) {
-      receipts.push({
-        pos: turnNo,
-        role: m.role,
-        chars: m.content.length,
-        head: receiptHead(m.content),
-      });
+      if (isSummary) summarySpans += 1;
+      receipts.push(receiptOf());
       newRows.push({
         work_item_id: threadId,
         turn_no: turnNo,
@@ -1576,8 +1596,15 @@ async function pushConversation(
         ts: m.timestamp ?? null,
         ts_precision: (m.timestamp ? "source" : "capture") as "source" | "capture",
         ...(model ? { model } : {}),
-        meta: {},
+        meta: summaryMeta ?? {},
       });
+      continue;
+    }
+    const priorFidelity = turnFidelity(prior.meta);
+    // P1 item 1. A summary never stands in for a turn already held word for
+    // word. The stored turn stays and the caller is told which position.
+    if (isSummary && priorFidelity === "verbatim") {
+      summaryRefused.push(turnNo);
       continue;
     }
     if (prior.content_hash === hash) {
@@ -1585,9 +1612,12 @@ async function pushConversation(
       continue;
     }
     // A re-push may improve a turn; it may not quietly replace verbatim with
-    // a condensed retelling. We keep what we have and say so.
+    // a condensed retelling. We keep what we have and say so. A verbatim
+    // message arriving over a stored summary is the record improving, so the
+    // length guard does not apply to it.
     const storedChars = (prior.content ?? "").length;
-    if (looksCondensed(m.content.length, storedChars)) {
+    const replacingSummary = !isSummary && priorFidelity === "summary";
+    if (!replacingSummary && looksCondensed(m.content.length, storedChars)) {
       degradedTurns.push({
         turn_no: turnNo,
         stored_chars: storedChars,
@@ -1596,10 +1626,16 @@ async function pushConversation(
       continue;
     }
     // Edited or branched upstream: update in place so the turn id survives.
-    const priorMeta =
+    const priorMetaRaw =
       prior.meta && typeof prior.meta === "object" && !Array.isArray(prior.meta)
         ? (prior.meta as Record<string, unknown>)
         : {};
+    const priorMeta = { ...priorMetaRaw };
+    if (replacingSummary) {
+      delete priorMeta["fidelity"];
+      delete priorMeta["covers_from"];
+      delete priorMeta["covers_to"];
+    }
     // Preserve the prior version before overwriting it. If that fails, the
     // overwrite does not happen: no version is lost without a copy first.
     const { error: revError } = await supabaseAdmin.from("turn_revisions").insert({
@@ -1629,19 +1665,16 @@ async function pushConversation(
         ...(model ? { model } : {}),
         meta: {
           ...priorMeta,
+          ...(summaryMeta ?? {}),
           revised_at: new Date().toISOString(),
           previous_content_hash: prior.content_hash,
         } as unknown as Json,
       })
       .eq("id", prior.id);
     if (updError) return rpcError(id, -32603, updError.message);
+    if (isSummary) summarySpans += 1;
     changedCount += 1;
-    receipts.push({
-      pos: turnNo,
-      role: m.role,
-      chars: m.content.length,
-      head: receiptHead(m.content),
-    });
+    receipts.push(receiptOf());
   }
   receipts.sort((a, b) => a.pos - b.pos);
 
