@@ -632,8 +632,13 @@ async function applyDestination(
   plan: PlacementPlan,
   /** P0 item 1: the caller may supply places already read, so one push reads once. */
   knownPlaces?: PlaceRow[],
-): Promise<{ text: string; target: "inbox" | "workboard"; place: PlaceRow | null }> {
-  if (!plan.destination) return { text: "", target: "inbox", place: null };
+): Promise<{
+  text: string;
+  target: "inbox" | "workboard";
+  place: PlaceRow | null;
+  status: string | null;
+}> {
+  if (!plan.destination) return { text: "", target: "inbox", place: null, status: null };
   const places = knownPlaces ?? (await readPlaces(owner)).places;
   const { place, colliding } = matchPlace(places, plan.destination);
   if (!place) {
@@ -642,16 +647,18 @@ async function applyDestination(
         text: renderUnknownRef(vocab, colliding.map((one) => one.ref), sharedCodeNote(vocab)),
         target: "inbox",
         place: null,
+        status: "unknown_ref",
       };
     }
     return {
       text: renderUnknownRef(vocab, places.map((one) => one.ref)),
       target: "inbox",
       place: null,
+      status: "unknown_ref",
     };
   }
   const placed = await placeOneItem(owner, vocab, itemId, place, plan);
-  return { text: placed.text, target: placed.target, place };
+  return { text: placed.text, target: placed.target, place, status: placed.status };
 }
 
 /** The workspace's words, read once for a push that may place something. */
