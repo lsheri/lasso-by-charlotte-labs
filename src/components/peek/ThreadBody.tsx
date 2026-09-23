@@ -153,6 +153,26 @@ function revisedLabel(turn: Turn): string | null {
 }
 
 /**
+ * P1 item 2. A span the pushing client could no longer reproduce word for
+ * word. The record says exactly which positions it stands for.
+ */
+export function summarisedSpan(turn: { meta?: unknown }): { from: number; to: number } | null {
+  const meta =
+    turn.meta && typeof turn.meta === "object" && !Array.isArray(turn.meta)
+      ? (turn.meta as { fidelity?: unknown; covers_from?: unknown; covers_to?: unknown })
+      : null;
+  if (meta?.fidelity !== "summary") return null;
+  const from = meta.covers_from;
+  const to = meta.covers_to;
+  if (typeof from !== "number" || typeof to !== "number") return null;
+  return { from, to };
+}
+
+export function summarisedLabel(span: { from: number; to: number }): string {
+  return `Summarised by the AI client. Messages ${span.from} to ${span.to} were not available word for word.`;
+}
+
+/**
  * The model's own words, with any verification ink settled on the claim span.
  * A mark is only ever drawn on a model turn: human turns render untouched.
  */
@@ -307,6 +327,13 @@ export function ThreadBody({
             .filter((mark) => mark.turnNo === turn.turn_no && !mark.stale)
             .map((mark) => ({ charStart: mark.charStart, charEnd: mark.charEnd }));
           const marked = !focusedRange && (liveRanges.length > 0 || noteRanges.length > 0);
+          const span = summarisedSpan(turn);
+          const summarisedNote = span ? (
+            <p data-testid="turn-summarised" className="mb-1 text-[11px] text-muted-foreground">
+              {summarisedLabel(span)}
+            </p>
+          ) : null;
+          const summarisedTone = span ? " text-muted-foreground" : "";
           return (
           <div key={turn.id} ref={(node) => { if (node) turnRefs.current.set(turn.turn_no, node); else turnRefs.current.delete(turn.turn_no); }} data-turn-no={turn.turn_no}>
           {turn.role === "user" ? (
@@ -315,9 +342,10 @@ export function ThreadBody({
                 Turn {turn.turn_no} · {turn.role}
                 {turnTime(turn.ts) ? ` · ${turnTime(turn.ts)}` : ""}
               </div>
+              {summarisedNote}
               <div
                 data-turn-content={turn.turn_no}
-                className={`relative max-w-[90%] whitespace-pre-wrap rounded-[var(--radius)] bg-grey-2 px-4 py-3 font-mono text-xs leading-relaxed text-foreground ${focused && !focusedRange ? "is-evidence-focus" : ""}`}
+                className={`relative max-w-[90%] whitespace-pre-wrap rounded-[var(--radius)] bg-grey-2 px-4 py-3 font-mono text-xs leading-relaxed ${span ? "text-muted-foreground" : "text-foreground"} ${focused && !focusedRange ? "is-evidence-focus" : ""}`}
               >
                 {focused && !focusedRange ? <EvidenceCircle /> : null}
                 {marked ? (
@@ -357,11 +385,12 @@ export function ThreadBody({
                       {turnTime(turn.ts) ? ` · ${turnTime(turn.ts)}` : ""}
                     </span>
                   </div>
+                  {summarisedNote}
                   <div
                     data-turn-content={turn.turn_no}
                     data-lit={lit ? "true" : undefined}
                     data-testid={lit ? `turn-lit-${turn.turn_no}` : undefined}
-                    className={`relative max-w-[90%] whitespace-pre-wrap rounded-[var(--radius)] border border-border bg-card px-4 py-3 font-mono text-xs leading-relaxed text-foreground shadow-card${
+                    className={`relative max-w-[90%] whitespace-pre-wrap rounded-[var(--radius)] border border-border bg-card px-4 py-3 font-mono text-xs leading-relaxed${summarisedTone || " text-foreground"} shadow-card${
                       lit ? " nb-turn-lit border-l-[3px]" : ""
                     } ${focused && !focusedRange ? "is-evidence-focus" : ""}`}
                     {...(lit
