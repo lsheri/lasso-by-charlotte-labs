@@ -41,4 +41,16 @@ describe("B3 marquee", () => {
     expect(end.slice(0, 400)).toContain("marqueeRef.current = null;");
     expect(css).toContain(".canvas-lab-marquee");
   });
+
+  it("stagePoint reads pan and zoom from refs so a fresh pan does not skew the box", () => {
+    expect(page).toContain("(clientX - rect.left - panStateRef.current.x) / zoomRef.current");
+    expect(page).toContain("(clientY - rect.top - panStateRef.current.y) / zoomRef.current");
+    expect(page).not.toContain("- pan.x) / zoom");
+  });
+
+  it("keeps one-finger touch pan on the empty board", () => {
+    const emptyBranch = page.slice(page.indexOf('if (event.button === 0 && empty) {'), page.indexOf('onContextMenu'));
+    expect(emptyBranch).toContain('event.pointerType === "touch"');
+    expect(emptyBranch).toContain("startSpacePan(event);");
+  });
 });
