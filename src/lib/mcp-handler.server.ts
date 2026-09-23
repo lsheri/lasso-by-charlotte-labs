@@ -2140,17 +2140,53 @@ async function pushConversation(
   const receiptNote = win || receipts.length > 0 ? receiptLine(receipts) : "";
   // P0 item 10. Asked for once, on the first push of this conversation.
   const urlNote = pushMode === "created" ? missingChatUrlNote(args) : "";
+  // P1 item 1. A summary never replaces a turn already held word for word.
+  const summaryRefusedNote =
+    summaryRefused.length > 0
+      ? ` ${summaryRefused
+          .map((pos) => `position ${pos} is verbatim in Lasso; a summary never replaces it`)
+          .join("; ")}.`
+      : "";
+  const placementText =
+    convoPlacement.target === "workboard"
+      ? ` ${convoPlacement.text}`
+      : ` It stays private until the user maps it.${convoPlacement.text ? ` ${convoPlacement.text}` : ""}`;
+  const summary = `${verb} '${title}' in Lasso.${counts}${attachmentLine}${attachmentPlaceNote}${shortNote}${windowNote}${totalNote}${receiptNote}${degradedNote}${summaryRefusedNote}${degradedAttachmentNote}${cursor}${placementText}${rejectedNote}${warn}${continuation}${urlNote}`;
+  // P1 item 0. Clients that read only structuredContent must still see
+  // everything the text says, as fields rather than prose.
+  const progress = pushProgress(storedCount, total ?? null);
+  const notes = [
+    windowNote,
+    totalNote,
+    degradedNote,
+    summaryRefusedNote,
+    degradedAttachmentNote,
+    rejectedNote,
+    warn,
+    continuation,
+    urlNote,
+  ]
+    .map((one) => one.trim())
+    .filter((one) => one.length > 0);
   return rpcResult(id, {
-    content: [
-      {
-        type: "text",
-        text: `${verb} '${title}' in Lasso.${counts}${attachmentLine}${attachmentPlaceNote}${shortNote}${windowNote}${totalNote}${receiptNote}${degradedNote}${degradedAttachmentNote}${cursor}${
-          convoPlacement.target === "workboard"
-            ? ` ${convoPlacement.text}`
-            : ` It stays private until the user maps it.${convoPlacement.text ? ` ${convoPlacement.text}` : ""}`
-        }${rejectedNote}${warn}${continuation}${urlNote}`,
+    content: [{ type: "text", text: summary }],
+    structuredContent: {
+      summary,
+      stored_count: storedCount,
+      total: total ?? null,
+      next_from: progress.next_from,
+      complete: progress.complete,
+      placement: {
+        target: convoPlacement.target,
+        ref: convoPlacement.place?.ref ?? null,
+        status: convoPlacement.status,
+        note: placementText.trim(),
       },
-    ],
-    structuredContent: { attachments: attachmentOutcomes, stored: receipts },
+      attachments_placed: attachmentsPlaced,
+      attachments_total: placeTargets.length,
+      notes,
+      attachments: attachmentOutcomes,
+      stored: receipts,
+    },
   });
 }
