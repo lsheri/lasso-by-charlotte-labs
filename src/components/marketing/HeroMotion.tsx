@@ -55,10 +55,10 @@ const SOURCES: SourceCard[] = [
 ];
 
 export const STORY_QUESTIONS = [
-  "Where did the 18% on slide 3 come from?",
-  "Find the link to the Claude conversation where I said ‘xyz’.",
-  "What did we consider and reject?",
   "Which conversations shaped the recommendation?",
+  "Find the link to the Claude conversation where I said ‘xyz’.",
+  "Where did the 18% on slide 3 come from?",
+  "What did we consider and reject?",
 ] as const;
 
 const STORY_QUESTION_SPEAKERS = ["Client question", "Manager question", "Client question", "Manager question"] as const;
