@@ -17,8 +17,7 @@ describe("pass A2 · All conversations absorbs Reflect", () => {
   });
 
   it("titles the page All conversations", () => {
-    expect(page).toContain('title="All"');
-    expect(page).toContain('italicWord="conversations"');
+    expect(page).toContain('>All conversations</h1>');
   });
 
   it("offers the three sources and records the change on the settled event", () => {

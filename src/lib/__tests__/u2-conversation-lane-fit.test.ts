@@ -23,7 +23,9 @@ describe("Unit 2 conversation lanes fit the shell at zoom 1", () => {
         expect(left).toBeGreaterThanOrEqual(0);
         expect(right).toBeLessThanOrEqual(shell.width);
       }
-      expect(lanes[0]?.y * fit.zoom + fit.pan.y).toBe(54);
+      const first = lanes[0];
+      if (!first) throw new Error("Expected a first conversation lane");
+      expect(first.y * fit.zoom + fit.pan.y).toBe(54);
     });
   }
 
