@@ -81,6 +81,7 @@
 - [x] Make cards in Ask Lasso context unmistakably lime while preserving the paperclip cue.
 - [x] Add one-time registry-led entry flares, ordered marquee staggering, and still reduced-motion behavior.
 - [x] Clarify marquee preview and sticky keyboard focus without changing controls or event payloads.
+- [x] C2: Replace one-shot flares with capped, interaction-paused living coronas beneath context cards.
 
 ## Unit 2 All conversations shell
 - [x] Replace the page shell while preserving controls, states, and existing calls.
