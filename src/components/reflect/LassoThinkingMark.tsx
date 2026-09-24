@@ -6,7 +6,6 @@ import {
   loopStamps,
   resolvedFormAt,
   resolvedLinework,
-  settledLassoStamps,
   type LoopStamp,
 } from "@/lib/lasso-loop";
 
