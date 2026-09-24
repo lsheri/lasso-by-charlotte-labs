@@ -5350,7 +5350,7 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 .landing-story-kicker { font-family: var(--font-mono); font-size: 2.6cqw; color: var(--nb-faint); text-transform: uppercase; }
 .landing-story-slide-line { font-size: 3cqw; line-height: 1.25; color: var(--muted-foreground); }
 .landing-story-slide-split img, .landing-story-img-placeholder { width: 34cqw; flex: none; height: 100%; object-fit: cover; border-radius: 1cqw; }
-.landing-story-img-placeholder { display: grid; place-items: center; background: repeating-linear-gradient(135deg, var(--nb-line-hairline) 0 1px, transparent 1px 7px); border: 1px solid var(--nb-line-hairline); }
+.landing-story-img-placeholder { display: grid; place-items: center; background: color-mix(in srgb, var(--nb-line-hairline) 45%, var(--nb-paper)); border: 1px dashed var(--nb-line-pencil, var(--nb-line-hairline)); }
 .landing-story-img-placeholder span { font-family: var(--font-mono); font-size: 2.4cqw; color: var(--nb-faint); background: var(--nb-paper); padding: 0 1cqw; }
 .landing-story-slide-footer { position: absolute; left: 6cqw; right: 6cqw; bottom: 3cqw; font-family: var(--font-mono); font-size: 2.2cqw; color: var(--nb-faint); border-top: 1px solid var(--nb-line-hairline); padding-top: 1.2cqw; }
 .landing-story-footnote { font-family: var(--font-mono); font-size: 2.2cqw; color: var(--nb-faint); }
