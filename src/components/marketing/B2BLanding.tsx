@@ -80,7 +80,7 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
     const observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
-          (entry.target as HTMLElement).dataset.play = entry.isIntersecting ? "running" : "paused";
+          (entry.target as HTMLElement).dataset["play"] = entry.isIntersecting ? "running" : "paused";
         }
       },
       { threshold: 0.25 },
