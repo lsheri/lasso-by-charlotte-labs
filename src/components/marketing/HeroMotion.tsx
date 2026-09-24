@@ -142,7 +142,7 @@ function DeckSlide({ index }: { index: number }) {
 
 function SourceCardView({ card, index, active }: { card: SourceCard; index: number; active: number }) {
   return (
-    <article className="landing-story-source" data-source-active={active === index || (active === 3 && index < 2)}>
+    <article className="landing-story-source" data-source-active={active === index || (active === 3 && index < 2) || (active === 0 && index === 4)}>
       <header><SourceGlyph vendor={card.vendor} size={24} /><span>{card.label}</span></header>
       <h3>{card.title}</h3>
       <p>{card.excerpt}</p>
