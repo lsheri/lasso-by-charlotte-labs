@@ -23,7 +23,7 @@ describe("Unit 4 public page", () => {
   });
 
   it("carries the hero H1 and the beats anchor", () => {
-    expect(page).toContain("Your firm bought AI. The human judgment in your team's work went invisible.");
+    expect(page).toContain("Your firm bought AI. The human judgment, process, and thinking in your team's work went invisible.");
     expect(page).toContain('href="#beats"');
     expect(page).toContain('id="beats"');
   });
