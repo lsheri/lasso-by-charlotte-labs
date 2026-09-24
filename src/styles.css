@@ -5352,3 +5352,26 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 @media (max-width: 900px) { .landing-story-canvas { grid-template-columns: 1fr; } .landing-story-reach { display: none; } .landing-story-answer blockquote { font-size: 30px; } .landing-story-answer-copy { font-size: 15px; } .landing-story-doodle { inset: -8px -6px -10px -8px; width: calc(100% + 14px); height: calc(100% + 18px); } }
 @media (max-width: 520px) { .landing-story-sources { grid-template-columns: repeat(5,minmax(0,1fr)); } }
 @media (prefers-reduced-motion: reduce) { .landing-story-answer-copy span { opacity: 1; animation: none; } .landing-story-doodle path { stroke-dashoffset: 0; animation: none; } .landing-story-reach-word { display: none; } .landing-story-reach-stream { animation: none; opacity: .5; } }
+
+/* Landing: particle reveal (marketing "Deliverables" block) */
+.particle-reveal {
+  position: relative;
+}
+.particle-reveal-content {
+  transition: none;
+}
+.particle-reveal-canvas {
+  position: absolute;
+  inset: -40px -60px;
+  width: calc(100% + 120px);
+  height: calc(100% + 80px);
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .particle-reveal-canvas {
+    display: none;
+  }
+  .particle-reveal-content {
+    opacity: 1 !important;
+  }
+}

@@ -5,6 +5,7 @@ import { type FormEvent, useEffect, useRef, useState } from "react";
 import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
 import { PublicHeader } from "@/components/layout/PublicHeader";
 import { FocusSection } from "@/components/marketing/FocusSection";
+import { ParticleReveal } from "@/components/marketing/ParticleReveal";
 import { HeroMotion } from "@/components/marketing/HeroMotion";
 import { Button } from "@/components/ui/button";
 import { startSessionReplay, stopSessionReplay } from "@/lib/posthog-client";
@@ -265,10 +266,12 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
 
           <div className="mx-auto max-w-3xl px-6 md:px-10">
             <section className="mt-24 border-t border-rule pt-10">
-              <h2 className="pencil-title">Deliverables you can defend to a client, a partner, or a board...</h2>
-              <p className="mt-5 max-w-2xl text-base leading-relaxed text-foreground">
-                The work, judgment, thinking...VISIBLE*
-              </p>
+              <ParticleReveal>
+                <h2 className="pencil-title">Deliverables you can defend to a client, a partner, or a board...</h2>
+                <p className="mt-5 max-w-2xl text-base leading-relaxed text-foreground">
+                  The work, judgment, thinking...VISIBLE*
+                </p>
+              </ParticleReveal>
             </section>
 
             <div id="pilot">
