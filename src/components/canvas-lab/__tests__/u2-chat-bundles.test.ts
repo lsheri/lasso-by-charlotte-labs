@@ -83,7 +83,9 @@ describe("board wiring", () => {
     expect(page).toMatch(/function onCardKeyDown\(picked: LabNode[^\n]*\n\s*const node = \[[^\n]*bundleChatFor\(picked\)/);
   });
   it("docks in the visibleNodes memo and turns resize off on pieces", () => {
-    expect(page).toContain("const visibleNodes = useMemo(() => dockBundles(shownNodes, bundles), [shownNodes, bundles]);");
+    // B2: minimized pieces leave the list first; dockBundles still runs in the same memo.
+    expect(page).toContain("const visibleNodes = useMemo(");
+    expect(page).toContain("shownNodes.filter((node) => !bundleView.dropped.has(node.id)) : shownNodes, bundleView.bundles)");
     expect(page).toContain("const canResize = !bundleChatId &&");
   });
   it("keeps keyboard state on the pressed piece while the drag carries its chat", () => {
