@@ -77,13 +77,26 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
     // One observer: each stage runs only while it is on screen.
     const targets = Array.from(document.querySelectorAll<HTMLElement>("[data-landing-beats-play]"));
     if (typeof IntersectionObserver === "undefined") return;
+    // The hero runs whenever any of it shows; of the beats, only the one
+    // most in view runs.
+    const ratios = new Map<HTMLElement, number>();
     const observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
-          (entry.target as HTMLElement).dataset["play"] = entry.isIntersecting ? "running" : "paused";
+          ratios.set(entry.target as HTMLElement, entry.isIntersecting ? entry.intersectionRatio : 0);
+        }
+        let lead: HTMLElement | null = null;
+        for (const target of targets) {
+          if (target.tagName !== "ARTICLE") continue;
+          const ratio = ratios.get(target) ?? 0;
+          if (ratio > 0 && (!lead || ratio > (ratios.get(lead) ?? 0))) lead = target;
+        }
+        for (const target of targets) {
+          const on = target.tagName === "ARTICLE" ? target === lead : (ratios.get(target) ?? 0) > 0;
+          target.dataset["play"] = on ? "running" : "paused";
         }
       },
-      { threshold: 0.25 },
+      { threshold: [0, 0.1, 0.25, 0.5, 0.75, 1] },
     );
     for (const target of targets) observer.observe(target);
     return () => observer.disconnect();
