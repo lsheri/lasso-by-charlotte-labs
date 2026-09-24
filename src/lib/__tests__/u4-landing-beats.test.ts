@@ -59,7 +59,8 @@ describe("Unit 4 public page", () => {
     expect(hero).toContain("export function DeckWalkthrough");
     expect(hero).toContain("IntersectionObserver");
     expect(hero).toContain('rootMargin: "-50% 0px -50% 0px"');
-    expect(hero).not.toMatch(/setInterval|setTimeout/);
+    expect(hero).toContain("window.setInterval(spawnWord, 260)");
+    expect(hero).not.toContain("setTimeout");
     expect(hero).not.toContain("ConversationTunnel");
     expect(hero).not.toContain("landing-story-doodle");
     expect(hero).not.toContain("landing-story-reach-chip");
@@ -75,7 +76,9 @@ describe("Unit 4 public page", () => {
     expect(hero).toContain("Manager question");
     expect(hero).toContain("lw-answer");
     expect(page.match(/>How it works</g)).toHaveLength(1);
-    expect(page).toContain("The deliverable stays. The questions walk past it.");
+    expect(page).toContain("Deliverables you can defend to a client, a partner, or a board.");
+    expect(page).toContain("Every claim, traced to the work behind it.");
+    expect(page).not.toContain("The deliverable stays");
   });
 });
 
@@ -119,7 +122,7 @@ describe("Unit 10 landing", () => {
     expect(page).toContain("Illustrative engagement · every figure is made up");
   });
 
-  it("inverts walkthrough emphasis and streams source words into the active highlight", () => {
+  it("inverts walkthrough emphasis and continuously streams source words into the active highlight", () => {
     expect(hero).toContain('"Manager question": "Question from your manager"');
     expect(hero).toContain("lw-role-label");
     expect(hero).toContain("lw-word-stream");
@@ -127,6 +130,15 @@ describe("Unit 10 landing", () => {
     expect(hero).toContain("lw-word-swirl");
     expect(hero).toContain("getBoundingClientRect");
     expect(hero).toContain("animation.finished");
+    expect(hero).toContain("inFlight.size >= 16");
+    expect(hero).toContain('document.addEventListener("visibilitychange"');
+    expect(hero).toContain("sectionObserver.observe(grid)");
+  });
+
+  it("resolves use-case clips from asset pointers with public fallbacks", () => {
+    expect(page).toContain('import.meta.glob("@/assets/use-*.asset.json", { eager: true })');
+    expect(page).toContain('useCaseAssetUrl(`${card.file}.mp4`, `/videos/${card.file}.mp4`)');
+    expect(page).toContain('useCaseAssetUrl(`${card.file}-poster.jpg`, `/videos/${card.file}-poster.jpg`)');
   });
 
   it("uses three invisible-ink particle layers", () => {

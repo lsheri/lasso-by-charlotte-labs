@@ -133,6 +133,7 @@ function DeckFrame({ step, stepIndex }: { step: StoryStep; stepIndex: number }) 
 export function DeckWalkthrough({ onActiveChange }: { onActiveChange?: (index: number) => void }) {
   const [active, setActive] = useState(0);
   const stepRefs = useRef<(HTMLElement | null)[]>([]);
+  const gridRef = useRef<HTMLDivElement | null>(null);
   const stickyRef = useRef<HTMLDivElement | null>(null);
   const overlayRef = useRef<HTMLDivElement | null>(null);
   const sourceRefs = useRef(new Map<SourceId, HTMLElement>());
@@ -155,17 +156,70 @@ export function DeckWalkthrough({ onActiveChange }: { onActiveChange?: (index: n
   useEffect(() => { report.current?.(active); }, [active]);
 
   useLayoutEffect(() => {
+    const grid = gridRef.current;
     const sticky = stickyRef.current;
     const overlay = overlayRef.current;
     const step = STORY[active];
-    if (!sticky || !overlay || !step) return;
+    if (!grid || !sticky || !overlay || !step) return;
 
     overlay.replaceChildren();
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const phone = window.matchMedia("(max-width: 767px)").matches;
     if (reduced || phone) return;
 
-    const run = () => {
+    let interval: number | null = null;
+    let sectionVisible = false;
+    let cardCursor = 0;
+    const wordCursors = new Map<SourceId, number>();
+    const inFlight = new Set<HTMLElement>();
+    let paths: { card: SourceCard; path: string }[] = [];
+
+    const stop = (clearWords: boolean) => {
+      if (interval !== null) window.clearInterval(interval);
+      interval = null;
+      if (clearWords) {
+        for (const word of inFlight) word.remove();
+        inFlight.clear();
+      }
+    };
+
+    const spawnWord = () => {
+      if (paths.length === 0 || inFlight.size >= 16) return;
+      const entry = paths[cardCursor % paths.length];
+      cardCursor += 1;
+      if (!entry) return;
+      const words = entry.card.excerpt.replace(/[.,]/g, "").split(/\s+/);
+      const wordIndex = wordCursors.get(entry.card.id) ?? 0;
+      wordCursors.set(entry.card.id, wordIndex + 1);
+      const word = document.createElement("span");
+      word.className = "lw-flying-word";
+      word.textContent = words[wordIndex % words.length] ?? "";
+      word.style.offsetPath = `path("${entry.path}")`;
+      overlay.append(word);
+      inFlight.add(word);
+      const animation = word.animate(
+        [
+          { offsetDistance: "0%", opacity: 0 },
+          { opacity: 1, offset: 0.15 },
+          { opacity: 1, offset: 0.8 },
+          { offsetDistance: "100%", opacity: 0 },
+        ],
+        { duration: 1500, easing: "cubic-bezier(.3,0,.2,1)", fill: "forwards" },
+      );
+      void animation.finished.catch(() => {}).then(() => {
+        inFlight.delete(word);
+        word.remove();
+      });
+    };
+
+    const start = () => {
+      if (interval !== null || !sectionVisible || document.hidden || paths.length === 0) return;
+      spawnWord();
+      interval = window.setInterval(spawnWord, 260);
+    };
+
+    const drawPaths = () => {
+      stop(true);
       overlay.replaceChildren();
       const stickyRect = sticky.getBoundingClientRect();
       const target = sticky.querySelector<HTMLElement>(".landing-story-hl");
@@ -173,7 +227,7 @@ export function DeckWalkthrough({ onActiveChange }: { onActiveChange?: (index: n
       const targetRect = target.getBoundingClientRect();
       const tx = targetRect.left + targetRect.width / 2 - stickyRect.left;
       const ty = targetRect.top + targetRect.height / 2 - stickyRect.top;
-      const animations: Animation[] = [];
+      paths = [];
 
       litCards(step).forEach((card, cardIndex) => {
         const source = sourceRefs.current.get(card.id);
@@ -184,6 +238,7 @@ export function DeckWalkthrough({ onActiveChange }: { onActiveChange?: (index: n
         const cx = (sx + tx) / 2 + (cardIndex % 2 === 0 ? -90 : 90);
         const cy = Math.min(sy, ty) - 70 - cardIndex * 18;
         const path = `M ${sx} ${sy} Q ${cx} ${cy} ${tx} ${ty}`;
+        paths.push({ card, path });
 
         const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
         svg.setAttribute("class", "lw-word-swirl");
@@ -193,42 +248,40 @@ export function DeckWalkthrough({ onActiveChange }: { onActiveChange?: (index: n
         swirl.setAttribute("pathLength", "1");
         svg.append(swirl);
         overlay.append(svg);
-        animations.push(swirl.animate(
+        void swirl.animate(
           [
             { strokeDashoffset: "1", opacity: 0 },
-            { strokeDashoffset: "0", opacity: 1, offset: 0.6 },
-            { strokeDashoffset: "0", opacity: 0 },
+            { strokeDashoffset: "0", opacity: 0.35 },
           ],
-          { duration: 1200, easing: "ease-out", fill: "forwards" },
-        ));
-
-        const sourceWords = card.excerpt.replace(/[.,]/g, "").split(/\s+/);
-        const wordCount = Math.min(12, Math.max(8, sourceWords.length));
-        for (let wordIndex = 0; wordIndex < wordCount; wordIndex += 1) {
-          const word = document.createElement("span");
-          word.className = "lw-flying-word";
-          word.textContent = sourceWords[wordIndex % sourceWords.length] ?? "";
-          word.style.offsetPath = `path("${path}")`;
-          overlay.append(word);
-          animations.push(word.animate(
-            [
-              { offsetDistance: "0%", opacity: 0 },
-              { opacity: 1, offset: 0.12 },
-              { opacity: 1, offset: 0.8 },
-              { offsetDistance: "100%", opacity: 0 },
-            ],
-            { duration: 900, delay: wordIndex * 50, easing: "ease-in", fill: "forwards" },
-          ));
-        }
+          { duration: 700, easing: "ease-out", fill: "forwards" },
+        ).finished.catch(() => {});
       });
-      void Promise.allSettled(animations.map((animation) => animation.finished)).then(() => overlay.replaceChildren());
+      start();
     };
 
-    run();
-    const onResize = () => run();
+    const sectionObserver = new IntersectionObserver(([entry]) => {
+      sectionVisible = Boolean(entry?.isIntersecting);
+      if (sectionVisible) {
+        drawPaths();
+      } else {
+        stop(true);
+        paths = [];
+        overlay.replaceChildren();
+      }
+    }, { threshold: 0 });
+    sectionObserver.observe(grid);
+    const onVisibilityChange = () => {
+      if (document.hidden) stop(true);
+      else if (sectionVisible) start();
+    };
+    const onResize = () => { if (sectionVisible) drawPaths(); };
     window.addEventListener("resize", onResize);
+    document.addEventListener("visibilitychange", onVisibilityChange);
     return () => {
+      sectionObserver.disconnect();
       window.removeEventListener("resize", onResize);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      stop(true);
       overlay.replaceChildren();
     };
   }, [active]);
@@ -237,7 +290,7 @@ export function DeckWalkthrough({ onActiveChange }: { onActiveChange?: (index: n
   if (!fallback) return null;
   const current = STORY[active] ?? fallback;
 
-  return <div className="lw-grid" data-active-step={active}>
+  return <div ref={gridRef} className="lw-grid" data-active-step={active}>
     <div className="lw-steps">
       {STORY.map((step, index) => <article key={step.question} ref={(el) => { stepRefs.current[index] = el; }} className="lw-step" data-story-index={index} data-active={index === active}>
         <p className="lw-role-label"><span>{ROLE_LABELS[step.speaker]}</span></p>
