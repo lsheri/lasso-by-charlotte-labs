@@ -12,8 +12,8 @@ export type WorkboardOpenVia = "header" | "canvas_tab" | "default" | "direct";
 export type WorkboardDisplayMode = "sticky" | "preview";
 export type WorkboardPreviewKind = "chat" | "document" | "deck" | "html" | "mermaid";
 
-export function noteWorkboardOpened(orgId: string | undefined, via: WorkboardOpenVia): void {
-  if (orgId) logEvent("workboard.opened", orgId, { via });
+export function noteWorkboardOpened(orgId: string | undefined, via: WorkboardOpenVia, bundles?: "0" | "1" | "2_plus"): void {
+  if (orgId) logEvent("workboard.opened", orgId, bundles ? { via, bundles } : { via });
 }
 
 export function noteWorkboardRail(orgId: string | undefined, state: "collapsed" | "reopened"): void {

@@ -10,7 +10,7 @@ import type { TelemetryDims } from "./telemetry-shared";
 
 /** Every workboard event name mapped to the exact dim keys its helper sends. */
 export const WORKBOARD_EVENT_DIMS: Readonly<Record<string, readonly string[]>> = {
-  "workboard.opened": ["via"],
+  "workboard.opened": ["via", "bundles"],
   "workboard.rail_toggled": ["state"],
   "workboard.node_created": ["kind", "judgment_type", "via"],
   "workboard.node_deleted": ["kind"],

@@ -74,6 +74,7 @@ describe("the workboard allowlist", () => {
         ],
         "workboard.opened": [
           "via",
+          "bundles",
         ],
         "workboard.rail_toggled": [
           "state",
