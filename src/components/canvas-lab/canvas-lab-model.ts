@@ -1424,7 +1424,7 @@ export function applyBundleViews(bundles: ChatBundles, views: Readonly<Record<st
   more: Map<string, number>;
   minimized: Map<string, number>;
 } {
-  const shownBundles: ChatBundles = new Map();
+  const shownBundles = new Map<string, string[]>();
   const dropped = new Set<string>();
   const more = new Map<string, number>();
   const minimized = new Map<string, number>();
