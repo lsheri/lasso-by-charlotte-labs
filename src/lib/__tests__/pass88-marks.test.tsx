@@ -131,6 +131,6 @@ describe("shared Lasso loop color", () => {
       const source = readFileSync(file, "utf8");
       expect(source).toContain("text-lasso-green");
     }
-    expect(styles).toContain("--color-lasso-green: var(--nb-lasso-green)");
+    expect(readFileSync("src/styles.css", "utf8")).toContain("--color-lasso-green: var(--nb-lasso-green)");
   });
 });
