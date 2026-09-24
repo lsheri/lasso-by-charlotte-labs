@@ -5499,7 +5499,7 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 .lw-lit-sources { display: flex; gap: 10px; margin-top: 42px; }
 .lw-lit-sources .landing-story-source { --x: 0px; --r: 0deg; flex: 1 1 0; max-width: none; margin-top: 0; transform: none; animation: lw-slide-in .35s ease both; }
 .lw-word-stream { position: absolute; inset: 0; z-index: 8; overflow: visible; pointer-events: none; }
-.lw-word-swirl { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.lw-word-swirl { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; opacity: .35; }
 .lw-word-swirl path { fill: none; stroke: var(--nb-lasso-green); stroke-width: 1.5; stroke-dasharray: 4 6; }
 .lw-flying-word { position: absolute; left: 0; top: 0; color: var(--nb-lasso-green); font-family: var(--font-mono); font-size: 11px; white-space: nowrap; offset-anchor: center; offset-rotate: 0deg; }
 .lw-phone-only { display: none; }

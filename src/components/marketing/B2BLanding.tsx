@@ -28,7 +28,7 @@ const useCaseAssetModules = import.meta.glob("@/assets/use-*.asset.json", { eage
 function useCaseAssetUrl(filename: string, fallback: string) {
   const match = Object.entries(useCaseAssetModules).find(([path]) => path.endsWith(`/${filename}.asset.json`));
   const module = match?.[1];
-  const pointer = module && "default" in module ? module.default : module;
+  const pointer = module && "default" in module ? module.default : module as AssetPointer | undefined;
   return pointer?.url ?? fallback;
 }
 
