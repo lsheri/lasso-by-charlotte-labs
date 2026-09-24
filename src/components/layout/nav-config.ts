@@ -1,7 +1,15 @@
 import type { GraphiteIconName } from "@/components/notebook/icons";
 import { EDU_VOCAB } from "@/lib/edu-vocab";
 
-export type NavItem = { label: string; to: string; icon: GraphiteIconName; nested?: boolean };
+export type NavItem = {
+  label: string;
+  to: string;
+  icon: GraphiteIconName;
+  nested?: boolean;
+  disabled?: boolean;
+  disabledReason?: string;
+  search?: { view: "asked" };
+};
 export type NavGroup = { id?: string; label: string; items: NavItem[]; emptyState?: string };
 
 /**
@@ -20,7 +28,7 @@ export const navGroups: NavGroup[] = [
     items: [
       { label: "Home", to: "/home", icon: "overview" },
       { label: "Inbox", to: "/work", icon: "work" },
-      { label: "All conversations", to: "/ai-record", icon: "ai-record" },
+      { label: "All AI Conversations", to: "/ai-record", icon: "ai-record" },
       { label: "Where work comes from", to: "/connectors", icon: "connectors" },
     ],
   },
@@ -36,8 +44,9 @@ export const navGroups: NavGroup[] = [
     id: "lookback",
     label: "Look back",
     items: [
-      { label: "Find it", to: "/find-it", icon: "work" },
-      { label: "Decision log", to: "/decisions", icon: "decisions" },
+      { label: "Past Ask Lasso chats", to: "/ai-record", icon: "history", search: { view: "asked" } },
+      { label: "Find it", to: "/find-it", icon: "work", disabled: true, disabledReason: "Coming soon" },
+      { label: "Decision log", to: "/decisions", icon: "decisions", disabled: true, disabledReason: "Coming soon" },
     ],
   },
   {

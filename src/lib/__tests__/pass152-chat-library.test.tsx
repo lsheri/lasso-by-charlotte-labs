@@ -37,12 +37,12 @@ function item(overrides: Partial<WorkItemRow> = {}): WorkItemRow {
 describe("chat library — the name", () => {
   it("names the section in the sidebar", () => {
     const labels = navGroups.flatMap((g) => g.items.map((i) => i.label));
-    expect(labels).toContain("All conversations");
+    expect(labels).toContain("All AI Conversations");
     expect(labels).not.toContain("AI record");
   });
 
   it("leaves the route URL alone and sits in What landed under the Inbox", () => {
-    const item = navGroups.flatMap((g) => g.items).find((i) => i.label === "All conversations");
+    const item = navGroups.flatMap((g) => g.items).find((i) => i.label === "All AI Conversations");
     expect(item?.to).toBe("/ai-record");
     const group = navGroups.find((g) => g.items.some((i) => i.to === "/ai-record"));
     expect(group?.id).toBe("landed");

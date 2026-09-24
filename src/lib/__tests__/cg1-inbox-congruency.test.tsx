@@ -434,59 +434,16 @@ describe("CG1 inbox congruency", () => {
     }
   });
 
-  it("recentres the fixed conversation month span from the reported live width", async () => {
-    const width = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "clientWidth");
-    const height = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "clientHeight");
-    const reported = { width: 1094, height: 1376 };
-    const callbacks = new Set<ResizeObserverCallback>();
-    const entry = () => ({
-      target: screen.getByTestId("board-shell"),
-      contentRect: { width: reported.width, height: reported.height },
-    }) as unknown as ResizeObserverEntry;
-    class LiveResizeObserver {
-      constructor(private readonly callback: ResizeObserverCallback) {}
-      observe() { callbacks.add(this.callback); this.callback([entry()], this as unknown as ResizeObserver); }
-      disconnect() { callbacks.delete(this.callback); }
-      unobserve() { callbacks.delete(this.callback); }
-    }
-    Object.defineProperty(HTMLElement.prototype, "clientWidth", {
-      configurable: true,
-      get(this: HTMLElement) { return this.dataset["testid"] === "board-shell" ? 1094 : 0; },
-    });
-    Object.defineProperty(HTMLElement.prototype, "clientHeight", {
-      configurable: true,
-      get(this: HTMLElement) { return this.dataset["testid"] === "board-shell" ? 1376 : 0; },
-    });
-    vi.stubGlobal("ResizeObserver", LiveResizeObserver);
-    const boardMetrics = () => {
-      const lanes = Array.from(screen.getByTestId("board-shell").querySelectorAll<HTMLElement>("[data-board-lane]"));
-      const stage = screen.getByTestId("board-shell-stage") as HTMLElement;
-      const transform = stage.style.transform.match(/translate\((-?[\d.]+)px,\s*(-?[\d.]+)px\)\s*scale\((-?[\d.]+)\)/);
-      if (!transform || lanes.length !== 4) throw new Error("Conversation board metrics unavailable");
-      const panX = Number(transform[1]);
-      const zoom = Number(transform[3]);
-      const left = Number.parseFloat(lanes[0]?.style.left ?? "0") * zoom + panX;
-      const last = lanes[3];
-      const right = last ? (Number.parseFloat(last.style.left) + Number.parseFloat(last.style.width)) * zoom + panX : 0;
-      return { span: right - left, left, right: reported.width - right, zoom };
-    };
-    try {
-      inboxRows = ["09", "08", "07", "06"].map((month) => ({
-        ...conversation(`conversation-${month}`, "claude", "ALPHA"),
-        captured_at: `2026-${month}-10T10:00:00Z`,
-      }));
-      render(<AiRecordPage />);
-      await waitFor(() => expect(boardMetrics()).toEqual({ span: 1030, left: 32, right: 32, zoom: 1 }));
-      reported.width = 1286;
-      act(() => { for (const callback of callbacks) callback([entry()], {} as ResizeObserver); });
-      await waitFor(() => expect(boardMetrics()).toEqual({ span: 1030, left: 128, right: 128, zoom: 1 }));
-    } finally {
-      vi.unstubAllGlobals();
-      if (width) Object.defineProperty(HTMLElement.prototype, "clientWidth", width);
-      else Reflect.deleteProperty(HTMLElement.prototype, "clientWidth");
-      if (height) Object.defineProperty(HTMLElement.prototype, "clientHeight", height);
-      else Reflect.deleteProperty(HTMLElement.prototype, "clientHeight");
-    }
+  it("stacks conversation months in document order without board controls", () => {
+    inboxRows = ["09", "08", "07", "06"].map((month) => ({
+      ...conversation(`conversation-${month}`, "claude", "ALPHA"),
+      captured_at: `2026-${month}-10T10:00:00Z`,
+    }));
+    render(<AiRecordPage />);
+    const stack = screen.getByLabelText("AI conversations by month");
+    expect(stack.className).toContain("conversation-month-stack");
+    expect(stack.querySelectorAll("[data-conversation-month]")).toHaveLength(4);
+    expect(screen.queryByTestId("board-shell")).toBeNull();
   });
 
   it("resizes four lanes to a narrow live-width shell and fits at natural card size", async () => {
@@ -566,71 +523,36 @@ describe("CG2 AI conversations congruency", () => {
     expect(styles).toContain("--nb-chat-border-copilot: linear-gradient(135deg, #6d3bb8, #17151b);");
   });
 
-  it("fits a mixed month timeline at zoom one with compact empty spines and honest lane heights", async () => {
-    const width = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "clientWidth");
-    const height = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "clientHeight");
-    Object.defineProperty(HTMLElement.prototype, "clientWidth", {
-      configurable: true,
-      get(this: HTMLElement) { return this.dataset["testid"] === "board-shell" ? 1094 : 0; },
-    });
-    Object.defineProperty(HTMLElement.prototype, "clientHeight", {
-      configurable: true,
-      get(this: HTMLElement) {
-        return this.dataset["testid"] === "board-shell" ? 1376 : 0;
-      },
-    });
-    try {
-      const inMonth = (month: string, count: number) =>
-        Array.from({ length: count }, (_, index) => ({
-          ...conversation(`${month} conversation ${index + 1}`, "claude", "ALPHA"),
-          captured_at: `2026-${month}-${String(index + 1).padStart(2, "0")}T10:00:00Z`,
-        }));
-      inboxRows = [
-        ...inMonth("09", 5),
-        ...inMonth("08", 2),
-        ...inMonth("06", 6),
-        ...inMonth("05", 1),
-        ...inMonth("04", 1),
-      ];
+  it("renders a mixed month timeline with compact empty months and wrapped card rows", () => {
+    const inMonth = (month: string, count: number) =>
+      Array.from({ length: count }, (_, index) => ({
+        ...conversation(`${month} conversation ${index + 1}`, "claude", "ALPHA"),
+        captured_at: `2026-${month}-${String(index + 1).padStart(2, "0")}T10:00:00Z`,
+      }));
+    inboxRows = [
+      ...inMonth("09", 5),
+      ...inMonth("08", 2),
+      ...inMonth("06", 6),
+      ...inMonth("05", 1),
+      ...inMonth("04", 1),
+    ];
 
-      render(<AiRecordPage />);
+    render(<AiRecordPage />);
 
-      const board = screen.getByTestId("board-shell");
-      await waitFor(() => {
-        expect(screen.getByTestId("board-shell-stage").style.transform).toMatch(/scale\(1\)$/);
-      });
-      const lanes = board.querySelectorAll<HTMLElement>("[data-board-lane]");
-      const spines = board.querySelectorAll<HTMLElement>("[data-board-frame]");
-      expect(lanes).toHaveLength(5);
-      expect(spines).toHaveLength(1);
-      for (const lane of lanes) expect(lane.style.width).toBe("230.5px");
-      expect(within(lanes[0] as HTMLElement).getByText("September")).toBeTruthy();
-      const july = spines[0] as HTMLElement;
-      expect(july.style.width).toBe("112px");
-      expect(within(july).getByText("July")).toBeTruthy();
-      expect(within(july).getByText("0")).toBeTruthy();
-      expect(july.querySelector("[data-testid^='board-lane-scroll-']")).toBeNull();
-      expect(within(lanes[4] as HTMLElement).getByText("April")).toBeTruthy();
-      expect(Number.parseFloat(lanes[4]?.style.left ?? "0")).toBeGreaterThan(1094);
-      expect((lanes[0] as HTMLElement).style.height).toBe("1268px");
-      expect((lanes[1] as HTMLElement).style.height).toBe("1268px");
-      const june = Array.from(lanes).find((lane) => within(lane).queryByText("June"));
-      expect(june?.style.height).toBe("1268px");
-      expect(june?.querySelector("[data-conversation-paging-row]")).not.toBeNull();
-      expect((lanes[0] as HTMLElement).querySelector("[data-conversation-paging-row]")).toBeNull();
-      const firstCard = within(lanes[0] as HTMLElement).getAllByRole("article")[0]?.closest<HTMLElement>("[data-lane-content]");
-      expect(firstCard?.style.width).toBe("206.5px");
-      expect(within(board).getByTestId("board-shell-toolbar")).toBeTruthy();
-      expect(screen.getByRole("searchbox", { name: "Search your chats" })).toBeTruthy();
-      expect(screen.getByRole("group", { name: "Filter by tool" })).toBeTruthy();
-      expect(screen.getByRole("button", { name: /Engagements/ })).toBeTruthy();
-      expect(screen.getByRole("button", { name: "15 conversations." })).toBeTruthy();
-    } finally {
-      if (width) Object.defineProperty(HTMLElement.prototype, "clientWidth", width);
-      else Reflect.deleteProperty(HTMLElement.prototype, "clientWidth");
-      if (height) Object.defineProperty(HTMLElement.prototype, "clientHeight", height);
-      else Reflect.deleteProperty(HTMLElement.prototype, "clientHeight");
-    }
+    const stack = screen.getByLabelText("AI conversations by month");
+    const months = Array.from(stack.querySelectorAll<HTMLElement>("[data-conversation-month]"));
+    expect(months).toHaveLength(6);
+    expect(within(months[0] as HTMLElement).getByText("September")).toBeTruthy();
+    const july = months.find((month) => within(month).queryByText("July"));
+    expect(july?.className).toContain("conversation-month-empty");
+    expect(within(july as HTMLElement).getByText("0")).toBeTruthy();
+    expect(july?.querySelector(".conversation-month-grid")).toBeNull();
+    expect(within(months[5] as HTMLElement).getByText("April")).toBeTruthy();
+    expect(within(stack).getAllByRole("article")).toHaveLength(15);
+    expect(screen.getByRole("searchbox", { name: "Search your chats" })).toBeTruthy();
+    expect(screen.getByRole("group", { name: "Filter by tool" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /Engagements/ })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "15 conversations." })).toBeTruthy();
   });
 
   it("keeps every conversation in place while dimming and disabling chip-filter non-matches", () => {

@@ -25,12 +25,6 @@ import { ThinkingIndicator } from "@/components/common/Working";
 import { ChatUrlLink } from "@/components/work/ChatUrlLink";
 import { PasteThreadDialog } from "@/components/work/PasteThreadDialog";
 import { Button } from "@/components/ui/button";
-import {
-  BoardShell,
-  type BoardShellFrame,
-  type BoardShellNode,
-} from "@/components/board/BoardShell";
-import { SubjectsPanel } from "@/components/work/SubjectsPanel";
 import { fedPhrase } from "@/components/work/ChatRow";
 import { WorkNote } from "@/components/work/WorkNote";
 import { CardMenu } from "@/components/work/CardMenu";
@@ -61,27 +55,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { logEvent } from "@/lib/telemetry";
 
 type MonthGroup = { key: string; label: string; items: WorkItemRow[] };
-type ConversationMonthLane = BoardShellFrame & { label: string; itemCount: number; isSpine: boolean };
-type ConversationLaneNode = BoardShellNode & { item: WorkItemRow; index: number };
-
-const CONVERSATION_LANE_WIDTH = 230.5;
-const CONVERSATION_SPINE_WIDTH = 112;
-const CONVERSATION_LANE_GAP = 36;
-const CONVERSATION_LANE_LEFT = 40;
-const CONVERSATION_BOARD_SIDE_MARGIN = 32;
-/**
- * The board controls are 54px tall. The fit centres lanes vertically, so the
- * visible lane top is (76 + 32) / 2 = 54, exactly below those controls.
- */
-const CONVERSATION_LANE_TOP = 76;
-const CONVERSATION_LANE_HEADER_HEIGHT = 40;
 export const CONVERSATION_CARD_HEIGHT = 118;
-const CONVERSATION_PAGING_ROW_HEIGHT = 44;
-const COLUMN_PAGE_SIZE = 5;
-const CONVERSATION_INITIAL_MONTHS = 4;
-/** Header 40 + one 118px card + paging 44: one card is always visible. */
-const CONVERSATION_LANE_MIN_HEIGHT =
-  CONVERSATION_LANE_HEADER_HEIGHT + CONVERSATION_CARD_HEIGHT + CONVERSATION_PAGING_ROW_HEIGHT;
 
 const MONTHS = [
   "January",
@@ -152,29 +126,6 @@ function groupByMonth(items: WorkItemRow[]): MonthGroup[] {
   return ordered;
 }
 
-function conversationMonthFrameId(group: MonthGroup): string {
-  return `${group.items.length === 0 ? "spine" : "lane"}:chat-month-${group.key}`;
-}
-
-/** Shell height minus top clearance 76 and bottom fit margin 32, with one-card minimum. */
-export function conversationLaneHeight(viewportHeight: number): number {
-  return Math.max(
-    CONVERSATION_LANE_MIN_HEIGHT,
-    viewportHeight - CONVERSATION_LANE_TOP - CONVERSATION_BOARD_SIDE_MARGIN,
-  );
-}
-
-/** Real first-four-month rectangles used by the page and zoom-one invariant test. */
-export function conversationLaneRects(viewport: { width: number; height: number }) {
-  const height = conversationLaneHeight(viewport.height);
-  return Array.from({ length: CONVERSATION_INITIAL_MONTHS }, (_, index) => ({
-    x: CONVERSATION_LANE_LEFT + index * (CONVERSATION_LANE_WIDTH + CONVERSATION_LANE_GAP),
-    y: CONVERSATION_LANE_TOP,
-    width: CONVERSATION_LANE_WIDTH,
-    height,
-  }));
-}
-
 /** A board glance starts with what the person asked; the reader keeps every turn. */
 export function conversationCardPreview(
   preview: WorkboardCardPreview | undefined,
@@ -218,15 +169,12 @@ export function AiRecordPage() {
   const [desktopReader, setDesktopReader] = useState(false);
   const [lensItem, setLensItem] = useState<WorkItemRow | null>(null);
   const [query, setQuery] = useState("");
-  const [subjectsOpen, setSubjectsOpen] = useState(false);
   const [tool, setTool] = useState<ToolVendor | "all">("all");
   const [engagement, setEngagement] = useState<string | "all">("all");
   const [recursOpen, setRecursOpen] = useState(false);
-  const [source, setSource] = useState<"captured" | "asked" | "everything">("captured");
   const [askSession, setAskSession] = useState<string | null>(null);
   const [askOpen, setAskOpen] = useState(false);
-  const [conversationViewportHeight, setConversationViewportHeight] = useState(0);
-  const search = useSearch({ strict: false }) as { ask?: boolean };
+  const search = useSearch({ strict: false }) as { ask?: boolean; view?: "asked" };
   const askedSessions = useAskedSessions();
   const isCoach = profile?.role === "coach";
   const readingMotion = useMotion("record.reading");
@@ -255,17 +203,6 @@ export function AiRecordPage() {
     }).catch(() => {});
   }
 
-  /**
-   * PASS A2 — which conversations are shown: the ones your tools sent over, the
-   * ones you started with Lasso, or both. Same settled event as the cards and
-   * list choice, one more closed value in its vocabulary.
-   */
-  function chooseSource(next: "captured" | "asked" | "everything") {
-    setSource(next);
-    void noteViewChanged({ data: { view: next, profile_id: profile?.id } }).catch(() => {});
-  }
-
-
   // Arrived here asking a question: open the composer, once.
   useEffect(() => {
     if (search.ask && !isCoach) {
@@ -273,6 +210,12 @@ export function AiRecordPage() {
       setAskOpen(true);
     }
   }, [search.ask, isCoach]);
+
+  useEffect(() => {
+    if (search.view === "asked") {
+      void noteViewChanged({ data: { view: "asked", profile_id: profile?.id } }).catch(() => {});
+    }
+  }, [noteViewChanged, profile?.id, search.view]);
 
   useEffect(() => {
     const query = window.matchMedia("(min-width: 1100px)");
@@ -343,49 +286,7 @@ export function AiRecordPage() {
   // Search narrows deliberately. Tool and engagement chips leave those search
   // results in place, dimming the conversations outside the chosen categories.
   const groups = groupByMonth(shown);
-  const currentConversationLaneHeight = conversationLaneHeight(conversationViewportHeight);
-  let nextMonthX = CONVERSATION_LANE_LEFT;
-  const monthLanes: ConversationMonthLane[] = groups.map((group) => {
-    const isSpine = group.items.length === 0;
-    const width = isSpine ? CONVERSATION_SPINE_WIDTH : CONVERSATION_LANE_WIDTH;
-    const frame: ConversationMonthLane = {
-      id: conversationMonthFrameId(group),
-      x: nextMonthX,
-      y: CONVERSATION_LANE_TOP,
-      width,
-      height: isSpine ? CONVERSATION_LANE_HEADER_HEIGHT : currentConversationLaneHeight,
-      ...(isSpine
-        ? {}
-        : {
-            contentInset: {
-              top: CONVERSATION_LANE_HEADER_HEIGHT,
-              bottom: group.items.length > COLUMN_PAGE_SIZE ? CONVERSATION_PAGING_ROW_HEIGHT : 0,
-            },
-          }),
-      label: group.label,
-      itemCount: group.items.length,
-      isSpine,
-    };
-    nextMonthX += width + CONVERSATION_LANE_GAP;
-    return frame;
-  });
-  const monthNodes: ConversationLaneNode[] = groups.flatMap((group) =>
-    group.items.map((item, index) => ({
-      id: item.id,
-      item,
-      index,
-      frame: conversationMonthFrameId(group),
-      x: 0,
-      y: 0,
-      width: CONVERSATION_LANE_WIDTH,
-      height: CONVERSATION_CARD_HEIGHT,
-    })),
-  );
-  const initialMonthLaneIds = monthLanes
-    .slice(0, CONVERSATION_INITIAL_MONTHS)
-    .map((lane) => lane.id);
-  // Asked Lasso on its own hides the captured list; Everything shows both.
-  const capturedShown = source !== "asked" && threads.length > 0;
+  const showingAskedHistory = search.view === "asked" && !isCoach;
   const selectedEngagement =
     engagement === "all" || engagement === "unmapped"
       ? null
@@ -498,20 +399,10 @@ export function AiRecordPage() {
     <div className="nb-chatview" data-reader={selected ? "open" : "closed"}>
       <div className="nb-chatview-list flex h-[calc(100vh-6.5rem)] min-h-0 flex-col overflow-hidden">
         <header className="box-border flex h-16 shrink-0 items-center gap-2 border-b border-[var(--nb-rule)] px-5">
-          <div className="mr-auto min-w-0 shrink-0">
-            <h1 className="whitespace-nowrap font-serif text-[19px] leading-none">All conversations</h1>
+           <div className="mr-auto min-w-0">
+             <h1 className="truncate font-serif text-[19px] leading-none">All AI Conversations</h1>
             <p className="mt-1 truncate font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">{subtitle}</p>
           </div>
-          {capturedShown ? <Button type="button" variant="ghost" className="h-9 shrink-0" onClick={() => { setSubjectsOpen(true); recordPanelOpen("subjects"); }}>Subjects and links</Button> : null}
-          {isCoach ? null : (
-            <span role="group" aria-label="Which conversations are shown" className="inline-flex shrink-0 items-center rounded-full border border-[var(--nb-rule)] bg-card p-0.5">
-              {([[
-                "captured", "Captured",
-              ], ["asked", "Asked Lasso"], ["everything", "Everything"]] as const).map(([value, label]) => (
-                <Button key={value} type="button" size="sm" variant={source === value ? "secondary" : "ghost"} aria-pressed={source === value} onClick={() => chooseSource(value)}>{label}</Button>
-              ))}
-            </span>
-          )}
           <PasteThreadDialog trigger={<Button type="button" variant="outline" className="h-9">Add a chat</Button>} />
           {isCoach ? null : (
             <Button type="button" variant="outline" className="h-9" onClick={() => { setAskSession(null); setAskOpen(true); }}>
@@ -565,7 +456,7 @@ export function AiRecordPage() {
             </PopoverContent>
           </Popover>
           <div className="ml-auto flex shrink-0 items-center gap-2">
-            {capturedShown ? (
+             {!showingAskedHistory ? (
               <Popover onOpenChange={(open) => { if (open) recordPanelOpen("coverage"); }}>
                 <PopoverTrigger asChild><Button type="button" variant="ghost" className="h-7 text-[13px] text-muted-foreground">{countLine}</Button></PopoverTrigger>
                 <PopoverContent align="end" className="max-h-[70vh] w-[min(720px,calc(100vw-2rem))] overflow-y-auto">
@@ -578,53 +469,49 @@ export function AiRecordPage() {
         </div>
 
         <div className="relative min-h-0 flex-1">
-          {source === "asked" ? (
+           {showingAskedHistory ? (
             <div className="h-full overflow-y-auto p-5"><AskedSessions sessions={askedSessions} onOpen={(id) => { setAskSession(id); setAskOpen(true); }} /></div>
           ) : (
             <div className="flex h-full min-h-0 flex-col">
-              {source === "everything" && !isCoach ? <div className="max-h-[220px] shrink-0 overflow-y-auto p-5"><AskedSessions sessions={askedSessions} onOpen={(id) => { setAskSession(id); setAskOpen(true); }} /></div> : null}
-              <div className="relative min-h-0 flex-1">
+               <div className="relative min-h-0 flex-1 overflow-y-auto">
                 {threads.length === 0 ? (
                   <div className="m-5 rounded-[var(--radius)] border border-dashed border-border p-8 text-center"><p className="text-sm text-foreground">Your chat library is empty. Keep your first conversation here and it stays yours to find and reuse.</p><p className="mt-2 text-sm text-muted-foreground">Push one from your assistant, paste one in, or import from a connector on the Work page.</p></div>
                 ) : groups.length === 0 ? <p className="p-5 text-sm text-muted-foreground">No chats match that search.</p> : (
-                  <BoardShell
-                    ariaLabel="AI conversations board"
-                    className="h-full"
-                    frames={monthLanes}
-                    nodes={monthNodes}
-                    fitFrameIds={initialMonthLaneIds}
-                    showViewControls
-                    fitKey={`${groups.length}:${shown.length}:${currentConversationLaneHeight}`}
-                    onViewportSizeChange={({ height }) => setConversationViewportHeight((current) => current === height ? current : height)}
-                    renderFrame={(lane) => (
-                      <>
-                        <div className={`pointer-events-none absolute inset-x-0 top-0 flex h-10 items-center px-3 ${lane.isSpine ? "flex-col justify-center gap-0" : "gap-3"}`}>
-                          <span className="font-hand text-[19px] leading-none text-graphite">{lane.label}</span>
-                          <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">{lane.itemCount}</span>
-                          {lane.isSpine ? null : <span className="h-px flex-1 bg-[var(--nb-rule)]" />}
-                        </div>
-                        {!lane.isSpine && lane.itemCount > COLUMN_PAGE_SIZE ? <span data-conversation-paging-row className="pointer-events-none absolute inset-x-3 bottom-0 h-11 border-t border-[var(--nb-rule)]" /> : null}
-                      </>
-                    )}
-                    renderNode={(node) => {
-                      const matches = matchesChipFilters(node.item);
-                      return (
-                        <DimmedDisabled dimmed={!matches} disabled={!matches} className="h-full min-w-0">
-                          <span className={`${pileMotion.className ? "nb-sticky-wave " : ""}conversation-card-compact canvas-lab-card-paper block h-full min-w-0`} style={{ "--nb-wave-delay": `${Math.min(node.index, 23) * 26}ms` } as React.CSSProperties}>
-                            <WorkNote item={node.item} dense displayMode="preview" chatPreview={conversationCardPreview(cardPreviews[node.item.id])} onOpen={() => openItem(node.item)} actions={(
-                              <CardMenu item={node.item} onFluency={(item) => setLensItem(item)}>
-                                {firstEngagement(node.item) ? <span className="font-mono text-[9px] uppercase tracking-[0.08em]" style={{ color: `var(${engagementHue(firstEngagement(node.item)?.id ?? "")})` }}>{firstEngagement(node.item)?.code}</span> : <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">UNMAPPED</span>}
-                                {itemModel(node.item) ? <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">{itemModel(node.item)}</span> : null}
-                                <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">{turnCounts?.[node.item.id] ?? 0} {(turnCounts?.[node.item.id] ?? 0) === 1 ? "turn" : "turns"}</span>
-                                {(fed?.[node.item.id] ?? []).length > 0 ? <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-green">{fedPhrase(fed?.[node.item.id] ?? [])}</span> : null}
-                                <ChatUrlLink item={node.item} showAbsence />
-                              </CardMenu>
-                            )} />
-                          </span>
-                        </DimmedDisabled>
-                      );
-                    }}
-                  />
+                   <div className="conversation-month-stack p-5" aria-label="AI conversations by month">
+                     {groups.map((group) => (
+                       <section key={group.key} data-conversation-month={group.key} className={group.items.length === 0 ? "conversation-month-empty" : undefined}>
+                         <div className="flex min-h-10 items-center gap-3">
+                           <h2 className="font-hand text-[19px] leading-none text-graphite">{group.label}</h2>
+                           <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">{group.items.length}</span>
+                           <span className="h-px flex-1 bg-[var(--nb-rule)]" />
+                         </div>
+                         {group.items.length > 0 ? (
+                           <div className="conversation-month-grid">
+                             {group.items.map((item, index) => {
+                               const matches = matchesChipFilters(item);
+                               return (
+                                 <DimmedDisabled key={item.id} dimmed={!matches} disabled={!matches} className="h-[118px] min-w-0">
+                                   <div data-lane-content style={{ height: `${CONVERSATION_CARD_HEIGHT}px` }} className="h-full min-w-0">
+                                   <span className={`${pileMotion.className ? "nb-sticky-wave " : ""}conversation-card-compact canvas-lab-card-paper block h-full min-w-0`} style={{ "--nb-wave-delay": `${Math.min(index, 23) * 26}ms` } as React.CSSProperties}>
+                                     <WorkNote item={item} dense displayMode="preview" chatPreview={conversationCardPreview(cardPreviews[item.id])} onOpen={() => openItem(item)} actions={(
+                                       <CardMenu item={item} onFluency={(nextItem) => setLensItem(nextItem)}>
+                                         {firstEngagement(item) ? <span className="font-mono text-[9px] uppercase tracking-[0.08em]" style={{ color: `var(${engagementHue(firstEngagement(item)?.id ?? "")})` }}>{firstEngagement(item)?.code}</span> : <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">UNMAPPED</span>}
+                                         {itemModel(item) ? <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">{itemModel(item)}</span> : null}
+                                         <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">{turnCounts?.[item.id] ?? 0} {(turnCounts?.[item.id] ?? 0) === 1 ? "turn" : "turns"}</span>
+                                         {(fed?.[item.id] ?? []).length > 0 ? <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-green">{fedPhrase(fed?.[item.id] ?? [])}</span> : null}
+                                         <ChatUrlLink item={item} showAbsence />
+                                       </CardMenu>
+                                     )} />
+                                   </span>
+                                   </div>
+                                 </DimmedDisabled>
+                               );
+                             })}
+                           </div>
+                         ) : null}
+                       </section>
+                     ))}
+                   </div>
                 )}
               </div>
             </div>
@@ -633,9 +520,6 @@ export function AiRecordPage() {
 
         <SlideOver open={askOpen} onOpenChange={(next) => { setAskOpen(next); if (!next) setAskSession(null); }} title="Ask Lasso" description="Private to you. Your coach never sees this." className="sm:w-[720px] sm:max-w-[760px]">
           <div className="overflow-y-auto p-4">{askOpen ? <ReflectPage embedded initialSessionId={askSession} autoStart={askSession === null} /> : null}</div>
-        </SlideOver>
-        <SlideOver open={subjectsOpen} onOpenChange={setSubjectsOpen} title="Subjects and links">
-          <div className="overflow-y-auto p-5"><h2 className="font-serif text-[19px]">Subjects and links</h2><div className="mt-4"><SubjectsPanel profileId={profile?.id} items={threads} /></div></div>
         </SlideOver>
         <SlideOver open={recursOpen && Boolean(selectedEngagement)} onOpenChange={(open) => setRecursOpen(open)} title="What recurs">
           <div className="space-y-3 overflow-y-auto p-5">

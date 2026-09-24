@@ -12,13 +12,11 @@ describe("pass A2 · All conversations absorbs Reflect", () => {
   it("renames the two nav rows", () => {
     const labels = navGroups.flatMap((g) => g.items ?? []).map((i) => i.label);
     expect(labels).toContain("Inbox");
-    expect(labels).toContain("All conversations");
-    expect(labels).not.toContain("All AI conversations");
+    expect(labels).toContain("All AI Conversations");
   });
 
-  it("titles the page All conversations", () => {
-    expect(page).toContain('>All conversations</h1>');
-    expect(page).toContain('<h1 className="whitespace-nowrap font-serif text-[19px] leading-none">All conversations</h1>');
+  it("titles the page All AI Conversations", () => {
+    expect(page).toContain('>All AI Conversations</h1>');
   });
 
   it("removes the retired Preview and Sticky controls", () => {
@@ -28,22 +26,25 @@ describe("pass A2 · All conversations absorbs Reflect", () => {
     expect(page).not.toContain('lasso.chatlib.view');
   });
 
-  it("offers the three sources and records the change on the settled event", () => {
-    expect(page).toContain('"captured", "Captured"');
-    expect(page).toContain('"asked", "Asked Lasso"');
-    expect(page).toContain('"everything", "Everything"');
-    expect(page).toContain("chooseSource");
+  it("moves history to a validated view and records it on the settled event", () => {
+    expect(page).toContain('search.view === "asked"');
     expect(page).toContain("noteViewChanged");
   });
 
-  it("keeps the source tabs and Subjects and links in the header", () => {
+  it("removes source tabs and Subjects and links while keeping primary actions", () => {
     const header = page.slice(page.indexOf("<header"), page.indexOf("</header>"));
-    const chipRow = page.slice(page.indexOf("<div className=\"flex h-[46px]"), page.indexOf("</div>", page.indexOf("<div className=\"flex h-[46px]")));
-    expect(header).toContain('aria-label="Which conversations are shown"');
-    expect(header).toContain(">Subjects and links</Button>");
-    expect(chipRow).not.toContain('aria-label="Which conversations are shown"');
-    expect(chipRow).not.toContain(">Subjects and links</Button>");
+    expect(header).not.toContain('aria-label="Which conversations are shown"');
+    expect(header).not.toContain("Subjects and links");
+    expect(header).toContain("Add a chat");
+    expect(header).toContain("Ask Lasso");
     expect(page).toContain('className="h-7 w-[200px] shrink-0');
+  });
+
+  it("stacks month sections and wraps their fixed-height cards", () => {
+    expect(page).toContain('className="conversation-month-stack p-5"');
+    expect(page).toContain('className="conversation-month-grid"');
+    expect(page).toContain('className="h-[118px] min-w-0"');
+    expect(page).not.toContain("<BoardShell");
   });
 
   it("adds the new values to the closed view vocabulary without removing the old ones", () => {
