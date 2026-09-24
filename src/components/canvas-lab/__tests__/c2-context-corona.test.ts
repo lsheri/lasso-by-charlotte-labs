@@ -30,4 +30,9 @@ describe("C2 living context corona", () => {
     expect(contextCoronaPhase("alpha")).toBeLessThanOrEqual(0);
     expect(contextCoronaPhase("alpha")).toBeGreaterThan(-13000);
   });
+
+  it("marks pointer, drawing, wheel-pan, and zoom movement as interacting", () => {
+    expect(page).toContain('interaction !== "idle" || drawing !== null || viewportMoving');
+    expect(page).toContain("pauseCoronasForViewportMotion();");
+  });
 });
