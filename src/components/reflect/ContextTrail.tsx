@@ -82,7 +82,7 @@ export function ThinkingTrail({
   const nextLines: DisplayLine[] = manifest
     ? [
         ...manifest.items.map((item) => ({ key: item.id || item.title, text: item.title, detail: item.detail, kind: item.kind })),
-        ...(manifest.brief_included ? [{ key: "brief", text: "The brief", detail: manifest.engagement?.name, kind: "brief" as const }] : []),
+        ...(manifest.brief_included ? [{ key: "brief", text: "The brief", ...(manifest.engagement?.name ? { detail: manifest.engagement.name } : {}), kind: "brief" as const }] : []),
         ...(manifest.firm_checks_applied > 0 ? [{ key: "checks", text: `${manifest.firm_checks_applied} firm ${manifest.firm_checks_applied === 1 ? "check" : "checks"}`, kind: "checks" as const }] : []),
       ].slice(-3)
     : items.map((item) => ({ key: item.id, text: item.title, kind: "item" as const })).slice(-3);
