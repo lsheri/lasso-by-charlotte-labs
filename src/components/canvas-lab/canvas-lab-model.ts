@@ -1257,7 +1257,8 @@ function pieceTurn(item: BundleItem): number | null {
 }
 
 function pieceCreated(item: BundleItem): string {
-  return resolveWorkDate({ work_date: item.work_date ?? null, created_at_source: item.created_at_source ?? null, captured_at: item.captured_at ?? "" }).iso;
+  const dated = { work_date: item.work_date ?? null, created_at_source: item.created_at_source ?? null, captured_at: item.captured_at ?? "" };
+  return resolveWorkDate(dated).iso;
 }
 
 /**
