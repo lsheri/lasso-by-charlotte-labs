@@ -526,410 +526,164 @@ export function AiRecordPage() {
 
   return (
     <div className="nb-chatview" data-reader={selected ? "open" : "closed"}>
-      <div className="nb-chatview-list">
-      <PageHeader
-        title="All"
-        italicWord="conversations"
-        subtitle={subtitle}
-        action={
-          /* Figma 27:635 hangs one control off the title: the way a
-             conversation gets in here by hand. */
-          <div className="flex flex-wrap items-center gap-2">
-            {isCoach ? null : (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setAskSession(null);
-                  setAskOpen(true);
-                }}
-              >
-                Ask Lasso about your work
-              </Button>
-            )}
-            <PasteThreadDialog
-              trigger={
-                <Button type="button" variant="outline">
-                  Add a chat yourself
-                </Button>
-              }
-            />
+      <div className="nb-chatview-list flex h-[calc(100vh-6.5rem)] min-h-0 flex-col overflow-hidden">
+        <header className="box-border flex h-16 shrink-0 flex-wrap items-center gap-4 border-b border-[var(--nb-rule)] px-5 md:flex-nowrap">
+          <div className="mr-auto min-w-0">
+            <h1 className="font-serif text-[19px] leading-none">All conversations</h1>
+            <p className="mt-1 truncate font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">{subtitle}</p>
           </div>
-        }
-      />
-
-      {isCoach ? null : (
-        <div
-          role="group"
-          aria-label="Which conversations are shown"
-          className="-mt-2 mb-4 flex flex-wrap items-center gap-2"
-        >
-          {(
-            [
-              ["captured", "Captured"],
-              ["asked", "Asked Lasso"],
-              ["everything", "Everything"],
-            ] as const
-          ).map(([value, label]) => (
-            <button
-              key={value}
-              type="button"
-              aria-pressed={source === value}
-              onClick={() => chooseSource(value)}
-              className={
-                source === value
-                  ? "rounded-full border border-graphite bg-nb-white px-3 py-1 text-[11.5px] font-medium text-foreground"
-                  : "rounded-full border border-[var(--nb-pencil)] px-3 py-1 text-[11.5px] text-muted-foreground transition-colors hover:border-foreground"
-              }
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {!isCoach && source !== "captured" ? (
-        <AskedSessions
-          sessions={askedSessions}
-          onOpen={(id) => {
-            setAskSession(id);
-            setAskOpen(true);
-          }}
-        />
-      ) : null}
-
-      <SlideOver
-        open={askOpen}
-        onOpenChange={(next) => {
-          setAskOpen(next);
-          if (!next) setAskSession(null);
-        }}
-        title="Ask Lasso"
-        description="Private to you. Your coach never sees this."
-        className="sm:w-[720px] sm:max-w-[760px]"
-      >
-        <div className="overflow-y-auto p-4">
-          {askOpen ? (
-            <ReflectPage
-              embedded
-              initialSessionId={askSession}
-              autoStart={askSession === null}
-            />
-          ) : null}
-        </div>
-      </SlideOver>
-
-      <div className="-mt-2 mb-6 flex items-center gap-2.5">
-        <BrandLogo brand="claude" size={16} />
-        <BrandLogo brand="chatgpt" size={16} />
-        <BrandLogo brand="gemini" size={16} />
-        <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
-          All your tools, one place
-        </span>
-      </div>
-
-      {capturedShown && threads.length > 0 ? (
-        <div style={{ height: CONVERSATION_BOARD_HEIGHT }}>
-          <BoardShell
-            ariaLabel="AI conversations board"
-            frames={monthLanes}
-            nodes={monthNodes}
-            fitFrameIds={initialMonthLaneIds}
-            fitKey={`${groups.length}:${shown.length}`}
-            toolbar={(
-              <div className="flex w-full min-w-0 flex-col gap-2">
-                <div className="flex min-w-0 items-center gap-3 overflow-x-auto">
-                  <label htmlFor="chat-library-search" className="sr-only">
-                    Search your chats
-                  </label>
-                  <input
-                    id="chat-library-search"
-                    type="search"
-                    value={query}
-                    onChange={(event) => setQuery(event.target.value)}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter") searchSignal.onSubmitQuery();
-                    }}
-                    placeholder="Search your chats"
-                    className="w-full max-w-sm shrink-0 rounded-[var(--radius)] border border-border bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/40"
-                  />
-                  <p className="shrink-0 text-[12px] text-muted-foreground">{countLine}</p>
-                </div>
-                <div className="flex min-w-0 items-center gap-2 overflow-x-auto pb-0.5">
-                  <div role="group" aria-label="Filter by tool" className="flex shrink-0 items-center gap-2">
-          {(["all", ...toolsPresent] as const).map((option) => {
-            const on = tool === option;
-            return (
-              <button
-                key={option}
-                type="button"
-                aria-pressed={on}
-                onClick={() => chooseTool(option as ToolVendor | "all")}
-                className={
-                  on
-                    ? "rounded-full border border-graphite bg-nb-white px-3 py-1 text-[11.5px] font-medium text-foreground"
-                    : "rounded-full border border-[var(--nb-pencil)] px-3 py-1 text-[11.5px] text-muted-foreground transition-colors hover:border-foreground"
-                }
-              >
-                {option === "all"
-                  ? "Everything"
-                  : option === "unknown"
-                    ? "Other"
-                    : vendorLabel(option)}
-                {/* Figma 27:635 puts the count inside the chip, so the row of
-                    tools is also the shape of the library. */}
-                <span className="ml-1.5 font-mono text-[10px] text-soft">
-                  {option === "all"
-                    ? shown.length
-                    : shown.filter((i) => vendorFromSource(i) === option).length}
-                </span>
-              </button>
-            );
-          })}
-                  </div>
-          <span
-            role="group"
-            aria-label="How conversations are shown"
-            className="ml-auto inline-flex items-center rounded-full border border-[var(--nb-rule)] bg-card p-0.5"
-          >
+          <span role="group" aria-label="How conversations are shown" className="inline-flex shrink-0 items-center rounded-full border border-[var(--nb-rule)] bg-card p-0.5">
             {(["preview", "sticky"] as const).map((option) => (
-              <button
-                key={option}
-                type="button"
-                aria-pressed={view === option}
-                onClick={() => chooseView(option)}
-                className={`rounded-full px-3 py-1 font-mono text-[10px] uppercase tracking-[0.08em] transition-colors ${
-                  view === option
-                    ? "bg-[var(--nb-ink)] text-[var(--nb-white)]"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
+              <Button key={option} type="button" size="sm" variant={view === option ? "secondary" : "ghost"} aria-pressed={view === option} onClick={() => chooseView(option)}>
                 {option === "preview" ? "Preview" : "Sticky"}
-              </button>
+              </Button>
             ))}
           </span>
-                </div>
-                <div role="group" aria-label="Filter by engagement" className="flex min-w-0 items-center gap-2 overflow-x-auto pb-0.5">
-          <button
-            type="button"
-            aria-pressed={engagement === "all"}
-            onClick={() => chooseEngagement("all")}
-            className={
-              engagement === "all"
-                ? "rounded-full border border-graphite bg-nb-white px-3 py-1 text-[11.5px] font-medium text-foreground"
-                : "rounded-full border border-[var(--nb-pencil)] px-3 py-1 text-[11.5px] text-muted-foreground transition-colors hover:border-foreground"
-            }
-          >
-            Everything
-            <span className="ml-1.5 font-mono text-[10px] text-soft">{shown.length}</span>
-          </button>
-          {engagementsPresent.map((e) => {
-            const on = engagement === e.id;
-            return (
-              <button
-                key={e.id}
-                type="button"
-                aria-pressed={on}
-                onClick={() => chooseEngagement(e.id)}
-                className={
-                  on
-                    ? "rounded-full border border-graphite bg-nb-white px-3 py-1 text-[11.5px] font-medium text-foreground"
-                    : "rounded-full border border-[var(--nb-pencil)] px-3 py-1 text-[11.5px] text-muted-foreground transition-colors hover:border-foreground"
-                }
-              >
-                <span
-                  className="mr-1.5 inline-block h-2 w-2 rounded-full align-middle"
-                  style={{ background: `var(${engagementHue(e.id)})` }}
-                />
-                {e.code}
-                <span className="ml-1.5 font-mono text-[10px] text-soft">{e.count}</span>
-              </button>
-            );
-          })}
-          {unmappedCount > 0 ? (
-            <button
-              type="button"
-              aria-pressed={engagement === "unmapped"}
-              onClick={() => chooseEngagement("unmapped")}
-              className={
-                engagement === "unmapped"
-                  ? "rounded-full border border-graphite bg-nb-white px-3 py-1 text-[11.5px] font-medium text-foreground"
-                  : "rounded-full border border-[var(--nb-pencil)] px-3 py-1 text-[11.5px] text-muted-foreground transition-colors hover:border-foreground"
-              }
-            >
-              Unmapped
-              <span className="ml-1.5 font-mono text-[10px] text-soft">{unmappedCount}</span>
-            </button>
-          ) : null}
-          {selectedEngagement ? (
-            <button
-              type="button"
-              onClick={() => setRecursOpen((prev) => !prev)}
-              className="text-xs font-medium text-accent-deep transition-opacity hover:opacity-70"
-            >
-              {recursOpen ? "Hide analysis" : "What recurs"}
-            </button>
-          ) : null}
-                </div>
-              </div>
-            )}
-            renderFrame={(lane) => (
-              <>
-                <div className={`pointer-events-none absolute inset-x-0 top-0 flex h-10 items-center px-3 ${lane.isSpine ? "flex-col justify-center gap-0" : "gap-3"}`}>
-                  <span className="font-hand text-[19px] leading-none text-graphite">{lane.label}</span>
-                  <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">
-                    {lane.itemCount}
-                  </span>
-                  {lane.isSpine ? null : <span className="h-px flex-1 bg-[var(--nb-rule)]" />}
-                </div>
-                {!lane.isSpine && lane.itemCount > COLUMN_PAGE_SIZE ? (
-                  <span
-                    data-conversation-paging-row
-                    className="pointer-events-none absolute inset-x-3 bottom-0 h-11 border-t border-[var(--nb-rule)]"
-                  />
-                ) : null}
-              </>
-            )}
-            renderNode={(node) => {
-              const matches = matchesChipFilters(node.item);
+          <PasteThreadDialog trigger={<Button type="button" variant="outline" className="h-9">Add a chat</Button>} />
+          {isCoach ? null : (
+            <Button type="button" variant="outline" className="h-9" onClick={() => { setAskSession(null); setAskOpen(true); }}>
+              <span aria-hidden="true" className="h-3.5 w-3.5 rounded-full border-2 border-[var(--nb-lasso-green)]" />
+              Ask Lasso
+            </Button>
+          )}
+        </header>
+
+        <div className="flex h-[46px] shrink-0 items-center gap-2 overflow-x-auto border-b border-[var(--nb-rule)] px-5 whitespace-nowrap">
+          <label htmlFor="chat-library-search" className="sr-only">Search your chats</label>
+          <input
+            id="chat-library-search"
+            type="search"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            onKeyDown={(event) => { if (event.key === "Enter") searchSignal.onSubmitQuery(); }}
+            placeholder="Search your chats"
+            className="h-7 w-60 shrink-0 rounded-[var(--radius)] border border-border bg-card px-3 text-[11.5px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/40"
+          />
+          {isCoach ? null : (
+            <div role="group" aria-label="Which conversations are shown" className="flex shrink-0 items-center gap-2">
+              {([[
+                "captured", "Captured",
+              ], ["asked", "Asked Lasso"], ["everything", "Everything"]] as const).map(([value, label]) => (
+                <Button key={value} type="button" size="sm" variant={source === value ? "secondary" : "ghost"} aria-pressed={source === value} onClick={() => chooseSource(value)}>{label}</Button>
+              ))}
+            </div>
+          )}
+          <span aria-hidden="true" className="h-5 w-px shrink-0 bg-[var(--nb-rule)]" />
+          <div role="group" aria-label="Filter by tool" className="flex shrink-0 items-center gap-2">
+            {(["all", ...toolsPresent] as const).map((option) => {
+              const on = tool === option;
               return (
-                <DimmedDisabled dimmed={!matches} disabled={!matches} className="h-full min-w-0">
-                  <span
-                    className={`${pileMotion.className ? "nb-sticky-wave " : ""}conversation-card-compact canvas-lab-card-paper block h-full min-w-0`}
-                    style={{ "--nb-wave-delay": `${Math.min(node.index, 23) * 26}ms` } as React.CSSProperties}
-                  >
-                    <WorkNote
-                      item={node.item}
-                      dense
-                      displayMode={view}
-                      chatPreview={conversationCardPreview(cardPreviews[node.item.id])}
-                      onOpen={() => openItem(node.item)}
-                      chips={(
-                        <>
-                          {firstEngagement(node.item) ? (
-                            <span
-                              className="font-mono text-[9px] uppercase tracking-[0.08em]"
-                              style={{ color: `var(${engagementHue(firstEngagement(node.item)?.id ?? "")})` }}
-                            >
-                              {firstEngagement(node.item)?.code}
-                            </span>
-                          ) : (
-                            <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">UNMAPPED</span>
-                          )}
-                          {itemModel(node.item) ? (
-                            <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">{itemModel(node.item)}</span>
-                          ) : null}
-                          <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">
-                            {turnCounts?.[node.item.id] ?? 0}{" "}
-                            {(turnCounts?.[node.item.id] ?? 0) === 1 ? "turn" : "turns"}
-                          </span>
-                          {(fed?.[node.item.id] ?? []).length > 0 ? (
-                            <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-green">
-                              {fedPhrase(fed?.[node.item.id] ?? [])}
-                            </span>
-                          ) : null}
-                          <ChatUrlLink item={node.item} showAbsence />
-                          <button
-                            type="button"
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              setLensItem(node.item);
-                            }}
-                            className="text-[10px] font-medium text-accent-deep"
-                          >
-                            Analyse
-                          </button>
-                        </>
-                      )}
-                    />
-                  </span>
-                </DimmedDisabled>
+                <button key={option} type="button" aria-pressed={on} onClick={() => chooseTool(option as ToolVendor | "all")} className={on ? "rounded-full border border-graphite bg-nb-white px-3 py-1 text-[11.5px] font-medium text-foreground" : "rounded-full border border-[var(--nb-pencil)] px-3 py-1 text-[11.5px] text-muted-foreground transition-colors hover:border-foreground"}>
+                  {option === "all" ? "Everything" : option === "unknown" ? "Other" : vendorLabel(option)}
+                  <span className="ml-1.5 font-mono text-[10px] text-soft">{option === "all" ? shown.length : shown.filter((item) => vendorFromSource(item) === option).length}</span>
+                </button>
               );
-            }}
-          />
+            })}
+          </div>
+          <Popover onOpenChange={(open) => { if (open) recordPanelOpen("engagements"); }}>
+            <PopoverTrigger asChild>
+              <Button type="button" variant="outline" className="h-7 rounded-full">
+                {selectedEngagement?.code ?? (engagement === "unmapped" ? "Unmapped" : "Engagements")}
+                <span className="font-mono text-[9px] text-soft">{engagement === "all" ? shown.length : matchingCount}</span>
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="start" className="w-80">
+              <div role="group" aria-label="Filter by engagement" className="flex flex-wrap items-center gap-2">
+                <button type="button" aria-pressed={engagement === "all"} onClick={() => chooseEngagement("all")} className={engagement === "all" ? "rounded-full border border-graphite bg-nb-white px-3 py-1 text-[11.5px] font-medium text-foreground" : "rounded-full border border-[var(--nb-pencil)] px-3 py-1 text-[11.5px] text-muted-foreground"}>Everything <span className="ml-1.5 font-mono text-[10px] text-soft">{shown.length}</span></button>
+                {engagementsPresent.map((entry) => (
+                  <button key={entry.id} type="button" aria-pressed={engagement === entry.id} onClick={() => chooseEngagement(entry.id)} className={engagement === entry.id ? "rounded-full border border-graphite bg-nb-white px-3 py-1 text-[11.5px] font-medium text-foreground" : "rounded-full border border-[var(--nb-pencil)] px-3 py-1 text-[11.5px] text-muted-foreground"}>
+                    <span className="mr-1.5 inline-block h-2 w-2 rounded-full align-middle" style={{ background: `var(${engagementHue(entry.id)})` }} />{entry.code}<span className="ml-1.5 font-mono text-[10px] text-soft">{entry.count}</span>
+                  </button>
+                ))}
+                {unmappedCount > 0 ? <button type="button" aria-pressed={engagement === "unmapped"} onClick={() => chooseEngagement("unmapped")} className={engagement === "unmapped" ? "rounded-full border border-graphite bg-nb-white px-3 py-1 text-[11.5px] font-medium text-foreground" : "rounded-full border border-[var(--nb-pencil)] px-3 py-1 text-[11.5px] text-muted-foreground"}>Unmapped <span className="ml-1.5 font-mono text-[10px] text-soft">{unmappedCount}</span></button> : null}
+                {selectedEngagement ? <Button type="button" variant="ghost" size="sm" onClick={() => setRecursOpen((open) => !open)}>{recursOpen ? "Hide analysis" : "What recurs"}</Button> : null}
+              </div>
+            </PopoverContent>
+          </Popover>
+          <div className="ml-auto flex shrink-0 items-center gap-2">
+            {capturedShown ? <Button type="button" variant="ghost" className="h-7" onClick={() => { setSubjectsOpen(true); recordPanelOpen("subjects"); }}>Subjects and links</Button> : null}
+            {capturedShown ? (
+              <Popover onOpenChange={(open) => { if (open) recordPanelOpen("coverage"); }}>
+                <PopoverTrigger asChild><Button type="button" variant="ghost" className="h-7 text-[13px] text-muted-foreground">{countLine}</Button></PopoverTrigger>
+                <PopoverContent align="end" className="max-h-[70vh] w-[min(720px,calc(100vw-2rem))] overflow-y-auto">
+                  <CaptureCoverage profileId={profile?.id} itemCount={threads.length} scopeLabel="your chat library" dates={threads.map((thread) => effectiveWorkDate(thread))} />
+                  <p className="mt-6 font-hand text-[16px] text-green">nothing here was written by Lasso</p>
+                </PopoverContent>
+              </Popover>
+            ) : null}
+          </div>
         </div>
-      ) : null}
 
-      {recursOpen && selectedEngagement ? (
-        <div className="mb-6 space-y-3 rounded-[var(--radius)] border border-border bg-card p-4">
-          <AnalysisChips
-            target={{
-              kind: "engagement",
-              id: selectedEngagement.id,
-              title: selectedEngagement.title,
-              itemCount: matchingCount,
-            }}
-            readsDetail="every piece of work mapped into this engagement, oldest first"
-            running={analyses.running}
-            orgId={profile?.org_id}
-            profileId={profile?.id}
-            onRun={(preset, checkId) =>
-              void analyses.runPreset(
-                preset,
-                {
-                  kind: "engagement",
-                  id: selectedEngagement.id,
-                  title: selectedEngagement.title,
-                  itemCount: matchingCount,
-                },
-                "every piece of work mapped into this engagement, oldest first",
-                checkId,
-              )
-            }
-          />
-          {analyses.running ? (
-            <>
-              <ThinkingIndicator />
-              {analyses.streamed ? <MarkdownMessage content={analyses.streamed} /> : null}
-            </>
-          ) : null}
-          {analyses.error ? <p className="text-sm text-destructive">{analyses.error}</p> : null}
-          <InlineAnalysisBlocks results={analyses.results} profileId={profile?.id} />
+        <div className="relative min-h-0 flex-1">
+          {source === "asked" ? (
+            <div className="h-full overflow-y-auto p-5"><AskedSessions sessions={askedSessions} onOpen={(id) => { setAskSession(id); setAskOpen(true); }} /></div>
+          ) : (
+            <div className="flex h-full min-h-0 flex-col">
+              {source === "everything" && !isCoach ? <div className="max-h-[220px] shrink-0 overflow-y-auto p-5"><AskedSessions sessions={askedSessions} onOpen={(id) => { setAskSession(id); setAskOpen(true); }} /></div> : null}
+              <div className="relative min-h-0 flex-1">
+                {threads.length === 0 ? (
+                  <div className="m-5 rounded-[var(--radius)] border border-dashed border-border p-8 text-center"><p className="text-sm text-foreground">Your chat library is empty. Keep your first conversation here and it stays yours to find and reuse.</p><p className="mt-2 text-sm text-muted-foreground">Push one from your assistant, paste one in, or import from a connector on the Work page.</p></div>
+                ) : groups.length === 0 ? <p className="p-5 text-sm text-muted-foreground">No chats match that search.</p> : (
+                  <BoardShell
+                    ariaLabel="AI conversations board"
+                    className="h-full"
+                    frames={monthLanes}
+                    nodes={monthNodes}
+                    fitFrameIds={initialMonthLaneIds}
+                    showViewControls
+                    fitKey={`${groups.length}:${shown.length}:${currentConversationLaneHeight}`}
+                    onViewportSizeChange={({ height }) => setConversationViewportHeight((current) => current === height ? current : height)}
+                    renderFrame={(lane) => (
+                      <>
+                        <div className={`pointer-events-none absolute inset-x-0 top-0 flex h-10 items-center px-3 ${lane.isSpine ? "flex-col justify-center gap-0" : "gap-3"}`}>
+                          <span className="font-hand text-[19px] leading-none text-graphite">{lane.label}</span>
+                          <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">{lane.itemCount}</span>
+                          {lane.isSpine ? null : <span className="h-px flex-1 bg-[var(--nb-rule)]" />}
+                        </div>
+                        {!lane.isSpine && lane.itemCount > COLUMN_PAGE_SIZE ? <span data-conversation-paging-row className="pointer-events-none absolute inset-x-3 bottom-0 h-11 border-t border-[var(--nb-rule)]" /> : null}
+                      </>
+                    )}
+                    renderNode={(node) => {
+                      const matches = matchesChipFilters(node.item);
+                      return (
+                        <DimmedDisabled dimmed={!matches} disabled={!matches} className="h-full min-w-0">
+                          <span className={`${pileMotion.className ? "nb-sticky-wave " : ""}conversation-card-compact canvas-lab-card-paper block h-full min-w-0`} style={{ "--nb-wave-delay": `${Math.min(node.index, 23) * 26}ms` } as React.CSSProperties}>
+                            <WorkNote item={node.item} dense displayMode={view} chatPreview={conversationCardPreview(cardPreviews[node.item.id])} onOpen={() => openItem(node.item)} chips={(
+                              <>
+                                {firstEngagement(node.item) ? <span className="font-mono text-[9px] uppercase tracking-[0.08em]" style={{ color: `var(${engagementHue(firstEngagement(node.item)?.id ?? "")})` }}>{firstEngagement(node.item)?.code}</span> : <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">UNMAPPED</span>}
+                                {itemModel(node.item) ? <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">{itemModel(node.item)}</span> : null}
+                                <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">{turnCounts?.[node.item.id] ?? 0} {(turnCounts?.[node.item.id] ?? 0) === 1 ? "turn" : "turns"}</span>
+                                {(fed?.[node.item.id] ?? []).length > 0 ? <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-green">{fedPhrase(fed?.[node.item.id] ?? [])}</span> : null}
+                                <ChatUrlLink item={node.item} showAbsence />
+                                <button type="button" onClick={(event) => { event.stopPropagation(); setLensItem(node.item); }} className="text-[10px] font-medium text-accent-deep">Analyse</button>
+                              </>
+                            )} />
+                          </span>
+                        </DimmedDisabled>
+                      );
+                    }}
+                  />
+                )}
+              </div>
+            </div>
+          )}
         </div>
-      ) : null}
 
-      {capturedShown ? (
-        <div className="mb-6 space-y-3">
-          <button
-            type="button"
-            onClick={() => setShowSubjects((prev) => !prev)}
-            className="text-xs font-medium text-accent-deep underline-offset-4 transition-opacity hover:opacity-70"
-          >
-            {showSubjects ? "Hide subjects" : "Subjects and links"}
-          </button>
-          {showSubjects ? <SubjectsPanel profileId={profile?.id} items={threads} /> : null}
-        </div>
-      ) : null}
-
-      {source === "asked" ? null : threads.length === 0 ? (
-        <div className="rounded-[var(--radius)] border border-dashed border-border p-8 text-center">
-          <p className="text-sm text-foreground">
-            Your chat library is empty. Keep your first conversation here and it stays yours to
-            find and reuse.
-          </p>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Push one from your assistant, paste one in, or import from a connector on the Work
-            page.
-          </p>
-        </div>
-      ) : groups.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No chats match that search.</p>
-      ) : null}
-
-      {capturedShown ? (
-        <>
-          <CaptureCoverage
-            profileId={profile?.id}
-            itemCount={threads.length}
-            scopeLabel="your chat library"
-            dates={threads.map((t) => effectiveWorkDate(t))}
-          />
-          <p className="font-hand mt-6 text-[16px] text-green">
-            nothing here was written by Lasso
-          </p>
-        </>
-      ) : null}
-
+        <SlideOver open={askOpen} onOpenChange={(next) => { setAskOpen(next); if (!next) setAskSession(null); }} title="Ask Lasso" description="Private to you. Your coach never sees this." className="sm:w-[720px] sm:max-w-[760px]">
+          <div className="overflow-y-auto p-4">{askOpen ? <ReflectPage embedded initialSessionId={askSession} autoStart={askSession === null} /> : null}</div>
+        </SlideOver>
+        <SlideOver open={subjectsOpen} onOpenChange={setSubjectsOpen} title="Subjects and links">
+          <div className="overflow-y-auto p-5"><h2 className="font-serif text-[19px]">Subjects and links</h2><div className="mt-4"><SubjectsPanel profileId={profile?.id} items={threads} /></div></div>
+        </SlideOver>
+        <SlideOver open={recursOpen && Boolean(selectedEngagement)} onOpenChange={(open) => setRecursOpen(open)} title="What recurs">
+          <div className="space-y-3 overflow-y-auto p-5">
+            <h2 className="font-serif text-[19px]">What recurs</h2>
+            {selectedEngagement ? <AnalysisChips target={{ kind: "engagement", id: selectedEngagement.id, title: selectedEngagement.title, itemCount: matchingCount }} readsDetail="every piece of work mapped into this engagement, oldest first" running={analyses.running} orgId={profile?.org_id} profileId={profile?.id} onRun={(preset, checkId) => void analyses.runPreset(preset, { kind: "engagement", id: selectedEngagement.id, title: selectedEngagement.title, itemCount: matchingCount }, "every piece of work mapped into this engagement, oldest first", checkId)} /> : null}
+            {analyses.running ? <><ThinkingIndicator />{analyses.streamed ? <MarkdownMessage content={analyses.streamed} /> : null}</> : null}
+            {analyses.error ? <p className="text-sm text-destructive">{analyses.error}</p> : null}
+            <InlineAnalysisBlocks results={analyses.results} profileId={profile?.id} />
+          </div>
+        </SlideOver>
       <PeekPanel
         entry={peek?.entry ?? null}
         open={peek !== null}
@@ -954,7 +708,7 @@ export function AiRecordPage() {
       ) : null}
       </div>
 
-      <div className="nb-chatview-pane">
+      <div className="nb-chatview-pane h-[calc(100vh-6.5rem)] overflow-y-auto">
         {selected ? (
           <GraphiteSeam className="w-[6px] shrink-0 self-stretch text-[var(--nb-pencil)]" />
         ) : null}
