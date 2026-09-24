@@ -1922,6 +1922,13 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   background: var(--nb-grey-1);
   color: var(--nb-ink);
 }
+.nb-nav-item-disabled,
+.nb-nav-item-disabled:hover {
+  cursor: not-allowed;
+  color: var(--nb-soft);
+  background: transparent;
+  opacity: 0.62;
+}
 .nb-nav-item-active {
   color: var(--nb-ink);
   font-weight: 600;
@@ -3937,6 +3944,19 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   .nb-chatview { transition: none; }
 }
 .nb-chatview-list { min-width: 0; }
+.conversation-month-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+.conversation-month-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 230.5px), 230.5px));
+  gap: 10px;
+}
+.conversation-month-empty {
+  min-height: 40px;
+}
 .nb-card-lift {
   transition:
     transform var(--nb-dur-move) var(--nb-ease),
