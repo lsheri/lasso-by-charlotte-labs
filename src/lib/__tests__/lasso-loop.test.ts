@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   LOOP_CYCLE_MS,
   LOOP_DOTS,
+  LOOP_SEQUENCE_LENGTH,
   LOOP_SIZE_CHAT,
   LOOP_SIZE_TITLE,
   LOOP_SIZE_TOOLBAR,
@@ -10,6 +11,7 @@ import {
   cohesionAt,
   loopStamps,
   motionPhaseAt,
+  resolvedFormAt,
   settledLassoStamps,
   stampRadiusFor,
   turnFractionAt,
@@ -91,22 +93,39 @@ describe("Ask Lasso signature loop maths", () => {
     );
   });
 
-  it("returns 48 stamps and resolves them into an open loop with a lower-right tail", () => {
+  it("starts with the cursive L and then advances through four distinct symbols in order", () => {
+    const cycleSeconds = LOOP_CYCLE_MS / 1000;
+    expect(LOOP_SEQUENCE_LENGTH).toBe(5);
+    expect(Array.from({ length: 10 }, (_, index) => resolvedFormAt(cycleSeconds * index))).toEqual([
+      0, 1, 2, 3, 4, 0, 1, 2, 3, 4,
+    ]);
+
+    const silhouettes = Array.from({ length: LOOP_SEQUENCE_LENGTH }, (_, form) =>
+      settledLassoStamps(LOOP_SIZE_TITLE, form as 0 | 1 | 2 | 3 | 4)
+        .map(({ x, y }) => `${x.toFixed(2)},${y.toFixed(2)}`)
+        .join("|"),
+    );
+    expect(new Set(silhouettes).size).toBe(LOOP_SEQUENCE_LENGTH);
+  });
+
+  it("returns 48 stamps and resolves every form inside its square", () => {
     const holdTime = (LOOP_CYCLE_MS / 1000) * 0.8;
     const stamps = loopStamps(holdTime, LOOP_SIZE_TOOLBAR);
     expect(LOOP_STAMPS).toBe(48);
     expect(stamps).toHaveLength(48);
     const still = settledLassoStamps(LOOP_SIZE_TOOLBAR);
     expect(still).toHaveLength(LOOP_STAMPS);
-    expect(Math.max(...still.map((stamp) => stamp.x))).toBeGreaterThan(LOOP_SIZE_TOOLBAR * 0.85);
-    expect(Math.max(...still.map((stamp) => stamp.y))).toBeGreaterThan(LOOP_SIZE_TOOLBAR * 0.8);
-    expect(Math.min(...still.map((stamp) => stamp.x))).toBeLessThan(LOOP_SIZE_TOOLBAR * 0.2);
     stamps.forEach((stamp, index) => {
       const target = still[index];
       expect(target).toBeDefined();
       expect(stamp.x).toBeCloseTo(target?.x ?? 0, 10);
       expect(stamp.y).toBeCloseTo(target?.y ?? 0, 10);
     });
+    for (const size of [LOOP_SIZE_CHAT, LOOP_SIZE_TOOLBAR, 56, LOOP_SIZE_TITLE]) {
+      for (const form of [0, 1, 2, 3, 4] as const) {
+        expect(settledLassoStamps(size, form).every(({ x, y }) => x >= 0 && x <= size && y >= 0 && y <= size)).toBe(true);
+      }
+    }
   });
 
   it("compresses into a horizon and loosens asymmetrically without leaving its square", () => {
