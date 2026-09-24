@@ -27,6 +27,8 @@ export function LabCardMenu({
   frameChoices = [],
   currentFrame,
   onMoveToFrame,
+  bundleToggleLabel,
+  onBundleToggle,
 }: {
   selected: boolean;
   canBranch: boolean;
@@ -47,6 +49,9 @@ export function LabCardMenu({
   frameChoices?: { id: string; name: string }[];
   currentFrame?: string | null | undefined;
   onMoveToFrame?: ((id: string) => void) | undefined;
+  /** B2: only on a chat with docked pieces. */
+  bundleToggleLabel?: string | undefined;
+  onBundleToggle?: (() => void) | undefined;
 }) {
 
   return (
@@ -76,6 +81,7 @@ export function LabCardMenu({
         {onFit ? <DropdownMenuItem onSelect={onFit}>Fit content</DropdownMenuItem> : null}
         {canBranch ? <DropdownMenuItem onSelect={onBranch}>Branch</DropdownMenuItem> : null}
         {onMoveToFrame && frameChoices.filter((frame) => frame.id !== currentFrame).map((frame) => <DropdownMenuItem key={frame.id} onSelect={() => onMoveToFrame(frame.id)}>Move to {frame.name}</DropdownMenuItem>)}
+        {onBundleToggle && bundleToggleLabel ? <DropdownMenuItem onSelect={onBundleToggle}>{bundleToggleLabel}</DropdownMenuItem> : null}
         {onTakeOutOfContext ? <DropdownMenuItem onSelect={onTakeOutOfContext}>Take out of context</DropdownMenuItem> : null}
         <DropdownMenuSeparator />
         {local ? (

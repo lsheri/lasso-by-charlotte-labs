@@ -245,6 +245,8 @@ export type TelemetryEvent =
   /** B4: a workstream was drawn on the workboard. Claimed count and whether one prompt was shown. */
   | "workboard.workstream_drawn"
   | "workboard.region_named"
+  /** B2: a chat's docked pieces were minimized, shown, or all shown. State, count band, entry only. */
+  | "workboard.bundle_toggled"
   /** D1: an empty note was started on a workstream. Entry point only, no ids and no text. */
   | "workboard.document_created"
   /** P1b: the person added the file to a placeholder the chat created. Match and entry only. */
