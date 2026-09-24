@@ -613,21 +613,19 @@ describe("CG2 AI conversations congruency", () => {
       expect(july.querySelector("[data-testid^='board-lane-scroll-']")).toBeNull();
       expect(within(lanes[4] as HTMLElement).getByText("April")).toBeTruthy();
       expect(Number.parseFloat(lanes[4]?.style.left ?? "0")).toBeGreaterThan(1094);
-      expect((lanes[0] as HTMLElement).style.height).toBe("862px");
-      expect((lanes[1] as HTMLElement).style.height).toBe("376px");
-      expect(1212 - Number.parseFloat((lanes[0] as HTMLElement).style.height)).toBe(5 * (220 - 150));
-      expect(Number.parseFloat((lanes[0] as HTMLElement).style.height) - Number.parseFloat((lanes[1] as HTMLElement).style.height)).toBe(3 * 150 + 3 * 12);
+      expect((lanes[0] as HTMLElement).style.height).toBe("1268px");
+      expect((lanes[1] as HTMLElement).style.height).toBe("1268px");
       const june = Array.from(lanes).find((lane) => within(lane).queryByText("June"));
-      expect(june?.style.height).toBe("906px");
+      expect(june?.style.height).toBe("1268px");
       expect(june?.querySelector("[data-conversation-paging-row]")).not.toBeNull();
       expect((lanes[0] as HTMLElement).querySelector("[data-conversation-paging-row]")).toBeNull();
       const firstCard = within(lanes[0] as HTMLElement).getAllByRole("article")[0]?.closest<HTMLElement>("[data-lane-content]");
       expect(firstCard?.style.width).toBe("206.5px");
-      const toolbar = within(board).getByTestId("board-shell-toolbar");
-      expect(within(toolbar).getByRole("searchbox", { name: "Search your chats" })).toBeTruthy();
-      expect(within(toolbar).getByRole("group", { name: "Filter by tool" })).toBeTruthy();
-      expect(within(toolbar).getByRole("group", { name: "Filter by engagement" })).toBeTruthy();
-      expect(within(toolbar).getByText("15 conversations.")).toBeTruthy();
+      expect(within(board).getByTestId("board-shell-toolbar")).toBeTruthy();
+      expect(screen.getByRole("searchbox", { name: "Search your chats" })).toBeTruthy();
+      expect(screen.getByRole("group", { name: "Filter by tool" })).toBeTruthy();
+      expect(screen.getByRole("button", { name: /Engagements/ })).toBeTruthy();
+      expect(screen.getByRole("button", { name: "15 conversations." })).toBeTruthy();
     } finally {
       if (width) Object.defineProperty(HTMLElement.prototype, "clientWidth", width);
       else Reflect.deleteProperty(HTMLElement.prototype, "clientWidth");
@@ -666,6 +664,7 @@ describe("CG2 AI conversations congruency", () => {
     render(<AiRecordPage />);
 
     fireEvent.click(within(screen.getByRole("group", { name: "Filter by tool" })).getByRole("button", { name: /Claude/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Engagements/ }));
     fireEvent.click(within(screen.getByRole("group", { name: "Filter by engagement" })).getByRole("button", { name: /BETA/i }));
 
     expect(recordedChatFilters).toEqual([
@@ -682,6 +681,7 @@ describe("CG2 AI conversations congruency", () => {
     render(<AiRecordPage />);
 
     fireEvent.click(within(screen.getByRole("group", { name: "Filter by tool" })).getByRole("button", { name: /Claude/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Engagements/ }));
     fireEvent.click(within(screen.getByRole("group", { name: "Filter by engagement" })).getByRole("button", { name: /BETA/i }));
 
     for (const row of inboxRows) expect(screen.getByText(row.title)).toBeTruthy();
@@ -732,6 +732,7 @@ describe("CG2 AI conversations congruency", () => {
     expect(document.body.contains(search)).toBe(true);
     expect((search as HTMLInputElement).value).toBe("nothing here");
     expect(screen.getByRole("group", { name: "Filter by tool" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: /Engagements/ }));
     expect(screen.getByRole("group", { name: "Filter by engagement" })).toBeTruthy();
     expect(screen.getByText(`Showing 0 of ${inboxRows.length}. Nothing is deleted here.`)).toBeTruthy();
     expect(screen.getByTestId("board-shell").querySelectorAll("[data-board-lane]")).toHaveLength(0);
