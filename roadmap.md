@@ -106,3 +106,9 @@
 ## Landing conversation vortex
 - [x] Replace the flat connector with a lime perspective tunnel carrying branded conversation excerpts into the deck.
 - [x] Verify motion, reduced-motion clarity, controls, and overflow on desktop and mobile.
+
+## Unit 9 landing deliverable
+- [x] Replace the sports story with the six-slide Harborline illustrative deliverable and five keyed source cards.
+- [x] Simplify the phone sequence, pause its timer after a question choice, and remove scroll-bound story scaling.
+- [x] Add the once-per-load invisible-ink close with an immediate reduced-motion state.
+- [x] Preserve controls and event payloads, then verify all four states at desktop and phone sizes.
