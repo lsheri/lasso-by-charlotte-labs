@@ -1,10 +1,10 @@
 import { useEffect, useRef } from "react";
 
-const CYCLE_MS = 6000;
-export const PARTICLE_TEXT_HOLD_MS = 2000;
-const GATHER_END_MS = 1500;
+const CYCLE_MS = 12500;
+export const PARTICLE_TEXT_HOLD_MS = 7000;
+const GATHER_END_MS = 3000;
 const HOLD_END_MS = GATHER_END_MS + PARTICLE_TEXT_HOLD_MS;
-const DISPERSE_END_MS = 5000;
+const DISPERSE_END_MS = 11800;
 
 type Particle = {
   x: number;
@@ -51,11 +51,16 @@ function ParticleWord({ word, index }: { word: string; index: number }) {
       const rect = wordNode.getBoundingClientRect();
       const width = Math.max(1, Math.ceil(rect.width));
       const height = Math.max(1, Math.ceil(rect.height));
+      const padding = Math.ceil(Math.max(48, width * 1.2));
+      const canvasWidth = width + padding * 2;
+      const canvasHeight = height + padding * 2;
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      canvas.width = Math.ceil(width * dpr);
-      canvas.height = Math.ceil(height * dpr);
-      canvas.style.width = `${width}px`;
-      canvas.style.height = `${height}px`;
+      canvas.width = Math.ceil(canvasWidth * dpr);
+      canvas.height = Math.ceil(canvasHeight * dpr);
+      canvas.style.left = `${-padding}px`;
+      canvas.style.top = `${-padding}px`;
+      canvas.style.width = `${canvasWidth}px`;
+      canvas.style.height = `${canvasHeight}px`;
       context.setTransform(dpr, 0, 0, dpr, 0, 0);
 
       const computed = window.getComputedStyle(wordNode);
@@ -84,11 +89,12 @@ function ParticleWord({ word, index }: { word: string; index: number }) {
         const angle = seeded(particleIndex + index * 431, 1) * Math.PI * 2;
         const distance = width * (0.45 + seeded(particleIndex + index * 431, 2) * 1.15);
         return {
-          ...target,
-          startX: width / 2 + Math.cos(angle) * distance,
-          startY: height / 2 + Math.sin(angle) * Math.max(height * 0.9, distance * 0.32),
-          endX: width / 2 - Math.cos(angle * 1.37) * distance * 1.15,
-          endY: height / 2 - Math.sin(angle * 1.37) * Math.max(height, distance * 0.38),
+          x: target.x + padding,
+          y: target.y + padding,
+          startX: padding + width / 2 + Math.cos(angle) * distance,
+          startY: padding + height / 2 + Math.sin(angle) * Math.max(height * 0.9, distance * 0.32),
+          endX: padding + width / 2 - Math.cos(angle * 1.37) * distance * 1.15,
+          endY: padding + height / 2 - Math.sin(angle * 1.37) * Math.max(height, distance * 0.38),
           radius: 0.8 + seeded(particleIndex + index * 431, 3) * 1.45,
           delay: seeded(particleIndex + index * 431, 4) * 0.3,
         };
@@ -109,7 +115,7 @@ function ParticleWord({ word, index }: { word: string; index: number }) {
       const gathering = elapsed < GATHER_END_MS;
       const holding = elapsed >= GATHER_END_MS && elapsed < HOLD_END_MS;
       const dispersing = elapsed >= HOLD_END_MS && elapsed < DISPERSE_END_MS;
-      const textIn = clamp((elapsed - 1120) / 380);
+      const textIn = clamp((elapsed - 2350) / 650);
       const textOut = clamp((elapsed - HOLD_END_MS) / 260);
       wordNode.style.opacity = holding ? "1" : gathering ? String(textIn) : dispersing ? String(1 - textOut) : "0";
 
