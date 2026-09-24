@@ -8,7 +8,7 @@ export type WorkboardPreviewTurn = {
 
 export type WorkboardCardPreview = {
   workItemId: string;
-  summary: string | null;
+  summary?: string | null;
   turns: WorkboardPreviewTurn[];
   firstUserTurn?: WorkboardPreviewTurn | null;
   turnCount: number;
