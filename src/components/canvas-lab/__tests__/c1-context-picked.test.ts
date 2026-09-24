@@ -30,20 +30,5 @@ describe("C1 board context visibility", () => {
     expect(css).toMatch(/@media \(prefers-reduced-motion: reduce\)[\s\S]*canvas-lab-card-paper::before/);
   });
 
-  it("masks a still band while rotation lives on its inner flame squares", () => {
-    const band = css.slice(css.indexOf(".canvas-lab-corona-band {"), css.indexOf(".canvas-lab-corona-flame {"));
-    expect(band).toContain("-webkit-mask:");
-    expect(band).toContain("-webkit-mask-composite: xor");
-    expect(band).toContain("mask:");
-    expect(band).toContain("mask-composite: exclude");
-    expect(band).not.toContain("rotate(");
-    expect(css).toContain(".canvas-lab-context-corona-motion .canvas-lab-corona-flame-a");
-    expect(css).toContain("canvas-lab-corona-clockwise");
-    expect(css).toContain("canvas-lab-corona-counterclockwise");
-  });
 
-  it("pauses during board interaction and has a reduced-motion block", () => {
-    expect(css).toContain('.canvas-lab-surface[data-interacting="true"] .canvas-lab-context-corona');
-    expect(css).toMatch(/@media \(prefers-reduced-motion: reduce\)[\s\S]*\.canvas-lab-context-corona/);
-  });
 });

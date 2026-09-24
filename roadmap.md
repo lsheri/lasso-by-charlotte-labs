@@ -122,3 +122,4 @@
 - [x] U2+U3 Pass A: derive chat bundles, dock pieces below their chat, redirect drag and keyboard move, bundle lines, bundles dim on workboard.opened.
 - [ ] U2+U3 Pass A follow-up: move a chat and its pieces to a workstream as one undo step (waiting on a decision: needs a grouped undo entry).
 - [ ] U2+U3 Pass B: minimize, +N more, bundle_toggled.
+- [x] Pass C3: Replace the C2 CSS corona with the approved viewport-bounded WebGL sun corona and verify all required tests.
