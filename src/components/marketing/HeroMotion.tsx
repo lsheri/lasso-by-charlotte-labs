@@ -34,13 +34,13 @@ export function ScaledStage({
   return (
     <div
       ref={ref}
-      className={`relative w-full overflow-hidden ${className}`}
+      className="relative w-full overflow-hidden"
       style={{ height: height * scale }}
       role={label ? "img" : undefined}
       aria-label={label}
     >
       <div
-        className="landing-beats-stage absolute left-0 top-0"
+        className={`landing-beats-stage absolute left-0 top-0 ${className}`}
         style={{ width, height, transform: `scale(${scale})`, transformOrigin: "top left" }}
       >
         {children}
