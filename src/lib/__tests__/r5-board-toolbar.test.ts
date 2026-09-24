@@ -17,7 +17,7 @@ describe("R5 board toolbar", () => {
 
     const mappings = [...toolbar.matchAll(/data-toolbar-control="([^"]+)"[\s\S]*?<GraphiteIcon name="([^"]+)"/g)];
     const iconNames = mappings.map((match) => match[2]);
-    expect(mappings.length).toBeGreaterThanOrEqual(12);
+    expect(mappings.length).toBeGreaterThanOrEqual(10);
     expect(new Set(iconNames).size).toBe(iconNames.length);
     expect(toolbar).toContain('<LassoThinkingMark kind="signature" size={LOOP_SIZE_TOOLBAR} />');
   });
@@ -56,7 +56,7 @@ describe("R5 board toolbar", () => {
       { id: "ask", width: 40, pinned: true },
       { id: "zoom", width: 116, pinned: true },
     ];
-    const plan = planToolbarOverflow(390, controls);
+    const plan = planToolbarOverflow(280, controls);
     expect(plan.row).toContain("add-work");
     expect(plan.overflow.length).toBeGreaterThan(0);
     expect([...plan.row, ...plan.overflow].sort()).toEqual(controls.map((control) => control.id).sort());

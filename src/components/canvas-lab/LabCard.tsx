@@ -185,6 +185,7 @@ export function LabCard({
             chatPreview={preview}
             filePreview={filePreview}
             className="h-full"
+            contextSelected={selected}
             onOpen={() => onOpen(cardRef.current?.getBoundingClientRect())}
             actions={commentCount > 0 && onOpenComments ? (
               <button type="button" data-testid="lab-comment-chip" aria-label={`${commentCount} ${commentCount === 1 ? "comment" : "comments"}`} onPointerDown={(event) => event.stopPropagation()} onClick={(event) => { event.stopPropagation(); onOpenComments(); }} className="inline-flex items-center gap-0.5 font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">

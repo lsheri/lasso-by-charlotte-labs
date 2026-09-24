@@ -18,7 +18,7 @@ describe("workboard card previews", () => {
     expect(workboardDisplayModeKey("person", "engagement")).toContain("person:engagement");
   });
 
-  it("uses one caller-scoped read, preserves the first user turn, and returns the last three turns", async () => {
+  it("reads stored summaries with the turns, preserves the first user turn, and returns the last three turns", async () => {
     const rows = Array.from({ length: 5 }, (_, index) => ({
       work_item_id: "visible-chat",
       turn_no: index + 1,
@@ -26,14 +26,15 @@ describe("workboard card previews", () => {
       content: index === 4 ? "x".repeat(450) : `turn ${index + 1}`,
       model: "model-name",
     }));
-    const order = vi.fn().mockResolvedValue({ data: rows, error: null });
-    const inFn = vi.fn().mockReturnValue({ order });
-    const select = vi.fn().mockReturnValue({ in: inFn });
-    const db = { from: vi.fn().mockReturnValue({ select }) };
+    const turnIn = vi.fn().mockReturnValue({ order: vi.fn().mockResolvedValue({ data: rows, error: null }) });
+    const summaryIn = vi.fn().mockResolvedValue({ data: [{ work_item_id: "visible-chat", summary: "Stored extract" }], error: null });
+    const db = { from: vi.fn((table: string) => ({ select: vi.fn().mockReturnValue({ in: table === "turns" ? turnIn : summaryIn }) })) };
 
     const result = await readWorkboardCardPreviews(db as never, ["visible-chat"]);
-    expect(db.from).toHaveBeenCalledTimes(1);
-    expect(inFn).toHaveBeenCalledWith("work_item_id", ["visible-chat"]);
+    expect(db.from).toHaveBeenCalledTimes(2);
+    expect(turnIn).toHaveBeenCalledWith("work_item_id", ["visible-chat"]);
+    expect(summaryIn).toHaveBeenCalledWith("work_item_id", ["visible-chat"]);
+    expect(result[0]?.summary).toBe("Stored extract");
     expect(result[0]?.turns.map((turn) => turn.turnNo)).toEqual([3, 4, 5]);
     expect(result[0]?.firstUserTurn).toEqual({ turnNo: 1, role: "user", content: "turn 1" });
     expect(result[0]?.turnCount).toBe(5);
@@ -41,12 +42,13 @@ describe("workboard card previews", () => {
   });
 
   it("keeps the read capped at 100 unique ids", async () => {
-    const order = vi.fn().mockResolvedValue({ data: [], error: null });
-    const inFn = vi.fn().mockReturnValue({ order });
-    const db = { from: vi.fn().mockReturnValue({ select: vi.fn().mockReturnValue({ in: inFn }) }) };
+    const turnIn = vi.fn().mockReturnValue({ order: vi.fn().mockResolvedValue({ data: [], error: null }) });
+    const summaryIn = vi.fn().mockResolvedValue({ data: [], error: null });
+    const db = { from: vi.fn((table: string) => ({ select: vi.fn().mockReturnValue({ in: table === "turns" ? turnIn : summaryIn }) })) };
     const ids = Array.from({ length: 110 }, (_, index) => `chat-${index}`);
     await readWorkboardCardPreviews(db as never, ids);
-    expect(inFn.mock.calls[0]?.[1]).toHaveLength(100);
+    expect(turnIn.mock.calls[0]?.[1]).toHaveLength(100);
+    expect(summaryIn.mock.calls[0]?.[1]).toHaveLength(100);
   });
 
   it("keeps shared vendor colors intact and isolates Preview card colors", () => {
