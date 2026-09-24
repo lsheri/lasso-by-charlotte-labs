@@ -5177,8 +5177,17 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 .landing-next-hero .pencil-title { max-width: 1040px; font-size: clamp(48px, 6vw, 82px); line-height: .98; }
 .landing-particle-phrase { color: var(--nb-ink); }
 .landing-particle-word { position: relative; display: inline-block; color: var(--nb-ink); }
-.landing-particle-word-text { display: inline-block; color: var(--nb-ink); will-change: opacity; }
-.landing-particle-word-canvas { position: absolute; z-index: 1; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.landing-particle-word-text {
+  display: inline-block;
+  color: var(--nb-ink);
+  text-decoration-line: underline;
+  text-decoration-color: var(--nb-lasso-green);
+  text-decoration-thickness: var(--nb-pencil-stroke);
+  text-underline-offset: 0.12em;
+  text-decoration-skip-ink: auto;
+  will-change: opacity;
+}
+.landing-particle-word-canvas { position: absolute; z-index: 1; pointer-events: none; }
 @media (prefers-reduced-motion: reduce) {
   .landing-particle-word-text { opacity: 1 !important; }
   .landing-particle-word-canvas { display: none; }
