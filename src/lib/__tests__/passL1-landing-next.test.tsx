@@ -62,7 +62,7 @@ describe("pass L1 hidden landing route", () => {
   it("uses one B2B variant with no search-param branch", () => {
     expect(route).not.toContain("validateSearch");
     expect(route).not.toContain('variant === "b"');
-    expect(route).toContain("Your firm bought AI. The human judgment in your team's work went invisible.");
+    expect(route).toContain('export const HERO_H1 = "Your firm bought AI. The human judgment, process, and thinking in your team\'s work went invisible."');
     expect(route.match(/Your firm bought AI\. Now nobody can say where a number came from\./g)).toHaveLength(1);
     expect(route).toContain("export const HERO_H1_FALLBACK");
   });

@@ -13,6 +13,7 @@ import { recordAnonymousEventFn } from "@/lib/telemetry.functions";
 
 // Fallback variant for the landing hero.
 export const HERO_H1_FALLBACK = "Your firm bought AI. Now nobody can say where a number came from.";
+export const HERO_H1 = "Your firm bought AI. The human judgment, process, and thinking in your team's work went invisible.";
 
 const BEATS = [
   {
@@ -203,7 +204,7 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
                 Your firm bought AI. <span className="landing-hero-highlight">The human judgment, process, and thinking</span> in your team's work went invisible.
               </h1>
               <h2 className="mt-6 max-w-3xl text-[26px] leading-relaxed text-muted-foreground">
-                Lasso is the reasoning and judgment layer for AI-assisted consulting. It connects the work across tools to the client deliverable, so your team can show where a claim came from and why it stayed.
+                Lasso is the reasoning and judgment layer for AI-assisted consulting. It connects the work across tools to the client deliverable and keeps the decisions your team made, so they can show where a claim came from and why it stayed.
               </h2>
               <div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-3">
                 <Button asChild>

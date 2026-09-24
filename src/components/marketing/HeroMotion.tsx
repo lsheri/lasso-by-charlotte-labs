@@ -136,7 +136,18 @@ export function StepRow({ label, className = "" }: { g?: "doc" | "chat" | "lens"
   return <div className={`landing-story-step ${className}`}><span aria-hidden="true" /><span>{label}</span></div>;
 }
 
-export type PreviewCardData = SourceCard & { tool?: string; when?: string; summary?: string; url?: string; left?: number; top?: number };
+export type PreviewCardData = {
+  vendor: VendorGlyph;
+  label?: string;
+  tool?: string;
+  when?: string;
+  title: string;
+  excerpt?: string;
+  summary?: string;
+  url?: string;
+  left?: number;
+  top?: number;
+};
 export function PreviewCard({ card }: { card: PreviewCardData; style?: React.CSSProperties }) {
   return <SourceCardView card={{ vendor: card.vendor, label: card.label ?? `${card.tool ?? ""} ${card.when ?? ""}`, title: card.title, excerpt: card.excerpt ?? card.summary ?? "" }} index={0} active={0} />;
 }
