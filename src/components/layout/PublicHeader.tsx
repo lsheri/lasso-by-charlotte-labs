@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import type { ReactNode } from "react";
 
 import { LassoLoopMark } from "./LassoLoopMark";
 
@@ -8,7 +9,7 @@ const LINKS = [
 ];
 
 /** Shared marketing header. `current` hides the link for the page you're on. */
-export function PublicHeader({ current }: { current?: "/" | "/why" | "/trust" }) {
+export function PublicHeader({ current, cta }: { current?: "/" | "/why" | "/trust"; cta?: ReactNode }) {
   return (
     <header className="sticky top-0 z-50 bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/75">
       <div className="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-6 px-6 pb-6 pt-[calc(1.5rem+env(safe-area-inset-top))] sm:px-8 md:px-12">
@@ -25,7 +26,7 @@ export function PublicHeader({ current }: { current?: "/" | "/why" | "/trust" })
             </span>
           </span>
         </Link>
-        <nav className="flex shrink-0 items-center gap-6 sm:gap-10">
+        <nav className="flex shrink-0 items-center gap-3 sm:gap-10">
           {LINKS.filter((link) => link.to !== current).map((link) => (
             <Link
               key={link.to}
@@ -41,6 +42,7 @@ export function PublicHeader({ current }: { current?: "/" | "/why" | "/trust" })
           >
             Sign in
           </Link>
+          {cta}
         </nav>
       </div>
     </header>

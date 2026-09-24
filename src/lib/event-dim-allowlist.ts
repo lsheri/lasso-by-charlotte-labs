@@ -110,7 +110,7 @@ export const EVENT_DIM_KEYS: Readonly<Record<string, readonly string[]>> = {
   "invite.blocked": ["delivered", "reason", "state", "variant"],
   "invite.email_sent": ["delivered", "reason", "resend", "variant"],
   "invite.revoked": ["delivered", "reason", "variant"],
-  "landing.pilot_cta_clicked": ["location"],
+  "landing.pilot_cta_clicked": ["location", "placement"],
   "landing.pilot_requested": ["team_size"],
   "landing.see_it_work_clicked": ["location"],
   "landing.story_section_viewed": ["input_mode", "section"],
