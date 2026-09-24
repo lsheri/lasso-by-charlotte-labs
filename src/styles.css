@@ -5157,18 +5157,21 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 
 /* B2B landing: a compact evidence story, not a product mock-up. */
 .landing-next-hero .pencil-title { max-width: 1040px; font-size: clamp(48px, 6vw, 82px); line-height: .98; }
-.landing-hero-highlight { position: relative; z-index: 0; display: inline; }
-.landing-hero-highlight::before {
-  content: ""; position: absolute; z-index: -1; left: -.03em; right: -.03em; bottom: .08em; height: .42em;
-  border-radius: 2px 5px 3px 2px; background: color-mix(in oklab, var(--nb-lasso-green) 78%, transparent);
-  transform: scaleX(0) rotate(-.4deg); transform-origin: left center;
+.landing-hero-highlight {
+  display: inline;
+  background-image: linear-gradient(color-mix(in oklab, var(--nb-lasso-green) 78%, transparent), color-mix(in oklab, var(--nb-lasso-green) 78%, transparent));
+  background-position: left 88%;
+  background-repeat: no-repeat;
+  background-size: 0% .42em;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
   animation: landing-hero-highlight 16s cubic-bezier(.65,0,.35,1) 3s infinite;
 }
 @keyframes landing-hero-highlight {
-  0% { transform: scaleX(0) rotate(-.4deg); opacity: 0; }
+  0% { background-size: 0% .42em; opacity: 0; }
   3% { opacity: 1; }
-  10%, 72% { transform: scaleX(1) rotate(-.4deg); opacity: .68; }
-  79%, 100% { transform: scaleX(1) rotate(-.4deg); opacity: 0; }
+  10%, 72% { background-size: 100% .42em; opacity: .68; }
+  79%, 100% { background-size: 100% .42em; opacity: 0; }
 }
 .landing-story-shell { width: 100%; border-top: 1px solid var(--landing-beats-hairline); border-bottom: 1px solid var(--landing-beats-hairline); background: var(--landing-beats-page); }
 .landing-story-canvas { position: relative; display: grid; grid-template-columns: minmax(220px, .78fr) 92px minmax(410px, 1.45fr) minmax(250px, .9fr); gap: 22px; min-height: 590px; padding: 46px; overflow: hidden; }
