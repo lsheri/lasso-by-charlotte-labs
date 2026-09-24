@@ -3,7 +3,7 @@
  * S2: what the share dialog does, not how it is written.
  *
  * Every assertion here is behaviour: which words reach the server function,
- * and whether the third section is a control at all.
+ * and what shows when there is nobody to choose.
  */
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -93,10 +93,22 @@ describe("S2 — giving someone one of two things", () => {
     expect(calls[0]).toEqual({ person_id: "p-on", access: "none" });
   });
 
-  it("the third section is not something a person can press", async () => {
+  it("there is no third section", async () => {
     await openDialog();
-    const coming = document.querySelector('[aria-disabled="true"]');
-    expect(coming).toBeTruthy();
-    expect(coming!.querySelectorAll("button, a, input, select")).toHaveLength(0);
+    expect(screen.queryByText("Not available yet")).toBeNull();
+    expect(screen.queryByText("Working on the same board together")).toBeNull();
+  });
+
+  it("with nobody to pick, one line replaces the choice and both buttons", async () => {
+    const { listEngagementPeopleFn } = await import("@/lib/engagement-access.functions");
+    vi.mocked(listEngagementPeopleFn).mockResolvedValueOnce({
+      canShare: true,
+      people: [{ id: "p-me", display_name: "Liam", access: "work", isYou: true }],
+    } as never);
+    mount();
+    fireEvent.click(screen.getByRole("button", { name: "Share" }));
+    await screen.findByText("Nobody else is in your workspace yet. Invite people from Settings, People.");
+    expect(screen.queryByRole("combobox")).toBeNull();
+    for (const choice of ACCESS_CHOICES) expect(screen.queryByRole("button", { name: choice.label })).toBeNull();
   });
 });
