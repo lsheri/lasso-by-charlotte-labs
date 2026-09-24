@@ -910,7 +910,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     }
     if (entry.action === "bundle_workstream_move") {
       // One step: every node in the bundle goes back, or forward, together.
-      for (const move of entry.moves) applyFrameMove(move.nodeId, direction === "undo" ? move.before || null : move.after);
+      for (const move of entry.moves) applyFrameMove(move.nodeId, direction === "undo" ? move.before : move.after);
       return;
     }
     applyFrameMove(entry.nodeId, direction === "undo" ? entry.before : entry.after);
