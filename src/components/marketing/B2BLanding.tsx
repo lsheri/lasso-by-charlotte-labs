@@ -265,9 +265,9 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
 
           <div className="mx-auto max-w-3xl px-6 md:px-10">
             <section className="mt-24 border-t border-rule pt-10">
-              <h2 className="pencil-title">Work you can defend to a client, a partner, or a board.</h2>
+              <h2 className="pencil-title">Deliverables you can defend to a client, a partner, or a board...</h2>
               <p className="mt-5 max-w-2xl text-base leading-relaxed text-foreground">
-                Nothing is deleted here. Filters dim, they never hide.
+                The work, judgment, thinking...VISIBLE*
               </p>
             </section>
 
