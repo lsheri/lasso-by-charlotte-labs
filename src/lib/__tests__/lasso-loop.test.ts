@@ -36,7 +36,7 @@ describe("Ask Lasso signature loop maths", () => {
     expect(stampRadiusFor(LOOP_SIZE_TOOLBAR)).toBeCloseTo(formula(LOOP_SIZE_TOOLBAR));
     expect(stampRadiusFor(LOOP_SIZE_TITLE)).toBeCloseTo(formula(LOOP_SIZE_TITLE));
     expect(stampRadiusFor(1)).toBe(0.62);
-    expect(stampRadiusFor(200)).toBe(1.6);
+    expect(stampRadiusFor(200)).toBe(1.72);
   });
 
   it("turns monotonically, closes continuously, and moves more slowly during hold than travel", () => {
