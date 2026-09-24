@@ -128,3 +128,13 @@
 - [ ] U2+U3 Pass A follow-up: move a chat and its pieces to a workstream as one undo step (waiting on a decision: needs a grouped undo entry).
 - [ ] U2+U3 Pass B: minimize, +N more, bundle_toggled.
 - [x] Pass C3: Replace the C2 CSS corona with the approved viewport-bounded WebGL sun corona and verify all required tests.
+
+## Unit S1 scope truth
+- [ ] Make live board picks authoritative, including all-mapped and brief-only picks.
+- [ ] Preserve board picks across New chat and await existing-session scope writes before send.
+- [ ] Add `reflect.message_sent.scope_source` and additive manifest scope metadata.
+- [ ] Update scope, server, chip, guard, and tripwire tests; run the requested suites.
+
+## Landing scroll playback and phone pass
+- [ ] Play the three product clips automatically, one at a time, with desktop sequencing and phone viewport selection.
+- [ ] Optimize every landing section for phone widths and verify desktop, phone, and narrow-phone layouts.
