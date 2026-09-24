@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent, PointerEvent as ReactPointerEvent } from "react";
 
 import type { LabNode, LabResizeCorner } from "@/components/canvas-lab/canvas-lab-model";
@@ -36,12 +37,15 @@ export function LabSticky({ node, selected, editable, layoutEditable, onSelect, 
   onRemove: () => void;
 }) {
   const body = stickyBodyOf(node);
+  // Only a real change to the words is saved on blur, so a click that merely
+  // leaves the sticky never races the next save.
+  const committedText = useRef(body.text);
   const style = { left: node.x, top: node.y, width: node.width, height: node.height } satisfies CSSProperties;
   const choose = (patch: Partial<WorkboardStickyBody>, field: "style" | "fill") => { const next = { ...body, ...patch }; onChange(next); onCommit(next, field); };
   return (
     <section data-testid={`sticky-${node.id}`} data-selected={selected} data-fill={body.fill} data-size={body.size} data-weight={body.weight} aria-label="Sticky" tabIndex={0} className="canvas-lab-sticky absolute" style={style} onFocus={onSelect} onPointerDown={(event) => { if (!selected) { onSelect(); return; } onDragStart(event); }}>
       {(["top", "right", "bottom", "left"] as const).map((edge) => <span key={edge} aria-hidden="true" className="canvas-lab-text-block-edge" data-edge={edge} onPointerDown={(event) => { event.stopPropagation(); onSelect(); onDragStart(event); }} />)}
-      <textarea aria-label="Sticky words" maxLength={WORKBOARD_TEXT_MAX_LENGTH} value={body.text} readOnly={!editable} placeholder="Write here" onPointerDown={(event) => { event.stopPropagation(); onSelect(); }} onChange={(event) => onChange({ ...body, text: event.target.value })} onBlur={() => onCommit(body, "text")} />
+      <textarea aria-label="Sticky words" maxLength={WORKBOARD_TEXT_MAX_LENGTH} value={body.text} readOnly={!editable} placeholder="Write here" onPointerDown={(event) => { event.stopPropagation(); onSelect(); }} onChange={(event) => onChange({ ...body, text: event.target.value })} onBlur={() => { if (body.text === committedText.current) return; committedText.current = body.text; onCommit(body, "text"); }} />
       {selected && layoutEditable ? <div className="canvas-lab-text-block-controls" onPointerDown={(event) => event.stopPropagation()}>
         {editable ? <>
           <div className="canvas-lab-sticky-swatches" role="group" aria-label="Sticky colour">
