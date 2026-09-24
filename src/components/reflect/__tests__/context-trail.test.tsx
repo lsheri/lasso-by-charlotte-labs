@@ -1,3 +1,4 @@
+import { parseManifest } from "@/lib/context-manifest";
 // @vitest-environment jsdom
 
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
@@ -166,6 +167,14 @@ describe("ContextAudit", () => {
     else expect(screen.queryByTestId("scope-closed-tag")).toBeNull();
     fireEvent.click(screen.getByRole("button", { expanded: false }));
     expect(screen.getByTestId("scope-why").textContent).toBe(why);
+  });
+
+  it("renders an honest empty disclosure when nothing picked has work and there is no brief", () => {
+    const empty = parseManifest({ engagement: null, brief_included: false, firm_checks_applied: 0, items: [], excluded: [], assembled_at: "now", scope: { source: "board_pick_brief_only", picked: 0 } });
+    render(<ContextAudit manifest={empty} />);
+    expect(screen.getByTestId("scope-closed-tag").textContent).toBe("NOTHING READ");
+    fireEvent.click(screen.getByRole("button", { expanded: false }));
+    expect(screen.getByTestId("scope-why").textContent).toBe("Nothing you picked has work to read, and this engagement has no brief yet. Nothing was read.");
   });
 
   it("leaves old manifests without a reason line or tag", () => {

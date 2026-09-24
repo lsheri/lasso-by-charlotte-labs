@@ -199,8 +199,9 @@ function AuditGlyph({ kind }: { kind: ManifestKind | "brief" | "checks" }) {
   return <TrailGlyph kind={kind} />;
 }
 
-export function scopeWhyLine(scope: NonNullable<ContextManifest["scope"]>): string {
+export function scopeWhyLine(scope: NonNullable<ContextManifest["scope"]>, briefIncluded = true): string {
   if (scope.source === "board_pick") return `You picked ${scope.picked ?? 0} on the board`;
+  if (scope.source === "board_pick_brief_only" && !briefIncluded) return "Nothing you picked has work to read, and this engagement has no brief yet. Nothing was read.";
   if (scope.source === "board_pick_brief_only") return "Nothing you picked has work to read, so only the brief";
   if (scope.source === "picker") return "Your choice in the work list";
   if (scope.source === "pointed") return "What you pointed at with @";
@@ -208,8 +209,9 @@ export function scopeWhyLine(scope: NonNullable<ContextManifest["scope"]>): stri
   return "Nothing picked: everything in this engagement";
 }
 
-export function scopeClosedTag(scope: NonNullable<ContextManifest["scope"]>): string | null {
+export function scopeClosedTag(scope: NonNullable<ContextManifest["scope"]>, briefIncluded = true): string | null {
   if (scope.source === "board_pick") return `YOU PICKED ${scope.picked ?? 0}`;
+  if (scope.source === "board_pick_brief_only" && !briefIncluded) return "NOTHING READ";
   if (scope.source === "board_pick_brief_only") return "BRIEF ONLY";
   if (scope.source === "picker") return "YOUR LIST";
   if (scope.source === "pointed") return "@";
@@ -235,7 +237,7 @@ export function ContextAudit({
   const manifest: ContextManifest = givenManifest ?? { engagement: null, brief_included: false, firm_checks_applied: 0, items: [], excluded: [], assembled_at: "" };
   const readRows = auditReadRows(manifest, reads);
   const total = readRows.length + (manifest.brief_included ? 1 : 0) + (manifest.firm_checks_applied > 0 ? 1 : 0) + manifest.excluded.length;
-  const closedTag = manifest.scope ? scopeClosedTag(manifest.scope) : null;
+  const closedTag = manifest.scope ? scopeClosedTag(manifest.scope, manifest.brief_included) : null;
 
   const toggle = () => {
     setOpen((current) => {
@@ -260,7 +262,7 @@ export function ContextAudit({
       </Button>
       {open ? (
         <div className="space-y-4 pb-1 pt-3 text-[13px]">
-          {manifest.scope ? <p data-testid="scope-why">{scopeWhyLine(manifest.scope)}</p> : null}
+          {manifest.scope ? <p data-testid="scope-why">{scopeWhyLine(manifest.scope, manifest.brief_included)}</p> : null}
           {readRows.length > 0 ? (
             <section data-audit-group="read">
               <h4 className="mb-2 font-mono text-[8.5px] uppercase text-muted-foreground tracking-[0.08em]">Read</h4>

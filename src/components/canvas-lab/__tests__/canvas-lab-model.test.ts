@@ -97,7 +97,8 @@ describe("canvas lab model", () => {
   it("maps the brief, work, calls, and deliverables into consulting frames", () => {
     const nodes = seedCanvas(SEED);
     const frameOf = (id: string) => nodes.find((node) => node.id === id)?.frame;
-    expect(frameOf("brief")).toBe("foundation");
+    expect(frameOf("brief")).toBeUndefined();
+    expect(seedCanvas({ ...SEED, savedBrief: true }).find((node) => node.id === "brief")?.frame).toBe("foundation");
     expect(frameOf("work:w1")).toBe("task:t1");
     expect(frameOf("work:w2")).toBe("task:t1");
     expect(frameOf("work:w3")).toBe("outputs");

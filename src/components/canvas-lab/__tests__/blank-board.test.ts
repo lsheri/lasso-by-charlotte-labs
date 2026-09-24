@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  applyDurableBoard,
   boardHasSeededStructure,
   createLabFrames,
   fitWorkboardViewport,
@@ -35,9 +36,9 @@ describe("which board is which", () => {
 describe("a new board opens blank", () => {
   it("places every card without an outline, from the origin", () => {
     const nodes = seedBlankCanvas(SEED);
-    expect(nodes).toHaveLength(4);
+    expect(nodes).toHaveLength(3);
     expect(nodes.every((node) => node.frame === null)).toBe(true);
-    expect(nodes[0]).toMatchObject({ id: "brief", x: 0, y: 0 });
+    expect(nodes[0]).toMatchObject({ id: "work:w1", x: 0, y: 0 });
   });
 
   it("keeps the same clear space between cards as the rest of the board", () => {
@@ -70,11 +71,25 @@ describe("a new board opens blank", () => {
   });
 });
 
+describe("S1.2: no brief card on new boards", () => {
+  it("seeds no brief node on a new blank or structured board", () => {
+    expect(seedBlankCanvas(SEED).some((node) => node.kind === "brief")).toBe(false);
+    expect(seedCanvas(SEED).some((node) => node.kind === "brief")).toBe(false);
+  });
+
+  it("still renders a brief node the board has saved", () => {
+    const base = { frames: [], nodes: seedBlankCanvas({ ...SEED, savedBrief: true }) };
+    const board = { frames: [], links: [], viewerProfileId: null, nodes: [{ id: "n1", kind: "brief", title: "", body: "", judgmentType: null, x: 40, y: 40, w: 0, h: 0, frameId: null, workItemId: null, decisionId: null, authorProfileId: null, hidden: false, version: 1 }] } as never;
+    const merged = applyDurableBoard(base, board);
+    expect(merged.nodes.find((node) => node.id === "brief")).toMatchObject({ kind: "brief", x: 40, width: expect.any(Number) });
+  });
+});
+
 describe("a board with structure is untouched", () => {
   it("opens with exactly the arrangement it has today", () => {
     const frames = sizeSeedFrames(createLabFrames([{ id: "t1", name: "Discovery" }]), seedCanvas(SEED, createLabFrames([{ id: "t1", name: "Discovery" }])));
     expect(frames.map((frame) => frame.id)).toEqual(["foundation", "task:t1", "decisions", "outputs"]);
-    const nodes = seedCanvas(SEED, frames);
+    const nodes = seedCanvas({ ...SEED, savedBrief: true }, frames);
     expect(nodes.map((node) => ({ id: node.id, frame: node.frame, x: node.x, y: node.y }))).toEqual([
       { id: "brief", frame: "foundation", x: 88, y: 484 },
       { id: "work:w1", frame: "task:t1", x: 550, y: 484 },
