@@ -5,6 +5,8 @@
  * is proof grade. Nothing decorative is ever added.
  */
 
+import { SCOPE_SOURCES, type ScopeSource } from "./reflect-shared";
+
 export type ManifestKind =
   | "conversation"
   | "document"
@@ -33,7 +35,7 @@ export type ContextManifest = {
   items: ManifestItem[];
   excluded: ManifestExcluded[];
   assembled_at: string;
-  scope?: { source: import("./reflect-shared").ScopeSource; picked: number | null };
+  scope?: { source: ScopeSource; picked: number | null };
 };
 
 /** Work item types as plain words, never internal enum names. */
@@ -94,7 +96,6 @@ export function parseManifest(value: unknown): ContextManifest | null {
   const rawScope = value["scope"];
   const scopeSource = isRecord(rawScope) ? str(rawScope, "source") : null;
   const picked = isRecord(rawScope) ? rawScope["picked"] : null;
-  const { SCOPE_SOURCES } = requireScopeSources();
   const manifest: ContextManifest = {
     engagement,
     brief_included: value["brief_included"] === true,
@@ -103,7 +104,7 @@ export function parseManifest(value: unknown): ContextManifest | null {
     excluded,
     assembled_at: str(value, "assembled_at") ?? "",
     ...(scopeSource && (SCOPE_SOURCES as readonly string[]).includes(scopeSource)
-      ? { scope: { source: scopeSource as import("./reflect-shared").ScopeSource, picked: typeof picked === "number" && Number.isInteger(picked) && picked >= 0 ? picked : null } }
+      ? { scope: { source: scopeSource as ScopeSource, picked: typeof picked === "number" && Number.isInteger(picked) && picked >= 0 ? picked : null } }
       : {}),
   };
   if (
@@ -115,10 +116,6 @@ export function parseManifest(value: unknown): ContextManifest | null {
     return null;
   }
   return manifest;
-}
-
-function requireScopeSources() {
-  return { SCOPE_SOURCES: ["board_pick", "board_pick_brief_only", "picker", "pointed", "workstream", "all"] as const };
 }
 
 /** The compact one line summary: what was read, in order. */

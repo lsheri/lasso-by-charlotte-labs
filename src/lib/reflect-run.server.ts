@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/integrations/supabase/types";
-import type { ContextSource } from "@/lib/reflect-shared";
+import type { ContextSource, ScopeSource } from "@/lib/reflect-shared";
 import type { AnalysisPresetId } from "@/lib/analysis-presets";
 import type { ContextManifest } from "@/lib/context-manifest";
 
@@ -13,6 +13,7 @@ export type ReflectInput = {
   preset?: AnalysisPresetId | undefined;
   /** Item ids the message points at with @. Narrows this message only. */
   pointed_at?: string[] | undefined;
+  scope_source?: ScopeSource | undefined;
 };
 
 export type ReflectResult = {
@@ -84,9 +85,11 @@ export async function runReflectTurn(
     throw new Response("Forbidden", { status: 403 });
   }
 
-  const { parseScope, scopeLabel, titleFromMessage, REFLECT_SYSTEM_PROMPT, ASK_LASSO_MAKING_RULES } = await import("./reflect-shared");
+  const { parseScope, parseScopeSource, scopeLabel, titleFromMessage, REFLECT_SYSTEM_PROMPT, ASK_LASSO_MAKING_RULES } = await import("./reflect-shared");
   const { analysisPreset } = await import("./analysis-presets");
   const sessionScope = parseScope(session.context_scope);
+  const scopeSource = parseScopeSource(data.scope_source);
+  const briefOnly = scopeSource === "board_pick_brief_only";
   let scope = sessionScope;
   // An @ mention dials the read set down to exactly those pieces of work, for
   // this message only. The brief stays ambient.
@@ -99,6 +102,8 @@ export async function runReflectTurn(
     pointedExcluded = narrowed.excluded;
   }
   const isPointed = pointedExcluded.length > 0 || (pointed.length > 0 && scope !== sessionScope);
+  const effectiveScopeSource = isPointed ? "pointed" : scopeSource;
+  const picked = effectiveScopeSource === "board_pick" ? sessionScope.ids.length : effectiveScopeSource === "board_pick_brief_only" ? 0 : null;
   const preset = data.preset ? analysisPreset(data.preset) : null;
 
   const { data: history } = await supabase
@@ -184,6 +189,7 @@ export async function runReflectTurn(
     const catalogueManifest = manifestFromSources(run.sources, {
       briefIncluded: run.catalogue.brief.itemIds.length > 0,
     });
+    catalogueManifest.scope = { source: effectiveScopeSource, picked };
     catalogueManifest.excluded = [...catalogueManifest.excluded, ...pointedExcluded];
 
     if (run.catalogue.entries.length > 0 && run.itemsFetched === 0) {
@@ -236,6 +242,7 @@ export async function runReflectTurn(
       userId,
       dims: {
         scope: scope.mode,
+        scope_source: effectiveScopeSource,
         context_mode: "catalogue",
         catalogue_size: sizeBucket(run.catalogue.entries.length),
         rounds: smallBucket(run.rounds),
@@ -277,7 +284,9 @@ export async function runReflectTurn(
   const { assembleReflectContext } = await import("./reflect-context.server");
   const assembled = await assembleReflectContext(supabase, profile.id, scope, {
     pointedAt: isPointed,
+    briefOnly,
   });
+  assembled.manifest.scope = { source: effectiveScopeSource, picked };
   if (pointedExcluded.length > 0) {
     assembled.manifest.excluded = [...assembled.manifest.excluded, ...pointedExcluded];
   }
@@ -390,6 +399,7 @@ export async function runReflectTurn(
     userId,
     dims: {
       scope: scope.mode,
+      scope_source: effectiveScopeSource,
       context_mode: "inline",
       truncated: assembled.truncated,
       tier2_items: tierBucket(assembled.tier2Count),
