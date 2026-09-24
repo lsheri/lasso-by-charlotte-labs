@@ -1,16 +1,14 @@
-import { Lock } from "lucide-react";
+import { ExternalLink, FileText } from "lucide-react";
 
-import { FromChatLine } from "@/components/work/FromChatLine";
-import { ArtifactNote, SourceMark, VendorMark } from "@/components/work/SourceMark";
-import { WorkCardPreview } from "@/components/work/WorkCardPreview";
-import { colourKey, noteHue, notePaper } from "@/components/work/note-paper";
-import { useNoteLive } from "@/hooks/use-note-live";
+import { WorkboardFilePreview as FilePreview } from "@/components/canvas-lab/WorkboardFilePreview";
+import { BrandLogo, brandHex, brandLabel } from "@/components/connectors/BrandLogo";
+import { ChatUrlLink } from "@/components/work/ChatUrlLink";
+import { sourceBrandKey } from "@/components/work/SourceMark";
 import type { WorkboardCardPreview, WorkboardDisplayMode, WorkboardFilePreview } from "@/lib/workboard-card-preview.shared";
-import { workIdentityLabel } from "@/lib/work-identity";
 import { resolveWorkDate } from "@/lib/work-order";
 import { formatDate, type WorkItemRow } from "@/lib/work-types";
 
-/** The shared paper note used anywhere a single piece of work is shown. */
+/** The shared Ledger preview card used anywhere one piece of work is shown. */
 export function WorkNote({
   item,
   onOpen,
@@ -18,21 +16,15 @@ export function WorkNote({
   actions,
   chips,
   clientLabel,
-  dense = false,
+  dense: _dense = false,
   className = "",
-  displayMode = "sticky",
+  displayMode: _displayMode = "preview",
   chatPreview,
   filePreview,
 }: {
-  // Callers join different relations: the board and Inbox carry
-  // work_item_tasks, Verify's deliverables do not. The type must say so.
-  item: Omit<WorkItemRow, "work_item_tasks"> & {
-    work_item_tasks?: WorkItemRow["work_item_tasks"];
-  };
+  item: Omit<WorkItemRow, "work_item_tasks"> & { work_item_tasks?: WorkItemRow["work_item_tasks"] };
   onOpen?: (() => void) | undefined;
-  /** Rendered before the body, e.g. a drag handle. */
   lead?: React.ReactNode;
-  /** Rendered at the trailing edge of the first line, e.g. a row menu. */
   actions?: React.ReactNode;
   chips?: React.ReactNode;
   clientLabel?: string | null | undefined;
@@ -42,29 +34,34 @@ export function WorkNote({
   chatPreview?: WorkboardCardPreview | undefined;
   filePreview?: WorkboardFilePreview | undefined;
 }) {
-  const live = useNoteLive<HTMLDivElement>();
-  // Verify's deliverables arrive nested from the engagement read and carry no
-  // work_item_tasks of their own, so the mapping is optional here.
   const mapping = item.work_item_tasks?.[0]?.tasks ?? null;
-  const clientId = mapping?.engagements?.clients?.id ?? item.client_id ?? null;
-  // The date the list ordered by, and which of the two it is. An arrival time
-  // is said to be an arrival, never shown as when the work happened.
   const when = resolveWorkDate(item);
   const date = when.byArrival ? `added ${formatDate(when.iso)}` : formatDate(when.iso);
-  const hasPreview = item.type === "ai_thread"
-    ? Boolean(chatPreview?.turns.length)
-    : Boolean(filePreview && filePreview.kind !== "fallback");
+  const brand = sourceBrandKey(item);
+  const summary = item.work_item_extracts?.find((extract) => extract.summary)?.summary
+    ?? chatPreview?.firstUserTurn?.content
+    ?? chatPreview?.turns.find((turn) => turn.role.trim().toLowerCase() === "user")?.content
+    ?? "No summary available.";
+  const isFile = item.type === "document" || item.type === "deck" || item.type === "sheet";
+  const hasFilePreview = Boolean(filePreview && filePreview.kind !== "fallback");
+  const detail = item.type === "deck" && filePreview?.pages?.length
+    ? `${filePreview.pages.length} ${filePreview.pages.length === 1 ? "slide" : "slides"}`
+    : item.type === "sheet"
+      ? "Spreadsheet"
+      : filePreview?.kind === "pdf"
+        ? "PDF document"
+        : item.type === "document"
+          ? "Document"
+          : "";
+  const sourceUrl = item.meta?.web_view_link ?? item.source_meta?.url ?? null;
 
   return (
     <div
-      ref={live}
-      className={`nb-paper ${displayMode === "preview" && hasPreview ? "canvas-lab-paper-preview nb-preview-card" : ""} ${className}`}
+      className={`nb-paper ledger-work-note ${className}`}
       data-paper-state={item.visibility}
       data-client-label={clientLabel ?? undefined}
-      style={{
-        ...notePaper(item.id),
-        ...noteHue(colourKey({ clientId, engagementId: mapping?.engagement_id ?? null })),
-      }}
+      data-brand={brand}
+      style={{ borderLeftColor: brandHex(brand) }}
     >
       <div
         {...(onOpen
@@ -81,49 +78,48 @@ export function WorkNote({
               },
             }
           : {})}
-        className={`nb-paper-body ${onOpen ? "cursor-pointer" : ""}`}
+        className={`nb-paper-body flex h-full min-h-0 flex-col ${onOpen ? "cursor-pointer" : ""}`}
       >
-        <div className="flex items-start gap-2">
+        <div className="flex h-[14px] shrink-0 select-none items-center gap-2">
           {lead ? <span className="shrink-0">{lead}</span> : null}
-          <div className="flex min-w-0 flex-1 items-center gap-1.5">
-            {item.visibility === "private" ? (
-              <Lock
-                className="h-2.5 w-2.5 shrink-0"
-                style={{ color: "var(--state-indigo)" }}
-                aria-label="Private"
-              />
-            ) : null}
-            <SourceMark item={item} size={14} disc />
-            <span className="min-w-0 truncate font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
-              <VendorMark item={item} />
-              {" · "}
-              {date}
-            </span>
-          </div>
-          {actions ? <span className="shrink-0">{actions}</span> : null}
+          <BrandLogo brand={brand} size={13} />
+          <span className="min-w-0 flex-1 truncate font-mono text-[8.5px] uppercase tracking-[0.08em] text-muted-foreground">{brandLabel(brand)}</span>
+          <span className="shrink-0 font-mono text-[8.5px] uppercase tracking-[0.08em] text-soft">{date}</span>
+          {actions ? <span className="shrink-0 select-none" onClick={(event) => event.stopPropagation()}>{actions}</span> : null}
         </div>
 
-        <p
-          className={`mt-1 break-words text-[13px] leading-[18px] text-foreground ${dense ? "line-clamp-3" : "line-clamp-2"}`}
-        >
-          {item.title} <ArtifactNote item={item} />
-        </p>
+        <p className="mt-1 shrink-0 select-text truncate text-[12px] font-medium leading-[15px] text-foreground">{item.title}</p>
 
-        {displayMode === "preview" ? (
-          <WorkCardPreview item={item as WorkItemRow} chatPreview={chatPreview} filePreview={filePreview} />
-        ) : null}
+        {isFile ? (
+          <div className="ledger-work-note__file mt-1 flex min-h-0 flex-1 items-center gap-2">
+            <div className="ledger-work-note__thumbnail h-[42px] w-[74px] shrink-0 overflow-hidden border border-hairline bg-secondary">
+              {hasFilePreview && filePreview ? <FilePreview preview={filePreview} title={item.title} onFailure={() => {}} /> : <FileText className="m-auto h-full w-5 text-muted-foreground" aria-label="Document" />}
+            </div>
+            <div className="min-w-0 select-text">
+              <p className="truncate text-[10.5px] leading-[15px] text-muted-foreground">{item.title}</p>
+              <p className="truncate font-mono text-[8.5px] uppercase tracking-[0.08em] text-soft">{detail}</p>
+            </div>
+          </div>
+        ) : (
+          <p className="my-auto line-clamp-3 min-h-0 select-text text-[10.5px] leading-[1.45] text-muted-foreground">{summary}</p>
+        )}
 
-        {workIdentityLabel(item) ? (
-          <p className="mt-1 truncate font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
-            {workIdentityLabel(item)}
-          </p>
-        ) : null}
-
-        {/* W2: where this came out of, said plainly, for a document lifted
-            out of its chat as much as for one still inside it. */}
-        <FromChatLine item={item} />
-
-        {chips ? <div className="mt-1 flex flex-wrap items-center gap-1.5">{chips}</div> : null}
+        <div className="mt-1 flex h-[16px] shrink-0 select-none items-center gap-2 border-t border-hairline pt-1">
+          <span className="min-w-0 flex-1 truncate text-[9px] text-muted-foreground" onClick={(event) => event.stopPropagation()}>
+            {item.type === "ai_thread" ? (
+              <ChatUrlLink item={item as WorkItemRow} showAbsence />
+            ) : sourceUrl ? (
+              <a href={sourceUrl} target="_blank" rel="noopener noreferrer" className="inline-flex max-w-full items-center gap-1">
+                <ExternalLink className="h-2.5 w-2.5 shrink-0" aria-hidden />
+                <span className="truncate">{sourceUrl}</span>
+              </a>
+            ) : (
+              <ChatUrlLink item={item as WorkItemRow} showAbsence />
+            )}
+          </span>
+          {mapping?.engagements?.code ? <span className="shrink-0 rounded-[3px] border border-hairline px-1 font-mono text-[8.5px] uppercase tracking-[0.08em] text-muted-foreground">{mapping.engagements.code}</span> : null}
+          {chips ? <span className="sr-only">{chips}</span> : null}
+        </div>
       </div>
     </div>
   );

@@ -4440,39 +4440,22 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   height: auto;
   overflow: hidden;
   text-align: left;
-  /* One uneven corner: cut paper is never square on all four. */
-  border-radius: 3px 3px 4px 3px;
-  border: 0;
-  background: var(--nb-paper-fill, var(--nb-white));
+  border-radius: 3px;
+  border: 1px solid var(--nb-mid);
+  border-left-width: 3px;
+  background: var(--nb-white);
   /* Contact, then ambient. Blur stays under twice the y-offset or the lift
      reads as a CSS card floating rather than paper resting. Tinted with ink,
      never black, which goes blue-grey against this paper. */
   box-shadow: var(--nb-paper-shadow-contact), var(--nb-paper-shadow-ambient);
-  transform: rotate(calc(var(--nb-rot, 0deg) + var(--nb-sway, 0deg)));
+  transform: none;
   transition:
     transform 160ms cubic-bezier(0.34, 1.36, 0.64, 1),
     box-shadow 160ms var(--nb-ease),
     opacity 160ms var(--nb-ease);
 }
 
-/* The corner lifts. A sticky note never lies perfectly flat, and the shadow
-   under the curl is what makes the page look like it is underneath it. */
-.nb-paper::before {
-  content: "";
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  width: 26px;
-  height: 26px;
-  background: linear-gradient(
-    135deg,
-    transparent 0 48%,
-    color-mix(in oklab, var(--nb-ink) 13%, var(--nb-paper-fill, var(--nb-white))) 48% 100%
-  );
-  box-shadow: -3px -3px 6px -2px rgb(22 24 26 / 0.22);
-  border-bottom-right-radius: 5px;
-  pointer-events: none;
-}
+.nb-paper::before { content: none; }
 
 /* Unmapped has no engagement yet, so it has no colour yet. The dashed pencil
    edge says "not filed" without spending a hue on it. */
@@ -4481,25 +4464,7 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   --nb-paper-edge: var(--nb-pencil);
 }
 
-.nb-paper[data-paper-state="private"] {
-  --nb-paper-fill: var(--nb-grey-1);
-  --nb-paper-edge: var(--nb-rule);
-}
-
-/* The turned corner: shipped to the firm. A fold, not a badge. Nothing sets
-   this yet — see the comment in NotePaperCard. */
-.nb-paper[data-paper-fold="shipped"]::after {
-  content: "";
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  width: 0;
-  height: 0;
-  border-style: solid;
-  border-width: 0 0 12px 12px;
-  border-color: transparent transparent var(--nb-green) transparent;
-  border-bottom-right-radius: 4px;
-}
+.nb-paper[data-paper-state="private"] { background: var(--nb-white); }
 
 /* M5, verbatim: 1.5px up, shadow grows, 160ms. */
 .nb-paper:hover,
@@ -4507,6 +4472,7 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   box-shadow:
     1px 3px 4px color-mix(in oklab, var(--nb-ink) 20%, transparent),
     0 16px 28px -14px color-mix(in oklab, var(--nb-ink) 34%, transparent);
+  transform: none;
 }
 
 .focus-paper-backdrop {
@@ -4559,43 +4525,11 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 }
 @media (min-width: 768px) { .focus-paper-backdrop { padding: 32px; } }
 
-/* The tilt. Perspective only exists inside this rule, so a card at rest is a
-   flat 2D layer and its type renders like every other glyph on the page. */
-@media (hover: hover) and (pointer: fine) {
-  .nb-paper:hover,
-  .nb-paper:focus-visible {
-    transform: perspective(620px) translateY(-1.5px) rotate(var(--nb-rot, 0deg)) rotateX(-3deg)
-      rotateY(4deg);
-  }
-}
-@media not all and (hover: hover) {
-  .nb-paper:hover,
-  .nb-paper:focus-visible {
-    transform: translateY(-1.5px) rotate(var(--nb-rot, 0deg));
-  }
-}
-
 /* Ambient. Material, not event: paper on a desk moves a little. Amplitude is
    set below the type's re-raster threshold on purpose, and the period and
    phase are seeded per card so neighbours never beat together. Only cards the
    IntersectionObserver has marked live animate, so an off-screen column costs
    nothing. */
-.nb-paper[data-live="1"] {
-  animation: nb-paper-sway var(--nb-paper-period, 9s) ease-in-out infinite alternate;
-  animation-delay: var(--nb-paper-phase, 0ms);
-}
-.nb-paper[data-live="1"]:hover {
-  animation-play-state: paused;
-}
-@keyframes nb-paper-sway {
-  from {
-    --nb-sway: -0.15deg;
-  }
-  to {
-    --nb-sway: 0.15deg;
-  }
-}
-
 /* The gust. Sandbox A M3's scatter-and-settle, fired on arrival: the notes
    blow in and find their places. Deliberately decorative and deliberately
    rare, so it is rationed by a 30% roll in WorkPage rather than played every
@@ -4619,30 +4553,21 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 }
 
 .nb-paper-body {
-  padding: 10px 11px 11px;
+  padding: 7px 8px;
 }
+
+.ledger-work-note { container-type: inline-size; width: 100%; height: 118px; max-width: none; }
+.ledger-work-note .canvas-lab-document-page,
+.ledger-work-note .canvas-lab-file-preview,
+.ledger-work-note .canvas-lab-file-preview-canvas { width: 100%; height: 100%; min-height: 0; object-fit: cover; }
+.ledger-work-note .canvas-lab-page-controls { display: none; }
+@container (max-width: 239px) { .ledger-work-note__thumbnail { width: 60px; } }
 
 /* The conversation board is a glance: one compact question, without changing other cards. */
 .conversation-card-compact > .nb-paper > .nb-paper-body {
   padding: 8px 9px;
 }
-.conversation-card-compact .nb-paper-body > p:first-of-type {
-  display: -webkit-box;
-  min-height: 36px;
-  max-height: 36px;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  overflow: hidden;
-}
-.conversation-card-compact .nb-preview-content[data-preview-shape="portrait"] {
-  height: 64px;
-  aspect-ratio: auto;
-  padding: 4px 0;
-}
-.conversation-card-compact .chat-preview-window,
-.conversation-card-compact .chat-preview-window__body {
-  min-height: 0;
-}
+.conversation-card-compact { height: 118px; }
 
 @media (prefers-reduced-motion: reduce) {
   .nb-paper,

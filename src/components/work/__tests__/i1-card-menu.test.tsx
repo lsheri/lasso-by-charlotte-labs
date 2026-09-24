@@ -94,6 +94,6 @@ describe("I1 the Inbox card menu", () => {
 
   it("carries no hover tooltip on the card title", () => {
     const source = readFileSync("src/components/work/WorkNote.tsx", "utf8");
-    expect(source.includes("title={item.title}")).toBe(false);
+    expect(source).not.toMatch(/<p[^>]*title=\{item\.title\}/);
   });
 });

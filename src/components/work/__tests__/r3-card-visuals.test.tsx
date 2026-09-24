@@ -15,17 +15,19 @@ describe("R4 paper preview craft pass", () => {
     expect(styles).toMatch(/\.nb-preview-card\s*\{[^}]*min-height:\s*var\(--nb-card-min-height\)/);
   });
 
-  it("uses lifted paper shadows without a paper stroke or sticky ring", () => {
+  it("uses the Ledger border and existing lifted shadow without a sticky ring", () => {
     const paperRules = [...styles.matchAll(/\.nb-paper\s*\{([^}]*)\}/g)].map((match) => match[1] ?? "");
     const finalPaper = paperRules.find((rule) => rule.includes("position: relative")) ?? "";
     const sticky = styles.match(/\.nb-sticky\s*\{([^}]*)\}/)?.[1] ?? "";
-    expect(finalPaper).toContain("border: 0");
+    expect(finalPaper).toContain("border: 1px solid var(--nb-mid)");
+    expect(finalPaper).toContain("border-left-width: 3px");
     expect(finalPaper).toContain("overflow: hidden");
     expect(finalPaper).toContain("var(--nb-paper-shadow-contact)");
     expect(finalPaper).toContain("var(--nb-paper-shadow-ambient)");
     expect(sticky).toContain("border: 0");
     expect(sticky).not.toContain("0 0 0 4px var(--nb-white)");
     expect(sticky).not.toContain("min-height: var(--nb-card-min-height)");
+    expect(styles).toContain(".nb-paper::before { content: none; }");
   });
 
   it.each([

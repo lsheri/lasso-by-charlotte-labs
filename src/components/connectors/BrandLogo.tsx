@@ -50,6 +50,16 @@ const SIMPLE: Partial<Record<BrandKey, { title: string; hex: string; path: strin
   gemini: siGooglegemini,
 };
 
+const CUSTOM_HEX: Partial<Record<BrandKey, string>> = {
+  onedrive: "#0364B8",
+  sharepoint: "#036C70",
+  chatgpt: "#000000",
+  copilot: "#1B8BE0",
+  slack: "#36C5F0",
+  granola: "#E8763A",
+  wispr: "#111111",
+};
+
 const LABELS: Record<BrandKey, string> = {
   googledrive: "Google Drive",
   gmail: "Gmail",
@@ -71,6 +81,17 @@ const LABELS: Record<BrandKey, string> = {
   thread: "Conversation",
   unknown: "Connector",
 };
+
+/** The primary brand ink used by the Ledger card's inside edge. */
+export function brandHex(brand: BrandKey): string {
+  const simple = SIMPLE[brand];
+  if (simple) return `#${simple.hex}`;
+  return CUSTOM_HEX[brand] ?? "var(--nb-soft)";
+}
+
+export function brandLabel(brand: BrandKey): string {
+  return LABELS[brand] ?? LABELS.unknown;
+}
 
 /** Marks simple-icons does not ship. Drawn once, in the vendor's own colour. */
 function CustomMark({ brand }: { brand: BrandKey }) {
