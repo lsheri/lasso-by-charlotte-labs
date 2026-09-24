@@ -86,3 +86,29 @@ describe("C3 WebGL context corona", () => {
     expect(page).toContain("pauseCoronasForViewportMotion();");
   });
 });
+
+import { readFileSync as readC31 } from "node:fs";
+import { coronaLeaveFade, contextCoronaFade as fadeC31 } from "@/components/canvas-lab/LabContextCoronas";
+
+describe("Pass C3.1", () => {
+  const src = readC31("src/components/canvas-lab/LabContextCoronas.tsx", "utf8");
+  it("fades on wall-clock seconds over 200ms", () => {
+    expect(fadeC31(10, 10)).toBe(1);
+    expect(fadeC31(10.1, 10)).toBeCloseTo(0.5);
+    expect(fadeC31(10.2, 10)).toBe(0);
+    expect(coronaLeaveFade(10.1, 10, false)).toBeCloseTo(0.5);
+    expect(src).toMatch(/entry\.leftAt = wallNow\(\)/);
+  });
+  it("a still-mode leave has no fade", () => {
+    expect(coronaLeaveFade(10, 10, true)).toBe(0);
+    expect(coronaLeaveFade(10, undefined, true)).toBe(1);
+  });
+  it("does not read computed style inside draw", () => {
+    const body = src.slice(src.indexOf("const draw = "), src.indexOf("const needsLoop"));
+    expect(body).not.toContain("getComputedStyle");
+  });
+  it("loses the context only behind the alive check", () => {
+    expect(src).toMatch(/if \(!aliveRef\.current\) lose\(\)/);
+    expect(src).toMatch(/if \(aliveRef\.current\) unavailableRef\.current = true/);
+  });
+});
