@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 
-import { loopStamps } from "@/lib/lasso-loop";
+import { loopStamps, settledLassoStamps, type LoopStamp } from "@/lib/lasso-loop";
 
 export type LassoThinkingMarkKind = "orbit" | "loop" | "gather" | "trace" | "signature";
 
@@ -34,6 +34,13 @@ function dot(
   context.beginPath();
   context.arc(point.x, point.y, radius, 0, Math.PI * 2);
   context.fill();
+}
+
+function particle(context: CanvasRenderingContext2D, stamp: LoopStamp, halo = true) {
+  if (halo && stamp.radius > 0.9) {
+    dot(context, stamp, stamp.radius * 2.25, stamp.alpha * 0.1);
+  }
+  dot(context, stamp, stamp.radius, stamp.alpha);
 }
 
 export function LassoThinkingMark({ kind, size, count = 0, className }: LassoThinkingMarkProps) {
@@ -104,10 +111,8 @@ export function LassoThinkingMark({ kind, size, count = 0, className }: LassoThi
 
     function drawGather(t: number) {
       const n = syncArrivals(t);
-      if (n === 0) {
-        const breath = 0.5 + 0.5 * Math.sin(t * 1.6);
-        dot(context, { x: cx, y: cy }, 2.1 + 0.9 * breath, 0.28 + 0.22 * breath);
-        return;
+      for (const stamp of loopStamps(t, size)) {
+        particle(context, { ...stamp, alpha: stamp.alpha * 0.72, radius: stamp.radius * 0.88 });
       }
       for (const arrival of arrivalsRef.current) {
         const home = ring(cx, cy, radius, t * 1.1 + arrival.slot * ((2 * Math.PI) / n));
@@ -120,7 +125,13 @@ export function LassoThinkingMark({ kind, size, count = 0, className }: LassoThi
           y: fromY + (home.y - fromY) * ease,
         };
         const depth = (home.z + 1) / 2;
-        dot(context, point, (1.2 + 2.4 * depth) * ease, (0.28 + 0.72 * depth) * ease);
+        particle(context, {
+          ...point,
+          z: home.z,
+          radius: (1.2 + 2.4 * depth) * ease,
+          alpha: (0.28 + 0.72 * depth) * ease,
+          cluster: arrival.slot % 5,
+        });
       }
     }
 
@@ -142,7 +153,7 @@ export function LassoThinkingMark({ kind, size, count = 0, className }: LassoThi
 
     function drawSignature(t: number) {
       for (const stamp of loopStamps(t, size)) {
-        dot(context, stamp, stamp.radius, stamp.alpha);
+        particle(context, stamp);
       }
     }
 
@@ -160,7 +171,9 @@ export function LassoThinkingMark({ kind, size, count = 0, className }: LassoThi
 
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reducedMotion) {
-      draw(mountedAt);
+      context.clearRect(0, 0, width, height);
+      for (const stamp of settledLassoStamps(size)) particle(context, stamp, false);
+      context.globalAlpha = 1;
       return;
     }
 

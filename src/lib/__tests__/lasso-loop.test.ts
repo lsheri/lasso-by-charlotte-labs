@@ -9,6 +9,8 @@ import {
   LOOP_STAMPS,
   cohesionAt,
   loopStamps,
+  motionPhaseAt,
+  settledLassoStamps,
   stampRadiusFor,
   turnFractionAt,
 } from "@/lib/lasso-loop";
@@ -16,9 +18,9 @@ import {
 describe("Ask Lasso signature loop maths", () => {
   it("keeps cohesion continuous through every phase and across the cycle seam", () => {
     expect(cohesionAt(0)).toBe(0);
-    expect(cohesionAt(0.4)).toBe(0);
-    expect(cohesionAt(0.54)).toBe(1);
+    expect(cohesionAt(0.54)).toBe(0);
     expect(cohesionAt(0.7)).toBe(1);
+    expect(cohesionAt(0.88)).toBe(1);
     expect(cohesionAt(0.999999)).toBeCloseTo(cohesionAt(0), 4);
 
     const samples = Array.from({ length: 2001 }, (_, index) => cohesionAt(index / 2000));
@@ -39,9 +41,10 @@ describe("Ask Lasso signature loop maths", () => {
 
   it("turns monotonically, closes continuously, and moves more slowly during hold than travel", () => {
     expect(turnFractionAt(0)).toBe(0);
-    expect(turnFractionAt(0.4)).toBeCloseTo(0.72);
-    expect(turnFractionAt(0.54)).toBeCloseTo(0.88);
-    expect(turnFractionAt(0.7)).toBeCloseTo(0.9);
+    expect(turnFractionAt(0.18)).toBeCloseTo(0.12);
+    expect(turnFractionAt(0.34)).toBeCloseTo(0.3);
+    expect(turnFractionAt(0.54)).toBeCloseTo(0.58);
+    expect(turnFractionAt(0.88)).toBeCloseTo(0.66);
     expect(turnFractionAt(0.999999)).toBeCloseTo(1, 4);
 
     const samples = Array.from({ length: 2000 }, (_, index) => turnFractionAt(index / 2000));
@@ -50,9 +53,16 @@ describe("Ask Lasso signature loop maths", () => {
       expect((samples[index] ?? 0) - (samples[index - 1] ?? 0)).toBeLessThan(0.02);
     }
 
-    const travelRate = (turnFractionAt(0.3) - turnFractionAt(0.1)) / 0.2;
-    const holdRate = (turnFractionAt(0.66) - turnFractionAt(0.58)) / 0.08;
+    const travelRate = (turnFractionAt(0.5) - turnFractionAt(0.36)) / 0.14;
+    const holdRate = (turnFractionAt(0.84) - turnFractionAt(0.74)) / 0.1;
     expect(travelRate).toBeGreaterThan(holdRate);
+  });
+
+  it("moves from clock face through horizon and loose orbit before resolving as Lasso", () => {
+    expect(motionPhaseAt(0.1)).toBe("clock");
+    expect(motionPhaseAt(0.25)).toBe("horizon");
+    expect(motionPhaseAt(0.5)).toBe("loose");
+    expect(motionPhaseAt(0.8)).toBe("lasso");
   });
 
   it("is deterministic for identical time and size inputs", () => {
@@ -81,19 +91,26 @@ describe("Ask Lasso signature loop maths", () => {
     );
   });
 
-  it("returns 48 stamps and gathers them around five distinct centres", () => {
-    const holdTime = (LOOP_CYCLE_MS / 1000) * 0.62;
+  it("returns 48 stamps and resolves them into an open loop with a lower-right tail", () => {
+    const holdTime = (LOOP_CYCLE_MS / 1000) * 0.8;
     const stamps = loopStamps(holdTime, LOOP_SIZE_TOOLBAR);
     expect(LOOP_STAMPS).toBe(48);
     expect(stamps).toHaveLength(48);
+    const still = settledLassoStamps(LOOP_SIZE_TOOLBAR);
+    expect(still).toHaveLength(LOOP_STAMPS);
+    expect(Math.max(...still.map((stamp) => stamp.x))).toBeGreaterThan(LOOP_SIZE_TOOLBAR * 0.85);
+    expect(Math.max(...still.map((stamp) => stamp.y))).toBeGreaterThan(LOOP_SIZE_TOOLBAR * 0.8);
+    expect(Math.min(...still.map((stamp) => stamp.x))).toBeLessThan(LOOP_SIZE_TOOLBAR * 0.2);
+    expect(stamps.map(({ x, y }) => [x, y])).toEqual(still.map(({ x, y }) => [x, y]));
+  });
 
-    const centres = Array.from({ length: LOOP_DOTS }, (_, cluster) => {
-      const members = stamps.filter((stamp) => stamp.cluster === cluster);
-      const x = members.reduce((sum, stamp) => sum + stamp.x, 0) / members.length;
-      const y = members.reduce((sum, stamp) => sum + stamp.y, 0) / members.length;
-      expect(Math.max(...members.map((stamp) => Math.hypot(stamp.x - x, stamp.y - y)))).toBeLessThan(1.5);
-      return `${x.toFixed(1)}:${y.toFixed(1)}`;
-    });
-    expect(new Set(centres)).toHaveLength(LOOP_DOTS);
+  it("compresses into a horizon and loosens asymmetrically without leaving its square", () => {
+    const cycleSeconds = LOOP_CYCLE_MS / 1000;
+    const horizon = loopStamps(cycleSeconds * 0.29, LOOP_SIZE_TITLE);
+    const loose = loopStamps(cycleSeconds * 0.48, LOOP_SIZE_TITLE);
+    const spreadY = (points: typeof horizon) => Math.max(...points.map((point) => point.y)) - Math.min(...points.map((point) => point.y));
+    expect(spreadY(horizon)).toBeLessThan(LOOP_SIZE_TITLE * 0.22);
+    expect(spreadY(loose)).toBeGreaterThan(spreadY(horizon) * 2);
+    expect(loose.every((point) => point.x > 0 && point.x < LOOP_SIZE_TITLE && point.y > 0 && point.y < LOOP_SIZE_TITLE)).toBe(true);
   });
 });
