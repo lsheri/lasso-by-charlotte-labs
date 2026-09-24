@@ -15,7 +15,7 @@ test("unit3 thinking line and response inputs", async ({ page }) => {
   await expect(dialog).toBeVisible();
   console.log("RESULT Ask Lasso :: PASS open=true");
 
-  const audit = dialog.getByRole("button", { name: /Read what went into this response/i });
+  const audit = dialog.getByRole("button", { name: /(?:Read what went into this response|Show where this came from)/i });
   if ((await audit.count()) === 0) {
     const past = dialog.getByRole("button", { name: "Past chats", exact: true });
     if (await past.count()) {
@@ -62,11 +62,11 @@ test("unit3 thinking line and response inputs", async ({ page }) => {
         const phase = working?.querySelectorAll("span")[1]?.textContent ?? null;
         return { rows: rows.length, live: rows.findIndex((row) => row.classList.contains("live")), phase, elapsed };
       }));
-      if (await dialog.getByRole("button", { name: /Read what went into this response/i }).count()) break;
+      if (await dialog.getByRole("button", { name: /(?:Read what went into this response|Show where this came from)/i }).count()) break;
     }
     console.log(`TRAIL samples=${JSON.stringify(samples)}`);
     console.log(`TRAIL maxRows=${Math.max(...samples.map((sample) => sample.rows))}`);
-    const completed = dialog.getByRole("button", { name: /Read what went into this response/i }).last();
+    const completed = dialog.getByRole("button", { name: /(?:Read what went into this response|Show where this came from)/i }).last();
     console.log(`AUDIT completed=${JSON.stringify(await completed.count() ? (await completed.innerText()).replace(/\s+/g, " ").trim() : "not completed within 20s")}`);
   } else {
     console.log("TRAIL unavailable=composer could not send from this surface");
