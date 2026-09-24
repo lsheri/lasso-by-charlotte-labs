@@ -5,11 +5,11 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { noteWorkboardContextChanged } from "@/components/canvas-lab/canvas-lab-telemetry";
 import { useSlashMenu } from "./use-slash-menu";
 
-import { AnswerSources } from "@/components/reflect/AnswerSources";
 import { CoverageNote } from "@/components/reflect/CoverageNote";
 import { GraphiteIcon, type GraphiteIconName } from "@/components/notebook/icons";
 import { MarkdownMessage } from "@/components/markdown/MarkdownMessage";
-import { ContextAudit, ThinkingTrail } from "@/components/reflect/ContextTrail";
+import { AnswerRail, ContextAudit, ThinkingTrail } from "@/components/reflect/ContextTrail";
+import { AnswerMoreMenu } from "@/components/reflect/AnswerMoreMenu";
 import { SaveForOneOnOneDialog } from "@/components/oneonone/SaveForOneOnOne";
 import { Button } from "@/components/ui/button";
 import { MappedWorkChecklist } from "@/components/reflect/MappedWorkChecklist";
@@ -242,27 +242,14 @@ function MessagesTab({ ask, emptyActions }: { ask: AskLasso; emptyActions?: Reac
                     {message.content}
                   </p>
                 ) : (
-                  <>
+                  <AnswerRail state="done">
                     <MarkdownMessage content={message.content} variant="binder" />
                     <div className="nb-binder-inset">
                       <ContextAudit
                         manifest={parseManifest(message.context_manifest)}
-                        buttonLabel="Show where this came from"
+                        reads={ask.sourcesByMessage?.[Number(message.id)] ?? []}
                       />
-                      <AnswerSources sources={ask.sourcesByMessage?.[Number(message.id)] ?? []} />
-                      <button
-                        type="button"
-                        onClick={() =>
-                          ask.setSaveTarget({
-                            text: message.content,
-                            kind: "chat_excerpt",
-                            sessionId: ask.sessionId,
-                          })
-                        }
-                        className="mt-2 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
-                      >
-                        Save for 1:1
-                      </button>
+                      <div className="mt-1 flex items-center" data-testid="answer-actions">
                       {keep && !ask.pending ? (
 <>
                         <button
@@ -280,7 +267,7 @@ function MessagesTab({ ask, emptyActions }: { ask: AskLasso; emptyActions?: Reac
                               "button",
                             )
                           }
-                          className="ml-3 mt-2 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+                          className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
                         >
                           {KEEP_ANSWER_LABEL}
                         </button>
@@ -315,23 +302,23 @@ function MessagesTab({ ask, emptyActions }: { ask: AskLasso; emptyActions?: Reac
                         ) : null}
                         </>
                       ) : null}
+                        <AnswerMoreMenu
+                          onSave={() =>
+                            ask.setSaveTarget({
+                              text: message.content,
+                              kind: "chat_excerpt",
+                              sessionId: ask.sessionId,
+                            })
+                          }
+                        />
+                      </div>
                     </div>
-                  </>
+                  </AnswerRail>
                 )}
               </div>
             </div>
           );
         })}
-
-        {ask.pending && ask.streamed ? (
-          <div className="nb-conversation-message max-w-none flex-row items-start gap-3">
-            <div className="grid w-7 shrink-0 grid-rows-[28px]">{speakerAvatar("assistant")}</div>
-            <div className="nb-conversation-body w-full flex-1 gap-0 overflow-visible">
-              {speakerName("assistant", new Date())}
-              <MarkdownMessage content={ask.streamed} variant="binder" className="nb-stream" />
-            </div>
-          </div>
-        ) : null}
 
         {ask.pending ? (
           <div className="nb-binder-line flex items-center gap-2">
@@ -343,15 +330,27 @@ function MessagesTab({ ask, emptyActions }: { ask: AskLasso; emptyActions?: Reac
         ) : null}
 
         {ask.pending ? (
-          <div className="nb-binder-inset">
-            <ThinkingTrail
-              items={(ask.pointedNow.length > 0 ? ask.pointedNow : ask.selectedItems).map(
-                (item) => ({ id: item.id, title: item.title }),
-              )}
-              finalPhase="Writing"
-              manifest={ask.liveManifest}
-              lead={ask.pointedNow.length > 0 ? "Reading what you pointed at" : undefined}
-            />
+          <div className="nb-conversation-message max-w-none flex-row items-start gap-3">
+            <div className="grid w-7 shrink-0 grid-rows-[28px]">{speakerAvatar("assistant")}</div>
+            <div className="nb-conversation-body w-full flex-1 gap-0 overflow-visible">
+              {speakerName("assistant", new Date())}
+              <AnswerRail state="working">
+                {ask.streamed ? (
+                  <MarkdownMessage content={ask.streamed} variant="binder" className="nb-stream" />
+                ) : (
+                  <div className="nb-binder-inset">
+                    <ThinkingTrail
+                      items={(ask.pointedNow.length > 0 ? ask.pointedNow : ask.selectedItems).map(
+                        (item) => ({ id: item.id, title: item.title }),
+                      )}
+                      finalPhase="Writing"
+                      manifest={ask.liveManifest}
+                      lead={ask.pointedNow.length > 0 ? "Reading what you pointed at" : undefined}
+                    />
+                  </div>
+                )}
+              </AnswerRail>
+            </div>
           </div>
         ) : null}
 

@@ -3,11 +3,15 @@
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { ContextAudit, ThinkingTrail } from "@/components/reflect/ContextTrail";
+import { readFileSync } from "node:fs";
+
+import { AnswerMoreMenu } from "@/components/reflect/AnswerMoreMenu";
+import { AnswerRail, ContextAudit, ThinkingTrail } from "@/components/reflect/ContextTrail";
 import type { ContextManifest } from "@/lib/context-manifest";
 
 const mocks = vi.hoisted(() => ({ emitClientEvent: vi.fn() }));
 
+vi.mock("@/components/work/ThreadViewerById", () => ({ ThreadViewerById: () => null }));
 vi.mock("@/lib/client-telemetry", () => ({ emitClientEvent: mocks.emitClientEvent }));
 vi.mock("@/components/reflect/LassoThinkingMark", () => ({
   LassoThinkingMark: ({ kind, size, className }: { kind: string; size: number; className?: string }) => (
@@ -145,5 +149,78 @@ describe("ContextAudit", () => {
     expect(screen.queryByRole("heading", { name: "Read" })).toBeNull();
     expect(screen.queryByRole("heading", { name: "Not read" })).toBeNull();
     expect(screen.getByRole("heading", { name: "Also in" })).toBeTruthy();
+  });
+});
+describe("Unit 6 rail and single disclosure", () => {
+  beforeEach(() => setReducedMotion(false));
+  afterEach(() => cleanup());
+
+  it("draws the thinking trail beside the lime working rail", () => {
+    const { container } = render(<ThinkingTrail items={[{ id: "a", title: "A" }]} finalPhase="Writing" />);
+    const rail = container.querySelector(".nb-answer-rail");
+    expect(rail?.getAttribute("data-rail-state")).toBe("working");
+    expect(rail?.querySelector('[data-testid="thinking-trail-rows"]')).toBeTruthy();
+  });
+
+  it("AnswerRail is lime while working and hairline when done", () => {
+    const css = readFileSync("src/styles.css", "utf8");
+    expect(css).toMatch(/\.nb-answer-rail \{\s*border-left: 2px solid var\(--nb-lasso-green\);\s*padding-left: 12px;/);
+    expect(css).toContain('.nb-answer-rail[data-rail-state="done"] { border-left-color: var(--nb-line-hairline); }');
+    const { rerender } = render(<AnswerRail state="working"><p>answer</p></AnswerRail>);
+    expect(screen.getByTestId("answer-rail").getAttribute("data-rail-state")).toBe("working");
+    rerender(<AnswerRail state="done"><p>answer</p></AnswerRail>);
+    expect(screen.getByTestId("answer-rail").getAttribute("data-rail-state")).toBe("done");
+  });
+
+  it("shows an ai_reads depth as the matching READ row detail and appends unmatched reads", () => {
+    const { container } = render(
+      <ContextAudit
+        manifest={manifest}
+        reads={[
+          { id: "read-1", title: "Interview notes", type: "note", source_vendor: null, depth: "full" },
+          { id: "extra-1", title: "Loose memo", type: "document", source_vendor: null, depth: "extract" },
+        ]}
+      />,
+    );
+    expect(container.querySelectorAll("[aria-expanded]")).toHaveLength(1);
+    fireEvent.click(screen.getByRole("button", { expanded: false }));
+    const row = container.querySelector('[data-audit-row="read-1"]');
+    expect(row?.querySelector("[data-audit-detail]")?.textContent).toBe("read in full");
+    const extra = container.querySelector('[data-audit-row="read:extra-1"]');
+    expect(extra?.textContent).toContain("Loose memo");
+    expect(extra?.textContent).toContain("summary only");
+  });
+});
+
+describe("Unit 6 answer footer", () => {
+  it("renders Put on board and holds Save for 1:1 in the More menu", async () => {
+    const onSave = vi.fn();
+    render(
+      <div>
+        <ContextAudit manifest={manifest} />
+        <button type="button">Put on board</button>
+        <AnswerMoreMenu onSave={onSave} />
+      </div>,
+    );
+    expect(document.querySelectorAll("[aria-expanded]").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByRole("button", { name: "Put on board" })).toBeTruthy();
+    expect(screen.queryByText("Save for 1:1")).toBeNull();
+    const trigger = screen.getByRole("button", { name: /More/ });
+    fireEvent.pointerDown(trigger, { button: 0, ctrlKey: false, pointerType: "mouse" });
+    const item = await screen.findByText("Save for 1:1");
+    fireEvent.click(item);
+    expect(onSave).toHaveBeenCalledTimes(1);
+    cleanup();
+  });
+
+  it("AskSurface wires one disclosure, Put on board, and the More menu", () => {
+    const surface = readFileSync("src/components/reflect/AskSurface.tsx", "utf8");
+    expect(surface).not.toContain("AnswerSources");
+    expect(surface).not.toContain("Show where this came from");
+    expect(surface.match(/<ContextAudit/g)).toHaveLength(1);
+    expect(surface).toContain("{KEEP_ANSWER_LABEL}");
+    expect(surface).toContain("<AnswerMoreMenu");
+    expect(surface).toContain('<AnswerRail state="working">');
+    expect(surface).toContain('<AnswerRail state="done">');
   });
 });

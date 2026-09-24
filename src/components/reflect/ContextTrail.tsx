@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 
 import { LassoThinkingMark } from "@/components/reflect/LassoThinkingMark";
+import { ThreadViewerById } from "@/components/work/ThreadViewerById";
 import { Button } from "@/components/ui/button";
 import { emitClientEvent } from "@/lib/client-telemetry";
 import type { ContextManifest, ManifestKind } from "@/lib/context-manifest";
+import type { ContextSource } from "@/lib/reflect-shared";
 import { bucket } from "@/lib/telemetry-shared";
 
 /** iOS and macOS honour this; we honour it too. */
@@ -113,7 +115,7 @@ export function ThinkingTrail({
 
   void lead;
   return (
-    <div className="text-muted-foreground" aria-live="polite">
+    <div className="nb-answer-rail text-muted-foreground" data-rail-state="working" aria-live="polite">
       {manifest ? (
         <p className="mb-2 text-[13px] leading-5">
           Read {manifest.items.length} pieces of work
@@ -147,28 +149,77 @@ export function ThinkingTrail({
   );
 }
 
+/**
+ * One rail for the life of an answer: lime while Lasso works, hairline once
+ * the answer is in. Children (trail, answer, footer) sit beside it.
+ */
+export function AnswerRail({ state, children }: { state: "working" | "done"; children: React.ReactNode }) {
+  return (
+    <div className="nb-answer-rail" data-rail-state={state} data-testid="answer-rail">
+      {children}
+    </div>
+  );
+}
+
+/** How deeply a piece of work was read, as a short row detail. */
+export const READ_DEPTH_DETAIL: Record<ContextSource["depth"], string> = {
+  full: "read in full",
+  extract: "summary only",
+  catalogue: "listed, not opened",
+  unreadable: "could not be read",
+};
+
+type AuditReadRow = { key: string; title: string; kind: ManifestKind; detail: string; openId: string | null };
+
+function auditReadRows(manifest: ContextManifest, reads: ContextSource[]): AuditReadRow[] {
+  const byId = new Map(reads.map((read) => [read.id, read]));
+  const matched = new Set<string>();
+  const rows: AuditReadRow[] = manifest.items.map((item) => {
+    const read = item.id ? byId.get(item.id) : undefined;
+    if (read) matched.add(read.id);
+    return {
+      key: item.id || item.title,
+      title: item.title,
+      kind: item.kind,
+      detail: read ? READ_DEPTH_DETAIL[read.depth] : item.detail,
+      openId: read ? read.id : null,
+    };
+  });
+  for (const read of reads) {
+    if (matched.has(read.id)) continue;
+    rows.push({ key: `read:${read.id}`, title: read.title, kind: "item", detail: READ_DEPTH_DETAIL[read.depth], openId: read.id });
+  }
+  return rows;
+}
+
 function AuditGlyph({ kind }: { kind: ManifestKind | "brief" | "checks" }) {
   return <TrailGlyph kind={kind} />;
 }
 
 /** After the answer: a closed disclosure line backed by the persisted manifest. */
 export function ContextAudit({
-  manifest,
+  manifest: givenManifest,
   buttonLabel,
+  reads = [],
 }: {
   manifest: ContextManifest | null;
   buttonLabel?: string;
+  /** What the answer read and how deeply. Merged into the READ group. */
+  reads?: ContextSource[];
 }) {
   const [open, setOpen] = useState(false);
+  const [openItem, setOpenItem] = useState<string | null>(null);
   const reduced = useReducedMotion();
-  if (!manifest) return null;
-  const total = manifest.items.length + (manifest.brief_included ? 1 : 0) + (manifest.firm_checks_applied > 0 ? 1 : 0) + manifest.excluded.length;
+  if (!givenManifest && reads.length === 0) return null;
+  const manifest: ContextManifest = givenManifest ?? { engagement: null, brief_included: false, firm_checks_applied: 0, items: [], excluded: [], assembled_at: "" };
+  const readRows = auditReadRows(manifest, reads);
+  const total = readRows.length + (manifest.brief_included ? 1 : 0) + (manifest.firm_checks_applied > 0 ? 1 : 0) + manifest.excluded.length;
 
   const toggle = () => {
     setOpen((current) => {
       if (!current) {
         emitClientEvent("reflect.trail_opened", {
-          read_band: bucket(manifest.items.length),
+          read_band: bucket(readRows.length),
           also_in_band: bucket((manifest.brief_included ? 1 : 0) + (manifest.firm_checks_applied > 0 ? 1 : 0)),
           not_read_band: bucket(manifest.excluded.length),
         });
@@ -186,11 +237,21 @@ export function ContextAudit({
       </Button>
       {open ? (
         <div className="space-y-4 pb-1 pt-3 text-[13px]">
-          {manifest.items.length > 0 ? (
+          {readRows.length > 0 ? (
             <section data-audit-group="read">
               <h4 className="mb-2 font-mono text-[8.5px] uppercase text-muted-foreground tracking-[0.08em]">Read</h4>
               <div className="space-y-2">
-                {manifest.items.map((item) => <p key={item.id || item.title} className="flex min-w-0 items-center"><AuditGlyph kind={item.kind} /><span className="ml-[9px] min-w-0 break-words">{item.title}</span>{item.detail ? <span className="ml-[7px] text-[12px] text-muted-foreground">{item.detail}</span> : null}</p>)}
+                {readRows.map((row) => (
+                  <p key={row.key} className="flex min-w-0 items-center" data-audit-row={row.key}>
+                    <AuditGlyph kind={row.kind} />
+                    {row.openId ? (
+                      <button type="button" onClick={() => setOpenItem(row.openId)} className="ml-[9px] min-w-0 break-words text-left hover:underline">{row.title}</button>
+                    ) : (
+                      <span className="ml-[9px] min-w-0 break-words">{row.title}</span>
+                    )}
+                    {row.detail ? <span className="ml-[7px] text-[12px] text-muted-foreground" data-audit-detail>{row.detail}</span> : null}
+                  </p>
+                ))}
               </div>
             </section>
           ) : null}
@@ -214,6 +275,7 @@ export function ContextAudit({
           {manifest.assembled_at ? <p className="font-mono text-[10px] uppercase text-muted-foreground opacity-60 tracking-[0.04em]">Assembled {new Date(manifest.assembled_at).toLocaleString("en-GB")}</p> : null}
         </div>
       ) : null}
+      {openItem ? <ThreadViewerById workItemId={openItem} onClose={() => setOpenItem(null)} /> : null}
     </div>
   );
 }
