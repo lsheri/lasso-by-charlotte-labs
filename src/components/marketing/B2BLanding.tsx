@@ -20,6 +20,18 @@ export const HERO_H1 = "Your firm bought AI. The human judgment, process, and th
 const BEAT_KEYS = ["thinking", "source", "answer", "share"] as const;
 
 type UseCaseKey = "bring_work_in" | "every_number" | "check_sources" | "find_lost_idea" | "share_deliverable" | "reasoning_stays";
+type AssetPointer = { url: string };
+type AssetModule = { default?: AssetPointer } | AssetPointer;
+
+const useCaseAssetModules = import.meta.glob("@/assets/use-*.asset.json", { eager: true }) as Record<string, AssetModule>;
+
+function useCaseAssetUrl(filename: string, fallback: string) {
+  const match = Object.entries(useCaseAssetModules).find(([path]) => path.endsWith(`/${filename}.asset.json`));
+  const module = match?.[1];
+  const pointer = module && "default" in module ? module.default : module;
+  return pointer?.url ?? fallback;
+}
+
 const USE_CASES: { key: UseCaseKey; file: string; title: string; body: string }[] = [
   { key: "bring_work_in", file: "use-bring-work-in", title: "Your chats, docs and decks on one board.", body: "Claude, ChatGPT, Gemini, Granola and Drive land as cards. Drag them into workstreams. No setup." },
   { key: "every_number", file: "use-every-number-has-a-source", title: "Every number has a source.", body: "Ask where the figure on slide 3 came from. Get the chat, the turn, and the model it came out of." },
@@ -53,7 +65,8 @@ function UseCaseCard({ card, onPlayed }: { card: (typeof USE_CASES)[number]; onP
   const [posterOk, setPosterOk] = useState(false);
   const [videoFailed, setVideoFailed] = useState(false);
   const [playing, setPlaying] = useState(false);
-  const poster = `/videos/${card.file}-poster.jpg`;
+  const poster = useCaseAssetUrl(`${card.file}-poster.jpg`, `/videos/${card.file}-poster.jpg`);
+  const clip = useCaseAssetUrl(`${card.file}.mp4`, `/videos/${card.file}.mp4`);
 
   useEffect(() => {
     const probe = new Image();
@@ -92,7 +105,7 @@ function UseCaseCard({ card, onPlayed }: { card: (typeof USE_CASES)[number]; onP
           <video
             ref={videoRef}
             className="landing-usecase-video"
-            src={`/videos/${card.file}.mp4`}
+            src={clip}
             muted
             playsInline
             preload="none"
@@ -357,7 +370,7 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
           <section id="beats" className="landing-walkthrough mx-auto mt-24 max-w-[1320px] px-4 md:px-6" aria-label="How Lasso works">
             <div className="landing-section-head">
               <p className="micro-label">How it works</p>
-              <h2 className="pencil-title">The deliverable stays. The questions walk past it.</h2>
+              <h2 className="pencil-title">Deliverables you can defend to a client, a partner, or a board.</h2>
             </div>
             <DeckWalkthrough onActiveChange={setActiveBeat} />
           </section>
@@ -384,7 +397,7 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
           </section>
 
           <section ref={closeRef} className="landing-close mx-auto max-w-4xl px-6 md:px-10" data-resolved={closeResolved} onPointerDown={() => { if (window.matchMedia("(max-width: 767px)").matches) setCloseResolved(true); }}>
-            <h2 className="landing-close-line1 landing-close-wordmark">Deliverables you can defend to a client, a partner, or a board.</h2>
+            <h2 className="landing-close-line1 landing-close-wordmark">Every claim, traced to the work behind it.</h2>
             <div className="landing-close-ink-wrap">
               <p className="landing-close-line2">The work, judgment, thinking. Visible.</p>
               <span className="landing-close-particles landing-close-particles-a" aria-hidden="true" />

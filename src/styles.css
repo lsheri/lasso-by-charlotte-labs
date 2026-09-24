@@ -5460,9 +5460,15 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 }
 
 /* Unit 10: hero video, deck-pinned walkthrough, use cases, trust row. */
-.landing-hero-media { margin: 0; padding: 28px; border-radius: 8px; background-image: radial-gradient(circle, var(--nb-line-hairline) 1px, transparent 1px); background-size: 14px 14px; }
-.landing-hero-video-box { position: relative; aspect-ratio: 16 / 9; overflow: hidden; border: 1px solid var(--nb-line-hairline); border-radius: 8px; background: var(--nb-paper); }
-.landing-hero-video { display: block; width: 100%; height: 100%; object-fit: cover; }
+.landing-hero-media { width: 100%; max-width: 1200px; aspect-ratio: 2 / 1; margin: 0 auto; padding: 0; border: 0; border-radius: 0; background: none; }
+.landing-hero-video-box { position: relative; width: 100%; aspect-ratio: 2 / 1; overflow: hidden; border: 0; border-radius: 0; background: none; -webkit-mask-image: linear-gradient(to right, transparent, black 48px, black calc(100% - 48px), transparent); mask-image: linear-gradient(to right, transparent, black 48px, black calc(100% - 48px), transparent); }
+@supports (mask-composite: intersect) {
+  .landing-hero-video-box { mask-image: linear-gradient(to right, transparent, black 48px, black calc(100% - 48px), transparent), linear-gradient(to bottom, transparent, black 32px, black calc(100% - 32px), transparent); mask-composite: intersect; }
+}
+@supports (-webkit-mask-composite: source-in) {
+  .landing-hero-video-box { -webkit-mask-image: linear-gradient(to right, transparent, black 48px, black calc(100% - 48px), transparent), linear-gradient(to bottom, transparent, black 32px, black calc(100% - 32px), transparent); -webkit-mask-composite: source-in; }
+}
+.landing-hero-video { display: block; width: 100%; height: 100%; object-fit: contain; }
 .landing-hero-play { position: absolute; inset: 0; margin: auto; width: 64px; height: 64px; display: grid; place-items: center; border: 1px solid var(--nb-line-hairline); border-radius: 999px; background: var(--nb-paper); color: var(--foreground); box-shadow: var(--shadow-card); }
 .landing-hero-play svg { width: 22px; height: 22px; fill: currentColor; }
 .landing-hero-caption { margin-top: 10px; color: var(--muted-foreground); font-family: var(--font-mono); font-size: 11.5px; text-align: center; }
@@ -5490,7 +5496,7 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 .lw-phone-slide .landing-story-hl { animation-delay: .2s; }
 .lw-slide-in { animation: lw-slide-in .35s ease both; }
 @keyframes lw-slide-in { from { opacity: 0; } to { opacity: 1; } }
-.lw-lit-sources { display: flex; gap: 10px; }
+.lw-lit-sources { display: flex; gap: 10px; margin-top: 42px; }
 .lw-lit-sources .landing-story-source { --x: 0px; --r: 0deg; flex: 1 1 0; max-width: none; margin-top: 0; transform: none; animation: lw-slide-in .35s ease both; }
 .lw-word-stream { position: absolute; inset: 0; z-index: 8; overflow: visible; pointer-events: none; }
 .lw-word-swirl { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
@@ -5517,8 +5523,14 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 .landing-trust-item p { margin-top: 6px; color: var(--muted-foreground); font-size: 14px; line-height: 1.45; }
 
 @media (max-width: 767px) {
-  .landing-hero-media { margin-inline: calc(50% - 50vw); padding: 0; border-radius: 0; background: none; }
-  .landing-hero-video-box { aspect-ratio: 16 / 9; border-inline: 0; border-radius: 0; }
+  .landing-hero-media { width: 100vw; max-width: none; aspect-ratio: 2 / 1; margin-inline: calc(50% - 50vw); padding: 0; border-radius: 0; background: none; }
+  .landing-hero-video-box { aspect-ratio: 2 / 1; -webkit-mask-image: linear-gradient(to right, transparent, black 24px, black calc(100% - 24px), transparent); mask-image: linear-gradient(to right, transparent, black 24px, black calc(100% - 24px), transparent); }
+  @supports (mask-composite: intersect) {
+    .landing-hero-video-box { mask-image: linear-gradient(to right, transparent, black 24px, black calc(100% - 24px), transparent), linear-gradient(to bottom, transparent, black 24px, black calc(100% - 24px), transparent); mask-composite: intersect; }
+  }
+  @supports (-webkit-mask-composite: source-in) {
+    .landing-hero-video-box { -webkit-mask-image: linear-gradient(to right, transparent, black 24px, black calc(100% - 24px), transparent), linear-gradient(to bottom, transparent, black 24px, black calc(100% - 24px), transparent); -webkit-mask-composite: source-in; }
+  }
   .landing-hero-caption { padding-inline: 16px; }
   .lw-grid { display: block; }
   .lw-stage { display: none; }
