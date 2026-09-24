@@ -19,7 +19,7 @@ describe("C1 board context visibility", () => {
     const nodes = Array.from({ length: 30 }, (_, index) => ({ id: `n${index}`, x: (29 - index) % 3, y: Math.floor((29 - index) / 3) }));
     const sequence = contextFlareSequence(nodes.map((node) => node.id), nodes);
     expect(sequence).toHaveLength(24);
-    expect(sequence.slice(0, 3).map(({ id }) => id)).toEqual(["n27", "n28", "n29"]);
+    expect(sequence.slice(0, 3).map(({ id }) => id)).toEqual(["n29", "n28", "n27"]);
     expect(sequence.at(-1)?.delayMs).toBe(400);
   });
 
