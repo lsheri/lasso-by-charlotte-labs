@@ -2,6 +2,7 @@ import { type ReactNode, useLayoutEffect, useRef, useState } from "react";
 
 import audienceImage from "@/assets/landing-audience.jpg";
 import { VendorMark, type VendorKey } from "@/components/marketing/VendorMark";
+import { BrandLogo } from "@/components/connectors/BrandLogo";
 
 export function ScaledStage({
   width,
@@ -39,7 +40,7 @@ export function ScaledStage({
   );
 }
 
-export type VendorGlyph = "claude" | "chatgpt" | "gemini" | "granola";
+export type VendorGlyph = "claude" | "chatgpt" | "gemini" | "granola" | "lovable";
 
 type SourceCard = {
   vendor: VendorGlyph;
@@ -52,7 +53,14 @@ const SOURCES: SourceCard[] = [
   { vendor: "claude", label: "Claude · 14 Aug", title: "Audience strategy", excerpt: "The rule-change moments created the strongest response." },
   { vendor: "chatgpt", label: "ChatGPT · 21 Aug", title: "Channel model", excerpt: "Short-form clips carried attention beyond event day." },
   { vendor: "gemini", label: "Gemini · 9 Sep", title: "Commercial scenario", excerpt: "An 18% bundle uplift held in the illustrative model." },
+  { vendor: "granola", label: "Granola · 3 Sep", title: "Client call transcript", excerpt: "The client asked which audience to prioritise first." },
+  { vendor: "lovable", label: "Lovable · 12 Sep", title: "Prototype build", excerpt: "A clickable bundle page made the offer concrete." },
 ];
+
+function SourceGlyph({ vendor, size }: { vendor: VendorGlyph; size: number }) {
+  if (vendor === "granola") return <BrandLogo brand="granola" size={size} />;
+  return <VendorMark vendor={vendor} size={size} />;
+}
 
 export const STORY_QUESTIONS = [
   "Which conversations shaped the recommendation?",
@@ -135,7 +143,7 @@ function DeckSlide({ index }: { index: number }) {
 function SourceCardView({ card, index, active }: { card: SourceCard; index: number; active: number }) {
   return (
     <article className="landing-story-source" data-source-active={active === index || (active === 3 && index < 2)}>
-      <header>{card.vendor === "granola" ? <span className="landing-story-granola" aria-hidden="true">G</span> : <VendorMark vendor={card.vendor} size={24} />}<span>{card.label}</span></header>
+      <header><SourceGlyph vendor={card.vendor} size={24} /><span>{card.label}</span></header>
       <h3>{card.title}</h3>
       <p>{card.excerpt}</p>
     </article>
@@ -147,6 +155,8 @@ function ConversationTunnel() {
     { vendor: "claude" as const, excerpt: "Rule-change moments…" },
     { vendor: "chatgpt" as const, excerpt: "Short-form clips…" },
     { vendor: "gemini" as const, excerpt: "18% bundle uplift…" },
+    { vendor: "granola" as const, excerpt: "Which audience first…" },
+    { vendor: "lovable" as const, excerpt: "Clickable bundle page…" },
   ];
 
   return (
@@ -158,7 +168,7 @@ function ConversationTunnel() {
       <div className="landing-story-vortex-streams"><i /><i /><i /></div>
       {fragments.map((fragment, index) => (
         <div className="landing-story-vortex-fragment" data-fragment={index + 1} key={fragment.vendor}>
-          <VendorMark vendor={fragment.vendor} size={18} />
+          <SourceGlyph vendor={fragment.vendor} size={18} />
           <span>{fragment.excerpt}</span>
         </div>
       ))}
@@ -204,6 +214,15 @@ export function HeroMotion({ activeSlide = 0, onSlideChange }: { activeSlide?: n
         </section>
 
         <ConversationTunnel />
+        <div className="landing-story-reach" aria-hidden="true" key={`reach-${activeSlide}`}>
+          <div className="landing-story-reach-stream" />
+          {SOURCES.map((card, index) => (
+            <div className="landing-story-reach-word" data-reach={index + 1} key={card.vendor}>
+              <SourceGlyph vendor={card.vendor} size={12} />
+              <span>{card.title}</span>
+            </div>
+          ))}
+        </div>
 
         <section className="landing-story-deck" aria-label="Four-slide illustrative client deck">
           <div className="landing-story-deck-bar"><span>Illustrative client recommendation</span><small>4 slides</small></div>
@@ -216,6 +235,9 @@ export function HeroMotion({ activeSlide = 0, onSlideChange }: { activeSlide?: n
         </section>
 
         <div className="landing-story-answer" key={question}>
+          <svg className="landing-story-doodle" viewBox="0 0 400 520" preserveAspectRatio="none" aria-hidden="true">
+            <path pathLength={1} d="M206 14C318 10 392 70 390 214c-2 150-40 282-196 292C58 514 10 420 12 262 14 106 70 20 214 22c40 1 74 8 104 22" />
+          </svg>
           <div className="landing-story-question">
             <p className="landing-story-column-label">{speaker}</p>
             <blockquote>{question}</blockquote>
@@ -223,7 +245,11 @@ export function HeroMotion({ activeSlide = 0, onSlideChange }: { activeSlide?: n
           <div className="landing-story-response">
             <p className="landing-story-response-label">Lasso answers</p>
             <div className="landing-story-answer-path"><i /><span>{path}</span></div>
-            <p className="landing-story-answer-copy">{answer}</p>
+            <p className="landing-story-answer-copy" aria-label={answer}>
+              {answer.split(" ").map((word, index) => (
+                <span aria-hidden="true" key={`${word}-${index}`} style={{ animationDelay: `${900 + index * 70}ms` }}>{word} </span>
+              ))}
+            </p>
           </div>
         </div>
       </div>
