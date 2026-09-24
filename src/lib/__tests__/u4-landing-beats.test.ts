@@ -89,3 +89,11 @@ describe("Unit 8 story system", () => {
     expect(page).toContain("dims: { placement }");
   });
 });
+
+describe("Unit 8 placement dim", () => {
+  it("keeps placement on the pilot CTA event", async () => {
+    const { guardEventDims } = await import("@/lib/event-dim-allowlist");
+    const kept = guardEventDims("landing.pilot_cta_clicked", { placement: "header" }) as Record<string, unknown>;
+    expect(kept).toMatchObject({ placement: "header" });
+  });
+});
