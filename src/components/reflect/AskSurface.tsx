@@ -18,6 +18,7 @@ import { parseManifest } from "@/lib/context-manifest";
 import { ArtifactNote, SourceMark } from "@/components/work/SourceMark";
 import { TypeBadge } from "@/components/work/TypeIcon";
 import { useAnswerKeep } from "@/components/reflect/answer-keep-context";
+import type { KeptAnswer } from "@/components/reflect/answer-keep-context";
 import { ANSWER_DRAG_MIME, KEEP_ANSWER_LABEL } from "@/lib/answer-card";
 import type { AskTab } from "@/components/reflect/ask-dock-state";
 import type { AskLasso } from "@/components/reflect/use-ask-lasso";
@@ -82,6 +83,52 @@ export function AskTabs({
 
 /** True when the chat's scope was narrowed by cards picked on the board. */
 export const AskBoardPickedContext = createContext(false);
+
+export function AnswerKeepControl({
+  answer,
+  keep,
+  canDrag,
+}: {
+  answer: KeptAnswer;
+  keep: (answer: KeptAnswer, via?: "button" | "drag") => void;
+  canDrag: boolean;
+}) {
+  return (
+    <div className="inline-flex items-stretch">
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={() => keep(answer, "button")}
+        className={`nb-put-on-board h-8 rounded-l-[var(--radius-md)] border-graphite bg-background px-3 font-sans text-[13px] font-normal text-foreground shadow-none hover:border-graphite hover:bg-secondary focus-visible:z-10 ${canDrag ? "rounded-r-none" : "rounded-r-[var(--radius-md)]"}`}
+      >
+        <GraphiteIcon name="example-board" size={16} />
+        {KEEP_ANSWER_LABEL}
+      </Button>
+      {canDrag ? (
+        <span
+          role="button"
+          tabIndex={-1}
+          draggable
+          aria-label="Drag onto the board"
+          title="Drag onto the board"
+          data-testid="answer-drag-grip"
+          onDragStart={(event) => {
+            event.dataTransfer.setData(ANSWER_DRAG_MIME, JSON.stringify(answer));
+            event.dataTransfer.effectAllowed = "copy";
+            document.body.dataset["answerDrag"] = "true";
+          }}
+          onDragEnd={() => {
+            delete document.body.dataset["answerDrag"];
+          }}
+          className="inline-flex h-8 w-8 cursor-grab items-center justify-center rounded-r-[var(--radius-md)] border border-l-0 border-graphite bg-background text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground active:cursor-grabbing"
+        >
+          <GraphiteIcon name="drag-handle" size={14} />
+        </span>
+      ) : null}
+    </div>
+  );
+}
 
 /** The scope chip: what Lasso will read on the next message. */
 export function AskScopeChip({ ask, block, workstream }: { ask: AskLasso; block?: boolean; workstream?: { name: string; ids: string[] } | null }) {
@@ -251,59 +298,21 @@ function MessagesTab({ ask, emptyActions }: { ask: AskLasso; emptyActions?: Reac
                         manifest={parseManifest(message.context_manifest)}
                         reads={ask.sourcesByMessage?.[Number(message.id)] ?? []}
                       />
-                      <div className="mt-1 flex items-center" data-testid="answer-actions">
-                      {keep && !ask.pending ? (
-<>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            keep(
-                              {
-                                messageId: Number(message.id),
-                                text: message.content,
-                                reads: (ask.sourcesByMessage?.[Number(message.id)] ?? []).map((source) => ({
-                                  id: source.id,
-                                  depth: source.depth,
-                                })),
-                              },
-                              "button",
-                            )
-                          }
-                          className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
-                        >
-                          {KEEP_ANSWER_LABEL}
-                        </button>
-                        {canDragAnswer ? (
-                          <span
-                            role="button"
-                            tabIndex={-1}
-                            draggable
-                            aria-label="Drag onto the board"
-                            title="Drag onto the board"
-                            data-testid="answer-drag-grip"
-                            onDragStart={(event) => {
-                              const payload = {
-                                messageId: Number(message.id),
-                                text: message.content,
-                                reads: (ask.sourcesByMessage?.[Number(message.id)] ?? []).map((source) => ({
-                                  id: source.id,
-                                  depth: source.depth,
-                                })),
-                              };
-                              event.dataTransfer.setData(ANSWER_DRAG_MIME, JSON.stringify(payload));
-                              event.dataTransfer.effectAllowed = "copy";
-                              document.body.dataset["answerDrag"] = "true";
+                      <div className="mt-1 flex items-center gap-1" data-testid="answer-actions">
+                        {keep && !ask.pending ? (
+                          <AnswerKeepControl
+                            answer={{
+                              messageId: Number(message.id),
+                              text: message.content,
+                              reads: (ask.sourcesByMessage?.[Number(message.id)] ?? []).map((source) => ({
+                                id: source.id,
+                                depth: source.depth,
+                              })),
                             }}
-                            onDragEnd={() => {
-                              delete document.body.dataset["answerDrag"];
-                            }}
-                            className="ml-1 inline-flex cursor-grab items-center align-middle text-muted-foreground transition-colors hover:text-foreground active:cursor-grabbing"
-                          >
-                            <GraphiteIcon name="drag-handle" size={14} />
-                          </span>
+                            keep={keep}
+                            canDrag={canDragAnswer}
+                          />
                         ) : null}
-                        </>
-                      ) : null}
                         <AnswerMoreMenu
                           onSave={() =>
                             ask.setSaveTarget({

@@ -117,6 +117,12 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
+@media (pointer: coarse) {
+  .nb-put-on-board {
+    min-height: 44px;
+  }
+}
+
 @layer nb {
 :root {
   --radius: 8px;

@@ -57,7 +57,8 @@ describe("B4 put on board", () => {
   it("shows the grip only where the keep action exists", () => {
     expect(surface).toContain("const canDragAnswer = !!keep && !isMobile && !coarse;");
     expect(surface).toContain('aria-label="Drag onto the board"');
-    expect(surface).toContain("{canDragAnswer ? (");
+    expect(surface).toContain("canDrag={canDragAnswer}");
+    expect(surface).toContain("{canDrag ? (");
     expect(read("src/styles.css")).toContain('body[data-answer-drag="true"] .canvas-lab-surface iframe { pointer-events: none; }');
   });
 

@@ -199,6 +199,24 @@ function AuditGlyph({ kind }: { kind: ManifestKind | "brief" | "checks" }) {
   return <TrailGlyph kind={kind} />;
 }
 
+export function scopeWhyLine(scope: NonNullable<ContextManifest["scope"]>): string {
+  if (scope.source === "board_pick") return `You picked ${scope.picked ?? 0} on the board`;
+  if (scope.source === "board_pick_brief_only") return "Nothing you picked has work to read, so only the brief";
+  if (scope.source === "picker") return "Your choice in the work list";
+  if (scope.source === "pointed") return "What you pointed at with @";
+  if (scope.source === "workstream") return "One workstream";
+  return "Nothing picked: everything in this engagement";
+}
+
+export function scopeClosedTag(scope: NonNullable<ContextManifest["scope"]>): string | null {
+  if (scope.source === "board_pick") return `YOU PICKED ${scope.picked ?? 0}`;
+  if (scope.source === "board_pick_brief_only") return "BRIEF ONLY";
+  if (scope.source === "picker") return "YOUR LIST";
+  if (scope.source === "pointed") return "@";
+  if (scope.source === "workstream") return "WORKSTREAM";
+  return null;
+}
+
 /** After the answer: a closed disclosure line backed by the persisted manifest. */
 export function ContextAudit({
   manifest: givenManifest,
@@ -217,6 +235,7 @@ export function ContextAudit({
   const manifest: ContextManifest = givenManifest ?? { engagement: null, brief_included: false, firm_checks_applied: 0, items: [], excluded: [], assembled_at: "" };
   const readRows = auditReadRows(manifest, reads);
   const total = readRows.length + (manifest.brief_included ? 1 : 0) + (manifest.firm_checks_applied > 0 ? 1 : 0) + manifest.excluded.length;
+  const closedTag = manifest.scope ? scopeClosedTag(manifest.scope) : null;
 
   const toggle = () => {
     setOpen((current) => {
@@ -237,9 +256,11 @@ export function ContextAudit({
         <span aria-hidden className={`inline-block text-[11px] text-muted-foreground transition-transform duration-200 ${open ? "rotate-90" : ""}`}>›</span>
         <span className="min-w-0 truncate">{buttonLabel ?? "Read what went into this response"}</span>
         <span className="font-mono text-[10.5px] text-muted-foreground">{total}</span>
+        {closedTag ? <span className="font-mono text-[9px] uppercase text-muted-foreground" data-testid="scope-closed-tag">{closedTag}</span> : null}
       </Button>
       {open ? (
         <div className="space-y-4 pb-1 pt-3 text-[13px]">
+          {manifest.scope ? <p data-testid="scope-why">{scopeWhyLine(manifest.scope)}</p> : null}
           {readRows.length > 0 ? (
             <section data-audit-group="read">
               <h4 className="mb-2 font-mono text-[8.5px] uppercase text-muted-foreground tracking-[0.08em]">Read</h4>

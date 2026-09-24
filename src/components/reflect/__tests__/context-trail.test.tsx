@@ -6,7 +6,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
 
 import { AnswerMoreMenu } from "@/components/reflect/AnswerMoreMenu";
+import { AnswerKeepControl } from "@/components/reflect/AskSurface";
 import { AnswerRail, ContextAudit, ThinkingTrail } from "@/components/reflect/ContextTrail";
+import { ANSWER_DRAG_MIME } from "@/lib/answer-card";
 import type { ContextManifest } from "@/lib/context-manifest";
 
 const mocks = vi.hoisted(() => ({ emitClientEvent: vi.fn() }));
@@ -150,6 +152,28 @@ describe("ContextAudit", () => {
     expect(screen.queryByRole("heading", { name: "Not read" })).toBeNull();
     expect(screen.getByRole("heading", { name: "Also in" })).toBeTruthy();
   });
+
+  it.each([
+    ["board_pick", 2, "You picked 2 on the board", "YOU PICKED 2"],
+    ["board_pick_brief_only", 0, "Nothing you picked has work to read, so only the brief", "BRIEF ONLY"],
+    ["picker", 2, "Your choice in the work list", "YOUR LIST"],
+    ["pointed", 1, "What you pointed at with @", "@"],
+    ["workstream", 3, "One workstream", "WORKSTREAM"],
+    ["all", null, "Nothing picked: everything in this engagement", null],
+  ] as const)("explains %s scope and applies its closed tag rule", (source, picked, why, tag) => {
+    render(<ContextAudit manifest={{ ...manifest, scope: { source, picked } }} />);
+    if (tag) expect(screen.getByTestId("scope-closed-tag").textContent).toBe(tag);
+    else expect(screen.queryByTestId("scope-closed-tag")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { expanded: false }));
+    expect(screen.getByTestId("scope-why").textContent).toBe(why);
+  });
+
+  it("leaves old manifests without a reason line or tag", () => {
+    render(<ContextAudit manifest={manifest} />);
+    expect(screen.queryByTestId("scope-closed-tag")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { expanded: false }));
+    expect(screen.queryByTestId("scope-why")).toBeNull();
+  });
 });
 describe("Unit 6 rail and single disclosure", () => {
   beforeEach(() => setReducedMotion(false));
@@ -193,6 +217,26 @@ describe("Unit 6 rail and single disclosure", () => {
 });
 
 describe("Unit 6 answer footer", () => {
+  it("keeps an answer from the labeled icon button", () => {
+    const keep = vi.fn();
+    const answer = { messageId: 7, text: "Answer", reads: [{ id: "work-1", depth: "full" }] };
+    render(<AnswerKeepControl answer={answer} keep={keep} canDrag={false} />);
+    const button = screen.getByRole("button", { name: "Put on board" });
+    expect(button.querySelector('[data-icon="example-board"]')).toBeTruthy();
+    fireEvent.click(button);
+    expect(keep).toHaveBeenCalledWith(answer, "button");
+    cleanup();
+  });
+
+  it("keeps the same answer drag payload on the split grip", () => {
+    const answer = { messageId: 7, text: "Answer", reads: [{ id: "work-1", depth: "full" }] };
+    const setData = vi.fn();
+    render(<AnswerKeepControl answer={answer} keep={vi.fn()} canDrag />);
+    fireEvent.dragStart(screen.getByTestId("answer-drag-grip"), { dataTransfer: { setData, effectAllowed: "none" } });
+    expect(setData).toHaveBeenCalledWith(ANSWER_DRAG_MIME, JSON.stringify(answer));
+    cleanup();
+  });
+
   it("renders Put on board and holds Save for 1:1 in the More menu", async () => {
     const onSave = vi.fn();
     render(
