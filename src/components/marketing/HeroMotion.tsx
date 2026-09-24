@@ -127,12 +127,13 @@ function DeckFrame({ step, stepIndex }: { step: StoryStep; stepIndex: number }) 
 
 /**
  * Unit 10: the deck-pinned walkthrough. Four steps stacked on the left; the
- * step nearest the viewport centre drives the sticky deck on the right.
- * Scroll-driven with IntersectionObserver. No timers.
+ * visible step body nearest the viewport centre drives the sticky deck on the
+ * right. Scroll measurements are limited to one per animation frame.
  */
 export function DeckWalkthrough({ onActiveChange }: { onActiveChange?: (index: number) => void }) {
   const [active, setActive] = useState(0);
-  const stepRefs = useRef<(HTMLElement | null)[]>([]);
+  const activeRef = useRef(0);
+  const stepBodyRefs = useRef<(HTMLDivElement | null)[]>([]);
   const gridRef = useRef<HTMLDivElement | null>(null);
   const stickyRef = useRef<HTMLDivElement | null>(null);
   const overlayRef = useRef<HTMLDivElement | null>(null);
@@ -141,16 +142,37 @@ export function DeckWalkthrough({ onActiveChange }: { onActiveChange?: (index: n
   report.current = onActiveChange;
 
   useEffect(() => {
-    if (typeof IntersectionObserver === "undefined") return;
-    const observer = new IntersectionObserver((entries) => {
-      for (const entry of entries) {
-        if (!entry.isIntersecting) continue;
-        const index = stepRefs.current.indexOf(entry.target as HTMLElement);
-        if (index >= 0) setActive(index);
+    let frame: number | null = null;
+    const measure = () => {
+      frame = null;
+      const viewportCentre = window.innerHeight / 2;
+      let nearestIndex = activeRef.current;
+      let nearestDistance = Number.POSITIVE_INFINITY;
+      stepBodyRefs.current.forEach((body, index) => {
+        if (!body) return;
+        const rect = body.getBoundingClientRect();
+        const distance = Math.abs(rect.top + rect.height / 2 - viewportCentre);
+        if (distance < nearestDistance) {
+          nearestDistance = distance;
+          nearestIndex = index;
+        }
+      });
+      if (nearestIndex !== activeRef.current) {
+        activeRef.current = nearestIndex;
+        setActive(nearestIndex);
       }
-    }, { rootMargin: "-50% 0px -50% 0px", threshold: 0 });
-    for (const el of stepRefs.current) if (el) observer.observe(el);
-    return () => observer.disconnect();
+    };
+    const requestMeasure = () => {
+      if (frame === null) frame = window.requestAnimationFrame(measure);
+    };
+    measure();
+    window.addEventListener("scroll", requestMeasure, { passive: true });
+    window.addEventListener("resize", requestMeasure);
+    return () => {
+      window.removeEventListener("scroll", requestMeasure);
+      window.removeEventListener("resize", requestMeasure);
+      if (frame !== null) window.cancelAnimationFrame(frame);
+    };
   }, []);
 
   useEffect(() => { report.current?.(active); }, [active]);
@@ -292,16 +314,18 @@ export function DeckWalkthrough({ onActiveChange }: { onActiveChange?: (index: n
 
   return <div ref={gridRef} className="lw-grid" data-active-step={active}>
     <div className="lw-steps">
-      {STORY.map((step, index) => <article key={step.question} ref={(el) => { stepRefs.current[index] = el; }} className="lw-step" data-story-index={index} data-active={index === active}>
-        <p className="lw-role-label"><span>{ROLE_LABELS[step.speaker]}</span></p>
-        <p className="lw-speaker">{step.speaker}</p>
-        <h3 className="lw-question">{step.question}</h3>
-        <div className="lw-answer"><p>{step.answer}</p><p className="lw-source-line">{sourceLineFor(index, step)}</p></div>
-        <div className="lw-chips">{litCards(step).map((card) => <SourceChip key={card.id} card={card} />)}</div>
-        <div className="lw-phone-only">
-          <p className="lw-phone-label">What Lasso read</p>
-          <div className="lw-phone-sources">{litCards(step).map((card) => <SourceCardView key={card.id} card={card} lit />)}</div>
-          <div className="lw-phone-slide"><div className="landing-story-slide-frame"><div className="landing-story-slide-layer"><DeckSlide index={step.slide} highlight={step.highlight} /></div></div><p className="landing-story-footnote landing-story-deck-note">Slide {step.slide + 1} of 6 · illustrative</p></div>
+      {STORY.map((step, index) => <article key={step.question} className="lw-step" data-story-index={index} data-active={index === active}>
+        <div ref={(el) => { stepBodyRefs.current[index] = el; }} className="lw-step-body">
+          <p className="lw-role-label"><span>{ROLE_LABELS[step.speaker]}</span></p>
+          <p className="lw-speaker">{step.speaker}</p>
+          <h3 className="lw-question">{step.question}</h3>
+          <div className="lw-answer"><p>{step.answer}</p><p className="lw-source-line">{sourceLineFor(index, step)}</p></div>
+          <div className="lw-chips">{litCards(step).map((card) => <SourceChip key={card.id} card={card} />)}</div>
+          <div className="lw-phone-only">
+            <p className="lw-phone-label">What Lasso read</p>
+            <div className="lw-phone-sources">{litCards(step).map((card) => <SourceCardView key={card.id} card={card} lit />)}</div>
+            <div className="lw-phone-slide"><div className="landing-story-slide-frame"><div className="landing-story-slide-layer"><DeckSlide index={step.slide} highlight={step.highlight} /></div></div><p className="landing-story-footnote landing-story-deck-note">Slide {step.slide + 1} of 6 · illustrative</p></div>
+          </div>
         </div>
       </article>)}
     </div>
