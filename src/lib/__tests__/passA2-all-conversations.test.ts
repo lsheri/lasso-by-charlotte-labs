@@ -18,6 +18,14 @@ describe("pass A2 · All conversations absorbs Reflect", () => {
 
   it("titles the page All conversations", () => {
     expect(page).toContain('>All conversations</h1>');
+    expect(page).toContain('<h1 className="whitespace-nowrap font-serif text-[19px] leading-none">All conversations</h1>');
+  });
+
+  it("uses compact icon controls for Preview and Sticky", () => {
+    expect(page).toContain('aria-label="How conversations are shown"');
+    expect(page).toContain('aria-label="Preview" title="Preview"');
+    expect(page).toContain('aria-label="Sticky" title="Sticky"');
+    expect(page).toContain('className="size-9"');
   });
 
   it("offers the three sources and records the change on the settled event", () => {

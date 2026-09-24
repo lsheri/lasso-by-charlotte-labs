@@ -216,6 +216,19 @@ describe("CG1 inbox congruency", () => {
     expect(screen.queryByTestId("board-shell")).toBeNull();
   });
 
+  it("keeps the Inbox title on one line and uses icon view controls", () => {
+    inboxRows = [];
+    render(<WorkPage />);
+    expect(screen.getByRole("heading", { name: "Inbox" }).classList.contains("whitespace-nowrap")).toBe(true);
+    const group = screen.getByRole("group", { name: "How work is shown" });
+    const preview = within(group).getByRole("button", { name: "Preview" });
+    const sticky = within(group).getByRole("button", { name: "Sticky" });
+    expect(preview.getAttribute("title")).toBe("Preview");
+    expect(sticky.getAttribute("title")).toBe("Sticky");
+    expect(preview.classList.contains("size-9")).toBe(true);
+    expect(sticky.classList.contains("size-9")).toBe(true);
+  });
+
   it("keeps every Inbox entry dimmed and disabled when the Unmapped filter matches nothing, and teaches about unclaimed work", () => {
     // Every entry is claimed, so the Unmapped placement filter matches zero
     // entries. Nothing may disappear and the teaching line, which is

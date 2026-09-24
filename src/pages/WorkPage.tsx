@@ -895,18 +895,19 @@ export function WorkPage() {
       </div>
 
       <header className="box-border flex h-16 shrink-0 flex-wrap items-center gap-4 border-b border-[var(--nb-rule)] px-5 md:flex-nowrap">
-        <div className="mr-auto min-w-0">
-          <h1 className="font-serif text-[19px] leading-none">Inbox</h1>
+        <div className="mr-auto min-w-0 shrink-0">
+          <h1 className="whitespace-nowrap font-serif text-[19px] leading-none">Inbox</h1>
           <p className="mt-1 truncate font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
             <WorkSubtitle pieces={groupedCount(all)} unmapped={groupedCount(unmapped)} />
           </p>
         </div>
         <span role="group" aria-label="How work is shown" className="inline-flex shrink-0 items-center rounded-full border border-[var(--nb-rule)] bg-card p-0.5">
-          {(["preview", "sticky"] as const).map((option) => (
-            <Button key={option} type="button" size="sm" variant={workView === option ? "secondary" : "ghost"} aria-pressed={workView === option} onClick={() => { setWorkView(option); writeWorkView(option); }}>
-              {option === "preview" ? "Preview" : "Sticky"}
-            </Button>
-          ))}
+          <Button type="button" size="icon" variant={workView === "preview" ? "secondary" : "ghost"} className="size-9" aria-label="Preview" title="Preview" aria-pressed={workView === "preview"} onClick={() => { setWorkView("preview"); writeWorkView("preview"); }}>
+            <svg aria-hidden viewBox="0 0 20 20" className="size-4" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M2.5 10s2.7-4.5 7.5-4.5 7.5 4.5 7.5 4.5-2.7 4.5-7.5 4.5S2.5 10 2.5 10Z" /><circle cx="10" cy="10" r="2.2" /></svg>
+          </Button>
+          <Button type="button" size="icon" variant={workView === "sticky" ? "secondary" : "ghost"} className="size-9" aria-label="Sticky" title="Sticky" aria-pressed={workView === "sticky"} onClick={() => { setWorkView("sticky"); writeWorkView("sticky"); }}>
+            <svg aria-hidden viewBox="0 0 20 20" className="size-4" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M4 3.5h12v9l-4 4H4z" /><path d="M12 16.5v-4h4" /></svg>
+          </Button>
         </span>
         <DropdownMenu onOpenChange={(open) => { if (open && profile?.org_id) logEvent("work.import_menu_opened", profile.org_id, {}); }}>
           <DropdownMenuTrigger asChild><Button type="button" variant="outline" className="h-9">Bring work in</Button></DropdownMenuTrigger>
