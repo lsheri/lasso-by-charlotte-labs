@@ -69,6 +69,12 @@ export const STORY: StoryStep[] = [
   },
 ];
 
+const ROLE_LABELS: Record<StoryStep["speaker"], string> = {
+  "Board chair": "Question from the board",
+  "Manager question": "Question from your manager",
+  "Client CEO": "Question from the client",
+};
+
 const SLIDE_TITLES = ["Harborline at a turning point.", "Five organizations we benchmarked.", "Partnership revenue to $1.4M by FY27.", "Eleven seats, three committees.", "Eight prospects, three tiers.", "Seat the partners. Set aside the merger."] as const;
 
 function Hl({ text, phrase }: { text: string; phrase: string | null }) {
@@ -127,6 +133,9 @@ function DeckFrame({ step, stepIndex }: { step: StoryStep; stepIndex: number }) 
 export function DeckWalkthrough({ onActiveChange }: { onActiveChange?: (index: number) => void }) {
   const [active, setActive] = useState(0);
   const stepRefs = useRef<(HTMLElement | null)[]>([]);
+  const stickyRef = useRef<HTMLDivElement | null>(null);
+  const overlayRef = useRef<HTMLDivElement | null>(null);
+  const sourceRefs = useRef(new Map<SourceId, HTMLElement>());
   const report = useRef(onActiveChange);
   report.current = onActiveChange;
 
@@ -145,6 +154,85 @@ export function DeckWalkthrough({ onActiveChange }: { onActiveChange?: (index: n
 
   useEffect(() => { report.current?.(active); }, [active]);
 
+  useLayoutEffect(() => {
+    const sticky = stickyRef.current;
+    const overlay = overlayRef.current;
+    const step = STORY[active];
+    if (!sticky || !overlay || !step) return;
+
+    overlay.replaceChildren();
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const phone = window.matchMedia("(max-width: 767px)").matches;
+    if (reduced || phone) return;
+
+    const run = () => {
+      overlay.replaceChildren();
+      const stickyRect = sticky.getBoundingClientRect();
+      const target = sticky.querySelector<HTMLElement>(".landing-story-hl");
+      if (!target) return;
+      const targetRect = target.getBoundingClientRect();
+      const tx = targetRect.left + targetRect.width / 2 - stickyRect.left;
+      const ty = targetRect.top + targetRect.height / 2 - stickyRect.top;
+      const animations: Animation[] = [];
+
+      litCards(step).forEach((card, cardIndex) => {
+        const source = sourceRefs.current.get(card.id);
+        if (!source) return;
+        const sourceRect = source.getBoundingClientRect();
+        const sx = sourceRect.left + sourceRect.width / 2 - stickyRect.left;
+        const sy = sourceRect.top - stickyRect.top;
+        const cx = (sx + tx) / 2 + (cardIndex % 2 === 0 ? -90 : 90);
+        const cy = Math.min(sy, ty) - 70 - cardIndex * 18;
+        const path = `M ${sx} ${sy} Q ${cx} ${cy} ${tx} ${ty}`;
+
+        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        svg.setAttribute("class", "lw-word-swirl");
+        svg.setAttribute("viewBox", `0 0 ${stickyRect.width} ${stickyRect.height}`);
+        const swirl = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        swirl.setAttribute("d", path);
+        swirl.setAttribute("pathLength", "1");
+        svg.append(swirl);
+        overlay.append(svg);
+        animations.push(swirl.animate(
+          [
+            { strokeDashoffset: "1", opacity: 0 },
+            { strokeDashoffset: "0", opacity: 1, offset: 0.6 },
+            { strokeDashoffset: "0", opacity: 0 },
+          ],
+          { duration: 1200, easing: "ease-out", fill: "forwards" },
+        ));
+
+        const sourceWords = card.excerpt.replace(/[.,]/g, "").split(/\s+/);
+        const wordCount = Math.min(12, Math.max(8, sourceWords.length));
+        for (let wordIndex = 0; wordIndex < wordCount; wordIndex += 1) {
+          const word = document.createElement("span");
+          word.className = "lw-flying-word";
+          word.textContent = sourceWords[wordIndex % sourceWords.length] ?? "";
+          word.style.offsetPath = `path("${path}")`;
+          overlay.append(word);
+          animations.push(word.animate(
+            [
+              { offsetDistance: "0%", opacity: 0 },
+              { opacity: 1, offset: 0.12 },
+              { opacity: 1, offset: 0.8 },
+              { offsetDistance: "100%", opacity: 0 },
+            ],
+            { duration: 900, delay: wordIndex * 50, easing: "ease-in", fill: "forwards" },
+          ));
+        }
+      });
+      void Promise.allSettled(animations.map((animation) => animation.finished)).then(() => overlay.replaceChildren());
+    };
+
+    run();
+    const onResize = () => run();
+    window.addEventListener("resize", onResize);
+    return () => {
+      window.removeEventListener("resize", onResize);
+      overlay.replaceChildren();
+    };
+  }, [active]);
+
   const fallback = STORY[0];
   if (!fallback) return null;
   const current = STORY[active] ?? fallback;
@@ -152,6 +240,7 @@ export function DeckWalkthrough({ onActiveChange }: { onActiveChange?: (index: n
   return <div className="lw-grid" data-active-step={active}>
     <div className="lw-steps">
       {STORY.map((step, index) => <article key={step.question} ref={(el) => { stepRefs.current[index] = el; }} className="lw-step" data-story-index={index} data-active={index === active}>
+        <p className="lw-role-label"><span>{ROLE_LABELS[step.speaker]}</span></p>
         <p className="lw-speaker">{step.speaker}</p>
         <h3 className="lw-question">{step.question}</h3>
         <div className="lw-answer"><p>{step.answer}</p><p className="lw-source-line">{sourceLineFor(index, step)}</p></div>
@@ -164,9 +253,10 @@ export function DeckWalkthrough({ onActiveChange }: { onActiveChange?: (index: n
       </article>)}
     </div>
     <div className="lw-stage">
-      <div className="lw-sticky">
+      <div ref={stickyRef} className="lw-sticky">
         <DeckFrame step={current} stepIndex={active} />
-        <div className="lw-lit-sources" aria-label="What Lasso read">{litCards(current).map((card) => <SourceCardView key={`${active}-${card.id}`} card={card} lit />)}</div>
+        <div className="lw-lit-sources" aria-label="What Lasso read">{litCards(current).map((card) => <SourceCardView key={`${active}-${card.id}`} card={card} lit cardRef={(el) => { if (el) sourceRefs.current.set(card.id, el); else sourceRefs.current.delete(card.id); }} />)}</div>
+        <div ref={overlayRef} className="lw-word-stream" aria-hidden="true" />
       </div>
     </div>
   </div>;
