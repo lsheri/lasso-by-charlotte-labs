@@ -355,6 +355,8 @@ export function stageBounds(frames: LabFrame[], nodes: LabNode[] = []): { width:
 
 export type SeedInput = {
   brief: { title: string; text: string | null } | null;
+  /** New boards get no brief card. Only a board that saved one keeps it. */
+  savedBrief?: boolean;
   tasks: { id: string; name: string; detail: string | null; ownedByViewer: boolean }[];
   work: {
     id: string;
@@ -631,7 +633,7 @@ export function seedCanvas(input: SeedInput, frames = createLabFrames(input.task
     return stack(frame, index);
   };
 
-  if (input.brief) {
+  if (input.brief && input.savedBrief) {
     const at = nextAt("foundation");
     nodes.push({
       id: "brief",
@@ -726,7 +728,7 @@ export function boardHasSeededStructure(board: { frames: { kind?: string | null;
  */
 export function seedBlankCanvas(input: SeedInput): LabNode[] {
   const entries: Omit<LabNode, "x" | "y" | "width" | "height">[] = [];
-  if (input.brief) {
+  if (input.brief && input.savedBrief) {
     entries.push({
       id: "brief",
       kind: "brief",

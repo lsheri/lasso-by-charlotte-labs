@@ -108,6 +108,7 @@ export function parseManifest(value: unknown): ContextManifest | null {
       : {}),
   };
   if (
+    !manifest.scope &&
     manifest.items.length === 0 &&
     manifest.excluded.length === 0 &&
     !manifest.brief_included &&

@@ -141,7 +141,7 @@ export function AskScopeChip({ ask, block, workstream }: { ask: AskLasso; block?
     ask.draftPointed.length > 0
       ? `Pointed at: ${ask.draftPointed.length} ${ask.draftPointed.length === 1 ? "item" : "items"}`
       : boardPicked && ask.boardPickedCount === 0
-          ? "Brief only: nothing picked has work to read"
+          ? (ask.engagementBrief ? "Brief only" : "Nothing readable picked")
         : boardPicked
           ? `${ask.boardPickedCount} picked on the board`
         : onWorkstream
@@ -151,9 +151,16 @@ export function AskScopeChip({ ask, block, workstream }: { ask: AskLasso; block?
           : ask.selectedItems.length === 1
           ? "1 piece of work selected"
           : `${ask.selectedItems.length} pieces of work selected`;
+  const title =
+    ask.draftPointed.length === 0 && boardPicked && ask.boardPickedCount === 0
+      ? ask.engagementBrief
+        ? "Brief only: nothing picked has work to read"
+        : "Nothing you picked has work to read, and this engagement has no brief yet"
+      : label;
   return (
     <button
       type="button"
+      title={title}
       onClick={() => ask.setPickerOpen(!ask.pickerOpen)}
       className={
         block

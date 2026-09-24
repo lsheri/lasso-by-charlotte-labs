@@ -157,7 +157,7 @@ export function EditEngagementDialog({
           ) : null}
           <div className="space-y-1.5">
             <Label htmlFor="edit-eng-brief" className="micro-label">
-              Description
+              Brief
             </Label>
             <Textarea
               id="edit-eng-brief"
