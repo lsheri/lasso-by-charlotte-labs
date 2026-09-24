@@ -34,6 +34,14 @@ describe("B2 one chat on the board", () => {
     expect(boardSelectionScope({ engagementId: "e", hasBoardPicks: true, mappedIds: [] })).toEqual({ mode: "engagements", ids: ["e"] });
   });
 
+  it("labels a board pick distinctly from the picker and all-work states", () => {
+    const surface = read("src/components/reflect/AskSurface.tsx");
+    expect(surface).toContain("Brief only: nothing picked has work to read");
+    expect(surface).toContain("${ask.boardPickedCount} picked on the board");
+    expect(surface).toContain("All work in this engagement");
+    expect(surface.indexOf("boardPicked && ask.boardPickedCount === 0")).toBeLessThan(surface.indexOf('"All work in this engagement"'));
+  });
+
   it("keeps the live board pick through New chat and restores all work only after clear", () => {
     expect(boardAsk).toContain("props.boardContextHasPicks");
     expect(page).toContain("boardContextHasPicks={contextNodes.length > 0}");
