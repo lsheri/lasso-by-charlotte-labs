@@ -102,3 +102,7 @@
 - [x] Recompose the story for phone widths with no overflow.
 - [x] Apply the shared lime loop mark across public, sign-in, menu, Ask, and board surfaces.
 - [x] Verify focused checks, type safety, preview build, and live desktop/mobile behavior.
+
+## Landing conversation vortex
+- [x] Replace the flat connector with a lime perspective tunnel carrying branded conversation excerpts into the deck.
+- [ ] Verify motion, reduced-motion clarity, controls, and overflow on desktop and mobile.

@@ -53,6 +53,13 @@ describe("Unit 4 public page", () => {
     expect(hero).not.toContain("Riverside Nine");
   });
 
+  it("moves branded conversation excerpts through the lime vortex", () => {
+    expect(hero).toContain("ConversationTunnel");
+    expect(hero).toContain("landing-story-vortex-rings");
+    expect(hero).toContain("landing-story-vortex-fragment");
+    expect(hero.match(/<VendorMark/g)?.length).toBeGreaterThanOrEqual(2);
+  });
+
   it("makes each incoming question and Lasso answer explicit", () => {
     expect(hero).toContain("Client question");
     expect(hero).toContain("Manager question");
