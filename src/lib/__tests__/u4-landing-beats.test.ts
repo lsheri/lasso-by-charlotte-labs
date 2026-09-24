@@ -45,11 +45,14 @@ describe("Unit 4 public page", () => {
     expect(beats).not.toMatch(/#[0-9a-fA-F]{3,6}\b/);
   });
 
-  it("uses a four-slide illustrative deck and real vendor marks", () => {
+  it("uses a six-slide illustrative Harborline deck and real vendor marks", () => {
     expect(hero).toContain("Illustrative client recommendation");
-    expect(hero).toContain("Illustrative comparison, not customer results");
+    expect(hero).toContain("Harborline Health Alliance · Growth partnerships and board structure, FY27");
+    expect(hero).toContain("Bridge4 Partners · illustrative · {index + 1} / 6");
+    expect(hero).toContain("Slide {current.slide + 1} of 6");
+    expect(hero).toContain("Five organizations we benchmarked.");
+    expect(hero).toContain("Partnership revenue to $1.4M by FY27.");
     expect(hero).toContain("<VendorMark");
-    expect(hero).toContain("Find the Claude conversation where I said 'rule-change moments'.");
     expect(hero).not.toContain("Riverside Nine");
   });
 
@@ -74,15 +77,17 @@ describe("Unit 4 public page", () => {
 });
 
 describe("Unit 8 story system", () => {
-  it("has four steps opening slides 3, 0, 2, 3", () => {
+  it("has four steps opening slides 2, 1, 3, 5", () => {
     const slides = Array.from(hero.matchAll(/^    slide: (\d),$/gm), (m) => Number(m[1]));
-    expect(slides).toEqual([3, 0, 2, 3]);
-    expect(hero).toContain("Open the exact source · {current.sourceCount}");
+    expect(slides).toEqual([2, 1, 3, 5]);
+    expect(hero).toContain("Open the exact turn · 1");
   });
 
-  it("closes with the pilot line and no particles", () => {
+  it("closes with the pilot line and an invisible-ink layer", () => {
     expect(page).toContain("Three months");
     expect(page).toContain("The work, judgment, thinking. Visible.");
+    expect(page).toContain("landing-close-wordmark");
+    expect(page).toContain("landing-close-particles");
     expect(page).not.toContain("ParticleReveal");
     expect(page).toContain('notePlacedPilotClick("header")');
     expect(page).toContain('notePlacedPilotClick("close")');

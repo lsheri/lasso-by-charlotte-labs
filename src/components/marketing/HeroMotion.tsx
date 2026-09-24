@@ -20,7 +20,7 @@ export function ScaledStage({ width, height, children, className = "", label }: 
 }
 
 export type VendorGlyph = "claude" | "chatgpt" | "gemini" | "granola" | "lovable";
-type SourceId = "research" | "board" | "scenarios" | "call" | "tracker";
+type SourceId = "research" | "board" | "scenarios" | "call" | "pipeline";
 type SourceCard = { id: SourceId; vendor: VendorGlyph; label: string; title: string; excerpt: string };
 
 const SOURCES: SourceCard[] = [
@@ -28,7 +28,7 @@ const SOURCES: SourceCard[] = [
   { id: "board", vendor: "claude", label: "Claude · 2 Sep", title: "Board structure options", excerpt: "Chair terms, committee shape and partner seats." },
   { id: "scenarios", vendor: "chatgpt", label: "ChatGPT · 9 Sep", title: "Partnership revenue scenarios", excerpt: "Three illustrative paths to FY27." },
   { id: "call", vendor: "granola", label: "Granola · 3 Sep", title: "Board chair call", excerpt: "Constraints, comparables and appetite for change." },
-  { id: "tracker", vendor: "lovable", label: "Lovable · 12 Sep", title: "Pipeline tracker prototype", excerpt: "Eight prospects grouped into three tiers." },
+  { id: "pipeline", vendor: "lovable", label: "Lovable · 12 Sep", title: "Pipeline prototype", excerpt: "Eight prospects grouped into three tiers." },
 ];
 
 function SourceGlyph({ vendor, size }: { vendor: VendorGlyph; size: number }) {
@@ -47,7 +47,7 @@ export type StoryStep = {
 };
 
 export const STORY: StoryStep[] = [
-  { speaker: "Board chair", question: "Where did the $1.4M on slide 3 come from?", litSources: ["scenarios", "tracker"], slide: 2, highlight: "$1.4M", answer: "A scenario built in ChatGPT on 9 Sep from the pipeline tracker's tier sizes. A model, not a forecast.", sourceCount: 2 },
+  { speaker: "Board chair", question: "Where did the $1.4M on slide 3 come from?", litSources: ["scenarios", "pipeline"], slide: 2, highlight: "$1.4M", answer: "A scenario built in ChatGPT on 9 Sep from the pipeline prototype's tier sizes. A model, not a forecast.", sourceCount: 2 },
   { speaker: "Manager question", question: "Which comparable organizations did we research?", litSources: ["research", "call"], slide: 1, highlight: "Five organizations", answer: "Riverbend, Two Rivers, Northgate, Cedar Coast, Meridian. The chair named Riverbend on the 3 Sep call; the other four came from the research thread.", sourceCount: 2 },
   { speaker: "Client CEO", question: "Send me the link to the chat where we settled on two-term limits for the chair.", litSources: ["board"], slide: 3, highlight: "two terms of three years", answer: "Claude, 2 Sep, turn 18. That turn is where two terms of three years was chosen over one of five.", sourceCount: 1 },
   { speaker: "Manager question", question: "Which conversations shaped the recommendation?", litSources: ["board", "call", "scenarios"], slide: 5, highlight: "Set aside the merger", answer: "Three, in order: the chair call set the constraint, the board-structure thread chose the shape, the scenario thread costed the merger and set it aside.", sourceCount: 3 },
