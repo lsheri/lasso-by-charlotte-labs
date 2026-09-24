@@ -373,6 +373,7 @@ export function AiRecordPage() {
   // Search narrows deliberately. Tool and engagement chips leave those search
   // results in place, dimming the conversations outside the chosen categories.
   const groups = groupByMonth(shown);
+  const currentConversationLaneHeight = conversationLaneHeight(conversationViewportHeight);
   let nextMonthX = CONVERSATION_LANE_LEFT;
   const monthLanes: ConversationMonthLane[] = groups.map((group) => {
     const isSpine = group.items.length === 0;
@@ -382,7 +383,7 @@ export function AiRecordPage() {
       x: nextMonthX,
       y: CONVERSATION_LANE_TOP,
       width,
-      height: isSpine ? CONVERSATION_LANE_HEADER_HEIGHT : conversationLaneHeight(group.items.length),
+      height: isSpine ? CONVERSATION_LANE_HEADER_HEIGHT : currentConversationLaneHeight,
       ...(isSpine
         ? {}
         : {
@@ -473,6 +474,10 @@ export function AiRecordPage() {
 
 
   const analyses = useChatAnalyses(profile?.id, profile?.org_id);
+
+  function recordPanelOpen(panel: "engagements" | "subjects" | "coverage" | "recurs") {
+    if (profile?.org_id) logEvent("chatlib.panel_opened", profile.org_id, { panel });
+  }
 
   const { data: turnCounts } = useQuery({
     queryKey: ["ai-record-turns", threadKey],
