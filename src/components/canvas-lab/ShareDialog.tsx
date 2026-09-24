@@ -59,8 +59,6 @@ export function ShareDialog({
             </p>
             <BoardLinkSection engagementId={engagementId} profileId={profileId} open={open} />
           </section>
-
-          <ComingSection />
         </div>
       </DialogContent>
     </Dialog>
