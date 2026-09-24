@@ -42,6 +42,7 @@ import { isContextFrameId } from "@/lib/context-region";
 import { isRegionFrameId } from "@/lib/board-region";
 import { isTrailFrameId } from "@/lib/reasoning-trail";
 import { placeAddedCards } from "@/lib/workboard-placement";
+import { resolveWorkDate } from "@/lib/work-order";
 
 export type LabNodeKind = "brief" | "task" | "work" | "decision" | "chat" | "source" | "ai_work" | "judgment" | "deliverable" | "shape" | "text" | "answer" | "sticky";
 export type LabJudgmentType = "added_constraint" | "corrected_ai" | "rejected_option" | "requested_evidence" | "changed_direction" | "accepted_but_rewrote";
@@ -1237,6 +1238,7 @@ export type BundleItem = {
   orig_conversation_id?: string | null | undefined;
   ungrouped_at?: string | null | undefined;
   captured_at?: string | null | undefined;
+  work_date?: string | null | undefined;
   created_at_source?: string | null | undefined;
   source_meta?: { role?: string | null; produced_at_turn?: number | null } | null | undefined;
 };
@@ -1255,7 +1257,7 @@ function pieceTurn(item: BundleItem): number | null {
 }
 
 function pieceCreated(item: BundleItem): string {
-  return item.created_at_source ?? item.captured_at ?? "";
+  return resolveWorkDate({ work_date: item.work_date ?? null, created_at_source: item.created_at_source ?? null, captured_at: item.captured_at ?? "" }).iso;
 }
 
 /**
