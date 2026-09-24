@@ -69,6 +69,13 @@ export function contextCoronaAge(now: number, enteredAt: number, still: boolean)
   return still ? 5 : now - enteredAt;
 }
 
+/** Exit fade on wall-clock seconds; reduced motion has no fade. */
+export function coronaLeaveFade(nowWall: number, leftAtWall: number | undefined, still: boolean): number {
+  if (leftAtWall === undefined) return 1;
+  if (still) return 0;
+  return contextCoronaFade(nowWall, leftAtWall);
+}
+
 export function contextCoronaFade(now: number, leftAt: number | undefined): number {
   if (leftAt === undefined) return 1;
   const elapsedMs = (now - leftAt) * 1000;
@@ -239,15 +246,21 @@ export function LabContextCoronas({
   const frameRef = useRef<number | null>(null);
   const lastFrameRef = useRef(0);
   const clockRef = useRef({ value: 0, last: 0 });
+  const limeRef = useRef<[number, number, number] | null>(null);
+  const aliveRef = useRef(false);
 
   useLayoutEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const now = clockRef.current.value;
+    const wallNow = () => performance.now() / 1000;
     const currentIds = new Set(nodes.map((node) => node.id));
     for (const [id, entry] of entriesRef.current) {
-      if (!currentIds.has(id) && entry.leftAt === undefined) entry.leftAt = now;
+      if (currentIds.has(id)) continue;
+      if (still) entriesRef.current.delete(id);
+      else if (entry.leftAt === undefined) entry.leftAt = wallNow();
     }
+    limeRef.current = parseCoronaColour(getComputedStyle(canvas).getPropertyValue("--nb-lasso-green"));
     for (const node of nodes) {
       const existing = entriesRef.current.get(node.id);
       if (existing) {
@@ -279,14 +292,18 @@ export function LabContextCoronas({
       const corona = glRef.current;
       if (!corona) return false;
       const { gl, uniforms } = corona;
-      const drawNow = clockRef.current.value;
+      const drawWall = wallNow();
+      let fading = false;
       for (const [id, entry] of entriesRef.current) {
-        if (contextCoronaFade(drawNow, entry.leftAt) <= 0) entriesRef.current.delete(id);
+        const fade = coronaLeaveFade(drawWall, entry.leftAt, still);
+        if (fade <= 0) entriesRef.current.delete(id);
+        else if (entry.leftAt !== undefined) fading = true;
       }
+      const keepGoing = entriesRef.current.size > 0 && (fading || (!still && !interacting));
       gl.viewport(0, 0, canvas.width, canvas.height);
       gl.clear(gl.COLOR_BUFFER_BIT);
-      const lime = parseCoronaColour(getComputedStyle(canvas).getPropertyValue("--nb-lasso-green"));
-      if (!lime || canvas.width === 0 || canvas.height === 0) return entriesRef.current.size > 0;
+      const lime = limeRef.current;
+      if (!lime || canvas.width === 0 || canvas.height === 0) return keepGoing;
       const look = coronaLook(zoom);
       const orderedIds = contextCoronaMotionIds(nodes);
       const entries = [...entriesRef.current.values()]
@@ -298,7 +315,7 @@ export function LabContextCoronas({
         })
         .filter((entry) => coronaTouchesViewport(coronaScreenRect(entry.node, pan, zoom, entry.height), viewport, look))
         .slice(0, CONTEXT_CORONA_MOTION_CAP);
-      if (entries.length === 0) return false;
+      if (entries.length === 0) return keepGoing;
       if (!still && !interacting) {
         if (clockRef.current.last > 0) clockRef.current.value += Math.max(0, (stamp - clockRef.current.last) / 1000);
         clockRef.current.last = stamp;
@@ -314,7 +331,7 @@ export function LabContextCoronas({
         const rect = coronaLookRect(coronaScreenRect(entry.node, pan, zoom, entry.height), look);
         rects.set([rect.x, rect.y, rect.width, rect.height], index * 4);
         ages[index] = contextCoronaAge(motionNow, entry.enteredAt, still);
-        fades[index] = contextCoronaFade(motionNow, entry.leftAt);
+        fades[index] = coronaLeaveFade(drawWall, entry.leftAt, still);
         seeds[index] = contextCoronaSeed(entry.node.id);
       });
       gl.useProgram(corona.program);
@@ -332,13 +349,13 @@ export function LabContextCoronas({
       gl.uniform1f(uniforms["uWisp"] ?? null, CORONA_LOOK.wisp);
       gl.uniform3f(uniforms["uLime"] ?? null, lime[0], lime[1], lime[2]);
       gl.drawArrays(gl.TRIANGLES, 0, 6);
-      return entriesRef.current.size > 0;
+      return keepGoing;
     };
 
-    draw(performance.now());
+    const needsLoop = draw(performance.now());
     if (frameRef.current !== null) cancelAnimationFrame(frameRef.current);
     frameRef.current = null;
-    if (!still && !interacting && entriesRef.current.size > 0 && glRef.current) {
+    if (needsLoop && glRef.current) {
       const loop = (stamp: number) => {
         if (stamp - lastFrameRef.current >= FRAME_MS) {
           lastFrameRef.current = stamp;
@@ -357,9 +374,10 @@ export function LabContextCoronas({
   useLayoutEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+    aliveRef.current = true;
     const onLost = (event: Event) => {
       event.preventDefault();
-      unavailableRef.current = true;
+      if (aliveRef.current) unavailableRef.current = true;
       glRef.current = null;
       if (frameRef.current !== null) cancelAnimationFrame(frameRef.current);
     };
@@ -367,9 +385,16 @@ export function LabContextCoronas({
     return () => {
       canvas.removeEventListener("webglcontextlost", onLost);
       if (frameRef.current !== null) cancelAnimationFrame(frameRef.current);
-      const gl = glRef.current?.gl;
-      gl?.getExtension("WEBGL_lose_context")?.loseContext();
-      glRef.current = null;
+      aliveRef.current = false;
+      const lose = () => {
+        const gl = glRef.current?.gl;
+        glRef.current = null;
+        gl?.getExtension("WEBGL_lose_context")?.loseContext();
+      };
+      // StrictMode remounts at once; a remount flips aliveRef back and cancels the loss.
+      setTimeout(() => {
+        if (!aliveRef.current) lose();
+      }, 0);
     };
   }, []);
 
