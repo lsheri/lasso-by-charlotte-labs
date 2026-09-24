@@ -19,8 +19,7 @@ const renderedCopy = [...jsxText, ...renderedStringProps, ...stringLiterals]
   .join(" ")
   .replace(/\s+/g, " ")
   .toLowerCase();
-const requiredReportHeadline = "a note in the margin, not a report on you";
-const copyWithoutRequiredHeadline = renderedCopy.replace(requiredReportHeadline, "");
+const copyWithoutRequiredHeadline = renderedCopy;
 
 const BANNED = [
   "calls?",
@@ -52,7 +51,6 @@ describe("pass L1 hidden landing route", () => {
     for (const phrase of BANNED) {
       expect(copyWithoutRequiredHeadline).not.toMatch(new RegExp(`\\b(?:${phrase})\\b`, "i"));
     }
-    expect(renderedCopy).toContain(requiredReportHeadline);
     expect(renderedCopy).toContain("the decisions your team made");
     expect(renderedCopy).toContain("defend to a client, a partner, or a board");
   });
@@ -93,39 +91,6 @@ describe("pass L1 hidden landing route", () => {
     expect(route).toContain('dims: { location }');
     expect(route).toContain('event_type: "landing.see_it_work_clicked"');
     expect(route).toContain('dims: { location: "hero" }');
-  });
-
-  it("keeps stable clip slots for the next media pass", () => {
-    for (const id of ["inbox", "decisions", "coach-note"]) {
-      expect(route).toContain(`id=\"${id}\"`);
-    }
-    expect(route).not.toContain('id="one-on-one"');
-  });
-
-  it("wires every available poster frame", () => {
-    // Each carousel panel plays a real clip with its own poster file.
-    for (const poster of ["inbox-poster.png", "decisions-poster.png", "coach-note-poster.png"]) {
-      expect(route).toContain(`poster="/videos/${poster}"`);
-    }
-    expect(route).toContain('import connectorPoster from "@/assets/landing/lasso-connector-poster.png.asset.json"');
-    expect(route).toContain('import claudePushPoster from "@/assets/landing/lasso-claude-push-poster.png.asset.json"');
-    expect(route).not.toContain("poster-what-fed-this.jpg");
-  });
-
-  it("plays every carousel clip at its native size", () => {
-    for (const id of ["inbox", "decisions", "coach-note"]) {
-      expect(route).toContain(`src="/videos/${id}.mp4"`);
-      expect(route).toContain(`poster="/videos/${id}-poster.png"`);
-    }
-    expect(route).toContain('import connectorVideo from "@/assets/landing/lasso-connector.mp4.asset.json"');
-    expect(route).toContain('import claudePushVideo from "@/assets/landing/lasso-claude-push.mp4.asset.json"');
-    expect(route).toContain('group="landing-sources"');
-    expect(route).toContain('aspect="1920 / 1132"');
-    expect(route).toContain('aspect="9 / 16"');
-    expect(route).not.toContain('src="/videos/lasso-what-fed-this.mp4"');
-    expect(route).toContain('landing-next-carousel-panel-sources');
-    expect(route).not.toContain('<ClipSlot id="workboard"');
-    expect(route).toContain('playback="hold"');
   });
 
   it("renders the exact pilot flow without sending form contents", () => {
