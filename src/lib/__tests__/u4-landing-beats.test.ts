@@ -58,7 +58,11 @@ describe("Unit 4 public page", () => {
   it("drives a sticky deck from the step nearest the viewport centre, with no tunnel or doodle", () => {
     expect(hero).toContain("export function DeckWalkthrough");
     expect(hero).toContain("IntersectionObserver");
-    expect(hero).toContain('rootMargin: "-50% 0px -50% 0px"');
+    expect(hero).toContain('className="lw-step-body"');
+    expect(hero).toContain("rect.top + rect.height / 2 - viewportCentre");
+    expect(hero).toContain('window.addEventListener("scroll", requestMeasure, { passive: true })');
+    expect(hero).toContain("window.requestAnimationFrame(measure)");
+    expect(hero).not.toContain('rootMargin: "-50% 0px -50% 0px"');
     expect(hero).toContain("window.setInterval(spawnWord, 260)");
     expect(hero).not.toContain("setTimeout");
     expect(hero).not.toContain("ConversationTunnel");
