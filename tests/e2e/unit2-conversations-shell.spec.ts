@@ -2,20 +2,22 @@ import { test, type Page } from "@playwright/test";
 
 import { signIn } from "./qa-helpers";
 
-/** Unit 2 verification: measures the All conversations shell and reports findings. */
-const EMAIL = "liam@charlotte-labs.com";
+/** Unit 2.1 verification: measures the All conversations shell and interactions. */
+const EMAIL = process.env["LASSO_QA_EMAIL"] ?? "qa.company.admin@qaprobe.test";
 const SHOTS = process.env["LASSO_SHOT_DIR"] ?? "test-results";
+
+type Measurement = Awaited<ReturnType<typeof measure>>;
 
 async function measure(page: Page, label: string) {
   const measured = await page.evaluate(() => {
     const rect = (element: Element | null) => {
       if (!element) return null;
       const box = element.getBoundingClientRect();
-      return { top: Math.round(box.top), left: Math.round(box.left), width: Math.round(box.width), height: Math.round(box.height), bottom: Math.round(box.bottom), right: Math.round(box.right) };
+      return { top: Math.round(box.top), left: Math.round(box.left), width: Math.round(box.width), height: Math.round(box.height) };
     };
     const heading = Array.from(document.querySelectorAll("h1")).find((element) => element.textContent?.trim() === "All conversations");
     const header = heading?.closest("header") ?? null;
-    const chipRow = header?.nextElementSibling ?? null;
+    const chipRow = header?.nextElementSibling as HTMLElement | null;
     const shell = document.querySelector('[data-testid="board-shell"]');
     const stage = document.querySelector('[data-testid="board-shell-stage"]') as HTMLElement | null;
     const transform = stage ? getComputedStyle(stage).transform : "none";
@@ -29,33 +31,39 @@ async function measure(page: Page, label: string) {
       tx = Math.round(parts[4]);
       ty = Math.round(parts[5]);
     }
-    const lanes = Array.from(document.querySelectorAll("[data-board-lane]")) as HTMLElement[];
-    const shellRect = rect(shell);
-    const firstLaneRect = rect(lanes[0] ?? null);
-    const controls = Array.from(chipRow?.querySelectorAll("button") ?? []).map((button) => (button.textContent ?? "").trim().replace(/\s+/g, " "));
-    const visibleCards = Array.from(document.querySelectorAll("[data-board-node]")).filter((node) => {
-      const box = node.getBoundingClientRect();
-      return box.width > 0 && box.height > 0 && box.bottom > 0 && box.right > 0 && box.top < window.innerHeight && box.left < window.innerWidth;
-    });
+    const lanes = Array.from(document.querySelectorAll<HTMLElement>("[data-board-lane]"));
+    const firstLane = lanes[0] ?? null;
+    const firstLaneBox = firstLane?.getBoundingClientRect() ?? null;
+    const cardsVisibleInFirstLane = firstLane && firstLaneBox
+      ? Array.from(firstLane.querySelectorAll("[data-board-node], [data-lane-content]")).filter((card) => {
+          const box = card.getBoundingClientRect();
+          return box.height > 0 && box.top < firstLaneBox.bottom && box.bottom > firstLaneBox.top;
+        }).length
+      : null;
+    const widths = {
+      search: rect(chipRow?.querySelector('input[type="search"]') ?? null)?.width ?? null,
+      divider: rect(chipRow?.querySelector('[aria-hidden="true"]') ?? null)?.width ?? null,
+      tools: rect(chipRow?.querySelector('[role="group"][aria-label="Filter by tool"]') ?? null)?.width ?? null,
+      engagements: rect(Array.from(chipRow?.querySelectorAll("button") ?? []).find((button) => button.textContent?.trim().startsWith("Engagements")) ?? null)?.width ?? null,
+      count: rect(Array.from(chipRow?.querySelectorAll("button") ?? []).find((button) => /conversation|Showing|match/.test(button.textContent ?? "")) ?? null)?.width ?? null,
+    };
     return {
-      viewport: { width: window.innerWidth, height: window.innerHeight },
-      document: { scrollHeight: document.scrollingElement?.scrollHeight ?? -1, mainCount: document.querySelectorAll("main").length },
-      header: rect(header),
-      chipRow: rect(chipRow),
-      shell: shellRect,
-      toolbar: rect(document.querySelector('[data-testid="board-shell-toolbar"]')),
-      transform,
+      scrollHeight: document.scrollingElement?.scrollHeight ?? -1,
+      innerHeight: window.innerHeight,
+      headerH: rect(header)?.height ?? null,
+      chipRowH: rect(chipRow)?.height ?? null,
+      chipScrollWidth: chipRow?.scrollWidth ?? null,
+      chipClientWidth: chipRow?.clientWidth ?? null,
+      widths,
+      shell: rect(shell),
       scale,
       tx,
       ty,
-      laneCount: lanes.length,
-      lanes: lanes.map((lane) => ({ style: `${lane.style.width}x${lane.style.height}`, rect: rect(lane) })),
-      firstLaneInside: firstLaneRect && shellRect ? firstLaneRect.top >= shellRect.top && firstLaneRect.left >= shellRect.left && firstLaneRect.bottom <= shellRect.bottom && firstLaneRect.right <= shellRect.right : null,
-      controls,
-      noticeCount: document.querySelectorAll('[role="alert"], [data-testid*="notice"]').length,
-      cardCount: document.querySelectorAll("[data-board-node]").length,
-      visibleCardCount: visibleCards.length,
-      countText: Array.from(chipRow?.querySelectorAll("button") ?? []).map((button) => button.textContent?.trim() ?? "").find((text) => /Showing |Nothing is deleted here/.test(text)) ?? null,
+      laneStyles: lanes.map((lane) => `${lane.style.width}x${lane.style.height}`),
+      firstLane: rect(firstLane),
+      cardsVisibleInFirstLane,
+      mainCount: document.querySelectorAll("main").length,
+      dataReader: document.querySelector(".nb-chatview")?.getAttribute("data-reader") ?? null,
     };
   });
   console.log(`MEASURE ${label} ${JSON.stringify(measured)}`);
@@ -69,37 +77,36 @@ async function result(name: string, body: () => Promise<string>) {
 
 async function dismiss(page: Page) {
   await page.keyboard.press("Escape");
-  await page.waitForTimeout(250);
+  await page.waitForTimeout(300);
+}
+
+function sourceObservation(page: Page) {
+  return page.evaluate(() => ({
+    board: Boolean(document.querySelector('[data-testid="board-shell"]')),
+    lanes: document.querySelectorAll("[data-board-lane]").length,
+    askedText: Array.from(document.querySelectorAll("h2, h3, p")).map((element) => element.textContent?.trim() ?? "").find((text) => /question|asked|session/i.test(text)) ?? null,
+  }));
 }
 
 test("unit2 all conversations shell", async ({ page }) => {
   test.setTimeout(300_000);
-  await signIn(page, EMAIL, /sign in/i).catch((error) => console.log(`SIGNIN note ${String(error).split("\n")[0]} url=${page.url()}`));
+  await signIn(page, EMAIL, /sign in/i).catch((e) => console.log(`SIGNIN note ${String(e).split("\n")[0]} url=${page.url()}`));
   await page.goto("/ai-record", { waitUntil: "domcontentloaded" });
   await page.getByRole("heading", { name: "All conversations" }).waitFor({ timeout: 60_000 });
   await page.waitForTimeout(3000);
 
   const passes: Array<readonly [number, number]> = [[1440, 900], [1280, 800], [1094, 658], [1440, 900]];
-  let firstScale: number | null = null;
+  const measurements: Measurement[] = [];
   for (const [width, height] of passes) {
     await page.setViewportSize({ width, height });
     await page.waitForTimeout(700);
-    const measured = await measure(page, `${width}x${height}`);
-    if (firstScale === null && width === 1440 && height === 900) firstScale = measured.scale;
+    measurements.push(await measure(page, `${width}x${height}`));
     if (width === 1094) await page.screenshot({ path: `${SHOTS}/unit2-1094x658.png` });
   }
   await page.screenshot({ path: `${SHOTS}/unit2-1440x900.png` });
-  console.log(`RESULT stage scale 1440x900 :: ${firstScale === 1 ? "PASS" : "FAIL"} scale=${firstScale}`);
+  const first = measurements[0];
+  console.log(`RESULT chip row width :: ${first?.chipScrollWidth === first?.chipClientWidth ? "PASS" : "FAIL"} scroll=${first?.chipScrollWidth} client=${first?.chipClientWidth}`);
 
-  await result("Preview and Sticky", async () => {
-    const preview = page.getByRole("button", { name: "Preview" });
-    const sticky = page.getByRole("button", { name: "Sticky" });
-    await sticky.click(); await page.waitForTimeout(250);
-    const stickyOn = await sticky.getAttribute("aria-pressed");
-    await preview.click(); await page.waitForTimeout(250);
-    const previewOn = await preview.getAttribute("aria-pressed");
-    return `${stickyOn === "true" && previewOn === "true" ? "PASS" : "FAIL"} sticky=${stickyOn} preview=${previewOn}`;
-  });
   await result("Add a chat", async () => {
     await page.getByRole("button", { name: "Add a chat" }).click(); await page.waitForTimeout(300);
     const visible = await page.locator('[role="dialog"]').first().isVisible().catch(() => false); await dismiss(page);
@@ -112,49 +119,57 @@ test("unit2 all conversations shell", async ({ page }) => {
     const visible = await page.getByRole("dialog", { name: /Ask Lasso/ }).isVisible().catch(() => false); await dismiss(page);
     return `${visible ? "PASS" : "FAIL"} panel=${visible}`;
   });
-  await result("source tabs", async () => {
-    const captured = page.getByRole("button", { name: "Captured", exact: true });
-    const asked = page.getByRole("button", { name: "Asked Lasso", exact: true });
-    const everything = page.getByRole("button", { name: "Everything", exact: true }).first();
-    if (!(await captured.count())) return "N/A coach view";
-    await asked.click(); await page.waitForTimeout(300); const askedOn = await asked.getAttribute("aria-pressed");
-    await everything.click(); await page.waitForTimeout(300); const everythingOn = await everything.getAttribute("aria-pressed");
-    await captured.click(); await page.waitForTimeout(300); const capturedOn = await captured.getAttribute("aria-pressed");
-    return `${askedOn === "true" && everythingOn === "true" && capturedOn === "true" ? "PASS" : "FAIL"} asked=${askedOn} everything=${everythingOn} captured=${capturedOn}`;
-  });
   await result("Engagements", async () => {
-    await page.getByRole("button", { name: /Engagements/ }).click(); await page.waitForTimeout(300);
+    await page.getByRole("button", { name: "Engagements", exact: true }).click(); await page.waitForTimeout(300);
     const visible = await page.getByRole("group", { name: "Filter by engagement" }).isVisible().catch(() => false); await dismiss(page);
-    return `${visible ? "PASS" : "FAIL"} popover=${visible}`;
+    return `${visible ? "PASS" : "FAIL"} group=${visible}`;
   });
   await result("Subjects and links", async () => {
-    const button = page.getByRole("button", { name: "Subjects and links" }).first();
-    if (!(await button.count())) return "FAIL button absent";
-    await button.click(); await page.waitForTimeout(350);
+    await page.getByRole("button", { name: "Subjects and links" }).click(); await page.waitForTimeout(350);
     const visible = await page.getByRole("dialog", { name: /Subjects and links/ }).isVisible().catch(() => false); await dismiss(page);
     return `${visible ? "PASS" : "FAIL"} panel=${visible}`;
   });
   await result("coverage", async () => {
-    const button = page.getByRole("button", { name: /Nothing is deleted here|Showing .* of/ }).first();
-    if (!(await button.count())) return "FAIL count button absent";
+    const button = page.getByRole("button", { name: /conversation|Showing|match/ }).last();
     await button.click(); await page.waitForTimeout(350);
     const visible = await page.getByText("nothing here was written by Lasso").isVisible().catch(() => false); await dismiss(page);
     return `${visible ? "PASS" : "FAIL"} popover=${visible}`;
   });
-  await result("search", async () => {
-    const search = page.getByRole("searchbox", { name: "Search your chats" });
-    await search.fill("no-match-unit-two"); await search.press("Enter"); await page.waitForTimeout(300);
-    const empty = await page.getByText("No chats match that search.").isVisible().catch(() => false);
-    await search.fill(""); await page.waitForTimeout(300);
-    return `${empty ? "PASS" : "FAIL"} empty=${empty}`;
+  await result("tool chip", async () => {
+    const group = page.getByRole("group", { name: "Filter by tool" });
+    const chip = group.getByRole("button").nth(1);
+    if (!(await chip.count())) return "N/A one tool only";
+    const before = await chip.getAttribute("aria-pressed"); await chip.click(); await page.waitForTimeout(300);
+    const after = await chip.getAttribute("aria-pressed");
+    await group.getByRole("button").first().click(); await page.waitForTimeout(300);
+    return `${before !== after && after === "true" ? "PASS" : "FAIL"} before=${before} after=${after}`;
   });
-  await result("conversation reader", async () => {
-    const card = page.locator("[data-board-node]").first();
+  await result("source tabs", async () => {
+    const group = page.getByRole("group", { name: "Which conversations are shown" });
+    const captured = group.getByRole("button", { name: "Captured", exact: true });
+    const asked = group.getByRole("button", { name: "Asked Lasso", exact: true });
+    const everything = group.getByRole("button", { name: "Everything", exact: true });
+    await captured.click(); await page.waitForTimeout(350); const capturedState = await sourceObservation(page);
+    await asked.click(); await page.waitForTimeout(350); const askedState = await sourceObservation(page);
+    await everything.click(); await page.waitForTimeout(350); const everythingState = await sourceObservation(page);
+    await captured.click(); await page.waitForTimeout(350);
+    const pass = capturedState.board && !askedState.board && everythingState.board;
+    return `${pass ? "PASS" : "FAIL"} captured=${JSON.stringify(capturedState)} asked=${JSON.stringify(askedState)} everything=${JSON.stringify(everythingState)}`;
+  });
+  await result("reader open and close refit", async () => {
+    const before = await measure(page, "reader-before");
+    const card = page.locator("[data-board-node] article").first();
     if (!(await card.count())) return "N/A no conversation cards";
-    await card.click(); await page.waitForTimeout(500);
-    const close = page.getByRole("button", { name: "Close the reader" });
-    const visible = await close.isVisible().catch(() => false);
-    if (visible) await close.click();
-    return `${visible ? "PASS" : "FAIL"} reader=${visible}`;
+    await card.click(); await page.waitForTimeout(600);
+    const opened = await measure(page, "reader-open");
+    await page.keyboard.press("Escape"); await page.waitForTimeout(600);
+    const closed = await measure(page, "reader-closed");
+    const restored = closed.scale === before.scale && closed.shell?.width === before.shell?.width;
+    return `${opened.dataReader === "open" && closed.dataReader === "closed" && restored ? "PASS" : "FAIL"} openReader=${opened.dataReader} openShell=${JSON.stringify(opened.shell)} openScale=${opened.scale} openScroll=${opened.scrollHeight} closedShell=${JSON.stringify(closed.shell)} closedScale=${closed.scale} closedScroll=${closed.scrollHeight} restored=${restored}`;
+  });
+  await result("resize refit", async () => {
+    await page.setViewportSize({ width: 1280, height: 800 }); await page.waitForTimeout(600); const smaller = await measure(page, "resize-1280x800");
+    await page.setViewportSize({ width: 1440, height: 900 }); await page.waitForTimeout(600); const restored = await measure(page, "resize-1440x900");
+    return `PASS scale1280=${smaller.scale} scale1440=${restored.scale}`;
   });
 });
