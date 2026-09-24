@@ -37,6 +37,7 @@ export const EVENT_DIM_KEYS: Readonly<Record<string, readonly string[]>> = {
   "capture.context": ["client_name", "client_version", "duration_band", "freshness_band", "had_code_blocks", "had_files", "had_images", "had_tables", "hour_band", "language", "prompt_len_band", "protocol_version", "push_size_band", "response_len_band", "tool_code_execution", "tool_file_tools", "tool_other", "tool_web_search", "weekday"],
   "chatlib.filter_changed": ["filter", "how", "selected", "vendor", "view"],
   "chatlib.panel_opened": ["panel"],
+  "reflect.trail_opened": ["read_band", "also_in_band", "not_read_band"],
   "chatlib.reader_closed": ["filter", "how", "selected", "vendor", "view"],
   "chatlib.search": ["filter", "had_click", "how", "query_len_band", "result_band", "selected", "vendor", "view"],
   "chatlib.source_opened": ["filter", "how", "selected", "vendor", "view"],

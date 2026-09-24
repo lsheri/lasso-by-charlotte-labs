@@ -5024,6 +5024,29 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 .canvas-lab-add-context { display: inline-flex; align-items: center; min-height: 20px; padding: 0 6px; color: var(--nb-green); font-family: var(--font-hand); font-size: 14px; text-transform: none; letter-spacing: normal; }
 .canvas-lab-add-context:hover { text-decoration: underline; }
 
+/* Ask Lasso thinking line: motion belongs only to the live, bottom row. */
+@keyframes nb-trail-window-enter-kf { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes nb-trail-window-leave-kf { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(-4px); } }
+@keyframes nb-trail-document-kf { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(.7px); } }
+@keyframes nb-trail-pen-kf { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(.42px, -.42px); } }
+@keyframes nb-trail-conversation-kf { 0%, 100% { opacity: .68; } 50% { opacity: 1; } }
+@keyframes nb-trail-search-kf { 0%, 100% { transform: rotate(-4deg); } 50% { transform: rotate(4deg); } }
+@keyframes nb-trail-brief-kf { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(.7px); } }
+@keyframes nb-audit-settle-kf { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+.nb-trail-window-enter { animation: nb-trail-window-enter-kf 260ms cubic-bezier(.22,.61,.36,1) both; }
+.nb-trail-window-leave { animation: nb-trail-window-leave-kf 200ms ease-in both; }
+.nb-trail-row.live .nb-trail-glyph-document { animation: nb-trail-document-kf 2.3s ease-in-out infinite; }
+.nb-trail-row.live .nb-trail-glyph-pen { animation: nb-trail-pen-kf 2.7s ease-in-out infinite; }
+.nb-trail-row.live .nb-trail-glyph-conversation circle:nth-of-type(1) { animation: nb-trail-conversation-kf 2.9s ease-in-out infinite; }
+.nb-trail-row.live .nb-trail-glyph-conversation circle:nth-of-type(2) { animation: nb-trail-conversation-kf 2.9s ease-in-out .28s infinite; }
+.nb-trail-row.live .nb-trail-glyph-conversation circle:nth-of-type(3) { animation: nb-trail-conversation-kf 2.9s ease-in-out .56s infinite; }
+.nb-trail-row.live .nb-trail-glyph-search { animation: nb-trail-search-kf 3.1s ease-in-out infinite; transform-origin: center; }
+.nb-trail-row.live .nb-trail-glyph-brief { animation: nb-trail-brief-kf 3.7s ease-in-out infinite; }
+.nb-audit-settle { animation: nb-audit-settle-kf 420ms cubic-bezier(.22,.61,.36,1) both; }
+@media (prefers-reduced-motion: reduce) {
+  .nb-trail-window-enter, .nb-trail-window-leave, .nb-trail-row.live svg, .nb-trail-row.live circle, .nb-audit-settle { animation: none !important; opacity: 1; transform: none; }
+}
+
 /* B1: while a drag, pan, resize or connect is live, embedded previews let the release reach the board. */
 .canvas-lab-surface[data-interacting="true"] iframe { pointer-events: none; }
 
