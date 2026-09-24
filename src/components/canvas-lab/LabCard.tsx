@@ -12,8 +12,8 @@ import type { WorkItemRow } from "@/lib/work-types";
 import type { WorkboardCardPreview, WorkboardFilePreview } from "@/lib/workboard-card-preview.shared";
 
 /**
- * One object on the board. Cards mode is a sticky summary for orientation,
- * Live opens the same card up enough to work with. The card never offers an
+ * One object on the board. Imported work uses the shared Ledger face.
+ * Focus opens the same card up enough to work with. The card never offers an
  * action the owner rules would refuse.
  */
 export function LabCard({
