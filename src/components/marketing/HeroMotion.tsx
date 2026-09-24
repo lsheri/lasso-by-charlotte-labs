@@ -104,13 +104,15 @@ export function HeroMotion({ step = 0, onStepChange }: { step?: number; onStepCh
   const cardRefs = useRef<Record<string, HTMLElement | null>>({});
   const slideRef = useRef<HTMLDivElement | null>(null);
   const responseRef = useRef<HTMLDivElement | null>(null);
-  const current = STORY[shown] ?? STORY[0]!;
+  const fallbackStory = STORY[0];
+  if (!fallbackStory) return null;
+  const current = STORY[shown] ?? fallbackStory;
 
   useEffect(() => {
     if (step === shown) return;
     const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
     setLeaving(true);
-    const timer = setTimeout(() => { setPrevSlide((STORY[shown] ?? STORY[0]!).slide); setShown(step); setLeaving(false); }, reduced ? 0 : LEAVE_MS);
+    const timer = setTimeout(() => { setPrevSlide((STORY[shown] ?? fallbackStory).slide); setShown(step); setLeaving(false); }, reduced ? 0 : LEAVE_MS);
     return () => clearTimeout(timer);
   }, [step, shown]);
 
@@ -126,13 +128,14 @@ export function HeroMotion({ step = 0, onStepChange }: { step?: number; onStepCh
       const mx = slide.left - c.left;
       const my = slide.top - c.top + slide.height / 2;
       const streams = current.litSources.map((id) => {
-        const source = SOURCES.find((item) => item.id === id)!;
+        const source = SOURCES.find((item) => item.id === id);
+        if (!source) return null;
         const card = cardRefs.current[id]?.getBoundingClientRect();
         const sx = card ? card.right - c.left : 0;
         const sy = card ? card.top - c.top + card.height / 2 : my;
         const dx = Math.max(24, (mx - sx) / 2);
         return { id, vendor: source.vendor, d: `M${sx.toFixed(1)} ${sy.toFixed(1)} C${(sx + dx).toFixed(1)} ${sy.toFixed(1)} ${(mx - dx).toFixed(1)} ${my.toFixed(1)} ${mx.toFixed(1)} ${my.toFixed(1)}` };
-      });
+      }).filter((stream): stream is { id: SourceId; vendor: VendorGlyph; d: string } => stream !== null);
       const ax = slide.right - c.left;
       const bx = response.left - c.left;
       const by = response.top - c.top + Math.min(40, response.height / 2);
