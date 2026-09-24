@@ -206,3 +206,10 @@ describe("the runtime dim allowlist", () => {
     expect(result.dims).toEqual({ org_type: "firm" });
   });
 });
+
+describe("unit 7 answer_retried", () => {
+  it("keeps answer_retried on reflect.message_sent", () => {
+    const kept = guardEventDims("reflect.message_sent", { answer_retried: true, finish_reason: "stop" }).dims;
+    expect(kept).toMatchObject({ answer_retried: true, finish_reason: "stop" });
+  });
+});

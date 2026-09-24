@@ -56,3 +56,13 @@ describe("95.1 backdrop", () => {
     expect(reduced.includes(".nb-ask-backdrop") || block.includes(".nb-ask-backdrop")).toBe(true);
   });
 });
+
+describe("unit 7 question shows on send", () => {
+  const dock = read("src/components/reflect/AskDock.tsx");
+
+  it("holds the question from the moment of send until the answer lands", () => {
+    expect(dock).toContain("const [asked, setAsked] = useState<string | null>(null);");
+    expect(dock).toContain("asked: lasso.pending ? asked : null,");
+    expect(dock).toContain("setAsked(question);");
+  });
+});

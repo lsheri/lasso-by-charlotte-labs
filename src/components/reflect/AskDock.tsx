@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 
 import { AskSurface } from "@/components/reflect/AskSurface";
@@ -26,7 +26,23 @@ export function AskDock(props: {
   const { open, onOpenChange, engagementId, engagementTitle, profileId, orgId } =
     props;
   const { width, setWidth, tab, setTab } = useAskDockState();
-  const ask = useAskLasso({ open, engagementId, engagementTitle, profileId, orgId });
+  const lasso = useAskLasso({ open, engagementId, engagementTitle, profileId, orgId });
+  /** The person's question, shown in the thread the moment they send it. */
+  const [asked, setAsked] = useState<string | null>(null);
+  const ask = {
+    ...lasso,
+    asked: lasso.pending ? asked : null,
+    submit: async () => {
+      const question = lasso.draft.trim();
+      if (!question || lasso.pending) return;
+      setAsked(question);
+      try {
+        await lasso.submit();
+      } finally {
+        setAsked(null);
+      }
+    },
+  };
   const dragging = useRef(false);
 
   const onPointerMove = useCallback(

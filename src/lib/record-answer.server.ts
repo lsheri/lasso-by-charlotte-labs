@@ -30,7 +30,27 @@ Rules:
 2. Summary cards are somebody else's compression. You may reason from them, but you may NEVER quote them.
 3. Quotation marks may only ever go around text returned by read_items or read_turns, or text in THE BRIEF, copied character for character.
 4. If a fetch fails or the budget runs out, say plainly what you could not read. Never fill the gap with invention.
-5. When you have everything you need, stop calling tools and reply with the single word READY. Do not write the answer while tools are still available.`;
+5. When you have everything you need, stop calling tools and reply with the single word READY. Do not write the answer while tools are still available.
+6. If the question asks what Lasso can or cannot do (look things up online, send email, edit files, remember things, create a document), call no tools. Answer from this list:
+   Lasso can: read the person's own recorded work; cite where an answer came from; draft a document as an answer, which the person places with Put on board.
+   Lasso cannot: browse the web; send messages or email; change the person's files; place anything on a board itself.`;
+
+/**
+ * The final write call. The catalogue rules are removed before it, because
+ * they end with "reply READY", and the model obeyed that on the write call.
+ */
+export const ANSWER_RULES = `WRITE THE ANSWER NOW
+The tools are gone. Write the full answer to the person's last message now.
+- Never reply with a status word such as READY, DONE or OK. The reply is the answer itself.
+- Use only what you opened or read, plus THE BRIEF. Anything you only saw as a catalogue line, you did not open: say so if it matters.
+- Quotation marks go only around text you read verbatim, copied character for character.
+- When the person asks to put, save or place "that" or "this" somewhere, the thing to place is your previous answer in this conversation. Reuse it word for word; do not look it up again. You cannot place it yourself: give it back and say they can use Put on board under this answer, or open a board and drag it on.`;
+
+/** An empty or status-word reply is not an answer. */
+export function isStatusWordAnswer(text: string): boolean {
+  const bare = text.trim().replace(/[^\p{L}\p{N}\s]/gu, "").trim();
+  return bare === "" || bare.toUpperCase() === "READY";
+}
 
 export type CatalogueAnswer = {
   answer: string;
@@ -45,6 +65,8 @@ export type CatalogueAnswer = {
   searches: number;
   itemsFetched: number;
   finishReason: string;
+  /** The first write came back empty or as a status word and was asked again. */
+  answerRetried: boolean;
 };
 
 /** The prompt block that stands in for pouring the whole record into context. */
@@ -169,28 +191,70 @@ export async function runCatalogueAnswer(
     }
   }
 
-  conversation.push({
+  // The write call never sees CATALOGUE_RULES (its rule 5 says "reply READY").
+  // Catalogue context and every tool result stay, so nothing fetched is lost.
+  const writeConversation: ChatMessage[] = conversation.flatMap((m) =>
+    m.role === "system" && m.content === CATALOGUE_RULES
+      ? [{ role: "system" as const, content: ANSWER_RULES }]
+      : [m],
+  );
+  writeConversation.push({
     role: "user",
     content:
-      "Now write the answer, using only what you fetched and what is in the brief. Quote only text you fetched verbatim.",
+      "Now write the answer, using only what you opened and what is in the brief. Quote only text you read verbatim.",
   });
 
-  const final = onDelta
-    ? await streamChat(conversation, onDelta, {
-        tier: input.tier ?? "smart",
-        maxTokens: 8000,
-        meta: input.meta,
-        ...(input.timeoutMs ? { timeoutMs: input.timeoutMs } : {}),
-      })
-    : await chatComplete(conversation, {
-        tier: input.tier ?? "smart",
-        maxTokens: 8000,
-        meta: input.meta,
-        ...(input.timeoutMs ? { timeoutMs: input.timeoutMs } : {}),
-      });
+  const writeOpts = {
+    tier: input.tier ?? "smart",
+    maxTokens: 8000,
+    meta: input.meta,
+    ...(input.timeoutMs ? { timeoutMs: input.timeoutMs } : {}),
+  } as const;
+  // Hold the first few characters back so a status word never reaches the
+  // person's screen; release them the moment the reply is clearly an answer.
+  const gatedDelta = (sink: (delta: string) => void) => {
+    let held = "";
+    let open = false;
+    return {
+      push(delta: string) {
+        if (open) return sink(delta);
+        held += delta;
+        if (held.trim().length > 8 && !isStatusWordAnswer(held)) {
+          open = true;
+          sink(held);
+          held = "";
+        }
+      },
+      flush() {
+        if (!open && held && !isStatusWordAnswer(held)) sink(held);
+        held = "";
+      },
+    };
+  };
+  const write = async (messages: ChatMessage[]) => {
+    if (!onDelta) return chatComplete(messages, writeOpts);
+    const gate = gatedDelta(onDelta);
+    const result = await streamChat(messages, (d) => gate.push(d), writeOpts);
+    gate.flush();
+    return result;
+  };
+
+  let final = await write(writeConversation);
   tokensIn += final.tokensIn;
   tokensOut += final.tokensOut;
   costUsd += final.costUsd;
+
+  let answerRetried = false;
+  if (isStatusWordAnswer(final.text)) {
+    answerRetried = true;
+    final = await write([
+      ...writeConversation,
+      { role: "user", content: "Write the full answer now." },
+    ]);
+    tokensIn += final.tokensIn;
+    tokensOut += final.tokensOut;
+    costUsd += final.costUsd;
+  }
 
   // What the model actually saw, item by item, recorded honestly.
   const reads: AiReadInput[] = [...catalogue.brief.reads];
@@ -226,6 +290,7 @@ export async function runCatalogueAnswer(
     searches: state.searches,
     itemsFetched: state.readFull.size,
     finishReason: final.finishReason,
+    answerRetried,
     catalogue,
   };
 }

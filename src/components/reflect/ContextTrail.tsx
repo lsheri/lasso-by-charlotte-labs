@@ -171,7 +171,10 @@ export const READ_DEPTH_DETAIL: Record<ContextSource["depth"], string> = {
 
 type AuditReadRow = { key: string; title: string; kind: ManifestKind; detail: string; openId: string | null };
 
-function auditReadRows(manifest: ContextManifest, reads: ContextSource[]): AuditReadRow[] {
+export function auditReadRows(manifest: ContextManifest, allReads: ContextSource[]): AuditReadRow[] {
+  // Only what was actually read joins READ. Catalogue and unreadable items
+  // already sit in manifest.excluded, so listing them here counted them twice.
+  const reads = allReads.filter((read) => read.depth === "full" || read.depth === "extract");
   const byId = new Map(reads.map((read) => [read.id, read]));
   const matched = new Set<string>();
   const rows: AuditReadRow[] = manifest.items.map((item) => {
