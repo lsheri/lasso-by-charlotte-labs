@@ -179,7 +179,7 @@ import { isDeliverableType } from "@/lib/lineage-shared";
 import type { WorkItemRow } from "@/lib/work-types";
 import { useQueryClient } from "@tanstack/react-query";
 import { AddWorkPanel, type AddWorkSource } from "@/components/canvas-lab/AddWorkPanel";
-import { CARD_HEIGHT, CARD_WIDTH, bundleCountBand, chatBundles, dockBundles, dockedPieceChats } from "@/components/canvas-lab/canvas-lab-model";
+import { CARD_HEIGHT, CARD_WIDTH, bundleCountBand, chatBundles, dockBundles, dockedPieceChats, applyBundleViews, bundlePiecesBand, readBundleViews, workboardBundlesKey, writeBundleViews, type BundleView } from "@/components/canvas-lab/canvas-lab-model";
 import { placeWorkOnBoardFn } from "@/lib/workboard-add-work.functions";
 import { placeAddedCards, placementRectsForFrames, placementRectsForNodes, type PlacementRect } from "@/lib/workboard-placement";
 import { briefAttachmentPoints, pendingBriefAttachments } from "@/lib/brief-files";

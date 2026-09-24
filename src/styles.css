@@ -5443,3 +5443,12 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   .landing-close-line2 { opacity: 1; filter: none; mask-image: none; }
   .landing-close-particles { display: none; }
 }
+
+/* B2: bundle controls. Anchors hold one screen size (scale by 1/zoom, set inline). */
+.canvas-lab-bundle-anchor { position: absolute; z-index: 15; width: 0; height: 0; transform-origin: top left; }
+.canvas-lab-bundle-control { position: absolute; left: 0; top: 0; white-space: nowrap; min-height: 22px; padding: 0 8px; border: 1.4px solid var(--nb-pencil); border-radius: 6px; background: var(--nb-white); color: var(--nb-ink); font-family: var(--font-hand); font-size: 16px; line-height: 20px; }
+.canvas-lab-bundle-control--up { left: auto; right: 0; top: auto; bottom: 0; }
+.canvas-lab-bundle-more { position: absolute; z-index: 1; border: 1.4px dashed var(--nb-pencil); border-radius: 8px; background: var(--nb-white); color: var(--nb-ink); font-family: var(--font-hand); font-size: 16px; }
+.canvas-lab-bundle-edge { position: absolute; z-index: 0; border: 1.4px solid var(--nb-pencil); border-radius: 8px; background: var(--nb-white); pointer-events: none; }
+.canvas-lab-bundle-control:focus-visible,
+.canvas-lab-bundle-more:focus-visible { outline: 2px solid var(--nb-green); outline-offset: 2px; }
