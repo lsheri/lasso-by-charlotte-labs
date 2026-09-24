@@ -27,7 +27,7 @@ describe("C1 board context visibility", () => {
     expect(resolveMotion("context.picked", false).className).toBe("canvas-lab-context-flare");
     expect(resolveMotion("context.picked", true).className).toBe("");
     expect(resolveMotion("context.picked", true).reduced).toContain("steady context ring");
-    expect(css).toMatch(/@media \(prefers-reduced-motion: reduce\)[\s\S]*canvas-lab-context-flare/);
+    expect(css).toMatch(/@media \(prefers-reduced-motion: reduce\)[\s\S]*canvas-lab-card-paper::before/);
   });
 
   it("keeps the ring still, rotates only its beam, and declares both mask syntaxes", () => {

@@ -211,7 +211,7 @@ export function LabCard({
         {selected ? <Paperclip aria-hidden="true" className="canvas-lab-context-mark" /> : null}
         {madeInChat ? <span className="sr-only" data-testid="lab-card-made-in-chat">Made in the chat {madeInChat}</span> : null}
       </div>
-      {contextFlareDelay !== undefined ? <>
+      {contextFlareDelay !== undefined && contextMotionClass ? <>
         <span className="canvas-lab-flare" aria-hidden="true"><span className="canvas-lab-flare-beam" /></span>
         <span className="canvas-lab-flare-bloom" aria-hidden="true" />
       </> : null}
