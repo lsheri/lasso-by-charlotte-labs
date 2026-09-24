@@ -25,6 +25,8 @@ export type TelemetryEvent =
   | "work.panel_opened"
   /** Chat library: a filter or supporting panel was opened. Closed panel word only. */
   | "chatlib.panel_opened"
+  /** Ask Lasso: the persisted response-input disclosure was opened. Count bands only. */
+  | "reflect.trail_opened"
   | "workitem.captured"
   | "workitem.mapped"
   | "workitem.marked_private"

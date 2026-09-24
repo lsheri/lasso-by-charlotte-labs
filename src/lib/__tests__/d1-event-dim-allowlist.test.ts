@@ -160,6 +160,7 @@ const LIVE_KEYS_BY_FAMILY: Record<string, readonly string[]> = {
 
 const LIVE_KEYS_BY_EVENT: Record<string, readonly string[]> = {
   "chatlib.panel_opened": ["panel"],
+  "reflect.trail_opened": ["read_band", "also_in_band", "not_read_band"],
   "work.filter_changed": ["filter", "selected", "result_band"],
   "work.import_menu_opened": [],
   "work.panel_opened": ["panel"],
