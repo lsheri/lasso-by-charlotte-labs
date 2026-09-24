@@ -5,7 +5,6 @@ import { type FormEvent, useEffect, useRef, useState } from "react";
 import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
 import { PublicHeader } from "@/components/layout/PublicHeader";
 import { FocusSection } from "@/components/marketing/FocusSection";
-import { ParticleReveal } from "@/components/marketing/ParticleReveal";
 import { HeroMotion } from "@/components/marketing/HeroMotion";
 import { Button } from "@/components/ui/button";
 import { startSessionReplay, stopSessionReplay } from "@/lib/posthog-client";
@@ -50,7 +49,9 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
   const [submitError, setSubmitError] = useState(false);
   const [activeBeat, setActiveBeat] = useState(0);
   const seenBeats = useRef(new Set<number>());
-  const inputMode = useRef<"scroll" | "control">("scroll");
+  const inputMode = useRef<"scroll" | "control" | "timer">("scroll");
+  const storyRef = useRef<HTMLElement | null>(null);
+  const restartTimer = useRef<() => void>(() => {});
   const submitPilot = useServerFn(submitPilotRequestFn);
 
   useEffect(() => {
@@ -66,40 +67,69 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
   }, []);
 
   useEffect(() => {
-    // One observer: each stage runs only while it is on screen.
-    const targets = Array.from(document.querySelectorAll<HTMLElement>("[data-landing-beats-play]"));
-    if (typeof IntersectionObserver === "undefined") return;
-    // The hero runs whenever any of it shows; of the beats, only the one
-    // most in view runs.
-    const ratios = new Map<HTMLElement, number>();
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          ratios.set(entry.target as HTMLElement, entry.isIntersecting ? entry.intersectionRatio : 0);
-        }
-        let lead: HTMLElement | null = null;
-        for (const target of targets) {
-          if (target.tagName !== "ARTICLE") continue;
-          const ratio = ratios.get(target) ?? 0;
-          if (ratio > 0 && (!lead || ratio > (ratios.get(lead) ?? 0))) lead = target;
-        }
-        for (const target of targets) {
-          const on = target.tagName === "ARTICLE" ? target === lead : (ratios.get(target) ?? 0) > 0;
-          target.dataset["play"] = on ? "running" : "paused";
-        }
-        if (lead?.dataset["storyIndex"]) {
-          const next = Number(lead.dataset["storyIndex"]);
-          if (Number.isInteger(next)) {
-            inputMode.current = "scroll";
-            setActiveBeat(next);
-          }
-        }
-      },
-      { threshold: [0, 0.1, 0.25, 0.5, 0.75, 1] },
-    );
-    for (const target of targets) observer.observe(target);
-    return () => observer.disconnect();
+    // Desktop: the section is pinned for four viewport heights, one step per
+    // quarter of scroll. Phone: no pinning, steps advance every 8 seconds
+    // while the section is on screen.
+    const section = storyRef.current;
+    if (!section) return;
+    const phone = window.matchMedia("(max-width: 767px)");
+    let timer: ReturnType<typeof setInterval> | null = null;
+    let visible = false;
+
+    const onScroll = () => {
+      if (phone.matches) return;
+      const rect = section.getBoundingClientRect();
+      const travel = section.offsetHeight - window.innerHeight;
+      if (travel <= 0) return;
+      const progress = Math.min(0.999, Math.max(0, -rect.top / travel));
+      const next = Math.floor(progress * 4);
+      setActiveBeat((prev) => {
+        if (prev !== next) inputMode.current = "scroll";
+        return next;
+      });
+    };
+    const startTimer = () => {
+      if (timer || !phone.matches || !visible) return;
+      timer = setInterval(() => {
+        inputMode.current = "timer";
+        setActiveBeat((prev) => (prev + 1) % BEATS.length);
+      }, 8000);
+    };
+    const stopTimer = () => {
+      if (timer) clearInterval(timer);
+      timer = null;
+    };
+    restartTimer.current = () => { stopTimer(); startTimer(); };
+
+    const observer = typeof IntersectionObserver === "undefined" ? null : new IntersectionObserver((entries) => {
+      visible = entries.some((entry) => entry.isIntersecting);
+      if (visible) startTimer(); else stopTimer();
+    }, { threshold: 0.2 });
+    observer?.observe(section);
+    const onMode = () => { stopTimer(); startTimer(); onScroll(); };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    phone.addEventListener("change", onMode);
+    onScroll();
+    return () => {
+      stopTimer();
+      observer?.disconnect();
+      window.removeEventListener("scroll", onScroll);
+      phone.removeEventListener("change", onMode);
+    };
   }, []);
+
+  function goToStep(index: number) {
+    inputMode.current = "control";
+    const section = storyRef.current;
+    if (section && !window.matchMedia("(max-width: 767px)").matches) {
+      const travel = section.offsetHeight - window.innerHeight;
+      const top = section.getBoundingClientRect().top + window.scrollY;
+      window.scrollTo({ top: top + ((index + 0.5) / 4) * travel, behavior: "smooth" });
+    } else {
+      restartTimer.current();
+    }
+    setActiveBeat(index);
+  }
 
   useEffect(() => {
     if (seenBeats.current.has(activeBeat)) return;
@@ -128,6 +158,18 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
         event_type: "landing.pilot_cta_clicked",
         view_id: viewId.current,
         dims: { location },
+      },
+    }).catch(() => {
+      /* This signal must never surface to the visitor. */
+    });
+  }
+
+  function notePlacedPilotClick(placement: "header" | "close") {
+    void recordAnonymousEventFn({
+      data: {
+        event_type: "landing.pilot_cta_clicked",
+        view_id: viewId.current,
+        dims: { placement },
       },
     }).catch(() => {
       /* This signal must never surface to the visitor. */
@@ -196,7 +238,18 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
       </div>
 
       <div className="relative z-10">
-        <PublicHeader current="/" />
+        <PublicHeader
+          current="/"
+          cta={
+            <a
+              href="#pilot"
+              onClick={() => notePlacedPilotClick("header")}
+              className="landing-header-cta rounded-[var(--radius)] bg-foreground px-4 py-3 font-mono text-[13px] uppercase tracking-[0.08em] text-background transition-opacity hover:opacity-85 sm:px-6 sm:text-[18px]"
+            >
+              Book a pilot
+            </a>
+          }
+        />
 
         <main className="landing-beats-root pb-24 pt-16 md:pt-20">
           <div className="mx-auto max-w-5xl px-6 md:px-10">
@@ -231,49 +284,39 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
             </section>
           </div>
 
-          <div className="landing-beats-play mx-auto mt-12 max-w-[1480px] px-4 md:px-6" data-landing-beats-play>
-            <HeroMotion activeSlide={activeBeat} onSlideChange={(index) => { inputMode.current = "control"; setActiveBeat(index); }} />
-          </div>
-
-          <section id="beats" className="landing-story-carousel mx-auto mt-24 max-w-6xl px-6 md:px-10" aria-label="How Lasso works">
-            <div className="landing-story-carousel-copy landing-story-carousel-copy-mobile">
-              <p className="micro-label">HOW IT WORKS</p>
-              <h2 className="pencil-title mt-4">The work stays connected from first thought to final answer.</h2>
-            </div>
-            <div className="landing-story-carousel-grid">
-              <div className="landing-story-sticky" aria-hidden="true">
-                <div className="landing-story-carousel-copy">
-                  <p className="micro-label">HOW IT WORKS</p>
-                  <h2 className="pencil-title mt-3">The work stays connected from first thought to final answer.</h2>
-                </div>
-                <HeroMotion activeSlide={activeBeat} />
+          <section id="beats" ref={storyRef} className="landing-story-pin mt-16" aria-label="How Lasso works">
+            <div className="landing-story-pin-inner mx-auto max-w-[1480px] px-4 md:px-6">
+              <div className="landing-story-pin-head">
+                <p className="micro-label">HOW IT WORKS</p>
+                <h2 className="pencil-title">The work stays connected from first thought to final answer.</h2>
               </div>
-              <div className="landing-story-beats">
-                {BEATS.map((beat, index) => (
-                  <article key={beat.key} className="landing-beats-play landing-story-beat" data-landing-beats-play data-story-index={index} data-active={activeBeat === index}>
-                    <p className="micro-label">{beat.label}</p>
-                    <h3 className="pencil-title mt-4">{beat.title}</h3>
-                    <p className="mt-5 max-w-xl text-base leading-relaxed text-foreground">{beat.body}</p>
-                    {index === 3 ? <p className="mt-5 font-mono text-[11.5px] text-muted-foreground">Shared boards are read only. Their links close after 48 hours.</p> : null}
-                    <div className="landing-story-beat-motion">
-                      <HeroMotion activeSlide={index} onSlideChange={(nextIndex) => { inputMode.current = "control"; setActiveBeat(nextIndex); }} />
-                    </div>
-                  </article>
-                ))}
-              </div>
+              <HeroMotion step={activeBeat} onStepChange={goToStep} />
+              {BEATS.map((beat, index) => (
+                <article key={beat.key} className="landing-story-beat" data-story-index={index} data-active={activeBeat === index} hidden={activeBeat !== index}>
+                  <p className="micro-label">{beat.label}</p>
+                  <h3>{beat.title}</h3>
+                  <p>{beat.body}</p>
+                  {index === 3 ? <p className="font-mono text-[11.5px] text-muted-foreground">Shared boards are read only. Their links close after 48 hours.</p> : null}
+                </article>
+              ))}
             </div>
           </section>
 
-          <div className="mx-auto max-w-3xl px-6 md:px-10">
-            <section className="mt-24 border-t border-rule pt-10">
-              <ParticleReveal>
-                <h2 className="pencil-title">Deliverables you can defend to a client, a partner, or a board...</h2>
-                <p className="mt-5 max-w-2xl text-base leading-relaxed text-foreground">
-                  The work, judgment, thinking...VISIBLE*
-                </p>
-              </ParticleReveal>
-            </section>
+          <section className="landing-close mx-auto max-w-4xl px-6 md:px-10">
+            <h2 className="landing-close-line1">Deliverables you can defend to a client, a partner, or a board.</h2>
+            <p className="landing-close-line2">The work, judgment, thinking. Visible.</p>
+            <div className="mt-10">
+              <Button asChild>
+                <a href="#pilot" onClick={() => notePlacedPilotClick("close")}>
+                  Book a pilot
+                </a>
+              </Button>
+            </div>
+            <p className="mt-6 text-base text-foreground">Three months. Your firm's real work. No prompts shown to anyone.</p>
+            <p className="mt-2 font-mono text-[11.5px] text-muted-foreground">A 30-minute call · we set up one engagement with you · you keep the record either way</p>
+          </section>
 
+          <div className="mx-auto max-w-3xl px-6 md:px-10">
             <div id="pilot">
             <FocusSection className="mt-20 border-t border-rule pt-10">
               <p className="micro-label">PILOT</p>
