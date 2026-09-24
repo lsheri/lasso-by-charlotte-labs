@@ -2,7 +2,6 @@ import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { type FormEvent, useEffect, useRef, useState } from "react";
 
-import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
 import { PublicHeader } from "@/components/layout/PublicHeader";
 import { FocusSection } from "@/components/marketing/FocusSection";
 import { HeroMotion } from "@/components/marketing/HeroMotion";
@@ -18,27 +17,27 @@ export const HERO_H1 = "Your firm bought AI. The human judgment, process, and th
 const BEATS = [
   {
     key: "thinking",
-    label: "01 · THE THINKING",
-    title: "Keep the thinking, not just the output.",
-    body: "Bring work from the AI tools your team already uses into one durable record. The analysis, alternatives, and human choices stay with the finished work.",
+    label: "01 · THE NUMBER",
+    title: "Show where the $1.4M scenario came from.",
+    body: "The finished slide stays connected to the scenario and pipeline work that shaped it.",
   },
   {
     key: "source",
-    label: "02 · THE SOURCE",
-    title: "Move from a claim to its source in one click.",
-    body: "Connect a deck statement to the conversation and human choice behind it. Open the exact turn instead of reconstructing the story later.",
+    label: "02 · THE COMPARABLES",
+    title: "Keep the five organizations with the research behind them.",
+    body: "The board-chair conversation and research thread remain beside the benchmark slide.",
   },
   {
     key: "answer",
-    label: "03 · THE ANSWER",
-    title: "Know what shaped the answer.",
-    body: "See what was read, what was left out, and why. Ask a plain-language question about the work and get the source with the answer.",
+    label: "03 · THE EXACT TURN",
+    title: "Return to the choice, not just the finished wording.",
+    body: "The chair-term decision opens at the exact conversation turn where the team chose it.",
   },
   {
     key: "share",
-    label: "04 · THE HANDOFF",
-    title: "Share the work without surrendering the whole record.",
-    body: "Coaches see only the work you choose to share. Nobody is told when you keep something back.",
+    label: "04 · THE RECOMMENDATION",
+    title: "Keep the conversations that shaped the recommendation in order.",
+    body: "The constraint, structure choice, and merger scenario remain connected to the final slide.",
   },
 ] as const;
 
@@ -52,6 +51,9 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
   const inputMode = useRef<"scroll" | "control" | "timer">("scroll");
   const storyRef = useRef<HTMLElement | null>(null);
   const restartTimer = useRef<() => void>(() => {});
+  const pauseTimer = useRef<() => void>(() => {});
+  const closeRef = useRef<HTMLElement | null>(null);
+  const [closeResolved, setCloseResolved] = useState(false);
   const submitPilot = useServerFn(submitPilotRequestFn);
 
   useEffect(() => {
@@ -100,6 +102,7 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
       timer = null;
     };
     restartTimer.current = () => { stopTimer(); startTimer(); };
+    pauseTimer.current = stopTimer;
 
     const observer = typeof IntersectionObserver === "undefined" ? null : new IntersectionObserver((entries) => {
       visible = entries.some((entry) => entry.isIntersecting);
@@ -126,7 +129,7 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
       const top = section.getBoundingClientRect().top + window.scrollY;
       window.scrollTo({ top: top + ((index + 0.5) / 4) * travel, behavior: "smooth" });
     } else {
-      restartTimer.current();
+      pauseTimer.current();
     }
     setActiveBeat(index);
   }
@@ -146,6 +149,24 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
       /* This signal must never surface to the visitor. */
     });
   }, [activeBeat]);
+
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setCloseResolved(true);
+      return;
+    }
+    const close = closeRef.current;
+    if (!close) return;
+    const reveal = () => {
+      if (close.getBoundingClientRect().top <= window.innerHeight * 0.6) {
+        setCloseResolved(true);
+        window.removeEventListener("scroll", reveal);
+      }
+    };
+    window.addEventListener("scroll", reveal, { passive: true });
+    reveal();
+    return () => window.removeEventListener("scroll", reveal);
+  }, []);
 
   useEffect(() => {
     stopSessionReplay();
@@ -233,10 +254,6 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
 
   return (
     <div className="landing-next min-h-screen overflow-x-clip bg-background">
-      <div className="landing-next-loop-small pointer-events-none fixed" aria-hidden="true">
-        <LassoLoopMark className="h-full w-full text-lasso-green" drawWithScroll />
-      </div>
-
       <div className="relative z-10">
         <PublicHeader
           current="/"
@@ -302,9 +319,12 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
             </div>
           </section>
 
-          <section className="landing-close mx-auto max-w-4xl px-6 md:px-10">
-            <h2 className="landing-close-line1">Deliverables you can defend to a client, a partner, or a board.</h2>
-            <p className="landing-close-line2">The work, judgment, thinking. Visible.</p>
+          <section ref={closeRef} className="landing-close mx-auto max-w-4xl px-6 md:px-10" data-resolved={closeResolved} onPointerDown={() => { if (window.matchMedia("(max-width: 767px)").matches) setCloseResolved(true); }}>
+            <h2 className="landing-close-line1 landing-close-wordmark">Deliverables you can defend to a client, a partner, or a board.</h2>
+            <div className="landing-close-ink-wrap">
+              <p className="landing-close-line2">The work, judgment, thinking. Visible.</p>
+              <span className="landing-close-particles" aria-hidden="true" />
+            </div>
             <div className="mt-10">
               <Button asChild>
                 <a href="#pilot" onClick={() => notePlacedPilotClick("close")}>
