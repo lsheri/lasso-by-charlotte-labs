@@ -84,7 +84,8 @@ function sourceObservation(page: Page) {
   return page.evaluate(() => ({
     board: Boolean(document.querySelector('[data-testid="board-shell"]')),
     lanes: document.querySelectorAll("[data-board-lane]").length,
-    askedText: Array.from(document.querySelectorAll("h2, h3, p")).map((element) => element.textContent?.trim() ?? "").find((text) => /question|asked|session/i.test(text)) ?? null,
+    askedSessions: Boolean(document.querySelector('[data-testid="asked-sessions"]')),
+    askedText: document.querySelector('[data-testid="asked-sessions"]')?.textContent?.replace(/\s+/g, " ").trim() ?? null,
   }));
 }
 
@@ -153,12 +154,12 @@ test("unit2 all conversations shell", async ({ page }) => {
     await asked.click(); await page.waitForTimeout(350); const askedState = await sourceObservation(page);
     await everything.click(); await page.waitForTimeout(350); const everythingState = await sourceObservation(page);
     await captured.click(); await page.waitForTimeout(350);
-    const pass = capturedState.board && !askedState.board && everythingState.board;
+    const pass = capturedState.board && askedState.askedSessions && everythingState.board && everythingState.askedSessions;
     return `${pass ? "PASS" : "FAIL"} captured=${JSON.stringify(capturedState)} asked=${JSON.stringify(askedState)} everything=${JSON.stringify(everythingState)}`;
   });
   await result("reader open and close refit", async () => {
     const before = await measure(page, "reader-before");
-    const card = page.locator("[data-board-node] article").first();
+    const card = page.locator("[data-board-node]").first();
     if (!(await card.count())) return "N/A no conversation cards";
     await card.click(); await page.waitForTimeout(600);
     const opened = await measure(page, "reader-open");
