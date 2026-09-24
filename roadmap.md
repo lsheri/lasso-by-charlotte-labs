@@ -72,3 +72,8 @@
 - [x] Read stored HTML/SVG artifacts safely and shape them as HTML previews.
 - [x] Render sandboxed previews without breaking board interactions.
 - [x] Verify CSP injection, fallback behavior, event kind reuse, and preserved controls/states.
+
+## Unit 2 All conversations shell
+- [ ] Replace the page shell while preserving controls, states, and existing calls.
+- [ ] Add the engagement-panel event guard and focused geometry tests.
+- [ ] Run focused checks, type check, and live four-size interaction verification.
