@@ -94,15 +94,15 @@ describe("Ask Lasso signature loop maths", () => {
     );
   });
 
-  it("starts with the cursive L and then advances through four distinct symbols in order", () => {
+  it("starts with the cursive L, advances through four symbols and the fox, then repeats", () => {
     const cycleSeconds = LOOP_CYCLE_MS / 1000;
-    expect(LOOP_SEQUENCE_LENGTH).toBe(5);
-    expect(Array.from({ length: 10 }, (_, index) => resolvedFormAt(cycleSeconds * index))).toEqual([
-      0, 1, 2, 3, 4, 0, 1, 2, 3, 4,
+    expect(LOOP_SEQUENCE_LENGTH).toBe(6);
+    expect(Array.from({ length: 12 }, (_, index) => resolvedFormAt(cycleSeconds * index))).toEqual([
+      0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5,
     ]);
 
     const silhouettes = Array.from({ length: LOOP_SEQUENCE_LENGTH }, (_, form) =>
-      settledLassoStamps(LOOP_SIZE_TITLE, form as 0 | 1 | 2 | 3 | 4)
+      settledLassoStamps(LOOP_SIZE_TITLE, form as 0 | 1 | 2 | 3 | 4 | 5)
         .map(({ x, y }) => `${x.toFixed(2)},${y.toFixed(2)}`)
         .join("|"),
     );
@@ -123,14 +123,14 @@ describe("Ask Lasso signature loop maths", () => {
       expect(stamp.y).toBeCloseTo(target?.y ?? 0, 10);
     });
     for (const size of [LOOP_SIZE_CHAT, LOOP_SIZE_TOOLBAR, 56, LOOP_SIZE_TITLE]) {
-      for (const form of [0, 1, 2, 3, 4] as const) {
+      for (const form of [0, 1, 2, 3, 4, 5] as const) {
         expect(settledLassoStamps(size, form).every(({ x, y }) => x >= 0 && x <= size && y >= 0 && y <= size)).toBe(true);
       }
     }
   });
 
   it("provides connected final linework for every resolved form", () => {
-    for (const form of [0, 1, 2, 3, 4] as const) {
+    for (const form of [0, 1, 2, 3, 4, 5] as const) {
       const paths = resolvedLinework(LOOP_SIZE_TITLE, form);
       expect(paths.length).toBeGreaterThan(0);
       expect(paths.some(({ points }) => points.length > 10)).toBe(true);
