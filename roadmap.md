@@ -77,6 +77,11 @@
 - [x] Render sandboxed previews without breaking board interactions.
 - [x] Verify CSP injection, fallback behavior, event kind reuse, and preserved controls/states.
 
+## C1 Board context visibility
+- [x] Make cards in Ask Lasso context unmistakably lime while preserving the paperclip cue.
+- [x] Add one-time registry-led entry flares, ordered marquee staggering, and still reduced-motion behavior.
+- [x] Clarify marquee preview and sticky keyboard focus without changing controls or event payloads.
+
 ## Unit 2 All conversations shell
 - [x] Replace the page shell while preserving controls, states, and existing calls.
 - [x] Add the engagement-panel event guard and focused geometry tests.

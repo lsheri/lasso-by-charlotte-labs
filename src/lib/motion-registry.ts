@@ -49,7 +49,8 @@ export type MotionName =
   /** Pass E2 · Find it. Rows of what was said, arriving in order. */
   | "rows-land"
   | "arrows"
-  | "workboard-unfold";
+  | "workboard-unfold"
+  | "context-flare";
 
 export type MotionEventName =
   // Auditability. Never remove one of these.
@@ -91,7 +92,8 @@ export type MotionEventName =
   | "page.enter"
   | "nav.active"
   | "arrow.drawn"
-  | "canvas.unfolded";
+  | "canvas.unfolded"
+  | "context.picked";
 
 interface MotionEventEntry {
   readonly group: MotionGroup;
@@ -276,6 +278,12 @@ const MOTION_EVENT_REGISTRY: Readonly<Record<MotionEventName, MotionEventEntry>>
     reduced: "Workboard open",
     promise: false,
   },
+  "context.picked": {
+    group: "chrome",
+    motion: "context-flare",
+    reduced: "The steady context ring appears",
+    promise: false,
+  },
 };
 
 interface MotionDraw {
@@ -327,6 +335,7 @@ const MOTION_CLASS: Partial<Record<MotionName, MotionDraw>> = {
   "keep-check": { moving: "nb-findit-kept" },
   "rows-land": { moving: "nb-findit-row" },
   "workboard-unfold": { moving: "canvas-lab-unfold" },
+  "context-flare": { moving: "canvas-lab-context-flare" },
 };
 
 /** True when the reader has asked for less movement. Safe during SSR. */

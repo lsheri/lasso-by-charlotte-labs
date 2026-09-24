@@ -1554,15 +1554,46 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   outline: calc(2px * var(--lab-inverse-zoom, 1)) solid var(--nb-green);
   outline-offset: calc(1px * var(--lab-inverse-zoom, 1));
 }
-.canvas-lab-card-paper[data-selected="true"]::before {
+.canvas-lab-card-paper::before,
+.canvas-lab-card-paper::after {
   content: "";
   position: absolute;
   inset: calc(-1px * var(--lab-inverse-zoom, 1));
   z-index: 10;
-  border: calc(2px * var(--lab-inverse-zoom, 1)) solid var(--mint);
   border-radius: inherit;
-  box-shadow: 0 0 calc(14px * var(--lab-inverse-zoom, 1)) calc(2px * var(--lab-inverse-zoom, 1)) color-mix(in srgb, var(--mint) 38%, transparent);
   pointer-events: none;
+}
+.canvas-lab-card-paper::before {
+  border: calc(2px * var(--lab-inverse-zoom, 1)) solid var(--nb-lasso-green);
+  box-shadow: 0 0 calc(14px * var(--lab-inverse-zoom, 1)) calc(2px * var(--lab-inverse-zoom, 1)) color-mix(in srgb, var(--nb-lasso-green) 45%, transparent);
+  opacity: 0;
+  transition: opacity 180ms ease-out;
+}
+.canvas-lab-card-paper[data-selected="true"]::before { opacity: 1; }
+.canvas-lab-card-paper[data-marquee-preview="true"]::before { opacity: .5; }
+.canvas-lab-card-paper::after {
+  inset: calc(-3px * var(--lab-inverse-zoom, 1));
+  padding: calc(3px * var(--lab-inverse-zoom, 1));
+  background: conic-gradient(from 0deg, transparent 0 74%, var(--nb-lasso-green) 87%, transparent 100%);
+  box-shadow: 0 0 calc(28px * var(--lab-inverse-zoom, 1)) calc(5px * var(--lab-inverse-zoom, 1)) color-mix(in srgb, var(--nb-lasso-green) 45%, transparent);
+  opacity: 0;
+  transform: rotate(0deg);
+  -webkit-mask: linear-gradient(var(--nb-white) 0 0) content-box, linear-gradient(var(--nb-white) 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+@keyframes canvas-lab-context-flare-kf {
+  0% { opacity: 0; transform: rotate(0deg); }
+  14% { opacity: 1; transform: rotate(38deg); }
+  78% { opacity: .82; transform: rotate(360deg); }
+  100% { opacity: 0; transform: rotate(420deg); }
+}
+.canvas-lab-context-flare .canvas-lab-card-paper[data-context-entering="true"]::after {
+  animation: canvas-lab-context-flare-kf 900ms cubic-bezier(.22,.61,.36,1) var(--context-flare-delay, 0ms) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .canvas-lab-context-flare .canvas-lab-card-paper[data-context-entering="true"]::after { animation: none; }
+  .canvas-lab-card-paper::before { transition: none; }
 }
 .canvas-lab-context-mark {
   position: absolute;
@@ -5006,8 +5037,8 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   position: absolute;
   pointer-events: none;
   z-index: 30;
-  border: calc(1.4px * var(--lab-inverse-zoom, 1)) solid var(--mint);
-  background: color-mix(in srgb, var(--mint) 8%, transparent);
+  border: calc(1.4px * var(--lab-inverse-zoom, 1)) dashed var(--nb-lasso-green);
+  background: color-mix(in srgb, var(--nb-lasso-green) 6%, transparent);
 }
 
 /* B4: an answer dragged from the chat reaches the board, not a preview. */
@@ -5229,7 +5260,7 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 .canvas-lab-sticky[data-fill="blue"] { --sticky-fill: var(--sticky-blue); --sticky-edge: var(--sticky-blue-edge); }
 .canvas-lab-sticky[data-fill="pink"] { --sticky-fill: var(--sticky-pink); --sticky-edge: var(--sticky-pink-edge); }
 .canvas-lab-sticky[data-fill="grey"] { --sticky-fill: var(--sticky-grey); --sticky-edge: var(--sticky-grey-edge); }
-.canvas-lab-sticky[data-selected="true"] { z-index: 40; outline: calc(2px * var(--lab-inverse-zoom, 1)) solid var(--mint); outline-offset: calc(1px * var(--lab-inverse-zoom, 1)); box-shadow: 0 0 calc(14px * var(--lab-inverse-zoom, 1)) calc(2px * var(--lab-inverse-zoom, 1)) color-mix(in srgb, var(--mint) 38%, transparent); }
+.canvas-lab-sticky[data-selected="true"] { z-index: 40; outline: calc(2px * var(--lab-inverse-zoom, 1)) solid var(--nb-graphite); outline-offset: calc(1px * var(--lab-inverse-zoom, 1)); }
 .canvas-lab-sticky textarea { width: 100%; height: 100%; resize: none; overflow-y: auto; border: 0; background: transparent; color: var(--nb-ink); font-family: var(--font-ui); line-height: 1.35; }
 .canvas-lab-sticky textarea:focus { outline: none; }
 .canvas-lab-sticky textarea::placeholder { color: var(--nb-faint); }
