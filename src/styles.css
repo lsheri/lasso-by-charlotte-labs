@@ -1553,10 +1553,11 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 .canvas-lab-card-paper[data-selected="true"]::before {
   content: "";
   position: absolute;
-  inset: 0;
+  inset: calc(-1px * var(--lab-inverse-zoom, 1));
   z-index: 10;
-  border: calc(1.4px * var(--lab-inverse-zoom, 1)) dashed var(--nb-green);
+  border: calc(2px * var(--lab-inverse-zoom, 1)) solid var(--mint);
   border-radius: inherit;
+  box-shadow: 0 0 calc(14px * var(--lab-inverse-zoom, 1)) calc(2px * var(--lab-inverse-zoom, 1)) color-mix(in srgb, var(--mint) 38%, transparent);
   pointer-events: none;
 }
 .canvas-lab-context-mark {
