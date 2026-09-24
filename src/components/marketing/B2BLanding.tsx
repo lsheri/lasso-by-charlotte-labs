@@ -48,6 +48,7 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
   const [submitError, setSubmitError] = useState(false);
   const [activeBeat, setActiveBeat] = useState(0);
   const seenBeats = useRef(new Set<number>());
+  const inputMode = useRef<"scroll" | "control">("scroll");
   const submitPilot = useServerFn(submitPilotRequestFn);
 
   useEffect(() => {
@@ -86,7 +87,10 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
         }
         if (lead?.dataset["storyIndex"]) {
           const next = Number(lead.dataset["storyIndex"]);
-          if (Number.isInteger(next)) setActiveBeat(next);
+          if (Number.isInteger(next)) {
+            inputMode.current = "scroll";
+            setActiveBeat(next);
+          }
         }
       },
       { threshold: [0, 0.1, 0.25, 0.5, 0.75, 1] },
@@ -104,7 +108,7 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
       data: {
         event_type: "landing.story_section_viewed",
         view_id: viewId.current,
-        dims: { section: beat.key, input_mode: "scroll" },
+        dims: { section: beat.key, input_mode: inputMode.current },
       },
     }).catch(() => {
       /* This signal must never surface to the visitor. */
@@ -226,7 +230,7 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
           </div>
 
           <div className="landing-beats-play mx-auto mt-12 max-w-[1480px] px-4 md:px-6" data-landing-beats-play>
-            <HeroMotion activeSlide={activeBeat} onSlideChange={setActiveBeat} />
+            <HeroMotion activeSlide={activeBeat} onSlideChange={(index) => { inputMode.current = "control"; setActiveBeat(index); }} />
           </div>
 
           <section id="beats" className="landing-story-carousel mx-auto mt-24 max-w-6xl px-6 md:px-10" aria-label="How Lasso works">

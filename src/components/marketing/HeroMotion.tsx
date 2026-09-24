@@ -39,8 +39,10 @@ export function ScaledStage({
   );
 }
 
+export type VendorGlyph = "claude" | "chatgpt" | "gemini" | "granola";
+
 type SourceCard = {
-  vendor: Extract<VendorKey, "claude" | "chatgpt" | "gemini">;
+  vendor: VendorGlyph;
   label: string;
   title: string;
   excerpt: string;
@@ -119,7 +121,7 @@ function DeckSlide({ index }: { index: number }) {
 function SourceCardView({ card, index, active }: { card: SourceCard; index: number; active: number }) {
   return (
     <article className="landing-story-source" data-source-active={active === index || (active === 3 && index < 2)}>
-      <header><VendorMark vendor={card.vendor} size={24} /><span>{card.label}</span></header>
+      <header>{card.vendor === "granola" ? <span className="landing-story-granola" aria-hidden="true">G</span> : <VendorMark vendor={card.vendor} size={24} />}<span>{card.label}</span></header>
       <h3>{card.title}</h3>
       <p>{card.excerpt}</p>
     </article>
