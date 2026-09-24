@@ -81,7 +81,7 @@ describe("S1.2: no brief card on new boards", () => {
     const base = { frames: [], nodes: seedBlankCanvas({ ...SEED, savedBrief: true }) };
     const board = { frames: [], links: [], viewerProfileId: null, nodes: [{ id: "n1", kind: "brief", title: "", body: "", judgmentType: null, x: 40, y: 40, w: 0, h: 0, frameId: null, workItemId: null, decisionId: null, authorProfileId: null, hidden: false, version: 1 }] } as never;
     const merged = applyDurableBoard(base, board);
-    expect(merged.nodes.find((node) => node.id === "brief")).toMatchObject({ kind: "brief", x: 40, width: 360 > 0 ? expect.any(Number) : 0 });
+    expect(merged.nodes.find((node) => node.id === "brief")).toMatchObject({ kind: "brief", x: 40, width: expect.any(Number) });
   });
 });
 
