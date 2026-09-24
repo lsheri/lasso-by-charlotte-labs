@@ -208,6 +208,9 @@
      the action colour stays graphite. The wash is the green at 40% on paper. */
   --nb-lasso-green: #04f85b;
   --nb-lasso-green-wash: #98f9b9;
+  /* Granola's own mark: dark spiral on its green square. */
+  --brand-granola: #7cb342;
+  --brand-granola-ink: #111111;
   /* The scrim behind a modal. Ink, not black: the page behind stays legible
      paper rather than blacking out. Matches .nb-ask-backdrop's language, which
      already dims with ink rather than with black. */
