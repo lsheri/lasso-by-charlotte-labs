@@ -21,8 +21,8 @@ describe("pass 179: the chat archive groups by month", () => {
     expect(page).toContain("InlineAnalysisBlocks");
   });
 
-  it("reads All conversations in the heading", () => {
-    expect(page).toContain('>All conversations</h1>');
+  it("reads All AI Conversations in the heading", () => {
+    expect(page).toContain('>All AI Conversations</h1>');
   });
 
   it("colours the engagement code on the row", () => {

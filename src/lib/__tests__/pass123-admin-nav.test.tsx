@@ -86,7 +86,9 @@ describe("Pass 123: the sidebar follows the weekly loop", () => {
     ]);
 
     const lookback = navGroups.find((g) => g.label === "Look back")!;
-    expect(lookback.items.map((i) => i.to)).toEqual(["/find-it", "/decisions"]);
+    expect(lookback.items.map((i) => i.to)).toEqual(["/ai-record", "/find-it", "/decisions"]);
+    expect(lookback.items.find((i) => i.label === "Past Ask Lasso chats")?.search).toEqual({ view: "asked" });
+    expect(lookback.items.filter((i) => i.disabled).map((i) => i.label)).toEqual(["Find it", "Decision log"]);
     expect(lookback.items.map((i) => i.to)).not.toContain("/firm");
     expect(lookback.items.map((i) => i.to)).not.toContain("/members");
 

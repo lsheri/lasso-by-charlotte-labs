@@ -5,6 +5,7 @@ import { Fragment, useState, useSyncExternalStore } from "react";
 import { NewEngagementDialog } from "@/components/engagements/NewEngagementDialog";
 import { GraphiteIcon } from "@/components/notebook/icons";
 import { CircleMark } from "@/components/notebook/CircleMark";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAffiliation } from "@/hooks/use-affiliation";
 import { useUnreadNotesAboutMe } from "@/hooks/use-coach-note-thread";
 import { useHasLiveCoachLink } from "@/hooks/use-coaching-links";
@@ -369,7 +370,23 @@ export function SidebarNav({
           .filter((item) => !(item.to === "/members" && !canManageMembers))
           .filter((item) => !(item.to === "/firm" && !canSeeFirmView))
           .map((item) =>
-            item.to === "/settings" ? (
+            item.disabled ? (
+              <TooltipProvider key={`${item.to}:${item.label}`} delayDuration={150}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      aria-disabled="true"
+                      className={`${linkClass} nb-nav-item-disabled w-full text-left`}
+                    >
+                      <GraphiteIcon name={item.icon} size={20} />
+                      <span className="truncate">{item.label}</span>
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">{item.disabledReason ?? "Coming soon"}</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            ) : item.to === "/settings" ? (
               <button
                 key={item.to}
                 type="button"
@@ -397,8 +414,9 @@ export function SidebarNav({
               </CircleMark>
             ) : (
               <Link
-                key={item.to}
+                 key={`${item.to}:${item.label}`}
                 to={item.to}
+                 search={item.search}
                 onClick={onNavigate}
                 className={item.nested ? `${linkClass} nb-nav-item-nested` : linkClass}
                 activeProps={activeProps}

@@ -15,7 +15,13 @@ import * as roles from "@/lib/role-access";
 import { engagementDisplayCode, engagementDisplayTitle } from "@/lib/clients";
 import { supabase } from "@/integrations/supabase/client";
 
-type Dest = { label: string; to: string; icon: GraphiteIconName };
+type Dest = {
+  label: string;
+  to: string;
+  icon: GraphiteIconName;
+  disabled?: boolean;
+  search?: { view: "asked" };
+};
 
 /**
  * On phones the drawer is gone: four destinations sit in the thumb zone and
@@ -52,8 +58,10 @@ export function MobileTabBar() {
     : [
         { label: "Home", to: "/home", icon: "overview" },
         { label: "Inbox", to: "/work", icon: "work" },
-        { label: "All conversations", to: "/ai-record", icon: "ai-record" },
-        { label: "Decision log", to: "/decisions", icon: "decisions" },
+        { label: "All AI Conversations", to: "/ai-record", icon: "ai-record" },
+        { label: "Past Ask Lasso chats", to: "/ai-record", icon: "history", search: { view: "asked" } },
+        { label: "Find it", to: "/find-it", icon: "work", disabled: true },
+        { label: "Decision log", to: "/decisions", icon: "decisions", disabled: true },
         { label: "1:1 prep", to: "/one-on-one", icon: "one-on-one" },
         ...(canReview
           ? [{ label: "People you coach", to: "/coaching", icon: "members" as const }]
@@ -183,10 +191,22 @@ export function MobileTabBar() {
             {profile?.display_name ?? "You"}
           </SheetTitle>
           <div className="mt-3 flex flex-col gap-0.5">
-            {you.map((item) => (
+            {you.map((item) => item.disabled ? (
+              <button
+                key={`${item.to}:${item.label}`}
+                type="button"
+                aria-disabled="true"
+                title="Coming soon"
+                className="nb-nav-item nb-nav-item-disabled min-h-[48px] w-full text-left"
+              >
+                <GraphiteIcon name={item.icon} size={16} />
+                <span className="flex flex-1 items-center justify-between gap-2"><span>{item.label}</span><span className="font-mono text-[9px] uppercase tracking-[0.08em]">Coming soon</span></span>
+              </button>
+            ) : (
               <Link
-                key={item.to}
+                key={`${item.to}:${item.label}`}
                 to={item.to}
+                search={item.search}
                 onClick={() => setYouOpen(false)}
                 className="nb-nav-item min-h-[48px]"
                 activeProps={{ className: "nb-nav-item-active" }}
