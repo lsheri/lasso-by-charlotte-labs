@@ -216,6 +216,6 @@ describe("unit 7 answer_retried", () => {
     expect(EVENT_DIM_KEYS["landing.usecase_played"]).toEqual(["card", "input_mode"]);
     const kept = guardEventDims("landing.usecase_played", { card: "every_number", input_mode: "tap", title: "x" }) as Record<string, unknown>;
     expect(kept).toMatchObject({ keep: true, dims: { card: "every_number", input_mode: "tap" } });
-    expect((kept.dims as Record<string, unknown>).title).toBeUndefined();
+    expect((kept["dims"] as Record<string, unknown>)["title"]).toBeUndefined();
   });
 });
