@@ -1,16 +1,9 @@
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { type FormEvent, type ReactNode, useEffect, useRef, useState } from "react";
+import { type FormEvent, useEffect, useRef, useState } from "react";
 
 import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
 import { PublicHeader } from "@/components/layout/PublicHeader";
-import {
-  BeatClaimSnapshot,
-  BeatNotReadSnapshot,
-  BeatRefuseSnapshot,
-  BeatReviewerSnapshot,
-  BeatToolsSnapshot,
-} from "@/components/marketing/BeatSnapshots";
 import { FocusSection } from "@/components/marketing/FocusSection";
 import { HeroMotion } from "@/components/marketing/HeroMotion";
 import { Button } from "@/components/ui/button";
@@ -20,45 +13,43 @@ import { recordAnonymousEventFn } from "@/lib/telemetry.functions";
 
 // Fallback variant for the landing hero.
 export const HERO_H1_FALLBACK = "Your firm bought AI. Now nobody can say where a number came from.";
+export const HERO_H1 = "Your firm bought AI. The human judgment, process, and thinking in your team's work went invisible.";
 
-const BEATS: { label: string; title: string; body: string; snapshot: ReactNode }[] = [
+const BEATS = [
   {
-    label: "EVERY TOOL, ONE RECORD",
-    title: "Claude, ChatGPT, Gemini and Granola land in the same board.",
-    body: "No AI vendor can see this shape of your work, because none of them can see the others.",
-    snapshot: <BeatToolsSnapshot />,
+    key: "thinking",
+    label: "01 · THE THINKING",
+    title: "Keep the thinking, not just the output.",
+    body: "Bring work from the AI tools your team already uses into one durable record. The analysis, alternatives, and human choices stay with the finished work.",
   },
   {
-    label: "CLICK A LINE, LAND ON THE TURN",
-    title: "Every claim in a deliverable points back at the turn that produced it.",
-    body: "A quote in a document, a click, and the trail opens on the source turn.",
-    snapshot: <BeatClaimSnapshot />,
+    key: "source",
+    label: "02 · THE SOURCE",
+    title: "Move from a claim to its source in one click.",
+    body: "Connect a deck statement to the conversation and human choice behind it. Open the exact turn instead of reconstructing the story later.",
   },
   {
-    label: "IT TELLS YOU WHAT IT DID NOT READ",
-    title: "The record names what was left out, and why.",
-    body: "Not part of this engagement. Not selected for this question. Over the context limit, the middle of those items was left out.",
-    snapshot: <BeatNotReadSnapshot />,
+    key: "answer",
+    label: "03 · THE ANSWER",
+    title: "Know what shaped the answer.",
+    body: "See what was read, what was left out, and why. Ask a plain-language question about the work and get the source with the answer.",
   },
   {
-    label: "NOTES ARE NEVER A SOURCE",
-    title: "The record refuses it.",
-    body: "Not a filter. A rule the server enforces.",
-    snapshot: <BeatRefuseSnapshot />,
-  },
-  {
-    label: "YOU CHOOSE WHAT A REVIEWER OPENS",
-    title: "A shared board is read only, and its link closes after 48 hours.",
+    key: "share",
+    label: "04 · THE HANDOFF",
+    title: "Share the work without surrendering the whole record.",
     body: "Coaches see only the work you choose to share. Nobody is told when you keep something back.",
-    snapshot: <BeatReviewerSnapshot />,
   },
-];
+] as const;
 
 export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
   const viewId = useRef<string>(crypto.randomUUID());
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(false);
+  const [activeBeat, setActiveBeat] = useState(0);
+  const seenBeats = useRef(new Set<number>());
+  const inputMode = useRef<"scroll" | "control">("scroll");
   const submitPilot = useServerFn(submitPilotRequestFn);
 
   useEffect(() => {
@@ -95,12 +86,35 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
           const on = target.tagName === "ARTICLE" ? target === lead : (ratios.get(target) ?? 0) > 0;
           target.dataset["play"] = on ? "running" : "paused";
         }
+        if (lead?.dataset["storyIndex"]) {
+          const next = Number(lead.dataset["storyIndex"]);
+          if (Number.isInteger(next)) {
+            inputMode.current = "scroll";
+            setActiveBeat(next);
+          }
+        }
       },
       { threshold: [0, 0.1, 0.25, 0.5, 0.75, 1] },
     );
     for (const target of targets) observer.observe(target);
     return () => observer.disconnect();
   }, []);
+
+  useEffect(() => {
+    if (seenBeats.current.has(activeBeat)) return;
+    seenBeats.current.add(activeBeat);
+    const beat = BEATS[activeBeat];
+    if (!beat) return;
+    void recordAnonymousEventFn({
+      data: {
+        event_type: "landing.story_section_viewed",
+        view_id: viewId.current,
+        dims: { section: beat.key, input_mode: inputMode.current },
+      },
+    }).catch(() => {
+      /* This signal must never surface to the visitor. */
+    });
+  }, [activeBeat]);
 
   useEffect(() => {
     stopSessionReplay();
@@ -184,14 +198,13 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
         <PublicHeader current="/" />
 
         <main className="landing-beats-root pb-24 pt-16 md:pt-20">
-          <div className="mx-auto max-w-3xl px-6 md:px-10">
+          <div className="mx-auto max-w-5xl px-6 md:px-10">
             <section className="landing-next-hero">
               <h1 className="pencil-title mt-5 text-foreground">
-                Your firm bought AI. The human judgment in your team's work went invisible.
+                Your firm bought AI. <span className="landing-hero-highlight">The human judgment, process, and thinking</span> in your team's work went invisible.
               </h1>
-              <h2 className="mt-6 max-w-2xl text-[26px] leading-relaxed text-muted-foreground">
-                Lasso traces every fact in a deliverable to its source and keeps the decisions your
-                team made alongside it. Work you can defend to a client, a partner, or a board.
+              <h2 className="mt-6 max-w-3xl text-[26px] leading-relaxed text-muted-foreground">
+                Lasso is the reasoning and judgment layer for AI-assisted consulting. It connects the work across tools to the client deliverable and keeps the decisions your team made, so they can show where a claim came from and why it stayed.
               </h2>
               <div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-3">
                 <Button asChild>
@@ -217,25 +230,28 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
             </section>
           </div>
 
-          <div className="landing-beats-play mx-auto mt-12 max-w-[1440px] px-4 md:px-6" data-landing-beats-play>
-            <HeroMotion />
+          <div className="landing-beats-play mx-auto mt-12 max-w-[1480px] px-4 md:px-6" data-landing-beats-play>
+            <HeroMotion activeSlide={activeBeat} onSlideChange={(index) => { inputMode.current = "control"; setActiveBeat(index); }} />
           </div>
 
-          <section id="beats" className="mx-auto mt-24 grid max-w-6xl grid-cols-[minmax(0,1fr)] gap-24 px-6 md:px-10" aria-label="How Lasso works">
-            {BEATS.map((beat) => (
-              <article
-                key={beat.label}
-                className="landing-beats-play grid grid-cols-[minmax(0,1fr)] items-center gap-8 md:grid-cols-[minmax(0,1fr)_minmax(0,560px)] md:gap-12"
-                data-landing-beats-play
-              >
-                <div>
-                  <p className="micro-label">{beat.label}</p>
-                  <h2 className="pencil-title mt-4">{beat.title}</h2>
-                  <p className="mt-5 max-w-xl text-base leading-relaxed text-foreground">{beat.body}</p>
-                </div>
-                <div className="w-full max-w-[560px]">{beat.snapshot}</div>
-              </article>
-            ))}
+          <section id="beats" className="landing-story-carousel mx-auto mt-24 max-w-6xl px-6 md:px-10" aria-label="How Lasso works">
+            <div className="landing-story-carousel-copy">
+              <p className="micro-label">HOW IT WORKS</p>
+              <h2 className="pencil-title mt-4">The work stays connected from first thought to final answer.</h2>
+            </div>
+            <div className="landing-story-carousel-grid">
+              <div className="landing-story-sticky" aria-hidden="true"><HeroMotion activeSlide={activeBeat} /></div>
+              <div className="landing-story-beats">
+                {BEATS.map((beat, index) => (
+                  <article key={beat.key} className="landing-beats-play landing-story-beat" data-landing-beats-play data-story-index={index} data-active={activeBeat === index}>
+                    <p className="micro-label">{beat.label}</p>
+                    <h3 className="pencil-title mt-4">{beat.title}</h3>
+                    <p className="mt-5 max-w-xl text-base leading-relaxed text-foreground">{beat.body}</p>
+                    {index === 3 ? <p className="mt-5 font-mono text-[11.5px] text-muted-foreground">Shared boards are read only. Their links close after 48 hours.</p> : null}
+                  </article>
+                ))}
+              </div>
+            </div>
           </section>
 
           <div className="mx-auto max-w-3xl px-6 md:px-10">

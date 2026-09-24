@@ -14,8 +14,8 @@ function visibleCopy(src: string) {
 }
 
 describe("Unit 4 public page", () => {
-  it("keeps the four anonymous events", () => {
-    for (const name of ["landing.viewed", "landing.pilot_cta_clicked", "landing.see_it_work_clicked", "landing.pilot_requested"]) {
+  it("keeps the four original anonymous events and adds the story-section event", () => {
+    for (const name of ["landing.viewed", "landing.pilot_cta_clicked", "landing.see_it_work_clicked", "landing.pilot_requested", "landing.story_section_viewed"]) {
       expect(page).toContain(`event_type: "${name}"`);
     }
     expect(page).toContain('dims: { variant: "b2b", surface }');
@@ -23,7 +23,7 @@ describe("Unit 4 public page", () => {
   });
 
   it("carries the hero H1 and the beats anchor", () => {
-    expect(page).toContain("Your firm bought AI. The human judgment in your team's work went invisible.");
+    expect(page).toContain("Your firm bought AI. The human judgment, process, and thinking in your team's work went invisible.");
     expect(page).toContain('href="#beats"');
     expect(page).toContain('id="beats"');
   });
@@ -45,8 +45,11 @@ describe("Unit 4 public page", () => {
     expect(beats).not.toMatch(/#[0-9a-fA-F]{3,6}\b/);
   });
 
-  it("drops the deck's old name and the affiliation line", () => {
-    expect(hero).toContain("Riverside Nine · marketing and engagement · v4");
-    expect(hero).not.toContain("Banana");
+  it("uses a four-slide illustrative deck and real vendor marks", () => {
+    expect(hero).toContain("Illustrative client recommendation");
+    expect(hero).toContain("Illustrative comparison, not customer results");
+    expect(hero).toContain("<VendorMark");
+    expect(hero).toContain("Find the link to the Claude conversation where I said ‘xyz’.");
+    expect(hero).not.toContain("Riverside Nine");
   });
 });
