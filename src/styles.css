@@ -5345,7 +5345,8 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 @keyframes ls-flip-in { from { opacity: 0; transform: rotateY(-10deg) translateX(6%); } to { opacity: 1; transform: none; } }
 @keyframes ls-flip-out { from { opacity: 1; } to { opacity: 0; } }
 .landing-story-slide { position: absolute; inset: 0; padding: 4.5cqw 6cqw 10cqw; display: flex; gap: 4cqw; overflow: hidden; }
-.landing-story-slide-main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 1.6cqw; }
+.landing-story-slide-main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 1cqw; }
+.landing-story-slide-split .landing-story-footnote { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .landing-story-slide h3 { font-family: var(--font-serif); font-size: 6.4cqw; line-height: 1.02; }
 .landing-story-kicker { font-family: var(--font-mono); font-size: 2.6cqw; color: var(--nb-faint); text-transform: uppercase; }
 .landing-story-slide-line { font-size: 3cqw; line-height: 1.25; color: var(--muted-foreground); }
@@ -5364,7 +5365,7 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 .landing-story-channel-grid div { border: 1px solid var(--nb-line-hairline); border-radius: 1cqw; padding: 1.6cqw; }
 .landing-story-channel-grid strong { display: block; font-family: var(--font-serif); font-size: 6cqw; line-height: 1; }
 .landing-story-channel-grid span { font-family: var(--font-mono); font-size: 2.2cqw; color: var(--muted-foreground); }
-.landing-story-metric strong { font-family: var(--font-serif); font-size: 9cqw; line-height: .9; font-weight: 400; }
+.landing-story-metric strong { font-family: var(--font-serif); font-size: 7.5cqw; line-height: .9; font-weight: 400; }
 .landing-story-metric span { display: block; font-family: var(--font-mono); font-size: 2.4cqw; color: var(--muted-foreground); }
 .landing-story-choice-row { display: flex; align-items: baseline; gap: 2.4cqw; border-bottom: 1px solid var(--nb-line-hairline); padding: 1.2cqw 0; }
 .landing-story-choice-row span { width: 14cqw; font-family: var(--font-mono); font-size: 2.4cqw; color: var(--nb-faint); text-transform: uppercase; }
