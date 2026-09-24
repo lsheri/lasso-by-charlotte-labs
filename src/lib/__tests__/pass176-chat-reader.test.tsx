@@ -15,6 +15,7 @@ describe("pass 176 — the reader opens on a click", () => {
 
   it("drives the pane from the selection", () => {
     expect(page).toContain('data-reader={selected ? "open" : "closed"}');
+    expect(page).toContain('selected && desktopReader ? "h-[calc(100vh-6.5rem)] overflow-y-auto" : "hidden"');
   });
 
   it("offers a way out", () => {
