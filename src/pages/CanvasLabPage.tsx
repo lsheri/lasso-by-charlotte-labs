@@ -1455,7 +1455,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     event.stopPropagation();
     closeDropPrompt("dismissed");
     setSelectedLinkId((current) => relationshipSelection(current, "deselect"));
-    setKeyboardId(node.id);
+    setKeyboardId(picked.id);
     setSelectedFrameId(null);
     setInteraction("drag");
     dragRef.current = { id: node.id, origin: { x: node.x, y: node.y }, from: { x: event.clientX, y: event.clientY } };
