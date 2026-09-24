@@ -92,7 +92,7 @@ function sharedBoard(): SharedBoardDto {
       brief: null,
       tasks: [],
       decisions: [],
-      work: [{ id: "w-chat", title: "Pricing chat", type: "ai_thread", source: "claude", visibility: "mapped", captured_at: "2026-09-20T00:00:00.000Z", content_ref: null, taskIds: [] } as SharedBoardDto["seed"]["work"][number]],
+      work: [{ id: "w-chat", title: "Pricing chat", type: "ai_thread", source: "claude", visibility: "mapped", captured_at: "2026-09-20T00:00:00.000Z", content_ref: null, taskIds: [] } as unknown as SharedBoardDto["seed"]["work"][number]],
     },
     cardPreviews: {},
     filePreviews: {},
