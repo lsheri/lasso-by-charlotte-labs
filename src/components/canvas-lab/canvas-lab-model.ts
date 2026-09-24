@@ -1226,3 +1226,122 @@ export function retryAction(command: WorkboardCommand): "create" | "update" | "a
   if (command.type.endsWith("_restore")) return "restore";
   return "update";
 }
+
+/* ---------------- U2: chat bundles, derived, never stored ---------------- */
+
+/** The work item fields a bundle is read from. Nothing here is written back. */
+export type BundleItem = {
+  id: string;
+  type: string;
+  owner_id?: string | null | undefined;
+  orig_conversation_id?: string | null | undefined;
+  ungrouped_at?: string | null | undefined;
+  captured_at?: string | null | undefined;
+  created_at_source?: string | null | undefined;
+  source_meta?: { role?: string | null; produced_at_turn?: number | null } | null | undefined;
+};
+
+/** Chat node id to its ordered piece node ids. */
+export type ChatBundles = ReadonlyMap<string, readonly string[]>;
+
+function bundleKey(item: BundleItem): string | null {
+  if (!item.owner_id || !item.orig_conversation_id || item.ungrouped_at) return null;
+  return `${item.owner_id}\u0000${item.orig_conversation_id}`;
+}
+
+function pieceTurn(item: BundleItem): number | null {
+  const turn = item.source_meta?.produced_at_turn;
+  return typeof turn === "number" && Number.isFinite(turn) ? turn : null;
+}
+
+function pieceCreated(item: BundleItem): string {
+  return item.created_at_source ?? item.captured_at ?? "";
+}
+
+/**
+ * A pushed chat and the pieces it made, when both sit visible on this board.
+ * Same owner, same conversation, chat is ai_thread, piece is an attachment,
+ * neither ungrouped. A piece belongs to at most one chat.
+ */
+export function chatBundles(
+  nodes: readonly Pick<LabNode, "id" | "workItemId">[],
+  items: readonly BundleItem[],
+  hiddenIds: readonly string[] = [],
+): Map<string, string[]> {
+  const byId = new Map(items.map((item) => [item.id, item]));
+  const chats = new Map<string, string>();
+  const pieces: { nodeId: string; key: string; item: BundleItem }[] = [];
+  for (const node of nodes) {
+    if (!node.workItemId || hiddenIds.includes(node.id)) continue;
+    const item = byId.get(node.workItemId);
+    if (!item) continue;
+    const key = bundleKey(item);
+    if (!key) continue;
+    if (item.type === "ai_thread") {
+      if (!chats.has(key)) chats.set(key, node.id);
+    } else if (item.source_meta?.role === "attachment") {
+      pieces.push({ nodeId: node.id, key, item });
+    }
+  }
+  const grouped = new Map<string, typeof pieces>();
+  const claimed = new Set<string>();
+  for (const piece of pieces) {
+    const chatId = chats.get(piece.key);
+    if (!chatId || claimed.has(piece.nodeId)) continue;
+    claimed.add(piece.nodeId);
+    grouped.set(chatId, [...(grouped.get(chatId) ?? []), piece]);
+  }
+  const result = new Map<string, string[]>();
+  for (const [chatId, list] of grouped) {
+    const ordered = [...list].sort((a, b) => {
+      const ta = pieceTurn(a.item);
+      const tb = pieceTurn(b.item);
+      if (ta !== null && tb !== null && ta !== tb) return ta - tb;
+      if (ta !== null && tb === null) return -1;
+      if (ta === null && tb !== null) return 1;
+      return pieceCreated(a.item).localeCompare(pieceCreated(b.item));
+    });
+    result.set(chatId, ordered.map((piece) => piece.nodeId));
+  }
+  return result;
+}
+
+/** Piece node id to the chat node id it is docked under. */
+export function dockedPieceChats(bundles: ChatBundles): Map<string, string> {
+  const map = new Map<string, string>();
+  for (const [chatId, pieceIds] of bundles) for (const pieceId of pieceIds) map.set(pieceId, chatId);
+  return map;
+}
+
+export const BUNDLE_GAP = 18;
+export const BUNDLE_INDENT = 24;
+
+/**
+ * Places each piece in a column below its chat: indented 24px, 18px between
+ * cards. Heights are the card's rendered box. Stored piece x and y are ignored.
+ */
+export function dockBundles<T extends Pick<LabNode, "id" | "x" | "y" | "height">>(nodes: readonly T[], bundles: ChatBundles): T[] {
+  if (bundles.size === 0) return nodes as T[];
+  const byId = new Map(nodes.map((node) => [node.id, node]));
+  const placed = new Map<string, { x: number; y: number }>();
+  for (const [chatId, pieceIds] of bundles) {
+    const chat = byId.get(chatId);
+    if (!chat) continue;
+    let top = chat.y + chat.height + BUNDLE_GAP;
+    for (const pieceId of pieceIds) {
+      const piece = byId.get(pieceId);
+      if (!piece) continue;
+      placed.set(pieceId, { x: chat.x + BUNDLE_INDENT, y: top });
+      top += piece.height + BUNDLE_GAP;
+    }
+  }
+  return nodes.map((node) => {
+    const at = placed.get(node.id);
+    return at ? { ...node, ...at } : node;
+  });
+}
+
+/** The size of the bundle count sent when the board opens. */
+export function bundleCountBand(count: number): "0" | "1" | "2_plus" {
+  return count <= 0 ? "0" : count === 1 ? "1" : "2_plus";
+}
