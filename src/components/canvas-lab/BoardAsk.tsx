@@ -38,7 +38,6 @@ function BoardAskPanel(props: Props) {
   const mappedKey = ask.mapped.map((i) => i.id).join("|");
   const inMapped = props.boardContextItemIds.filter((id) => ask.mapped.some((i) => i.id === id));
   useEffect(() => {
-    if (ask.mapped.length === 0) return;
     ask.setBoardSelection(props.boardContextHasPicks, inMapped);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.boardContextHasPicks, idsKey, mappedKey]);

@@ -155,7 +155,7 @@ export async function runReflectTurn(
   const { scopeItemCount, CATALOGUE_THRESHOLD } = await import("./record-catalogue.server");
   const inScopeCount = await scopeItemCount(supabase, profile.id, scope);
   const contextMode: "inline" | "catalogue" =
-    inScopeCount > CATALOGUE_THRESHOLD ? "catalogue" : "inline";
+    !briefOnly && inScopeCount > CATALOGUE_THRESHOLD ? "catalogue" : "inline";
 
   if (contextMode === "catalogue") {
     const { runCatalogueAnswer } = await import("./record-answer.server");

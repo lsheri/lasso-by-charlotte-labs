@@ -302,7 +302,7 @@ export function useAskLasso({
           profile_id: profileId,
           surface: "ask_lasso",
           pointed_at: pointedItems.map((i) => i.id),
-          scope_source: scopeSource,
+          scope_source: pointedItems.length > 0 ? "pointed" : scopeSource,
         },
         (delta) => setStreamed((prev) => prev + delta),
       );

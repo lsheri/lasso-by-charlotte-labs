@@ -323,6 +323,9 @@ export async function loadScopeData(
   ownerId: string,
   scope: ContextScope,
 ): Promise<{ tasks: TaskRow[]; linkRows: LinkRow[]; items: ItemRow[] }> {
+  if (scope.mode !== "whole" && scope.ids.length === 0) {
+    return { tasks: [], linkRows: [], items: [] };
+  }
   async function loadTasksAndLinks(): Promise<{ tasks: TaskRow[]; linkRows: LinkRow[] }> {
     let taskQuery = supabase
       .from("tasks")
