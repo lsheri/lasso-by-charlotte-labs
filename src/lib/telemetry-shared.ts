@@ -7,6 +7,8 @@ export type TelemetryEvent =
   | "landing.pilot_cta_clicked"
   /** B2B landing: a visitor chose the hero's product-story link. Location only. */
   | "landing.see_it_work_clicked"
+  /** B2B landing: one story section became visible. Closed section and input mode only. */
+  | "landing.story_section_viewed"
   /** B2B landing: a pilot request was saved. Team-size band only. */
   | "landing.pilot_requested"
   /** P4a: the signed-in Home board was opened. Content-free. */
