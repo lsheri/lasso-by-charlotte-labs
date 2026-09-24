@@ -10,7 +10,6 @@ import { toast } from "sonner";
 
 import { CaptureCoverage } from "@/components/common/CaptureCoverage";
 import { DimmedDisabled } from "@/components/common/DimmedDisabled";
-import { PageHeader } from "@/components/layout/PageHeader";
 import { MarkdownMessage } from "@/components/markdown/MarkdownMessage";
 import { PeekActionBar } from "@/components/peek/PeekActionBar";
 import { PeekPanel, type PeekEntry } from "@/components/peek/PeekPanel";
@@ -31,7 +30,6 @@ import {
   type BoardShellFrame,
   type BoardShellNode,
 } from "@/components/board/BoardShell";
-import { BrandLogo } from "@/components/connectors/BrandLogo";
 import { SubjectsPanel } from "@/components/work/SubjectsPanel";
 import { fedPhrase } from "@/components/work/ChatRow";
 import { WorkNote } from "@/components/work/WorkNote";
@@ -59,7 +57,8 @@ import { formatDate } from "@/lib/work-types";
 import { useWorkboardCardPreviews } from "@/hooks/use-workboard-card-previews";
 import type { WorkView } from "@/lib/work-view";
 import type { WorkboardCardPreview } from "@/lib/workboard-card-preview.shared";
-import { laneContentExtent } from "@/lib/board-lane";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { logEvent } from "@/lib/telemetry";
 
 type MonthGroup = { key: string; label: string; items: WorkItemRow[] };
 type ConversationMonthLane = BoardShellFrame & { label: string; itemCount: number; isSpine: boolean };
@@ -69,7 +68,12 @@ const CONVERSATION_LANE_WIDTH = 230.5;
 const CONVERSATION_SPINE_WIDTH = 112;
 const CONVERSATION_LANE_GAP = 36;
 const CONVERSATION_LANE_LEFT = 40;
-const CONVERSATION_LANE_TOP = 120;
+const CONVERSATION_BOARD_SIDE_MARGIN = 32;
+/**
+ * The board controls are 54px tall. The fit centres lanes vertically, so the
+ * visible lane top is (76 + 32) / 2 = 54, exactly below those controls.
+ */
+const CONVERSATION_LANE_TOP = 76;
 const CONVERSATION_LANE_HEADER_HEIGHT = 40;
 export const CONVERSATION_CARD_LABEL_ROW_HEIGHT = 18;
 export const CONVERSATION_CARD_TITLE_HEIGHT = 36;
@@ -83,7 +87,9 @@ export const CONVERSATION_CARD_HEIGHT =
 const CONVERSATION_PAGING_ROW_HEIGHT = 44;
 const COLUMN_PAGE_SIZE = 5;
 const CONVERSATION_INITIAL_MONTHS = 4;
-const CONVERSATION_BOARD_HEIGHT = 1376;
+/** Header 40 + one card 150 + paging 44 = 234: one card is always visible. */
+const CONVERSATION_LANE_MIN_HEIGHT =
+  CONVERSATION_LANE_HEADER_HEIGHT + CONVERSATION_CARD_HEIGHT + CONVERSATION_PAGING_ROW_HEIGHT;
 
 const MONTHS = [
   "January",
@@ -158,15 +164,23 @@ function conversationMonthFrameId(group: MonthGroup): string {
   return `${group.items.length === 0 ? "spine" : "lane"}:chat-month-${group.key}`;
 }
 
-function conversationLaneHeight(itemCount: number): number {
-  const visibleCount = Math.min(itemCount, COLUMN_PAGE_SIZE);
-  const visible = Array.from({ length: visibleCount }, (_, index) => ({
-    id: String(index),
-    height: CONVERSATION_CARD_HEIGHT,
+/** Shell height minus top clearance 76 and bottom fit margin 32, with one-card minimum. */
+export function conversationLaneHeight(viewportHeight: number): number {
+  return Math.max(
+    CONVERSATION_LANE_MIN_HEIGHT,
+    viewportHeight - CONVERSATION_LANE_TOP - CONVERSATION_BOARD_SIDE_MARGIN,
+  );
+}
+
+/** Real first-four-month rectangles used by the page and zoom-one invariant test. */
+export function conversationLaneRects(viewport: { width: number; height: number }) {
+  const height = conversationLaneHeight(viewport.height);
+  return Array.from({ length: CONVERSATION_INITIAL_MONTHS }, (_, index) => ({
+    x: CONVERSATION_LANE_LEFT + index * (CONVERSATION_LANE_WIDTH + CONVERSATION_LANE_GAP),
+    y: CONVERSATION_LANE_TOP,
+    width: CONVERSATION_LANE_WIDTH,
+    height,
   }));
-  return CONVERSATION_LANE_HEADER_HEIGHT
-    + laneContentExtent(visible)
-    + (itemCount > COLUMN_PAGE_SIZE ? CONVERSATION_PAGING_ROW_HEIGHT : 0);
 }
 
 /** A board glance starts with what the person asked; the reader keeps every turn. */
@@ -212,7 +226,7 @@ export function AiRecordPage() {
   const [desktopReader, setDesktopReader] = useState(false);
   const [lensItem, setLensItem] = useState<WorkItemRow | null>(null);
   const [query, setQuery] = useState("");
-  const [showSubjects, setShowSubjects] = useState(false);
+  const [subjectsOpen, setSubjectsOpen] = useState(false);
   const [tool, setTool] = useState<ToolVendor | "all">("all");
   const [engagement, setEngagement] = useState<string | "all">("all");
   const [recursOpen, setRecursOpen] = useState(false);
@@ -220,6 +234,7 @@ export function AiRecordPage() {
   const [source, setSource] = useState<"captured" | "asked" | "everything">("captured");
   const [askSession, setAskSession] = useState<string | null>(null);
   const [askOpen, setAskOpen] = useState(false);
+  const [conversationViewportHeight, setConversationViewportHeight] = useState(0);
   const search = useSearch({ strict: false }) as { ask?: boolean };
   const askedSessions = useAskedSessions();
   const isCoach = profile?.role === "coach";
