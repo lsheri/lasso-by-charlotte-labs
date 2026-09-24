@@ -61,6 +61,20 @@ export const STORY_QUESTIONS = [
   "Which conversations shaped the recommendation?",
 ] as const;
 
+const STORY_QUESTION_SPEAKERS = ["Client question", "Manager question", "Client question", "Manager question"] as const;
+const STORY_ANSWER_PATHS = [
+  "Audience strategy · supporting evidence",
+  "Claude · Audience strategy · exact turn",
+  "Scenario model · pricing assumption",
+  "Three conversations · recommendation",
+] as const;
+const STORY_ANSWERS = [
+  "The audience pattern came from the channel and event conversations.",
+  "Here is the conversation and the exact place where ‘xyz’ appears.",
+  "The 18% came from the illustrative scenario model and was carried into slide 3.",
+  "The recommendation kept the fan vote and set paid acquisition aside.",
+] as const;
+
 function MiniBars() {
   return (
     <div className="landing-story-bars" aria-hidden="true">
@@ -154,6 +168,9 @@ export function PreviewCard({ card }: { card: PreviewCardData; style?: React.CSS
 
 export function HeroMotion({ activeSlide = 0, onSlideChange }: { activeSlide?: number; onSlideChange?: (index: number) => void }) {
   const question = STORY_QUESTIONS[activeSlide] ?? STORY_QUESTIONS[0];
+  const speaker = STORY_QUESTION_SPEAKERS[activeSlide] ?? STORY_QUESTION_SPEAKERS[0];
+  const path = STORY_ANSWER_PATHS[activeSlide] ?? STORY_ANSWER_PATHS[0];
+  const answer = STORY_ANSWERS[activeSlide] ?? STORY_ANSWERS[0];
   return (
     <div className="landing-story-shell" aria-label="AI conversations becoming a client deck, with the source behind each answer">
       <div className="landing-story-canvas landing-beats-dots">
@@ -174,13 +191,16 @@ export function HeroMotion({ activeSlide = 0, onSlideChange }: { activeSlide?: n
           </div>
         </section>
 
-        <div className="landing-story-answer">
-          <p className="landing-story-column-label">A question about the work</p>
-          <blockquote key={question}>{question}</blockquote>
-          <div className="landing-story-answer-path"><i /><span>{activeSlide === 1 ? "Claude · Audience strategy · exact turn" : activeSlide === 2 ? "Scenario model · pricing assumption" : activeSlide === 3 ? "Three conversations · recommendation" : "Audience strategy · supporting evidence"}</span></div>
-          <p className="landing-story-answer-copy">
-            {activeSlide === 1 ? "Here is the conversation and the exact place where ‘xyz’ appears." : activeSlide === 2 ? "The 18% came from the illustrative scenario model and was carried into slide 3." : activeSlide === 3 ? "The recommendation kept the fan vote and set paid acquisition aside." : "The audience pattern came from the channel and event conversations."}
-          </p>
+        <div className="landing-story-answer" key={question}>
+          <div className="landing-story-question">
+            <p className="landing-story-column-label">{speaker}</p>
+            <blockquote>{question}</blockquote>
+          </div>
+          <div className="landing-story-response">
+            <p className="landing-story-response-label">Lasso answers</p>
+            <div className="landing-story-answer-path"><i /><span>{path}</span></div>
+            <p className="landing-story-answer-copy">{answer}</p>
+          </div>
         </div>
       </div>
     </div>

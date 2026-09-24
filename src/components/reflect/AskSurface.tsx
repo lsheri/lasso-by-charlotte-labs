@@ -174,7 +174,7 @@ function MessagesTab({ ask, emptyActions }: { ask: AskLasso; emptyActions?: Reac
   function speakerAvatar(role: "user" | "assistant") {
     const assistant = role === "assistant";
     if (assistant) {
-      return <LassoLoopMark className="size-7 shrink-0 text-green" />;
+      return <LassoLoopMark className="size-7 shrink-0 text-lasso-green" />;
     }
     return (
       <span
