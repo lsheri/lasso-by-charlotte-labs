@@ -25,6 +25,11 @@ describe("the workboard allowlist", () => {
           "length_band",
           "is_reply",
         ],
+        "workboard.bundle_toggled": [
+          "state",
+          "pieces",
+          "via",
+        ],
         "workboard.card_content_viewed": [
           "kind",
           "via",
