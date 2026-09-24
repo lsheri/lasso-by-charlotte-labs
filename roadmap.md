@@ -74,6 +74,7 @@
 - [x] Verify CSP injection, fallback behavior, event kind reuse, and preserved controls/states.
 
 ## Unit 2 All conversations shell
-- [ ] Replace the page shell while preserving controls, states, and existing calls.
-- [ ] Add the engagement-panel event guard and focused geometry tests.
-- [ ] Run focused checks, type check, and live four-size interaction verification.
+- [x] Replace the page shell while preserving controls, states, and existing calls.
+- [x] Add the engagement-panel event guard and focused geometry tests.
+- [x] Run focused checks and type check.
+- [ ] Run live four-size interaction verification. Blocked because the required Liam session could not be minted and the available QA sign-in remained on the sign-in page after two attempts.
