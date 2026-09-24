@@ -114,3 +114,23 @@ describe("id-aware marks in list-shaped sites", () => {
     expect(getByTestId("row-c").querySelector("svg")).not.toBeNull();
   });
 });
+
+describe("shared Lasso loop color", () => {
+  it("uses the motion lime across public, sign-in, and product shells", () => {
+    const files = [
+      "src/components/layout/PublicHeader.tsx",
+      "src/components/layout/BrandLockup.tsx",
+      "src/components/layout/AppSidebar.tsx",
+      "src/components/layout/AppShell.tsx",
+      "src/components/marketing/B2BLanding.tsx",
+      "src/components/reflect/AskSurface.tsx",
+      "src/pages/CanvasLabPage.tsx",
+      "src/components/find-it/FindItLink.tsx",
+    ];
+    for (const file of files) {
+      const source = readFileSync(file, "utf8");
+      expect(source).toContain("text-lasso-green");
+    }
+    expect(readFileSync("src/styles.css", "utf8")).toContain("--color-lasso-green: var(--nb-lasso-green)");
+  });
+});

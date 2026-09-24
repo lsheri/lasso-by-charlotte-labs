@@ -95,3 +95,10 @@
 - [ ] Read existing stored summaries with card previews and prefer them over first-user-turn fallback
 - [ ] Update focused checks and run requested test groups and type safety
 - [ ] Verify authenticated workboard drag, resize, marquee, styling, summary use, and screenshot
+
+## Landing question story and shared lime mark
+- [x] Make all four client questions and Lasso answers the visual payoff.
+- [x] Keep How it works present and tighten desktop scroll pacing.
+- [x] Recompose the story for phone widths with no overflow.
+- [x] Apply the shared lime loop mark across public, sign-in, menu, Ask, and board surfaces.
+- [x] Verify focused checks, type safety, preview build, and live desktop/mobile behavior.

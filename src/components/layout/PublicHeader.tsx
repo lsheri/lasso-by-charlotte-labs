@@ -17,7 +17,7 @@ export function PublicHeader({ current }: { current?: "/" | "/why" | "/trust" })
           className="flex min-w-0 items-center gap-3 font-mono text-lg tracking-[0.18em] text-foreground sm:gap-4 sm:text-2xl sm:tracking-[0.24em]"
           aria-current={current === "/" ? "page" : undefined}
         >
-          <LassoLoopMark className="h-10 w-10 text-green" />
+          <LassoLoopMark className="h-10 w-10 text-lasso-green" />
           <span className="flex min-w-0 flex-col leading-none">
             <span className="truncate">LASSO</span>
             <span className="mt-2 whitespace-nowrap font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground sm:text-[15px]">

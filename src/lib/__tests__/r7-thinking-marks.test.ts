@@ -27,7 +27,7 @@ describe("R7 Ask Lasso thinking marks", () => {
     expect(header).toContain("size={LOOP_SIZE_CHAT}");
     expect(surface.match(/kind="signature"/g)).toHaveLength(1);
     expect(messages).not.toContain('kind="signature"');
-    expect(surface).toContain('<LassoLoopMark className="size-7 shrink-0 text-green" />');
+    expect(surface).toContain('<LassoLoopMark className="size-7 shrink-0 text-lasso-green" />');
     expect(surface).toContain('{assistant ? "Lasso" : "You"}');
   });
 

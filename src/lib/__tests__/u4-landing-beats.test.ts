@@ -52,4 +52,13 @@ describe("Unit 4 public page", () => {
     expect(hero).toContain("Find the link to the Claude conversation where I said ‘xyz’.");
     expect(hero).not.toContain("Riverside Nine");
   });
+
+  it("makes each incoming question and Lasso answer explicit", () => {
+    expect(hero).toContain("Client question");
+    expect(hero).toContain("Manager question");
+    expect(hero).toContain("Lasso answers");
+    expect(hero).toContain("landing-story-response");
+    expect(page.match(/HOW IT WORKS/g)).toHaveLength(2);
+    expect(page).toContain("landing-story-beat-motion");
+  });
 });

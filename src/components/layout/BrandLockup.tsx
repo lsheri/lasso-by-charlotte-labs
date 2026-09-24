@@ -10,7 +10,7 @@ import { LassoLoopMark } from "./LassoLoopMark";
 export function BrandLockup({ className = "" }: { className?: string }) {
   return (
     <div className={`inline-flex items-center gap-3 ${className}`}>
-      <LassoLoopMark className="h-10 w-10 shrink-0" />
+      <LassoLoopMark className="h-10 w-10 shrink-0 text-lasso-green" />
       <div className="flex flex-col leading-none">
         <span className="font-serif text-2xl text-foreground">Lasso</span>
         <span className="font-hand nb-type-small text-green">by Charlotte Labs</span>

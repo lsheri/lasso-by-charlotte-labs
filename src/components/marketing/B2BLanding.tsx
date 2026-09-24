@@ -191,7 +191,7 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
   return (
     <div className="landing-next min-h-screen overflow-x-clip bg-background">
       <div className="landing-next-loop-small pointer-events-none fixed" aria-hidden="true">
-        <LassoLoopMark className="h-full w-full text-green" drawWithScroll />
+        <LassoLoopMark className="h-full w-full text-lasso-green" drawWithScroll />
       </div>
 
       <div className="relative z-10">
@@ -235,12 +235,18 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
           </div>
 
           <section id="beats" className="landing-story-carousel mx-auto mt-24 max-w-6xl px-6 md:px-10" aria-label="How Lasso works">
-            <div className="landing-story-carousel-copy">
+            <div className="landing-story-carousel-copy landing-story-carousel-copy-mobile">
               <p className="micro-label">HOW IT WORKS</p>
               <h2 className="pencil-title mt-4">The work stays connected from first thought to final answer.</h2>
             </div>
             <div className="landing-story-carousel-grid">
-              <div className="landing-story-sticky" aria-hidden="true"><HeroMotion activeSlide={activeBeat} /></div>
+              <div className="landing-story-sticky" aria-hidden="true">
+                <div className="landing-story-carousel-copy">
+                  <p className="micro-label">HOW IT WORKS</p>
+                  <h2 className="pencil-title mt-3">The work stays connected from first thought to final answer.</h2>
+                </div>
+                <HeroMotion activeSlide={activeBeat} />
+              </div>
               <div className="landing-story-beats">
                 {BEATS.map((beat, index) => (
                   <article key={beat.key} className="landing-beats-play landing-story-beat" data-landing-beats-play data-story-index={index} data-active={activeBeat === index}>
@@ -248,6 +254,9 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
                     <h3 className="pencil-title mt-4">{beat.title}</h3>
                     <p className="mt-5 max-w-xl text-base leading-relaxed text-foreground">{beat.body}</p>
                     {index === 3 ? <p className="mt-5 font-mono text-[11.5px] text-muted-foreground">Shared boards are read only. Their links close after 48 hours.</p> : null}
+                    <div className="landing-story-beat-motion">
+                      <HeroMotion activeSlide={index} onSlideChange={(nextIndex) => { inputMode.current = "control"; setActiveBeat(nextIndex); }} />
+                    </div>
                   </article>
                 ))}
               </div>
