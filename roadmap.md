@@ -82,3 +82,9 @@
 - [x] Add the engagement-panel event guard and focused geometry tests.
 - [x] Run focused checks and type check.
 - [ ] Run live four-size interaction verification. Blocked because the required Liam session could not be minted and the available QA sign-in remained on the sign-in page after two attempts.
+## UNIT 5a
+- [ ] Inventory card surfaces, controls, states, mode reads, pinned tests, summary and thumbnail paths
+- [ ] Unify Ledger preview card through WorkNote and remove sticky mode UI/branches/storage reads-writes
+- [ ] Fix marquee drag text selection lifecycle
+- [ ] Update focused tests and exact card/lane geometry assertions
+- [ ] Run requested tests, typecheck, unchanged live shell specs, and Playwright visual/interaction checks
