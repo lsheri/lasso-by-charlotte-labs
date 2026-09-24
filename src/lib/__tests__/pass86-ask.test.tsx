@@ -63,6 +63,8 @@ describe("ask lasso reads stay gated", () => {
 
   it("keeps the live session following the selection", () => {
     expect(src).toContain('.update({ context_scope: scopeForSelection() })');
+    expect(src).toContain("await writeCurrentScope(id)");
+    expect(src).toContain("if (scopeError) throw new Error(scopeError.message)");
   });
 });
 

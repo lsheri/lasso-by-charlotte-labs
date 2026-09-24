@@ -212,6 +212,10 @@ describe("unit 7 answer_retried", () => {
     const kept = guardEventDims("reflect.message_sent", { answer_retried: true, finish_reason: "stop" }).dims;
     expect(kept).toMatchObject({ answer_retried: true, finish_reason: "stop" });
   });
+  it("keeps scope_source on reflect.message_sent and drops an unlisted dimension", () => {
+    const kept = guardEventDims("reflect.message_sent", { scope_source: "board_pick", picked_count: 2 }).dims;
+    expect(kept).toEqual({ scope_source: "board_pick" });
+  });
   it("keeps card and input_mode on landing.usecase_played and drops anything else", () => {
     expect(EVENT_DIM_KEYS["landing.usecase_played"]).toEqual(["card", "input_mode"]);
     const kept = guardEventDims("landing.usecase_played", { card: "every_number", input_mode: "tap", title: "x" }) as Record<string, unknown>;
