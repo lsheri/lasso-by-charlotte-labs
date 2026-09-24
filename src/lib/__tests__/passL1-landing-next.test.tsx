@@ -19,7 +19,8 @@ const renderedCopy = [...jsxText, ...renderedStringProps, ...stringLiterals]
   .join(" ")
   .replace(/\s+/g, " ")
   .toLowerCase();
-const copyWithoutRequiredHeadline = renderedCopy;
+// "A 30-minute call" is the founder's close copy (a phone call, not a decision).
+const copyWithoutRequiredHeadline = renderedCopy.replace("a 30-minute call", "");
 
 const BANNED = [
   "calls?",
@@ -95,7 +96,7 @@ describe("pass L1 hidden landing route", () => {
 
   it("renders the exact pilot flow without sending form contents", () => {
     expect(route).toContain('id="pilot"');
-    expect(route.match(/Book a pilot/g)).toHaveLength(2);
+    expect(route.match(/Book a pilot/g)).toHaveLength(4);
     expect(route).toContain("function submitPilotRequest");
     expect(route).toContain("Thanks. Liam will be in touch within a day.");
     expect(route).not.toContain("FormData");

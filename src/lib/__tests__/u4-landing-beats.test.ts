@@ -49,19 +49,19 @@ describe("Unit 4 public page", () => {
     expect(hero).toContain("Illustrative client recommendation");
     expect(hero).toContain("Illustrative comparison, not customer results");
     expect(hero).toContain("<VendorMark");
-    expect(hero).toContain("Find the link to the Claude conversation where I said ‘xyz’.");
+    expect(hero).toContain("Find the Claude conversation where I said 'rule-change moments'.");
     expect(hero).not.toContain("Riverside Nine");
   });
 
-  it("moves branded conversation excerpts through the lime vortex", () => {
+  it("moves branded conversation excerpts along one path per step", () => {
     expect(hero).toContain("ConversationTunnel");
-    expect(hero).toContain("landing-story-vortex-rings");
-    expect(hero).toContain("landing-story-vortex-fragment");
+    expect(hero).not.toContain("landing-story-vortex-rings");
+    expect(hero).toContain("landing-story-fragment");
     expect(hero.match(/<SourceGlyph/g)?.length).toBeGreaterThanOrEqual(2);
     expect(hero).toContain('vendor: "granola"');
     expect(hero).toContain('vendor: "lovable"');
     expect(hero).toContain("landing-story-doodle");
-    expect(hero).toContain("landing-story-reach");
+    expect(hero).toContain("landing-story-reach-chip");
   });
 
   it("makes each incoming question and Lasso answer explicit", () => {
@@ -69,7 +69,23 @@ describe("Unit 4 public page", () => {
     expect(hero).toContain("Manager question");
     expect(hero).toContain("Lasso answers");
     expect(hero).toContain("landing-story-response");
-    expect(page.match(/HOW IT WORKS/g)).toHaveLength(2);
-    expect(page).toContain("landing-story-beat-motion");
+    expect(page.match(/HOW IT WORKS/g)).toHaveLength(1);
+  });
+});
+
+describe("Unit 8 story system", () => {
+  it("has four steps opening slides 3, 0, 2, 3", () => {
+    const slides = Array.from(hero.matchAll(/^    slide: (\d),$/gm), (m) => Number(m[1]));
+    expect(slides).toEqual([3, 0, 2, 3]);
+    expect(hero).toContain("Open the exact source · {current.sourceCount}");
+  });
+
+  it("closes with the pilot line and no particles", () => {
+    expect(page).toContain("Three months");
+    expect(page).toContain("The work, judgment, thinking. Visible.");
+    expect(page).not.toContain("ParticleReveal");
+    expect(page).toContain('notePlacedPilotClick("header")');
+    expect(page).toContain('notePlacedPilotClick("close")');
+    expect(page).toContain("dims: { placement }");
   });
 });
