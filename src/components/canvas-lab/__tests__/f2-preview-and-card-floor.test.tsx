@@ -75,23 +75,19 @@ const cardProps = {
 
 afterEach(cleanup);
 
-describe("F2 Preview and Sticky are different drawings", () => {
-  it("draws a rendered document directly in Preview and paper chrome in Sticky", () => {
+describe("Unit 5a.1 shared Ledger workboard card", () => {
+  it("renders WorkNote's brand edge with no folded corner", () => {
     globalThis.ResizeObserver = class { observe() {} disconnect() {} unobserve() {} } as typeof ResizeObserver;
-    const preview = render(
+    const card = render(
       <LabCard
         {...cardProps}
-        displayMode="preview"
         filePreview={{ workItemId: item.id, kind: "text", url: null, lines: ["Rendered page"], slideTitle: null, versionCount: 1 }}
       />,
     );
-    expect(preview.container.querySelector('[data-drawing="preview"]')).not.toBeNull();
-    expect(preview.container.querySelector('[data-drawing="preview"].nb-paper')).not.toBeNull();
-    expect(preview.getByRole("button", { name: "Open Proposal larger" })).not.toBeNull();
-    preview.unmount();
-
-    const sticky = render(<LabCard {...cardProps} displayMode="sticky" />);
-    expect(sticky.container.querySelector('[data-drawing="sticky"] .nb-paper')).not.toBeNull();
+    const face = card.container.querySelector<HTMLElement>(".ledger-work-note");
+    expect(face).not.toBeNull();
+    expect(face?.style.borderLeftColor).not.toBe("");
+    expect(card.container.querySelector(".fold")).toBeNull();
   });
 });
 

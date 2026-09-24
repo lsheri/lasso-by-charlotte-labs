@@ -2136,7 +2136,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     const item = itemByNode(node);
     setFocusOrigin(origin ? { left: origin.left, top: origin.top, width: origin.width, height: origin.height } : null);
     const openedPreview = item ? filePreviews[item.id] : undefined;
-    if (displayMode === "preview" && item && openedPreview && openedPreview.kind !== "fallback" && (item.type === "document" || item.type === "deck" || item.type === "sheet") && !viewedPreviewIdsRef.current.has(item.id)) {
+    if (item && openedPreview && openedPreview.kind !== "fallback" && (item.type === "document" || item.type === "deck" || item.type === "sheet") && !viewedPreviewIdsRef.current.has(item.id)) {
       viewedPreviewIdsRef.current.add(item.id);
       noteWorkboardCardContentViewed(orgId, openedPreview.kind === "html" ? "html" : openedPreview.kind === "mermaid" ? "mermaid" : item.type === "deck" ? "deck" : "document", "open");
     }

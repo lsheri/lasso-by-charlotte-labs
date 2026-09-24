@@ -41,10 +41,10 @@ describe("R5 board toolbar", () => {
     expect(css).not.toMatch(/canvas-lab-ask-(?:drift|float|tilt)/);
   });
 
-  it("uses the folded paper gesture for Sticky cards", () => {
+  it("removes the retired card display control without removing its icon definition", () => {
     expect(icons).toMatch(/sticky: \{ d: \[[^\]]+\]/);
-    expect(toolbar).toMatch(/data-toolbar-control="sticky"[\s\S]*?<GraphiteIcon name="sticky"/);
-    expect(toolbar).not.toMatch(/data-toolbar-control="sticky"[\s\S]*?<GraphiteIcon name="messages"/);
+    expect(toolbar).not.toContain('data-toolbar-control="preview"');
+    expect(toolbar).not.toContain('data-toolbar-control="sticky"');
   });
 
   it("plans the wider labelled Add work control with the same larger gap as the row", () => {
@@ -52,7 +52,6 @@ describe("R5 board toolbar", () => {
     expect(page).toContain('className="canvas-lab-toolbar flex min-w-0 flex-1 items-center justify-end gap-2 overflow-hidden"');
     const controls: ToolbarControlSpec[] = [
       { id: "workstreams", width: 40, moveOrder: 1 },
-      { id: "display", width: 76, moveOrder: 2 },
       { id: "add-work", width: 112, pinned: true },
       { id: "ask", width: 40, pinned: true },
       { id: "zoom", width: 116, pinned: true },
@@ -64,7 +63,7 @@ describe("R5 board toolbar", () => {
   });
 
   it("retains an accessible name and tooltip for every icon-only control", () => {
-    for (const label of ["Show workstreams", "Preview cards", "Sticky cards", "Working from", "Add text", "Add grouping", "Ask Lasso", "Share", "Fit", "Zoom out", "Zoom in", "More board controls"]) {
+    for (const label of ["Show workstreams", "Working from", "Add text", "Add grouping", "Ask Lasso", "Share", "Fit", "Zoom out", "Zoom in", "More board controls"]) {
       expect(`${page}\n${share}`).toContain(`aria-label="${label}"`);
     }
     expect(toolbar.match(/<ToolbarIcon label=/g)?.length).toBeGreaterThanOrEqual(8);

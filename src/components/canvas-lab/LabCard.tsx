@@ -53,7 +53,7 @@ export function LabCard({
   onOpenComments,
   preview,
   filePreview,
-  onPreviewScroll,
+  onPreviewScroll: _onPreviewScroll,
   readOnly = false,
 }: {
   node: LabNode;
