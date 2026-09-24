@@ -596,7 +596,7 @@ export function AiRecordPage() {
                   </button>
                 ))}
                 {unmappedCount > 0 ? <button type="button" aria-pressed={engagement === "unmapped"} onClick={() => chooseEngagement("unmapped")} className={engagement === "unmapped" ? "rounded-full border border-graphite bg-nb-white px-3 py-1 text-[11.5px] font-medium text-foreground" : "rounded-full border border-[var(--nb-pencil)] px-3 py-1 text-[11.5px] text-muted-foreground"}>Unmapped <span className="ml-1.5 font-mono text-[10px] text-soft">{unmappedCount}</span></button> : null}
-                {selectedEngagement ? <Button type="button" variant="ghost" size="sm" onClick={() => setRecursOpen((open) => !open)}>{recursOpen ? "Hide analysis" : "What recurs"}</Button> : null}
+                {selectedEngagement ? <Button type="button" variant="ghost" size="sm" onClick={() => { if (!recursOpen) recordPanelOpen("recurs"); setRecursOpen((open) => !open); }}>{recursOpen ? "Hide analysis" : "What recurs"}</Button> : null}
               </div>
             </PopoverContent>
           </Popover>
