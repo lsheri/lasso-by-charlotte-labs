@@ -1561,7 +1561,6 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   z-index: 10;
   border-radius: inherit;
   pointer-events: none;
-}
   border: calc(2px * var(--lab-inverse-zoom, 1)) solid var(--nb-lasso-green);
   box-shadow: 0 0 calc(18px * var(--lab-inverse-zoom, 1)) calc(3px * var(--lab-inverse-zoom, 1)) color-mix(in srgb, var(--nb-lasso-green) 55%, transparent);
   opacity: 0;
@@ -1569,63 +1568,97 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
 }
 .canvas-lab-card-paper[data-selected="true"]::before { opacity: 1; }
 .canvas-lab-card-paper[data-marquee-preview="true"]::before { opacity: .5; }
-.canvas-lab-flare {
+.canvas-lab-context-coronas { z-index: 0; }
+.canvas-lab-context-corona {
   position: absolute;
-  inset: calc(-3px * var(--lab-inverse-zoom, 1));
-  z-index: 12;
-  overflow: hidden;
-  padding: calc(3px * var(--lab-inverse-zoom, 1));
-  border-radius: inherit;
+  z-index: 0;
+  border-radius: 8px;
   pointer-events: none;
-  opacity: 0;
+  opacity: 1;
+  transform: scale(1);
+  transform-origin: center;
+  transition: opacity 200ms ease-out;
+}
+.canvas-lab-corona-rim,
+.canvas-lab-corona-falloff,
+.canvas-lab-corona-band { position: absolute; pointer-events: none; }
+.canvas-lab-corona-rim {
+  inset: calc(-2px * var(--lab-inverse-zoom, 1));
+  border: calc(2px * var(--lab-inverse-zoom, 1)) solid color-mix(in srgb, var(--nb-lasso-green) 60%, var(--nb-white));
+  border-radius: inherit;
+  box-shadow: 0 0 calc(6px * var(--lab-inverse-zoom, 1)) color-mix(in srgb, var(--nb-lasso-green) 72%, transparent);
+}
+.canvas-lab-corona-falloff {
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: 0 0 calc(28px * var(--lab-inverse-zoom, 1)) calc(5px * var(--lab-inverse-zoom, 1)) color-mix(in srgb, var(--nb-lasso-green) 25%, transparent);
+}
+.canvas-lab-corona-band {
+  inset: calc(-22px * var(--lab-inverse-zoom, 1));
+  overflow: hidden;
+  padding: calc(22px * var(--lab-inverse-zoom, 1));
+  border-radius: calc(8px + 22px * var(--lab-inverse-zoom, 1));
+  opacity: .88;
+  transform: scale(1);
   -webkit-mask: linear-gradient(var(--nb-ink) 0 0) content-box, linear-gradient(var(--nb-ink) 0 0);
   -webkit-mask-composite: xor;
-  mask: linear-gradient(var(--nb-ink) 0 0) content-box exclude, linear-gradient(var(--nb-ink) 0 0);
+  mask: linear-gradient(var(--nb-ink) 0 0) content-box, linear-gradient(var(--nb-ink) 0 0);
+  mask-composite: exclude;
 }
-.canvas-lab-flare-beam {
+.canvas-lab-corona-flame {
   position: absolute;
   left: 50%;
   top: 50%;
   width: 300%;
   aspect-ratio: 1;
-  background: conic-gradient(from 0deg, transparent 0 82%, var(--nb-lasso-green) 88% 93%, transparent 99% 100%);
+  filter: blur(calc(10px * var(--lab-inverse-zoom, 1)));
+}
+.canvas-lab-corona-flame-a {
+  background: conic-gradient(from 12deg, transparent 0 5%, color-mix(in srgb, var(--nb-lasso-green) 52%, transparent) 9%, transparent 14% 23%, color-mix(in srgb, var(--nb-lasso-green) 31%, transparent) 29%, transparent 35% 51%, color-mix(in srgb, var(--nb-lasso-green) 55%, transparent) 58%, transparent 63% 78%, color-mix(in srgb, var(--nb-lasso-green) 38%, transparent) 84%, transparent 91% 100%);
   transform: translate(-50%, -50%) rotate(0deg);
 }
-.canvas-lab-flare-bloom {
-  position: absolute;
-  inset: 0;
-  z-index: 11;
-  border-radius: inherit;
-  box-shadow: 0 0 calc(28px * var(--lab-inverse-zoom, 1)) calc(5px * var(--lab-inverse-zoom, 1)) color-mix(in srgb, var(--nb-lasso-green) 45%, transparent);
-  pointer-events: none;
-  opacity: 0;
+.canvas-lab-corona-flame-b {
+  background: conic-gradient(from 197deg, transparent 0 11%, color-mix(in srgb, var(--nb-lasso-green) 28%, transparent) 16%, transparent 22% 39%, color-mix(in srgb, var(--nb-lasso-green) 55%, transparent) 45%, transparent 49% 67%, color-mix(in srgb, var(--nb-lasso-green) 43%, transparent) 73%, transparent 80% 92%, color-mix(in srgb, var(--nb-lasso-green) 24%, transparent) 96%, transparent 100%);
+  transform: translate(-50%, -50%) rotate(360deg);
 }
-@keyframes canvas-lab-flare-ring-kf {
-  0% { opacity: 0; }
-  10% { opacity: 1; }
-  85% { opacity: 1; }
-  100% { opacity: 0; }
+@keyframes canvas-lab-corona-enter {
+  0% { opacity: 0; transform: scale(.9); }
+  62% { opacity: 1; transform: scale(1.08); }
+  100% { opacity: 1; transform: scale(1); }
 }
-@keyframes canvas-lab-flare-beam-kf {
+@keyframes canvas-lab-corona-clockwise {
   from { transform: translate(-50%, -50%) rotate(0deg); }
   to { transform: translate(-50%, -50%) rotate(360deg); }
 }
-@keyframes canvas-lab-flare-bloom-kf {
-  0% { opacity: 0; }
-  30% { opacity: 1; }
-  100% { opacity: 0; }
+@keyframes canvas-lab-corona-counterclockwise {
+  from { transform: translate(-50%, -50%) rotate(360deg); }
+  to { transform: translate(-50%, -50%) rotate(0deg); }
 }
-.canvas-lab-context-flare .canvas-lab-flare {
-  animation: canvas-lab-flare-ring-kf 700ms ease-out var(--context-flare-delay, 0ms) both;
+@keyframes canvas-lab-corona-breathe {
+  from { opacity: .75; transform: scale(1); }
+  to { opacity: 1; transform: scale(1.03); }
 }
-.canvas-lab-context-flare .canvas-lab-flare-beam {
-  animation: canvas-lab-flare-beam-kf 700ms ease-out var(--context-flare-delay, 0ms) both;
+.canvas-lab-context-corona[data-entering="true"] {
+  animation: canvas-lab-corona-enter 600ms ease-out var(--context-corona-delay, 0ms) both;
 }
-.canvas-lab-context-flare .canvas-lab-flare-bloom {
-  animation: canvas-lab-flare-bloom-kf 900ms ease-out var(--context-flare-delay, 0ms) both;
+.canvas-lab-context-corona-motion .canvas-lab-corona-band {
+  animation: canvas-lab-corona-breathe 3.2s ease-in-out var(--context-corona-phase) infinite alternate;
+}
+.canvas-lab-context-corona-motion .canvas-lab-corona-flame-a {
+  animation: canvas-lab-corona-clockwise 9s linear var(--context-corona-phase) infinite;
+}
+.canvas-lab-context-corona-motion .canvas-lab-corona-flame-b {
+  animation: canvas-lab-corona-counterclockwise 13s linear var(--context-corona-phase) infinite;
+}
+.canvas-lab-context-corona[data-leaving="true"] { opacity: 0; }
+.canvas-lab-surface[data-interacting="true"] .canvas-lab-context-corona,
+.canvas-lab-surface[data-interacting="true"] .canvas-lab-context-corona * {
+  animation-play-state: paused;
 }
 @media (prefers-reduced-motion: reduce) {
   .canvas-lab-card-paper::before { transition: none; }
+  .canvas-lab-context-corona,
+  .canvas-lab-context-corona * { animation: none !important; }
 }
 .canvas-lab-context-mark {
   position: absolute;

@@ -50,7 +50,7 @@ export type MotionName =
   | "rows-land"
   | "arrows"
   | "workboard-unfold"
-  | "context-flare";
+  | "context-corona";
 
 export type MotionEventName =
   // Auditability. Never remove one of these.
@@ -280,8 +280,8 @@ const MOTION_EVENT_REGISTRY: Readonly<Record<MotionEventName, MotionEventEntry>>
   },
   "context.picked": {
     group: "chrome",
-    motion: "context-flare",
-    reduced: "The steady context ring appears",
+    motion: "context-corona",
+    reduced: "A still lime glow; nothing moves",
     promise: false,
   },
 };
@@ -335,7 +335,7 @@ const MOTION_CLASS: Partial<Record<MotionName, MotionDraw>> = {
   "keep-check": { moving: "nb-findit-kept" },
   "rows-land": { moving: "nb-findit-row" },
   "workboard-unfold": { moving: "canvas-lab-unfold" },
-  "context-flare": { moving: "canvas-lab-context-flare" },
+  "context-corona": { moving: "canvas-lab-context-corona-motion" },
 };
 
 /** True when the reader has asked for less movement. Safe during SSR. */

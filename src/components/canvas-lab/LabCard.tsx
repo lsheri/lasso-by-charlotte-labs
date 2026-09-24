@@ -21,8 +21,6 @@ export function LabCard({
   item,
   selected,
   previewSelected = false,
-  contextFlareDelay,
-  contextMotionClass = "",
   focused,
   focusOnMount = false,
   onSelect,
@@ -66,8 +64,6 @@ export function LabCard({
   item?: WorkItemRow | undefined;
   selected: boolean;
   previewSelected?: boolean;
-  contextFlareDelay?: number | undefined;
-  contextMotionClass?: string | undefined;
   focused: boolean;
   focusOnMount?: boolean;
   onSelect: () => void;
@@ -187,11 +183,11 @@ export function LabCard({
         if ((event.shiftKey && event.key === "F10") || event.key === "ContextMenu") openMenu(event);
         else if (event.target === event.currentTarget) onKeyDown(event);
       }}
-      style={{ left: node.x, top: node.y, width: node.width, height: node.height, zIndex: stackZ, "--context-flare-delay": `${contextFlareDelay ?? 0}ms` } as React.CSSProperties}
+      style={{ left: node.x, top: node.y, width: node.width, height: node.height, zIndex: stackZ } as React.CSSProperties}
       data-size={cardSizeTier(node)}
-      className={`canvas-lab-card group absolute text-left outline-none ${contextFlareDelay !== undefined ? contextMotionClass : ""}`}
+      className="canvas-lab-card group absolute text-left outline-none"
     >
-      <div ref={paperRef} data-selected={selected} data-marquee-preview={previewSelected} data-context-entering={contextFlareDelay !== undefined} data-focused={focused} data-connect-source={connectSourceAnchor !== null} className="canvas-lab-card-paper h-full w-full overflow-hidden">
+      <div ref={paperRef} data-selected={selected} data-marquee-preview={previewSelected} data-focused={focused} data-connect-source={connectSourceAnchor !== null} className="canvas-lab-card-paper h-full w-full overflow-hidden">
         {item && isReferenceItem(item) ? <ReferenceFileCard item={item} onOpen={() => onOpen(cardRef.current?.getBoundingClientRect())} /> : item ? (
           <WorkNote
             item={item}
@@ -211,10 +207,6 @@ export function LabCard({
         {selected ? <Paperclip aria-hidden="true" className="canvas-lab-context-mark" /> : null}
         {madeInChat ? <span className="sr-only" data-testid="lab-card-made-in-chat">Made in the chat {madeInChat}</span> : null}
       </div>
-      {contextFlareDelay !== undefined && contextMotionClass ? <>
-        <span className="canvas-lab-flare" aria-hidden="true"><span className="canvas-lab-flare-beam" /></span>
-        <span className="canvas-lab-flare-bloom" aria-hidden="true" />
-      </> : null}
       {canResize && focused && !readOnly ? (["nw", "ne", "se", "sw"] as LabResizeCorner[]).map((corner) => <button key={corner} type="button" className="canvas-lab-resize-handle" data-corner={corner} aria-label={`Resize ${node.title} from ${corner}`} onDoubleClick={(event) => { event.stopPropagation(); onFit(); }} onPointerDown={(event) => onResizeStart(corner, event)} onKeyDown={(event) => onResizeKeyDown(corner, event)} onKeyUp={onResizeKeyUp} />) : null}
       {readOnly ? null : anchors.map((side) => <button key={side} type="button" className="canvas-lab-anchor" data-node-id={node.id} data-side={side} data-active={connectSourceAnchor === side} aria-label={`Connect from ${side}`} onPointerDown={(event) => { anchorDownRef.current = { x: event.clientX, y: event.clientY }; onAnchorPointerDown(side, event); }} onClick={(event) => { event.stopPropagation(); const down = anchorDownRef.current; anchorDownRef.current = null; if (down && Math.hypot(event.clientX - down.x, event.clientY - down.y) >= 6) return; onAnchorActivate(side); }} />)}
       {readOnly ? null : <LabCardMenu selected={selected} canBranch={node.ownership === "teammate" || node.kind === "chat"} local={Boolean(node.local || node.kind === "chat")} removable={node.kind !== "judgment" || Boolean(node.local)} open={menuOpen} onOpenChange={changeMenuOpen} cardRef={cardRef} onSelect={onSelect} onOpen={() => onOpen(cardRef.current?.getBoundingClientRect())} onBranch={onBranch} onHide={onHide} onDelete={onDelete} onTakeOutOfContext={onTakeOutOfContext} onFit={canResize ? onFit : undefined} frameChoices={structured ? frameChoices : []} currentFrame={node.frame} onMoveToFrame={structured && canResize ? onMoveToFrame : undefined} bundleToggleLabel={bundleToggleLabel} onBundleToggle={onBundleToggle} />}

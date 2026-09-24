@@ -24,19 +24,26 @@ describe("C1 board context visibility", () => {
   });
 
   it("registers context entry with a still reduced-motion answer", () => {
-    expect(resolveMotion("context.picked", false).className).toBe("canvas-lab-context-flare");
+    expect(resolveMotion("context.picked", false).className).toBe("canvas-lab-context-corona-motion");
     expect(resolveMotion("context.picked", true).className).toBe("");
-    expect(resolveMotion("context.picked", true).reduced).toContain("steady context ring");
+    expect(resolveMotion("context.picked", true).reduced).toBe("A still lime glow; nothing moves");
     expect(css).toMatch(/@media \(prefers-reduced-motion: reduce\)[\s\S]*canvas-lab-card-paper::before/);
   });
 
-  it("keeps the ring still, rotates only its beam, and declares both mask syntaxes", () => {
-    const ring = css.slice(css.indexOf(".canvas-lab-flare {"), css.indexOf(".canvas-lab-flare-beam {"));
-    const beamAnimation = css.slice(css.indexOf("@keyframes canvas-lab-flare-beam-kf"), css.indexOf("@keyframes canvas-lab-flare-bloom-kf"));
-    expect(ring).toContain("-webkit-mask:");
-    expect(ring).toContain("-webkit-mask-composite: xor");
-    expect(ring).toContain("mask:");
-    expect(ring).not.toContain("transform:");
-    expect(beamAnimation).toContain("rotate(360deg)");
+  it("masks a still band while rotation lives on its inner flame squares", () => {
+    const band = css.slice(css.indexOf(".canvas-lab-corona-band {"), css.indexOf(".canvas-lab-corona-flame {"));
+    expect(band).toContain("-webkit-mask:");
+    expect(band).toContain("-webkit-mask-composite: xor");
+    expect(band).toContain("mask:");
+    expect(band).toContain("mask-composite: exclude");
+    expect(band).not.toContain("rotate(");
+    expect(css).toContain(".canvas-lab-context-corona-motion .canvas-lab-corona-flame-a");
+    expect(css).toContain("canvas-lab-corona-clockwise");
+    expect(css).toContain("canvas-lab-corona-counterclockwise");
+  });
+
+  it("pauses during board interaction and has a reduced-motion block", () => {
+    expect(css).toContain('.canvas-lab-surface[data-interacting="true"] .canvas-lab-context-corona');
+    expect(css).toMatch(/@media \(prefers-reduced-motion: reduce\)[\s\S]*\.canvas-lab-context-corona/);
   });
 });
