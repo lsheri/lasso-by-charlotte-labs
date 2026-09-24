@@ -4,7 +4,7 @@ import { type FormEvent, type ReactNode, useEffect, useRef, useState } from "rea
 
 import { PublicHeader } from "@/components/layout/PublicHeader";
 import { FocusSection } from "@/components/marketing/FocusSection";
-import { DeckWalkthrough, STORY } from "@/components/marketing/HeroMotion";
+import { DeckWalkthrough } from "@/components/marketing/HeroMotion";
 import { Button } from "@/components/ui/button";
 import { startSessionReplay, stopSessionReplay } from "@/lib/posthog-client";
 import { submitPilotRequestFn } from "@/lib/pilot-request.functions";
