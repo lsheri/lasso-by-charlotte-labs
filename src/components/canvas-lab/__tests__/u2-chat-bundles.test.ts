@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 
 import { describe, expect, it } from "vitest";
 
-import { bundleCountBand, chatBundles, dockBundles, dockedPieceChats, type BundleItem } from "@/components/canvas-lab/canvas-lab-model";
+import { bundleCountBand, bundlePiecesByChat, chatBundles, createLabFrames, dockBundles, dockedPieceChats, seedBlankCanvas, seedCanvas, type BundleItem, type LabNode, type SeedInput } from "@/components/canvas-lab/canvas-lab-model";
 
 const chat = (id: string, owner = "p1", conv = "c1"): BundleItem => ({ id, type: "ai_thread", owner_id: owner, orig_conversation_id: conv });
 const piece = (id: string, extra: Partial<BundleItem> = {}): BundleItem => ({
@@ -117,5 +117,47 @@ describe("page-shaped read (Pass A.2)", () => {
     const result = chatBundles([n("c393"), n("0e92")], [...byId.values()]);
     expect(result.size).toBe(1);
     expect(result.get("n-c393")).toEqual(["n-0e92"]);
+  });
+});
+
+describe("bundle-aware seed (Pass A.3)", () => {
+  const work = (id: string, bundle: BundleItem) => ({ id, title: id, typeLabel: "x", source: "s", ownedByViewer: true, taskIds: ["t1"], deliverable: false, bundle });
+  const input = {
+    brief: null,
+    tasks: [{ id: "t1", name: "Stream", detail: null, ownedByViewer: true }],
+    work: [
+      work("A", chat("A", "p1", "cA")),
+      work("a1", piece("a1", { orig_conversation_id: "cA", source_meta: { role: "attachment", produced_at_turn: 1 } })),
+      work("a2", piece("a2", { orig_conversation_id: "cA", source_meta: { role: "attachment", produced_at_turn: 2 } })),
+      work("B", chat("B", "p1", "cB")),
+      work("C", chat("C", "p1", "cC")),
+    ],
+    decisions: [],
+  };
+  const hit = (a: { x: number; y: number; width: number; height: number }, b: typeof a) =>
+    a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
+  const noOverlap = (nodes: LabNode[]) => {
+    for (let i = 0; i < nodes.length; i += 1) for (let j = i + 1; j < nodes.length; j += 1) {
+      expect(hit(nodes[i]!, nodes[j]!), `${nodes[i]!.id} vs ${nodes[j]!.id}`).toBe(false);
+    }
+  };
+  const items = input.work.map((w) => w.bundle);
+
+  it("bundlePiecesByChat uses the chatBundles rules", () => {
+    expect([...bundlePiecesByChat(items)]).toEqual([["A", ["a1", "a2"]]]);
+  });
+  for (const [label, seed] of [["framed", (i: SeedInput) => seedCanvas(i, createLabFrames(i.tasks))], ["blank", seedBlankCanvas]] as const) {
+    it(`${label}: after docking, no card overlaps another`, () => {
+      const seeded = seed(input);
+      const docked = dockBundles(seeded, chatBundles(seeded, items));
+      noOverlap(docked);
+    });
+  }
+  it("a seeded piece never gets its own slot", () => {
+    const withPieces = seedCanvas(input, createLabFrames(input.tasks));
+    const without = seedCanvas({ ...input, work: input.work.filter((w) => !w.id.startsWith("a")) }, createLabFrames(input.tasks));
+    const at = (nodes: LabNode[], id: string) => nodes.find((node) => node.id === `work:${id}`)!;
+    // B takes the slot right after A, as if the pieces were not there.
+    expect([at(withPieces, "B").x, at(withPieces, "B").y]).toEqual([at(without, "B").x, at(without, "B").y]);
   });
 });
