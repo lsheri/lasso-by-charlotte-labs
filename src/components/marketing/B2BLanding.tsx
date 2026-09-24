@@ -221,11 +221,11 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
             <HeroMotion />
           </div>
 
-          <section id="beats" className="mx-auto mt-24 grid max-w-6xl gap-24 px-6 md:px-10" aria-label="How Lasso works">
+          <section id="beats" className="mx-auto mt-24 grid max-w-6xl grid-cols-[minmax(0,1fr)] gap-24 px-6 md:px-10" aria-label="How Lasso works">
             {BEATS.map((beat) => (
               <article
                 key={beat.label}
-                className="landing-beats-play grid items-center gap-8 md:grid-cols-[minmax(0,1fr)_minmax(0,560px)] md:gap-12"
+                className="landing-beats-play grid grid-cols-[minmax(0,1fr)] items-center gap-8 md:grid-cols-[minmax(0,1fr)_minmax(0,560px)] md:gap-12"
                 data-landing-beats-play
               >
                 <div>
