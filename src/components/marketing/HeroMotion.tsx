@@ -98,88 +98,76 @@ function SourceCardView({ card, lit, cardRef }: { card: SourceCard; lit: boolean
   return <article ref={cardRef} className="landing-story-source" data-lit={lit} data-source-id={card.id} data-vendor={card.vendor}><header><SourceGlyph vendor={card.vendor} size={20} /><span>{card.label}</span></header><h3>{card.title}</h3><p>{card.excerpt}</p></article>;
 }
 
-type FlowPaths = { streams: { id: SourceId; vendor: VendorGlyph; d: string }[]; chip: string; w: number; h: number } | null;
-function ConversationTunnel({ paths, step }: { paths: FlowPaths; step: StoryStep }) {
-  if (!paths) return null;
-  return <div className="landing-story-flow" aria-hidden="true"><svg width={paths.w} height={paths.h} viewBox={`0 0 ${paths.w} ${paths.h}`}>{paths.streams.map((stream) => <path key={stream.id} className="landing-story-stream" d={stream.d} pathLength={1} />)}<path className="landing-story-stream landing-story-stream-merged" d={paths.chip} pathLength={1} /></svg>{paths.streams.map((stream) => <div className="landing-story-fragment" key={stream.id} style={{ offsetPath: `path("${stream.d}")` }}><SourceGlyph vendor={stream.vendor} size={14} /><span>{SOURCES.find((item) => item.id === stream.id)?.title}</span></div>)}<div className="landing-story-reach-chip" style={{ offsetPath: `path("${paths.chip}")` }}>{step.sourceCount} source{step.sourceCount === 1 ? "" : "s"}</div></div>;
-}
-
-function CircleDoodle() { return <svg className="landing-story-doodle landing-story-doodle-qa" viewBox="0 0 400 300" preserveAspectRatio="none" aria-hidden="true"><path pathLength={1} vectorEffect="non-scaling-stroke" d="M214 10C330 8 394 58 392 146c-2 92-56 146-196 148C62 296 8 236 10 150 12 66 74 14 208 14c44 1 80 8 112 24" /></svg>; }
 export function ClosedAuditLine({ count }: { count: number }) { return <div className="landing-story-evidence-line"><span>Open the exact source</span><small>{count} source{count === 1 ? "" : "s"}</small></div>; }
 export function StepRow({ label, className = "" }: { g?: "doc" | "chat" | "lens" | "link"; label: string; className?: string }) { return <div className={`landing-story-step ${className}`}><span aria-hidden="true" /><span>{label}</span></div>; }
 export type PreviewCardData = { vendor: VendorGlyph; label?: string; tool?: string; when?: string; title: string; excerpt?: string; summary?: string; url?: string; left?: number; top?: number };
 export function PreviewCard({ card }: { card: PreviewCardData; style?: React.CSSProperties }) { return <SourceCardView card={{ id: "research", vendor: card.vendor, label: card.label ?? `${card.tool ?? ""} ${card.when ?? ""}`, title: card.title, excerpt: card.excerpt ?? card.summary ?? "" }} lit />; }
 
-const LEAVE_MS = 700;
-export function HeroMotion({ step = 0, onStepChange }: { step?: number; onStepChange?: (index: number) => void }) {
-  const [shown, setShown] = useState(step);
-  const [prevSlide, setPrevSlide] = useState<number>(STORY[step]?.slide ?? 2);
-  const [leaving, setLeaving] = useState(false);
-  const [paths, setPaths] = useState<FlowPaths>(null);
-  const canvasRef = useRef<HTMLDivElement | null>(null);
-  const cardRefs = useRef<Record<string, HTMLElement | null>>({});
-  const slideRef = useRef<HTMLDivElement | null>(null);
-  const responseRef = useRef<HTMLDivElement | null>(null);
-  const fallbackStory = STORY[0];
-  if (!fallbackStory) return null;
-  const current = STORY[shown] ?? fallbackStory;
+function SourceChip({ card }: { card: SourceCard }) {
+  return <span className="lw-chip" data-source-id={card.id}><SourceGlyph vendor={card.vendor} size={14} /><span>{card.title}</span></span>;
+}
+
+function sourceLineFor(index: number, step: StoryStep) {
+  return index === 2 ? "Open the exact turn · 1" : `Open the exact source · ${step.sourceCount}`;
+}
+
+function litCards(step: StoryStep) {
+  return step.litSources.map((id) => SOURCES.find((item) => item.id === id)).filter((card): card is SourceCard => Boolean(card));
+}
+
+function DeckFrame({ step, stepIndex }: { step: StoryStep; stepIndex: number }) {
+  return <section className="landing-story-deck lw-deck" aria-label="Six-slide illustrative client deck"><div className="landing-story-deck-bar"><svg className="landing-story-doc-icon" viewBox="0 0 12 14" aria-hidden="true"><path d="M1 1h7l3 3v9H1z" /><rect x="3" y="6" width="6" height="4" /></svg><span className="landing-story-deck-title">Harborline Health Alliance · Growth partnerships and board structure, FY27</span><span className="landing-story-deck-menu">File Edit View Insert</span><span className="landing-story-deck-count">Slide {step.slide + 1} of 6</span></div><div className="landing-story-deck-body"><div className="landing-story-filmstrip" aria-hidden="true">{SLIDE_TITLES.map((title, index) => <div key={title} className="landing-story-thumb" data-active={index === step.slide}><span>{index + 1}</span><p>{title}</p></div>)}</div><div className="landing-story-slide-frame" data-testid="landing-story-slide" data-slide={step.slide} data-step={stepIndex}><div key={step.slide} className="landing-story-slide-layer lw-slide-in"><DeckSlide index={step.slide} highlight={step.highlight} /></div></div></div><p className="landing-story-footnote landing-story-deck-note">Illustrative client recommendation</p></section>;
+}
+
+/**
+ * Unit 10: the deck-pinned walkthrough. Four steps stacked on the left; the
+ * step nearest the viewport centre drives the sticky deck on the right.
+ * Scroll-driven with IntersectionObserver. No timers.
+ */
+export function DeckWalkthrough({ onActiveChange }: { onActiveChange?: (index: number) => void }) {
+  const [active, setActive] = useState(0);
+  const stepRefs = useRef<(HTMLElement | null)[]>([]);
+  const report = useRef(onActiveChange);
+  report.current = onActiveChange;
 
   useEffect(() => {
-    if (step === shown) return;
-    const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-    setLeaving(true);
-    const timer = setTimeout(() => { setPrevSlide((STORY[shown] ?? fallbackStory).slide); setShown(step); setLeaving(false); }, reduced ? 0 : LEAVE_MS);
-    return () => clearTimeout(timer);
-  }, [step, shown]);
+    if (typeof IntersectionObserver === "undefined") return;
+    const observer = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        const index = stepRefs.current.indexOf(entry.target as HTMLElement);
+        if (index >= 0) setActive(index);
+      }
+    }, { rootMargin: "-50% 0px -50% 0px", threshold: 0 });
+    for (const el of stepRefs.current) if (el) observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
-  useLayoutEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const measure = () => {
-      if (window.matchMedia("(max-width: 767px)").matches) return setPaths(null);
-      const c = canvas.getBoundingClientRect();
-      const slide = slideRef.current?.getBoundingClientRect();
-      const response = responseRef.current?.getBoundingClientRect();
-      if (!slide || !response || slide.width === 0) return setPaths(null);
-      const mx = slide.left - c.left;
-      const my = slide.top - c.top + slide.height / 2;
-      const streams = current.litSources.map((id) => {
-        const source = SOURCES.find((item) => item.id === id);
-        if (!source) return null;
-        const card = cardRefs.current[id]?.getBoundingClientRect();
-        const sx = card ? card.right - c.left : 0;
-        const sy = card ? card.top - c.top + card.height / 2 : my;
-        const dx = Math.max(24, (mx - sx) / 2);
-        return { id, vendor: source.vendor, d: `M${sx.toFixed(1)} ${sy.toFixed(1)} C${(sx + dx).toFixed(1)} ${sy.toFixed(1)} ${(mx - dx).toFixed(1)} ${my.toFixed(1)} ${mx.toFixed(1)} ${my.toFixed(1)}` };
-      }).filter((stream): stream is { id: SourceId; vendor: VendorGlyph; d: string } => stream !== null);
-      const ax = slide.right - c.left;
-      const bx = response.left - c.left;
-      const by = response.top - c.top + Math.min(40, response.height / 2);
-      const chip = `M${ax.toFixed(1)} ${my.toFixed(1)} C${((ax + bx) / 2).toFixed(1)} ${my.toFixed(1)} ${((ax + bx) / 2).toFixed(1)} ${by.toFixed(1)} ${bx.toFixed(1)} ${by.toFixed(1)}`;
-      setPaths({ streams, chip, w: c.width, h: c.height });
-    };
-    measure();
-    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(measure);
-    observer?.observe(canvas);
-    return () => observer?.disconnect();
-  }, [shown]);
+  useEffect(() => { report.current?.(active); }, [active]);
 
-  const orderedSources = [...SOURCES].sort((a, b) => Number(current.litSources.includes(b.id)) - Number(current.litSources.includes(a.id)));
-  const words = current.answer.split(" ");
-  const sourceLineDelay = 3000 + words.length * 70 + 120;
-  const sourceLine = shown === 2 ? "Open the exact turn · 1" : `Open the exact source · ${current.sourceCount}`;
+  const fallback = STORY[0];
+  if (!fallback) return null;
+  const current = STORY[active] ?? fallback;
 
-  return <div className="landing-story-shell" aria-label="AI conversations connected to an illustrative client deck">
-    <div ref={canvasRef} className="landing-story-canvas" data-leaving={leaving} key={shown}>
-      <ConversationTunnel paths={paths} step={current} />
-      <div className="landing-story-qa">
-        <CircleDoodle />
-        <div className="landing-story-question"><p className="landing-story-column-label">{current.speaker}</p><blockquote>{current.question}</blockquote></div>
-        <div ref={responseRef} className="landing-story-response"><p className="landing-story-response-label">Lasso answers</p><p className="landing-story-answer-copy" aria-label={current.answer}>{words.map((word, index) => <span aria-hidden="true" key={`${word}-${index}`} style={{ animationDelay: `${3000 + index * 70}ms` }}>{word} </span>)}</p><p className="landing-story-source-line" style={{ animationDelay: `${sourceLineDelay}ms` }}>{sourceLine}</p></div>
+  return <div className="lw-grid" data-active-step={active}>
+    <div className="lw-steps">
+      {STORY.map((step, index) => <article key={step.question} ref={(el) => { stepRefs.current[index] = el; }} className="lw-step" data-story-index={index} data-active={index === active}>
+        <p className="lw-speaker">{step.speaker}</p>
+        <h3 className="lw-question">{step.question}</h3>
+        <div className="lw-answer"><p>{step.answer}</p><p className="lw-source-line">{sourceLineFor(index, step)}</p></div>
+        <div className="lw-chips">{litCards(step).map((card) => <SourceChip key={card.id} card={card} />)}</div>
+        <div className="lw-phone-only">
+          <p className="lw-phone-label">What Lasso read</p>
+          <div className="lw-phone-sources">{litCards(step).map((card) => <SourceCardView key={card.id} card={card} lit />)}</div>
+          <div className="lw-phone-slide"><div className="landing-story-slide-frame"><div className="landing-story-slide-layer"><DeckSlide index={step.slide} highlight={step.highlight} /></div></div><p className="landing-story-footnote landing-story-deck-note">Slide {step.slide + 1} of 6 · illustrative</p></div>
+        </div>
+      </article>)}
+    </div>
+    <div className="lw-stage">
+      <div className="lw-sticky">
+        <DeckFrame step={current} stepIndex={active} />
+        <div className="lw-lit-sources" aria-label="What Lasso read">{litCards(current).map((card) => <SourceCardView key={`${active}-${card.id}`} card={card} lit />)}</div>
       </div>
-      <section className="landing-story-sources" aria-label="What Lasso read"><p className="landing-story-mobile-label">What Lasso read</p><div className="landing-story-source-list">{orderedSources.map((card) => <SourceCardView key={card.id} card={card} lit={current.litSources.includes(card.id)} cardRef={(el) => { cardRefs.current[card.id] = el; }} />)}</div></section>
-      <section className="landing-story-deck" aria-label="Six-slide illustrative client deck"><p className="landing-story-mobile-label">On the slide</p><div className="landing-story-deck-bar"><svg className="landing-story-doc-icon" viewBox="0 0 12 14" aria-hidden="true"><path d="M1 1h7l3 3v9H1z" /><rect x="3" y="6" width="6" height="4" /></svg><span className="landing-story-deck-title">Harborline Health Alliance · Growth partnerships and board structure, FY27</span><span className="landing-story-deck-menu">File Edit View Insert</span><span className="landing-story-deck-count">Slide {current.slide + 1} of 6</span></div><div className="landing-story-deck-body"><div className="landing-story-filmstrip" aria-hidden="true">{SLIDE_TITLES.map((title, index) => <div key={title} className="landing-story-thumb" data-active={index === current.slide}><span>{index + 1}</span><p>{title}</p></div>)}</div><div ref={slideRef} className="landing-story-slide-frame" data-testid="landing-story-slide">{prevSlide !== current.slide ? <div className="landing-story-slide-layer landing-story-slide-old"><DeckSlide index={prevSlide} highlight={null} /></div> : null}<div className="landing-story-slide-layer landing-story-slide-new"><DeckSlide index={current.slide} highlight={current.highlight} /></div></div></div><p className="landing-story-footnote landing-story-deck-note">Illustrative client recommendation</p></section>
-      <div className="landing-story-mobile-nav"><span>Slide {current.slide + 1} of 6</span><div className="landing-story-steps" role="tablist" aria-label="Choose a question">{STORY.map((item, index) => <button key={item.question} type="button" role="tab" aria-selected={step === index} aria-label={`Question ${index + 1}`} onClick={() => onStepChange?.(index)} />)}</div></div>
     </div>
   </div>;
 }

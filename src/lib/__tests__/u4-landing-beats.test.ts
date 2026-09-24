@@ -49,31 +49,34 @@ describe("Unit 4 public page", () => {
     expect(hero).toContain("Illustrative client recommendation");
     expect(hero).toContain("Harborline Health Alliance · Growth partnerships and board structure, FY27");
     expect(hero).toContain("Bridge4 Partners · illustrative · {index + 1} / 6");
-    expect(hero).toContain("Slide {current.slide + 1} of 6");
+    expect(hero).toContain("Slide {step.slide + 1} of 6");
     expect(hero).toContain("Five organizations we benchmarked.");
     expect(hero).toContain("Partnership revenue to $1.4M by FY27.");
     expect(hero).toContain("<VendorMark");
     expect(hero).not.toContain("Riverside Nine");
   });
 
-  it("moves branded conversation excerpts along one path per step", () => {
-    expect(hero).toContain("ConversationTunnel");
-    expect(hero).not.toContain("landing-story-vortex-rings");
-    expect(hero).toContain("landing-story-fragment");
-    expect(hero.match(/<SourceGlyph/g)?.length).toBeGreaterThanOrEqual(2);
+  it("drives a sticky deck from the step nearest the viewport centre, with no tunnel or doodle", () => {
+    expect(hero).toContain("export function DeckWalkthrough");
+    expect(hero).toContain("IntersectionObserver");
+    expect(hero).toContain('rootMargin: "-50% 0px -50% 0px"');
+    expect(hero).not.toMatch(/setInterval|setTimeout/);
+    expect(hero).not.toContain("ConversationTunnel");
+    expect(hero).not.toContain("landing-story-doodle");
+    expect(hero).not.toContain("landing-story-reach-chip");
+    expect(hero.match(/<SourceGlyph/g)?.length).toBeGreaterThanOrEqual(1);
     expect(hero).toContain('vendor: "granola"');
     expect(hero).toContain('vendor: "lovable"');
-    expect(hero).toContain("landing-story-doodle");
-    expect(hero).toContain("landing-story-reach-chip");
+    expect(hero).toContain("What Lasso read");
   });
 
   it("makes each incoming question and Lasso answer explicit", () => {
     expect(hero).toContain("Board chair");
     expect(hero).toContain("Client CEO");
     expect(hero).toContain("Manager question");
-    expect(hero).toContain("Lasso answers");
-    expect(hero).toContain("landing-story-response");
-    expect(page.match(/HOW IT WORKS/g)).toHaveLength(1);
+    expect(hero).toContain("lw-answer");
+    expect(page.match(/>How it works</g)).toHaveLength(1);
+    expect(page).toContain("The deliverable stays. The questions walk past it.");
   });
 });
 
@@ -85,7 +88,10 @@ describe("Unit 8 story system", () => {
   });
 
   it("closes with the pilot line and an invisible-ink layer", () => {
-    expect(page).toContain("Three months");
+    expect(page).toContain("Three months. Your firm's real work. Share what you choose, when you choose: one review pass instead of five, and a record the firm keeps.");
+    expect(page).toContain("Three months, one real engagement");
+    expect(page).not.toContain("No prompts shown");
+    expect(page).not.toMatch(/Four months/i);
     expect(page).toContain("The work, judgment, thinking. Visible.");
     expect(page).toContain("landing-close-wordmark");
     expect(page).toContain("landing-close-particles");
@@ -101,5 +107,33 @@ describe("Unit 8 placement dim", () => {
     const { guardEventDims } = await import("@/lib/event-dim-allowlist");
     const kept = guardEventDims("landing.pilot_cta_clicked", { placement: "header" }) as Record<string, unknown>;
     expect(kept).toMatchObject({ keep: true, dims: { placement: "header" } });
+  });
+});
+
+describe("Unit 10 landing", () => {
+  it("plays the hero video with both sources, a poster and a reduced-motion play button", () => {
+    expect(page).toContain('poster="/videos/lasso-hero-poster.jpg"');
+    expect(page).toContain('<source src="/videos/lasso-hero-landing-1440.webm" type="video/webm" />');
+    expect(page).toContain('<source src="/videos/lasso-hero-landing-1440.mp4" type="video/mp4" />');
+    expect(page).toContain('aria-label="Play"');
+    expect(page).toContain("Illustrative engagement · every figure is made up");
+  });
+
+  it("has the six use-case cards and fires landing.usecase_played once per card", () => {
+    for (const key of ["bring_work_in", "every_number", "check_sources", "find_lost_idea", "share_deliverable", "reasoning_stays"]) {
+      expect(page).toContain(`key: "${key}"`);
+    }
+    for (const file of ["use-bring-work-in", "use-every-number-has-a-source", "use-check-the-sources", "use-find-the-idea-that-got-lost", "use-share-the-deliverable", "use-reasoning-stays-with-the-firm"]) {
+      expect(page).toContain(`file: "${file}"`);
+    }
+    expect(page).toContain('event_type: "landing.usecase_played"');
+    expect(page).toContain("dims: { card, input_mode: inputMode }");
+    expect(page).toContain("playedCards.current.has(card)");
+  });
+
+  it("carries the trust row", () => {
+    expect(page).toContain("Notes are never a source.");
+    expect(page).toContain("You choose what a reviewer opens.");
+    expect(page).toContain("The record is yours.");
   });
 });
