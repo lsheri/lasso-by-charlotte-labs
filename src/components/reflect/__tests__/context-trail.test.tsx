@@ -82,7 +82,6 @@ describe("ThinkingTrail", () => {
     render(<ThinkingTrail items={[]} finalPhase="Writing…" />);
     expect(screen.getByText("0:00")).toBeTruthy();
     act(() => {
-      vi.setSystemTime(new Date("2026-09-24T01:01:05.000Z"));
       vi.advanceTimersByTime(65_000);
     });
     expect(screen.getByText("1:05")).toBeTruthy();
