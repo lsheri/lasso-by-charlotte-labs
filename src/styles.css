@@ -4982,8 +4982,8 @@ button:hover .nb-ico[data-icon="close"] .nb-sig:nth-of-type(2),
   position: absolute;
   pointer-events: none;
   z-index: 30;
-  border: calc(1.4px * var(--lab-inverse-zoom, 1)) dashed color-mix(in srgb, var(--nb-graphite) 60%, transparent);
-  background: color-mix(in srgb, var(--nb-green) 6%, transparent);
+  border: calc(1.4px * var(--lab-inverse-zoom, 1)) solid var(--mint);
+  background: color-mix(in srgb, var(--mint) 8%, transparent);
 }
 
 /* B4: an answer dragged from the chat reaches the board, not a preview. */

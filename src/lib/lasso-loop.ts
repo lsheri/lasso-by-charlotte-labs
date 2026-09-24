@@ -171,12 +171,14 @@ function formLinePaths(form: LassoResolvedForm): ShapePoint[][] {
   }
 
   if (form === 3) {
+    // Crowned ring: a crescent with pointed horns cradling an inner ring,
+    // three blade spikes rising from its top. Separate strokes, not one line.
     return [
-      sampledArc(0.5, 0.56, 0.3, 0.26, 0.04, Math.PI - 0.08),
-      [{ x: 0.2, y: 0.55 }, { x: 0.22, y: 0.33 }, { x: 0.34, y: 0.47 },
-        { x: 0.29, y: 0.19 }, { x: 0.45, y: 0.4 }, { x: 0.5, y: 0.1 },
-        { x: 0.55, y: 0.4 }, { x: 0.71, y: 0.19 }, { x: 0.66, y: 0.47 },
-        { x: 0.78, y: 0.33 }, { x: 0.8, y: 0.55 }],
+      sampledArc(0.5, 0.64, 0.19, 0.15, 0, Math.PI * 2, 32),
+      sampledArc(0.5, 0.6, 0.31, 0.29, -2.55, -4.32, 32),
+      [{ x: 0.5, y: 0.49 }, { x: 0.465, y: 0.26 }, { x: 0.5, y: 0.05 }, { x: 0.535, y: 0.26 }, { x: 0.5, y: 0.49 }],
+      [{ x: 0.37, y: 0.53 }, { x: 0.29, y: 0.4 }, { x: 0.17, y: 0.23 }, { x: 0.33, y: 0.36 }, { x: 0.37, y: 0.53 }],
+      [{ x: 0.63, y: 0.53 }, { x: 0.71, y: 0.4 }, { x: 0.83, y: 0.23 }, { x: 0.67, y: 0.36 }, { x: 0.63, y: 0.53 }],
     ];
   }
 
@@ -243,13 +245,12 @@ function targetForForm(index: number, form: LassoResolvedForm): ShapePoint {
   }
 
   if (form === 3) {
-    if (index < 25) return arcPoint(index / 24, 0.5, 0.56, 0.3, 0.26, 0.04, Math.PI - 0.08);
-    return polylinePoint([
-      { x: 0.2, y: 0.55 }, { x: 0.22, y: 0.33 }, { x: 0.34, y: 0.47 },
-      { x: 0.29, y: 0.19 }, { x: 0.45, y: 0.4 }, { x: 0.5, y: 0.1 },
-      { x: 0.55, y: 0.4 }, { x: 0.71, y: 0.19 }, { x: 0.66, y: 0.47 },
-      { x: 0.78, y: 0.33 }, { x: 0.8, y: 0.55 },
-    ], (index - 25) / 22);
+    const crown = formLinePaths(3);
+    if (index < 14) return polylinePoint(crown[0] ?? [], index / 13);
+    if (index < 28) return polylinePoint(crown[1] ?? [], (index - 14) / 13);
+    if (index < 36) return polylinePoint(crown[2] ?? [], (index - 28) / 7);
+    if (index < 42) return polylinePoint(crown[3] ?? [], (index - 36) / 5);
+    return polylinePoint(crown[4] ?? [], (index - 42) / Math.max(1, LOOP_STAMPS - 43));
   }
 
   if (form === 4) {
