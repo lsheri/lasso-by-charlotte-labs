@@ -5475,7 +5475,7 @@ body[data-answer-drag="true"] .canvas-lab-surface {
 .lw-step { min-height: 72vh; display: flex; flex-direction: column; justify-content: center; gap: 14px; opacity: .62; transition: opacity 300ms ease; }
 .lw-step[data-active="true"] { opacity: 1; }
 .lw-role-label { position: relative; align-self: flex-start; isolation: isolate; color: var(--nb-graphite); font-family: var(--font-hand); font-size: 34px; font-weight: 600; line-height: 1; }
-.lw-role-label::before { content: ""; position: absolute; z-index: -1; left: -.08em; right: -.08em; bottom: -.02em; height: 55%; background: var(--nb-lasso-green); transform: scaleX(0); transform-origin: left; transition: transform 400ms cubic-bezier(.2,.8,.2,1); }
+.lw-role-label::before { content: ""; position: absolute; z-index: -1; left: 0; bottom: -.02em; width: 100%; height: 55%; background: var(--nb-lasso-green); transform: scaleX(0); transform-origin: left; transition: transform 400ms cubic-bezier(.2,.8,.2,1); }
 .lw-step[data-active="true"] .lw-role-label::before { transform: scaleX(1); }
 .lw-speaker { color: var(--muted-foreground); font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase; }
 .lw-question { font-family: var(--font-serif); font-size: 34px; font-weight: 400; line-height: 1.1; }
