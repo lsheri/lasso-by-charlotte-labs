@@ -23,7 +23,7 @@ import type {
   WorkboardRowSnapshot,
 } from "@/lib/canvas-lab-shared";
 import { isRegionFill, isRegionFrameId } from "@/lib/board-region";
-import { WORKBOARD_ANCHORS, WORKBOARD_CARD_DEFAULT_SIZE, WORKBOARD_JUDGMENT_TYPES, WORKBOARD_NODE_KINDS, WORKBOARD_RELATIONS, WORKBOARD_SHAPE_COLOURS, isWorkboardDecorationKind, parseWorkboardTextBody, validWorkboardNodeGeometry } from "@/lib/canvas-lab-shared";
+import { WORKBOARD_ANCHORS, WORKBOARD_CARD_DEFAULT_SIZE, WORKBOARD_JUDGMENT_TYPES, WORKBOARD_NODE_KINDS, WORKBOARD_RELATIONS, WORKBOARD_SHAPE_COLOURS, isWorkboardDecorationKind, parseWorkboardStickyBody, parseWorkboardTextBody, validWorkboardNodeGeometry } from "@/lib/canvas-lab-shared";
 import type { ResolvedProfile } from "@/lib/profile-resolve";
 
 type Db = SupabaseClient<Database>;
@@ -198,7 +198,7 @@ export function validNodeInput(node: WorkboardNodeInput): string | null {
   if (node.kind === "mark") return "Marks are not available yet.";
   // W3: colour blocks were replaced by drawn regions, which are frames.
   if (node.kind === "shape") return "Draw a region on the board instead of a colour block.";
-  if (!validWorkboardNodeGeometry(node)) return node.kind === "text" ? "Text block dimensions are outside the supported range." : "Card dimensions are outside the supported range.";
+  if (!validWorkboardNodeGeometry(node)) return node.kind === "text" ? "Text block dimensions are outside the supported range." : node.kind === "sticky" ? "Sticky dimensions are outside the supported range." : "Card dimensions are outside the supported range.";
   if (node.kind === "work_item" && !node.workItemId) return "A work card needs its work item.";
   if (node.kind === "decision" && !node.decisionId) return "A decision card needs its decision.";
   if ((node.kind === "judgment" || node.kind === "draft") && (node.workItemId || node.decisionId)) return "An authored card cannot reference a record.";
@@ -208,6 +208,9 @@ export function validNodeInput(node: WorkboardNodeInput): string | null {
   if (node.kind === "text" && (node.workItemId || node.decisionId)) return "A text block cannot reference work or a decision.";
   if (node.kind === "text" && (node.frameKey || node.title || node.judgmentType)) return "A text block can only carry its words, style and rectangle.";
   if (node.kind === "text" && !parseWorkboardTextBody(node.body)) return "Check the text block words and style choices.";
+  if (node.kind === "sticky" && (node.workItemId || node.decisionId)) return "A sticky cannot reference work or a decision.";
+  if (node.kind === "sticky" && (node.frameKey || node.title || node.judgmentType)) return "A sticky can only carry its words, style, fill and rectangle.";
+  if (node.kind === "sticky" && !parseWorkboardStickyBody(node.body)) return "Check the sticky words and style choices.";
   if (node.judgmentType && !WORKBOARD_JUDGMENT_TYPES.includes(node.judgmentType)) return "Unknown judgment type.";
   return null;
 }
@@ -217,6 +220,7 @@ export function validateLinkNodeKinds(kinds: string[]): string | null {
   if (decorationKind === "shape") return "A colour block cannot be connected.";
   if (decorationKind === "text") return "A text block cannot be connected.";
   if (decorationKind === "mark") return "A mark cannot be connected.";
+  if (decorationKind === "sticky") return "A sticky cannot be connected.";
   return null;
 }
 
@@ -225,6 +229,8 @@ export function validNodeUpdate(kind: WorkboardNodeDto["kind"], patch: Extract<W
   if (kind === "shape") return "Draw a region on the board instead of a colour block.";
   if (!validNodeGeometry(kind, patch)) return kind === "text" ? "Text block dimensions are outside the supported range." : "Card dimensions are outside the supported range.";
   if (kind === "text" && patch.body !== undefined && !parseWorkboardTextBody(patch.body)) return "Check the text block words and style choices.";
+  if (kind === "sticky" && patch.body !== undefined && !parseWorkboardStickyBody(patch.body)) return "Check the sticky words and style choices.";
+  if (kind === "sticky" && patch.title !== undefined) return "A sticky can only carry its words, style, fill and rectangle.";
   return null;
 }
 
@@ -393,7 +399,7 @@ export async function applyWorkboardCommand(
     // Authored judgment and draft cards answer only to their author, archive
     // and restore included. Canonical reference cards are shared structure.
     const owner = (await db.from("workboard_nodes").select("kind, author_profile_id").eq("id", command.nodeId).eq("workboard_id", board.id).maybeSingle()).data;
-    if (owner && (owner.kind === "judgment" || owner.kind === "draft" || (owner.kind === "text" && command.type === "node_update" && command.patch.body !== undefined)) && owner.author_profile_id !== profile.id) {
+    if (owner && (owner.kind === "judgment" || owner.kind === "draft" || ((owner.kind === "text" || owner.kind === "sticky") && command.type === "node_update" && command.patch.body !== undefined)) && owner.author_profile_id !== profile.id) {
       return { status: "forbidden" };
     }
     if (!owner) return { status: "validation_error", message: "That card is gone." };

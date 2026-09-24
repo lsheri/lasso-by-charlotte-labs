@@ -22,6 +22,11 @@ import {
   WORKBOARD_TEXT_MIN_WIDTH,
   isWorkboardDecorationKind,
   parseWorkboardTextBody,
+  parseWorkboardStickyBody,
+  WORKBOARD_STICKY_MIN_WIDTH,
+  WORKBOARD_STICKY_MIN_HEIGHT,
+  WORKBOARD_STICKY_MAX_SIZE,
+  type WorkboardStickyFill,
   type WorkboardCommand,
   type WorkboardDto,
   type WorkboardNodeDto,
@@ -38,7 +43,7 @@ import { isRegionFrameId } from "@/lib/board-region";
 import { isTrailFrameId } from "@/lib/reasoning-trail";
 import { placeAddedCards } from "@/lib/workboard-placement";
 
-export type LabNodeKind = "brief" | "task" | "work" | "decision" | "chat" | "source" | "ai_work" | "judgment" | "deliverable" | "shape" | "text" | "answer";
+export type LabNodeKind = "brief" | "task" | "work" | "decision" | "chat" | "source" | "ai_work" | "judgment" | "deliverable" | "shape" | "text" | "answer" | "sticky";
 export type LabJudgmentType = "added_constraint" | "corrected_ai" | "rejected_option" | "requested_evidence" | "changed_direction" | "accepted_but_rewrote";
 export type LabTemplateKind = "source" | "ai_work" | "judgment" | "decision" | "deliverable";
 /**
@@ -98,6 +103,8 @@ export type LabNode = {
   textSize?: WorkboardTextSize;
   textWeight?: WorkboardTextWeight;
   textColour?: WorkboardTextColour;
+  /** A sticky's paper fill. */
+  stickyFill?: WorkboardStickyFill;
   /** Kept answers only: when the row was saved, and who asked. */
   createdAt?: string | null;
   authorName?: string;
@@ -897,13 +904,13 @@ export function fitWorkboardViewport(
   };
 }
 
-export type LabResizeKind = "card" | "frame" | "shape" | "text";
+export type LabResizeKind = "card" | "frame" | "shape" | "text" | "sticky";
 
 export function resizeLabRect(start: LabRect, corner: LabResizeCorner, delta: Point, preserveAspect = false, kind: LabResizeKind = "card"): LabRect {
-  const minWidth = kind === "shape" ? WORKBOARD_SHAPE_MIN_SIZE : kind === "text" ? WORKBOARD_TEXT_MIN_WIDTH : kind === "card" ? CARD_MIN_WIDTH : FRAME_MIN_WIDTH;
-  const minHeight = kind === "shape" ? WORKBOARD_SHAPE_MIN_SIZE : kind === "text" ? WORKBOARD_TEXT_MIN_HEIGHT : kind === "card" ? CARD_MIN_HEIGHT : FRAME_MIN_HEIGHT;
-  const maxWidth = kind === "shape" ? WORKBOARD_SHAPE_MAX_SIZE : kind === "text" ? WORKBOARD_TEXT_MAX_SIZE : kind === "card" ? CARD_MAX_WIDTH : 2400;
-  const maxHeight = kind === "shape" ? WORKBOARD_SHAPE_MAX_SIZE : kind === "text" ? WORKBOARD_TEXT_MAX_SIZE : kind === "card" ? CARD_MAX_HEIGHT : 1800;
+  const minWidth = kind === "sticky" ? WORKBOARD_STICKY_MIN_WIDTH : kind === "shape" ? WORKBOARD_SHAPE_MIN_SIZE : kind === "text" ? WORKBOARD_TEXT_MIN_WIDTH : kind === "card" ? CARD_MIN_WIDTH : FRAME_MIN_WIDTH;
+  const minHeight = kind === "sticky" ? WORKBOARD_STICKY_MIN_HEIGHT : kind === "shape" ? WORKBOARD_SHAPE_MIN_SIZE : kind === "text" ? WORKBOARD_TEXT_MIN_HEIGHT : kind === "card" ? CARD_MIN_HEIGHT : FRAME_MIN_HEIGHT;
+  const maxWidth = kind === "sticky" ? WORKBOARD_STICKY_MAX_SIZE : kind === "shape" ? WORKBOARD_SHAPE_MAX_SIZE : kind === "text" ? WORKBOARD_TEXT_MAX_SIZE : kind === "card" ? CARD_MAX_WIDTH : 2400;
+  const maxHeight = kind === "sticky" ? WORKBOARD_STICKY_MAX_SIZE : kind === "shape" ? WORKBOARD_SHAPE_MAX_SIZE : kind === "text" ? WORKBOARD_TEXT_MAX_SIZE : kind === "card" ? CARD_MAX_HEIGHT : 1800;
   const left = corner === "nw" || corner === "sw";
   const top = corner === "nw" || corner === "ne";
   let width = Math.max(minWidth, Math.min(maxWidth, start.width + (left ? -delta.x : delta.x)));
@@ -1066,6 +1073,29 @@ export function applyDurableBoard(base: { frames: LabFrame[]; nodes: LabNode[] }
         height: durable.h,
       });
     }
+    if (durable.kind === "sticky") {
+      const sticky = parseWorkboardStickyBody(durable.body);
+      if (sticky) nodes.push({
+        id: localId,
+        kind: "sticky",
+        frame: null,
+        title: "Sticky",
+        summary: sticky.text,
+        typeLabel: "sticky",
+        ownership: durable.authorProfileId === board.viewerProfileId ? "yours" : "teammate",
+        textSize: sticky.size,
+        textWeight: sticky.weight,
+        textColour: sticky.colour,
+        stickyFill: sticky.fill,
+        local: durable.authorProfileId === board.viewerProfileId,
+        durableId: durable.id,
+        durableVersion: durable.version,
+        x: durable.x,
+        y: durable.y,
+        width: durable.w,
+        height: durable.h,
+      });
+    }
     if (durable.kind === "text") {
       const text = parseWorkboardTextBody(durable.body);
       if (text) nodes.push({
@@ -1179,6 +1209,7 @@ export function eventKind(node: LabNode): LabNodeEventKind {
   if (node.kind === "answer") return "answer";
   if (node.kind === "shape") return "shape";
   if (node.kind === "text") return "text";
+  if (node.kind === "sticky") return "sticky";
   if (node.kind === "chat") return "draft_thread";
   if (node.kind === "judgment") return "human_judgment";
   if (node.kind === "ai_work") return "ai_work";

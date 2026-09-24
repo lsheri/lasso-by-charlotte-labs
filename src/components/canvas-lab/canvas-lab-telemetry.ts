@@ -3,7 +3,7 @@ import { lengthBand } from "@/lib/canvas-lab-annotations-shared";
 import type { WorkboardRelation } from "@/lib/canvas-lab-shared";
 import { logEvent } from "@/lib/telemetry";
 
-export type LabNodeEventKind = "source" | "ai_work" | "human_judgment" | "decision" | "deliverable" | "draft_thread" | "shape" | "text" | "answer";
+export type LabNodeEventKind = "source" | "ai_work" | "human_judgment" | "decision" | "deliverable" | "draft_thread" | "shape" | "text" | "answer" | "sticky";
 export type LabJudgmentEventType = "added_constraint" | "corrected_ai" | "rejected_option" | "requested_evidence" | "changed_direction" | "accepted_but_rewrote";
 export type LabOwnershipEvent = "yours" | "teammate" | "draft";
 export type LabCardMenuEventKind = LabNodeEventKind | "frame";
@@ -69,7 +69,7 @@ export function noteWorkboardConflictResolved(orgId: string | undefined, entity:
   if (orgId) logEvent("workboard.conflict_resolved", orgId, { entity, choice });
 }
 
-export function noteWorkboardElementResized(orgId: string | undefined, elementKind: "card" | "frame" | "shape" | "text", method: "pointer" | "keyboard" | "fit_content", axis: "horizontal" | "vertical" | "both"): void {
+export function noteWorkboardElementResized(orgId: string | undefined, elementKind: "card" | "frame" | "shape" | "text" | "sticky", method: "pointer" | "keyboard" | "fit_content", axis: "horizontal" | "vertical" | "both"): void {
   if (orgId) logEvent("workboard.element_resized", orgId, { element_kind: elementKind, method, axis });
 }
 

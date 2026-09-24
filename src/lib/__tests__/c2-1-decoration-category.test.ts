@@ -33,6 +33,7 @@ describe("C2.1 decoration boundary", () => {
       text: true,
       mark: true,
       answer: false,
+      sticky: true,
     } satisfies Record<WorkboardNodeKind, boolean>;
 
     for (const kind of WORKBOARD_NODE_KINDS) {

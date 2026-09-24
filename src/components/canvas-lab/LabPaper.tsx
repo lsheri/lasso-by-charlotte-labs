@@ -6,6 +6,7 @@ const KIND_ICON: Record<Exclude<LabNode["kind"], "work" | "task">, GraphiteIconN
   brief: "engagement",
   decision: "decisions",
   chat: "messages",
+  sticky: "sticky",
   source: "attach",
   ai_work: "ai-record",
   judgment: "reflect",
