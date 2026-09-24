@@ -58,6 +58,7 @@
 - [x] Extend the dimensional signature motion with a fixed five-form sequence: cursive L, then the four supplied symbols.
 - [x] Verify sequence order, compact containment, reduced motion, focused checks, and live visual stability.
 - [x] Resolve each cycle into connected lime linework matching the cursive L and four supplied symbols.
+- [x] Add the supplied fox mark as the sixth connected finish before the sequence returns to the cursive L.
 
 ## P2 Inbox board lanes
 - [x] Render the four existing work-type columns as fixed lanes in BoardShell.

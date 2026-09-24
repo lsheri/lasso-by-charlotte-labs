@@ -2,7 +2,7 @@ export const LOOP_STAMPS = 48;
 export const LOOP_DOTS = 5;
 export const LOOP_CYCLE_MS = 5200;
 export const LOOP_SUPER_PERIOD = 3;
-export const LOOP_SEQUENCE_LENGTH = 5;
+export const LOOP_SEQUENCE_LENGTH = 6;
 
 export const LOOP_RX_RATIO = 0.31;
 export const LOOP_KY = 0.92;
@@ -23,7 +23,7 @@ export type LoopStamp = {
 };
 
 export type LassoMotionPhase = "clock" | "horizon" | "loose" | "lasso";
-export type LassoResolvedForm = 0 | 1 | 2 | 3 | 4;
+export type LassoResolvedForm = 0 | 1 | 2 | 3 | 4 | 5;
 
 type ShapePoint = { x: number; y: number; z?: number };
 export type LassoLinePath = {
@@ -180,11 +180,30 @@ function formLinePaths(form: LassoResolvedForm): ShapePoint[][] {
     ];
   }
 
+  if (form === 4) {
+    return [
+      sampledArc(0.48, 0.48, 0.29, 0.31, -0.72, -4.88),
+      [{ x: 0.47, y: 0.16 }, { x: 0.5, y: 0.06 }, { x: 0.52, y: 0.22 }],
+      [{ x: 0.42, y: 0.77 }, { x: 0.46, y: 0.91 }, { x: 0.53, y: 0.78 }],
+      sampledArc(0.88, 0.48, 0.035, 0.035, 0, Math.PI * 2, 10),
+    ];
+  }
+
   return [
-    sampledArc(0.48, 0.48, 0.29, 0.31, -0.72, -4.88),
-    [{ x: 0.47, y: 0.16 }, { x: 0.5, y: 0.06 }, { x: 0.52, y: 0.22 }],
-    [{ x: 0.42, y: 0.77 }, { x: 0.46, y: 0.91 }, { x: 0.53, y: 0.78 }],
-    sampledArc(0.88, 0.48, 0.035, 0.035, 0, Math.PI * 2, 10),
+    [
+      { x: 0.16, y: 0.12 }, { x: 0.3, y: 0.31 }, { x: 0.38, y: 0.49 },
+      { x: 0.2, y: 0.56 }, { x: 0.35, y: 0.67 }, { x: 0.43, y: 0.9 },
+      { x: 0.5, y: 0.96 }, { x: 0.57, y: 0.9 }, { x: 0.65, y: 0.67 },
+      { x: 0.8, y: 0.56 }, { x: 0.62, y: 0.49 }, { x: 0.7, y: 0.31 },
+      { x: 0.84, y: 0.12 }, { x: 0.8, y: 0.46 }, { x: 0.94, y: 0.54 },
+      { x: 0.72, y: 0.72 }, { x: 0.6, y: 0.93 }, { x: 0.5, y: 0.96 },
+      { x: 0.4, y: 0.93 }, { x: 0.28, y: 0.72 }, { x: 0.06, y: 0.54 },
+      { x: 0.2, y: 0.46 }, { x: 0.16, y: 0.12 },
+    ],
+    [{ x: 0.38, y: 0.34 }, { x: 0.62, y: 0.34 }, { x: 0.57, y: 0.48 }, { x: 0.43, y: 0.48 }, { x: 0.38, y: 0.34 }],
+    [{ x: 0.5, y: 0.48 }, { x: 0.5, y: 0.92 }],
+    [{ x: 0.2, y: 0.56 }, { x: 0.39, y: 0.51 }, { x: 0.4, y: 0.66 }, { x: 0.31, y: 0.6 }],
+    [{ x: 0.8, y: 0.56 }, { x: 0.61, y: 0.51 }, { x: 0.6, y: 0.66 }, { x: 0.69, y: 0.6 }],
   ];
 }
 
@@ -233,14 +252,23 @@ function targetForForm(index: number, form: LassoResolvedForm): ShapePoint {
     ], (index - 25) / 22);
   }
 
-  if (index < 32) return arcPoint(index / 31, 0.48, 0.48, 0.29, 0.31, -0.72, -4.88);
-  if (index < 38) return polylinePoint([
-    { x: 0.47, y: 0.16 }, { x: 0.5, y: 0.06 }, { x: 0.52, y: 0.22 },
-  ], (index - 32) / 5);
-  if (index < 43) return polylinePoint([
-    { x: 0.42, y: 0.77 }, { x: 0.46, y: 0.91 }, { x: 0.53, y: 0.78 },
-  ], (index - 38) / 4);
-  return arcPoint((index - 43) / 4, 0.88, 0.48, 0.035, 0.035, 0, Math.PI * 2);
+  if (form === 4) {
+    if (index < 32) return arcPoint(index / 31, 0.48, 0.48, 0.29, 0.31, -0.72, -4.88);
+    if (index < 38) return polylinePoint([
+      { x: 0.47, y: 0.16 }, { x: 0.5, y: 0.06 }, { x: 0.52, y: 0.22 },
+    ], (index - 32) / 5);
+    if (index < 43) return polylinePoint([
+      { x: 0.42, y: 0.77 }, { x: 0.46, y: 0.91 }, { x: 0.53, y: 0.78 },
+    ], (index - 38) / 4);
+    return arcPoint((index - 43) / 4, 0.88, 0.48, 0.035, 0.035, 0, Math.PI * 2);
+  }
+
+  const foxPaths = formLinePaths(5);
+  if (index < 28) return polylinePoint(foxPaths[0] ?? [], index / 27);
+  if (index < 36) return polylinePoint(foxPaths[1] ?? [], (index - 28) / 7);
+  if (index < 40) return polylinePoint(foxPaths[2] ?? [], (index - 36) / 3);
+  if (index < 44) return polylinePoint(foxPaths[3] ?? [], (index - 40) / 3);
+  return polylinePoint(foxPaths[4] ?? [], (index - 44) / 3);
 }
 
 export function resolvedFormAt(timeSeconds: number): LassoResolvedForm {
