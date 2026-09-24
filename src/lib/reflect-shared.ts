@@ -31,6 +31,20 @@ export type ScopeMode = (typeof SCOPE_MODES)[number];
 
 export type ContextScope = { mode: ScopeMode; ids: string[] };
 
+export const SCOPE_SOURCES = [
+  "board_pick",
+  "board_pick_brief_only",
+  "picker",
+  "pointed",
+  "workstream",
+  "all",
+] as const;
+export type ScopeSource = (typeof SCOPE_SOURCES)[number];
+
+export function parseScopeSource(value: unknown): ScopeSource {
+  return (SCOPE_SOURCES as readonly unknown[]).includes(value) ? (value as ScopeSource) : "all";
+}
+
 export const DEFAULT_SCOPE: ContextScope = { mode: "whole", ids: [] };
 
 export function parseScope(value: unknown): ContextScope {
@@ -45,7 +59,8 @@ export function parseScope(value: unknown): ContextScope {
 }
 
 export function scopeLabel(scope: ContextScope): string {
-  if (scope.mode === "whole" || scope.ids.length === 0) return "Whole record";
+  if (scope.mode === "whole") return "Whole record";
+  if (scope.ids.length === 0) return "No work items";
   const noun =
     scope.mode === "engagements" ? "engagement" : scope.mode === "tasks" ? "workstream" : "work item";
   return `${scope.ids.length} ${noun}${scope.ids.length === 1 ? "" : "s"}`;

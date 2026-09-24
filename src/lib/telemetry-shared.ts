@@ -109,7 +109,7 @@ export type TelemetryEvent =
   | "task.updated"
   | "feedback.submitted"
   | "reflect.session_created"
-  /** Dims include answer_retried (boolean, additive Sep 24 2026): the first catalogue write was empty or a status word and was asked once more. */
+  /** Dims include answer_retried and additive scope_source, a closed context-origin value. */
   | "reflect.message_sent"
   | "analysis.started"
   | "analysis.run"
