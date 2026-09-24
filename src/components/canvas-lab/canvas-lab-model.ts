@@ -1391,11 +1391,16 @@ export function dockedPieceChats(bundles: ChatBundles): Map<string, string> {
 }
 
 export const BUNDLE_GAP = 18;
-export const BUNDLE_INDENT = 24;
+export const BUNDLE_INDENT = 18;
 
 /** B2: at most four pieces show under an expanded chat; the rest wait behind a tile. */
 export const BUNDLE_VISIBLE_CAP = 4;
 export const BUNDLE_MORE_TILE = { width: 260, height: 56 } as const;
+
+/** Bundle controls grow at low zoom, but stop at the 60% board scale. */
+export function bundleControlScale(zoom: number): number {
+  return 1 / Math.max(zoom, 0.6);
+}
 
 /** Per viewer: absent means expanded, the default. */
 export type BundleView = "expanded" | "minimized" | "all_shown";
@@ -1476,7 +1481,7 @@ export function bundlePiecesBand(count: number): "1" | "2_4" | "5_plus" {
 }
 
 /**
- * Places each piece in a column below its chat: indented 24px, 18px between
+ * Places each piece in a column below its chat: indented 18px, 18px between
  * cards. Heights are the card's rendered box. Stored piece x and y are ignored.
  */
 export function dockBundles<T extends Pick<LabNode, "id" | "x" | "y" | "height">>(nodes: readonly T[], bundles: ChatBundles): T[] {

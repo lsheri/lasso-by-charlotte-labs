@@ -57,7 +57,7 @@ describe("chatBundles", () => {
 });
 
 describe("dockBundles", () => {
-  it("stacks pieces below the chat, indented 24px, 18px apart, ignoring stored positions", () => {
+  it("stacks pieces below the chat, indented 18px, 18px apart, ignoring stored positions", () => {
     const nodes = [
       { id: "c", x: 100, y: 200, height: 180 },
       { id: "p1", x: 900, y: 900, height: 120 },
@@ -65,8 +65,8 @@ describe("dockBundles", () => {
       { id: "free", x: 5, y: 5, height: 100 },
     ];
     const out = dockBundles(nodes, new Map([["c", ["p1", "p2"]]]));
-    expect(out.find((node) => node.id === "p1")).toMatchObject({ x: 124, y: 398 });
-    expect(out.find((node) => node.id === "p2")).toMatchObject({ x: 124, y: 536 });
+    expect(out.find((node) => node.id === "p1")).toMatchObject({ x: 118, y: 398 });
+    expect(out.find((node) => node.id === "p2")).toMatchObject({ x: 118, y: 536 });
     expect(out.find((node) => node.id === "free")).toMatchObject({ x: 5, y: 5 });
     expect(out.find((node) => node.id === "c")).toMatchObject({ x: 100, y: 200 });
   });
@@ -160,8 +160,8 @@ describe("bundle-aware seed (Pass A.3)", () => {
     const at = (id: string) => seeded.find((node) => node.id === `work:${id}`)!;
     const a = at("A");
     // Pieces sit in the chat's dock, off the slot grid, and the grid slots go to A, B, C only.
-    expect([at("a1").x, at("a1").y]).toEqual([a.x + 24, a.y + a.height + 18]);
-    expect([at("a2").x, at("a2").y]).toEqual([a.x + 24, a.y + 2 * (a.height + 18)]);
+    expect([at("a1").x, at("a1").y]).toEqual([a.x + 18, a.y + a.height + 18]);
+    expect([at("a2").x, at("a2").y]).toEqual([a.x + 18, a.y + 2 * (a.height + 18)]);
     const slots = new Set(["A", "B", "C"].map((id) => `${at(id).x},${at(id).y}`));
     expect(slots.size).toBe(3);
     for (const id of ["a1", "a2"]) expect(slots.has(`${at(id).x},${at(id).y}`)).toBe(false);

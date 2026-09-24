@@ -3,8 +3,10 @@ import { describe, expect, it } from "vitest";
 
 import {
   BUNDLE_GAP,
+  BUNDLE_INDENT,
   BUNDLE_MORE_TILE,
   applyBundleViews,
+  bundleControlScale,
   bundlePiecesBand,
   bundleReserveHeight,
   readBundleViews,
@@ -43,6 +45,12 @@ describe("B2 visible-piece rule", () => {
   it("bands the piece count", () => {
     expect([bundlePiecesBand(1), bundlePiecesBand(3), bundlePiecesBand(5)]).toEqual(["1", "2_4", "5_plus"]);
   });
+  it("uses the 18px indent and caps control growth below 60% zoom", () => {
+    expect(BUNDLE_INDENT).toBe(18);
+    expect(bundleControlScale(1)).toBe(1);
+    expect(bundleControlScale(0.6)).toBeCloseTo(1 / 0.6);
+    expect(bundleControlScale(0.4)).toBeCloseTo(1 / 0.6);
+  });
 });
 
 describe("B2 per-viewer storage", () => {
@@ -78,6 +86,15 @@ describe("B2 board wiring", () => {
     expect(controls).toContain("+{extra} more from this chat");
     expect(controls).toContain(">Minimize<");
     expect(page).toContain('"Show pieces" : "Minimize pieces"');
+  });
+  it("names every bundle control with its chat and keeps the line spine at half the indent", () => {
+    const controls = readFileSync("src/components/canvas-lab/LabBundleControls.tsx", "utf8");
+    const links = readFileSync("src/components/canvas-lab/LabBundleLinks.tsx", "utf8");
+    expect(controls).toContain('aria-label={`Minimize pieces from ${chat.title}`}');
+    expect(controls).toContain('aria-label={`Show ${count} ${count === 1 ? "piece" : "pieces"} from ${chat.title}`}');
+    expect(controls).toContain('aria-label={`Show all ${pieceIds.length + extra} pieces from ${chat.title}`}');
+    expect(controls).toContain("bundleControlScale(zoom)");
+    expect(links).toContain("const spineX = chat.x + 9;");
   });
 });
 

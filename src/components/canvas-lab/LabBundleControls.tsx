@@ -1,5 +1,5 @@
 import type { ChatBundles, LabNode } from "@/components/canvas-lab/canvas-lab-model";
-import { BUNDLE_GAP, BUNDLE_INDENT, BUNDLE_MORE_TILE, type BundleView } from "@/components/canvas-lab/canvas-lab-model";
+import { BUNDLE_GAP, BUNDLE_INDENT, BUNDLE_MORE_TILE, bundleControlScale, type BundleView } from "@/components/canvas-lab/canvas-lab-model";
 
 type Props = {
   nodes: readonly LabNode[];
@@ -21,7 +21,7 @@ function piecesLabel(count: number): string {
  */
 export function LabBundleControls({ nodes, bundles, more, minimized, zoom, onToggle }: Props) {
   const byId = new Map(nodes.map((node) => [node.id, node]));
-  const inverse = `scale(${1 / zoom})`;
+  const inverse = `scale(${bundleControlScale(zoom)})`;
   const out: React.ReactNode[] = [];
   for (const [chatId, pieceIds] of bundles) {
     const chat = byId.get(chatId);
@@ -33,13 +33,13 @@ export function LabBundleControls({ nodes, bundles, more, minimized, zoom, onTog
     // body, so it never lands on a piece title or the chat's menu at the top.
     out.push(
       <div key={`min:${chatId}`} className="canvas-lab-bundle-anchor" style={{ left: chat.x + chat.width - 8, top: chat.y + chat.height - 6, transform: inverse }}>
-        <button type="button" className="canvas-lab-bundle-control canvas-lab-bundle-control--up" data-testid="lab-bundle-minimize" onPointerDown={(event) => event.stopPropagation()} onClick={() => onToggle(chat, "minimized")}>Minimize</button>
+        <button type="button" aria-label={`Minimize pieces from ${chat.title}`} className="canvas-lab-bundle-control canvas-lab-bundle-control--up" data-testid="lab-bundle-minimize" onPointerDown={(event) => event.stopPropagation()} onClick={() => onToggle(chat, "minimized")}>Minimize</button>
       </div>,
     );
     const extra = more.get(chatId);
     if (extra) {
       out.push(
-        <button key={`more:${chatId}`} type="button" className="canvas-lab-bundle-more" data-testid="lab-bundle-more" style={{ left: chat.x + BUNDLE_INDENT, top: last.y + last.height + BUNDLE_GAP, width: BUNDLE_MORE_TILE.width, height: BUNDLE_MORE_TILE.height }} onPointerDown={(event) => event.stopPropagation()} onClick={() => onToggle(chat, "all_shown")}>
+        <button key={`more:${chatId}`} type="button" aria-label={`Show all ${pieceIds.length + extra} pieces from ${chat.title}`} className="canvas-lab-bundle-more" data-testid="lab-bundle-more" style={{ left: chat.x + BUNDLE_INDENT, top: last.y + last.height + BUNDLE_GAP, width: BUNDLE_MORE_TILE.width, height: BUNDLE_MORE_TILE.height }} onPointerDown={(event) => event.stopPropagation()} onClick={() => onToggle(chat, "all_shown")}>
           +{extra} more from this chat
         </button>,
       );
@@ -51,7 +51,7 @@ export function LabBundleControls({ nodes, bundles, more, minimized, zoom, onTog
     // Below the stacked edges (8px), in the room the pieces left.
     out.push(
       <div key={`show:${chatId}`} className="canvas-lab-bundle-anchor" style={{ left: chat.x + BUNDLE_INDENT, top: chat.y + chat.height + 14, transform: inverse }}>
-        <button type="button" className="canvas-lab-bundle-control" data-testid="lab-bundle-expand" onPointerDown={(event) => event.stopPropagation()} onClick={() => onToggle(chat, "expanded")}>{piecesLabel(count)}</button>
+        <button type="button" aria-label={`Show ${count} ${count === 1 ? "piece" : "pieces"} from ${chat.title}`} className="canvas-lab-bundle-control" data-testid="lab-bundle-expand" onPointerDown={(event) => event.stopPropagation()} onClick={() => onToggle(chat, "expanded")}>{piecesLabel(count)}</button>
       </div>,
     );
   }
