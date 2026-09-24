@@ -45,7 +45,7 @@ function TrailGlyph({ kind }: { kind: DisplayLine["kind"] }) {
     transcript: <><path {...common} d="M3 3h10M3 6h7M3 9h9M3 12h6" /></>,
     brief: <><path {...common} d="M3.5 2h7l2 2v10h-9zM6 6h4M6 8.5h4M6 11h2.5" /><path {...common} d="M10.5 2v2h2" /></>,
     item: <><rect {...common} x="3" y="3" width="10" height="10" rx="1" /><path {...common} d="M5.5 6h5M5.5 8.5h5M5.5 11h3" /></>,
-    checks: <><path {...common} d="m2.5 5 2 2 3-3M8.5 5h5M2.5 11l2 2 3-3M8.5 11h5" /></>,
+    checks: <><circle {...common} cx="7" cy="7" r="4" /><path {...common} d="m10 10 3.2 3.2" /></>,
   };
   const motionClass = kind === "conversation" ? "nb-trail-glyph-conversation" : kind === "document" || kind === "deck" || kind === "sheet" || kind === "email" || kind === "transcript" || kind === "item" ? "nb-trail-glyph-document" : kind === "note" ? "nb-trail-glyph-pen" : kind === "brief" ? "nb-trail-glyph-brief" : kind === "checks" ? "nb-trail-glyph-search" : "";
   return <span aria-hidden className="flex size-4 shrink-0 items-center justify-center bg-background"><svg viewBox="0 0 16 16" className={`size-4 ${motionClass}`}>{paths[kind]}</svg></span>;
@@ -138,7 +138,7 @@ export function ThinkingTrail({
         </div>
       </div>
       <div className="mt-2 flex h-5 items-center gap-2 text-[13px] text-muted-foreground">
-        <LassoThinkingMark kind="signature" size={20} className="shrink-0 text-[var(--nb-lasso-green)]" />
+        <LassoThinkingMark kind="loop" size={20} className="shrink-0 text-[var(--nb-lasso-green)]" />
         <span>{manifest ? finalPhase : "Reading your work"}</span>
         <span aria-hidden>·</span>
         <span className="font-mono text-[11px]">{elapsedLabel(elapsed)}</span>
