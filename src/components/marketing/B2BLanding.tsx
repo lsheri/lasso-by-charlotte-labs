@@ -61,7 +61,8 @@ function UseCaseCard({ card, onPlayed }: { card: (typeof USE_CASES)[number]; onP
   const [videoFailed, setVideoFailed] = useState(false);
   const [playing, setPlaying] = useState(false);
   const poster = useCaseAssetUrl(`${card.file}-poster.jpg`, `/videos/${card.file}-poster.jpg`);
-  const clip = useCaseAssetUrl(`${card.file}.mp4`, `/videos/${card.file}.mp4`);
+  const webmClip = useCaseAssetUrl(`${card.file}.webm`, `/videos/${card.file}.webm`);
+  const mp4Clip = useCaseAssetUrl(`${card.file}.mp4`, `/videos/${card.file}.mp4`);
 
   useEffect(() => {
     const probe = new Image();
@@ -100,7 +101,6 @@ function UseCaseCard({ card, onPlayed }: { card: (typeof USE_CASES)[number]; onP
           <video
             ref={videoRef}
             className="landing-usecase-video"
-            src={clip}
             muted
             playsInline
             preload="none"
@@ -109,7 +109,10 @@ function UseCaseCard({ card, onPlayed }: { card: (typeof USE_CASES)[number]; onP
             onPause={() => setPlaying(false)}
             onEnded={() => setPlaying(false)}
             onError={() => setVideoFailed(true)}
-          />
+          >
+            <source src={webmClip} type="video/webm" />
+            <source src={mp4Clip} type="video/mp4" />
+          </video>
         )}
       </button>
       <div className="landing-usecase-copy">

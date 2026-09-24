@@ -137,8 +137,11 @@ describe("Unit 10 landing", () => {
 
   it("resolves use-case clips from asset pointers with public fallbacks", () => {
     expect(page).toContain('import.meta.glob("@/assets/use-*.asset.json", { eager: true })');
+    expect(page).toContain('useCaseAssetUrl(`${card.file}.webm`, `/videos/${card.file}.webm`)');
     expect(page).toContain('useCaseAssetUrl(`${card.file}.mp4`, `/videos/${card.file}.mp4`)');
     expect(page).toContain('useCaseAssetUrl(`${card.file}-poster.jpg`, `/videos/${card.file}-poster.jpg`)');
+    expect(page).toContain('<source src={webmClip} type="video/webm" />');
+    expect(page).toContain('<source src={mp4Clip} type="video/mp4" />');
   });
 
   it("uses three invisible-ink particle layers", () => {
