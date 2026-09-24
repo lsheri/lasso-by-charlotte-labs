@@ -8,9 +8,6 @@ import {
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -135,7 +132,6 @@ import {
   noteWorkboardTrailSelected,
   noteWorkboardDropPromptAnswered,
   noteWorkboardStructureToggled,
-  noteWorkboardDisplayModeToggled,
   noteWorkboardCardContentViewed,
   noteWorkboardExampleViewed,
   noteWorkboardSaveErrorResolved,
@@ -176,7 +172,6 @@ import { needsHighlightForComment } from "@/lib/canvas-lab-annotations-shared";
 import { engagementDisplayTitle } from "@/lib/clients";
 import { isDeliverableType } from "@/lib/lineage-shared";
 import type { WorkItemRow } from "@/lib/work-types";
-import { readWorkboardDisplayMode, workboardDisplayModeKey, type WorkboardDisplayMode } from "@/lib/workboard-card-preview.shared";
 import { useQueryClient } from "@tanstack/react-query";
 import { AddWorkPanel, type AddWorkSource } from "@/components/canvas-lab/AddWorkPanel";
 import { CARD_HEIGHT, CARD_WIDTH } from "@/components/canvas-lab/canvas-lab-model";
@@ -317,7 +312,6 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   const [interaction, setInteraction] = useState<"idle" | "drag" | "pan" | "resize" | "connect" | "marquee">("idle");
   const [structureMode, setStructureMode] = useState<LabStructureMode>("freeform");
   const [exampleOpen, setExampleOpen] = useState(false);
-  const [displayMode, setDisplayMode] = useState<WorkboardDisplayMode>("preview");
   const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
   const [selectedFrameId, setSelectedFrameId] = useState<string | null>(null);
   const [front, setFront] = useState<string[]>([]);
@@ -421,7 +415,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   const focusItem = focusNode ? itemByNode(focusNode) ?? null : null;
   const reviewItem = reviewNode ? itemByNode(reviewNode) ?? null : null;
   const onScreenChatIds = useMemo(() => {
-    if (displayMode !== "preview" || viewportSize.width === 0 || zoom <= 0) return [];
+    if (viewportSize.width === 0 || zoom <= 0) return [];
     const left = -pan.x / zoom;
     const top = -pan.y / zoom;
     const right = left + viewportSize.width / zoom;
@@ -432,9 +426,9 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       const intersects = node.x < right && node.x + node.width > left && node.y < bottom && node.y + height > top;
       return item?.type === "ai_thread" && intersects ? [item.id] : [];
     });
-  }, [displayMode, pan.x, pan.y, viewportSize.height, viewportSize.width, visibleNodes, workItems, zoom]);
+  }, [pan.x, pan.y, viewportSize.height, viewportSize.width, visibleNodes, workItems, zoom]);
   const onScreenFileItems = useMemo(() => {
-    if (displayMode !== "preview" || viewportSize.width === 0 || zoom <= 0) return [];
+    if (viewportSize.width === 0 || zoom <= 0) return [];
     const left = -pan.x / zoom;
     const top = -pan.y / zoom;
     const right = left + viewportSize.width / zoom;
@@ -445,7 +439,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       const intersects = node.x < right && node.x + node.width > left && node.y < bottom && node.y + height > top;
       return item && item.type !== "ai_thread" && intersects ? [item] : [];
     });
-  }, [displayMode, pan.x, pan.y, viewportSize.height, viewportSize.width, visibleNodes, workItems, zoom]);
+  }, [pan.x, pan.y, viewportSize.height, viewportSize.width, visibleNodes, workItems, zoom]);
   const cardPreviews = useWorkboardCardPreviews(engagementId, profile?.id, true, onScreenChatIds);
   const filePreviews = useWorkboardFilePreviews(profile?.id, true, onScreenFileItems);
   const focusThreadId = focusItem && focusItem.type === "ai_thread" ? focusItem.id : null;
@@ -465,7 +459,6 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
 
   useEffect(() => {
     if (!profile?.id) return;
-    setDisplayMode(readWorkboardDisplayMode(window.localStorage.getItem(workboardDisplayModeKey(profile.id, engagementId))));
     try {
       setStructureMode(readWorkboardStructureMode(window.localStorage.getItem(workboardStructureModeKey(profile.id, engagementId))));
     } catch {
@@ -614,13 +607,6 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   function openExample() {
     setExampleOpen(true);
     noteWorkboardExampleViewed(orgId, "header");
-  }
-
-  function chooseDisplayMode(mode: WorkboardDisplayMode) {
-    if (mode === displayMode) return;
-    setDisplayMode(mode);
-    if (profile?.id) window.localStorage.setItem(workboardDisplayModeKey(profile.id, engagementId), mode);
-    noteWorkboardDisplayModeToggled(orgId, mode);
   }
 
   function notePreviewScroll(item: WorkItemRow, kind: "chat" | "document" | "deck" | "html" | "mermaid") {
@@ -2150,7 +2136,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     const item = itemByNode(node);
     setFocusOrigin(origin ? { left: origin.left, top: origin.top, width: origin.width, height: origin.height } : null);
     const openedPreview = item ? filePreviews[item.id] : undefined;
-    if (displayMode === "preview" && item && openedPreview && openedPreview.kind !== "fallback" && (item.type === "document" || item.type === "deck" || item.type === "sheet") && !viewedPreviewIdsRef.current.has(item.id)) {
+    if (item && openedPreview && openedPreview.kind !== "fallback" && (item.type === "document" || item.type === "deck" || item.type === "sheet") && !viewedPreviewIdsRef.current.has(item.id)) {
       viewedPreviewIdsRef.current.add(item.id);
       noteWorkboardCardContentViewed(orgId, openedPreview.kind === "html" ? "html" : openedPreview.kind === "mermaid" ? "mermaid" : item.type === "deck" ? "deck" : "document", "open");
     }
@@ -2459,25 +2445,6 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     ),
   });
   toolbarItems.push({
-    spec: { id: "display", width: 76, moveOrder: 2 },
-    row: (
-      <div className="canvas-lab-structure-toggle" aria-label="Card display">
-        <ToolbarIcon label="Preview cards"><Button type="button" size="icon" variant={displayMode === "preview" ? "secondary" : "ghost"} aria-label="Preview cards" aria-pressed={displayMode === "preview"} data-toolbar-control="preview" onClick={() => chooseDisplayMode("preview")}><GraphiteIcon name="preview-cards" animate={false} /></Button></ToolbarIcon>
-        <ToolbarIcon label="Sticky cards"><Button type="button" size="icon" variant={displayMode === "sticky" ? "secondary" : "ghost"} aria-label="Sticky cards" aria-pressed={displayMode === "sticky"} data-toolbar-control="sticky" onClick={() => chooseDisplayMode("sticky")}><GraphiteIcon name="sticky" animate={false} /></Button></ToolbarIcon>
-      </div>
-    ),
-    menu: (
-      <>
-        <DropdownMenuLabel>Card display</DropdownMenuLabel>
-        <DropdownMenuRadioGroup value={displayMode} onValueChange={(value) => chooseDisplayMode(value as typeof displayMode)}>
-          <DropdownMenuRadioItem value="preview">Preview</DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="sticky">Sticky</DropdownMenuRadioItem>
-        </DropdownMenuRadioGroup>
-        <DropdownMenuSeparator />
-      </>
-    ),
-  });
-  toolbarItems.push({
     spec: { id: "working-from", width: 0, pinned: true },
       row: <ToolbarIcon label="Working from"><Button type="button" size="icon" variant="outline" className="md:hidden" aria-label="Working from" data-toolbar-control="working-from" onClick={() => setAskOpen(true)}><GraphiteIcon name="working-from" animate={false} /></Button></ToolbarIcon>,
   });
@@ -2606,7 +2573,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
             </svg>
             {visibleNodes.filter((node) => node.kind === "text").map((node) => <LabTextBlock key={node.id} node={node} selected={keyboardId === node.id} editable={Boolean(node.local)} layoutEditable={Boolean(lab.board?.canEditStructure)} onSelect={() => { setKeyboardId(node.id); setSelectedFrameId(null); setSelectedLinkId(null); }} onDragStart={(event) => { if (decorationPointerIntent({ selected: keyboardId === node.id, onEdge: Boolean((event.target as HTMLElement).dataset["edge"]) }) === "drag") onCardPointerDown(node, event); }} onResizeStart={(corner, event) => startResize("text", node.id, corner, node, event)} onResizeKeyDown={(corner, event) => keyboardResize("text", node.id, corner, node, event)} onResizeKeyUp={finishKeyboardResize} onChange={(body) => setNodes((current) => current?.map((entry) => entry.id === node.id ? { ...entry, summary: body.text, textSize: body.size, textWeight: body.weight, textColour: body.colour } : entry) ?? current)} onCommit={(body: WorkboardTextBody) => { noteWorkboardNodeEdited(orgId, "text"); void persistNodePatch(node.id, { body: serializeWorkboardTextBody(body) }); }} onRemove={() => deleteNode(node)} />)}
             {visibleNodes.filter((node) => node.kind === "answer").map((node) => <LabAnswerCard key={node.id} node={node} focused={keyboardId === node.id} stackZ={cardStackZ(front, node.id)} onFocus={() => { setFront((current) => bringToFront(current, node.id)); setKeyboardId(node.id); setSelectedFrameId(null); }} onPointerDown={(event) => { setFront((current) => bringToFront(current, node.id)); onCardPointerDown(node, event); }} onDelete={() => deleteNode(node)} frameChoices={structureMode === "structured" ? boardFrames.filter((frame) => !isContextFrameId(frame.id) && !isTrailFrameId(frame.id)).map((frame) => ({ id: frame.id, name: frame.name })) : []} onMoveToFrame={structureMode === "structured" && lab.board?.canEditStructure ? (frameId) => moveToFrame(node, frameId) : undefined} />)}
-            {visibleNodes.filter((node) => node.kind !== "answer" && !isWorkboardDecorationKind(node.kind)).map((node) => { const canResize = Boolean(lab.board?.canEditStructure) && (node.kind !== "judgment" || Boolean(node.local)); const cardItem = itemByNode(node); return <LabCard key={node.id} node={node} item={cardItem} displayMode={displayMode} preview={cardItem ? cardPreviews[cardItem.id] : undefined} filePreview={cardItem ? filePreviews[cardItem.id] : undefined} onPreviewScroll={cardItem ? (kind) => notePreviewScroll(cardItem, kind) : undefined} selected={selected.includes(node.id)} focused={keyboardId === node.id} focusOnMount={pendingJudgmentFocusId === node.id} connecting={connectSource !== null || connectorPreview !== null} connectSourceAnchor={connectSource?.nodeId === node.id ? connectSource.anchor : null} onSelect={() => { setAnnouncement(selected.includes(node.id) ? "Removed from context" : "Added to context"); setSelected((current) => toggleContext(current, node.id)); }} onOpen={(origin) => openNode(node, origin)} onBranch={() => branchFrom(node)} onHide={() => hideNode(node)} onDelete={() => deleteNode(node)} onTakeOutOfContext={isContextFrameId(node.frame) && node.workItemId ? () => void takeOutOfContext(node) : undefined} onEdit={(text) => setNodes((current) => current ? updateLocalNode(current, node.id, text) : current)} onEditCommitted={() => { noteWorkboardNodeEdited(orgId, eventKind(node)); const current = nodesRef.current.find((entry) => entry.id === node.id); if (current?.durableId) void persistNodePatch(current.id, { body: current.summary, title: current.title }); }} onAnchorPointerDown={(side, event) => startPointerConnect(node, side, event)} onAnchorActivate={(side) => chooseConnectAnchor(node, side)} onMenuOpened={() => { if (connectSource || connectorDragRef.current) cancelConnect(); noteWorkboardCardMenuOpened(orgId, eventKind(node), node.ownership); }} onMenuOpenChange={setCardMenuOpen} onMeasure={(height) => cardHeightsRef.current.set(node.id, height)} onPointerDown={(event) => { setFront((current) => bringToFront(current, node.id)); onCardPointerDown(node, event); }} onFocus={() => { setFront((current) => bringToFront(current, node.id)); setKeyboardId(node.id); setSelectedFrameId(null); setSelectedLinkId((current) => relationshipSelection(current, "deselect")); if (pendingJudgmentFocusId === node.id) setPendingJudgmentFocusId(null); }} onKeyDown={(event) => onCardKeyDown(node, event)} canResize={canResize} onResizeStart={(corner, event) => startResize("card", node.id, corner, { x: node.x, y: node.y, width: node.width, height: node.height }, event)} onResizeKeyDown={(corner, event) => keyboardResize("card", node.id, corner, { x: node.x, y: node.y, width: node.width, height: node.height }, event)} onResizeKeyUp={finishKeyboardResize} onFit={() => fitCard(node)} frameChoices={boardFrames.filter((frame) => !isContextFrameId(frame.id) && !isTrailFrameId(frame.id)).map((frame) => ({ id: frame.id, name: frame.name }))} structured={structureMode === "structured"} onMoveToFrame={(frameId) => moveToFrame(node, frameId)} stackZ={cardStackZ(front, node.id)} commentCount={node.workItemId ? commentCounts[node.workItemId] ?? 0 : 0} onOpenComments={() => { setFocusOrigin(null); setFocusOpensComments(true); setFocusId(node.id); }} />; })}
+            {visibleNodes.filter((node) => node.kind !== "answer" && !isWorkboardDecorationKind(node.kind)).map((node) => { const canResize = Boolean(lab.board?.canEditStructure) && (node.kind !== "judgment" || Boolean(node.local)); const cardItem = itemByNode(node); return <LabCard key={node.id} node={node} item={cardItem} preview={cardItem ? cardPreviews[cardItem.id] : undefined} filePreview={cardItem ? filePreviews[cardItem.id] : undefined} onPreviewScroll={cardItem ? (kind) => notePreviewScroll(cardItem, kind) : undefined} selected={selected.includes(node.id)} focused={keyboardId === node.id} focusOnMount={pendingJudgmentFocusId === node.id} connecting={connectSource !== null || connectorPreview !== null} connectSourceAnchor={connectSource?.nodeId === node.id ? connectSource.anchor : null} onSelect={() => { setAnnouncement(selected.includes(node.id) ? "Removed from context" : "Added to context"); setSelected((current) => toggleContext(current, node.id)); }} onOpen={(origin) => openNode(node, origin)} onBranch={() => branchFrom(node)} onHide={() => hideNode(node)} onDelete={() => deleteNode(node)} onTakeOutOfContext={isContextFrameId(node.frame) && node.workItemId ? () => void takeOutOfContext(node) : undefined} onEdit={(text) => setNodes((current) => current ? updateLocalNode(current, node.id, text) : current)} onEditCommitted={() => { noteWorkboardNodeEdited(orgId, eventKind(node)); const current = nodesRef.current.find((entry) => entry.id === node.id); if (current?.durableId) void persistNodePatch(current.id, { body: current.summary, title: current.title }); }} onAnchorPointerDown={(side, event) => startPointerConnect(node, side, event)} onAnchorActivate={(side) => chooseConnectAnchor(node, side)} onMenuOpened={() => { if (connectSource || connectorDragRef.current) cancelConnect(); noteWorkboardCardMenuOpened(orgId, eventKind(node), node.ownership); }} onMenuOpenChange={setCardMenuOpen} onMeasure={(height) => cardHeightsRef.current.set(node.id, height)} onPointerDown={(event) => { setFront((current) => bringToFront(current, node.id)); onCardPointerDown(node, event); }} onFocus={() => { setFront((current) => bringToFront(current, node.id)); setKeyboardId(node.id); setSelectedFrameId(null); setSelectedLinkId((current) => relationshipSelection(current, "deselect")); if (pendingJudgmentFocusId === node.id) setPendingJudgmentFocusId(null); }} onKeyDown={(event) => onCardKeyDown(node, event)} canResize={canResize} onResizeStart={(corner, event) => startResize("card", node.id, corner, { x: node.x, y: node.y, width: node.width, height: node.height }, event)} onResizeKeyDown={(corner, event) => keyboardResize("card", node.id, corner, { x: node.x, y: node.y, width: node.width, height: node.height }, event)} onResizeKeyUp={finishKeyboardResize} onFit={() => fitCard(node)} frameChoices={boardFrames.filter((frame) => !isContextFrameId(frame.id) && !isTrailFrameId(frame.id)).map((frame) => ({ id: frame.id, name: frame.name }))} structured={structureMode === "structured"} onMoveToFrame={(frameId) => moveToFrame(node, frameId)} stackZ={cardStackZ(front, node.id)} commentCount={node.workItemId ? commentCounts[node.workItemId] ?? 0 : 0} onOpenComments={() => { setFocusOrigin(null); setFocusOpensComments(true); setFocusId(node.id); }} />; })}
             <svg className="canvas-lab-relationship-overlays absolute inset-0 overflow-visible" width={bounds.width} height={bounds.height} aria-label="Workboard relationship labels">
               <LabRelationshipOverlays links={links} nodes={visibleNodes} measuredHeights={cardHeightsRef.current} selectedLinkId={selectedLinkId} hoveredLinkId={hoveredLinkId} inverseZoom={labInverseZoom(zoom)} zoom={zoom} editable={Boolean(lab.board?.canEditStructure)} onRemove={removeRelationship} onHover={setHoveredLinkId} />
             </svg>

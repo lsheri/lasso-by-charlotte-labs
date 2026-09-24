@@ -3,16 +3,17 @@ import { Paperclip } from "lucide-react";
 
 import { LabCardMenu } from "@/components/canvas-lab/LabCardMenu";
 import { LabPaper } from "@/components/canvas-lab/LabPaper";
-import { LabPreview } from "@/components/canvas-lab/LabPreview";
 import { ReferenceFileCard, referenceMatchLine } from "@/components/canvas-lab/ReferenceFileCard";
+import { GraphiteIcon } from "@/components/notebook/icons";
+import { WorkNote } from "@/components/work/WorkNote";
 import { isReferenceItem } from "@/lib/reference-file-shared";
 import { cardSizeTier, type LabAnchor, type LabNode, type LabResizeCorner } from "@/components/canvas-lab/canvas-lab-model";
 import type { WorkItemRow } from "@/lib/work-types";
-import type { WorkboardCardPreview, WorkboardDisplayMode, WorkboardFilePreview } from "@/lib/workboard-card-preview.shared";
+import type { WorkboardCardPreview, WorkboardFilePreview } from "@/lib/workboard-card-preview.shared";
 
 /**
- * One object on the board. Cards mode is a sticky summary for orientation,
- * Live opens the same card up enough to work with. The card never offers an
+ * One object on the board. Imported work uses the shared Ledger face.
+ * Focus opens the same card up enough to work with. The card never offers an
  * action the owner rules would refuse.
  */
 export function LabCard({
@@ -50,10 +51,9 @@ export function LabCard({
   stackZ = 1,
   commentCount = 0,
   onOpenComments,
-  displayMode = "sticky",
   preview,
   filePreview,
-  onPreviewScroll,
+  onPreviewScroll: _onPreviewScroll,
   readOnly = false,
 }: {
   node: LabNode;
@@ -91,7 +91,6 @@ export function LabCard({
   /** Slice 2a unit 2: live top-level comments on this card's item. */
   commentCount?: number;
   onOpenComments?: (() => void) | undefined;
-  displayMode?: WorkboardDisplayMode;
   preview?: WorkboardCardPreview | undefined;
   filePreview?: WorkboardFilePreview | undefined;
   onPreviewScroll?: ((kind: "chat" | "document" | "deck" | "html" | "mermaid") => void) | undefined;
@@ -104,7 +103,6 @@ export function LabCard({
   const cardDownRef = useRef<{ x: number; y: number } | null>(null);
   const lastClickMovedRef = useRef(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [previewFailed, setPreviewFailed] = useState(false);
 
   useLayoutEffect(() => {
     if (focusOnMount) cardRef.current?.focus({ preventScroll: true });
@@ -156,8 +154,6 @@ export function LabCard({
 
   const matchLine = item && !isReferenceItem(item) ? referenceMatchLine(item) : null;
   const anchors: LabAnchor[] = ["top", "right", "bottom", "left"];
-  const hasPreview = displayMode === "preview" && Boolean(item) && !previewFailed && (item?.type === "ai_thread" ? Boolean(preview?.turns.length) : Boolean(filePreview && filePreview.kind !== "fallback"));
-  const stickyHasThumbnail = Boolean(item) && !previewFailed && (item?.type === "ai_thread" ? Boolean(preview?.turns.length) : Boolean(filePreview && filePreview.kind !== "fallback"));
   return (
     <div
       ref={cardRef}
@@ -183,7 +179,21 @@ export function LabCard({
       className="canvas-lab-card group absolute text-left outline-none"
     >
       <div ref={paperRef} data-selected={selected} data-focused={focused} data-connect-source={connectSourceAnchor !== null} className="canvas-lab-card-paper h-full w-full overflow-hidden">
-        {item && isReferenceItem(item) ? <ReferenceFileCard item={item} onOpen={() => onOpen(cardRef.current?.getBoundingClientRect())} /> : hasPreview && item ? <LabPreview item={item} preview={preview} filePreview={filePreview} focused={focused} onFailure={() => setPreviewFailed(true)} onPreviewScroll={onPreviewScroll} onOpen={() => onOpen(cardRef.current?.getBoundingClientRect())} /> : <div data-drawing="sticky" className="h-full"><LabPaper node={node} item={item} selected={selected} focused={focused} displayMode={stickyHasThumbnail ? "preview" : "sticky"} preview={preview} filePreview={filePreview} showOwnership={!readOnly} onEdit={onEdit} onEditCommitted={onEditCommitted} commentCount={commentCount} onOpenComments={onOpenComments} onOpenTrail={readOnly || !node.deliverable ? undefined : () => onOpen(cardRef.current?.getBoundingClientRect())} /></div>}
+        {item && isReferenceItem(item) ? <ReferenceFileCard item={item} onOpen={() => onOpen(cardRef.current?.getBoundingClientRect())} /> : item ? (
+          <WorkNote
+            item={item}
+            chatPreview={preview}
+            filePreview={filePreview}
+            className="h-full"
+            contextSelected={selected}
+            onOpen={() => onOpen(cardRef.current?.getBoundingClientRect())}
+            actions={commentCount > 0 && onOpenComments ? (
+              <button type="button" data-testid="lab-comment-chip" aria-label={`${commentCount} ${commentCount === 1 ? "comment" : "comments"}`} onPointerDown={(event) => event.stopPropagation()} onClick={(event) => { event.stopPropagation(); onOpenComments(); }} className="inline-flex items-center gap-0.5 font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
+                <GraphiteIcon name="messages" size={11} animate={false} />{commentCount}
+              </button>
+            ) : undefined}
+          />
+        ) : <LabPaper node={node} selected={selected} showOwnership={!readOnly} onEdit={onEdit} onEditCommitted={onEditCommitted} onOpenTrail={readOnly || !node.deliverable ? undefined : () => onOpen(cardRef.current?.getBoundingClientRect())} />}
         {matchLine ? <span data-testid="reference-match-line" className="absolute bottom-1 left-2 text-xs text-muted-foreground">{matchLine}</span> : null}
         {selected ? <Paperclip aria-hidden="true" className="canvas-lab-context-mark" /> : null}
       </div>

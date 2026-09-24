@@ -21,6 +21,7 @@ export function WorkNote({
   displayMode: _displayMode = "preview",
   chatPreview,
   filePreview,
+  contextSelected = false,
 }: {
   item: Omit<WorkItemRow, "work_item_tasks"> & { work_item_tasks?: WorkItemRow["work_item_tasks"] };
   onOpen?: (() => void) | undefined;
@@ -33,12 +34,14 @@ export function WorkNote({
   displayMode?: WorkboardDisplayMode;
   chatPreview?: WorkboardCardPreview | undefined;
   filePreview?: WorkboardFilePreview | undefined;
+  contextSelected?: boolean;
 }) {
   const mapping = item.work_item_tasks?.[0]?.tasks ?? null;
   const when = resolveWorkDate(item);
   const date = when.byArrival ? `added ${formatDate(when.iso)}` : formatDate(when.iso);
   const brand = sourceBrandKey(item);
   const summary = item.work_item_extracts?.find((extract) => extract.summary)?.summary
+    ?? chatPreview?.summary
     ?? chatPreview?.firstUserTurn?.content
     ?? chatPreview?.turns.find((turn) => turn.role.trim().toLowerCase() === "user")?.content
     ?? "No summary available.";
@@ -80,7 +83,7 @@ export function WorkNote({
           : {})}
         className={`nb-paper-body flex h-full min-h-0 flex-col ${onOpen ? "cursor-pointer" : ""}`}
       >
-        <div className="flex h-[14px] shrink-0 select-none items-center gap-2">
+        <div className={`flex h-[14px] shrink-0 select-none items-center gap-2 ${contextSelected ? "canvas-lab-context-header" : ""}`}>
           {lead ? <span className="shrink-0">{lead}</span> : null}
           <BrandLogo brand={brand} size={13} />
           <span className="min-w-0 flex-1 truncate font-mono text-[8.5px] uppercase tracking-[0.08em] text-muted-foreground">{brandLabel(brand)}</span>
@@ -88,7 +91,7 @@ export function WorkNote({
           {actions ? <span className="shrink-0 select-none" onClick={(event) => event.stopPropagation()}>{actions}</span> : null}
         </div>
 
-        <p className="mt-1 shrink-0 select-text truncate text-[12px] font-medium leading-[15px] text-foreground">{item.title}</p>
+        <p className={`mt-1 shrink-0 select-text truncate text-[12px] font-medium leading-[15px] text-foreground ${contextSelected ? "canvas-lab-context-title" : ""}`}>{item.title}</p>
 
         {isFile ? (
           <div className="ledger-work-note__file mt-1 flex min-h-0 flex-1 items-center gap-2">
@@ -101,7 +104,7 @@ export function WorkNote({
             </div>
           </div>
         ) : (
-          <p className="my-auto line-clamp-3 min-h-0 select-text text-[10.5px] leading-[1.45] text-muted-foreground">{summary}</p>
+          <p data-summary-source={item.work_item_extracts?.some((extract) => extract.summary) || chatPreview?.summary ? "stored" : chatPreview?.firstUserTurn || chatPreview?.turns.some((turn) => turn.role.trim().toLowerCase() === "user") ? "first-turn" : "absent"} className="my-auto line-clamp-3 min-h-0 select-text text-[10.5px] leading-[1.45] text-muted-foreground">{summary}</p>
         )}
 
         <div className="mt-1 flex h-[16px] shrink-0 select-none items-center gap-2 border-t border-hairline pt-1">

@@ -57,4 +57,15 @@ describe("Unit 5a Ledger WorkNote", () => {
     expect(container.querySelector(".ledger-work-note__thumbnail")).not.toBeNull();
     expect(getByTestId("file-thumbnail")).toBeTruthy();
   });
+
+  it("prefers a stored summary and falls back to the first user turn", () => {
+    const stored = render(<WorkNote item={item("claude")} chatPreview={{ workItemId: "stored", summary: "Stored extract", turnCount: 1, model: null, firstUserTurn: { turnNo: 1, role: "user", content: "First turn" }, turns: [] }} />);
+    expect(stored.getByText("Stored extract")).toBeTruthy();
+    expect(stored.container.querySelector('[data-summary-source="stored"]')).not.toBeNull();
+    stored.unmount();
+
+    const fallback = render(<WorkNote item={item("chatgpt")} chatPreview={{ workItemId: "fallback", summary: null, turnCount: 1, model: null, firstUserTurn: { turnNo: 1, role: "user", content: "First turn" }, turns: [] }} />);
+    expect(fallback.getByText("First turn")).toBeTruthy();
+    expect(fallback.container.querySelector('[data-summary-source="first-turn"]')).not.toBeNull();
+  });
 });
