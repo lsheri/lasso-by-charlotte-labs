@@ -85,7 +85,7 @@ export function ThinkingTrail({
         ...(manifest.brief_included ? [{ key: "brief", text: "The brief", ...(manifest.engagement?.name ? { detail: manifest.engagement.name } : {}), kind: "brief" as const }] : []),
         ...(manifest.firm_checks_applied > 0 ? [{ key: "checks", text: `${manifest.firm_checks_applied} firm ${manifest.firm_checks_applied === 1 ? "check" : "checks"}`, kind: "checks" as const }] : []),
       ].slice(-3)
-    : items.map((item) => ({ key: item.id, text: item.title, kind: "item" as const })).slice(-3);
+    : items.slice(0, 3).map((item) => ({ key: item.id, text: item.title, kind: "item" as const }));
   const signature = nextLines.map((line) => `${line.key}:${line.text}:${line.detail ?? ""}`).join("|");
   const [shown, setShown] = useState(nextLines);
   const shownSignature = useRef(signature);
@@ -186,12 +186,14 @@ export function ContextAudit({
       </Button>
       {open ? (
         <div className="space-y-4 pb-1 pt-3 text-[13px]">
-          <section data-audit-group="read">
-            <h4 className="mb-2 font-mono text-[8.5px] uppercase text-muted-foreground tracking-[0.08em]">Read</h4>
-            <div className="space-y-2">
-              {manifest.items.map((item) => <p key={item.id || item.title} className="flex min-w-0 items-center"><AuditGlyph kind={item.kind} /><span className="ml-[9px] min-w-0 break-words">{item.title}</span>{item.detail ? <span className="ml-[7px] text-[12px] text-muted-foreground">{item.detail}</span> : null}</p>)}
-            </div>
-          </section>
+          {manifest.items.length > 0 ? (
+            <section data-audit-group="read">
+              <h4 className="mb-2 font-mono text-[8.5px] uppercase text-muted-foreground tracking-[0.08em]">Read</h4>
+              <div className="space-y-2">
+                {manifest.items.map((item) => <p key={item.id || item.title} className="flex min-w-0 items-center"><AuditGlyph kind={item.kind} /><span className="ml-[9px] min-w-0 break-words">{item.title}</span>{item.detail ? <span className="ml-[7px] text-[12px] text-muted-foreground">{item.detail}</span> : null}</p>)}
+              </div>
+            </section>
+          ) : null}
           {manifest.brief_included || manifest.firm_checks_applied > 0 ? (
             <section data-audit-group="also-in">
               <h4 className="mb-2 font-mono text-[8.5px] uppercase text-muted-foreground tracking-[0.08em]">Also in</h4>
@@ -201,12 +203,14 @@ export function ContextAudit({
               </div>
             </section>
           ) : null}
-          <section data-audit-group="not-read">
-            <h4 className="mb-2 font-mono text-[8.5px] uppercase text-muted-foreground tracking-[0.08em]">Not read</h4>
-            <div className="space-y-2 opacity-[0.62]">
-              {manifest.excluded.map((entry) => <p key={`${entry.title}:${entry.reason}`} className="flex min-w-0 items-start"><span aria-hidden className="mt-[7px] h-px w-1 shrink-0 bg-current" /><span className="ml-[9px] break-words">{entry.title}<span className="text-muted-foreground"> {" - "}{entry.reason}</span></span></p>)}
-            </div>
-          </section>
+          {manifest.excluded.length > 0 ? (
+            <section data-audit-group="not-read">
+              <h4 className="mb-2 font-mono text-[8.5px] uppercase text-muted-foreground tracking-[0.08em]">Not read</h4>
+              <div className="space-y-2 opacity-[0.62]">
+                {manifest.excluded.map((entry) => <p key={`${entry.title}:${entry.reason}`} className="flex min-w-0 items-start"><span aria-hidden className="mt-[7px] h-px w-1 shrink-0 bg-current" /><span className="ml-[9px] break-words">{entry.title}<span className="text-muted-foreground"> {" - "}{entry.reason}</span></span></p>)}
+              </div>
+            </section>
+          ) : null}
           {manifest.assembled_at ? <p className="font-mono text-[10px] uppercase text-muted-foreground opacity-60 tracking-[0.04em]">Assembled {new Date(manifest.assembled_at).toLocaleString("en-GB")}</p> : null}
         </div>
       ) : null}

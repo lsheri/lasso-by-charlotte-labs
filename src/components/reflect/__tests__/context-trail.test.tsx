@@ -51,7 +51,7 @@ describe("ThinkingTrail", () => {
     vi.useRealTimers();
   });
 
-  it("shows a rolling window of at most three pending rows with only the last live", () => {
+  it("shows the first three pending rows with only the last live", () => {
     const { container } = render(
       <ThinkingTrail
         items={Array.from({ length: 7 }, (_, index) => ({ id: `selected-${index}`, title: `Selected ${index}` }))}
@@ -60,7 +60,7 @@ describe("ThinkingTrail", () => {
     );
     const rows = container.querySelectorAll("[data-trail-state]");
     expect(rows).toHaveLength(3);
-    expect([...rows].map((row) => row.textContent)).toEqual(["Selected 4", "Selected 5", "Selected 6"]);
+    expect([...rows].map((row) => row.textContent)).toEqual(["Selected 0", "Selected 1", "Selected 2"]);
     expect(container.querySelectorAll("[data-trail-state].live")).toHaveLength(1);
     expect(rows[2]?.classList.contains("live")).toBe(true);
     expect(screen.getByText("Reading your work")).toBeTruthy();
@@ -136,5 +136,14 @@ describe("ContextAudit", () => {
     const { container } = render(<ContextAudit manifest={manifest} buttonLabel="Response inputs" />);
     expect(screen.getByRole("button", { name: /Response inputs5/i })).toBeTruthy();
     expect(container.querySelector(".nb-audit-settle")).toBeNull();
+  });
+
+  it("omits empty read and not-read groups", () => {
+    const emptyGroups: ContextManifest = { ...manifest, items: [], excluded: [] };
+    render(<ContextAudit manifest={emptyGroups} />);
+    fireEvent.click(screen.getByRole("button", { name: /Read what went into this response2/i }));
+    expect(screen.queryByRole("heading", { name: "Read" })).toBeNull();
+    expect(screen.queryByRole("heading", { name: "Not read" })).toBeNull();
+    expect(screen.getByRole("heading", { name: "Also in" })).toBeTruthy();
   });
 });
