@@ -123,24 +123,17 @@ export function LassoThinkingMark({ kind, size, count = 0, className }: LassoThi
       }
     }
 
-    function drawLoop(t: number) {
-      for (let index = 26; index >= 0; index -= 1) {
-        const age = index / 26;
-        const point = ring(cx, cy, radius, t * 2 - index * 0.075);
-        const depth = (point.z + 1) / 2;
-        const alpha = (1 - age) * (0.22 + 0.78 * depth);
-        const pointRadius = (1 + 2.6 * (1 - age)) * (0.6 + 0.4 * depth);
-        dot(context, point, pointRadius, alpha);
+    function drawResolvingLoop(t: number, opacity = 1) {
+      const resolved = cohesionAt(t / (LOOP_CYCLE_MS / 1000));
+      for (const stamp of loopStamps(t, size)) {
+        particle(context, { ...stamp, alpha: stamp.alpha * opacity * (1 - resolved) });
       }
+      drawResolvedMark(context, t, size, resolved * opacity);
     }
 
     function drawGather(t: number) {
       const n = syncArrivals(t);
-      const resolved = cohesionAt(t / (LOOP_CYCLE_MS / 1000));
-      for (const stamp of loopStamps(t, size)) {
-        particle(context, { ...stamp, alpha: stamp.alpha * 0.72 * (1 - resolved), radius: stamp.radius * 0.88 });
-      }
-      drawResolvedMark(context, t, size, resolved);
+      drawResolvingLoop(t, 0.72);
       for (const arrival of arrivalsRef.current) {
         const home = ring(cx, cy, radius, t * 1.1 + arrival.slot * ((2 * Math.PI) / n));
         const progress = Math.max(0, Math.min((t - arrival.born) / 0.62, 1));
@@ -179,11 +172,7 @@ export function LassoThinkingMark({ kind, size, count = 0, className }: LassoThi
     }
 
     function drawSignature(t: number) {
-      const resolved = cohesionAt(t / (LOOP_CYCLE_MS / 1000));
-      for (const stamp of loopStamps(t, size)) {
-        particle(context, { ...stamp, alpha: stamp.alpha * (1 - resolved) });
-      }
-      drawResolvedMark(context, t, size, resolved);
+      drawResolvingLoop(t);
     }
 
     function draw(timestamp: number) {
@@ -191,7 +180,7 @@ export function LassoThinkingMark({ kind, size, count = 0, className }: LassoThi
       context.clearRect(0, 0, width, height);
       context.globalAlpha = 1;
       if (kind === "orbit") drawOrbit(t);
-      else if (kind === "loop") drawLoop(t);
+      else if (kind === "loop") drawResolvingLoop(t);
       else if (kind === "gather") drawGather(t);
       else if (kind === "trace") drawTrace(t);
       else drawSignature(t);
