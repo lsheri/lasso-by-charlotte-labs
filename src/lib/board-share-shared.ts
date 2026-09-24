@@ -99,7 +99,7 @@ export type SharedSeedWork = WorkItemRow & { taskIds: string[] };
 export type SharedSeedDecision = { id: string; call: string; situation: string };
 
 export type SharedBoardSeed = {
-  brief: string | null;
+  brief: { text: string | null } | null;
   tasks: SharedSeedTask[];
   work: SharedSeedWork[];
   decisions: SharedSeedDecision[];

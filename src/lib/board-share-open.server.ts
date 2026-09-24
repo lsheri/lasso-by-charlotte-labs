@@ -315,7 +315,7 @@ async function readBoard(
   return {
     board,
     seed: {
-      brief: briefHidden ? null : engagement.brief,
+      brief: briefHidden ? null : { text: engagement.brief },
       tasks: taskRows.map((task) => ({ id: task.id, name: task.name, detail: task.detail })),
       work,
       decisions,
