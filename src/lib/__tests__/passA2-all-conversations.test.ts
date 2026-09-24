@@ -28,6 +28,16 @@ describe("pass A2 · All conversations absorbs Reflect", () => {
     expect(page).toContain("noteViewChanged");
   });
 
+  it("keeps the source tabs and Subjects and links in the header", () => {
+    const header = page.slice(page.indexOf("<header"), page.indexOf("</header>"));
+    const chipRow = page.slice(page.indexOf("<div className=\"flex h-[46px]"), page.indexOf("</div>", page.indexOf("<div className=\"flex h-[46px]")));
+    expect(header).toContain('aria-label="Which conversations are shown"');
+    expect(header).toContain(">Subjects and links</Button>");
+    expect(chipRow).not.toContain('aria-label="Which conversations are shown"');
+    expect(chipRow).not.toContain(">Subjects and links</Button>");
+    expect(page).toContain('className="h-7 w-[200px] shrink-0');
+  });
+
   it("adds the new values to the closed view vocabulary without removing the old ones", () => {
     expect(chatlib).toContain(
       'const CHAT_VIEWS = ["cards", "list", "preview", "sticky", "captured", "asked", "everything"] as const;',
