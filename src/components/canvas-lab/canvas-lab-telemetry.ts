@@ -194,3 +194,7 @@ export function noteHighlightChanged(
     isReply: false,
   });
 }
+/** B2: a person folded a chat's pieces away, opened them, or opened all of them. Never on restore. */
+export function noteWorkboardBundleToggled(orgId: string | undefined, state: "expanded" | "minimized" | "all_shown", pieces: "1" | "2_4" | "5_plus", via: "control" | "menu"): void {
+  if (orgId) logEvent("workboard.bundle_toggled", orgId, { state, pieces, via });
+}

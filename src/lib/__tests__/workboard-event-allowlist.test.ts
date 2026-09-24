@@ -25,6 +25,11 @@ describe("the workboard allowlist", () => {
           "length_band",
           "is_reply",
         ],
+        "workboard.bundle_toggled": [
+          "state",
+          "pieces",
+          "via",
+        ],
         "workboard.card_content_viewed": [
           "kind",
           "via",
@@ -210,6 +215,7 @@ describe("the workboard allowlist", () => {
       () => helpers.noteWorkboardSaveErrorResolved("o", "board", "retry"),
       () => helpers.noteWorkboardContextChanged("o", "cleared"),
       () => helpers.noteWorkboardUndoUsed("o", "move", "undo"),
+      () => helpers.noteWorkboardBundleToggled("o", "minimized", "2_4", "control"),
       () => helpers.noteWorkboardWorkAdded("o", "inbox", "header", 3),
       () => helpers.noteWorkboardWorkAdded("o", "connector", "context_menu", 1),
       () => helpers.noteWorkboardWorkAdded("o", "brief", "new_engagement", 2),
@@ -236,7 +242,7 @@ describe("the workboard allowlist", () => {
       const [name, , dims] = mocked.mock.calls[0] as [string, string, Record<string, unknown>];
       expect(guardWorkboardEvent(name, dims as never)).toEqual({ keep: true, dims });
     }
-    expect(Object.keys(WORKBOARD_EVENT_DIMS)).toHaveLength(28);
+    expect(Object.keys(WORKBOARD_EVENT_DIMS)).toHaveLength(29);
   });
 
   it("keeps the additive open path for previewed document and deck cards", () => {

@@ -625,7 +625,7 @@ export function seedCanvas(input: SeedInput, frames = createLabFrames(input.task
     const frame = frameById(frameId);
     if (pieceCount > 0) {
       const columns = Math.max(1, Math.floor((frame.width - FRAME_PADDING * 2) / (CARD_WIDTH + 18)));
-      const rows = Math.ceil(((pieceCount + 1) * (CARD_HEIGHT + BUNDLE_GAP)) / CARD_GAP_Y);
+      const rows = Math.ceil((CARD_HEIGHT + BUNDLE_GAP + bundleReserveHeight(pieceCount, CARD_HEIGHT)) / CARD_GAP_Y);
       for (let row = 1; row < rows; row += 1) taken.add(index + row * columns);
     }
     return stack(frame, index);
@@ -777,7 +777,7 @@ export function seedBlankCanvas(input: SeedInput): LabNode[] {
   for (const entry of entries) {
     if (entry.workItemId && pieceIds.has(entry.workItemId)) continue;
     const count = entry.workItemId ? piecesByChat.get(entry.workItemId)?.length ?? 0 : 0;
-    const size = { width: CARD_WIDTH, height: CARD_HEIGHT + count * (CARD_HEIGHT + BUNDLE_GAP) };
+    const size = { width: CARD_WIDTH, height: CARD_HEIGHT + bundleReserveHeight(count, CARD_HEIGHT) };
     const [wanted] = placeAddedCards({ x: 0, y: 0 }, [], slot + 1).slice(slot);
     const at = placeAddedCards(wanted ?? { x: 0, y: 0 }, occupied, 1, { size })[0] ?? { x: 0, y: 0 };
     occupied.push({ ...at, ...size });
@@ -1392,6 +1392,88 @@ export function dockedPieceChats(bundles: ChatBundles): Map<string, string> {
 
 export const BUNDLE_GAP = 18;
 export const BUNDLE_INDENT = 24;
+
+/** B2: at most four pieces show under an expanded chat; the rest wait behind a tile. */
+export const BUNDLE_VISIBLE_CAP = 4;
+export const BUNDLE_MORE_TILE = { width: 260, height: 56 } as const;
+
+/** Per viewer: absent means expanded, the default. */
+export type BundleView = "expanded" | "minimized" | "all_shown";
+
+/** Room a seeded chat keeps under itself: the capped pieces, plus the tile when there are more. */
+export function bundleReserveHeight(pieces: number, cardHeight: number): number {
+  if (pieces <= 0) return 0;
+  const shown = Math.min(pieces, BUNDLE_VISIBLE_CAP);
+  return shown * (cardHeight + BUNDLE_GAP) + (pieces > BUNDLE_VISIBLE_CAP ? BUNDLE_MORE_TILE.height + BUNDLE_GAP : 0);
+}
+
+/** Which pieces show for one view, and how many sit behind the "+N more" tile. */
+export function visibleBundlePieces(pieceIds: readonly string[], view: BundleView = "expanded"): { shown: string[]; more: number } {
+  if (view === "minimized") return { shown: [], more: 0 };
+  if (view === "all_shown" || pieceIds.length <= BUNDLE_VISIBLE_CAP) return { shown: [...pieceIds], more: 0 };
+  return { shown: pieceIds.slice(0, BUNDLE_VISIBLE_CAP), more: pieceIds.length - BUNDLE_VISIBLE_CAP };
+}
+
+/**
+ * Applies each chat's view. `bundles` keeps only the pieces that show; `dropped`
+ * are the pieces this viewer has folded away (never hidden, only not drawn).
+ */
+export function applyBundleViews(bundles: ChatBundles, views: Readonly<Record<string, BundleView>>, viewKeyOf: (chatId: string) => string | undefined): {
+  bundles: ChatBundles;
+  dropped: Set<string>;
+  more: Map<string, number>;
+  minimized: Map<string, number>;
+} {
+  const shownBundles = new Map<string, string[]>();
+  const dropped = new Set<string>();
+  const more = new Map<string, number>();
+  const minimized = new Map<string, number>();
+  for (const [chatId, pieceIds] of bundles) {
+    const key = viewKeyOf(chatId);
+    const view = (key ? views[key] : undefined) ?? "expanded";
+    const result = visibleBundlePieces(pieceIds, view);
+    for (const id of pieceIds) if (!result.shown.includes(id)) dropped.add(id);
+    if (result.shown.length > 0) shownBundles.set(chatId, result.shown);
+    if (result.more > 0) more.set(chatId, result.more);
+    if (view === "minimized") minimized.set(chatId, pieceIds.length);
+  }
+  return { bundles: shownBundles, dropped, more, minimized };
+}
+
+/** B2: the viewer's saved bundle views live under this key. */
+export function workboardBundlesKey(profileId: string, engagementId: string): string {
+  return `lasso:workboard:${profileId}:${engagementId}:bundles`;
+}
+
+/** Read the saved views; anything unreadable is treated as all expanded. */
+export function readBundleViews(storage: Pick<Storage, "getItem"> | undefined, key: string): Record<string, BundleView> {
+  try {
+    const raw = storage?.getItem(key);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    const out: Record<string, BundleView> = {};
+    for (const [id, value] of Object.entries(parsed)) if (value === "minimized" || value === "all_shown") out[id] = value;
+    return out;
+  } catch {
+    return {};
+  }
+}
+
+/** Save the views; a storage that throws simply leaves the board as it is. */
+export function writeBundleViews(storage: Pick<Storage, "setItem"> | undefined, key: string, views: Record<string, BundleView>): void {
+  try {
+    const compact: Record<string, BundleView> = {};
+    for (const [id, value] of Object.entries(views)) if (value !== "expanded") compact[id] = value;
+    storage?.setItem(key, JSON.stringify(compact));
+  } catch {
+    /* the board works without storage */
+  }
+}
+
+/** Count band sent with bundle_toggled. */
+export function bundlePiecesBand(count: number): "1" | "2_4" | "5_plus" {
+  return count <= 1 ? "1" : count <= 4 ? "2_4" : "5_plus";
+}
 
 /**
  * Places each piece in a column below its chat: indented 24px, 18px between
