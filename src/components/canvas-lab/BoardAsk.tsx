@@ -43,7 +43,7 @@ function BoardAskPanel(props: Props) {
   }, [props.boardContextHasPicks, idsKey, mappedKey]);
 
   return (
-    <AskBoardPickedContext.Provider value={props.boardContextHasPicks}>
+    <AskBoardPickedContext.Provider value={ask.boardPickActive}>
     <aside
       aria-label="Ask Lasso"
       className="z-20 flex min-h-0 shrink-0 flex-col border-l border-border bg-background"

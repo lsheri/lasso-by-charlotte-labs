@@ -1,11 +1,16 @@
 import { describe, expect, it } from "vitest";
 
 import { parseManifest } from "@/lib/context-manifest";
+import { loadScopeData } from "@/lib/reflect-context.server";
 import { parseScopeSource, scopeLabel } from "@/lib/reflect-shared";
 
 describe("S1 scope truth", () => {
   it("never labels an empty item scope as the whole record", () => {
     expect(scopeLabel({ mode: "items", ids: [] })).toBe("No work items");
+  });
+
+  it("does not query or return work for an empty item scope", async () => {
+    await expect(loadScopeData({} as never, "profile", { mode: "items", ids: [] })).resolves.toEqual({ tasks: [], linkRows: [], items: [] });
   });
 
   it("normalizes scope_source to the closed set", () => {
