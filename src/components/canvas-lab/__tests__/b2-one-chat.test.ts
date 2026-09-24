@@ -36,7 +36,9 @@ describe("B2 one chat on the board", () => {
 
   it("labels a board pick distinctly from the picker and all-work states", () => {
     const surface = read("src/components/reflect/AskSurface.tsx");
-    expect(surface).toContain("Brief only: nothing picked has work to read");
+    expect(surface).toContain('ask.engagementBrief ? "Brief only" : "Nothing readable picked"');
+    expect(surface).toContain('"Brief only: nothing picked has work to read"');
+    expect(surface).toContain("title={title}");
     expect(surface).toContain("${ask.boardPickedCount} picked on the board");
     expect(surface).toContain("All work in this engagement");
     expect(surface.indexOf("boardPicked && ask.boardPickedCount === 0")).toBeLessThan(surface.indexOf('"All work in this engagement"'));
