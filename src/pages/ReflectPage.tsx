@@ -6,8 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { MarkdownMessage } from "@/components/markdown/MarkdownMessage";
 import { ToneCard } from "@/components/notebook/ToneCard";
-import { AnswerSources } from "@/components/reflect/AnswerSources";
-import { ContextAudit, ThinkingTrail } from "@/components/reflect/ContextTrail";
+import { AnswerRail, ContextAudit, ThinkingTrail } from "@/components/reflect/ContextTrail";
 import { CoverageNote } from "@/components/reflect/CoverageNote";
 import {
   AnalysisChips,
@@ -486,17 +485,15 @@ export function ReflectPage({
                           {message.content}
                         </p>
                       ) : (
-                        <>
+                        <AnswerRail state="done">
                           <MarkdownMessage content={message.content} variant="binder" />
                           <div className="nb-binder-inset">
-                            <ToneCard tone="record" label="WHAT WE PULLED FOR THIS PROMPT">
-                              <ContextAudit manifest={parseManifest(message.context_manifest)} />
-                            </ToneCard>
-                            <AnswerSources
-                              sources={sourcesByMessage?.[Number(message.id)] ?? []}
+                            <ContextAudit
+                              manifest={parseManifest(message.context_manifest)}
+                              reads={sourcesByMessage?.[Number(message.id)] ?? []}
                             />
                           </div>
-                        </>
+                        </AnswerRail>
                       )}
                     </div>
                   ))}
@@ -513,22 +510,25 @@ export function ReflectPage({
                     </p>
                   ))}
 
-                  {pending && streamed ? (
+                  {pending ? (
                     <div>
                       <p className="nb-binder-label nb-speaker-ai">AI</p>
-                      <MarkdownMessage content={streamed} variant="binder" className="nb-stream" />
-                    </div>
-                  ) : null}
-                  {pending ? (
-                    <div className="nb-binder-inset">
-                      <ThinkingTrail
-                        items={scopedItems.map((item) => ({
-                          id: item.id,
-                          title: item.title,
-                        }))}
-                        finalPhase="Writing"
-                        manifest={liveManifest}
-                      />
+                      <AnswerRail state="working">
+                        {streamed ? (
+                          <MarkdownMessage content={streamed} variant="binder" className="nb-stream" />
+                        ) : (
+                          <div className="nb-binder-inset">
+                            <ThinkingTrail
+                              items={scopedItems.map((item) => ({
+                                id: item.id,
+                                title: item.title,
+                              }))}
+                              finalPhase="Writing"
+                              manifest={liveManifest}
+                            />
+                          </div>
+                        )}
+                      </AnswerRail>
                     </div>
                   ) : null}
                   {analyses.running ? (
