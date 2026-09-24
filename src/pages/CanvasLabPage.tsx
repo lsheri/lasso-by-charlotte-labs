@@ -2025,7 +2025,7 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     // Pass B1: a chat with docked pieces carries them into the workstream, as one step.
     const pieceIds = bundles.get(node.id) ?? [];
     if (pieceIds.length > 0) {
-      const moves = [node, ...pieceIds.map((id) => shownNodes.find((entry) => entry.id === id)).filter((entry): entry is LabNode => Boolean(entry))]
+      const moves = [node, ...pieceIds.map((id) => allNodes.find((entry) => entry.id === id)).filter((entry): entry is LabNode => Boolean(entry))]
         .map((entry) => ({ nodeId: entry.id, before: entry.frame ?? "", after: frameId }));
       record({ action: "bundle_workstream_move", chatTitle: node.title, moves });
       for (const move of moves) applyFrameMove(move.nodeId, frameId);
