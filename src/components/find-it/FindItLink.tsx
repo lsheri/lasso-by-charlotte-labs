@@ -31,7 +31,7 @@ export function FindItLink({
           : ""
       } ${className}`}
     >
-      <LassoLoopMark className="h-4 w-4" />
+      <LassoLoopMark className="h-4 w-4 text-lasso-green" />
       <span>{FIND_IT_LINK_LABEL}</span>
     </Link>
   );
