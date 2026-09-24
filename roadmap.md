@@ -88,3 +88,10 @@
 - [ ] Fix marquee drag text selection lifecycle
 - [ ] Update focused tests and exact card/lane geometry assertions
 - [ ] Run requested tests, typecheck, unchanged live shell specs, and Playwright visual/interaction checks
+
+## UNIT 5a.1
+- [ ] Replace workboard item faces with shared WorkNote while preserving all board interactions
+- [ ] Remove Canvas Lab card-display control, preference use, and emissions while retaining event schema
+- [ ] Read existing stored summaries with card previews and prefer them over first-user-turn fallback
+- [ ] Update focused checks and run requested test groups and type safety
+- [ ] Verify authenticated workboard drag, resize, marquee, styling, summary use, and screenshot

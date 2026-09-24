@@ -39,6 +39,7 @@ export function WorkNote({
   const date = when.byArrival ? `added ${formatDate(when.iso)}` : formatDate(when.iso);
   const brand = sourceBrandKey(item);
   const summary = item.work_item_extracts?.find((extract) => extract.summary)?.summary
+    ?? chatPreview?.summary
     ?? chatPreview?.firstUserTurn?.content
     ?? chatPreview?.turns.find((turn) => turn.role.trim().toLowerCase() === "user")?.content
     ?? "No summary available.";
@@ -101,7 +102,7 @@ export function WorkNote({
             </div>
           </div>
         ) : (
-          <p className="my-auto line-clamp-3 min-h-0 select-text text-[10.5px] leading-[1.45] text-muted-foreground">{summary}</p>
+          <p data-summary-source={item.work_item_extracts?.some((extract) => extract.summary) || chatPreview?.summary ? "stored" : chatPreview?.firstUserTurn || chatPreview?.turns.some((turn) => turn.role.trim().toLowerCase() === "user") ? "first-turn" : "absent"} className="my-auto line-clamp-3 min-h-0 select-text text-[10.5px] leading-[1.45] text-muted-foreground">{summary}</p>
         )}
 
         <div className="mt-1 flex h-[16px] shrink-0 select-none items-center gap-2 border-t border-hairline pt-1">
