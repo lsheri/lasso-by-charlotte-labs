@@ -1,63 +1,58 @@
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { type FormEvent, useEffect, useRef, useState } from "react";
+import { type FormEvent, type ReactNode, useEffect, useRef, useState } from "react";
 
-import claudePushPoster from "@/assets/landing/lasso-claude-push-poster.png.asset.json";
-import claudePushVideo from "@/assets/landing/lasso-claude-push.mp4.asset.json";
-import connectorPoster from "@/assets/landing/lasso-connector-poster.png.asset.json";
-import connectorVideo from "@/assets/landing/lasso-connector.mp4.asset.json";
-import pastWorkLibrary from "@/assets/past-work-library.png.asset.json";
 import { LassoLoopMark } from "@/components/layout/LassoLoopMark";
 import { PublicHeader } from "@/components/layout/PublicHeader";
-import { ClipPlayer } from "@/components/marketing/ClipPlayer";
+import {
+  BeatClaimSnapshot,
+  BeatNotReadSnapshot,
+  BeatRefuseSnapshot,
+  BeatReviewerSnapshot,
+  BeatToolsSnapshot,
+} from "@/components/marketing/BeatSnapshots";
 import { FocusSection } from "@/components/marketing/FocusSection";
-import { PrivacyToggleDemo } from "@/components/marketing/PrivacyToggleDemo";
-import { VendorLabel } from "@/components/marketing/VendorMark";
+import { HeroMotion } from "@/components/marketing/HeroMotion";
 import { Button } from "@/components/ui/button";
 import { startSessionReplay, stopSessionReplay } from "@/lib/posthog-client";
 import { submitPilotRequestFn } from "@/lib/pilot-request.functions";
 import { recordAnonymousEventFn } from "@/lib/telemetry.functions";
 
-type ClipSlotProps = {
-  id: string;
-  src?: string;
-  poster?: string;
-  label: string;
-  width?: number;
-  height?: number;
-};
-
 // Fallback variant for the landing hero.
 export const HERO_H1_FALLBACK = "Your firm bought AI. Now nobody can say where a number came from.";
 
-function ClipSlot({ id, src, poster, label, width = 1440, height = 900 }: ClipSlotProps) {
-  if (src && poster) {
-    return (
-      <ClipPlayer
-        src={src}
-        poster={poster}
-        width={width}
-        height={height}
-        aspect="16 / 9"
-        label={label}
-        playback="hold"
-      />
-    );
-  }
-
-  return (
-    <div
-      id={`clip-slot-${id}`}
-      className="landing-next-slot flex w-full items-center justify-center rounded-[var(--radius)] border border-dashed border-rule bg-card"
-      style={{ aspectRatio: "16 / 9" }}
-      aria-label={`${label}. Clip coming soon.`}
-    >
-      <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
-        {id.replaceAll("-", " ")}
-      </span>
-    </div>
-  );
-}
+const BEATS: { label: string; title: string; body: string; snapshot: ReactNode }[] = [
+  {
+    label: "EVERY TOOL, ONE RECORD",
+    title: "Claude, ChatGPT, Gemini and Granola land in the same board.",
+    body: "No AI vendor can see this shape of your work, because none of them can see the others.",
+    snapshot: <BeatToolsSnapshot />,
+  },
+  {
+    label: "CLICK A LINE, LAND ON THE TURN",
+    title: "Every claim in a deliverable points back at the turn that produced it.",
+    body: "A quote in a document, a click, and the trail opens on the source turn.",
+    snapshot: <BeatClaimSnapshot />,
+  },
+  {
+    label: "IT TELLS YOU WHAT IT DID NOT READ",
+    title: "The record names what was left out, and why.",
+    body: "Not part of this engagement. Not selected for this question. Over the context limit, the middle of those items was left out.",
+    snapshot: <BeatNotReadSnapshot />,
+  },
+  {
+    label: "NOTES ARE NEVER A SOURCE",
+    title: "The record refuses it.",
+    body: "Not a filter. A rule the server enforces.",
+    snapshot: <BeatRefuseSnapshot />,
+  },
+  {
+    label: "YOU CHOOSE WHAT A REVIEWER OPENS",
+    title: "A shared board is read only, and its link closes after 48 hours.",
+    body: "Coaches see only the work you choose to share. Nobody is told when you keep something back.",
+    snapshot: <BeatReviewerSnapshot />,
+  },
+];
 
 export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
   const viewId = useRef<string>(crypto.randomUUID());
@@ -76,6 +71,35 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
     }).catch(() => {
       /* This signal must never surface to the visitor. */
     });
+  }, []);
+
+  useEffect(() => {
+    // One observer: each stage runs only while it is on screen.
+    const targets = Array.from(document.querySelectorAll<HTMLElement>("[data-landing-beats-play]"));
+    if (typeof IntersectionObserver === "undefined") return;
+    // The hero runs whenever any of it shows; of the beats, only the one
+    // most in view runs.
+    const ratios = new Map<HTMLElement, number>();
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          ratios.set(entry.target as HTMLElement, entry.isIntersecting ? entry.intersectionRatio : 0);
+        }
+        let lead: HTMLElement | null = null;
+        for (const target of targets) {
+          if (target.tagName !== "ARTICLE") continue;
+          const ratio = ratios.get(target) ?? 0;
+          if (ratio > 0 && (!lead || ratio > (ratios.get(lead) ?? 0))) lead = target;
+        }
+        for (const target of targets) {
+          const on = target.tagName === "ARTICLE" ? target === lead : (ratios.get(target) ?? 0) > 0;
+          target.dataset["play"] = on ? "running" : "paused";
+        }
+      },
+      { threshold: [0, 0.1, 0.25, 0.5, 0.75, 1] },
+    );
+    for (const target of targets) observer.observe(target);
+    return () => observer.disconnect();
   }, []);
 
   useEffect(() => {
@@ -159,7 +183,7 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
       <div className="relative z-10">
         <PublicHeader current="/" />
 
-        <main className="pb-24 pt-16 md:pt-20">
+        <main className="landing-beats-root pb-24 pt-16 md:pt-20">
           <div className="mx-auto max-w-3xl px-6 md:px-10">
             <section className="landing-next-hero">
               <h1 className="pencil-title mt-5 text-foreground">
@@ -176,7 +200,7 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
                   </a>
                 </Button>
                 <a
-                  href="#how-it-works"
+                  href="#beats"
                   onClick={noteSeeItWorkClick}
                   className="story-link text-sm text-foreground transition-colors hover:text-muted-foreground"
                 >
@@ -191,175 +215,36 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
                 Start your own record
               </Link>
             </section>
-
-            <div id="how-it-works">
-            <FocusSection className="mt-24">
-              <h2 className="pencil-title">
-                Where the work actually happens now.
-              </h2>
-              <p className="micro-label mt-8">Clips show sample data.</p>
-              <div className="mt-5 grid grid-cols-2 gap-x-3 gap-y-12 sm:gap-x-5 sm:gap-y-14">
-                <div className="sm:-rotate-[0.6deg]">
-                  <VendorLabel vendor="chatgpt" name="ChatGPT" />
-                  <ClipPlayer src="/videos/lasso-chatgpt.mp4" poster="/videos/poster-chatgpt.jpg" width={720} height={672} cover aspect="4 / 3" label="Work happening inside ChatGPT" playback="hold" />
-                </div>
-                <div className="sm:translate-y-5 sm:rotate-[0.5deg]">
-                  <VendorLabel vendor="claude" name="Claude" />
-                  <ClipPlayer src="/videos/lasso-claude.mp4" poster="/videos/poster-claude.jpg" width={720} height={672} cover aspect="5 / 4" label="Work happening inside Claude" playback="hold" />
-                </div>
-                <div className="sm:rotate-[0.4deg]">
-                  <VendorLabel vendor="gemini" name="Gemini" />
-                  <ClipPlayer src="/videos/lasso-gemini.mp4" poster="/videos/poster-gemini.jpg" width={720} height={374} cover aspect="5 / 4" label="Work happening inside Gemini" playback="hold" />
-                </div>
-                <div className="sm:translate-y-5 sm:-rotate-[0.5deg]">
-                  <VendorLabel vendor="lovable" name="Lovable" />
-                  <ClipPlayer src="/videos/lasso-lovable.mp4" poster="/videos/poster-lovable.jpg" width={720} height={374} cover aspect="4 / 3" label="Work happening inside Lovable" playback="hold" />
-                </div>
-              </div>
-            </FocusSection>
-            </div>
           </div>
 
-          <section className="landing-next-carousel mt-20" aria-label="How Lasso works">
-            <div className="landing-next-carousel-sticky">
-              <div className="landing-next-carousel-track">
-                <section className="landing-next-carousel-panel">
-                  <div className="landing-next-carousel-content">
-                    <div>
-                      <p className="micro-label">THE ONE THING NOBODY ELSE CAN SHOW</p>
-                      <h2 className="pencil-title mt-4">Circle any fact. See where it came from.</h2>
-                      <p className="mt-5 max-w-2xl text-base leading-relaxed text-foreground">
-                        Drop a deck on the board. The conversations that fed it come forward with the
-                        exact sentence, quoted, and why. Across ChatGPT, Claude, Gemini and whatever
-                        else your team used.
-                      </p>
-                    </div>
-                  </div>
-                </section>
+          <div className="landing-beats-play mx-auto mt-12 max-w-[1440px] px-4 md:px-6" data-landing-beats-play>
+            <HeroMotion />
+          </div>
 
-                <section className="landing-next-carousel-panel landing-next-carousel-panel-sources">
-                  <div className="landing-next-carousel-content">
-                    <div>
-                      <p className="micro-label">THE ENGAGEMENT, LAID OUT</p>
-                      <h2 className="pencil-title mt-4">
-                        Sources, AI work, your team's decisions, the deliverable. One board, in that order.
-                      </h2>
-                      <p className="mt-5 max-w-2xl text-base leading-relaxed text-foreground">
-                        Every engagement gets a board: one frame per workstream, cards for the brief,
-                        the meetings, the chats and the drafts. Your judgment is its own card, not a
-                        comment in the margin. Draw a line and say what it means: informed, produced,
-                        revised, cited. Nothing on the board feeds AI by proximity. What fed this
-                        follows the lines you drew, never a guess.
-                      </p>
-                      <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
-                        Your engagement team sees the same board. Coaches read, they don't edit.
-                      </p>
-                    </div>
-                    <div className="landing-next-source-clips">
-                      <ClipPlayer
-                        src={connectorVideo.url}
-                        poster={connectorPoster.url}
-                        width={1920}
-                        height={1132}
-                        aspect="1920 / 1132"
-                        label="Work arriving in Lasso from connected tools"
-                        group="landing-sources"
-                        playback="hold"
-                      />
-                      <ClipPlayer
-                        src={claudePushVideo.url}
-                        poster={claudePushPoster.url}
-                        width={1080}
-                        height={1920}
-                        aspect="9 / 16"
-                        label="A Claude conversation being sent to Lasso"
-                        group="landing-sources"
-                        playback="hold"
-                      />
-                    </div>
-                  </div>
-                </section>
-
-                <section className="landing-next-carousel-panel">
-                  <div className="landing-next-carousel-content">
-                    <div>
-                      <p className="micro-label">DECISIONS</p>
-                      <h2 className="pencil-title mt-4">
-                        The decisions you made, written down before you forget them
-                      </h2>
-                      <p className="mt-5 max-w-2xl text-base leading-relaxed text-foreground">
-                        Lasso drafts the decision from the conversation. You confirm it or discard it.
-                        The firm's judgment stops living in chat scroll, and the client gets a “how we
-                        got here” page with the deliverable.
-                      </p>
-                    </div>
-                    <ClipSlot id="decisions" src="/videos/decisions.mp4" poster="/videos/decisions-poster.png" label="A decision drafted from a conversation" />
-                  </div>
-                </section>
-
-                <section className="landing-next-carousel-panel">
-                  <div className="landing-next-carousel-content">
-                    <div>
-                      <p className="micro-label">WHAT LANDS</p>
-                      <h2 className="pencil-title mt-4">Everything you made this week, in one inbox</h2>
-                      <p className="mt-5 max-w-2xl text-base leading-relaxed text-foreground">
-                        Chats, files, meetings and drafts arrive as they happen. You shape them into
-                        work, or leave them. Nothing is lost, nothing is required.
-                      </p>
-                    </div>
-                    <ClipSlot id="inbox" src="/videos/inbox.mp4" poster="/videos/inbox-poster.png" label="Work arriving in one inbox" />
-                  </div>
-                </section>
-              </div>
-              <div className="landing-next-carousel-progress" aria-hidden="true">
-                {Array.from({ length: 4 }, (_, index) => (
-                  <span key={index} className={`landing-next-carousel-dash landing-next-carousel-dash-${index + 1}`} />
-                ))}
-              </div>
-            </div>
+          <section id="beats" className="mx-auto mt-24 grid max-w-6xl grid-cols-[minmax(0,1fr)] gap-24 px-6 md:px-10" aria-label="How Lasso works">
+            {BEATS.map((beat) => (
+              <article
+                key={beat.label}
+                className="landing-beats-play grid grid-cols-[minmax(0,1fr)] items-center gap-8 md:grid-cols-[minmax(0,1fr)_minmax(0,560px)] md:gap-12"
+                data-landing-beats-play
+              >
+                <div>
+                  <p className="micro-label">{beat.label}</p>
+                  <h2 className="pencil-title mt-4">{beat.title}</h2>
+                  <p className="mt-5 max-w-xl text-base leading-relaxed text-foreground">{beat.body}</p>
+                </div>
+                <div className="w-full max-w-[560px]">{beat.snapshot}</div>
+              </article>
+            ))}
           </section>
 
           <div className="mx-auto max-w-3xl px-6 md:px-10">
-            <FocusSection className="mt-20 border-t border-rule pt-10">
-              <p className="micro-label">YOUR COACH</p>
-              <h2 className="pencil-title mt-4">A note in the margin, not a report on you</h2>
+            <section className="mt-24 border-t border-rule pt-10">
+              <h2 className="pencil-title">Work you can defend to a client, a partner, or a board.</h2>
               <p className="mt-5 max-w-2xl text-base leading-relaxed text-foreground">
-                A coach picks one piece of work and writes to you about it. It shows up as a circle,
-                opens as a conversation, and you write back. Not prescriptive. It shows how people
-                work, it does not tell them how to work.
+                Nothing is deleted here. Filters dim, they never hide.
               </p>
-              <div className="mt-6">
-                <ClipSlot id="coach-note" src="/videos/coach-note.mp4" poster="/videos/coach-note-poster.png" label="A coach note opening as a conversation" />
-              </div>
-            </FocusSection>
-
-            <FocusSection className="mt-20 border-t border-rule pt-10">
-              <p className="micro-label">PRIVACY, DEMONSTRATED</p>
-              <h2 className="pencil-title mt-4">What a coach sees.</h2>
-              <p className="mt-5 max-w-2xl text-base leading-relaxed text-foreground">
-                Your work is private by default. You choose what to share with an engagement lead or
-                coach, and they see only that. The firm sees work people chose to place there, never
-                a feed of what anyone is doing.
-              </p>
-              <div className="mt-8"><PrivacyToggleDemo /></div>
-            </FocusSection>
-
-            <FocusSection className="mt-20 border-t border-rule pt-10">
-              <p className="micro-label">WHAT ACCUMULATES</p>
-              <h2 className="pencil-title mt-4">A library your firm can learn from</h2>
-              <p className="mt-5 text-base leading-relaxed text-foreground">
-                Copilot sees Microsoft. Gemini sees Google. ChatGPT sees ChatGPT. Your engagements
-                cross all of them. Lasso keeps the one record that spans tools, and over an
-                engagement, then a practice, then a firm, that record becomes how this kind of
-                analysis gets built here.
-              </p>
-              <p className="mt-4 text-base leading-relaxed text-foreground">
-                The work belongs to the people who did it.
-              </p>
-              <figure className="mt-8">
-                <img src={pastWorkLibrary.url} alt="A firm library of finished work" width={1962} height={1174} loading="lazy" decoding="async" className="w-full rounded-[var(--radius)] border border-rule shadow-card" />
-              </figure>
-            </FocusSection>
+            </section>
 
             <div id="pilot">
             <FocusSection className="mt-20 border-t border-rule pt-10">
