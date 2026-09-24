@@ -1,6 +1,6 @@
 /**
- * Horizontal brand lockup for the front door: the lasso loop mark, the Lasso
- * word in the serif display type, and the "by Charlotte Labs" hand caption.
+ * Horizontal brand lockup for the front door: the lasso loop mark and the
+ * LASSO wordmark used in the landing header.
  *
  * The loop is inlined as an SVG so the sign-in page never depends on an
  * expiring Figma asset URL or an external image fetch.
@@ -11,10 +11,7 @@ export function BrandLockup({ className = "" }: { className?: string }) {
   return (
     <div className={`inline-flex items-center gap-3 ${className}`}>
       <LassoLoopMark className="h-10 w-10 shrink-0 text-lasso-green" />
-      <div className="flex flex-col leading-none">
-        <span className="font-serif text-2xl text-foreground">Lasso</span>
-        <span className="font-hand nb-type-small text-green">by Charlotte Labs</span>
-      </div>
+      <span className="font-mono text-2xl tracking-[0.24em] text-foreground">LASSO</span>
     </div>
   );
 }
