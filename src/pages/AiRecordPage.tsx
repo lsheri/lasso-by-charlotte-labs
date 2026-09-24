@@ -527,11 +527,21 @@ export function AiRecordPage() {
   return (
     <div className="nb-chatview" data-reader={selected ? "open" : "closed"}>
       <div className="nb-chatview-list flex h-[calc(100vh-6.5rem)] min-h-0 flex-col overflow-hidden">
-        <header className="box-border flex h-16 shrink-0 flex-wrap items-center gap-4 border-b border-[var(--nb-rule)] px-5 md:flex-nowrap">
-          <div className="mr-auto min-w-0">
+        <header className="box-border flex h-16 shrink-0 items-center gap-2 border-b border-[var(--nb-rule)] px-5">
+          <div className="mr-auto min-w-0 flex-1">
             <h1 className="font-serif text-[19px] leading-none">All conversations</h1>
             <p className="mt-1 truncate font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">{subtitle}</p>
           </div>
+          {capturedShown ? <Button type="button" variant="ghost" className="h-9 shrink-0" onClick={() => { setSubjectsOpen(true); recordPanelOpen("subjects"); }}>Subjects and links</Button> : null}
+          {isCoach ? null : (
+            <span role="group" aria-label="Which conversations are shown" className="inline-flex shrink-0 items-center rounded-full border border-[var(--nb-rule)] bg-card p-0.5">
+              {([[
+                "captured", "Captured",
+              ], ["asked", "Asked Lasso"], ["everything", "Everything"]] as const).map(([value, label]) => (
+                <Button key={value} type="button" size="sm" variant={source === value ? "secondary" : "ghost"} aria-pressed={source === value} onClick={() => chooseSource(value)}>{label}</Button>
+              ))}
+            </span>
+          )}
           <span role="group" aria-label="How conversations are shown" className="inline-flex shrink-0 items-center rounded-full border border-[var(--nb-rule)] bg-card p-0.5">
             {(["preview", "sticky"] as const).map((option) => (
               <Button key={option} type="button" size="sm" variant={view === option ? "secondary" : "ghost"} aria-pressed={view === option} onClick={() => chooseView(option)}>
@@ -557,17 +567,8 @@ export function AiRecordPage() {
             onChange={(event) => setQuery(event.target.value)}
             onKeyDown={(event) => { if (event.key === "Enter") searchSignal.onSubmitQuery(); }}
             placeholder="Search your chats"
-            className="h-7 w-60 shrink-0 rounded-[var(--radius)] border border-border bg-card px-3 text-[11.5px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/40"
+            className="h-7 w-[200px] shrink-0 rounded-[var(--radius)] border border-border bg-card px-3 text-[11.5px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/40"
           />
-          {isCoach ? null : (
-            <div role="group" aria-label="Which conversations are shown" className="flex shrink-0 items-center gap-2">
-              {([[
-                "captured", "Captured",
-              ], ["asked", "Asked Lasso"], ["everything", "Everything"]] as const).map(([value, label]) => (
-                <Button key={value} type="button" size="sm" variant={source === value ? "secondary" : "ghost"} aria-pressed={source === value} onClick={() => chooseSource(value)}>{label}</Button>
-              ))}
-            </div>
-          )}
           <span aria-hidden="true" className="h-5 w-px shrink-0 bg-[var(--nb-rule)]" />
           <div role="group" aria-label="Filter by tool" className="flex shrink-0 items-center gap-2">
             {(["all", ...toolsPresent] as const).map((option) => {
@@ -584,7 +585,7 @@ export function AiRecordPage() {
             <PopoverTrigger asChild>
               <Button type="button" variant="outline" className="h-7 rounded-full">
                 {selectedEngagement?.code ?? (engagement === "unmapped" ? "Unmapped" : "Engagements")}
-                <span className="font-mono text-[9px] text-soft">{engagement === "all" ? shown.length : matchingCount}</span>
+                {engagement === "all" ? null : <span className="font-mono text-[9px] text-soft">{matchingCount}</span>}
               </Button>
             </PopoverTrigger>
             <PopoverContent align="start" className="w-80">
@@ -601,7 +602,6 @@ export function AiRecordPage() {
             </PopoverContent>
           </Popover>
           <div className="ml-auto flex shrink-0 items-center gap-2">
-            {capturedShown ? <Button type="button" variant="ghost" className="h-7" onClick={() => { setSubjectsOpen(true); recordPanelOpen("subjects"); }}>Subjects and links</Button> : null}
             {capturedShown ? (
               <Popover onOpenChange={(open) => { if (open) recordPanelOpen("coverage"); }}>
                 <PopoverTrigger asChild><Button type="button" variant="ghost" className="h-7 text-[13px] text-muted-foreground">{countLine}</Button></PopoverTrigger>
