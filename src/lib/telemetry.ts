@@ -13,15 +13,22 @@ export type { CaptureChannel, TelemetryDims, TelemetryEvent } from "./telemetry-
 export function logEvent(eventType: TelemetryEvent, orgId: string, dims: TelemetryDims): void {
   const entry = consumeEntryDim(eventType);
   const merged = entry ? { ...dims, ...entry } : dims;
-  void recordEventFn({
-    data: {
-      event_type: eventType,
-      org_id: orgId,
-      dims: merged,
-      session_id: sessionId(),
-      client_seq: nextClientSeq(),
-    },
-  }).catch(() => {
+  void (async () => {
+    // The server only accepts signed-in events; skip the call when there is
+    // no session so signed-out pages never raise an unauthorized error.
+    const { supabase } = await import("@/integrations/supabase/client");
+    const { data } = await supabase.auth.getSession();
+    if (!data.session) return;
+    await recordEventFn({
+      data: {
+        event_type: eventType,
+        org_id: orgId,
+        dims: merged,
+        session_id: sessionId(),
+        client_seq: nextClientSeq(),
+      },
+    });
+  })().catch(() => {
     /* telemetry must never surface to the user */
   });
 }
