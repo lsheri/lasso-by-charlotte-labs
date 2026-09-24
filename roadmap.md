@@ -135,6 +135,11 @@
 - [x] Add `reflect.message_sent.scope_source` and additive manifest scope metadata.
 - [x] Update scope, server, chip, guard, and tripwire tests; run the requested suites.
 
+## Unit S2 answer actions and read disclosure
+- [ ] Make Put on board the clear secondary split button without changing keep or drag behavior.
+- [ ] Explain the stored scope source in open and closed read disclosures.
+- [ ] Cover footer behavior, all six scope reasons, old manifests, and requested suites.
+
 ## Landing scroll playback and phone pass
 - [ ] Play the three product clips automatically, one at a time, with desktop sequencing and phone viewport selection.
 - [ ] Optimize every landing section for phone widths and verify desktop, phone, and narrow-phone layouts.
