@@ -105,4 +105,4 @@
 
 ## Landing conversation vortex
 - [x] Replace the flat connector with a lime perspective tunnel carrying branded conversation excerpts into the deck.
-- [ ] Verify motion, reduced-motion clarity, controls, and overflow on desktop and mobile.
+- [x] Verify motion, reduced-motion clarity, controls, and overflow on desktop and mobile.
