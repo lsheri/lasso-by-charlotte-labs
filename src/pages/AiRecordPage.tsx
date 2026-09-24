@@ -491,6 +491,7 @@ export function AiRecordPage() {
                                const matches = matchesChipFilters(item);
                                return (
                                  <DimmedDisabled key={item.id} dimmed={!matches} disabled={!matches} className="h-[118px] min-w-0">
+                                   <div data-lane-content style={{ height: `${CONVERSATION_CARD_HEIGHT}px` }} className="h-full min-w-0">
                                    <span className={`${pileMotion.className ? "nb-sticky-wave " : ""}conversation-card-compact canvas-lab-card-paper block h-full min-w-0`} style={{ "--nb-wave-delay": `${Math.min(index, 23) * 26}ms` } as React.CSSProperties}>
                                      <WorkNote item={item} dense displayMode="preview" chatPreview={conversationCardPreview(cardPreviews[item.id])} onOpen={() => openItem(item)} actions={(
                                        <CardMenu item={item} onFluency={(nextItem) => setLensItem(nextItem)}>
@@ -502,6 +503,7 @@ export function AiRecordPage() {
                                        </CardMenu>
                                      )} />
                                    </span>
+                                   </div>
                                  </DimmedDisabled>
                                );
                              })}

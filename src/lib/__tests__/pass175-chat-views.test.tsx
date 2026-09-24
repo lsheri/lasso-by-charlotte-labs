@@ -9,8 +9,9 @@ const styles = readFileSync("src/styles.css", "utf8");
 const chatRow = readFileSync("src/components/work/ChatRow.tsx", "utf8");
 
 describe("pass 175 — preview and sticky", () => {
-  it("defaults the chat library to Preview", () => {
-    expect(page).toContain('useState<WorkView>("preview")');
+  it("keeps the chat library on the shared Preview face", () => {
+    expect(page).toContain('displayMode="preview"');
+    expect(page).not.toContain('aria-label="How conversations are shown"');
   });
 
   it("uses the shared note and Workboard preview path", () => {
