@@ -80,3 +80,21 @@ describe("B2 board wiring", () => {
     expect(page).toContain('"Show pieces" : "Minimize pieces"');
   });
 });
+
+describe("B2.1 a minimized chat still carries its pieces", () => {
+  const page = readFileSync("src/pages/CanvasLabPage.tsx", "utf8");
+  it("moveToFrame looks pieces up in the stored list, never visibleNodes", () => {
+    const body = page.slice(page.indexOf("function moveToFrame("), page.indexOf("function addNode("));
+    expect(body).toContain("const pieceIds = bundles.get(node.id) ?? [];");
+    expect(body).toContain("pieceIds.map((id) => allNodes.find((entry) => entry.id === id))");
+    expect(body).not.toContain("visibleNodes");
+  });
+  it("bundles are derived before minimize filtering", () => {
+    const bundlesAt = page.indexOf("const bundles = useMemo(() => chatBundles(shownNodes, workItems)");
+    const viewAt = page.indexOf("const bundleView = useMemo");
+    const visibleAt = page.indexOf("const visibleNodes = useMemo(");
+    expect(bundlesAt).toBeGreaterThan(-1);
+    expect(bundlesAt).toBeLessThan(viewAt);
+    expect(viewAt).toBeLessThan(visibleAt);
+  });
+});
