@@ -733,7 +733,6 @@ describe("CG2 AI conversations congruency", () => {
     expect((search as HTMLInputElement).value).toBe("nothing here");
     expect(screen.getByRole("group", { name: "Filter by tool" })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: /Engagements/ }));
-    fireEvent.click(screen.getByRole("button", { name: /Engagements/ }));
     expect(screen.getByRole("group", { name: "Filter by engagement" })).toBeTruthy();
     expect(screen.getByText(`Showing 0 of ${inboxRows.length}. Nothing is deleted here.`)).toBeTruthy();
     expect(screen.queryByTestId("board-shell")).toBeNull();
