@@ -364,6 +364,8 @@ export type SeedInput = {
     ownedByViewer: boolean;
     taskIds: string[];
     deliverable: boolean;
+    /** U3: the bundle fields, so the seed can reserve room under a chat. */
+    bundle?: BundleItem;
   }[];
   decisions: { id: string; call: string; situation: string; ownedByViewer: boolean }[];
 };
@@ -610,10 +612,23 @@ export function seedCanvas(input: SeedInput, frames = createLabFrames(input.task
   const frameById = (id: LabFrameId) =>
     frames.find((frame) => frame.id === id) ?? (frames[0] as LabFrame);
   const frameCounts = new Map<string, number>();
-  const nextAt = (frameId: string) => {
-    const index = frameCounts.get(frameId) ?? 0;
+  const reserved = new Map<string, Set<number>>();
+  const piecesByChat = bundlePiecesByChat(input.work.flatMap((item) => (item.bundle ? [item.bundle] : [])));
+  const pieceIds = new Set([...piecesByChat.values()].flat());
+  // U3: a chat with pieces holds one block; the slots under it stay empty.
+  const nextAt = (frameId: string, pieceCount = 0) => {
+    const taken = reserved.get(frameId) ?? new Set<number>();
+    reserved.set(frameId, taken);
+    let index = frameCounts.get(frameId) ?? 0;
+    while (taken.has(index)) index += 1;
     frameCounts.set(frameId, index + 1);
-    return stack(frameById(frameId), index);
+    const frame = frameById(frameId);
+    if (pieceCount > 0) {
+      const columns = Math.max(1, Math.floor((frame.width - FRAME_PADDING * 2) / (CARD_WIDTH + 18)));
+      const rows = Math.ceil(((pieceCount + 1) * (CARD_HEIGHT + BUNDLE_GAP)) / CARD_GAP_Y);
+      for (let row = 1; row < rows; row += 1) taken.add(index + row * columns);
+    }
+    return stack(frame, index);
   };
 
   if (input.brief) {
@@ -633,14 +648,32 @@ export function seedCanvas(input: SeedInput, frames = createLabFrames(input.task
     });
   }
 
-  for (const item of input.work) {
+  const seededAt = new Map<string, { frame: LabFrameId; at: Point }>();
+  const frameFor = (item: SeedInput["work"][number]): LabFrameId => {
     const mappedTask = item.taskIds.find((taskId) => frames.some((frame) => frame.id === `task:${taskId}`));
-    const frame: LabFrameId = item.deliverable
-      ? "outputs"
-      : mappedTask
-        ? `task:${mappedTask}`
-        : "foundation";
-    const at = nextAt(frame);
+    return item.deliverable ? "outputs" : mappedTask ? `task:${mappedTask}` : "foundation";
+  };
+  for (const item of input.work) {
+    if (pieceIds.has(item.id)) continue;
+    const frame = frameFor(item);
+    seededAt.set(item.id, { frame, at: nextAt(frame, piecesByChat.get(item.id)?.length ?? 0) });
+  }
+  // A docked piece gets no slot: it sits where its chat's dock puts it.
+  for (const [chatId, pieces] of piecesByChat) {
+    const chat = seededAt.get(chatId);
+    if (!chat) continue;
+    pieces.forEach((pieceId, index) => {
+      seededAt.set(pieceId, {
+        frame: chat.frame,
+        at: { x: chat.at.x + BUNDLE_INDENT, y: chat.at.y + (index + 1) * (CARD_HEIGHT + BUNDLE_GAP) },
+      });
+    });
+  }
+
+  for (const item of input.work) {
+    const seeded = seededAt.get(item.id);
+    const frame: LabFrameId = seeded?.frame ?? frameFor(item);
+    const at = seeded?.at ?? nextAt(frame);
     nodes.push({
       id: `work:${item.id}`,
       kind: "work",
@@ -728,9 +761,38 @@ export function seedBlankCanvas(input: SeedInput): LabNode[] {
       ownership: decision.ownedByViewer ? "yours" : "teammate",
     });
   }
-  const points = placeAddedCards({ x: 0, y: 0 }, [], entries.length);
-  return entries.map((entry, index) => {
-    const at = points[index] ?? { x: 0, y: 0 };
+  const piecesByChat = bundlePiecesByChat(input.work.flatMap((item) => (item.bundle ? [item.bundle] : [])));
+  if (piecesByChat.size === 0) {
+    const points = placeAddedCards({ x: 0, y: 0 }, [], entries.length);
+    return entries.map((entry, index) => {
+      const at = points[index] ?? { x: 0, y: 0 };
+      return { ...entry, x: at.x, y: at.y, width: CARD_WIDTH, height: CARD_HEIGHT };
+    });
+  }
+  // U3: pieces take no slot; a chat with pieces claims one taller block.
+  const pieceIds = new Set([...piecesByChat.values()].flat());
+  const occupied: { x: number; y: number; width: number; height: number }[] = [];
+  const placed = new Map<string, Point>();
+  let slot = 0;
+  for (const entry of entries) {
+    if (entry.workItemId && pieceIds.has(entry.workItemId)) continue;
+    const count = entry.workItemId ? piecesByChat.get(entry.workItemId)?.length ?? 0 : 0;
+    const size = { width: CARD_WIDTH, height: CARD_HEIGHT + count * (CARD_HEIGHT + BUNDLE_GAP) };
+    const [wanted] = placeAddedCards({ x: 0, y: 0 }, [], slot + 1).slice(slot);
+    const at = placeAddedCards(wanted ?? { x: 0, y: 0 }, occupied, 1, { size })[0] ?? { x: 0, y: 0 };
+    occupied.push({ ...at, ...size });
+    placed.set(entry.id, at);
+    slot += 1;
+  }
+  for (const [chatId, pieces] of piecesByChat) {
+    const chat = placed.get(`work:${chatId}`);
+    if (!chat) continue;
+    pieces.forEach((pieceId, index) => {
+      placed.set(`work:${pieceId}`, { x: chat.x + BUNDLE_INDENT, y: chat.y + (index + 1) * (CARD_HEIGHT + BUNDLE_GAP) });
+    });
+  }
+  return entries.map((entry) => {
+    const at = placed.get(entry.id) ?? { x: 0, y: 0 };
     return { ...entry, x: at.x, y: at.y, width: CARD_WIDTH, height: CARD_HEIGHT };
   });
 }
@@ -1311,6 +1373,14 @@ export function chatBundles(
     result.set(chatId, ordered.map((piece) => piece.nodeId));
   }
   return result;
+}
+
+/**
+ * U3: chat work item id to its ordered piece work item ids, from the work
+ * items alone. Same rules as chatBundles; the seed uses it before any node exists.
+ */
+export function bundlePiecesByChat(items: readonly BundleItem[]): Map<string, string[]> {
+  return chatBundles(items.map((item) => ({ id: item.id, workItemId: item.id })), items);
 }
 
 /** Piece node id to the chat node id it is docked under. */
