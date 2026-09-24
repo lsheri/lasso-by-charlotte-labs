@@ -48,6 +48,7 @@ import {
   popUndo,
   recordUndo,
   undoAnnouncement,
+  bundleMoveAnnouncement,
   undoKeyIntent,
   type UndoDirection,
   type UndoEntry,
@@ -907,6 +908,11 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
       changeRelation(entry.linkId, (direction === "undo" ? entry.before : entry.after) as WorkboardRelation, { silent: true });
       return;
     }
+    if (entry.action === "bundle_workstream_move") {
+      // One step: every node in the bundle goes back, or forward, together.
+      for (const move of entry.moves) applyFrameMove(move.nodeId, direction === "undo" ? move.before : move.after);
+      return;
+    }
     applyFrameMove(entry.nodeId, direction === "undo" ? entry.before : entry.after);
   }
 
@@ -921,7 +927,12 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
     setUndoToast(null);
     applyUndoEntry(popped.entry, direction);
     noteWorkboardUndoUsed(orgId, popped.entry.action, direction);
-    setAnnouncement(undoAnnouncement(popped.entry.action, direction));
+    if (popped.entry.action === "bundle_workstream_move") {
+      const entry = popped.entry;
+      const target = direction === "undo" ? entry.moves[0]?.before : entry.moves[0]?.after;
+      const name = framesRef.current.find((frame) => frame.id === target)?.name ?? "no workstream";
+      setAnnouncement(bundleMoveAnnouncement(entry.chatTitle, entry.moves.length - 1, name));
+    } else setAnnouncement(undoAnnouncement(popped.entry.action, direction));
     return true;
   }
 
@@ -1976,6 +1987,16 @@ export function CanvasLabPage({ engagementId, entryVia }: { engagementId: string
   function moveToFrame(node: LabNode, frameId: string) {
     const target = framesRef.current.find((frame) => frame.id === frameId);
     if (!target || node.frame === frameId) return;
+    // Pass B1: a chat with docked pieces carries them into the workstream, as one step.
+    const pieceIds = bundles.get(node.id) ?? [];
+    if (pieceIds.length > 0) {
+      const moves = [node, ...pieceIds.map((id) => visibleNodes.find((entry) => entry.id === id)).filter((entry): entry is LabNode => Boolean(entry))]
+        .map((entry) => ({ nodeId: entry.id, before: entry.frame ?? "", after: frameId }));
+      record({ action: "bundle_workstream_move", chatTitle: node.title, moves });
+      for (const move of moves) applyFrameMove(move.nodeId, frameId);
+      setAnnouncement(bundleMoveAnnouncement(node.title, moves.length - 1, target.name));
+      return;
+    }
     record({ action: "workstream_move", nodeId: node.id, before: node.frame ?? "", after: frameId });
     applyFrameMove(node.id, frameId);
     setAnnouncement(`${node.title} moved to ${target.name}.`);

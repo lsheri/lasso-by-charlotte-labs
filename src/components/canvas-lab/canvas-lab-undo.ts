@@ -17,7 +17,8 @@ export type UndoAction =
   | "relationship_add"
   | "relationship_remove"
   | "link_relation"
-  | "workstream_move";
+  | "workstream_move"
+  | "bundle_workstream_move";
 
 export type UndoDirection = "undo" | "redo";
 
@@ -30,7 +31,8 @@ export type UndoEntry =
   | { id: string; action: "relationship_add"; link: LabLink; coalesceKey?: string; at?: number }
   | { id: string; action: "relationship_remove"; link: LabLink; coalesceKey?: string; at?: number }
   | { id: string; action: "link_relation"; linkId: string; before: string; after: string; coalesceKey?: string; at?: number }
-  | { id: string; action: "workstream_move"; nodeId: string; before: string; after: string; coalesceKey?: string; at?: number };
+  | { id: string; action: "workstream_move"; nodeId: string; before: string; after: string; coalesceKey?: string; at?: number }
+  | { id: string; action: "bundle_workstream_move"; chatTitle: string; moves: { nodeId: string; before: string; after: string }[]; coalesceKey?: string; at?: number };
 
 export type UndoEntryDraft = UndoEntry extends infer Entry
   ? Entry extends UndoEntry ? Omit<Entry, "id" | "at"> & { at?: number } : never
@@ -92,7 +94,13 @@ export function undoActionWord(action: UndoAction): string {
   if (action === "relationship_add") return "relationship";
   if (action === "relationship_remove") return "relationship removal";
   if (action === "link_relation") return "what this link means";
+  if (action === "bundle_workstream_move") return "move of a chat and its pieces";
   return "move to a workstream";
+}
+
+/** Pass B1: what is said when a chat and its docked pieces change workstream together. */
+export function bundleMoveAnnouncement(chatTitle: string, pieces: number, workstream: string): string {
+  return `${chatTitle} and its ${pieces} ${pieces === 1 ? "piece" : "pieces"} moved to ${workstream}.`;
 }
 
 export function undoAnnouncement(action: UndoAction, direction: UndoDirection): string {
