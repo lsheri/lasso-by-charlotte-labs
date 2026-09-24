@@ -32,6 +32,6 @@ describe("Unit 2 conversation lanes fit the shell at zoom 1", () => {
   it("follows shell height and keeps one conversation card visible", () => {
     expect(conversationLaneHeight(900)).toBe(792);
     expect(conversationLaneHeight(658)).toBe(550);
-    expect(conversationLaneHeight(200)).toBe(234);
+    expect(conversationLaneHeight(200)).toBe(202);
   });
 });

@@ -125,10 +125,6 @@ import { WorkPage } from "@/pages/WorkPage";
 import {
   AiRecordPage,
   CONVERSATION_CARD_HEIGHT,
-  CONVERSATION_CARD_LABEL_ROW_HEIGHT,
-  CONVERSATION_CARD_PADDING_HEIGHT,
-  CONVERSATION_CARD_QUOTE_HEIGHT,
-  CONVERSATION_CARD_TITLE_HEIGHT,
 } from "@/pages/AiRecordPage";
 
 function item(id: string, visibility: WorkItemRow["visibility"], code?: string): WorkItemRow {
@@ -216,17 +212,13 @@ describe("CG1 inbox congruency", () => {
     expect(screen.queryByTestId("board-shell")).toBeNull();
   });
 
-  it("keeps the Inbox title on one line and uses icon view controls", () => {
+  it("keeps the Inbox title on one line and removes the retired view controls", () => {
     inboxRows = [];
     render(<WorkPage />);
     expect(screen.getByRole("heading", { name: "Inbox" }).classList.contains("whitespace-nowrap")).toBe(true);
-    const group = screen.getByRole("group", { name: "How work is shown" });
-    const preview = within(group).getByRole("button", { name: "Preview" });
-    const sticky = within(group).getByRole("button", { name: "Sticky" });
-    expect(preview.getAttribute("title")).toBe("Preview");
-    expect(sticky.getAttribute("title")).toBe("Sticky");
-    expect(preview.classList.contains("size-9")).toBe(true);
-    expect(sticky.classList.contains("size-9")).toBe(true);
+    expect(screen.queryByRole("group", { name: "How work is shown" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Preview" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Sticky" })).toBeNull();
   });
 
   it("keeps every Inbox entry dimmed and disabled when the Unmapped filter matches nothing, and teaches about unclaimed work", () => {
@@ -355,7 +347,7 @@ describe("CG1 inbox congruency", () => {
     for (const label of ["AI conversations", "Documents", "Models & sheets", "Meeting transcripts"]) {
       expect(within(board).getByText(label)).toBeTruthy();
     }
-    expect(screen.getByRole("group", { name: "How work is shown" })).toBeTruthy();
+    expect(screen.queryByRole("group", { name: "How work is shown" })).toBeNull();
     expect(screen.getByRole("button", { name: "Everything" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Unmapped" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Claimed by you" })).toBeTruthy();
@@ -543,7 +535,7 @@ describe("CG1 inbox congruency", () => {
 });
 
 describe("CG2 AI conversations congruency", () => {
-  it("derives the compact card height from named content parts and shows only the first user turn", () => {
+  it("uses the fixed Ledger card height and shows only the first user turn", () => {
     inboxRows = [conversation("Question first", "claude", "ALPHA")];
     cardPreviews["Question first"] = {
       workItemId: "Question first",
@@ -558,15 +550,9 @@ describe("CG2 AI conversations congruency", () => {
 
     render(<AiRecordPage />);
 
-    const parts = [
-      CONVERSATION_CARD_LABEL_ROW_HEIGHT,
-      CONVERSATION_CARD_TITLE_HEIGHT,
-      CONVERSATION_CARD_QUOTE_HEIGHT,
-      CONVERSATION_CARD_PADDING_HEIGHT,
-    ];
     const card = screen.getByText("Question first").closest<HTMLElement>("[data-lane-content]");
-    expect(CONVERSATION_CARD_HEIGHT).toBe(parts.reduce((sum, part) => sum + part, 0));
-    expect(card?.style.height).toBe(`${parts.reduce((sum, part) => sum + part, 0)}px`);
+    expect(CONVERSATION_CARD_HEIGHT).toBe(118);
+    expect(card?.style.height).toBe("118px");
     expect(screen.getAllByTestId("conversation-card-turn")).toHaveLength(1);
     expect(screen.getByText("user: How should I frame this?")).toBeTruthy();
     expect(screen.queryByText(/Start with the answer|Then what/)).toBeNull();

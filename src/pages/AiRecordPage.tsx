@@ -33,6 +33,7 @@ import {
 import { SubjectsPanel } from "@/components/work/SubjectsPanel";
 import { fedPhrase } from "@/components/work/ChatRow";
 import { WorkNote } from "@/components/work/WorkNote";
+import { CardMenu } from "@/components/work/CardMenu";
 import {
   noteChatViewChangedFn,
   noteFilterChangedFn,
@@ -55,7 +56,6 @@ import { peekFormat } from "@/lib/peek-format";
 import { getWorkFileUrl } from "@/lib/work-files.functions";
 import { formatDate } from "@/lib/work-types";
 import { useWorkboardCardPreviews } from "@/hooks/use-workboard-card-previews";
-import type { WorkView } from "@/lib/work-view";
 import type { WorkboardCardPreview } from "@/lib/workboard-card-preview.shared";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { logEvent } from "@/lib/telemetry";
@@ -75,19 +75,11 @@ const CONVERSATION_BOARD_SIDE_MARGIN = 32;
  */
 const CONVERSATION_LANE_TOP = 76;
 const CONVERSATION_LANE_HEADER_HEIGHT = 40;
-export const CONVERSATION_CARD_LABEL_ROW_HEIGHT = 18;
-export const CONVERSATION_CARD_TITLE_HEIGHT = 36;
-export const CONVERSATION_CARD_QUOTE_HEIGHT = 64;
-export const CONVERSATION_CARD_PADDING_HEIGHT = 32;
-export const CONVERSATION_CARD_HEIGHT =
-  CONVERSATION_CARD_LABEL_ROW_HEIGHT
-  + CONVERSATION_CARD_TITLE_HEIGHT
-  + CONVERSATION_CARD_QUOTE_HEIGHT
-  + CONVERSATION_CARD_PADDING_HEIGHT;
+export const CONVERSATION_CARD_HEIGHT = 118;
 const CONVERSATION_PAGING_ROW_HEIGHT = 44;
 const COLUMN_PAGE_SIZE = 5;
 const CONVERSATION_INITIAL_MONTHS = 4;
-/** Header 40 + one card 150 + paging 44 = 234: one card is always visible. */
+/** Header 40 + one 118px card + paging 44: one card is always visible. */
 const CONVERSATION_LANE_MIN_HEIGHT =
   CONVERSATION_LANE_HEADER_HEIGHT + CONVERSATION_CARD_HEIGHT + CONVERSATION_PAGING_ROW_HEIGHT;
 
@@ -230,7 +222,6 @@ export function AiRecordPage() {
   const [tool, setTool] = useState<ToolVendor | "all">("all");
   const [engagement, setEngagement] = useState<string | "all">("all");
   const [recursOpen, setRecursOpen] = useState(false);
-  const [view, setView] = useState<WorkView>("preview");
   const [source, setSource] = useState<"captured" | "asked" | "everything">("captured");
   const [askSession, setAskSession] = useState<string | null>(null);
   const [askOpen, setAskOpen] = useState(false);
@@ -262,27 +253,6 @@ export function AiRecordPage() {
         profile_id: profile?.id,
       },
     }).catch(() => {});
-  }
-
-  // Read after mount so the server and the first client render agree. Blocked
-  // site data throws here, and a saved preference is never worth a broken page.
-  useEffect(() => {
-    try {
-      const saved = window.localStorage.getItem("lasso.chatlib.view");
-      setView(saved === "sticky" ? "sticky" : "preview");
-    } catch {
-      // Stay on Preview.
-    }
-  }, []);
-
-  function chooseView(next: WorkView) {
-    setView(next);
-    try {
-      window.localStorage.setItem("lasso.chatlib.view", next);
-    } catch {
-      // The choice still holds for this visit.
-    }
-    void noteViewChanged({ data: { view: next, profile_id: profile?.id } }).catch(() => {});
   }
 
   /**
@@ -325,7 +295,7 @@ export function AiRecordPage() {
   // The id list is sorted before it becomes part of a key, so a reordered but
   // identical set of threads does not churn the cache and repaint the page.
   const threadIds = threads.map((i) => i.id);
-  const cardPreviews = useWorkboardCardPreviews("chat-library", profile?.id, view === "preview", threadIds);
+  const cardPreviews = useWorkboardCardPreviews("chat-library", profile?.id, true, threadIds);
   const threadKey = [...threadIds].sort().join(",");
   const needle = query.trim().toLowerCase();
   const shown = needle
@@ -444,7 +414,7 @@ export function AiRecordPage() {
   /** One close path: the button, Escape and reselecting all come through here. */
   function closeReader(how: "button" | "escape" | "reselect") {
     setSelected(null);
-    void noteReaderClosed({ data: { view, how, profile_id: profile?.id } }).catch(() => {});
+    void noteReaderClosed({ data: { view: "preview", how, profile_id: profile?.id } }).catch(() => {});
   }
 
   /** One open path, shared by the list and the cards so they cannot drift. */
@@ -542,14 +512,6 @@ export function AiRecordPage() {
               ))}
             </span>
           )}
-          <span role="group" aria-label="How conversations are shown" className="inline-flex shrink-0 items-center rounded-full border border-[var(--nb-rule)] bg-card p-0.5">
-            <Button type="button" size="icon" variant={view === "preview" ? "secondary" : "ghost"} className="size-9" aria-label="Preview" title="Preview" aria-pressed={view === "preview"} onClick={() => chooseView("preview")}>
-              <svg aria-hidden viewBox="0 0 20 20" className="size-4" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M2.5 10s2.7-4.5 7.5-4.5 7.5 4.5 7.5 4.5-2.7 4.5-7.5 4.5S2.5 10 2.5 10Z" /><circle cx="10" cy="10" r="2.2" /></svg>
-            </Button>
-            <Button type="button" size="icon" variant={view === "sticky" ? "secondary" : "ghost"} className="size-9" aria-label="Sticky" title="Sticky" aria-pressed={view === "sticky"} onClick={() => chooseView("sticky")}>
-              <svg aria-hidden viewBox="0 0 20 20" className="size-4" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M4 3.5h12v9l-4 4H4z" /><path d="M12 16.5v-4h4" /></svg>
-            </Button>
-          </span>
           <PasteThreadDialog trigger={<Button type="button" variant="outline" className="h-9">Add a chat</Button>} />
           {isCoach ? null : (
             <Button type="button" variant="outline" className="h-9" onClick={() => { setAskSession(null); setAskOpen(true); }}>
@@ -649,15 +611,14 @@ export function AiRecordPage() {
                       return (
                         <DimmedDisabled dimmed={!matches} disabled={!matches} className="h-full min-w-0">
                           <span className={`${pileMotion.className ? "nb-sticky-wave " : ""}conversation-card-compact canvas-lab-card-paper block h-full min-w-0`} style={{ "--nb-wave-delay": `${Math.min(node.index, 23) * 26}ms` } as React.CSSProperties}>
-                            <WorkNote item={node.item} dense displayMode={view} chatPreview={conversationCardPreview(cardPreviews[node.item.id])} onOpen={() => openItem(node.item)} chips={(
-                              <>
+                            <WorkNote item={node.item} dense displayMode="preview" chatPreview={conversationCardPreview(cardPreviews[node.item.id])} onOpen={() => openItem(node.item)} actions={(
+                              <CardMenu item={node.item} onFluency={(item) => setLensItem(item)}>
                                 {firstEngagement(node.item) ? <span className="font-mono text-[9px] uppercase tracking-[0.08em]" style={{ color: `var(${engagementHue(firstEngagement(node.item)?.id ?? "")})` }}>{firstEngagement(node.item)?.code}</span> : <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">UNMAPPED</span>}
                                 {itemModel(node.item) ? <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">{itemModel(node.item)}</span> : null}
                                 <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-soft">{turnCounts?.[node.item.id] ?? 0} {(turnCounts?.[node.item.id] ?? 0) === 1 ? "turn" : "turns"}</span>
                                 {(fed?.[node.item.id] ?? []).length > 0 ? <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-green">{fedPhrase(fed?.[node.item.id] ?? [])}</span> : null}
                                 <ChatUrlLink item={node.item} showAbsence />
-                                <button type="button" onClick={(event) => { event.stopPropagation(); setLensItem(node.item); }} className="text-[10px] font-medium text-accent-deep">Analyse</button>
-                              </>
+                              </CardMenu>
                             )} />
                           </span>
                         </DimmedDisabled>

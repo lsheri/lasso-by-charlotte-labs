@@ -42,6 +42,12 @@ describe("B3 marquee", () => {
     expect(css).toContain(".canvas-lab-marquee");
   });
 
+  it("suppresses text selection for exactly the life of a marquee drag", () => {
+    expect(page).toContain("event.preventDefault(); window.getSelection()?.removeAllRanges(); event.currentTarget.classList.add(\"select-none\")");
+    expect(page).toContain('shellRef.current?.classList.remove("select-none")');
+    expect(page.match(/classList\.remove\("select-none"\)/g)).toHaveLength(3);
+  });
+
   it("stagePoint reads pan and zoom from refs so a fresh pan does not skew the box", () => {
     expect(page).toContain("(clientX - rect.left - panStateRef.current.x) / zoomRef.current");
     expect(page).toContain("(clientY - rect.top - panStateRef.current.y) / zoomRef.current");

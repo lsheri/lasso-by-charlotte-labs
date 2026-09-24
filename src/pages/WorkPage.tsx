@@ -87,7 +87,6 @@ import {
   type BucketKey,
 } from "@/components/work/work-buckets";
 import { useSettingsDialog } from "@/lib/settings-dialog-context";
-import { readWorkView, writeWorkView, type WorkView } from "@/lib/work-view";
 import { inboxFilterDims, inboxFilterMatches, recordInboxFilterChange } from "@/lib/inbox-filter";
 import { newLaneFrameId } from "@/lib/board-lane";
 import { selectArrivals } from "@/lib/inbox-arrivals";
@@ -105,7 +104,6 @@ type InboxLaneFrame = BoardShellFrame & { bucket: Bucket; entryCount: number };
 type InboxLaneNode = BoardShellNode & { entry: WorkItemRow | ConversationGroup };
 
 const INBOX_LANE_COUNT = 4;
-const INBOX_LANE_MIN_WIDTH = 220;
 const INBOX_LANE_GAP = 36;
 /** Matches fitWorkboardViewport's own 32px padding, so a fitted board sits 32px in from each side. */
 const INBOX_BOARD_SIDE_MARGIN = 32;
@@ -117,12 +115,12 @@ const INBOX_LANE_LEFT = 40;
  * exactly the bottom of that row, and the visible bottom gap is also 54.
  */
 const INBOX_LANE_TOP = 76;
-const INBOX_CARD_HEIGHT = 220;
+export const INBOX_CARD_HEIGHT = 118;
 const INBOX_LANE_PADDING = 12;
 const INBOX_CARD_GAP = 12;
 const INBOX_LANE_HEADER_HEIGHT = 40;
 const INBOX_LANE_PAGING_HEIGHT = 44;
-/** Header 40 + padding 12 * 2 + one card 220 + paging 44 = 328: one card is always visible. */
+/** Header 40 + padding 12 * 2 + one 118px card + paging 44: one card is always visible. */
 const INBOX_LANE_MIN_HEIGHT =
   INBOX_LANE_HEADER_HEIGHT + INBOX_LANE_PADDING * 2 + INBOX_CARD_HEIGHT + INBOX_LANE_PAGING_HEIGHT;
 
@@ -144,10 +142,9 @@ export function inboxLaneRects(viewport: { width: number; height: number }): { x
 }
 
 export function inboxLaneWidth(viewportWidth: number): number {
-  const dividedWidth =
-    (viewportWidth - INBOX_BOARD_SIDE_MARGIN * 2 - INBOX_LANE_GAP * (INBOX_LANE_COUNT - 1)) /
-    INBOX_LANE_COUNT;
-  return Math.max(INBOX_LANE_MIN_WIDTH, dividedWidth);
+  return (
+    viewportWidth - INBOX_BOARD_SIDE_MARGIN * 2 - INBOX_LANE_GAP * (INBOX_LANE_COUNT - 1)
+  ) / INBOX_LANE_COUNT;
 }
 
 /** The mark for stepping through a column. Hand drawn, in the pencil idiom
@@ -328,7 +325,6 @@ export function WorkPage() {
   const [showPrivate, setShowPrivate] = useState(true);
   // Presentation-only filter for the type columns. Local state, no query.
   const [columnFilter, setColumnFilter] = useState<string>("all");
-  const [workView, setWorkView] = useState<WorkView>(() => readWorkView());
   const [inboxViewportWidth, setInboxViewportWidth] = useState(0);
   const [inboxViewportHeight, setInboxViewportHeight] = useState(0);
   // Which page each type column is on. Presentation-only local state, exactly
@@ -473,7 +469,7 @@ export function WorkPage() {
         group={group}
         variant={variant}
         dense
-        displayMode={workView}
+        displayMode="preview"
         preview={chatPreviews[head.id]}
         onOpen={(item: WorkItemRow) => {
           markOpenStart("peek.open");
@@ -723,8 +719,8 @@ export function WorkPage() {
   const visibleEntries = groupConversations(visible);
   const unmappedCount = groupedCount(unmapped);
   const previewHeads = visibleEntries.map((entry) => isConversationGroup(entry) ? (entry.transcript ?? entry.items[0]!) : entry);
-  const chatPreviews = useWorkboardCardPreviews("work", profile?.id, workView === "preview", previewHeads.filter((item) => item.type === "ai_thread").map((item) => item.id));
-  const filePreviews = useWorkboardFilePreviews(profile?.id, workView === "preview", previewHeads.filter((item) => item.type !== "ai_thread"));
+  const chatPreviews = useWorkboardCardPreviews("work", profile?.id, true, previewHeads.filter((item) => item.type === "ai_thread").map((item) => item.id));
+  const filePreviews = useWorkboardFilePreviews(profile?.id, true, previewHeads.filter((item) => item.type !== "ai_thread"));
 
 
   const chipBase = "rounded-full px-3 py-1 text-[11.5px] transition-colors";
@@ -790,7 +786,7 @@ export function WorkPage() {
         key={entry.id}
         item={entry}
         dense
-        displayMode={workView}
+        displayMode="preview"
         chatPreview={chatPreviews[entry.id]}
         filePreview={filePreviews[entry.id]}
         lead={
@@ -901,14 +897,6 @@ export function WorkPage() {
             <WorkSubtitle pieces={groupedCount(all)} unmapped={groupedCount(unmapped)} />
           </p>
         </div>
-        <span role="group" aria-label="How work is shown" className="inline-flex shrink-0 items-center rounded-full border border-[var(--nb-rule)] bg-card p-0.5">
-          <Button type="button" size="icon" variant={workView === "preview" ? "secondary" : "ghost"} className="size-9" aria-label="Preview" title="Preview" aria-pressed={workView === "preview"} onClick={() => { setWorkView("preview"); writeWorkView("preview"); }}>
-            <svg aria-hidden viewBox="0 0 20 20" className="size-4" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M2.5 10s2.7-4.5 7.5-4.5 7.5 4.5 7.5 4.5-2.7 4.5-7.5 4.5S2.5 10 2.5 10Z" /><circle cx="10" cy="10" r="2.2" /></svg>
-          </Button>
-          <Button type="button" size="icon" variant={workView === "sticky" ? "secondary" : "ghost"} className="size-9" aria-label="Sticky" title="Sticky" aria-pressed={workView === "sticky"} onClick={() => { setWorkView("sticky"); writeWorkView("sticky"); }}>
-            <svg aria-hidden viewBox="0 0 20 20" className="size-4" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M4 3.5h12v9l-4 4H4z" /><path d="M12 16.5v-4h4" /></svg>
-          </Button>
-        </span>
         <DropdownMenu onOpenChange={(open) => { if (open && profile?.org_id) logEvent("work.import_menu_opened", profile.org_id, {}); }}>
           <DropdownMenuTrigger asChild><Button type="button" variant="outline" className="h-9">Bring work in</Button></DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="flex w-64 flex-col items-stretch gap-1 p-2 [&_button]:w-full [&_button]:justify-start">
@@ -1002,7 +990,7 @@ export function WorkPage() {
                   {["WHERE THIS CAME FROM", ...sourceCounts.map((row) => `${row.label} ${row.count}`)].join(" · ")}
                 </p>
               ) : undefined}
-              fitKey={`${workView}:${visibleEntries.length}:${currentInboxLaneWidth}:${currentInboxLaneHeight}`}
+              fitKey={`${visibleEntries.length}:${currentInboxLaneWidth}:${currentInboxLaneHeight}`}
               onViewportSizeChange={({ width, height }) => {
                 setInboxViewportWidth((current) => current === width ? current : width);
                 setInboxViewportHeight((current) => current === height ? current : height);

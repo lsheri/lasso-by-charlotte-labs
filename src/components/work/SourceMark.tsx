@@ -11,7 +11,7 @@ import {
   siNotion,
 } from "simple-icons";
 
-import { BrandLogo, brandForToolkit } from "@/components/connectors/BrandLogo";
+import { BrandLogo, brandForToolkit, type BrandKey } from "@/components/connectors/BrandLogo";
 import { hashId } from "@/components/work/pile-scatter";
 import { useVendorVisible } from "@/hooks/use-vendor-display";
 import { vendorLabel } from "@/lib/conversation-shared";
@@ -111,6 +111,13 @@ export function sourceBrand(item: SourceItem): Brand | null {
     return DRIVE_BRANDS[driveMarkKey(item)] ?? siGoogledrive;
   }
   return VENDOR_BRANDS[key] ?? null;
+}
+
+export function sourceBrandKey(item: SourceItem): BrandKey {
+  const key = sourceVendorKey(item);
+  if (!key) return item.source === "upload" ? "upload" : "unknown";
+  if (key === "googledrive" || key === "gdrive" || key === "google drive") return driveMarkKey(item);
+  return brandForToolkit(key);
 }
 
 /**

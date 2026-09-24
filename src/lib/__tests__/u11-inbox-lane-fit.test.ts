@@ -30,6 +30,6 @@ describe("Unit 1.1 Inbox lanes fit the shell at zoom 1", () => {
   it("lane height follows the shell and never drops below one card", () => {
     expect(inboxLaneHeight(900)).toBe(792);
     expect(inboxLaneHeight(658)).toBe(550);
-    expect(inboxLaneHeight(200)).toBe(328);
+    expect(inboxLaneHeight(200)).toBe(226);
   });
 });

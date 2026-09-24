@@ -6,7 +6,7 @@ import { EngagementChip, TypeBadge, TypeIcon } from "@/components/work/TypeIcon"
 import { ArtifactNote, SourceMark, VendorMark } from "@/components/work/SourceMark";
 import { WorkNote } from "@/components/work/WorkNote";
 import { UNREAD_MARKER_LINE, contentsUnread, textStatusReason } from "@/lib/text-status";
-import { engagementHue, workIdentityLabel } from "@/lib/work-identity";
+import { workIdentityLabel } from "@/lib/work-identity";
 import { effectiveWorkDate, formatDate, type WorkItemRow } from "@/lib/work-types";
 import type { WorkboardCardPreview, WorkboardDisplayMode, WorkboardFilePreview } from "@/lib/workboard-card-preview.shared";
 
@@ -22,7 +22,7 @@ export function WorkRow({
   clientLabel,
   primaryAction,
   onFluency,
-  displayMode = "sticky",
+  displayMode = "preview",
   chatPreview,
   filePreview,
 }: {
@@ -55,37 +55,7 @@ export function WorkRow({
   const link = item.meta?.web_view_link ?? null;
   const dateIso = effectiveWorkDate(item);
   const state = item.visibility;
-
-  // State reads before you read a word: dashed and muted = needs mapping,
-  // solid with an engagement-coloured spine = mapped, recessed = private.
-  const shell =
-    state === "mapped"
-      ? "border-border bg-card shadow-card"
-      : state === "private"
-        ? "border-border/70"
-        : "border-dashed";
-
-  // Amber wash + dashed border for waiting work, indigo recess for private.
-  const wash =
-    state === "unmapped"
-      ? {
-          backgroundColor: "var(--state-amber-wash)",
-          borderColor: "color-mix(in oklab, var(--state-amber) 45%, transparent)",
-        }
-      : state === "private"
-        ? { backgroundColor: "var(--state-indigo-wash)" }
-        : {};
-
-  // The spine stays per engagement on purpose: inside one client's colour
-  // family, the spine is how you still tell two engagements apart.
-  const spine =
-    state === "mapped"
-      ? {
-          borderLeftWidth: "3px",
-          borderLeftStyle: "solid" as const,
-          borderLeftColor: `var(${engagementHue(mapping?.engagement_id)})`,
-        }
-      : {};
+  const shell = state === "private" ? "bg-secondary" : "bg-card";
 
   if (dense) {
     return (
@@ -99,14 +69,10 @@ export function WorkRow({
           displayMode={displayMode}
           chatPreview={chatPreview}
           filePreview={filePreview}
-          chips={
-            primaryAction ? (
-              <span onClick={(event) => event.stopPropagation()}>{primaryAction}</span>
-            ) : null
-          }
           actions={
-            actions || chips ? (
+            actions || chips || primaryAction ? (
               <CardMenu item={item} clientLabel={clientLabel} onFluency={onFluency}>
+                {primaryAction}
                 {chips}
                 {actions}
               </CardMenu>
@@ -128,7 +94,6 @@ export function WorkRow({
       className={`rounded-[var(--radius)] border ${shell} ${
         onOpen ? "transition-colors hover:border-accent/40" : ""
       }`}
-      style={{ ...wash, ...spine }}
     >
       <div
         {...(onOpen
