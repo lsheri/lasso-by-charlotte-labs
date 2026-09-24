@@ -86,4 +86,8 @@ describe("board wiring", () => {
     expect(page).toContain("const visibleNodes = useMemo(() => dockBundles(shownNodes, bundles), [shownNodes, bundles]);");
     expect(page).toContain("const canResize = !bundleChatId &&");
   });
+  it("keeps keyboard state on the pressed piece while the drag carries its chat", () => {
+    expect(page).toContain("setKeyboardId(picked.id);");
+    expect(page).toContain("dragRef.current = { id: node.id");
+  });
 });
