@@ -5211,7 +5211,7 @@ body[data-answer-drag="true"] .canvas-lab-surface {
   padding-left: 12px;
   transition: border-color 420ms cubic-bezier(.22,.61,.36,1);
 }
-.nb-answer-rail[data-rail-state="done"] { border-left-color: var(--border); }
+.nb-answer-rail[data-rail-state="done"] { border-left-color: var(--nb-line-hairline); }
 .nb-answer-rail .nb-answer-rail { border-left: 0; padding-left: 0; }
 @media (prefers-reduced-motion: reduce) {
   .nb-answer-rail { transition: none; }
