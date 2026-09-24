@@ -5,6 +5,7 @@ import { type FormEvent, type ReactNode, useEffect, useRef, useState } from "rea
 import { PublicHeader } from "@/components/layout/PublicHeader";
 import { FocusSection } from "@/components/marketing/FocusSection";
 import { DeckWalkthrough } from "@/components/marketing/HeroMotion";
+import { LandingParticlePhrase } from "@/components/marketing/LandingParticlePhrase";
 import { Button } from "@/components/ui/button";
 import heroMp4Asset from "@/assets/lasso-hero-1440.mp4.asset.json";
 import heroPosterAsset from "@/assets/lasso-hero-poster.jpg.asset.json";
@@ -333,7 +334,7 @@ export function B2BLanding({ surface }: { surface: "home" | "landing-next" }) {
           <div className="mx-auto max-w-5xl px-6 md:px-10">
             <section className="landing-next-hero">
               <h1 className="pencil-title mt-5 text-foreground">
-                Your firm bought AI. <span className="landing-hero-highlight">The human judgment, process, and thinking</span> in your team's work went invisible.
+                Your firm bought AI. <LandingParticlePhrase text="The human judgment, process, and thinking" /> in your team's work went invisible.
               </h1>
               <h2 className="mt-6 max-w-3xl text-[26px] leading-relaxed text-muted-foreground">
                 Lasso is the reasoning and judgment layer for AI-assisted consulting. It connects the work across tools to the client deliverable and keeps the decisions your team made, so they can show where a claim came from and why it stayed.
