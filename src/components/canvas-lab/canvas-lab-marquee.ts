@@ -5,6 +5,23 @@ export type MarqueePoint = { x: number; y: number };
 export type MarqueeRect = { x: number; y: number; width: number; height: number };
 type MarqueeNode = { id: string; kind: string; x: number; y: number; width: number; height: number };
 
+export const CONTEXT_FLARE_CAP = 24;
+export const CONTEXT_FLARE_STEP_MS = 45;
+export const CONTEXT_FLARE_MAX_DELAY_MS = 400;
+
+/** Newly picked cards flare in reading order, without turning a large box into a long light show. */
+export function contextFlareSequence(
+  ids: readonly string[],
+  nodes: readonly Pick<MarqueeNode, "id" | "x" | "y">[],
+): { id: string; delayMs: number }[] {
+  const wanted = new Set(ids);
+  return nodes
+    .filter((node) => wanted.has(node.id))
+    .sort((a, b) => a.y - b.y || a.x - b.x)
+    .slice(0, CONTEXT_FLARE_CAP)
+    .map((node, index) => ({ id: node.id, delayMs: Math.min(index * CONTEXT_FLARE_STEP_MS, CONTEXT_FLARE_MAX_DELAY_MS) }));
+}
+
 /** The box between where the drag started and where the pointer is now. */
 export function marqueeRect(from: MarqueePoint, to: MarqueePoint): MarqueeRect {
   return {
