@@ -1,4 +1,4 @@
-import { AskMark, ClosedAuditLine, PreviewCard, type PreviewCardData, ScaledStage, StepRow } from "@/components/marketing/HeroMotion";
+import { ClosedAuditLine, PreviewCard, type PreviewCardData, ScaledStage, StepRow } from "@/components/marketing/HeroMotion";
 
 const W = 560;
 const H = 320;
@@ -171,7 +171,6 @@ export function BeatReviewerSnapshot() {
       <div style={{ position: "absolute", left: 340, top: 30, width: 1, height: 260, borderLeft: `1px dashed ${node}` }} />
       <div className="landing-beats-paper" style={{ ...sheet, left: 356, top: 60, width: 180, height: 200, padding: "12px 14px", boxSizing: "border-box" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <AskMark />
           <span style={{ fontSize: 11.5, fontWeight: 500 }}>Shared link</span>
         </div>
         <div className="landing-beats-mono" style={{ fontSize: 8.5, color: muted, marginTop: 12 }}>Read only</div>
