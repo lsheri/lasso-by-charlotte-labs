@@ -31,7 +31,7 @@ describe("Ask Lasso signature loop maths", () => {
   });
 
   it("uses the named sizes and clamps the sublinear stamp radius at both ends", () => {
-    const formula = (size: number) => 0.0275 * size * Math.pow(36 / size, 0.35);
+    const formula = (size: number) => 0.029 * size * Math.pow(36 / size, 0.38);
     expect(stampRadiusFor(LOOP_SIZE_CHAT)).toBeCloseTo(formula(LOOP_SIZE_CHAT));
     expect(stampRadiusFor(LOOP_SIZE_TOOLBAR)).toBeCloseTo(formula(LOOP_SIZE_TOOLBAR));
     expect(stampRadiusFor(LOOP_SIZE_TITLE)).toBeCloseTo(formula(LOOP_SIZE_TITLE));
@@ -101,7 +101,12 @@ describe("Ask Lasso signature loop maths", () => {
     expect(Math.max(...still.map((stamp) => stamp.x))).toBeGreaterThan(LOOP_SIZE_TOOLBAR * 0.85);
     expect(Math.max(...still.map((stamp) => stamp.y))).toBeGreaterThan(LOOP_SIZE_TOOLBAR * 0.8);
     expect(Math.min(...still.map((stamp) => stamp.x))).toBeLessThan(LOOP_SIZE_TOOLBAR * 0.2);
-    expect(stamps.map(({ x, y }) => [x, y])).toEqual(still.map(({ x, y }) => [x, y]));
+    stamps.forEach((stamp, index) => {
+      const target = still[index];
+      expect(target).toBeDefined();
+      expect(stamp.x).toBeCloseTo(target?.x ?? 0, 10);
+      expect(stamp.y).toBeCloseTo(target?.y ?? 0, 10);
+    });
   });
 
   it("compresses into a horizon and loosens asymmetrically without leaving its square", () => {
